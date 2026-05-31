@@ -118,6 +118,18 @@ type TagIO struct {
 	CutTag  func(body string) error
 }
 
+// AnnotatedTagArgs returns the `git tag` arguments that cut an annotated tag
+// carrying body in the tag MESSAGE BODY (not the subject). The two `-m` flags
+// give git a `Release <version>` subject and the notes as the following
+// paragraph, so `git tag -l --format='%(contents:body)'` extracts exactly body.
+// A single `-m body` would fold the notes into the subject, leaving the body
+// empty — which CI's empty-body guard would (correctly) reject. This is the
+// single source of truth for the tag-cut shape, shared by the CLI and the
+// AC-3 round-trip test.
+func AnnotatedTagArgs(tag, version, body string) []string {
+	return []string{"tag", "-a", tag, "-m", "Release " + version, "-m", body}
+}
+
 // ConfirmAndTag presents the proposed notes for review and cuts the annotated
 // tag only on explicit confirmation, using the captain's edited body. A decline
 // leaves no tag.

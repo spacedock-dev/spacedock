@@ -126,7 +126,7 @@ func notes(args []string) int {
 	tagIO := release.TagIO{
 		Confirm: confirmNotes,
 		CutTag: func(body string) error {
-			return cutAnnotatedTag(tag, body)
+			return cutAnnotatedTag(tag, version, body)
 		},
 	}
 	if err := release.ConfirmAndTag(proposed, tagIO); err != nil {
@@ -222,15 +222,16 @@ func editInEditor(proposed string) (string, error) {
 	return strings.TrimRight(string(edited), "\n"), nil
 }
 
-// cutAnnotatedTag creates the annotated tag locally with body as the WHOLE tag
-// message (no subject line), so `git tag -l --format='%(contents:body)'` in CI
-// round-trips exactly these notes into goreleaser's --release-notes. The tag is
-// not pushed — that stays a manual step.
-func cutAnnotatedTag(tag, body string) error {
+// cutAnnotatedTag creates the annotated tag locally with the notes in the tag
+// message BODY (under a `Release <version>` subject), so `git tag -l
+// --format='%(contents:body)'` in CI round-trips exactly these notes into
+// goreleaser's --release-notes. The tag is not pushed — that stays a manual
+// step.
+func cutAnnotatedTag(tag, version, body string) error {
 	if strings.TrimSpace(body) == "" {
 		return fmt.Errorf("refusing to cut %s with empty notes body", tag)
 	}
-	if err := exec.Command("git", "tag", "-a", tag, "-m", body).Run(); err != nil {
+	if err := exec.Command("git", release.AnnotatedTagArgs(tag, version, body)...).Run(); err != nil {
 		return err
 	}
 	fmt.Printf("created annotated tag %s (local only)\n", tag)
