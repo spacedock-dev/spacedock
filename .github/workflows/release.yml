@@ -28,11 +28,27 @@ jobs:
         with:
           go-version: "1.22"
 
+      # The release notes are authored LOCALLY (via `spacedock-release notes`)
+      # and carried in the annotated tag's message body, so CI never runs
+      # `claude` — it only reads the tag. `%(contents:body)` strips the tag
+      # subject and yields just the notes body. Guard against an empty body
+      # (a lightweight tag, or one cut outside the notes flow) so we fail loudly
+      # rather than publish an empty Release; this step MUST precede goreleaser,
+      # which consumes the file via --release-notes.
+      - name: Extract release notes from the tag body
+        run: |
+          set -euo pipefail
+          git tag -l --format='%(contents:body)' "$GITHUB_REF_NAME" > release-notes.txt
+          if [ ! -s release-notes.txt ]; then
+            echo "::error::tag $GITHUB_REF_NAME has an empty annotated-tag body; cut it via 'spacedock-release notes <version>'" >&2
+            exit 1
+          fi
+
       - name: Run goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean
+          args: release --clean --release-notes release-notes.txt
         env:
           # GITHUB_TOKEN creates the release on this repo. HOMEBREW_TAP_TOKEN is a
           # PAT with write access to spacedock-dev/homebrew-tap so the

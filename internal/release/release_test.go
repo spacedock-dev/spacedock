@@ -4,6 +4,7 @@ package release
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -198,6 +199,154 @@ func TestBumpCalendarVersionNewDayResetsSequence(t *testing.T) {
 	}
 	if !(v > "0.0.2026053199") {
 		t.Errorf("new-day bump %q did not exceed prior-day max 0.0.2026053199", v)
+	}
+}
+
+// TestFilterCommitLogDropsWorkflowNoise locks AC-1: FilterCommitLog removes the
+// workflow-state commit classes the changelog prompt is told to ignore
+// (`dispatch:`/`advance:`/`merge:`/`archive:` subjects plus the CI commits
+// `release: stamp …` and `next: bump …`) while preserving real user-facing
+// commits, so both the `claude` input and the no-claude fallback output are
+// already clean. The input is the `git log --oneline` shape (`<sha> <subject>`).
+func TestFilterCommitLogDropsWorkflowNoise(t *testing.T) {
+	raw := strings.Join([]string{
+		"a28bb9d feat(ci): wire approval-gated live-runtime e2e job",
+		"ff98605 dispatch: release-notes-local-summary entering implementation",
+		"41e76a7 fix(dispatch): bind resolved state checkout",
+		"fcee0ed release: stamp plugin manifests to 0.19.1",
+		"23aa4d7 next: bump marketplace calendar version",
+		"e00d3f3 advance: cli-cobra-redesign entering validation",
+		"22a42ec merge: release-pipeline (jf) — goreleaser homebrew_casks",
+		"6eeaad1 archive: release-notes-local-summary",
+		"080ec3e feat(plugin): vendor repo plugin manifest",
+	}, "\n")
+
+	got := FilterCommitLog(raw)
+
+	// Real commits survive — including ones whose subject merely mentions a
+	// noise word inside a scope (`fix(dispatch): …`) rather than as the prefix.
+	keep := []string{
+		"feat(ci): wire approval-gated live-runtime e2e job",
+		"fix(dispatch): bind resolved state checkout",
+		"feat(plugin): vendor repo plugin manifest",
+	}
+	for _, want := range keep {
+		if !strings.Contains(got, want) {
+			t.Errorf("FilterCommitLog dropped a real commit %q:\n%s", want, got)
+		}
+	}
+
+	// Each workflow-noise class is gone.
+	drop := []string{
+		"dispatch: release-notes-local-summary",
+		"release: stamp plugin manifests",
+		"next: bump marketplace calendar",
+		"advance: cli-cobra-redesign",
+		"merge: release-pipeline",
+		"archive: release-notes-local-summary",
+	}
+	for _, bad := range drop {
+		if strings.Contains(got, bad) {
+			t.Errorf("FilterCommitLog kept workflow-noise commit %q:\n%s", bad, got)
+		}
+	}
+}
+
+// TestBuildChangelogPromptShape locks AC-1's prompt half: the prompt names the
+// release version, demands plain text (no markdown), and its ignore-list names
+// this repo's workflow-noise classes so the LLM is told to drop them.
+func TestBuildChangelogPromptShape(t *testing.T) {
+	p := BuildChangelogPrompt("0.19.2")
+	if !strings.Contains(p, "0.19.2") {
+		t.Errorf("prompt does not name the version:\n%s", p)
+	}
+	if !strings.Contains(p, "Plain text only") {
+		t.Errorf("prompt does not demand plain text:\n%s", p)
+	}
+	for _, noise := range []string{"dispatch", "advance", "merge", "archive"} {
+		if !strings.Contains(p, noise) {
+			t.Errorf("prompt ignore-list omits the %q noise class:\n%s", noise, p)
+		}
+	}
+}
+
+// TestGenerateNotesFallsBackWithoutClaude locks AC-1's fallback: when the claude
+// runner returns an error (binary absent), GenerateNotes still produces notes —
+// the filtered raw log — rather than failing.
+func TestGenerateNotesFallsBackWithoutClaude(t *testing.T) {
+	raw := "a28bb9d feat(ci): real change\nff98605 dispatch: noise"
+	io := NotesIO{
+		RawLog: func() (string, error) { return raw, nil },
+		Claude: func(prompt, input string) (string, error) { return "", errors.New("claude: not found") },
+	}
+	notes, err := GenerateNotes("0.19.2", io)
+	if err != nil {
+		t.Fatalf("GenerateNotes: %v", err)
+	}
+	if !strings.Contains(notes, "feat(ci): real change") {
+		t.Errorf("fallback notes lost the real commit:\n%s", notes)
+	}
+	if strings.Contains(notes, "dispatch: noise") {
+		t.Errorf("fallback notes kept workflow noise:\n%s", notes)
+	}
+}
+
+// TestGenerateNotesUsesClaudeOnFilteredLog locks AC-1: when claude is available,
+// it is fed the FILTERED log (not the raw one) and its output is the notes.
+func TestGenerateNotesUsesClaudeOnFilteredLog(t *testing.T) {
+	raw := "a28bb9d feat(ci): real change\nff98605 dispatch: noise"
+	var sawInput string
+	io := NotesIO{
+		RawLog: func() (string, error) { return raw, nil },
+		Claude: func(prompt, input string) (string, error) {
+			sawInput = input
+			return "A summary release.\n- feat: real change", nil
+		},
+	}
+	notes, err := GenerateNotes("0.19.2", io)
+	if err != nil {
+		t.Fatalf("GenerateNotes: %v", err)
+	}
+	if strings.Contains(sawInput, "dispatch: noise") {
+		t.Errorf("claude was fed unfiltered noise:\n%s", sawInput)
+	}
+	if !strings.Contains(sawInput, "feat(ci): real change") {
+		t.Errorf("claude was not fed the real commit:\n%s", sawInput)
+	}
+	if notes != "A summary release.\n- feat: real change" {
+		t.Errorf("notes != claude output: %q", notes)
+	}
+}
+
+// TestConfirmAndTagDeclineCutsNoTag locks AC-2's negative half: when the captain
+// declines, the tag hook is never invoked.
+func TestConfirmAndTagDeclineCutsNoTag(t *testing.T) {
+	tagged := false
+	io := TagIO{
+		Confirm: func(proposed string) (string, bool) { return proposed, false },
+		CutTag:  func(body string) error { tagged = true; return nil },
+	}
+	if err := ConfirmAndTag("notes body", io); err != nil {
+		t.Fatalf("ConfirmAndTag: %v", err)
+	}
+	if tagged {
+		t.Errorf("tag was cut despite the captain declining")
+	}
+}
+
+// TestConfirmAndTagConfirmCutsEditedBody locks AC-2's positive half: on confirm,
+// the tag hook is called with the captain's EDITED body, not the proposed one.
+func TestConfirmAndTagConfirmCutsEditedBody(t *testing.T) {
+	var gotBody string
+	io := TagIO{
+		Confirm: func(proposed string) (string, bool) { return "captain-edited body", true },
+		CutTag:  func(body string) error { gotBody = body; return nil },
+	}
+	if err := ConfirmAndTag("proposed body", io); err != nil {
+		t.Fatalf("ConfirmAndTag: %v", err)
+	}
+	if gotBody != "captain-edited body" {
+		t.Errorf("tag cut with body %q, want the captain-edited body", gotBody)
 	}
 }
 
