@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -85,24 +86,13 @@ func (e *modHeadingError) Error() string {
 		"Everything after '## Agent Prompt' is treated as the prompt body."
 }
 
-// StandingTeammate is one declared standing teammate: the spawn name (from the
-// mod's ## Hook: startup section, falling back to frontmatter name), the
-// frontmatter description, and the routing-usage body (extracted from the mod's
-// ## Routing Usage section, "" when absent). The body is carried as data so the
-// Claude-specific render lives in internal/claudeteam without re-reading the mod.
-type StandingTeammate struct {
-	Name             string
-	Description      string
-	RoutingUsageBody string
-}
-
 // EnumerateDeclaredStandingTeammates returns the declared standing teammates for
 // a workflow: every {workflow_dir}/_mods/*.md with standing: true in frontmatter,
 // in sorted path order. The name comes from ## Hook: startup (authoritative,
 // matching spawn-standing) falling back to frontmatter name; a mod with no
 // resolvable name is skipped. Returns an empty slice for bare mode (empty
 // teamName), no _mods dir, or no standing mods. Mirrors the Python helper.
-func EnumerateDeclaredStandingTeammates(workflowDir, teamName string) []StandingTeammate {
+func EnumerateDeclaredStandingTeammates(workflowDir, teamName string) []claudeteam.StandingTeammate {
 	if teamName == "" {
 		return nil
 	}
@@ -111,7 +101,7 @@ func EnumerateDeclaredStandingTeammates(workflowDir, teamName string) []Standing
 		return nil
 	}
 
-	var declared []StandingTeammate
+	var declared []claudeteam.StandingTeammate
 	for _, modPath := range sortedModPaths(modsDir) {
 		meta, err := ParseModMetadata(modPath)
 		if err != nil {
@@ -129,7 +119,7 @@ func EnumerateDeclaredStandingTeammates(workflowDir, teamName string) []Standing
 			continue
 		}
 		body, _ := ParseRoutingUsageBody(modPath)
-		declared = append(declared, StandingTeammate{
+		declared = append(declared, claudeteam.StandingTeammate{
 			Name:             name,
 			Description:      meta.Frontmatter["description"],
 			RoutingUsageBody: body,

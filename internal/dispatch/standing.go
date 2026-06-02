@@ -65,7 +65,7 @@ func runShowStanding(workflowDir string, stdout, stderr io.Writer) int {
 	// A truthy sentinel team name: the filesystem scan is team-agnostic, and the
 	// bare-mode short-circuit lives in build upstream of this call.
 	teammates := EnumerateDeclaredStandingTeammates(workflowDir, "_show_standing_")
-	rendered := claudeteam.RenderStandingTeammatesSection(toClaudeTeammates(teammates))
+	rendered := claudeteam.RenderStandingTeammatesSection(teammates)
 	if rendered != "" {
 		fmt.Fprintln(stdout, rendered)
 	}
@@ -179,18 +179,4 @@ type spawnSpec struct {
 // including its ensure_ascii escaping of a non-ASCII Agent Prompt.
 func emitSpawnJSON(stdout io.Writer, spec spawnSpec) int {
 	return claudeteam.EmitPythonJSON(stdout, spec)
-}
-
-// toClaudeTeammates maps the runtime-neutral StandingTeammate to the Claude
-// render's input type (same fields), so the render package needs no dispatch import.
-func toClaudeTeammates(in []StandingTeammate) []claudeteam.StandingTeammate {
-	out := make([]claudeteam.StandingTeammate, len(in))
-	for i, tm := range in {
-		out[i] = claudeteam.StandingTeammate{
-			Name:             tm.Name,
-			Description:      tm.Description,
-			RoutingUsageBody: tm.RoutingUsageBody,
-		}
-	}
-	return out
 }

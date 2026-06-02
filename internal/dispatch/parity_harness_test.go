@@ -93,15 +93,17 @@ func rewriteOracleFetch(s string) string {
 	return s
 }
 
-// stateCommitGuidanceLine matches the split-root state-commit guidance sentence
-// (a single line ending in "after a short wait.\n"). The native emitter and the
-// Python oracle diverge here intentionally — the same documented divergence as
-// the fetch line: the oracle ships the gated literal-brace block (and emits
-// nothing at all for non-worktree split-root stages), while the native emitter
-// substitutes resolved absolute paths on both branches. The body-parity compare
-// strips this block from BOTH sides so the unchanged bytes still byte-match; the
-// diverged content is covered by build_statecommit_test.go instead.
-var stateCommitGuidanceLine = regexp.MustCompile(`This workflow is split-root: [^\n]*? after a short wait\.\n`)
+// stateCommitGuidanceLine matches the split-root state-commit guidance, a single
+// line from "This workflow is split-root:" to its terminating newline. The native
+// emitter and the Python oracle diverge here intentionally — the same documented
+// divergence as the fetch line: the oracle ships the gated literal-brace block
+// ending in "after a short wait." (and emits nothing at all for non-worktree
+// split-root stages), while the native emitter substitutes resolved absolute paths
+// on both branches and appends the push-the-state-branch reminder ending in "then
+// re-push.". Matching the whole line to its newline covers both endings. The
+// body-parity compare strips this block from BOTH sides so the unchanged bytes
+// still byte-match; the diverged content is covered by build_statecommit_test.go.
+var stateCommitGuidanceLine = regexp.MustCompile(`This workflow is split-root: [^\n]*\n`)
 
 // stripStateCommitGuidance removes the diverged state-commit guidance line and
 // collapses the blank-line artifact left where it was removed, so a body with
