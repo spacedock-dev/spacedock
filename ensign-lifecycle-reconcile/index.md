@@ -1,13 +1,14 @@
 ---
 id: qs87q0ca1wa3bhzfkj07mgwb
 title: Harden FO reconciliation — teardown agents at terminal + supersede-shutdown + a state-keyed reconcile sweep (no lingering ensigns / stale branches / un-advanced PRs)
-status: backlog
+status: ideation
 source: "captain (2026-06-02) — observed the FO leak 3 ensigns (the 7h implementer post-merge + the old 3g cycle agents post-rework) and reconcile in-flight branches only reactively at merge (02 hit #263 late); all keyed off drift-prone FO session memory"
 completed:
 verdict:
 score: "0.30"
 worktree:
 issue:
+started: 2026-06-02T21:14:43Z
 ---
 
 The FO leaks agents and reconciles reactively because every lifecycle rule keys off **FO session memory**, which drifts under context pressure (this session: the FO tracked "5 alive" when 7 were — the 7h implementer lingered after its entity merged+archived, and the superseded old-3g `-implementation`/`-validation` lingered after 3g re-ideated). Same root cause as the prose-pin tests: a "remember to shut down / remember to rebase" rule can't self-check.
