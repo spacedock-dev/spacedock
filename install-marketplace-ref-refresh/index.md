@@ -17,48 +17,107 @@ issue:
 2. `claude plugin uninstall spacedock@spacedock`
 3. `claude plugin install spacedock@spacedock`
 
-Step 1 is a no-op when the marketplace `spacedock` is already declared in user settings — claude emits `Marketplace 'spacedock' already on disk — declared in user settings` and skips. The `@next` ref pin never lands. Steps 2-3 then uninstall and re-install the plugin sourced from whatever ref the marketplace was originally added with (the default branch, or a stale `@next` from a prior session). The user sees a successful-looking install and a stale plugin.
+Step 1 is a no-op when the marketplace `spacedock` is already declared in user settings — claude emits `Marketplace 'spacedock' already on disk — declared in user settings` and exits 0. The `@next` ref pin never lands. Steps 2-3 then uninstall and re-install the plugin sourced from whatever ref the marketplace was originally added with (the default branch, or a stale `@next` from a prior session). The user sees a successful-looking install and a stale plugin.
 
 This silently defeats the recalibrated sprint goal "install path off `next` — fresh install works from `spacedock-dev/spacedock@next`."
 
 ## Problem
 
-The 3-step sequence assumes `marketplace add` is idempotent and re-pins the ref. It is not: when the marketplace is already on disk, claude skips the add entirely with no exit-code signal, so the downstream uninstall/install pair operates on the stale ref. There is no observable failure for the user or for any test that just checks the install exit code.
+The 3-step sequence assumes `marketplace add` is idempotent and re-pins the ref. It is not: when the marketplace is already on disk, claude skips the add entirely with exit 0, so the downstream uninstall/install pair operates on the stale ref. There is no observable failure for the user or for any test that just checks the install exit code.
 
-## Proposed approach
+## Spike: live claude CLI behavior (run 2026-06-02 against claude 2.1.160)
 
-Insert a `marketplace remove spacedock` before the add, making it a 4-step sequence:
+The design rests on three unverified claude-CLI behaviors. All three were exercised live before committing to the plan; the results force the design (see "Design choice" below).
 
-1. `claude plugin marketplace remove spacedock` (no-op on a fresh box)
-2. `claude plugin marketplace add spacedock-dev/spacedock@next`
-3. `claude plugin uninstall spacedock@spacedock`
-4. `claude plugin install spacedock@spacedock`
+| # | Command | Pre-state | Observed exit | Observed stderr/stdout |
+|---|---|---|---|---|
+| 1 | `claude plugin marketplace add spacedock-dev/spacedock@next` | `spacedock` already declared (stale @next pin) | **0** | `Marketplace 'spacedock' already on disk — declared in user settings` (the bug) |
+| 2 | `claude plugin marketplace remove spacedock` | `spacedock` declared | 0 | `Successfully removed marketplace: spacedock` |
+| 3 | `claude plugin marketplace remove spacedock` | NOT declared (fresh box) | **1** | `Failed to remove marketplace: Marketplace 'spacedock' not found` |
+| 4 | `claude plugin marketplace add spacedock-dev/spacedock@next` | `spacedock` removed (post-step 2) | 0 | Clones SSH, fetches `next`, `Successfully added marketplace: spacedock`; the @next pin lands |
 
-The remove step is benign on first install (claude either succeeds silently or emits "not declared," neither fatal). On an upgrade, it clears the stale on-disk pin so the add lands the @next ref cleanly.
+(For #3, the fresh-box case, the spike substituted a non-existent marketplace name on this captain's box, which is the same code path inside claude — there is no "this name vs that name" branch in the remove handler.)
 
-Open design question for ideation: should the remove step's stderr be tolerated unconditionally (current `Install` aggregates `CombinedOutput` and fails on any non-zero exit), or should we wrap it to ignore the "not declared" exit? A small `installArgvSequence` refactor with a per-step "tolerate failure" flag covers it cleanly.
+Result: the remove step exits 1 on a fresh box. Plain insertion of `marketplace remove` as a `CombinedOutput`-aggregating step would abort `Install` on first install. **Failure tolerance is mandatory**, not optional.
+
+## Design choice: per-step failure-tolerance flag on the argv sequence
+
+`installArgvSequence` becomes a slice of `{argv []string, tolerateExit bool}` entries (a small unexported struct local to `host_exec.go`); the remove step is the only entry with `tolerateExit: true`. `Install` loops the slice and, when the step's `tolerateExit` is true, treats a non-zero exit as a recoverable case — it appends combined output to `sb` and continues, NOT returning the error. Every other step keeps today's strict behavior.
+
+```go
+type installStep struct {
+    argv         []string
+    tolerateExit bool // remove step is true; others false
+}
+
+func installArgvSequence(source, branch string) []installStep {
+    return []installStep{
+        {argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+        {argv: []string{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)}},
+        {argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
+        {argv: []string{"plugin", "install", "spacedock@spacedock"}},
+    }
+}
+```
+
+Rejected alternatives:
+
+- **Swallow only stderr matching "not declared".** Fragile: the message text is unstable across claude versions (we have already seen "not found" wording on 2.1.160, vs the "not declared" wording captain remembered) and a substring match couples our binary to a host string.
+- **Tolerate every step's exit.** Loses the fail-fast signal on the uninstall/install steps, which are real failures we want surfaced.
+- **Run the remove step out-of-band and ignore its exit by always wrapping in `_ = cmd.Run()`.** Same shape as the per-step flag but hides the tolerance decision inside `Install`'s control flow rather than co-locating it with the argv data; the flag makes the asymmetry visible in tests.
+
+The per-step flag also keeps `installArgvSequence` testable as a pure function — `TestInstallArgvSequence` extends to assert the remove step's position AND its `tolerateExit: true`.
+
+### Test-time fakeHost modeling
+
+`fakeHost.Install` today records `[host, source, branch]` once per `runInit` call (no per-step argv visibility) — this is enough for `runInit`-level tests since the argv shape is owned by the pure `installArgvSequence`. The fix exercises both layers without thickening the fakeHost:
+
+- **Argv shape** (pure function, no fake) — `TestInstallArgvSequence` extends to assert the 4-step ordering, the remove-first position, and the `tolerateExit: true` flag on step 0 only.
+- **`runInit` end-to-end** (fakeHost) — existing `TestInitClaudeIssuesHostPluginCommands` and `TestInitTargetsNextWhenDevBranchPinned` keep passing; the fakeHost still records `[claude, spacedock-dev/spacedock, next]` (one `Install` call) and `runDoctor` still sees a compatible manifest.
+- **Failure-tolerance behavior** (real `execHost.Install` against a stub binary) — a new unit test invokes `execHost.Install` with a per-PATH stub `claude` script that exits 1 on the remove subcommand and 0 otherwise; the test asserts the call returns nil error and that the combined output contains the remove-step stderr. This proves the loop tolerates the exit code, not just that the flag is set on the slice. Cost: a single `t.TempDir()` + `os.WriteFile` stub script, an `exec.LookPath`-friendly PATH override via `t.Setenv`. (No live claude required, no network.)
 
 ## Out of scope
 
 - Codex install (the codex path is documented prose; the @ref is already correct on every printed invocation).
 - The `--ref` flag surface itself (already correct — `marketplaceAddArg` composes `source@branch` correctly when `devBranch != ""`).
+- Plugin uninstall step's failure tolerance — `plugin uninstall spacedock@spacedock` on a fresh box is already handled by the existing 3-step shape (claude's uninstall is a no-op on a not-installed plugin), and the spike did not surface a regression here. Out-of-scope for this task; revisit only if the live AC-1 confirmation surfaces an upgrade-path regression on it.
 
 ## Acceptance criteria
 
 **AC-1 — `spacedock install --host claude` lands the `@next`-pinned plugin even when a stale marketplace declaration already exists.**
-Verified by: a host-ops test that primes a fakeHost with an existing `spacedock` marketplace pinned at the default branch, runs `runInit`, and asserts (a) the issued argv sequence carries the remove step before the add, and (b) the resulting marketplace pin reflects `spacedock-dev/spacedock@next`. Plus a manual confirmation by the captain that the live install on a clean session pulls the `next` ref.
+Verified by: `go test ./internal/cli -run TestInstallArgvSequence` passing on a sequence whose step 0 is `plugin marketplace remove spacedock` with `tolerateExit: true` and step 1 is `plugin marketplace add spacedock-dev/spacedock@next` — i.e. remove precedes add in the issued argv. Plus a manual `./spacedock install --host claude` run by the captain on a session whose `spacedock` marketplace is currently pinned to a non-`@next` ref, where the post-run `claude plugin marketplace list` shows `Source: GitHub (spacedock-dev/spacedock@next)`.
 
-**AC-2 — A first install on a fresh box still succeeds end-to-end (the remove step's "not declared" outcome is tolerated).**
-Verified by: a host-ops test with no pre-declared marketplace where `runInit` issues all four steps and returns success despite the remove step's non-zero exit (or a "not declared"-flavored stderr). The contract gate then reports the @next-installed contract.
+**AC-2 — A first install on a fresh box still succeeds end-to-end (the remove step's "not declared" exit-1 is tolerated).**
+Verified by: a new `go test ./internal/cli -run TestInstallToleratesRemoveStepFailure` that drives `execHost.Install` against a per-PATH stub `claude` script returning exit 1 on `plugin marketplace remove ...` and exit 0 on every other subcommand; the test asserts (a) `Install` returns a nil error, (b) the combined output string contains all four steps' stub output, and (c) the test fails (today) without the per-step tolerance flag — a guard against silent regression.
+
+**AC-3 — On a non-tolerated step's failure, `Install` still surfaces the error (fail-fast on add/uninstall/install).**
+Verified by: an extension of the AC-2 stub test (or a sibling `TestInstallFailsFastOnAddStep`) where the stub `claude` exits 1 on `plugin marketplace add ...` and exit 0 on every other subcommand; `Install` MUST return a non-nil error wrapping the `add` step's argv and the combined output MUST contain the add-step stderr. This locks the tolerance asymmetry — it is NOT a "tolerate every step" regression.
 
 ## Test plan
 
-- Host-ops unit tests via the existing `hostOps`/`fakeHost` seam in `internal/cli/`: extend the fake to record argv sequences and simulate the "already-on-disk" no-op, plus the "not declared" fresh-box case. Assertions are over the issued argv shape and the resulting per-host pin.
-- Cost: low. Reuses the existing test seam; no live host needed.
-- No live-workflow test required — the claim is the argv sequence emitted by the binary, not a runtime integration.
+- `TestInstallArgvSequence` (extended): pure-function check over the 4-step slice; the remove step is at index 0 with `tolerateExit: true`; every other step has `tolerateExit: false` (or the zero value). Reuses `reflect.DeepEqual` on the slice. Cost: ~10 lines.
+- `TestInstallToleratesRemoveStepFailure` (new): per-PATH stub `claude` script, drives real `execHost{}.Install("claude", "spacedock-dev/spacedock", "next")`; asserts nil error and combined output contains the remove-step stub message. Cost: ~25 lines including the stub script writer helper.
+- `TestInstallFailsFastOnAddStep` (new): same stub-script pattern, stub fails on `add`; asserts non-nil error and the error wraps the add subcommand. Cost: ~15 lines (reuses the helper).
+- Existing `TestInitClaudeIssuesHostPluginCommands`, `TestInitTargetsNextWhenDevBranchPinned`, `TestInitCheckRunsDoctorWithoutInstalling`, `TestInitMarketplaceSourceIsMigratedRepo`: keep passing unchanged — they exercise `runInit` via the fakeHost, which is one level above the argv-sequence change.
+- Manual: captain runs `./spacedock install --host claude` on a box with a stale `spacedock` marketplace pin and confirms the post-install `claude plugin marketplace list` reports `@next`. This is the AC-1 live confirmation.
+- Cost: low. No live host needed for the unit tests (the PATH stub is local), no network, no fakeHost API change.
 
 ## Notes
 
 - Captain-observed 2026-06-02 — `./spacedock install --host claude` after a prior session's install: `Marketplace 'spacedock' already on disk — declared in user settings` followed by a "successful" uninstall+install pair from the stale ref.
+- Spike-confirmed 2026-06-02 (claude 2.1.160 on this box): `marketplace add` when already declared exits 0 silently; `marketplace remove` when present exits 0; `marketplace remove` when not declared exits **1** with `Failed to remove marketplace: ... not found`; `marketplace add` after a successful remove fetches `@next` cleanly.
 - Coordinates with packaging work (post-bootstrap repo migration to `spacedock-dev/spacedock`): a clean remove+add sequence is the right shape for `requires-contract` cross-repo verification too.
 - Manual workaround until this lands: `claude plugin marketplace remove spacedock && ./spacedock install --host claude`.
+
+## Stage Report: ideation
+
+- DONE: The fix's mechanism (insert `marketplace remove spacedock` before the `add` in installArgvSequence) is exercised end-to-end against BOTH the live claude 'already on disk' case (the bug captain observed) and the 'not declared' fresh-box case (where remove emits non-zero) — OR an auditable 'no spike needed' is recorded with the proven mechanisms relied on.
+  Live spike against claude 2.1.160 ran all four mechanism checks: stale-pin add exits 0 silently (bug confirmed), remove-when-present exits 0, remove-when-not-declared exits **1** with "not found" stderr, post-remove add fetches `@next` cleanly. Results table is in the entity body under "Spike: live claude CLI behavior".
+- DONE: The remove-step's failure-exit handling is concretely designed (per-step tolerate-failure flag on installArgvSequence vs swallowing only the not-declared exit vs an alternative mechanism); the choice + rationale + how the test-time fakeHost models it is in the entity body.
+  Chose per-step `tolerateExit bool` flag on a new `installStep` struct (the slice becomes `[]installStep`); rejected alternatives (substring-match on stderr, tolerate-every-step, hide-the-flag-in-Install) are documented with rationale. fakeHost is unchanged — argv shape stays a pure-function test, and a new stub-`claude`-script unit test against real `execHost.Install` proves the tolerance-loop behavior at the right layer.
+- DONE: Each AC is entity-level (a property of the finished change, not a stage action), its `Verified by:` clause names a runnable check outside the entity body (a host-ops unit test against the fakeHost seam + a manual captain live-install confirmation), and the AC list covers both the upgrade-from-stale-ref path and the fresh-install path.
+  AC-1 covers the stale-pin upgrade path (named `go test` + captain live confirmation); AC-2 covers the fresh-box path (named `go test` against a PATH-stub claude); AC-3 was added to lock the tolerance asymmetry (fail-fast on non-remove steps) — three named tests, every Verified-by points to a runnable command or live observation outside this document.
+
+### Summary
+
+Refreshed the ideation with a live mechanism spike against claude 2.1.160 that confirmed all four bug-relevant behaviors (the stale-pin add no-op, the not-declared remove exiting **1** with "not found" stderr, the remove-when-present exiting 0, and the post-remove add landing @next). The spike forced the design: failure tolerance on the remove step is mandatory, not optional. Chose a per-step `tolerateExit bool` flag on a new `installStep` struct as the cleanest seam — co-locating the tolerance decision with the argv data, keeping fail-fast on the other three steps, and remaining testable at the right layer (pure-function argv check + PATH-stub `execHost.Install` integration check for the tolerance loop). Added AC-3 to lock the tolerance asymmetry against silent regression toward tolerate-every-step.
