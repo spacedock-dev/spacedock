@@ -58,7 +58,7 @@ when you want sandboxed runs.
 3. **Install the host plugin.**
 
    ```bash
-   spacedock init --host claude
+   spacedock install --host claude
    ```
 
    Adds the `spacedock-dev/spacedock` marketplace plugin for Claude Code, then

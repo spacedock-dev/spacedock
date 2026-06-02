@@ -89,11 +89,18 @@ func newRootCommand(ctx context.Context, env []string, dir string, stdin io.Read
 	versionFlag := false
 
 	root := &cobra.Command{
-		Use:               "spacedock",
-		SilenceErrors:     true,
-		SilenceUsage:      true,
-		Args:              cobra.ArbitraryArgs,
-		CompletionOptions: cobra.CompletionOptions{DisableDefaultCmd: true},
+		Use:           "spacedock",
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		Args:          cobra.ArbitraryArgs,
+		// An unknown subcommand carrying a trailing flag (e.g. the removed
+		// `spacedock init --host claude`) must reach RunE so args[0] drives the
+		// unknown-command diagnostic. Without this, the root flagset errors on the
+		// unrecognized flag during parse and, under SilenceErrors/SilenceUsage,
+		// exits 2 with no output — a silent exit. Whitelisting unknown flags lets
+		// parsing fall through to RunE so the command token is reported.
+		FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true},
+		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if versionFlag {
 				printVersion(stdout)

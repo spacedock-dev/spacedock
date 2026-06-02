@@ -21,7 +21,7 @@ step-by-step journey with the observable output at each step.
 ```bash
 brew tap spacedock-dev/homebrew-tap
 brew install spacedock
-spacedock init --host claude
+spacedock install --host claude
 ```
 
 The no-tap one-liner `brew install spacedock-dev/homebrew-tap/spacedock` is
@@ -45,10 +45,10 @@ go build -o spacedock ./cmd/spacedock
 plugin is out of date (predates this binary's contract), reinstall it:
 
 ```bash
-spacedock init --host claude
+spacedock install --host claude
 ```
 
-`spacedock init` reinstalls from `spacedock-dev/spacedock@next`, replacing a
+`spacedock install` reinstalls from `spacedock-dev/spacedock@next`, replacing a
 stale already-installed plugin (it uninstalls before installing, since a plain
 `plugin install` no-ops when the plugin is already present).
 

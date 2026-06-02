@@ -40,7 +40,7 @@ const (
 	// PluginPredatesContract means the manifest has no requires-contract field at
 	// all: the installed plugin predates the contract mechanism. Kin to
 	// too-old-plugin, but with no range to name; remedy reinstalls via
-	// `spacedock init` and omits the `plugin update` fallback (which no-ops on a
+	// `spacedock install` and omits the `plugin update` fallback (which no-ops on a
 	// stale install).
 	PluginPredatesContract
 )
@@ -186,7 +186,7 @@ func tooOldPluginRemedy(c int, rangeStr, host string) string {
 
 // pluginPredatesContractRemedy is the pinned remedy for an installed plugin that
 // predates the contract mechanism (no requires-contract field). It names the
-// `spacedock init` one-liner — never raw `<host> plugin` commands — and omits the
+// `spacedock install` one-liner — never raw `<host> plugin` commands — and omits the
 // `plugin update` fallback, which no-ops on a stale already-installed plugin. The
 // host is parameterized; the optional pre-release branch suffixes the reinstall
 // source so a dev install reflects the branch (the default release path omits it).
@@ -197,7 +197,7 @@ func pluginPredatesContractRemedy(host, branch string) string {
 	}
 	return fmt.Sprintf(
 		"plugin-predates-contract: your installed Spacedock plugin is out of date "+
-			"(predates this binary's contract). Upgrade it: spacedock init --host %s "+
+			"(predates this binary's contract). Upgrade it: spacedock install --host %s "+
 			"(reinstalls from %s).",
 		host, source)
 }

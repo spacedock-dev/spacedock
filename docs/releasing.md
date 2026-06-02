@@ -32,11 +32,15 @@ before publishing.
    git worktree add .worktrees/release-X.Y.Z -b release/X.Y.Z origin/next
    ```
 
-3. Bump the two plugin manifests with the release tool, then commit:
+3. Bump the version stamps with the release tool, then commit. `stamp-version`
+   writes the release `X.Y.Z` into the plugin manifests; `bump-calendar` advances
+   the marketplace entry's separate `0.0.YYYYMMDDNN` calendar key (the
+   `claude plugin update` re-pull key) — they stamp different files, so both run:
 
    ```bash
    go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
-   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+   go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
+   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json .claude-plugin/marketplace.json
    ```
 
 4. Write a changelog. Summarize the commits since the last tag into plain text:
