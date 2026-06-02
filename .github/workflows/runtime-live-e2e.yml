@@ -145,7 +145,8 @@ jobs:
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
-          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v
+          set -o pipefail
+          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
 
       - name: Upload live artifacts
         if: always()
@@ -154,4 +155,5 @@ jobs:
           name: runtime-live-e2e-claude-live-${{ matrix.model }}
           path: |
             ./spacedock
+            ./live-e2e-transcript.txt
           if-no-files-found: warn
