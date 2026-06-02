@@ -1,7 +1,7 @@
 ---
 id: f4h107he3s9swwz51ymr022m
-title: Enable Codex live CI with a real headless runtime smoke
-status: validation
+title: Enable Codex live CI by reusing shared runtime scenarios on top of r0
+status: implementation
 source: "captain (2026-06-02) — revive the useful old Python Codex live CI setup, ignore tautological static grep tests, and document setup/principles in docs/dev/README.md"
 started: 2026-06-02T17:59:45Z
 completed:
@@ -12,71 +12,83 @@ issue:
 mod-block: 
 ---
 
-The old Python-era live CI had the right Codex shape: a `codex-live` job with `CI-E2E-CODEX`, `OPENAI_API_KEY`, Codex CLI install, `codex login --with-api-key`, preserved artifacts, and a `make test-live-codex` target that ran live Codex tests in a cheap serial preflight before heavier parallel cases. The static workflow-grep tests around it are not worth reviving.
+The old Python-era live CI had the right Codex shape: a `codex-live` job with `CI-E2E-CODEX`, `OPENAI_API_KEY`, Codex CLI install, `codex login --with-api-key`, preserved artifacts, and a `make test-live-codex` target that reused scenario files also run by Claude. The useful overlap was three shared scenarios:
 
-This task ports only the useful live behavior to the current Go repo: a real `codex exec --json` smoke that exercises the current Spacedock plugin/skill checkout, plus an approval-gated GitHub Actions job that installs/logs in to Codex and runs that live smoke.
+- `test_gate_guardrail.py --runtime codex`
+- `test_rejection_flow.py --runtime codex`
+- `test_merge_hook_guardrail.py --runtime codex`
+
+The static workflow-grep tests around that harness are not worth reviving.
+
+This task ports the useful live behavior to the current Go repo as a shared runtime scenario library. Codex CI should exercise the same common user journeys Claude uses where the behavior is runtime-neutral, and f4 must be stacked on r0 so the live run proves the Codex runtime adapter and Codex-shaped dispatch contract.
 
 ## Problem
 
-Current CI has a Claude live lane but no Codex live lane. r0 added the Codex runtime contract and Codex-shaped dispatch text, but the only Codex proof so far is local CLI/plugin probing plus unit tests. That is not enough for runtime regressions such as skill loading, `codex exec --json` event shape, multi-agent notification handling, or install/login drift in GitHub Actions.
+Current CI has a Claude live lane but no Codex live lane. r0 adds the Codex runtime contract and Codex-shaped dispatch text, but Codex needs proof beyond local CLI/plugin probing and unit tests. The proof must cover runtime regressions such as skill loading, `codex exec --json` event shape, multi-agent notification handling, install/login drift in GitHub Actions, and the r0 adapter actually being used by a real Codex first officer.
 
-The old Python live harness proves the design direction, but it cannot be copied wholesale: `tests/` is gone, the repo is Go-first, the old harness used synthetic `$HOME/.agents/skills/spacedock` skill injection, and some old assertions (especially "immediate wait after dispatch") contradict the r0 Codex contract where mailbox notification is the completion signal and `wait_agent` is only a sparing critical-path accelerator.
+The first f4 implementation was too narrow: a Codex-only gate-hold smoke proved the live test library and local auth plumbing, but it did not reuse the old shared scenarios and it was not stacked on r0. That makes it a useful harness spike, not a sufficient CI deliverable.
+
+The old Python live harness proves the intended scenario overlap, but it cannot be copied wholesale: `tests/` is gone, the repo is Go-first, the old harness used synthetic `$HOME/.agents/skills/spacedock` skill injection, and some old assertions (especially "immediate wait after dispatch") contradict the r0 Codex contract where mailbox notification is the completion signal and `wait_agent` is only a sparing critical-path accelerator.
 
 ## Proposed approach
 
-Add the smallest meaningful Codex live smoke in Go, likely under `internal/ensigncycle` behind `//go:build live`, parallel to the existing Claude live test but focused on a gated workflow rather than a full terminal cycle. The test should:
+Rework the Go live harness under `internal/ensigncycle` so common journeys are scenario functions with runtime-specific drivers. The Codex suite must include at least the three old shared Codex/Claude overlaps:
 
-- create a temporary git-backed workflow with one gated entity;
-- launch a real Codex headless session via `codex exec --json` (or a proven headless equivalent) with isolated `HOME` and `CODEX_HOME`;
-- load the current checkout's Spacedock plugin/skills, not the remote `next` plugin by accident;
-- drive the FO to the gate;
-- assert observable state and output: the entity is still at the gated stage, the FO did not self-approve or archive it, and the final output/report clearly says it is waiting for human approval;
-- preserve JSONL/transcript artifacts when CI sets a test-artifact root.
+- gate guardrail: drive a gated workflow to the gate and assert the FO waits for approval instead of self-approving or archiving;
+- rejection flow: exercise validation rejection and feedback routing back to implementation, using Codex notification/reuse semantics from r0;
+- merge hook guardrail: exercise the PR merge hook guard, ensuring terminalization cannot bypass the registered merge hook/mod-block flow.
 
-Then add a `codex-live` job to `.github/workflows/runtime-live-e2e.yml` that depends on the offline Go suite, uses the approval-gated `CI-E2E-CODEX` environment, reads only `OPENAI_API_KEY`, installs Codex, logs in with `codex login --with-api-key`, builds the local `spacedock` binary, proves Codex plugin readiness against the current checkout, runs the live Codex smoke, and uploads artifacts.
+The harness should launch real Codex headlessly via `codex exec --json` (or a proven headless equivalent) with isolated `HOME` and `CODEX_HOME`, load the current checkout's Spacedock plugin/skills, preserve JSONL/transcript artifacts when CI sets a test-artifact root, and allow local subscription auth by copying only `~/.codex/auth.json` into the isolated `CODEX_HOME` while keeping CI strict on `OPENAI_API_KEY`.
 
-Update `docs/dev/README.md` (the evergreen development doc referenced by `AGENTS.md`) with the Codex live test setup and principles: live behavior is the proof; static grep tests are not a substitute; the job must test the PR/current checkout, not `next`; serial cheap preflight before heavier cases; environment approval protects spend/secrets; artifacts are part of the debugging contract.
+Stack f4 on `spacedock-ensign/codex-runtime-adapter` before validation. The `codex-live` job in `.github/workflows/runtime-live-e2e.yml` should depend on the offline Go suite, use the approval-gated `CI-E2E-CODEX` environment, read only `OPENAI_API_KEY`, install/log in to Codex, build the local `spacedock` binary, prove Codex plugin readiness against the current checkout, run the shared Codex scenario suite, and upload artifacts.
+
+Update `docs/dev/README.md` (the evergreen development doc referenced by `AGENTS.md`) with the Codex live test setup and principles: live behavior is the proof; static grep tests are not a substitute; shared runtime scenarios are preferred over one-off host-only smokes; the job must test the PR/current checkout, not `next`; serial cheap preflight before heavier cases; environment approval protects spend/secrets; artifacts are part of the debugging contract.
 
 ## Riskiest unknown
 
-The first implementation spike must prove how CI loads the **current PR checkout** as a Codex plugin. `codex plugin marketplace add spacedock-dev/spacedock --ref next` is not acceptable for PR validation because it tests the published `next` branch, not the code under review. Candidate paths are:
+The current-checkout Codex plugin load has already been proven by the first f4 implementation: a generated local marketplace can point `spacedock@spacedock` at the PR checkout and `codex plugin list` resolves that temp local path. The remaining riskiest unknown is whether the old shared Codex scenarios can be expressed in the current Go harness without recreating stale Python semantics. The implementation should port the scenario intent, not line-for-line Python code.
 
-- generate a temporary local Codex marketplace in the job whose `spacedock` plugin source points at `${GITHUB_WORKSPACE}`;
-- use a supported local marketplace path directly with `codex plugin marketplace add`;
-- or prove a headless `codex exec` path can consume the local plugin checkout without marketplace installation.
+Record any scenario that cannot be faithfully ported and why. A port that reduces the suite back to a single gate smoke does not satisfy this task.
 
-Record the chosen mechanism in `docs/dev/README.md` and in the implementation report. If no current-checkout mechanism works reliably, stop and report the blocker rather than shipping a live lane that false-passes against `next`.
+If a full scenario is too expensive for every CI run, it may be split into a cheap required live preflight plus a separately gated extended Codex journey, but the acceptance criteria must still include the three shared journeys and validation must run them locally or in approved CI before passing.
 
 ## Out of scope
 
 - Do not revive the old Python static workflow-grep tests.
-- Do not port the whole old `make test-live-codex` suite in this task.
+- Do not port stale Python syntax or runtime internals line-for-line.
 - Do not reintroduce `test_codex_dispatch_immediate_wait.py` semantics; immediate wait-after-spawn is stale after r0.
 - Do not add a model/cost matrix yet. Cost ledger integration belongs to the separate journey-cost-ledger task.
 
 ## Acceptance criteria
 
-**AC-1 — A Go live Codex smoke proves FO gate-hold behavior through a real Codex runtime.**
-Verified by: `OPENAI_API_KEY=... go test -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` (or the implemented equivalent) launches real Codex headlessly, reaches the gate on a temp workflow, and fails if the entity is self-approved, archived, or missing a waiting-for-approval signal. Without live Codex auth, the test may skip locally; in CI the secret-bearing job must fail clearly when `OPENAI_API_KEY` is absent after environment approval.
+**AC-1 — f4 is stacked on r0 and therefore exercises the Codex runtime adapter.**
+Verified by: `git merge-base --is-ancestor origin/spacedock-ensign/codex-runtime-adapter HEAD` passes from `.worktrees/spacedock-ensign-codex-live-ci`, and the live Codex artifacts show `skills/first-officer/references/codex-first-officer-runtime.md` was available from the current checkout plugin cache.
 
-**AC-2 — GitHub Actions has an approval-gated `codex-live` lane that runs the live smoke against the current checkout.**
-Verified by: `.github/workflows/runtime-live-e2e.yml` includes a `codex-live` job that needs the offline Go gate, uses environment `CI-E2E-CODEX`, reads `OPENAI_API_KEY` but not `ANTHROPIC_API_KEY`, installs/logs in to Codex, builds the local `spacedock` binary, loads or installs the current checkout's plugin/skills, runs the live Codex smoke, and uploads artifacts. Validation should cite a successful Actions run when available; local validation must at least run the same job commands up through the live test on a machine with Codex auth.
+**AC-2 — The Go live harness has shared runtime scenarios for the old Claude/Codex overlap.**
+Verified by: the code exposes and tests scenario definitions for gate guardrail, rejection flow, and merge hook guardrail, and the Codex live suite runs those same scenario definitions rather than a Codex-only one-off test.
 
-**AC-3 — Codex plugin readiness is proven with real Codex CLI commands, not assumed from docs.**
+**AC-3 — A real Codex runtime run executes the shared scenarios against the current checkout.**
+Verified by: `OPENAI_API_KEY=... go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` (or the implemented equivalent) launches real Codex headlessly, runs the gate guardrail, rejection flow, and merge hook guardrail scenarios, and fails on self-approval, missing rejection feedback routing, or merge-hook bypass. Without live Codex auth, the test may skip locally; in CI the secret-bearing job must fail clearly when `OPENAI_API_KEY` is absent after environment approval.
+
+**AC-4 — GitHub Actions has an approval-gated `codex-live` lane that runs the shared scenario suite against the current checkout.**
+Verified by: `.github/workflows/runtime-live-e2e.yml` includes a `codex-live` job that needs the offline Go gate, uses environment `CI-E2E-CODEX`, reads `OPENAI_API_KEY` but not `ANTHROPIC_API_KEY`, installs/logs in to Codex, builds the local `spacedock` binary, loads or installs the current checkout's plugin/skills, runs the shared Codex scenario suite, and uploads artifacts. Validation should cite a successful Actions run when available; local validation must at least run the same job commands through the live shared suite on a machine with Codex auth.
+
+**AC-5 — Codex plugin readiness is proven with real Codex CLI commands, not assumed from docs.**
 Verified by: the live job or its setup script runs the current Codex plugin install/load path and `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` (or a stronger current-checkout equivalent) after installation. The evidence must show the resolver sees `spacedock@spacedock` from the intended checkout/cache; a run that only tests remote `next` does not satisfy this AC.
 
-**AC-4 — Evergreen docs explain Codex live setup and testing principles in `docs/dev/README.md`.**
-Verified by: `docs/dev/README.md` contains a Codex live CI/testing section covering required local tools/secrets, GitHub environment/secret names, how to run the local smoke, why static grep tests do not prove runtime behavior, why CI must test the current checkout rather than `next`, and how artifacts are preserved for debugging.
+**AC-6 — Evergreen docs explain Codex live setup and testing principles in `docs/dev/README.md`.**
+Verified by: `docs/dev/README.md` contains a Codex live CI/testing section covering required local tools/secrets, GitHub environment/secret names, how to run the local shared suite, why static grep tests do not prove runtime behavior, why shared runtime scenarios are preferred over one-off host-only smokes, why CI must test the current checkout rather than `next`, and how artifacts are preserved for debugging.
 
-**AC-5 — The implementation does not restore tautological static tests as the primary proof.**
-Verified by: validation evidence centers on live command execution and resulting state/output. Syntax or parser checks are allowed as supporting guardrails only; they cannot be the only proof for AC-1 through AC-3.
+**AC-7 — The implementation does not restore tautological static tests as the primary proof.**
+Verified by: validation evidence centers on live command execution and resulting state/output. Syntax or parser checks are allowed as supporting guardrails only; they cannot be the only proof for AC-1 through AC-5.
 
 ## Test plan
 
 - Cheap setup check: run `codex --version`, `codex login status` or equivalent, and a current-checkout plugin install/load spike before writing the live test.
 - Go gates: `go test ./...`, `go test ./... -race`, and focused tests for any new live harness helpers.
+- Stack check: from the f4 worktree, `git merge-base --is-ancestor origin/spacedock-ensign/codex-runtime-adapter HEAD`.
 - Codex CLI smoke: `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` after plugin setup.
-- Live runtime smoke: run the new `go test -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` locally when Codex auth is available; otherwise document the skip and rely on the approval-gated CI run.
+- Shared live runtime suite: run the new `go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` locally when Codex auth is available; otherwise document the skip and rely on the approval-gated CI run.
 - CI evidence: after the PR opens, approve `CI-E2E-CODEX` and cite the `codex-live` job result and uploaded artifacts in validation.
 
 ## Stage Report: ideation
@@ -182,3 +194,16 @@ Recommendation: PASSED for commit `e4f3b568ff123192a89f04ad6313e790e099c70d`. Th
 ### Summary
 
 The PR branch is rebased and ready to push after captain approval of the draft body.
+
+## Stage Report: scope reframe
+
+- DONE: Pulled f4 back from stale PR-prep
+  Cleared `mod-block: merge:pr-merge` and moved f4 from `validation` back to `implementation` because the previous one-off Codex gate smoke was only a harness spike.
+- DONE: Reframed the deliverable around existing shared runtime scenarios
+  The task body now requires the old Python-era Claude/Codex overlap: gate guardrail, rejection flow, and merge hook guardrail, ported as shared Go scenario definitions rather than Codex-only smoke logic.
+- DONE: Made r0 stacking an explicit acceptance criterion
+  AC-1 now requires f4 to be based on `origin/spacedock-ensign/codex-runtime-adapter` so the live Codex run exercises r0's runtime adapter files and Codex-shaped dispatch contract.
+
+### Summary
+
+The prior f4 validation evidence is stale. The next implementation pass must stack f4 on r0 and turn the Codex live lane into a shared scenario suite that reuses the existing Claude journey shape.
