@@ -141,3 +141,30 @@ Validation recommends PASSED for commit `11381e15397336626144d7ee75964fd6d65c5af
 ### Summary
 
 Follow-up validation is required because the previous validation report is now stale: the local live Codex smoke no longer skips when the operator has an existing Codex subscription login.
+
+## Stage Report: validation follow-up
+
+- DONE: Re-check the entity acceptance criteria against the full implementation plus the follow-up commit.
+  AC-1 through AC-5 remain satisfied at code commit `e4f3b568ff123192a89f04ad6313e790e099c70d`; the checks below prove behavior outside the task body.
+- DONE: AC-1 - Go live Codex smoke proves FO gate-hold behavior through a real Codex runtime.
+  Built `/tmp/spacedock-codex-live-validation` from the code worktree, then `env -u OPENAI_API_KEY ... go test -count=1 -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` passed in 40.93s.
+- DONE: AC-2 - GitHub Actions has an approval-gated `codex-live` lane that runs the live smoke against the current checkout.
+  `.github/workflows/runtime-live-e2e.yml` still gates `codex-live` on `CI-E2E-CODEX`, requires only `OPENAI_API_KEY`, installs/logs in to Codex, builds local `spacedock`, installs the current checkout plugin, runs resolver/live tests, and uploads artifacts.
+- DONE: AC-3 - Codex plugin readiness is proven with real Codex CLI commands, not assumed from docs.
+  Live artifacts show `codex plugin list` installed `spacedock@spacedock` from the temp local marketplace path, and `go test -count=1 ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` passed.
+- DONE: AC-4 - Evergreen docs explain Codex live setup and testing principles in `docs/dev/README.md`.
+  The Codex Live CI docs now describe `codex login`, local `~/.codex/auth.json` copying into temp `CODEX_HOME`, `OPENAI_API_KEY`, CI strictness, current-checkout plugin loading, live proof, and artifacts.
+- DONE: AC-5 - The implementation does not restore tautological static tests as the primary proof.
+  Validation evidence is real `codex exec --json` execution, temp workflow state assertions, Codex plugin commands, focused helper tests, and Go gates; no static workflow-grep proof was revived.
+- DONE: Specifically verify the old Python harness issue: local Codex subscription auth should work in an isolated home without `OPENAI_API_KEY`, by copying only `~/.codex/auth.json` into temp `CODEX_HOME`; CI-required mode must still require `OPENAI_API_KEY`.
+  Local `~/.codex/auth.json` was nonempty; the live smoke passed with `OPENAI_API_KEY` unset and `codex login status` reported ChatGPT auth, while `SPACEDOCK_CODEX_LIVE_REQUIRED=1` failed clearly without `OPENAI_API_KEY`.
+- DONE: Run the smallest command set that proves the follow-up.
+  Focused auth-helper tests passed, `go test -count=1 ./...` passed 747 tests in 12 packages, and `go test -count=1 ./... -race` passed 747 tests in 12 packages.
+- SKIPPED: Approved GitHub Actions `codex-live` run.
+  No approved Actions run was available in this local validation; the local live command exercised the same current-checkout plugin and live Codex gate-smoke path.
+- SKIPPED: `gofmt -w ./cmd ./internal`.
+  This worker cannot edit product code; read-only `gofmt -l ./cmd ./internal` reported unrelated `internal/status/enum_scope_test.go`, while the codex-live touched Go files were gofmt-clean.
+
+### Summary
+
+Recommendation: PASSED for commit `e4f3b568ff123192a89f04ad6313e790e099c70d`. The follow-up restores local subscription-auth ergonomics without weakening CI: local isolated `CODEX_HOME` auth passed a real live Codex smoke with no `OPENAI_API_KEY`, and CI-required mode still hard-fails without `OPENAI_API_KEY`.
