@@ -142,3 +142,14 @@ Implemented all four ACs in the code worktree: Codex install readiness, Codex-sh
 ### Summary
 
 PASSED: implementation commit `2c4cd877` satisfies AC-1 through AC-4 with focused tests and full Go gates passing from the code worktree. The validation made no deliverable code changes. The only weak proof is structural rather than behavioral for some runtime prose, which matches the AC's stated proof level, and the only format caveat is an unrelated existing file outside the implementation commit.
+
+## Stage Report: merge prep
+
+- DONE: Rebased the code branch onto `origin/next` with only the r0 implementation commit retained
+  Branch `spacedock-ensign/codex-runtime-adapter` now points at `13fde1b6`, one commit ahead of `origin/next`, with the expected nine-file diff (`405 insertions, 56 deletions`).
+- DONE: Post-rebase verification reran from the code worktree
+  `go test ./internal/cli ./internal/dispatch ./internal/hostneutrality` passed, `go test ./...` passed, and `go test ./... -race` passed. Touched Go files were formatted with `gofmt -w`; whole-tree `gofmt -l ./cmd ./internal` still reports unrelated pre-existing `internal/status/enum_scope_test.go`.
+
+### Summary
+
+Prepared r0 for the PR merge hook after validation approval: the branch is rebased onto `origin/next`, the branch pointer is attached to the rebased commit, and post-rebase tests passed.
