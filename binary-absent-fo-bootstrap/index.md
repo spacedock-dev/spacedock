@@ -1,7 +1,7 @@
 ---
 id: 5vb6mh9kewyh0p68r93mf6m1
 title: Harden binary-absent FO startup — install hint in the contract-gate abort, don't route to the missing binary's doctor
-status: validation
+status: implementation
 source: "captain (2026-06-02) — live install-path test (plugin present, binary unlinked): the FO aborts cleanly but its install guidance is model-improvised, and the contract routes the binary-absent case to `spacedock doctor`, which is itself the missing binary"
 started: 2026-06-02T14:37:38Z
 completed:
@@ -118,3 +118,14 @@ Split Startup step 1's single abort clause into two classes using the ideation's
 ### Summary
 
 PASSED. The deliverable is a surgical 1-line edit to `first-officer-shared-core.md` Startup step 1 (split abort by class) plus an additive contract-text test in `contract_gate_test.go`. Confirmed the failing-first claim by reverting the step-1 edit (AC-1/AC-2 test fails); the AC-3 test correctly remains green on that revert because it pins a single-source invariant, which I separately proved non-trivial by injecting a drift mirror. Each AC relationship was validated by mutating the real file and observing the test flip, not by substring re-reading — AC-1 presence (both install lines in Class A), AC-1 absence (doctor route count > prohibition fails), AC-2 (Class B doctor route deletion fails), AC-3 (mirror injection fails). Install lines match README verbatim; `go vet` clean; full integration package 26 passed; working tree clean.
+
+## Feedback Cycles
+
+**Cycle 1 (FO, 2026-06-02) — validation recommended PASSED; detached adversarial audit found two test-strength holes; routed to implementation for one-line tightenings before merge.**
+
+The shipped prose is correct — the audit refuted nothing material on the contract edit (install lines verbatim vs README:27/37; scope surgical, only step 1's abort clause; AC-3 single-source confirmed by an independent grep). But two `skills/integration/contract_gate_test.go` assertions under-pin their own docstrings, so the suite would green-light a future regression in either direction:
+
+- **M1 (`contract_gate_test.go:144`)** — the Class A no-doctor check is guarded by `if n := strings.Count(classA, doctor); n > 0`. If a future edit deletes the `Do NOT run \`spacedock doctor\`` prohibition entirely (zero doctor mentions), the check is skipped and the test passes — so it does NOT pin that Class A carries the no-doctor guidance. **Fix:** require the prohibition string present in Class A (so its removal fails), then keep the route-count guard for the present case.
+- **M2 (`contract_gate_test.go:151`)** — AC-2 is a bare `strings.Contains(classB, "spacedock doctor")`, satisfied by a negated/disclaimer mention (audit verified an edit replacing the Class B route with `(Historically we suggested spacedock doctor but no longer.)` passes). **Fix:** assert the live-route phrasing (e.g. `run \`spacedock doctor\`` or `for the per-class remedy`) so a gutted route phrased as a disclaimer fails.
+
+**Required proof:** each tightened test must FAIL on the auditor's adversarial edit (Class A prohibition deleted; Class B route replaced by a disclaimer) and pass on the real file. Mutation-verify, do not re-read.
