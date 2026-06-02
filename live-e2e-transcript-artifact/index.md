@@ -1,7 +1,7 @@
 ---
 id: 3g6gbbn1bvk41a57tjbe50rv
 title: Upload the live-e2e transcript as a CI artifact (diagnose failures past gh log truncation)
-status: validation
+status: implementation
 source: "FO (2026-06-02): 38's streamWatcher tees the FO transcript to t.Log, but on a failed run gh truncates the large job log AND the CI uploads only the spacedock binary, not the transcript — so the sonnet FO-stall on 38's PR was not fully diagnosable. Prerequisite for root-causing the headless FO-drive flake."
 started: 2026-06-02T07:57:40Z
 completed:
@@ -10,7 +10,7 @@ score: "0.30"
 worktree: .worktrees/spacedock-ensign-live-e2e-transcript-artifact
 issue:
 mod-block: 
-pr: "#267"
+pr: 
 ---
 
 The live test ALREADY streams the FO's stream-json to `t.Log` (`38`, merged on `next` at `3a59916a`); on a failure the captured stdout is defeated downstream — `gh run view --log` truncates the multi-MB job log and the upload step grabs only `./spacedock`. The closed PR #265 fixed THAT (tee the run-step stdout to `live-e2e-transcript.txt` + upload it). **Captain correction (2026-06-02): that stdout tee is the WRONG diagnostic target.** The run-step stdout is the FO's stream-json re-emitted through `t.Log` — a flattened, lossy view. The artifact `headless-fo-drive-flake` (`hd`) actually needs to root-cause an FO stall is the **agent session JSONL** the claude runtime writes: the full structured transcript (tool_use/tool_result blocks, usage, per-member subagent threads), not the stdout echo.
