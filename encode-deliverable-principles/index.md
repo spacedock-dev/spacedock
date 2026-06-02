@@ -1,7 +1,7 @@
 ---
 id: v1awnfhs996ykymv409anywh
 title: Encode deliverable principles + template ergonomics into README, FO/ensign contract, and status guards
-status: validation
+status: implementation
 source: FO triage (2026-06-01) — docs/dev/_proposals cleanup; consolidates the deliverable-principles study + the TDD/template-adoption ergonomics
 started: 2026-06-02T04:57:30Z
 completed:
@@ -327,3 +327,19 @@ Closed all four feedback-cycle-1 findings: the tests now pin RELATIONSHIP/POLARI
 ### Summary
 
 PASSED. Re-validated all four cycle-0 findings by MUTATING the real files on a detached throwaway worktree (0cd1f742, removed after) — every adversarial edit that was green in cycle 0 now FAILS, and the fixture-deletion case HARD-FAILS rather than skips. The cycle-0 material finding (AC-2 trigger-surface bare-substring leak into "front-door change"/"contract_gate_test.go") is closed by scoping the WHEN-axis assertions to the opening trigger sentence with trigger-line-unique phrasing. The new tests pin relationship/polarity (inversion denylists + consequence-follows + distinct-bullet structure), not token-presence, dogfooding the #262 M1/M2 lesson on this entity's own tests. The testdata-skip on the sibling single-source test is narrowly scoped (verified: a real mirror outside testdata/ still fails). Full suite 29/29, vet/gofmt clean, no stray "oracle". Contract prose unchanged from cycle 0; change confined to deliverable_principles_test.go + the testdata fixture + a one-bullet contract_gate_test.go testdata-skip.
+
+## Feedback Cycles
+
+**Cycle 2 (FO + captain, 2026-06-02) — RESHAPE: wrong home + banned proof. Re-home the disciplines to the dev workflow + template; drop the grep tests.** Captain review of the held PR raised two points, both decisive:
+
+1. **Wrong home.** The `## Detached Adversarial Audit` discipline AND the AC-coverage-cross-check hardening were placed in the *universal* `first-officer-shared-core.md`. But that contract governs EVERY commissioned workflow, dev and non-dev. The deliverable principles (external-oracle proof / behavioral-not-grep / enforce-in-code / spike-the-risk) are **dev-centric** — a non-development workflow (research, ops, writing/triage) has ACs whose proof is a published artifact, a metric, or a human review, NOT a test/command/exit-code. Imposing the external-proof constraint universally is a category error. So these disciplines are **dev-workflow policy**, not universal FO mechanism.
+2. **Banned proof.** `deliverable_principles_test.go` is the tautological grep-over-prose antipattern this entity itself forbids (P2). A contract/prose edit's proof is review + the *code* guard (2a), never a grep that spell-checks the prose. The entire cycle-1 M-1..M-4 saga was hardening a construct we ban.
+
+**Reshape (this cycle):**
+- **REVERT both edits** to `skills/first-officer/references/first-officer-shared-core.md`: remove the AC-cross-check hardening and the `## Detached Adversarial Audit` section. The universal FO contract returns to its prior generic state (it keeps only "each AC needs an evidence citation"; no external/behavioral qualifier).
+- **ADD** the dev-specific guidance to **`docs/dev/README.md`** (this workflow's own contract): the AC-external-proof hardening as validation-stage / gate guidance, and the detached-adversarial-audit discipline as a validation/review practice (when it triggers, what it produces, how it's recorded — grounded in the #262 / 1x / 7h catches).
+- **ADD** both as **recommended (opt-in)** practices in the commission **dev-template** (the workflow-README template under `skills/commission/`), so new dev workflows can adopt them without the universal FO contract mandating them.
+- **DELETE** `skills/integration/deliverable_principles_test.go` AND its testdata fixture; **REVERT** the `contract_gate_test.go` testdata-skip (it only existed to accommodate that fixture). No grep self-proof.
+- **Design note for `2a`** (not this entity): the `status --validate` external-proof guard must be **workflow-opt-in** (a workflow declares it wants the guard), not a universal binary behavior — same dev-specificity reason. Record this so 2a's ideation picks it up.
+
+**v1's proof after the reshape:** doc edits (the dev README + the commission dev-template), reviewed at the gate; the behavioral enforcement is delegated to `2a` (opt-in). This is an honest documentation/policy deliverable — no self-proof grep, no universal-contract overreach. Record the boundary explicitly in the entity body.
