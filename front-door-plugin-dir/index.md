@@ -9,7 +9,7 @@ verdict:
 score: "0.42"
 worktree: .worktrees/spacedock-ensign-front-door-plugin-dir
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: #260
 ---
 
