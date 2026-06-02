@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#263"
+archived: 2026-06-02T15:45:21Z
 ---
 
 A batch of low-risk code-quality cleanups surfaced by the sprint-end staff-SWE + AI-eng reviews. All Minor; grouped because each is too small to track alone.
