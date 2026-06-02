@@ -57,6 +57,13 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// directly with a fake home so it never touches the real ~/.claude.
 	childEnv := isolatedClaudeEnv(t, os.Getenv("HOME"))
 
+	// Put the built binary's directory first on the FO subprocess's PATH. The FO
+	// contract's first step is `spacedock --version` and the FO knows `spacedock`
+	// only by PATH name (not SPACEDOCK_BIN, which is the test's own resolution
+	// hook); without this the runner PATH has no `spacedock` and the FO aborts at
+	// the binary gate before ever reaching TeamCreate (CI run 26839572693).
+	childEnv = withBinaryOnPath(childEnv, binary)
+
 	// Stage the SAME flat-entity backlog fixture the skeleton builds: a
 	// git-init'd root with a non-worktree workflow README and a flat entity in
 	// the initial (backlog) stage. The real FO drives it to the TERMINAL stage,

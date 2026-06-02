@@ -138,6 +138,37 @@ func isolatedClaudeEnv(t *testing.T, realHome string) []string {
 	}
 }
 
+// withBinaryOnPath prepends filepath.Dir(binary) as the FIRST element of the
+// child env's PATH entry and returns the augmented env. The live FO subprocess
+// inherits PATH verbatim from this child env and knows `spacedock` only by PATH
+// name (the FO contract's first step is `spacedock --version`, not an env var),
+// so putting the just-built binary's directory first guarantees the FO resolves
+// the binary the test built rather than a stale `spacedock` on PATH (locally) or
+// nothing at all (CI, where the runner PATH never had the build dir). Other env
+// entries pass through untouched; when the child env carries no PATH at all, a
+// PATH=<binary dir> entry is synthesized.
+func withBinaryOnPath(env []string, binary string) []string {
+	binDir := filepath.Dir(binary)
+	out := make([]string, 0, len(env)+1)
+	found := false
+	for _, kv := range env {
+		if rest, ok := strings.CutPrefix(kv, "PATH="); ok {
+			found = true
+			if rest != "" {
+				out = append(out, "PATH="+binDir+string(os.PathListSeparator)+rest)
+			} else {
+				out = append(out, "PATH="+binDir)
+			}
+			continue
+		}
+		out = append(out, kv)
+	}
+	if !found {
+		out = append(out, "PATH="+binDir)
+	}
+	return out
+}
+
 // envOr returns the environment value for key, or def when unset/empty.
 func envOr(key, def string) string {
 	if v := os.Getenv(key); v != "" {
