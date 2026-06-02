@@ -9,7 +9,7 @@ verdict:
 score: "0.30"
 worktree: .worktrees/spacedock-ensign-encode-deliverable-principles
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#266"
 ---
 
