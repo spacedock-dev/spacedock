@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+top-placed top-placed                     backlog              Top-level placed entity        0.50     probe
+arch-placed arch-placed                    backlog              Archive placed entity          0.50     probe
+
+===== stderr =====

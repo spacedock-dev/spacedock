@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: 'zzz' is not a defined stage in workflow <ROOT> — known stages: [backlog, ideation, implementation, done]

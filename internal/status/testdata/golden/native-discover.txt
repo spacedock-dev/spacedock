@@ -1,0 +1,7 @@
+===== exit =====
+0
+===== stdout =====
+<ROOT>/nested/wf2
+<ROOT>/wf
+
+===== stderr =====

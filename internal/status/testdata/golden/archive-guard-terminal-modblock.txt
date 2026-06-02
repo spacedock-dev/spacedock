@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: entity 010-blocked has pending mod-block (merge:pr-merge). Clear mod-block in a separate --set call, or use --force.

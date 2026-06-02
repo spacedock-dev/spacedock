@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: entity 020-no-sentinel cannot be archived — workflow has merge hook(s) [local-merge] that have not run (pr field is empty and mod-block is empty). Invoke the hook first, or use --force to bypass.

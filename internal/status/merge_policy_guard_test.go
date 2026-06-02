@@ -8,32 +8,22 @@ import (
 	"testing"
 )
 
-// assertParity runs the same args through native and oracle and fails unless
-// their exit code and stderr match. It returns the native exit code so the
-// caller can additionally assert the expected pass/refuse outcome.
-func assertParity(t *testing.T, fixture, slug string, args ...string) (int, string, string) {
+// assertMergeGolden runs args through native on a fresh fixture and freezes the
+// normalized three channels to a golden keyed by name. It returns the native exit
+// code/stdout/stderr so the caller can additionally assert the pass/refuse
+// outcome. The root is normalized to a placeholder (the --archive dest carries
+// an absolute path that differs per temp run).
+func assertMergeGolden(t *testing.T, name, fixture string, args ...string) (int, string, string) {
 	t.Helper()
 	env := pinnedEnv(t)
 	nativeRoot := stageFixture(t, fixture)
-	oracleRoot := stageFixture(t, fixture)
 
 	nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
 	nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
 
-	if nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d (nErr=%q oErr=%q)", nCode, oCode, nErr, oErr)
-	}
-	if strings.TrimSpace(nErr) != strings.TrimSpace(oErr) {
-		t.Fatalf("stderr: native=%q oracle=%q", nErr, oErr)
-	}
-	// Normalize each run's own temp root (and the realpath'd archive dest) to a
-	// placeholder so the two distinct fixture roots compare structurally — the
-	// --archive dest carries an absolute path that differs between the two runs.
-	if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-		t.Fatalf("stdout: native=%q oracle=%q", normalize(nOut, nativeRoot), normalize(oOut, oracleRoot))
-	}
+	assertEnvelopeGolden(t, name, goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 	return nCode, nOut, nErr
 }
 
@@ -41,7 +31,7 @@ func assertParity(t *testing.T, fixture, slug string, args ...string) (int, stri
 // terminal --set with empty pr and empty mod-block succeeds without --force even
 // though a merge hook is registered — the policy exempts the pr-requirement.
 func TestMergeLocalNoSentinelTerminalSetSucceeds(t *testing.T) {
-	code, _, errOut := assertParity(t, "merge-local-workflow", "020-no-sentinel",
+	code, _, errOut := assertMergeGolden(t, "merge-local-nosentinel-set", "merge-local-workflow",
 		"--set", "020-no-sentinel", "status=done")
 	if code != 0 {
 		t.Fatalf("merge: local terminal --set should succeed (exit 0), got %d (stderr=%q)", code, errOut)
@@ -51,7 +41,7 @@ func TestMergeLocalNoSentinelTerminalSetSucceeds(t *testing.T) {
 // TestMergeLocalNoSentinelArchiveSucceeds (AC-3): under merge: local, --archive
 // with empty pr and empty mod-block succeeds without --force.
 func TestMergeLocalNoSentinelArchiveSucceeds(t *testing.T) {
-	code, _, errOut := assertParity(t, "merge-local-workflow", "020-no-sentinel",
+	code, _, errOut := assertMergeGolden(t, "merge-local-nosentinel-archive", "merge-local-workflow",
 		"--archive", "020-no-sentinel")
 	if code != 0 {
 		t.Fatalf("merge: local --archive should succeed (exit 0), got %d (stderr=%q)", code, errOut)
@@ -63,7 +53,7 @@ func TestMergeLocalNoSentinelArchiveSucceeds(t *testing.T) {
 // succeeds. This holds under merge: local too — the sentinel records the landed
 // merge regardless of policy.
 func TestSentinelSatisfiesGuardTerminalSet(t *testing.T) {
-	code, _, errOut := assertParity(t, "merge-local-workflow", "010-sentinel",
+	code, _, errOut := assertMergeGolden(t, "merge-sentinel-set", "merge-local-workflow",
 		"--set", "010-sentinel", "status=done")
 	if code != 0 {
 		t.Fatalf("sentinel terminal --set should succeed (exit 0), got %d (stderr=%q)", code, errOut)
@@ -73,7 +63,7 @@ func TestSentinelSatisfiesGuardTerminalSet(t *testing.T) {
 // TestSentinelSatisfiesGuardArchive (AC-1): the sentinel also satisfies the
 // --archive merge-hook guard with NO --force.
 func TestSentinelSatisfiesGuardArchive(t *testing.T) {
-	code, _, errOut := assertParity(t, "merge-local-workflow", "010-sentinel",
+	code, _, errOut := assertMergeGolden(t, "merge-sentinel-archive", "merge-local-workflow",
 		"--archive", "010-sentinel")
 	if code != 0 {
 		t.Fatalf("sentinel --archive should succeed (exit 0), got %d (stderr=%q)", code, errOut)
@@ -88,7 +78,7 @@ func TestSentinelSatisfiesGuardArchive(t *testing.T) {
 // that the safety invariant turns on: an FO must not collapse the ceremony, and
 // the mechanism still catches a terminal transition that combines a live block.
 func TestMergeLocalModBlockPendingStillBlocks(t *testing.T) {
-	code, out, errOut := assertParity(t, "merge-local-workflow", "030-pending",
+	code, out, errOut := assertMergeGolden(t, "merge-local-modblock-pending", "merge-local-workflow",
 		"--set", "030-pending", "status=done")
 	if code != 1 {
 		t.Fatalf("mod-block-pending terminal --set must refuse (exit 1) under merge: local, got %d", code)
@@ -107,7 +97,7 @@ func TestMergeLocalModBlockPendingStillBlocks(t *testing.T) {
 // in the SAME --set that terminalizes is refused regardless of policy, so the
 // audit history must show the block resolving separately from terminalization.
 func TestMergeLocalCombinedClearAndTerminalizeRefused(t *testing.T) {
-	code, out, errOut := assertParity(t, "merge-local-workflow", "030-pending",
+	code, out, errOut := assertMergeGolden(t, "merge-local-combined-clear-terminalize", "merge-local-workflow",
 		"--set", "030-pending", "mod-block=", "status=done")
 	if code != 1 {
 		t.Fatalf("combined clear+terminalize must refuse (exit 1) under merge: local, got %d", code)
@@ -125,7 +115,7 @@ func TestMergeLocalCombinedClearAndTerminalizeRefused(t *testing.T) {
 // still refuses a terminal --set — the merge-hook catch is preserved. This is the
 // byte-identical-to-today guarantee for un-declared workflows.
 func TestMergePrDefaultNoSentinelStillRefuses(t *testing.T) {
-	code, out, errOut := assertParity(t, "merge-pr-workflow", "020-no-sentinel",
+	code, out, errOut := assertMergeGolden(t, "merge-pr-default-nosentinel-set", "merge-pr-workflow",
 		"--set", "020-no-sentinel", "status=done")
 	if code != 1 {
 		t.Fatalf("default-policy terminal --set must still refuse (exit 1), got %d", code)
@@ -141,7 +131,7 @@ func TestMergePrDefaultNoSentinelStillRefuses(t *testing.T) {
 // TestMergePrDefaultNoSentinelArchiveStillRefuses (AC-4): the default-policy
 // --archive of the same no-sentinel entity also still refuses.
 func TestMergePrDefaultNoSentinelArchiveStillRefuses(t *testing.T) {
-	code, out, errOut := assertParity(t, "merge-pr-workflow", "020-no-sentinel",
+	code, out, errOut := assertMergeGolden(t, "merge-pr-default-nosentinel-archive", "merge-pr-workflow",
 		"--archive", "020-no-sentinel")
 	if code != 1 {
 		t.Fatalf("default-policy --archive must still refuse (exit 1), got %d", code)
@@ -160,20 +150,16 @@ func TestMergePrDefaultNoSentinelArchiveStillRefuses(t *testing.T) {
 func TestSentinelDisplaysAsLocal(t *testing.T) {
 	env := pinnedEnv(t)
 	nativeRoot := stageFixture(t, "merge-local-workflow")
-	oracleRoot := stageFixture(t, "merge-local-workflow")
 
-	args := []string{"--fields", "pr"}
-	nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
-	nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
+	args := append([]string{"--workflow-dir", nativeRoot}, "--fields", "pr")
+	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
-	if nCode != 0 || oCode != 0 {
-		t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+	if nCode != 0 {
+		t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 	}
-	if nOut != oOut {
-		t.Fatalf("display parity: native=%q oracle=%q", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "merge-sentinel-displays-local", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 	if !strings.Contains(nOut, "abc1234 (local)") {
 		t.Fatalf("sentinel should render as 'abc1234 (local)', got:\n%s", nOut)
 	}

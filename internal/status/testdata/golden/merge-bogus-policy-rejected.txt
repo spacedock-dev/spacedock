@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: README merge: must be 'local' or 'pr' (or absent for the default 'pr'), not 'bogus'

@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: --where requires an operator: use 'field = value', 'field != value', 'field !=' (non-empty), or 'field =' (empty)

@@ -1,0 +1,7 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Warning: entity 'dup' has both <ROOT>/dup.md and <ROOT>/dup/index.md; preferring folder form. Remove the flat file to silence this warning.
+Error: flat/folder conflict: workflow=<ROOT> scope=active slug=dup flat_path=<ROOT>/dup.md folder_path=<ROOT>/dup/index.md

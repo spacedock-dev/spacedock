@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           CURRENT              NEXT                 WORKTREE
+--     ----                           -------              ----                 --------
+alpha  alpha                          ideation             build                no
+
+===== stderr =====

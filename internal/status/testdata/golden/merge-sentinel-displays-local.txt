@@ -1,0 +1,10 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE                         PR
+--     ----                           ------               -----                          -----    ------                         --
+010    010-sentinel                   implementation       Entity carrying a post-merge local-merge sentinel 0.50     roadmap                        abc1234 (local)
+020    020-no-sentinel                implementation       Entity with no sentinel and no mod-block 0.40     roadmap                        
+030    030-pending                    implementation       Entity with an in-flight mod-block under merge local 0.30     roadmap                        
+
+===== stderr =====

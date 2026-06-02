@@ -1,0 +1,10 @@
+---
+id: "060"
+title: No EOF newline
+status: done
+score: "0.5"
+source: x
+---
+# No EOF newline
+
+This file does not end in a newline.

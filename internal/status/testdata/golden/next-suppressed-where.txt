@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+waiting waiting                        ideation             Ready but next stage is full   0.80     probe
+
+===== stderr =====

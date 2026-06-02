@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           CURRENT              NEXT                 WORKTREE
+--     ----                           -------              ----                 --------
+002    002-high                       backlog              done                 no
+003    003-low                        backlog              done                 no
+
+===== stderr =====

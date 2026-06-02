@@ -89,9 +89,9 @@ func readFrontmatter(t *testing.T, path string) string {
 	return strings.Join(fm, "\n")
 }
 
-// mutationCase runs the same mutation through the launcher (into one temp copy)
-// and the oracle (into a second temp copy), then asserts the mutated file's
-// frontmatter and the narration stdout match (timestamps normalized).
+// mutationCase runs a mutation natively into a temp copy, then freezes the
+// mutated file's frontmatter and the narration stdout against goldens (timestamps
+// + root normalized).
 type mutationCase struct {
 	name       string
 	fixture    string
@@ -132,29 +132,17 @@ func TestMutationParity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env := pinnedEnv(t)
 
-			launcherRoot := stageFixture(t, tc.fixture)
-			oracleRoot := stageFixture(t, tc.fixture)
+			root := stageFixture(t, tc.fixture)
+			args := append([]string{"--workflow-dir", root}, tc.mutateArgs(root)...)
+			nOut, nErr, nCode := runNative(t, root, env, args...)
 
-			lArgs := append([]string{"--workflow-dir", launcherRoot}, tc.mutateArgs(launcherRoot)...)
-			oArgs := append([]string{"--workflow-dir", oracleRoot}, tc.mutateArgs(oracleRoot)...)
-
-			lOut, lErr, lCode := runLauncher(t, launcherRoot, env, lArgs...)
-			oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-
-			if lCode != oCode {
-				t.Fatalf("exit: launcher=%d oracle=%d (launcherErr=%q oracleErr=%q)", lCode, oCode, lErr, oErr)
-			}
-			// Narration parity (timestamps normalized; roots already differ so
-			// strip each root before compare via the timestamp-only normalize).
-			if normalize(lOut, "") != normalize(oOut, "") {
-				t.Fatalf("narration mismatch\n--- launcher ---\n%q\n--- oracle ---\n%q", lOut, oOut)
-			}
-			// Frontmatter parity of the mutated file (timestamps normalized).
-			lFM := normalize(readFrontmatter(t, filepath.Join(launcherRoot, tc.checkFile)), "")
-			oFM := normalize(readFrontmatter(t, filepath.Join(oracleRoot, tc.checkFile)), "")
-			if lFM != oFM {
-				t.Fatalf("frontmatter mismatch\n--- launcher ---\n%s\n--- oracle ---\n%s", lFM, oFM)
-			}
+			// Narration frozen (timestamps + root normalized).
+			assertEnvelopeGolden(t, "mutation-"+tc.name, goldenEnvelope{
+				stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+			})
+			// Frontmatter of the mutated file (timestamps + root normalized).
+			fm := normalize(readFrontmatter(t, filepath.Join(root, tc.checkFile)), root)
+			assertTextGolden(t, "mutation-"+tc.name+"-frontmatter", fm)
 		})
 	}
 }

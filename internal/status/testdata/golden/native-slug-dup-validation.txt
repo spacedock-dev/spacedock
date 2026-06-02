@@ -1,0 +1,7 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: duplicate effective id: workflow=<ROOT> scope=active slug=dup id= display=dup path=<ROOT>/dup.md
+Error: duplicate effective id: workflow=<ROOT> scope=archived slug=dup id= display=dup path=<ROOT>/_archive/dup.md

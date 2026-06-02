@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: non-numeric sequential id: workflow=<ROOT> scope=active slug=a id=abc path=<ROOT>/a.md

@@ -35,23 +35,15 @@ func TestNativeEOFNewlineIdentity(t *testing.T) {
 
 			env := pinnedEnv(t)
 			nativeRoot := stageFixtureWith(t, "seq-workflow", map[string]string{"eof-entity.md": tc.body})
-			oracleRoot := stageFixtureWith(t, "seq-workflow", map[string]string{"eof-entity.md": tc.body})
 
-			args := []string{"--set", "eof-entity", "status=done"}
-			nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-			oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
-
-			_, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-			_, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-			if nCode != oCode {
-				t.Fatalf("exit: native=%d oracle=%d (nErr=%q oErr=%q)", nCode, oCode, nErr, oErr)
+			args := append([]string{"--workflow-dir", nativeRoot}, "--set", "eof-entity", "status=done")
+			_, nErr, nCode := runNative(t, nativeRoot, env, args...)
+			if nCode != 0 {
+				t.Fatalf("native exit=%d stderr=%q", nCode, nErr)
 			}
 
 			nFile := readWhole(t, filepath.Join(nativeRoot, "eof-entity.md"))
-			oFile := readWhole(t, filepath.Join(oracleRoot, "eof-entity.md"))
-			if nFile != oFile {
-				t.Fatalf("EOF-newline mismatch\n--- native ---\n%q\n--- oracle ---\n%q", nFile, oFile)
-			}
+			assertTextGolden(t, "eof-newline-"+tc.name, normalize(nFile, nativeRoot))
 			// The mutated file must keep the input's terminal-newline state.
 			if strings.HasSuffix(nFile, "\n") != endsWithNewline {
 				t.Fatalf("native changed terminal-newline state: input had newline=%v, output %q", endsWithNewline, nFile)

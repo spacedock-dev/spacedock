@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: missing required id: workflow=<ROOT> scope=active slug=a id= path=<ROOT>/a.md

@@ -1,0 +1,7 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Warning: entity '001-a' has both <ROOT>/001-a.md and <ROOT>/001-a/index.md; preferring folder form. Remove the flat file to silence this warning.
+Error: flat/folder conflict: workflow=<ROOT> scope=active slug=001-a flat_path=<ROOT>/001-a.md folder_path=<ROOT>/001-a/index.md

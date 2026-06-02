@@ -44,23 +44,18 @@ func TestNativeUsageErrorsExitOneNotTwo(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			args := tc.args(root)
 			nOut, nErr, nCode := runNative(t, root, env, args...)
-			oOut, oErr, oCode := runOracle(t, root, env, args...)
 
 			if nCode == 2 {
 				t.Fatalf("native exit=2 for usage error %q; must be 1 (never 2)", tc.name)
 			}
-			if nCode != oCode {
-				t.Fatalf("exit: native=%d oracle=%d (nErr=%q oErr=%q)", nCode, oCode, nErr, oErr)
-			}
 			if nCode != 1 {
 				t.Fatalf("usage error %q exit=%d, want 1", tc.name, nCode)
 			}
-			if normalize(nErr, root) != normalize(oErr, root) {
-				t.Fatalf("stderr mismatch for %s\n--- native ---\n%s\n--- oracle ---\n%s",
-					tc.name, normalize(nErr, root), normalize(oErr, root))
-			}
-			if nOut != "" || oOut != "" {
-				t.Fatalf("stdout must be empty on usage error: native=%q oracle=%q", nOut, oOut)
+			assertEnvelopeGolden(t, "native-usage-"+tc.name, goldenEnvelope{
+				stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+			})
+			if nOut != "" {
+				t.Fatalf("stdout must be empty on usage error: native=%q", nOut)
 			}
 		})
 	}

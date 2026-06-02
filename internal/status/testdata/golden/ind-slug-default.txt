@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+intro  intro                          draft                Intro                          0.7      roadmap
+guide  guide                          published            Guide                          0.4      roadmap
+
+===== stderr =====

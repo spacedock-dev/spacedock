@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+workflow=<ROOT> scope=active slug=<ID>-one id=<ID> path=<ROOT>/<ID>-one.md
+
+===== stderr =====

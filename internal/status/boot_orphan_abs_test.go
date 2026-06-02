@@ -74,20 +74,13 @@ func TestBootAbsoluteWorktreeDirExists(t *testing.T) {
 	if nativeCode != 0 {
 		t.Fatalf("native --boot exit=%d stderr=%q", nativeCode, nativeErr)
 	}
+	// The absolute `worktree:` value resolves to that absolute dir (os.path.join
+	// drops git_root), so DIR_EXISTS is yes when it exists. This is the
+	// certified-parity behavior the oracle confirmed at retirement time; the two
+	// distinct temp dirs (root + absWorktree) make the DIR_EXISTS cell the stable
+	// observable to assert, not a full-output golden.
 	if got := orphanDirExists(nativeOut); got != "yes" {
 		t.Fatalf("DIR_EXISTS for absolute existing worktree = %q, want \"yes\"\n%s", got, nativeOut)
-	}
-
-	// Oracle parity. The oracle is resolved in-tree, so this comparison always
-	// runs (and hard-fails on a real divergence) on top of the direct DIR_EXISTS
-	// assertion above.
-	oracleOut, _, oracleCode := runOracle(t, root, env, args...)
-	if oracleCode != 0 {
-		t.Fatalf("oracle --boot exit=%d", oracleCode)
-	}
-	if got, want := orphanDirExists(nativeOut), orphanDirExists(oracleOut); got != want {
-		t.Fatalf("ORPHANS DIR_EXISTS native=%q oracle=%q\n--- native ---\n%s\n--- oracle ---\n%s",
-			got, want, nativeOut, oracleOut)
 	}
 }
 

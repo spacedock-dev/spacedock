@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"testing"
 
@@ -117,28 +118,24 @@ func indNormalize(s, root string) string {
 		}
 		s = strings.ReplaceAll(s, root, "<ROOT>")
 	}
+	// The sd-b32 NEXT_ID / --next-id candidate hashes the realpath'd workflow dir,
+	// so it varies per temp-dir run. Normalize it to a placeholder the same way the
+	// in-tree boot harness does; the deterministic minting itself is frozen against
+	// a fixed-path fixture by TestNativeNextIDMatchesOracle / TestNextIDParity.
+	s = sdB32Re.ReplaceAllString(s, "<ID>")
 	return s
 }
 
-// indDiff asserts native==oracle for (stdout, stderr, exit) after normalization.
-func indDiff(t *testing.T, name, root string, nOut, nErr string, nCode int, oOut, oErr string, oCode int) {
+// indGolden freezes the native (stdout, stderr, exit) against the per-key golden
+// after normalization, and asserts the exit stays in the {0,1} domain. The
+// goldens ARE the certified-parity bytes the oracle produced at retirement time.
+func indGolden(t *testing.T, key, root string, nOut, nErr string, nCode int) {
 	t.Helper()
-	if nCode != oCode {
-		t.Errorf("[%s] EXIT mismatch: native=%d oracle=%d\nnative-stderr=%q\noracle-stderr=%q", name, nCode, oCode, nErr, oErr)
-	}
-	no, oo := indNormalize(nOut, root), indNormalize(oOut, root)
-	if no != oo {
-		t.Errorf("[%s] STDOUT mismatch:\n--- native ---\n%s\n--- oracle ---\n%s", name, no, oo)
-	}
-	ne, oe := indNormalize(nErr, root), indNormalize(oErr, root)
-	if ne != oe {
-		t.Errorf("[%s] STDERR mismatch:\n--- native ---\n%s\n--- oracle ---\n%s", name, ne, oe)
-	}
+	assertEnvelopeGolden(t, "ind-"+key, goldenEnvelope{
+		stdout: indNormalize(nOut, root), stderr: indNormalize(nErr, root), exit: nCode,
+	})
 	if nCode != 0 && nCode != 1 {
-		t.Errorf("[%s] EXIT %d outside domain {0,1}", name, nCode)
-	}
-	if oCode != 0 && oCode != 1 {
-		t.Errorf("[%s] ORACLE EXIT %d outside domain {0,1}", name, oCode)
+		t.Errorf("[%s] EXIT %d outside domain {0,1}", key, nCode)
 	}
 }
 
@@ -217,8 +214,7 @@ func TestIndReadFlagsSeq(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			nOut, nErr, nCode := indRunNative(t, root, env, "", c.args...)
-			oOut, oErr, oCode := indRunOracle(t, root, env, "", c.args...)
-			indDiff(t, c.name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+			indGolden(t, "seq-"+c.name, root, nOut, nErr, nCode)
 		})
 	}
 }
@@ -243,8 +239,7 @@ func TestIndReadFlagsSDB32(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			nOut, nErr, nCode := indRunNative(t, root, env, "", c.args...)
-			oOut, oErr, oCode := indRunOracle(t, root, env, "", c.args...)
-			indDiff(t, c.name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+			indGolden(t, "sdb32-"+c.name, root, nOut, nErr, nCode)
 		})
 	}
 }
@@ -269,8 +264,7 @@ func TestIndReadFlagsSlug(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			nOut, nErr, nCode := indRunNative(t, root, env, "", c.args...)
-			oOut, oErr, oCode := indRunOracle(t, root, env, "", c.args...)
-			indDiff(t, c.name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+			indGolden(t, "slug-"+c.name, root, nOut, nErr, nCode)
 		})
 	}
 }
@@ -336,60 +330,38 @@ func indReadAll(t *testing.T, root string) map[string]string {
 	return out
 }
 
-// indMutationCase runs the same mutation args natively and via the oracle into
-// two independent copies of the source workflow, then diffs stdout/stderr/exit
-// AND the resulting on-disk .md files. git init so absolute archive dests work.
+// indMutationCase runs the mutation args natively into a fresh copy of the source
+// workflow, then freezes stdout/stderr/exit AND the resulting on-disk .md file-set
+// against goldens. git init so absolute archive dests work.
 func indMutationCase(t *testing.T, name, src string, env []string, args ...string) {
 	t.Helper()
 	t.Run(name, func(t *testing.T) {
 		nDir := indCopyTree(t, src)
-		oDir := indCopyTree(t, src)
 		gitInit(t, nDir)
-		gitInit(t, oDir)
 		nArgs := withWorkflowDir(args, nDir)
-		oArgs := withWorkflowDir(args, oDir)
 		nOut, nErr, nCode := indRunNative(t, nDir, env, "", nArgs...)
-		oOut, oErr, oCode := indRunOracle(t, oDir, env, "", oArgs...)
-		// Each side ran in its own temp root, so normalize each against its own
-		// root before comparing the placeholder forms.
-		if nCode != oCode {
-			t.Errorf("[%s] EXIT mismatch: native=%d oracle=%d\nnative-stderr=%q oracle-stderr=%q", name, nCode, oCode, nErr, oErr)
-		}
 		if nCode != 0 && nCode != 1 {
 			t.Errorf("[%s] EXIT %d outside domain {0,1}", name, nCode)
 		}
-		if indNormalize(nOut, nDir) != indNormalize(oOut, oDir) {
-			t.Errorf("[%s] STDOUT differs:\nnative=%q\noracle=%q", name, indNormalize(nOut, nDir), indNormalize(oOut, oDir))
-		}
-		if indNormalize(nErr, nDir) != indNormalize(oErr, oDir) {
-			t.Errorf("[%s] STDERR differs:\nnative=%q\noracle=%q", name, indNormalize(nErr, nDir), indNormalize(oErr, oDir))
-		}
-		nFiles := indReadAll(t, nDir)
-		oFiles := indReadAll(t, oDir)
-		if len(nFiles) != len(oFiles) {
-			t.Errorf("[%s] file-set size differs: native=%d oracle=%d\nnative=%v\noracle=%v", name, len(nFiles), len(oFiles), keysOf(nFiles), keysOf(oFiles))
-		}
-		for rel, oContent := range oFiles {
-			nContent, ok := nFiles[rel]
-			if !ok {
-				t.Errorf("[%s] file %s present in oracle, missing in native", name, rel)
-				continue
-			}
-			// Normalize before diffing: a bare-timestamp --set auto-fills now() on
-			// each side independently, so the written `started:`/`completed:` stamps
-			// straddle a wall-clock second boundary and diverge intermittently. The
-			// timestamp normalization (test-only, never in product) makes the diff
-			// stable; each side is normalized against its own temp root.
-			if indNormalize(nContent, nDir) != indNormalize(oContent, oDir) {
-				t.Errorf("[%s] file %s differs:\n--- native ---\n%q\n--- oracle ---\n%q", name, rel, indNormalize(nContent, nDir), indNormalize(oContent, oDir))
-			}
-		}
-		for rel := range nFiles {
-			if _, ok := oFiles[rel]; !ok {
-				t.Errorf("[%s] file %s present in native, missing in oracle", name, rel)
-			}
-		}
+		indGolden(t, "mutation-"+name, nDir, nOut, nErr, nCode)
+		// Freeze the resulting file-set (the bare-timestamp --set auto-fill is
+		// normalized away, so the frozen stamps are placeholders).
+		assertTextGolden(t, "ind-mutation-"+name+"-files", marshalFileSet(indReadAll(t, nDir), nDir))
 	})
+}
+
+// marshalFileSet serializes a rel->contents map into a stable, root-normalized
+// text blob (sorted by rel path) for a file-set golden.
+func marshalFileSet(files map[string]string, root string) string {
+	keys := keysOf(files)
+	sort.Strings(keys)
+	var b strings.Builder
+	for _, rel := range keys {
+		b.WriteString("----- " + rel + " -----\n")
+		b.WriteString(indNormalize(files[rel], root))
+		b.WriteString("\n")
+	}
+	return b.String()
 }
 
 func keysOf(m map[string]string) []string {
@@ -426,14 +398,13 @@ func TestIndMutationSeq(t *testing.T) {
 	indMutationCase(t, "archive-folder", src, env, "--workflow-dir", "@WD@", "--archive", "003")
 }
 
-// indReadCase runs a read-only args list natively + oracle in the same dir and
-// diffs all channels.
+// indReadCase runs a read-only args list natively and freezes all channels
+// against the per-name golden.
 func indReadCase(t *testing.T, name, root string, env []string, args ...string) {
 	t.Helper()
 	t.Run(name, func(t *testing.T) {
 		nOut, nErr, nCode := indRunNative(t, root, env, "", args...)
-		oOut, oErr, oCode := indRunOracle(t, root, env, "", args...)
-		indDiff(t, name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+		indGolden(t, name, root, nOut, nErr, nCode)
 	})
 }
 
@@ -673,20 +644,17 @@ func TestIndNewGuards(t *testing.T) {
 // native and oracle are mutated on identical copies and the bytes diffed.
 func TestIndEOFNewlineIdentity(t *testing.T) {
 	env := indEnv(t)
-	mk := func(trailing bool) (string, string) {
+	mk := func(trailing bool) string {
 		nDir := t.TempDir()
-		oDir := t.TempDir()
 		readme := "---\nentity-label: task\nid-style: sequential\nstages:\n  states:\n    - name: backlog\n      initial: true\n---\n# WF\n"
 		entity := "---\nid: \"001\"\ntitle: A\nstatus: backlog\nscore: \"0.5\"\n---\n# A\nbody"
 		if trailing {
 			entity += "\n"
 		}
-		for _, d := range []string{nDir, oDir} {
-			indWrite(t, filepath.Join(d, "README.md"), readme)
-			indWrite(t, filepath.Join(d, "001-a.md"), entity)
-			gitInit(t, d)
-		}
-		return nDir, oDir
+		indWrite(t, filepath.Join(nDir, "README.md"), readme)
+		indWrite(t, filepath.Join(nDir, "001-a.md"), entity)
+		gitInit(t, nDir)
+		return nDir
 	}
 	for _, tc := range []struct {
 		name     string
@@ -696,14 +664,10 @@ func TestIndEOFNewlineIdentity(t *testing.T) {
 		{"with-trailing-newline", true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			nDir, oDir := mk(tc.trailing)
+			nDir := mk(tc.trailing)
 			indRunNative(t, nDir, env, "", "--workflow-dir", nDir, "--set", "001", "score=0.9")
-			indRunOracle(t, oDir, env, "", "--workflow-dir", oDir, "--set", "001", "score=0.9")
 			nb, _ := os.ReadFile(filepath.Join(nDir, "001-a.md"))
-			ob, _ := os.ReadFile(filepath.Join(oDir, "001-a.md"))
-			if string(nb) != string(ob) {
-				t.Errorf("[%s] mutated file differs:\nnative=%q\noracle=%q", tc.name, string(nb), string(ob))
-			}
+			assertTextGolden(t, "ind-eof-"+tc.name, indNormalize(string(nb), nDir))
 			nEndsNL := strings.HasSuffix(string(nb), "\n")
 			if nEndsNL != tc.trailing {
 				t.Errorf("[%s] native EOF-newline=%v want %v (identity violated)", tc.name, nEndsNL, tc.trailing)
@@ -718,31 +682,21 @@ func TestIndEOFNewlineIdentity(t *testing.T) {
 // against the oracle (which runs with cwd=workflow-dir for the relative case).
 func TestIndArchiveDestSpelling(t *testing.T) {
 	env := indEnv(t)
-	mk := func() (string, string) {
+	mk := func() string {
 		nDir := t.TempDir()
-		oDir := t.TempDir()
 		readme := "---\nentity-label: task\nid-style: sequential\nstages:\n  states:\n    - name: backlog\n      initial: true\n---\n# WF\n"
-		for _, d := range []string{nDir, oDir} {
-			indWrite(t, filepath.Join(d, "README.md"), readme)
-			indWrite(t, filepath.Join(d, "001-a.md"), "---\nid: \"001\"\ntitle: A\nstatus: backlog\nscore: \"0.5\"\n---\n# A\n")
-			indWrite(t, filepath.Join(d, "002-b.md"), "---\nid: \"002\"\ntitle: B\nstatus: backlog\nscore: \"0.5\"\n---\n# B\n")
-			gitInit(t, d)
-		}
-		return nDir, oDir
+		indWrite(t, filepath.Join(nDir, "README.md"), readme)
+		indWrite(t, filepath.Join(nDir, "001-a.md"), "---\nid: \"001\"\ntitle: A\nstatus: backlog\nscore: \"0.5\"\n---\n# A\n")
+		indWrite(t, filepath.Join(nDir, "002-b.md"), "---\nid: \"002\"\ntitle: B\nstatus: backlog\nscore: \"0.5\"\n---\n# B\n")
+		gitInit(t, nDir)
+		return nDir
 	}
 
 	t.Run("relative-dot", func(t *testing.T) {
-		nDir, oDir := mk()
+		nDir := mk()
 		// Native: Dir is the workflow dir, --workflow-dir is ".".
-		nOut, _, nCode := indRunNative(t, nDir, env, "", "--workflow-dir", ".", "--archive", "001")
-		// Oracle: cwd is the workflow dir, --workflow-dir is ".".
-		oOut, _, oCode := indRunOracle(t, oDir, env, "", "--workflow-dir", ".", "--archive", "001")
-		if nCode != oCode {
-			t.Errorf("relative-dot EXIT native=%d oracle=%d", nCode, oCode)
-		}
-		if nOut != oOut {
-			t.Errorf("relative-dot dest differs:\nnative=%q\noracle=%q", nOut, oOut)
-		}
+		nOut, nErr, nCode := indRunNative(t, nDir, env, "", "--workflow-dir", ".", "--archive", "001")
+		indGolden(t, "archive-relative-dot", nDir, nOut, nErr, nCode)
 		if !strings.Contains(nOut, "archived: ./_archive/001-a.md") {
 			t.Errorf("relative-dot native dest not relative: %q", nOut)
 		}
@@ -753,15 +707,9 @@ func TestIndArchiveDestSpelling(t *testing.T) {
 	})
 
 	t.Run("absolute", func(t *testing.T) {
-		nDir, oDir := mk()
-		nOut, _, nCode := indRunNative(t, nDir, env, "", "--workflow-dir", nDir, "--archive", "002")
-		oOut, _, oCode := indRunOracle(t, oDir, env, "", "--workflow-dir", oDir, "--archive", "002")
-		if nCode != oCode {
-			t.Errorf("absolute EXIT native=%d oracle=%d", nCode, oCode)
-		}
-		if indNormalize(nOut, nDir) != indNormalize(oOut, oDir) {
-			t.Errorf("absolute dest differs:\nnative=%q\noracle=%q", indNormalize(nOut, nDir), indNormalize(oOut, oDir))
-		}
+		nDir := mk()
+		nOut, nErr, nCode := indRunNative(t, nDir, env, "", "--workflow-dir", nDir, "--archive", "002")
+		indGolden(t, "archive-absolute", nDir, nOut, nErr, nCode)
 		if !strings.Contains(nOut, nDir+"/_archive/002-b.md") {
 			t.Errorf("absolute native dest not absolute under root: %q", nOut)
 		}
@@ -782,14 +730,13 @@ func TestIndResolveRealpathAsymmetry(t *testing.T) {
 	}
 	root := mk()
 	nOut, _, nCode := indRunNative(t, root, env, "", "--workflow-dir", root, "--resolve", "001")
-	oOut, _, oCode := indRunOracle(t, root, env, "", "--workflow-dir", root, "--resolve", "001")
-	if nCode != oCode {
-		t.Fatalf("EXIT native=%d oracle=%d", nCode, oCode)
+	if nCode != 0 {
+		t.Fatalf("EXIT native=%d", nCode)
 	}
-	// Raw (un-normalized) comparison so the realpath asymmetry itself is asserted.
-	if nOut != oOut {
-		t.Errorf("resolve raw output differs (realpath asymmetry not matched):\nnative=%q\noracle=%q", nOut, oOut)
-	}
+	// This trap is the realpath asymmetry itself: a <ROOT>-normalized golden would
+	// erase the distinction being asserted, so the asymmetry is locked directly on
+	// the raw native output — workflow= uses the realpath, path= uses the as-passed
+	// spelling. This is the certified-parity behavior the oracle confirmed.
 	real, _ := filepath.EvalSymlinks(root)
 	if real != root {
 		// On macOS the temp root is symlinked: confirm workflow= used the realpath
@@ -840,8 +787,7 @@ func TestIndCRLFParity(t *testing.T) {
 		for _, c := range cases {
 			t.Run(c.name, func(t *testing.T) {
 				nOut, nErr, nCode := indRunNative(t, root, env, "", c.args...)
-				oOut, oErr, oCode := indRunOracle(t, root, env, "", c.args...)
-				indDiff(t, c.name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+				indGolden(t, "crlf-"+c.name, root, nOut, nErr, nCode)
 				// Lock the concrete symptoms the feedback named.
 				if c.name == "default" && !strings.Contains(nOut, "001-crlf") {
 					t.Errorf("native dropped the CRLF entity from the default table:\n%s", nOut)
@@ -890,8 +836,7 @@ func TestIndExoticScoreSort(t *testing.T) {
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			nOut, nErr, nCode := indRunNative(t, root, env, "", c.args...)
-			oOut, oErr, oCode := indRunOracle(t, root, env, "", c.args...)
-			indDiff(t, c.name, root, nOut, nErr, nCode, oOut, oErr, oCode)
+			indGolden(t, "exotic-score-"+c.name, root, nOut, nErr, nCode)
 		})
 	}
 }
@@ -928,11 +873,10 @@ func TestIndNewSlugNoIDStamp(t *testing.T) {
 		}
 	}
 
-	// Both entities resolve identically native-vs-oracle, with id= empty.
+	// Both entities resolve identically (frozen), with id= empty.
 	for _, slug := range []string{"manual", "minted"} {
 		nOut, nE, nC := indRunNative(t, root, env, "", "--workflow-dir", root, "--resolve", slug)
-		oOut, oE, oC := indRunOracle(t, root, env, "", "--workflow-dir", root, "--resolve", slug)
-		indDiff(t, "resolve-"+slug, root, nOut, nE, nC, oOut, oE, oC)
+		indGolden(t, "newslug-resolve-"+slug, root, nOut, nE, nC)
 		if !strings.Contains(nOut, "id= ") {
 			t.Errorf("resolve %s: native id not empty: %q", slug, nOut)
 		}

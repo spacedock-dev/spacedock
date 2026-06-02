@@ -1,0 +1,7 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: duplicate id: workflow=<ROOT> scope=active slug=001-a id=001 path=<ROOT>/001-a.md
+Error: duplicate id: workflow=<ROOT> scope=active slug=002-b id=001 path=<ROOT>/002-b.md

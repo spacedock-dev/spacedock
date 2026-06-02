@@ -1,0 +1,13 @@
+---
+id: "050"
+title: Tracker-linked entity
+status: ideation
+score: "0.40"
+source: linear
+issue: ENG-123
+tracker-url: https://linear.app/x/ENG-123
+archived: <TS>
+---
+# Tracker-linked entity
+
+Carries external-tracker fields that must survive mutation.

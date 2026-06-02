@@ -75,28 +75,19 @@ func TestNativeMutationParity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			env := pinnedEnv(t)
 			nativeRoot := stageFixture(t, tc.fixture)
-			oracleRoot := stageFixture(t, tc.fixture)
 
 			nArgs := append([]string{"--workflow-dir", nativeRoot}, tc.mutateArgs(nativeRoot)...)
-			oArgs := append([]string{"--workflow-dir", oracleRoot}, tc.mutateArgs(oracleRoot)...)
-
 			nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-			oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
 
-			if nCode != oCode {
-				t.Fatalf("exit: native=%d oracle=%d (nativeErr=%q oracleErr=%q)", nCode, oCode, nErr, oErr)
-			}
-			// Narration parity: normalize timestamps and each run's own root.
-			if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-				t.Fatalf("narration mismatch\n--- native ---\n%q\n--- oracle ---\n%q", nOut, oOut)
-			}
-			// Full mutated-file parity (whole file, not just frontmatter) so the
+			// Narration frozen against the certified native output (timestamps + root
+			// normalized).
+			assertEnvelopeGolden(t, "native-mutation-"+tc.name, goldenEnvelope{
+				stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+			})
+			// Full mutated-file golden (whole file, not just frontmatter) so the
 			// EOF-newline identity and body are byte-checked.
 			nFile := readWhole(t, filepath.Join(nativeRoot, tc.checkFile))
-			oFile := readWhole(t, filepath.Join(oracleRoot, tc.checkFile))
-			if normalize(nFile, nativeRoot) != normalize(oFile, oracleRoot) {
-				t.Fatalf("file mismatch for %s\n--- native ---\n%q\n--- oracle ---\n%q", tc.checkFile, nFile, oFile)
-			}
+			assertTextGolden(t, "native-mutation-"+tc.name+"-file", normalize(nFile, nativeRoot))
 		})
 	}
 }
@@ -138,25 +129,16 @@ func TestNativeUnknownFieldPreservation(t *testing.T) {
 		t.Run(step.name, func(t *testing.T) {
 			env := pinnedEnv(t)
 			nativeRoot := stageFixtureWith(t, "seq-workflow", map[string]string{"050-tracker.md": body})
-			oracleRoot := stageFixtureWith(t, "seq-workflow", map[string]string{"050-tracker.md": body})
 
 			nArgs := append([]string{"--workflow-dir", nativeRoot}, step.args(nativeRoot)...)
-			oArgs := append([]string{"--workflow-dir", oracleRoot}, step.args(oracleRoot)...)
-
 			nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-			oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-			if nCode != oCode {
-				t.Fatalf("exit: native=%d oracle=%d (nativeErr=%q oracleErr=%q)", nCode, oCode, nErr, oErr)
-			}
-			if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-				t.Fatalf("narration mismatch\n--- native ---\n%q\n--- oracle ---\n%q", nOut, oOut)
-			}
+
+			assertEnvelopeGolden(t, "native-unknownfield-"+step.name, goldenEnvelope{
+				stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+			})
 
 			nFile := readWhole(t, filepath.Join(nativeRoot, step.file))
-			oFile := readWhole(t, filepath.Join(oracleRoot, step.file))
-			if normalize(nFile, nativeRoot) != normalize(oFile, oracleRoot) {
-				t.Fatalf("file mismatch\n--- native ---\n%q\n--- oracle ---\n%q", nFile, oFile)
-			}
+			assertTextGolden(t, "native-unknownfield-"+step.name+"-file", normalize(nFile, nativeRoot))
 			// Explicit byte-for-byte survival of the unknown/tracker fields.
 			for _, line := range []string{"source: linear", "issue: ENG-123", "tracker-url: https://linear.app/x/ENG-123"} {
 				if !strings.Contains(nFile, line) {
@@ -183,33 +165,24 @@ func TestNativeFolderEntityReportAppendPreservesTracker(t *testing.T) {
 		"070-tracker/reports/ideation.md": reportSeed,
 	}
 	nativeRoot := stageFixtureWith(t, "seq-workflow", extra)
-	oracleRoot := stageFixtureWith(t, "seq-workflow", extra)
 
 	// Stage-report append: grow the entity body, the way an ensign appends its
 	// "## Stage Report" section to index.md.
 	report := "\n## Stage Report: implementation\n\n- DONE: wired the thing\n  ref abc123\n"
-	for _, root := range []string{nativeRoot, oracleRoot} {
-		idx := filepath.Join(root, "070-tracker", "index.md")
-		body := readWhole(t, idx)
-		if err := os.WriteFile(idx, []byte(body+report), 0o644); err != nil {
-			t.Fatalf("append report to %s: %v", idx, err)
-		}
+	idx := filepath.Join(nativeRoot, "070-tracker", "index.md")
+	body := readWhole(t, idx)
+	if err := os.WriteFile(idx, []byte(body+report), 0o644); err != nil {
+		t.Fatalf("append report to %s: %v", idx, err)
 	}
 
-	// Default status read after the append: native must match the oracle on every
-	// channel. The oracle is the authoritative entity-count oracle, so parity here
-	// already proves native counts the folder entity exactly as the oracle does.
+	// Default status read after the append, frozen against the certified native
+	// output. The folder entity must count as exactly one (the reports/ subdir is
+	// not misdetected), which the frozen table encodes.
 	args := []string{"--workflow-dir", nativeRoot}
 	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
-	oArgs := []string{"--workflow-dir", oracleRoot}
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-	if nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d (nativeErr=%q oracleErr=%q)", nCode, oCode, nErr, oErr)
-	}
-	if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-		t.Fatalf("status read mismatch after report append\n--- native ---\n%s\n--- oracle ---\n%s",
-			normalize(nOut, nativeRoot), normalize(oOut, oracleRoot))
-	}
+	assertEnvelopeGolden(t, "native-folder-report-append", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 
 	// Discovered as exactly ONE entity: the folder slug appears in a single data
 	// row, never duplicated by the reports/ subdir.

@@ -1,0 +1,17 @@
+===== exit =====
+0
+===== stdout =====
+MODS: none
+ID_STYLE: slug
+NEXT_ID: n/a (id-style: slug)
+ORPHANS: none
+PR_STATE: none
+DISPATCHABLE
+ID     SLUG                           CURRENT              NEXT                 WORKTREE
+--     ----                           -------              ----                 --------
+intro  intro                          draft                published            no
+TEAM_STATE
+present: false
+hint: run TeamCreate before first team-mode dispatch (claude runtime supports it)
+
+===== stderr =====

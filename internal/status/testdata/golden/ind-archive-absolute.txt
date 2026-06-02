@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+archived: <ROOT>/_archive/002-b.md
+
+===== stderr =====

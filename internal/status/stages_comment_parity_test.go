@@ -51,13 +51,12 @@ stages:
 	gitInit(t, root)
 
 	nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--next")
-	oOut, oErr, oCode := runOracle(t, root, env, "--workflow-dir", root, "--next")
-	if nCode != 0 || oCode != 0 {
-		t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+	if nCode != 0 {
+		t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 	}
-	if nOut != oOut {
-		t.Fatalf("--next native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "stages-comment-next", goldenEnvelope{
+		stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+	})
 	// Count dispatch rows (lines naming build as NEXT). The stripped concurrency
 	// 1 caps this at one; an un-stripped value would fall back to the default 2
 	// and dispatch both, which this asserts against.

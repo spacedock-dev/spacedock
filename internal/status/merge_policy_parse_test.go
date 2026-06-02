@@ -68,7 +68,7 @@ func TestResolveMergePolicyRejectsUnknown(t *testing.T) {
 // invalid merge: value exits 1 with the same error in native and oracle, leaving
 // the entity unchanged. This is the loud-rejection guarantee end to end.
 func TestMergeBogusPolicyRejectedAtSet(t *testing.T) {
-	code, out, errOut := assertParity(t, "merge-bogus-workflow", "020-no-sentinel",
+	code, out, errOut := assertMergeGolden(t, "merge-bogus-policy-rejected", "merge-bogus-workflow",
 		"--set", "020-no-sentinel", "status=done")
 	if code != 1 {
 		t.Fatalf("invalid merge: policy must reject the --set (exit 1), got %d", code)
