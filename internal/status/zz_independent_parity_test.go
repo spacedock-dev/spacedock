@@ -1,5 +1,5 @@
 // ABOUTME: Independent validation-stage parity harness — builds fresh fixtures
-// ABOUTME: and diffs NativeRunner directly against the live Python oracle.
+// ABOUTME: and freezes NativeRunner output against goldens captured from the oracle.
 package status
 
 import (
@@ -7,7 +7,6 @@ import (
 	"context"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -19,32 +18,10 @@ import (
 
 // This file is an INDEPENDENT validator authored at the validation stage. It
 // does not reuse the native_*_test.go assertions or the in-tree testdata; it
-// builds its own fixtures, drives the production NativeRunner.Run, shells out to
-// the live oracle, and diffs the four observable channels after the documented
-// normalization. Failure here means a real parity gap, not a stale golden.
-
-// indOraclePath resolves the oracle for the independent parity harness with the
-// same test-integrity contract as oraclePath: a SPACEDOCK_ORACLE override must
-// point at an existing file, and with no override the in-tree vendored oracle is
-// used. A missing oracle is a hard failure, never a skip — so the oracle-backed
-// TestInd* subtests cannot pass-by-skip on CI or a fresh clone.
-func indOraclePath(t *testing.T) string {
-	t.Helper()
-	if p := os.Getenv("SPACEDOCK_ORACLE"); p != "" {
-		if _, err := os.Stat(p); err != nil {
-			t.Fatalf("SPACEDOCK_ORACLE=%s does not exist: %v", p, err)
-		}
-		return p
-	}
-	p, err := filepath.Abs(filepath.Join("vendor", "status"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(p); err != nil {
-		t.Fatalf("vendored oracle not found at %s: %v", p, err)
-	}
-	return p
-}
+// builds its own fixtures, drives the production NativeRunner.Run, and freezes
+// the observable channels (after the documented normalization) against goldens
+// captured from the oracle at retirement time. Failure here means a real native
+// regression, not a stale golden.
 
 func indEnv(t *testing.T) []string {
 	t.Helper()
@@ -77,29 +54,6 @@ func indRunNative(t *testing.T, dir string, env []string, stdin string, args ...
 	})
 	if err != nil {
 		t.Fatalf("native error: %v", err)
-	}
-	return stdout.String(), stderr.String(), code
-}
-
-func indRunOracle(t *testing.T, dir string, env []string, stdin string, args ...string) (string, string, int) {
-	t.Helper()
-	cmd := exec.Command("python3", append([]string{indOraclePath(t)}, args...)...)
-	cmd.Dir = dir
-	cmd.Env = env
-	if stdin != "" {
-		cmd.Stdin = strings.NewReader(stdin)
-	}
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	code := 0
-	if err != nil {
-		if ee, ok := err.(*exec.ExitError); ok {
-			code = ee.ExitCode()
-		} else {
-			t.Fatalf("oracle exec error: %v (stderr=%q)", err, stderr.String())
-		}
 	}
 	return stdout.String(), stderr.String(), code
 }

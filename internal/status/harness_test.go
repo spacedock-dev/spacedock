@@ -1,33 +1,25 @@
-// ABOUTME: Parity-harness shared helpers — pinned env, oracle/launcher runners,
-// ABOUTME: and the normalization (timestamps, root prefix, realpath) for compares.
+// ABOUTME: Golden-harness shared helpers — pinned env, golden file IO, and the
+// ABOUTME: normalization (timestamps, root prefix, realpath, state-backend) for compares.
 package status
 
 import (
-	"bytes"
-	"context"
 	"flag"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 )
 
-// update regenerates checked-in golden files from the oracle instead of
-// comparing against them. Run: go test ./internal/status -run TestGoldenRead -update
-var update = flag.Bool("update", false, "regenerate golden files from the oracle")
+// update regenerates checked-in golden files from the current native output
+// instead of comparing against them. Run: go test ./internal/status -update
+var update = flag.Bool("update", false, "regenerate golden files from native output")
 
-// oracleEnvVar names an env var that overrides the path to the live status
-// oracle script. When unset, the harness falls back to the in-tree vendored
-// oracle, which is always present in a checkout.
-const oracleEnvVar = "SPACEDOCK_ORACLE"
-
-// pinnedEnv returns the locale/id/timestamp-pinned environment both the oracle
-// and the launcher must run under so env-dependent output is reproducible. The
-// values mirror the test plan: PYTHONUTF8/LANG for locale, USER/actor/seed and
+// pinnedEnv returns the locale/id/timestamp-pinned environment the native runner
+// must run under so env-dependent output is reproducible. The values mirror the
+// test plan: PYTHONUTF8/LANG for locale, USER/actor/seed and
 // SPACEDOCK_TEST_SD_B32_TIMESTAMP for sd-b32, HOME for the team probe, PATH for
-// locating python3/git/gh.
+// locating git/gh.
 func pinnedEnv(t *testing.T) []string {
 	t.Helper()
 	return []string{
@@ -39,83 +31,6 @@ func pinnedEnv(t *testing.T) []string {
 		"HOME=" + t.TempDir(), // empty team dir -> deterministic TEAM_STATE
 		"PATH=" + os.Getenv("PATH"),
 	}
-}
-
-// oraclePath returns the oracle script the parity tests run against. A
-// SPACEDOCK_ORACLE override, when set, must point at an existing file — a
-// misconfigured override is a hard failure, not a skip. With no override the
-// in-tree vendored oracle is used; a missing vendored copy is a hard failure
-// too. The oracle is therefore always resolvable in a checkout, so the parity
-// assertions hard-fail on a real divergence instead of green-by-skip on CI or a
-// fresh clone (the test-integrity contract this enforces).
-func oraclePath(t *testing.T) string {
-	t.Helper()
-	if p := os.Getenv(oracleEnvVar); p != "" {
-		if _, err := os.Stat(p); err != nil {
-			t.Fatalf("%s=%s does not exist: %v", oracleEnvVar, p, err)
-		}
-		return p
-	}
-	p, err := filepath.Abs(filepath.Join("vendor", "status"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(p); err != nil {
-		t.Fatalf("vendored oracle not found at %s: %v", p, err)
-	}
-	return p
-}
-
-// runLauncher runs the vendored-exec runner (the launcher path) with the given
-// args/dir/env and returns stdout, stderr, exit code.
-func runLauncher(t *testing.T, dir string, env []string, args ...string) (string, string, int) {
-	t.Helper()
-	var stdout, stderr bytes.Buffer
-	runner := &VendorRunner{}
-	code, err := runner.Run(context.Background(), Request{
-		Args:   args,
-		Dir:    dir,
-		Env:    env,
-		Stdout: &stdout,
-		Stderr: &stderr,
-	})
-	if err != nil {
-		t.Fatalf("launcher runner error: %v (stderr=%q)", err, stderr.String())
-	}
-	return stdout.String(), stderr.String(), code
-}
-
-// runOracle runs the oracle script directly under python3 with the given
-// args/dir/env and returns stdout, stderr, exit code. A missing oracle is a hard
-// failure (see oraclePath), never a skip.
-func runOracle(t *testing.T, dir string, env []string, args ...string) (string, string, int) {
-	t.Helper()
-	oracle := oraclePath(t)
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("python3", append([]string{oracle}, args...)...)
-	cmd.Dir = dir
-	cmd.Env = env
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	code := 0
-	if err != nil {
-		var exitErr *exec.ExitError
-		if ok := asExitError(err, &exitErr); ok {
-			code = exitErr.ExitCode()
-		} else {
-			t.Fatalf("oracle run error: %v (stderr=%q)", err, stderr.String())
-		}
-	}
-	return stdout.String(), stderr.String(), code
-}
-
-func asExitError(err error, target **exec.ExitError) bool {
-	if e, ok := err.(*exec.ExitError); ok {
-		*target = e
-		return true
-	}
-	return false
 }
 
 // tsRe matches ISO-8601 UTC timestamps in BOTH the second-precision mutation
