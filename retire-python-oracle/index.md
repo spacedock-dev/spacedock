@@ -4,10 +4,10 @@ title: Retire the Python oracle — remove the embedded vendor/status + VendorRu
 status: implementation
 source: FO investigation (2026-06-01) — the sole open precondition gating zj (yaml-parser-migration), currently orphaned (0x scoped it out; sprint-notes deferred it). Post-bootstrap.
 started: 2026-06-02T15:29:46Z
-completed:
-verdict:
+completed: 2026-06-02T19:48:24Z
+verdict: PASSED
 score: "0.25"
-worktree: .worktrees/spacedock-ensign-retire-python-oracle
+worktree: 
 issue:
 mod-block: 
 pr: "#270"
