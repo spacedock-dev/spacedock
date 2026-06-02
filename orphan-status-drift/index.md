@@ -9,6 +9,7 @@ verdict:
 score: "0.28"
 worktree: .worktrees/spacedock-ensign-orphan-status-drift
 issue: spacedock-dev/spacedock#251
+mod-block: merge:pr-merge
 ---
 
 ## Problem
