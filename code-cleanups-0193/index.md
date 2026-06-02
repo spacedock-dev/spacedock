@@ -10,6 +10,7 @@ score: "0.22"
 worktree: .worktrees/spacedock-ensign-code-cleanups-0193
 issue:
 mod-block: merge:pr-merge
+pr: "#263"
 ---
 
 A batch of low-risk code-quality cleanups surfaced by the sprint-end staff-SWE + AI-eng reviews. All Minor; grouped because each is too small to track alone.
