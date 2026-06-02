@@ -232,6 +232,7 @@ func TestEnsignCycleGoesRedOnBrokenOutput(t *testing.T) {
 // stage, so the cycle exercises the flat-entity / no-worktree path.
 func readmeNonWorktree() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
