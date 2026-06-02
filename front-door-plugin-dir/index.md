@@ -21,13 +21,71 @@ This also blocks the captain's PRIMARY dev workflow: nearly every real launch is
 - **Test:** `TestLiveEnsignCycle` passes green against the fixed binary, restoring the live-e2e net.
 - Lands on `next` as its own PR (whose own CI-E2E validates the fix end-to-end), then greens the in-flight #258 (5p) and #259 (#251) once they rebase onto the fixed `next`.
 
-## Acceptance criteria (provisional — harden at ideation)
+## Spike result (riskiest unknown, run FIRST)
 
-**AC-1 — `spacedock claude --plugin-dir <dir>` (before `--`) launches with the local checkout and a relaxed gate.** The flag is accepted (no "unknown flag"), forwarded to the host, and `hasPluginDir` relaxes the contract gate; `--plugin-dir=<dir>` and repeated `--plugin-dir` both work.
-Verified by: a frontdoor unit test asserting the parsed passthrough carries `--plugin-dir <dir>` and the gate is relaxed, for both before-`--` and after-`--` placements.
+**Question:** which cobra/pflag mechanism forwards host flags before `--` without swallowing spacedock's own flags (`--safehouse-*`, `--skip-contract-check`) or breaking the after-`--` passthrough.
 
-**AC-2 — the live-e2e net is restored.** `go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/` passes against the fixed binary (the same invocation CI runs).
-Verified by: the live job green on this entity's own PR (CI-E2E), plus a local `-tags live` run recorded in the stage report.
+**Answer: no generic flag-mode toggle works; the sound design is to register `--plugin-dir` as the ONE host flag spacedock teaches itself, and keep every OTHER host flag after `--`.** Spiked end-to-end against `github.com/spf13/pflag v1.0.9` (the pinned version) on the real `spacedock claude` arg shape:
 
-**AC-3 — after-`--` host passthrough is unchanged.** Flags placed after `--` still forward verbatim; spacedock's own flags (`--safehouse-*`, `--skip-contract-check`) still parse before `--`.
-Verified by: existing frontdoor passthrough tests stay green; `go test ./...` green.
+- **`ParseErrorsWhitelist.UnknownFlags = true` SILENTLY EATS unknown flags.** Reading `pflag/flag.go` `parseArgs`/`parseLongArg`/`stripUnknownFlagValue` (v1.0.10 mirror of the v1.0.9 logic): an unknown long flag token is never appended to `f.args`, and `stripUnknownFlagValue` drops its following value too. Spike confirmed: `--plugin-dir /repo … -- task` → `passthrough=[task]`, the `--plugin-dir /repo` vanished. The worst outcome — data loss with no error. Rejected.
+- **`SetInterspersed(false)` cannot distinguish spacedock flags from host flags.** It either errors on the first unknown flag (`unknown flag: --plugin-dir`) or, when the first token is a positional, stops parsing and dumps everything (including `--skip-contract-check`) into `Args()`. Rejected.
+- **A manual generic pre-pass cannot pair value-taking host flags with their values** — it does not know each host flag's arity (`--verbose` takes none, `--model` takes one). Spike showed `--plugin-dir /repo -p Drive. --model sonnet` mis-split into `hostBefore=[--plugin-dir -p --model]` / `taskTokens=[/repo Drive. sonnet]`. This arity problem is *exactly* why the Option-2 grammar moved host flags after `--`; forwarding arbitrary host flags before `--` reintroduces it. Rejected.
+- **WINNER — register `--plugin-dir` as a repeatable `StringArray` on the existing front-door pflag.FlagSet.** pflag then knows its arity (one value, repeatable), parses `--plugin-dir <dir>` / `--plugin-dir=<dir>` / repeated forms before `--` correctly, and the captured dirs re-inject into the FRONT of passthrough so they forward to the host and `hasPluginDir` sees them unchanged. Every other host flag (`-p`, `--model`, `--permission-mode`, `--output-format`, `--verbose`, …) stays after `--`. Spike end-to-end:
+  - `--plugin-dir /repo --skip-contract-check -- -p Drive. --model sonnet` → inner argv `claude --agent spacedock:first-officer --plugin-dir /repo -p Drive. --model sonnet <prompt>`, `hasPluginDir=true`.
+  - `--plugin-dir /repo "review the PRs"` (no `--`, captain dev workflow) → `--plugin-dir /repo` parsed, task `review the PRs`, gate relaxed.
+  - `--plugin-dir /a --plugin-dir=/b --` → both captured (`/a`, `/b`), both forms.
+  - A non-plugin-dir host flag left before `--` (e.g. `-p`) → loud `unknown shorthand flag: 'p'` error, NOT a silent mis-split — proving the live test MUST move its non-plugin-dir flags after `--`.
+
+Spike harness: `/tmp/pflag-spike` (throwaway). The implementation's first failing test seeds from the WINNER row.
+
+## Decisions (hardened at ideation)
+
+- **D1 — `--plugin-dir` before `--` is ADDITIVE, not a replacement.** Both before-`--` and after-`--` `--plugin-dir` work; after-`--` stays verbatim-forwarded (unparsed positional) exactly as today. The help.go convention (`tokens after -- forward verbatim … and --plugin-dir`) is RETAINED and AUGMENTED: help gains a `--plugin-dir DIR` flag row (it is now a real spacedock-parsed flag) plus one example line `spacedock claude --plugin-dir ./checkout`. No documented behavior is removed.
+- **D2 — only `--plugin-dir` is promoted; all OTHER host flags stay after `--`.** Per checklist #2's "move the non-plugin-dir ones after `--`": the live test moves `-p/--permission-mode/--output-format/--verbose/--model` to after `--`. Forwarding arbitrary host flags before `--` is rejected (arity problem, spike).
+- **D3 — symmetric `spacedock codex` treatment.** `--plugin-dir` is a marketplace/plugin flag both hosts share and `hasPluginDir` already gates both `runClaude` and `runCodex`; promoting it in the shared `parseFrontDoorArgs` covers codex for free. No extra codex-only work.
+- **D4 — placement: re-inject captured before-`--` `--plugin-dir <dir>` tokens at the FRONT of passthrough, before the after-`--` tokens.** Keeps the spacedock prompt the always-last assembled token (the Option-2 invariant `TestDanglingValueTakingHostFlagStillSwallows` pins) and keeps `hasPluginDir(passthrough)` the single gate-relax reader (no new field threaded through `runClaude`/`runCodex`).
+
+## Acceptance criteria
+
+**AC-1 — `spacedock claude --plugin-dir <dir>` BEFORE `--` is parsed, forwarded, and relaxes the gate.** The flag is accepted (no "unknown flag"), the captured dir(s) appear in the host passthrough as `--plugin-dir <dir>`, and `hasPluginDir(passthrough)` is true so the contract gate is relaxed (a failing manifest still launches). `--plugin-dir=<dir>` and repeated `--plugin-dir` both work; the captain's no-`--` form `spacedock claude --plugin-dir <dir> "task"` parses the dir as a flag and `task` as the launch prompt.
+Verified by: a new `parseFrontDoorArgs` table case (before-`--` `--plugin-dir` space, equals, and repeated forms → captured into passthrough; a stray non-plugin-dir host flag before `--` → parse error) AND a `runClaude` seam test asserting the launch argv carries `--plugin-dir <dir>` and the gate is relaxed on a failing manifest, mirrored for `runCodex`.
+
+**AC-2 — the live-e2e net is restored.** `go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/` (the exact CI invocation) passes against the fixed binary. `live_test.go` keeps `--plugin-dir <repoRoot>` before `--` and moves `-p`, `--permission-mode`, `--output-format`, `--verbose`, `--model` to AFTER `--`, ahead of the fenced task.
+Verified by: the live job green on this entity's own PR (CI-E2E), plus a local `-tags live` run recorded in the stage report (or SKIPPED-with-reason if no live credential on the implementer's machine, with the CI-E2E green as the binding proof).
+
+**AC-3 — after-`--` host passthrough and spacedock-flag parsing are unchanged.** After-`--` `--plugin-dir /a --plugin-dir /b` still forwards verbatim in operator order; spacedock's own flags (`--safehouse`, `--safehouse-*`, `--skip-contract-check`) still parse before `--` in space and equals forms; the spacedock prompt is still the last assembled host-argv token.
+Verified by: the existing front-door suite stays green unchanged — `TestParseFrontDoorArgs`, `TestPluginDirRelaxesGate`, `TestDanglingValueTakingHostFlagStillSwallows`, `TestDevLanePluginDirReachesLaunchSeam`, `TestClaudeFrontDoorLaunchesOnCompatible` — and `go test ./...` is green.
+
+## Approach
+
+In `internal/cli/frontdoor.go`:
+
+- `bindFrontDoorFlags` gains one binding: `pluginDir: fs.StringArray("plugin-dir", nil, "Load a local plugin checkout (relaxes the contract gate); repeatable")`. Because `bindFrontDoorFlags` is the single source feeding both the parser and `declareFrontDoorHelpFlags`, the help row appears automatically with no drift (the comment on `frontDoorFlags` already promises this).
+- `parseFrontDoorArgs` reads `*flags.pluginDir` after `Parse` and re-injects `--plugin-dir <dir>` pairs at the FRONT of `fd.passthrough`, then appends the post-`--` positionals after them. The after-`--` `--plugin-dir` path is untouched (those tokens are post-dash positionals, never seen by the flagset).
+- `hasPluginDir`, `runClaude`, `runCodex` are UNCHANGED — they already read `fd.passthrough`.
+
+In `internal/cli/help.go`: the `setFrontDoorHelp` prose keeps the after-`--` sentence and gains a one-line example `spacedock <host> --plugin-dir ./checkout`; the `--plugin-dir` flag row renders via the new binding. Update the ABOUTME/prose only where it states host flags ride "after `--`" to acknowledge `--plugin-dir` is also accepted before.
+
+In `internal/ensigncycle/live_test.go`: move the five non-plugin-dir host flags to after `--`.
+
+## Test plan
+
+- **Unit (fixture-free, ~instant): `parseFrontDoorArgs` table** — add before-`--` `--plugin-dir` cases (space, equals, repeated; mixed with `--skip-contract-check` and a task; a non-plugin-dir host flag before `--` asserting a returned error). Cost: trivial. This is the failing-test-first artifact seeded by the spike WINNER row.
+- **Unit: `runClaude`/`runCodex` seam** — extend the launch-parity suite with a before-`--` `--plugin-dir` case asserting the inner argv carries `--plugin-dir <dir>` and the gate relaxes on `tooOldBinaryManifest`. Cost: trivial, uses the existing `fakeHost`.
+- **Regression: `go test ./internal/cli/...`** — the full existing suite (121 tests) must stay green, proving AC-3. Cost: ~1s.
+- **Live (gated): `go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/`** — the binary-change proof. Needs the built binary + a live credential (OAuth benchmark-token or `ANTHROPIC_API_KEY`); skips cleanly without one. The binding proof is the CI-E2E job green on this entity's PR. Cost: one live model run (~350s observed).
+
+No fixture or golden changes needed. No schema/on-disk-format change.
+
+## Stage Report: ideation
+
+- DONE: AC pins the captain-workflow fix: `spacedock claude --plugin-dir <dir>` (BEFORE `--`) accepted, forwarded, relaxes the gate; `=`/repeated forms; before-vs-after-`--` decided ADDITIVE; frontdoor unit test named.
+  AC-1 + D1 + D4; named unit test: a new `parseFrontDoorArgs` table case + a `runClaude`/`runCodex` launch-parity seam case.
+- DONE: AC restores the live-e2e net: `go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/` passes against the fixed binary; test-change-vs-binary-change decided BOTH (binary parses --plugin-dir before `--`, test moves the other five host flags after `--`).
+  AC-2 + D2; the five non-plugin-dir flags (-p/--permission-mode/--output-format/--verbose/--model) move after `--`.
+- DONE: Spike the riskiest unknown FIRST: which cobra mechanism forwards host flags before `--` without swallowing spacedock's own flags or breaking after-`--`; exercised end-to-end against the real `spacedock claude` arg shape.
+  Spike result section; ran 4 mechanisms in /tmp/pflag-spike against pflag v1.0.9 — UnknownFlags silently eats, SetInterspersed(false) and generic pre-pass both unsound; WINNER = register --plugin-dir as StringArray. Verified the real live-test shape end-to-end.
+
+### Summary
+
+Spiked the riskiest unknown first and it overturned the obvious approach: pflag's `ParseErrorsWhitelist.UnknownFlags` SILENTLY DROPS unknown host flags (confirmed by reading pflag source + running it), and no generic flag-mode toggle can forward arbitrary host flags before `--` because spacedock cannot know each host flag's arity — which is precisely why the Option-2 grammar moved them after `--`. The sound design promotes ONLY `--plugin-dir` (the one host flag whose arity spacedock already reasons about via `hasPluginDir`) to a real repeatable StringArray on the front-door flagset; every other host flag stays after `--`, so the live test moves its five non-plugin-dir flags there. Decisions recorded: before-`--` is ADDITIVE (after-`--` retained), codex gets it for free via the shared `parseFrontDoorArgs`, and captured dirs re-inject at the front of passthrough so `hasPluginDir`/`runClaude`/`runCodex` stay unchanged and the prompt-always-last invariant holds. Baseline: all 121 internal/cli tests green before any change.
