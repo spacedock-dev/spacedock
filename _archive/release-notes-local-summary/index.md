@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#264"
+archived: 2026-06-02T16:16:30Z
 ---
 
 The release notes on the GitHub Release are goreleaser's **default raw changelog** — `.goreleaser.yaml` has no `changelog:` config, so the notes are an unfiltered commit dump including all the workflow-state noise (`dispatch:`/`advance:`/`merge:` entity commits, archived-task frontmatter). Refine the release flow to produce **clean, user-value release notes** via an LLM summary, generated **LOCALLY** (so the captain can review/tweak before tagging), while the **build still triggers on the `v*` tag push** (CI goreleaser stays the builder/publisher).
