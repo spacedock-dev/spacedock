@@ -14,7 +14,9 @@ import (
 )
 
 func TestLiveCodexGateGuardrail(t *testing.T) {
-	decision := decideCodexLiveAuth(os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_CODEX_LIVE_REQUIRED"))
+	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
+	realHome := os.Getenv("HOME")
+	decision := decideCodexLiveAuth(openAIAPIKey, codexLocalAuthAvailable(realHome), os.Getenv("SPACEDOCK_CODEX_LIVE_REQUIRED"))
 	switch decision.mode {
 	case codexAuthSkip:
 		t.Skip(decision.message)
@@ -31,13 +33,23 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 	artifactDir := codexLiveArtifactDir(t, "codex-gate-guardrail")
 	codexHome := t.TempDir()
 	cleanHome := t.TempDir()
-	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), os.Getenv("OPENAI_API_KEY"))
+	if decision.mode == codexAuthLocal {
+		if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
+			t.Fatalf("seed local Codex auth: %v", err)
+		}
+	}
+	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey)
 
 	install, err := writeCodexLocalMarketplace(t.TempDir(), repo)
 	if err != nil {
 		t.Fatalf("write local Codex marketplace: %v", err)
 	}
-	runCodexLiveCommand(t, artifactDir, "codex-login.txt", os.Getenv("OPENAI_API_KEY")+"\n", env, codexBin, "login", "--with-api-key")
+	switch decision.mode {
+	case codexAuthAPIKey:
+		runCodexLiveCommand(t, artifactDir, "codex-login.txt", openAIAPIKey+"\n", env, codexBin, "login", "--with-api-key")
+	case codexAuthLocal:
+		runCodexLiveCommand(t, artifactDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
+	}
 	runCodexLiveCommand(t, artifactDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.marketplaceRoot)
 	runCodexLiveCommand(t, artifactDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
 	listing := runCodexLiveCommand(t, artifactDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
@@ -96,21 +108,6 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
-}
-
-func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string) []string {
-	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "CLAUDECODE")
-	path := os.Getenv("PATH")
-	if pathPrefix != "" {
-		path = pathPrefix + string(os.PathListSeparator) + path
-	}
-	env = append(env,
-		"CODEX_HOME="+codexHome,
-		"HOME="+home,
-		"OPENAI_API_KEY="+openAIAPIKey,
-		"PATH="+path,
-	)
-	return env
 }
 
 func codexLiveArtifactDir(t *testing.T, name string) string {

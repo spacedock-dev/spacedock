@@ -151,11 +151,13 @@ Local prerequisites:
 
 ```bash
 npm install -g @openai/codex
+codex login
 go build -o ./spacedock ./cmd/spacedock
 export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
-export OPENAI_API_KEY=...
 ```
+
+Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies `auth.json` into a temporary `CODEX_HOME` when using the local subscription path, so plugin marketplace mutations stay isolated from the operator's real Codex config. CI does not use local subscription auth.
 
 Run the focused local smoke:
 
@@ -163,7 +165,7 @@ Run the focused local smoke:
 go test -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v
 ```
 
-Without `OPENAI_API_KEY`, the live test skips locally. In GitHub Actions, the `codex-live` job sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, so a missing key fails clearly after the `CI-E2E-CODEX` environment is approved.
+Without either `OPENAI_API_KEY` or a readable local Codex `auth.json`, the live test skips locally. In GitHub Actions, the `codex-live` job sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, so a missing `OPENAI_API_KEY` fails clearly after the `CI-E2E-CODEX` environment is approved.
 
 GitHub setup:
 
