@@ -4,10 +4,10 @@ title: Headless FO intermittently doesn't drive the cycle (-p / teams) — root-
 status: implementation
 source: "FO (2026-06-02): live-e2e flakiness — under spacedock claude -p with EXPERIMENTAL_AGENT_TEAMS=1 the FO intermittently stalls (one model per run): on 38's PR sonnet booted, loaded the contract (Skill->Read), then went silent (~70s quiet trip) while opus drove the full cycle. The deferred FO-runtime-await question, now confirmed real. Investigation; gated on the transcript-artifact follow-up for data."
 started: 2026-06-02T07:57:40Z
-completed:
-verdict:
+completed: 2026-06-02T19:38:12Z
+verdict: PASSED
 score: "0.34"
-worktree: .worktrees/spacedock-ensign-headless-fo-drive-flake
+worktree: 
 issue:
 mod-block: 
 pr: "#271"
