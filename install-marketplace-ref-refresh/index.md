@@ -1,11 +1,11 @@
 ---
 id: s0cqcf9hg4k0tgartr6ymf1b
 title: spacedock install --host claude silently reuses stale marketplace ref (defeats fresh-install-from-next)
-status: backlog
+status: ideation
 source: captain (2026-06-02) — observed `./spacedock install --host claude` reports success but the marketplace add no-ops on "already on disk", so the @next ref never replaces the existing pin; the uninstall+install cycle then re-pulls from the stale ref
 score: "0.38"
 worktree:
-started:
+started: 2026-06-02T21:14:43Z
 completed:
 verdict:
 issue:
