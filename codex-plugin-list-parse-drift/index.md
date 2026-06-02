@@ -9,7 +9,7 @@ verdict:
 score: "0.40"
 worktree: .worktrees/spacedock-ensign-codex-plugin-list-parse-drift
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#258"
 ---
 
