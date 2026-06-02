@@ -1,7 +1,7 @@
 ---
 id: zjmjzznydmqr58bd46qz6q07
 title: Migrate the frontmatter parser/mutator to a YAML library (post-oracle, deliberate divergences)
-status: implementation
+status: validation
 source: sprint — captain (parser-modernization, post-bootstrap)
 score: "0.25"
 worktree: .worktrees/spacedock-ensign-yaml-parser-migration
