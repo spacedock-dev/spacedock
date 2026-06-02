@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#271"
+archived: 2026-06-02T19:38:12Z
 ---
 
 The live-e2e "flake" is root-caused from captured evidence (CI run 26839572693, both legs): the CI live-e2e environment does NOT put the built `spacedock` binary on the FO subprocess's PATH, so the FO's first contract step — `spacedock --version` — fails with `command not found` and the FO correctly ABORTS via the #262 binary-absent gate. This is a 4th cause, distinct from the original H1/H2/H3 framing. It is NOT the teams-vs-`-p` precedence (old H1), NOT contract-load model nondeterminism (old H2), NOT the `-p` await semantics (old H3), and NOT an 02-branch (retire-python-oracle) regression. The fix is TEST-INFRA: put the built binary on the FO subprocess's PATH. Once that lands, the FO drives past the binary gate and the cycle can proceed.
