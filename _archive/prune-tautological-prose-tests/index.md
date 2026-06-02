@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#268"
+archived: 2026-06-02T17:47:01Z
 ---
 
 A 4-agent classification workflow (mutation-proved each suspect by inverting the asserted prose and confirming the test stayed GREEN) found **6 of 26** `skills/integration` test funcs are the banned **tautological-prose-pin** antipattern (P2: grep-over-prose asserting the contract "says" something — paraphrase-invertible, gives false confidence). Same class as the deleted `v1` grep tests. The other 20 are legitimate (10 absence/structural lints, 8 behavioral). This entity removes the 6.
