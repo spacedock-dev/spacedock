@@ -1,7 +1,7 @@
 ---
 id: qs87q0ca1wa3bhzfkj07mgwb
 title: Harden FO reconciliation — teardown agents at terminal + supersede-shutdown + a state-keyed reconcile sweep (no lingering ensigns / stale branches / un-advanced PRs)
-status: validation
+status: implementation
 source: "captain (2026-06-02) — observed the FO leak 3 ensigns (the 7h implementer post-merge + the old 3g cycle agents post-rework) and reconcile in-flight branches only reactively at merge (02 hit #263 late); all keyed off drift-prone FO session memory"
 completed:
 verdict:
@@ -9,7 +9,7 @@ score: "0.30"
 worktree: .worktrees/spacedock-ensign-ensign-lifecycle-reconcile
 issue:
 started: 2026-06-02T21:14:43Z
-mod-block: merge:pr-merge
+mod-block: 
 ---
 
 The FO leaks agents and reconciles reactively because every lifecycle rule keys off **FO session memory**, which drifts under context pressure (this session: the FO tracked "5 alive" when 7 were — the 7h implementer lingered after its entity merged+archived, and the superseded old-3g `-implementation`/`-validation` lingered after 3g re-ideated). Same root cause as the prose-pin tests: a "remember to shut down / remember to rebase" rule can't self-check. The fix is to **compute the reconciliation set from state** that already exists on disk (team `config.json` members[] + entity frontmatter + git refs), and to let a code gate flag drift the FO would otherwise miss.
@@ -227,3 +227,35 @@ Built and shipped `spacedock dispatch reconcile` as a pure-reader CLI helper tha
 ### Summary
 
 PASSED. All three ACs verified by runnable checks outside the entity body at HEAD 4a70ce83. AC-1: `internal/dispatch/reconcile_test.go` (5 tests, 26 subcases incl. the flip) emits exactly one of each A/B/C/D/E from the synthetic fixture and the flip reclassifies. AC-2: the three FO-contract additions land in the documented sections (shared-core ## Merge and Cleanup step 10, shared-core ## Completion and Gates supersede-shutdown, claude-runtime ## Event Loop step 0 + step 4), each citing `spacedock dispatch reconcile` verbatim and naming its per-Class backstop; markdown is syntactically valid. AC-3: `internal/dispatch/reconcile_e_test.go` asserts `rev-parse main == rev-parse origin/next` after the reset on a real git fixture, plus `go build -o tmp ./cmd/spacedock` exit-code proof. Live exercise of `/tmp/spacedock-validate dispatch reconcile --workflow-dir docs/dev` against the running session emitted a valid envelope with one Class D drift (sibling `codex-live-ci` worktree 1 behind), confirming the helper runs end-to-end. `go test ./...` is 765/765 green across 12 packages; the host-neutrality discipline holds (the only `~/.claude/teams` read lives at `internal/claudeteam/reconcile.go` behind `LoadReconcileTeam`). The SendMessage-to-zombie spike result (behavior (i) — silent success) is recorded inline at entity body lines 107-110 with three design consequences. Implementation came in at ~1450 LOC vs the ideation's 800-1100 estimate; the overshoot is honest — the helper's 627 LOC distributes across 5 class detectors (28/39/27/31/13) + a 65-LOC orchestrator + a 42-LOC decomposer + 2 injection seams + JSON marshalling, no single function bloated.
+
+### Feedback Cycles
+
+**Cycle 1 — 2026-06-02 — AUDIT REJECTED → feedback-to: implementation**
+
+Detached adversarial audit (Task `wd8vzhu61`, Run `wf_08ade5fd-8ff`, 4 lenses, 20 sub-agents, 5/5 findings confirmed after 3-vote refutation) returned **MATERIAL-PRESENT** with 3 material + 2 polish findings after the validation gate PASSED at HEAD `4a70ce83`. Per the captain's gate-decision directive ("approve, hold merge for audit; if MATERIAL, route findings back through feedback cycle"), this cycle addresses the audit's findings without weakening the ACs. L2 (graceful degradation across 18 adversarial inputs) and L4 (host-neutrality seam + 627 LOC bloat check) returned no findings.
+
+**Material findings — must address:**
+
+1. **L1-M1: Class A active-status=done branch is dead in the fixture.** `internal/dispatch/reconcile.go:410-439` has two disjoint emit paths in `classA`: archived[d.slug] (lines 418-425) and active[d.slug].status=="done" (lines 427-435). The current `reconcile_test.go` fixture has ZERO active entities with status=done — every status=done entity lives under `_archive/` and hits the archived branch. Bug-injection confirmed by all 3 refuters: deleting the active-status=done block leaves all reconcile tests green. A regression that silently disables terminal-status detection on active entities (ensigns that hit "done" but weren't yet archived) would ship undetected.
+   **Fix:** add an active fixture entity with status="done" (a sixth entity outside `_archive/`); assert `classA` emits an A entry for it with Reason containing "status=done" (distinct from "archived"). Keep the existing archived-branch coverage.
+
+2. **L1-M2: Class C MERGED filter + status!=done filter are independently dead in the fixture.** `reconcile.go:535` is `if state == "MERGED" && rec.status != "done"`. The fixture has exactly one entity with `pr` set (pr-merged, pr="42", status=implementation) and the gh stub maps only "42"→"MERGED". No row pairs `pr` with a non-MERGED gh state, and no row pairs MERGED with status=done. Both bug-injections (drop MERGED conjunct; drop status!=done conjunct) confirmed by all 3 refuters: all 7 reconcile tests stay green.
+   **Fix:** add two new fixture rows + corresponding gh-stub entries: (a) entity with `pr` set + gh state=OPEN → assert NO C entry emits; (b) entity with `pr` set + status=done + gh state=MERGED → assert NO C entry emits. Tighten the existing pr-merged assertion to check the full Reason string, not just the "merged" substring.
+
+3. **L3-1: Shared-core makes a Claude-only backstop promise in runtime-neutral prose.** `skills/first-officer/references/first-officer-shared-core.md:159` (supersede-shutdown) and `:240` (step 10 terminal teardown) both assert `spacedock dispatch reconcile`'s Class A/B is the behavioral backstop if the prose step is skipped. The helper is Claude-bound — `reconcile.go:106` wires `claudeteam.LoadReconcileTeam` which scans `~/.claude/teams/*/config.json` and exits non-zero with "no team config with a spacedock:ensign member found" when none exist (empirically reproduced with HOME pointed at an empty directory). A Codex FO reading shared-core believes it has a cycle-by-cycle backstop that doesn't exist; `codex-first-officer-runtime.md` has zero hits for reconcile/Class A/Class B/backstop.
+   **Fix:** make the backstop claim runtime-conditional in shared-core. Two options:
+   - **(a) (recommended):** Move the "behavioral backstop is reconcile" sentences from shared-core into `claude-first-officer-runtime.md` as Claude-only addenda; reword shared-core to say the prose step is mandatory with no cross-runtime safety net.
+   - **(b):** Keep the sentences in shared-core but qualify them as "on Claude hosts" and add a Codex-runtime note documenting the absence of an equivalent sweep.
+   Also consider extending `internal/hostneutrality/prose_neutrality_test.go` to police the tokens `spacedock dispatch reconcile`, `Class A`, and `Class B` as Claude-bound.
+
+**Polish findings — fold into this cycle (small, adjacent):**
+
+- **L3-2: Ship-Local Ceremony bypasses the new step 10 teardown.** `shared-core.md:254` (Ship-Local step 7) delegates only to "as in Merge-and-Cleanup step 9", missing the newly-added step 10 (terminal agent teardown via shutdown_request). The new step 10 explicitly rejects the "Class A catches it" rationale ("one extra context-window cycle the lingering agent burns") — yet the sibling Ship-Local ceremony does not propagate the mandate. On Claude, Class A backstop catches it (one extra cycle of waste); on Codex, nothing does.
+  **Fix:** add a step 8 to Ship-Local Ceremony mirroring Merge-and-Cleanup step 10, OR reword step 7 to delegate to "step 9 and step 10".
+
+- **L3-3: Supersede-shutdown prose cites an undefined "dispatch-vs-shutdown sequencing rule".** `shared-core:159` references "the dispatch-vs-shutdown sequencing rule"; `grep` across `skills/first-officer/` finds exactly one hit (the citing sentence itself). The closest analog is `claude-first-officer-runtime.md:76` ("Sequencing rule" whose enumerated scope — TeamCreate/TeamDelete/spawn-standing/Agent — excludes SendMessage). Behaviorally the in-sentence "in a SEPARATE message" imperative still drives correct order; this is wording, not a behavioral hole.
+  **Fix:** either rename the existing Sequencing rule to cover shutdown_request and link to it from shared-core, or strike the dangling "per the dispatch-vs-shutdown sequencing rule" tail and rely on the inline imperative.
+
+**Scope for this cycle (audit-fix):** all 3 material findings + 2 polish findings. Mostly fixture additions (L1-M1/M2 — test code) + scaffolding prose tightening (L3-1/-2/-3). No new helper logic; the helper's class detectors are correct, the tests just didn't exercise them.
+
+**Worktree:** existing `.worktrees/spacedock-ensign-ensign-lifecycle-reconcile` on branch `spacedock-ensign/ensign-lifecycle-reconcile` at HEAD `4a70ce83`. Cycle-2 work stacks on top.
