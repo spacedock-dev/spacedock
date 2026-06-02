@@ -141,11 +141,24 @@ jobs:
           echo "- Model: \`${{ matrix.model }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Effort: \`${{ inputs.effort }}\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # Archivable per-job config dir under $RUNNER_TEMP, exported to later steps
+      # via $GITHUB_ENV. $RUNNER_TEMP is the runtime shell variable (the `runner`
+      # CONTEXT is NOT available in a job-level `env:` — the runner is unassigned
+      # until the job starts, so referencing it there is a parse-time startup
+      # failure). The child claude writes its session jsonl to
+      # projects/<slug>/<session>.jsonl HERE (the test honors this via
+      # isolatedClaudeEnv), so the Upload step below grabs the structured
+      # transcript even on a failed/killed run. The /${{ matrix.model }} segment
+      # keeps the two matrix legs from sharing a config dir.
+      - name: Set archivable CLAUDE_CONFIG_DIR
+        run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
+
       - name: Run live ensign cycle
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
-          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v
+          set -o pipefail
+          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
 
       - name: Upload live artifacts
         if: always()
@@ -154,4 +167,6 @@ jobs:
           name: runtime-live-e2e-claude-live-${{ matrix.model }}
           path: |
             ./spacedock
+            ./live-e2e-transcript.txt
+            ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
           if-no-files-found: warn

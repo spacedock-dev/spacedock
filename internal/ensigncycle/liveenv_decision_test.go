@@ -97,6 +97,83 @@ func TestDecideClaudeEnv(t *testing.T) {
 	})
 }
 
+// TestResolveClaudeConfigDir covers the CLAUDE_CONFIG_DIR resolution the child
+// env carries: the parent's value passes through when set (the CI path — the
+// archivable $RUNNER_TEMP dir the upload step grabs), else a deterministic path
+// under the isolated HOME (the local path — a fresh, inspectable config dir).
+func TestResolveClaudeConfigDir(t *testing.T) {
+	// CI path: the job env sets CLAUDE_CONFIG_DIR to the archivable per-job dir;
+	// the child must keep it verbatim so claude writes projects/<slug>/*.jsonl
+	// there (not under the reaped isolated HOME) for the upload step to capture.
+	t.Run("parent_value_passes_through", func(t *testing.T) {
+		isolatedHome := t.TempDir()
+		parent := "/runner/_temp/spacedock-claude-config/sonnet"
+
+		got := resolveClaudeConfigDir(parent, isolatedHome)
+
+		if got != parent {
+			t.Errorf("resolveClaudeConfigDir = %q, want the parent value %q", got, parent)
+		}
+	})
+
+	// Local path: no CLAUDE_CONFIG_DIR in the parent env (an operator run with no
+	// CI env) -> a deterministic dir under the isolated HOME so local runs still
+	// land the jsonl somewhere inspectable.
+	t.Run("unset_parent_defaults_under_isolated_home", func(t *testing.T) {
+		isolatedHome := t.TempDir()
+
+		got := resolveClaudeConfigDir("", isolatedHome)
+
+		want := filepath.Join(isolatedHome, ".claude")
+		if got != want {
+			t.Errorf("resolveClaudeConfigDir = %q, want the isolated-home default %q", got, want)
+		}
+	})
+}
+
+// TestIsolatedClaudeEnvHonorsParentConfigDir asserts the concrete child env keeps
+// the parent's CLAUDE_CONFIG_DIR (the CI archivable path) rather than dropping or
+// overriding it — the contract the upload step depends on.
+func TestIsolatedClaudeEnvHonorsParentConfigDir(t *testing.T) {
+	fakeHome := t.TempDir() // no benchmark-token -> API-key path
+	t.Setenv("ANTHROPIC_API_KEY", "sk-ci-api-key")
+	t.Setenv("CLAUDECODE", "1")
+	parentConfig := "/runner/_temp/spacedock-claude-config/sonnet"
+	t.Setenv("CLAUDE_CONFIG_DIR", parentConfig)
+
+	env := isolatedClaudeEnv(t, fakeHome)
+
+	cfg, ok := envValue(env, "CLAUDE_CONFIG_DIR")
+	if !ok || cfg != parentConfig {
+		t.Errorf("CLAUDE_CONFIG_DIR = %q (present=%v), want the parent CI path %q", cfg, ok, parentConfig)
+	}
+}
+
+// TestIsolatedClaudeEnvDefaultsConfigDirUnderHome asserts that when the parent
+// has no CLAUDE_CONFIG_DIR (local operator run), the child env gets a
+// deterministic config dir under the fresh isolated HOME.
+func TestIsolatedClaudeEnvDefaultsConfigDirUnderHome(t *testing.T) {
+	fakeHome := t.TempDir() // no benchmark-token -> API-key path
+	t.Setenv("ANTHROPIC_API_KEY", "sk-ci-api-key")
+	t.Setenv("CLAUDECODE", "1")
+	os.Unsetenv("CLAUDE_CONFIG_DIR")
+
+	env := isolatedClaudeEnv(t, fakeHome)
+
+	home, ok := envValue(env, "HOME")
+	if !ok {
+		t.Fatal("HOME must be set to the fresh isolated dir")
+	}
+	cfg, ok := envValue(env, "CLAUDE_CONFIG_DIR")
+	if !ok {
+		t.Fatal("CLAUDE_CONFIG_DIR must default to a dir under the isolated HOME")
+	}
+	want := filepath.Join(home, ".claude")
+	if cfg != want {
+		t.Errorf("CLAUDE_CONFIG_DIR = %q, want the isolated-home default %q", cfg, want)
+	}
+}
+
 // TestIsolatedClaudeEnvOAuthPath asserts the concrete child env the OAuth path
 // produces: CLAUDE_CODE_OAUTH_TOKEN set, ANTHROPIC_API_KEY ABSENT (dropped),
 // CLAUDECODE dropped, and HOME pointing at a fresh dir that is NOT the real one.

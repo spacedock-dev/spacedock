@@ -87,6 +87,20 @@ func cleanEnviron(drop ...string) []string {
 	return env
 }
 
+// resolveClaudeConfigDir picks the child claude's CLAUDE_CONFIG_DIR. When the
+// parent env sets it (the CI path: the live job points it at an archivable
+// $RUNNER_TEMP dir so the upload step grabs projects/<slug>/*.jsonl after a
+// failed/killed run), pass that value through verbatim. When it is unset (a
+// local operator run with no CI env), default to a deterministic dir under the
+// isolated HOME so local runs still land the session jsonl somewhere inspectable
+// and outside the live $HOME/.claude.
+func resolveClaudeConfigDir(parentValue, isolatedHome string) string {
+	if parentValue != "" {
+		return parentValue
+	}
+	return filepath.Join(isolatedHome, ".claude")
+}
+
 // isolatedClaudeEnv resolves the child environment for the live `spacedock
 // claude` launch: a fresh empty HOME (so parallel invocations never collide in
 // ~/.claude) plus the authoritative credential per decideClaudeEnv. When no
@@ -94,7 +108,9 @@ func cleanEnviron(drop ...string) []string {
 // path (c). realHome is the home directory to probe for the benchmark-token;
 // pass os.Getenv("HOME") for the live path. CLAUDECODE is always dropped so the
 // child binary takes the real front-door path rather than a nested-session
-// shortcut.
+// shortcut. CLAUDE_CONFIG_DIR is resolved by resolveClaudeConfigDir so claude
+// writes its session jsonl at the archivable CI path (or the isolated-HOME
+// default locally) rather than under the reaped HOME's .claude.
 func isolatedClaudeEnv(t *testing.T, realHome string) []string {
 	t.Helper()
 	decision := decideClaudeEnv(realHome, os.Getenv("ANTHROPIC_API_KEY"))
@@ -104,16 +120,17 @@ func isolatedClaudeEnv(t *testing.T, realHome string) []string {
 	}
 
 	cleanHome := t.TempDir()
+	configDir := resolveClaudeConfigDir(os.Getenv("CLAUDE_CONFIG_DIR"), cleanHome)
 	switch decision.mode {
 	case authOAuthToken:
 		// Operator-local: drop the API key so the OAuth token is authoritative.
-		env := cleanEnviron("CLAUDECODE", "HOME", "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN")
-		env = append(env, "HOME="+cleanHome, "CLAUDE_CODE_OAUTH_TOKEN="+decision.oauthToken)
+		env := cleanEnviron("CLAUDECODE", "HOME", "ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CONFIG_DIR")
+		env = append(env, "HOME="+cleanHome, "CLAUDE_CODE_OAUTH_TOKEN="+decision.oauthToken, "CLAUDE_CONFIG_DIR="+configDir)
 		return env
 	case authAPIKey:
 		// CI: pass ANTHROPIC_API_KEY through against the fresh HOME.
-		env := cleanEnviron("CLAUDECODE", "HOME")
-		env = append(env, "HOME="+cleanHome)
+		env := cleanEnviron("CLAUDECODE", "HOME", "CLAUDE_CONFIG_DIR")
+		env = append(env, "HOME="+cleanHome, "CLAUDE_CONFIG_DIR="+configDir)
 		return env
 	default:
 		t.Fatalf("unreachable auth mode %d", decision.mode)
