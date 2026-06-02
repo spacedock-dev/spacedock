@@ -9,7 +9,7 @@ verdict:
 score: "0.22"
 worktree: .worktrees/spacedock-ensign-code-cleanups-0193
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#263"
 ---
 
