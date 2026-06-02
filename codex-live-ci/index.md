@@ -105,3 +105,24 @@ Ready for implementation: add a Go live Codex gate-hold smoke, wire an approval-
 ### Summary
 
 Implemented a build-tagged Codex live gate-hold smoke, helper tests for local marketplace/auth/gate assertions, and a `codex-live` Actions lane that installs the current checkout as a local Codex marketplace before running the live smoke. Verified with uncached `go test -count=1 ./...`, uncached `go test -count=1 ./... -race`, focused Codex helper tests, YAML parsing, and an isolated Codex plugin install proving the cache came from the current checkout rather than remote `next`.
+
+## Stage Report: validation
+
+- DONE: AC-1 - Go live Codex smoke proves FO gate-hold behavior through real Codex runtime
+  `go test -count=1 -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` compiled and skipped without `OPENAI_API_KEY`; required CI mode failed clearly with the approval-gated key message.
+- DONE: AC-2 - GitHub Actions has approval-gated `codex-live` lane against current checkout
+  `.github/workflows/runtime-live-e2e.yml` has `codex-live` behind `CI-E2E-CODEX`, needs `offline`, reads only `OPENAI_API_KEY`, installs/logs in to Codex, builds local `spacedock`, installs the current checkout marketplace, runs resolver/live tests, and uploads artifacts.
+- DONE: AC-3 - Codex plugin readiness is proven with real Codex CLI commands/current-checkout mechanism, not remote `next`
+  Isolated temp `HOME`/`CODEX_HOME` ran `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, `codex plugin list`, and `go test -count=1 ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v`; listing pointed at the temp local checkout path.
+- DONE: AC-4 - `docs/dev/README.md` documents Codex live setup and proof principles
+  The Codex Live CI section covers local prerequisites, `CI-E2E-CODEX`/`OPENAI_API_KEY`, current-checkout marketplace loading, runtime proof over static grep, live smoke command, and artifacts.
+- DONE: AC-5 - Primary proof is live command execution/resulting state/output, not tautological static tests
+  Evidence is the live-tagged `codex exec --json` harness, state/output assertions, real Codex plugin commands, and Go gates; no stale Python/static workflow-grep proof was revived.
+- DONE: Local gates are rerun from the code worktree, including focused helper tests, `go test ./...`, and `go test ./... -race`
+  From `.worktrees/spacedock-ensign-codex-live-ci`: `go test -count=1 ./internal/ensigncycle`, `go test -count=1 ./...`, and `go test -count=1 ./... -race` all passed.
+- DONE: The validation report recommends PASSED or REJECTED and flags any remaining CI/live-auth caveats
+  Recommendation: PASSED; caveat: no local `OPENAI_API_KEY` or approved Actions run was available, so full live-auth runtime execution remains to be observed in `codex-live`.
+
+### Summary
+
+Validation recommends PASSED for commit `11381e15397336626144d7ee75964fd6d65c5afd`. The implementation provides a real Codex CLI/current-checkout setup path plus a live-tagged FO gate-hold smoke; local validation proved the non-auth skip and CI-required missing-secret failure paths, but did not observe a paid live Codex run.
