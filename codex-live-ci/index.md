@@ -90,3 +90,18 @@ Verified by: validation evidence centers on live command execution and resulting
 ### Summary
 
 Ready for implementation: add a Go live Codex gate-hold smoke, wire an approval-gated `codex-live` Actions job around it, prove current-checkout plugin loading, and document the setup/principles in `docs/dev/README.md`.
+
+## Stage Report: implementation
+
+- DONE: Current-checkout Codex plugin load is proven and cannot false-pass against next
+  Generated `.agents/plugins/marketplace.json` with `source: local`; isolated `codex plugin list` showed a temp local path, resolver passed, and the cache contained new `codex_live_test.go`.
+- DONE: Live Go Codex gate-hold smoke and codex-live CI lane are implemented
+  Code commit `11381e15397336626144d7ee75964fd6d65c5afd` adds `TestLiveCodexGateGuardrail`; `.github/workflows/runtime-live-e2e.yml` adds `codex-live` on `CI-E2E-CODEX`.
+- DONE: docs/dev/README.md documents Codex live setup and proof principles
+  `docs/dev/README.md` now covers local setup, `CI-E2E-CODEX`/`OPENAI_API_KEY`, current-checkout marketplace loading, live proof, and artifacts.
+- SKIPPED: Local live Codex execution with real OPENAI_API_KEY
+  No `OPENAI_API_KEY` is present locally; `go test -count=1 -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` compiled and skipped, and the CI-required missing-secret path failed clearly.
+
+### Summary
+
+Implemented a build-tagged Codex live gate-hold smoke, helper tests for local marketplace/auth/gate assertions, and a `codex-live` Actions lane that installs the current checkout as a local Codex marketplace before running the live smoke. Verified with uncached `go test -count=1 ./...`, uncached `go test -count=1 ./... -race`, focused Codex helper tests, YAML parsing, and an isolated Codex plugin install proving the cache came from the current checkout rather than remote `next`.
