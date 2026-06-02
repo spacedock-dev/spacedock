@@ -4,13 +4,13 @@ title: spacedock claude --plugin-dir before `--` (captain dev workflow) + restor
 status: validation
 source: captain (2026-06-02) — CI-E2E live-runtime e2e fails: cobra `spacedock claude` rejects --plugin-dir before `--`; the captain's primary dev workflow and the e2e net both depend on it. 0.19.3 keystone.
 started: 2026-06-02T05:06:55Z
-completed:
-verdict:
+completed: 2026-06-02T06:23:36Z
+verdict: PASSED
 score: "0.42"
-worktree: .worktrees/spacedock-ensign-front-door-plugin-dir
+worktree: 
 issue:
 mod-block: 
-pr: #260
+pr: "#260"
 ---
 
 The approval-gated live-runtime e2e (`TestLiveEnsignCycle`, `internal/ensigncycle/live_test.go:91-100`) has been silently broken since the cobra migration (#241): it invokes `spacedock claude --plugin-dir <repo> --skip-contract-check -p … --model … -- <task>` with the host flags BEFORE `--`, but the cobra-migrated front door rejects them (`unknown flag: --plugin-dir`) — host flags must follow `--`. The break stayed hidden because the env-approval gate kept every prior live run "waiting"; it surfaced the first time the job actually ran (this session, after CI approval). The live-e2e net has therefore been dead through the entire 0.19.2 sprint.
