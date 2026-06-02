@@ -69,7 +69,7 @@ func TestRunDefaultsToNativeRunner(t *testing.T) {
 		t.Fatalf("Run status exit=%d stderr=%q", code, stderr.String())
 	}
 	if !strings.Contains(stdout.String(), "add-login") {
-		t.Fatalf("Run default did not render the state-dir entity — VendorRunner cannot compose split-root, so the default is not native:\n%s", stdout.String())
+		t.Fatalf("Run default did not render the state-dir entity — the native runner must compose split-root itself:\n%s", stdout.String())
 	}
 }
 

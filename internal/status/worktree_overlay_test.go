@@ -67,8 +67,8 @@ stages:
 // TestWorktreeOverlayActiveReads is the M2 parity test: for a NON-split-root
 // worktree-backed entity whose pipeline-dir status differs from its worktree-copy
 // status, native active reads (table / --where / --fields / --resolve) must show
-// the worktree-copy value, byte-matching the oracle (VendorRunner). This locks
-// the overlay that scan_entities_active / load_active_entity_fields perform.
+// the worktree-copy value, frozen against the certified golden. This locks the
+// overlay that scan_entities_active / load_active_entity_fields perform.
 func TestWorktreeOverlayActiveReads(t *testing.T) {
 	pipelineEntity := "---\nid: add-login\nstatus: implementation\ntitle: Add login\nworktree: wt\n---\n"
 	worktreeEntity := "---\nid: add-login\nstatus: review\ntitle: Add login\nworktree: wt\n---\n"

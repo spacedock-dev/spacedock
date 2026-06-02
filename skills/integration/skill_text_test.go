@@ -1,5 +1,5 @@
 // ABOUTME: Absence-invariant tests over the vendored FO/ensign skill surface —
-// ABOUTME: AC-1 (no plugin status path) and AC-6 (no new PR-merge / `## Hook:` mod), oracle = the structural scope-fence.
+// ABOUTME: AC-1 (no plugin status path) and AC-6 (no new PR-merge / `## Hook:` mod), via the structural scope-fence.
 package integration
 
 import (
@@ -22,9 +22,7 @@ func skillsRoot(t *testing.T) string {
 }
 
 // vendoredSkillFiles returns the vendored skill instruction surface: the FO and
-// ensign reference markdown plus the vendored claude-team helper. The vendored
-// status library is excluded — it is the status oracle, not skill instruction
-// text, and legitimately carries the literal status filename internally.
+// ensign reference markdown.
 func vendoredSkillFiles(t *testing.T) map[string]string {
 	t.Helper()
 	root := skillsRoot(t)
@@ -32,7 +30,6 @@ func vendoredSkillFiles(t *testing.T) map[string]string {
 		"first-officer/references/first-officer-shared-core.md",
 		"first-officer/references/claude-first-officer-runtime.md",
 		"ensign/references/ensign-shared-core.md",
-		"commission/bin/claude-team",
 	}
 	out := make(map[string]string, len(rel))
 	for _, r := range rel {

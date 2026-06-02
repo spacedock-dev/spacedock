@@ -14,9 +14,8 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
 
-// NativeRunner is the native-Go status runner. It satisfies the same Runner
-// interface as VendorRunner; callers select it without any contract change.
-// TeamStateProbe is the host-supplied boot TEAM_STATE probe: the Claude front
+// NativeRunner is the native-Go status runner and the sole implementer of the
+// Runner interface. TeamStateProbe is the host-supplied boot TEAM_STATE probe: the Claude front
 // door wires claudeteam.Probe; a non-Claude host leaves it nil (host-neutral
 // present:false). It is the only host-coupled input the runner takes.
 type NativeRunner struct {
