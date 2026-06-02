@@ -29,7 +29,7 @@ type pluginListEntry struct {
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path
 // for host, or "" (no error) when no plugin is installed. The two hosts resolve
 // differently: Claude reports an installPath in `claude plugin list --json`;
-// Codex 0.132.0 has no --json (it rejects the flag, exit 2) and its text listing
+// Codex 0.136.0 has no --json (it rejects the flag, exit 2) and its text listing
 // carries no install path, so the Codex path confirms the install via the text
 // listing and resolves the manifest under the deterministic Codex plugin cache.
 func (e execHost) ResolveManifest(host string) (string, error) {
@@ -63,7 +63,7 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 }
 
 // resolveCodexManifest confirms spacedock@spacedock is installed via the text
-// `codex plugin list` (no --json — 0.132.0 rejects it) and resolves the manifest
+// `codex plugin list` (no --json — 0.136.0 rejects it) and resolves the manifest
 // under the Codex plugin cache. Codex installs land at
 // <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json;
 // the listing carries no install path, so the cache layout is the resolver.

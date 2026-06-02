@@ -90,9 +90,13 @@ func TestLatestVersionDirNoSubdirs(t *testing.T) {
 	}
 }
 
-// TestCodexEntryInstalled exercises the `codex plugin list` text parse: an
-// installed entry carries `<id> (installed`; a not-installed entry, or a
-// listing without the id, does not match.
+// TestCodexEntryInstalled exercises the `codex plugin list` text parse on the
+// tolerated legacy paren form. Current codex renders the comma/table form
+// `<id>  installed, enabled  <ver>  <path>` (covered by
+// TestCodexEntryInstalledRealFormats); the paren form `<id> (installed[, enabled])`
+// is the older rendering the predicate still accepts. An installed entry's
+// status field reads `installed` after stripping surrounding `()`; a
+// not-installed entry, or a listing without the id, does not match.
 func TestCodexEntryInstalled(t *testing.T) {
 	cases := []struct {
 		name    string
