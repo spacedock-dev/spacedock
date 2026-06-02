@@ -1,7 +1,7 @@
 ---
 id: qs87q0ca1wa3bhzfkj07mgwb
 title: Harden FO reconciliation — teardown agents at terminal + supersede-shutdown + a state-keyed reconcile sweep (no lingering ensigns / stale branches / un-advanced PRs)
-status: implementation
+status: validation
 source: "captain (2026-06-02) — observed the FO leak 3 ensigns (the 7h implementer post-merge + the old 3g cycle agents post-rework) and reconcile in-flight branches only reactively at merge (02 hit #263 late); all keyed off drift-prone FO session memory"
 completed:
 verdict:
