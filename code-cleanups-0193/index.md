@@ -21,20 +21,96 @@ A batch of low-risk code-quality cleanups surfaced by the sprint-end staff-SWE +
 - **init→install rename drift** (`internal/contract` + `internal/cli` + docs) — the `init`→`install` rename left stale `spacedock init` callouts: `internal/contract/contract.go:200` tells a binary-present *version-mismatch* user to `Upgrade it: spacedock init --host %s` (a command that no longer exists), `internal/cli/init.go` still prefixes its error messages `spacedock init:` (×4: lines 33/50/102/110), and the docs (`README.md` ×3 lines 24/48/51, `docs/install-journey.md:61`) still document `spacedock init --host claude`. Sweep all sites to `install`. The `internal/cli/init.go` filename is itself stale — renaming the file is optional polish, not required. Surfaced live by the captain (2026-06-02) testing the install path; the version-mismatch user currently gets a dead command.
 - **unknown-subcommand silent exit** (`internal/cli` root) — `spacedock <unknown> --someflag` exits 2 with ZERO output (captain hit `spacedock init --host claude` → silent exit 2). Bare `spacedock init` *does* print the usage block, but adding a flag makes cobra swallow even that. Any unknown subcommand must print the usage block to stderr regardless of trailing flags/args, and exit non-zero. Behavioral fix + a test asserting non-empty usage output on an unknown command carrying a flag.
 
-## Acceptance criteria (provisional — harden at ideation)
+## Root cause + minimal fix (per cleanup)
 
-**AC-1 — release multi-version clobber fixed + guarded.** A version-stamp over a file containing more than one `version` key rewrites only the intended key.
-Verified by: a multi-version fixture test in `internal/release` that fails against the current `ReplaceAll` and passes after the targeted replace.
+**1. release twin-regex + multi-`version` clobber** (`internal/release/release.go`).
+Root cause: `topLevelVersionRe` (line 17) and `entryVersionRe` (line 41) are byte-identical (`("version"\s*:\s*")[^"]*(")`) — twin regexes. Both `StampVersion` (line 34) and `BumpCalendarVersion` (line 73) call `regexp.ReplaceAll`, which rewrites EVERY `"version":` match in the blob; the doc-comments claim "the first such member" / "the first match", but `ReplaceAll` does not honor first-only. A manifest with a second nested `version` key would be over-rewritten (latent clobber).
+Minimal fix: one shared regex; replace `ReplaceAll` with a replace-FIRST-match-only helper (`FindSubmatchIndex` + splice, or a `ReplaceAllFunc` with a once-guard) used by both functions. No public-signature change. (No spike: Go `regexp` first-match-splice is a proven stdlib idiom.)
 
-**AC-2 — the remaining cleanups land with no behavior change.** StandingTeammate is one struct + one mapper; the statecommit phrase assertion and push-on-commit line are present; prose markers match phrases.
-Verified by: `go test ./...` green; the dedup compiles against a single definition; the new assertions present.
+**2. statecommit "never a bare git add -A" phrase assertion** (`internal/dispatch/build_statecommit_test.go`).
+Root cause: the three existing tests assert the resolved `git -C` paths and brace-freedom, but NONE assert the concurrency-safety phrase "never a bare `git add -A`" that `stateCommitGuidance` (`build.go:459`) emits — so a future edit could silently drop the warning. Pure test-coverage addition.
+Minimal fix: extend `TestStateCommitGuidanceResolvesPaths` (or a sibling) to assert the emitted body contains the literal "never a bare `git add -A`" substring for the split-root case. No production-code change.
 
-**AC-3 — no `spacedock init` remains as a user-facing command callout.** Code and docs reference `spacedock install` (or the live subcommand) wherever they previously said `spacedock init`; the version-mismatch remedy emits a runnable command.
-Verified by: a grep over `internal/`, `README.md`, `docs/` finds no `spacedock init --host` / `spacedock init:` user-facing string; a test on the contract version-mismatch message asserts it names `install`.
+**3. push-on-commit line in `stateCommitGuidance`** (`internal/dispatch/build.go:459`).
+Root cause: the emitted guidance stops at "Retry on index.lock contention after a short wait." and never tells the worker to push the state branch — yet the ensign shared core (`ensign-shared-core.md` "Multi-writer sync") requires `git -C {state_checkout} push origin {state_branch}` then `pull --rebase` on rejection. The dispatched prose omits the sync step entirely.
+Minimal fix: append a push-on-commit sentence to `stateCommitGuidance`. NOTE — this needs the state-branch name; `stateCommitGuidance(stateCheckout, entityPath)` does not currently receive it. The implementer must either (a) thread the resolved state-branch through, or (b) if the branch is not readily available at that call site, emit a branch-neutral "then push the state branch and `pull --rebase` on rejection" reminder. Decide at implementation; this is the one item whose blast radius (a new parameter) edges past trivial — flag if (a) proves non-trivial. Guard with a phrase assertion in the same statecommit test.
 
-**AC-4 — unknown subcommand always prints usage.** `spacedock <unknown>` and `spacedock <unknown> --flag` both print the usage block to stderr and exit non-zero — never a silent exit 2.
-Verified by: a CLI test that runs an unknown command carrying a flag and asserts non-empty usage output on stderr + non-zero exit.
+**4. StandingTeammate dedup** (`internal/dispatch/mods.go:93` + `internal/claudeteam/standing.go:16` + `toClaudeTeammates` at `internal/dispatch/standing.go:184`).
+Root cause: two structurally identical structs (`{Name, Description, RoutingUsageBody string}`) plus an identity field-copy mapper, a leftover of the `zs` claude-runtime-segregation split.
+Import graph (verified): `dispatch` imports `claudeteam`; `claudeteam` does NOT import `dispatch` (no cycle). So the single struct must live in `claudeteam` (the lower layer) for `dispatch` to use it without reversing the dependency.
+Minimal fix: delete `dispatch.StandingTeammate` and `toClaudeTeammates`; have `EnumerateDeclaredStandingTeammates` return `[]claudeteam.StandingTeammate` and `RenderStandingTeammatesSection` take it directly. DESIGN NOTE: this makes the runtime-neutral `dispatch` enumerator return a `claudeteam`-package type, slightly nudging the segregation boundary the `zs` split drew. The alternative (struct stays in `dispatch`, `claudeteam` imports it) creates the cycle and is rejected. Implementer confirms the chosen direction compiles cycle-free.
+
+**5. prose-marker brittleness + min/itoa cleanup** (`internal/hostneutrality/prose_neutrality_test.go`).
+Root cause (a): `hostQualifierMarkers = []string{"Codex", "codex"}` (line 41) treats a span as host-qualified if it contains the BARE word "Codex"/"codex" anywhere — but the intended qualifier is the `X on Codex, Y on Claude` PHRASE shape (per the function's own comment). A passing mention of "codex" falsely qualifies a span, letting an unqualified Claude token slip through.
+Root cause (b): local `min` (lines 210-216) shadows the go1.22 builtin `min`; `itoa` (lines 219-236) reimplements `strconv.Itoa` with a stale "avoids importing strconv twice" rationale (`strconv` is imported zero times in the package).
+Minimal fix: change markers to the phrase form (e.g. `" on Codex"` / `" on codex"`); delete local `min` (use builtin); delete `itoa`, import `strconv`, use `strconv.Itoa`. Add a fixture span proving a bare-word "codex" mention no longer qualifies while the real `… on Codex …` span still does.
+
+**6. init→install rename drift** (`internal/contract` + `internal/cli` + docs + lockstep tests). Full site enumeration (grep over `internal/` + `README.md` + `docs/`, excluding `.spacedock-state/_archive` history and the entity's own body):
+- `internal/contract/contract.go:200` — `pluginPredatesContractRemedy` emits the DEAD command `spacedock init --host %s` (the live defect the captain hit). Sibling remedies `tooOldPluginRemedy` (line 183) and `noPluginMessage` (line 210) were ALREADY fixed to `install` by the `cli-cobra-redesign` work — this one was missed.
+- `internal/contract/contract.go:43`, `:189`, `internal/contract/doctor.go:21` — evergreen comments still say `spacedock init`; update to match the code.
+- `internal/cli/init.go:33,50,102,110` — 4 error-prefix self-labels `spacedock init:`. (Filename `init.go` itself is optional polish, NOT required.) Also the ABOUTME line 1 names `init`.
+- `README.md:24` (brew lane block), `:48` (upgrade lane block), `:51` (prose "`spacedock init` reinstalls…").
+- `docs/install-journey.md:61` (step-3 install command).
+- LOCKSTEP test assertions that currently PIN the dead command and will break on the fix: `internal/contract/contract_test.go:81` (`predates-contract-empty` case asserts `spacedock init --host claude`), `:136` and `:152` (`TestPluginPredatesContractRemedy` asserts the init one-liner). Flip these three to `install`. (Comment-only mentions at `contract_test.go:125`, `init_test.go:12,104`, `init_devbranch_test.go:1,14`, `frontdoor_test.go:142,145` update for accuracy.) `frontdoor_test.go:167` and `contract_test.go:177` are NEGATIVE assertions already forbidding `init` — they stay and will now also pass for the predates-contract path once contract.go:200 is fixed.
+
+## Spike — cobra silent-exit-2 mechanism (riskiest unknown, exercised first)
+
+Root cause, reproduced live (`go build -o /tmp/sd-test ./cmd/spacedock`): the root command (`cli.go:91`) has `SilenceErrors`/`SilenceUsage: true` and flag parsing ENABLED (no `DisableFlagParsing`). For `spacedock init --host claude`, cobra resolves no `init` subcommand and runs the root `RunE` — but FIRST parses `--host claude` against the root flagset, which has no `--host`, returning a silenced `unknown flag` error → exit 2 with ZERO output. The root `RunE`'s `unknownCommand(args[0])` path never runs. Bare `spacedock init` (no flag) DOES print the usage because there is no flag to error on. Reproduced:
+- `init --host claude` → exit 2, no output (the captain's case)
+- `bogus --someflag` → exit 2, no output
+- `bogus` / `init` (no flag) → `unknown command: …` + help, exit 2 (correct)
+
+Fix verified by a throwaway cobra spike (`FParseErrWhitelist{UnknownFlags: true}` on the root): unknown flags stop erroring during parse, fall through to `RunE`, and `args[0]` correctly carries the command token →
+- `init --host claude` → `unknown command: init`
+- `bogus --someflag` → `unknown command: bogus`
+- `--version`, bare `spacedock`, `install`, `bogus` (no flag) → all UNCHANGED.
+
+HONEST SCOPE LIMIT (recorded so it is not a silent regression): with the whitelist, a LONE unknown flag and no command token (`spacedock --bogus`) is swallowed entirely — `RunE` sees `args=[]` — so it goes from today's silent exit 2 to printing help + exit 0. No existing test pins the lone-flag case (`TestUnknownCommand` only covers bare `bogus`), so no contract breaks. This is within the captain's stated requirement ("unknown SUBCOMMAND … regardless of trailing flags/args") — the lone-flag-no-command case is out of that scope and the help+exit-0 outcome is acceptable. Minimal fix: add `FParseErrWhitelist: cobra.FParseErrWhitelist{UnknownFlags: true}` to the root `cobra.Command` (one struct field).
+
+## Acceptance criteria
+
+**AC-1 — release: one regex, replace-first-only, multi-version safe.** `StampVersion` and `BumpCalendarVersion` share one regex and each rewrite only the FIRST `"version"` match; a manifest with a second `"version"` key keeps that second key untouched.
+Verified by: a multi-`version`-key fixture test in `internal/release` that FAILS against the current `ReplaceAll` (asserts the second key is unchanged) and PASSES after the replace-first fix. `go test ./internal/release/` green.
+
+**AC-2 — statecommit guidance: concurrency phrase + push reminder pinned.** The split-root state-commit guidance the dispatch emits contains both the "never a bare `git add -A`" concurrency-safety phrase and a push-the-state-branch (+ `pull --rebase` on rejection) reminder; single-root dispatches emit neither.
+Verified by: assertions in `internal/dispatch/build_statecommit_test.go` over the emitted dispatch body for the substring "never a bare `git add -A`" AND a push reminder substring (split-root case); the existing `TestSingleRootNoStateCommitGuidance` negative still passes. `go test ./internal/dispatch/` green.
+
+**AC-3 — StandingTeammate is one struct, no identity mapper.** A single `StandingTeammate` type exists (in `claudeteam`); `dispatch.StandingTeammate` and `toClaudeTeammates` are gone; `EnumerateDeclaredStandingTeammates` returns `[]claudeteam.StandingTeammate` consumed directly by the render. No behavior change to the rendered standing-teammates section.
+Verified by: `go build ./...` compiles against the single definition (a residual second definition would not compile / a duplicate-type grep finds one `type StandingTeammate struct`); the existing standing-teammate render tests stay green. `go test ./internal/dispatch/ ./internal/claudeteam/` green.
+
+**AC-4 — prose oracle qualifies on the phrase, not a bare word; helpers trimmed.** `hostQualifierMarkers` matches the `… on Codex …` phrase shape, so a span that merely mentions "codex" in passing no longer counts as host-qualified; the local `min` and `itoa` are removed in favor of the builtin `min` and `strconv.Itoa`.
+Verified by: a `prose_neutrality_test.go` fixture-span case asserting (a) a bare-word "codex" span carrying an unqualified Claude token now FAILS the oracle (was wrongly passing) and (b) a real `… on Codex, … on Claude …` span still passes; the package compiles with no local `min`/`itoa`. `go test ./internal/hostneutrality/` green.
+
+**AC-5 — no dead `spacedock init` user-facing command remains; the predates-contract remedy is runnable.** Every user-facing `spacedock init` callout (the predates-contract remedy, the `init.go` error prefixes, README, install-journey) names `spacedock install`; the predates-contract verdict message names `spacedock install --host <host>`.
+Verified by: a grep over `internal/`, `README.md`, `docs/` (excluding `.spacedock-state/_archive`) finds no user-facing `spacedock init --host` / `spacedock init:` string; the retargeted `contract_test.go` assertions (lines 81/136/152, now asserting `install`) plus the existing negative `TestCompareHostSubstitution`/`TestGateRemedyNamesLiveInstallCommand` pass. `go test ./internal/contract/ ./internal/cli/` green.
+
+**AC-6 — unknown subcommand always prints usage + exits non-zero.** `spacedock <unknown>` and `spacedock <unknown> --flag` both print `unknown command: <unknown>` + the grouped help to stderr and exit 2 — never a silent exit 2. (Lone-flag-no-command `spacedock --bogus` is out of scope per the spike's recorded limit.)
+Verified by: a CLI test in `internal/cli` driving `Run([]string{"init", "--host", "claude"}, …)` (and a `bogus --someflag` case) asserting non-empty stderr containing "unknown command:" and exit code 2; the existing `TestUnknownCommand` (bare `bogus`) stays green. `go test ./internal/cli/` green.
+
+## Test plan
+
+- All proofs are Go unit/behavioral tests at the claim's level — no live workflow run needed; the only runtime claim (cobra exit behavior) is exercised by `cli.Run` in-process and was additionally reproduced against a built binary in the spike above. Estimated cost: sub-second per package; `go test ./...` for the final green sweep.
+- TDD order per item: write the failing assertion first (multi-version fixture asserting the second key survives; the `init --host claude` → "unknown command" CLI assertion; the bare-word-codex oracle span; the missing concurrency/push phrases; the `install` remedy). The cobra fix and the release replace-first are the two with a runtime/parser mechanism — both already spike-verified above, so the spike's observed outcomes seed the first test.
+- Riskiest-first: the cobra mechanism (proven) gates AC-6; the release replace-first idiom (proven stdlib) gates AC-1. Everything else composes already-proven behavior (struct dedup, phrase substrings, comment/doc sweep).
+- Final gate: full `go test ./...` (excluding the pre-existing env-gated `TestCodexResolveManifestAgainstInstalledHost`, unrelated to this diff) green + `gofmt`/`go vet` clean.
+
+## Scope assessment (all Minor?)
+
+Five of six items are genuinely Minor / no-behavior-change (release internal regex; statecommit test; StandingTeammate dedup; prose-test markers; rename sweep). TWO carry an intentional, scoped behavior change that the captain explicitly requested: AC-6 (unknown-subcommand now prints usage — the whole point) and AC-2's push reminder (new guidance text). The single item that could exceed Minor is AC-2's push-on-commit line IF threading the state-branch name into `stateCommitGuidance` requires a new parameter through the call chain — flagged for the implementer to confirm or fall back to a branch-neutral reminder. No item requires a CONTRACT_VERSION bump.
 
 ## Notes
 - Touches `internal/release` + `internal/dispatch` + `internal/cli` + `internal/contract` + docs + tests — NOT the `internal/status` serialized lane, so its implementation worktree can run alongside status-lane work. `internal/cli/cli.go` (root command) is a hot single-writer file — coordinate the implementation worktree with any other `cli.go` writer. The StandingTeammate dedup traces to the `zs` claude-runtime-segregation split (upstream-flow note).
 - The init→install drift + unknown-subcommand-silent-exit were folded in by the captain (2026-06-02) from a live install-path test; the sibling FO-contract guidance gap (binary-*absent* startup routes to the missing-binary `doctor`) is tracked separately as `binary-absent-fo-bootstrap`.
+
+## Stage Report: ideation
+
+- DONE: Each cleanup has a root cause + minimal fix recorded; the init->install sweep enumerates EVERY stale `spacedock init` site (grep over internal/ + README + docs) so implementation lands complete, not partial.
+  Per-cleanup "Root cause + minimal fix" section (6 items) + AC-5's full site list: contract.go:200/43/189, doctor.go:21, init.go:33/50/102/110+L1, README.md:24/48/51, install-journey.md:61, plus the 3 lockstep test assertions (contract_test.go:81/136/152) that currently PIN the dead command. `_archive` history and the entity body excluded.
+- DONE: The unknown-subcommand-silent-exit fix names the cobra mechanism causing the silent exit 2 and specifies a behavioral test.
+  Spike section: root cause is the root command parsing `--host` against its own flagset (no `DisableFlagParsing`) + `SilenceErrors/SilenceUsage` → silenced "unknown flag" → exit 2. Reproduced live against a built binary; fix `FParseErrWhitelist{UnknownFlags: true}` verified by throwaway cobra spike. AC-6 test: `Run(["init","--host","claude"])` + `bogus --someflag` assert "unknown command:" on stderr + exit 2.
+- DONE: ACs hardened to be gate-checkable (not prose-only); confirm each cleanup is genuinely no-behavior-change, and flag any item that turns out to be more than Minor.
+  6 ACs each name a Go test + a `go test ./<pkg>/` green oracle; "Scope assessment" section flags AC-2's push-reminder (state-branch threading) as the one item that could edge past Minor, and records AC-6's intentional behavior change + its honest lone-flag scope limit.
+
+### Summary
+
+Hardened all six cleanups with root cause, minimal fix, and a gate-checkable AC apiece. Exercised the two riskiest unknowns first: reproduced the cobra silent-exit-2 live (root flagset eats the unknown flag before RunE under SilenceErrors) and verified the `FParseErrWhitelist{UnknownFlags:true}` fix via a throwaway spike — recording the honest limit that a lone unknown flag with no command token shifts from silent-exit-2 to help+exit-0 (no test pins it, within the captain's "unknown subcommand" scope). Found the rename drift is deeper than a doc sweep: contract.go:200's `pluginPredatesContractRemedy` still emits the dead `spacedock init` AND three test assertions actively pin it (siblings `tooOldPluginRemedy`/`noPluginMessage` were already fixed), so the fix is contract.go + 3 lockstep test flips + comments/docs. Flagged AC-2's push-on-commit line as the only item that could exceed Minor (needs the state-branch name threaded into `stateCommitGuidance`).
