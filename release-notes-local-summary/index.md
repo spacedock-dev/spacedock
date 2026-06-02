@@ -4,10 +4,10 @@ title: Local release script — LLM-summarized release notes (reuse old release.
 status: validation
 source: captain (2026-05-31) — "refine the release script, use the python-based release prompt to simplify the release notes; local so I can tweak, build still triggers on tag push"
 started: 2026-05-31T22:45:17Z
-completed:
-verdict:
+completed: 2026-06-02T16:16:30Z
+verdict: PASSED
 score: "0.32"
-worktree: .worktrees/spacedock-ensign-release-notes-local-summary
+worktree: 
 issue:
 mod-block: 
 pr: "#264"
