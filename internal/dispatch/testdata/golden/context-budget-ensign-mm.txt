@@ -1,0 +1,17 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "name": "ensign-mm",
+  "resident_tokens": 2000,
+  "model": "claude-sonnet-4-6",
+  "context_limit": 200000,
+  "usage_pct": 1.0,
+  "threshold_pct": 60,
+  "reuse_ok": true,
+  "config_declared_model": "claude-opus-4-8",
+  "mixed_models_warning": "multiple models seen in jsonl: ['claude-opus-4-8', 'claude-sonnet-4-6'] \u2014 using smallest context window",
+  "config_drift_warning": "team config requested claude-opus-4-8 but runtime is claude-sonnet-4-6"
+}
+
+===== stderr =====

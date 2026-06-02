@@ -1,0 +1,12 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "subagent_type": "general-purpose",
+  "name": "comm-officer",
+  "team_name": "fixture-team",
+  "model": "sonnet",
+  "prompt": "You are comm-officer.\n"
+}
+
+===== stderr =====

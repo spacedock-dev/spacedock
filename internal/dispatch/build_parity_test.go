@@ -166,19 +166,12 @@ func TestBuildParityNonASCIITitle(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", root)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "build-nonascii-title", native, oracle)
 	assertEmDashEscaped(t, native.stdout)
-	wantBody := stripStateCommitGuidance(rewriteOracleFetch(oracleBody))
-	gotBody := stripStateCommitGuidance(nativeBody)
-	if gotBody != wantBody {
-		t.Errorf("build-nonascii-title: dispatch body mismatch\n--- native ---\n%s\n--- oracle(rewritten) ---\n%s",
-			gotBody, wantBody)
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-nonascii-title", env)
 }
 
 // mergeStdin merges extra into base (extra wins) and returns the JSON string.

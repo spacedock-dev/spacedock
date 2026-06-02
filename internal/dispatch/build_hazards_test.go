@@ -112,12 +112,11 @@ func TestBuildModelPrecedence(t *testing.T) {
 				"bare_mode":      false,
 			}, nil)
 
-			oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
 			native := runNative(stdin, "build", "--workflow-dir", root)
-			assertParity(t, tc.name, native, oracle)
+			assertGolden(t, "build-model-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 
-			// Lock the "model" JSON value explicitly (parity already covers it, but
-			// this names the contract: null literal vs string).
+			// Lock the "model" JSON value explicitly (the golden already covers it,
+			// but this names the contract: null literal vs string).
 			var out map[string]json.RawMessage
 			if err := json.Unmarshal([]byte(native.stdout), &out); err != nil {
 				t.Fatalf("native stdout not JSON: %v", err)
@@ -165,15 +164,11 @@ func TestBuildNoHTMLEscape(t *testing.T) {
 		"feedback_context":   "compare a < b && c > d in <Tag> & raw &amp; ampersand",
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", root)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "html-escape", native, oracle)
-	if nativeBody != rewriteOracleFetch(oracleBody) {
-		t.Errorf("html-escape body mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nativeBody, rewriteOracleFetch(oracleBody))
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-html-escape", env)
 
 	// Explicit: the raw <, >, & bytes survive in the native stdout description,
 	// and no \uXXXX-escaped sequences appear (Go's default HTML escaping is off).
@@ -212,15 +207,11 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", workflowDir)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "space-path", native, oracle)
-	if nativeBody != rewriteOracleFetch(oracleBody) {
-		t.Errorf("space-path body mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nativeBody, rewriteOracleFetch(oracleBody))
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-space-path", env)
 	// Explicit: the space-bearing dir is single-quoted in the native fetch line.
 	wantQuoted := "spacedock dispatch show-stage-def --workflow-dir '" + workflowDir + "' --stage backlog"
 	if !strings.Contains(native.stdout, wantQuoted) {

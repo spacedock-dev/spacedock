@@ -1,0 +1,14 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "name": "ensign-1m",
+  "resident_tokens": 159000,
+  "model": "claude-opus-4-8",
+  "context_limit": 1000000,
+  "usage_pct": 15.9,
+  "threshold_pct": 60,
+  "reuse_ok": true
+}
+
+===== stderr =====

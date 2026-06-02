@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+### ideation
+
+alpha
+beta gamma.
+
+===== stderr =====

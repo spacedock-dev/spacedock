@@ -1,0 +1,16 @@
+===== exit =====
+0
+===== stdout =====
+### Standing teammates available in your team
+
+These standing teammates are available in your team; you MAY route to them via SendMessage. Best-effort, non-blocking, 2-minute timeout; proceed with un-polished/un-reviewed content if no reply.
+
+- **comm-officer** (prose polisher)
+  Send a draft; reply is the polished text.
+
+  Keep it tight.
+- **science-officer** (researcher): SendMessage with the relevant input shape; reply format per the mod.
+
+Full routing contract: see `skills/first-officer/references/first-officer-shared-core.md` `## Standing Teammates`.
+
+===== stderr =====

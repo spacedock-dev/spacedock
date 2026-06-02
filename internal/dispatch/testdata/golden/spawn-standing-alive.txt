@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+{"status": "already-alive", "name": "comm-officer"}
+
+===== stderr =====

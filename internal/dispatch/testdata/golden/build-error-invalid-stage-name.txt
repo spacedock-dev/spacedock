@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: derived name 'spacedock-ensign-thing-BadStage' contains invalid characters: stage name 'BadStage' must match ^[a-z0-9][a-z0-9-]*[a-z0-9]$ (kebab-case lowercase letters, digits, and hyphens only). Run `status --validate` against the workflow to surface the same stage-name error upstream of dispatch.

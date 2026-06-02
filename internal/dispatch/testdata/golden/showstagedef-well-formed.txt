@@ -1,0 +1,11 @@
+===== exit =====
+0
+===== stdout =====
+### ideation
+
+Ideation body line one.
+
+- **Inputs:** the seed.
+- **Outputs:** the design.
+
+===== stderr =====
