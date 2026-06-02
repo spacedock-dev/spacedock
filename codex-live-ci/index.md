@@ -126,3 +126,18 @@ Implemented a build-tagged Codex live gate-hold smoke, helper tests for local ma
 ### Summary
 
 Validation recommends PASSED for commit `11381e15397336626144d7ee75964fd6d65c5afd`. The implementation provides a real Codex CLI/current-checkout setup path plus a live-tagged FO gate-hold smoke; local validation proved the non-auth skip and CI-required missing-secret failure paths, but did not observe a paid live Codex run.
+
+## Stage Report: implementation follow-up
+
+- DONE: Restored the old Python harness's local subscription-auth ergonomics for the Go Codex live smoke
+  Code commit `e4f3b568` adds a local Codex auth path: when `OPENAI_API_KEY` is absent and `~/.codex/auth.json` exists, the test copies only `auth.json` into a temporary `CODEX_HOME`, preserving isolated plugin marketplace state while using the operator's existing Codex login.
+- DONE: Kept CI approval-gated auth strict
+  `SPACEDOCK_CODEX_LIVE_REQUIRED=1` still requires `OPENAI_API_KEY`; local subscription auth is not accepted as a CI substitute.
+- DONE: Proved the live smoke locally through real Codex without `OPENAI_API_KEY`
+  `env -u OPENAI_API_KEY SPACEDOCK_BIN=/tmp/spacedock-codex-live SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-codex-live-artifacts go test -count=1 -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` passed in 24.4s.
+- DONE: Reran the normal Go gates after the follow-up
+  `go test ./...` passed 747 tests in 12 packages, and `go test ./... -race` passed 747 tests in 12 packages.
+
+### Summary
+
+Follow-up validation is required because the previous validation report is now stale: the local live Codex smoke no longer skips when the operator has an existing Codex subscription login.
