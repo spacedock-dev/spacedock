@@ -143,6 +143,46 @@ To list the tasks ready for dispatch (the query the first officer runs each loop
 spacedock status --workflow-dir docs/dev --next
 ```
 
+## Codex Live CI
+
+The Codex live lane proves runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for running `codex exec --json`, observing its output, and checking the resulting workflow state.
+
+Local prerequisites:
+
+```bash
+npm install -g @openai/codex
+go build -o ./spacedock ./cmd/spacedock
+export SPACEDOCK_BIN="$PWD/spacedock"
+export SPACEDOCK_REPO_ROOT="$PWD"
+export OPENAI_API_KEY=...
+```
+
+Run the focused local smoke:
+
+```bash
+go test -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v
+```
+
+Without `OPENAI_API_KEY`, the live test skips locally. In GitHub Actions, the `codex-live` job sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, so a missing key fails clearly after the `CI-E2E-CODEX` environment is approved.
+
+GitHub setup:
+
+- Environment: `CI-E2E-CODEX`
+- Secret on that environment or repository: `OPENAI_API_KEY`
+- Workflow: `.github/workflows/runtime-live-e2e.yml`
+- Artifact directory during the job: `live-artifacts/codex/`
+
+The CI job must test the current checkout, not `spacedock-dev/spacedock --ref next`. The supported mechanism is a generated local Codex marketplace under `$RUNNER_TEMP`:
+
+```text
+.agents/plugins/marketplace.json
+plugins/spacedock -> $GITHUB_WORKSPACE
+```
+
+The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job then runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. After that, `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` confirms Spacedock resolves the installed Codex manifest.
+
+The live smoke creates a tiny workflow already parked at a gated review stage, invokes real headless Codex through `codex exec --json`, and asserts the entity stays at the gate: no entity edit, no terminal status, no verdict, no archive, and a final gate-review/decision prompt for a human. JSONL, stderr, plugin listing, and final-message artifacts are uploaded for debugging.
+
 ## Task Template
 
 ```yaml
