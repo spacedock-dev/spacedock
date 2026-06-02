@@ -200,3 +200,16 @@ Exit-0 on a usage error is the silent-failure class the captain originally repor
 ### Summary
 
 Fixed the AC-6 leading-flag gap the detached audit found (commit 61bd3a85). The `UnknownFlags` whitelist strips a stray leading flag during parse, so the root RunE fell through to the bare-help path and exited 0 — a silent usage error, the exact class this entity set out to kill. Threaded the raw argv into the root command and detect a leading `-`-prefixed token on the bare path, routing it to a loud `unknown flag:` + usage + exit 2. Bare `spacedock`, `--version`, the install/status paths, and the unknown-command/subcommand exit-2 wins are all unchanged (verified against a built binary, evidence table above). Other 6 cleanups untouched. Full `go test ./...` green, gofmt/vet clean.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: The audit's two leading-flag regressions are now loud usage errors with non-zero exit (verified by RUNNING /tmp/sd-cycle1, not reading code).
+  `--bogus`, `--boot` → BEFORE exit 0 + help; AFTER `unknown flag: <flag>` + 17-line usage on stderr + exit 2, stdout empty. `--foo install` (space form) → BEFORE exit 0, install not run; AFTER `unknown flag: --foo` + usage + exit 2 (install not run).
+- DONE: Regression guards still hold (built-binary runs).
+  bare `spacedock` → help + exit 0; `--version` → exit 0; `bogus` / `init --host claude` / `bogus --someflag` → `unknown command: <name>` + exit 2 (AC-6 win intact); `install --bogusflag` → `unknown argument` exit 2 (valid-sub unknown flag still NOT swallowed); `install --check` → runs, `OK: binary contract 1 satisfies plugin range`, exit 0.
+- DONE: New tests were failing-first (spot-checked by reverting the 61bd3a85 leading-flag routing); full `go test ./...` green + gofmt/vet clean.
+  Removing the `leadingUnknownFlag` RunE routing (keeping the test files) → all 3 `TestLeadingUnknownFlagIsUsageError` cases FAIL ("exited 0 on a leading unknown flag; want non-zero"), `TestLeadingFlagBareStillHelp` stays green. Restored → 5 pass. Full suite 725 passed/12 pkgs (was 720; +5 new cases); gofmt clean (cli.go/cli_test.go/frontdoor_test.go); `go vet` clean. Only `internal/cli` changed this cycle; the other 6 cleanups untouched and not regressed.
+
+### Summary
+
+PASSED. The AC-6 leading-flag gap the detached audit found is closed in 61bd3a85: a stray leading unknown flag (`--bogus`, `--boot`, the space-form `--foo install`) now prints `unknown flag:` + the usage block to stderr and exits 2, instead of the silent exit-0+help the UnknownFlags whitelist previously yielded. Verified by running the built binary across the full before/after matrix — every regression now loud, every guard (bare-help+0, `--version`, the AC-6 `unknown command:` exit-2 wins, valid-subcommand unknown-flag rejection, `install --check`) still holds. The two new tests were confirmed failing-first by reverting just the RunE routing. The fix correctly distinguishes a leading flag from a bare invocation via the raw argv (the whitelist strips the flag during parse, leaving empty positional args), and `--version`/`-h`/`--help` are intercepted before that path so only genuinely-unknown leading flags route to the exit-2 diagnostic. No regression elsewhere — full suite 725 green, gofmt/vet clean.
