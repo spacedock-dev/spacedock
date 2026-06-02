@@ -1,7 +1,7 @@
 ---
 id: r09jrf0k6qjv6c1sddhe1sh6
 title: Ship a Codex runtime and install-readiness contract — codex ensign/first-officer adapters + Codex-shaped dispatch + wait/observe semantics
-status: implementation
+status: validation
 source: "captain (2026-06-02) — live Codex FO session: 0.19.x ships Claude-only runtime adapters; Codex FO/ensign dispatch/wait/observe is improvised (wait_agent timed out 10s then async notifications), and dispatch build emits the Claude-ism Skill(skill=...) which the Codex skill list does not expose"
 started: 2026-06-02T15:38:31Z
 completed:
