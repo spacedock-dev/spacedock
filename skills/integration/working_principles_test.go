@@ -51,68 +51,16 @@ func TestShippedInstructionsCarryNoInsiderJargon(t *testing.T) {
 	}
 }
 
-// TestWorkflowGuideCarriesPrinciples locks the half of AC-1 that the workflow
-// guide owns: the four working principles appear in plain language in the
-// workflow-specific stage slots a captain and a worker read. These are durable
-// plain-language phrases the README prose commits to — not the proposal's jargon.
-func TestWorkflowGuideCarriesPrinciples(t *testing.T) {
-	readme := shippedInstructionFiles(t)["workflow guide (docs/dev/README.md)"]
-	markers := map[string]string{
-		"no doc-only deliverable (real checkable change)": "a real, checkable change",
-		"prove by exercising, not by re-reading":          "exercises the behavior and observes the outcome",
-		"spike the riskiest unknown first":                "riskiest",
-		"code gate preferred over prose-only rule":        "a code gate can enforce",
-	}
-	for principle, marker := range markers {
-		if !strings.Contains(readme, marker) {
-			t.Errorf("workflow guide missing the %q principle (expected plain-language marker %q)", principle, marker)
-		}
-	}
-}
-
-// TestFOContractCarriesWorkingPrinciplesAndPosture locks the FO-contract half of
-// AC-1: a `## Working Principles` section names the cross-workflow gate discipline
-// and the FO posture (name the end value, lead with a yes-able recommendation, do
-// obvious reversible work without ceremony). These live in sections disjoint from
-// the zs contract reorg.
-func TestFOContractCarriesWorkingPrinciplesAndPosture(t *testing.T) {
+// TestFOContractCarriesWorkingPrinciplesSection is a structural lint: it asserts
+// the `## Working Principles` section heading exists in the FO contract. The
+// heading is a structural anchor — a real on-disk section that other instruction
+// text and refits reference by name — so deleting it is a non-paraphrasable
+// mutation the lint catches. It deliberately does NOT grep the section's prose:
+// wording is doc review, not a Go assertion, and a paraphrase that keeps the
+// heading is not something this lint should pass or fail on.
+func TestFOContractCarriesWorkingPrinciplesSection(t *testing.T) {
 	fo := shippedInstructionFiles(t)["FO contract (first-officer-shared-core.md)"]
 	if !strings.Contains(fo, "## Working Principles") {
-		t.Errorf("FO contract missing the `## Working Principles` section")
-	}
-	postureMarkers := map[string]string{
-		"name the end value before starting":          "Name the end value",
-		"lead with a yes-able recommendation":         "a recommendation the captain can say yes to",
-		"do obvious reversible work without ceremony": "reversible work without ceremony",
-	}
-	for posture, marker := range postureMarkers {
-		if !strings.Contains(fo, marker) {
-			t.Errorf("FO contract missing the %q posture (expected marker %q)", posture, marker)
-		}
-	}
-	// The spike-first discipline rides the FO's existing ideation-probe section.
-	if !strings.Contains(fo, "riskiest") {
-		t.Errorf("FO contract missing the spike-first (riskiest unverified path) discipline")
-	}
-}
-
-// TestEnsignContractCarriesTestFirstRule locks the ensign-contract half of AC-1:
-// the worker contract carries the write-the-failing-test-first rule in plain
-// language. Per the companion design study, the authoring-order rule belongs in
-// the worker's standing practice (the ensign contract), not in the gate-facing
-// workflow template.
-func TestEnsignContractCarriesTestFirstRule(t *testing.T) {
-	ensign := shippedInstructionFiles(t)["ensign contract (ensign-shared-core.md)"]
-	for _, marker := range []string{
-		"failing test",
-		"watch it fail",
-	} {
-		if !strings.Contains(ensign, marker) {
-			t.Errorf("ensign contract missing the write-the-failing-test-first rule (expected marker %q)", marker)
-		}
-	}
-	// The "no hidden machine dependencies" principle is worker-facing discipline.
-	if !strings.Contains(ensign, "hidden") {
-		t.Errorf("ensign contract missing the no-hidden-machine-dependencies principle")
+		t.Errorf("FO contract missing the `## Working Principles` section heading")
 	}
 }

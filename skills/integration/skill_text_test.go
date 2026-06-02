@@ -5,6 +5,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -106,27 +107,93 @@ func TestNoPRMergeOrModBehaviorIntroduced(t *testing.T) {
 	}
 }
 
-// TestCommissionStateBackendDecisionRule locks AC-2: the commission SKILL.md
-// carries the split-root-vs-single-root state-backend decision rule, so a newly
-// commissioned workflow no longer defaults to single-root with no guidance. The
-// three load-bearing fragments are the split-root frontmatter spelling, the
-// split-root trigger phrase, and the single-root "omit" guidance.
-func TestCommissionStateBackendDecisionRule(t *testing.T) {
+// commissionStateBackendDecisionRows extracts the two state-backend decision rows
+// from the commission SKILL.md decision table: each `- **{Label}** (...)` bullet
+// directly under the `**State backend (...)**` decision lead-in, returned keyed by
+// its bold branch label. It bounds each row to its own bullet line so an
+// assertion can check what that row alone binds, not a free-floating substring
+// anywhere in the file.
+func commissionStateBackendDecisionRows(t *testing.T) map[string]string {
+	t.Helper()
 	p := filepath.Join(skillsRoot(t), "commission", "SKILL.md")
 	b, err := os.ReadFile(p)
 	if err != nil {
 		t.Fatalf("read commission SKILL.md: %v", err)
 	}
-	skill := string(b)
-
-	for _, frag := range []string{
-		"state: .spacedock-state",
-		"embedded in a code repo whose PRs you care about",
-		"omit `state:`",
-	} {
-		if !strings.Contains(skill, frag) {
-			t.Errorf("commission SKILL.md missing state-backend decision-rule fragment %q", frag)
+	lines := strings.Split(string(b), "\n")
+	// Find the decision lead-in, then collect the contiguous `- **Label**` bullets
+	// that immediately follow (the decision-table rows), stopping at the first
+	// non-bullet line.
+	start := -1
+	for i, line := range lines {
+		if strings.HasPrefix(line, "**State backend") {
+			start = i + 1
+			break
 		}
+	}
+	if start == -1 {
+		return nil
+	}
+	rows := map[string]string{}
+	labelRow := regexp.MustCompile(`^- \*\*([^*]+)\*\*`)
+	for i := start; i < len(lines); i++ {
+		line := lines[i]
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		m := labelRow.FindStringSubmatch(line)
+		if m == nil {
+			if len(rows) > 0 {
+				break // past the contiguous decision-table block
+			}
+			continue
+		}
+		rows[m[1]] = line
+	}
+	return rows
+}
+
+// TestCommissionStateBackendDecisionRule asserts the structural shape of the
+// commission SKILL.md state-backend decision table: two distinct labeled branches
+// under one decision lead-in, each row binding its own frontmatter outcome — the
+// split-root row binds `state: .spacedock-state`, the inline row binds the omit/
+// $inline outcome and NOT the split-root path. A scaffolding agent reads exactly
+// this table to choose a backend, so the load-bearing property is that both
+// branches exist as separate rows and neither collapses into the other.
+//
+// This DEMOTES the prior grep-over-prose check (it asserted three free-floating
+// substrings exist anywhere in the file, which a meaning-inverting paraphrase —
+// e.g. swapping which condition selects split-root — would keep green). REPLACE
+// with a behavioral driver was not feasible: the commission flow is
+// instruction-driven (the agent follows SKILL.md's "Write the README with ..."
+// steps); there is no Go scaffolder function that takes a standalone-vs-code-repo
+// input and emits frontmatter, so nothing behavioral is invocable from a test.
+// The honest fallback per the task is this structural decision-table assertion,
+// which pins the two-row shape and each row's bound outcome rather than prose
+// wording, and FAILS if a branch is dropped, merged, or rebound to the wrong path.
+func TestCommissionStateBackendDecisionRule(t *testing.T) {
+	rows := commissionStateBackendDecisionRows(t)
+	splitRoot, hasSplit := rows["Split-root"]
+	inline, hasInline := rows["Inline"]
+	if !hasSplit {
+		t.Fatal("commission SKILL.md state-backend table missing the `- **Split-root**` row")
+	}
+	if !hasInline {
+		t.Fatal("commission SKILL.md state-backend table missing the `- **Inline**` row")
+	}
+	// The split-root row must bind the orphan-state path; the inline row must NOT
+	// claim it (that is the binding that flips if the two branches are swapped or
+	// collapsed).
+	if !strings.Contains(splitRoot, "state: .spacedock-state") {
+		t.Errorf("split-root decision row does not bind `state: .spacedock-state`: %q", splitRoot)
+	}
+	if strings.Contains(inline, "state: .spacedock-state") {
+		t.Errorf("inline decision row wrongly binds the split-root path `state: .spacedock-state`: %q", inline)
+	}
+	// The inline row must bind its own outcome (the $inline value, or the omit
+	// guidance) so the two rows carry distinct frontmatter choices.
+	if !strings.Contains(inline, "$inline") && !strings.Contains(inline, "omit") {
+		t.Errorf("inline decision row binds no inline outcome ($inline or omit): %q", inline)
 	}
 }
 
