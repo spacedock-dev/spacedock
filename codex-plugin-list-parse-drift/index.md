@@ -1,7 +1,7 @@
 ---
 id: 5pb3h1ewewvrjayhgyabx5y4
 title: spacedock codex can't detect an installed codex plugin — codex plugin list parse drift
-status: implementation
+status: validation
 source: captain (2026-06-01) — reproduced LIVE: `spacedock codex` reports no plugin while `codex plugin list` shows spacedock@spacedock installed, enabled 0.19.2
 started: 2026-06-02T02:04:04Z
 completed:
