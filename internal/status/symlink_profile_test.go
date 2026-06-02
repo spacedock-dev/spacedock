@@ -101,7 +101,7 @@ func TestSymlinkStateProfile(t *testing.T) {
 	// AC-1 + AC-2: the default table renders the three active entities through the
 	// symlinked README, ordered by the stages block, and never misdetects the
 	// folder entities' frontmatter-bearing reports/ or artifacts/ subdirectories.
-	out, stderr, code := runLauncher(t, state, env, "--workflow-dir", state)
+	out, stderr, code := runNative(t, state, env, "--workflow-dir", state)
 	if code != 0 {
 		t.Fatalf("default table exit=%d stderr=%q", code, stderr)
 	}
@@ -134,7 +134,7 @@ func TestSymlinkStateProfile(t *testing.T) {
 	// AC-1: --next reads dispatchable entities, which requires the stages block to
 	// resolve through the symlinked README. A broken symlink would instead fail
 	// with "README.md has no stages block".
-	nextOut, nextErr, nextCode := runLauncher(t, state, env, "--workflow-dir", state, "--next")
+	nextOut, nextErr, nextCode := runNative(t, state, env, "--workflow-dir", state, "--next")
 	if nextCode != 0 {
 		t.Fatalf("--next exit=%d stderr=%q (stages block did not resolve through symlink)", nextCode, nextErr)
 	}
@@ -147,7 +147,7 @@ func TestSymlinkStateProfile(t *testing.T) {
 
 	// AC-3: archiving the folder entity moves the whole folder (with its reports/
 	// subtree) under _archive and removes it from the active view.
-	_, archErr, archCode := runLauncher(t, state, env, "--workflow-dir", state, "--archive", "seed-archive")
+	_, archErr, archCode := runNative(t, state, env, "--workflow-dir", state, "--archive", "seed-archive")
 	if archCode != 0 {
 		t.Fatalf("--archive exit=%d stderr=%q", archCode, archErr)
 	}
@@ -171,7 +171,7 @@ func TestSymlinkStateProfile(t *testing.T) {
 	}
 
 	// (d) the default table no longer lists seed-archive.
-	afterOut, afterErr, afterCode := runLauncher(t, state, env, "--workflow-dir", state)
+	afterOut, afterErr, afterCode := runNative(t, state, env, "--workflow-dir", state)
 	if afterCode != 0 {
 		t.Fatalf("post-archive default table exit=%d stderr=%q", afterCode, afterErr)
 	}
@@ -180,7 +180,7 @@ func TestSymlinkStateProfile(t *testing.T) {
 	}
 
 	// (e) --archived lists seed-archive.
-	archivedOut, archivedErr, archivedCode := runLauncher(t, state, env, "--workflow-dir", state, "--archived")
+	archivedOut, archivedErr, archivedCode := runNative(t, state, env, "--workflow-dir", state, "--archived")
 	if archivedCode != 0 {
 		t.Fatalf("--archived exit=%d stderr=%q", archivedCode, archivedErr)
 	}

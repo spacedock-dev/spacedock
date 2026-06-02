@@ -42,29 +42,23 @@ func TestNativeReadMatchesOracle(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			args := append([]string{"--workflow-dir", root}, tc.extra...)
 
-			oracleOut, oracleErr, oracleCode := runOracle(t, root, env, args...)
 			nativeOut, nativeErr, nativeCode := runNative(t, root, env, args...)
-
-			if nativeCode != oracleCode {
-				t.Fatalf("exit: native=%d oracle=%d (nativeErr=%q oracleErr=%q)", nativeCode, oracleCode, nativeErr, oracleErr)
-			}
-			if normalize(nativeOut, root) != normalize(oracleOut, root) {
-				t.Fatalf("stdout differs for %s\n--- native ---\n%s\n--- oracle ---\n%s",
-					tc.name, normalize(nativeOut, root), normalize(oracleOut, root))
-			}
-			if normalize(nativeErr, root) != normalize(oracleErr, root) {
-				t.Fatalf("stderr differs for %s\n--- native ---\n%s\n--- oracle ---\n%s",
-					tc.name, normalize(nativeErr, root), normalize(oracleErr, root))
-			}
+			assertEnvelopeGolden(t, "native-read-"+tc.name, goldenEnvelope{
+				stdout: normalize(nativeOut, root),
+				stderr: normalize(nativeErr, root),
+				exit:   nativeCode,
+			})
 		})
 	}
 }
 
-// TestNativeNextIDMatchesOracle locks the sd-b32 minting path: the native
-// --next-id candidate equals the oracle's under identical pinned id material,
-// and has the right format. This is the riskiest mechanism (SHA-256 digest +
-// 5-bit big-endian extraction), validated against the oracle directly.
-func TestNativeNextIDMatchesOracle(t *testing.T) {
+// TestNativeNextIDFormatAndDeterminism exercises the sd-b32 minting path end to
+// end through the runner: the native --next-id candidate is a valid 24-char
+// sd-b32 token (FORMAT) and is reproducible across runs with identical inputs
+// (DETERMINISM). The candidate's concrete bytes depend on realpathOf(workflowDir)
+// so they vary per checkout path; the path-independent SHA-256 + 5-bit-extraction
+// derivation is pinned by TestSDB32CandidateDerivationVector.
+func TestNativeNextIDFormatAndDeterminism(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
 		t.Fatal(err)
@@ -72,31 +66,27 @@ func TestNativeNextIDMatchesOracle(t *testing.T) {
 	env := pinnedEnv(t)
 	args := []string{"--workflow-dir", root, "--next-id", "--id-seed", "pinnedseed", "--id-actor", "pinnedactor"}
 
-	nativeOut, nativeErr, nativeCode := runNative(t, root, env, args...)
-	if nativeCode != 0 {
-		t.Fatalf("native exit=%d stderr=%q", nativeCode, nativeErr)
+	out1, errOut, code := runNative(t, root, env, args...)
+	if code != 0 {
+		t.Fatalf("native exit=%d stderr=%q", code, errOut)
 	}
-	candidate := strings.TrimSpace(nativeOut)
-	if len(candidate) != 24 {
-		t.Fatalf("candidate %q length=%d, want 24", candidate, len(candidate))
-	}
-	for _, c := range candidate {
-		if !strings.ContainsRune(sdB32Chars, c) {
-			t.Fatalf("candidate %q has char %q outside SD-B32 alphabet", candidate, c)
-		}
+	candidate := strings.TrimSpace(out1)
+	if !sdB32IsValidCandidate(candidate) {
+		t.Fatalf("candidate %q is not a 24-char sd-b32 token", candidate)
 	}
 
-	oracleOut, oracleErr, oracleCode := runOracle(t, root, env, args...)
-	if oracleCode != 0 {
-		t.Fatalf("oracle exit=%d stderr=%q", oracleCode, oracleErr)
+	out2, _, code2 := runNative(t, root, env, args...)
+	if code2 != 0 {
+		t.Fatalf("second --next-id run exit=%d", code2)
 	}
-	if got := strings.TrimSpace(oracleOut); got != candidate {
-		t.Fatalf("--next-id: native=%q oracle=%q (pinned env must reproduce)", candidate, got)
+	if got := strings.TrimSpace(out2); got != candidate {
+		t.Fatalf("--next-id not deterministic: run1=%q run2=%q", candidate, got)
 	}
 }
 
-// TestNativeBootMatchesOracle locks --boot structural + section parity for the
-// sd-b32 fixture, normalizing the volatile sd-b32 NEXT_ID and root prefix.
+// TestNativeBootMatchesOracle freezes --boot structural + section output for the
+// sd-b32 fixture against the certified native golden, masking the minted NEXT_ID
+// line and the root prefix.
 func TestNativeBootMatchesOracle(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
@@ -109,13 +99,6 @@ func TestNativeBootMatchesOracle(t *testing.T) {
 	if nativeCode != 0 {
 		t.Fatalf("native --boot exit=%d stderr=%q", nativeCode, nativeErr)
 	}
-	oracleOut, _, oracleCode := runOracle(t, root, env, args...)
-	if oracleCode != 0 {
-		t.Fatalf("oracle --boot exit=%d", oracleCode)
-	}
-	normNative := sdB32Re.ReplaceAllString(stripStateBackend(normalize(nativeOut, root)), "<ID>")
-	normOracle := sdB32Re.ReplaceAllString(stripStateBackend(normalize(oracleOut, root)), "<ID>")
-	if normNative != normOracle {
-		t.Fatalf("--boot parity mismatch\n--- native ---\n%s\n--- oracle ---\n%s", normNative, normOracle)
-	}
+	normNative := maskBootNextID(stripStateBackend(normalize(nativeOut, root)))
+	assertTextGolden(t, "native-boot-sdb32", normNative)
 }

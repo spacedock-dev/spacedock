@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: stdin must be a JSON object

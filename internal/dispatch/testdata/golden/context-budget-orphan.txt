@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: no team config found for member 'orphan'

@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: worktree path '<ROOT>/.worktrees/does-not-exist' does not exist

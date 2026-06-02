@@ -1,0 +1,11 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+002    002-high                       backlog              NormalHigh                     0.9      r
+003    003-low                        backlog              NormalLow                      0.1      r
+001    001-hex                        backlog              HexScore                       0x1p4    r
+004    004-na                         backlog              NotANumber                     high     r
+
+===== stderr =====

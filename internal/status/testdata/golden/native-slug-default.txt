@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+alpha  alpha                          backlog              A                              0.5      x
+beta   beta                           done                 B                              0.7      y
+
+===== stderr =====

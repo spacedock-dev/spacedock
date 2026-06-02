@@ -1,0 +1,56 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "subagent_type": "spacedock:ensign",
+  "description": "Thing: backlog",
+  "fetch_commands": [
+    "spacedock dispatch show-stage-def --workflow-dir <ROOT>/state-checkout --stage backlog"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-backlog.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-backlog.md and treat its content as your assignment.",
+  "model": null,
+  "name": "spacedock-ensign-thing-backlog",
+  "team_name": "fixture-team"
+}
+
+===== stderr =====
+
+===== body =====
+## First action
+
+Before anything else, invoke your operating contract:
+
+    Skill(skill="spacedock:ensign")
+
+This loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+
+You are working on: Thing
+
+Stage: backlog
+
+This workflow is split-root: the entity body and your stage report live in the shared state checkout, not alongside the code. Write and commit them to the state checkout at the entity path below. Commit state path-scoped — `git -C <ROOT>/state-checkout/state-checkout add <ROOT>/state-checkout/thing/index.md && git -C <ROOT>/state-checkout/state-checkout commit -m "..." -- <ROOT>/state-checkout/thing/index.md` — never a bare `git add -A` or bare `git commit` in the state checkout (a bare commit cross-attributes a concurrent writer's staged entity). Retry on index.lock contention after a short wait. Then push the state branch so peers see your entity/report: `git -C <ROOT>/state-checkout/state-checkout push origin spacedock-state/state-checkout`; on a non-fast-forward rejection, `git -C <ROOT>/state-checkout/state-checkout pull --rebase origin spacedock-state/state-checkout` then re-push.
+
+Read the entity file at <ROOT>/state-checkout/thing/index.md for the current spec.
+
+### Completion checklist
+
+- a
+- b
+
+### Summary
+{brief description of what was accomplished}
+
+### Fetch commands
+
+    spacedock dispatch show-stage-def --workflow-dir <ROOT>/state-checkout --stage backlog
+
+
+### Completion Signal
+
+When you finish (after all commits and stage report writes are done), your last action MUST be:
+
+    SendMessage(to="team-lead", message="Done: Thing completed backlog. Report written to <ROOT>/state-checkout/thing/index.md.")
+
+**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.

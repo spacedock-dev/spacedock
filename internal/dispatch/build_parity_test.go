@@ -130,21 +130,11 @@ func TestBuildParityCrossProduct(t *testing.T) {
 				"bare_mode":      false,
 			}, tc.stdinExtra)
 
-			// Native and oracle write the dispatch body to the SAME deterministic
-			// path, so capture the oracle's body before the native run overwrites it.
-			oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", workflowDir)
-			oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
-
 			native := runNative(stdin, "build", "--workflow-dir", workflowDir)
 			nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-			assertParity(t, tc.name, native, oracle)
-			wantBody := stripStateCommitGuidance(rewriteOracleFetch(oracleBody))
-			gotBody := stripStateCommitGuidance(nativeBody)
-			if gotBody != wantBody {
-				t.Errorf("%s: dispatch body mismatch\n--- native ---\n%s\n--- oracle(rewritten) ---\n%s",
-					tc.name, gotBody, wantBody)
-			}
+			env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+			assertGolden(t, "build-crossproduct-"+tc.name, env)
 		})
 	}
 }
@@ -176,19 +166,12 @@ func TestBuildParityNonASCIITitle(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", root)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "build-nonascii-title", native, oracle)
 	assertEmDashEscaped(t, native.stdout)
-	wantBody := stripStateCommitGuidance(rewriteOracleFetch(oracleBody))
-	gotBody := stripStateCommitGuidance(nativeBody)
-	if gotBody != wantBody {
-		t.Errorf("build-nonascii-title: dispatch body mismatch\n--- native ---\n%s\n--- oracle(rewritten) ---\n%s",
-			gotBody, wantBody)
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-nonascii-title", env)
 }
 
 // mergeStdin merges extra into base (extra wins) and returns the JSON string.

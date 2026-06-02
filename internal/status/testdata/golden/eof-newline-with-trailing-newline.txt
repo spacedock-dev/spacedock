@@ -1,0 +1,10 @@
+---
+id: "061"
+title: EOF newline
+status: done
+score: "0.5"
+source: x
+---
+# EOF newline
+
+This file ends in a newline.

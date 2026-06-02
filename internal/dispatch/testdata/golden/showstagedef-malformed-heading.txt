@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: stage heading at line 20 mentions 'validation' but does not parse as a stage heading: '### review of the validation stage'. The stage name must be the first content token of the heading after stripping Markdown decoration (backticks, *, _, ~) and treating '(' and '[' as token terminators.

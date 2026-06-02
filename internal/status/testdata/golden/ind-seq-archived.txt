@@ -1,0 +1,13 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+001    001-alpha                      backlog              Alpha task                     0.80     roadmap
+002    002-beta                       ideation             Beta task                      0.50     grooming
+004    004-delta                      ideation             Delta no score                          backlog
+003    003-gamma                      implementation       Gamma folder task              0.90     roadmap
+000    000-zeta                       done                 Zeta archived                  0.10     roadmap
+005    005-epsilon                    parked               Epsilon weird status           0.30     roadmap
+
+===== stderr =====

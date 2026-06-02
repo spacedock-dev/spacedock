@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: no assistant entries with usage in <HOME>/.claude/projects/proj-fixture/sess-z/subagents/agent-ensign-z.jsonl

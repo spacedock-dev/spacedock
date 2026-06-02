@@ -1,0 +1,6 @@
+id: "002"
+title: Vendor the status script
+status: ideation
+score: "0.60"
+source: roadmap
+started: <TS>

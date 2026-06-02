@@ -306,7 +306,7 @@ func writeMergeMod(t *testing.T, root string) {
 // split-root workflow a merge mod placed at <definitionDir>/_mods/ registers, so
 // a terminal transition on a pr-empty / mod-block-empty entity is refused with
 // the merge-hook error. Both the terminal --set and --archive guards see it.
-// Native-only (no runOracle): split-root is an intentional native divergence.
+// Split-root is intentional native-only behavior.
 func TestSplitRootDefinitionDirModArmsGuard(t *testing.T) {
 	env := pinnedEnv(t)
 
@@ -349,7 +349,7 @@ func TestSplitRootDefinitionDirModArmsGuard(t *testing.T) {
 // reads the definition dir, never the state checkout — so --boot shows no MODS
 // and a terminal transition on a pr-empty / mod-block-empty entity succeeds (the
 // guard is unarmed). This is the inverse of the def-dir case and locks the clean
-// cutover. Native-only (no runOracle).
+// cutover. Native-only behavior.
 func TestSplitRootStateDirModDoesNotRegister(t *testing.T) {
 	env := pinnedEnv(t)
 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{
@@ -383,7 +383,7 @@ func TestSplitRootStateDirModDoesNotRegister(t *testing.T) {
 // state-checkout copy may still be present; the def-dir-only scan ignores it, so
 // the hook registers exactly once (no double-registration) and stays armed. This
 // is the no-gap closure — an atomic add plus a harmless leftover, not a runtime
-// both-dirs scan. Native-only (no runOracle).
+// both-dirs scan. Native-only behavior.
 func TestSplitRootMigrationNoGap(t *testing.T) {
 	env := pinnedEnv(t)
 	def, state := buildSplitRoot(t, splitRootReadme, map[string]string{

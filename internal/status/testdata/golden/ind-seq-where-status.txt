@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+002    002-beta                       ideation             Beta task                      0.50     grooming
+004    004-delta                      ideation             Delta no score                          backlog
+
+===== stderr =====

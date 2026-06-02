@@ -1,0 +1,58 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "subagent_type": "spacedock:ensign",
+  "description": "Thing: implementation",
+  "fetch_commands": [
+    "spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-implementation.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-implementation.md and treat its content as your assignment.",
+  "model": null,
+  "name": "spacedock-ensign-thing-implementation",
+  "team_name": "fixture-team"
+}
+
+===== stderr =====
+
+===== body =====
+## First action
+
+Before anything else, invoke your operating contract:
+
+    Skill(skill="spacedock:ensign")
+
+This loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). The call is safe to call more than once; if the agent-definition preload ever starts working, calling it again is a no-op (the skill content is re-loaded but has no behavioral effect). Do not paraphrase; call the tool.
+
+You are working on: Thing
+
+Stage: implementation
+
+Your working directory is <ROOT>/.worktrees/spacedock-ensign-thing
+All file reads and writes MUST use paths under <ROOT>/.worktrees/spacedock-ensign-thing.
+Your git branch is spacedock-ensign/thing. All commits MUST be on this branch. Do NOT switch branches or commit to main.
+
+Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md for the full spec. It contains:
+
+### Completion checklist
+
+- a
+- b
+
+### Summary
+{brief description of what was accomplished}
+
+### Fetch commands
+
+    spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
+
+
+### Completion Signal
+
+When you finish (after all commits and stage report writes are done), your last action MUST be:
+
+    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md.")
+
+**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.

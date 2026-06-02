@@ -103,24 +103,13 @@ stages:
 		t.Run(tc.name, func(t *testing.T) {
 			env := pinnedEnv(t)
 			nativeRoot := validationFixture(t, tc.readme, tc.files)
-			oracleRoot := validationFixture(t, tc.readme, tc.files)
 
 			nArgs := []string{"--workflow-dir", nativeRoot, "--validate"}
-			oArgs := []string{"--workflow-dir", oracleRoot, "--validate"}
-
 			nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-			oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
 
-			if nCode != oCode {
-				t.Fatalf("exit: native=%d oracle=%d (nativeErr=%q oracleErr=%q)", nCode, oCode, nErr, oErr)
-			}
-			if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-				t.Fatalf("stdout: native=%q oracle=%q", normalize(nOut, nativeRoot), normalize(oOut, oracleRoot))
-			}
-			if normalize(nErr, nativeRoot) != normalize(oErr, oracleRoot) {
-				t.Fatalf("stderr mismatch for %s\n--- native ---\n%s\n--- oracle ---\n%s",
-					tc.name, normalize(nErr, nativeRoot), normalize(oErr, oracleRoot))
-			}
+			assertEnvelopeGolden(t, "native-validate-"+tc.name, goldenEnvelope{
+				stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+			})
 		})
 	}
 }
@@ -132,18 +121,16 @@ func TestNativeValidationGatesReads(t *testing.T) {
 	env := pinnedEnv(t)
 	files := map[string]string{"a.md": "---\ntitle: T\nstatus: backlog\n---\n# T\n"}
 	nativeRoot := validationFixture(t, seqREADME, files)
-	oracleRoot := validationFixture(t, seqREADME, files)
 
 	nOut, nErr, nCode := runNative(t, nativeRoot, env, "--workflow-dir", nativeRoot)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, "--workflow-dir", oracleRoot)
 
-	if nCode != 1 || oCode != 1 {
-		t.Fatalf("default table over an id-less workflow must exit 1: native=%d oracle=%d", nCode, oCode)
+	if nCode != 1 {
+		t.Fatalf("default table over an id-less workflow must exit 1: native=%d", nCode)
 	}
-	if nOut != "" || oOut != "" {
-		t.Fatalf("stdout must be empty on validation failure: native=%q oracle=%q", nOut, oOut)
+	if nOut != "" {
+		t.Fatalf("stdout must be empty on validation failure: native=%q", nOut)
 	}
-	if normalize(nErr, nativeRoot) != normalize(oErr, oracleRoot) {
-		t.Fatalf("stderr: native=%q oracle=%q", normalize(nErr, nativeRoot), normalize(oErr, oracleRoot))
-	}
+	assertEnvelopeGolden(t, "native-validate-gates-reads", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 }

@@ -13,8 +13,8 @@ import (
 )
 
 // runNative runs the native runner with the given args/dir/env (and optional
-// stdin) and returns stdout, stderr, exit code. It is the native analog of
-// runLauncher / runOracle.
+// stdin) and returns stdout, stderr, exit code. It is the shared driver the
+// graduated parity goldens assert against.
 func runNative(t *testing.T, dir string, env []string, args ...string) (string, string, int) {
 	t.Helper()
 	return runNativeStdin(t, dir, env, nil, args...)

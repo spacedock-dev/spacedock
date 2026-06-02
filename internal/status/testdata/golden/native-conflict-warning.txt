@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+status: backlog -> done
+
+===== stderr =====
+Warning: entity 'conflict' has both <ROOT>/conflict.md and <ROOT>/conflict/index.md; preferring folder form. Remove the flat file to silence this warning.
+Warning: entity 'conflict' has both <ROOT>/conflict.md and <ROOT>/conflict/index.md; preferring folder form. Remove the flat file to silence this warning.

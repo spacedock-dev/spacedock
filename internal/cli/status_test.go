@@ -100,21 +100,21 @@ func TestStatusUnknownTopLevelFlagForwarded(t *testing.T) {
 	}
 }
 
-// When the runner cannot run at all (interpreter missing), the CLI fails loudly
-// with exit 1 and a diagnostic on stderr rather than masquerading as success.
+// When the runner cannot run at all, the CLI fails loudly with exit 1 and a
+// diagnostic on stderr rather than masquerading as success.
 func TestStatusRunnerErrorIsLoud(t *testing.T) {
-	fake := &fakeRunner{exitCode: -1, err: errFakeNoPython}
+	fake := &fakeRunner{exitCode: -1, err: errFakeRunnerFailed}
 	var stdout, stderr bytes.Buffer
 	code := run(context.Background(), []string{"status", "--workflow-dir", "/wf"}, nil, "", nil, &stdout, &stderr, fake, nil)
 	if code != 1 {
 		t.Fatalf("exit code = %d, want 1", code)
 	}
-	if !strings.Contains(stderr.String(), "python3 missing") {
+	if !strings.Contains(stderr.String(), "runner failed") {
 		t.Fatalf("stderr = %q, want the runner diagnostic surfaced", stderr.String())
 	}
 }
 
-var errFakeNoPython = errFake("spacedock status: python3 missing")
+var errFakeRunnerFailed = errFake("spacedock status: runner failed")
 
 type errFake string
 

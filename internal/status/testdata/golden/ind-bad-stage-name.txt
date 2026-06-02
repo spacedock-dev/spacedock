@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+workflow '<ROOT>': stage name 'Bad_Stage' must match ^[a-z0-9][a-z0-9-]*[a-z0-9]$; rename to 'bad-stage' or similar

@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+workflow=%ROOT% scope=active slug=add-login id=add-login path=%ROOT%/add-login.md
+
+===== stderr =====

@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+archived: <ROOT>/_archive/050-tracker.md
+
+===== stderr =====

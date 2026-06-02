@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: entity 020-no-sentinel cannot advance to terminal — workflow has merge hook(s) [local-merge] that have not run (pr field is empty and mod-block is empty). Set mod-block=merge:local-merge and invoke the hook, or use --force to bypass.

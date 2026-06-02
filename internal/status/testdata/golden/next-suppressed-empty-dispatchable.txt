@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE                         NEXT-SUPPRESSED-BY
+--     ----                           ------               -----                          -----    ------                         ------------------
+ready  ready                          ideation             ready                          0.5      probe                          
+
+===== stderr =====

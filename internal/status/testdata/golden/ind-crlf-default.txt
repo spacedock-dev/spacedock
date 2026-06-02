@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+001    001-crlf                       backlog              CRLF entity                    0.5      roadmap
+
+===== stderr =====

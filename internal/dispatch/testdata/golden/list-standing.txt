@@ -1,0 +1,7 @@
+===== exit =====
+0
+===== stdout =====
+<ROOT>/_mods/comm-officer.md
+<ROOT>/_mods/science-officer.md
+
+===== stderr =====

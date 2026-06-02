@@ -61,20 +61,8 @@ func TestShowStageDefParity(t *testing.T) {
 			root := t.TempDir()
 			writeFile(t, filepath.Join(root, "README.md"), readmeHeadings)
 
-			oracle := runOracle(t, root, home, "", "show-stage-def", "--workflow-dir", root, "--stage", tc.stage)
 			native := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", tc.stage)
-
-			// show-stage-def has no fetch-line rewrite; all three channels are
-			// byte-identical to the oracle.
-			if native.stdout != oracle.stdout {
-				t.Errorf("%s: stdout mismatch\n--- native ---\n%q\n--- oracle ---\n%q", tc.name, native.stdout, oracle.stdout)
-			}
-			if native.stderr != oracle.stderr {
-				t.Errorf("%s: stderr mismatch\n--- native ---\n%q\n--- oracle ---\n%q", tc.name, native.stderr, oracle.stderr)
-			}
-			if native.exit != oracle.exit {
-				t.Errorf("%s: exit mismatch native=%d oracle=%d", tc.name, native.exit, oracle.exit)
-			}
+			assertGolden(t, "showstagedef-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }
@@ -87,20 +75,14 @@ func TestShowStageDefMissingReadme(t *testing.T) {
 	root := t.TempDir()
 	// A workflow dir that does not exist.
 	missing := filepath.Join(root, "nope")
-	oracle := runOracle(t, root, home, "", "show-stage-def", "--workflow-dir", missing, "--stage", "ideation")
 	native := runNative("", "show-stage-def", "--workflow-dir", missing, "--stage", "ideation")
-	if native.stderr != oracle.stderr || native.exit != oracle.exit {
-		t.Errorf("missing-dir mismatch\nnative=(%q,%d)\noracle=(%q,%d)", native.stderr, native.exit, oracle.stderr, oracle.exit)
-	}
+	assertGolden(t, "showstagedef-missing-dir", goldenEnvelope{res: normRun(native, root, home)})
 
 	// A dir that exists but has no README.
 	noReadme := filepath.Join(root, "empty")
 	if err := os.MkdirAll(noReadme, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	oracle2 := runOracle(t, root, home, "", "show-stage-def", "--workflow-dir", noReadme, "--stage", "ideation")
 	native2 := runNative("", "show-stage-def", "--workflow-dir", noReadme, "--stage", "ideation")
-	if native2.stderr != oracle2.stderr || native2.exit != oracle2.exit {
-		t.Errorf("no-readme mismatch\nnative=(%q,%d)\noracle=(%q,%d)", native2.stderr, native2.exit, oracle2.stderr, oracle2.exit)
-	}
+	assertGolden(t, "showstagedef-no-readme", goldenEnvelope{res: normRun(native2, root, home)})
 }

@@ -14,27 +14,20 @@ import (
 func TestNativeTerminalSetUnderModBlock(t *testing.T) {
 	env := pinnedEnv(t)
 	nativeRoot := stageFixture(t, "guard-workflow")
-	oracleRoot := stageFixture(t, "guard-workflow")
 
-	args := []string{"--set", "010-blocked", "status=done"}
-	nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
+	args := append([]string{"--workflow-dir", nativeRoot}, "--set", "010-blocked", "status=done")
 
-	nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
+	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
 	if nCode != 1 {
 		t.Fatalf("native exit=%d, want 1", nCode)
 	}
-	if nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d", nCode, oCode)
+	if nOut != "" {
+		t.Fatalf("stdout must be empty on rejection: native=%q", nOut)
 	}
-	if strings.TrimSpace(nErr) != strings.TrimSpace(oErr) {
-		t.Fatalf("stderr: native=%q oracle=%q", nErr, oErr)
-	}
-	if nOut != "" || oOut != "" {
-		t.Fatalf("stdout must be empty on rejection: native=%q oracle=%q", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "native-guard-terminal-modblock", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 	fm := readWhole(t, filepath.Join(nativeRoot, "010-blocked.md"))
 	if !strings.Contains(fm, "status: implementation") || strings.Contains(fm, "status: done") {
 		t.Fatalf("entity mutated despite guard:\n%s", fm)
@@ -45,21 +38,16 @@ func TestNativeTerminalSetUnderModBlock(t *testing.T) {
 func TestNativeArchiveRelativeDest(t *testing.T) {
 	env := pinnedEnv(t)
 	nativeRoot := stageFixture(t, "seq-workflow")
-	oracleRoot := stageFixture(t, "seq-workflow")
 
 	args := []string{"--workflow-dir", ".", "--archive", "001-design-seam"}
 	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, args...)
 
-	if nCode != 0 || oCode != 0 {
-		t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+	if nCode != 0 {
+		t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 	}
 	want := "archived: ./_archive/001-design-seam.md\n"
 	if nOut != want {
 		t.Fatalf("native narration = %q, want %q", nOut, want)
-	}
-	if nOut != oOut {
-		t.Fatalf("narration: native=%q oracle=%q", nOut, oOut)
 	}
 }
 
@@ -68,25 +56,21 @@ func TestNativeArchiveRelativeDest(t *testing.T) {
 func TestNativeMidSetTruncation(t *testing.T) {
 	env := pinnedEnv(t)
 	nativeRoot := stageFixture(t, "seq-workflow")
-	oracleRoot := stageFixture(t, "seq-workflow")
 
-	args := []string{"--set", "002-vendor-script", "--bogus", "status=done"}
-	nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
+	args := append([]string{"--workflow-dir", nativeRoot}, "--set", "002-vendor-script", "--bogus", "status=done")
 
-	nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
+	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
-	if nCode != 1 || nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d", nCode, oCode)
+	if nCode != 1 {
+		t.Fatalf("exit: native=%d, want 1", nCode)
 	}
 	if !strings.Contains(nErr, "requires at least one field=value") {
 		t.Fatalf("native stderr=%q", nErr)
 	}
-	if strings.TrimSpace(nErr) != strings.TrimSpace(oErr) {
-		t.Fatalf("stderr: native=%q oracle=%q", nErr, oErr)
+	if nOut != "" {
+		t.Fatalf("stdout must be empty: native=%q", nOut)
 	}
-	if nOut != "" || oOut != "" {
-		t.Fatalf("stdout must be empty: native=%q oracle=%q", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "native-guard-midset-truncation", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 }

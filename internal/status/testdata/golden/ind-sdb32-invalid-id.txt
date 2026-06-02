@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: invalid sd-b32 stored id: workflow=<ROOT> scope=active slug=abcdefghjkmnpqrstvwxyz23-a id=NOTVALIDB32!! path=<ROOT>/abcdefghjkmnpqrstvwxyz23-a.md

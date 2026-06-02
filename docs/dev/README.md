@@ -131,13 +131,7 @@ A task reaches done when validation is complete and the captain approves the res
 
 ## Workflow State
 
-Workflow state is read from `.spacedock-state`. During the compatibility phase, use the current status script against the state checkout:
-
-```bash
-python3 /path/to/spacedock/skills/commission/bin/status --workflow-dir docs/dev/.spacedock-state
-```
-
-The target launcher command is:
+Workflow state is read from `.spacedock-state`. Read it with the launcher:
 
 ```bash
 spacedock status --workflow-dir docs/dev
@@ -201,12 +195,12 @@ Validation pilots should use these when verifying implementation work:
 | Race-enabled Go suite | `go test ./... -race` | Concurrency hazards in Go code when relevant |
 | Launcher help smoke test | `go run ./cmd/spacedock --help` | Basic command entrypoint behavior |
 | Launcher version smoke test | `go run ./cmd/spacedock --version` | Basic version output behavior |
-| Current status validator | `python3 /path/to/status --workflow-dir docs/dev/.spacedock-state --validate` | Compatibility with current Spacedock entity contract |
-| Current status table | `python3 /path/to/status --workflow-dir docs/dev/.spacedock-state` | Compatibility with current status output during symlink phase |
+| Status validator | `spacedock status --workflow-dir docs/dev --validate` | Spacedock entity-contract validation |
+| Status table | `spacedock status --workflow-dir docs/dev` | Status enumeration output |
 | State behavior extension | `docs/specs/state-behavior-extension.md` | Split-root state semantics and external tracker bridge principles |
 | Bootstrap roadmap | `docs/roadmap/bootstrap-roadmap.md` | Stage-specific required tests |
 
-Validators should pick the smallest test surface that proves the claim. Use Go unit tests for package behavior, golden fixtures for stable command output, status-script comparisons for compatibility claims, and live workflow smoke tests only when the runtime integration itself is the claim.
+Validators should pick the smallest test surface that proves the claim. Use Go unit tests for package behavior, golden fixtures for stable command output, and live workflow smoke tests only when the runtime integration itself is the claim.
 
 ## Commit Discipline
 

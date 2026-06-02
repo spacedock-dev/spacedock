@@ -51,9 +51,8 @@ func TestListStandingParity(t *testing.T) {
 		"not-standing.md":    "---\nstanding: false\nname: nope\n---\nbody\n",
 	})
 
-	oracle := runOracle(t, wd, home, "", "list-standing", "--workflow-dir", wd)
 	native := runNative("", "list-standing", "--workflow-dir", wd)
-	assertParity(t, "list-standing", native, oracle)
+	assertGolden(t, "list-standing", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestListStandingParityNoMods drives the degenerate path: a workflow with no
@@ -62,9 +61,8 @@ func TestListStandingParityNoMods(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	wd := t.TempDir()
-	oracle := runOracle(t, wd, home, "", "list-standing", "--workflow-dir", wd)
 	native := runNative("", "list-standing", "--workflow-dir", wd)
-	assertParity(t, "list-standing-no-mods", native, oracle)
+	assertGolden(t, "list-standing-no-mods", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestShowStandingParity drives show-standing over a _mods fixture: one mod with a
@@ -80,9 +78,8 @@ func TestShowStandingParity(t *testing.T) {
 		"science-officer.md": standingMod("science-officer", "opus", "researcher", ""),
 	})
 
-	oracle := runOracle(t, wd, home, "", "show-standing", "--workflow-dir", wd)
 	native := runNative("", "show-standing", "--workflow-dir", wd)
-	assertParity(t, "show-standing", native, oracle)
+	assertGolden(t, "show-standing", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestShowStandingParityEmpty drives the degenerate empty case (no standing mods):
@@ -94,9 +91,8 @@ func TestShowStandingParityEmpty(t *testing.T) {
 	writeMods(t, wd, map[string]string{
 		"not-standing.md": "---\nstanding: false\nname: nope\n---\nbody\n",
 	})
-	oracle := runOracle(t, wd, home, "", "show-standing", "--workflow-dir", wd)
 	native := runNative("", "show-standing", "--workflow-dir", wd)
-	assertParity(t, "show-standing-empty", native, oracle)
+	assertGolden(t, "show-standing-empty", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestSpawnStandingParitySpecEmit drives the spec-emit path: the named member is
@@ -115,9 +111,8 @@ func TestSpawnStandingParitySpecEmit(t *testing.T) {
 		jsonls:  map[string]string{},
 	}.write(t, home)
 
-	oracle := runOracle(t, wd, home, "", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
 	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertParity(t, "spawn-standing-spec", native, oracle)
+	assertGolden(t, "spawn-standing-spec", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestSpawnStandingParitySpecNonASCIIPrompt is the A-2 non-ASCII parity case for
@@ -149,9 +144,8 @@ func TestSpawnStandingParitySpecNonASCIIPrompt(t *testing.T) {
 		jsonls:  map[string]string{},
 	}.write(t, home)
 
-	oracle := runOracle(t, wd, home, "", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
 	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertParity(t, "spawn-standing-spec-nonascii", native, oracle)
+	assertGolden(t, "spawn-standing-spec-nonascii", goldenEnvelope{res: normRun(native, wd, home)})
 	assertEmDashEscaped(t, native.stdout)
 }
 
@@ -184,9 +178,8 @@ func TestSpawnStandingParityAlreadyAlive(t *testing.T) {
 		jsonls:  map[string]string{},
 	}.write(t, home)
 
-	oracle := runOracle(t, wd, home, "", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
 	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-	assertParity(t, "spawn-standing-alive", native, oracle)
+	assertGolden(t, "spawn-standing-alive", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
 // TestSpawnStandingParityLoudFailures drives the loud-failure paths byte-compared
@@ -240,11 +233,10 @@ func TestSpawnStandingParityLoudFailures(t *testing.T) {
 			if tc.mod != "" {
 				writeFile(t, modPath, tc.mod)
 			}
-			oracle := runOracle(t, wd, home, "", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
 			native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
-			assertParity(t, "spawn-standing-"+tc.name, native, oracle)
-			if oracle.exit == 0 {
-				t.Fatalf("loud-failure case %q exited 0 on oracle (fixture is wrong)", tc.name)
+			assertGolden(t, "spawn-standing-"+tc.name, goldenEnvelope{res: normRun(native, wd, home)})
+			if native.exit == 0 {
+				t.Fatalf("loud-failure case %q exited 0 (fixture is wrong)", tc.name)
 			}
 		})
 	}
@@ -275,16 +267,9 @@ func TestBuildModsParity(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", root)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "build-mods", native, oracle)
-	wantBody := stripStateCommitGuidance(rewriteOracleFetch(oracleBody))
-	gotBody := stripStateCommitGuidance(nativeBody)
-	if gotBody != wantBody {
-		t.Errorf("build-mods: dispatch body mismatch\n--- native ---\n%s\n--- oracle(rewritten) ---\n%s",
-			gotBody, wantBody)
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-mods", env)
 }

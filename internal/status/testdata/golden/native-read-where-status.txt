@@ -1,0 +1,9 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+002    002-vendor-script              ideation             Vendor the status script       0.60     roadmap
+004    004-no-score                   ideation             Entity without a score                  backlog grooming
+
+===== stderr =====

@@ -67,8 +67,8 @@ stages:
 // TestWorktreeOverlayActiveReads is the M2 parity test: for a NON-split-root
 // worktree-backed entity whose pipeline-dir status differs from its worktree-copy
 // status, native active reads (table / --where / --fields / --resolve) must show
-// the worktree-copy value, byte-matching the oracle (VendorRunner). This locks
-// the overlay that scan_entities_active / load_active_entity_fields perform.
+// the worktree-copy value, frozen against the certified golden. This locks the
+// overlay that scan_entities_active / load_active_entity_fields perform.
 func TestWorktreeOverlayActiveReads(t *testing.T) {
 	pipelineEntity := "---\nid: add-login\nstatus: implementation\ntitle: Add login\nworktree: wt\n---\n"
 	worktreeEntity := "---\nid: add-login\nstatus: review\ntitle: Add login\nworktree: wt\n---\n"
@@ -94,37 +94,26 @@ func TestWorktreeOverlayActiveReads(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Two independent copies so the runners never observe each other.
 			nativeRoot := buildWorktreeBacked(t, overlayReadme, pipelineEntity, worktreeEntity)
-			oracleRoot := buildWorktreeBacked(t, overlayReadme, pipelineEntity, worktreeEntity)
 			env := pinnedEnv(t)
 
-			args := append([]string{"--workflow-dir", "%ROOT%"}, tc.args...)
-
-			nativeArgs := withRoot(args, nativeRoot)
-			oracleArgs := withRoot(args, oracleRoot)
-
-			nOut, nErr, nCode := runNative(t, nativeRoot, env, nativeArgs...)
-			oOut, oErr, oCode := runLauncher(t, oracleRoot, env, oracleArgs...)
+			args := withRoot(append([]string{"--workflow-dir", "%ROOT%"}, tc.args...), nativeRoot)
+			nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
 			// Normalize the per-test temp root prefix out of both streams so only
-			// the behavioral content is compared.
-			nOutN := replaceAll(nOut, nativeRoot, "%ROOT%")
-			oOutN := replaceAll(oOut, oracleRoot, "%ROOT%")
-			nErrN := replaceAll(nErr, nativeRoot, "%ROOT%")
-			oErrN := replaceAll(oErr, oracleRoot, "%ROOT%")
+			// the behavioral content is compared. The --resolve workflow= field is
+			// realpath'd (resolve.go emits realpathOf(workflowDir)), so on macOS it
+			// carries the /private-resolved spelling while path= keeps the as-spelled
+			// root; strip the realpath'd spelling first, then the as-spelled one, so
+			// both map to %ROOT% and the golden is path-independent across hosts.
+			nOutN := overlayRoot(nOut, nativeRoot)
+			nErrN := overlayRoot(nErr, nativeRoot)
 
-			if nCode != oCode {
-				t.Fatalf("exit code native=%d oracle=%d\nnative stderr=%q\noracle stderr=%q", nCode, oCode, nErr, oErr)
-			}
-			if nOutN != oOutN {
-				t.Fatalf("stdout mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOutN, oOutN)
-			}
-			if nErrN != oErrN {
-				t.Fatalf("stderr mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nErrN, oErrN)
-			}
+			assertEnvelopeGolden(t, "worktree-overlay-"+tc.name, goldenEnvelope{
+				stdout: nOutN, stderr: nErrN, exit: nCode,
+			})
 
-			// Guard against both sides agreeing on the wrong (pipeline-copy) value.
+			// Guard against agreeing on the wrong (pipeline-copy) value.
 			if tc.wantValue != "" && !strings.Contains(nOutN, tc.wantValue) {
 				t.Fatalf("native output should reflect worktree-copy value %q:\n%s", tc.wantValue, nOutN)
 			}
@@ -178,6 +167,14 @@ func withRoot(args []string, root string) []string {
 	return out
 }
 
-func replaceAll(s, old, new string) string {
-	return strings.ReplaceAll(s, old, new)
+// overlayRoot maps both the realpath'd and the as-spelled temp root to %ROOT%.
+// The realpath'd spelling (macOS /private/var/...) is stripped first since it is
+// the longer/more-specific form, then the as-spelled root, mirroring normalize()
+// — so the realpath'd workflow= field and the as-spelled path= field both
+// collapse to the placeholder and the golden holds on macOS and Linux alike.
+func overlayRoot(s, root string) string {
+	if real := realpath(root); real != root {
+		s = strings.ReplaceAll(s, real, "%ROOT%")
+	}
+	return strings.ReplaceAll(s, root, "%ROOT%")
 }

@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: invalid model for stages.states[0].model: 'frobnicate' — must be one of: sonnet, opus, haiku

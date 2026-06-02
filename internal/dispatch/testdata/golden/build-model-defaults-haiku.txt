@@ -1,0 +1,19 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "subagent_type": "spacedock:ensign",
+  "description": "Thing: defaultsmodel",
+  "fetch_commands": [
+    "spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage defaultsmodel"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
+  "model": "haiku",
+  "name": "spacedock-ensign-thing-defaultsmodel",
+  "team_name": "fixture-team"
+}
+
+===== stderr =====
+[build] effective_model=haiku (from defaults) → Agent model=haiku

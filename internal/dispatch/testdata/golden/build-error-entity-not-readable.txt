@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: entity file not readable at '<ROOT>/nope.md'

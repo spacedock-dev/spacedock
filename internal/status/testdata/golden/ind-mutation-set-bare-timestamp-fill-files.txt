@@ -1,0 +1,86 @@
+----- 001-alpha.md -----
+---
+id: "001"
+title: Alpha task
+status: backlog
+score: "0.80"
+source: roadmap
+issue: ENG-101
+tracker-url: https://x/1
+---
+# Alpha
+body
+
+----- 002-beta.md -----
+---
+id: "002"
+title: Beta task
+status: ideation
+score: "0.50"
+source: grooming
+started: <TS>
+---
+# Beta
+
+----- 003-gamma/index.md -----
+---
+id: "003"
+title: Gamma folder task
+status: implementation
+score: "0.90"
+source: roadmap
+---
+# Gamma
+
+----- 004-delta.md -----
+---
+id: "004"
+title: Delta no score
+status: ideation
+score: ""
+source: backlog
+---
+# Delta
+
+----- 005-epsilon.md -----
+---
+id: "005"
+title: Epsilon weird status
+status: parked
+score: "0.30"
+source: roadmap
+---
+# Epsilon
+
+----- README.md -----
+---
+entity-label: task
+id-style: sequential
+stages:
+  defaults:
+    worktree: false
+    concurrency: 2
+  states:
+    - name: backlog
+      initial: true
+      gate: true
+    - name: ideation
+      gate: true
+    - name: implementation
+      worktree: true
+    - name: done
+      terminal: true
+---
+# Seq WF
+
+----- _archive/000-zeta.md -----
+---
+id: "000"
+title: Zeta archived
+status: done
+score: "0.10"
+source: roadmap
+archived: <TS>
+---
+# Zeta
+

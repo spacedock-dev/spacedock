@@ -1,0 +1,7 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+warning: narrowed subagent scan for 'ensign-x' found nothing; falling back to broad ~/.claude/projects scan
+Error: no subagent jsonl found for 'ensign-x'

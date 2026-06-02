@@ -1,0 +1,24 @@
+----- 001-crlf.md -----
+---
+id: "001"
+title: CRLF entity
+status: backlog
+score: 0.9
+source: roadmap
+---
+# CRLF
+body
+
+----- README.md -----
+---
+entity-label: task
+id-style: sequential
+stages:
+  states:
+    - name: backlog
+      initial: true
+    - name: done
+      terminal: true
+---
+# WF
+

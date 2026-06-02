@@ -12,45 +12,35 @@ import (
 // starting with -- terminates the --set field-list parse, so
 // `--set <slug> --bogus status=done` drops status=done, exits 1 with the
 // "requires at least one field=value" error, and leaves the entity unchanged.
-// The launcher forwards argv verbatim; this is the script's own semantics.
 func TestMidSetUnknownTokenTruncates(t *testing.T) {
 	env := pinnedEnv(t)
-	launcherRoot := stageFixture(t, "seq-workflow")
-	oracleRoot := stageFixture(t, "seq-workflow")
+	root := stageFixture(t, "seq-workflow")
 
-	args := []string{"--set", "002-vendor-script", "--bogus", "status=done"}
-	lArgs := append([]string{"--workflow-dir", launcherRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
+	args := append([]string{"--workflow-dir", root}, "--set", "002-vendor-script", "--bogus", "status=done")
+	nOut, nErr, nCode := runNative(t, root, env, args...)
 
-	lOut, lErr, lCode := runLauncher(t, launcherRoot, env, lArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-
-	if lCode != 1 {
-		t.Fatalf("launcher exit=%d, want 1 (truncated --set has no field=value)", lCode)
+	if nCode != 1 {
+		t.Fatalf("native exit=%d, want 1 (truncated --set has no field=value)", nCode)
 	}
-	if lCode != oCode {
-		t.Fatalf("exit: launcher=%d oracle=%d", lCode, oCode)
+	if !strings.Contains(nErr, "requires at least one field=value") {
+		t.Fatalf("native stderr=%q, want the truncation error", nErr)
 	}
-	if !strings.Contains(lErr, "requires at least one field=value") {
-		t.Fatalf("launcher stderr=%q, want the truncation error", lErr)
+	if nOut != "" {
+		t.Fatalf("stdout must be empty: native=%q", nOut)
 	}
-	if strings.TrimSpace(lErr) != strings.TrimSpace(oErr) {
-		t.Fatalf("stderr: launcher=%q oracle=%q", lErr, oErr)
-	}
-	if lOut != "" || oOut != "" {
-		t.Fatalf("stdout must be empty: launcher=%q oracle=%q", lOut, oOut)
-	}
+	assertEnvelopeGolden(t, "argv-midset-truncate", goldenEnvelope{
+		stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+	})
 	// status=done was dropped: the entity remains in ideation.
-	fm := readFrontmatter(t, filepath.Join(launcherRoot, "002-vendor-script.md"))
+	fm := readFrontmatter(t, filepath.Join(root, "002-vendor-script.md"))
 	if !strings.Contains(fm, "status: ideation") {
 		t.Fatalf("status=done should have been dropped; frontmatter:\n%s", fm)
 	}
 }
 
 // TestUnknownTopLevelFlagFallsThrough locks the other passthrough case: an
-// unrecognized top-level flag is not rejected by the launcher; the vendored
-// script ignores it and renders the default table at exit 0. Compared launcher
-// vs oracle (root normalized).
+// unrecognized top-level flag is not rejected; the reader ignores it and renders
+// the default table at exit 0. Frozen against the certified-parity native output.
 func TestUnknownTopLevelFlagFallsThrough(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
 	if err != nil {
@@ -59,21 +49,16 @@ func TestUnknownTopLevelFlagFallsThrough(t *testing.T) {
 	env := pinnedEnv(t)
 	args := []string{"--workflow-dir", root, "--bogus-top-level"}
 
-	lOut, lErr, lCode := runLauncher(t, root, env, args...)
-	oOut, _, oCode := runOracle(t, root, env, args...)
+	nOut, nErr, nCode := runNative(t, root, env, args...)
 
-	if lCode != 0 {
-		t.Fatalf("launcher exit=%d stderr=%q, want 0 (unknown top-level flag falls through)", lCode, lErr)
-	}
-	if lCode != oCode {
-		t.Fatalf("exit: launcher=%d oracle=%d", lCode, oCode)
+	if nCode != 0 {
+		t.Fatalf("native exit=%d stderr=%q, want 0 (unknown top-level flag falls through)", nCode, nErr)
 	}
 	// Default table renders (header present, entities present).
-	if !strings.Contains(lOut, "001-design-seam") {
-		t.Fatalf("expected default table with entities, got:\n%s", lOut)
+	if !strings.Contains(nOut, "001-design-seam") {
+		t.Fatalf("expected default table with entities, got:\n%s", nOut)
 	}
-	if normalize(lOut, root) != normalize(oOut, root) {
-		t.Fatalf("default-table passthrough mismatch\n--- launcher ---\n%s\n--- oracle ---\n%s",
-			normalize(lOut, root), normalize(oOut, root))
-	}
+	assertEnvelopeGolden(t, "argv-unknown-toplevel", goldenEnvelope{
+		stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+	})
 }

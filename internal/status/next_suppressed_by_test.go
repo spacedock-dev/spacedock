@@ -43,13 +43,12 @@ func TestNextSuppressedByObservable(t *testing.T) {
 
 	t.Run("fields-shows-reason", func(t *testing.T) {
 		nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--fields", "next-suppressed-by")
-		oOut, oErr, oCode := runOracle(t, root, env, "--workflow-dir", root, "--fields", "next-suppressed-by")
-		if nCode != 0 || oCode != 0 {
-			t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+		if nCode != 0 {
+			t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 		}
-		if nOut != oOut {
-			t.Fatalf("--fields native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-		}
+		assertEnvelopeGolden(t, "next-suppressed-fields", goldenEnvelope{
+			stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+		})
 		want := map[string]string{
 			"building": "worktree-set",
 			"waiting":  "concurrency-full",
@@ -63,14 +62,13 @@ func TestNextSuppressedByObservable(t *testing.T) {
 	})
 
 	t.Run("where-filters-by-reason", func(t *testing.T) {
-		nOut, _, nCode := runNative(t, root, env, "--workflow-dir", root, "--where", "next-suppressed-by = concurrency-full")
-		oOut, _, oCode := runOracle(t, root, env, "--workflow-dir", root, "--where", "next-suppressed-by = concurrency-full")
-		if nCode != 0 || oCode != 0 {
-			t.Fatalf("exit: native=%d oracle=%d", nCode, oCode)
+		nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--where", "next-suppressed-by = concurrency-full")
+		if nCode != 0 {
+			t.Fatalf("exit: native=%d", nCode)
 		}
-		if nOut != oOut {
-			t.Fatalf("--where native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-		}
+		assertEnvelopeGolden(t, "next-suppressed-where", goldenEnvelope{
+			stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+		})
 		if !strings.Contains(nOut, "waiting") {
 			t.Fatalf("--where concurrency-full should surface waiting:\n%s", nOut)
 		}
@@ -82,14 +80,13 @@ func TestNextSuppressedByObservable(t *testing.T) {
 	})
 
 	t.Run("all-fields-excludes-computed", func(t *testing.T) {
-		nOut, _, nCode := runNative(t, root, env, "--workflow-dir", root, "--all-fields")
-		oOut, _, oCode := runOracle(t, root, env, "--workflow-dir", root, "--all-fields")
-		if nCode != 0 || oCode != 0 {
-			t.Fatalf("exit: native=%d oracle=%d", nCode, oCode)
+		nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--all-fields")
+		if nCode != 0 {
+			t.Fatalf("exit: native=%d", nCode)
 		}
-		if nOut != oOut {
-			t.Fatalf("--all-fields native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-		}
+		assertEnvelopeGolden(t, "next-suppressed-allfields", goldenEnvelope{
+			stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+		})
 		if strings.Contains(strings.ToUpper(nOut), "NEXT-SUPPRESSED-BY") {
 			t.Fatalf("--all-fields must NOT surface the computed next-suppressed-by column:\n%s", nOut)
 		}
@@ -129,13 +126,12 @@ stages:
 	gitInit(t, root)
 
 	nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--fields", "next-suppressed-by")
-	oOut, oErr, oCode := runOracle(t, root, env, "--workflow-dir", root, "--fields", "next-suppressed-by")
-	if nCode != 0 || oCode != 0 {
-		t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+	if nCode != 0 {
+		t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 	}
-	if nOut != oOut {
-		t.Fatalf("--fields native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "next-suppressed-empty-dispatchable", goldenEnvelope{
+		stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+	})
 	if got := extraCellFor(t, nOut, "ready"); got != "" {
 		t.Fatalf("next-suppressed-by for dispatchable 'ready' = %q, want empty\n%s", got, nOut)
 	}

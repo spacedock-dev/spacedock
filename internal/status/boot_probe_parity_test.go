@@ -77,8 +77,8 @@ func presentProbe(string, time.Time) (bool, string, bool) {
 //
 // The nil-probe arm documents the host-neutrality refinement: a non-Claude host
 // emits no Claude-specific advice. The byte-identical claim is scoped to the
-// non-TEAM_STATE bytes; the Claude path's TEAM_STATE matches today's oracle output
-// (locked separately by TestNativeBootMatchesOracle).
+// non-TEAM_STATE bytes; the Claude path's TEAM_STATE is frozen separately by
+// TestNativeBootMatchesOracle's golden.
 func TestBootTeamStateProbeConfinement(t *testing.T) {
 	bootPresent := bootWithProbe(t, presentProbe)
 	bootAbsent := bootWithProbe(t, claudeteam.Probe) // empty HOME → present:false

@@ -1,0 +1,10 @@
+===== exit =====
+0
+===== stdout =====
+### `implementation` *(captain-interactive)*
+
+Implementation body.
+
+- **Outputs:** the deliverable.
+
+===== stderr =====

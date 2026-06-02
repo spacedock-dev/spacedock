@@ -195,18 +195,8 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			root := t.TempDir()
 			wd, stdin := tc.fx(t, root)
 
-			oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", wd)
 			native := runNative(stdin, "build", "--workflow-dir", wd)
-
-			if native.stderr != oracle.stderr {
-				t.Errorf("%s: stderr mismatch\n--- native ---\n%q\n--- oracle ---\n%q", tc.name, native.stderr, oracle.stderr)
-			}
-			if native.exit != oracle.exit {
-				t.Errorf("%s: exit mismatch native=%d oracle=%d (native stderr=%q)", tc.name, native.exit, oracle.exit, native.stderr)
-			}
-			if native.stdout != oracle.stdout {
-				t.Errorf("%s: stdout mismatch native=%q oracle=%q", tc.name, native.stdout, oracle.stdout)
-			}
+			assertGolden(t, "build-error-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }
@@ -221,18 +211,14 @@ func TestBuildStrEErrors(t *testing.T) {
 		wd := writeGood(t, root)
 		stdin := `{"a": ` // truncated -> JSON syntax error
 
-		oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", wd)
 		native := runNative(stdin, "build", "--workflow-dir", wd)
 
 		const prefix = "error: invalid JSON on stdin: "
-		if native.exit != 1 || oracle.exit != 1 {
-			t.Errorf("exit native=%d oracle=%d, want 1/1", native.exit, oracle.exit)
+		if native.exit != 1 {
+			t.Errorf("exit native=%d, want 1", native.exit)
 		}
 		if !strings.HasPrefix(native.stderr, prefix) {
 			t.Errorf("native stderr lacks prefix %q:\n%q", prefix, native.stderr)
-		}
-		if !strings.HasPrefix(oracle.stderr, prefix) {
-			t.Errorf("oracle stderr lacks prefix %q:\n%q", prefix, oracle.stderr)
 		}
 	})
 
@@ -257,18 +243,14 @@ func TestBuildStrEErrors(t *testing.T) {
 		}
 		defer os.RemoveAll(target)
 
-		oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", wd)
 		native := runNative(stdin, "build", "--workflow-dir", wd)
 
 		prefix := "dispatch_file_write_failed: " + target + ": "
-		if native.exit != 1 || oracle.exit != 1 {
-			t.Errorf("exit native=%d oracle=%d, want 1/1", native.exit, oracle.exit)
+		if native.exit != 1 {
+			t.Errorf("exit native=%d, want 1", native.exit)
 		}
 		if !strings.HasPrefix(native.stderr, prefix) {
 			t.Errorf("native stderr lacks prefix %q:\n%q", prefix, native.stderr)
-		}
-		if !strings.HasPrefix(oracle.stderr, prefix) {
-			t.Errorf("oracle stderr lacks prefix %q:\n%q", prefix, oracle.stderr)
 		}
 	})
 }

@@ -1,0 +1,10 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE                         WORKTREE
+--     ----                           ------               -----                          -----    ------                         --------
+waiting waiting                        ideation             Ready but next stage is full   0.80     probe                          
+building building                       build                In-flight build                0.90     probe                          wt/building
+gated  gated                          review               Sitting at a gate              0.70     probe                          
+
+===== stderr =====

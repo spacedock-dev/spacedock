@@ -90,14 +90,14 @@ func assistantLineNoModel(input, cacheCreation, cacheRead int) string {
 	return string(b)
 }
 
-// runBudget runs both native and oracle context-budget for name over the fixture
-// home and asserts three-channel parity (no fetch rewrite — context-budget emits
-// no fetch lines). It returns the native result for follow-on field assertions.
+// runBudget runs native context-budget for name over the fixture home and
+// asserts three-channel parity against the frozen golden (no fetch rewrite —
+// context-budget emits no fetch lines). It returns the native result for
+// follow-on field assertions.
 func runBudget(t *testing.T, home, name string) runResult {
 	t.Helper()
-	oracle := runOracle(t, home, home, "", "context-budget", "--name", name)
 	native := runNative("", "context-budget", "--name", name)
-	assertParity(t, "context-budget "+name, native, oracle)
+	assertGolden(t, "context-budget-"+name, goldenEnvelope{res: normRun(native, "", home)})
 	return native
 }
 

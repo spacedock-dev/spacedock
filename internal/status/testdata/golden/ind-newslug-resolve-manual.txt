@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+workflow=<ROOT> scope=active slug=manual id= path=<ROOT>/manual.md
+
+===== stderr =====

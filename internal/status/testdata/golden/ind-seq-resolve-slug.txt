@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+workflow=<ROOT> scope=active slug=002-beta id=002 path=<ROOT>/002-beta.md
+
+===== stderr =====

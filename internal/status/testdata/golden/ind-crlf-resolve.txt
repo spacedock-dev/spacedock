@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+workflow=<ROOT> scope=active slug=001-crlf id=001 path=<ROOT>/001-crlf.md
+
+===== stderr =====

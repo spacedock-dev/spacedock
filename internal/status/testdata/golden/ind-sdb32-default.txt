@@ -1,0 +1,8 @@
+===== exit =====
+0
+===== stdout =====
+ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
+--     ----                           ------               -----                          -----    ------
+ab     abcdefghjkmnpqrstvwxyz23-one   backlog              One                            0.5      roadmap
+
+===== stderr =====

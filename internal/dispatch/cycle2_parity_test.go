@@ -40,15 +40,11 @@ func TestBuildAbsoluteWorktreeParity(t *testing.T) {
 		"bare_mode":      false,
 	}, nil)
 
-	oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
-	oracleBody := readDispatchBody(t, dispatchFilePathFromStdout(t, oracle.stdout))
 	native := runNative(stdin, "build", "--workflow-dir", root)
 	nativeBody := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
 
-	assertParity(t, "abs-worktree", native, oracle)
-	if nativeBody != rewriteOracleFetch(oracleBody) {
-		t.Errorf("abs-worktree body mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nativeBody, rewriteOracleFetch(oracleBody))
-	}
+	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
+	assertGolden(t, "build-abs-worktree", env)
 	// Explicit: native must exit 0 (full dispatch), not the doubled-path error.
 	if native.exit != 0 {
 		t.Errorf("abs-worktree native exit=%d, want 0; stderr=%q", native.exit, native.stderr)
@@ -87,15 +83,8 @@ func TestShowStageDefSeparatorParity(t *testing.T) {
 			readme := "---\nentity-type: task\nid-style: slug\n---\n# Sep\n\n### ideation\n\nalpha" + sc.sep + "beta gamma.\n\n### done\n\nterm.\n"
 			writeFile(t, filepath.Join(root, "README.md"), readme)
 
-			oracle := runOracle(t, root, home, "", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
 			native := runNative("", "show-stage-def", "--workflow-dir", root, "--stage", "ideation")
-
-			if native.stdout != oracle.stdout {
-				t.Errorf("%s: stdout mismatch\n--- native ---\n%q\n--- oracle ---\n%q", sc.name, native.stdout, oracle.stdout)
-			}
-			if native.stderr != oracle.stderr || native.exit != oracle.exit {
-				t.Errorf("%s: stderr/exit mismatch native=(%q,%d) oracle=(%q,%d)", sc.name, native.stderr, native.exit, oracle.stderr, oracle.exit)
-			}
+			assertGolden(t, "showstagedef-separator-"+sc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }
@@ -129,11 +118,9 @@ func TestBuildSchemaVersionNumericParity(t *testing.T) {
 				`{"schema_version":%s,"entity_path":%q,"workflow_dir":%q,"stage":"backlog","checklist":["- a"],"team_name":"t"}`,
 				tc.sv, entityPath, root)
 
-			oracle := runOracle(t, root, home, stdin, "build", "--workflow-dir", root)
 			native := runNative(stdin, "build", "--workflow-dir", root)
-			// Accepted cases write a dispatch body; capture order does not matter
-			// here since we only byte-compare the channels.
-			assertParity(t, tc.name, native, oracle)
+			// Accepted cases write a dispatch body; the golden freezes the channels.
+			assertGolden(t, "build-schemaversion-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }
@@ -161,15 +148,8 @@ func TestBuildNonObjectStdinParity(t *testing.T) {
 			writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(false))
 			gitInit(t, root)
 
-			oracle := runOracle(t, root, home, tc.stdin, "build", "--workflow-dir", root)
 			native := runNative(tc.stdin, "build", "--workflow-dir", root)
-
-			if native.stderr != oracle.stderr {
-				t.Errorf("%s: stderr mismatch\nnative=%q\noracle=%q", tc.name, native.stderr, oracle.stderr)
-			}
-			if native.exit != oracle.exit {
-				t.Errorf("%s: exit mismatch native=%d oracle=%d", tc.name, native.exit, oracle.exit)
-			}
+			assertGolden(t, "build-nonobject-"+tc.name, goldenEnvelope{res: normRun(native, root, home)})
 		})
 	}
 }

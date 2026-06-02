@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+error: entity_path must be a project-root absolute path; got worktree path '<ROOT>/.worktrees/x/thing.md'. Pass the project-root location (e.g. '/repo/docs/plans/{slug}.md'), not the worktree copy. The helper derives the worktree read target internally.

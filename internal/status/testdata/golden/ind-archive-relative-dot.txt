@@ -1,0 +1,6 @@
+===== exit =====
+0
+===== stdout =====
+archived: ./_archive/001-a.md
+
+===== stderr =====

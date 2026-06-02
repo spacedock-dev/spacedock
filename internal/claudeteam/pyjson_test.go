@@ -4,7 +4,6 @@ package claudeteam
 
 import (
 	"bytes"
-	"os/exec"
 	"strings"
 	"testing"
 )
@@ -14,27 +13,31 @@ import (
 // rune (BMP accents/dashes/arrows + a surrogate-pair astral emoji) — plus the
 // chars both leave alone (plain ASCII, the encoder's own \t/\n escapes, and the
 // HTML-significant < > & that ensure_ascii does NOT touch). Each input's native
-// emission must byte-match the live python3 json.dumps, so the table can't drift
-// from json.dumps' actual ensure_ascii=True behavior. Inputs are written with Go
-// escapes so this source file stays pure ASCII.
+// emission must byte-match the frozen json.dumps(ensure_ascii=True) output
+// captured from python3 at retirement time, so the table pins the certified
+// behavior without execing an interpreter. Inputs and wants are written with Go
+// escapes so this source file stays pure ASCII; each want is the literal
+// backslash-u form json.dumps emits.
 func TestEscapeNonASCIIMatchesPythonEnsureASCII(t *testing.T) {
-	inputs := []string{
-		"plain",
-		"em—dash",          // em-dash U+2014
-		"smart“q”",         // curly quotes
-		"arrow→there",      // rightwards arrow
-		"café",             // accented e
-		"rocket\U0001f680", // astral emoji -> surrogate pair
-		"del\x7fx",         // DEL: ASCII but json.dumps escapes it, Go's encoder does not
-		"nbsp x",           // non-breaking space
-		"tab\tnl\n",        // encoder already escapes these; helper leaves them
-		"less<more>amp&",   // HTML chars stay raw under ensure_ascii
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"plain", "\"plain\""},
+		{"em—dash", "\"em\\u2014dash\""},                 // em-dash U+2014
+		{"smart“q”", "\"smart\\u201cq\\u201d\""},         // curly quotes
+		{"arrow→there", "\"arrow\\u2192there\""},         // rightwards arrow
+		{"café", "\"caf\\u00e9\""},                       // accented e
+		{"rocket\U0001f680", "\"rocket\\ud83d\\ude80\""}, // astral emoji -> surrogate pair
+		{"del\x7fx", "\"del\\u007fx\""},                  // DEL: json.dumps escapes it, Go's encoder does not
+		{"nbsp x", "\"nbsp\\u00a0x\""},                   // non-breaking space
+		{"tab\tnl\n", "\"tab\\tnl\\n\""},                 // encoder already escapes these; helper leaves them
+		{"less<more>amp&", "\"less<more>amp&\""},         // HTML chars stay raw under ensure_ascii
 	}
-	for _, in := range inputs {
-		got := emitJSONString(t, in)
-		want := pythonJSONDumps(t, in)
-		if got != want {
-			t.Errorf("emit %q\n  native = %s\n  python = %s", in, got, want)
+	for _, tc := range cases {
+		got := emitJSONString(t, tc.in)
+		if got != tc.want {
+			t.Errorf("emit %q\n  native = %s\n  want   = %s", tc.in, got, tc.want)
 		}
 	}
 }
@@ -49,16 +52,4 @@ func emitJSONString(t *testing.T, s string) string {
 		t.Fatalf("EmitPythonJSON returned non-zero for %q", s)
 	}
 	return strings.TrimRight(buf.String(), "\n")
-}
-
-// pythonJSONDumps shells to python3 to compute json.dumps(s) for the cross-check.
-func pythonJSONDumps(t *testing.T, s string) string {
-	t.Helper()
-	cmd := exec.Command("python3", "-c", "import json,sys; sys.stdout.write(json.dumps(sys.stdin.read()))")
-	cmd.Stdin = strings.NewReader(s)
-	out, err := cmd.Output()
-	if err != nil {
-		t.Fatalf("python3 json.dumps failed: %v", err)
-	}
-	return string(out)
 }

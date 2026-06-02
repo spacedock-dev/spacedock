@@ -1,0 +1,6 @@
+===== exit =====
+2
+===== stdout =====
+
+===== stderr =====
+error: unsupported input schema_version 1, schema_version: 2 required

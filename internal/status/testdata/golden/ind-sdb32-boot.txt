@@ -1,0 +1,18 @@
+===== exit =====
+0
+===== stdout =====
+MODS: none
+ID_STYLE: sd-b32
+NEXT_ID: <ID>
+MIN_PREFIX: 2
+ORPHANS: none
+PR_STATE: none
+DISPATCHABLE
+ID     SLUG                           CURRENT              NEXT                 WORKTREE
+--     ----                           -------              ----                 --------
+ab     abcdefghjkmnpqrstvwxyz23-one   backlog              done                 no
+TEAM_STATE
+present: false
+hint: run TeamCreate before first team-mode dispatch (claude runtime supports it)
+
+===== stderr =====

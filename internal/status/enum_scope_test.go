@@ -15,6 +15,7 @@ import (
 //     archived one, even though both share status: backlog;
 //   - the --archived read surfaces the archived entity (and still the active
 //     one, since --archived appends archived to active).
+//
 // Each read is compared native-vs-oracle so the rule is parity-pinned, not just
 // asserted on the Go side.
 func TestEnumerationScopeByPlacement(t *testing.T) {
@@ -23,13 +24,12 @@ func TestEnumerationScopeByPlacement(t *testing.T) {
 
 	t.Run("active-scope", func(t *testing.T) {
 		nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root)
-		oOut, oErr, oCode := runOracle(t, root, env, "--workflow-dir", root)
-		if nCode != 0 || oCode != 0 {
-			t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+		if nCode != 0 {
+			t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 		}
-		if nOut != oOut {
-			t.Fatalf("active-read native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-		}
+		assertEnvelopeGolden(t, "enum-scope-active", goldenEnvelope{
+			stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+		})
 		// The rule: top-level placement => active scope; _archive/ => not active,
 		// regardless of the shared status value.
 		if !strings.Contains(nOut, "top-placed") {
@@ -42,13 +42,12 @@ func TestEnumerationScopeByPlacement(t *testing.T) {
 
 	t.Run("archived-scope", func(t *testing.T) {
 		nOut, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--archived")
-		oOut, oErr, oCode := runOracle(t, root, env, "--workflow-dir", root, "--archived")
-		if nCode != 0 || oCode != 0 {
-			t.Fatalf("exit: native=%d (%q) oracle=%d (%q)", nCode, nErr, oCode, oErr)
+		if nCode != 0 {
+			t.Fatalf("exit: native=%d (%q)", nCode, nErr)
 		}
-		if nOut != oOut {
-			t.Fatalf("archived-read native vs oracle mismatch\n--- native ---\n%s\n--- oracle ---\n%s", nOut, oOut)
-		}
+		assertEnvelopeGolden(t, "enum-scope-archived", goldenEnvelope{
+			stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+		})
 		// The rule: _archive/ placement => archived scope is enumerated under
 		// --archived; the active top-level entity is still present (--archived
 		// appends archived to active).

@@ -35,30 +35,18 @@ func TestNativeConflictWarningParity(t *testing.T) {
 		return dst
 	}
 	nativeRoot := mk()
-	oracleRoot := mk()
 
 	// --set on the conflicting slug resolves via discovery (folder wins) and
 	// emits the warning, without running global validation.
-	args := []string{"--set", "conflict", "status=done"}
-	nArgs := append([]string{"--workflow-dir", nativeRoot}, args...)
-	oArgs := append([]string{"--workflow-dir", oracleRoot}, args...)
+	args := append([]string{"--workflow-dir", nativeRoot}, "--set", "conflict", "status=done")
+	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
-	nOut, nErr, nCode := runNative(t, nativeRoot, env, nArgs...)
-	oOut, oErr, oCode := runOracle(t, oracleRoot, env, oArgs...)
-
-	if nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d (nErr=%q oErr=%q)", nCode, oCode, nErr, oErr)
-	}
 	if !strings.Contains(nErr, "preferring folder form") {
 		t.Fatalf("native stderr missing conflict warning: %q", nErr)
 	}
-	if normalize(nErr, nativeRoot) != normalize(oErr, oracleRoot) {
-		t.Fatalf("conflict warning mismatch\n--- native ---\n%s\n--- oracle ---\n%s",
-			normalize(nErr, nativeRoot), normalize(oErr, oracleRoot))
-	}
-	if normalize(nOut, nativeRoot) != normalize(oOut, oracleRoot) {
-		t.Fatalf("stdout mismatch: native=%q oracle=%q", nOut, oOut)
-	}
+	assertEnvelopeGolden(t, "native-conflict-warning", goldenEnvelope{
+		stdout: normalize(nOut, nativeRoot), stderr: normalize(nErr, nativeRoot), exit: nCode,
+	})
 	// Folder form is the one that got mutated.
 	folder := readWhole(t, filepath.Join(nativeRoot, "conflict", "index.md"))
 	if !strings.Contains(folder, "status: done") {
@@ -81,15 +69,9 @@ func TestNativeDiscoverParity(t *testing.T) {
 
 	args := []string{"--discover", "--root", root}
 	nOut, nErr, nCode := runNative(t, root, env, args...)
-	oOut, oErr, oCode := runOracle(t, root, env, args...)
-
-	if nCode != oCode {
-		t.Fatalf("exit: native=%d oracle=%d (nErr=%q oErr=%q)", nCode, oCode, nErr, oErr)
-	}
-	if normalize(nOut, root) != normalize(oOut, root) {
-		t.Fatalf("--discover output mismatch\n--- native ---\n%s\n--- oracle ---\n%s",
-			normalize(nOut, root), normalize(oOut, root))
-	}
+	assertEnvelopeGolden(t, "native-discover", goldenEnvelope{
+		stdout: normalize(nOut, root), stderr: normalize(nErr, root), exit: nCode,
+	})
 }
 
 func writeAll(t *testing.T, root string, files map[string]string) {
