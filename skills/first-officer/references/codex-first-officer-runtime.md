@@ -52,3 +52,27 @@ in the FO mailbox and then resumes the shared event loop.
 The captain is the user of the Codex session. Communicate gate results,
 clarifications, and status directly in the conversation. Do not invent a
 team-lead mailbox on Codex.
+
+## No state-keyed reconcile sweep on Codex
+
+The shared core's terminal-teardown step (Merge and Cleanup step 10) and
+supersede-shutdown step (Completion and Gates) call out that a cross-runtime
+safety net is the runtime adapter's responsibility, not the shared core's.
+**Codex declares none.** There is no analog of Claude's
+`spacedock dispatch reconcile` sweep on Codex: no team-roster config to scan,
+no Class A/B drift detection, no periodic event-loop call that catches a
+missed teardown.
+
+Consequences for the Codex FO:
+
+- A skipped terminal-teardown step means the prior-stage worker stays addressable
+  until session end. There is no auto-catch; the prose step is the only enforcement.
+- A skipped supersede-shutdown before a fresh-dispatch cycle means the prior cycle's
+  worker stays alive alongside the new one until session end, same reason.
+- The shared-core "mandatory at the boundary itself" wording therefore binds with
+  no slack here. Discipline at the step is the entire mechanism.
+
+If a state-keyed reconcile equivalent ever ships for Codex (a roster source
+queryable from the FO plus a drift classifier), this section moves; until then,
+record the gap explicitly so the FO does not believe in a backstop the runtime
+does not provide.

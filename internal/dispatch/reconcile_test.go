@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -62,7 +63,7 @@ stages:
 		t.Fatal(err)
 	}
 
-	// 2. Entities — five active slugs covering each AC-1 case.
+	// 2. Entities — covering each AC-1 case plus L1-M1/M2 audit-fix rows.
 	// alive: a clean (no-drift) entity with a clean worktree (no D, no C).
 	wtClean := filepath.Join(repoRoot, ".worktrees", "spacedock-ensign-alive")
 	writeFile(t, filepath.Join(stateRoot, "alive", "index.md"), reconcileEntityFM(map[string]string{
@@ -72,12 +73,24 @@ stages:
 		"status":   "implementation",
 		"worktree": filepath.Join(".worktrees", "spacedock-ensign-alive"),
 	}))
-	// release-notes-local-summary: archived → its ensign is class A.
+	// release-notes-local-summary: archived → its ensign is class A
+	// (archived-branch path of classA).
 	writeFile(t, filepath.Join(stateRoot, "_archive", "release-notes-local-summary", "index.md"),
 		reconcileEntityFM(map[string]string{
 			"id":     "id-rnls",
 			"title":  "release notes",
 			"slug":   "release-notes-local-summary",
+			"status": "done",
+		}))
+	// terminal-not-yet-archived: active (NOT under _archive/) with status=done →
+	// class A via the active-status=done branch (L1-M1 fix). Without this row
+	// deleting reconcile.go's "active.status==done" emit block (the second of
+	// classA's two disjoint paths) goes undetected.
+	writeFile(t, filepath.Join(stateRoot, "terminal-not-yet-archived", "index.md"),
+		reconcileEntityFM(map[string]string{
+			"id":     "id-tnya",
+			"title":  "terminal not yet archived",
+			"slug":   "terminal-not-yet-archived",
 			"status": "done",
 		}))
 	// cohort: same slug+stage as two ensigns — class B (loser flagged).
@@ -87,13 +100,33 @@ stages:
 		"slug":   "cohort",
 		"status": "ideation",
 	}))
-	// pr-merged: pr set, status NOT done — class C when gh returns MERGED.
+	// pr-merged: pr set, status NOT done, gh MERGED → class C.
 	writeFile(t, filepath.Join(stateRoot, "pr-merged", "index.md"), reconcileEntityFM(map[string]string{
 		"id":     "id-prm",
 		"title":  "pr merged",
 		"slug":   "pr-merged",
 		"status": "implementation",
 		"pr":     "42",
+	}))
+	// pr-open: pr set, gh state=OPEN → no C entry (L1-M2 negative case for the
+	// MERGED conjunct). Without this row, deleting the `state == "MERGED"`
+	// conjunct in reconcile.go's classC goes undetected.
+	writeFile(t, filepath.Join(stateRoot, "pr-open", "index.md"), reconcileEntityFM(map[string]string{
+		"id":     "id-pro",
+		"title":  "pr open",
+		"slug":   "pr-open",
+		"status": "implementation",
+		"pr":     "43",
+	}))
+	// pr-merged-done: pr set, status=done, gh state=MERGED → no C entry
+	// (L1-M2 negative case for the status!=done conjunct). Without this row,
+	// deleting the `rec.status != "done"` conjunct in classC goes undetected.
+	writeFile(t, filepath.Join(stateRoot, "pr-merged-done", "index.md"), reconcileEntityFM(map[string]string{
+		"id":     "id-prmd",
+		"title":  "pr merged done",
+		"slug":   "pr-merged-done",
+		"status": "done",
+		"pr":     "44",
 	}))
 	// yaml-parser-migration: worktree branch is BEHIND origin/next — class D.
 	wtStale := filepath.Join(repoRoot, ".worktrees", "spacedock-ensign-yaml-parser-migration")
@@ -106,14 +139,19 @@ stages:
 			"worktree": filepath.Join(".worktrees", "spacedock-ensign-yaml-parser-migration"),
 		}))
 
-	// 3. Team config — team-lead (exempt), one alive ensign, A loser, B cohort
-	// (winner + loser-cycle1), C and D ensigns.
+	// 3. Team config — team-lead (exempt), the alive ensign, A losers
+	// (archived + terminal-not-yet-archived), B cohort (winner + loser-cycle1),
+	// C ensigns (pr-merged + pr-open + pr-merged-done), and D ensign.
+	// The pr-open and pr-merged-done ensigns are present so the helper sees
+	// them as members; the assertions confirm they DO NOT emit C drift.
 	cfgPath := filepath.Join(home, ".claude", "teams", teamName, "config.json")
 	writeFile(t, cfgPath, teamConfigJSON(teamName, []claudeteam.ReconcileMember{
 		{Name: "team-lead", AgentType: "team-lead", Model: "claude-opus-4-7"},
 		{Name: "spacedock-ensign-alive-implementation",
 			AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
 		{Name: "spacedock-ensign-release-notes-local-summary-implementation",
+			AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
+		{Name: "spacedock-ensign-terminal-not-yet-archived-implementation",
 			AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
 		{Name: "spacedock-ensign-cohort-ideation",
 			AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
@@ -156,7 +194,11 @@ stages:
 		cfgPath:     cfgPath,
 		wtClean:     wtClean,
 		wtStale:     wtStale,
-		ghResponses: map[string]string{"42": "MERGED"},
+		ghResponses: map[string]string{
+			"42": "MERGED", // pr-merged: status!=done → emits C
+			"43": "OPEN",   // pr-open: MERGED conjunct fails → no C
+			"44": "MERGED", // pr-merged-done: status==done → no C
+		},
 	}
 }
 
@@ -208,59 +250,132 @@ func TestReconcileFiveClasses(t *testing.T) {
 		t.Errorf("team_name=%q, want %q", result.TeamName, f.teamName)
 	}
 
-	byClass := indexDriftByClass(t, result.Drift)
-	if len(byClass) != 5 {
-		t.Fatalf("expected 5 classes, got %d (%v): %s",
-			len(byClass), keys(byClass), formatDrift(result.Drift))
-	}
-	a := requireOne(t, byClass, "A")
-	if a.Name != "spacedock-ensign-release-notes-local-summary-implementation" {
-		t.Errorf("A.name=%q, want release-notes-local-summary-implementation", a.Name)
-	}
-	if a.Slug != "release-notes-local-summary" {
-		t.Errorf("A.slug=%q", a.Slug)
-	}
-	if !strings.Contains(a.Reason, "archived") {
-		t.Errorf("A.reason=%q, want archived", a.Reason)
+	byClassAll := groupDriftByClass(result.Drift)
+	for _, class := range []string{"A", "B", "C", "D", "E"} {
+		if len(byClassAll[class]) == 0 {
+			t.Errorf("expected at least one class %s drift entry; got: %s",
+				class, formatDrift(result.Drift))
+		}
 	}
 
-	b := requireOne(t, byClass, "B")
-	if b.Slug != "cohort" || b.Stage != "ideation" {
-		t.Errorf("B {slug=%q stage=%q}, want {cohort ideation}", b.Slug, b.Stage)
+	// AC-1 wants one entry per class; L1-M1 splits A into two disjoint cases
+	// (archived vs active-status=done), so A has TWO entries by design here.
+	asByName := map[string]driftItem{}
+	for _, a := range byClassAll["A"] {
+		asByName[a.Name] = a
 	}
-	// The loser is the unsuffixed (=cycle 1) name; the winner is cycle2.
-	if b.Name != "spacedock-ensign-cohort-ideation" {
-		t.Errorf("B.name=%q, want spacedock-ensign-cohort-ideation (loser)", b.Name)
+	if len(asByName) != 2 {
+		t.Errorf("expected 2 A entries (archived + active-status=done); got %d: %s",
+			len(asByName), formatDrift(byClassAll["A"]))
 	}
-	if !strings.Contains(b.Reason, "spacedock-ensign-cohort-ideation-cycle2") {
-		t.Errorf("B.reason=%q, want winner cycle2 named", b.Reason)
+	// Archived-branch A entry — Reason must mention "archived".
+	aArchived, ok := asByName["spacedock-ensign-release-notes-local-summary-implementation"]
+	if !ok {
+		t.Errorf("missing A entry for archived release-notes-local-summary; got names: %v",
+			keysOfDriftMap(asByName))
+	} else {
+		if aArchived.Slug != "release-notes-local-summary" {
+			t.Errorf("archived A.slug=%q", aArchived.Slug)
+		}
+		if !strings.Contains(aArchived.Reason, "archived") {
+			t.Errorf("archived A.reason=%q, want substring 'archived'", aArchived.Reason)
+		}
+	}
+	// Active-status=done branch A entry (L1-M1) — Reason must mention
+	// "status=done" (distinct token from "archived" so an injected regression
+	// that disables the active-status=done emit block is caught here).
+	aActiveDone, ok := asByName["spacedock-ensign-terminal-not-yet-archived-implementation"]
+	if !ok {
+		t.Errorf("missing A entry for active terminal-not-yet-archived; got names: %v",
+			keysOfDriftMap(asByName))
+	} else {
+		if aActiveDone.Slug != "terminal-not-yet-archived" {
+			t.Errorf("active-done A.slug=%q", aActiveDone.Slug)
+		}
+		if !strings.Contains(aActiveDone.Reason, "status=done") {
+			t.Errorf("active-done A.reason=%q, want substring 'status=done'", aActiveDone.Reason)
+		}
+		if strings.Contains(aActiveDone.Reason, "archived") {
+			t.Errorf("active-done A.reason=%q, must NOT mention 'archived' (the two branches must remain distinguishable in output)",
+				aActiveDone.Reason)
+		}
 	}
 
-	c := requireOne(t, byClass, "C")
-	if c.Slug != "pr-merged" || c.PR != "42" {
-		t.Errorf("C {slug=%q pr=%q}, want {pr-merged 42}", c.Slug, c.PR)
+	bs := byClassAll["B"]
+	if len(bs) != 1 {
+		t.Errorf("expected 1 B entry; got %d: %s", len(bs), formatDrift(bs))
 	}
-	if !strings.Contains(c.Reason, "merged") {
-		t.Errorf("C.reason=%q, want merged", c.Reason)
+	if len(bs) > 0 {
+		b := bs[0]
+		if b.Slug != "cohort" || b.Stage != "ideation" {
+			t.Errorf("B {slug=%q stage=%q}, want {cohort ideation}", b.Slug, b.Stage)
+		}
+		// The loser is the unsuffixed (=cycle 1) name; the winner is cycle2.
+		if b.Name != "spacedock-ensign-cohort-ideation" {
+			t.Errorf("B.name=%q, want spacedock-ensign-cohort-ideation (loser)", b.Name)
+		}
+		if !strings.Contains(b.Reason, "spacedock-ensign-cohort-ideation-cycle2") {
+			t.Errorf("B.reason=%q, want winner cycle2 named", b.Reason)
+		}
 	}
 
-	d := requireOne(t, byClass, "D")
-	if d.Slug != "yaml-parser-migration" {
-		t.Errorf("D.slug=%q", d.Slug)
+	// L1-M2: exactly ONE C entry — pr-merged only. pr-open (gh=OPEN) must NOT
+	// emit C (MERGED conjunct check); pr-merged-done (status=done) must NOT
+	// emit C (status!=done conjunct check). The exact-Reason check tightens
+	// the assertion beyond the prior "contains 'merged'" substring.
+	cs := byClassAll["C"]
+	if len(cs) != 1 {
+		t.Errorf("expected exactly 1 C entry (pr-merged only); got %d: %s",
+			len(cs), formatDrift(cs))
 	}
-	if d.Behind <= 0 {
-		t.Errorf("D.behind=%d, want > 0", d.Behind)
+	if len(cs) > 0 {
+		c := cs[0]
+		if c.Slug != "pr-merged" || c.PR != "42" {
+			t.Errorf("C {slug=%q pr=%q}, want {pr-merged 42}", c.Slug, c.PR)
+		}
+		const wantCReason = "PR merged but status=implementation"
+		if c.Reason != wantCReason {
+			t.Errorf("C.reason=%q, want exact %q", c.Reason, wantCReason)
+		}
 	}
-	if !strings.Contains(d.Worktree, "yaml-parser-migration") {
-		t.Errorf("D.worktree=%q", d.Worktree)
+	for _, c := range cs {
+		if c.Slug == "pr-open" {
+			t.Errorf("pr-open (gh=OPEN) must NOT emit C drift; got %+v", c)
+		}
+		if c.Slug == "pr-merged-done" {
+			t.Errorf("pr-merged-done (status=done) must NOT emit C drift; got %+v", c)
+		}
 	}
 
-	e := requireOne(t, byClass, "E")
-	if e.Ahead <= 0 {
-		t.Errorf("E.ahead=%d, want > 0", e.Ahead)
+	ds := byClassAll["D"]
+	if len(ds) != 1 {
+		t.Errorf("expected 1 D entry; got %d", len(ds))
 	}
-	if !strings.Contains(e.Reason, "reset main") {
-		t.Errorf("E.reason=%q, want reset main", e.Reason)
+	if len(ds) > 0 {
+		d := ds[0]
+		if d.Slug != "yaml-parser-migration" {
+			t.Errorf("D.slug=%q", d.Slug)
+		}
+		if d.Behind <= 0 {
+			t.Errorf("D.behind=%d, want > 0", d.Behind)
+		}
+		if !strings.Contains(d.Worktree, "yaml-parser-migration") {
+			t.Errorf("D.worktree=%q", d.Worktree)
+		}
+	}
+
+	es := byClassAll["E"]
+	if len(es) != 1 {
+		t.Errorf("expected 1 E entry; got %d", len(es))
+	}
+	if len(es) > 0 {
+		e := es[0]
+		if e.Ahead <= 0 {
+			t.Errorf("E.ahead=%d, want > 0", e.Ahead)
+		}
+		if !strings.Contains(e.Reason, "reset main") {
+			t.Errorf("E.reason=%q, want reset main", e.Reason)
+		}
 	}
 }
 
@@ -496,34 +611,24 @@ func hasGit(t *testing.T) bool {
 	return err == nil
 }
 
-// indexDriftByClass groups drift items by their Class field and FAILS the test
-// if any class appears more than once (every fixture entity is unique by design).
-func indexDriftByClass(t *testing.T, drift []driftItem) map[string]driftItem {
-	t.Helper()
-	out := map[string]driftItem{}
+// groupDriftByClass groups drift items by their Class field, allowing
+// multi-entry classes (used by the L1-M1 fixture which now has two A entries).
+func groupDriftByClass(drift []driftItem) map[string][]driftItem {
+	out := map[string][]driftItem{}
 	for _, d := range drift {
-		if _, dup := out[d.Class]; dup {
-			t.Errorf("duplicate drift for class %s: %s", d.Class, formatDrift(drift))
-		}
-		out[d.Class] = d
+		out[d.Class] = append(out[d.Class], d)
 	}
 	return out
 }
 
-func requireOne(t *testing.T, m map[string]driftItem, class string) driftItem {
-	t.Helper()
-	d, ok := m[class]
-	if !ok {
-		t.Fatalf("missing class %s drift; got: %v", class, keys(m))
-	}
-	return d
-}
-
-func keys(m map[string]driftItem) []string {
+// keysOfDriftMap returns the keys of a name->driftItem map sorted for
+// deterministic error output.
+func keysOfDriftMap(m map[string]driftItem) []string {
 	out := make([]string, 0, len(m))
 	for k := range m {
 		out = append(out, k)
 	}
+	sort.Strings(out)
 	return out
 }
 

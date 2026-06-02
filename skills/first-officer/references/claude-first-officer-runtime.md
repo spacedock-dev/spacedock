@@ -253,6 +253,15 @@ These are FO-internal scheduling reads — parse them as JSON, not the padded hu
 
 Repeat from step 1 after each agent completion until the captain ends the session or, in single-entity mode, until the target entity is resolved.
 
+### Cross-runtime backstop addenda (Claude-only)
+
+The shared core's terminal-teardown step (Merge and Cleanup step 10) and supersede-shutdown step (Completion and Gates) deliberately leave the cross-runtime safety-net claim to each runtime adapter. On Claude Code, the backstop is the same `spacedock dispatch reconcile` sweep wired into step 0 / step 4 above:
+
+- **Terminal-teardown backstop — Class A (lingering).** If the FO skips step 10's per-entity SendMessage shutdown sweep, the next event-loop iteration's reconcile call detects the surviving ensign (its entity is archived or `status=done`) as Class A and the FO executes the same shutdown then. Cost of a missed step 10: one extra context-window cycle the lingering agent burns.
+- **Supersede-shutdown backstop — Class B (superseded).** If the FO skips the supersede-shutdown step before a fresh `-cycleN` dispatch, the next reconcile call detects the prior-cycle ensign as Class B (same `(slug, stage)` cohort, lower cycle number) and the FO executes the same shutdown then. Cost of a missed supersede shutdown: one extra context-window cycle the loser burns.
+
+These backstops are Claude-bound — the helper reads `~/.claude/teams/{team}/config.json`, which exists only under the Claude Code harness. The shared core's prose steps remain mandatory at their boundaries; the backstop is convergent slack, not permission to skip.
+
 ## Mod-Block Enforcement at Terminal Transitions
 
 Before advancing an entity into Merge and Cleanup, the FO must:
