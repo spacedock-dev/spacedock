@@ -1,7 +1,7 @@
 ---
 id: 7havdt4r7mett5q13tcxaxdj
 title: Local release script — LLM-summarized release notes (reuse old release.sh prompt), CI builds on tag push
-status: validation
+status: implementation
 source: captain (2026-05-31) — "refine the release script, use the python-based release prompt to simplify the release notes; local so I can tweak, build still triggers on tag push"
 started: 2026-05-31T22:45:17Z
 completed:
@@ -196,3 +196,11 @@ PASSED. The cycle-1 AC-3 empty-body regression is fixed and verified LIVE end-to
 ### Summary
 
 PASSED. Re-home re-confirmed against CURRENT origin/next. The FO cleanly re-homed the entity by cherry-picking ONLY the 2 genuine release-notes commits (`94cf3bcd` feat, `fb70a090` fix — note the FO's dispatch named `3c2cf8d6`/`576bd2bc`, which are the pre-rehome SHAs; the post-rehome equivalents are `94cf3bcd`/`fb70a090`) onto current origin/next HEAD `3a59916a`. The branch is now exactly the deliverable: `0 behind / 2 ahead`, diff = EXACTLY the 5 release-notes files, zero stale duplicate work from the old diverged base. The cycle-2 PASS holds byte-for-byte post-rehome: full suite green (717 passed, codex test even passes this env), the AC-3 tag-body round-trip is re-proven LIVE with the real binary (`%(contents:body)` NON-EMPTY == filtered notes), the mutation test still catches the cycle-1 empty-body bug, and release.yml/`cmd/spacedock-release` interact cleanly with the current next pipeline (stamp-version now dual-stamps codex + claude manifests, bump-calendar untouched, notes added without collision) — no conflict introduced by the 31-commit advance. Release still deferred (no merge/tag/push).
+
+## Feedback Cycles (re-home, FO 2026-06-02)
+
+**Re-home cycle — validation PASSED, but the detached adversarial audit found a dead-guard bug in release.yml; routed to implementation before merge.**
+
+The tool-cut release path is safe — the audit confirmed `AnnotatedTagArgs` always uses two `-m` and `cutAnnotatedTag` rejects an empty/whitespace body in Go before tagging. But the **defense-in-depth empty-body guard in `.github/workflows/release.yml:38-45` is dead code**: `git tag -l --format='%(contents:body)'` always appends a trailing `\n`, so the file is ≥1 byte even for an empty body, and `[ ! -s release-notes.txt ]` (true only for a ZERO-byte file) **never fires**. The audit reproduced this on git 2.39.5 for all three cases the guard's comment (`release.yml:34-36`) claims to catch — lightweight tag, subject-only annotated tag (the cycle-1 regression shape), empty second `-m` — each yields a 1-byte `\n` file that PASSES the guard, after which goreleaser publishes a blank-body Release. (Validation simulated only the happy-path tool-cut tag, which has a real body, so it did not surface this — the audit did.)
+
+**Fix required:** gate on stripped content, e.g. `if [ -z "$(tr -d '[:space:]' < release-notes.txt)" ]; then …; exit 1; fi`, so a whitespace/newline-only body fails loudly. Add a guard-logic check (a small shell or Go-level test that a whitespace-only body is rejected), or record why a CI-yaml-step guard can't be unit-tested and how it was verified instead. Everything else (goreleaser wiring, injection safety, notes extraction, pipeline interaction, the round-trip test) was audited clean.
