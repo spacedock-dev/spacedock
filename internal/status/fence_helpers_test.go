@@ -59,6 +59,18 @@ func TestFrontmatterSliceHelperCorruption(t *testing.T) {
 			in:   "---\nid: a\n---\nbody\n---\ntail\n",
 			want: "id: a\n",
 		},
+		{
+			// Mirrors the sibling TestContentHasOpeningFenceHelperCorruption's
+			// "leading blank lines skipped" case (the opening fence is on a
+			// later line, not line 0). A bug-injection that reduced
+			// frontmatterSlice to `if lines[0] != "---" { return nil }` would
+			// pass the rest of this suite but lose the YAML body here — the
+			// fence finder must scan past leading truly-empty lines, matching
+			// contentHasOpeningFence's behavior on the same input shape.
+			name: "leading blank lines skipped",
+			in:   "\n\n---\nid: a\n---\nbody\n",
+			want: "id: a\n",
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
