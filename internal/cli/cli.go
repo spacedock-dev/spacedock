@@ -50,7 +50,7 @@ func Run(args []string, stdout io.Writer, stderr io.Writer) int {
 // package's public surface (Run) and the exit-code contract are unchanged: the
 // command tree captures env/dir/stdin/stdout/stderr/runner in its RunE closures.
 func run(ctx context.Context, args []string, env []string, dir string, stdin io.Reader, stdout io.Writer, stderr io.Writer, runner status.Runner, dispatchProbe claudeteam.TeamStateProbe) int {
-	root := newRootCommand(ctx, env, dir, stdin, stdout, stderr, runner, dispatchProbe)
+	root := newRootCommand(ctx, args, env, dir, stdin, stdout, stderr, runner, dispatchProbe)
 	root.SetArgs(args)
 	if err := root.Execute(); err != nil {
 		return exitCodeFor(err)
@@ -85,7 +85,7 @@ func exitCodeFor(err error) int {
 // package: cobra never prints its own error or usage, so the unknown-command path
 // emits the pinned message and exits 2 (the root RunE below), and the help is
 // rendered solely by printHelp.
-func newRootCommand(ctx context.Context, env []string, dir string, stdin io.Reader, stdout, stderr io.Writer, runner status.Runner, dispatchProbe claudeteam.TeamStateProbe) *cobra.Command {
+func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir string, stdin io.Reader, stdout, stderr io.Writer, runner status.Runner, dispatchProbe claudeteam.TeamStateProbe) *cobra.Command {
 	versionFlag := false
 
 	root := &cobra.Command{
@@ -107,10 +107,18 @@ func newRootCommand(ctx context.Context, env []string, dir string, stdin io.Read
 				return nil
 			}
 			// No subcommand and no recognized flag: an unknown command token
-			// (e.g. `spacedock bogus`) exits 2 with the pinned message; bare
-			// `spacedock` renders the grouped help.
+			// (e.g. `spacedock bogus`) exits 2 with the pinned message.
 			if len(args) > 0 {
 				return unknownCommand(args[0], stderr)
+			}
+			// A leading unknown flag (e.g. `spacedock --bogus`, or the space-form
+			// `spacedock --foo install` where `--foo` consumed `install` as its
+			// value) reaches RunE with empty args because the UnknownFlags whitelist
+			// strips it during parse. Left to the bare-help path it would exit 0 — a
+			// silent usage error. Detect it from the raw argv and route to the
+			// usage/exit-2 path; a bare `spacedock` (no leading flag) still helps + 0.
+			if leadingUnknownFlag(rawArgs) {
+				return unknownFlag(rawArgs[0], stderr)
 			}
 			printHelp(stdout)
 			return nil
@@ -384,6 +392,26 @@ func unknownCommand(name string, stderr io.Writer) error {
 	fmt.Fprintf(stderr, "unknown command: %s\n", name)
 	printHelp(stderr)
 	return exitCodeError{2}
+}
+
+// unknownFlag writes the pinned unknown-flag diagnostic plus the grouped help to
+// stderr and returns the exit-2 carrier. It mirrors unknownCommand for a leading
+// flag that resolves to no subcommand, so a stray `spacedock --bogus` is a loud
+// usage error rather than a silent exit 0.
+func unknownFlag(name string, stderr io.Writer) error {
+	fmt.Fprintf(stderr, "unknown flag: %s\n", name)
+	printHelp(stderr)
+	return exitCodeError{2}
+}
+
+// leadingUnknownFlag reports whether the raw argv begins with a `-`-prefixed token
+// that is not a recognized root flag. `--version` and `-h`/`--help` are handled
+// before this is consulted (version returns early; help is intercepted by the
+// help func), so any leading flag reaching the bare-help path is unknown — the
+// UnknownFlags whitelist stripped it during parse, leaving empty positional args.
+// A bare invocation (no args, or a leading non-flag token) is not a leading flag.
+func leadingUnknownFlag(rawArgs []string) bool {
+	return len(rawArgs) > 0 && strings.HasPrefix(rawArgs[0], "-")
 }
 
 // runStatus forwards the post-"status" argv verbatim to the runner and returns

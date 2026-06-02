@@ -137,6 +137,50 @@ func TestUnknownCommand(t *testing.T) {
 	}
 }
 
+// TestLeadingUnknownFlagIsUsageError pins AC-6's leading-flag half: a stray
+// leading unknown flag that resolves to no valid subcommand (before any command
+// token) must print the usage block to stderr and exit NON-ZERO — never the
+// silent exit-0+help the UnknownFlags whitelist would otherwise yield. The
+// space-form `--foo install` (where `--foo` would consume `install` as its value)
+// must NOT silently swallow the valid command token either. Distinct from the
+// bare invocation, which still prints help + exit 0 (TestLeadingFlagBareStillHelp).
+func TestLeadingUnknownFlagIsUsageError(t *testing.T) {
+	for _, args := range [][]string{
+		{"--bogus"},
+		{"--boot"},
+		{"--foo", "install"},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			code := Run(args, &stdout, &stderr)
+
+			if code == 0 {
+				t.Fatalf("Run(%v) exited 0 on a leading unknown flag; want non-zero usage error (stdout=%q)", args, stdout.String())
+			}
+			if !strings.Contains(stderr.String(), tagline) {
+				t.Fatalf("Run(%v) stderr missing the usage block (tagline): %q", args, stderr.String())
+			}
+		})
+	}
+}
+
+// TestLeadingFlagBareStillHelp guards the regression boundary: bare `spacedock`
+// (no args) still renders help to stdout and exits 0 — the leading-unknown-flag
+// fix must not turn the legitimate bare invocation into a usage error.
+func TestLeadingFlagBareStillHelp(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(nil, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("bare spacedock exited %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), tagline) {
+		t.Fatalf("bare spacedock stdout missing help: %q", stdout.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("bare spacedock stderr = %q, want empty", stderr.String())
+	}
+}
+
 // TestUnknownCommandWithFlag pins AC-6: an unknown subcommand carrying a trailing
 // flag must STILL print `unknown command: <name>` + the grouped help to stderr and
 // exit 2 — never a silent exit 2. The removed `spacedock init --host claude` is the
