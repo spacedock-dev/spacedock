@@ -11,5 +11,6 @@ description: Execute workflow stage work as a dispatched worker.
 
 Load the runtime adapter for your platform:
 - Claude Code (`CLAUDECODE` env var is set): read `references/claude-ensign-runtime.md`
+- Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-ensign-runtime.md`
 
 Then read your assignment and begin work.

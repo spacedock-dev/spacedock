@@ -21,5 +21,6 @@ If this skill is invoked directly in a non-interactive run and the prompt names 
 
 Load the runtime adapter for your platform:
 - Claude Code (`CLAUDECODE` env var is set): read `references/claude-first-officer-runtime.md`
+- Codex (`CODEX_THREAD_ID` env var is set): read `references/codex-first-officer-runtime.md`
 
 Then begin the Startup procedure from the shared core.
