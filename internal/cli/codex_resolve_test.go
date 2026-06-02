@@ -26,7 +26,7 @@ func TestCodexResolveManifestAgainstInstalledHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("codex plugin list failed (exit/output): %v\n%s", err, listOut)
 	}
-	installed := strings.Contains(string(listOut), "spacedock@spacedock (installed")
+	installed := codexEntryInstalled(string(listOut), "spacedock@spacedock")
 
 	path, err := execHost{}.ResolveManifest("codex")
 	if err != nil {
