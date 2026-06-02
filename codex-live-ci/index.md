@@ -169,3 +169,16 @@ Follow-up validation is required because the previous validation report is now s
 ### Summary
 
 Recommendation: PASSED for commit `e4f3b568ff123192a89f04ad6313e790e099c70d`. The follow-up restores local subscription-auth ergonomics without weakening CI: local isolated `CODEX_HOME` auth passed a real live Codex smoke with no `OPENAI_API_KEY`, and CI-required mode still hard-fails without `OPENAI_API_KEY`.
+
+## Stage Report: PR prep
+
+- DONE: Rebased the code branch onto current `origin/next`
+  The branch now carries two commits: `96dd51bc` (`ci: add codex live gate smoke`) and `5e4a15f7` (`test: allow codex live smoke to use local auth`).
+- DONE: Reran post-rebase verification
+  `gofmt -l ./cmd ./internal` was clean, `go test -count=1 ./...` passed 745 tests in 12 packages, and `go test -count=1 ./... -race` passed 745 tests in 12 packages.
+- DONE: Reran the local subscription-auth live Codex smoke post-rebase
+  Built `/tmp/spacedock-codex-live-pr`, then `env -u OPENAI_API_KEY SPACEDOCK_BIN=/tmp/spacedock-codex-live-pr SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-codex-live-pr-artifacts go test -count=1 -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v` passed in 33.19s.
+
+### Summary
+
+The PR branch is rebased and ready to push after captain approval of the draft body.
