@@ -92,3 +92,16 @@ The deliverable is the FO's own loaded instructions — the binary is *absent*, 
 ### Summary
 
 Fleshed out the binary-absent FO-startup hardening into a concrete two-class abort split for `first-officer-shared-core.md` §Startup step 1, with verbatim before/after wording and install lines lifted from the repo README so they cannot drift. Resolved the doc-as-deliverable AC tension by grounding AC-1's presence/absence proof in the fact that the binary is absent (the contract prose is the only artifact present at failure, so a property-of-the-text check is proof at the claim's own level — the workflow's own named exception). Verified by grep that the gate text has a single prose source, narrowing AC-3 to a single-source invariant rather than a two-file reconciliation; recorded "no spike needed" since the design only edits static contract prose.
+
+## Stage Report: implementation
+
+- DONE: The two-class abort split lands in references/first-officer-shared-core.md Startup step 1 per the ideation before/after: Class A (binary absent/non-executable) carries both install lines verbatim (`brew install spacedock-dev/homebrew-tap/spacedock` + `go build -o spacedock ./cmd/spacedock`) with NO `spacedock doctor` route; Class B (present-but-out-of-range) keeps the doctor route.
+  Applied the ideation's exact replacement wording to step 1's abort clause; install lines match README:27,37 verbatim. Class A carries `Do NOT run \`spacedock doctor\` for this class`; Class B retains `run \`spacedock doctor\` for the per-class remedy`. Commit b5e5ced7.
+- DONE: A Go test enforces AC-1/AC-2/AC-3 over the real contract file (both install strings present, no `spacedock doctor` in the absent-class span, `spacedock doctor` retained for Class B, single-source grep over skills/+agents/) and is green — written failing-first.
+  `TestStartupAbortSplitsByBinaryPresence` (AC-1/AC-2) + `TestStartupGateGuidanceHasSingleProseSource` (AC-3) in skills/integration/contract_gate_test.go, reusing the existing `foSharedCore`/`sectionAfter`/`repoRoot` helpers. Confirmed failing pre-edit (class marker absent), green post-edit. Full `go test ./skills/integration/` passes; `go vet` clean. AC-1's banned-token check distinguishes a doctor ROUTE from the prohibition clause, which the prescribed Class A wording itself contains.
+- DONE: agents/first-officer.md still only delegates to the shared core (no gate-prose mirror introduced).
+  AC-3 test asserts `agents/first-officer.md` retains `begin the Startup procedure from the shared core` and contains no gate markers (`per-class remedy`, `spacedock doctor`); the skills/+agents/ .md walk returns exactly one prose source (first-officer-shared-core.md). The marketplace_manifest_test.go `spacedock doctor` match is a Go comment, excluded by the .md-only scope.
+
+### Summary
+
+Split Startup step 1's single abort clause into two classes using the ideation's exact wording: binary-absent emits the runnable brew+go-build install hint with no doctor bounce; binary-present-out-of-range keeps the doctor route. Added three contract-text assertions to the existing `contract_gate_test.go` (failing-first), green over the real file; full integration package and vet pass. The single-prose-source invariant and the agents/first-officer.md delegation are guarded by test, not just grep.
