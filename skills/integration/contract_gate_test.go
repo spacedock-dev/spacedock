@@ -136,20 +136,31 @@ func TestStartupAbortSplitsByBinaryPresence(t *testing.T) {
 			t.Errorf("binary-absent class is missing runnable install line %q", line)
 		}
 	}
-	// AC-1: no doctor ROUTE inside the binary-absent class. The class may name
-	// `spacedock doctor` only to forbid it ("Do NOT run `spacedock doctor` …");
-	// any other mention would be a route. Assert every doctor occurrence in
-	// Class A is the negated form, so a routing instruction can never hide here.
+	// AC-1: Class A must carry the no-doctor PROHIBITION and must not route to
+	// doctor. The prohibition string itself names `spacedock doctor` once; any
+	// further mention would be a route. Require the prohibition is present (so
+	// deleting the guidance fails, not skips) AND that the lone doctor mention is
+	// exactly that prohibition (so an added route fails). `doctor` is the same
+	// missing binary, so it can never be a live remedy in Class A.
 	const doctorProhibition = "Do NOT run `spacedock doctor`"
-	if n := strings.Count(classA, doctor); n > 0 {
-		if !strings.Contains(classA, doctorProhibition) || n != 1 {
-			t.Errorf("binary-absent class mentions %q %d time(s) outside the prohibition %q — `doctor` is the same missing binary and must not be a route in Class A", doctor, n, doctorProhibition)
-		}
+	if !strings.Contains(classA, doctorProhibition) {
+		t.Errorf("binary-absent class is missing the no-doctor prohibition %q — Class A must carry the guidance that `doctor` is the same missing binary", doctorProhibition)
+	}
+	if n := strings.Count(classA, doctor); n != 1 {
+		t.Errorf("binary-absent class mentions %q %d time(s); want exactly 1 (the prohibition only) — any extra mention is a route, and `doctor` must not be a route in Class A", doctor, n)
 	}
 
-	// AC-2: doctor survives and is attached to the binary-present class.
-	if !strings.Contains(classB, doctor) {
-		t.Errorf("binary-present-out-of-range class no longer routes to %q (blanket deletion regression)", doctor)
+	// AC-2: doctor survives as a LIVE ROUTE in the binary-present class. A bare
+	// mention is too weak — a disclaimer ("Historically we suggested spacedock
+	// doctor but no longer.") would satisfy it. Assert the active routing phrasing
+	// so a gutted route phrased as a disclaimer fails: the class must instruct to
+	// `run `spacedock doctor`` for `the per-class remedy`.
+	const (
+		doctorRoute  = "run `spacedock doctor`"
+		perClassVerb = "for the per-class remedy"
+	)
+	if !strings.Contains(classB, doctorRoute) || !strings.Contains(classB, perClassVerb) {
+		t.Errorf("binary-present-out-of-range class no longer carries the live doctor route (%q + %q) — a blanket deletion or a disclaimer-only mention would hit this", doctorRoute, perClassVerb)
 	}
 }
 
