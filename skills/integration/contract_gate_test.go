@@ -195,16 +195,7 @@ func TestStartupGateGuidanceHasSingleProseSource(t *testing.T) {
 			if err != nil {
 				return err
 			}
-			// Skip testdata fixtures: vendored historical records under a
-			// `testdata/` directory are inert harness inputs, not a contract-prose
-			// mirror the single-source rule guards.
-			if info.IsDir() {
-				if info.Name() == "testdata" {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if filepath.Ext(p) != ".md" {
+			if info.IsDir() || filepath.Ext(p) != ".md" {
 				return nil
 			}
 			b, err := os.ReadFile(p)

@@ -108,6 +108,24 @@ Terminal state. The task's PR is merged and the entity is archived.
 - **Good:** Reached terminal via real merge, not by manual flag flip
 - **Bad:** Marking done before the PR actually merged
 
+## Recommended practices (opt-in)
+
+These are proven dev-workflow disciplines a captain can adopt into this workflow's validation stage. They are recommended, not mandatory — the universal first-officer contract does not impose them, because a non-development workflow's acceptance proof may legitimately be a published artifact, a metric, or a human review rather than a test or command. Adopt them by copying the guidance into the `validation` stage's Outputs and Bad lists above when commissioning a code-shipping workflow.
+
+### External-proof acceptance criteria
+
+At the validation gate, require that each AC's cited evidence comes from a check OUTSIDE the task body — a test, a command's output or exit code, a file the change produces, or the resulting on-disk state. An AC whose only cited proof is review of the task's own prose ("verified by reviewing this task's decision section") proves only that the prose exists; it can never fail, so it does not satisfy the AC. Reject self-referential ACs. If the task's only deliverable is a decision with nothing shipped, do not recommend PASSED — the decision belongs in the roadmap, not a terminal dev task. (Behavioral enforcement of this rule, when a workflow wants it, is a workflow-opt-in `spacedock status --validate` guard — the workflow declares it; it is not universal binary behavior.)
+
+### Detached adversarial audit
+
+For high-stakes surfaces — a front-door launcher, the status/guard mutation paths, shipped contract/scaffolding, or CI/release machinery — treat a passing validation as necessary but not sufficient. Before merging, run (or dispatch) a read-only adversarial audit on a detached checkout of the merge result:
+
+- **When:** the high-stakes surfaces above; routine low-blast-radius changes do not need it.
+- **What:** the auditor works on a separate throwaway checkout (never the implementation worktree) and never mutates the deliverable. It tries to REFUTE the validation — construct an adversarial edit the deliverable's own tests should catch, and confirm they do. A test that stays green under a claim-breaking edit is a hole. Findings come in two tiers — `Material:` (a real correctness or test-strength hole) and `Polish:` (non-blocking); "refuted nothing material" is a valid recorded outcome.
+- **How recorded:** material findings route back through the validation→implementation feedback flow (a `### Feedback Cycles` entry naming the audit and its adversarial edit); the gate is not clean until they close.
+
+The audit catches the class of hole where the test passes but would also pass on a broken future edit — which a green suite cannot see itself.
+
 ## Workflow State
 
 View the workflow overview:
