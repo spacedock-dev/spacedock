@@ -1,13 +1,13 @@
 ---
 id: 1xk9bz4fr7qefgcqz6stzpkk
 title: 0.19.3 code-quality cleanups — release regex clobber, statecommit test phrase, StandingTeammate dedup, prose-marker brittleness, init→install rename drift, unknown-subcommand silent exit
-status: ideation
+status: implementation
 source: sprint-end antipattern reviews (2026-06-01) — 0.19.3 minor-findings bucket (all Minor)
 started: 2026-06-02T04:57:30Z
 completed:
 verdict:
 score: "0.22"
-worktree:
+worktree: .worktrees/spacedock-ensign-code-cleanups-0193
 issue:
 ---
 
