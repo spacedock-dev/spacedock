@@ -173,3 +173,30 @@ Exit-0 on a usage error is the silent-failure class the captain originally repor
 - Likely seam: in the root `RunE`, inspect the raw args for a leading `-`-prefixed token that is not a recognized persistent flag, and route it to the unknown/usage path with a non-zero exit.
 
 **Tests to add (TDD, failing-first):** pin `spacedock --bogus`, `spacedock --boot`, and `spacedock --foo install` → non-empty usage on stderr + non-zero exit. **Regression guards (must stay green):** bare `spacedock` → help + exit 0; `spacedock --version`; `spacedock install` / `spacedock status --boot`; `spacedock bogus` / `spacedock init --host claude` → `unknown command:` + exit 2 (the AC-6 win). Full `go test ./...` green + gofmt/vet clean.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Fix the leading-unknown-flag regression — a stray leading flag must print usage + exit non-zero, never silent exit 0.
+  Commit 61bd3a85 on spacedock-ensign/code-cleanups-0193. Root cause: the `FParseErrWhitelist{UnknownFlags: true}` strips a leading unknown flag during parse, so the root RunE runs with empty positional args and falls through to the bare-help path (exit 0). Fix: thread the raw argv into `newRootCommand`; in RunE's bare path, `leadingUnknownFlag(rawArgs)` detects a leading `-`-prefixed token (version/help are handled earlier) and routes to a new `unknownFlag` helper → `unknown flag: <tok>` + usage + exit 2.
+- DONE: TDD failing-first tests pinning the three leading-flag cases + the bare-invocation regression boundary.
+  `TestLeadingUnknownFlagIsUsageError` (`--bogus`, `--boot`, `--foo install`) asserts non-zero exit + usage on stderr; confirmed failing (exit 0) before the fix, green after. `TestLeadingFlagBareStillHelp` guards bare `spacedock` → help + exit 0. Updated the one direct `newRootCommand` caller (frontdoor_test.go:179) for the new `rawArgs` param.
+- DONE: All regression guards stay green; full `go test ./...` + gofmt/vet clean.
+  `go test ./...` all packages ok (cli 153 tests); `go vet ./...` no issues; gofmt clean on touched files. The other 6 cleanups untouched.
+
+### Behavior evidence (built binary, before → after)
+
+| Invocation | Before | After |
+| --- | --- | --- |
+| `spacedock --bogus` | exit 0 + help (silent usage error) | exit 2, `unknown flag: --bogus` + usage |
+| `spacedock --boot` | exit 0 + help | exit 2, `unknown flag: --boot` + usage |
+| `spacedock --foo install` | exit 0, `install` never ran | exit 2, `unknown flag: --foo` (install not run) |
+| `spacedock` (bare) | exit 0 + help | exit 0 + help (unchanged) |
+| `spacedock --version` | exit 0 | exit 0 (unchanged) |
+| `spacedock bogus` | exit 2 `unknown command: bogus` | exit 2 (unchanged) |
+| `spacedock init --host claude` | exit 2 `unknown command: init` | exit 2 (unchanged) |
+| `spacedock install --check` | exit 0 runs | exit 0 runs (unchanged) |
+| `spacedock status --boot` | exit 1 (no workflow) | exit 1 (unchanged) |
+
+### Summary
+
+Fixed the AC-6 leading-flag gap the detached audit found (commit 61bd3a85). The `UnknownFlags` whitelist strips a stray leading flag during parse, so the root RunE fell through to the bare-help path and exited 0 — a silent usage error, the exact class this entity set out to kill. Threaded the raw argv into the root command and detect a leading `-`-prefixed token on the bare path, routing it to a loud `unknown flag:` + usage + exit 2. Bare `spacedock`, `--version`, the install/status paths, and the unknown-command/subcommand exit-2 wins are all unchanged (verified against a built binary, evidence table above). Other 6 cleanups untouched. Full `go test ./...` green, gofmt/vet clean.
