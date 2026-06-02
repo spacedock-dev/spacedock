@@ -1,5 +1,5 @@
-// ABOUTME: AC-1 migration check — every fixture frontmatter parses through
-// ABOUTME: yaml.v3 and the reader's value-map matches a direct decode.
+// ABOUTME: AC-1 live-entities-parse check — every fixture + live frontmatter
+// ABOUTME: parses through yaml.v3; helper-level corruption tests cover the seam.
 package status
 
 import (
@@ -11,15 +11,27 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// TestMigrationCheckFixturesParseConsistently is the AC-1 divergence guard:
-// it walks every `*.md` under internal/status/testdata AND the repo-root
-// workflow-definition files (agent prompts, skill scaffolding, hook mods,
-// dev workflow READMEs), parses each frontmatter block via the public
-// reader (ParseFrontmatter, yaml.v3-backed), then independently decodes
-// the in-fence slice through yaml.v3 directly, and asserts the two
-// value-maps agree key-by-key. A disagreement would be silent drift
-// between the reader and the YAML standard — exactly the failure mode the
-// migration check is meant to surface.
+// TestMigrationCheckFixturesParseConsistently is the AC-1 live-entities-parse
+// guard. It walks every `*.md` under internal/status/testdata AND the
+// repo-root workflow-definition files (agent prompts, skill scaffolding, hook
+// mods, dev workflow READMEs), parses each frontmatter block via the public
+// reader (ParseFrontmatter, yaml.v3-backed), then independently decodes the
+// in-fence slice through yaml.v3 directly, and asserts the two value-maps
+// agree key-by-key on top-level scalars.
+//
+// SCOPE NOTE (cycle 1 audit, finding L1-b): both the reader and the
+// independent decode here go through yaml.v3, so this is a yaml.v3-against-
+// yaml.v3 INTRA-VERSION CONSISTENCY check — NOT a parser-migration parity
+// oracle against the retired Python reader. AC-1 claims "live entities still
+// parse," which this asserts: every live + fixture frontmatter parses cleanly
+// through yaml.v3 and the reader's value-map is consistent with a direct
+// yaml.v3 decode against the same fence-extracted bytes. The
+// fence-extraction chain itself (`contentHasOpeningFence`,
+// `frontmatterSlice`, `splitLines`, `normalizeNewlines`) is the upstream
+// helper-level pipeline; bugs in those helpers would affect BOTH sides of
+// this consistency check, so they are covered by the corruption-sensitive
+// unit tests below (TestFrontmatterSliceHelperCorruption,
+// TestSplitLinesNormalizeHelperCorruption) rather than by this walk.
 //
 // Accepted exceptions: files with NO opening fence (body-only markdown,
 // READMEs without frontmatter) are skipped, not failed. The spike found

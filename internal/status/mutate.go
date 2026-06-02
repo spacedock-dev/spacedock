@@ -27,20 +27,48 @@ type fieldUpdate struct {
 	hasValue bool // false => bare timestamp field
 }
 
+// resolvedFields is the small insertion-order tracker the --set narration
+// emits in (field: old -> new lines, JSON changes, quiet pairs). Reader-side
+// ordering is the yaml.Node Content list; this struct's only job is to remember
+// which --set updates actually resolved (a bare timestamp on an already-set
+// field is skipped) and in what order they were requested.
+type resolvedFields struct {
+	order  []string
+	values map[string]string
+}
+
+func (r *resolvedFields) set(key, val string) {
+	if _, ok := r.values[key]; !ok {
+		r.order = append(r.order, key)
+	}
+	r.values[key] = val
+}
+
+func (r *resolvedFields) get(key string) (string, bool) {
+	v, ok := r.values[key]
+	return v, ok
+}
+
+func (r *resolvedFields) keys() []string { return r.order }
+
 // nowTimestamp returns the YYYY-MM-DDTHH:MM:SSZ stamp the oracle writes.
 func nowTimestamp() string {
 	return time.Now().UTC().Format("2006-01-02T15:04:05Z")
 }
 
-// updateFrontmatter parses the FM slice into a yaml.Node, mutates the target
-// scalar node(s) (or appends new K,V pairs for genuinely-missing fields), and
-// re-marshals; unchanged scalar nodes re-marshal byte-identically so unknown
-// frontmatter fields and key order survive --set/--archive (the AC-2 contract).
-// Bare timestamp fields skip when already set. The write is atomic and
-// preserves the file's EOF-newline state byte-for-byte: the splice replaces
-// only the in-fence body, leaving the opening/close fence lines and the
-// post-fence body — including the file's terminal newline state — untouched.
-func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) {
+// updateFrontmatter parses the in-fence YAML body into a yaml.Node, mutates
+// the target scalar node(s) or appends new K,V pairs for genuinely-missing
+// fields, and re-marshals. The yaml.v3 emitter is canonical, so the contract
+// is FIELD-exact, not byte-exact: unknown fields and key order survive
+// --set/--archive intact (the AC-2 contract); the rewritten YAML body may
+// renormalize visual whitespace (trailing whitespace, empty-value lines,
+// pre-comment whitespace) that does not change any value. The 5 documented
+// emitter normalizations are accepted observed behavior. Bare timestamp
+// fields skip when already set. The write is atomic and preserves the file's
+// EOF-newline state byte-for-byte: the splice replaces only the in-fence
+// body, leaving the opening/close fence lines and the post-fence body —
+// including the file's terminal newline state — untouched.
+func updateFrontmatter(path string, updates []fieldUpdate) (*resolvedFields, error) {
 	if !hasOpeningFence(path) {
 		return nil, fmt.Errorf("No frontmatter found in %s", path)
 	}
@@ -70,8 +98,12 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) 
 	}
 
 	// Slice the in-fence YAML body and parse it into a yaml.Node we can
-	// mutate. Unchanged scalar nodes re-marshal byte-identically — the seam's
-	// load-bearing property.
+	// mutate. Unchanged scalars survive FIELD-exact through re-marshal — same
+	// value, same key order — while the yaml.v3 emitter is free to re-emit
+	// the same value in its canonical form (the 5 documented normalizations).
+	// That is the seam's load-bearing property under AC-2's field-exact
+	// contract; pinned by TestUpdateFrontmatterNodeRoundTrip + the 5
+	// divergence tests.
 	fmBody := strings.Join(lines[fmStart+1:fmEnd], "\n") + "\n"
 	var doc yaml.Node
 	if err := yaml.Unmarshal([]byte(fmBody), &doc); err != nil {
@@ -105,7 +137,7 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) 
 	}
 
 	now := nowTimestamp()
-	resolved := newOrderedMap()
+	resolved := &resolvedFields{values: map[string]string{}}
 	for _, u := range updates {
 		if !u.hasValue {
 			if current[u.field] != "" {
