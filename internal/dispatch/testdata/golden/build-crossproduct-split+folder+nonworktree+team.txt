@@ -30,7 +30,7 @@ You are working on: Thing
 
 Stage: backlog
 
-This workflow is split-root: the entity body and your stage report live in the shared state checkout, not alongside the code. Write and commit them to the state checkout at the entity path below. Commit state path-scoped — `git -C <ROOT>/state-checkout/state-checkout add <ROOT>/state-checkout/thing/index.md && git -C <ROOT>/state-checkout/state-checkout commit -m "..." -- <ROOT>/state-checkout/thing/index.md` — never a bare `git add -A` or bare `git commit` in the state checkout (a bare commit cross-attributes a concurrent writer's staged entity). Retry on index.lock contention after a short wait.
+This workflow is split-root: the entity body and your stage report live in the shared state checkout, not alongside the code. Write and commit them to the state checkout at the entity path below. Commit state path-scoped — `git -C <ROOT>/state-checkout/state-checkout add <ROOT>/state-checkout/thing/index.md && git -C <ROOT>/state-checkout/state-checkout commit -m "..." -- <ROOT>/state-checkout/thing/index.md` — never a bare `git add -A` or bare `git commit` in the state checkout (a bare commit cross-attributes a concurrent writer's staged entity). Retry on index.lock contention after a short wait. Then push the state branch so peers see your entity/report: `git -C <ROOT>/state-checkout/state-checkout push origin spacedock-state/state-checkout`; on a non-fast-forward rejection, `git -C <ROOT>/state-checkout/state-checkout pull --rebase origin spacedock-state/state-checkout` then re-push.
 
 Read the entity file at <ROOT>/state-checkout/thing/index.md for the current spec.
 
