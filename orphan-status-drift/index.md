@@ -1,7 +1,7 @@
 ---
 id: at3jmf35cgt1ghgm53m91en8
 title: status --boot ORPHANS misreports DIR_EXISTS/BRANCH_EXISTS for split-root code worktrees
-status: implementation
+status: validation
 source: spacedock-dev/spacedock#251 + FO boot (2026-06-01) — reproduced live this session: boot flagged the 7h code worktree as dir_exists/branch_exists=no
 started: 2026-06-02T02:18:54Z
 completed:
