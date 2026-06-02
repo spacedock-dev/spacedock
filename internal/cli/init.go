@@ -39,13 +39,23 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		}
 		return runDoctor(ctx, []string{"--host", "claude"}, ops, stdout, stderr)
 	case "codex":
-		// Codex install is documented prose: the host install verb is `add`
-		// (NOT `install`), and the marketplace add accepts the branch via --ref.
-		printCodexInstallProse(stdout)
-		if !check {
-			return 0
+		resolved, err := ops.ResolveManifest("codex")
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
+			return 1
 		}
-		return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
+		if resolved != "" || check {
+			code := contract.RunDoctor(resolved, "codex", devBranch, stdout, stderr)
+			if code != 0 || resolved != "" || check {
+				return code
+			}
+		}
+
+		// Codex install is documented prose when no installed plugin resolves: the
+		// host install verb is `add` (NOT `install`), and the marketplace add
+		// accepts the branch via --ref.
+		printCodexInstallProse(stdout)
+		return 0
 	default:
 		fmt.Fprintf(stderr, "spacedock install: unknown host %q (want claude or codex)\n", host)
 		return 2

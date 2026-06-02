@@ -109,6 +109,13 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	teamName := optString(fields, "team_name")
 	feedbackContext := optString(fields, "feedback_context")
 	scopeNotes := optString(fields, "scope_notes")
+	host := optString(fields, "host")
+	if host == "" {
+		host = "claude"
+	}
+	if host != "claude" && host != "codex" {
+		return buildError(stderr, 1, "unsupported host %q (want claude or codex)", host)
+	}
 	bareMode := optBool(fields, "bare_mode")
 	isFeedbackReflow := optBool(fields, "is_feedback_reflow")
 
@@ -302,18 +309,7 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	var parts []string
 
 	// 0. Operating-contract first-action directive.
-	parts = append(parts,
-		"## First action\n"+
-			"\n"+
-			"Before anything else, invoke your operating contract:\n"+
-			"\n"+
-			"    Skill(skill=\"spacedock:ensign\")\n"+
-			"\n"+
-			"This loads the shared ensign discipline (stage-report format, BashOutput "+
-			"polling, worktree ownership, completion signal protocol). The call is safe "+
-			"to call more than once; if the agent-definition preload ever starts "+
-			"working, calling it again is a no-op (the skill content is re-loaded but "+
-			"has no behavioral effect). Do not paraphrase; call the tool.\n")
+	parts = append(parts, firstActionBlock(host))
 
 	// 1. Header.
 	parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
@@ -409,18 +405,7 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 		if worktreePath != "" && !splitRoot {
 			entityFileRef = worktreeEntityPath
 		}
-		parts = append(parts, fmt.Sprintf(
-			"\n\n### Completion Signal\n\n"+
-				"When you finish (after all commits and stage report writes are done), "+
-				"your last action MUST be:\n\n"+
-				"    SendMessage(to=\"team-lead\", message=\"Done: %s completed "+
-				"%s. Report written to %s.\")\n\n"+
-				"**If you are the first officer forwarding this prompt to Agent():** copy "+
-				"the entire block above into `Agent(prompt=...)` character-for-character. "+
-				"Do NOT paraphrase `SendMessage(to=\"team-lead\", ...)` as \"SendMessage with "+
-				"to='team-lead'\" or any other English rewrite — the parenthesis-equals "+
-				"syntax is the literal call the ensign must emit, not a description of one.",
-			entityTitle, stage, entityFileRef))
+		parts = append(parts, completionSignalBlock(host, entityTitle, stage, entityFileRef))
 	}
 
 	dispatchBody := strings.Join(parts, "\n")
@@ -437,9 +422,7 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 		return 1
 	}
 
-	prompt := fmt.Sprintf(
-		"Skill(skill=\"spacedock:ensign\"); then Read %s and treat its content as your assignment.",
-		dispatchFilePath)
+	prompt := dispatchPointerPrompt(host, dispatchFilePath)
 
 	out := buildOutput{
 		SchemaVersion: schemaVersion,
@@ -458,6 +441,64 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	}
 
 	return emitBuildJSON(stdout, out)
+}
+
+func firstActionBlock(host string) string {
+	if host == "codex" {
+		return "## First action\n" +
+			"\n" +
+			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
+			"\n" +
+			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
+			"worktree ownership, and completion signal protocol) plus the stage-specific assignment. " +
+			"Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
+			"pointer as the contract surface.\n"
+	}
+	return "## First action\n" +
+		"\n" +
+		"Before anything else, invoke your operating contract:\n" +
+		"\n" +
+		"    Skill(skill=\"spacedock:ensign\")\n" +
+		"\n" +
+		"This loads the shared ensign discipline (stage-report format, BashOutput " +
+		"polling, worktree ownership, completion signal protocol). The call is safe " +
+		"to call more than once; if the agent-definition preload ever starts " +
+		"working, calling it again is a no-op (the skill content is re-loaded but " +
+		"has no behavioral effect). Do not paraphrase; call the tool.\n"
+}
+
+func completionSignalBlock(host, entityTitle, stage, entityFileRef string) string {
+	if host == "codex" {
+		return fmt.Sprintf(
+			"\n\n### Completion Signal\n\n"+
+				"When you finish (after all commits and stage report writes are done), send one concise final "+
+				"message in this Codex worker thread:\n\n"+
+				"    Done: %s completed %s. Report written to %s.\n\n"+
+				"The first officer observes completion through the Codex final-status notification in the FO mailbox. "+
+				"Do not emit a Claude `SendMessage` call; the Codex mailbox notification is the completion signal.",
+			entityTitle, stage, entityFileRef)
+	}
+	return fmt.Sprintf(
+		"\n\n### Completion Signal\n\n"+
+			"When you finish (after all commits and stage report writes are done), "+
+			"your last action MUST be:\n\n"+
+			"    SendMessage(to=\"team-lead\", message=\"Done: %s completed "+
+			"%s. Report written to %s.\")\n\n"+
+			"**If you are the first officer forwarding this prompt to Agent():** copy "+
+			"the entire block above into `Agent(prompt=...)` character-for-character. "+
+			"Do NOT paraphrase `SendMessage(to=\"team-lead\", ...)` as \"SendMessage with "+
+			"to='team-lead'\" or any other English rewrite — the parenthesis-equals "+
+			"syntax is the literal call the ensign must emit, not a description of one.",
+		entityTitle, stage, entityFileRef)
+}
+
+func dispatchPointerPrompt(host, dispatchFilePath string) string {
+	if host == "codex" {
+		return fmt.Sprintf("Read %s and treat its content as your assignment.", dispatchFilePath)
+	}
+	return fmt.Sprintf(
+		"Skill(skill=\"spacedock:ensign\"); then Read %s and treat its content as your assignment.",
+		dispatchFilePath)
 }
 
 // stateCommitGuidance is the split-root state-commit instruction, shared by the
