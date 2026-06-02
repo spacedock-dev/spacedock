@@ -156,6 +156,8 @@ SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next st
 
 **If fresh dispatch:** Check whether the next stage has `feedback-to` pointing at the completed stage. If yes, keep the completed agent alive only while it remains addressable and eligible for later reuse. Otherwise, explicitly shut down the agent. Run `status --next` and dispatch the next stage.
 
+**Supersede-shutdown.** When the FO decides fresh dispatch because of a cycle increment (the new dispatch name carries a `-cycleN` suffix that the prior agent's name lacks) OR a feedback-rework re-enters the prior stage, shut down the prior cohort BEFORE issuing the new dispatch — in a SEPARATE message per the dispatch-vs-shutdown sequencing rule. The prior cohort is every team-roster member whose `agentType == "spacedock:ensign"` and whose `decompose(name)` shares the same `(slug, stage)` pair as the new dispatch's name. SendMessage `{"type":"shutdown_request"}` to each prior-cohort name; drop them from session-memory tracking. The behavioral backstop is `spacedock dispatch reconcile`'s **Class B (superseded)** detection — if the prose step is skipped, the next idle sweep flags the loser(s) and the FO executes the same shutdown then.
+
 If the stage is gated:
 - never self-approve
 - present the stage report to the human operator per `## Gate Presentation` below
@@ -235,6 +237,7 @@ When an entity reaches its terminal stage:
 7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`
 8. Archive the entity into `{workflow_dir}/_archive/` with `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
 9. Remove the worktree (`git worktree remove {path}`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is still pending — the PR reviewer needs it on the remote. Remote-branch cleanup belongs to the PR merge, not the FO.
+10. **Teardown agents at terminal.** Derive the entity's agent cohort from the live team roster: every member whose `agentType == "spacedock:ensign"` and whose name decomposes (per `spacedock dispatch reconcile`'s `decompose(name)` rule — strip the `spacedock-ensign-` prefix, peel a trailing `-cycleN` or `-N`, peel the longest matching workflow stage) to a slug equal to this entity's slug. SendMessage `{"type":"shutdown_request"}` to each — cooperative, best-effort, fire-and-forget — and drop them from session-memory tracking. The behavioral backstop for this step is `spacedock dispatch reconcile`'s **Class A (lingering)** detection, which the FO calls at idle and post-merge per the runtime adapter's `## Event Loop`. If the prose step is skipped, the next idle sweep will flag the surviving agent as Class A and the FO will execute the same shutdown then — but the cost is one extra context-window cycle the lingering agent burns, which is why the prose step is mandatory at the terminal boundary itself.
 
 ### Ship-Local Ceremony
 
