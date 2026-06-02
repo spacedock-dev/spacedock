@@ -154,3 +154,16 @@ PASSED: implementation commit `2c4cd877` satisfies AC-1 through AC-4 with focuse
 ### Summary
 
 Prepared r0 for the PR merge hook after validation approval: the branch is rebased onto `origin/next`, the branch pointer is attached to the rebased commit, and post-rebase tests passed.
+
+## Stage Report: PR refresh
+
+- DONE: Rebasing r0 incorporated the live-E2E fixes now on `origin/next`
+  Rebased branch `spacedock-ensign/codex-runtime-adapter` from old PR head `13fde1b6` onto current `origin/next`, producing new head `528ffa17`.
+- DONE: Required local gates passed after the rebase
+  From `.worktrees/spacedock-ensign-codex-runtime-adapter`, `gofmt -w ./cmd ./internal` completed, `go test ./...` passed 738 tests in 12 packages, and `go test ./... -race` passed 738 tests in 12 packages.
+- DONE: Updated the existing PR branch for rerun
+  Force-with-lease pushed `spacedock-ensign/codex-runtime-adapter` so PR #269 reruns on the fixed base.
+
+### Summary
+
+r0 is refreshed on top of current `origin/next`; the previous Opus failure was from the stale pre-fix PR head and the updated PR branch is now waiting on fresh CI.
