@@ -139,6 +139,10 @@ func TestSingleRootNoStateCommitGuidance(t *testing.T) {
 				t.Errorf("%s: single-root body leaks a `git -C` state-commit command\n--- body ---\n%s",
 					tc.name, body)
 			}
+			if strings.Contains(body, "pull --rebase") {
+				t.Errorf("%s: single-root body leaks a state-branch push/`pull --rebase` reminder\n--- body ---\n%s",
+					tc.name, body)
+			}
 		})
 	}
 }
@@ -210,6 +214,29 @@ func TestStateCommitGuidanceResolvesPaths(t *testing.T) {
 			if !strings.Contains(body, wantCommit) {
 				t.Errorf("%s: body missing resolved commit command %q\n--- body ---\n%s",
 					tc.name, wantCommit, body)
+			}
+
+			// CONCURRENCY-SAFETY PHRASE: the split-root guidance must keep the
+			// "never a bare `git add -A`" warning that guards the shared state index.
+			const concurrencyPhrase = "never a bare `git add -A`"
+			if !strings.Contains(body, concurrencyPhrase) {
+				t.Errorf("%s: body missing concurrency-safety phrase %q\n--- body ---\n%s",
+					tc.name, concurrencyPhrase, body)
+			}
+
+			// PUSH REMINDER: split-root commits land on a shared orphan state branch
+			// peers also write, so the guidance must remind the worker to push that
+			// branch and `pull --rebase` on a rejection. The resolved branch name
+			// (spacedock-state/<workflow-basename>) is named verbatim.
+			stateBranch := "spacedock-state/" + filepath.Base(workflowDir)
+			wantPush := "git -C " + stateCheckout + " push origin " + stateBranch
+			if !strings.Contains(body, wantPush) {
+				t.Errorf("%s: body missing resolved push reminder %q\n--- body ---\n%s",
+					tc.name, wantPush, body)
+			}
+			if !strings.Contains(body, "pull --rebase") {
+				t.Errorf("%s: body missing `pull --rebase` on-rejection reminder\n--- body ---\n%s",
+					tc.name, body)
 			}
 
 			// NEGATIVE (the encoded failure): no literal brace tokens survive.

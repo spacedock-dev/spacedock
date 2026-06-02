@@ -72,6 +72,42 @@ func TestStampVersionLeavesMarketplaceCalendarUntouched(t *testing.T) {
 	}
 }
 
+// TestStampVersionRewritesOnlyFirstVersionKey locks the replace-first contract:
+// a manifest carrying a second nested `version` key (beyond the top-level one)
+// must have ONLY its top-level version rewritten — the nested key is left
+// exactly as-is. A blanket ReplaceAll over every `"version":` match would clobber
+// the nested key too; the targeted first-match replace must not.
+func TestStampVersionRewritesOnlyFirstVersionKey(t *testing.T) {
+	src := `{
+  "name": "spacedock",
+  "version": "0.1.0-dev",
+  "skills": "./skills/",
+  "metadata": {
+    "version": "schema-7"
+  }
+}
+`
+	out, err := StampVersion([]byte(src), "0.19.0")
+	if err != nil {
+		t.Fatalf("StampVersion: %v", err)
+	}
+	var m struct {
+		Version  string `json:"version"`
+		Metadata struct {
+			Version string `json:"version"`
+		} `json:"metadata"`
+	}
+	if err := json.Unmarshal(out, &m); err != nil {
+		t.Fatalf("stamped manifest does not parse: %v\n%s", err, out)
+	}
+	if m.Version != "0.19.0" {
+		t.Errorf("top-level version = %q, want 0.19.0", m.Version)
+	}
+	if m.Metadata.Version != "schema-7" {
+		t.Errorf("nested metadata.version was clobbered: %q, want schema-7 (replace-first must leave it untouched)", m.Metadata.Version)
+	}
+}
+
 // TestBumpCalendarVersionStrictlyIncreases locks AC-2d: invoking the bump
 // function twice over the SAME marketplace.json produces a strictly increasing
 // entry version (the `plugin update` re-pull key actually moves), not two
@@ -112,6 +148,36 @@ func TestBumpCalendarVersionStrictlyIncreases(t *testing.T) {
 	}
 	if !strings.HasPrefix(v2, "0.0.20260601") {
 		t.Errorf("second bump = %q, want 0.0.20260601NN prefix", v2)
+	}
+}
+
+// TestBumpCalendarVersionRewritesOnlyFirstVersionKey locks the replace-first
+// contract for the calendar bump: a marketplace.json whose plugin entry carries a
+// trailing second `version` key (e.g. a nested source/metadata block) must have
+// ONLY the entry's first `version` advanced — the trailing key stays intact. A
+// blanket ReplaceAll would over-rewrite it.
+func TestBumpCalendarVersionRewritesOnlyFirstVersionKey(t *testing.T) {
+	src := `{
+  "name": "spacedock",
+  "plugins": [
+    {
+      "name": "spacedock",
+      "version": "0.0.2026053101",
+      "schema": { "version": "marketplace-2" }
+    }
+  ]
+}
+`
+	now := time.Date(2026, 6, 1, 12, 0, 0, 0, time.UTC)
+	out, err := BumpCalendarVersion([]byte(src), now)
+	if err != nil {
+		t.Fatalf("bump: %v", err)
+	}
+	if v := entryVersion(t, out); v != "0.0.2026060101" {
+		t.Errorf("entry calendar version = %q, want 0.0.2026060101", v)
+	}
+	if !strings.Contains(string(out), `"version": "marketplace-2"`) {
+		t.Errorf("nested schema.version was clobbered; replace-first must leave it untouched:\n%s", out)
 	}
 }
 

@@ -1,4 +1,4 @@
-// ABOUTME: AC-3a — `spacedock init --host claude` targets @next when devBranch is
+// ABOUTME: AC-3a — `spacedock install --host claude` targets @next when devBranch is
 // ABOUTME: pinned to next, and the composed marketplace-add argv carries @next.
 package cli
 
@@ -11,7 +11,7 @@ import (
 
 // TestInitTargetsNextWhenDevBranchPinned locks AC-3a: with devBranch pinned to
 // `next` (the released binary's default, until `next` is the default branch),
-// `spacedock init --host claude` drives the install seam with branch=next, so the
+// `spacedock install --host claude` drives the install seam with branch=next, so the
 // issued `marketplace add` resolves `spacedock-dev/spacedock@next`. The package
 // var is saved/restored so the assertion does not leak into sibling tests.
 func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {

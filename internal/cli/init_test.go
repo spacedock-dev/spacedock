@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// TestInitClaudeIssuesHostPluginCommands: `spacedock init --host claude` drives
+// TestInitClaudeIssuesHostPluginCommands: `spacedock install --host claude` drives
 // the install seam (host plugin marketplace add + install) rather than a
 // filesystem copy of skill files.
 func TestInitClaudeIssuesHostPluginCommands(t *testing.T) {
@@ -101,7 +101,7 @@ func TestInitCheckRunsDoctorWithoutInstalling(t *testing.T) {
 	}
 }
 
-// TestInitCodexEmitsAddCommandProse: `spacedock init --host codex` emits the
+// TestInitCodexEmitsAddCommandProse: `spacedock install --host codex` emits the
 // documented `codex plugin marketplace add` + `codex plugin add` pair as prose
 // (install verb is `add`, not `install`) and does NOT shell the claude install
 // seam.

@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -35,10 +36,19 @@ var claudeHelperTokens = []string{
 	"lookup_model",
 }
 
-// hostQualifierMarkers mark a span as explicitly host-qualified: it names a
-// non-Claude runtime alternative (the `X on Codex, Y on Claude` shape) so the
-// Claude token is a qualified realization, not an unqualified generic step.
-var hostQualifierMarkers = []string{"Codex", "codex"}
+// A span counts as host-qualified only when it names BOTH runtimes by their
+// capitalized product names — the `X on Codex, Y on Claude` contrast shape, where
+// the Claude token is a qualified realization presented alongside the Codex
+// alternative, not an unqualified generic step. Requiring the contrast (both
+// names), rather than a lone "Codex"/"codex" anywhere, keeps a span that merely
+// mentions a host in passing (e.g. a bare `codex exec`) from falsely qualifying an
+// unqualified Claude-only helper. The names are matched capitalized so the
+// lowercase `claude-` inside a helper token (claude-team) does not self-satisfy
+// the Claude half of the contrast.
+const (
+	codexMarker  = "Codex"
+	claudeMarker = "Claude"
+)
 
 // TestSharedCoreHasNoUnqualifiedClaudeHelpers parses the generic core's markdown
 // structure into spans (numbered/bulleted list items and paragraphs) and fails if
@@ -60,7 +70,7 @@ func TestSharedCoreHasNoUnqualifiedClaudeHelpers(t *testing.T) {
 			violations = append(violations,
 				strings.TrimSpace(
 					sp.text[:min(len(sp.text), 120)])+
-					" [unqualified token: "+tok+", first line "+itoa(sp.startLine)+"]")
+					" [unqualified token: "+tok+", first line "+strconv.Itoa(sp.startLine)+"]")
 		}
 	}
 	if len(violations) > 0 {
@@ -86,6 +96,48 @@ func TestClaudeAdapterOwnsRelocatedCommands(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("Claude adapter %s does not name the relocated command %q", claudeRuntimePath, want)
 		}
+	}
+}
+
+// TestSpanHostQualifiedRequiresContrast pins AC-4: a span counts as host-qualified
+// only when it presents the Codex/Claude CONTRAST — naming both a Codex token and a
+// Claude token — not when it merely mentions "codex" in passing. The bare-word
+// markers wrongly qualified any span containing "Codex"/"codex"; the de-brittled
+// oracle qualifies only the contrast. Each case names a Claude helper token so the
+// qualification decision is what gates a violation.
+func TestSpanHostQualifiedRequiresContrast(t *testing.T) {
+	cases := []struct {
+		name      string
+		text      string
+		qualified bool
+	}{
+		{
+			name:      "real-contrast",
+			text:      "The concrete routing call is the runtime adapter's (`send_input` on Codex, `SendMessage` on Claude teams).",
+			qualified: true,
+		},
+		{
+			name:      "declares-contrast",
+			text:      "The probe command is the adapter's (Codex declares none; Claude supplies one — see the context-budget section).",
+			qualified: true,
+		},
+		{
+			name:      "bare-codex-mention-no-claude",
+			text:      "Run the context-budget probe before reuse (the codex exec flow does the same).",
+			qualified: false,
+		},
+		{
+			name:      "no-host-tokens",
+			text:      "Before evaluating reuse conditions, consult the context-budget probe.",
+			qualified: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := spanHostQualified(c.text); got != c.qualified {
+				t.Errorf("spanHostQualified(%q) = %v, want %v", c.text, got, c.qualified)
+			}
+		})
 	}
 }
 
@@ -195,42 +247,11 @@ func isListItemStart(line string) bool {
 }
 
 // spanHostQualified reports whether a span is explicitly host-qualified — it names
-// a non-Claude runtime alternative, the `X on Codex, Y on Claude` shape. Such a
-// span may reference a Claude helper because it is presenting the Claude
-// realization alongside the alternative, not stating an unqualified generic step.
+// BOTH runtimes, the `X on Codex, Y on Claude` contrast shape. Such a span may
+// reference a Claude helper because it is presenting the Claude realization
+// alongside the Codex alternative, not stating an unqualified generic step. A span
+// that names only one runtime (a passing mention) is not the contrast and does not
+// qualify.
 func spanHostQualified(text string) bool {
-	for _, m := range hostQualifierMarkers {
-		if strings.Contains(text, m) {
-			return true
-		}
-	}
-	return false
-}
-
-// min returns the smaller of a and b.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// itoa is a tiny int-to-string for diagnostics (avoids importing strconv twice).
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var b []byte
-	neg := n < 0
-	if neg {
-		n = -n
-	}
-	for n > 0 {
-		b = append([]byte{byte('0' + n%10)}, b...)
-		n /= 10
-	}
-	if neg {
-		b = append([]byte{'-'}, b...)
-	}
-	return string(b)
+	return strings.Contains(text, codexMarker) && strings.Contains(text, claudeMarker)
 }

@@ -78,7 +78,7 @@ func TestCompare(t *testing.T) {
 		{"too-old-plugin-at-hi", 2, ">=1,<2", TooOldPlugin, "too-old-plugin"},
 		{"too-old-plugin-above-hi", 5, ">=1,<2", TooOldPlugin, "too-old-plugin"},
 		{"malformed", 1, ">=1", MalformedRange, "malformed contract range"},
-		{"predates-contract-empty", 1, "", PluginPredatesContract, "spacedock init --host claude"},
+		{"predates-contract-empty", 1, "", PluginPredatesContract, "spacedock install --host claude"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestCompareMessageShape(t *testing.T) {
 }
 
 // TestPluginPredatesContractRemedy locks the new verdict for an absent/empty
-// requires-contract: it names the `spacedock init --host <host>` one-liner,
+// requires-contract: it names the `spacedock install --host <host>` one-liner,
 // reflects the dev branch (@next) when set, and OMITS the `plugin update`
 // fallback that reusing too-old-plugin would drag in (that fallback no-ops on a
 // stale install). A whitespace-only value routes here too; a non-empty
@@ -133,8 +133,8 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 		if res.Verdict != PluginPredatesContract {
 			t.Fatalf("Compare(1,%q) verdict = %v, want plugin-predates-contract", raw, res.Verdict)
 		}
-		if !strings.Contains(res.Message, "spacedock init --host claude") {
-			t.Errorf("predates-contract remedy missing init one-liner: %q", res.Message)
+		if !strings.Contains(res.Message, "spacedock install --host claude") {
+			t.Errorf("predates-contract remedy missing install one-liner: %q", res.Message)
 		}
 		if !strings.Contains(res.Message, "@next") {
 			t.Errorf("predates-contract remedy missing @next branch: %q", res.Message)
@@ -149,8 +149,8 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 	if strings.Contains(plain.Message, "@next") {
 		t.Errorf("predates-contract remedy with no branch should omit @next: %q", plain.Message)
 	}
-	if !strings.Contains(plain.Message, "spacedock init --host claude") {
-		t.Errorf("predates-contract remedy with no branch missing init one-liner: %q", plain.Message)
+	if !strings.Contains(plain.Message, "spacedock install --host claude") {
+		t.Errorf("predates-contract remedy with no branch missing install one-liner: %q", plain.Message)
 	}
 
 	// A non-empty unparseable value is still a packaging bug, not predates-contract.

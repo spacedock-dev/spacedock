@@ -1,4 +1,4 @@
-// ABOUTME: spacedock init/doctor command paths — install the per-host plugin via
+// ABOUTME: spacedock install/doctor command paths — install the per-host plugin via
 // ABOUTME: the host plugin mechanism (claude) or emit the documented add prose (codex).
 package cli
 
@@ -30,7 +30,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		if !check {
 			out, err := ops.Install(host, marketplaceSource, devBranch)
 			if err != nil {
-				fmt.Fprintf(stderr, "spacedock init: host install failed: %v\n", err)
+				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
 				return 1
 			}
 			if out != "" {
@@ -47,7 +47,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		}
 		return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
 	default:
-		fmt.Fprintf(stderr, "spacedock init: unknown host %q (want claude or codex)\n", host)
+		fmt.Fprintf(stderr, "spacedock install: unknown host %q (want claude or codex)\n", host)
 		return 2
 	}
 }
@@ -99,7 +99,7 @@ func parseInitArgs(args []string, stderr io.Writer) (host string, check bool, co
 		switch args[i] {
 		case "--host":
 			if i+1 >= len(args) {
-				fmt.Fprintln(stderr, "spacedock init: --host requires a value (claude or codex)")
+				fmt.Fprintln(stderr, "spacedock install: --host requires a value (claude or codex)")
 				return "", false, 2
 			}
 			host = args[i+1]
@@ -107,7 +107,7 @@ func parseInitArgs(args []string, stderr io.Writer) (host string, check bool, co
 		case "--check":
 			check = true
 		default:
-			fmt.Fprintf(stderr, "spacedock init: unknown argument %q\n", args[i])
+			fmt.Fprintf(stderr, "spacedock install: unknown argument %q\n", args[i])
 			return "", false, 2
 		}
 	}

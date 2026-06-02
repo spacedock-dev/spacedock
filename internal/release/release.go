@@ -10,11 +10,28 @@ import (
 	"time"
 )
 
-// topLevelVersionRe matches the first `"version": "..."` member of a JSON object.
-// In a plugin.json the top-level version is the first such member; in a
-// marketplace.json the version lives only on the nested plugin entry, so a blob
-// with no top-level `version` key is left untouched by StampVersion.
-var topLevelVersionRe = regexp.MustCompile(`("version"\s*:\s*")[^"]*(")`)
+// versionRe matches a `"version": "..."` member of a JSON object. Both stamp
+// steps rewrite only the FIRST match in the blob (see replaceFirstVersion): in a
+// plugin.json that first match is the top-level version; in a marketplace.json,
+// which carries no top-level version, it is the nested plugin entry's calendar
+// key. A second `version` key elsewhere in the blob is left untouched.
+var versionRe = regexp.MustCompile(`("version"\s*:\s*")[^"]*(")`)
+
+// replaceFirstVersion rewrites only the FIRST `"version": "..."` member of blob
+// to value, preserving the `"version": "` prefix and closing `"` and leaving any
+// later `version` key untouched. Returns blob unchanged when there is no match.
+func replaceFirstVersion(blob []byte, value string) []byte {
+	loc := versionRe.FindSubmatchIndex(blob)
+	if loc == nil {
+		return blob
+	}
+	// loc indices: [matchStart, matchEnd, g1Start, g1End, g2Start, g2End].
+	out := make([]byte, 0, len(blob)+len(value))
+	out = append(out, blob[:loc[3]]...) // up to and including the prefix group
+	out = append(out, value...)
+	out = append(out, blob[loc[4]:]...) // from the closing-quote group onward
+	return out
+}
 
 // StampVersion rewrites the top-level `version` field of a plugin manifest
 // (plugin.json / .codex-plugin/plugin.json) to version, preserving the rest of
@@ -31,14 +48,8 @@ func StampVersion(manifest []byte, version string) ([]byte, error) {
 		// No top-level version (marketplace.json shape): nothing to stamp.
 		return manifest, nil
 	}
-	out := topLevelVersionRe.ReplaceAll(manifest, []byte("${1}"+version+"${2}"))
-	return out, nil
+	return replaceFirstVersion(manifest, version), nil
 }
-
-// entryVersionRe matches the `"version": "..."` member of the nested plugin
-// entry in a marketplace.json. A marketplace.json carries no top-level version,
-// so the first match is the entry's calendar key.
-var entryVersionRe = regexp.MustCompile(`("version"\s*:\s*")[^"]*(")`)
 
 // BumpCalendarVersion advances the marketplace plugin entry's calendar version
 // to `0.0.YYYYMMDDNN` for the date in now. NN is a per-day sequence: when the
@@ -70,6 +81,5 @@ func BumpCalendarVersion(marketplace []byte, now time.Time) ([]byte, error) {
 	}
 	next := fmt.Sprintf("%s%02d", prefix, seq)
 
-	out := entryVersionRe.ReplaceAll(marketplace, []byte("${1}"+next+"${2}"))
-	return out, nil
+	return replaceFirstVersion(marketplace, next), nil
 }

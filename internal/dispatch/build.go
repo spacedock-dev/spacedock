@@ -240,6 +240,16 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	stateCheckout := splitRootStateCheckout(workflowDir)
 	splitRoot := stateCheckout != ""
 
+	// stateBranch is the orphan state branch peers push/pull on a split-root
+	// workflow (spacedock-state/<workflow-basename>, or a README state-branch:
+	// override). The state-commit guidance names it in the push reminder; an
+	// underivable branch (should not happen for a split-root dir) falls back to a
+	// branch-neutral reminder inside stateCommitGuidance.
+	var stateBranch string
+	if splitRoot {
+		stateBranch, _ = status.StateBranch(workflowDir)
+	}
+
 	// Rule 5: Feedback context required for feedback reflow.
 	if isFeedbackReflow && feedbackContext == "" {
 		return buildError(stderr, 1,
@@ -334,7 +344,7 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 					"code to main.\n"+
 					"%s",
 				worktreePath, worktreePath, branch,
-				stateCommitGuidance(stateCheckout, entityPath)))
+				stateCommitGuidance(stateCheckout, entityPath, stateBranch)))
 		} else {
 			parts = append(parts, fmt.Sprintf(
 				"Your working directory is %s\n"+
@@ -344,7 +354,7 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 				worktreePath, worktreePath, branch))
 		}
 	} else if splitRoot {
-		parts = append(parts, stateCommitGuidance(stateCheckout, entityPath))
+		parts = append(parts, stateCommitGuidance(stateCheckout, entityPath, stateBranch))
 	}
 
 	// 4. Entity-read instruction. Under split root the entity lives in the state
@@ -455,8 +465,27 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 // substitutes the resolved absolute state checkout and entity paths into the
 // path-scoped commit command — never literal {state_checkout}/{entity_path}
 // brace tokens — and carries the concurrency-safe "never a bare git add -A"
-// rule that governs every split-root stage.
-func stateCommitGuidance(stateCheckout, entityPath string) string {
+// rule that governs every split-root stage. After the commit it reminds the
+// worker to push the orphan state branch peers share and `pull --rebase` on a
+// rejection; stateBranch is named verbatim when resolved, else a branch-neutral
+// reminder stands in.
+func stateCommitGuidance(stateCheckout, entityPath, stateBranch string) string {
+	pushReminder := "Then push the state branch so peers see your entity/report: " +
+		"`git -C " + stateCheckout + " push origin "
+	if stateBranch != "" {
+		pushReminder += stateBranch + "`"
+	} else {
+		pushReminder += "<state-branch>`"
+	}
+	pushReminder += "; on a non-fast-forward rejection, " +
+		"`git -C " + stateCheckout + " pull --rebase origin "
+	if stateBranch != "" {
+		pushReminder += stateBranch + "`"
+	} else {
+		pushReminder += "<state-branch>`"
+	}
+	pushReminder += " then re-push.\n"
+
 	return fmt.Sprintf(
 		"This workflow is split-root: the entity body and your stage report "+
 			"live in the shared state checkout, not alongside the code. Write and "+
@@ -466,8 +495,8 @@ func stateCommitGuidance(stateCheckout, entityPath string) string {
 			"git -C %s commit -m \"...\" -- %s` — "+
 			"never a bare `git add -A` or bare `git commit` in the state "+
 			"checkout (a bare commit cross-attributes a concurrent writer's "+
-			"staged entity). Retry on index.lock contention after a short wait.\n",
-		stateCheckout, entityPath, stateCheckout, entityPath)
+			"staged entity). Retry on index.lock contention after a short wait. %s",
+		stateCheckout, entityPath, stateCheckout, entityPath, pushReminder)
 }
 
 // emitBuildJSON writes out as two-space-indented JSON with a trailing newline,
