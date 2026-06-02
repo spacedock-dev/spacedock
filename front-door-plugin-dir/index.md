@@ -115,3 +115,7 @@ Implemented the spike WINNER as settled: `--plugin-dir` is now a repeatable Stri
 ### Summary
 
 PASSED. Independently reproduced every "Verified by" by running the behavior, not re-reading: built the binary and exercised the real front door (space/equals/repeated `--plugin-dir` before `--` forward and relax the gate; stray host flags before `--` error loudly with claude not invoked), and ran the exact CI live invocation locally, which loaded the worktree plugin inline (`source: spacedock@inline`) the way impl proved before 401'ing on the stale local OAuth token — the AC-2 SKIPPED-with-reason path; CI-E2E green on the PR is the binding live proof. Full offline suite 680/680, `go vet` clean (incl. `-tags live`), prompt-always-last invariant holds, after-`--` passthrough and spacedock-flag parsing unchanged. No competing live-invocation shape exists. No PR open yet (the captain/FO opens it post-validation, per scope). Recommendation: PASSED.
+
+## Stage Report: implementation (post-validation addendum)
+
+- DONE: audit-surfaced test-only addition — `TestBareValuelessPluginDirErrors` in internal/cli/frontdoor_parse_test.go pins that a bare before-`--` `--plugin-dir` with no value is a LOUD parse error naming the flag (`flag needs an argument: --plugin-dir`, runClaude/runCodex return 1 before Launch), not the silent drop UnknownFlags would have produced — the load-bearing reason StringArray beat UnknownFlags. No logic change; `go test ./internal/cli/` green. Commit 18240751 (worktree branch, not pushed — FO pushes the full branch at the merge boundary).
