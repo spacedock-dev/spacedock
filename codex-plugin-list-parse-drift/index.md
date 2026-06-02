@@ -4,10 +4,10 @@ title: spacedock codex can't detect an installed codex plugin — codex plugin l
 status: validation
 source: "captain (2026-06-01) — reproduced LIVE: spacedock codex reports no plugin while codex plugin list shows spacedock@spacedock installed, enabled 0.19.2"
 started: 2026-06-02T02:04:04Z
-completed:
-verdict:
+completed: 2026-06-02T06:40:18Z
+verdict: PASSED
 score: "0.40"
-worktree: .worktrees/spacedock-ensign-codex-plugin-list-parse-drift
+worktree: 
 issue:
 mod-block: 
 pr: "#258"
