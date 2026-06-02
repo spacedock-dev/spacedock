@@ -10,6 +10,7 @@ score: "0.36"
 worktree: .worktrees/spacedock-ensign-live-e2e-per-stage-timeouts
 issue:
 mod-block: merge:pr-merge
+pr: "#261"
 ---
 
 `TestLiveEnsignCycle` (internal/ensigncycle/live_test.go) drives the entire FO→done cycle through one headless `spacedock claude -p` process under a SINGLE `liveTimeout = 12*time.Minute` ctx + `cmd.CombinedOutput()`. This regressed from the upstream Python harness (`~/git/spacedock/scripts/test_lib.py`, `FOStreamWatcher` ~L1288), which bounds EACH stage/event with its own per-stage timeout (`w.expect(event, timeout_s=…)`; upstream `PER_STAGE_OVERALL_S` 60–120s, `SUBPROCESS_EXIT_BUDGET_S` 180s).
