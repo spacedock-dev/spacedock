@@ -9,6 +9,7 @@ verdict:
 score: "0.40"
 worktree: .worktrees/spacedock-ensign-codex-plugin-list-parse-drift
 issue:
+mod-block: merge:pr-merge
 ---
 
 `spacedock codex` refuses to launch — "no installed codex plugin found. Run `spacedock install --host codex`" — even when the codex plugin IS installed and enabled. Reproduced live against the just-released 0.19.2: `codex plugin list` shows `spacedock@spacedock  installed, enabled  0.19.2   https://github.com/spacedock-dev/spacedock.git, ref next`, but the codex front door can't see it. This is a launcher-replacement regression (Goal #1) shipped in 0.19.2 — it warrants a fast 0.19.3 patch.
