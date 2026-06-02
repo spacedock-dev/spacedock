@@ -119,12 +119,28 @@ func TestLiveEnsignCycle(t *testing.T) {
 	poller := newCmdPoller(cmd, pw)
 	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
 
+	// Kill the subprocess on ANY exit path. Only expectExit kills on its own
+	// timeout; an EARLY t.Fatalf (a TeamCreate-stall or dispatch-close-stall
+	// below) would otherwise orphan a token-spending `claude`. kill() is a no-op
+	// once the process has exited, so this is harmless on the clean path.
+	defer poller.kill()
+
 	// The proven upstream watch sequence: TeamCreate (teams mode engaged) → the
 	// single ensign dispatch closes (backlog→done is ONE dispatch that writes
 	// `## Stage Report: done`) → the FO subprocess exits. terminalize + archive
 	// are NOT watched as stream events — they are the post-exit filesystem state
 	// the end-state assertions below verify. Each step is bounded by its own
 	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	//
+	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
+	// resets on ANY drained line, so it catches a SILENT hang (no new stream
+	// activity → tripped in ≤60s, localized) but NOT a "stuck-but-emitting"
+	// (chatty) hang — an FO that keeps emitting unrelated stream lines without
+	// ever reaching the next watched step. That case is deliberately left to
+	// Go's BUILT-IN default test timeout rather than an explicit long `-timeout`:
+	// the captain banned long individual timeouts, and a chatty hang is far rarer
+	// than a silent one (which the quiet budget does catch). Documenting it here
+	// keeps the trade-off explicit instead of silently absent.
 	if _, err := watcher.expect(isTeamCreate, quietBudgetDefault, "TeamCreate"); err != nil {
 		t.Fatalf("live cycle failed at TeamCreate: %v", err)
 	}

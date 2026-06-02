@@ -366,6 +366,39 @@ func TestExpectExitWaitsThenKills(t *testing.T) {
 	})
 }
 
+// TestEarlyStepTripCanKillProc guards the live test's `defer poller.kill()`
+// contract at the unit level: an early-step stall (TeamCreate / dispatch-close)
+// trips a stepTimeout WITHOUT the watcher itself killing the proc (only
+// expectExit kills internally) — so the still-running child must remain killable
+// by the caller's deferred kill(). Before the fix, an early t.Fatalf orphaned a
+// token-spending claude; this proves the kill() the live defer calls is
+// effective on a proc that is still alive after an early trip. The live defer
+// itself runs only under //go:build live, so this is the offline proof of the
+// building block.
+func TestEarlyStepTripCanKillProc(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{} // never exits — models a hung child
+	w := newTestWatcher(src, proc)
+
+	// An early step goes silent → stepTimeout. The watcher does NOT kill on this
+	// path (that is the caller's deferred responsibility).
+	_, err := w.expect(isToolUse("TeamCreate"), w.quietBudget, "TeamCreate")
+	var st *stepTimeout
+	if !errors.As(err, &st) {
+		t.Fatalf("want *stepTimeout on an early-step stall, got %T: %v", err, err)
+	}
+	if proc.wasKilled() {
+		t.Fatal("expect must NOT kill on its own trip — killing is the caller's deferred job")
+	}
+
+	// The deferred kill() the live test runs on this exit path must still stop
+	// the hung child.
+	proc.kill()
+	if !proc.wasKilled() {
+		t.Error("the child must be killable after an early-step trip (the defer poller.kill() contract)")
+	}
+}
+
 // --- synthetic stream-json line builders ---------------------------------
 //
 // These emit the standard Claude Code stream-json shapes the watcher parses.
