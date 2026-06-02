@@ -10,6 +10,7 @@ score: "0.30"
 worktree: .worktrees/spacedock-ensign-encode-deliverable-principles
 issue:
 mod-block: merge:pr-merge
+pr: "#266"
 ---
 
 Encode the deliverable principles + template-ergonomics snippets into the workflow's own
