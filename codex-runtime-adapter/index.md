@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-codex-runtime-adapter
 issue:
 milestone: post-0.19.4 (own track — Codex runtime parity, NOT folded into 0.19.4)
 mod-block: 
-pr: #269
+pr: spacedock-dev/spacedock#269
 ---
 
 0.19.x ships **runtime-agnostic shared cores with Codex-aware mentions** (`send_input` routing, "Codex declares none" budget probe, codex resume) but **no Codex runtime contract**. The result is the "model-improvised, not contract-guaranteed" antipattern at runtime scale — confirmed live by the captain's Codex FO session. Captain feedback on 2026-06-02 folds the adjacent Codex install-readiness gap into this entity, because a Codex runtime contract is not usable if `spacedock install --host codex` stays blind to an already-installed compatible plugin.
