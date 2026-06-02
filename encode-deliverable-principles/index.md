@@ -4,10 +4,10 @@ title: Encode deliverable principles + template ergonomics into README, FO/ensig
 status: validation
 source: FO triage (2026-06-01) — docs/dev/_proposals cleanup; consolidates the deliverable-principles study + the TDD/template-adoption ergonomics
 started: 2026-06-02T04:57:30Z
-completed:
-verdict:
+completed: 2026-06-02T17:22:21Z
+verdict: PASSED
 score: "0.30"
-worktree: .worktrees/spacedock-ensign-encode-deliverable-principles
+worktree: 
 issue:
 mod-block: 
 pr: "#266"
