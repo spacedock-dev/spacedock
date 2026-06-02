@@ -283,6 +283,7 @@ type frontDoorFlags struct {
 	enable    *[]string
 	addDirs   *[]string
 	addDirsRO *[]string
+	pluginDir *[]string
 }
 
 func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
@@ -297,6 +298,8 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 			"Grant safehouse read-write access to a directory; repeatable"),
 		addDirsRO: fs.StringArray("safehouse-add-dirs-ro", nil,
 			"Grant safehouse read-only access to a directory; repeatable"),
+		pluginDir: fs.StringArray("plugin-dir", nil,
+			"Load a local plugin checkout (relaxes the contract gate); repeatable"),
 	}
 }
 
@@ -347,6 +350,20 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 	if len(taskTokens) > 0 {
 		fd.task = strings.Join(taskTokens, " ")
 		fd.hasTask = true
+	}
+
+	// --plugin-dir is the one host flag spacedock parses before `--`: pflag knows
+	// its arity (one value, repeatable), so the dirs are captured correctly in
+	// space/equals/repeated forms. Re-inject each as a `--plugin-dir <dir>` pair at
+	// the FRONT of passthrough so it forwards to the host and hasPluginDir sees it,
+	// ahead of any after-`--` tokens. This keeps the spacedock prompt the always-last
+	// assembled token and hasPluginDir the single gate-relax reader (D4).
+	if dirs := *flags.pluginDir; len(dirs) > 0 {
+		front := make([]string, 0, len(dirs)*2+len(fd.passthrough))
+		for _, d := range dirs {
+			front = append(front, "--plugin-dir", d)
+		}
+		fd.passthrough = append(front, fd.passthrough...)
 	}
 	return fd, nil
 }

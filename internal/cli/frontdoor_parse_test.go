@@ -74,6 +74,41 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			task:           "task text",
 			hasTask:        true,
 		},
+		{
+			name:        "plugin-dir-before-dash-space-form",
+			args:        []string{"--plugin-dir", "/p"},
+			passthrough: []string{"--plugin-dir", "/p"},
+		},
+		{
+			name:        "plugin-dir-before-dash-equals-form",
+			args:        []string{"--plugin-dir=/p"},
+			passthrough: []string{"--plugin-dir", "/p"},
+		},
+		{
+			name:        "plugin-dir-before-dash-repeated",
+			args:        []string{"--plugin-dir", "/a", "--plugin-dir=/b"},
+			passthrough: []string{"--plugin-dir", "/a", "--plugin-dir", "/b"},
+		},
+		{
+			name:        "plugin-dir-before-dash-then-task",
+			args:        []string{"--plugin-dir", "/p", "review the PRs"},
+			passthrough: []string{"--plugin-dir", "/p"},
+			task:        "review the PRs",
+			hasTask:     true,
+		},
+		{
+			name:        "plugin-dir-before-dash-with-skip-and-task",
+			args:        []string{"--plugin-dir", "/p", "--skip-contract-check", "do it"},
+			passthrough: []string{"--plugin-dir", "/p"},
+			skipCheck:   true,
+			task:        "do it",
+			hasTask:     true,
+		},
+		{
+			name:        "plugin-dir-before-and-after-dash-both-forward",
+			args:        []string{"--plugin-dir", "/before", "--", "--plugin-dir", "/after"},
+			passthrough: []string{"--plugin-dir", "/before", "--plugin-dir", "/after"},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -95,6 +130,29 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			}
 			if fd.skipCheck != tc.skipCheck {
 				t.Errorf("skipCheck = %v, want %v", fd.skipCheck, tc.skipCheck)
+			}
+		})
+	}
+}
+
+// TestStrayHostFlagBeforeDashErrors pins the spike WINNER's loud-failure boundary:
+// only --plugin-dir is promoted as a spacedock-parsed flag before `--`; every other
+// host flag left before `--` is an UNKNOWN flag and produces a parse error (not a
+// silent mis-split, the rejected generic-pre-pass failure mode). This is exactly why
+// the live test must move its non-plugin-dir host flags after `--`.
+func TestStrayHostFlagBeforeDashErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string
+	}{
+		{name: "shorthand-p-before-dash", args: []string{"-p", "Drive."}},
+		{name: "model-before-dash", args: []string{"--model", "sonnet"}},
+		{name: "plugin-dir-then-stray-host-flag", args: []string{"--plugin-dir", "/p", "--model", "sonnet"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := parseFrontDoorArgs(tc.args); err == nil {
+				t.Fatalf("parseFrontDoorArgs(%v) err = nil, want a parse error for the stray host flag", tc.args)
 			}
 		})
 	}

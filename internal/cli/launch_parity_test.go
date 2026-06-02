@@ -284,6 +284,42 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (--plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
 	})
+	t.Run("claude-before-dash-forwards-and-relaxes", func(t *testing.T) {
+		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
+		var stdout, stderr bytes.Buffer
+		code := runClaude(context.Background(), []string{"--plugin-dir", "/a", "--plugin-dir=/b"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
+		}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
+		if !equalArgv(fake.launchedArg, want) {
+			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+		}
+	})
+	t.Run("codex-before-dash-forwards-and-relaxes", func(t *testing.T) {
+		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
+		var stdout, stderr bytes.Buffer
+		code := runCodex(context.Background(), []string{"--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
+		}
+		want := []string{"codex", "--plugin-dir", "/a", wantCodexBootstrapPrompt}
+		if !equalArgv(fake.launchedArg, want) {
+			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+		}
+	})
+	t.Run("claude-before-dash-plugin-dir-with-task", func(t *testing.T) {
+		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
+		var stdout, stderr bytes.Buffer
+		code := runClaude(context.Background(), []string{"--plugin-dir", "/a", "review the PRs"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (captain no-`--` form relaxes the gate); stderr=%q", code, stderr.String())
+		}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/a", wantBootstrapPrompt + " review the PRs"}
+		if !equalArgv(fake.launchedArg, want) {
+			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+		}
+	})
 	t.Run("no-plugin-dir-still-fails-fast", func(t *testing.T) {
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 		var stdout, stderr bytes.Buffer
