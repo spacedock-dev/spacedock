@@ -115,3 +115,16 @@ The full verbatim descriptions were extracted via `strings /opt/homebrew/bin/cod
 ### Summary
 
 Repaired the ideation gate finding and folded the captain's install-readiness report into the task. The entity now owns four checkable outcomes: Codex adapter loading, Codex-shaped dispatch output including completion-signal wording, Codex wait/observe contract text grounded in the spike, and `install --host codex` awareness of an already-installed compatible plugin.
+
+## Stage Report: implementation
+
+- DONE: Codex install path reports installed or compatible state before manual add guidance
+  Code commit `2c4cd877` changes `spacedock init --host codex` to resolve the installed manifest first; `TestInitCodexInstallReadiness` covers compatible, missing, and incompatible states.
+- DONE: Codex dispatch build host=codex output omits Skill(...) and uses Codex mailbox completion semantics
+  Code commit `2c4cd877` adds the optional dispatch `host` field and `TestBuildCodexHostPromptShape`, asserting the Codex prompt/body omit `Skill(...)` and name the FO mailbox notification.
+- DONE: Codex FO and ensign runtime adapters load via a verified Codex branch
+  Code commit `2c4cd877` adds both Codex adapters plus SKILL.md `CODEX_THREAD_ID` branches; live env spike observed `CODEX_CI=1` and `CODEX_THREAD_ID=019e8949-0679-70a3-aa9a-1f626004898d`.
+
+### Summary
+
+Implemented all four ACs in the code worktree: Codex install readiness, Codex-shaped dispatch build output, dedicated FO/ensign Codex adapters, and adapter contract tests for the wait/observe clauses. Verification run from the code worktree: `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`; `gofmt` wanted one unrelated existing comment change in `internal/status/enum_scope_test.go`, which was not committed.
