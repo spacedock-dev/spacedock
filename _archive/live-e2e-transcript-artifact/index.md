@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#267"
+archived: 2026-06-02T18:05:52Z
 ---
 
 The live test ALREADY streams the FO's stream-json to `t.Log` (`38`, merged on `next` at `3a59916a`); on a failure the captured stdout is defeated downstream — `gh run view --log` truncates the multi-MB job log and the upload step grabs only `./spacedock`. The closed PR #265 fixed THAT (tee the run-step stdout to `live-e2e-transcript.txt` + upload it). **Captain correction (2026-06-02): that stdout tee is the WRONG diagnostic target.** The run-step stdout is the FO's stream-json re-emitted through `t.Log` — a flattened, lossy view. The artifact `headless-fo-drive-flake` (`hd`) actually needs to root-cause an FO stall is the **agent session JSONL** the claude runtime writes: the full structured transcript (tool_use/tool_result blocks, usage, per-member subagent threads), not the stdout echo.
