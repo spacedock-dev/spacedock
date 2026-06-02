@@ -1,7 +1,7 @@
 ---
 id: rx13p1svcchfs8rtdmwsxq1k
 title: Prune/demote/replace the tautological prose-pin integration tests (the banned grep-over-prose antipattern)
-status: implementation
+status: validation
 source: "FO classify-integration-tests workflow (2026-06-02) — 6 of 26 skills/integration funcs confirmed tautological-prose-pins (gut-it-keep-green proven by meaning-inversion mutation); captain: prune them"
 started: 2026-06-02T17:28:09Z
 completed:
