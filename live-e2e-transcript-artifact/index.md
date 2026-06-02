@@ -1,7 +1,7 @@
 ---
 id: 3g6gbbn1bvk41a57tjbe50rv
 title: Upload the live-e2e transcript as a CI artifact (diagnose failures past gh log truncation)
-status: implementation
+status: validation
 source: "FO (2026-06-02): 38's streamWatcher tees the FO transcript to t.Log, but on a failed run gh truncates the large job log AND the CI uploads only the spacedock binary, not the transcript — so the sonnet FO-stall on 38's PR was not fully diagnosable. Prerequisite for root-causing the headless FO-drive flake."
 started: 2026-06-02T07:57:40Z
 completed:
