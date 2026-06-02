@@ -4,10 +4,10 @@ title: Harden binary-absent FO startup — install hint in the contract-gate abo
 status: validation
 source: "captain (2026-06-02) — live install-path test (plugin present, binary unlinked): the FO aborts cleanly but its install guidance is model-improvised, and the contract routes the binary-absent case to `spacedock doctor`, which is itself the missing binary"
 started: 2026-06-02T14:37:38Z
-completed:
-verdict:
+completed: 2026-06-02T15:10:25Z
+verdict: PASSED
 score: "0.28"
-worktree: .worktrees/spacedock-ensign-binary-absent-fo-bootstrap
+worktree: 
 issue:
 mod-block: 
 pr: "#262"
