@@ -1,13 +1,13 @@
 ---
 id: 3780rb1fcaw0dt8pytyk8vmx
 title: Live-e2e per-stage timeouts — port the FOStreamWatcher pattern, ban the monolithic long timeout
-status: ideation
+status: implementation
 source: "captain (2026-06-02): live-e2e flakiness dive — v1 regressed to a single 12m monolithic timeout; restore the Python harness's per-stage timeouts (no individual timeout > 60s, long timeout banned) and verify reliable e2e"
 started: 2026-06-02T07:02:10Z
 completed:
 verdict:
 score: "0.36"
-worktree:
+worktree: .worktrees/spacedock-ensign-live-e2e-per-stage-timeouts
 issue:
 ---
 
