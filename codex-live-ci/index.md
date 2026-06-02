@@ -9,6 +9,7 @@ verdict:
 score: "0.72"
 worktree: .worktrees/spacedock-ensign-codex-live-ci
 issue:
+mod-block: merge:pr-merge
 ---
 
 The old Python-era live CI had the right Codex shape: a `codex-live` job with `CI-E2E-CODEX`, `OPENAI_API_KEY`, Codex CLI install, `codex login --with-api-key`, preserved artifacts, and a `make test-live-codex` target that ran live Codex tests in a cheap serial preflight before heavier parallel cases. The static workflow-grep tests around it are not worth reviving.
