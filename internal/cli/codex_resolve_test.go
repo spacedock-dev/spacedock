@@ -11,7 +11,7 @@ import (
 )
 
 // TestCodexResolveManifestAgainstInstalledHost drives the production codex
-// resolver against the real `codex` CLI. codex 0.132.0 rejects `--json` (exit 2),
+// resolver against the real `codex` CLI. codex 0.136.0 rejects `--json` (exit 2),
 // so the resolver must use the supported `codex plugin list` text output. When
 // spacedock@spacedock is installed, ResolveManifest must return a non-empty path
 // to an existing .codex-plugin/plugin.json; when it is NOT installed, it must
@@ -26,7 +26,7 @@ func TestCodexResolveManifestAgainstInstalledHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("codex plugin list failed (exit/output): %v\n%s", err, listOut)
 	}
-	installed := strings.Contains(string(listOut), "spacedock@spacedock (installed")
+	installed := codexEntryInstalled(string(listOut), "spacedock@spacedock")
 
 	path, err := execHost{}.ResolveManifest("codex")
 	if err != nil {

@@ -90,9 +90,13 @@ func TestLatestVersionDirNoSubdirs(t *testing.T) {
 	}
 }
 
-// TestCodexEntryInstalled exercises the `codex plugin list` text parse: an
-// installed entry carries `<id> (installed`; a not-installed entry, or a
-// listing without the id, does not match.
+// TestCodexEntryInstalled exercises the `codex plugin list` text parse on the
+// tolerated legacy paren form. Current codex renders the comma/table form
+// `<id>  installed, enabled  <ver>  <path>` (covered by
+// TestCodexEntryInstalledRealFormats); the paren form `<id> (installed[, enabled])`
+// is the older rendering the predicate still accepts. An installed entry's
+// status field reads `installed` after stripping surrounding `()`; a
+// not-installed entry, or a listing without the id, does not match.
 func TestCodexEntryInstalled(t *testing.T) {
 	cases := []struct {
 		name    string
@@ -111,6 +115,96 @@ func TestCodexEntryInstalled(t *testing.T) {
 				t.Fatalf("codexEntryInstalled(%q) = %v, want %v", tc.listing, got, tc.want)
 			}
 		})
+	}
+}
+
+// TestCodexEntryInstalledRealFormats pins the parse to the formats codex
+// actually emits. The current comma/table form (`<id>  installed, enabled  <ver>
+// <path>`) renders the status as `installed,` with NO parens, inside a
+// column-aligned table with a header row and a marketplace PATH cell that
+// contains the bare marketplace word `spacedock`. The predicate must field-match
+// the id exactly and read the next field as the status, so it accepts the comma
+// form and the legacy paren form, rejects `not installed`, a foreign id, and the
+// PATH line, and never matches the bare substring `installed` inside
+// `not installed`.
+func TestCodexEntryInstalledRealFormats(t *testing.T) {
+	// Live-captured block from `codex plugin list` (codex-cli 0.136.0): a
+	// column-aligned table with a header row, the spacedock data row (comma
+	// status), a not-installed row, and the marketplace PATH cell containing
+	// the bare word `spacedock`.
+	commaTable := "" +
+		"PLUGIN               STATUS              VERSION  PATH\n" +
+		"browser@openai-bundled  installed, enabled  26.519.22136  /Users/clkao/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/browser\n" +
+		"chrome@openai-bundled  not installed  /Users/clkao/.codex/.tmp/bundled-marketplaces/openai-bundled/plugins/chrome\n" +
+		"\n" +
+		"PLUGIN               STATUS              VERSION  PATH\n" +
+		"spacedock@spacedock  installed, enabled  0.12.1   /Users/clkao/.codex/.tmp/marketplaces/spacedock/plugins/spacedock\n"
+
+	cases := []struct {
+		name    string
+		listing string
+		want    bool
+	}{
+		// The real comma/table form codex emits today — this is the case the
+		// paren-literal predicate misses, shipping the no-plugin-found drift.
+		{"real-comma-table", commaTable, true},
+		// The marketplace PATH cell contains the bare word `spacedock` but the
+		// id `spacedock@spacedock` is not a field on this line — no false match.
+		{"marketplace-path-line", "  not a row but a path /Users/clkao/.codex/.tmp/marketplaces/spacedock/plugins/spacedock", false},
+		// `not installed` must reject: the status field after the id is `not`,
+		// and the bare substring `installed` inside `not installed` must NOT match.
+		{"not-installed-comma", "spacedock@spacedock  not installed  0.12.1  /some/path", false},
+		// Legacy paren forms stay accepted (codex-revert tolerance).
+		{"legacy-paren-installed", "  spacedock@spacedock (installed)", true},
+		{"legacy-paren-enabled", "  spacedock@spacedock (installed, enabled)", true},
+		// A foreign id that is not spacedock@spacedock must not match even when installed.
+		{"foreign-id-installed", "other@market  installed, enabled  1.0.0  /some/path", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := codexEntryInstalled(tc.listing, "spacedock@spacedock"); got != tc.want {
+				t.Fatalf("codexEntryInstalled(%q) = %v, want %v", tc.listing, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestCodexCacheManifestResolvesCachedPluginJSON drives the cache-resolution
+// tail of resolveCodexManifest — the half the predicate test does not cover.
+// With a temp CODEX_HOME holding the real install layout
+// (plugins/cache/spacedock/spacedock/<ver>/.codex-plugin/plugin.json), the
+// resolver must return that exact plugin.json path. This is what proves the
+// predicate fix alone is insufficient: the front door only launches if this
+// cache tail lands on a real manifest.
+func TestCodexCacheManifestResolvesCachedPluginJSON(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", home)
+	manifest := filepath.Join(home, "plugins", "cache", "spacedock", "spacedock", "0.12.1", ".codex-plugin", "plugin.json")
+	if err := os.MkdirAll(filepath.Dir(manifest), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(manifest, []byte(`{"name":"spacedock"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	got, err := codexCacheManifest()
+	if err != nil {
+		t.Fatalf("codexCacheManifest errored: %v", err)
+	}
+	if got != manifest {
+		t.Fatalf("codexCacheManifest = %q, want %q", got, manifest)
+	}
+}
+
+// TestCodexCacheManifestAbsentCache: with no cached install under CODEX_HOME,
+// the cache tail degrades to "" (no error) — the no-cached-manifest state.
+func TestCodexCacheManifestAbsentCache(t *testing.T) {
+	t.Setenv("CODEX_HOME", t.TempDir())
+	got, err := codexCacheManifest()
+	if err != nil {
+		t.Fatalf("codexCacheManifest errored on absent cache: %v", err)
+	}
+	if got != "" {
+		t.Fatalf("codexCacheManifest = %q, want empty for an absent cache", got)
 	}
 }
 

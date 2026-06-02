@@ -29,7 +29,7 @@ type pluginListEntry struct {
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path
 // for host, or "" (no error) when no plugin is installed. The two hosts resolve
 // differently: Claude reports an installPath in `claude plugin list --json`;
-// Codex 0.132.0 has no --json (it rejects the flag, exit 2) and its text listing
+// Codex 0.136.0 has no --json (it rejects the flag, exit 2) and its text listing
 // carries no install path, so the Codex path confirms the install via the text
 // listing and resolves the manifest under the deterministic Codex plugin cache.
 func (e execHost) ResolveManifest(host string) (string, error) {
@@ -63,7 +63,7 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 }
 
 // resolveCodexManifest confirms spacedock@spacedock is installed via the text
-// `codex plugin list` (no --json — 0.132.0 rejects it) and resolves the manifest
+// `codex plugin list` (no --json — 0.136.0 rejects it) and resolves the manifest
 // under the Codex plugin cache. Codex installs land at
 // <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json;
 // the listing carries no install path, so the cache layout is the resolver.
@@ -77,6 +77,15 @@ func (execHost) resolveCodexManifest() (string, error) {
 	if !codexEntryInstalled(string(out), "spacedock@spacedock") {
 		return "", nil
 	}
+	return codexCacheManifest()
+}
+
+// codexCacheManifest resolves the cached spacedock@spacedock manifest under the
+// Codex plugin cache: <CODEX_HOME>/plugins/cache/spacedock/spacedock/<version>/
+// .codex-plugin/plugin.json. It picks the semver-greatest version dir and
+// returns that manifest path, or "" (no error) when no cached manifest exists
+// yet (absent cache root, no version dir, or the manifest file is missing).
+func codexCacheManifest() (string, error) {
 	cacheRoot := filepath.Join(codexHome(), "plugins", "cache", "spacedock", "spacedock")
 	versionDir, err := latestVersionDir(cacheRoot)
 	if err != nil || versionDir == "" {
@@ -90,13 +99,26 @@ func (execHost) resolveCodexManifest() (string, error) {
 }
 
 // codexEntryInstalled reports whether the `codex plugin list` text output marks
-// the given plugin id as installed. The listing renders one indented line per
-// plugin as `<id> (installed[, enabled]) | (not installed)`; an installed entry
-// carries the literal `<id> (installed`.
+// the given plugin id as installed. The listing renders a column-aligned table
+// (PLUGIN STATUS VERSION PATH header) with one space-padded row per plugin as
+// `<id>  <status>  <ver>  <path>`, where an installed row's status is
+// `installed,` (or `installed`) and a not-installed row's is `not installed`.
+// (Older codex rendered the status in parens — `<id> (installed[, enabled])` —
+// which this still tolerates.) The match is field-based: the id must be a
+// whitespace-delimited field, and the next field, stripped of surrounding `()`
+// and a trailing `,`, must equal `installed` exactly. Field equality (not a
+// substring scan) rejects a marketplace PATH cell that contains the bare
+// marketplace word; reading the next field rejects `not installed`.
 func codexEntryInstalled(listing, id string) bool {
 	for _, line := range strings.Split(listing, "\n") {
-		if strings.Contains(line, id+" (installed") {
-			return true
+		fields := strings.Fields(line)
+		for i, f := range fields {
+			if f != id {
+				continue
+			}
+			if i+1 < len(fields) && strings.Trim(fields[i+1], "(),") == "installed" {
+				return true
+			}
 		}
 	}
 	return false
