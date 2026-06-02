@@ -9,7 +9,7 @@ verdict:
 score: "0.32"
 worktree: .worktrees/spacedock-ensign-release-notes-local-summary
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#264"
 ---
 
