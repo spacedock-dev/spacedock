@@ -9,7 +9,7 @@ verdict:
 score: "0.34"
 worktree: .worktrees/spacedock-ensign-headless-fo-drive-flake
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#271"
 ---
 
