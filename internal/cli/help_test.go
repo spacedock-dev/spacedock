@@ -29,6 +29,10 @@ func TestFrontDoorHelpCarriesDetail(t *testing.T) {
 				"--plugin-dir",
 				"forward verbatim",
 				"Examples:",
+				// the --plugin-dir example line and the before-`--` prose (D1):
+				// --plugin-dir is a real spacedock-parsed flag accepted before `--`.
+				"spacedock " + host + " --plugin-dir ./checkout",
+				"before --",
 			} {
 				if !strings.Contains(out, want) {
 					t.Errorf("%s --help missing %q:\n%s", host, want, out)

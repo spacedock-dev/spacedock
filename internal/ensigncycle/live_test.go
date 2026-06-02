@@ -82,21 +82,26 @@ func TestLiveEnsignCycle(t *testing.T) {
 	defer cancel()
 
 	// The real front door: `spacedock claude --plugin-dir <repo> --skip-contract-check
-	// -p <bootstrap> ... -- <task>`. --plugin-dir loads the local v1 plugin checkout
-	// (and relaxes the contract gate); --skip-contract-check is belt-and-braces.
-	// stream-json + bypassPermissions + the model pin mirror the headless launch
-	// the Python net uses. The task is fenced after `--` so it rides as the
-	// launch-prompt override. CLAUDECODE is dropped by isolatedClaudeEnv so the
-	// binary takes the real front-door path rather than a nested-session shortcut.
+	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-contract-check are
+	// spacedock-owned flags BEFORE `--`: --plugin-dir loads the local v1 plugin
+	// checkout (and relaxes the contract gate, the keystone this entity fixes);
+	// --skip-contract-check is belt-and-braces. Every host flag (-p, --permission-mode,
+	// --output-format, --verbose, --model) rides AFTER `--` and forwards verbatim to
+	// claude, ahead of the fenced task — only --plugin-dir is promoted before `--`
+	// (the spike WINNER: every other host flag stays after `--`). stream-json +
+	// bypassPermissions + the model pin mirror the headless launch the Python net
+	// uses. CLAUDECODE is dropped by isolatedClaudeEnv so the binary takes the real
+	// front-door path rather than a nested-session shortcut.
 	cmd := exec.CommandContext(ctx, binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
+		"--",
 		"-p", "Drive the workflow.",
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
 		"--model", model,
-		"--", task,
+		task,
 	)
 	cmd.Dir = root
 	cmd.Env = childEnv

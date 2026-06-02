@@ -54,8 +54,9 @@ Usage:
 Start `+hostTitle(host)+` as your Spacedock first officer. The optional task is the
 launch prompt; everything after -- forwards verbatim to `+host+`.
 
-A --plugin-dir launch (after --) loads a local plugin checkout and relaxes the
-contract gate, so it does not require a prior "spacedock install".
+A --plugin-dir launch loads a local plugin checkout and relaxes the contract gate,
+so it does not require a prior "spacedock install". --plugin-dir is accepted both
+before -- (as a spacedock-parsed flag, repeatable) and after -- (forwarded verbatim).
 
 Flags:
 `)
@@ -68,6 +69,7 @@ Forwarding:
 Examples:
   spacedock `+host+`
   spacedock `+host+` "review the open PRs"
+  spacedock `+host+` --plugin-dir ./checkout
   spacedock `+host+` --safehouse-add-dirs ~/scratch -- --plugin-dir ./checkout
 `)
 	})
