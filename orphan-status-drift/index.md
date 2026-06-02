@@ -4,10 +4,10 @@ title: status --boot ORPHANS misreports DIR_EXISTS/BRANCH_EXISTS for split-root 
 status: validation
 source: "spacedock-dev/spacedock#251 + FO boot (2026-06-01) — reproduced live this session: boot flagged the 7h code worktree as dir_exists/branch_exists=no"
 started: 2026-06-02T02:18:54Z
-completed:
-verdict:
+completed: 2026-06-02T06:40:18Z
+verdict: PASSED
 score: "0.28"
-worktree: .worktrees/spacedock-ensign-orphan-status-drift
+worktree: 
 issue: spacedock-dev/spacedock#251
 mod-block: 
 pr: "#259"
