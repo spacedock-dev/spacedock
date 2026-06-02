@@ -243,13 +243,17 @@ type installStep struct {
 // remove later would orphan a live uninstall), drop the existing marketplace
 // declaration for spacedock (so the next add re-pins the @ref instead of
 // no-op'ing on "already on disk"), pin the marketplace source (@ref when a
-// branch is set), then install fresh. The remove step is tolerated because it
-// exits 1 on a fresh box where spacedock is not declared; the uninstall step
-// is fail-fast but documented to no-op on a not-installed plugin (a fresh-box
-// exit 0). Every other step is fail-fast.
+// branch is set), then install fresh. The tolerance asymmetry: BOTH cleanup
+// steps (plugin uninstall + marketplace remove) are tolerated as best-effort,
+// because claude exits 1 on the fresh-box cases ("Plugin not found in
+// installed plugins" for uninstall, "Marketplace 'spacedock' not found" for
+// remove) with no way to distinguish those from real failures via stable
+// stderr matching. BOTH pinning steps (marketplace add + plugin install) stay
+// fail-fast — they are the real-failure backstops that surface a broken
+// install (network, contract incompatibility, missing source).
 func installArgvSequence(source, branch string) []installStep {
 	return []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)}},
 		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
@@ -258,10 +262,12 @@ func installArgvSequence(source, branch string) []installStep {
 
 // Install shells the host plugin upgrade sequence (uninstall + marketplace
 // remove + add + install). The marketplace source is pinned to branch via @ref
-// (Claude) when set. A step whose tolerateExit is true is allowed to exit
-// non-zero — its output is appended and the loop continues; every other step
-// is fail-fast. Codex installs are not shelled here — runInit emits the
-// documented prose for that host.
+// (Claude) when set. The two cleanup steps (uninstall, marketplace remove) are
+// tolerated — their non-zero exits on a fresh-box ("not installed" / "not
+// found") are appended to combined output and the loop continues. The two
+// pinning steps (marketplace add, plugin install) are fail-fast and surface
+// real install failures. Codex installs are not shelled here — runInit emits
+// the documented prose for that host.
 func (execHost) Install(host, source, branch string) (string, error) {
 	if host != "claude" {
 		return "", fmt.Errorf("programmatic install is only supported for claude; codex install is documented prose")

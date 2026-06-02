@@ -76,6 +76,53 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 	}
 }
 
+// TestFreshBoxInstallSucceeds exercises the AC-2 fresh-box half: on a box where
+// spacedock@spacedock is NOT pre-installed and the spacedock marketplace is NOT
+// pre-declared, execHost.Install MUST succeed end-to-end — the two cleanup
+// steps (plugin uninstall + marketplace remove) exit 1 on a real claude
+// 2.1.160 ("Plugin not found in installed plugins" / "Marketplace 'spacedock'
+// not found") and the install only succeeds if BOTH are tolerated. After
+// Install, `claude plugin list --json` MUST report spacedock@spacedock with a
+// non-empty installPath — proof that the marketplace-add + plugin-install
+// pinning steps fired and landed the plugin. Hermetic via CLAUDE_CONFIG_DIR +
+// CLAUDE_CODE_PLUGIN_CACHE_DIR isolation; skips when claude is not on PATH.
+func TestFreshBoxInstallSucceeds(t *testing.T) {
+	claudeBin, err := exec.LookPath("claude")
+	if err != nil {
+		t.Skip("claude not on PATH; fresh-box install test requires the host CLI")
+	}
+
+	tmp := t.TempDir()
+	marketplace := buildLocalMarketplace(t, tmp)
+	configDir := filepath.Join(tmp, "config")
+	cacheDir := filepath.Join(tmp, "cache")
+	mustMkdir(t, configDir)
+	mustMkdir(t, cacheDir)
+
+	t.Setenv("CLAUDE_CONFIG_DIR", configDir)
+	t.Setenv("CLAUDE_CODE_PLUGIN_CACHE_DIR", cacheDir)
+
+	out, err := execHost{}.Install("claude", marketplace, "")
+	if err != nil {
+		t.Fatalf("Install on fresh box returned error: %v\nout=%q", err, out)
+	}
+
+	listOut := runHost(t, claudeBin, os.Environ(), "plugin", "list", "--json")
+	var entries []struct {
+		ID          string `json:"id"`
+		InstallPath string `json:"installPath"`
+	}
+	if err := json.Unmarshal([]byte(listOut), &entries); err != nil {
+		t.Fatalf("parse plugin list --json: %v\n%s", err, listOut)
+	}
+	for _, e := range entries {
+		if e.ID == "spacedock@spacedock" && e.InstallPath != "" {
+			return
+		}
+	}
+	t.Fatalf("spacedock@spacedock not installed after fresh-box Install; combined output=%q\nplugin list=%s", out, listOut)
+}
+
 // buildStaleMarketplace writes a local-path marketplace whose plugin manifest has
 // NO requires-contract field — the 0.12.1 shape that predates the contract
 // mechanism. Returns the marketplace directory.
