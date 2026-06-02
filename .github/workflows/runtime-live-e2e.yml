@@ -89,6 +89,12 @@ jobs:
       DISABLE_AUTOUPDATER: "1"
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
+      # Archivable per-job config dir under $RUNNER_TEMP: the child claude writes
+      # its session jsonl to projects/<slug>/<session>.jsonl HERE (the test honors
+      # this via isolatedClaudeEnv), so the Upload step below grabs the structured
+      # transcript even on a failed/killed run. The /${{ matrix.model }} segment
+      # keeps the two matrix legs from sharing a config dir.
+      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}
     steps:
       - name: Check required secret
         run: |
@@ -156,4 +162,5 @@ jobs:
           path: |
             ./spacedock
             ./live-e2e-transcript.txt
+            ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
           if-no-files-found: warn
