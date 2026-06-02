@@ -49,28 +49,49 @@ func TestMarketplaceAddArgvCarriesRef(t *testing.T) {
 	}
 }
 
-// TestInstallArgvSequence locks AC-2: execHost.Install issues the 3-command
-// upgrade shape — marketplace add (with the @ref pin), then `plugin uninstall
-// spacedock@spacedock`, then `plugin install spacedock@spacedock`, in that order.
-// The uninstall step is what moves a stale already-installed plugin off (plain
-// install no-ops on it); uninstall is itself a no-op on a fresh box. With an
-// empty branch the marketplace arg is the bare source.
+// TestInstallArgvSequence locks AC-1 and AC-3's tolerance asymmetry:
+// execHost.Install issues the 4-command upgrade shape — `plugin uninstall
+// spacedock@spacedock` first (claude tracks an installed plugin via its
+// marketplace record, so the marketplace remove later would orphan a live
+// uninstall), then `plugin marketplace remove spacedock` (tolerated, fresh-box
+// exit 1), then `plugin marketplace add` (with the @ref pin), then `plugin
+// install spacedock@spacedock`. The remove step is what defeats the "already
+// on disk" no-op in marketplace add when a stale pin is declared; remove is
+// tolerated because it exits 1 on a fresh box (claude reports "not found").
+// Every other step is fail-fast. With an empty branch the marketplace add arg
+// is the bare source.
 func TestInstallArgvSequence(t *testing.T) {
-	wantWithBranch := [][]string{
-		{"plugin", "marketplace", "add", "spacedock-dev/spacedock@next"},
-		{"plugin", "uninstall", "spacedock@spacedock"},
-		{"plugin", "install", "spacedock@spacedock"},
+	wantWithBranch := []installStep{
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/spacedock@next"}},
+		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
 	}
 	if got := installArgvSequence("spacedock-dev/spacedock", "next"); !reflect.DeepEqual(got, wantWithBranch) {
 		t.Errorf("installArgvSequence(branch=next) = %v, want %v", got, wantWithBranch)
 	}
 
-	wantBareSource := [][]string{
-		{"plugin", "marketplace", "add", "spacedock-dev/spacedock"},
-		{"plugin", "uninstall", "spacedock@spacedock"},
-		{"plugin", "install", "spacedock@spacedock"},
+	wantBareSource := []installStep{
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/spacedock"}},
+		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
 	}
 	if got := installArgvSequence("spacedock-dev/spacedock", ""); !reflect.DeepEqual(got, wantBareSource) {
 		t.Errorf("installArgvSequence(no branch) = %v, want %v", got, wantBareSource)
+	}
+
+	// Lock the tolerance asymmetry explicitly: ONLY the marketplace-remove step
+	// is tolerated. Any future drift toward tolerate-every-step (or moving the
+	// tolerance to a different step) fails here.
+	seq := installArgvSequence("spacedock-dev/spacedock", "next")
+	for i, step := range seq {
+		isRemove := len(step.argv) >= 3 && step.argv[1] == "marketplace" && step.argv[2] == "remove"
+		if isRemove && !step.tolerateExit {
+			t.Errorf("step %d (remove) tolerateExit = false, want true", i)
+		}
+		if !isRemove && step.tolerateExit {
+			t.Errorf("step %d (%v) tolerateExit = true, want false (only marketplace-remove is tolerated)", i, step.argv)
+		}
 	}
 }

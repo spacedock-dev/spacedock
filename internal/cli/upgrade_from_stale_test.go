@@ -15,10 +15,13 @@ import (
 // TestUpgradeFromStaleMovesToGreen is the load-bearing AC-3 proof: a plugin
 // installed from a stale marketplace (no requires-contract, the 0.12.1 shape)
 // resolves to the plugin-predates-contract verdict (exit 1, the dead-end the
-// captain hit); running the 3-command installArgvSequence against an upgraded
-// marketplace (requires-contract >=1,<2) then leaves doctor reporting compatible
-// (exit 0). This proves plain `plugin install` no-ops on an already-installed
-// plugin and the inserted `plugin uninstall` is what moves the stale install off.
+// captain hit); running installArgvSequence against an upgraded marketplace
+// (requires-contract >=1,<2) then leaves doctor reporting compatible (exit 0).
+// This proves plain `plugin install` no-ops on an already-installed plugin and
+// the inserted `plugin uninstall` is what moves the stale install off. The
+// remove step is tolerated — a fresh `marketplace remove` may exit 1 in some
+// claude builds when the named marketplace was added inline (not from settings),
+// which is acceptable since the next `marketplace add` re-pins the source.
 // Skips when `claude` is not on PATH; a real install kept hermetic by env
 // isolation, not a mock — mirrors TestClaudePluginInstallIsHostNative.
 func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
@@ -52,11 +55,17 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 		t.Fatalf("stale install verdict = %v, want plugin-predates-contract (message=%q)", staleVerdict.Verdict, staleVerdict.Message)
 	}
 
-	// Upgrade via the committed 3-command shape. Plain `plugin install` would
-	// no-op here (the plugin is already installed); the inserted uninstall is what
-	// moves it. Run the exact argv installArgvSequence emits.
-	for _, args := range installArgvSequence(upgradedMarketplace, "") {
-		runHost(t, claudeBin, env, args...)
+	// Upgrade via the committed argv shape. Plain `plugin install` would no-op
+	// here (the plugin is already installed); the inserted uninstall is what
+	// moves it. Run the exact argv installArgvSequence emits. The remove step
+	// is tolerated — runHostTolerant accepts a non-zero exit on it without
+	// failing the test, matching the production loop's behavior.
+	for _, step := range installArgvSequence(upgradedMarketplace, "") {
+		if step.tolerateExit {
+			runHostTolerant(t, claudeBin, env, step.argv...)
+		} else {
+			runHost(t, claudeBin, env, step.argv...)
+		}
 	}
 
 	// Doctor now reports compatible (exit 0) — the install moved off the stale plugin.
@@ -90,6 +99,17 @@ func buildStaleMarketplace(t *testing.T, root string) string {
 `)
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
+}
+
+// runHostTolerant runs the host CLI with the given env and returns its combined
+// output, NOT failing the test on a non-zero exit — used for the tolerated
+// remove step whose exit code is allowed to be 1 (fresh-box "not declared").
+func runHostTolerant(t *testing.T, bin string, env []string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command(bin, args...)
+	cmd.Env = env
+	out, _ := cmd.CombinedOutput()
+	return string(out)
 }
 
 // resolveClaudeManifestEnv resolves the installed spacedock@spacedock manifest
