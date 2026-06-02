@@ -1,7 +1,7 @@
 ---
 id: 02a92vbcn4x7453bhszprpje
 title: Retire the Python oracle — remove the embedded vendor/status + VendorRunner, graduate the differential-parity suite
-status: implementation
+status: validation
 source: FO investigation (2026-06-01) — the sole open precondition gating zj (yaml-parser-migration), currently orphaned (0x scoped it out; sprint-notes deferred it). Post-bootstrap.
 started: 2026-06-02T15:29:46Z
 completed:
