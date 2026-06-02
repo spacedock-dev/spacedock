@@ -13,40 +13,58 @@ mod-block:
 pr: 
 ---
 
-`38` (live-e2e-per-stage-timeouts) made the live test STREAM the FO's stream-json to `t.Log` so a hang names the stalled step. But that diagnosability is defeated downstream: on 38's own PR CI-E2E (#261) the sonnet job failed (FO stalled headless), and the streamed transcript was NOT recoverable — `gh run view --log` truncates the multi-MB streamed log, AND the CI "Upload live artifacts" step (`.github/workflows/runtime-live-e2e.yml`) uploads only the `spacedock` binary, not the test transcript. So the captured-transcript half of 38's diagnosability never reaches a human on a real failure.
+The live test ALREADY streams the FO's stream-json to `t.Log` (`38`, merged on `next` at `3a59916a`); on a failure the captured stdout is defeated downstream — `gh run view --log` truncates the multi-MB job log and the upload step grabs only `./spacedock`. The closed PR #265 fixed THAT (tee the run-step stdout to `live-e2e-transcript.txt` + upload it). **Captain correction (2026-06-02): that stdout tee is the WRONG diagnostic target.** The run-step stdout is the FO's stream-json re-emitted through `t.Log` — a flattened, lossy view. The artifact `headless-fo-drive-flake` (`hd`) actually needs to root-cause an FO stall is the **agent session JSONL** the claude runtime writes: the full structured transcript (tool_use/tool_result blocks, usage, per-member subagent threads), not the stdout echo.
 
-This is the PREREQUISITE for root-causing the headless FO-drive flake (the sibling follow-up `headless-fo-drive-flake`): you cannot diagnose WHY the FO stalls without the failing run's transcript.
+This is the PREREQUISITE for root-causing the headless FO-drive flake (the sibling follow-up `headless-fo-drive-flake`): you cannot diagnose WHY the FO stalls without the failing run's structured session JSONL.
 
-## Where the transcript lives (grounding)
+## Where the session JSONL lives (grounding + spike)
 
-`38` is already merged into `next` (commit `3a59916a`, `internal/ensigncycle/streamwatch.go` present on `next`, absent on `main`). The live workflow triggers on `pull_request` to `next` and on `workflow_dispatch`, so the test a CI-E2E job actually compiles is 38's streaming-watcher version, not the pre-38 `CombinedOutput` version still on `main`.
+`38` is merged on `next` (commit `3a59916a`); the live workflow triggers on `pull_request` to `next` and on `workflow_dispatch`, so a CI-E2E job compiles 38's streaming-watcher test (`internal/ensigncycle/live_test.go`), not the pre-38 `main` version.
 
-Under 38 the watcher's `tee` sink is `func(line string) { t.Log(line) }`: every drained stream-json line flows to `t.Log` line-by-line as it streams (streamwatch.go `drainEntries` → `w.tee(line)`). On a stalled step the watcher trips a `stepTimeout`/`stepFailure` whose `Error()` carries the step label + a transcript tail, and the test calls `t.Fatalf(... err)` — so the labelled failure tail also lands in the test framework's output. `go test … -v` surfaces all of that `t.Log`/`t.Fatalf` output on the step's **stdout**.
+The live test shells the real front door — `spacedock claude … -p … --output-format stream-json … <task>` (`live_test.go:93`) — under an **isolated HOME**: `isolatedClaudeEnv` (`liveenv_test.go:98`) sets `HOME=t.TempDir()` and (CI path) passes `ANTHROPIC_API_KEY` through. The claude runtime under that child writes the session transcript JSONL. That JSONL is the structured transcript; the stream-json on stdout is a derived echo.
 
-So the transcript's destination is already the CI step's stdout. The only thing missing is: that stdout is neither persisted to a file nor uploaded — `gh run view --log` truncates the multi-MB stream, and the upload step grabs only `./spacedock`. This task tees the step's stdout to a file and adds that file to the upload. It composes with 38; it ships no new transcript-production mechanism.
+**Why it's lost today.** `t.TempDir()` is rooted at the test process's `$TMPDIR` and is REMOVED when the test ends (Go deletes each `t.TempDir()` on test cleanup), so the jsonl is written then deleted before any upload step runs. Nothing archivable points at it.
+
+**The OLD Python CI did NOT actually archive the jsonl either (correcting the seed's premise — surfaced to FO).** The seed says the old Python CI archived the jsonl via `SPACEDOCK_TEST_TMP_ROOT`. Git history (commit `bc0b5b7c`, `scripts/test_lib.py:388`) shows `SPACEDOCK_TEST_TMP_ROOT` only redirected the *project working dir* (`TestRunner.test_dir`) under `$RUNNER_TEMP`. But `_isolated_claude_env` (`test_lib.py` @ `6f41579a:319`) put the isolated HOME at a SEPARATE bare `tempfile.mkdtemp(prefix="spacedock-clean-home-")` — under system `/tmp`, NOT under `test_dir`. So `.claude/projects/*.jsonl` was under the bare HOME tmpdir, OUTSIDE the archived `SPACEDOCK_TEST_TMP_ROOT` subtree. The old upload captured the working dir, not the session jsonl. We are not "restoring" a working old behavior; we are adding jsonl archival the Python CI never actually had. The reusable idea from the old pattern is the *anchor* (put the runtime state under a known, archivable, per-job path) — applied this time to the config dir, not just the working dir.
+
+**Spike (PROVEN — the riskiest unknown, ran during this re-ideation).** WHERE does claude write the session jsonl under isolation, and does it survive a stalled/killed run?
+
+Ran against real claude `2.1.160`:
+
+```
+$ CLAUDE_CONFIG_DIR=/tmp/cfg HOME=/tmp/home claude -p "say hi" --output-format text
+  → /tmp/cfg/projects/-private-tmp/<uuid>.jsonl    (jsonl under CLAUDE_CONFIG_DIR)
+  → /tmp/home/.claude/                              (NOT created — HOME .claude unused)
+```
+
+Result, three facts, each load-bearing:
+1. **`CLAUDE_CONFIG_DIR` relocates the whole config tree** including `projects/<slug>/<session-uuid>.jsonl`. When `CLAUDE_CONFIG_DIR` is set, claude does NOT write `$HOME/.claude` at all (the HOME `.claude` dir was never created). So `CLAUDE_CONFIG_DIR` is a cleaner, HOME-independent archival anchor than the HOME-isolation seam. The repo already uses `CLAUDE_CONFIG_DIR` for install isolation (`internal/cli/install_behavior_test.go:35`).
+2. **The jsonl exists even when the run does not complete.** The spike's run aborted on "Not logged in" (no auth in the spike env) yet still left the jsonl on disk — claude writes the transcript incrementally as the session runs, not on clean exit. A second probe `kill -9`'d a mid-run claude and the jsonl was still present. So a stalled/killed FO leaves a PARTIAL jsonl — exactly the failing-run artifact `hd` needs (same capture-as-it-streams property the stdout tee had, now at the structured-jsonl level).
+3. **Teams mode adds per-member subagent jsonls.** The live job sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"`; the repo's own native reader (`internal/claudeteam/contextbudget.go:178`) confirms the on-disk layout is `projects/<slug>/[<session>/]subagents/agent-*.jsonl` for team members plus the top-level FO session jsonl. Archiving the whole `CLAUDE_CONFIG_DIR/projects/` subtree captures the FO session AND every dispatched ensign's subagent thread — the full FO-drive picture, which is precisely what an FO-stall root-cause needs.
+
+The slug is the cwd path with `/`→`-` (e.g. `-private-tmp`); we do not need to predict it — we archive the whole `projects/` subtree, so the slug is irrelevant to the upload.
 
 ## Design
 
-A CI-only change to `.github/workflows/runtime-live-e2e.yml`. No test-side hook — see "Decision: tee, not a test-side path" below.
+Two coordinated changes — a CI env/upload edit plus a one-line test-env change — that land the session jsonl at a known, archivable, per-job path and upload it.
 
-**Path.** `./live-e2e-transcript.txt` in the repo root (the job's working directory), matching the existing `./spacedock` relative-path convention in the upload step. No per-model suffix is needed in the filename: each matrix leg (`sonnet` / `claude-opus-4-8`) is a distinct job with its own workspace and its own artifact name (`runtime-live-e2e-claude-live-${{ matrix.model }}`), so the two legs never share a file or an upload.
+**Path.** `${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}` as `CLAUDE_CONFIG_DIR` for the live job. `$RUNNER_TEMP` is the canonical archivable scratch root (the same anchor the old Python `SPACEDOCK_TEST_TMP_ROOT` used); the `/${{ matrix.model }}` segment keeps the two matrix legs (`sonnet` / `claude-opus-4-8`) from sharing a config dir even though they are already separate jobs/workspaces — belt-and-braces, and it makes the per-leg artifact self-describing.
 
-**Edit 1 — tee the streamed test output, preserving the exit code.** Replace the `Run live ensign cycle` step's `run:` body with:
+**Edit 1 — set `CLAUDE_CONFIG_DIR` on the live job** (job-level `env:`, alongside the existing `DISABLE_AUTOUPDATER` / `ANTHROPIC_API_KEY` / `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`):
 
 ```yaml
-      - name: Run live ensign cycle
-        env:
-          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
-        run: |
-          set -o pipefail
-          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+    env:
+      DISABLE_AUTOUPDATER: "1"
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
+      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}
 ```
 
-`set -o pipefail` makes the pipeline's exit status the rightmost non-zero status, so a failing `go test` (a watcher `stepTimeout`/`stepFailure` → `t.Fatalf` → non-zero exit) propagates through `tee` and the step goes RED. `2>&1` folds stderr (Go's SIGQUIT goroutine-dump on the built-in default test timeout, plus any test-framework stderr) into the same captured stream. `tee` writes line-by-line as the pipe streams, so a hung/killed run leaves a partial transcript on disk up to the kill point — capture-as-it-streams, not capture-on-success.
+A job-level `env` is inherited by every step, including the `Install Claude Code` step and the `Run live ensign cycle` step's child process. The install step runs `claude --version` against this config dir (harmless — it just initializes there).
 
-GitHub Actions' default `run:` shell is already `bash --noprofile --norc -eo pipefail {0}`, so `pipefail` is on by default — but the explicit `set -o pipefail` makes the AC-2 guarantee self-evident in the step and immune to a later `shell:` override silently turning it off. It is one cheap line that removes a hidden dependency on GHA's default-shell choice.
+**Edit 2 — make the live test honor `CLAUDE_CONFIG_DIR`** (the one test-side change — see "Decision" below). The test isolates HOME via `t.TempDir()`; for the jsonl to land at the archivable `CLAUDE_CONFIG_DIR` rather than under the doomed `$HOME/.claude`, the child env must carry `CLAUDE_CONFIG_DIR` through. `isolatedClaudeEnv` (`liveenv_test.go:98`) currently drops/overrides HOME and the credentials but does NOT pass `CLAUDE_CONFIG_DIR`. Because `cleanEnviron` already copies through every env var it does not explicitly drop, `CLAUDE_CONFIG_DIR` from the job env is ALREADY inherited by the child — *unless* a future edit adds it to the drop list. So Edit 2 is a guard + a fallback, not a passthrough: when `CLAUDE_CONFIG_DIR` is set in the parent env, keep it in the child env (do not drop it); when it is unset (local operator run with no CI env), default it to a path under the isolated HOME so local runs still get a deterministic, inspectable config dir. The exact wording is settled in implementation against the real `isolatedClaudeEnv`; the contract is: **the child claude process's `CLAUDE_CONFIG_DIR` resolves to the archivable per-job path on CI.**
 
-**Edit 2 — add the transcript to the existing upload.** Add the path to the `Upload live artifacts` step's `path:` list (the step already has `if: always()`, so it runs on failure):
+**Edit 3 — upload the session jsonl subtree.** Add the `projects/` subtree of the config dir to the existing `if: always()` `Upload live artifacts` step:
 
 ```yaml
       - name: Upload live artifacts
@@ -56,57 +74,64 @@ GitHub Actions' default `run:` shell is already `bash --noprofile --norc -eo pip
           name: runtime-live-e2e-claude-live-${{ matrix.model }}
           path: |
             ./spacedock
-            ./live-e2e-transcript.txt
+            ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
           if-no-files-found: warn
 ```
 
-`if-no-files-found: warn` is retained: if a run dies so early the transcript file was never created, the upload warns rather than failing — but on any run that reached `go test`, `tee` has created the file (even if empty-then-partial), so the transcript is present on every real failure.
+Uploading the whole `projects/` subtree (not a single predicted jsonl) sidesteps the slug-prediction problem and captures the FO session jsonl PLUS every teams-mode `subagents/agent-*.jsonl`. `if: always()` (already present) means a FAILED/killed run still uploads the partial jsonl. `if-no-files-found: warn` is kept: a run that dies before claude initializes warns rather than reddening the upload step, but any run that reached the live cycle has a `projects/` dir.
 
-## Decision: tee, not a test-side path
+## Decision: KEEP the stdout tee as a secondary signal
 
-The assignment leaves room for "a tiny test-side hook if a known transcript path is cleaner than a tee." It is not, here. 38 already routes the full transcript to `t.Log`, which `-v` puts on stdout; a CI-level `tee` captures exactly that with zero Go changes. A test-side file would duplicate the sink, introduce a second source of truth for "where the transcript is," and couple the CI artifact path into Go source — strictly more surface for no diagnostic gain. Tee wins on YAGNI and on keeping the change inside the named scope file. Recorded so the determination is on the record.
+PR #265's stdout tee (`set -o pipefail` + `2>&1 | tee live-e2e-transcript.txt`, still on this branch at commit `2ec22cc4`) is KEPT, not dropped. Rationale: the two artifacts answer different questions and the tee's exit-contract role is load-bearing. The `set -o pipefail` is what keeps a failing live cycle RED (the step's exit code); removing the tee to drop the txt would also remove that pipefail line unless re-added bare. The txt is the cheap, immediately-`gh`-viewable-tail human signal (the labelled `stepTimeout`/`stepFailure` step name), while the jsonl is the deep structured artifact for `hd`. They compose: the txt tells you WHICH step stalled; the jsonl tells you WHY. Cost of keeping it is one extra small file in the artifact. Recorded so the determination is on the record.
+
+## Decision: honor CLAUDE_CONFIG_DIR in the test, not copy-out-on-failure
+
+The checklist offered (a) honor an env so the jsonl lands at a known archivable path vs (b) copy the jsonl out on failure. Chose (a). Copy-out-on-failure (b) needs a `defer`/cleanup hook in the Go test that finds the jsonl (slug-prediction or a glob) and copies it before `t.TempDir()` is reaped — strictly more Go surface, a second source of truth for the path, and it must run on the killed/fatal path (Go's `t.Cleanup` does run after `t.Fatalf`, but a `kill -9` of the *test process itself* would skip it; a `CLAUDE_CONFIG_DIR` outside the reaped TempDir survives unconditionally). (a) is a one-line env contract that makes claude write directly to the archivable path — no copy, no glob, survives any exit. YAGNI + survives-anything wins.
 
 ## Acceptance criteria
 
-**AC-1 — A failed live-e2e run's artifact contains the non-empty transcript with the failure tail.** On a CI-E2E job that FAILS (e.g. a watcher `stepTimeout`/`stepFailure`), the uploaded `runtime-live-e2e-claude-live-<model>` artifact contains `live-e2e-transcript.txt`, non-empty, carrying the streamed stream-json lines AND the labelled `stepTimeout`/`stepFailure` step name + transcript tail — not just `./spacedock`.
-Verified by: inspect the uploaded artifact of a failing CI-E2E run (a real flake or a forced-fail dispatch) and confirm `live-e2e-transcript.txt` is present, non-empty, and contains the labelled failure tail string (e.g. `step "..." made no progress` / `FO subprocess exited (code=...) before step`).
+**AC-1 — A failed live-e2e run's artifact contains the session JSONL transcript.** On a CI-E2E job that FAILS (e.g. a watcher `stepTimeout`/`stepFailure` → killed FO), the uploaded `runtime-live-e2e-claude-live-<model>` artifact contains the claude session JSONL subtree — at least one `projects/<slug>/<session>.jsonl` (the FO session) and, for a teams-mode run that got far enough to dispatch, `projects/<slug>/[…/]subagents/agent-*.jsonl` (the ensign threads) — non-empty, carrying the structured stream entries (assistant/tool_use/tool_result), not just `./spacedock`.
+Verified by: inspect the uploaded artifact of a failing CI-E2E run (a real flake or a forced-fail dispatch) and confirm a non-empty `*.jsonl` is present under the uploaded `projects/` subtree and parses as JSONL (each line a JSON object). The end-to-end leg is the captain's approval-gated live run.
 
-**AC-2 — Exit code is not swallowed by the tee; pass stays green, fail stays red.** The `tee` does NOT mask the test exit code: a passing `go test` run leaves the `Run live ensign cycle` step green; a failing run leaves it RED (the `claude-live` job fails). The file is written as the pipe streams (survives a killed run), not on clean exit only.
+**AC-2 — The session JSONL lands at the archivable path and survives a failed/killed run; the exit contract is preserved.** The child claude process writes its session JSONL under the per-job `CLAUDE_CONFIG_DIR` (the archivable `$RUNNER_TEMP` path), NOT under the reaped `$HOME/.claude` or a bare tmpdir; the file is written as the session streams, so a stalled/killed FO leaves a PARTIAL jsonl on disk. The kept `set -o pipefail` tee means a passing run stays green and a failing run stays RED (exit not swallowed).
 Verified by:
-- exit-code preservation is exercised offline (machine-independent, no live credential, no GitHub) by `bash --noprofile --norc -eo pipefail -c '<failing-cmd> 2>&1 | tee f; echo "should-not-print"'` returning non-zero AND `f` containing the failing command's output. Already run during ideation (see Spike below) — it returns exit 1, the post-pipe `echo` is suppressed by `-e`, and `f` carries both lines. This is the riskiest mechanism and it is proven.
-- end-to-end: a green CI-E2E run shows the step green with the transcript uploaded; a red CI-E2E run (forced or flake) shows the step red with the transcript uploaded.
+- JSONL-location is proven offline (machine-independent, no live credential, no GitHub) by the Spike below: `CLAUDE_CONFIG_DIR=<dir> claude -p …` writes `<dir>/projects/<slug>/<uuid>.jsonl` and leaves it on disk even when the run aborts/`kill -9`s. This is the riskiest mechanism and it is proven.
+- exit-contract preservation is proven offline by `bash --noprofile --norc -eo pipefail -c '<failing-cmd> 2>&1 | tee f'` returning non-zero with `f` populated (carried over from PR #265's spike, still applicable since the tee is kept).
+- end-to-end: a green CI-E2E run shows the step green with the jsonl uploaded; a red CI-E2E run (forced or flake) shows the step red with the partial jsonl uploaded.
 
-**AC-3 — Scope contained to the workflow file.** The shipped diff touches only `.github/workflows/runtime-live-e2e.yml` (the two steps above). No change to `internal/status`, no change to the FO runtime, no test-side transcript hook.
-Verified by: the PR diff's changed-files list is exactly `[.github/workflows/runtime-live-e2e.yml]`.
+**AC-3 — Scope: the workflow file plus the one test-env line; no production-runtime or status-lane change.** The shipped diff touches only `.github/workflows/runtime-live-e2e.yml` (the `CLAUDE_CONFIG_DIR` job-env line + the upload `path:` addition) and `internal/ensigncycle/liveenv_test.go` (the `CLAUDE_CONFIG_DIR` passthrough/fallback in `isolatedClaudeEnv`, a `_test.go` file under the live build tag). No change to `internal/status`, no change to the FO production runtime (no non-test `.go` outside the live test env), no change to any other workflow.
+Verified by: the PR diff's changed-files list is exactly `[.github/workflows/runtime-live-e2e.yml, internal/ensigncycle/liveenv_test.go]`; `git diff --name-only` shows no `internal/status/*`, no non-`_test.go` production file, no other `.github/workflows/*`.
+
+**AC-4 — The test-env change is unit-verified offline.** `isolatedClaudeEnv` returns a child env whose `CLAUDE_CONFIG_DIR` equals the parent's when the parent sets it (CI path), and a deterministic path under the isolated HOME when the parent does not (local path).
+Verified by: a Go unit test (in the existing offline `liveenv_decision_test.go` / a sibling `_test.go`, NOT under the live tag so it runs in the secret-free `go test ./...` job) that drives the env-resolution with a fake parent env both with and without `CLAUDE_CONFIG_DIR` set and asserts the resolved value. This is the failing-test-first deliverable for the implementation stage.
 
 ## Test plan
 
-- **Mechanism spike (done, offline, throwaway):** `set -o pipefail` + `tee` preserves a non-zero pipeline exit while leaving the transcript file on disk. Ran during ideation; result recorded under Spike below. Cost: seconds. This is the riskiest unknown — that the tee doesn't swallow the exit code — and it is proven before the rest of the plan.
-- **YAML well-formedness (offline, cheap):** the edited workflow must parse. A `yamllint`/`actionlint` or `python -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))'` parse of the file, or a `gh workflow view` after merge, confirms the file is still valid YAML — this is a parse of a real artifact, not a substring search.
-- **End-to-end (live, gated, expensive — captain-driven):** a real CI-E2E dispatch. Green path: the run passes, the step is green, the artifact carries the transcript. Red path: a forced-fail (e.g. temporarily shrink a watcher budget on a throwaway branch, or catch a real flake) leaves the step red and the artifact still carries the partial/failed transcript with the labelled tail. The live run is approval-gated and spends `ANTHROPIC_API_KEY`, so it is the captain's call when to burn it; AC-1/AC-2's end-to-end legs are verified on that run. AC-2's exit-code half and AC-3 are fully verifiable offline without a live run.
-- No new Go unit test is warranted: the change adds no Go code (Decision above), and the streaming/tee/`t.Log` behavior it relies on is 38's, already covered by `streamwatch_unit_test.go` on `next`.
+- **Mechanism spike (done, offline, throwaway):** WHERE claude writes the session jsonl under isolation and whether it survives a non-clean exit. Ran during this re-ideation against real claude `2.1.160`; result recorded under Spike below. Cost: seconds. This is the riskiest unknown — that the archived path actually contains the jsonl on a failing run — and it is proven before the rest of the plan.
+- **Go unit test (offline, cheap — AC-4):** drive `isolatedClaudeEnv`'s env resolution with a synthetic parent env (with / without `CLAUDE_CONFIG_DIR`) and assert the child `CLAUDE_CONFIG_DIR`. Refactor the env-resolution into a pure helper if needed so it is testable without spawning claude (mirrors how `decideClaudeEnv` was already factored pure for `liveenv_decision_test.go`). Failing-test-first. Runs in `go test ./...` (no live tag, no credential).
+- **YAML well-formedness (offline, cheap):** the edited workflow must parse. A `python -c 'import yaml,sys; yaml.safe_load(open(sys.argv[1]))'` / `actionlint` parse of the file, or `gh workflow view` after merge, confirms valid YAML — a parse of a real artifact, not a substring search.
+- **End-to-end (live, gated, expensive — captain-driven):** a real CI-E2E dispatch. Green path: the run passes, the step is green, the artifact carries the FO + subagent jsonls. Red path: a forced-fail (temporarily shrink a watcher budget on a throwaway branch, or catch a real flake) leaves the step red and the artifact still carries the partial jsonl. Approval-gated, spends `ANTHROPIC_API_KEY`; the captain's call when to burn it. AC-1 and AC-2's end-to-end leg are verified there; AC-2's location/exit halves, AC-3, and AC-4 are fully verifiable offline.
 
-## Spike: pipefail + tee exit-code preservation (riskiest unknown — PROVEN)
+## Spike: WHERE the session jsonl lands under isolation, and does it survive a non-clean exit (riskiest unknown — PROVEN)
 
-Ran offline during ideation (mimics the GHA default shell):
+Ran during this re-ideation against real claude `2.1.160` (no live auth needed — the jsonl is written before any auth check):
 
 ```
-$ bash --noprofile --norc -eo pipefail -c \
-    'go() { echo "line1"; echo "FAIL line"; return 1; }; \
-     go test 2>&1 | tee /tmp/t.txt; echo "exit after pipe: $?"'
-line1
-FAIL line
-# outer exit: 1   (the post-pipe echo did NOT print — `-e` aborted on the failed pipeline → step goes RED)
-$ cat /tmp/t.txt
-line1
-FAIL line          (transcript survived the failed pipeline)
+$ CLAUDE_CONFIG_DIR=/tmp/cfg HOME=/tmp/home \
+    claude -p "say hi in one word" --output-format text
+  (run aborts: "Not logged in" — no auth in the spike env)
+$ find /tmp/cfg -name '*.jsonl'
+  /tmp/cfg/projects/-private-tmp/<uuid>.jsonl     ← jsonl under CLAUDE_CONFIG_DIR
+$ ls /tmp/home/.claude
+  (does not exist — HOME .claude never written when CLAUDE_CONFIG_DIR is set)
 ```
 
-Result: the failing pipeline returns exit 1 (step would go RED), and the transcript file is on disk with the streamed lines. The trade-off the AC rests on is proven. No other unverified mechanism remains — the transcript-to-`t.Log` and `stepTimeout`/`stepFailure`-to-`t.Fatalf` paths are 38's, already merged on `next` and unit-tested there; `go test -v`→stdout and `actions/upload-artifact` multi-path upload are stock behavior.
+Three proven facts: (1) `CLAUDE_CONFIG_DIR` relocates `projects/<slug>/<session>.jsonl` and claude does NOT touch `$HOME/.claude` when it is set — so `CLAUDE_CONFIG_DIR` is a clean, HOME-independent archival anchor; (2) the jsonl is on disk even though the run aborted (and a second `kill -9` probe also left it present) — claude writes the transcript incrementally, so a stalled/killed FO leaves a partial jsonl; (3) the repo's own native reader (`internal/claudeteam/contextbudget.go:178`) documents the teams-mode layout `projects/<slug>/[<session>/]subagents/agent-*.jsonl`, so archiving the whole `projects/` subtree captures the FO session AND every dispatched ensign thread. No other unverified mechanism remains: the env-passthrough is plain `os.Environ()` copy-through (offline unit-tested per AC-4), and `actions/upload-artifact` multi-path upload of a directory is stock behavior. The exit-contract half (pipefail + tee) is PR #265's already-proven spike, kept.
 
 ## Notes
-- `.github/workflows/runtime-live-e2e.yml`. Merge this FIRST (captain) — prerequisite for the `headless-fo-drive-flake` investigation. Targets `next` (where 38 lives and where the live workflow triggers); `main` still has the pre-38 `CombinedOutput` test, so the diagnostic payoff is realized on `next`-bound PRs.
-- The transcript can run multi-MB (the same volume `gh` truncates); `actions/upload-artifact` handles that fine and the artifact retention is GitHub's default. No size cap or truncation is added on purpose — the whole point is to escape `gh`'s truncation.
+- Files: `.github/workflows/runtime-live-e2e.yml` + `internal/ensigncycle/liveenv_test.go` (live-tagged test env) + a small offline `_test.go` for AC-4. Merge this FIRST (captain) — prerequisite for the `headless-fo-drive-flake` investigation. Targets `next` (where 38 lives and where the live workflow triggers); `main` still has the pre-38 `CombinedOutput` test, so the diagnostic payoff is realized on `next`-bound PRs.
+- The session jsonl can run multi-MB; `actions/upload-artifact` handles a directory subtree fine and retention is GitHub's default. No size cap or truncation — the whole point is to escape `gh`'s truncation and to capture the STRUCTURED transcript, not the flattened stdout echo.
+- **Seed-premise correction (FO/captain):** the seed/feedback says the old Python CI archived the jsonl via `SPACEDOCK_TEST_TMP_ROOT`. Git history shows it did not — `SPACEDOCK_TEST_TMP_ROOT` only redirected the project working dir; the isolated HOME (where `.claude/projects/*.jsonl` lived) was a separate bare `mkdtemp` under `/tmp`, outside the archived subtree. This task adds jsonl archival the Python CI never actually had. Surfaced rather than silently inheriting the premise.
 
 ## Stage Report: ideation
 
@@ -146,3 +171,16 @@ Implemented the two CI-only edits to `runtime-live-e2e.yml` verbatim from the De
 ### Summary
 
 PASSED. The riskiest property — pipefail exit-preservation through the tee — was adversarially confirmed offline: a non-zero command propagates its exit (a failing live cycle stays RED, it does NOT go green), while a zero-exit command stays exit 0, and tee streams line-by-line so a killed run leaves a partial transcript. Upload wiring verified over parsed YAML values (not substring): `./live-e2e-transcript.txt` is in the `if: always()` upload `path:` alongside `./spacedock`, and the file is well-formed. Scope is contained to the single workflow file; no Go code changed, so the Go toolchain gates are unaffected. The end-to-end live legs of AC-1 and AC-2 remain the captain's approval-gated CI-E2E dispatch, as the spec already designates.
+
+## Stage Report: ideation (cycle 2 — re-target to session JSONL)
+
+- DONE: Re-target the deliverable to archiving the agent session JSONL (the structured transcript hd needs), NOT the run-step stdout. Ground it in the old Python CI pattern (SPACEDOCK_TEST_TMP_ROOT) and explain why the current Go test (cleanHome := t.TempDir()) loses the jsonl.
+  Body rewritten: the diagnostic target is now `CLAUDE_CONFIG_DIR/projects/*/…*.jsonl`. Grounded in git history — `bc0b5b7c:scripts/test_lib.py:388` (TMP_ROOT redirected the working dir) AND `6f41579a:test_lib.py:319` (isolated HOME was a SEPARATE bare mkdtemp). The current test's `t.TempDir()` HOME (`liveenv_test.go:106`) is Go-reaped on test end, so the jsonl is written then deleted. Recorded the seed-premise correction: the old Python CI did NOT in fact archive the jsonl (it was outside the archived subtree) — surfaced rather than inherited.
+- DONE: Decide the mechanism and record the trade-off: honor an env (archivable CLAUDE_CONFIG_DIR) vs copy-the-jsonl-out-on-failure; define what CI uploads, preserving the exit contract (a killed run still archives the partial jsonl).
+  Chose (a) honor `CLAUDE_CONFIG_DIR` — a one-line env contract, no Go copy/glob, survives any exit including a `kill -9` of the test process (the config dir lives OUTSIDE the reaped `t.TempDir()`). Rejected (b) copy-out-on-failure (more Go surface, second source of truth, skipped on a test-process `kill -9`); recorded in "Decision: honor CLAUDE_CONFIG_DIR". CI uploads the whole `CLAUDE_CONFIG_DIR/projects` subtree (FO session jsonl + teams-mode `subagents/agent-*.jsonl`), via the existing `if: always()` upload, so a FAILED/killed run still archives the partial jsonl.
+- DONE: Spike the riskiest unknown — confirm WHERE claude writes the session jsonl under an isolated HOME and that it survives a stall/kill; decide whether to KEEP the prior stdout tee (PR #265, commit 2ec22cc4 on this branch).
+  Spiked against real claude 2.1.160: `CLAUDE_CONFIG_DIR=<dir> claude -p …` writes `<dir>/projects/<slug>/<uuid>.jsonl`, does NOT touch `$HOME/.claude`, and the jsonl is on disk even when the run aborts / is `kill -9`'d (recorded in "Spike" + "Where the session JSONL lives"). Teams layout (`projects/<slug>/…/subagents/agent-*.jsonl`) confirmed via the repo's own reader `internal/claudeteam/contextbudget.go:178`. Decided to KEEP the stdout tee as a SECONDARY signal (recorded in "Decision: KEEP the stdout tee") — it carries the load-bearing `set -o pipefail` exit contract and is the cheap gh-viewable which-step-stalled tail; the jsonl is the deep why-it-stalled artifact.
+
+### Summary
+
+Re-targeted from the closed PR #265 stdout tee to the structured session JSONL `hd` actually needs. The riskiest unknown — WHERE the jsonl lands under isolation and whether it survives a non-clean exit — was spiked against real claude 2.1.160 FIRST: `CLAUDE_CONFIG_DIR` relocates the whole `projects/<slug>/<session>.jsonl` tree (HOME `.claude` untouched), the jsonl is written incrementally so a stalled/killed FO leaves a partial, and teams mode adds `subagents/agent-*.jsonl` (per the repo's own `contextbudget.go` reader). Mechanism: honor `CLAUDE_CONFIG_DIR` (one env line + a test-env passthrough) over copy-on-failure (more surface, skipped on a test-process kill); upload the whole `projects/` subtree via the existing `if: always()` step. Kept PR #265's stdout tee as a secondary signal (it carries the pipefail exit contract). Scope is the workflow file + the live test-env (`liveenv_test.go`) + a small offline unit test for the env resolution (AC-4) — no production-runtime or status-lane change. Surfaced a seed-premise correction: the old Python CI did NOT actually archive the jsonl (the isolated HOME was a bare `/tmp` mkdtemp outside `SPACEDOCK_TEST_TMP_ROOT`), so this adds archival that never existed rather than restoring it.
