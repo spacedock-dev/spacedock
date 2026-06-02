@@ -1,7 +1,7 @@
 ---
 id: 3g6gbbn1bvk41a57tjbe50rv
 title: Upload the live-e2e transcript as a CI artifact (diagnose failures past gh log truncation)
-status: validation
+status: ideation
 source: "FO (2026-06-02): 38's streamWatcher tees the FO transcript to t.Log, but on a failed run gh truncates the large job log AND the CI uploads only the spacedock binary, not the transcript — so the sonnet FO-stall on 38's PR was not fully diagnosable. Prerequisite for root-causing the headless FO-drive flake."
 started: 2026-06-02T07:57:40Z
 completed:
@@ -10,7 +10,7 @@ score: "0.30"
 worktree: .worktrees/spacedock-ensign-live-e2e-transcript-artifact
 issue:
 mod-block: 
-pr: "#265"
+pr: 
 ---
 
 `38` (live-e2e-per-stage-timeouts) made the live test STREAM the FO's stream-json to `t.Log` so a hang names the stalled step. But that diagnosability is defeated downstream: on 38's own PR CI-E2E (#261) the sonnet job failed (FO stalled headless), and the streamed transcript was NOT recoverable — `gh run view --log` truncates the multi-MB streamed log, AND the CI "Upload live artifacts" step (`.github/workflows/runtime-live-e2e.yml`) uploads only the `spacedock` binary, not the test transcript. So the captured-transcript half of 38's diagnosability never reaches a human on a real failure.
