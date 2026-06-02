@@ -1,13 +1,13 @@
 ---
 id: f4h107he3s9swwz51ymr022m
 title: Enable Codex live CI with a real headless runtime smoke
-status: ideation
+status: implementation
 source: "captain (2026-06-02) — revive the useful old Python Codex live CI setup, ignore tautological static grep tests, and document setup/principles in docs/dev/README.md"
-started:
+started: 2026-06-02T17:59:45Z
 completed:
 verdict:
 score: "0.72"
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-live-ci
 issue:
 ---
 
