@@ -124,6 +124,7 @@ jobs:
         run: |
           go build -o ./spacedock ./cmd/spacedock
           echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "$(pwd)" >> "$GITHUB_PATH"
 
       - name: Configure git identity
         run: |
