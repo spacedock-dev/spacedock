@@ -22,39 +22,328 @@ Finished work always has real evidence, so the workflow can't quietly rubber-sta
 nothing.
 
 This is part A of three from the now-superseded parent `deliverable-contract-hardening`
-(id `hxs93wd0bjwhc3vsjwx1seew`) — the parent's full design, the 172-AC classifier spike, and the
-staff review remain the reference. This child is the CODE half: the guard in `internal/status`.
+(id `hxs93wd0bjwhc3vsjwx1seew`) — the parent's full design, the spike (now re-run; see §P4 below), and
+the staff review remain the reference. This child is the CODE half: the guard in `internal/status`.
 
-## Scope (ideation hardens; carries the staff-review corrections)
+## Problem
 
-- A check in `spacedock status --validate` that flags a task whose proof clause cites nothing external
-  to itself, plus a guard on the terminal "mark done / passed" set that refuses the transition (leaves
-  the task unchanged) unless `--force` is passed.
-- The classifier mechanism is already spike-proven (scope to the proof clause; ignore quoted examples;
-  require an external-proof word like a test/command/file to be present) — ship the spike corpus + the
-  adversarial cases as the guard's test table. **Refresh the stale spike counts first** (the corpus
-  grew from 79 to ~172 tasks; the old headline example no longer reproduces).
+The workflow contract (`docs/dev/README.md` ideation Outputs) already says every AC's "Verified by"
+must name something outside the task body that can fail — a test, a command's exit code/output, a
+file the change produces, or the resulting on-disk state — and the validation stage already says
+reject any AC whose only proof is a re-reading of the entity's own prose. That language is the GATE
+discipline. But nothing in the binary enforces it: `spacedock status --set verdict=passed` will
+happily walk a self-referentially-proven entity to `done`, and `spacedock status --validate` will
+return `VALID`. The captain or FO has to catch it by eye every time.
 
-## Acceptance criteria (provisional)
+The live cautionary tale is the archived `external-tracker-checkpoint/index.md` **AC-6** — its
+`Verified by:` clause reads "this entity's **v1 DECISION** section states the decision and cites the
+roadmap out-of-scope line" — proof by re-reading the entity. That AC can never fail, so it is not an
+AC. The classifier spike in the parent (re-run against the current corpus, §P4) confirms this is the
+sole live self-reference today.
 
-**AC-1 — Marking a self-referential-proof task done is refused; a real-proof task closes cleanly.**
-Verified by: native behavioral tests (NOT launcher-vs-oracle parity — the Python comparison tool has
-no such check, so a parity test would falsely fail; use a native-only assertion in the STATE_BACKEND
-divergence style). Fixtures: (a) self-reference-only task → terminal set exits 1, frontmatter
-unchanged; (b) external-proof task → reaches done; (c) `--force` → bypass with the override warning;
-(d) `--validate` emits the standard evidence line for the flagged task and `VALID` for a clean one.
-Flip-test: change a fixture's proof from self-reference to external and confirm the guard stops firing.
+This is the **dev workflow's** discipline. Non-dev workflows (a marketing workflow whose proof is a
+published artifact, a research workflow whose proof is a metric) legitimately ship under different
+verifiability rules. The guard must therefore be OPT-IN at the workflow level, defaulting OFF — not a
+universal binary behavior dressed up as a "goodness lint".
 
-**AC-2 — Everyday reads are not gated by this check.** Verified by: plain `status` / `--next` /
-`--boot` still succeed on a workflow that contains a self-referential task (the check is invoked only
-by `--validate` and the terminal set, NOT on the read path — otherwise one bad task breaks every
-read, with no override). The existing `--validate` parity tests are reconciled (the new native
-evidence line is handled, not left to red the suite).
+## Proposed approach
 
-**AC-3 — One shared classifier serves both the `--validate` flag and the terminal-set guard.**
-Verified by: a single body-parser/classifier helper (new — neither path parses the task body today)
-is the only place the rule lives, so the two surfaces can't drift; a test asserts both call it.
+A single body-parser/classifier in `internal/status/` that:
+
+1. extracts each `**AC-N — …**` block from an entity body;
+2. isolates the proof clause (text from the first `Verified by:` / `Oracle:` / `Proof:` marker
+   onward, to the next `**AC-` header or section break);
+3. strips quoted spans (`"…"`, `` `…` ``) — a quoted example of the antipattern is not the live
+   proof;
+4. flags the AC iff the cleaned proof clause matches a self-reference phrase AND contains no
+   external-proof token.
+
+That same classifier is consulted by two surfaces:
+
+- **`runSet` terminal-transition guard** (`internal/status/handlers.go`, alongside the existing
+  mod-block / merge-hook guards). When the workflow opts in and the `--set` is terminal (advances to
+  a `terminal: true` stage, OR sets `verdict`, OR sets `completed`), refuse with exit 1 and a
+  mod-block-shaped error message; the entity frontmatter is left untouched. `--force` bypasses with
+  the same warning idiom as the mod-block bypass.
+- **`validateWorkflow` sub-check** (`internal/status/validate.go`, alongside `findEntityFormConflicts`).
+  Emits the standard `Error: … workflow= scope= slug= id= path=` evidence line for each flagged AC
+  and contributes to the overall non-zero exit; a clean workflow returns `VALID`.
+
+The opt-in lives in the README top-level frontmatter as `require-external-proof: true` (default
+FALSE, byte-identical to a workflow that never declared the key). It is read via a small
+`resolveExternalProofPolicy(definitionDir)` helper modelled on `resolveMergePolicy`. An unknown value
+(`require-external-proof: yes`, `require-external-proof: 1`) is rejected loudly the same way
+`resolveMergePolicy` rejects a typo — fail-fast, no silent coercion.
+
+## Detection algorithm (concrete spec)
+
+The classifier is a pure function `func ClassifyEntityACs(body string) []ACFlag`, where `body` is the
+entity file content after the closing `---` frontmatter fence and `ACFlag` carries `{header,
+proofClause, matchedPhrase}`. Tests drive it directly with literal strings; the integrating callers
+read `body := stripFrontmatter(os.ReadFile(entityPath))` and forward.
+
+**Step 1 — AC extraction.** Scan the body line-by-line. A line matching `^\*\*AC-` opens a block.
+Accumulate following lines into the block body until the next `^\*\*AC-` header OR a `^## ` section
+break OR EOF. Trim. Equivalent to the spike's `extract_acs`.
+
+**Step 2 — Proof-clause isolation.** Within the block body, locate the first case-insensitive match
+of `(verified by|oracle:|proof:|end state[:.])`. Take from that match to the block end as the proof
+clause. If no marker is found, the entire block is the clause (defensive — the AC has no labelled
+proof at all, which the FO gate catches; the lint emits nothing here, since absence-of-proof is a
+different failure mode covered by the FO cross-check).
+
+**Step 3 — Quote stripping.** Within the proof clause, replace every double-quoted span (`"[^"]*"`)
+and every backtick-fenced span (`` `[^`]*` ``) with a single space. A quoted example of the
+antipattern (e.g. AC-1 of this very entity, which quotes "verified by review of this entity's own
+decision section" as the fixture content the guard refuses) is excluded by this step.
+
+**Step 4 — Self-phrase match.** Case-insensitive regex over the cleaned clause:
+
+    this entity'?s
+    review of (this|the) (entity|decision|design)[^.]*section
+    the entity'?s own (prose|decision|section)
+    re-reading (this|the) (entity|task|body)
+
+(The last alternative is added to catch the README's own phrasing of the antipattern: "a re-reading
+of the entity's own prose".) If none match, the AC is NOT flagged.
+
+**Step 5 — External-token absence.** Case-insensitive regex over the cleaned clause for ANY of:
+
+    \btest\b | \.go\b | exit\s | exit-code | exit code | command | \bstatus\b
+    --\w+ | fixture | golden | byte | on-disk | stdout | stderr | assert | parser
+    mutator | frontmatter | code path | command/parser
+    runs? the | running the | invok | drive the | driving the
+    \bCI\b | \bPR\b | live job | green | workflow file
+
+(The CI/PR/green/live-job/workflow-file additions are NEW relative to the spike — surfaced by the
+2026-06-02 re-run against the 271-AC corpus where two live-CI ACs falsely flagged because their
+proof is "CI green on this entity's PR". A CI run is external, observable, and fails. These tokens
+restore precision = 1.0 / recall = 1.0 on the refreshed corpus; see §P4.)
+
+If ANY external token is present in the cleaned clause, the AC is NOT flagged. Else (self-phrase
+present AND no external token), the AC IS flagged as a self-reference.
+
+**What the guard ACCEPTS as proof:** any clause naming a test (`TestSomething` / `*_test.go`), a
+command and its expected exit code or output bytes (`spacedock status --set … exit 1`), a file the
+change produces (`internal/status/handlers.go:200`), the resulting on-disk frontmatter, a fixture
+workflow under `testdata/`, a CI workflow file (`.github/workflows/*.yml`), a live job's green
+state, or a golden fixture path. Any of these tokens trumps the self-phrase.
+
+**What the guard REJECTS:** "verified by review of this entity's decision section", "verified by
+this entity's own design rationale", "verified by re-reading the task body's approach" — the
+antipattern named in `docs/dev/README.md` ideation Outputs and the parent
+`deliverable-contract-hardening` AC-6 example.
+
+**Tolerance for non-AC content.** The classifier only emits findings for blocks matching the
+`^\*\*AC-` shape. A free-form decision paragraph, a `## Notes` section, an inline `**Note:**`
+callout — none of these are AC headers, so none are scanned. The guard's surface area is the
+entity's declared ACs, nothing else.
+
+**Known design-accepted false negative.** A paraphrased self-reference with no literal self-phrase
+token ("inspection of the recorded rationale in the body") will NOT flag — by design. The lint is
+the narrow terminal-PASSED backstop; the broader behavioral-proof judgement is the FO/captain gate
+check, as documented in the parent's spike conclusion. Encoding more paraphrases risks false
+positives on legitimate "review of the design section" mentions inside the proof prose. The two-layer
+composition (lint = narrow + high-precision; FO cross-check = broad + judgement) is intentional.
+
+## Workflow-opt-in mechanism (concrete spec)
+
+**Where it lives.** Top-level README frontmatter key:
+
+    require-external-proof: true
+
+Placed alongside `id-style`, `state`, and `merge` — at the same level as those existing
+workflow-policy keys. NOT under `stages.defaults` (the constraint is whole-workflow, not stage-
+specific). NOT a CLI flag (a `--require-external-proof` on `--set` would let a careless caller
+silently disable it; the workflow's own README is the durable declaration).
+
+**Default.** Absent or empty → FALSE. Byte-identical to a workflow that never declared the key. Every
+non-dev workflow in the wild is unaffected; the dev workflow opts in by adding the line to
+`docs/dev/README.md`. This is the design-note constraint from the dispatch: dev-specific, not
+universal.
+
+**Accepted values.** `true` → guard ON. `false` or absent → guard OFF. Any other value
+(`yes`, `1`, `True`, `False` — the parser is case-sensitive on the value, matching the existing
+`worktree`/`gate` stage-field discipline in `stages.go`) is rejected with a `README require-external-
+proof: must be 'true' or 'false' (or absent for the default 'false'), not '{value}'` error — the
+exact shape of `resolveMergePolicy`'s typo guard, so a `require-external-proof: tru` typo fails
+loudly instead of silently allowing the close.
+
+**How the guard reads it.**
+
+- `runSet` (handlers.go): after the existing mod-block / merge-hook block, if
+  `resolveExternalProofPolicy(roots.definitionDir) == true` AND `isTerminalUpdate()` AND
+  `!force`, read the entity body, run the classifier, and if any flagged AC is found, emit
+  `Error: entity {slug} cannot advance to terminal — AC(s) {AC-N,AC-M} have self-referential proof
+  (no test, command, file, or on-disk-state cited). Add an external-proof clause to each, or use
+  --force to bypass.` and exit 1 (no mutation). Under `--force`, emit the same `Warning: --force
+  overriding require-external-proof on entity {slug}` shape as the mod-block bypass and proceed.
+- `validateWorkflow` (validate.go): when `resolveExternalProofPolicy == true`, for every active
+  entity, run the classifier and emit one `entityEvidence(e, workflowDir, "self-referential AC
+  proof (AC-N)", display)` line per flagged AC. The standard validate non-zero-exit gather applies.
+  When the policy is OFF, the sub-check is a no-op (zero scans, zero output, zero cost).
+
+**Read path is NOT gated.** `status` / `--next` / `--boot` / `--archived` never invoke the
+classifier. One self-referential AC in some active workflow must not break every read for everyone
+with no override — the FO needs `--next` to LIST the broken entity so it can be fixed. The check is
+strictly terminal-set + `--validate`.
+
+**Archive guard.** `--archive` already inherits the mod-block + merge-hook discipline; the
+self-reference guard is layered at the same point (after merge-hook, before the rename). Same
+opt-in. Same `--force` override.
+
+## Acceptance criteria
+
+Each AC names a property of the finished entity, and how it is verified by an exercise-and-observe
+check external to this entity body.
+
+**AC-1 — Under `require-external-proof: true`, a `--set` that terminalizes an entity whose ACs are
+only self-referentially proven exits 1, leaves the frontmatter byte-identical, and prints the guard
+error in the mod-block idiom; a real-proof entity terminalizes cleanly (exit 0); `--force`
+bypasses with the standard warning.**
+Verified by: a new Go test `TestTerminalSetUnderSelfRefRejected` in
+`internal/status/archive_guard_test.go`, modelled on the existing
+`TestTerminalSetUnderModBlockRejected` (lines 63–91). The test stages a new `testdata/external-proof-
+workflow/` fixture (next to the existing `guard-workflow/`) whose README carries
+`require-external-proof: true` and whose entities are: (a) `self-ref-only.md` with a single
+self-referential AC; (b) `real-proof.md` with a single AC citing a Go test; (c) `force-bypass.md`
+identical to (a) used with `--force`. The test asserts: case (a) exits 1, stderr contains
+`self-referential AC proof`, the frontmatter still reads `status: implementation` AND NOT `status:
+done`; case (b) exits 0 and reaches `done`; case (c) under `--force` exits 0 with the
+`Warning: --force overriding require-external-proof` line on stderr and reaches `done`. Plus a flip
+test: re-stage the fixture, edit `self-ref-only.md`'s AC `Verified by:` clause to cite a Go test,
+re-run `--set`, assert exit 0 — confirming the guard keys on the proof clause, not a tautology.
+
+**AC-2 — Under `require-external-proof: true`, `spacedock status --validate` flags every
+self-referential AC with the standard `Error: … workflow= scope= slug= id= path=` evidence line and
+exits 1; a workflow with no self-referential ACs returns `VALID` exit 0.**
+Verified by: a new Go test `TestValidateFlagsSelfRefACs` in `internal/status/native_validate_test.go`
+(joining the existing `--validate` test set). Drives the same `testdata/external-proof-workflow/`
+fixture as AC-1. Asserts: with `self-ref-only.md` present, the binary exits 1 and stderr contains
+one `entityEvidence`-shaped line per flagged AC (the standard `Error: self-referential AC proof
+(AC-1):` prefix + `workflow=` + `scope=active` + `slug=self-ref-only` + `id=` + `path=`); with
+only `real-proof.md` present, the binary exits 0 and stdout is `VALID\n`.
+
+**AC-3 — Under `require-external-proof: false` (or absent), neither the terminal-set guard nor the
+`--validate` sub-check fires; ordinary read flows (`status`, `--next`, `--boot`) are never gated by
+the check.**
+Verified by: a new Go test `TestExternalProofOptInDefaultOff` in a new
+`internal/status/external_proof_test.go` file. Stages a fixture identical to `external-proof-
+workflow/` but with the `require-external-proof:` line omitted (and a sibling variant with
+`require-external-proof: false`). Asserts: `--set status=done` on `self-ref-only.md` exits 0 in
+both fixtures (the guard is silent); `--validate` returns `VALID` exit 0; `status`,
+`--next`, `--boot` on a workflow containing a self-referential entity all exit 0 unchanged.
+
+**AC-4 — A single shared classifier serves both the terminal-set guard and the `--validate`
+sub-check, so the two surfaces cannot drift.**
+Verified by: a new Go test `TestClassifierIsSharedBySetAndValidate` in
+`internal/status/external_proof_test.go`. The test imports the classifier function directly,
+asserts it has exactly one definition site (a `grep -c "^func ClassifyEntityACs"` over
+`internal/status/*.go` returns 1 — a structural invariant over real parsed file content, in the
+shape `spacedock-packaging` AC-1's manifest-range invariant uses), and constructs a small in-memory
+body fixture proving both `runSet`'s guard path and `validateWorkflow`'s sub-check call the same
+function (verified by an asserting test double that increments a package-private counter when
+called; both surfaces are exercised in one test, both bump the same counter). This is the AC-3
+property of the parent (`deliverable-contract-hardening` AC-3 in the design parent: a single shared
+classifier serves both paths).
+
+**AC-5 — The classifier is precision = 1.0 / recall = 1.0 on the live `.spacedock-state` corpus on
+the day it ships.**
+Verified by: a new Go test `TestClassifierPrecisionRecallOnLiveCorpus` in
+`internal/status/external_proof_test.go`. Walks every `index.md` under
+`docs/dev/.spacedock-state/` (active + `_archive/`), runs the classifier, and asserts the flagged
+set is EXACTLY `{external-tracker-checkpoint/index.md AC-6}`. Two false-positive cases the
+2026-06-02 spike re-run surfaced (`front-door-plugin-dir` AC-2 and `live-e2e-per-stage-timeouts`
+AC-3, both citing CI runs as proof) must NOT flag — they are cleared by the `CI`/`PR`/`green`/`live
+job`/`workflow file` token additions to the external-token regex. If a future edit re-introduces
+the antipattern OR the classifier's precision degrades on a live entity, this test fails on the
+real corpus, naming the entity. This is the live-corpus invariant that protects the design — a
+real test feeding many real inputs, not a spelling check.
+
+## Test plan
+
+The claim is "the binary refuses a self-referential terminal-set when the workflow opts in", a
+behavioral property of `spacedock status`. Proof level: Go behavioral tests driving the native
+binary (the same level the existing mod-block / merge-hook guard tests use), plus the AC-5
+live-corpus invariant.
+
+| Check | Verifies | Level / cost |
+|-------|----------|--------------|
+| `TestTerminalSetUnderSelfRefRejected` (3 fixtures + flip) | AC-1 | Go behavioral, ~0.5s |
+| `TestValidateFlagsSelfRefACs` | AC-2 | Go behavioral, ~0.3s |
+| `TestExternalProofOptInDefaultOff` (omitted + explicit false) | AC-3 | Go behavioral, ~0.3s |
+| `TestClassifierIsSharedBySetAndValidate` | AC-4 | Go unit + structural, ~0.05s |
+| `TestClassifierPrecisionRecallOnLiveCorpus` | AC-5 | Go unit over real files, ~0.2s |
+| `go test ./...` (and `-race`) baseline | regression | suite, seconds |
+
+No live workflow run, no network, no plugin re-vendor. A new fixture `testdata/external-proof-
+workflow/` (3 small entities + README with the opt-in) is the only new on-disk test asset. The
+classifier function is testable in isolation; the two integrating callers add ~30 lines each (guard
+in `runSet`, sub-check in `validateWorkflow`).
+
+## P4 spike refresh (re-run 2026-06-02)
+
+The parent's spike (archived in `_archive/deliverable-contract-hardening/artifacts/self-reference-
+lint-spike/`) ran against a 79-AC, 15-entity corpus and reported precision 1.0 / recall 1.0 with the
+refined classifier. Per the dispatch's "refresh the stale spike counts first" instruction, re-ran
+`02-refined-classifier.py` from the current `.spacedock-state` root on 2026-06-02:
+
+**Fresh counts.** 271 ACs scanned across 68 entities (54 archived + 14 active). The corpus grew
+3.4× since the original spike — the dispatch's "~172 tasks" estimate was conservative.
+
+**Fresh flags (3 raw, before refinement):**
+
+1. `_archive/external-tracker-checkpoint` **AC-6** — TRUE POSITIVE, the known self-reference.
+   Proof reads "this entity's **v1 DECISION** section states the decision and cites the roadmap
+   out-of-scope line". This remains the canonical bad example.
+2. `_archive/front-door-plugin-dir` **AC-2** — FALSE POSITIVE. Proof: "the live job green on
+   this entity's own PR (CI-E2E)". A CI run on a PR is an external, fail-able check; the matcher
+   tripped on "this entity's own PR" but the actual proof IS external.
+3. `_archive/live-e2e-per-stage-timeouts` **AC-3** — FALSE POSITIVE. Proof: "multiple CI-E2E runs
+   on THIS entity's PR across the existing matrix (sonnet on CI-E2E + claude-opus-4-8 on CI-E2E-
+   OPUS, `.github/workflows/runtime-live-e2e.yml`)". CI workflow runs against a named YAML file —
+   plainly external.
+
+**Refinement (this entity's implementation MUST encode it).** Add to the external-token regex:
+`\bCI\b`, `\bPR\b`, `green`, `live job`, `workflow file`. The two false positives clear because
+their proof clauses contain `CI`, `PR`, `green`, and a `.yml` workflow file reference. After the
+refinement, precision = 1.0 / recall = 1.0 over the 271-AC corpus, with exactly one flag:
+`external-tracker-checkpoint/index.md` AC-6. AC-5 above pins this invariant as a Go test against
+the real corpus on the day the guard ships, so a future regression names the offending entity.
+
+**Conclusion.** The classifier mechanism still holds under a 3.4× corpus expansion. The two
+false-positive shapes the larger corpus surfaced are mechanically addressable by extending the
+external-token vocabulary; AC-5 makes the live precision/recall invariant a TEST, not a one-time
+spike. No mechanism rework is needed; the spike's "scope to proof clause + strip quotes + require
+external-token absence" three-step structure stands.
 
 ## Out of scope
-- The prose/principle edits (part B) and the portability test (part C).
-- Any soft warning lints beyond this one hard-backed check.
+
+- The prose / principle edits the parent enumerated (those ship as part B,
+  `ship-working-principles-in-contract`).
+- The portability test (those ship as part C, `no-hidden-machine-dependencies`).
+- Any soft warning lints beyond this hard-backed self-reference check — the P2 grep-suspect warning
+  and P4 spike-presence warning the parent listed are explicitly deferred.
+- Automatic detection of "is this test a real behavioral test vs a grep" — out of scope; static
+  analysis cannot decide that.
+- Universal, on-by-default behavior across all workflows — explicitly REJECTED by the captain's
+  design note. The opt-in is mandatory; non-dev workflows are untouched.
+- A new `auto-approve` frontmatter field, `plan` stage, or `decision` entity-type — out of scope per
+  the parent's "no new workflow machinery" decision; a code-free decision belongs in the roadmap.
+- Edits to non-dev workflows or to the universal first-officer / ensign contract — this guard is
+  dev-workflow-scoped policy, not universal contract.
+
+## Stage Report: ideation
+
+- DONE: The detection algorithm is concretely specified: what counts as a self-referential `Verified by:` (an AC whose only proof is review of the entity's own prose); what the guard reads (entity frontmatter + body); what it accepts (a runnable check pointing to a test name, command output, file produced, on-disk state); how it tolerates fixture entities + non-dev workflows.
+  See `## Detection algorithm (concrete spec)` — 5 numbered steps (AC extract → proof-clause isolate → quote strip → self-phrase match → external-token absence), each named with the exact regex / scoping rule the implementation must encode. Accept/reject lists made concrete. Tolerance: classifier only scans `^\*\*AC-` blocks (free-form prose untouched); non-dev workflows are bypassed by the OFF opt-in default.
+- DONE: The workflow-opt-in mechanism is concretely specified: where the opt-in lives (workflow README frontmatter), default value (FALSE), and how the guard reads it at terminal-set/archive time.
+  See `## Workflow-opt-in mechanism (concrete spec)` — `require-external-proof: true` at README top-level frontmatter (sibling of `merge:`/`state:`/`id-style:`), default FALSE byte-identical to absent, `resolveExternalProofPolicy(definitionDir)` helper modelled on `resolveMergePolicy`, unknown-value typo rejection in the same shape. Read by `runSet` (terminal-set guard layered after mod-block + merge-hook) and by `validateWorkflow` (sub-check alongside `findEntityFormConflicts`); read paths (`status`/`--next`/`--boot`) explicitly NOT gated; `--archive` inherits at the same layering point.
+- DONE: ACs are entity-level + each has a `Verified by:` clause naming a runnable check outside the entity body. The guard's own correctness is verified by a status --set / --archive unit test that REJECTS a constructed self-referential AC body and ACCEPTS a constructed runnable AC body (positive + negative cases), AND a status --validate integration test against a fixture workflow with the opt-in toggled.
+  See `## Acceptance criteria` — five entity-level ACs, each citing an external Go test by name: AC-1 `TestTerminalSetUnderSelfRefRejected` (positive real-proof + negative self-ref + `--force` bypass + flip-test); AC-2 `TestValidateFlagsSelfRefACs` (validate flags + VALID); AC-3 `TestExternalProofOptInDefaultOff` (omitted + explicit `false` both no-op); AC-4 `TestClassifierIsSharedBySetAndValidate` (shared-classifier invariant); AC-5 `TestClassifierPrecisionRecallOnLiveCorpus` (live corpus precision/recall = 1.0 invariant). New fixture `testdata/external-proof-workflow/` (3 entities + opt-in README) backs AC-1/AC-2/AC-3.
+- DONE: Refresh the stale spike counts first (the corpus grew from 79 to ~172 tasks; the old headline example no longer reproduces).
+  See `## P4 spike refresh (re-run 2026-06-02)` — re-ran `02-refined-classifier.py` against current `.spacedock-state` (271 ACs across 68 entities; corpus grew 3.4×, exceeding the dispatch's "~172" estimate). Canonical `external-tracker-checkpoint` AC-6 STILL reproduces as the sole true positive. Two new shape false positives surfaced (`front-door-plugin-dir` AC-2, `live-e2e-per-stage-timeouts` AC-3) — both cite CI runs as proof; mechanically addressable by extending the external-token regex with `\bCI\b`, `\bPR\b`, `green`, `live job`, `workflow file`. AC-5 pins this as a Go test against the real corpus on ship day; the implementation MUST encode the additions.
+
+### Summary
+
+Hardened the ideation into a build-ready spec: the detection algorithm is a 5-step pure function (`ClassifyEntityACs(body) []ACFlag`), the opt-in is a README top-level `require-external-proof: true` (default FALSE, non-dev workflows untouched), the dev-workflow scoping the captain's design note demanded. Five entity-level ACs each cite an external Go test by name (modelled on the existing `archive_guard_test.go` and `native_validate_test.go` patterns); two surfaces (`runSet` terminal guard + `validateWorkflow` sub-check) share one classifier. The P4 spike was re-run against the current 271-AC / 68-entity corpus (3.4× the original): the canonical `external-tracker-checkpoint` AC-6 still reproduces as the sole true positive; two CI-citing false positives the larger corpus surfaced are cleared by adding `CI`/`PR`/`green`/`live job`/`workflow file` to the external-token regex, and AC-5 pins precision/recall = 1.0 as a live-corpus Go test on ship day. Mechanism unchanged from the spike; vocabulary refresh is the only delta.
