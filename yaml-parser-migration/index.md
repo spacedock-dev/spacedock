@@ -1,7 +1,7 @@
 ---
 id: zjmjzznydmqr58bd46qz6q07
 title: Migrate the frontmatter parser/mutator to a YAML library (post-oracle, deliberate divergences)
-status: validation
+status: implementation
 source: sprint — captain (parser-modernization, post-bootstrap)
 score: "0.25"
 worktree: .worktrees/spacedock-ensign-yaml-parser-migration
@@ -140,3 +140,25 @@ Swapped the frontmatter reader and the `--set`/`--archive` mutator to `gopkg.in/
 ### Summary
 
 Recommendation: **REJECTED → feedback-to: implementation**. The yaml.v3 reader swap and the `yaml.Node` mutator surgery both land correctly: AC-1 and AC-2 have honest, behavior-grounded evidence outside the entity body (the 46-entity migration check, the on-disk node-round-trip test, the 5-divergence test set, and a fully-green `go test ./...`), and the 4 golden deltas are exactly the documented divergences with no silent payload drift. AC-3 (net LOC reduction realized) is materially unmet at this revision: production source grew +72 LOC instead of shrinking ~200-350, because `orderedmap.go` (28 LOC) and `stages.go` (232 LOC) — both named in ideation as in-scope candidates — were not touched, and the kept hand-rolled fence/CRLF/EOF seam was augmented with yaml.Node plumbing rather than replaced. Narrow feedback surface: either port the `stages.go` `stages:`-block parse to a `yaml.Node`/typed decode and retire `orderedmap.go`'s reader side (the two ideation candidates), OR have the captain re-sharpen AC-3 to reflect the post-implementation reality (mechanism swap completed but the durable byte-preservation seam being kept hand-rolled means the LOC projection was an over-call).
+
+### Feedback Cycles
+
+**Cycle 1 — 2026-06-02 — REJECTED → feedback-to: implementation (Narrow+ scope)**
+
+Captain (with conn) authorized **Narrow+** fix scope after the validation REJECTED on AC-3 and the detached adversarial audit (Task `wobgtdlsp`) returned MATERIAL-PRESENT with 8 confirmed findings. Captain insight: the audit's L1 and L2 findings hold the implementation to STRICTER claims than the actual AC text. AC-2 is explicitly field-exact (line 36 of this body — "The contract relaxes from byte-identical to FIELD-identical"); AC-1 claims "live entities still parse," not "migration check catches reader bugs." The audit's L2 byte-drift observations (trailing whitespace, block scalars, blank lines, double-space-after-colon, pre-comment whitespace) are all visual-formatting normalizations that PRESERVE values + key order. Values and order survive — that is what AC-2 actually requires.
+
+The audit's findings remain real implementation-hygiene observations: the implementation's `mutate.go:37-38` code comment ("unchanged scalar nodes re-marshal byte-identically") over-claims relative to the entity-level AC-2 contract. The migration check is structurally a yaml.v3-against-yaml.v3 intra-version consistency check, not a parser-old-vs-new parity check. Both should be tightened to match the actual ACs.
+
+**Scope for this cycle (Narrow+):**
+
+1. **AC-3 (the real contract violation)** — port `internal/status/stages.go`'s `stages:`-block parse to a `yaml.Node` typed-decode (the two ideation-named candidates); retire `internal/status/orderedmap.go`'s reader-side usage (the `--set` narration's resolved-field order may keep a small remnant — engineer's call). Expected net LOC delta: −200 to −300 on the broader candidate surface, satisfying AC-3's "net removal" framing.
+2. **AC-2 hygiene (no contract change)** — tighten `internal/status/mutate.go:37-38` code comment from "unchanged scalar nodes re-marshal byte-identically" to match AC-2's actual claim: "**field-exact** preservation of unknown fields and key order; canonical yaml.v3 emitter formatting for re-marshaled scalars." Tighten `TestUpdateFrontmatterNodeRoundTrip` so it verifies **field-exact** preservation (value-map + key order equality on unchanged fields) rather than byte-equality via `strings.Contains` on whitespace-clean seeds. Optionally add tests pinning the documented yaml.v3 normalizations (trailing whitespace, block scalars, etc.) as accepted, observed behavior — so a future emitter change is caught.
+3. **AC-1 hygiene (no contract change)** — choose ONE of: (a) make `TestMigrationCheckFixturesParseConsistently`'s direct-decode side use an independent byte pipeline (raw read + minimal self-contained fence extraction) so bugs in `frontmatterSlice`/`contentHasOpeningFence`/`splitLines`/`normalizeNewlines` are caught; OR (b) keep the current shape but tighten the test's documented purpose to "yaml.v3 reader parses every live entity (and produces a value-map consistent with a direct yaml.v3 decode against the same fence-extracted bytes)" — explicitly NOT a parser-migration parity oracle, plus add corruption-sensitive unit tests for each of the four helpers in the fence-extraction chain. Engineer's call; the test plan in the entity body should reflect whichever path is taken.
+
+**NOT in scope this cycle:** node-level byte-surgery to preserve unchanged-line byte sequences (the Full-B alternative); reverting the swap (the Revert alternative); re-introducing the retired Python oracle.
+
+**Worktree:** `.worktrees/spacedock-ensign-yaml-parser-migration` (existing, branch `spacedock-ensign/yaml-parser-migration`). Rebase onto current `origin/next` before re-implementing (codex peer's `Add Codex runtime adapter contract` landed mid-session at `abfc0ccc`).
+
+**Existing validation evidence to preserve:** `TestNativeUnknownFieldPreservation`, `TestMigrationCheckFixturesParseConsistently` (46 entities), `TestUpdateFrontmatterQuotesColonSpaceValue`, `TestParseFrontmatterMalformedQuoteIsDivergence`, `TestCommentValueRoundTripParity`, `TestNativeEOFNewlineIdentity`, and all 5 documented divergences — all GREEN at `9b42038c`; the AC-3 + AC-1/AC-2 hygiene fixes are additive and must not break them.
+
+Fresh implementation ensign will be dispatched into the existing worktree (the prior implementer was shut down at the start of this session per captain's team-respawn directive).
