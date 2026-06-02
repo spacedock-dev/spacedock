@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#270"
+archived: 2026-06-02T19:48:24Z
 ---
 
 Retire the vendored Python status oracle so the codebase no longer carries a ~100KB embedded
