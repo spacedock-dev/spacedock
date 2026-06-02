@@ -10,6 +10,7 @@ score: "0.25"
 worktree: .worktrees/spacedock-ensign-retire-python-oracle
 issue:
 mod-block: merge:pr-merge
+pr: "#270"
 ---
 
 Retire the vendored Python status oracle so the codebase no longer carries a ~100KB embedded
