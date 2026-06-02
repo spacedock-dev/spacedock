@@ -11,6 +11,7 @@ worktree:
 issue: spacedock-dev/spacedock#251
 mod-block: 
 pr: "#259"
+archived: 2026-06-02T06:40:18Z
 ---
 
 ## Problem
