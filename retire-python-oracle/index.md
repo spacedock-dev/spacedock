@@ -200,3 +200,23 @@ AC-1/AC-4 above. Implementation runs under the `internal/status` serialized-lane
 
 ### Summary
 Hardened the retirement into a 4-step ordered plan (add goldens → graduate status suite → strip oracle drivers → delete artifacts), each step ending green and the oracle deleted last (fully reversible until then). Ran the load-bearing spike: proved a live-oracle parity case can be graduated to a frozen-golden assertion that still fails on injected divergence (PHASE2/PHASE3 OK), and surfaced the `<ROOT>` normalization constraint (dispatch body embeds the abs root 3×) that dictates keeping the existing normalizers. Key correction to the spec: there are THREE vendored Python artifacts (a byte-identical `commission/bin/status` copy and the `claude-team` dispatch oracle were uninventoried), plus two integration-test scan references and a stale doc line — all now in the touchpoint list and AC-1/AC-4. Production already ships only `NativeRunner`, so this is purely test-time removal.
+
+## Stage Report: implementation
+
+- DONE: Execute the 4-step ordered plan keeping the suite green AT EACH STEP (capture goldens; graduate status+dispatch; strip drivers; delete artifacts, oracle LAST).
+  5 commits af709249→4d5fdb4f, each ending `go test ./...` green; oracle deleted only in the final commit (reversible until then).
+- DONE: AC-1 proof — full `go test ./...` passes with python3 REMOVED from PATH (behavior, not grep).
+  `env -i PATH=<git+gh+go, no python3> go test ./...` → all 12 packages ok, uncached; `git ls-files | grep -E 'vendor/status|commission/bin/(status|claude-team)'` = 0.
+- DONE: AC-3 flip-test — mutate a native path → a graduated golden FAILS, then revert.
+  Dispatch: perturb the build body `Stage:` emit → build-mods golden fails; revert → 112 green. Status: perturb the table header → many graduated goldens fail; revert → 324 green.
+- DONE: AC-2 — no runOracle/indRunOracle/vendoredOracle/SPACEDOCK_ORACLE symbol remains; zz_independent builders survive (re-pointed to golden compares).
+  `grep -rn 'runOracle|indRunOracle|vendoredOracle|SPACEDOCK_ORACLE|VendorRunner|go:embed' internal/` = empty; indSeq/indSDB32/indSlug fresh-fixture builders kept, re-pointed indDiff→indGolden.
+- DONE: AC-4 — `go test ./skills/integration/` green; no doc names the retired commission/bin/status invocation.
+  Integration 26 passed; skill_text_test.go drops the claude-team read; docs/dev/README.md drops the python3 .../status compat lines (spacedock status stays); no `python3 .../status` invocation in docs.
+- DONE: Full suite green + gofmt/vet clean.
+  `go test ./...` 701 passed (python3 present); gofmt -l empty; go vet clean.
+
+### Summary
+Graduated the ~60 oracle-coupled parity subtests (52 status + 7 dispatch files) to frozen goldens captured from the certified-parity native output, via a golden harness in each package (normRun/normPaths with `<ROOT>`/`<HOME>`; envelope + text goldens over the existing `-update`+`normalize`). Validated the live-oracle→frozen-golden mechanism end-to-end before converting (capture→compare→flip→revert). Then stripped all oracle-driver code (keeping the normalizers the goldens reuse) and deleted all three vendored Python artifacts + the `//go:embed`+VendorRunner seam + procgroup helper; NativeRunner is now the sole Runner.
+
+Three deviations from the named touchpoints, all surfaced to team-lead: (1) `workflow_dir_test.go` tested the launcher's `dirname(__file__)` empty-scan landmine with no native analog (NativeRunner discovers the enclosing workflow) — deleted with the seam tests; native no-flag discovery stays covered by discover_walkup_test.go. (2) The whole-suite AC-1 run surfaced a 4th, un-inventoried python3 exec — `internal/claudeteam/pyjson_test.go` cross-checked EmitPythonJSON against live `python3 json.dumps`; graduated to frozen `ensure_ascii` literals (the last python3 exec anywhere in the tree). (3) `portability_test.go:51` lists `skills/commission/bin/status` as a forbidden-substring guard (NOT a file read, despite the spec wording) — kept, since the "path absent on a fresh install" premise holds even more strongly after deletion; raised the keep-vs-drop choice with team-lead. AC-1 is proven behaviorally (python3-free `go test ./...` green), not by grep. zj (yaml-parser-migration) is now unblocked.
