@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#266"
+archived: 2026-06-02T17:22:21Z
 ---
 
 Encode the deliverable principles + template-ergonomics snippets into the workflow's own
