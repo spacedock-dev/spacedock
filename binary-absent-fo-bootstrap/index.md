@@ -129,3 +129,14 @@ The shipped prose is correct — the audit refuted nothing material on the contr
 - **M2 (`contract_gate_test.go:151`)** — AC-2 is a bare `strings.Contains(classB, "spacedock doctor")`, satisfied by a negated/disclaimer mention (audit verified an edit replacing the Class B route with `(Historically we suggested spacedock doctor but no longer.)` passes). **Fix:** assert the live-route phrasing (e.g. `run \`spacedock doctor\`` or `for the per-class remedy`) so a gutted route phrased as a disclaimer fails.
 
 **Required proof:** each tightened test must FAIL on the auditor's adversarial edit (Class A prohibition deleted; Class B route replaced by a disclaimer) and pass on the real file. Mutation-verify, do not re-read.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: M1 — Class A no-doctor check is skip-on-zero; require the prohibition string present AND keep the route-count guard.
+  `contract_gate_test.go` now asserts `Do NOT run \`spacedock doctor\`` is present in Class A, then asserts the doctor count is exactly 1 (the prohibition only). Mutation-verify: deleting the Class A prohibition sentence → test FAILS on both the presence and count assertions (was previously skipped at n==0). Commit 4268dc1a.
+- DONE: M2 — Class B doctor assertion accepts a negated mention; assert the live-route phrasing instead.
+  Replaced the bare `strings.Contains(classB, doctor)` with a check for both `run \`spacedock doctor\`` and `for the per-class remedy`. Mutation-verify: replacing the Class B route with `(Historically we suggested spacedock doctor but no longer.)` → test FAILS; real file passes. Commit 4268dc1a.
+
+### Summary
+
+Tightened the two flagged assertions in `skills/integration/contract_gate_test.go`; the shipped contract prose is unchanged. M1 now pins that Class A carries the no-doctor prohibition (presence) and routes nowhere (count==1), closing the skip-on-zero hole. M2 now requires Class B's live-route phrasing, so a disclaimer can no longer satisfy it. Both fixes mutation-verified by editing the real contract file: the Class A-prohibition-deletion adversarial edit fails M1, the Class B-disclaimer adversarial edit fails M2, and the unmodified file passes both — full `go test ./skills/integration/` green, `go vet` clean, contract file restored with no residue.
