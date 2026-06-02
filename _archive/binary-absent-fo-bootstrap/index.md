@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#262"
+archived: 2026-06-02T15:10:25Z
 ---
 
 When a Spacedock plugin is present but the `spacedock` binary is absent from PATH, the FO contract-version gate (`first-officer-shared-core.md` §Startup step 1) runs `spacedock --version`, gets "command not found", and aborts startup — correctly, no silent failure. But the captain's live `claude -p` test surfaced two weaknesses in what happens next:
