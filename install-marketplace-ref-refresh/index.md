@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#272"
 ---
 
 `./spacedock install --host claude` runs a 3-command sequence (`internal/cli/host_exec.go:235-241` `installArgvSequence`):
