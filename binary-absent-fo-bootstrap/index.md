@@ -140,3 +140,16 @@ The shipped prose is correct — the audit refuted nothing material on the contr
 ### Summary
 
 Tightened the two flagged assertions in `skills/integration/contract_gate_test.go`; the shipped contract prose is unchanged. M1 now pins that Class A carries the no-doctor prohibition (presence) and routes nowhere (count==1), closing the skip-on-zero hole. M2 now requires Class B's live-route phrasing, so a disclaimer can no longer satisfy it. Both fixes mutation-verified by editing the real contract file: the Class A-prohibition-deletion adversarial edit fails M1, the Class B-disclaimer adversarial edit fails M2, and the unmodified file passes both — full `go test ./skills/integration/` green, `go vet` clean, contract file restored with no residue.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: M1 — Class A now pins the no-doctor guidance: deleting the prohibition sentence FAILS (presence), adding a real doctor route into Class A still FAILS (count), the lone prohibition passes.
+  Independently mutation-verified against commit 4268dc1a on the REAL contract file. Deleted the `Do NOT run \`spacedock doctor\`` sentence from Class A → FAILS at contract_gate_test.go:147 (missing prohibition) AND :150 (count 0≠1). Added `If unsure, run \`spacedock doctor\` to triage.` into Class A → FAILS at :150 (count 2≠1). Unmodified file: the lone prohibition passes (count==1). The old skip-on-zero hole (`if n > 0`) is closed: zero mentions now fails the presence assertion rather than being skipped.
+- DONE: M2 — Class B now pins the LIVE route: replacing the route with a disclaimer FAILS; the real route passes.
+  Replaced the Class B route with `ABORT startup with the actionable mismatch message. (Historically we suggested spacedock doctor but no longer.)` → FAILS at contract_gate_test.go:163 (missing live route `run \`spacedock doctor\`` + `for the per-class remedy`). The disclaimer still contains the bare substring "spacedock doctor", so the OLD `strings.Contains` assertion would have passed it — the strengthened phrasing-based check correctly rejects it. Unmodified file passes.
+- DONE: Full AC suite holds: `go test ./skills/integration/` green, `go vet` clean, prose diff vs cycle 0 is zero (only the test file changed).
+  Baseline and post-restore both = 26 passed; `go vet ./skills/integration/` clean. `git diff b5e5ced7 4268dc1a -- first-officer-shared-core.md --numstat` empty (zero prose diff); commit 4268dc1a touches only `contract_gate_test.go` (+22/−11). File restored after every mutation; `git status --short` clean at the end.
+
+### Summary
+
+PASSED (cycle 1). Both test-strength holes the detached audit found are genuinely closed, verified by mutating the real contract file rather than trusting the implementer. M1: deleting the Class A prohibition now fails (presence + count), and an added doctor route still fails (count≠1); the skip-on-zero gap is gone. M2: a disclaimer-only Class B mention now fails because the assertion requires the active routing phrasing (`run \`spacedock doctor\`` + `for the per-class remedy`), where the old bare-substring check would have green-lit it. The shipped contract prose is byte-identical to my cycle-0 PASS (zero diff); only `contract_gate_test.go` changed. Full integration package 26 passed, `go vet` clean, tree clean.
