@@ -128,3 +128,16 @@ Repaired the ideation gate finding and folded the captain's install-readiness re
 ### Summary
 
 Implemented all four ACs in the code worktree: Codex install readiness, Codex-shaped dispatch build output, dedicated FO/ensign Codex adapters, and adapter contract tests for the wait/observe clauses. Verification run from the code worktree: `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`; `gofmt` wanted one unrelated existing comment change in `internal/status/enum_scope_test.go`, which was not committed.
+
+## Stage Report: validation
+
+- DONE: Each AC-1 through AC-4 is independently verified with reproducible evidence
+  AC-1/AC-3: `go test ./internal/hostneutrality` passed and verified both Codex adapter files, SKILL.md `CODEX_THREAD_ID` branches, required sections, and anchored mailbox/wait clauses; AC-2: `go test ./internal/dispatch` passed and verified host `codex` prompt/body omit `Skill(...)` and Claude `SendMessage`; AC-4: `go test ./internal/cli` passed and verified compatible, missing, and incompatible Codex install states.
+- DONE: Implementation test gates and command behavior are run from the code worktree
+  Ran from `.worktrees/spacedock-ensign-codex-runtime-adapter`: `go test ./internal/hostneutrality ./internal/dispatch ./internal/cli` PASS; `go test ./...` PASS; `go test ./... -race` PASS; `git status --short` clean before and after tests.
+- DONE: Validation recommends PASSED or REJECTED and flags stale or weak proof
+  Recommendation: PASSED. Proof caveats: AC-2's new test directly covers only the Codex arm while existing dispatch parity tests carry the Claude/default back-compat floor; `gofmt -l ./cmd ./internal` still reports unrelated pre-existing `internal/status/enum_scope_test.go`.
+
+### Summary
+
+PASSED: implementation commit `2c4cd877` satisfies AC-1 through AC-4 with focused tests and full Go gates passing from the code worktree. The validation made no deliverable code changes. The only weak proof is structural rather than behavioral for some runtime prose, which matches the AC's stated proof level, and the only format caveat is an unrelated existing file outside the implementation commit.
