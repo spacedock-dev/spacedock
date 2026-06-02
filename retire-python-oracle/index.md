@@ -9,7 +9,7 @@ verdict:
 score: "0.25"
 worktree: .worktrees/spacedock-ensign-retire-python-oracle
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#270"
 ---
 
