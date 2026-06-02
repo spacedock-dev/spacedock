@@ -1,20 +1,22 @@
-// ABOUTME: Line-oriented frontmatter parser matching the oracle's
-// ABOUTME: _has_opening_fence + parse_frontmatter — no YAML dependency.
+// ABOUTME: Frontmatter reader — fence finder + EOF/CRLF normalization are
+// ABOUTME: hand-rolled; the in-fence slice is parsed by gopkg.in/yaml.v3.
 package status
 
 import (
 	"os"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // utf8BOM is the leading byte-order mark stripped from a file's first line
-// before the opening-fence check, matching the oracle's BOM handling.
+// before the opening-fence check.
 const utf8BOM = "\uFEFF"
 
 // hasOpeningFence reports whether the file's first non-empty, non-BOM line is
 // exactly `---`. Leading truly-empty lines (`\n` only) are skipped; a
 // whitespace-only first content line disqualifies the file. A leading UTF-8 BOM
-// on the first line is stripped before the check. Matches _has_opening_fence.
+// on the first line is stripped before the check.
 func hasOpeningFence(path string) bool {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -41,11 +43,10 @@ func contentHasOpeningFence(data []byte) bool {
 	return false
 }
 
-// normalizeNewlines translates CRLF and lone CR into LF, matching the oracle's
-// Python text-mode universal-newlines read (open(path, 'r')). Applied at every
-// content-read boundary so a `---\r` fence compares equal to `---` and a CRLF
-// README's stages block parses. `\r\n` is collapsed first so a CRLF pair never
-// yields two LFs.
+// normalizeNewlines translates CRLF and lone CR into LF (Python text-mode
+// universal-newlines equivalent), so a `---\r` fence compares equal to `---`
+// and a CRLF README's stages block parses. `\r\n` is collapsed first so a CRLF
+// pair never yields two LFs.
 func normalizeNewlines(s string) string {
 	if !strings.ContainsRune(s, '\r') {
 		return s
@@ -56,18 +57,13 @@ func normalizeNewlines(s string) string {
 
 // splitLines splits on '\n' the way Python's `for line in f` iteration does
 // after rstrip('\n'): the trailing newline is removed from each line. A file
-// ending in '\n' yields no extra empty trailing element here (file iteration
-// stops at EOF), unlike strings.Split which would. We replicate file iteration:
-// split on '\n' and drop a single trailing empty element only when the input
-// ended with '\n'. Newlines are normalized first (universal newlines).
+// ending in '\n' yields no extra empty trailing element. Newlines are
+// normalized first.
 func splitLines(s string) []string {
 	if s == "" {
 		return nil
 	}
 	parts := strings.Split(normalizeNewlines(s), "\n")
-	// Python file iteration over a trailing-newline file does not yield a final
-	// empty line; strings.Split does. Drop that final empty element so the parse
-	// loops see the same lines the oracle does.
 	if len(parts) > 0 && parts[len(parts)-1] == "" {
 		parts = parts[:len(parts)-1]
 	}
@@ -75,10 +71,12 @@ func splitLines(s string) []string {
 }
 
 // ParseFrontmatter extracts top-level key/value pairs between the first and
-// second `---` fences. Matches parse_frontmatter: split on the first `:`, strip
-// key and value, strip matched surrounding quotes (len>=2, same char at both
-// ends, `"` or `'`), ignore nested/indented lines, last top-level key wins,
-// empty values yield "". Returns an empty map when there is no opening fence.
+// second `---` fences. Returns an empty map when there is no opening fence.
+// Implementation: the hand-rolled fence finder slices the in-fence bytes;
+// gopkg.in/yaml.v3 parses them as a YAML mapping; only top-level scalar
+// values are surfaced (nested mappings / sequences render as empty strings,
+// preserving the prior "indented lines ignored" semantic). Last-key-wins is
+// native to yaml.v3.
 func ParseFrontmatter(path string) map[string]string {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -93,9 +91,69 @@ func parseFrontmatterContent(data []byte) map[string]string {
 	if !contentHasOpeningFence(data) {
 		return fields
 	}
+	slice := frontmatterSlice(data)
+	if len(slice) == 0 {
+		return fields
+	}
+	var doc yaml.Node
+	if err := yaml.Unmarshal(slice, &doc); err != nil {
+		// A malformed YAML body is surfaced as no fields. The migration check
+		// asserts every live entity parses; a parse failure here is the loud
+		// signal we want for a true corruption (e.g., the retired
+		// mismatched-quote quirk).
+		return fields
+	}
+	if len(doc.Content) == 0 {
+		return fields
+	}
+	mapping := doc.Content[0]
+	if mapping.Kind != yaml.MappingNode {
+		return fields
+	}
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		k := mapping.Content[i]
+		v := mapping.Content[i+1]
+		if k.Kind != yaml.ScalarNode {
+			continue
+		}
+		key := k.Value
+		if v.Kind == yaml.ScalarNode {
+			fields[key] = v.Value
+		} else {
+			// Nested mapping or sequence — match the prior "indented lines
+			// ignored" semantic by surfacing the key with an empty value.
+			fields[key] = ""
+		}
+	}
+	return fields
+}
+
+// isSpaceByte reports whether b is one of the ASCII whitespace bytes Python's
+// str.isspace treats as space for the leading-char check used by stages.go,
+// mutate.go, and new.go to skip indented YAML lines in their stages-block /
+// frontmatter-line passes.
+func isSpaceByte(b byte) bool {
+	switch b {
+	case ' ', '\t', '\n', '\r', '\v', '\f':
+		return true
+	}
+	return false
+}
+
+// frontmatterSlice returns the raw bytes between the first two `---` fences
+// of data (the YAML body the reader feeds to yaml.v3). A missing closing
+// fence yields the bytes from after the opening fence to EOF. BOM on the
+// first line is stripped; CRLF/CR are universal-newline normalized. Returns
+// nil when there is no opening fence.
+func frontmatterSlice(data []byte) []byte {
+	if !contentHasOpeningFence(data) {
+		return nil
+	}
+	lines := splitLines(string(data))
+	var body []string
 	inFM := false
 	first := true
-	for _, raw := range splitLines(string(data)) {
+	for _, raw := range lines {
 		line := raw
 		if first {
 			line = strings.TrimPrefix(line, utf8BOM)
@@ -111,60 +169,10 @@ func parseFrontmatterContent(data []byte) map[string]string {
 		if !inFM {
 			continue
 		}
-		if !strings.Contains(line, ":") {
-			continue
-		}
-		// Indented lines (first char is whitespace) are ignored — only
-		// top-level key: value pairs become fields.
-		if len(line) > 0 && isSpaceByte(line[0]) {
-			continue
-		}
-		key, val, _ := strings.Cut(line, ":")
-		key = strings.TrimSpace(key)
-		fields[key] = parseValue(val)
+		body = append(body, line)
 	}
-	return fields
-}
-
-// parseValue resolves a frontmatter value: it trims surrounding whitespace,
-// then either unwraps a quoted scalar (dropping any trailing inline comment
-// after the close quote) or strips an inline comment from an unquoted scalar.
-// A quoted scalar protects an interior `#` (it is literal, not a comment); an
-// unquoted scalar drops a whitespace-preceded `#…` per the YAML rule (an
-// unspaced `v1.0#163`-style token is kept). Matches the oracle's parse_value.
-func parseValue(raw string) string {
-	val := strings.TrimSpace(raw)
-	if len(val) > 0 && (val[0] == '"' || val[0] == '\'') {
-		q := val[0]
-		if j := strings.IndexByte(val[1:], q); j >= 0 {
-			closeAt := j + 1
-			rest := strings.TrimLeft(val[closeAt+1:], " \t")
-			if rest == "" || rest[0] == '#' {
-				return val[1:closeAt]
-			}
-		}
-		// Unterminated or trailing non-comment content: preserve the historical
-		// matched-surrounding-quotes behavior, no comment strip.
-		return stripMatchedQuotes(val)
+	if len(body) == 0 {
+		return []byte{}
 	}
-	return stripInlineComment(val)
-}
-
-// stripMatchedQuotes removes a single pair of matched surrounding quotes from a
-// value that is >= 2 chars and identically quoted at both ends with `"` or `'`.
-func stripMatchedQuotes(val string) string {
-	if len(val) >= 2 && val[0] == val[len(val)-1] && (val[0] == '"' || val[0] == '\'') {
-		return val[1 : len(val)-1]
-	}
-	return val
-}
-
-// isSpaceByte reports whether b is one of the ASCII whitespace bytes Python's
-// str.isspace treats as space for the leading-char check used here.
-func isSpaceByte(b byte) bool {
-	switch b {
-	case ' ', '\t', '\n', '\r', '\v', '\f':
-		return true
-	}
-	return false
+	return []byte(strings.Join(body, "\n") + "\n")
 }

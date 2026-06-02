@@ -4,7 +4,7 @@ title: Vendor the status script
 status: ideation
 score: "0.60"
 source: roadmap
-pr: #42
+pr: "#42"
 ---
 # Vendor the status script
 

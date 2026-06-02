@@ -1,5 +1,5 @@
-// ABOUTME: AC-2 frontmatter parser table tests — the line-oriented parser
-// ABOUTME: matches the oracle's _has_opening_fence + parse_frontmatter edge cases.
+// ABOUTME: Frontmatter reader table tests — the yaml.v3-backed reader keeps
+// ABOUTME: the convergent cases and surfaces the documented divergence on bad quotes.
 package status
 
 import (
@@ -51,11 +51,12 @@ func TestParseFrontmatterContent(t *testing.T) {
 			in:   "---\ntitle: 'Quoted'\n---\n",
 			want: map[string]string{"title": "Quoted"},
 		},
-		{
-			name: "mismatched quotes preserved",
-			in:   "---\ntitle: \"half'\n---\n",
-			want: map[string]string{"title": "\"half'"},
-		},
+		// Divergence #4 retired: the prior `mismatched quotes preserved` case
+		// (Python line parser kept `"half'` literally) is dropped — the
+		// yaml.v3-backed reader raises a parse error on a malformed quote,
+		// which is the loud-failure mode we want. The migration check
+		// confirms no live entity triggers it. See
+		// TestParseFrontmatterMalformedQuoteIsDivergence below.
 		{
 			name: "nested indented lines ignored",
 			in:   "---\nstages:\n  defaults:\n    worktree: false\nid: 1\n---\n",
@@ -89,5 +90,18 @@ func TestParseFrontmatterContent(t *testing.T) {
 				t.Fatalf("parseFrontmatterContent(%q) = %v, want %v", tc.in, got, tc.want)
 			}
 		})
+	}
+}
+
+// TestParseFrontmatterMalformedQuoteIsDivergence pins divergence #4: the
+// yaml.v3-backed reader raises a parse error on a mismatched / unterminated
+// quote in a value (e.g. `title: "half'`), and the public reader surfaces
+// that as an empty field map rather than silently preserving the malformed
+// bytes (the retired Python-line-parser quirk). The migration check asserts
+// no live entity trips this; the surface here is the unit-test contract.
+func TestParseFrontmatterMalformedQuoteIsDivergence(t *testing.T) {
+	got := parseFrontmatterContent([]byte("---\ntitle: \"half'\n---\n"))
+	if len(got) != 0 {
+		t.Fatalf("malformed-quote input should surface as empty (parse error), got %v", got)
 	}
 }
