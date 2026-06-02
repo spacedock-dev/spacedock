@@ -5,13 +5,13 @@
 package ensigncycle
 
 import (
-	"context"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
-	"time"
 )
 
 // This is the live analog of TestEnsignCycleMechanicalOutputs (cycle_test.go).
@@ -33,12 +33,6 @@ import (
 // (the secret-free offline job). It compiles and runs ONLY under
 // `go test -tags live`, the gated job's invocation that spends the live
 // credential behind the CI-E2E approval gate.
-
-// liveTimeout caps the single live dispatch->cycle run. A sonnet/opus run driving
-// the flat entity to the terminal stage is well inside this (the FO live runs
-// landed at ~350s); the cap turns a hung model run into a red FAIL with output
-// rather than a silent CI hang.
-const liveTimeout = 12 * time.Minute
 
 // TestLiveEnsignCycle stages the skeleton's flat-entity backlog fixture, shells
 // the real `spacedock claude` front door headless to drive the entity to done
@@ -78,9 +72,6 @@ func TestLiveEnsignCycle(t *testing.T) {
 		"entity make-it-work.md all the way to the done stage by dispatching an " +
 		"ensign for it. Do not stop until the entity reaches the terminal stage."
 
-	ctx, cancel := context.WithTimeout(context.Background(), liveTimeout)
-	defer cancel()
-
 	// The real front door: `spacedock claude --plugin-dir <repo> --skip-contract-check
 	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-contract-check are
 	// spacedock-owned flags BEFORE `--`: --plugin-dir loads the local v1 plugin
@@ -92,7 +83,14 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// bypassPermissions + the model pin mirror the headless launch the Python net
 	// uses. CLAUDECODE is dropped by isolatedClaudeEnv so the binary takes the real
 	// front-door path rather than a nested-session shortcut.
-	cmd := exec.CommandContext(ctx, binary, "claude",
+	//
+	// The subprocess runs under a plain context.Background() with NO deadline ctx
+	// (AC-1 bans the monolithic timeout); the streamWatcher's per-step quiet
+	// budgets ARE the timeout discipline. Both stdout and stderr feed one io.Pipe
+	// so the watcher reads claude's stream-json line-by-line as it arrives (a hang
+	// leaves a partial transcript — AC-2) rather than CombinedOutput()'s zero-byte
+	// block-until-exit.
+	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
 		"--",
@@ -106,13 +104,39 @@ func TestLiveEnsignCycle(t *testing.T) {
 	cmd.Dir = root
 	cmd.Env = childEnv
 
-	out, err := cmd.CombinedOutput()
-	t.Logf("spacedock claude exit: %v\n--- transcript (tail) ---\n%s", err, tail(string(out), 8000))
-	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("live cycle timed out after %s", liveTimeout)
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	cmd.Stderr = pw
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("spacedock claude failed to start: %v", err)
 	}
+
+	// Run cmd.Wait() in the background; closing the pipe write-end when it
+	// returns lets the watcher's line scanner reach EOF and drain the final
+	// lines. cmdPoller.poll() reads the recorded exit non-blockingly so the
+	// watcher's expect/expectDispatchClose loops can check for early exit, and
+	// expectExit waits on it. The poller's kill() forcibly stops a hung claude.
+	poller := newCmdPoller(cmd, pw)
+	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
+
+	// The proven upstream watch sequence: TeamCreate (teams mode engaged) → the
+	// single ensign dispatch closes (backlog→done is ONE dispatch that writes
+	// `## Stage Report: done`) → the FO subprocess exits. terminalize + archive
+	// are NOT watched as stream events — they are the post-exit filesystem state
+	// the end-state assertions below verify. Each step is bounded by its own
+	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	if _, err := watcher.expect(isTeamCreate, quietBudgetDefault, "TeamCreate"); err != nil {
+		t.Fatalf("live cycle failed at TeamCreate: %v", err)
+	}
+	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
+		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
+	}
+	exitCode, err := watcher.expectExit(exitBudgetDefault)
 	if err != nil {
-		t.Fatalf("spacedock claude failed: %v", err)
+		t.Fatalf("live cycle failed waiting for FO exit: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("spacedock claude exited non-zero: code=%d", exitCode)
 	}
 
 	// Locate the entity at the REAL completed-cycle end-state. A full FO-to-done
@@ -211,4 +235,58 @@ func repoRoot(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return root
+}
+
+// isTeamCreate matches the FO's TeamCreate assistant tool_use — the first
+// progress beat of the teams-mode live cycle (the team is engaged).
+func isTeamCreate(e streamEntry) bool {
+	b := e.toolUseBlock()
+	return b != nil && b.Name == "TeamCreate"
+}
+
+// cmdPoller is the live procPoller: it Waits the exec.Cmd in the background,
+// records the exit code, and reports it non-blockingly via poll() so the
+// watcher's expect loops can detect an early crash and expectExit can wait for a
+// clean exit. Closing the pipe write-end on exit unblocks the line scanner so
+// the watcher drains the final stream-json lines. kill() forcibly stops a hung
+// claude on a quiet-budget timeout.
+type cmdPoller struct {
+	cmd *exec.Cmd
+
+	mu     sync.Mutex
+	exited bool
+	code   int
+}
+
+// newCmdPoller starts the background Wait. pw is the pipe write-end shared by
+// cmd.Stdout/Stderr; it is closed when Wait returns so the reader reaches EOF.
+func newCmdPoller(cmd *exec.Cmd, pw io.Closer) *cmdPoller {
+	p := &cmdPoller{cmd: cmd}
+	go func() {
+		err := cmd.Wait()
+		code := 0
+		if exit, ok := err.(*exec.ExitError); ok {
+			code = exit.ExitCode()
+		} else if err != nil {
+			code = -1
+		}
+		pw.Close()
+		p.mu.Lock()
+		p.exited = true
+		p.code = code
+		p.mu.Unlock()
+	}()
+	return p
+}
+
+func (p *cmdPoller) poll() (int, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.code, p.exited
+}
+
+func (p *cmdPoller) kill() {
+	if p.cmd.Process != nil {
+		_ = p.cmd.Process.Kill()
+	}
 }
