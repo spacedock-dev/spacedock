@@ -2,7 +2,10 @@
 // ABOUTME: task before --, host flags after --, and the safehouse/skip knobs anywhere.
 package cli
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestParseFrontDoorArgs pins the Option-2 front-door grammar (AC-3 + AC-6). The
 // task is the joined non-flag positionals BEFORE `--`; host value-taking flags
@@ -155,5 +158,21 @@ func TestStrayHostFlagBeforeDashErrors(t *testing.T) {
 				t.Fatalf("parseFrontDoorArgs(%v) err = nil, want a parse error for the stray host flag", tc.args)
 			}
 		})
+	}
+}
+
+// TestBareValuelessPluginDirErrors pins the load-bearing loud-error property that
+// chose StringArray over ParseErrorsWhitelist.UnknownFlags: a bare before-`--`
+// `--plugin-dir` with no following value is a LOUD parse error naming the flag
+// (pflag knows its arity), NOT a silent drop. Under UnknownFlags the missing value
+// would vanish without a trace — the worst outcome the spike rejected. The returned
+// error means runClaude/runCodex return 1 before reaching Launch (no launch).
+func TestBareValuelessPluginDirErrors(t *testing.T) {
+	_, err := parseFrontDoorArgs([]string{"--plugin-dir"})
+	if err == nil {
+		t.Fatalf("parseFrontDoorArgs([--plugin-dir]) err = nil, want a loud arity error (not a silent drop)")
+	}
+	if !strings.Contains(err.Error(), "--plugin-dir") {
+		t.Fatalf("error %q does not name --plugin-dir; the loud-error property must be specific", err.Error())
 	}
 }
