@@ -10,7 +10,7 @@ score: "0.33"
 worktree: .worktrees/spacedock-ensign-codex-runtime-adapter
 issue:
 milestone: post-0.19.4 (own track — Codex runtime parity, NOT folded into 0.19.4)
-mod-block: merge:pr-merge
+mod-block: 
 pr: #269
 ---
 
