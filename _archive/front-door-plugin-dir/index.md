@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block: 
 pr: "#260"
+archived: 2026-06-02T06:23:36Z
 ---
 
 The approval-gated live-runtime e2e (`TestLiveEnsignCycle`, `internal/ensigncycle/live_test.go:91-100`) has been silently broken since the cobra migration (#241): it invokes `spacedock claude --plugin-dir <repo> --skip-contract-check -p … --model … -- <task>` with the host flags BEFORE `--`, but the cobra-migrated front door rejects them (`unknown flag: --plugin-dir`) — host flags must follow `--`. The break stayed hidden because the env-approval gate kept every prior live run "waiting"; it surfaced the first time the job actually ran (this session, after CI approval). The live-e2e net has therefore been dead through the entire 0.19.2 sprint.
