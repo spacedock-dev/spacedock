@@ -1,7 +1,7 @@
 ---
 id: 1xk9bz4fr7qefgcqz6stzpkk
 title: 0.19.3 code-quality cleanups — release regex clobber, statecommit test phrase, StandingTeammate dedup, prose-marker brittleness, init→install rename drift, unknown-subcommand silent exit
-status: validation
+status: implementation
 source: sprint-end antipattern reviews (2026-06-01) — 0.19.3 minor-findings bucket (all Minor)
 started: 2026-06-02T04:57:30Z
 completed:
@@ -156,3 +156,20 @@ All 6 cleanups + cleanup #7 (releasing.md bump-calendar doc) landed across three
 ### Summary
 
 PASSED. All 7 ACs reproduced by exercising real behavior, not prose grep: AC-1 (release replace-first) and AC-6 (cobra usage) confirmed failing-first by reverting each fix; AC-4 (prose contrast) confirmed both failing-first (old bare-word) and that the entity's literal `" on Codex"` prescription genuinely breaks the real-file test at first-officer-shared-core.md:145, justifying the recorded deviation. The capitalized Codex+Claude-contrast rule correctly prevents lowercase `claude-team`/`codex exec` from self-qualifying. The cobra whitelist is root-only — a real unknown flag on a valid subcommand (`install --bogusflag`) is still rejected with exit 2, not newly swallowed. Diff scope is exactly the declared files; no collateral behavior change in cli.go/contract.go/dispatch/build.go/release.go beyond the two intentional captain-requested changes (AC-6 usage output, AC-2 push reminder). Full suite 720 passed, gofmt/vet clean.
+
+## Feedback Cycles
+
+**Cycle 1 (FO, 2026-06-02) — validation PASSED; detached audit found one material AC-6 gap (captain decision: fix it); routed to implementation.**
+
+The detached audit verified 6 of 7 cleanups sound and refuted the collateral-flag worry (the whitelist is root-only; `install --nope`/`status --bogus` still exit 2 via each subcommand's own parser). But it sharpened AC-6: the root `FParseErrWhitelist{UnknownFlags: true}` regresses the exit code for a **stray leading unknown flag** (appearing before any resolved subcommand) from exit-2 to **exit-0 + help**, untested:
+- `spacedock --bogus` / `spacedock --boot` (forgot the `status` subcommand) → OLD exit 2, NEW exit 0.
+- `spacedock --foo install` (space form: `--foo` consumes `install` as its value) → OLD exit 2, NEW exit 0, `install` not executed.
+
+Exit-0 on a usage error is the silent-failure class the captain originally reported. **Captain decision (2026-06-02): fix it — a stray leading unknown flag must print usage + exit non-zero.**
+
+**Fix required:**
+- A leading unknown flag that resolves to no valid subcommand must print the usage block to stderr and exit non-zero — never exit 0+help, never silently consume a valid command token.
+- Distinguish from the bare-invocation case: `spacedock` (no args) must STILL print help + exit 0 (unchanged).
+- Likely seam: in the root `RunE`, inspect the raw args for a leading `-`-prefixed token that is not a recognized persistent flag, and route it to the unknown/usage path with a non-zero exit.
+
+**Tests to add (TDD, failing-first):** pin `spacedock --bogus`, `spacedock --boot`, and `spacedock --foo install` → non-empty usage on stderr + non-zero exit. **Regression guards (must stay green):** bare `spacedock` → help + exit 0; `spacedock --version`; `spacedock install` / `spacedock status --boot`; `spacedock bogus` / `spacedock init --host claude` → `unknown command:` + exit 2 (the AC-6 win). Full `go test ./...` green + gofmt/vet clean.
