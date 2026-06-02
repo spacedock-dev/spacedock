@@ -244,3 +244,21 @@ PASSED. All four ACs validated behaviorally (not by grep/report re-read), with p
 - **Polish (fold in):** scrub the now-stale comments asserting oracle-equality / "deterministic under the pinned env" (nextid_boot_test.go header, boot_probe_parity_test.go:81); optionally fix the stale `python3 missing` errFakeNoPython wording.
 
 **Required proof (behavioral):** the full suite passes in TWO different-path worktrees (path-independence — the exact lever the audit used to catch this); the 5-bit-mask 31→30 mutation still FAILS the --next-id derivation check (regression detector intact); the M3 read-path mutation (a wrong-but-valid id) now FAILS. The residual-coupling, dispatch, claudeteam, and pyjson graduations were audited CLEAN and mutation-flipping — do NOT touch them.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: M1+M2 — replace the path-dependent byte-frozen sd-b32 --next-id goldens with logical assertions (format + determinism + a path-independent derivation vector).
+  TestNextIDParity / TestNativeNextIDMatchesOracle → *FormatAndDeterminism (24-char valid sd-b32, two runs match); new TestSDB32CandidateDerivationVector drives sdB32Candidate over a FIXED literal workflow path (realpathOf returns it unchanged on any host) and asserts the SHA-256 + 5-bit minting against an independently-derived id (n1y6x7mw00etcc0v1c9mzwwr). Deleted nextid-parity-candidate.txt + native-nextid-candidate.txt; no -update re-pin. Commit 389df537.
+- DONE: M2 regression detector intact — the 5-bit-mask 31→30 flip (identity.go:151) still FAILS.
+  Flipped mask to 30 → TestSDB32CandidateDerivationVector FAILS (got m0y6w6mw…, want n1y6x7mw…); revert → green. Identical result at the alt path (proving the vector is path-independent).
+- DONE: M3 — scope the <ID> masking to ONLY the minted next-id/NEXT_ID output, not read-path goldens.
+  Removed the over-broad sdB32Re→<ID> from indNormalize; added maskBootNextID (anchored ^NEXT_ID:) used by both the ind goldens and the in-tree boot tests; re-captured the sdb32 read/boot goldens to carry the literal fixture id abcdefghjkmnpqrstvwxyz23; ind next-id-seeded dropped its golden for format+determinism. Mutation proof: inject a wrong-but-valid resolve id (zzzz…) → ind-sdb32-resolve + native-read-resolve + GoldenRead/resolve all FAIL; revert → green.
+- DONE: Polish — scrub stale oracle-equality / "deterministic under the pinned env" comments + the python3-missing errFake wording.
+  nextid_boot header + TestBootStructuralParity comment + boot_probe_parity_test.go:81 rewritten to "frozen golden"; errFakeNoPython→errFakeRunnerFailed ("runner failed", generic) in cli/status_test.go.
+- DONE: REQUIRED PROOF — full `go test ./...` passes in TWO different-path worktrees.
+  Mint path: 702 passed. Copied the worktree (rsync, excl .git) to /var/folders/…/spacedock-altpath-proof and ran `go test ./...` there → all 10 test packages ok. This is the exact path-independence lever the cycle-1 audit used to catch the red-by-construction failure; it now passes.
+- DONE: AC-1 still green python3-free; dispatch/claudeteam/pyjson graduations untouched.
+  `env -i PATH=<git+gh+go, no python3> go test ./...` → 10 packages ok, no failures. `git diff --stat HEAD~1 -- internal/dispatch/ internal/claudeteam/` empty. gofmt/vet clean.
+
+### Summary
+Fixed the cycle-1 REJECT: the sd-b32 `--next-id` parity check was graduated to a static golden that baked in the absolute checkout path (the candidate hashes `realpathOf(definitionDir)`), so it only reproduced on the mint-time machine — red-by-construction on CI. Per the captain steer (logical soundness, not Python byte-parity), replaced the byte-freeze with format + determinism + a path-independent SHA-256/5-bit derivation vector over a fixed literal path; the 31→30 mask flip still fails it, identically at any path. Scoped the over-broad `<ID>` masking to only the minted NEXT_ID line so read-path goldens freeze the real fixture id (a wrong-but-valid id now fails). Verified path-independence by running the full suite in two different-path worktrees — the exact lever the audit used — both green. The residual-coupling, dispatch, claudeteam, and pyjson graduations the audit cleared were left untouched.
