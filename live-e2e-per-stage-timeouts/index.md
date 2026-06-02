@@ -9,7 +9,7 @@ verdict:
 score: "0.36"
 worktree: .worktrees/spacedock-ensign-live-e2e-per-stage-timeouts
 issue:
-mod-block: merge:pr-merge
+mod-block: 
 pr: "#261"
 ---
 
