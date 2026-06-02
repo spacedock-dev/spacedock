@@ -4,10 +4,10 @@ title: Prune/demote/replace the tautological prose-pin integration tests (the ba
 status: validation
 source: "FO classify-integration-tests workflow (2026-06-02) — 6 of 26 skills/integration funcs confirmed tautological-prose-pins (gut-it-keep-green proven by meaning-inversion mutation); captain: prune them"
 started: 2026-06-02T17:28:09Z
-completed:
-verdict:
+completed: 2026-06-02T17:47:01Z
+verdict: PASSED
 score: "0.28"
-worktree: .worktrees/spacedock-ensign-prune-tautological-prose-tests
+worktree: 
 issue:
 mod-block: 
 pr: "#268"
