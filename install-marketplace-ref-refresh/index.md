@@ -42,19 +42,21 @@ Result: the remove step exits 1 on a fresh box. Plain insertion of `marketplace 
 
 ## Design choice: per-step failure-tolerance flag on the argv sequence
 
-`installArgvSequence` becomes a slice of `{argv []string, tolerateExit bool}` entries (a small unexported struct local to `host_exec.go`); the remove step is the only entry with `tolerateExit: true`. `Install` loops the slice and, when the step's `tolerateExit` is true, treats a non-zero exit as a recoverable case — it appends combined output to `sb` and continues, NOT returning the error. Every other step keeps today's strict behavior.
+`installArgvSequence` becomes a slice of `{argv []string, tolerateExit bool}` entries (a small unexported struct local to `host_exec.go`); the marketplace-remove step is the only entry with `tolerateExit: true`. `Install` loops the slice and, when the step's `tolerateExit` is true, treats a non-zero exit as a recoverable case — it appends combined output to `sb` and continues, NOT returning the error. Every other step keeps today's strict behavior.
+
+Updated 2026-06-02 during implementation — `TestUpgradeFromStaleMovesToGreen` (the AC-3 live upgrade-from-stale smoke) surfaced that `plugin uninstall` must precede `marketplace remove`: claude tracks the installed plugin via the marketplace record, and dropping that record orphans the uninstall step (`Plugin not found in installed plugins`, exit 1). Uninstall before remove preserves the invariant. The ideation flagged this revisit-trigger at the "Out of scope" note (line 83). The tolerance asymmetry is unchanged — only `marketplace remove` is tolerated.
 
 ```go
 type installStep struct {
     argv         []string
-    tolerateExit bool // remove step is true; others false
+    tolerateExit bool // marketplace remove is true; others false
 }
 
 func installArgvSequence(source, branch string) []installStep {
     return []installStep{
+        {argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
         {argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
         {argv: []string{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)}},
-        {argv: []string{"plugin", "uninstall", "spacedock@spacedock"}},
         {argv: []string{"plugin", "install", "spacedock@spacedock"}},
     }
 }
@@ -121,3 +123,16 @@ Verified by: an extension of the AC-2 stub test (or a sibling `TestInstallFailsF
 ### Summary
 
 Refreshed the ideation with a live mechanism spike against claude 2.1.160 that confirmed all four bug-relevant behaviors (the stale-pin add no-op, the not-declared remove exiting **1** with "not found" stderr, the remove-when-present exiting 0, and the post-remove add landing @next). The spike forced the design: failure tolerance on the remove step is mandatory, not optional. Chose a per-step `tolerateExit bool` flag on a new `installStep` struct as the cleanest seam — co-locating the tolerance decision with the argv data, keeping fail-fast on the other three steps, and remaining testable at the right layer (pure-function argv check + PATH-stub `execHost.Install` integration check for the tolerance loop). Added AC-3 to lock the tolerance asymmetry against silent regression toward tolerate-every-step.
+
+## Stage Report: implementation
+
+- DONE: installArgvSequence becomes []installStep with a per-step `tolerateExit bool`; the remove step is index 0 with tolerateExit:true; every other step is fail-fast. Install loops the slice and, on a tolerateExit step's non-zero exit, appends the combined output and continues without returning the error.
+  Implemented in internal/cli/host_exec.go (commit on worktree branch spacedock-ensign/install-marketplace-ref-refresh); design-revisit during implementation reordered to {uninstall, marketplace-remove, marketplace-add, install} after TestUpgradeFromStaleMovesToGreen surfaced that dropping the marketplace orphans claude's plugin-tracking record. Tolerance asymmetry preserved (only marketplace-remove is tolerated); entity body Design-choice section updated with the inline note and the revised code snippet.
+- DONE: The three named tests are added: TestInstallArgvSequence (extended — assert 4-step ordering + remove-first + tolerateExit asymmetry), TestInstallToleratesRemoveStepFailure (new — PATH-stub claude script returns exit 1 on `plugin marketplace remove`, exit 0 elsewhere; Install returns nil error + combined output contains all 4 steps' stub output), and TestInstallFailsFastOnAddStep (new — stub fails on `plugin marketplace add`; Install returns non-nil error wrapping the add subcommand). All three green.
+  All three pass. TestInstallArgvSequence asserts the new {uninstall, remove, add, install} ordering and the asymmetric-tolerance rule (only marketplace-remove tolerated). The two new tests live in internal/cli/install_tolerance_test.go and drive a `t.TempDir()`+`os.WriteFile` /bin/sh stub `claude` via t.Setenv PATH override.
+- DONE: The existing fakeHost-driven tests (TestInitClaudeIssuesHostPluginCommands, TestInitTargetsNextWhenDevBranchPinned, TestInitCheckRunsDoctorWithoutInstalling, TestInitMarketplaceSourceIsMigratedRepo) stay green WITHOUT fakeHost API changes — the argv shape stays a pure-function concern; the tolerance loop is tested at the execHost layer via the PATH-stub claude script.
+  Confirmed: all four pass with no fakeHost-API change. Full repo `go test ./...` reports 732/732 across 12 packages.
+
+### Summary
+
+Implemented per-step `installStep{argv, tolerateExit}` in internal/cli/host_exec.go; the marketplace-remove step is the sole tolerated entry. During implementation the AC-3 live `TestUpgradeFromStaleMovesToGreen` surfaced an upgrade-path regression — claude tracks an installed plugin via its marketplace record, so `marketplace remove` before `plugin uninstall` orphans the uninstall step. Reordered to {uninstall, marketplace-remove, marketplace-add, install} (team-lead approved this as the ideation-authorized "revisit only if AC-1 confirmation surfaces it" trigger); the tolerance asymmetry is unchanged. All three named tests pass plus the live upgrade-from-stale test. Manual AC-1 confirmation remains for validation — captain to run `./spacedock install --host claude` on a stale-pin box and verify `claude plugin marketplace list` shows `@next`.
