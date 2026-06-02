@@ -1,9 +1,9 @@
 ---
 id: v1awnfhs996ykymv409anywh
 title: Encode deliverable principles + template ergonomics into README, FO/ensign contract, and status guards
-status: backlog
+status: ideation
 source: FO triage (2026-06-01) — docs/dev/_proposals cleanup; consolidates the deliverable-principles study + the TDD/template-adoption ergonomics
-started:
+started: 2026-06-02T04:57:30Z
 completed:
 verdict:
 score: "0.30"
