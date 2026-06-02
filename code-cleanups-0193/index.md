@@ -4,10 +4,10 @@ title: 0.19.3 code-quality cleanups — release regex clobber, statecommit test 
 status: validation
 source: sprint-end antipattern reviews (2026-06-01) — 0.19.3 minor-findings bucket (all Minor)
 started: 2026-06-02T04:57:30Z
-completed:
-verdict:
+completed: 2026-06-02T15:45:21Z
+verdict: PASSED
 score: "0.22"
-worktree: .worktrees/spacedock-ensign-code-cleanups-0193
+worktree: 
 issue:
 mod-block: 
 pr: "#263"
