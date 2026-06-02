@@ -3,6 +3,6 @@
 ===== stdout =====
 ID     SLUG                           STATUS               TITLE                          SCORE    SOURCE
 --     ----                           ------               -----                          -----    ------
-ab     <ID>-one   backlog              One                            0.5      roadmap
+ab     abcdefghjkmnpqrstvwxyz23-one   backlog              One                            0.5      roadmap
 
 ===== stderr =====

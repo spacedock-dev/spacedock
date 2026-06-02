@@ -72,21 +72,18 @@ func indNormalize(s, root string) string {
 		}
 		s = strings.ReplaceAll(s, root, "<ROOT>")
 	}
-	// The sd-b32 NEXT_ID / --next-id candidate hashes the realpath'd workflow dir,
-	// so it varies per temp-dir run. Normalize it to a placeholder the same way the
-	// in-tree boot harness does; the deterministic minting itself is frozen against
-	// a fixed-path fixture by TestNativeNextIDMatchesOracle / TestNextIDParity.
-	s = sdB32Re.ReplaceAllString(s, "<ID>")
 	return s
 }
 
 // indGolden freezes the native (stdout, stderr, exit) against the per-key golden
 // after normalization, and asserts the exit stays in the {0,1} domain. The
 // goldens ARE the certified-parity bytes the oracle produced at retirement time.
+// The boot NEXT_ID line's minted (path-dependent) value is masked; every other
+// sd-b32 token is a fixed fixture id that freezes literally.
 func indGolden(t *testing.T, key, root string, nOut, nErr string, nCode int) {
 	t.Helper()
 	assertEnvelopeGolden(t, "ind-"+key, goldenEnvelope{
-		stdout: indNormalize(nOut, root), stderr: indNormalize(nErr, root), exit: nCode,
+		stdout: maskBootNextID(indNormalize(nOut, root)), stderr: indNormalize(nErr, root), exit: nCode,
 	})
 	if nCode != 0 && nCode != 1 {
 		t.Errorf("[%s] EXIT %d outside domain {0,1}", key, nCode)
@@ -186,7 +183,6 @@ func TestIndReadFlagsSDB32(t *testing.T) {
 		{"next", []string{"--workflow-dir", root, "--next"}},
 		{"short-id", []string{"--workflow-dir", root, "--short-id", "abcdefghjkmnpqrstvwxyz23"}},
 		{"resolve", []string{"--workflow-dir", root, "--resolve", "abcdefghjkmnpqrstvwxyz23"}},
-		{"next-id-seeded", []string{"--workflow-dir", root, "--next-id", "--id-seed", "new-task", "--id-actor", "ind-actor"}},
 		{"validate", []string{"--workflow-dir", root, "--validate"}},
 		{"boot", []string{"--workflow-dir", root, "--boot"}},
 	}
@@ -196,6 +192,28 @@ func TestIndReadFlagsSDB32(t *testing.T) {
 			indGolden(t, "sdb32-"+c.name, root, nOut, nErr, nCode)
 		})
 	}
+
+	// --next-id mints a candidate that hashes realpathOf(workflowDir), so its bytes
+	// vary per checkout path — assert FORMAT + DETERMINISM (not a static golden);
+	// the path-independent derivation is pinned by TestSDB32CandidateDerivationVector.
+	t.Run("next-id-seeded", func(t *testing.T) {
+		seededArgs := []string{"--workflow-dir", root, "--next-id", "--id-seed", "new-task", "--id-actor", "ind-actor"}
+		out1, errOut, code := indRunNative(t, root, env, "", seededArgs...)
+		if code != 0 {
+			t.Fatalf("--next-id exit=%d stderr=%q", code, errOut)
+		}
+		cand := strings.TrimSpace(out1)
+		if !sdB32IsValidCandidate(cand) {
+			t.Fatalf("--next-id candidate %q is not a 24-char sd-b32 token", cand)
+		}
+		out2, _, code2 := indRunNative(t, root, env, "", seededArgs...)
+		if code2 != 0 {
+			t.Fatalf("second --next-id exit=%d", code2)
+		}
+		if got := strings.TrimSpace(out2); got != cand {
+			t.Fatalf("--next-id not deterministic: run1=%q run2=%q", cand, got)
+		}
+	})
 }
 
 // TestIndReadFlagsSlug diffs read flags on id-style slug, including the

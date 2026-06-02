@@ -3,6 +3,6 @@
 ===== stdout =====
 ID     SLUG                           CURRENT              NEXT                 WORKTREE
 --     ----                           -------              ----                 --------
-ab     <ID>-one   backlog              done                 no
+ab     abcdefghjkmnpqrstvwxyz23-one   backlog              done                 no
 
 ===== stderr =====

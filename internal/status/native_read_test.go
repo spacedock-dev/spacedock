@@ -52,12 +52,13 @@ func TestNativeReadMatchesOracle(t *testing.T) {
 	}
 }
 
-// TestNativeNextIDMatchesOracle locks the sd-b32 minting path: the native
-// --next-id candidate is the certified-parity value frozen from the oracle under
-// identical pinned id material, and has the right format. This is the riskiest
-// mechanism (SHA-256 digest + 5-bit big-endian extraction); the frozen golden is
-// the byte the oracle minted at retirement time.
-func TestNativeNextIDMatchesOracle(t *testing.T) {
+// TestNativeNextIDFormatAndDeterminism exercises the sd-b32 minting path end to
+// end through the runner: the native --next-id candidate is a valid 24-char
+// sd-b32 token (FORMAT) and is reproducible across runs with identical inputs
+// (DETERMINISM). The candidate's concrete bytes depend on realpathOf(workflowDir)
+// so they vary per checkout path; the path-independent SHA-256 + 5-bit-extraction
+// derivation is pinned by TestSDB32CandidateDerivationVector.
+func TestNativeNextIDFormatAndDeterminism(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
 		t.Fatal(err)
@@ -65,26 +66,27 @@ func TestNativeNextIDMatchesOracle(t *testing.T) {
 	env := pinnedEnv(t)
 	args := []string{"--workflow-dir", root, "--next-id", "--id-seed", "pinnedseed", "--id-actor", "pinnedactor"}
 
-	nativeOut, nativeErr, nativeCode := runNative(t, root, env, args...)
-	if nativeCode != 0 {
-		t.Fatalf("native exit=%d stderr=%q", nativeCode, nativeErr)
+	out1, errOut, code := runNative(t, root, env, args...)
+	if code != 0 {
+		t.Fatalf("native exit=%d stderr=%q", code, errOut)
 	}
-	candidate := strings.TrimSpace(nativeOut)
-	if len(candidate) != 24 {
-		t.Fatalf("candidate %q length=%d, want 24", candidate, len(candidate))
+	candidate := strings.TrimSpace(out1)
+	if !sdB32IsValidCandidate(candidate) {
+		t.Fatalf("candidate %q is not a 24-char sd-b32 token", candidate)
 	}
-	for _, c := range candidate {
-		if !strings.ContainsRune(sdB32Chars, c) {
-			t.Fatalf("candidate %q has char %q outside SD-B32 alphabet", candidate, c)
-		}
+
+	out2, _, code2 := runNative(t, root, env, args...)
+	if code2 != 0 {
+		t.Fatalf("second --next-id run exit=%d", code2)
 	}
-	// The candidate is deterministic under the pinned id material, so freezing the
-	// exact bytes locks the minting path against the certified oracle value.
-	assertTextGolden(t, "native-nextid-candidate", candidate)
+	if got := strings.TrimSpace(out2); got != candidate {
+		t.Fatalf("--next-id not deterministic: run1=%q run2=%q", candidate, got)
+	}
 }
 
-// TestNativeBootMatchesOracle locks --boot structural + section parity for the
-// sd-b32 fixture, normalizing the volatile sd-b32 NEXT_ID and root prefix.
+// TestNativeBootMatchesOracle freezes --boot structural + section output for the
+// sd-b32 fixture against the certified native golden, masking the minted NEXT_ID
+// line and the root prefix.
 func TestNativeBootMatchesOracle(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
@@ -97,6 +99,6 @@ func TestNativeBootMatchesOracle(t *testing.T) {
 	if nativeCode != 0 {
 		t.Fatalf("native --boot exit=%d stderr=%q", nativeCode, nativeErr)
 	}
-	normNative := sdB32Re.ReplaceAllString(stripStateBackend(normalize(nativeOut, root)), "<ID>")
+	normNative := maskBootNextID(stripStateBackend(normalize(nativeOut, root)))
 	assertTextGolden(t, "native-boot-sdb32", normNative)
 }

@@ -10,7 +10,7 @@ PR_STATE: none
 DISPATCHABLE
 ID     SLUG                           CURRENT              NEXT                 WORKTREE
 --     ----                           -------              ----                 --------
-ab     <ID>-one   backlog              done                 no
+ab     abcdefghjkmnpqrstvwxyz23-one   backlog              done                 no
 TEAM_STATE
 present: false
 hint: run TeamCreate before first team-mode dispatch (claude runtime supports it)

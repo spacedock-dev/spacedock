@@ -52,9 +52,21 @@ func stripStateBackend(s string) string {
 	return stateBackendLineRe.ReplaceAllString(s, "")
 }
 
-// sdB32Re matches a 24-char SD-B32 id token (the --next-id / NEXT_ID material),
-// used to normalize the non-deterministic id away for structural comparison.
-var sdB32Re = regexp.MustCompile(`\b[0-9a-hjkmnp-tv-z]{24}\b`)
+// bootNextIDLineRe matches ONLY the boot `NEXT_ID:` line's sd-b32 value — the
+// minted candidate, which hashes the realpath'd workflow dir and so varies per
+// checkout path. Anchored to the line prefix so it does NOT touch a stored
+// fixture id elsewhere in the output (the DISPATCHABLE table's id column, a
+// --resolve id= field): those are fixed fixture content and must freeze
+// literally, so a wrong-but-valid id there fails its golden. The minting
+// derivation itself is pinned path-independently by
+// TestSDB32CandidateDerivationVector.
+var bootNextIDLineRe = regexp.MustCompile(`(?m)^NEXT_ID: [0-9a-hjkmnp-tv-z]{24}$`)
+
+// maskBootNextID replaces the minted value on the boot NEXT_ID line with a
+// placeholder, leaving every other sd-b32 token (fixed fixture ids) intact.
+func maskBootNextID(s string) string {
+	return bootNextIDLineRe.ReplaceAllString(s, "NEXT_ID: <ID>")
+}
 
 // normalize applies the test-plan normalization to output before comparison:
 // the timestamp placeholder, and root-prefix placeholders for the workflow root

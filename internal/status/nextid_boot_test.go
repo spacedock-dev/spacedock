@@ -1,5 +1,5 @@
-// ABOUTME: AC-1 parity for the non-static read flags — --next-id (format +
-// ABOUTME: oracle-equality under pinned env) and --boot (structural + section parity).
+// ABOUTME: AC-1 checks for the non-static read flags — --next-id (format +
+// ABOUTME: determinism + a path-independent derivation vector) and --boot structure.
 package status
 
 import (
@@ -8,11 +8,30 @@ import (
 	"testing"
 )
 
-// AC-1: --next-id is in scope for pass-through but asserted at format + oracle-
-// equality level (not a static golden), since the candidate is SHA-derived. The
-// harness pins all id material (timestamp via env, seed/actor via flags) so the
-// launcher and the oracle produce the identical reproducible candidate.
-func TestNextIDParity(t *testing.T) {
+// sdB32IsValidCandidate reports whether s is a syntactically valid sd-b32 id:
+// exactly sdB32IDLength chars, all in the alphabet.
+func sdB32IsValidCandidate(s string) bool {
+	if len(s) != sdB32IDLength {
+		return false
+	}
+	for _, c := range s {
+		if !strings.ContainsRune(sdB32Chars, c) {
+			return false
+		}
+	}
+	return true
+}
+
+// TestNextIDFormatAndDeterminism asserts the two machine-independent properties
+// the --next-id candidate must hold (the captain steer: logical soundness, not
+// byte-parity with the retired Python oracle): (a) FORMAT — a 24-char valid
+// sd-b32 token — and (b) DETERMINISM — the candidate is a pure function of the
+// digest material, so two runs with identical inputs yield the identical id. The
+// candidate hashes realpathOf(workflowDir) (identity.go:183), so its concrete
+// bytes vary per checkout path; freezing a static golden was machine-dependent
+// (red-by-construction on a fresh clone). The path-independent derivation is
+// asserted by TestSDB32CandidateDerivationVector instead.
+func TestNextIDFormatAndDeterminism(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
 		t.Fatal(err)
@@ -20,24 +39,50 @@ func TestNextIDParity(t *testing.T) {
 	env := pinnedEnv(t)
 	args := []string{"--workflow-dir", root, "--next-id", "--id-seed", "pinnedseed", "--id-actor", "pinnedactor"}
 
-	nativeOut, nativeErr, nativeCode := runNative(t, root, env, args...)
-	if nativeCode != 0 {
-		t.Fatalf("native exit=%d stderr=%q", nativeCode, nativeErr)
+	out1, errOut, code := runNative(t, root, env, args...)
+	if code != 0 {
+		t.Fatalf("native exit=%d stderr=%q", code, errOut)
 	}
-	candidate := strings.TrimSpace(nativeOut)
-
-	// Format: 24 chars, all in the SD-B32 alphabet.
-	if len(candidate) != 24 {
-		t.Fatalf("--next-id candidate %q length=%d, want 24", candidate, len(candidate))
-	}
-	for _, c := range candidate {
-		if !strings.ContainsRune(sdB32Chars, c) {
-			t.Fatalf("--next-id candidate %q has char %q outside SD-B32 alphabet", candidate, c)
-		}
+	candidate := strings.TrimSpace(out1)
+	if !sdB32IsValidCandidate(candidate) {
+		t.Fatalf("--next-id candidate %q is not a 24-char sd-b32 token", candidate)
 	}
 
-	// Deterministic under the pinned env: freeze the exact certified candidate.
-	assertTextGolden(t, "nextid-parity-candidate", candidate)
+	// Determinism: a second run over identical inputs reproduces the candidate.
+	out2, _, code2 := runNative(t, root, env, args...)
+	if code2 != 0 {
+		t.Fatalf("second --next-id run exit=%d", code2)
+	}
+	if got := strings.TrimSpace(out2); got != candidate {
+		t.Fatalf("--next-id not deterministic: run1=%q run2=%q", candidate, got)
+	}
+}
+
+// TestSDB32CandidateDerivationVector pins the SHA-256 + big-endian 5-bit-window
+// minting against a FIXED, path-INDEPENDENT digest-material vector, so the same
+// expected id reproduces on any machine. The workflow path is a literal that
+// realpathOf returns unchanged (its `/spacedock/...` prefix does not exist, so
+// realpathOf cleans it to itself on every host), and seed/actor/timestamp/nonce
+// are fixed. The expected id was derived from an independent reference
+// implementation of encode_sd_b32_digest with the correct 5-bit mask (31); the
+// 31->30 mask flip at identity.go:151 changes the output, so this vector is the
+// minting-regression detector that the old static golden was meant to be — minus
+// the machine coupling.
+func TestSDB32CandidateDerivationVector(t *testing.T) {
+	const (
+		fixedWorkflow  = "/spacedock/derivation-vector/wf"
+		fixedSeed      = "fixed-seed"
+		fixedActor     = "fixed-actor"
+		fixedTimestamp = "2026-01-01T00:00:00.000000Z"
+		fixedNonce     = 0
+		// Derived independently (mask 31) over the fixed digest material; a 31->30
+		// flip yields a different string, so this catches the masking regression.
+		wantID = "n1y6x7mw00etcc0v1c9mzwwr"
+	)
+	got := sdB32Candidate(fixedWorkflow, fixedSeed, fixedActor, fixedTimestamp, fixedNonce, env{})
+	if got != wantID {
+		t.Fatalf("sd-b32 derivation vector mismatch: got %q want %q (5-bit mask regression?)", got, wantID)
+	}
 }
 
 // bootSections are the --boot section headers in their required order. The FO
@@ -47,11 +92,10 @@ var bootSections = []string{
 }
 
 // AC-1: --boot is verified structurally (headers present and in order) and the
-// deterministic section bodies (ID_STYLE, NEXT_ID, DISPATCHABLE) are parity-
-// checked against the oracle. Volatile material (NEXT_ID value, TEAM_STATE hint)
-// is normalized; the fixture has no orphans/PRs so those render their `none`
-// forms. The launcher and oracle run under the identical env (same HOME) so the
-// TEAM_STATE probe is identical between them.
+// deterministic section bodies (ID_STYLE, NEXT_ID, DISPATCHABLE) are frozen
+// against the certified native golden. Volatile material (the minted NEXT_ID
+// value) is masked; the fixture has no orphans/PRs so those render their `none`
+// forms, and the pinned (empty) HOME makes the TEAM_STATE probe deterministic.
 func TestBootStructuralParity(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "sdb32-workflow"))
 	if err != nil {
@@ -83,8 +127,9 @@ func TestBootStructuralParity(t *testing.T) {
 		t.Fatalf("--boot ID_STYLE body wrong\n%s", nativeOut)
 	}
 
-	// Full structural parity frozen against the certified native --boot after
-	// normalizing the sd-b32 NEXT_ID and the root prefix.
-	normNative := sdB32Re.ReplaceAllString(normalize(nativeOut, root), "<ID>")
+	// Structural --boot frozen against the certified native output: the minted
+	// NEXT_ID line is masked (path-dependent), every other token — including the
+	// fixed fixture id in the DISPATCHABLE table — freezes literally.
+	normNative := maskBootNextID(normalize(nativeOut, root))
 	assertTextGolden(t, "boot-structural", normNative)
 }
