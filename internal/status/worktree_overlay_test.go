@@ -101,9 +101,13 @@ func TestWorktreeOverlayActiveReads(t *testing.T) {
 			nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
 			// Normalize the per-test temp root prefix out of both streams so only
-			// the behavioral content is compared.
-			nOutN := replaceAll(nOut, nativeRoot, "%ROOT%")
-			nErrN := replaceAll(nErr, nativeRoot, "%ROOT%")
+			// the behavioral content is compared. The --resolve workflow= field is
+			// realpath'd (resolve.go emits realpathOf(workflowDir)), so on macOS it
+			// carries the /private-resolved spelling while path= keeps the as-spelled
+			// root; strip the realpath'd spelling first, then the as-spelled one, so
+			// both map to %ROOT% and the golden is path-independent across hosts.
+			nOutN := overlayRoot(nOut, nativeRoot)
+			nErrN := overlayRoot(nErr, nativeRoot)
 
 			assertEnvelopeGolden(t, "worktree-overlay-"+tc.name, goldenEnvelope{
 				stdout: nOutN, stderr: nErrN, exit: nCode,
@@ -163,6 +167,14 @@ func withRoot(args []string, root string) []string {
 	return out
 }
 
-func replaceAll(s, old, new string) string {
-	return strings.ReplaceAll(s, old, new)
+// overlayRoot maps both the realpath'd and the as-spelled temp root to %ROOT%.
+// The realpath'd spelling (macOS /private/var/...) is stripped first since it is
+// the longer/more-specific form, then the as-spelled root, mirroring normalize()
+// — so the realpath'd workflow= field and the as-spelled path= field both
+// collapse to the placeholder and the golden holds on macOS and Linux alike.
+func overlayRoot(s, root string) string {
+	if real := realpath(root); real != root {
+		s = strings.ReplaceAll(s, real, "%ROOT%")
+	}
+	return strings.ReplaceAll(s, root, "%ROOT%")
 }
