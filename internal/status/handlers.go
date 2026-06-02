@@ -226,7 +226,7 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 		return errExit(stderr, "README.md has no stages block. --boot requires stage metadata.")
 	}
 
-	gitRoot := FindGitRoot(roots.entityDir)
+	gitRoot := FindGitRoot(roots.definitionDir)
 	idStyle, err := workflowIDStyle(roots.definitionDir)
 	if err != nil {
 		return errExit(stderr, err.Error())
