@@ -203,3 +203,16 @@ Revised the design to make `wait_agent` a scheduling choice after the FO has exh
 ### Summary
 
 Implemented the retryable Codex idle-notification probe contract in commit `e4148d40`. The runtime now treats `wait_agent` as a retryable foreground wait only after ready workflow work is exhausted, the manual recipe separates queued flush from autonomous idle wake-up, and JSON evidence captures the 2026-06-03 dogfood observation as queued-delivery evidence.
+
+## Stage Report: validation
+
+- DONE: Reproduce the focused Codex idle-notification tests for runtime text, recipe shape, evidence schema, and blanket-wait guardrails.
+  Evidence: `go test ./skills/integration -run TestCodexIdleNotification -count=1 -v` passed 3 focused tests in the assigned worktree.
+- DONE: Cross-check AC-1 through AC-6 against implementation artifacts, especially queued_flush versus autonomous_idle_wake classification.
+  Evidence: commit `e4148d40` satisfies AC-1/2/3 via the runtime-contract test, AC-4 via the recipe-shape test, and AC-5/6 via the evidence-schema test; Dalton dogfood evidence is `queued_flush` with `autonomous_wake_observed: false`.
+- DONE: Run required repo gates or explain any skipped gate with a concrete blocker, then write a PASSED or REJECTED validation report.
+  Evidence: `go test ./...` passed 879 tests in 12 packages; `go test ./... -race` passed 879 tests in 12 packages; `gofmt -w ./cmd ./internal` left the implementation worktree clean. Recommendation: PASSED.
+
+### Summary
+
+Validation PASSED for implementation commit `e4148d40`. The focused tests enforce the three completion paths, scheduling priority before foreground waiting, recipe shape, JSON evidence schema, and the queued-flush versus autonomous-idle-wake distinction; all required repo gates passed with no skipped checks.
