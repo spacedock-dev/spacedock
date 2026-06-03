@@ -36,7 +36,7 @@ func decideCodexLiveAuth(openAIAPIKey string, localAuthAvailable bool, required 
 	}
 	return codexLiveAuthDecision{
 		mode:    codexAuthSkip,
-		message: "no live Codex auth available: set OPENAI_API_KEY or log in with codex to run the live Codex smoke",
+		message: "no live Codex auth available: set OPENAI_API_KEY or log in with codex to run the live Codex shared suite",
 	}
 }
 

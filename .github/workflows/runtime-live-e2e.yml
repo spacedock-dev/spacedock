@@ -280,8 +280,8 @@ jobs:
           echo "- \`codex --version\`: \`$(codex --version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Run live Codex gate smoke
-        run: go test -tags live -run TestLiveCodexGateGuardrail ./internal/ensigncycle -v
+      - name: Run live Codex shared scenarios
+        run: go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 
       - name: Upload live artifacts
         if: always()

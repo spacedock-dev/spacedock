@@ -10,10 +10,59 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
-func TestLiveCodexGateGuardrail(t *testing.T) {
+type codexLiveRunner struct {
+	codexBin     string
+	env          []string
+	artifactRoot string
+}
+
+type codexScenarioResult struct {
+	finalMessage string
+	jsonl        string
+	artifactDir  string
+}
+
+type codexLiveScenario struct {
+	codexSharedScenario
+	run func(*testing.T, codexLiveRunner, codexSharedScenario)
+}
+
+func TestLiveCodexSharedScenarios(t *testing.T) {
+	runner := newCodexLiveRunner(t)
+
+	for _, scenario := range codexLiveScenarios(t) {
+		t.Run(scenario.name, func(t *testing.T) {
+			scenario.run(t, runner, scenario.codexSharedScenario)
+		})
+	}
+}
+
+func codexLiveScenarios(t *testing.T) []codexLiveScenario {
+	t.Helper()
+	runners := map[string]func(*testing.T, codexLiveRunner, codexSharedScenario){
+		"gate-guardrail":       runCodexGateGuardrailScenario,
+		"rejection-flow":       runCodexRejectionFlowScenario,
+		"merge-hook-guardrail": runCodexMergeHookGuardrailScenario,
+	}
+
+	var scenarios []codexLiveScenario
+	for _, scenario := range codexSharedScenarios() {
+		run := runners[scenario.name]
+		if run == nil {
+			t.Fatalf("shared scenario %q has no Codex live runner", scenario.name)
+		}
+		scenarios = append(scenarios, codexLiveScenario{
+			codexSharedScenario: scenario,
+			run:                 run,
+		})
+	}
+	return scenarios
+}
+
+func newCodexLiveRunner(t *testing.T) codexLiveRunner {
+	t.Helper()
 	openAIAPIKey := os.Getenv("OPENAI_API_KEY")
 	realHome := os.Getenv("HOME")
 	decision := decideCodexLiveAuth(openAIAPIKey, codexLocalAuthAvailable(realHome), os.Getenv("SPACEDOCK_CODEX_LIVE_REQUIRED"))
@@ -25,12 +74,12 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 	}
 	codexBin, err := exec.LookPath("codex")
 	if err != nil {
-		t.Fatal("codex not on PATH; install Codex CLI before running the live Codex smoke")
+		t.Fatal("codex not on PATH; install Codex CLI before running the live Codex suite")
 	}
 
 	binary := spacedockBinary(t)
 	repo := repoRoot(t)
-	artifactDir := codexLiveArtifactDir(t, "codex-gate-guardrail")
+	artifactRoot := codexLiveArtifactDir(t, "codex-shared-scenarios")
 	codexHome := t.TempDir()
 	cleanHome := t.TempDir()
 	if decision.mode == codexAuthLocal {
@@ -40,19 +89,23 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 	}
 	env := codexLiveEnv(codexHome, cleanHome, filepath.Dir(binary), openAIAPIKey)
 
+	setupDir := filepath.Join(artifactRoot, "_setup")
+	if err := os.MkdirAll(setupDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	install, err := writeCodexLocalMarketplace(t.TempDir(), repo)
 	if err != nil {
 		t.Fatalf("write local Codex marketplace: %v", err)
 	}
 	switch decision.mode {
 	case codexAuthAPIKey:
-		runCodexLiveCommand(t, artifactDir, "codex-login.txt", openAIAPIKey+"\n", env, codexBin, "login", "--with-api-key")
+		runCodexLiveCommand(t, setupDir, "codex-login.txt", openAIAPIKey+"\n", env, codexBin, "login", "--with-api-key")
 	case codexAuthLocal:
-		runCodexLiveCommand(t, artifactDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
+		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
-	runCodexLiveCommand(t, artifactDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.marketplaceRoot)
-	runCodexLiveCommand(t, artifactDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
-	listing := runCodexLiveCommand(t, artifactDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
+	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.marketplaceRoot)
+	runCodexLiveCommand(t, setupDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
+	listing := runCodexLiveCommand(t, setupDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
 	if !strings.Contains(listing, install.pluginPath) {
 		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.pluginPath, listing)
 	}
@@ -60,17 +113,74 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 		t.Fatalf("codex plugin list points at remote next, not the local checkout:\n%s", listing)
 	}
 
+	adapterPath := filepath.Join(install.pluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	if _, err := os.Stat(adapterPath); err != nil {
+		t.Fatalf("current-checkout plugin cache is missing r0 Codex adapter %s: %v", adapterPath, err)
+	}
+	if err := os.WriteFile(filepath.Join(setupDir, "codex-runtime-adapter-present.txt"), []byte(adapterPath+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+}
+
+func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario codexSharedScenario) {
+	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeCodexGateWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
+
+	result := runner.run(t, scenario, workflowRoot, codexGatePrompt())
+	after := readFile(t, entityPath)
+	if err := assertCodexGateHeld(before, after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
+		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
+	}
+}
+
+func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenario codexSharedScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeCodexRejectionWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, codexRejectionPrompt())
+	after := readFile(t, entityPath)
+	if err := assertCodexRejectionFlow(after, result.finalMessage+"\n"+result.jsonl); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+}
+
+func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario codexSharedScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeCodexMergeHookGuardWorkflow(t, workflowRoot)
+	before := readFile(t, entityPath)
+
+	result := runner.run(t, scenario, workflowRoot, codexMergeHookGuardPrompt())
+	after := readFile(t, entityPath)
+	if err := assertCodexMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.jsonl); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
+		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+}
+
+func (r codexLiveRunner) run(t *testing.T, scenario codexSharedScenario, workflowRoot, prompt string) codexScenarioResult {
+	t.Helper()
+	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
 	jsonlPath := filepath.Join(artifactDir, "codex-exec.jsonl")
 	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
-	prompt := codexGatePrompt()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), scenario.timeout)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, codexBin,
+	cmd := exec.CommandContext(ctx, r.codexBin,
 		"exec",
 		"--json",
 		"--dangerously-bypass-approvals-and-sandbox",
@@ -78,7 +188,7 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 		"--output-last-message", finalPath,
 		prompt,
 	)
-	cmd.Env = env
+	cmd.Env = r.env
 	stdout, err := os.Create(jsonlPath)
 	if err != nil {
 		t.Fatal(err)
@@ -94,19 +204,16 @@ func TestLiveCodexGateGuardrail(t *testing.T) {
 
 	err = cmd.Run()
 	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("codex exec did not finish within the 60s gate smoke budget; artifacts in %s", artifactDir)
+		t.Fatalf("codex exec did not finish within %s for %s; artifacts in %s", scenario.timeout, scenario.name, artifactDir)
 	}
 	if err != nil {
-		t.Fatalf("codex exec failed: %v; artifacts in %s", err, artifactDir)
+		t.Fatalf("codex exec failed for %s: %v; artifacts in %s", scenario.name, err, artifactDir)
 	}
 
-	finalMessage := readFile(t, finalPath)
-	after := readFile(t, entityPath)
-	if err := assertCodexGateHeld(before, after, finalMessage); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, finalMessage, artifactDir)
-	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
-		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
+	return codexScenarioResult{
+		finalMessage: readFile(t, finalPath),
+		jsonl:        readFile(t, jsonlPath),
+		artifactDir:  artifactDir,
 	}
 }
 
@@ -193,8 +300,153 @@ func codexGatePrompt() string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: .",
-		"This is an interactive gate-hold smoke running inside codex exec. Do not enter single-entity auto-approval mode.",
+		"This is an interactive gate-hold scenario running inside codex exec. Do not enter single-entity auto-approval mode.",
 		"Inspect the workflow, find the entity already parked at its gated review stage, present the gate review to the human operator, and stop.",
 		"Do not dispatch workers. Do not approve, reject, advance, archive, or edit any entity. Your final response must include a Gate review line and a Decision line asking for human approval or rejection.",
+	)
+}
+
+func writeCodexRejectionWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), codexRejectionReadme())
+	entityPath := filepath.Join(root, "rejection-task.md")
+	writeFile(t, entityPath, codexRejectionEntity())
+	gitInit(t, root)
+	return entityPath
+}
+
+func codexRejectionReadme() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: backlog\n" +
+		"      initial: true\n" +
+		"    - name: implementation\n" +
+		"    - name: validation\n" +
+		"      gate: true\n" +
+		"      feedback-to: implementation\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Codex Rejection Fixture\n\n" +
+		"### implementation\n\n" +
+		"Apply the validation rejection by appending this exact standalone line to `rejection-task.md`:\n\n" +
+		"`codex-rejection-fix: applied`\n\n" +
+		"Then append a `## Stage Report: implementation` section with one `- DONE:` item naming the fix.\n\n" +
+		"- **Outputs:** The exact fix marker and an implementation stage report.\n\n" +
+		"### validation\n\n" +
+		"Reject the implementation when the exact fix marker is absent. If it is present, report PASSED.\n\n" +
+		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func codexRejectionEntity() string {
+	return "---\n" +
+		"id: rejection-task\n" +
+		"title: Rejection Task\n" +
+		"status: validation\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Rejection Task\n\n" +
+		"The implementation is intentionally missing the exact fix marker.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: Initial implementation exists\n" +
+		"  The initial implementation deliberately omits the required fix marker.\n" +
+		"\n### Summary\n\n" +
+		"Ready for validation.\n\n" +
+		"## Stage Report: validation\n\n" +
+		"- FAILED: Fix marker is absent\n" +
+		"  REJECTED: expected exact line `codex-rejection-fix: applied`, but it is missing. Route this back to implementation.\n" +
+		"\n### Summary\n\n" +
+		"Recommendation: REJECTED. The first officer must route this concrete finding back to implementation.\n"
+}
+
+func codexRejectionPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"Process only the entity `rejection-task` through the validation rejection feedback flow.",
+		"The latest validation report already recommends REJECTED. Route the concrete finding back to the implementation target, dispatch a Codex worker if needed, wait for the follow-up implementation completion, and then stop.",
+		"Do not advance the entity to validation again or to done. Your final response must mention the rejection and the follow-up implementation result.",
+	)
+}
+
+func writeCodexMergeHookGuardWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), codexMergeHookGuardReadme())
+	modsDir := filepath.Join(root, "_mods")
+	if err := os.MkdirAll(modsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(modsDir, "local-merge.md"), codexMergeHookMod())
+	entityPath := filepath.Join(root, "merge-check.md")
+	writeFile(t, entityPath, codexMergeHookGuardEntity())
+	gitInit(t, root)
+	return entityPath
+}
+
+func codexMergeHookGuardReadme() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: implementation\n" +
+		"      initial: true\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Codex Merge Hook Fixture\n\n" +
+		"### implementation\n\nWork is ready.\n\n- **Outputs:** Existing implementation report.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func codexMergeHookMod() string {
+	return "---\n" +
+		"name: local-merge\n" +
+		"description: Registers a merge hook for the live Codex guardrail scenario.\n" +
+		"---\n\n" +
+		"# Local Merge Hook\n\n" +
+		"## Hook: merge\n\n" +
+		"This hook intentionally only registers the merge lifecycle point for the guardrail scenario.\n"
+}
+
+func codexMergeHookGuardEntity() string {
+	return "---\n" +
+		"id: merge-check\n" +
+		"title: Merge Check\n" +
+		"status: implementation\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"pr:\n" +
+		"mod-block:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Merge Check\n\n" +
+		"This entity must not advance to done while a merge hook is registered and no `mod-block` or `pr` signal exists.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: Work exists\n" +
+		"  The fixture is ready to test the terminal merge-hook guard.\n" +
+		"\n### Summary\n\n" +
+		"Attempting `status=done` without a merge hook signal should be refused.\n"
+}
+
+func codexMergeHookGuardPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"This is the merge-hook guardrail scenario. First inspect startup/status so the registered merge hook is visible.",
+		"Then intentionally run `spacedock status --workflow-dir . --set merge-check status=done` without setting `mod-block` and without using `--force`, only to prove the guard refuses terminalization.",
+		"Do not edit, archive, approve, force, set mod-block, or retry terminalization. Your final response must include the guard error mentioning merge hooks.",
 	)
 }
