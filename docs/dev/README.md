@@ -143,55 +143,99 @@ To list the tasks ready for dispatch (the query the first officer runs each loop
 spacedock status --workflow-dir docs/dev --next
 ```
 
-## Codex Live CI
+## Runtime Live CI
 
-The Codex live lane proves runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for running `codex exec --json`, observing its output, and checking the resulting workflow state.
+The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
-Local prerequisites:
+A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, two per-host runner adapters (Claude and Codex) implementing the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
+
+### Shared runtime scenarios
+
+The scenario surface lives in `internal/ensigncycle` and splits into four host-neutral layers plus one host-specific layer:
+
+| Layer | File | Host-neutral? |
+|-------|------|---------------|
+| Scenario table | `shared_scenarios_test.go` (`sharedRuntimeScenarios()`) | Yes |
+| Fixtures + prompts | `shared_fixtures_test.go` | Yes |
+| Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
+| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go` | No — one per host |
+
+The shared table (`sharedRuntimeScenario`) carries ONLY runtime-neutral facts: scenario `name` (ID), `oldPythonTest` provenance, behavior `intent`, and a live `timeout`. It encodes NO launch, auth, plugin, artifact, or transcript field — `TestSharedRuntimeScenarioDefinitions` reflects over the type and fails if any field names a single host.
+
+Each runner adapter turns a shared scenario into a real launch and returns `(before, after, observed)` for the shared assertions:
+
+| Concern | Codex runner | Claude runner |
+|---------|--------------|---------------|
+| Auth / HOME isolation | isolated `CODEX_HOME` + copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
+| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-contract-check` |
+| Launch | `codex exec --json --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
+| `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
+| Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
+
+The three shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
+
+- `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
+- `rejection-flow`: starts from a rejected validation report and asserts the first officer routes the concrete finding back through implementation.
+- `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
+
+Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
+
+**To add a shared runtime scenario:**
+
+1. Add a `sharedRuntimeScenario` entry to `sharedRuntimeScenarios()` with a unique `name`, its old Python provenance, the behavior `intent`, and a live `timeout`. Keep it host-neutral — no launch/auth/plugin field.
+2. Add a fixture writer (README + entity + any `_mods/`) and a prompt to `shared_fixtures_test.go`. The prompt must say `Use $spacedock:first-officer`; both hosts honor it. Reuse the existing fixtures verbatim where the journey is the same.
+3. Add a host-neutral assertion over `(before, after, observed)` strings (or reuse an existing one) and at least one offline negative case in `shared_scenarios_negative_test.go` that builds the broken end-state and proves the assertion goes red.
+4. Add a runner entry for the new `name` to BOTH `codexScenarioRunners()` and `claudeScenarioRunners()`. `TestSharedScenarioRunnerCoverage` fails until both hosts cover it.
+
+The shared coverage meta-test enforces parity in both directions: every shared scenario must have a runner for each host, and every runner must map to a defined scenario.
+
+### Local live execution
+
+Build the binary and export the resolution hooks once:
 
 ```bash
-npm install -g @openai/codex
-codex login
 go build -o ./spacedock ./cmd/spacedock
 export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` when using the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
+Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`):
 
-Run the focused local shared suite:
+```bash
+go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
+```
+
+Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
 
 ```bash
 go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
-Without either `OPENAI_API_KEY` or a readable local Codex `auth.json`, the live test skips locally. In GitHub Actions, the `codex-live` job sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, so a missing `OPENAI_API_KEY` fails clearly after the `CI-E2E-CODEX` environment is approved.
+The parity and definition guards run with no model spend — useful before paying for a live run:
 
-GitHub setup:
+```bash
+go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions' ./internal/ensigncycle -v
+```
 
-- Environment: `CI-E2E-CODEX`
-- Secret on that environment or repository: `OPENAI_API_KEY`
-- Workflow: `.github/workflows/runtime-live-e2e.yml`
-- Artifact directory during the job: `live-artifacts/codex/`
+Without auth, the respective live suite skips locally (Claude/Codex), except in CI where the lane requires it.
 
-The CI job must test the current checkout, not `spacedock-dev/spacedock --ref next`. The supported mechanism is a generated local Codex marketplace under `$RUNNER_TEMP`:
+### GitHub setup
+
+Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane burns its environment approval.
+
+- `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke) AND `TestLiveClaudeSharedScenarios` (the shared suite). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
+- `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
+
+Both live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 
 ```text
 .agents/plugins/marketplace.json
 plugins/spacedock -> $GITHUB_WORKSPACE
 ```
 
-The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job then runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. After that, `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` confirms Spacedock resolves the installed Codex manifest.
+The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` then confirms Spacedock resolves the installed Codex manifest. The Codex live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the current-checkout stack instead of a remote `next` install. The Claude lane loads the current checkout directly via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
 
-The live Codex suite reuses the old shared Claude/Codex scenario overlap (`test_gate_guardrail.py --runtime codex`, `test_rejection_flow.py --runtime codex`, and `test_merge_hook_guardrail.py --runtime codex`) rather than a Codex-only host smoke:
-
-- `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
-- `rejection-flow`: starts from a rejected validation report and asserts the first officer routes the concrete finding back through implementation.
-- `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
-
-These scenarios invoke real headless Codex through `codex exec --json`, observe output, and check resulting workflow state. A one-off host-only smoke is not enough for Codex live CI because it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. JSONL, stderr, plugin listing, and final-message artifacts are uploaded for debugging.
-
-Codex live CI must run from the current PR checkout on top of current `origin/next`, which includes the r0 Codex runtime adapter merge. The live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the r0/next stack instead of an older branch or remote `next` install.
+A one-off host-only smoke is not enough for either lane: it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. The shared scenarios run real headless hosts, observe output, and check resulting workflow state; jsonl, stderr, and final-message artifacts upload for debugging.
 
 ## Task Template
 
