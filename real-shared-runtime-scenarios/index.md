@@ -9,7 +9,7 @@ verdict:
 score: "0.68"
 worktree: .worktrees/spacedock-ensign-real-shared-runtime-scenarios
 issue:
-mod-block:
+mod-block: merge:pr-merge
 ---
 
 f4 ports the old Python Claude/Codex journey overlap into the Codex live lane, but the Go implementation is still Codex-shaped: `codexSharedScenarios()` defines the scenario list and the current Claude live CI continues to run `TestLiveEnsignCycle` rather than consuming the same scenario table.
