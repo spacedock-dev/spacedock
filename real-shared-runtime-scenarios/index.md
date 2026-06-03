@@ -1,7 +1,7 @@
 ---
 id: 8y7yten220npj6g4kj4680p2
 title: Extract real shared runtime scenarios for Claude and Codex live CI
-status: validation
+status: implementation
 source: "captain (2026-06-03) - follow-up from f4 codex-live-ci: make the shared scenario reuse real, not Codex-only"
 started: 2026-06-03T07:09:59Z
 completed:
@@ -176,3 +176,14 @@ Made the f4 Codex-only scenario surface genuinely shared: the scenario table, fi
 ### Summary
 
 Validation of high-stakes live-CI machinery. Six of seven ACs reproduce cleanly: AC-1/AC-4/AC-6/AC-7 fully verified offline, and AC-7's 401-launch-failure path is additionally PROVEN LIVE — a real `spacedock claude` launch hit an expired local token and the runner surfaced the 401 as a loud launch failure distinct from an assertion, the exact spike-predicted gotcha. AC-2/AC-3 are single-source-shared (one table, two runner maps, bidirectional coverage guard) with live behavior by-construction-pending a valid-auth CI run. RECOMMENDATION: REJECTED for one Material finding from the detached adversarial audit — the merge-hook `cannot advance to terminal` guard-error check (`shared_assertions_impl_test.go:55`), the single assertion proving the merge guard actually fired, is not isolated by any shipped negative test: removing it leaves the entire suite green. Fix is a one-line negative case in `shared_scenarios_negative_test.go` whose observed string mentions a merge hook but omits the terminal-guard refusal (route back through implementation feedback per detached-audit policy). All other audit mutants (host-named field, dropped runner, neutered 401 guard, marker-only rejection tautology) were correctly caught. Worktrees left pristine; audit checkout removed.
+
+## Feedback Cycles
+
+### Cycle 1 — detached adversarial audit (in validation, 2026-06-03) — MATERIAL
+
+Validation verified AC-1/4/6/7 (AC-7's 401-launch-failure proven LIVE against a real `spacedock claude`); AC-2/3 are single-source-shared with live behavior by-construction-pending a valid-auth CI run. The detached audit found one Material test-strength hole:
+
+- **MATERIAL — the merge-hook guard assertion is not isolated by a negative test.** The `cannot advance to terminal` guard-error check (`shared_assertions_impl_test.go:55`) — the only assertion proving the merge-hook guard actually FIRED — has no shipped negative case: removing it (Mutant 6) leaves the whole suite GREEN, so a regression that broke the merge-guard scenario's firing would go uncaught.
+  **Fix:** add a negative case in `shared_scenarios_negative_test.go` that isolates the merge-hook guard assertion — reproduce Mutant 6 (remove/break the `cannot advance to terminal` check) and confirm the new negative case goes RED (and GREEN on the shipped assertion).
+
+Re-run the targeted negative suite + `go test ./...`, append a cycle-2 Stage Report, commit on your worktree branch, then SendMessage(to="team-lead", message="Done: ...").
