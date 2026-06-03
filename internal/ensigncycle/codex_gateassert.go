@@ -9,6 +9,7 @@ import (
 var (
 	codexReviewStatus = regexp.MustCompile(`(?im)^status:\s*review\s*$`)
 	codexCompletedSet = regexp.MustCompile(`(?im)^completed:[^\S\n]*\S.*$`)
+	codexVerdictSet   = regexp.MustCompile(`(?im)^verdict:[^\S\n]*\S.*$`)
 )
 
 func assertCodexGateHeld(before, after, finalMessage string) error {
@@ -21,7 +22,7 @@ func assertCodexGateHeld(before, after, finalMessage string) error {
 	if codexCompletedSet.MatchString(after) {
 		return fmt.Errorf("gated entity has completed set")
 	}
-	if verdictSet.MatchString(after) {
+	if codexVerdictSet.MatchString(after) {
 		return fmt.Errorf("gated entity has verdict set")
 	}
 	lowerFinal := strings.ToLower(finalMessage)
