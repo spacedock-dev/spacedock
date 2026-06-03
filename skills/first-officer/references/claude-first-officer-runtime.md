@@ -245,22 +245,23 @@ After each agent completion:
 
 These are FO-internal scheduling reads — parse them as JSON, not the padded human table. Each read below uses `--json` so the FO consumes a compact, byte-stable document (one rule: every value is a string) instead of scraping column padding that a token proxy can mangle. `--fields` narrows the read to the keys the FO needs. The `--json` envelopes are: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[{"id","slug","current","next","worktree"},…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim — JSON is for the machine reader, the table is for the human.
 
-0. **State-keyed reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir} [--team-name {team_name}]` at the following moments: (a) at boot, AFTER the split-root `pull --rebase` and BEFORE the first dispatch; (b) at idle (step 4 below); (c) after each merge (immediately after Merge-and-Cleanup step 10, before resuming the event loop). The helper emits `{"command":"reconcile","team_name":"…","drift":[{"class":"A|B|C|D|E", …}, …]}` on stdout. Empty `drift[]` is a green sweep. For each drift entry, the FO acts per the action table: **A (lingering)** → `SendMessage({"type":"shutdown_request"})` to `name`, drop from session memory; **B (superseded)** → same shutdown on the loser; **C (un-advanced PR)** → enter Merge-and-Cleanup for the named slug; **D (stale branch)** → `git -C {worktree} pull --rebase origin next`, halt on conflict per the rebase-conflict halt rule; **E (stale local main)** → `git -C {repo} fetch origin next && git -C {repo} reset --hard origin/next && cd {repo} && go build -o spacedock ./cmd/spacedock`. A non-zero helper exit (1 setup / 2 usage) surfaces to the captain rather than blocking the loop. Report a one-line sweep summary to the captain when drift is found (`reconcile: {N} drift entries: A={N_A} B={N_B} C={N_C} D={N_D} E={N_E} — acting`).
+0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir} [--team-name {team_name}]` (a) at boot, AFTER the split-root `pull --rebase` and BEFORE the first dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"A|B|C|D|E",…}]}`. Empty `drift[]` is green. Act per drift class:
+   - **A (lingering)** / **B (superseded)** → `SendMessage({"type":"shutdown_request"})` to `name`; drop from session memory.
+   - **C (un-advanced PR)** → enter Merge-and-Cleanup for the named slug.
+   - **D (stale branch)** → `git -C {worktree} pull --rebase origin next`; halt on conflict per the rebase-conflict halt rule.
+   - **E (stale local main)** → `git -C {repo} fetch origin next && git -C {repo} reset --hard origin/next && cd {repo} && go build -o spacedock ./cmd/spacedock`.
+
+   Non-zero helper exit (1 setup / 2 usage) surfaces to the captain; it does not block the loop. On drift, report one line: `reconcile: {N} entries: A={N_A} B={N_B} C={N_C} D={N_D} E={N_E} — acting`.
 1. **Check PR-pending entities** — Run `status --where "pr !=" --json --fields id,slug,pr`. For each entity in `entities`, check PR state via `gh pr view` and advance merged PRs. When advancing a merged PR, clear its `mod-block` if set: `status --set {slug} mod-block=`.
 2. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g., re-present the PR summary). Do not dispatch new work for a mod-blocked entity.
 3. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus the named frontmatter keys; `--fields` is additive over the fixed five, since the computed dispatch columns are not projectable).
-4. **If nothing is dispatchable** — Fire `idle` hooks, then re-run step 0's `spacedock dispatch reconcile` sweep, then re-run `status --next --json --fields id,slug`. Dispatch anything a hook OR the reconcile sweep unblocked. If still nothing, end the iteration.
+4. **If nothing is dispatchable** — Fire `idle` hooks, re-run the step-0 reconcile sweep, then re-run `status --next`. Dispatch anything either unblocked; otherwise end the iteration.
 
 Repeat from step 1 after each agent completion until the captain ends the session or, in single-entity mode, until the target entity is resolved.
 
-### Cross-runtime backstop addenda (Claude-only)
+### Backstop (Claude)
 
-The shared core's terminal-teardown step (Merge and Cleanup step 10) and supersede-shutdown step (Completion and Gates) deliberately leave the cross-runtime safety-net claim to each runtime adapter. On Claude Code, the backstop is the same `spacedock dispatch reconcile` sweep wired into step 0 / step 4 above:
-
-- **Terminal-teardown backstop — Class A (lingering).** If the FO skips step 10's per-entity SendMessage shutdown sweep, the next event-loop iteration's reconcile call detects the surviving ensign (its entity is archived or `status=done`) as Class A and the FO executes the same shutdown then. Cost of a missed step 10: one extra context-window cycle the lingering agent burns.
-- **Supersede-shutdown backstop — Class B (superseded).** If the FO skips the supersede-shutdown step before a fresh `-cycleN` dispatch, the next reconcile call detects the prior-cycle ensign as Class B (same `(slug, stage)` cohort, lower cycle number) and the FO executes the same shutdown then. Cost of a missed supersede shutdown: one extra context-window cycle the loser burns.
-
-These backstops are Claude-bound — the helper reads `~/.claude/teams/{team}/config.json`, which exists only under the Claude Code harness. The shared core's prose steps remain mandatory at their boundaries; the backstop is convergent slack, not permission to skip.
+The shared core's terminal-teardown (step 10) and supersede-shutdown steps remain mandatory at their boundaries. On Claude, the step-0/step-4 reconcile sweep converges anyway: Class A catches a missed teardown, Class B catches a missed supersede shutdown. Cost of a miss: one extra event-loop cycle the agent burns.
 
 ## Mod-Block Enforcement at Terminal Transitions
 
