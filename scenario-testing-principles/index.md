@@ -1,13 +1,13 @@
 ---
 id: m8yy9wbsm1b832a5078fgyza
 title: Scenario-testing principles — a scenario is a natural-language spec; codified test and LLM run are two executor implementations; cost/coverage key by scenario × {mode, runtime}
-status: ideation
+status: implementation
 source: captain (2026-06-03, session 12) — "we should have scenario as natural language, like bdd. and codified test is a variant of an implementation. running through llm is another implementation." + "document this as scenario-testing principles first, the semantics not the syntax. 8y should have concluded with a few scenarios; we build upon it. 4n is tracking cost, which should be keyed by the scenario (with mode, runtime as variants)."
 started: 2026-06-03T16:55:07Z
 completed:
 verdict:
 score: 0.41
-worktree:
+worktree: .worktrees/spacedock-ensign-scenario-testing-principles
 issue:
 ---
 
