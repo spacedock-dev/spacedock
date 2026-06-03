@@ -132,3 +132,20 @@ The ideation result chooses a compatibility-first Pi runtime shape: default to b
 ### Summary
 
 Implemented the first compatibility slice for Pi runtime support in code commit `f935a7b2`, plus required gofmt cleanup in `672d5ba6`: `spacedock dispatch build` now accepts `host: "pi"` and emits Pi-native dispatch guidance without Claude team-tool signatures. The shipped skill surface now advertises and loads Pi first-officer/ensign runtime adapters; focused dispatch and skill integration tests pass.
+
+## Stage Report: validation
+
+- DONE: AC-1 Pi dispatch uses a Pi-native tool contract instead of Claude-compatible tool names.
+  Evidence: `go test ./internal/dispatch -run TestBuildPiHostPromptShape -count=1` passes; the test fails on Claude team-tool syntax and confirms the Pi dispatch-file/subagent-completion shape.
+- FAILED: AC-2 The default Pi ensign path can complete a real split-root workflow task through `pi-subagents` from an isolated Pi home that reuses existing OAuth credentials.
+  Evidence missing: no live `TestLivePiSubagentEnsignSmoke` or equivalent isolated `PI_CODING_AGENT_DIR` run exists yet. The dogfood attempt surfaced the auth-isolation requirement but did not complete a worker run.
+- FAILED: AC-3 Optional `pi-agent-teams` support is represented as an adapter over the `teams` action schema, not as Claude team emulation.
+  Evidence missing: no teams-adapter code or offline contract test maps Spacedock lifecycle intents to `teams` actions yet.
+- FAILED: AC-4 Follow-up routing cannot accept stale completion evidence.
+  Evidence missing: no Pi worker registry/completion epoch implementation or stale-completion rejection test exists yet.
+- FAILED: AC-5 Split-root state paths are preserved in Pi dispatch prompts and tests.
+  Evidence partial only: existing dispatch behavior preserves split-root generally, but no Pi-specific split-root dispatch fixture asserts state-checkout entity paths.
+
+### Summary
+
+Validation result: REJECTED. The implementation commits `f935a7b2` and `672d5ba6` are a useful first slice (Pi host dispatch shape plus loadable runtime docs), and `go test ./...` plus `go test ./... -race` pass from the worktree, but the entity-level acceptance criteria require live Pi subagent proof, pi-agent-teams adapter tests, stale completion protection, and Pi-specific split-root path coverage before this task can pass.
