@@ -1,7 +1,7 @@
 ---
 id: mtqe6vqr5hmnrjvg5ss4969m
 title: dispatch build requires a hand-built JSON blob on stdin, and the contract's inline-echo example anchors the FO on shell heredocs (backticks break them) instead of the Write tool
-status: implementation
+status: validation
 source: captain (2026-06-03) — observed the FO using `python3 <<'PYEOF'` to escape backticks in checklist strings for `spacedock dispatch build`; asked why it wasn't obvious to just use the Write tool
 score: "0.27"
 worktree: .worktrees/spacedock-ensign-dispatch-build-json-ergonomics
