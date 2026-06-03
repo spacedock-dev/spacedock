@@ -67,3 +67,46 @@ func TestBuildPiHostPromptShape(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildPiHostPreservesSplitRootEntityPath(t *testing.T) {
+	root := t.TempDir()
+	stateDir := filepath.Join(root, "state-checkout")
+	writeFile(t, filepath.Join(root, "README.md"), readmeWorktree(true))
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	worktreeRel := ".worktrees/spacedock-ensign-thing"
+	if err := os.MkdirAll(filepath.Join(root, worktreeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	entityPath := filepath.Join(stateDir, "thing", "index.md")
+	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
+	gitInit(t, root)
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "implementation",
+		"checklist":      []string{"- preserve split-root entity path"},
+		"team_name":      "fixture-pi-team",
+		"bare_mode":      false,
+		"host":           "pi",
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", root)
+	if native.exit != 0 {
+		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+	worktreeEntityPath := filepath.Join(root, worktreeRel, "state-checkout", "thing", "index.md")
+	if strings.Contains(body, worktreeEntityPath) {
+		t.Fatalf("pi split-root dispatch must not rewrite entity path into code worktree: %s\n%s", worktreeEntityPath, body)
+	}
+	if !strings.Contains(body, "Read the entity file at "+entityPath) {
+		t.Fatalf("pi split-root dispatch body does not point at state-checkout entity %s:\n%s", entityPath, body)
+	}
+	if !strings.Contains(body, "This workflow is split-root") {
+		t.Fatalf("pi split-root dispatch body missing split-root state guidance:\n%s", body)
+	}
+}
