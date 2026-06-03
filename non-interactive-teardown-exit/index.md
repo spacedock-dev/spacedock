@@ -235,3 +235,19 @@ Validation PASSED, but the detached audit (high-stakes: FO contract + CI) found 
 - **Polish:** marker has 3 verbatim copies with no cross-equality test (add one); the pre-completion ban test is substring-presence not semantic.
 
 AC-2's marker-vs-beats discriminator was attacked hardest and held **CLEAN** (beats-only never greens; the marker is genuinely load-bearing).
+
+## Stage Report: implementation (audit feedback cycle 1)
+
+- DONE: M1 — AC-3 oracle: retry-to-success re-introducible by NEAR-SYNONYM
+  Root cause was marker-substring required phrases (`hold`/`launcher` live inside the marker "…holding for launcher.") + exact-substring negating. Fix: `assertDirectionalMandate` now MASKS the marker before checking required phrases, so behavioral anchors (`STOPS calling`/`no further teardown tool calls`) actually discriminate; broadened negating set (`continues issuing`/`rounds until`/`until the registry`/`finally clears`). Auditor's "continues issuing settle-then-TeamDelete rounds until…clears" edit now REDs (verified).
+- DONE: M2 — AC-3 oracle: FO-self-exit re-introducible (kill -9 PPID + "backstop")
+  Required `launcher` survived in "backstop". Fix: distinct launcher-exit anchors (`launcher's** responsibility, not the FO's`, `never an FO self-exit`) checked against the marker-masked prose; negating set adds `kill -9`/`$ppid`/`terminates its own`/`backstop`/`launcher is only a`. Auditor's kill-PPID/backstop edit now REDs (verified).
+- DONE: M3 — ≤60s guard misses ADDITIVE composites
+  live_budget_test.go folded only MUL; `holdConfirmDefault = time.Minute + 30*time.Second` (90s) passed. Fix: recursive `durationOf` folds ADD/SUB/MUL/paren/bare-unit; new `TestBudgetConstantsAreUnder60s` pins the constants' evaluated values directly. The 90s composite now REDs in BOTH guards (verified, reports 1m30s).
+- DONE: P1 — marker cross-equality
+  New `TestGradeMarkerMatchesContract` (ensigncycle) asserts the grade const appears verbatim in both contract files — catches a grade-const+fixtures drift that skips the contract.
+- DONE: P2 — pre-completion ban semantic, not substring-presence
+  Strengthened to assert the `- emit \`TeamDelete\`` bullet under `Do not:` + `tearing down is premature` rationale, and FORBID affirmative re-intros (`should emit \`teamdelete\``, `emit \`teamdelete\` early`, …). An inverted ban keeping the token now REDs (verified).
+
+### Summary
+Audit feedback cycle 1: the deliverable behavior was correct; the three Material holes were all test-strength (evadable oracles), so this cycle changed ONLY tests/guards — no production or contract edits. M1/M2 root cause was shared: the required `hold`/`launcher` phrases were substrings of the marker string and added zero discrimination, and the negating set was exact-substring (near-synonyms evaded). Fixed structurally by masking the marker before required-phrase checks (forcing real behavioral anchors) plus a broadened negating set; M3 fixed by folding additive composites in the AST guard + a direct constant-value guard. All three auditor evasions RED after the fix; both polish items landed (marker cross-equality, semantic pre-completion ban). `go test ./...` green; live build compiles; ≤60s invariant intact. Commit 0068f345 on the worktree branch.
