@@ -1,10 +1,10 @@
 ---
 id: bxav7rd90n4mcw8fhp9myv19
 title: Make dispatch subcommand help reachable without required operational flags
-status: ideation
+status: implementation
 source: "codex FO dogfood (2026-06-03) - `spacedock dispatch build --help` returned a required `--workflow-dir` error while trying to inspect the command contract"
 score: "0.22"
-worktree:
+worktree: .worktrees/spacedock-ensign-dispatch-build-help-ergonomics
 started: 2026-06-03T21:34:29Z
 completed:
 verdict:
