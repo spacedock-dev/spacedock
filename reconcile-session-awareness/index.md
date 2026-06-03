@@ -151,3 +151,18 @@ Validation PASSED, but the detached audit found a test-strength hole the suite m
 **Fix:** add a regression fixture that pins exactness — a foreign team whose `leadSessionId` is (a) empty and (b) a strict prefix/substring of the current session id must NOT resolve → must degrade to git-only (no roster A/B/C). The fixture must turn RED under a `HasPrefix`/`Contains` comparison and GREEN under exact `!=`. Then re-run the targeted suite (must stay green on the shipped exact code) + `go test ./...`.
 
 (Polish, optional: pin the assembly-level `rosterTrusted` gate at `internal/dispatch/reconcile.go:191` directly via a stub `rosterLoader` returning a non-empty-roster degrade sentinel — currently it's only exercised through the loader.)
+
+## Stage Report: implementation (cycle 2)
+
+Addresses the Cycle 1 detached-audit MATERIAL finding: the exactness of the `leadSessionId` match was not pinned, so loosening the shipped `!=` to `strings.HasPrefix`/`strings.Contains` (notably a foreign config with an EMPTY `leadSessionId`) would leak roster classes A/B/C while all targeted tests stayed green.
+
+- DONE: Add a regression fixture pinning exactness — a foreign team whose `leadSessionId` is empty / a strict prefix / a strict substring of the current session id must NOT resolve → degrade to git-only.
+  `TestLoadReconcileTeamSessionMatchIsExact` (internal/claudeteam/reconcile_session_test.go) — table of 3 foreign near-miss configs. Verified RED under both audit-named mutants: `!strings.HasPrefix(session, lead)` fails the empty-lead + strict-prefix sub-cases (1 leaked member each); `!strings.Contains(session, lead)` fails all 3. GREEN under the shipped exact `!=`. Mutants applied/reverted via file backup; loader unchanged.
+- DONE: (audit polish) Pin the assembly-level `rosterTrusted` gate directly via a stub rosterLoader.
+  `TestReconcileGateSuppressesEvenWithPopulatedRoster` (internal/dispatch/reconcile_session_test.go) — stub returns the empty-`TeamName` sentinel carrying a Class-A-tripping ensign roster; asserts A/B/C suppressed while D/E still emit. Verified RED when `rosterTrusted &&` is dropped from the Class A emit (reconcile.go:209).
+- DONE: Re-run targeted suite + `go test ./...`.
+  Targeted (claudeteam + dispatch + integration) 185/185; full suite 851/851 (10/10 packages); `go vet ./...` clean; `gofmt -l` clean. Commit e1d5b785, test-only (the shipped loader/gate were already correct).
+
+### Summary
+
+Test-only cycle closing the mutation-coverage gap the audit found. The shipped exact `leadSessionId != sessionID` comparison and the `rosterTrusted` assembly gate are both now pinned by mutation-proven regression tests: the empty-`leadSessionId` exploit (the session-11 stale-team leak) and the prefix/substring near-misses all degrade to git-only under exact match and leak under any loosening. No production change. Full suite, vet, and gofmt clean.
