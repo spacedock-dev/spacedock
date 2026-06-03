@@ -1,7 +1,7 @@
 ---
 id: yyqez6npx8qb11b5v7fgwjtf
 title: Sonnet live-CI fails with a repeatable shape — FO subprocess ends its turn after shutdown_request before the streamwatcher's expected dispatch-close fires
-status: validation
+status: implementation
 source: session-10 — identical failure shape on PR #275 (n3 frontmatter-hash-quoting) and PR #277 (2a require-external-proof-guard); both offline-green + opus-green + sonnet-red. Two matching failures = mechanism issue, not random flake. Blocks merging n3 + 2a into 0.19.5.
 score: "0.19"
 worktree: .worktrees/spacedock-ensign-sonnet-live-ci-flake
@@ -165,3 +165,12 @@ Findings 1 and 2 hold and the live-AC-1 behavior fix (finding-3 prose) is presen
 
 ### Summary
 REJECTED. Independently reproduced all of cycle-1's adversarial edits: findings 1 (inversion-resistant oracle) and 2 (non-tautological replay) are genuinely CLOSED — both turn RED exactly where they must, and a sharper surgical edit (removing only the L323 active-member failure line) confirms the replay is no longer tautological. Finding-3's PROSE (inter-attempt settle + non-interactive exit obligation) is present and correct in both contract surfaces, so the LIVE AC-1 fix behavior is in place. But checklist item 2 fails: no oracle COVERS finding-3 — I gutted both files' teardown steps back to the #275 millisecond-re-race + non-interactive hang and the suite stayed GREEN, because the `"settle"` requirement is satisfied by a non-load-bearing `"...are the adapter's"` delegation sentence and the Claude side checks no settle/non-interactive token. That is a test-strength hole that green-lights the exact regression the fix prevents. AC-1 stays live-pending (not a blocker); AC-2 and AC-3 hold (`go test ./...` 836 passed, `go vet -tags live` clean). Routes back to implementation for the oracle extension; no contract-prose change needed.
+
+### Cycle 2 — detached re-audit (in cycle-2 validation, 2026-06-03) — MATERIAL
+
+Findings 1 & 2 from cycle 1 are CLOSED (the re-audit independently reproduced both inverted mandates → oracle RED, and the fixture truncation + L323 removal → replay RED). One NEW hole remains:
+
+- **MATERIAL — finding-3's settle + non-interactive-exit prose has no load-bearing oracle.** The inter-attempt settle clause and the non-interactive cap-exhaustion exit clause ARE present in both contract surfaces (so the live AC-1 behaviour fix is in place), but `TestTerminalTeardownRetriesToSuccess` does NOT cover them: gutting both files' teardown steps back to the #275 "immediately retry" millisecond-re-race + "surface to captain and end the turn" non-interactive hang leaves the oracle GREEN. The "settle" token is satisfied by a non-load-bearing "...are the adapter's" delegation sentence; the Claude side checks no settle / non-interactive token. So an inversion of the exact regression the fix prevents passes green.
+  **Fix (oracle extension only — do NOT change the contract prose; the prose is correct):** extend the oracle so it requires the LOAD-BEARING settle clause AND the non-interactive cap-exhaustion clause within the teardown step (scoped so a delegation sentence cannot satisfy it). While you're there, make the oracle comprehensive over EVERY load-bearing teardown clause (retry-to-success, settle-between-attempts, non-interactive cap-exhaustion exit) so prose and oracle can't drift again. Reproduce the audit's gut-edit — revert both teardown steps to immediate-retry + surface-and-end-turn — and confirm the strengthened oracle goes RED on each clause.
+
+This is **feedback cycle 2** (next reject escalates to the captain). AC-1 remains live-pending (not a blocker). Re-run the targeted oracle + `go test ./...`, append a cycle-3 Stage Report, commit on your worktree branch, then SendMessage(to="team-lead", message="Done: ...").
