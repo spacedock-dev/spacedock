@@ -27,10 +27,14 @@ var canonicalStages = []string{"backlog", "ideation", "implementation", "validat
 // reconcileOpts captures the resolved CLI flags for one reconcile run. roster
 // is the team-roster loader the helper calls — in production this is
 // claudeteam.LoadReconcileTeam, which owns the only ~/.claude/teams read; tests
-// inject a stub so the host-neutrality scan stays clean.
+// inject a stub so the host-neutrality scan stays clean. sessionID is the
+// current lead session (from $CLAUDE_CODE_SESSION_ID); auto-discovery matches it
+// against config.leadSessionId when teamName is empty. Tests inject a fixture
+// UUID; the empty value drives the degrade-to-git-only path.
 type reconcileOpts struct {
 	workflowDir string
 	teamName    string
+	sessionID   string
 	repoRoot    string
 	include     map[string]bool
 	home        string
@@ -42,7 +46,7 @@ type reconcileOpts struct {
 
 // rosterLoader is the team-roster injection point. claudeteam.LoadReconcileTeam
 // satisfies it; tests pass an in-memory stub.
-type rosterLoader func(home, teamName string) (claudeteam.ReconcileTeamState, error)
+type rosterLoader func(home, teamName, sessionID string) (claudeteam.ReconcileTeamState, error)
 
 // ghRunner runs `gh pr view {N} --json state` returning the state string (e.g.
 // "MERGED", "OPEN"). Tests inject a stub; production passes ghRunnerExec.
@@ -100,6 +104,7 @@ func runReconcile(args []string, stdout, stderr io.Writer) int {
 	opts := reconcileOpts{
 		workflowDir: workflowDir,
 		teamName:    flags["--team-name"],
+		sessionID:   os.Getenv("CLAUDE_CODE_SESSION_ID"),
 		repoRoot:    flags["--repo-root"],
 		include:     include,
 		home:        os.Getenv("HOME"),
@@ -171,10 +176,22 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 		}
 	}
 
-	team, err := opts.roster(opts.home, opts.teamName)
+	team, err := opts.roster(opts.home, opts.teamName, opts.sessionID)
 	if err != nil {
 		fmt.Fprintf(stderr, "error: %s\n", err)
 		return 1
+	}
+
+	// An empty TeamName is the degrade-to-git-only sentinel: no session-scoped
+	// team resolved (bare reconcile with no current-session match), so the
+	// roster-derived classes A/B/C are suppressed — a non-session-matched config
+	// could be a stale prior session's or a parallel live session's team, and
+	// must never be trusted as our roster. Only the session-independent git/
+	// filesystem classes D/E run. This is not an error: the sweep ran (exit 0).
+	rosterTrusted := team.TeamName != ""
+	if !rosterTrusted {
+		fmt.Fprintln(stderr,
+			"note: no session-scoped team resolved; reporting git/filesystem drift only (roster reconciliation needs a team identity — pass --team-name)")
 	}
 
 	stateRoot := splitRootStateCheckout(opts.workflowDir)
@@ -189,13 +206,13 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 	var drift []driftItem
 
 	ensigns := filterEnsigns(team.Members)
-	if opts.include["A"] {
+	if rosterTrusted && opts.include["A"] {
 		drift = append(drift, classA(ensigns, stageNames, active, archived)...)
 	}
-	if opts.include["B"] {
+	if rosterTrusted && opts.include["B"] {
 		drift = append(drift, classB(ensigns, stageNames)...)
 	}
-	if opts.include["C"] {
+	if rosterTrusted && opts.include["C"] {
 		drift = append(drift, classC(active, opts.gh)...)
 	}
 	if opts.include["D"] {
