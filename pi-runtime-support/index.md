@@ -185,3 +185,16 @@ Cycle 1 closed the missing offline validation gaps from the first validation rep
 ### Summary
 
 Validation result: REJECTED. The offline contract gaps are now closed and the worktree passes `go test ./...` and `go test ./... -race`, but AC-2 still requires a live Pi subagent smoke with isolated `PI_CODING_AGENT_DIR`/session dir and copied auth. The next bounce should implement that live runner or explicitly rescope AC-2 if the captain wants this split to land as an offline-only foundation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add the live-gated Pi subagent smoke harness for AC-2.
+  Evidence: code commit `4715da1e` adds `TestLivePiSubagentEnsignSmoke` under `internal/ensigncycle` with `//go:build live`. The harness creates temp `PI_CODING_AGENT_DIR`, temp `PI_CODING_AGENT_SESSION_DIR`/`--session-dir`, a clean `HOME`, copies existing `~/.pi/agent/auth.json` into the isolated Pi home, loads the local `pi-subagents` extension/skill plus local Spacedock skills, and launches Pi with a parent prompt that dispatches one ensign through `subagent(...)`.
+- DONE: Prove the live smoke against a split-root workflow with durable state evidence.
+  Evidence: `go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle -v` passed. The test creates a temp workflow README with `state: .spacedock-state`, a folder-form entity in the state checkout, requires the worker to append the exact marker `PI-LIVE-SUBAGENT-ENSIGN-SMOKE`, and asserts the entity body contains the stage report plus the state-checkout git log contains the worker commit `ensign: pi live smoke`.
+- DONE: Keep the proof Pi-native and independent of transcript prose.
+  Evidence: the live prompt bans Claude `Agent`, `SendMessage`, `TeamCreate`, and `TeamDelete`; the test passes or fails on process exit, entity-file content, state-checkout git log, and clean entity status rather than cheerful transcript text.
+
+### Summary
+
+Cycle 2 implements and runs the missing AC-2 live smoke. The first written live harness passed immediately, showing the product path was available once the isolated Pi home, copied OAuth credentials, explicit local `pi-subagents` extension path, local Spacedock skills, and split-root fixture were wired together. The harness was then tightened to run with a clean `HOME` so it cannot mutate or rely on global `~/.pi/agent` state beyond the copied auth file.
