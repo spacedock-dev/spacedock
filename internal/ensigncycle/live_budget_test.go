@@ -36,10 +36,16 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			be, ok := n.(*ast.BinaryExpr)
-			if !ok || be.Op != token.MUL {
+			if !ok {
 				return true
 			}
-			d, isDuration := durationOfMul(be)
+			// Evaluate the WHOLE binary expression as a duration — folding ADD/SUB
+			// composites, not just a bare MUL. `time.Minute + 30*time.Second`
+			// evaluates to 90s here; a MUL-only fold would see 30s and miss the sum
+			// (the audit-cycle-1 M3 hole). On a successful duration fold, check the
+			// total and return false so we do NOT descend and re-flag the inner MUL
+			// operands separately.
+			d, isDuration := durationOf(be)
 			if !isDuration {
 				return true
 			}
@@ -47,8 +53,29 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 				t.Errorf("%s: timeout literal %q evaluates to %s, exceeding the 60s cap (AC-1)",
 					file, exprText(fset, be), d)
 			}
-			return true
+			return false
 		})
+	}
+}
+
+// TestBudgetConstantsAreUnder60s pins the live path's budget constants to their
+// REAL evaluated values at compile time — a direct value check that complements
+// the source-AST guard above. The AST guard reasons about the SPELLING of every
+// timeout literal in the file; this asserts the actual constants the live cycle
+// uses are each ≤60s. Together they catch both an over-budget literal anywhere in
+// the source AND an over-budget VALUE on the specific constants the watcher
+// drives (e.g. a `holdConfirmDefault = time.Minute + 30*time.Second` = 90s — the
+// audit-cycle-1 M3 hole — reds here directly regardless of how it is spelled).
+func TestBudgetConstantsAreUnder60s(t *testing.T) {
+	const budgetCap = 60 * time.Second
+	for name, d := range map[string]time.Duration{
+		"quietBudgetDefault": quietBudgetDefault,
+		"exitBudgetDefault":  exitBudgetDefault,
+		"holdConfirmDefault": holdConfirmDefault,
+	} {
+		if d > budgetCap {
+			t.Errorf("%s = %s exceeds the 60s cap (AC-1)", name, d)
+		}
 	}
 }
 
@@ -74,16 +101,43 @@ func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 	})
 }
 
-// durationOfMul evaluates a `N * time.Unit` (or `time.Unit * N`) binary
-// expression to its real time.Duration. Returns isDuration=false when the
-// expression is not an int-times-time.Unit shape, so non-duration multiplications
-// (and the package's int arithmetic) are skipped rather than mis-flagged.
-func durationOfMul(be *ast.BinaryExpr) (time.Duration, bool) {
-	if n, unit, ok := intAndUnit(be.X, be.Y); ok {
-		return time.Duration(n) * unit, true
-	}
-	if n, unit, ok := intAndUnit(be.Y, be.X); ok {
-		return time.Duration(n) * unit, true
+// durationOf evaluates an expression to its real time.Duration, folding the
+// COMPOSITE forms a timeout literal can take: a bare `time.Unit` selector, a
+// `N * time.Unit` (or `time.Unit * N`) multiplication, an ADD/SUB of two
+// duration sub-expressions (so `time.Minute + 30*time.Second` folds to 90s — the
+// audit-cycle-1 M3 hole a MUL-only fold missed), and a parenthesized duration.
+// Returns isDuration=false for anything that is not a pure duration expression,
+// so the package's int arithmetic is skipped rather than mis-flagged.
+func durationOf(e ast.Expr) (time.Duration, bool) {
+	switch ex := e.(type) {
+	case *ast.ParenExpr:
+		return durationOf(ex.X)
+	case *ast.SelectorExpr:
+		// A bare `time.Second` etc. is a 1× duration.
+		return timeUnitDuration(ex)
+	case *ast.BinaryExpr:
+		switch ex.Op {
+		case token.MUL:
+			if n, unit, ok := intAndUnit(ex.X, ex.Y); ok {
+				return time.Duration(n) * unit, true
+			}
+			if n, unit, ok := intAndUnit(ex.Y, ex.X); ok {
+				return time.Duration(n) * unit, true
+			}
+			return 0, false
+		case token.ADD, token.SUB:
+			// A duration ADD/SUB requires BOTH operands to be durations; otherwise
+			// it is not a duration expression (e.g. `len(x) + 1`).
+			lhs, lok := durationOf(ex.X)
+			rhs, rok := durationOf(ex.Y)
+			if !lok || !rok {
+				return 0, false
+			}
+			if ex.Op == token.ADD {
+				return lhs + rhs, true
+			}
+			return lhs - rhs, true
+		}
 	}
 	return 0, false
 }

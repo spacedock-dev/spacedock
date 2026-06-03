@@ -75,6 +75,22 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 		"residual cleanup at process death",                  // disproven FO self-exit
 		"the fo exits the process",                           // disproven FO self-exit
 		"the fo must keep the settle-then-`teamdelete` loop", // unbounded retry obligation
+		// audit-cycle-1 near-synonym re-introductions (M1): an unbounded
+		// retry-to-success that swaps the exact tokens for a "rounds-until-clears"
+		// paraphrase. These are the common rewordings that re-establish the
+		// retry-to-success the runtime CANNOT satisfy.
+		"continues issuing",  // "continues issuing settle-then-TeamDelete rounds…"
+		"rounds until",       // "…rounds until the registry finally clears"
+		"until the registry", // "…until the registry clears/settles/empties"
+		"finally clears",     // "…until the registry finally clears"
+		// audit-cycle-1 FO-self-exit re-introductions (M2): the FO killing its own
+		// process group / runtime and demoting the launcher to a "backstop".
+		"kill -9",            // self-kill via Bash
+		"$ppid",              // kill the parent process (the harness)
+		"terminates its own", // "the FO terminates its own runtime…"
+		"the fo terminates",  // FO-driven exit
+		"launcher is only a", // "…the launcher is only a backstop" (demotes launcher-owned exit)
+		"backstop",           // the launcher relegated to a backstop
 	}
 
 	// Shared core, step 10 in Merge and Cleanup. Scope to step 10 ALONE — the
@@ -91,14 +107,28 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 		t.Fatal("FO shared core missing Merge-and-Cleanup step 10 (terminal teardown)")
 	}
 	step10Behavioral := stripDelegationTail(step10)
+	// The verbatim marker must be present (asserted directly — it is NOT masked
+	// for its own presence check); the behavioral required phrases below are
+	// checked with the marker MASKED so a marker-substring cannot satisfy them.
+	if !strings.Contains(step10Behavioral, terminalTeardownMarker) {
+		t.Errorf("shared-core step 10 missing the verbatim terminal-status marker %q", terminalTeardownMarker)
+	}
 	assertDirectionalMandate(t, "shared-core step 10", step10Behavioral, negatingPhrases,
 		[]string{
 			"bounded best-effort",          // the bounded framing (not retry-to-success)
 			"attempt cap",                  // bounded fast retries
 			"wait a short settle interval", // inter-attempt settle (load-bearing, not delegated)
-			"then hold",                    // STOP-then-hold after the bound (no further teardown calls)
-			terminalTeardownMarker,         // the verbatim terminal-status marker (co-designed with the oracle)
-			"launcher",                     // the process exit is the launcher's responsibility
+			// STOP/hold semantics that the marker substring CANNOT satisfy (M1 fix):
+			// the FO STOPS the attempts and makes NO FURTHER teardown calls. A
+			// near-synonym retry-to-success ("continues issuing … rounds until …
+			// clears") cannot keep these.
+			"STOPS the teardown attempts",    // the bound terminates the attempts
+			"no further teardown tool calls", // the hold: nothing more is issued
+			// Launcher-owned exit, distinct from the marker's "for launcher." (M2 fix):
+			// the prose must assert the launcher owns the exit AND it is not the FO's.
+			// A `kill -9 $PPID` self-exit that demotes the launcher to a "backstop"
+			// cannot keep this.
+			"launcher's** responsibility, not the FO's", // launcher owns the exit, not the FO
 		})
 
 	// Claude runtime: the Awaiting-Completion section already bans retrying
@@ -113,16 +143,26 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 	if teardown == "" {
 		t.Fatal("Claude FO runtime missing the `## Terminal Team Teardown` section (the bounded-best-effort realization of shared-core step 10)")
 	}
+	if !strings.Contains(teardown, terminalTeardownMarker) {
+		t.Errorf("Terminal Team Teardown missing the verbatim terminal-status marker %q", terminalTeardownMarker)
+	}
 	assertDirectionalMandate(t, "Terminal Team Teardown", teardown, negatingPhrases,
 		[]string{
-			"TeamDelete",           // names the call it attempts
-			"active member",        // names the race it attempts past
-			"wait for the settle",  // inter-attempt settle mandate
-			"sleep 2",              // the concrete settle
-			"attempt cap",          // bounded attempts
-			"hold",                 // STOP-then-hold after the bound
-			terminalTeardownMarker, // the verbatim terminal-status marker
-			"launcher",             // launcher-owned exit
+			"TeamDelete",          // names the call it attempts
+			"active member",       // names the race it attempts past
+			"wait for the settle", // inter-attempt settle mandate
+			"sleep 2",             // the concrete settle
+			"attempt cap",         // bounded attempts
+			// STOP/hold semantics the marker substring CANNOT satisfy (M1 fix): on
+			// cap-exhaustion the FO STOPS calling TeamDelete and makes NO FURTHER
+			// teardown calls. A "continues issuing … rounds until … clears"
+			// near-synonym cannot keep these.
+			"STOPS calling",                  // the bound terminates the TeamDelete calls
+			"no further teardown tool calls", // the hold: nothing more is issued
+			// Launcher-owned exit, distinct from the marker's "for launcher." (M2 fix):
+			// the prose must explicitly forbid an FO self-exit. A `kill -9 $PPID`
+			// self-exit cannot keep "never an FO self-exit".
+			"never an FO self-exit", // the exit is the launcher's, never the FO's
 		})
 }
 
@@ -131,6 +171,16 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 // two-sided check is what makes the lint inversion-resistant: an inverted edit
 // either introduces a negating phrase or drops a positive one (or both), so it
 // cannot pass by merely preserving grep tokens.
+//
+// Required phrases are checked against the region with the terminal-status MARKER
+// MASKED OUT (markerStripped). The marker string itself contains the substrings
+// "holding" and "for launcher.", so a naive `strings.Contains(region, "hold")`
+// or `…, "launcher")` is satisfied by the marker MENTION alone — they add ZERO
+// discriminating power and let a gut-edit that keeps the verbatim marker but
+// guts the STOP/hold/launcher-exit BEHAVIORAL prose pass green (the audit-cycle-1
+// M1/M2 holes). Masking the marker forces the behavioral required phrases to be
+// satisfied by the actionable prose, not the sentinel. The marker's own presence
+// is asserted separately by the caller (it is a required phrase in its own right).
 func assertDirectionalMandate(t *testing.T, label, region string, negating, required []string) {
 	t.Helper()
 	lower := strings.ToLower(region)
@@ -139,9 +189,10 @@ func assertDirectionalMandate(t *testing.T, label, region string, negating, requ
 			t.Errorf("%s contains the inverted-mandate phrase %q — the terminal teardown is BOUNDED best-effort then a marker + hold, NOT retry-to-success or an FO self-exit", label, neg)
 		}
 	}
+	masked := strings.Replace(region, terminalTeardownMarker, " <marker> ", -1)
 	for _, req := range required {
-		if !strings.Contains(region, req) {
-			t.Errorf("%s missing required directional-mandate phrase %q", label, req)
+		if !strings.Contains(masked, req) {
+			t.Errorf("%s missing required directional-mandate phrase %q (checked against prose with the marker masked, so a marker-substring does not count)", label, req)
 		}
 	}
 }
@@ -208,6 +259,13 @@ func numberedStep(region string, n int) string {
 // not emit TeamDelete (retrying it during the wait phase is the original
 // premature-teardown bug). The terminal bounded-teardown clause is a separate
 // phase; this lint ensures the Awaiting-Completion ban survives the reversal.
+//
+// Semantic (not bare-substring) ban (audit-cycle-1 P2): a substring-PRESENCE
+// check on "emit `TeamDelete`" would pass an INVERTED ban ("you SHOULD emit
+// `TeamDelete` early") that keeps the token. This asserts the `emit \`TeamDelete\“
+// bullet sits under the negative "Do not:" framing AND carries its premature-
+// teardown rationale, AND forbids the affirmative re-introductions that flip a
+// ban into a directive.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	claude := vendoredSkillFiles(t)["first-officer/references/claude-first-officer-runtime.md"]
 	region := sectionAfter(claude, "## Awaiting Completion")
@@ -216,5 +274,29 @@ func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	}
 	if !strings.Contains(region, "emit `TeamDelete`") {
 		t.Error("Awaiting Completion must still ban emitting TeamDelete before the completion signal arrives")
+	}
+	// The ban is a `- emit `TeamDelete`` bullet under the "Do not:" prohibition,
+	// with the premature-teardown rationale. An inverted ban that keeps the token
+	// but flips the framing drops one of these.
+	if !strings.Contains(region, "Do not:") {
+		t.Error("Awaiting Completion must keep the negative `Do not:` framing that governs the TeamDelete ban")
+	}
+	if !strings.Contains(region, "- emit `TeamDelete`") {
+		t.Error("the TeamDelete ban must remain a `- emit `TeamDelete`` bullet under the `Do not:` list, not a free-standing (potentially affirmative) mention")
+	}
+	if !strings.Contains(region, "tearing down is premature") {
+		t.Error("the TeamDelete ban must keep its premature-teardown rationale (the semantic that pins it as a ban, not a directive)")
+	}
+	// Forbid the affirmative re-introductions that flip the ban into a directive.
+	lower := strings.ToLower(region)
+	for _, affirm := range []string{
+		"should emit `teamdelete`",
+		"you may emit `teamdelete`",
+		"must emit `teamdelete`",
+		"emit `teamdelete` early",
+	} {
+		if strings.Contains(lower, affirm) {
+			t.Errorf("Awaiting Completion contains the affirmative phrase %q — the pre-completion TeamDelete ban was inverted into a directive", affirm)
+		}
 	}
 }
