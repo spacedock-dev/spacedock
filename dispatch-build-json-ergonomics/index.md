@@ -28,6 +28,7 @@ Two coupled gaps — one binary-ergonomics, one contract-ergonomics:
 1. **Binary: an ergonomic input form** so no hand-escaped JSON blob is required — e.g. flags (`--stage`, `--entity`, `--checklist-file FILE`, `--scope-notes-file FILE`) or reading the checklist as a newline-delimited file, so a backtick is never shell-escaped. (This is the "dispatch-build JSON robustness" candidate the roadmap-readiness audit surfaced.) Keep stdin-JSON as a supported form; add the ergonomic one.
 2. **Binary: fail loud on malformed JSON** (clear error naming the offending field), not a partial/silent build.
 3. **Contract: fix the documented pattern.** The FO runtime dispatch adapter should author the JSON via the Write tool to a file, then `cat file | dispatch build` (or use the new flag form) — NOT inline `echo '<json>'`. The break-glass fallback example should follow suit. A documented clean path beats a documented footgun.
+4. **Binary: expose the schema.** `spacedock dispatch build --print-schema` emits the canonical dispatch-spec JSON Schema, and `--validate-only FILE` checks a spec without building — so the schema lives where the contract lives, and any authoring path (Write tool, editor, a future structured-output flow) validates against it. **Rejected alternative — a per-dispatch StructuredOutput tool call:** StructuredOutput is a Workflow-subagent-only mechanism (the `schema:` option on `agent()`), not callable from the FO main loop, and it returns the validated object to the caller's context rather than to a file; it would add agent-spawn overhead over the Write tool with no safety the binary's own ingest-validation doesn't already provide.
 
 ## Out of scope
 
@@ -39,8 +40,8 @@ Two coupled gaps — one binary-ergonomics, one contract-ergonomics:
 **AC-1 — `dispatch build` accepts per-dispatch inputs without a hand-escaped JSON blob.**
 Verified by: a Go test driving the new input form (flags or `--checklist-file`) with a checklist item containing a backtick and a `$`-var, asserting the emitted dispatch spec carries the item verbatim.
 
-**AC-2 — Malformed JSON input fails loud.**
-Verified by: a test feeding truncated/invalid JSON and asserting a non-zero exit with an error naming the problem (not a partial build).
+**AC-2 — Malformed JSON input fails loud, and the dispatch-spec schema is inspectable.**
+Verified by: a test feeding truncated/invalid JSON and asserting a non-zero exit with an error naming the problem (not a partial build); plus `spacedock dispatch build --validate-only FILE` returning 0 on a valid spec and non-zero (naming the violation) on an invalid one, and `--print-schema` emitting the canonical `schema_version: 2` JSON Schema so any authoring tool validates against the same contract the build path enforces.
 
 **AC-3 — The FO runtime dispatch-adapter prose documents the Write-to-file (or flag) path, not inline `echo '<json>'`.**
 Verified by: a presence/absence oracle over `claude-first-officer-runtime.md` confirming the dispatch example uses file/flag authoring and no longer demonstrates inline-echo JSON as the primary path.
