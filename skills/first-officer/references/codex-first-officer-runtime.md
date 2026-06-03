@@ -15,9 +15,25 @@ unless the current task explicitly depends on the previous worker's context.
 ## Dispatch
 
 Use `spawn_agent` for initial worker dispatch. Assemble the dispatch input with
-`spacedock dispatch build` and pass `host: "codex"` in the JSON envelope. Forward
-the emitted prompt exactly as returned; for Codex it is a read-dispatch-file
-prompt and must not be rewritten into `Skill(skill=...)`.
+`spacedock dispatch build`; Codex host is normally derived from
+`CODEX_THREAD_ID`, so pass `--host codex` only for deliberate tests or cross-host
+tooling. Write checklist, scope notes, and feedback context into files, then use
+the flag/file form:
+
+```
+spacedock dispatch build \
+  --workflow-dir {workflow_dir} \
+  --entity-path {entity_file_path} \
+  --stage {target_stage_name} \
+  --checklist-file {checklist_file} \
+  [--scope-notes-file {scope_notes_file}] \
+  [--feedback-context-file {feedback_context_file}] \
+  [--bare-mode] \
+  [--feedback-reflow]
+```
+
+Forward the emitted prompt exactly as returned; for Codex it is a
+read-dispatch-file prompt. The FO must never forward a prompt containing `Skill(skill="spacedock:ensign")` to a Codex worker.
 
 Codex has no team registry, so there is no `team_name` lifecycle to create,
 recover, or tear down. Use Codex task names and mailbox notifications as the

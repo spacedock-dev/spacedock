@@ -25,11 +25,15 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 
 	switch args[0] {
 	case "build":
-		workflowDir, code := requireFlag(args[1:], "--workflow-dir", stderr)
+		opts, code := parseBuildOptions(args[1:], stderr)
 		if code != 0 {
 			return code
 		}
-		return runBuild(probe, workflowDir, stdin, stdout, stderr)
+		if !opts.PrintSchema && opts.ValidateOnly == "" && opts.WorkflowDir == "" {
+			fmt.Fprintln(stderr, "error: dispatch build requires --workflow-dir")
+			return 2
+		}
+		return runBuild(probe, opts, stdin, stdout, stderr)
 	case "show-stage-def":
 		workflowDir, stage, code := requireStageFlags(args[1:], stderr)
 		if code != 0 {
@@ -69,6 +73,87 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 		fmt.Fprintf(stderr, "error: unknown dispatch subcommand: %s\n", args[0])
 		printUsage(stderr)
 		return 2
+	}
+}
+
+type buildOptions struct {
+	WorkflowDir         string
+	Host                string
+	EntityPath          string
+	Stage               string
+	ChecklistFile       string
+	ScopeNotesFile      string
+	FeedbackContextFile string
+	TeamName            string
+	BareMode            bool
+	FeedbackReflow      bool
+	PrintSchema         bool
+	ValidateOnly        string
+	requestFlagProvided bool
+}
+
+func (o buildOptions) hasRequestFlags() bool {
+	return o.requestFlagProvided
+}
+
+func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
+	var opts buildOptions
+	valueFlags := map[string]*string{
+		"--workflow-dir":          &opts.WorkflowDir,
+		"--host":                  &opts.Host,
+		"--entity-path":           &opts.EntityPath,
+		"--stage":                 &opts.Stage,
+		"--checklist-file":        &opts.ChecklistFile,
+		"--scope-notes-file":      &opts.ScopeNotesFile,
+		"--feedback-context-file": &opts.FeedbackContextFile,
+		"--team-name":             &opts.TeamName,
+		"--validate-only":         &opts.ValidateOnly,
+	}
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if eq := indexByte(a, '='); eq > 0 {
+			name := a[:eq]
+			if dst, ok := valueFlags[name]; ok {
+				*dst = a[eq+1:]
+				if isBuildRequestFlag(name) {
+					opts.requestFlagProvided = true
+				}
+			}
+			continue
+		}
+		if dst, ok := valueFlags[a]; ok {
+			if i+1 >= len(args) {
+				fmt.Fprintf(stderr, "error: dispatch build requires value for %s\n", a)
+				return opts, 2
+			}
+			*dst = args[i+1]
+			if isBuildRequestFlag(a) {
+				opts.requestFlagProvided = true
+			}
+			i++
+			continue
+		}
+		switch a {
+		case "--bare-mode":
+			opts.BareMode = true
+			opts.requestFlagProvided = true
+		case "--feedback-reflow":
+			opts.FeedbackReflow = true
+			opts.requestFlagProvided = true
+		case "--print-schema":
+			opts.PrintSchema = true
+		}
+	}
+	return opts, 0
+}
+
+func isBuildRequestFlag(name string) bool {
+	switch name {
+	case "--entity-path", "--stage", "--checklist-file", "--scope-notes-file",
+		"--feedback-context-file", "--team-name":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -144,6 +229,9 @@ func printUsage(w io.Writer) {
 
 Usage:
   spacedock dispatch build --workflow-dir DIR        (stdin JSON -> stdout JSON)
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [--host claude|codex]
+  spacedock dispatch build --print-schema
+  spacedock dispatch build --validate-only FILE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include A,B,C,D,E]
 `)

@@ -29,6 +29,7 @@ func vendoredSkillFiles(t *testing.T) map[string]string {
 	rel := []string{
 		"first-officer/references/first-officer-shared-core.md",
 		"first-officer/references/claude-first-officer-runtime.md",
+		"first-officer/references/codex-first-officer-runtime.md",
 		"ensign/references/ensign-shared-core.md",
 	}
 	out := make(map[string]string, len(rel))
@@ -101,6 +102,40 @@ func TestNoPRMergeOrModBehaviorIntroduced(t *testing.T) {
 				t.Errorf("%s introduces a PR-merge invocation %q (out of scope per AC-6)", name, m)
 			}
 		}
+	}
+}
+
+// TestFirstOfficerDispatchDocsUseFlagFileMode locks the dispatch-build
+// ergonomics contract: the FO runtime docs must teach file-backed dispatch input
+// and runtime-derived host selection, not inline shell JSON.
+func TestFirstOfficerDispatchDocsUseFlagFileMode(t *testing.T) {
+	files := vendoredSkillFiles(t)
+	claude := files["first-officer/references/claude-first-officer-runtime.md"]
+	codex := files["first-officer/references/codex-first-officer-runtime.md"]
+
+	for name, content := range map[string]string{
+		"claude-first-officer-runtime.md": claude,
+		"codex-first-officer-runtime.md":  codex,
+	} {
+		for _, want := range []string{"--entity-path", "--stage", "--checklist-file"} {
+			if !strings.Contains(content, want) {
+				t.Errorf("%s primary dispatch docs do not mention %s", name, want)
+			}
+		}
+		for _, banned := range []string{"echo '<json>' | spacedock dispatch build", "python3 <<", "PYEOF"} {
+			if strings.Contains(content, banned) {
+				t.Errorf("%s still teaches fragile inline JSON pattern %q", name, banned)
+			}
+		}
+	}
+	if !strings.Contains(claude, "CLAUDECODE") {
+		t.Errorf("Claude FO runtime does not document CLAUDECODE host derivation")
+	}
+	if !strings.Contains(codex, "CODEX_THREAD_ID") {
+		t.Errorf("Codex FO runtime does not document CODEX_THREAD_ID host derivation")
+	}
+	if !strings.Contains(codex, "must never forward a prompt containing `Skill(skill=\"spacedock:ensign\")`") {
+		t.Errorf("Codex FO runtime lacks the explicit no-Claude-shaped-prompt guard")
 	}
 }
 

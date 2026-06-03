@@ -56,37 +56,166 @@ func buildError(stderr io.Writer, code int, format string, a ...any) int {
 	return code
 }
 
-// runBuild reads a dispatch request as JSON on stdin and assembles the dispatch
-// envelope on stdout plus the dispatch-file body written to a deterministic
-// path. It always emits the show-stage-def fetch line and appends the
-// show-standing fetch line when the workflow declares at least one standing
-// teammate. Matches cmd_build.
-func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Reader, stdout, stderr io.Writer) int {
-	raw, err := io.ReadAll(stdin)
-	if err != nil {
-		return buildError(stderr, 1, "failed to read stdin: %s", err)
+// runBuild reads a dispatch request from stdin JSON or the flag/file input mode
+// and assembles the dispatch envelope on stdout plus the dispatch-file body
+// written to a deterministic path. It always emits the show-stage-def fetch line
+// and appends the show-standing fetch line when the workflow declares at least
+// one standing teammate.
+func runBuild(probe claudeteam.TeamStateProbe, opts buildOptions, stdin io.Reader, stdout, stderr io.Writer) int {
+	if opts.PrintSchema {
+		return emitBuildSchema(stdout)
+	}
+
+	fields, code := loadBuildFields(opts, stdin, stderr)
+	if code != 0 {
+		return code
+	}
+
+	return runBuildFields(probe, opts, fields, stdout, stderr)
+}
+
+func loadBuildFields(opts buildOptions, stdin io.Reader, stderr io.Writer) (map[string]json.RawMessage, int) {
+	switch {
+	case opts.ValidateOnly != "":
+		raw, err := os.ReadFile(opts.ValidateOnly)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read validate-only file %q: %s", opts.ValidateOnly, err)
+		}
+		return decodeBuildFields(raw, stderr)
+	case opts.hasRequestFlags():
+		return fieldsFromBuildFlags(opts, stderr)
+	default:
+		raw, err := io.ReadAll(stdin)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read stdin: %s", err)
+		}
+		return decodeBuildFields(raw, stderr)
+	}
+}
+
+func decodeBuildFields(raw []byte, stderr io.Writer) (map[string]json.RawMessage, int) {
+	if len(raw) == 0 {
+		raw = []byte{}
 	}
 
 	// Classify the top-level value the way the oracle does (json.loads then
-	// isinstance(inp, dict)): invalid JSON → "invalid JSON on stdin"; a valid
-	// non-object top-level (null, array, scalar) → "stdin must be a JSON object".
-	// A bare-map decode cannot tell these apart — decoding JSON null into a map
+	// isinstance(inp, dict)): invalid JSON -> "invalid JSON on stdin"; a valid
+	// non-object top-level (null, array, scalar) -> "stdin must be a JSON object".
+	// A bare-map decode cannot tell these apart -- decoding JSON null into a map
 	// succeeds with a nil map, masking the non-object case as a missing field.
 	var top interface{}
 	if err := json.Unmarshal(raw, &top); err != nil {
-		return buildError(stderr, 1, "invalid JSON on stdin: %s", err)
+		return nil, buildError(stderr, 1, "invalid JSON on stdin: %s", err)
 	}
 	if _, ok := top.(map[string]interface{}); !ok {
-		return buildError(stderr, 1, "stdin must be a JSON object")
+		return nil, buildError(stderr, 1, "stdin must be a JSON object")
 	}
 
 	// Distinguish present-but-null from absent (the required-field rule fires for
 	// both), so decode into a raw-message map for typed field access.
 	var fields map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &fields); err != nil {
-		return buildError(stderr, 1, "invalid JSON on stdin: %s", err)
+		return nil, buildError(stderr, 1, "invalid JSON on stdin: %s", err)
+	}
+	return fields, 0
+}
+
+func fieldsFromBuildFlags(opts buildOptions, stderr io.Writer) (map[string]json.RawMessage, int) {
+	if opts.EntityPath == "" || opts.Stage == "" || opts.ChecklistFile == "" {
+		return nil, buildError(stderr, 2, "flag/file input requires --entity-path, --stage, and --checklist-file")
+	}
+	checklist, err := readChecklistFile(opts.ChecklistFile)
+	if err != nil {
+		return nil, buildError(stderr, 1, "failed to read checklist file %q: %s", opts.ChecklistFile, err)
+	}
+	fields := map[string]json.RawMessage{
+		"schema_version": rawJSON(schemaVersion),
+		"entity_path":    rawJSON(opts.EntityPath),
+		"workflow_dir":   rawJSON(opts.WorkflowDir),
+		"stage":          rawJSON(opts.Stage),
+		"checklist":      rawJSON(checklist),
+		"bare_mode":      rawJSON(opts.BareMode),
+	}
+	if opts.TeamName != "" {
+		fields["team_name"] = rawJSON(opts.TeamName)
+	}
+	if opts.ScopeNotesFile != "" {
+		scopeNotes, err := os.ReadFile(opts.ScopeNotesFile)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read scope-notes file %q: %s", opts.ScopeNotesFile, err)
+		}
+		fields["scope_notes"] = rawJSON(string(scopeNotes))
+	}
+	if opts.FeedbackContextFile != "" {
+		feedbackContext, err := os.ReadFile(opts.FeedbackContextFile)
+		if err != nil {
+			return nil, buildError(stderr, 1, "failed to read feedback-context file %q: %s", opts.FeedbackContextFile, err)
+		}
+		fields["feedback_context"] = rawJSON(string(feedbackContext))
+	}
+	if opts.FeedbackReflow {
+		fields["is_feedback_reflow"] = rawJSON(true)
+	}
+	return fields, 0
+}
+
+func readChecklistFile(path string) ([]string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, line := range strings.Split(string(raw), "\n") {
+		line = strings.TrimSuffix(line, "\r")
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		out = append(out, line)
+	}
+	return out, nil
+}
+
+func rawJSON(v any) json.RawMessage {
+	raw, _ := json.Marshal(v)
+	return raw
+}
+
+func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (string, error) {
+	if flagHost != "" && !validBuildHost(flagHost) {
+		return "", fmt.Errorf("unsupported host %q (want claude or codex)", flagHost)
+	}
+	if jsonHost != "" && !validBuildHost(jsonHost) {
+		return "", fmt.Errorf("unsupported host %q (want claude or codex)", jsonHost)
+	}
+	if flagHost != "" && jsonHost != "" && flagHost != jsonHost {
+		return "", fmt.Errorf("conflicting explicit host sources: --host=%q, JSON host=%q", flagHost, jsonHost)
+	}
+	if flagHost != "" {
+		return flagHost, nil
+	}
+	if jsonHost != "" {
+		return jsonHost, nil
 	}
 
+	codex := getenv("CODEX_THREAD_ID") != ""
+	claude := getenv("CLAUDECODE") != ""
+	if codex && claude {
+		return "", fmt.Errorf("ambiguous runtime host sources: CODEX_THREAD_ID and CLAUDECODE are both set; pass --host claude or --host codex")
+	}
+	if codex {
+		return "codex", nil
+	}
+	if claude {
+		return "claude", nil
+	}
+	return "", fmt.Errorf("missing host source: pass --host, set JSON host, or run under CODEX_THREAD_ID or CLAUDECODE")
+}
+
+func validBuildHost(host string) bool {
+	return host == "claude" || host == "codex"
+}
+
+func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
 	// Rule 1: Required fields present and non-null.
 	for _, field := range buildRequiredFields {
 		v, ok := fields[field]
@@ -105,16 +234,17 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	}
 
 	entityPath := jsonString(fields["entity_path"])
+	workflowDir := opts.WorkflowDir
+	if workflowDir == "" {
+		workflowDir = jsonString(fields["workflow_dir"])
+	}
 	stage := jsonString(fields["stage"])
 	teamName := optString(fields, "team_name")
 	feedbackContext := optString(fields, "feedback_context")
 	scopeNotes := optString(fields, "scope_notes")
-	host := optString(fields, "host")
-	if host == "" {
-		host = "claude"
-	}
-	if host != "claude" && host != "codex" {
-		return buildError(stderr, 1, "unsupported host %q (want claude or codex)", host)
+	host, err := resolveBuildHost(opts.Host, optString(fields, "host"), os.Getenv)
+	if err != nil {
+		return buildError(stderr, 1, "%s", err)
 	}
 	bareMode := optBool(fields, "bare_mode")
 	isFeedbackReflow := optBool(fields, "is_feedback_reflow")
@@ -263,8 +393,9 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 			"dispatching to feedback target stage '%s' but feedback_context is missing", stage)
 	}
 
-	// Rule 8: Team name non-empty in team mode.
-	if !bareMode && teamName == "" {
+	// Rule 8: Team name non-empty in Claude team mode. Codex has no team
+	// registry, so non-bare Codex dispatches keep a task name and omit team_name.
+	if !bareMode && host == "claude" && teamName == "" {
 		return buildError(stderr, 1, "team mode requires team_name")
 	}
 
@@ -399,8 +530,8 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	}
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
-	// 10. Completion signal (team mode only).
-	if !bareMode && teamName != "" {
+	// 10. Completion signal (Claude team mode or Codex named dispatch).
+	if !bareMode && (teamName != "" || host == "codex") {
 		entityFileRef := entityPath
 		if worktreePath != "" && !splitRoot {
 			entityFileRef = worktreeEntityPath
@@ -409,6 +540,9 @@ func runBuild(probe claudeteam.TeamStateProbe, workflowDir string, stdin io.Read
 	}
 
 	dispatchBody := strings.Join(parts, "\n")
+	if opts.ValidateOnly != "" {
+		return 0
+	}
 
 	// v2 file-pointer: write the body to a deterministic path; emit a tiny prompt
 	// the ensign Reads on first action.
@@ -545,4 +679,52 @@ func stateCommitGuidance(stateCheckout, entityPath, stateBranch string) string {
 // including its ensure_ascii escaping of any non-ASCII entity title / prompt.
 func emitBuildJSON(stdout io.Writer, out buildOutput) int {
 	return claudeteam.EmitPythonJSON(stdout, out)
+}
+
+func emitBuildSchema(stdout io.Writer) int {
+	schema := map[string]any{
+		"$schema":              "https://json-schema.org/draft/2020-12/schema",
+		"title":                "spacedock dispatch build request",
+		"type":                 "object",
+		"additionalProperties": true,
+		"required":             buildRequiredFields,
+		"properties": map[string]any{
+			"schema_version": map[string]any{
+				"const": schemaVersion,
+			},
+			"entity_path": map[string]any{
+				"type": "string",
+			},
+			"workflow_dir": map[string]any{
+				"type": "string",
+			},
+			"stage": map[string]any{
+				"type": "string",
+			},
+			"checklist": map[string]any{
+				"type":  "array",
+				"items": map[string]any{"type": "string"},
+			},
+			"team_name": map[string]any{
+				"type": []string{"string", "null"},
+			},
+			"feedback_context": map[string]any{
+				"type": []string{"string", "null"},
+			},
+			"scope_notes": map[string]any{
+				"type": []string{"string", "null"},
+			},
+			"bare_mode": map[string]any{
+				"type": "boolean",
+			},
+			"is_feedback_reflow": map[string]any{
+				"type": "boolean",
+			},
+			"host": map[string]any{
+				"type": "string",
+				"enum": []string{"claude", "codex"},
+			},
+		},
+	}
+	return claudeteam.EmitPythonJSON(stdout, schema)
 }
