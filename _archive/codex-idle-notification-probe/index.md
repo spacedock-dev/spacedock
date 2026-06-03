@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#283"
+archived: 2026-06-03T21:30:26Z
 ---
 
 Codex first-officer operation depends on knowing when `wait_agent` is required and when a worker can safely run in the background. The current adapter says the Codex completion signal is the async final-status notification in the FO mailbox and `wait_agent` is only an optional accelerator. A 2026-06-03 dogfood session confirmed a useful but subtle behavior: a no-wait probe worker completed and its notification was queued before the captain's next message. It did not fully prove that the FO is automatically re-entered while the user stays idle, because queued notification delivery and actual model wake-up are observably different.
