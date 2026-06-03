@@ -23,11 +23,12 @@ The cost signal overlaps with tests, but it is not the same contract. Token coun
 
 Add a journey metrics layer that attaches to selected tests and live journeys.
 
-1. Tests opt in by declaring a stable journey ID and metadata, for example `fresh-install-claude`, `fresh-install-codex`, `fo-startup-status`, `one-entity-ideation`, `implementation-validation-cycle`, and `codex-runtime-dispatch`.
+1. Tests opt in by declaring a stable journey ID and metadata, for example `fresh-install-claude`, `fresh-install-codex`, `fo-startup-status`, `one-entity-ideation`, `implementation-validation-cycle`, and `codex-runtime-dispatch`. Codex journey IDs are allowed in v0 only after the runner has captured a representative `codex-exec.jsonl` fixture and classified the record as `metrics_state: characterized`; they do not get budget ceilings or trend claims until a parser AC promotes them to measured records.
 2. A small `internal/journeymetrics` package owns the schema, aggregation, and budget policy. Test helpers or live harnesses write one JSON record per marked journey into a known output directory.
-3. Host-specific parsers extract cost from transcripts after the run. Start with Claude, reusing the existing usage-field knowledge in `internal/claudeteam/contextbudget.go`: assistant `usage.input_tokens`, `cache_creation_input_tokens`, and `cache_read_input_tokens`, plus tool-use and turn counts from transcript events. Add Codex only after its transcript schema is verified.
-4. CI uploads raw per-run journey records as artifacts. The release process aggregates accepted records into `journey-costs-vX.Y.Z.json` and a short markdown summary showing deltas from the prior release.
-5. Budgets are optional and coarse. By default a tracked journey records metrics and reports deltas without failing. A test may declare explicit ceilings such as `max_total_tokens` or `max_tool_calls` only for stable journeys where a budget violation should block.
+3. Host-specific parsers extract cost from transcripts after the run. Start with Claude, reusing the existing usage-field knowledge in `internal/claudeteam/contextbudget.go` and the live `internal/ensigncycle/testdata/sonnet_teamdelete_hang.stream.jsonl` shape. Claude assistant rows can be split across multiple JSONL rows with the same `message.id`; count the message-level `usage` object once per unique `message.id`, count turns by unique assistant message ID, and count tool calls by unique `tool_use.id` with per-tool names from the content block. For stream-json runs that end with a terminal `result` row, `result.usage` is the run-level token aggregate and `modelUsage` is the per-model cost/token aggregate. Do not add assistant-row usage to terminal `result.usage`; keep assistant-dedup totals only as parser diagnostics or as a fallback when the terminal result row is absent.
+4. The existing Codex live runner already writes `codex-exec.jsonl` under `live-artifacts/codex/...`. The implementation first captures a small checked-in characterization fixture from that output and asserts the fields Spacedock can rely on before any Codex token parser is considered in scope.
+5. CI uploads raw per-run journey records as artifacts. A release-tool command, for example `spacedock-release journey-costs X.Y.Z --metrics-dir <dir> --out <path>`, validates accepted records and writes `journey-costs-vX.Y.Z.json`. The release job must run that command, fail if the file is absent or empty, and publish the generated file as a release asset; documentation alone is not proof.
+6. Budgets are optional and coarse. By default a tracked journey records metrics and reports deltas without failing. A test may declare explicit ceilings such as `max_total_tokens` or `max_tool_calls` only for stable journeys where a budget violation should block.
 
 The overlap with test cases is intentional: a tracked journey is still a normal test or live harness that proves behavior. The metrics layer observes that run and emits cost facts. Most unit tests stay untracked.
 
@@ -36,7 +37,7 @@ The overlap with test cases is intentional: a tracked journey is still a normal 
 - Storing raw transcripts in release assets. CI may upload transcripts as temporary artifacts for diagnosis, but release ledgers contain aggregate counts and metadata only.
 - Exact token-count golden tests. The ledger compares trends and optional ceilings, not byte-for-byte cost totals.
 - Replacing `spacedock status`, `dispatch context-budget`, or existing live E2E pass/fail logic.
-- Codex transcript parsing before the actual Codex transcript schema is exercised and recorded.
+- Codex token-cost parsing before a captured `codex-exec.jsonl` fixture proves the schema fields to consume.
 
 ## Acceptance criteria
 
@@ -45,24 +46,28 @@ Each AC names an end-state property and a check outside this task body that can 
 **AC-1 - Selected tests and live harnesses can opt into journey cost tracking without changing their behavioral assertions.**
 Verified by: Go tests for `internal/journeymetrics` register at least two fake journeys, one ordinary unit-style journey and one live-harness-style journey, and assert that both still report behavior pass/fail independently from metrics emission.
 
-**AC-2 - The Claude journey parser extracts turns, tool calls, and token usage from transcript fixtures.**
-Verified by: fixture-based Go tests over representative Claude JSONL transcript snippets assert total turns, total tool calls, tool-call counts by name, input tokens, cache creation tokens, cache read tokens, and total tokens. The fixtures include at least one assistant entry with usage and one tool-use event.
+**AC-2 - The Claude journey parser extracts turns, tool calls, terminal usage, and per-model usage without double-counting split assistant rows.**
+Verified by: fixture-based Go tests over representative Claude JSONL transcript snippets assert total turns, total tool calls, tool-call counts by name, input tokens, output tokens, cache creation tokens, cache read tokens, total tokens, total cost, and per-model `modelUsage`. The fixtures include split assistant rows that share the same `message.id` but carry repeated `message.usage`; the expected totals count that `usage` once for assistant diagnostics and use terminal `result.usage` as the run aggregate when present. A second fixture without a terminal result asserts the assistant-dedup fallback path.
 
-**AC-3 - Release journey metrics serialize to a stable, versioned ledger schema.**
+**AC-3 - Codex v0 journey coverage is characterization-first, not an unverified cost claim.**
+Verified by: a checked-in `codex-exec.jsonl` fixture captured from `TestLiveCodexSharedScenarios` or the existing runner shape is parsed by a characterization test that records the stable event kinds and fields available for journey attribution. The test asserts that Codex journey IDs serialize with `metrics_state: characterized` until a later parser AC supplies token totals; budget policy rejects Codex token ceilings while that state is active.
+
+**AC-4 - Release journey metrics serialize to a stable, versioned ledger schema.**
 Verified by: a golden-file Go test feeds multiple journey records to the aggregator and asserts the resulting `journey-costs.json` contains `schema_version`, release/version metadata, host/model metadata, outcome, duration, turns, tool calls, token totals, and per-tool counts.
 
-**AC-4 - The release/live CI path preserves journey metrics as artifacts.**
-Verified by: a test or workflow-lint check confirms `.github/workflows/runtime-live-e2e.yml` uploads the journey metrics output directory, and release documentation names the release asset `journey-costs-vX.Y.Z.json`.
+**AC-5 - The release/live CI path preserves journey metrics as artifacts and produces the release ledger through a checked release-tool path.**
+Verified by: tests for `cmd/spacedock-release journey-costs` feed fixture journey records and assert it writes `journey-costs-vX.Y.Z.json`, rejects empty accepted input, and fails on an output filename that does not match the release version. A workflow check parses `.github/workflows/runtime-live-e2e.yml` and `.github/workflows/release.yml` to assert the live job uploads the metrics directory, the release job runs the journey-cost builder before publishing, and the generated JSON path is included in the release assets.
 
-**AC-5 - Cost budgets are explicit and coarse, not hidden golden values.**
+**AC-6 - Cost budgets are explicit and coarse, not hidden golden values.**
 Verified by: Go tests over the budget policy assert that a journey with no budget never fails from cost drift, a journey with `max_total_tokens` fails or reports the configured violation when exceeded, and exact token equality is not required anywhere.
 
 ## Test plan
 
 - Unit tests for the schema, aggregator, and optional budget policy in `internal/journeymetrics`.
-- Fixture tests for Claude transcript parsing, using small checked-in JSONL snippets rather than live host output.
-- A workflow or release-doc check that the live E2E job uploads journey metric files and release docs describe the versioned asset.
-- No live Codex parser test until a Codex transcript fixture is captured and its schema is understood.
+- Fixture tests for Claude transcript parsing, using small checked-in JSONL snippets. Include a split-row same-`message.id` case, a terminal `result.usage`/`modelUsage` case, and a no-terminal-result fallback case.
+- A Codex characterization fixture test over captured `codex-exec.jsonl` output. This verifies the v0 schema surface and marks Codex records characterized, not measured, until a parser is added.
+- Release-tool tests for `cmd/spacedock-release journey-costs`, plus a workflow check that the live E2E job uploads metrics and the release job builds and publishes `journey-costs-vX.Y.Z.json`.
+- No Codex token parser or Codex budget gate until the characterization fixture proves the stable fields to consume.
 
 ## Stage Report: ideation
 
@@ -76,3 +81,16 @@ Verified by: Go tests over the budget policy assert that a journey with no budge
 ### Summary
 
 Designed a release journey cost ledger that reuses selected tests as measurement points without making token counts brittle test oracles. The implementation starts with a small metrics package, Claude transcript fixtures, JSON aggregation, CI artifact upload, and optional explicit budgets.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Specify Claude transcript parsing so split assistant rows with the same message id do not double-count `usage`, and terminal `result.usage` / `modelUsage` handling is explicit.
+  Proposed approach item 3 and AC-2 now pin same-`message.id` dedupe, terminal `result.usage` as the run aggregate, and `modelUsage` as the per-model aggregate.
+- DONE: Resolve the Codex v0 scope: either add a captured `codex-exec.jsonl` characterization AC or remove Codex journey IDs from the release-ledger claim.
+  Proposed approach item 4 and AC-3 add the captured Codex characterization fixture path; Codex records stay `metrics_state: characterized` until token parsing is proven.
+- DONE: Strengthen release proof so `journey-costs-vX.Y.Z.json` is produced by a release-tool/job check, not only uploaded or mentioned in docs.
+  Proposed approach item 5 and AC-5 require `spacedock-release journey-costs` plus a release-workflow check that builds and publishes the generated JSON asset.
+
+### Summary
+
+Reworked the ideation gate findings without changing the frontmatter or touching sibling entities. The spec now separates Claude measured parsing, Codex v0 characterization, and release-ledger production through a concrete release-tool path.
