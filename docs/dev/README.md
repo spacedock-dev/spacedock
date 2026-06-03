@@ -147,6 +147,8 @@ spacedock status --workflow-dir docs/dev --next
 
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
+See [`../runtime-support.md`](../runtime-support.md) for how to add a new runtime host, including the "assume it already works" prompt and the exact Pi `pi-subagents` live-smoke mechanism used to manifest runtime support from first-contact setup friction.
+
 A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, two per-host runner adapters (Claude and Codex) implementing the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
 
 ### Shared runtime scenarios
