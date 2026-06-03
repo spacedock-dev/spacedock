@@ -10,6 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-require-external-proof-guard
 issue:
 mod-block: merge:pr-merge
+pr: "#277"
 ---
 
 **What this is for (plain).** Today nothing stops a task from being marked finished when its "proof"
