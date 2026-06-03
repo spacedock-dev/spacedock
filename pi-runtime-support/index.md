@@ -168,3 +168,20 @@ Validation result: REJECTED. The implementation commits `f935a7b2` and `672d5ba6
 ### Summary
 
 Cycle 1 closed the missing offline validation gaps from the first validation report: pi-agent-teams has a concrete action adapter contract, Pi worker reuse has epoch-scoped stale-completion protection, and Pi dispatch now has split-root path coverage. The remaining high-risk gap is AC-2's live isolated-home `pi-subagents` smoke.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: AC-1 Pi dispatch uses a Pi-native tool contract instead of Claude-compatible tool names.
+  Evidence: `go test ./internal/dispatch` passes, including `TestBuildPiHostPromptShape`.
+- FAILED: AC-2 The default Pi ensign path can complete a real split-root workflow task through `pi-subagents` from an isolated Pi home that reuses existing OAuth credentials.
+  Evidence missing: no live isolated-home Pi subagent smoke exists or has run yet; this remains the required next implementation target.
+- DONE: AC-3 Optional `pi-agent-teams` support is represented as an adapter over the `teams` action schema, not as Claude team emulation.
+  Evidence: `go test ./internal/piruntime` passes, including `TestTeamsAdapterMapsLifecycleActions` and `TestTeamsAdapterPayloadsContainNoClaudeToolNames`.
+- DONE: AC-4 Follow-up routing cannot accept stale completion evidence.
+  Evidence: `go test ./internal/piruntime` passes, including `TestRegistryRejectsStaleCompletionAfterFollowup`.
+- DONE: AC-5 Split-root state paths are preserved in Pi dispatch prompts and tests.
+  Evidence: `go test ./internal/dispatch` passes, including `TestBuildPiHostPreservesSplitRootEntityPath`.
+
+### Summary
+
+Validation result: REJECTED. The offline contract gaps are now closed and the worktree passes `go test ./...` and `go test ./... -race`, but AC-2 still requires a live Pi subagent smoke with isolated `PI_CODING_AGENT_DIR`/session dir and copied auth. The next bounce should implement that live runner or explicitly rescope AC-2 if the captain wants this split to land as an offline-only foundation.
