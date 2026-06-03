@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#280"
 ---
 
 `spacedock dispatch reconcile` run without `--team-name` resolves the team by globbing `~/.claude/teams/*/config.json` and taking the **most-recently-modified** config containing a `spacedock:ensign` member (`internal/claudeteam/reconcile.go` `LoadReconcileTeam`, lines 43-87). The code comment calls this "a stable proxy for 'the live team in this session'" — but it is a newest-mtime heuristic, not a session-identity check, and it misfires on both repeated and parallel sessions.
