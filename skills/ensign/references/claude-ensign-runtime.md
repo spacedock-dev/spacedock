@@ -1,6 +1,6 @@
 # Claude Code Ensign Runtime
 
-This file defines how the shared ensign core executes on Claude Code.
+How the shared ensign core executes on Claude Code.
 
 ## Agent Surface
 
@@ -12,7 +12,7 @@ If requirements are unclear or ambiguous, ask for clarification via `SendMessage
 
 ## Captain Communication
 
-When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output — not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down in the TUI. Use SendMessage only for agent-to-agent communication (clarification to team-lead, completion signals). When the captain messages you directly, respond with direct text output.
+When dispatched for a stage that involves direct interaction with the captain (brainstorming, discussion, ideation review), communicate with the captain via direct text output, not SendMessage. In the Claude Code team model, your text output is visible to the captain when they switch to your agent via Shift+Up/Down. Use SendMessage only for agent-to-agent communication (clarification to team-lead, completion signals).
 
 ## Completion Signal
 
@@ -26,9 +26,9 @@ The entity file is the artifact. Do not include the checklist or summary in the 
 
 ## Feedback Interaction
 
-When dispatched for a feedback stage, the first officer may keep a prior-stage agent alive for messaging. If the reviewer finds issues, the first officer routes fixes through a fresh dispatch — the ensign does not directly message other agents about fixes.
+For feedback stages, the FO may keep a prior-stage agent alive for messaging. If the reviewer finds issues, the FO routes fixes through a fresh dispatch — the ensign does not directly message other agents.
 
-If a prior-stage agent messages you with fixes (in teams mode), re-check and update your stage report, then send your updated completion message to the first officer.
+If a prior-stage agent messages you with fixes (teams mode), re-check, update your stage report, and send your updated completion message to the FO.
 
 ## Shutdown Response Protocol
 
@@ -41,6 +41,6 @@ If the first officer sends you a `SendMessage` whose message body is the JSON ob
 Rules:
 - Echo the `request_id` from the request verbatim.
 - Set `approve: true` unless you have load-bearing in-flight work that will be lost; in that case use `approve: false` with a short `reason`.
-- The message body MUST be the structured JSON object above, not plain prose text.
-- Send it as your very next action after observing the shutdown request. The first officer blocks team teardown waiting on this response; a missing or delayed reply burns FO budget on cleanup churn.
+- The message body MUST be the structured JSON object above, not plain prose.
+- Send it as your very next action after observing the shutdown request — the first officer blocks team teardown waiting on this response.
 - After sending `approve: true`, stop. The harness terminates you.
