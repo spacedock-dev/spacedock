@@ -303,25 +303,36 @@ func newNewCommand(ctx context.Context, env []string, dir string, stdin io.Reade
 	}
 }
 
-// newStateCommand wires `spacedock state init` for split-root state-checkout
+// newStateCommand wires `spacedock state init|new` for split-root state-checkout
 // management. Flag parsing is disabled so the post-subcommand argv (the optional
-// --workflow-dir) reaches runStateInit verbatim. `init` is the only subcommand;
-// an unknown or missing subcommand is a usage error (exit 2).
+// --workflow-dir) reaches the handler verbatim. `init` resumes a cloned workflow's
+// state checkout; `new` births one around a present split-root README. An unknown
+// or missing subcommand is a usage error (exit 2).
 func newStateCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "state init [--workflow-dir DIR]",
-		Short:              "Initialize a cloned split-root workflow's state checkout",
+		Use:                "state init|new [--workflow-dir DIR]",
+		Short:              "Manage a split-root workflow's state checkout (init resumes, new births)",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if wantsHelp(args) {
 				return cmd.Help()
 			}
-			if len(args) == 0 || args[0] != "init" {
-				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init)")
+			if len(args) == 0 {
+				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init or new)")
 				return exitCodeError{2}
 			}
-			if code := runStateInit(ctx, args[1:], env, dir, stdout, stderr); code != 0 {
+			var code int
+			switch args[0] {
+			case "init":
+				code = runStateInit(ctx, args[1:], env, dir, stdout, stderr)
+			case "new":
+				code = runStateNew(ctx, args[1:], env, dir, stdout, stderr)
+			default:
+				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init or new)")
+				return exitCodeError{2}
+			}
+			if code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
