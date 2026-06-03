@@ -21,22 +21,38 @@ func TestWorkflowsPreserveAndPublishJourneyCosts(t *testing.T) {
 		}
 	}
 
-	builder := "go run ./cmd/spacedock-release journey-costs"
-	goreleaser := "goreleaser/goreleaser-action"
-	if !strings.Contains(release, builder) {
-		t.Fatalf("release.yml does not run the journey-cost builder")
+	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+		t.Fatal(err)
 	}
-	if strings.Index(release, builder) > strings.Index(release, goreleaser) {
-		t.Fatalf("release.yml runs journey-cost builder after goreleaser; builder must run before publish")
+}
+
+func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostBuilder(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	adversarial := strings.Replace(release,
+		`go run ./cmd/spacedock-release journey-costs "$RELEASE_VERSION" \`,
+		`# go run ./cmd/spacedock-release journey-costs "$RELEASE_VERSION" \`,
+		1)
+	adversarial = strings.Replace(adversarial,
+		`test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
+		`printf '{}' > "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"
+          test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
+		1)
+
+	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+		t.Fatal("release workflow guard accepted a commented builder plus fake JSON output")
 	}
-	for _, want := range []string{
-		"--metrics-dir \"$RUNNER_TEMP/journey-metrics\"",
-		"--out \"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json\"",
-		"gh release upload \"$GITHUB_REF_NAME\" \"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json\"",
-	} {
-		if !strings.Contains(release, want) {
-			t.Fatalf("release.yml missing %q", want)
-		}
+}
+
+func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	adversarial := strings.Replace(release,
+		`gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber`,
+		`# gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber
+          echo "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`,
+		1)
+
+	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+		t.Fatal("release workflow guard accepted a commented publish command")
 	}
 }
 
