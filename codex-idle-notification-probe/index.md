@@ -37,11 +37,11 @@ live probe runner before the host exposes timestamped mailbox events.
    Keep the existing mailbox model, but split `## Awaiting Completion` into
    named outcomes:
 
-   - **Foreground wait:** the FO calls `wait_agent(handle)` because the next
-     stage transition, gate result, or dispatch decision depends on the worker's
-     final status. A timeout is normal and retryable with the same handle. A
-     captain message or shell-out during the wait is operator activity, not idle
-     wake evidence.
+   - **Foreground wait:** the FO calls `wait_agent(handle)` as the next useful
+     idle action after it has exhausted ready completions, gate decisions, state
+     transitions, and newly dispatchable work. A timeout is normal and retryable
+     with the same handle. A captain message or shell-out during the wait is
+     operator activity, not idle wake evidence.
    - **Queued notification flushed by later activity:** the FO does not call
      `wait_agent`, ends the turn, and a later captain message, tool action, or
      shell-out causes Codex to deliver a worker final-status notification that
@@ -52,10 +52,15 @@ live probe runner before the host exposes timestamped mailbox events.
      final-status notification alone. This is the only observation that proves
      no-wait idle wake-up.
 
-   The contract should say: non-critical background work may end the FO turn and
-   rely on the mailbox, but a critical-path result still requires `wait_agent` or
-   another explicit operator-visible waiting posture. The guidance must not say
-   every Codex dispatch must immediately foreground-wait.
+   The contract should also define the scheduling priority. Before foreground
+   waiting, the FO should finish the available dispatch sequence: process ready
+   final-status notifications, make gate decisions, apply resulting state
+   transitions, and dispatch any work that has become eligible. `wait_agent`
+   should run only when no other dispatchable or gate-processing work is
+   available and an unresolved worker completion is the next useful idle action.
+   Non-critical background work may still end the FO turn and rely on the
+   mailbox. The guidance must not say every Codex dispatch must immediately
+   foreground-wait.
 
 2. Add a rerunnable manual recipe at
    `docs/dev/codex-idle-notification-probe.md`. The recipe should have three
@@ -102,9 +107,10 @@ live probe runner before the host exposes timestamped mailbox events.
 
    - A runtime-text test should parse the `## Awaiting Completion` section of
      `skills/first-officer/references/codex-first-officer-runtime.md` and assert
-     that the three named outcomes are present, that the critical-path
-     `wait_agent` rule is present, and that blanket "wait after every dispatch"
-     wording is absent.
+     that the three named outcomes are present, that foreground waiting comes
+     after ready completions, gate decisions, state transitions, and newly
+     dispatchable work, and that blanket "wait after every dispatch" wording is
+     absent.
    - A recipe-shape test should read
      `docs/dev/codex-idle-notification-probe.md` and assert that the three probe
      sections exist, that the idle window is at least 90 seconds, and that queued
@@ -130,21 +136,24 @@ Each AC names a property of the finished task and a check outside this task body
 **AC-1 - The Codex FO runtime contract distinguishes all three completion paths.**
 Verified by: `go test ./skills/integration -run TestCodexIdleNotificationRuntimeContract` parses the `## Awaiting Completion` section of `skills/first-officer/references/codex-first-officer-runtime.md` and fails unless it names foreground `wait_agent`, queued notification flushed by later activity, and autonomous idle FO wake-up as separate outcomes.
 
-**AC-2 - Critical-path guidance remains conservative without forcing foreground waits for every dispatch.**
-Verified by: the same runtime-contract test fails unless the Codex adapter says a critical-path worker result requires `wait_agent` or explicit operator-visible waiting, and also fails on blanket wording such as "must call `wait_agent` after every dispatch".
+**AC-2 - The Codex FO runtime contract prioritizes ready workflow work before foreground waiting.**
+Verified by: the same runtime-contract test fails unless the Codex adapter says the FO should process ready completions, gate decisions, state transitions, and newly dispatchable work before calling `wait_agent`, and that `wait_agent` is appropriate only when no other dispatchable or gate-processing work is available and unresolved worker completion is the next useful idle action.
 
-**AC-3 - A rerunnable manual probe documents the foreground-wait comparison, no-wait idle probe, and queued-notification flush check.**
+**AC-3 - Foreground-wait guidance remains conservative without forcing foreground waits for every dispatch.**
+Verified by: the same runtime-contract test fails on blanket wording such as "must call `wait_agent` after every dispatch", while preserving the rule that foreground waiting is an explicit action the FO may take when unresolved worker completion is the next useful idle action.
+
+**AC-4 - A rerunnable manual probe documents the foreground-wait comparison, no-wait idle probe, and queued-notification flush check.**
 Verified by: `go test ./skills/integration -run TestCodexIdleNotificationRecipeShape` reads `docs/dev/codex-idle-notification-probe.md` and fails unless the three sections, minimum idle window, no-activity rule, and interpretation rules are present.
 
-**AC-4 - Timestamped evidence captures the current Codex behavior in a machine-checkable format.**
+**AC-5 - Timestamped evidence captures the current Codex behavior in a machine-checkable format.**
 Verified by: `go test ./skills/integration -run TestCodexIdleNotificationEvidenceSchema` parses `docs/dev/_evidence/codex-idle-notification-probe/*.json`, validates required fields and RFC3339 timestamps, and rejects unknown classifications.
 
-**AC-5 - Existing queued-notification evidence is not promoted to autonomous idle-wake evidence.**
+**AC-6 - Existing queued-notification evidence is not promoted to autonomous idle-wake evidence.**
 Verified by: the evidence-schema test fails if the 2026-06-03 dogfood evidence classifies the `Dalton` run as `autonomous_idle_wake` while `first_user_activity_at_utc` is non-null or `autonomous_wake_observed` is false.
 
 ## Test plan
 
-- Add `skills/integration/codex_idle_notification_test.go` with three focused tests: runtime contract, recipe shape, and evidence schema. Cost: low.
+- Add `skills/integration/codex_idle_notification_test.go` with three focused tests: runtime contract, recipe shape, and evidence schema. The runtime-contract test should cover both the notification taxonomy and the FO scheduling priority before `wait_agent`. Cost: low.
 - Run `go test ./skills/integration -run TestCodexIdleNotification` first to see the new tests fail for missing wording/artifacts, then implement the runtime text, recipe, and JSON evidence. Cost: low.
 - Run the repo gates after the focused tests pass: `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`. Cost: medium, dominated by the race test.
 - Defer a live automated Codex idle-wake probe until the host exposes timestamped mailbox events or a stable automation API. Cost if added later: medium to high.
@@ -166,3 +175,16 @@ Verified by: the evidence-schema test fails if the 2026-06-03 dogfood evidence c
 ### Summary
 
 Fleshed out the seed into an implementation-ready task body that separates foreground waiting, queued notification delivery, and autonomous idle wake-up. The design keeps Codex runtime guidance conservative for critical-path results while preserving background dispatch compatibility, and it gives future workers concrete tests and artifact paths to implement.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Add to the proposed approach and ACs that the FO should finish the available dispatch sequence first: process ready completions, gate decisions, state transitions, and newly dispatchable work before foreground-waiting.
+  Evidence: `Proposed approach` now defines that scheduling priority, and AC-2 requires the runtime-contract test to enforce it.
+- DONE: `wait_agent` should be called when there is no other dispatchable or gate-processing work available and unresolved worker completion is the next useful idle action.
+  Evidence: the foreground-wait outcome and AC-2 now bind `wait_agent` to that idle-action condition.
+- DONE: Preserve the distinction between background notifications, queued flush, autonomous idle wake, and explicit foreground wait; this feedback refines scheduling priority, not the notification taxonomy.
+  Evidence: AC-1 still covers the three completion paths, while AC-2 and AC-3 add scheduling priority and blanket-wait guardrails.
+
+### Summary
+
+Revised the design to make `wait_agent` a scheduling choice after the FO has exhausted ready workflow work, not an immediate response to every unresolved worker. The notification taxonomy stays intact, and the ACs now require future tests to catch both taxonomy drift and scheduling-priority drift.
