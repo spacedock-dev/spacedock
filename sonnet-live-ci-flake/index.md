@@ -1,7 +1,7 @@
 ---
 id: yyqez6npx8qb11b5v7fgwjtf
 title: Sonnet live-CI fails with a repeatable shape — FO subprocess ends its turn after shutdown_request before the streamwatcher's expected dispatch-close fires
-status: validation
+status: implementation
 source: session-10 — identical failure shape on PR #275 (n3 frontmatter-hash-quoting) and PR #277 (2a require-external-proof-guard); both offline-green + opus-green + sonnet-red. Two matching failures = mechanism issue, not random flake. Blocks merging n3 + 2a into 0.19.5.
 score: "0.19"
 worktree: .worktrees/spacedock-ensign-sonnet-live-ci-flake
@@ -117,3 +117,18 @@ Both deliverables landed and committed in the code worktree. The FO-contract fix
 
 ### Summary
 PASSED (offline + opus + fixture), with AC-1 by-construction-pending the live sonnet run the FO triggers next. AC-2's reframe HOLDS and is not rubber-stamped: the fixture's actual event ordering matches the diagnosed trace exactly — TeamCreate (L91) → Agent dispatch (L213) → premature shutdown_request (L252, before the completion signal) → task_notification completed (L270) → TeamDelete (L322) → active-member fail (L323) → 2nd shutdown_request (L338) → turn ends WITHOUT retrying TeamDelete (L340). That last "no-retry-after-fail" is the real defect; a recording of the buggy producer cannot demonstrate the producer-side fix, so AC-2 legitimately only pins the watcher's localization while AC-1 is the fix oracle. Change set is exactly scoped (5 files: 2 contract-prose, fixture+replay, prose-oracle lint) — no `streamwatch.go` logic change, no `am`/n3/2a coupling, per the out-of-scope list. High-stakes surface (FO contract + CI machinery): a detached adversarial read-only audit of the merge result is REQUIRED before merge per the dev README validation stage — my own AC-2 mutation was a spot-check, not that full audit.
+
+## Feedback Cycles
+
+### Cycle 1 — detached adversarial audit (2026-06-03) — MATERIAL
+
+Validation PASSED, but the detached audit found two test-strength holes plus a fix-completeness gap that is load-bearing for the live AC-1 oracle:
+
+- **MATERIAL — the contract oracles are substring-presence lints, not meaning oracles.** `TestTerminalTeardownRetriesToSuccess` checks only `strings.Contains` for tokens. An **inverted** mandate ("End the turn on the first failure; do NOT re-send shutdown_request; do NOT call TeamDelete again" — the exact #275 bug) passes GREEN in BOTH `first-officer-shared-core.md` and `claude-first-officer-runtime.md` because the grep tokens survive. The "locked by this test" claim is overstated.
+  **Fix:** strengthen the oracle to detect inversion — assert the directional mandate AND the ABSENCE of the negating phrases (ban e.g. "do not retry", "end the turn on the first failure", "do NOT call TeamDelete again") within the terminal-teardown region, scoped to step 10 / the `## Terminal Team Teardown` step (not the whole `## Merge and Cleanup` region). The two inverting edits the audit applied must turn the oracle RED.
+
+- **MATERIAL — the AC-2 replay step-3 is tautological.** `TestSonnetTeamDeleteHangReplay`'s `fakeProc` never exits, so `expectExit` ALWAYS trips `stepTimeout` regardless of stream content; truncating the captured stream to drop the real `TeamDelete`-failure (L323 "active member(s)") and the no-retry turn-end (L341) leaves the test GREEN. Step 3 is proven by the test's own never-exiting proc, not by the recording.
+  **Fix:** make step 3 depend on the captured failure — assert the watcher OBSERVED the `TeamDelete`-failure line (L323) and/or drive proc-exit from the stream so removing the failure evidence changes the outcome. Truncating the stream to drop L271–341 must turn the test RED.
+
+- **POLISH but load-bearing for AC-1 — the fix may not close the SONNET case.** (a) No inter-attempt settle/backoff between `TeamDelete` retries → an agent can fire all ~3–5 attempts in milliseconds and exhaust the cap before any member leaves the roster (exactly #275's "retried 3x but all raced before the registry settled, then stopped"). (b) Cap-exhaustion in non-interactive `claude -p` mode → "surface to captain" = emit text + end turn, leaving the team un-deleted (still hangs).
+  **Fix:** prescribe an inter-attempt settle/wait in the contract (do NOT fire retries in parallel/instantly), and define the non-interactive cap-exhaustion behavior so the subprocess does not hang. This is what determines whether the live AC-1 sonnet run actually passes — do not skip it.

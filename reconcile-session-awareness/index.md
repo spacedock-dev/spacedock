@@ -1,7 +1,7 @@
 ---
 id: 0nadpgpzer0jhrvcxeg52az2
 title: reconcile auto-discovery (no --team-name) is not session-aware — newest-mtime team glob picks stale prior-session or parallel-session configs, poisoning roster-derived drift classes
-status: validation
+status: implementation
 source: session-11 FO (2026-06-03) — observed bare `dispatch reconcile` resolve a two-day-old prior-session team config and report archived-entity agents as Class A; captain flagged it ("did reconcile not consider repeated or parallel sessions?")
 score: "0.19"
 worktree: .worktrees/spacedock-ensign-reconcile-session-awareness
@@ -139,3 +139,15 @@ Removed the newest-mtime team glob entirely and narrowed bare-reconcile discover
 ### Summary
 
 PASSED. The fix removes the newest-mtime team glob and resolves bare-reconcile roster discovery solely by `leadSessionId == sessionID`; every other case (zero/multi/empty-session match, foreign config) degrades to a git-only sentinel that suppresses A/B/C entirely, so no roster class can derive from a non-current-session config. All six ACs have reproducible external evidence over the real loader/assembly and the contract file — none self-referential. The red-on-pre-fix claim was independently reproduced by restoring the mtime loader (8 tests red for the documented reasons, the explicit-path tests correctly green). AC-6's prose oracle is genuinely load-bearing: an adversarial revert to the bracketed-optional framing turns it red on every clause. Full suite, vet, and gofmt are clean. This is a high-stakes teardown surface — the detached adversarial audit the entity flagged is still required before merge; validation passing is necessary but not sufficient on its own.
+
+## Feedback Cycles
+
+### Cycle 1 — detached adversarial audit (2026-06-03) — MATERIAL
+
+Validation PASSED, but the detached audit found a test-strength hole the suite misses:
+
+- **MATERIAL — the exactness of the `leadSessionId` match is not pinned.** The shipped loader (`internal/claudeteam/reconcile.go:70`) uses exact `!=` and is correct, but loosening it to `strings.HasPrefix(sessionID, lead)` or `strings.Contains(...)` breaks the core claim (a foreign/stale config resolves) while **all 20 targeted tests stay GREEN**. The realistic exploit: a foreign config with an **empty `leadSessionId`** — `HasPrefix(x, "")` / `Contains(x, "")` are always true in Go, so an empty-lead foreign team matches ANY current session. The audit reproduced the leak end-to-end (foreign `team-foreign-empty-lead` with an archived-entity ensign emitted Class A + Class C from bare reconcile — the exact session-11 stale-team bug) while `TestReconcileForeignTeamNeverPoisonsRoster` (AC-1) stayed green. The entity's own audit charge demanded the malformed/empty-config fixture; it is missing.
+
+**Fix:** add a regression fixture that pins exactness — a foreign team whose `leadSessionId` is (a) empty and (b) a strict prefix/substring of the current session id must NOT resolve → must degrade to git-only (no roster A/B/C). The fixture must turn RED under a `HasPrefix`/`Contains` comparison and GREEN under exact `!=`. Then re-run the targeted suite (must stay green on the shipped exact code) + `go test ./...`.
+
+(Polish, optional: pin the assembly-level `rosterTrusted` gate at `internal/dispatch/reconcile.go:191` directly via a stub `rosterLoader` returning a non-empty-roster degrade sentinel — currently it's only exercised through the loader.)
