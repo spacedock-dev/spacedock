@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#281"
+archived: 2026-06-03T08:43:50Z
 ---
 
 f4 ports the old Python Claude/Codex journey overlap into the Codex live lane, but the Go implementation is still Codex-shaped: `codexSharedScenarios()` defines the scenario list and the current Claude live CI continues to run `TestLiveEnsignCycle` rather than consuming the same scenario table.
