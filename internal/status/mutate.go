@@ -238,7 +238,6 @@ func needsExplicitQuoting(val string) bool {
 	return false
 }
 
-
 // atomicWrite writes data to a temp file in the same directory and renames it
 // into place, so a reader never observes a half-written entity. The principle
 // stated in decision B applied to --set, --archive's stamp, and --new.

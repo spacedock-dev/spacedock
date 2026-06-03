@@ -185,4 +185,3 @@ func fenceHelpersEqualStrings(a, b []string) bool {
 	}
 	return true
 }
-
