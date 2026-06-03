@@ -22,7 +22,7 @@ The runtime gap is specifically about ensign lifecycle: first-officer code and s
 - Old PR #155 clone at `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/tmp.SKgFLFccFF/spacedock-pr155/` was present. Its useful Pi baseline is the `scripts/pi_session_registry.py` and `scripts/pi_worker_runtime.py` model: a thin worker-label to Pi session mapping, completion epochs to reject stale evidence, and explicit dispatch/reuse/shutdown commands. Its limitation for v1 is that it is Python test-harness-era code, not a Go launcher/package surface, and it predates the current split-root v1 workflow shape.
 - `pi-agent-teams` clone at `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/tmp.zCMAQuSWp2/pi-agent-teams/` was present. It exposes a Pi `teams` tool, not Claude-compatible tools. Relevant actions include `member_spawn`, `delegate`, `message_dm`, `member_shutdown`, and `team_done`, with task/mailbox/session state under a teams root. This is closest to a long-lived team substrate, but it requires an adapter that speaks its action schema.
 - Installed/cached `pi-subagents` artifacts show a parent-side `subagent` tool. It supports a single delegated task, parallel `tasks`, optional worktree isolation, management actions such as `list/status/interrupt`, and acceptance-style completion from a child invocation. It is not a long-lived mailbox team by default, which makes it a better first-slice ensign dispatch primitive than a direct Claude-team emulation.
-- This ideation task itself is a bounded dogfood run using the Pi subagent construct as the Spacedock ensign: the future live proof should formalize the same shape in tests instead of relying on this prose.
+- This ideation task itself attempted a bounded dogfood run using the Pi subagent construct as the Spacedock ensign. The first dispatch attempt reached the parent-side `subagent(...)` tool but failed before worker start with provider auth (`No API key found for openrouter`). Treat that as a live-harness setup finding, not a product-runtime impossibility: the live Pi runner should isolate Pi's home/session directories and copy the operator's existing Pi OAuth credentials, the same way the Codex live runner uses an isolated `CODEX_HOME` with copied auth.
 
 ## Proposed approach
 
@@ -54,6 +54,18 @@ Keep the first implementation compatibility-first and small:
 - Add offline tests with fixtures for `subagent` dispatch JSON, `teams` action mapping, registry stale-completion rejection, and split-root entity paths.
 - Add one live/dogfood runtime scenario that launches a Pi parent with the subagents extension, dispatches a tiny ensign against a temp split-root workflow, and verifies committed state/output outside the task prose.
 
+### Live harness isolation
+
+Mirror the Codex live runner's isolation pattern instead of requiring a globally-mutated Pi home:
+
+1. Create a temp `PI_CODING_AGENT_DIR` for config, installed packages, settings, and auth.
+2. Create a temp `PI_CODING_AGENT_SESSION_DIR` or pass `--session-dir` for session JSONL output.
+3. Copy the operator's existing `~/.pi/agent/auth.json` into the temp config dir when present, so subscription/OAuth logins are reused without exposing the real global session/package state to the test.
+4. Install or point at only the local test resources needed for the run: Spacedock skills, `pi-subagents` or `pi-agent-teams`, and any local extension path under test.
+5. Run the Pi parent/worker from the temp workflow root and assert durable state checkout changes, exit codes, and logs. Do not assert on global `~/.pi/agent` state and do not require the operator to relogin for every live run.
+
+This is the answer to the auth failure observed during dogfood dispatch: isolate the runtime home, but reuse the already-authorized OAuth token file.
+
 ## Out of scope
 
 - PR merge, mod behavior, or terminalization behavior specific to Pi.
@@ -73,8 +85,8 @@ No spike is needed for the existence of `pi-agent-teams` action names because th
 **AC-1 - Pi dispatch uses a Pi-native tool contract instead of Claude-compatible tool names.**
 Verified by: focused Go fixture tests for the Pi dispatch builder that fail if generated Pi instructions/specs contain `Agent`, `SendMessage`, `TeamCreate`, or `TeamDelete`, and pass only when the default dispatch target is `subagent` with Pi-specific parameters.
 
-**AC-2 - The default Pi ensign path can complete a real split-root workflow task through `pi-subagents`.**
-Verified by: a live test tag scenario, for example `go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle -v`, that launches Pi with the subagents extension, dispatches a tiny ensign, and asserts the state checkout entity body/git log changed as expected.
+**AC-2 - The default Pi ensign path can complete a real split-root workflow task through `pi-subagents` from an isolated Pi home that reuses existing OAuth credentials.**
+Verified by: a live test tag scenario, for example `go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle -v`, that creates temp `PI_CODING_AGENT_DIR` and session dir, copies `~/.pi/agent/auth.json` into the temp config dir when available, launches Pi with the subagents extension, dispatches a tiny ensign, and asserts the state checkout entity body/git log changed as expected.
 
 **AC-3 - Optional `pi-agent-teams` support is represented as an adapter over the `teams` action schema, not as Claude team emulation.**
 Verified by: offline contract tests that feed a dispatch/follow-up/shutdown intent and assert the adapter emits `teams` actions such as `member_spawn` or `delegate`, `message_dm`, `member_shutdown`, and `team_done` with required fields.
@@ -90,14 +102,14 @@ Verified by: fixture or CLI tests that build a Pi dispatch for `docs/dev` with `
 - **Offline dispatch contract tests (low cost):** Add table-driven Go tests for Pi dispatch spec generation. Include negative cases for banned Claude tool names and positive cases for `subagent` default fields and split-root entity paths.
 - **Offline teams-adapter tests (low/medium cost):** Add fixtures that translate Spacedock lifecycle intents into `teams` tool action payloads. Assert exact JSON actions and required fields for spawn/delegate, follow-up DM, status/shutdown, and team done.
 - **Offline registry tests (low cost):** Reimplement the PR #155 registry semantics in Go only if needed for follow-up/reuse. Test atomic record persistence, active/completed/shutdown transitions, and stale epoch rejection.
-- **Live Pi subagent smoke (medium/high cost, required for the runtime claim):** With Pi auth and `pi-subagents` installed, run a temp split-root workflow where the FO dispatches one ensign through `subagent(...)`. The assertion should inspect output, exit code, state checkout git log, and entity file state; it should not pass by grepping skill prose.
+- **Live Pi subagent smoke (medium/high cost, required for the runtime claim):** Create an isolated Pi home (`PI_CODING_AGENT_DIR`) and session dir, copy `~/.pi/agent/auth.json` into the temp home when available, load only the local Spacedock skills plus `pi-subagents`, and run a temp split-root workflow where the FO dispatches one ensign through `subagent(...)`. The assertion should inspect output, exit code, state checkout git log, and entity file state; it should not pass by grepping skill prose.
 - **Live teams smoke (optional/deferred):** If the optional `pi-agent-teams` adapter is implemented in the same slice, run a small leader session that uses `teams({action:"member_spawn"})`, sends one `message_dm`, and then `member_shutdown`/`team_done`. Otherwise leave this as a documented future substrate test.
 - **Baseline Go gate:** Run `go test ./...` for every implementation change; run `go test ./... -race` when registry concurrency or filesystem mutation code is added.
 
 ## Stage Report: ideation
 
 - DONE: Decide and document the v1 Pi runtime target shape, including how PR #155's session-registry helper and pi-agent-teams/pi-subagents compare.
-  Documented `pi-subagents` as the first-slice default, PR #155 registry semantics as reusable scaffolding, and `pi-agent-teams` as an optional `teams` action adapter.
+  Documented `pi-subagents` as the first-slice default, PR #155 registry semantics as reusable scaffolding, `pi-agent-teams` as an optional `teams` action adapter, and the isolated-Pi-home/OAuth-copy live-harness requirement discovered during dogfood dispatch.
 - DONE: Add entity-level acceptance criteria and a test plan with at least one live/dogfood runtime proof and focused offline contract tests.
   Added AC-1 through AC-5 with external verification commands/tests plus a test plan covering live Pi subagent smoke and offline dispatch/teams/registry/split-root tests.
 - DONE: Append a `## Stage Report: ideation` section accounting for every checklist item.
