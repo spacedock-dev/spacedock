@@ -4,10 +4,12 @@ title: Migrate the frontmatter parser/mutator to a YAML library (post-oracle, de
 status: validation
 source: sprint — captain (parser-modernization, post-bootstrap)
 score: "0.25"
-worktree: .worktrees/spacedock-ensign-yaml-parser-migration
+worktree:
 started: 2026-06-02T15:44:41Z
 mod-block:
 pr: "#274"
+completed: 2026-06-03T00:39:32Z
+verdict: PASSED
 ---
 
 Replace the hand-rolled line-oriented frontmatter parser + line-rewriter mutator with a YAML library (`gopkg.in/yaml.v3`, `yaml.Node` for round-trip), being DELIBERATE about which Python-oracle quirks to drop (documented divergences) rather than enshrining them. The Go binary links deps at build time, so the Python-era zero-dep rationale does not apply (see sprint-notes "Go-binary dependency policy correction"); the only thing blocking the swap today is byte-PARITY with the Python oracle, which is a bootstrap migration scaffold, not a long-term goal.
