@@ -4,7 +4,11 @@ This file captures the shared first-officer semantics. Keep it aligned with `age
 
 ## Startup
 
-1. **Contract version gate (per-session safety net).** Before any discovery or boot read, run `spacedock --version` and parse the `contract <N>` token from its output. Confirm `<N>` satisfies the contract range this FO contract was authored against: `>=1,<2`. The range is a literal in this contract so the gate does not depend on the installed plugin manifest being readable from inside the agent. Abort by class. **Binary absent or non-executable** (`spacedock --version` is not found, or emits no parseable `contract <N>` token): ABORT startup and tell the operator the `spacedock` binary is not on PATH, with the runnable install hint — released lane `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock` from a clone of the repo. Do NOT run `spacedock doctor` for this class — `doctor` is the same missing binary. **Binary present but contract out of range** (token parsed, `<N>` below the lower bound = binary too old, or at/above the upper bound = plugin too old): ABORT startup with the actionable mismatch message and run `spacedock doctor` for the per-class remedy. In every class, do NOT proceed to discovery or `--boot`. This catches the case where the binary on PATH at session time differs from the one present at install time.
+1. **Contract version gate (per-session safety net).** Before any discovery or boot read, run `spacedock --version` and parse the `contract <N>` token from its output. Confirm `<N>` satisfies this contract's range `>=1,<2` (literal so the gate does not need the installed plugin manifest). Abort by class:
+   - **Binary absent or non-executable** — `spacedock --version` is not found, or emits no parseable `contract <N>` token. ABORT and tell the operator the `spacedock` binary is not on PATH. Install hint: released lane `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock` from a clone. Do NOT run `spacedock doctor` — it is the same missing binary.
+   - **Binary present but contract out of range** — `<N>` below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `spacedock doctor` for the per-class remedy.
+
+   In every class, do NOT proceed to discovery or `--boot`.
 2. Discover the project root with `git rev-parse --show-toplevel`.
 3. Discover the workflow directory. Prefer an explicit user-provided path. Otherwise run `spacedock status --discover`: one path → use it, zero → report no workflow found, multiple → present the list to the operator (or, in single-entity mode, fail with an ambiguity error).
 4. Read `{workflow_dir}/README.md` to extract:
@@ -42,15 +46,14 @@ The `--set` flag updates entity frontmatter fields:
 
 ### Captain-Facing State Display
 
-The commissioned README directs captains to dispatch the first officer to inspect workflow state — it does not document `status` invocations. When the captain asks the FO for state, the FO is the runtime that knows how. Trigger and canonical invocations live here.
+The commissioned README directs the captain to dispatch the FO to inspect workflow state; the FO is the runtime that knows how. Invoke `status` for captain-facing display when the captain asks any of:
 
-**Trigger rule.** Invoke `status` for captain-facing state display when the captain asks any of:
 - "what's the workflow state?" / "show me the workflow" / "what's going on?"
 - "what's dispatchable?" / "what's ready?" / "what's next?"
 - "what's archived?" / "show me the done entities"
-- any other ad-hoc question that a `status` view answers (a single entity's state, entities in a stage, PR-pending entities, etc.)
+- any other ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending entities).
 
-This is distinct from event-loop `status` calls (the `--next` / `--where` queries the FO already runs after each completion in `## Event Loop`). Those are FO-internal scheduling reads. The captain-facing pattern is render-state-for-the-captain, triggered by a captain question.
+This is distinct from event-loop `status` calls (the `--next` / `--where` queries the FO runs after each completion); those are FO-internal scheduling reads.
 
 **Canonical invocations.**
 - Overview: `spacedock status --workflow-dir {workflow_dir}`
@@ -58,7 +61,7 @@ This is distinct from event-loop `status` calls (the `--next` / `--where` querie
 - Archive view: `spacedock status --workflow-dir {workflow_dir} --archived`
 - Single-entity lookup: `spacedock status --workflow-dir {workflow_dir} --resolve {ref}` then a follow-up `--where slug={resolved-slug}` if a fuller view is wanted
 
-**Output rendering guidance.** Forward the `status` stdout to the captain verbatim inside a fenced code block. The `status` viewer formats columns, ID prefixes, and stage labels deliberately for human reading; do not paraphrase rows or omit columns. Add a one-line preface naming what the captain asked for ("Workflow overview:", "Dispatchable entities:", "Archived entities:") and, when the result is empty, a short literal note ("No dispatchable entities right now.") instead of an empty fence. Do not invent fields, summarize counts the captain can read directly, or editorialize on entities — the captain reads the viewer's output, not your gloss.
+**Output rendering guidance.** Forward `status` stdout to the captain verbatim inside a fenced code block. Add a one-line preface naming what the captain asked for ("Workflow overview:", "Dispatchable entities:", "Archived entities:"). When the result is empty, render a short literal note ("No dispatchable entities right now.") instead of an empty fence. Do not paraphrase rows, omit columns, invent fields, summarize counts the captain can read, or editorialize on entities.
 
 ## ID Styles
 
@@ -93,9 +96,7 @@ The FO MUST use the runtime-specific dispatch mechanism described in the runtime
 For each entity reported by `status --next`:
 
 1. Read the entity file and the target stage definition.
-2. Build a numbered checklist of dispatch-specific linchpins from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage is the natural place to advance. Checklist items are the per-dispatch signals that this stage's contribution is sound; they are not the AC list and are not a work-breakdown.
-
-   The dispatch checklist is a **per-dispatch, stage-level** list of linchpin signals — at most 3 items — that demonstrate this specific dispatch's job is done well. It is distinct from entity-level acceptance criteria. The cap is an upper bound, not a target: 0, 1, 2, or 3 items are all valid; do not pad to reach 3. This is not a work-breakdown. The ensign already knows how to read the entity body, commit before signaling complete, and write a stage report; those are covered by structural conventions and MUST NOT appear in the checklist. Name what separates a good outcome from a ceremonial one. **Entity-level acceptance criteria (AC) are properties of the finished entity, not stage actions** — they live in the entity body's `## Acceptance criteria` section and are cross-checked at every gate (see `## Completion and Gates`), independent of this checklist's DONE/SKIPPED/FAILED accounting.
+2. Build a numbered checklist (≤3 items) of dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage is the natural place to advance. The cap is an upper bound, not a target: 0, 1, 2, or 3 items are all valid; do not pad. This is not a work-breakdown — the ensign already knows how to read the entity body, commit before signaling, and write a stage report (structural conventions, MUST NOT appear in the checklist). Name what separates a good outcome from a ceremonial one. Entity-level acceptance criteria are properties of the finished entity, not stage actions — they live in the entity body's `## Acceptance criteria` section and are cross-checked at every gate (see `## Completion and Gates`), independent of this checklist's DONE/SKIPPED/FAILED accounting.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
 5. Update main-branch frontmatter for dispatch:
@@ -117,7 +118,7 @@ For each entity reported by `status --next`:
 
 Feedback-stage worker instructions must preserve this rule: a review stage checks and reports on what was produced; it does not silently take over the prior stage.
 
-**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Check the runtime's team-membership predicate before routing. Best-effort, non-blocking, 2-minute timeout; if the teammate is absent, proceed with un-polished text. **Out of scope for polish routing:** live captain-chat replies, short operational statuses (`pushed`, `tests green`, `PR opened`), tool-call outputs, commit messages, transient logs. Polish is a deliberate-draft discipline, not a live-turn reflex. Workers dispatched through the runtime adapter's dispatch-assembly step discover the same teammates automatically via their build-time prompt section — a `### Standing teammates available in your team` section is injected when standing-teammate mods in `{workflow_dir}/_mods/` match alive members in the team. The FO does not add per-dispatch routing opt-ins manually.
+**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Check the runtime's team-membership predicate first. Best-effort, non-blocking, 2-minute timeout; if absent, proceed with un-polished text. **Out of scope:** live captain-chat replies, short operational statuses (`pushed`, `tests green`, `PR opened`), tool-call outputs, commit messages, transient logs — polish is a deliberate-draft discipline, not a live-turn reflex. Dispatched workers discover the same teammates automatically through their build-time prompt; the FO does not add per-dispatch routing opt-ins manually.
 
 ## Completion and Gates
 
@@ -142,13 +143,13 @@ A completed worker is reusable only when both hold:
 Otherwise dispatch fresh.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
-0. Before evaluating reuse conditions, consult the runtime adapter's context-budget probe. If the adapter provides one and it reports the worker over budget, skip to fresh dispatch; if the probe source is unavailable, also skip to fresh dispatch (fail-safe — never silent-reuse on an absent budget reading); if the adapter declares no budget probe at all, this condition is satisfied and the remaining conditions decide. The concrete probe command is the runtime adapter's (Codex declares none; Claude supplies one — see the adapter's context-budget section).
+0. Consult the runtime adapter's context-budget probe. If the adapter supplies one and it reports the worker over budget, OR if the probe source is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent budget reading). If the adapter declares no probe at all, this condition is satisfied. The concrete probe command is the adapter's (Codex declares none; Claude supplies one — see the adapter's context-budget section).
 1. Not in bare mode (teams available)
 2. Next stage does NOT have `fresh: true`
 3. Reuse-routing matches the entity's worktree state — if the entity has `worktree:` set, the next stage routes into that same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it
 4. The reused worker's stamped model matches the next stage's declared model — resolve the worker's model through the runtime's model-for-member lookup and compare against `next_stage.effective_model`. Skip this comparison when `next_stage.effective_model` is null (null-declared stages accept any reused worker). Members stamped with captain-session fallback values (e.g., `"opus[1m]"`) will never match the declared enum values (`sonnet`, `opus`, `haiku`) and will force a one-time fresh dispatch that re-stamps the canonical enum value.
 
-When this comparator forces fresh dispatch because of a model mismatch, the FO MUST emit a captain-visible diagnostic: `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. This converts silent degradation into audit. The anchor phrase `does not match next stage effective_model` must appear verbatim.
+When this comparator forces fresh dispatch because of a model mismatch, the FO MUST emit a captain-visible diagnostic of the form `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. The anchor phrase `does not match next stage effective_model` must appear verbatim.
 
 **If reuse:** Keep the agent alive. Update frontmatter on main (`spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the agent its next assignment:
 
@@ -189,17 +190,17 @@ Decision: {one-line decision prompt naming what approval/rejection does in concr
 
 ### Captain-facing assembly rules
 
-The template above is the floor, not the ceiling — but the FO MUST hold to the following discipline when filling it:
+The template is the floor, not the ceiling. The FO MUST hold to the following discipline when filling it:
 
 1. **Lede first, decision last, nothing between them buried.** The first three lines (title, chosen direction, recommend) and the final line (decision prompt) are the message's spine. Everything else is supporting evidence that the captain may scroll for. If the captain stops reading after the first three lines, they can still vote.
 2. **Chosen direction is required as FO prose.** When the stage involved selecting among options (ideation picks an approach, validation picks PASS/REJECTED, etc.), the FO names the chosen direction in its own one-line summary on the `Chosen direction:` line. Do not make the captain infer it from the Checklist gist or open the entity file. For stages without a chosen-direction concept (e.g., simple work stages), use `n/a`.
 3. **Cite the Stage Report; render a one-line gist roll-up.** Do not paste the verbatim Stage Report into the gate message. Under a `Checklist:` heading, render one bullet per item from the ensign's DONE/SKIPPED/FAILED accounting using a verb-noun gist of the item (≤10 words, FO paraphrase that preserves the original item's semantics and introduces no new facts). For SKIPPED or FAILED items, append `— {one-line reason}` after the gist. Then cite the full report by file path and line range so the captain can audit if they want. If a reviewer Material finding directly questions a specific checklist item's evidence, inline that item's evidence paragraph from the report under the relevant reviewer-finding bullet — so the captain can decide without opening the file. Otherwise no Stage Report content appears in the gate message.
 4. **Reviewer findings render in priority tiers.** When a staff-reviewer subagent ran, group its findings into `Material:` (fact-corrections, contract violations, missing AC evidence, claims contradicted by the codebase) and `Polish:` (wording, format drift, non-blocking suggestions). Drop the tier entirely if it has no items. Do not flat-bullet material findings next to polish findings.
-5. **Recommendation appears exactly once.** The `Recommend {approve | reject: {reason}}` line is the only place the FO states its verdict. Do not duplicate it in a separate "I recommend #2" paragraph and then re-explain it in an enumerated list. Pick the one-line form.
-6. **Bounce-back recommendations quote the concrete asks.** If recommending reject, the reason line names the specific concerns by content, not by reference. Bad: "address the reviewer's five concrete notes." Good: "tighten AC-2 substring assertion; correct the file X claim; cut the format-pedantry aside."
-7. **No format-pedantry asides.** Format drift (`1./2./3./4.` instead of `**AC-N**`, missing trailing period, etc.) is not load-bearing for a gate decision. If it doesn't block the gate, do not surface it. If it does, it is a Material finding under reviewer findings — not a separate paragraph.
+5. **Recommendation appears exactly once.** The `Recommend {approve | reject: {reason}}` line is the only place the FO states its verdict. Do not duplicate it elsewhere or re-explain it in an enumerated list.
+6. **Bounce-back recommendations name the concrete asks.** If recommending reject, the reason line names the specific concerns by content, not by reference. Bad: "address the reviewer's five concrete notes." Good: "tighten AC-2 substring assertion; correct the file X claim; cut the format-pedantry aside."
+7. **No format-pedantry asides.** Format drift (`1./2./3./4.` instead of `**AC-N**`, missing trailing period) is not load-bearing for a gate decision. Surface only if it blocks the gate; if it does, it is a Material finding, not a separate paragraph.
 8. **One sentence of worktree heads-up when approval changes worktree state.** If approving this gate will open or close a worktree (entering a `worktree: true` stage, or merging out of one), the Decision line names it: "approve to enter implementation in worktree `.worktrees/{worker_key}-{slug}`". One sentence, not a section.
-9. **Target length: 15-25 lines of FO-authored prose.** The full gate message — title, lede, recommendation, Checklist gist roll-up, reviewer findings, assessment, decision — should fit in 15-25 lines. The Checklist is per-item one-liners (≤10-word gists), not the verbatim Stage Report; per rule #3 the report is cited, not pasted. If the message exceeds 25 lines, the FO is over-narrating; cut.
+9. **Target length: 15-25 lines of FO-authored prose.** The full gate message — title, lede, recommendation, Checklist gist roll-up, reviewer findings, assessment, decision — should fit in 15-25 lines. The Checklist is per-item one-liners (≤10-word gists); per rule #3 the report is cited, not pasted. If the message exceeds 25 lines, the FO is over-narrating; cut.
 
 ## Feedback Rejection Flow
 
@@ -208,11 +209,8 @@ When a feedback stage recommends REJECTED:
 1. Read the rejected stage's `feedback-to` target — it names the stage that receives the fix request, not the reviewer.
 2. Track feedback cycles in a `### Feedback Cycles` section in the entity body.
 3. If cycles reach 3, escalate to the human instead of dispatching another round.
-4. Before routing findings back, consult the runtime adapter's budget probe (reuse condition 0). If it reports the old ensign over budget, or the budget source is unavailable, shut down the old ensign and fresh-dispatch; if the adapter declares no probe, proceed to the reuse check below.
-5. Route the findings back to the target stage in the same worktree using the existing worker handle when it is still addressable and the reuse conditions pass (`send_input` on Codex, `SendMessage` on Claude teams). If those checks fail, shut down the old worker explicitly and fresh-dispatch.
-   The routed message must carry the concrete next-stage assignment and requested fix work, not just an acknowledgment request.
-   On Codex, do not treat the immediate `send_input` response as the new completion result. If that follow-up is on the entity's critical path, the FO must wait for the reused worker's next completion before advancing or shutting it down.
-   This wait is entity-scoped, not a global scheduling stop: other ready entities may still be dispatched or advanced.
+4. Consult the runtime adapter's budget probe (reuse condition 0). If it reports the old ensign over budget, or the source is unavailable, shut down the old ensign and fresh-dispatch; if the adapter declares no probe, proceed to reuse below.
+5. Route the findings back to the target stage in the same worktree using the existing worker handle when it is still addressable and reuse conditions pass (`send_input` on Codex, `SendMessage` on Claude teams). Otherwise shut down the old worker explicitly and fresh-dispatch. The routed message must carry the concrete next-stage assignment and requested fix work, not just an acknowledgment request. On Codex, do not treat the immediate `send_input` response as the new completion result; if that follow-up is on the entity's critical path, the FO must wait for the reused worker's next completion before advancing or shutting it down. This wait is entity-scoped, not a global scheduling stop.
 6. Re-run the reviewer after fixes.
 7. Re-enter the normal gate flow with the updated result.
 
@@ -232,7 +230,7 @@ When an entity reaches its terminal stage:
 5. If a merge hook completed without blocking, clear the mod-block in its own `--set` call:
    `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=`
    Commit: `mod-block: {slug} cleared ({mod_name} completed)`.
-   The clear MUST be a standalone `--set` — the audit history must show the block resolving separately from terminalization. `status --set` refuses and exits 1 if `mod-block=` is combined with `status={terminal}`, `completed`, `verdict`, or `worktree=` in one call. Use two commits, or pass `--force` if the captain explicitly approved bypassing the hook.
+   The clear MUST be standalone — `status --set` exits 1 if `mod-block=` is combined with `status={terminal}`, `completed`, `verdict`, or `worktree=` in one call. Use two commits, or `--force` if the captain explicitly approved bypassing the hook.
 6. If no merge hook handled the merge, perform the default local merge from the stage worktree branch.
 7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`
 8. Archive the entity into `{workflow_dir}/_archive/` with `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
@@ -253,7 +251,7 @@ When the merge boundary has no PR host — the README declares `merge: local`, o
 6. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
 7. Remove the worktree and delete the local branch as in Merge-and-Cleanup step 9, then run the terminal agent teardown sweep as in Merge-and-Cleanup step 10. The teardown step is mandatory at the terminal boundary regardless of whether the merge ran locally or via a PR host.
 
-The set→invoke→clear sequence (steps 1, 2, 4) stays MANDATORY when a merge hook is registered, regardless of `merge: local`. The policy relaxes only the guard's pr-requirement; it does not authorize skipping the hook or terminalizing without having merged. `--force` is never part of this ceremony's happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+The set→invoke→clear sequence (steps 1, 2, 4) stays mandatory when a merge hook is registered, regardless of `merge: local`. The policy relaxes only the guard's pr-requirement, not the mod-block-pending or combined-clear refusals. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
 
 ### Worktree removal safety
 
@@ -290,31 +288,31 @@ captain-confirmed bypass.
 
 ### Split-Root Worktree Contract
 
-When the workflow is split-root — the workflow README declares a `state:` checkout (e.g. `state: .spacedock-state`) — a worktree stage isolates **CODE only**. The runtime entities live in a separate, non-branched state checkout that a worktree of the main repo does not contain, so:
+When the workflow is split-root — the README declares a `state:` checkout (e.g. `state: .spacedock-state`) — a worktree stage isolates **CODE only**. The entities live in a separate, non-branched state checkout that a worktree of the main repo does not contain:
 
-- The entity body and stage reports are written and committed to the shared state checkout at the entity's state-checkout path, **never** to a worktree copy. The dispatch helper hands workers that state-checkout entity path even under a worktree stage.
+- The entity body and stage reports are written and committed to the shared state checkout at the entity's state-checkout path, **never** a worktree copy. The dispatch helper hands workers that state-checkout path even under a worktree stage.
 - The worktree still owns code: working directory, branch, and "commits MUST be on this branch" apply to code changes only.
-- The narrow `pr:`-mirrored-on-`main` exception is unaffected. Non-split-root workflows keep today's behavior — the entity lives in the worktree copy.
+- The narrow `pr:`-mirrored-on-`main` exception is unaffected.
 
-**Concurrency-safe state commits.** Because every stage commits its entity body and stage report to the one shared, non-branched state checkout, concurrent stages race a single git index. A bare `git add -A` / `git commit` from one writer sweeps up a sibling writer's already-staged entity file, cross-attributing or clobbering another entity's change. Every writer to the state checkout MUST therefore use a concurrency-safe commit, in preference order:
+**Concurrency-safe state commits.** The shared state checkout is a single non-branched git index that concurrent stages write to at the same time. A bare `git add -A` / `git commit` sweeps up a sibling writer's already-staged entity file, cross-attributing or clobbering it. Every writer MUST therefore commit concurrency-safe, in preference order:
 
-- **Preferred — tool-managed atomic state commits.** When the status tool owns the `add`+`commit` of an entity's state under a lock, route entity commits through it so concurrent writers serialize and never cross-attribute.
-- **Fallback — path-scoped commits per writer.** Until the tool owns commits, stage and commit ONLY the writer's own entity path: `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Never a bare `git add -A` or bare `git commit` in the shared state checkout. Retry on `index.lock` contention after a short wait (~2s).
+- **Preferred — tool-managed atomic state commits.** When the status tool owns `add`+`commit` of an entity's state under a lock, route through it.
+- **Fallback — path-scoped commits per writer.** Stage and commit ONLY the writer's own entity path: `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Never a bare `git add -A` or bare `git commit` in the shared state checkout. Retry on `index.lock` contention after ~2s.
 
-**Multi-writer sync (push / pull --rebase).** The state branch is shared via the main repo's `origin`; concurrent writers (the FO and ensigns, across hosts or same-host parallel stages) must converge without clobbering. Three minimal sync points extend the path-scoped-commit rule — NOT a pull before every dispatch:
+**Multi-writer sync (push / pull --rebase).** The state branch is shared via the main repo's `origin`. Three sync points extend the path-scoped-commit rule — NOT a pull before every dispatch:
 
-- **After a state commit → push.** Whoever commits an entity/report to the state checkout pushes the state branch so peers see it: `git -C {state_checkout} push origin {state_branch}`.
-- **On push rejection (non-fast-forward) → `pull --rebase` then re-push.** A peer pushed first; `git -C {state_checkout} pull --rebase origin {state_branch}` replays the local path-scoped commit atop the peer's. Because each writer commits exactly ONE entity file, concurrent writers touch disjoint paths → the rebase replays with no conflict. Then re-push.
+- **After a state commit → push.** `git -C {state_checkout} push origin {state_branch}`.
+- **On push rejection (non-fast-forward) → `pull --rebase` then re-push.** `git -C {state_checkout} pull --rebase origin {state_branch}` replays the local single-file commit atop the peer's. Because each writer commits exactly ONE entity file, concurrent writers touch disjoint paths → no conflict. Then re-push.
 - **At FO boot (before first dispatch) → `pull --rebase`.** Integrate peers' state once at boot (the Startup pull-on-boot step), not per-read.
 
-**Rebase-conflict halt (B6).** When a `git -C {state_checkout} pull --rebase origin {state_branch}` (at boot, or after a push rejection) CONFLICTS — the only realistic cause is two writers editing the SAME entity's frontmatter concurrently, the path-scoped rule's known boundary — the FO MUST:
+**Rebase-conflict halt (B6).** If `git -C {state_checkout} pull --rebase origin {state_branch}` CONFLICTS — realistically only when two writers edit the SAME entity's frontmatter concurrently — the FO MUST:
 
-1. **HALT** the operation in progress (dispatch). Do not proceed against an unmerged state tree.
-2. **Abort the rebase** (`git -C {state_checkout} rebase --abort`) to leave the checkout in a clean, known state.
-3. **Surface** the conflict to the captain with the conflicting entity path(s) and the peer commit, and **stop**. This is manual intervention.
+1. **HALT** the dispatch in progress. Do not proceed against an unmerged state tree.
+2. **Abort the rebase**: `git -C {state_checkout} rebase --abort`.
+3. **Surface** the conflict to the captain with the conflicting entity path(s) and the peer commit, and stop. This is manual intervention.
 4. The FO must NOT `--force` / `--force-with-lease` push, and must NOT auto-resolve (no `-X ours/theirs`, no discarding either side) — either choice silently loses a peer's frontmatter edit.
 
-This matches the escalate-rather-than-guess discipline. A full lock model is out of scope; the halt IS the boundary behavior for the rare same-entity collision.
+This matches the escalate-rather-than-guess discipline. A full lock model is out of scope; the halt IS the boundary behavior.
 
 ## FO Write Scope
 
@@ -354,17 +352,17 @@ Merge hooks can create blocking conditions (e.g., captain approval before pushin
 - **Set** by the FO before invoking a merge hook: `mod-block=merge:{mod_name}`
 - **Cleared** by the FO after the hook's blocking action completes or the captain force-overrides. The clear runs in its own `--set` call — `status --set` refuses to clear `mod-block` and apply terminal fields (`status={terminal}`, `completed`, `verdict`, `worktree=`) in the same command unless `--force` is passed.
 - **Guarded** by `status --set`, which refuses terminal transitions (status to a terminal stage, completed, verdict, worktree clear) while `mod-block` is non-empty unless `--force` is passed.
-- **Enforced at the mechanism level** — `status --set` and `status --archive` refuse terminal transitions and archival when the workflow has registered merge hooks (`_mods/*.md` with `## Hook: merge`) AND `pr` is empty AND `mod-block` is empty, regardless of whether the FO set `mod-block` first. In that state the hook has provably not run, so terminal advancement is rejected with an error naming the hook. `--force` bypasses this check. This catches the FO forgetting to set `mod-block`. When the README declares `merge: local`, this check exempts the pr-requirement (the workflow merges locally, so an empty `pr` is expected) — but only the pr-requirement: the mod-block-pending and combined-clear refusals above are policy-independent, so the set→invoke→clear ceremony stays mandatory. See the Ship-Local Ceremony under Merge and Cleanup.
+- **Enforced at the mechanism level** — `status --set` and `status --archive` refuse terminal transitions (status to terminal stage, completed, verdict, worktree clear) and archival when the workflow has registered merge hooks (`_mods/*.md` with `## Hook: merge`) AND `pr` is empty AND `mod-block` is empty, regardless of whether the FO set `mod-block` first. `--force` bypasses. When the README declares `merge: local`, this check exempts the pr-requirement (the workflow merges locally, so an empty `pr` is expected); the mod-block-pending and combined-clear refusals stay policy-independent. The set→invoke→clear ceremony remains mandatory. See the Ship-Local Ceremony.
 - **Survives session resume** — the FO reads `mod-block` from entity frontmatter on boot and resumes the pending action.
 
 ## Standing Teammates
 
 A **standing teammate** is a long-lived specialist agent (prose polisher, science officer, code reviewer, language translator) declared by a workflow mod with `standing: true` in frontmatter. The FO discovers each at boot via the runtime adapter's standing-discovery step but defers spawn to the first team-mode dispatch, routes to it by name, and lets it die with the team at session teardown. The four concepts below are load-bearing for every runtime; each runtime adapter realizes (or omits) the concrete mechanics — discovery command, on-disk layout, routing call, teardown trigger — its own way.
 
-- **first-boot-wins** — lifecycle is team-scoped, not workflow-scoped. Spawn is deferred to first dispatch, not boot. When multiple workflows share one team, the first FO to find the member absent spawns it; later workflows detect the live member and skip. How "team scope" maps onto session lifetime is the runtime's concern (on Claude, teams are per-captain-session, so team-scope is effectively captain-session scope; other runtimes re-derive scope from their own team model).
-- **team-scope lifecycle** — the teammate lives as a member of exactly one team and dies when that team is torn down (session end, explicit team-delete, captain-initiated shutdown). No cross-team handoff, no cross-session persistence. Mid-session death is detected on the next routing attempt and handled by the caller (respawn, or proceed without); auto-recovery is deferred.
-- **routing contract** — ensigns and the FO address a standing teammate by its declared `name`, best-effort and non-blocking: if no reply arrives within the 2-minute interactive timeout convention, the sender proceeds with un-polished / un-reviewed / un-translated content. Round-trip latencies of several minutes are normal on long drafts — the non-blocking discipline applies regardless. The sender never waits synchronously. The concrete routing call is the runtime adapter's (`send_input` on Codex, `SendMessage` on Claude teams).
-- **declaration** — one mod file per standing teammate, frontmatter `standing: true`, carrying the spawn config and a verbatim agent-prompt body. The exact on-disk layout, the spawn-config section grammar, and the prompt-extraction rule are the runtime adapter's mechanics; the cross-runtime concept is "one declaration per teammate, parsed by the adapter's discovery and spawn steps."
+- **first-boot-wins** — lifecycle is team-scoped, not workflow-scoped. Spawn is deferred to first dispatch. When multiple workflows share one team, the first FO to find the member absent spawns it; later workflows detect the live member and skip. How team scope maps onto session lifetime is the runtime's concern.
+- **team-scope lifecycle** — the teammate lives as a member of exactly one team and dies when that team is torn down (session end, explicit team-delete, captain-initiated shutdown). No cross-team handoff, no cross-session persistence. Mid-session death is detected on the next routing attempt; auto-recovery is deferred.
+- **routing contract** — ensigns and the FO address a standing teammate by its declared `name`, best-effort and non-blocking: if no reply arrives within the 2-minute timeout, the sender proceeds with un-polished / un-reviewed / un-translated content. Round-trip latencies of several minutes are normal on long drafts. The concrete routing call is the runtime adapter's (`send_input` on Codex, `SendMessage` on Claude teams).
+- **declaration** — one mod file per standing teammate, frontmatter `standing: true`, carrying the spawn config and a verbatim agent-prompt body. The on-disk layout and parse rules are the runtime adapter's.
 
 ## Clarification and Communication
 
@@ -395,7 +393,7 @@ These habits govern how the first officer frames work and adjudicates gates, ind
 
 - when a dispatched-ideation design rests on an unverified mechanism (a format round-trip, a runtime handoff, a tool actually supporting a flag), the riskiest path is exercised end-to-end first — the smallest run that would invalidate the rest of the work if it broke. The evidence from that run goes in the entity body; "no spike needed" is recorded with the proven mechanisms relied on. See the `running-research-spikes` skill. This is the integration-level analog of the acceptance-criteria rule: arrive at the gate with the riskiest claim demonstrated, not asserted.
 - when checking whether tool X supports Y, read X's schema directly via ToolSearch before greping for existing callers — usage presence is not existence evidence.
-- prefer Grep over Read for targeted entity-body inspection. Anchor a Grep to the heading or field name (a `## Stage Report`, a `### Feedback Cycles` entry, a specific frontmatter field) instead of reading the whole file. Read only when you need the full text; avoid full-file Read as a probe.
+- prefer Grep over Read for targeted entity-body inspection. Anchor a Grep to the heading or field name (`## Stage Report`, `### Feedback Cycles`, a specific frontmatter field) instead of reading the whole file. Read only when you need the full text.
 - on Claude Code: a `Read` followed by a Bash-driven mutation of the same file (including `status --set`) triggers the file-staleness safety net, which echoes the entire current file back on the next turn as cache-write tokens. Grep does not participate in this tracking. Use Grep for targeted reads and trust `status --set` stdout for mutation narration.
 - `status --set` prints one line per field as `field: old -> new` on stdout — enough to narrate the mutation without re-reading the entity file. Clear-to-empty renders as `field: old -> ` and bare-timestamp auto-fill as `field:  -> {timestamp}`.
 
