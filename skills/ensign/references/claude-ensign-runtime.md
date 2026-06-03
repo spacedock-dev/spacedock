@@ -1,6 +1,6 @@
 # Claude Code Ensign Runtime
 
-This file defines how the shared ensign core executes on Claude Code.
+How the shared ensign core executes on Claude Code.
 
 ## Agent Surface
 
@@ -26,9 +26,9 @@ The entity file is the artifact. Do not include the checklist or summary in the 
 
 ## Feedback Interaction
 
-When dispatched for a feedback stage, the first officer may keep a prior-stage agent alive for messaging. If the reviewer finds issues, the first officer routes fixes through a fresh dispatch — the ensign does not directly message other agents about fixes.
+For feedback stages, the FO may keep a prior-stage agent alive for messaging. If the reviewer finds issues, the FO routes fixes through a fresh dispatch — the ensign does not directly message other agents.
 
-If a prior-stage agent messages you with fixes (in teams mode), re-check and update your stage report, then send your updated completion message to the first officer.
+If a prior-stage agent messages you with fixes (teams mode), re-check, update your stage report, and send your updated completion message to the FO.
 
 ## Shutdown Response Protocol
 
