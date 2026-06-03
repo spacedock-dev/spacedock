@@ -188,3 +188,18 @@ Fleshed out the seed into an implementation-ready task body that separates foreg
 ### Summary
 
 Revised the design to make `wait_agent` a scheduling choice after the FO has exhausted ready workflow work, not an immediate response to every unresolved worker. The notification taxonomy stays intact, and the ACs now require future tests to catch both taxonomy drift and scheduling-priority drift.
+
+## Stage Report: implementation
+
+- DONE: Updated the Codex FO runtime text to distinguish foreground wait, queued-notification flush, and autonomous idle FO wake-up while preserving existing mailbox compatibility wording.
+  Evidence: code commit `e4148d40` changes `skills/first-officer/references/codex-first-officer-runtime.md`; `go test ./internal/hostneutrality -count=1` and `go test ./skills/integration -run TestCodexIdleNotification -count=1` both pass.
+- DONE: Added the retryable manual probe recipe and timestamped dogfood evidence artifact.
+  Evidence: code commit `e4148d40` adds `docs/dev/codex-idle-notification-probe.md` and `docs/dev/_evidence/codex-idle-notification-probe/2026-06-03-dogfood.json`; the dogfood record classifies Dalton as `queued_flush`, not `autonomous_idle_wake`.
+- DONE: Added focused tests for runtime wording, recipe shape, evidence schema, and the no-blanket-foreground-wait rule.
+  Evidence: code commit `e4148d40` adds `skills/integration/codex_idle_notification_test.go`; the initial focused RED run failed on the missing runtime headings, recipe, and evidence, then passed after implementation.
+- DONE: Ran the required verification gates.
+  Evidence: `gofmt -w skills/integration/codex_idle_notification_test.go`; `gofmt -w ./cmd ./internal`; `go test ./skills/integration -count=1`; `go test ./...`; `go test ./... -race`.
+
+### Summary
+
+Implemented the retryable Codex idle-notification probe contract in commit `e4148d40`. The runtime now treats `wait_agent` as a retryable foreground wait only after ready workflow work is exhausted, the manual recipe separates queued flush from autonomous idle wake-up, and JSON evidence captures the 2026-06-03 dogfood observation as queued-delivery evidence.
