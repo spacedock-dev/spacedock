@@ -211,7 +211,7 @@ The prior f4 validation evidence is stale. The next implementation pass must sta
 ## Stage Report: implementation follow-up (cycle 2)
 
 - DONE: Reviewed and salvaged the staged WIP from the crashed worker
-  Code commit `4b24af74` keeps the current-checkout marketplace/local-auth harness and replaces the one-off Codex smoke target with shared scenario execution.
+  Code commit `1aeb7a96` keeps the current-checkout marketplace/local-auth harness and replaces the one-off Codex smoke target with shared scenario execution.
 - DONE: Completed coherent shared scenario definitions under `internal/ensigncycle`
   `codexSharedScenarios()` now defines `gate-guardrail`, `rejection-flow`, and `merge-hook-guardrail` with old Python provenance, behavior intent, and live timeouts.
 - DONE: Ensured the live Codex suite is named `TestLiveCodexSharedScenarios` and runs all three shared scenarios
@@ -221,10 +221,12 @@ The prior f4 validation evidence is stale. The next implementation pass must sta
 - DONE: Updated CI and evergreen docs for the shared suite
   `.github/workflows/runtime-live-e2e.yml` now runs `TestLiveCodexSharedScenarios`; `docs/dev/README.md` documents the three scenarios, local auth, current-checkout plugin loading, and why static grep/host-only smoke is insufficient.
 - DONE: Ran required verification on the final rebased code branch
-  `gofmt -w ./cmd ./internal`, `go test ./internal/ensigncycle`, live shared suite, `go test ./...`, and `go test ./... -race` all passed on branch `spacedock-ensign/codex-live-ci`.
+  `go test ./internal/ensigncycle`, `go test ./...`, and `go test ./... -race` passed after dropping the unrelated `internal/status` churn.
+- DONE: Checked the required formatting command after removing unrelated status churn
+  `gofmt -w ./cmd ./internal` exits 0 but dirties only `internal/status/fence_helpers_test.go` and `internal/status/mutate.go`; those upstream-only formatting diffs were restored so f4 stays clean.
 - SKIPPED: Approved GitHub Actions `codex-live` run
   No push or CI approval was performed because this dispatch explicitly said not to push either branch.
 
 ### Summary
 
-The f4 code branch is now rebased on current `origin/next` and carries the shared Codex live suite at commit `4b24af74`. Local live verification used existing subscription auth with `OPENAI_API_KEY` unset and proved all three required shared scenarios through real `codex exec --json`.
+The f4 code branch is now rebased on current `origin/next` and carries the shared Codex live suite at commit `1aeb7a96` without unrelated `internal/status` churn. Local live verification used existing subscription auth with `OPENAI_API_KEY` unset and proved all three required shared scenarios through real `codex exec --json`; the follow-up cleanup reran focused/full Go gates and documented the upstream gofmt dirtiness separately.
