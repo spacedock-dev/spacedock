@@ -1,5 +1,22 @@
 # Sprint notes — pending sprint-end actions (FO)
 
+## 0.19.5 sprint slate (captain, 2026-06-03 — FO has the conn: prioritize + parallelize)
+**Goal: improve tests.** v0.19.4 shipped (release recovered + published session 11). The 0.19.5 theme is test coverage + test-infra correctness.
+
+Slate (test-themed first):
+- **sonnet-live-ci-flake** (`yyqez6n…`) — FO. Repeatable sonnet live-CI failure shape blocks merging n3 #275 + 2a #277; fix carries both back to mergeable. Gating for the two parked PRs. **Top test-infra priority.**
+- **reconcile-session-awareness** (`0nadpgp…`) — FO. `dispatch reconcile` auto-discovery (no --team-name) is not session-aware → poisons roster classes A/B/C from stale/parallel-session team configs. Correctness bug in a teardown path that can `shutdown_request` a parallel session; deliverable is the fix + regression tests.
+- **ensign-contract-dev-leakage** (`ep0ra3z…`) — FO. Re-home dev-only discipline (TDD, code-only deliverables, "CODE only" worktree) out of the universal ensign shared core; lock-in oracles. Contract correctness; saves per-dispatch tokens.
+- **Codex live test + shared scenarios (codex peer's lane — DO NOT file/dispatch).** Codex FO ships the codex live test, then files a follow-up task for making codex + claude **share test scenarios**. Tracked here on the 0.19.5 slate; coordinate via shared state only. When the shared-scenarios task lands, it's the natural convergence point with our live-CI work (sonnet-live-ci-flake touches the same streamwatcher/scenario surface).
+
+Carried test-adjacent backlog (lower priority, pull as slots free):
+- **am** ensigncycle-streamwatch-test-only — rename test-supporting lib to `*_test.go`; quiet-slot.
+- **6b** terminal-guard-rejected-consistency — minor-findings bucket.
+- Phase 0.B contract sweep (binary-simplification-roadmap) — length sweep of remaining contract surface; not test-themed, defer behind the test work.
+
+Parallelization: the three FO entities are independent (different surfaces: live-CI/streamwatcher, reconcile loader, ensign contract prose) → ideation can fan out in parallel once gated through backlog.
+
+
 ## AT SPRINT END (all entities done): parallel antipattern reviews
 Captain directive (2026-05-30): when the sprint completes, dispatch PARALLEL reviews
 for antipatterns — over-abstraction, over-engineering, tautological/grep tests — with
