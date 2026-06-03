@@ -222,7 +222,7 @@ After dispatching an ensign (or routing work to a kept-alive ensign), you are wa
 **First-turn-after-dispatch decision procedure.** When a turn begins and your most recent dispatch-related action was an `Agent(...)` spawn whose completion signal (1, 2, or 3 above) has NOT yet been observed in the stream, you MUST end the turn immediately with no tool calls and no text. Do not:
 
 - emit `SendMessage(to="{ensign}", message={"type":"shutdown_request"})` — this is the exact bug this section exists to prevent.
-- emit `TeamDelete` — fails anyway while members are alive, and retrying it in a loop is the second-order bug.
+- emit `TeamDelete` — before a completion signal the entity is not terminal, so tearing down is premature; it fails anyway while members are alive, and retrying it in a loop here is the second-order bug. (At the TERMINAL boundary the opposite holds — see `## Terminal Team Teardown`, where `TeamDelete` MUST be retried to success.)
 - emit `Bash` with commands like `sleep 30` or `wait` — the runtime handles the wait for you; sleeping in Bash wastes time and does not accelerate delivery.
 - re-dispatch a replacement ensign — you have no evidence the first ensign failed.
 - write reassuring text like "Waiting for completion signal" — this converts idle-polling into a multi-turn generation loop that drifts into hallucination on subsequent wake-ups.
@@ -238,6 +238,19 @@ Just emit `end_turn` with empty content. The runtime will wake you up again when
 - Any action whose justification is "enough time has passed" or "the ensign appears idle" — you cannot measure time from inside a turn, and ensign idleness is normal between dispatch and completion.
 
 **DISPATCH IDLE GUARDRAIL.** After dispatching an agent, wait for an explicit completion message. Idle notifications are normal between-turn state for team agents — they are not a reason to tear down the team, and they usually mean the agent is waiting for input. Only shut down when: (1) the agent sends a completion message, (2) the captain explicitly requests shutdown, or (3) you are transitioning the entity to a new stage (AFTER you have observed the prior stage's completion signal per the list above). Never interpret idle notifications as "stuck" or "unresponsive."
+
+## Terminal Team Teardown
+
+This is the Claude realization of the shared core's Merge-and-Cleanup step 10 retry-to-success requirement. It governs the TERMINAL phase only — AFTER the entity reached its terminal stage and the FO is dismantling the team. It is a DIFFERENT phase from `## Awaiting Completion` above: that section bans emitting `TeamDelete` *before* a completion signal (the premature-teardown bug); this section requires retrying `TeamDelete` to success *after* terminal cleanup has begun. Do not conflate the two — the ban is pre-completion, the retry is terminal.
+
+When tearing down the team at the terminal boundary:
+
+1. Send the cooperative `SendMessage({"type":"shutdown_request"})` to every roster member in the entity's cohort. This is cooperative — the member acknowledges and leaves the roster asynchronously.
+2. Call `TeamDelete`. The cooperative shutdown and `TeamDelete` race: the first `TeamDelete` can fail with `Cannot cleanup team with N active member(s): {name}` because a member you just signalled is still settling out of the team registry.
+3. **On that failure, do NOT end the turn.** Re-send `SendMessage({"type":"shutdown_request"})` to each still-named active member from the failure message, then call `TeamDelete` again. Repeat until `TeamDelete` succeeds or a small attempt cap (≈3–5 attempts) is reached.
+4. If the cap is reached without success, surface the still-active member(s) to the captain rather than silently leaving the team half-torn-down.
+
+The retry IS the fix: ending the turn on the first `active member(s)` failure strands the `claude -p` FO subprocess — the team is never torn down, so the runtime never exits and the live cycle hangs at its exit wait. The cap keeps a genuinely stuck teardown from spinning forever. A failed `TeamDelete` here is the EXPECTED first step of a settling race, not a reason to stop; it is the one place the FO actively retries `TeamDelete` (everywhere else — see `## Awaiting Completion` — retrying it is the bug).
 
 ## Event Loop
 
