@@ -255,3 +255,56 @@ func TestReconcileDegradeExitAndNote(t *testing.T) {
 			code, stderr2.String())
 	}
 }
+
+// TestReconcileGateSuppressesEvenWithPopulatedRoster pins the assembly-level
+// rosterTrusted gate (reconcile.go) directly via a stub rosterLoader, decoupled
+// from the loader's own degrade logic. The stub returns the degrade sentinel
+// (empty TeamName) but deliberately carries a Class-A-tripping ensign in
+// Members — so if the A/B/C emit blocks were not guarded by `rosterTrusted`,
+// this populated roster would leak a Class A entry. The gate must suppress it on
+// the strength of the empty TeamName alone, regardless of what Members holds.
+func TestReconcileGateSuppressesEvenWithPopulatedRoster(t *testing.T) {
+	if !hasGit(t) {
+		t.Skip("git not available")
+	}
+	f := newReconcileFixture(t)
+	var stdout, stderr bytes.Buffer
+	opts := reconcileOpts{
+		workflowDir: f.workflowDir,
+		teamName:    "",
+		sessionID:   currentSessionID,
+		repoRoot:    f.repoRoot,
+		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		// Degrade sentinel (empty TeamName) that nonetheless carries a roster.
+		roster: func(home, teamName, sessionID string) (claudeteam.ReconcileTeamState, error) {
+			return claudeteam.ReconcileTeamState{
+				TeamName: "", // sentinel → rosterTrusted == false
+				Members: []claudeteam.ReconcileMember{
+					{Name: "spacedock-ensign-release-notes-local-summary-implementation",
+						AgentType: "spacedock:ensign", Model: "m"},
+				},
+			}, nil
+		},
+		home: f.home,
+		gh:   func(string) (string, error) { return "OPEN", nil },
+		git:  gitRunnerExec,
+	}
+	if code := Reconcile(opts, &stdout, &stderr); code != 0 {
+		t.Fatalf("degrade exit=%d, want 0; stderr=%s", code, stderr.String())
+	}
+	var result reconcileResult
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	for _, d := range result.Drift {
+		if d.Class == "A" || d.Class == "B" || d.Class == "C" {
+			t.Errorf("rosterTrusted gate leaked class %s despite empty TeamName sentinel: %+v", d.Class, d)
+		}
+	}
+	// The git/filesystem classes must still emit — the gate suppresses roster
+	// classes only, not the whole sweep.
+	byClass := groupDriftByClass(result.Drift)
+	if len(byClass["D"]) == 0 && len(byClass["E"]) == 0 {
+		t.Errorf("gate must still emit git classes D/E on degrade; got none\n%s", formatDrift(result.Drift))
+	}
+}

@@ -146,3 +146,50 @@ func TestLoadReconcileTeamExplicitMissingErrors(t *testing.T) {
 		t.Errorf("missing explicit config must error, not degrade")
 	}
 }
+
+// TestLoadReconcileTeamSessionMatchIsExact pins the EXACTNESS of the
+// leadSessionId comparison — the property the rest of the suite leaves
+// unguarded. Each sub-case seeds ONE foreign team whose leadSessionId is a
+// near-miss of the current session id that a LOOSENED comparison would wrongly
+// accept, and asserts it still degrades (empty TeamName, no roster):
+//
+//   - empty leadSessionId: strings.HasPrefix(session, "") and
+//     strings.Contains(session, "") are BOTH always true in Go, so an
+//     empty-lead foreign config matches ANY session under a loosened compare —
+//     the realistic exploit (a malformed/missing config in ~/.claude/teams).
+//   - strict prefix of the session id: caught by HasPrefix(session, lead).
+//   - strict substring of the session id: caught by Contains(session, lead).
+//
+// Under the shipped exact `lead != session` the near-miss never equals the
+// session id, so all three degrade (GREEN). Swap the comparison to HasPrefix or
+// Contains and at least one sub-case resolves the foreign team and returns its
+// roster (RED). This is the regression the audit demanded.
+func TestLoadReconcileTeamSessionMatchIsExact(t *testing.T) {
+	const sessionID = "aec06dd4-1111-2222-3333-444444486011"
+	cases := []struct {
+		name          string
+		foreignLeadID string
+	}{
+		{"empty-lead", ""},
+		{"strict-prefix", "aec06dd4"},
+		{"strict-substring", "2222-3333"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			writeSessionTeamConfig(t, home, "team-foreign-"+tc.name, tc.foreignLeadID, 1*time.Minute)
+
+			state, err := LoadReconcileTeam(home, "", sessionID)
+			if err != nil {
+				t.Fatalf("near-miss degrade must not error; got %v", err)
+			}
+			if state.TeamName != "" {
+				t.Errorf("foreign leadSessionId=%q is only a near-miss of session=%q and MUST NOT resolve (exact match required); resolved team=%q",
+					tc.foreignLeadID, sessionID, state.TeamName)
+			}
+			if len(state.Members) != 0 {
+				t.Errorf("foreign near-miss must yield no roster; got %d members", len(state.Members))
+			}
+		})
+	}
+}
