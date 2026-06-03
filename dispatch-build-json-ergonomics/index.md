@@ -141,3 +141,16 @@ Ideation narrowed the task to a concrete flag/file input mode plus a non-default
 ### Summary
 
 Cycle 2 incorporates the captain's host-derivation feedback: Codex derives from `CODEX_THREAD_ID`, Claude derives from `CLAUDECODE`, and missing or ambiguous runtime sources fail instead of falling back. Explicit host inputs remain available as deliberate programmatic overrides, while the FO routine path no longer has to hand-author host.
+
+## Stage Report: implementation
+
+- DONE: Flag/file dispatch-build input mode lands while stdin JSON remains supported.
+  Code commit `cfa3b671` adds `--entity-path`, `--stage`, `--checklist-file`, scope/feedback file flags, and keeps stdin JSON covered by `TestBuildFlagFileInputModePreservesLiteralChecklist`.
+- DONE: Host resolver derives Codex from CODEX_THREAD_ID and Claude from CLAUDECODE, with loud missing/conflict errors.
+  `TestBuildHostResolutionFromFlagJSONAndEnv` covers derived Codex/Claude, explicit override, explicit conflict, unsupported host, missing source, and ambiguous runtime markers.
+- DONE: Tests and runtime-doc updates prove Codex cannot silently receive a Claude-shaped prompt.
+  `TestFirstOfficerDispatchDocsUseFlagFileMode` and Codex dispatch assertions cover no `Skill(skill="spacedock:ensign")` / no `SendMessage(to="team-lead")`; full gates passed with `go test ./...` and `go test ./... -race`.
+
+### Summary
+
+Implemented flag/file dispatch input, JSON schema/validate-only support, and non-defaulting host resolution from explicit host fields or `CODEX_THREAD_ID` / `CLAUDECODE`. Updated first-officer runtime docs away from inline shell JSON and added command-level plus instruction-text tests; code is committed as `cfa3b671`.
