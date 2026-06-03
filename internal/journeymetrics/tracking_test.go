@@ -13,10 +13,13 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	dir := t.TempDir()
 
 	unitResult, err := Track(dir, JourneySpec{
-		ID:     "unit-fake",
-		Source: "unit-test",
-		Host:   "go-test",
-		Model:  "fake",
+		ScenarioID: "unit-fake",
+		Source:     "unit-test",
+		Mode:       "fake",
+		Runtime:    "go-test",
+		Executor:   "codified",
+		Host:       "go-test",
+		Model:      "fake",
 	}, func() BehaviorResult {
 		return BehaviorResult{Passed: true}
 	}, func() Observation {
@@ -37,10 +40,13 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	}
 
 	liveResult, err := Track(dir, JourneySpec{
-		ID:     "live-fake",
-		Source: "live-harness",
-		Host:   "claude",
-		Model:  "sonnet",
+		ScenarioID: "live-fake",
+		Source:     "live-harness",
+		Mode:       "sonnet",
+		Runtime:    "claude",
+		Executor:   "llm",
+		Host:       "claude",
+		Model:      "sonnet",
 	}, func() BehaviorResult {
 		return BehaviorResult{Passed: false, Failure: "behavior assertion failed"}
 	}, func() Observation {
@@ -66,7 +72,7 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	}
 	byID := map[string]Record{}
 	for _, record := range records {
-		byID[record.JourneyID] = record
+		byID[record.ScenarioID] = record
 	}
 	if byID["unit-fake"].Outcome.Status != "passed" {
 		t.Errorf("unit outcome = %q, want passed", byID["unit-fake"].Outcome.Status)
@@ -81,7 +87,7 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 
 func TestBudgetPolicyIsExplicitAndCoarse(t *testing.T) {
 	record := Record{
-		JourneyID:       "measured",
+		ScenarioID:      "measured",
 		MetricsState:    StateMeasured,
 		Tokens:          TokenTotals{Total: 101},
 		ToolCalls:       3,
@@ -109,6 +115,61 @@ func TestBudgetPolicyIsExplicitAndCoarse(t *testing.T) {
 	got = EvaluateBudget(record, Budget{MaxToolCalls: &maxToolCalls})
 	if !got.Blocking || !strings.Contains(strings.Join(got.Violations, "\n"), "max_tool_calls") {
 		t.Fatalf("tool-call ceiling did not report a configured violation: %+v", got)
+	}
+}
+
+func TestEmitRecordKeepsSharedScenarioObservationsDistinct(t *testing.T) {
+	dir := t.TempDir()
+	records := []Record{
+		{
+			SchemaVersion: RecordSchemaVersion,
+			ScenarioID:    "gate-guardrail",
+			Mode:          "sonnet",
+			Runtime:       "claude",
+			Executor:      "llm",
+			Host:          "claude",
+			Model:         "claude-sonnet-4-6",
+			MetricsState:  StateMeasured,
+			Outcome:       Outcome{Status: "passed"},
+		},
+		{
+			SchemaVersion: RecordSchemaVersion,
+			ScenarioID:    "gate-guardrail",
+			Mode:          "gpt-5-codex",
+			Runtime:       "codex",
+			Executor:      "llm",
+			Host:          "codex",
+			Model:         "gpt-5-codex",
+			MetricsState:  StateCharacterized,
+			Outcome:       Outcome{Status: "passed"},
+		},
+	}
+	for _, record := range records {
+		if err := EmitRecord(dir, record); err != nil {
+			t.Fatalf("EmitRecord(%s/%s): %v", record.ScenarioID, record.Runtime, err)
+		}
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("metric files = %d, want 2", len(entries))
+	}
+	emitted := readRecordFiles(t, dir)
+	if len(emitted) != 2 {
+		t.Fatalf("emitted records = %d, want 2", len(emitted))
+	}
+	seen := map[string]bool{}
+	for _, record := range emitted {
+		seen[record.Runtime] = true
+		if record.ScenarioID != "gate-guardrail" {
+			t.Fatalf("scenario_id = %q, want gate-guardrail", record.ScenarioID)
+		}
+	}
+	if !seen["claude"] || !seen["codex"] {
+		t.Fatalf("shared scenario observations were not distinct: %#v", seen)
 	}
 }
 

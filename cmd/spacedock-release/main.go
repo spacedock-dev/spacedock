@@ -109,7 +109,7 @@ func journeyCosts(args []string) int {
 		fmt.Fprintf(os.Stderr, "write %s: %v\n", out, err)
 		return 1
 	}
-	fmt.Printf("wrote %s (%d journeys)\n", out, len(records))
+	fmt.Printf("wrote %s (%d scenarios, %d observations)\n", out, ledger.Summary.ScenarioCount, ledger.Summary.ObservationCount)
 	return 0
 }
 

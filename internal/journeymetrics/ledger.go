@@ -11,11 +11,11 @@ import (
 )
 
 type Ledger struct {
-	SchemaVersion int             `json:"schema_version"`
-	Release       ReleaseMetadata `json:"release"`
-	GeneratedAt   string          `json:"generated_at"`
-	Summary       LedgerSummary   `json:"summary"`
-	Journeys      []Record        `json:"journeys"`
+	SchemaVersion int                   `json:"schema_version"`
+	Release       ReleaseMetadata       `json:"release"`
+	GeneratedAt   string                `json:"generated_at"`
+	Summary       LedgerSummary         `json:"summary"`
+	Scenarios     []ScenarioLedgerEntry `json:"scenarios"`
 }
 
 type ReleaseMetadata struct {
@@ -24,9 +24,16 @@ type ReleaseMetadata struct {
 }
 
 type LedgerSummary struct {
-	JourneyCount       int `json:"journey_count"`
+	ScenarioCount      int `json:"scenario_count"`
+	ObservationCount   int `json:"observation_count"`
 	MeasuredCount      int `json:"measured_count"`
 	CharacterizedCount int `json:"characterized_count"`
+}
+
+type ScenarioLedgerEntry struct {
+	ScenarioID   string   `json:"scenario_id"`
+	Source       string   `json:"source,omitempty"`
+	Observations []Record `json:"observations"`
 }
 
 func AggregateLedger(releaseVersion string, records []Record, generatedAt time.Time) (Ledger, error) {
@@ -39,25 +46,43 @@ func AggregateLedger(releaseVersion string, records []Record, generatedAt time.T
 	}
 	records = append([]Record(nil), records...)
 	for i := range records {
-		if records[i].SchemaVersion == 0 {
-			records[i].SchemaVersion = RecordSchemaVersion
-		}
-		if records[i].JourneyID == "" {
-			return Ledger{}, fmt.Errorf("record %d missing journey_id", i+1)
+		records[i] = normalizeRecord(records[i])
+		if records[i].ScenarioID == "" {
+			return Ledger{}, fmt.Errorf("record %d missing scenario_id", i+1)
 		}
 		if records[i].MetricsState == "" {
-			return Ledger{}, fmt.Errorf("record %s missing metrics_state", records[i].JourneyID)
+			return Ledger{}, fmt.Errorf("record %s missing metrics_state", records[i].ScenarioID)
 		}
 		if records[i].Outcome.Status == "" {
-			return Ledger{}, fmt.Errorf("record %s missing outcome.status", records[i].JourneyID)
+			return Ledger{}, fmt.Errorf("record %s missing outcome.status", records[i].ScenarioID)
 		}
-		records[i].Tokens = records[i].Tokens.withTotal()
-		records[i].ModelUsage = normalizeModelUsage(records[i].ModelUsage)
 	}
 	sort.Slice(records, func(i, j int) bool {
-		return records[i].JourneyID < records[j].JourneyID
+		return recordSortKey(records[i]) < recordSortKey(records[j])
 	})
-	summary := LedgerSummary{JourneyCount: len(records)}
+	byScenario := map[string][]Record{}
+	scenarioSources := map[string]string{}
+	for _, record := range records {
+		byScenario[record.ScenarioID] = append(byScenario[record.ScenarioID], record)
+		if scenarioSources[record.ScenarioID] == "" {
+			scenarioSources[record.ScenarioID] = record.Source
+		}
+	}
+	scenarios := make([]ScenarioLedgerEntry, 0, len(byScenario))
+	for scenarioID, observations := range byScenario {
+		scenarios = append(scenarios, ScenarioLedgerEntry{
+			ScenarioID:   scenarioID,
+			Source:       scenarioSources[scenarioID],
+			Observations: observations,
+		})
+	}
+	sort.Slice(scenarios, func(i, j int) bool {
+		return scenarios[i].ScenarioID < scenarios[j].ScenarioID
+	})
+	summary := LedgerSummary{
+		ScenarioCount:    len(scenarios),
+		ObservationCount: len(records),
+	}
 	for _, record := range records {
 		switch record.MetricsState {
 		case StateMeasured:
@@ -74,7 +99,7 @@ func AggregateLedger(releaseVersion string, records []Record, generatedAt time.T
 		},
 		GeneratedAt: generatedAt.UTC().Format(time.RFC3339),
 		Summary:     summary,
-		Journeys:    records,
+		Scenarios:   scenarios,
 	}, nil
 }
 
@@ -103,7 +128,8 @@ func ReadRecordsDir(dir string) ([]Record, error) {
 		if err := json.Unmarshal(data, &record); err != nil {
 			return fmt.Errorf("parse %s: %w", path, err)
 		}
-		if record.JourneyID == "" || record.MetricsState == "" || record.Outcome.Status == "" {
+		record = normalizeRecord(record)
+		if record.ScenarioID == "" || record.MetricsState == "" || record.Outcome.Status == "" {
 			return nil
 		}
 		records = append(records, record)
@@ -119,4 +145,16 @@ func ReadRecordsDir(dir string) ([]Record, error) {
 
 func normalizeVersion(version string) string {
 	return strings.TrimPrefix(strings.TrimSpace(version), "v")
+}
+
+func recordSortKey(record Record) string {
+	return strings.Join([]string{
+		record.ScenarioID,
+		record.Runtime,
+		record.Executor,
+		record.Host,
+		record.Mode,
+		record.Model,
+		string(record.MetricsState),
+	}, "\x00")
 }

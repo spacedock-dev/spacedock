@@ -23,10 +23,13 @@ func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, res
 	observation := parsed.Observation
 	observation.Duration = result.duration
 	record := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
-		ID:     "claude-" + scenario.name,
-		Source: "live-harness",
-		Host:   "claude",
-		Model:  model,
+		ScenarioID: scenario.name,
+		Source:     "live-harness",
+		Mode:       model,
+		Runtime:    "claude",
+		Executor:   "llm",
+		Host:       "claude",
+		Model:      model,
 	}, journeymetrics.BehaviorResult{Passed: true}, observation)
 	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
 		t.Fatalf("emit Claude journey metrics for %s: %v", scenario.name, err)
@@ -44,10 +47,13 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 		t.Fatalf("characterize Codex journey metrics for %s: %v", scenario.name, err)
 	}
 	record := journeymetrics.CodexCharacterizedRecord(journeymetrics.JourneySpec{
-		ID:     "codex-" + scenario.name,
-		Source: "live-harness",
-		Host:   "codex",
-		Model:  characterization.Model,
+		ScenarioID: scenario.name,
+		Source:     "live-harness",
+		Mode:       characterization.Model,
+		Runtime:    "codex",
+		Executor:   "llm",
+		Host:       "codex",
+		Model:      characterization.Model,
 	}, characterization, journeymetrics.BehaviorResult{Passed: true})
 	record.DurationMS = result.duration.Milliseconds()
 	record.ToolCalls = characterization.ToolCalls

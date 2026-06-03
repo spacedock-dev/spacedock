@@ -30,10 +30,13 @@ func TestCodexFixtureIsCharacterizedNotMeasured(t *testing.T) {
 	}
 
 	record := CodexCharacterizedRecord(JourneySpec{
-		ID:     "codex-runtime-dispatch",
-		Source: "live-harness",
-		Host:   "codex",
-		Model:  characterization.Model,
+		ScenarioID: "runtime-dispatch",
+		Source:     "live-harness",
+		Mode:       characterization.Model,
+		Runtime:    "codex",
+		Executor:   "llm",
+		Host:       "codex",
+		Model:      characterization.Model,
 	}, characterization, BehaviorResult{Passed: true})
 	if record.MetricsState != StateCharacterized {
 		t.Fatalf("metrics_state = %q, want characterized", record.MetricsState)

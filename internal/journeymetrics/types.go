@@ -3,8 +3,8 @@ package journeymetrics
 import "time"
 
 const (
-	RecordSchemaVersion = 1
-	LedgerSchemaVersion = 1
+	RecordSchemaVersion = 2
+	LedgerSchemaVersion = 2
 )
 
 type MetricsState string
@@ -15,11 +15,16 @@ const (
 )
 
 type JourneySpec struct {
-	ID     string
-	Source string
-	Host   string
-	Model  string
-	Budget Budget
+	// ID is a legacy alias for ScenarioID.
+	ID         string
+	ScenarioID string
+	Source     string
+	Mode       string
+	Runtime    string
+	Executor   string
+	Host       string
+	Model      string
+	Budget     Budget
 }
 
 type BehaviorResult struct {
@@ -88,8 +93,12 @@ type BudgetResult struct {
 
 type Record struct {
 	SchemaVersion   int                    `json:"schema_version"`
-	JourneyID       string                 `json:"journey_id"`
+	ScenarioID      string                 `json:"scenario_id"`
+	JourneyID       string                 `json:"journey_id,omitempty"`
 	Source          string                 `json:"source"`
+	Mode            string                 `json:"mode,omitempty"`
+	Runtime         string                 `json:"runtime,omitempty"`
+	Executor        string                 `json:"executor,omitempty"`
 	Host            string                 `json:"host"`
 	Model           string                 `json:"model"`
 	MetricsState    MetricsState           `json:"metrics_state"`
@@ -108,8 +117,11 @@ type Record struct {
 
 type recordJSON struct {
 	SchemaVersion   int                    `json:"schema_version"`
-	JourneyID       string                 `json:"journey_id"`
+	ScenarioID      string                 `json:"scenario_id"`
 	Source          string                 `json:"source"`
+	Mode            string                 `json:"mode,omitempty"`
+	Runtime         string                 `json:"runtime,omitempty"`
+	Executor        string                 `json:"executor,omitempty"`
 	Host            string                 `json:"host"`
 	Model           string                 `json:"model"`
 	MetricsState    MetricsState           `json:"metrics_state"`
@@ -138,9 +150,12 @@ func (r Record) MarshalJSON() ([]byte, error) {
 		budget = &b
 	}
 	return marshalRecordJSON(recordJSON{
-		SchemaVersion:   r.SchemaVersion,
-		JourneyID:       r.JourneyID,
+		SchemaVersion:   RecordSchemaVersion,
+		ScenarioID:      firstNonEmpty(r.ScenarioID, r.JourneyID),
 		Source:          r.Source,
+		Mode:            firstNonEmpty(r.Mode, r.Model),
+		Runtime:         firstNonEmpty(r.Runtime, r.Host),
+		Executor:        r.Executor,
 		Host:            r.Host,
 		Model:           r.Model,
 		MetricsState:    r.MetricsState,

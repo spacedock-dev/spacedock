@@ -1,42 +1,40 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "release": {
     "version": "0.20.0",
     "artifact": "journey-costs-v0.20.0.json"
   },
   "generated_at": "2026-06-03T12:00:00Z",
   "summary": {
-    "journey_count": 2,
+    "scenario_count": 1,
+    "observation_count": 2,
     "measured_count": 1,
     "characterized_count": 1
   },
-  "journeys": [
+  "scenarios": [
     {
-      "schema_version": 1,
-      "journey_id": "claude-gate-guardrail",
+      "scenario_id": "gate-guardrail",
       "source": "live-harness",
-      "host": "claude",
-      "model": "sonnet",
-      "metrics_state": "measured",
-      "outcome": {
-        "status": "passed"
-      },
-      "duration_ms": 1234,
-      "turns": 2,
-      "tool_calls": 1,
-      "tool_calls_by_name": {
-        "Bash": 1
-      },
-      "tokens": {
-        "input": 100,
-        "output": 50,
-        "cache_creation": 20,
-        "cache_read": 10,
-        "total": 180
-      },
-      "total_cost_usd": 0.42,
-      "model_usage": {
-        "claude-sonnet-4-6": {
+      "observations": [
+        {
+          "schema_version": 2,
+          "scenario_id": "gate-guardrail",
+          "source": "live-harness",
+          "mode": "sonnet",
+          "runtime": "claude",
+          "executor": "llm",
+          "host": "claude",
+          "model": "claude-sonnet-4-6",
+          "metrics_state": "measured",
+          "outcome": {
+            "status": "passed"
+          },
+          "duration_ms": 1234,
+          "turns": 2,
+          "tool_calls": 1,
+          "tool_calls_by_name": {
+            "Bash": 1
+          },
           "tokens": {
             "input": 100,
             "output": 50,
@@ -44,25 +42,40 @@
             "cache_read": 10,
             "total": 180
           },
-          "cost_usd": 0.42
+          "total_cost_usd": 0.42,
+          "model_usage": {
+            "claude-sonnet-4-6": {
+              "tokens": {
+                "input": 100,
+                "output": 50,
+                "cache_creation": 20,
+                "cache_read": 10,
+                "total": 180
+              },
+              "cost_usd": 0.42
+            }
+          }
+        },
+        {
+          "schema_version": 2,
+          "scenario_id": "gate-guardrail",
+          "source": "live-harness",
+          "mode": "gpt-5-codex",
+          "runtime": "codex",
+          "executor": "llm",
+          "host": "codex",
+          "model": "gpt-5-codex",
+          "metrics_state": "characterized",
+          "outcome": {
+            "status": "passed"
+          },
+          "duration_ms": 2345,
+          "tool_calls": 1,
+          "tool_calls_by_name": {
+            "exec_command": 1
+          }
         }
-      }
-    },
-    {
-      "schema_version": 1,
-      "journey_id": "codex-gate-guardrail",
-      "source": "live-harness",
-      "host": "codex",
-      "model": "gpt-5-codex",
-      "metrics_state": "characterized",
-      "outcome": {
-        "status": "passed"
-      },
-      "duration_ms": 2345,
-      "tool_calls": 1,
-      "tool_calls_by_name": {
-        "exec_command": 1
-      }
+      ]
     }
   ]
 }

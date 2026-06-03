@@ -40,8 +40,11 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 	}
 	record := Record{
 		SchemaVersion:   RecordSchemaVersion,
-		JourneyID:       spec.ID,
+		ScenarioID:      firstNonEmpty(spec.ScenarioID, spec.ID),
 		Source:          spec.Source,
+		Mode:            firstNonEmpty(spec.Mode, spec.Model),
+		Runtime:         firstNonEmpty(spec.Runtime, spec.Host),
+		Executor:        spec.Executor,
 		Host:            spec.Host,
 		Model:           spec.Model,
 		MetricsState:    state,
@@ -63,8 +66,9 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 }
 
 func EmitRecord(dir string, record Record) error {
-	if strings.TrimSpace(record.JourneyID) == "" {
-		return fmt.Errorf("journey id is required")
+	record = normalizeRecord(record)
+	if strings.TrimSpace(record.ScenarioID) == "" {
+		return fmt.Errorf("scenario id is required")
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
@@ -74,7 +78,7 @@ func EmitRecord(dir string, record Record) error {
 		return err
 	}
 	data = append(data, '\n')
-	return os.WriteFile(filepath.Join(dir, safeFilename(record.JourneyID)+".json"), data, 0o644)
+	return os.WriteFile(filepath.Join(dir, recordFilename(record)), data, 0o644)
 }
 
 func EvaluateBudget(record Record, budget Budget) BudgetResult {
@@ -96,6 +100,37 @@ func EvaluateBudget(record Record, budget Budget) BudgetResult {
 
 func hasBudget(b Budget) bool {
 	return b.MaxTotalTokens != nil || b.MaxToolCalls != nil
+}
+
+func normalizeRecord(record Record) Record {
+	record.SchemaVersion = RecordSchemaVersion
+	record.ScenarioID = firstNonEmpty(record.ScenarioID, record.JourneyID)
+	record.JourneyID = ""
+	record.Mode = firstNonEmpty(record.Mode, record.Model)
+	record.Runtime = firstNonEmpty(record.Runtime, record.Host)
+	record.Tokens = record.Tokens.withTotal()
+	record.ModelUsage = normalizeModelUsage(record.ModelUsage)
+	return record
+}
+
+func recordFilename(record Record) string {
+	parts := []string{record.ScenarioID}
+	seen := map[string]bool{record.ScenarioID: true}
+	for _, part := range []string{
+		record.Runtime,
+		record.Executor,
+		record.Host,
+		record.Mode,
+		record.Model,
+		string(record.MetricsState),
+	} {
+		if part == "" || seen[part] {
+			continue
+		}
+		seen[part] = true
+		parts = append(parts, part)
+	}
+	return safeFilename(strings.Join(parts, "--")) + ".json"
 }
 
 func safeFilename(id string) string {

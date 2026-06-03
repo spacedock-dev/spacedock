@@ -11,8 +11,11 @@ func TestAggregateLedgerMatchesGolden(t *testing.T) {
 	records := []Record{
 		{
 			SchemaVersion:   RecordSchemaVersion,
-			JourneyID:       "codex-gate-guardrail",
+			ScenarioID:      "gate-guardrail",
 			Source:          "live-harness",
+			Mode:            "gpt-5-codex",
+			Runtime:         "codex",
+			Executor:        "llm",
 			Host:            "codex",
 			Model:           "gpt-5-codex",
 			MetricsState:    StateCharacterized,
@@ -23,10 +26,13 @@ func TestAggregateLedgerMatchesGolden(t *testing.T) {
 		},
 		{
 			SchemaVersion:   RecordSchemaVersion,
-			JourneyID:       "claude-gate-guardrail",
+			ScenarioID:      "gate-guardrail",
 			Source:          "live-harness",
+			Mode:            "sonnet",
+			Runtime:         "claude",
+			Executor:        "llm",
 			Host:            "claude",
-			Model:           "sonnet",
+			Model:           "claude-sonnet-4-6",
 			MetricsState:    StateMeasured,
 			Outcome:         Outcome{Status: "passed"},
 			DurationMS:      1234,
