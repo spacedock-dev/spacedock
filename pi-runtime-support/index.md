@@ -153,3 +153,18 @@ Implemented the first compatibility slice for Pi runtime support in code commit 
 ### Summary
 
 Validation result: REJECTED. The implementation commits `f935a7b2` and `672d5ba6` are a useful first slice (Pi host dispatch shape plus loadable runtime docs), and `go test ./...` plus `go test ./... -race` pass from the worktree, but the entity-level acceptance criteria require live Pi subagent proof, pi-agent-teams adapter tests, stale completion protection, and Pi-specific split-root path coverage before this task can pass.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Add missing offline evidence for `pi-agent-teams` action mapping.
+  Evidence: code commit `efc7df90` adds `internal/piruntime` and `TestTeamsAdapterMapsLifecycleActions`, mapping dispatch/follow-up/shutdown/team-done intents to `teams` action payloads.
+- DONE: Add stale-completion protection for Pi follow-up routing.
+  Evidence: `TestRegistryRejectsStaleCompletionAfterFollowup` pins worker completion epochs so epoch-0 evidence cannot satisfy an epoch-1 follow-up.
+- DONE: Add Pi-specific split-root dispatch path coverage.
+  Evidence: `TestBuildPiHostPreservesSplitRootEntityPath` asserts `host: "pi"` dispatch points at the state-checkout entity path and does not rewrite it into the code worktree.
+- SKIPPED: Complete the live isolated-home Pi subagent smoke in this cycle.
+  Rationale: the live run requires a proper isolated `PI_CODING_AGENT_DIR` harness with copied `auth.json`; the design and docs now pin that requirement, but the live runner itself remains the next implementation slice.
+
+### Summary
+
+Cycle 1 closed the missing offline validation gaps from the first validation report: pi-agent-teams has a concrete action adapter contract, Pi worker reuse has epoch-scoped stale-completion protection, and Pi dispatch now has split-root path coverage. The remaining high-risk gap is AC-2's live isolated-home `pi-subagents` smoke.
