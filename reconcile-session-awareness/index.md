@@ -4,10 +4,10 @@ title: reconcile auto-discovery (no --team-name) is not session-aware — newest
 status: validation
 source: session-11 FO (2026-06-03) — observed bare `dispatch reconcile` resolve a two-day-old prior-session team config and report archived-entity agents as Class A; captain flagged it ("did reconcile not consider repeated or parallel sessions?")
 score: "0.19"
-worktree: .worktrees/spacedock-ensign-reconcile-session-awareness
+worktree:
 started: 2026-06-03T07:09:59Z
-completed:
-verdict:
+completed: 2026-06-03T08:30:20Z
+verdict: PASSED
 issue:
 mod-block:
 pr: "#280"
