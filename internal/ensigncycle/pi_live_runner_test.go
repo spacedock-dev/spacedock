@@ -22,35 +22,64 @@ func TestLivePiSubagentEnsignSmoke(t *testing.T) {
 	}
 	repo := repoRoot(t)
 	piSubagentsRoot := piSubagentsPackageRoot(t)
-	binary := spacedockBinary(t)
-
-	piHome := t.TempDir()
-	sessionDir := t.TempDir()
-	cleanHome := t.TempDir()
-	seedPiLocalAuth(t, piHome, os.Getenv("HOME"))
-
-	workflowRoot, stateRoot, entityPath := writePiSplitRootSmokeWorkflow(t)
-	artifactDir := filepath.Join(piLiveArtifactDir(t, "pi-subagent-ensign-smoke"), "run")
-	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
-	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
+	binary := piSpacedockBinary(t, repo)
+	workflowRoot, stateRoot, entityPath, artifactDir, env := newPiLiveSmokeFixture(t, "pi-subagent-ensign-smoke", repo, piSubagentsRoot, binary)
 
 	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, piBin,
+	runPiLiveCommand(t, artifactDir, workflowRoot, env, piBin,
 		"--print",
-		"--session-dir", sessionDir,
+		"--session-dir", filepath.Join(artifactDir, "sessions"),
 		"--extension", filepath.Join(piSubagentsRoot, "src", "extension", "index.ts"),
 		"--skill", filepath.Join(piSubagentsRoot, "skills", "pi-subagents"),
 		"--skill", filepath.Join(repo, "skills", "first-officer"),
 		"--skill", filepath.Join(repo, "skills", "ensign"),
 		prompt,
 	)
+	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
+}
+
+func TestLivePiFrontDoorSmoke(t *testing.T) {
+	repo := repoRoot(t)
+	piSubagentsRoot := piSubagentsPackageRoot(t)
+	binary := piSpacedockBinary(t, repo)
+	workflowRoot, stateRoot, entityPath, artifactDir, env := newPiLiveSmokeFixture(t, "pi-frontdoor-smoke", repo, piSubagentsRoot, binary)
+
+	prompt := piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath)
+	runPiLiveCommand(t, artifactDir, workflowRoot, env, binary,
+		"pi",
+		prompt,
+		"--plugin-dir", repo,
+		"--",
+		"--print",
+		"--session-dir", filepath.Join(artifactDir, "sessions"),
+	)
+	assertPiLiveSmokeResult(t, stateRoot, entityPath, artifactDir)
+}
+
+func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary string) (workflowRoot, stateRoot, entityPath, artifactDir string, env []string) {
+	t.Helper()
+	piHome := t.TempDir()
+	sessionDir := t.TempDir()
+	cleanHome := t.TempDir()
+	seedPiLocalAuth(t, piHome, os.Getenv("HOME"))
+	workflowRoot, stateRoot, entityPath = writePiSplitRootSmokeWorkflow(t)
+	artifactDir = filepath.Join(piLiveArtifactDir(t, name), "run")
+	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	env = piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary), piSubagentsRoot)
+	return workflowRoot, stateRoot, entityPath, artifactDir, env
+}
+
+func runPiLiveCommand(t *testing.T, artifactDir, workflowRoot string, env []string, argv ...string) {
+	t.Helper()
+	stdoutPath := filepath.Join(artifactDir, "pi-stdout.txt")
+	stderrPath := filepath.Join(artifactDir, "pi-stderr.txt")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = workflowRoot
-	cmd.Env = piLiveEnv(piHome, sessionDir, cleanHome, filepath.Dir(binary))
+	cmd.Env = env
 	stdout, err := os.Create(stdoutPath)
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +100,10 @@ func TestLivePiSubagentEnsignSmoke(t *testing.T) {
 	if runErr != nil {
 		t.Fatalf("pi live smoke failed: %v; artifacts in %s\nstderr tail:\n%s", runErr, artifactDir, tail(readFile(t, stderrPath), 4000))
 	}
+}
 
+func assertPiLiveSmokeResult(t *testing.T, stateRoot, entityPath, artifactDir string) {
+	t.Helper()
 	entity := readFile(t, entityPath)
 	for _, want := range []string{piLiveSmokeMarker, "## Stage Report: implementation", "- DONE:", "### Summary"} {
 		if !strings.Contains(entity, want) {
@@ -85,6 +117,20 @@ func TestLivePiSubagentEnsignSmoke(t *testing.T) {
 	if strings.TrimSpace(git(t, stateRoot, "status", "--short", "--", "pi-live-smoke", "index.md")) != "" {
 		t.Fatalf("state checkout entity has uncommitted changes after worker commit; artifacts in %s\n%s", artifactDir, git(t, stateRoot, "status", "--short"))
 	}
+}
+
+func piSpacedockBinary(t *testing.T, repo string) string {
+	t.Helper()
+	if os.Getenv("SPACEDOCK_BIN") != "" {
+		return spacedockBinary(t)
+	}
+	out := filepath.Join(t.TempDir(), "spacedock")
+	cmd := exec.Command("go", "build", "-o", out, "./cmd/spacedock")
+	cmd.Dir = repo
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("build spacedock for Pi live smoke: %v\n%s", err, b)
+	}
+	return out
 }
 
 func piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath string) string {
@@ -179,12 +225,13 @@ func seedPiLocalAuth(t *testing.T, piHome, realHome string) {
 	}
 }
 
-func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir string) []string {
+func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
 	env := os.Environ()
 	env = append(env,
 		"HOME="+cleanHome,
 		"PI_CODING_AGENT_DIR="+piHome,
 		"PI_CODING_AGENT_SESSION_DIR="+sessionDir,
+		"PI_SUBAGENTS_PACKAGE_ROOT="+piSubagentsRoot,
 		"PI_OFFLINE=1",
 	)
 	return withBinaryOnPath(env, filepath.Join(binaryDir, "spacedock"))

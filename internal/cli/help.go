@@ -19,9 +19,10 @@ const topLevelHelp = tagline + `
 Launch
   claude  [task] [-- claude-flags]   Start Claude Code as your Spacedock first officer
   codex   [task] [-- codex-flags]    Start Codex as your Spacedock first officer
+  pi      [task] [-- pi-flags]       Start Pi as your Spacedock first officer
 Setup
-  install  [--host claude|codex]     Install the Spacedock plugin for a host, then check it
-  doctor   [--host claude|codex]     Check the installed plugin and this binary are compatible
+  install  [--host claude|codex|pi]  Install the Spacedock plugin for a host, then check it
+  doctor   [--host claude|codex|pi]  Check the installed plugin and this binary are compatible
 Workflow
   status      [args]                 Show or update workflow state
   new         [--folder] SLUG        Create an entity from a stdin body (auto-discovers the workflow)
@@ -71,6 +72,35 @@ Examples:
   spacedock `+host+` "review the open PRs"
   spacedock `+host+` --plugin-dir ./checkout
   spacedock `+host+` --safehouse-add-dirs ~/scratch -- --plugin-dir ./checkout
+`)
+	})
+}
+
+// setPiHelp installs the Pi-specific launch help. Pi loads explicit skills and
+// extensions instead of a Claude/Codex plugin manifest.
+func setPiHelp(cmd *cobra.Command, w io.Writer) {
+	cmd.Flags().String("plugin-dir", "", "Load a local Spacedock skill checkout")
+	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
+		fmt.Fprint(w, tagline+`
+
+Usage:
+  spacedock pi [task] [--plugin-dir <checkout>] [-- pi-flags]
+
+Start Pi as your Spacedock first officer by loading the Pi-native pi-subagents
+extension/skill and the Spacedock first-officer/ensign skills. The optional task
+is appended to the launch prompt; everything after -- forwards verbatim to pi.
+
+Flags:
+`)
+		fmt.Fprint(w, c.Flags().FlagUsages())
+		fmt.Fprint(w, `
+Forwarding:
+  Tokens before -- are spacedock's (the task + --plugin-dir). Tokens after --
+  forward verbatim to pi, e.g. --model, --print, or --session-dir.
+
+Examples:
+  spacedock pi --plugin-dir ./checkout
+  spacedock pi "drive the workflow" --plugin-dir ./checkout -- --model google/gemini
 `)
 	})
 }
