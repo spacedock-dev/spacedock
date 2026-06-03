@@ -1,7 +1,7 @@
 ---
 id: atwf2w6p68t9q1mda790dcfc
 title: "Non-interactive FO teardown — grade bounded best-effort + launcher-owned exit (dead-but-listed member: yy retry-to-success unreachable, FO self-exit impossible)"
-status: validation
+status: implementation
 source: live AC-1 confirmation of yy (PR #282) FAILED — both n3 #275 and 2a #277 sonnet cycles failed with yy's fix in the checkout; the sonnet FO looped 6 TeamDelete attempts in the settle-then-retry loop and never exited claude -p. Captain chose A+C (2026-06-03).
 score: "0.42"
 worktree: .worktrees/spacedock-ensign-non-interactive-teardown-exit
@@ -235,6 +235,15 @@ Validation PASSED, but the detached audit (high-stakes: FO contract + CI) found 
 - **Polish:** marker has 3 verbatim copies with no cross-equality test (add one); the pre-completion ban test is substring-presence not semantic.
 
 AC-2's marker-vs-beats discriminator was attacked hardest and held **CLEAN** (beats-only never greens; the marker is genuinely load-bearing).
+
+### Cycle 2 — re-audit (2026-06-03)
+
+Cycle-1's 3 fixes all confirmed RED; AC-2 still CLEAN; `go test ./...` green (889 pass). 1 new Material + 1 polish:
+
+- **M — `durationOf` misses a parenthesized MUL operand.** Cycle-1 added ADD folding, but the MUL branch still demands a bare `time.Unit`, so `2 * (40 * time.Second)` (80s) returns `isDuration=false` and is SKIPPED — `live_budget_test.go:120-127`; an inline `_ = 2*(40*time.Second)` stayed GREEN in both ≤60s guards. Fix: make `durationOf` recursively compositional (ADD/SUB/MUL/paren). Auditor-verified → folds to 1m20s. Narrow blast radius (named budget constants are value-pinned; only a non-constant inline literal evades).
+- **P2 — overstated claim.** The cycle-1 commit said the pre-completion TeamDelete ban is "semantic"; it is STILL substring-based — "It is fine to call `TeamDelete` right now…" evades (`terminal_teardown_retry_test.go:269-302`). Deliver genuine semantic OR honestly downgrade the claim.
+
+Escalation tripwire: a cycle-3 prose-lint evasion → escalate to the captain rather than loop (prose lints are inherently reword-evadable; the bar is "common re-introductions red + named constants value-pinned", essentially met).
 
 ## Stage Report: implementation (audit feedback cycle 1)
 
