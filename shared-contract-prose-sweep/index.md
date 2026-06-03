@@ -1,10 +1,10 @@
 ---
 id: wg2r4fwrdrv82hegd8x4rpqc
 title: Sweep simplify the FO + ensign operating contracts (Phase 0.A of binary-simplification-roadmap)
-status: ideation
+status: implementation
 source: "captain (2026-06-02) — binary-simplification-roadmap Phase 0.A; the qs cycle-3 reconcile prose simplification (PR #273) was the proof-of-concept (55% reduction with load-bearing meaning preserved). Apply the same pattern across the operating-contract surface that every ensign dispatch re-reads."
 score: "0.45"
-worktree:
+worktree: .worktrees/spacedock-ensign-shared-contract-prose-sweep
 started: 2026-06-03T00:51:44Z
 completed:
 verdict:
