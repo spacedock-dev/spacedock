@@ -187,3 +187,12 @@ Validation verified AC-1/4/6/7 (AC-7's 401-launch-failure proven LIVE against a 
   **Fix:** add a negative case in `shared_scenarios_negative_test.go` that isolates the merge-hook guard assertion — reproduce Mutant 6 (remove/break the `cannot advance to terminal` check) and confirm the new negative case goes RED (and GREEN on the shipped assertion).
 
 Re-run the targeted negative suite + `go test ./...`, append a cycle-2 Stage Report, commit on your worktree branch, then SendMessage(to="team-lead", message="Done: ...").
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Close the Material finding — isolate the merge-hook `cannot advance to terminal` guard-error check (shared_assertions_impl_test.go:55) with a negative case, reproduce Mutant 6, confirm RED on mutant / GREEN on shipped.
+  Added a negative case to `TestMergeHookGuardrailNegativeBypass` (shared_scenarios_negative_test.go) with observed = "…registers a merge hook [local-merge]. Proceeding without terminalization." — it passes the line-52 merge-hook mention check and so fails ONLY on the line-55 guard-error check, the clause no prior case reached. Verified: GREEN on the shipped assertion; under Mutant 6 (line-55 check removed via perl, then reverted byte-identical — `git diff` clean) the case reds at shared_scenarios_negative_test.go:121 AND the whole ensigncycle suite reds (previously stayed fully green). Commit 77e1258e on worktree branch spacedock-ensign/real-shared-runtime-scenarios.
+
+### Summary
+
+Cycle-1 detached-audit Material finding closed: the merge-hook terminal-guard check is now independently covered by an isolating negative case that reds exactly when that check is removed (Mutant 6 caught — the whole suite now goes red where it previously stayed green). The shipped assertion is untouched (only the test gained a case). `go test ./...` 843 pass, race-clean; live build/vet clean. No other files changed; streamwatch.go and yy's fixtures remain untouched.
