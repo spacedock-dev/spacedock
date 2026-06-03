@@ -118,3 +118,16 @@ This entity is FOUNDATIONAL: it is the single shared model the cluster cites ins
 ### Summary
 
 Refined the seed into a gate-ready ideation. The hard part — the failable proof — is solved by binding the doc to `8y`'s already-tested `sharedRuntimeScenarios()` table: a `package ensigncycle` lock test compares the doc's declared seed IDs to the Go table and reds on drift in either direction (spiked: PASS / dropped-FAIL / added-FAIL). This is what separates it from `docs/specs/state-behavior-extension.md` (prose-only, bound to nothing). Syntax is explicitly deferred to a follow-on authoring-primitive entity; `4n` (codex lane) and `p4` are named as the consumer bindings that carry the model's teeth. No further spike needed.
+
+## Stage Report: implementation
+
+- DONE: Write `docs/specs/scenario-testing-principles.md` capturing the SEMANTICS verbatim-in-spirit — scenario = natural-language behavioral spec graded on durable outcomes (never transcript phrasing); two interchangeable executors (codified = consumer logic, LLM = real producer); variant axes scenario × {mode, runtime}; the three seed instances; the consumer model (citation gate, authoring primitive, cost ledger keyed by the tuple).
+  Doc at `docs/specs/scenario-testing-principles.md`, committed on worktree branch `spacedock-ensign/scenario-testing-principles` as `ffb829b8`. Includes a machine-readable `<!-- seed-scenarios -->` block whose IDs were exercised against `sharedRuntimeScenarios()` and matched (gate-guardrail, rejection-flow, merge-hook-guardrail).
+- DONE: Match `docs/specs/` house style (read `state-behavior-extension.md`); markdown only, no ABOUTME comments; tight and reference-grade.
+  Followed the read reference's structure: top `Status:` line, short purpose, sectioned semantics, fenced `text` blocks. ~69 lines, ~1.5 pages. Syntax kept explicitly out of scope per captain direction.
+- DONE: Doc-only deliverable — no tests/ACs/validation gate; note doc path + no-ceremony design doc per captain direction.
+  No-ceremony doc-write per captain-directed dispatch (doc-only entities banned, ceremony collapsed). The entity's AC-1 lock test (`TestScenarioPrinciplesSeedLock`) is intentionally NOT authored here; the `<!-- seed-scenarios -->` block is present so the p4/primitive lanes can bind a lock test to it later.
+
+### Summary
+
+Distilled the ideation body into a concise, reference-grade design doc at `docs/specs/scenario-testing-principles.md` (semantics only; syntax deferred). The doc carries the scenario/executor/variant-axes model, the three seed scenarios mirroring `sharedRuntimeScenarios()` (verified matching), and the consumer contract the citation gate / cost ledger / authoring primitive cite. Per captain's no-ceremony direction this is doc-only: no lock test or presence checks were authored, but the machine-readable seed block is in place so a future lane can bind to it. FO merges the doc directly — no PR, no validation gate.
