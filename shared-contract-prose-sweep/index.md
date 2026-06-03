@@ -9,6 +9,7 @@ started: 2026-06-03T00:51:44Z
 completed:
 verdict:
 issue:
+mod-block: merge:pr-merge
 ---
 
 Generalize the qs cycle-3 prose-simplification pattern across the FO + ensign operating contracts that every dispatch re-loads. The qs cycle-3 sweep cut 880 → 400 words (55%) in the 4 reconcile sections while preserving all load-bearing mechanism; the same three rhetorical inflators (audit-trail exposition, cross-file restatement, over-qualification of slack) are visible elsewhere in the contract surface and should be pruned uniformly.
