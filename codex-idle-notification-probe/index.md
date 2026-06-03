@@ -9,7 +9,7 @@ verdict:
 score: "0.26"
 worktree: .worktrees/spacedock-ensign-codex-idle-notification-probe
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#283"
 ---
 
