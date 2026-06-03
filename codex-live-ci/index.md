@@ -1,7 +1,7 @@
 ---
 id: f4h107he3s9swwz51ymr022m
 title: Enable Codex live CI by reusing shared runtime scenarios on top of r0
-status: implementation
+status: validation
 source: "captain (2026-06-02) — revive the useful old Python Codex live CI setup, ignore tautological static grep tests, and document setup/principles in docs/dev/README.md"
 started: 2026-06-02T17:59:45Z
 completed:
