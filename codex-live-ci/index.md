@@ -10,6 +10,7 @@ score: "0.72"
 worktree: .worktrees/spacedock-ensign-codex-live-ci
 issue:
 mod-block:
+pr: spacedock-dev/spacedock#278
 ---
 
 The old Python-era live CI had the right Codex shape: a `codex-live` job with `CI-E2E-CODEX`, `OPENAI_API_KEY`, Codex CLI install, `codex login --with-api-key`, preserved artifacts, and a `make test-live-codex` target that reused scenario files also run by Claude. The useful overlap was three shared scenarios:
