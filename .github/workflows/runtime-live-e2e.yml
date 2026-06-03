@@ -95,6 +95,10 @@ jobs:
       DISABLE_AUTOUPDATER: "1"
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
+      # Per-leg artifact root the shared Claude scenario runner writes its
+      # stream/final-message artifacts under (claudeLiveArtifactDir reads it). The
+      # /${{ matrix.model }} segment keeps the two matrix legs from colliding.
+      SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/claude/${{ matrix.model }}
     steps:
       - name: Check required secret
         run: |
@@ -165,7 +169,19 @@ jobs:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
           go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+
+      # The shared scenario suite: the Claude lane runs the SAME host-neutral
+      # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
+      # spacedock claude front door. This is the AC-4 proof that both runtime lanes
+      # exercise the shared scenario table, not separate per-host smokes.
+      - name: Run live Claude shared scenarios
+        env:
+          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+        run: |
+          set -o pipefail
+          go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
 
       - name: Upload live artifacts
         if: always()
@@ -175,7 +191,9 @@ jobs:
           path: |
             ./spacedock
             ./live-e2e-transcript.txt
+            ./claude-shared-scenarios-transcript.txt
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
+            live-artifacts/claude/**
           if-no-files-found: warn
 
   codex-live:
