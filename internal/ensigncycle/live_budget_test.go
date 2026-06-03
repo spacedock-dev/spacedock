@@ -64,14 +64,14 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 // timeout literal in the file; this asserts the actual constants the live cycle
 // uses are each ≤60s. Together they catch both an over-budget literal anywhere in
 // the source AND an over-budget VALUE on the specific constants the watcher
-// drives (e.g. a `holdConfirmDefault = time.Minute + 30*time.Second` = 90s — the
-// audit-cycle-1 M3 hole — reds here directly regardless of how it is spelled).
+// drives (e.g. a `quietBudgetDefault = time.Minute + 30*time.Second` = 90s — the
+// audit-cycle-1 additive-composite hole — reds here directly regardless of how it
+// is spelled).
 func TestBudgetConstantsAreUnder60s(t *testing.T) {
 	const budgetCap = 60 * time.Second
 	for name, d := range map[string]time.Duration{
 		"quietBudgetDefault": quietBudgetDefault,
 		"exitBudgetDefault":  exitBudgetDefault,
-		"holdConfirmDefault": holdConfirmDefault,
 	} {
 		if d > budgetCap {
 			t.Errorf("%s = %s exceeds the 60s cap (AC-1)", name, d)

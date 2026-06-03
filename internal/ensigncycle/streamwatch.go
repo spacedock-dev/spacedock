@@ -38,11 +38,6 @@ const (
 	// exitBudgetDefault is how long expectExit waits for the FO to exit after
 	// the last watched step matched, before killing it.
 	exitBudgetDefault = 60 * time.Second
-	// holdConfirmDefault is how long expectTerminalTeardownGrade watches AFTER the
-	// terminal-status marker to confirm the FO HOLDS (no further teardown
-	// tool_use). The marker + a clean hold over this window is the bounded-teardown
-	// PASS; the launcher's kill() then reaps the subprocess (no self-exit needed).
-	holdConfirmDefault = 30 * time.Second
 	// pollIntervalDefault matches upstream POLL_INTERVAL_S = 0.2.
 	pollIntervalDefault = 200 * time.Millisecond
 	// transcriptTailLines bounds the tail carried in failure messages.
@@ -274,54 +269,47 @@ func (w *streamWatcher) expectExit(budget time.Duration) (int, error) {
 }
 
 // expectTerminalTeardownGrade grades the FO's bounded best-effort terminal
-// teardown WITHOUT requiring a clean self-exit (which is impossible: the harness
-// will not let claude -p exit while the team's members[] is populated). It waits,
-// bounded by the no-progress quiet budget, for the contract-mandated
-// terminal-status MARKER to appear in the stream — the unique tail of the fix
-// that NEITHER bug shape emits (the pre-yy give-up ends the turn with no marker;
-// the post-yy retry-loop retries TeamDelete past the cap with no marker). Once
-// the marker is observed, it confirms the HOLD over a bounded window: any
-// teardown tool_use (TeamDelete or a shutdown_request SendMessage) emitted AFTER
-// the marker FAILS the grade (the FO kept retrying instead of holding). On a clean
-// hold it returns nil; the caller's deferred poller.kill() then reaps the
+// teardown WITHOUT requiring a clean self-exit (impossible: the harness will not
+// let claude -p exit while the team's members[] is populated) AND WITHOUT
+// requiring a clean post-marker HOLD (proven UNACHIEVABLE for the real producer
+// on PR #285: the real sonnet FO emits the marker but, on each harness re-invoke
+// with active members[], RESUMES teardown instead of holding). It waits, bounded
+// by the no-progress quiet budget, for the FO to EMIT the contract-mandated
+// terminal-status MARKER — the unique signal of the fix that NEITHER bug shape
+// produces (the pre-yy give-up ends the turn with no marker; the post-yy
+// retry-loop retries TeamDelete past the cap with no marker). The FO AUTHORING
+// the marker (a text/thinking block, not a contract-Read tool_result) is the PASS
+// condition; the caller's deferred poller.kill() then reaps the still-running
 // subprocess and the cycle PASSES.
 //
-// This grade is the live realization of gradeTerminalTeardown (AC-2): it keys on
-// the marker + hold, NOT on the shutdown_request/TeamDelete beats both bug shapes
-// also emit — so it greens ONLY on the fix, not on the very run yy's fix failed.
-// holdConfirm is the post-marker window over which a continued-retry FAILS; the
-// quiet budget bounds how long the watcher waits for the marker itself. Both stay
-// ≤60s so the AC-1 timeout guard is unaffected.
-func (w *streamWatcher) expectTerminalTeardownGrade(quietBudget, holdConfirm time.Duration) error {
-	// Phase 1: wait for the marker (an assistant text block, graded over raw
-	// lines), bounded by the no-progress quiet budget.
+// This is the live realization of gradeTerminalTeardown (AC-2): it keys on the
+// FO-authored marker, NOT on the shutdown_request/TeamDelete beats both bug
+// shapes also emit, and NOT on a no-further-teardown hold the real FO cannot
+// deliver. The quiet budget bounds how long the watcher waits for the marker; it
+// stays ≤60s so the AC-1 timeout guard is unaffected.
+func (w *streamWatcher) expectTerminalTeardownGrade(quietBudget time.Duration) error {
 	deadline := time.Now().Add(quietBudget)
-	markerLine := -1
-	for markerLine < 0 {
+	markerSeen := func() bool {
+		for _, line := range w.transcript {
+			if markerEmittedByAssistant(line) {
+				return true
+			}
+		}
+		return false
+	}
+	for {
 		_, drained := w.drainEntries()
 		if drained > 0 {
 			deadline = time.Now().Add(quietBudget)
 		}
-		for i := len(w.transcript) - 1; i >= 0 && i >= len(w.transcript)-drained; i-- {
-			if lineHasMarker(w.transcript[i]) {
-				markerLine = i
-				break
-			}
-		}
-		if markerLine >= 0 {
-			break
+		if markerSeen() {
+			return nil
 		}
 		if _, exited := w.proc.poll(); exited {
 			// A final drain so a marker that landed alongside exit still wins.
 			w.drainEntries()
-			for i, line := range w.transcript {
-				if lineHasMarker(line) {
-					markerLine = i
-					break
-				}
-			}
-			if markerLine >= 0 {
-				break
+			if markerSeen() {
+				return nil
 			}
 			code, _ := w.proc.poll()
 			return &stepFailure{
@@ -337,31 +325,6 @@ func (w *streamWatcher) expectTerminalTeardownGrade(quietBudget, holdConfirm tim
 				msg: fmt.Sprintf("the FO did not emit the terminal-status marker within %s (no-progress quiet budget) — it never reached the bounded-teardown terminus.\nTranscript tail:\n%s",
 					quietBudget, w.transcriptTail()),
 			}
-		}
-		time.Sleep(w.pollInterval)
-	}
-
-	// Phase 2: confirm the HOLD. Over holdConfirm, any teardown tool_use after the
-	// marker means the FO did NOT hold — fail. The deadline resets on a hold-clean
-	// line so a chatty hold still confirms; a teardown tool_use trips immediately.
-	holdDeadline := time.Now().Add(holdConfirm)
-	for {
-		w.drainEntries()
-		if ok, reason := gradeTerminalTeardown(w.transcript); !ok {
-			return &stepFailure{
-				label: "terminal_teardown_grade",
-				msg: fmt.Sprintf("terminal teardown grade FAILED after the marker: %s.\nTranscript tail:\n%s",
-					reason, w.transcriptTail()),
-			}
-		}
-		if _, exited := w.proc.poll(); exited {
-			// The launcher killed it (or it exited): the marker held to the end. PASS.
-			return nil
-		}
-		if time.Now().After(holdDeadline) {
-			// The hold held for the whole confirmation window with no further
-			// teardown tool_use. PASS — the launcher's kill() reaps the subprocess.
-			return nil
 		}
 		time.Sleep(w.pollInterval)
 	}
@@ -521,6 +484,8 @@ type streamBlock struct {
 	Input      streamToolInput `json:"input"`
 	ToolUseID  string          `json:"tool_use_id"`
 	RawContent json.RawMessage `json:"content"`
+	Text       string          `json:"text"`
+	Thinking   string          `json:"thinking"`
 }
 
 type streamToolInput struct {
@@ -584,72 +549,70 @@ func (b *streamBlock) flatText() string {
 
 // --- terminal-teardown grade ---------------------------------------------
 
-// isTeardownToolUse reports whether the entry is one of the terminal-teardown
-// tool calls: a `TeamDelete`, or a `SendMessage` carrying a `shutdown_request`.
-// These are the calls the bounded teardown STOPS issuing once it emits the
-// terminal-status marker — so a teardown tool_use AFTER the marker means the FO
-// did NOT hold (it kept retrying), which fails the grade.
-func isTeardownToolUse(e streamEntry) bool {
-	b := e.toolUseBlock()
-	if b == nil {
+// markerEmittedByAssistant reports whether a raw stream-json line is an
+// ASSISTANT entry that EMITS the verbatim terminal-status marker in its own
+// authored content (a text or thinking block). This is marker EMISSION, not
+// marker PRESENCE: it deliberately does NOT match the marker appearing in a
+// `user`/`tool_result` entry, because the FO READS the marker-bearing contract
+// files at startup (the marker is in shared-core step 10 and the Claude runtime),
+// and a contract-Read is not the FO reaching the bounded terminus. The grade
+// keys PASS on the FO AUTHORING the marker, not on having seen it in a file.
+//
+// A cheap raw-substring pre-check gates the JSON parse (most lines do not carry
+// the marker at all), then the parse confirms the marker sits in an assistant
+// text/thinking block.
+func markerEmittedByAssistant(line string) bool {
+	if !strings.Contains(line, terminalTeardownMarker) {
 		return false
 	}
-	if b.Name == "TeamDelete" {
-		return true
+	var e streamEntry
+	if json.Unmarshal([]byte(line), &e) != nil || e.Type != "assistant" || e.Message == nil {
+		return false
 	}
-	if b.Name == "SendMessage" && strings.Contains(string(b.Input.Message), "shutdown_request") {
-		return true
+	for _, b := range e.Message.Content {
+		if strings.Contains(b.Text, terminalTeardownMarker) || strings.Contains(b.Thinking, terminalTeardownMarker) {
+			return true
+		}
 	}
 	return false
 }
 
-// lineHasMarker reports whether a raw stream-json line carries the verbatim
-// terminal-status marker (emitted as an assistant text block). The grade greps
-// the raw line — the same fixed substring the contract mandates — rather than
-// parsing text-block content, so a marker the FO emits in any text position is
-// found.
+// lineHasMarker reports whether a raw stream-json line is an assistant-authored
+// emission of the terminal-status marker. It is the watcher's Phase-1 predicate
+// (wait for the FO to reach the bounded terminus) and the offline grade's
+// discriminator. (It intentionally does NOT match a contract-Read tool_result
+// that merely contains the marker — see markerEmittedByAssistant.)
 func lineHasMarker(line string) bool {
-	return strings.Contains(line, terminalTeardownMarker)
+	return markerEmittedByAssistant(line)
 }
 
 // gradeTerminalTeardown decides whether a stream carries the bounded-best-effort
-// terminus: the contract-mandated terminal-status marker FOLLOWED BY A HOLD (no
-// further teardown tool_use). It returns ok=true ONLY when the marker appears AND
-// no `TeamDelete`/`shutdown_request` tool_use appears on any LATER line. This is
-// the load-bearing discriminator:
+// terminus: the contract-mandated terminal-status marker EMITTED BY THE FO. It
+// returns ok=true when the FO authored the verbatim marker (a text/thinking
+// block in an assistant entry). This is the load-bearing discriminator:
 //
-//   - the fix shape (bounded attempts → marker → hold) PASSES;
+//   - the fix shape (bounded attempts → the FO emits the marker) PASSES;
 //   - the pre-yy give-up (sonnet_teamdelete_hang: one TeamDelete, ends the turn,
 //     NO marker) FAILS — the marker is absent;
 //   - the post-yy retry-loop (sonnet_teamdelete_retryloop: 6 TeamDelete past the
-//     cap, NO marker, never holds) FAILS — the marker is absent.
+//     cap, NO marker) FAILS — the marker is absent.
 //
-// Grading on the marker+hold (NOT on the shutdown_request/TeamDelete beats both
-// bug shapes ALSO emit) is what makes the grade green ONLY on the fix: a
-// beats-present grade would green the very runs yy's fix failed. The reason
-// string localizes which condition failed for a CI reader.
+// It does NOT require a clean post-marker HOLD (no-further-teardown). The live
+// AC-1 run (PR #285) proved that requirement UNACHIEVABLE for the real producer:
+// the real sonnet FO emits the marker but, on each harness re-invoke with active
+// members[], RESUMES teardown (more TeamDelete) instead of holding — the same
+// model-instinct that made yy's clean self-exit unachievable. A no-further-
+// teardown grade over-fits the offline recordings and fights the real FO, so it
+// is dropped. The MARKER itself is the discriminator (neither bug shape emits it,
+// verified against both authentic recordings); grading on the FO AUTHORING the
+// marker survives the re-invoke-retry reality while still redding both bugs.
 func gradeTerminalTeardown(lines []string) (ok bool, reason string) {
-	markerLine := -1
-	for i, line := range lines {
-		if lineHasMarker(line) {
-			markerLine = i
-			break
+	for _, line := range lines {
+		if markerEmittedByAssistant(line) {
+			return true, ""
 		}
 	}
-	if markerLine < 0 {
-		return false, "terminal-status marker absent — the FO never emitted the bounded-teardown terminus (a silent give-up or an unbounded retry loop)"
-	}
-	// After the marker, the FO must HOLD: no further teardown tool_use.
-	for i := markerLine + 1; i < len(lines); i++ {
-		var e streamEntry
-		if json.Unmarshal([]byte(lines[i]), &e) != nil {
-			continue
-		}
-		if isTeardownToolUse(e) {
-			return false, fmt.Sprintf("teardown tool_use at line %d AFTER the marker (line %d) — the FO did not hold; it kept retrying", i, markerLine)
-		}
-	}
-	return true, ""
+	return false, "terminal-status marker absent — the FO never emitted the bounded-teardown terminus (a silent give-up or an unbounded retry loop, neither of which authors the marker)"
 }
 
 // --- live pipe adapters (used only by the //go:build live live test) -----

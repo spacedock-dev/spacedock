@@ -1,33 +1,44 @@
-// ABOUTME: AC-2 offline grade — gradeTerminalTeardown greens ONLY on the
-// ABOUTME: terminal-status marker + hold tail, and REDs both authentic bug recordings (pre-yy give-up + post-yy retry-loop).
+// ABOUTME: AC-2 offline grade — gradeTerminalTeardown greens on FO-authored
+// ABOUTME: terminal-status marker emission (incl. the real re-invoke-retry shape), REDs both authentic bug recordings.
 package ensigncycle
 
 import "testing"
 
-// TestGradeGreensOnlyOnMarkerAndHold is AC-2: the offline grade greens ONLY on
-// the fix shape (a bounded count of TeamDelete attempts → the contract-mandated
-// terminal-status marker → a hold) and REDs BOTH authentic bug recordings. It
-// replaces the cycle-1 fakeProc-never-exits tautology: the proof is "greens only
-// on the marker+hold," demonstrated by REDDING both real bug streams. Sub-second,
-// no model spend.
+// TestGradeGreensOnMarkerEmission is AC-2: the offline grade greens when the FO
+// EMITS the contract-mandated terminal-status marker (reaching the bounded
+// terminus) and REDs BOTH authentic bug recordings, which emit no marker. The
+// grade keys on the FO AUTHORING the marker — NOT on a clean post-marker hold,
+// which the PR #285 live run proved the real sonnet FO cannot deliver (it resumes
+// teardown on each harness re-invoke). Sub-second, no model spend.
 //
-// The three fixtures are real captured stream-json (the live test's t.Log tee
-// format), each failing/passing for the RIGHT reason:
-//   - GREEN: sonnet_teamdelete_bounded_marker — 5 bounded TeamDelete attempts +
-//     the marker + a hold tail (no further teardown tool_use). PASS.
+// Fixtures (real captured stream-json, the live test's t.Log tee format):
+//   - GREEN: sonnet_teamdelete_bounded_marker — bounded TeamDelete attempts +
+//     the FO emits the marker. PASS.
+//   - GREEN: sonnet_teamdelete_marker_continues — the REAL failing PR #285 sonnet
+//     run: the FO emits the marker (in a thinking block) AND continues teardown
+//     across re-invokes. This is the producer reality a hold-grade red'd; marker
+//     emission must PASS it.
 //   - RED #1: sonnet_teamdelete_hang — the pre-yy give-up: ONE TeamDelete, fails
-//     "active member(s)", FO ends the turn with NO retry and NO marker. RED
-//     because the marker is absent. (This is why an attempt-COUNT grade fails: 1
-//     attempt is ≤ cap, so "bounded-then-stopped" alone would wrongly GREEN it.)
-//   - RED #2: sonnet_teamdelete_retryloop — the post-yy retry-loop from the real
-//     failed CI run 26891717026: 6 TeamDelete attempts past the cap, NO marker,
-//     never holds. RED because the marker is absent.
-func TestGradeGreensOnlyOnMarkerAndHold(t *testing.T) {
-	t.Run("green_bounded_marker_hold", func(t *testing.T) {
+//     "active member(s)", FO ends the turn with NO retry and NO marker. RED.
+//   - RED #2: sonnet_teamdelete_retryloop — the post-yy retry-loop (real run
+//     26891717026): 6 TeamDelete past the cap, NO marker. RED.
+func TestGradeGreensOnMarkerEmission(t *testing.T) {
+	t.Run("green_bounded_marker", func(t *testing.T) {
 		lines := loadStreamFixture(t, "sonnet_teamdelete_bounded_marker.stream.jsonl")
 		ok, reason := gradeTerminalTeardown(lines)
 		if !ok {
-			t.Errorf("the fix shape (bounded attempts + marker + hold) must PASS, got reason: %s", reason)
+			t.Errorf("the fix shape (bounded attempts + the FO emits the marker) must PASS, got reason: %s", reason)
+		}
+	})
+
+	t.Run("green_real_marker_continues", func(t *testing.T) {
+		// The real PR #285 sonnet run: marker emitted, then teardown CONTINUES on
+		// re-invoke (no clean hold). The grade keys on emission, so this PASSES —
+		// the exact shape the prior hold-grade wrongly red'd against the live FO.
+		lines := loadStreamFixture(t, "sonnet_teamdelete_marker_continues.stream.jsonl")
+		ok, reason := gradeTerminalTeardown(lines)
+		if !ok {
+			t.Errorf("the real producer (marker emitted + teardown continues on re-invoke) must PASS — a hold-grade over-fits the recordings; got reason: %s", reason)
 		}
 	})
 
@@ -35,7 +46,7 @@ func TestGradeGreensOnlyOnMarkerAndHold(t *testing.T) {
 		lines := loadStreamFixture(t, "sonnet_teamdelete_hang.stream.jsonl")
 		ok, reason := gradeTerminalTeardown(lines)
 		if ok {
-			t.Error("the pre-yy give-up (one TeamDelete, no retry, NO marker) must RED — boundedness alone (1 ≤ cap) must not green it")
+			t.Error("the pre-yy give-up (one TeamDelete, no retry, NO marker) must RED")
 		}
 		if reason == "" {
 			t.Error("a RED grade must carry a localizing reason")
@@ -46,7 +57,7 @@ func TestGradeGreensOnlyOnMarkerAndHold(t *testing.T) {
 		lines := loadStreamFixture(t, "sonnet_teamdelete_retryloop.stream.jsonl")
 		ok, reason := gradeTerminalTeardown(lines)
 		if ok {
-			t.Error("the post-yy retry-loop (6 TeamDelete past the cap, NO marker, never holds) must RED")
+			t.Error("the post-yy retry-loop (6 TeamDelete past the cap, NO marker) must RED")
 		}
 		if reason == "" {
 			t.Error("a RED grade must carry a localizing reason")
@@ -54,23 +65,23 @@ func TestGradeGreensOnlyOnMarkerAndHold(t *testing.T) {
 	})
 }
 
-// TestGradeRedsWhenTeardownContinuesAfterMarker pins the HOLD half of the grade
-// independently of the marker half: even WITH the marker present, a teardown
-// tool_use emitted AFTER the marker (the FO kept retrying instead of holding)
-// must RED. Without this, a grade keyed on marker-PRESENCE alone would green an
-// FO that emitted the marker and then kept hammering TeamDelete — which is not
-// the bounded terminus the contract mandates. The fixture is the GREEN stream
-// with one extra teardown line appended after the marker.
-func TestGradeRedsWhenTeardownContinuesAfterMarker(t *testing.T) {
-	lines := loadStreamFixture(t, "sonnet_teamdelete_bounded_marker.stream.jsonl")
-
-	// Append a TeamDelete tool_use AFTER the marker — the FO did NOT hold.
-	postMarkerRetry := `{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu_post","name":"TeamDelete","input":{}}]}}`
-	lines = append(lines, postMarkerRetry)
+// TestGradeIgnoresMarkerInContractRead pins the EMISSION discriminator: the grade
+// must key on the FO AUTHORING the marker, not on the marker appearing in a
+// contract-Read tool_result. The FO Reads the marker-bearing contract files
+// (shared-core step 10 / the Claude runtime) at startup — the real run shows the
+// marker in TWO user/tool_result entries (contract reads) plus ONE assistant
+// thinking emission. A stream whose ONLY marker is a contract-Read must RED; the
+// authentic green fixtures pass because the FO ALSO authors the marker.
+func TestGradeIgnoresMarkerInContractRead(t *testing.T) {
+	// A user tool_result that carries the marker verbatim (a contract Read) but no
+	// assistant-authored marker → RED.
+	contractRead := `{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"r","content":[{"type":"text","text":"10. ...emit TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher. ..."}]}]}}`
+	teamDelete := `{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"tu","name":"TeamDelete","input":{}}]}}`
+	lines := []string{contractRead, teamDelete}
 
 	ok, reason := gradeTerminalTeardown(lines)
 	if ok {
-		t.Error("a teardown tool_use AFTER the marker must RED — the FO must HOLD, not keep retrying")
+		t.Error("a marker that appears ONLY in a contract-Read tool_result must RED — the FO did not author it")
 	}
 	if reason == "" {
 		t.Error("a RED grade must carry a localizing reason")

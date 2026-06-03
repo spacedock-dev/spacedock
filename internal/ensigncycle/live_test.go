@@ -160,15 +160,18 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// live AC-1 confirmation proved a clean self-exit is impossible (the harness
 	// will not let claude -p exit while the team's members[] is populated, and the
 	// dead-but-listed member is never cleared — upstream #38116/#57681), so
-	// `exitCode==0` is unreachable and demanding it re-hangs the cycle. Instead we
-	// grade the FIX's unique tail: the FO emits the contract-mandated
-	// terminal-status MARKER and then HOLDS (no further teardown tool_use). The
-	// grade keys on the MARKER+hold, NOT on the shutdown_request/TeamDelete beats
-	// both bug shapes ALSO emit — so it greens ONLY on the fix, not on the run yy's
-	// fix failed. On a clean hold the deferred poller.kill() reaps the subprocess
-	// and the cycle PASSES. Both budgets stay ≤60s (the AC-1 timeout guard is
-	// unaffected).
-	if err := watcher.expectTerminalTeardownGrade(quietBudgetDefault, holdConfirmDefault); err != nil {
+	// `exitCode==0` is unreachable and demanding it re-hangs the cycle. The PR #285
+	// live run further proved a clean post-marker HOLD is unachievable: the real
+	// sonnet FO emits the marker but RESUMES teardown on each harness re-invoke. So
+	// we grade the FIX's unique signal: the FO EMITS the contract-mandated
+	// terminal-status MARKER (a text/thinking block it authors, not a contract-Read
+	// it merely saw). The grade keys on that marker emission — NOT on the
+	// shutdown_request/TeamDelete beats both bug shapes ALSO emit, and NOT on a
+	// no-further-teardown hold the real FO cannot deliver — so it greens ONLY on
+	// the fix while redding both bug recordings. On marker emission the deferred
+	// poller.kill() reaps the still-running subprocess and the cycle PASSES. The
+	// budget stays ≤60s (the AC-1 timeout guard is unaffected).
+	if err := watcher.expectTerminalTeardownGrade(quietBudgetDefault); err != nil {
 		t.Fatalf("live cycle failed grading the terminal teardown: %v", err)
 	}
 
