@@ -103,3 +103,18 @@ Sharpened against the post-zj baseline: zj's writer-quoting at HEAD `75cc2b81` a
 ### Summary
 
 Implementation is two artifacts: (1) one path-scoped state-branch commit re-quoting `pr: #N` → `pr: "#N"` in the 13 terminal archived entities listed in the body's migration table, and (2) one code-branch commit adding `internal/status/no_yaml_silent_drop_test.go` with `TestNoSilentYAMLValueDrop`, which walks `testdata/` and asserts no key whose raw post-`:` value is non-empty decodes to `""`. The exercise-validation per the dispatch ran inline (temp fixture with bare `pr: #99` → FAIL; quoted → PASS; temp fixture removed). All three ACs are satisfied at this revision: AC-1's audit reports 0 hazards over 68 files, AC-2's new test PASSES at HEAD, AC-3 lands the 13 re-quotes on `spacedock-state/dev` and the full repo `go test ./...` is green.
+
+## Stage Report: validation
+
+- DONE: AC-1 verification at THIS revision — fresh raw-vs-yaml.v3 audit (yaml.Node-based, so it correctly distinguishes silent-drop null scalars from legit non-string decoded values like time.Time) over all `index.md` files under `docs/dev/.spacedock-state/`.
+  Throwaway scanner (`/tmp/yaml_audit_validation.go`) reported `Scanned 68 files, 0 hazards` against state-checkout HEAD `92970066`; scanner deleted after.
+- DONE: AC-2 verification — `go test ./internal/status -run TestNoSilentYAMLValueDrop -v` PASS at code-branch HEAD `cee6d05a` (the new test at `internal/status/no_yaml_silent_drop_test.go`).
+  PASS confirmed; exercise-validated end-to-end: a temporary `testdata/no-silent-drop-regression-validation/index.md` with bare `pr: #99` made the test FAIL with `key "pr" has raw value "#99" but decodes to "" (yaml.v3 silently dropped it)` at `no_yaml_silent_drop_test.go:51`; quoting to `pr: "#99"` made it PASS; temp fixture removed; `git status` clean.
+- DONE: AC-3 verification — the 13 listed archived entities on `spacedock-state/dev` carry `pr: "#N"` (quoted) and the re-quote commit is in the state log.
+  `grep -l 'pr: "#'` over the 13 listed `_archive/{slug}/index.md` paths returned all 13; the three spot-checked lines are literally `pr: "#247"`, `pr: "#256"`, `pr: "#254"`; a yaml.v3 decode of two of those files returns the strings `"#247"` and `"#254"` (not empty). `git log --oneline | head` on state shows `ee18b424 fix(archive): re-quote bare \`pr: #N\` in 13 terminal entities`.
+- DONE: Full repo `go test ./...` green at code-branch HEAD `cee6d05a`.
+  `Go test: 808 passed in 12 packages` — no FAIL anywhere; the new test does not regress any existing test.
+
+### Summary
+
+Validation PASSED at code-branch HEAD `cee6d05a` and state-checkout HEAD `92970066`. All three ACs are satisfied with proof outside the entity body: AC-1 by a fresh re-run of the raw-vs-yaml.v3 audit (0 hazards over 68 files, with a yaml.Node-based classifier so non-string decoded scalars like time.Time are not mis-flagged), AC-2 by `TestNoSilentYAMLValueDrop` passing and exercise-validated against a temporary `pr: #99` fixture (FAIL → flip to quoted → PASS → fixture removed), and AC-3 by all 13 listed archived entities carrying the quoted `pr: "#N"` form plus the `ee18b424` re-quote commit visible in the state log. Recommendation: **PASSED**.
