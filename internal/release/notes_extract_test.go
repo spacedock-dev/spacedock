@@ -112,6 +112,7 @@ func TestReleaseYAMLGuardRejectsEmptyBody(t *testing.T) {
 		}
 		cmd := exec.Command("sh", "-c", "if "+guard+"; then exit 1; fi")
 		cmd.Dir = dir
+		cmd.Env = append(os.Environ(), "RUNNER_TEMP="+dir)
 		err := cmd.Run()
 		fired := err != nil // guard's `if <cond>; then exit 1` ran exit 1
 		if fired != c.wantReject {
