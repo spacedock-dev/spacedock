@@ -8,7 +8,7 @@ state: .spacedock-state
 stages:
   defaults:
     worktree: false
-    concurrency: 2
+    concurrency: 3
   states:
     - name: backlog
       initial: true
