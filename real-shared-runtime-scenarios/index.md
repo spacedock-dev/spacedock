@@ -4,10 +4,10 @@ title: Extract real shared runtime scenarios for Claude and Codex live CI
 status: validation
 source: "captain (2026-06-03) - follow-up from f4 codex-live-ci: make the shared scenario reuse real, not Codex-only"
 started: 2026-06-03T07:09:59Z
-completed:
-verdict:
+completed: 2026-06-03T08:43:50Z
+verdict: PASSED
 score: "0.68"
-worktree: .worktrees/spacedock-ensign-real-shared-runtime-scenarios
+worktree:
 issue:
 mod-block:
 pr: "#281"
