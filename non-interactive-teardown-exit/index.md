@@ -15,46 +15,50 @@ yy (PR #282) fixed the original "end the turn on the first `TeamDelete` failure"
 
 ## Problem
 
-This is the audit's cycle-1 **polish finding #3** manifesting (flagged then as "load-bearing for AC-1"). Two coupled root causes:
+The live-e2e sonnet cycle hangs at terminal teardown because of a verified upstream Claude Code defect, **#38116 / #57681** (an approved-shutdown member is never cleared from the team `members[]`). The mechanism, settled by the real failed CI artifact (the ensign member's own session jsonl, runs `26891717026` n3 + `26891718562` 2a, artifact `runtime-live-e2e-claude-live-sonnet`):
 
-1. **Contract: the non-interactive cap-exhaustion EXIT is ambiguous.** "surface to captain and end the turn" does NOT terminate the `claude -p` process when the team can't be deleted (members stuck). The FO keeps thinking/acting → never finishes → never exits. From the failure JSONL, the FO's own thinking: *"the non-interactive exit obligation requires me to keep retrying."*
-2. **Test/streamwatcher: requires `TeamDelete` success before the FO exits.** The live cycle's `expectExit` only fires on a clean process exit, which never comes if teardown can't complete. The streamwatcher over-constrains: it should accept a **best-effort-teardown-then-exit**.
+1. The dispatched ensign finished its work, RECEIVED the FO's cooperative `shutdown_request`, APPROVED it, and its session TERMINATED at **14:37:30**.
+2. But the harness **never removed it from the team `members[]`**, so the FO's `TeamDelete` kept failing `Cannot cleanup team with 1 active member(s)` for ~55s against an already-DEAD member (FO still sees it active at **14:38:25+**).
+3. The live cycle's flat-60s `expectExit` then killed the never-exiting subprocess → FAIL.
 
-**Evidence:** live runs `26891717026` (n3) + `26891718562` (2a), artifact `runtime-live-e2e-claude-live-sonnet` — the FO session JSONL shows 6 `TeamDelete` attempts + the "keep retrying" thinking, no process exit. opus passes (it happens to exit); sonnet loops.
+Two consequences, both empirically confirmed (see `## SPIKE RESULTS`):
 
-yy's fix is kept as-is — retry-to-success genuinely helps a *real* session (members do terminate, so the retry recovers). This entity closes the live-CI / non-interactive exit path it does not cover.
+- **yy's "retry `TeamDelete` to success" is UNREACHABLE** — success never comes, because the dead member is never removed from `members[]`. The retry loop runs until the 60s exit budget kills it.
+- **The `claude -p` harness will NOT let the subprocess self-exit while `members[]` is populated** — a genuine `end_turn` does not terminate; the harness re-invokes the FO. Proven on sonnet AND opus (`EXIT=124`, raw stream preserved). So contract A's "hard-exit at the cap; residual cleanup at process death" is IMPOSSIBLE: there is no process death the FO can cause.
 
-## Proposed approach (A + C)
+The fix therefore cannot demand a `TeamDelete` success or an FO self-exit. It grades the FO's CORRECT bounded best-effort teardown and makes the process exit the launcher's responsibility.
 
-1. **(A — contract) Hard-exit at the cap.** In non-interactive mode, terminal teardown is: cooperative shutdown + `TeamDelete` up to a small cap WITH the inter-attempt settle, and if still failing at the cap, the FO **EXITS the process** (best-effort; residual team cleanup happens at session/process death) — NOT "surface and keep going." Make the cap-exhaustion EXIT unambiguous: stop retrying, terminate. An inverted "keep retrying past the cap" must be a contract violation the oracle catches.
-2. **(C — streamwatcher/test) Accept best-effort-teardown-then-exit.** The live cycle / streamwatcher's `expectExit` should fire when the FO exits after the bounded teardown attempt, not require `TeamDelete` success. Widen the `expectExit` budget for the settle latency if needed. Update the yy AC-2 replay fixture/oracle to reflect the bounded-exit contract.
+## Proposed approach (captain-approved, 2026-06-03): grade best-effort teardown; the LAUNCHER owns the exit
 
-**Riskiest unknown — exercise first:** how does the FO subprocess cleanly EXIT `claude -p` from within the contract when there's an un-deletable team? Does ending the turn with no further work actually exit, or is an explicit signal needed? This is exactly what yy's fix got wrong; the spike must pin the real exit mechanism before designing the prose.
+The exit cannot come from the FO (impossible) or from a `TeamDelete` success (unreachable). So we stop demanding either. Two coordinated changes:
+
+1. **(Test / streamwatcher) Grade terminal teardown on CORRECT BOUNDED BEST-EFFORT BEHAVIOR, then the launcher kills the subprocess and the cycle PASSES.** The live cycle replaces its final `expectExit → exitCode==0` step (live_test.go:157-163) with: observe that the FO did the right sequence — sent `shutdown_request` → member approved → FO made BOUNDED `TeamDelete` attempts — then STOP the subprocess via the existing `defer poller.kill()` (live_test.go:125-133) and PASS. It MUST NOT require a clean self-exit, which the upstream bug makes impossible. This is a STRONGER assertion than `exitCode==0`: it checks the FO performed the correct teardown sequence, not that the process happened to exit. The grading step still uses the existing ≤60s no-progress budget per beat, so no timeout literal grows.
+2. **(Contract — `first-officer-shared-core.md` + the Claude runtime adapter) Non-interactive terminal teardown is BOUNDED best-effort, then STOP and emit a terminal status; the PROCESS EXIT is the LAUNCHER's responsibility, NOT the FO's.** The FO: cooperative `shutdown_request` to the cohort → a BOUNDED set of `TeamDelete` attempts with the inter-attempt settle → then STOP retrying and emit a terminal status (it cannot delete a team the harness won't let it empty). The process death comes from the launcher (the live test's `kill()`, or a real automation's timeout) — the FO cannot cause it. After the bound, the harness will re-invoke the FO (proven); the FO just HOLDS (text only, no tool calls) until the launcher kills it. This **rehabilitates A's SPIRIT** — best-effort then process death — except the death is launcher-owned. REMOVE/correct yy's "keep retrying `TeamDelete` to success in non-interactive mode" (unreachable → the hang) and the disproven "hard-exit at the cap / residual cleanup at process death" (the FO cannot cause the death).
 
 ## Out of scope
 
-- Reverting yy (kept as-is — it helps real sessions; this is the non-interactive exit complement).
-- The opus path (already exits cleanly).
+- Reaching into Claude's private team registry to force-clear the dead member (captain rejected the config-rewrite host-hack).
+- The opus path (it hits the SAME harness invariant; this fixes the grading, which is model-neutral).
 
 ## Acceptance criteria
 
-**AC-1 — The sonnet live cycle PASSES (the real behavioural oracle).**
-Verified by: a live-e2e sonnet run (on n3 #275 / 2a #277 or a dedicated run) where the FO completes a bounded teardown and the process EXITS — `expectExit` fires, no timeout. This is the oracle yy's fix failed; this time it must pass.
+**AC-1 — The sonnet live cycle PASSES via correct bounded best-effort teardown + launcher kill (runtime-observable oracle).**
+Verified by: a live-e2e sonnet run where the FO performs the correct bounded teardown sequence (shutdown_request → member approval → bounded `TeamDelete` attempts) and the harness/launcher kills the subprocess — NO clean self-exit required, NO `exitCode==0` gate. The `expectExit`-style flat-cap-then-fail is gone. By-construction-pending-live; MUST pass on a real sonnet run (the oracle yy's fix failed).
 
-**AC-2 — An offline fixture pins bounded-teardown-then-exit (no infinite loop).**
-Verified by: a Go test dripping a stream where `TeamDelete` never succeeds, asserting the FO makes ≤cap attempts with settle and then the modelled process exits (the streamwatcher's `expectExit` fires), RED on the pre-fix loop-forever behaviour.
+**AC-2 — An offline fixture reproduces the dead-but-listed shape and the watcher grades it as correct best-effort teardown → PASS.**
+Verified by: a Go test (sibling to / extending `TestSonnetTeamDeleteHangReplay` in `internal/ensigncycle/`) dripping a stream where the member APPROVES shutdown and its session ENDS, yet `TeamDelete` keeps failing `active member(s)`; the new grading step asserts the watcher OBSERVED the correct beats (shutdown_request sent + member approval + ≥1 bounded `TeamDelete` attempt) and PASSES (then the modelled `kill()` stops the proc). RED on a fixture where the FO did NOT do the correct teardown — never sent `shutdown_request`, OR never attempted `TeamDelete` — so the grade is behavioral, not "the proc was killed regardless." (Replaces the existing replay's `fakeProc`-never-exits tautology with a behavioral grade.)
 
-**AC-3 — The contract unambiguously prescribes the hard-exit at the cap.**
-Verified by: an oracle requiring the cap-exhaustion clause to mandate process EXIT (not "keep retrying"); an inverted "retry past the cap forever" edit reds it.
-
-**AC-4 — The streamwatcher accepts best-effort-teardown-then-exit.**
-Verified by: a test asserting `expectExit` fires on a best-effort-teardown-then-exit stream (no `TeamDelete` success required), and that the budget tolerates the settle latency.
+**AC-3 — The contract mandates bounded best-effort teardown + launcher-owned exit, and FORBIDS the unreachable/impossible framings.**
+Verified by: extending `TestTerminalTeardownRetriesToSuccess` (`skills/integration/terminal_teardown_retry_test.go`) so the required set asserts "bounded best-effort teardown" + a "terminal status, then hold" + a "the launcher/process owner ends the subprocess" clause, and the NEGATING set ADDS "retry … to success" (now unreachable) and "hard-exit at the cap" / "residual cleanup at process death" / "the FO exits the process" (now impossible). An inverted edit re-introducing retry-to-success OR FO-self-exit reds it. (Prose-only ceiling — the behavioral oracle is AC-1.)
 
 ## Test plan
 
-- Spike the claude -p exit mechanism FIRST (the riskiest unknown).
-- Go tests for AC-2/AC-3/AC-4 (offline fixtures + oracle).
-- The live sonnet run for AC-1 (by-construction-pending-live, but it MUST pass this time — that is the whole point).
+- Spike: DONE (see `## SPIKE RESULTS`) — the riskiest unknowns are empirically settled by (a) the raw `cap-confirm.jsonl` harness-reinvocation reproduction (sonnet+opus, `EXIT=124`) and (b) the real CI artifact's dead-but-listed timeline (member dies 14:37:30 / FO still sees it active 14:38:25+, upstream #38116/#57681). NO further live spike needed for the mechanism.
+- AC-2: offline Go test in `internal/ensigncycle/` (the dead-but-listed fixture + the new behavioral grade); sub-second, no model spend.
+- AC-3: contract oracle in `skills/integration/terminal_teardown_retry_test.go` (extend the directional-mandate lint); sub-second.
+- AC-1: one live-e2e sonnet cycle (~minutes, CI-only / Linux-bound), by-construction-pending-live.
+- **≤60s guard stays green.** The new grading step uses the existing ≤60s no-progress budget per beat and the `defer poller.kill()` for exit, so no timeout literal grows; `TestNoTimeoutLiteralExceeds60s` (live_budget_test.go) is unaffected. Confirm it stays green at validation.
+- **OPEN QUESTION (flagged, non-blocking; default = live CI is the only consumer):** are there real headless/cron `spacedock … -p` FO runs that gate on a CLEAN exit code? If so they need a launcher-side timeout (a wrapper that bounds the run and kills it), NOT a contract change and NOT any reach into Claude's private registry. Default: only the live-e2e CI consumes the FO `-p` exit, and it already owns a `kill()`, so no extra launcher work is needed.
 - High-stakes (FO contract + CI machinery) → detached adversarial audit before merge.
 
 ## Notes
@@ -89,38 +93,18 @@ The riskiest unknown was: **how does a non-interactive `claude -p` FO subprocess
 
 2. **The roster never empties, because the member is dead-but-listed.** From the REAL failed CI artifact (the ensign member's own session jsonl, runs `26891717026` / `26891718562`): the dispatched ensign finished its work, RECEIVED the FO's `shutdown_request`, APPROVED it ("my work is complete… I'll approve"), and its session TERMINATED at **14:37:30**. But the Claude Code harness **never removed it from the team `members[]`**. The FO kept getting `Cannot cleanup team with 1 active member(s)` for ~55s AFTER the member was already dead (FO still sees it active at **14:38:25+**), until the flat 60s `expectExit` killed it. This is upstream Claude Code bug **#38116 / #57681** (an approved-shutdown member is never cleared from `members[]`).
 
-**What these jointly INVALIDATE:**
+**What these jointly INVALIDATE** (the canonical current design lives in `## Proposed approach` / `## Acceptance criteria` up top; this is the evidence behind it):
 - yy's "retry `TeamDelete` to success" is **UNREACHABLE**: success never comes, because the dead member is never removed from `members[]`. The retry loop runs forever (bounded only by the 60s exit budget that then kills it).
-- contract A's "hard-exit at the cap; residual cleanup at process death" is **IMPOSSIBLE**: the harness will not let `claude -p` self-exit while `members[]` is non-empty (fact 1), so there is no process death the FO can cause. (My earlier no-progress-reset reframe is also dropped — it only widens the wait for a success that, per fact 2, never arrives.)
+- contract A's "hard-exit at the cap; residual cleanup at process death" is **IMPOSSIBLE**: the harness will not let `claude -p` self-exit while `members[]` is non-empty (fact 1), so there is no process death the FO can cause.
 
-### Approved direction (captain, 2026-06-03): grade correct best-effort teardown; the LAUNCHER owns the exit
+(The superseded directions these displace — the original A+C and the no-progress-reset reframe — are quarantined in `## Superseded directions (provenance)` near the bottom so exactly one current AC set exists.)
 
-The exit cannot come from the FO (impossible) or from a `TeamDelete` success (unreachable). So we stop demanding either. Two coordinated changes:
+## Superseded directions (provenance)
 
-1. **(Test / streamwatcher) Grade the terminal teardown on CORRECT BOUNDED BEST-EFFORT BEHAVIOR, then the launcher kills the subprocess and the cycle PASSES.** The live cycle replaces its final `expectExit → exitCode==0` step (live_test.go:157-163) with: observe that the FO did the right sequence — sent `shutdown_request` → member approved → FO made BOUNDED `TeamDelete` attempts — then STOP the subprocess via the existing `defer poller.kill()` (live_test.go:125-133) and PASS. It MUST NOT require a clean self-exit, which the upstream bug makes impossible. This is a STRONGER assertion than `exitCode==0`: it checks the FO performed the correct teardown sequence, not that the process happened to exit. No-progress-reset is UNNECESSARY (we observe a FINITE bounded sequence, not an open-ended success-wait) — drop it; the ≤60s guard stays green because the new step still uses the ≤60s no-progress budget for each beat.
-2. **(Contract — `first-officer-shared-core.md` + the Claude runtime adapter) Non-interactive terminal teardown is BOUNDED best-effort, then STOP and emit a terminal status; the PROCESS EXIT is the LAUNCHER's responsibility, NOT the FO's.** The FO: cooperative `shutdown_request` to the cohort → a BOUNDED set of `TeamDelete` attempts with the inter-attempt settle → then STOP retrying and emit a terminal status (it cannot delete a team the harness won't let it empty). The process death comes from the launcher (the live test's `kill()`, or a real automation's timeout) — the FO cannot cause it. After the bound, the harness will re-invoke the FO (proven); the FO just HOLDS (text only, no tool calls) until the launcher kills it. This **rehabilitates A's SPIRIT** — best-effort then process death — except the death is launcher-owned. REMOVE/correct yy's "keep retrying `TeamDelete` to success in non-interactive mode" (unreachable → the hang) and the disproven "hard-exit at the cap / residual cleanup at process death" (the FO cannot cause the death).
+These directions were explored and ruled out by the spikes + the CI artifact. Kept as the audit trail; they are NOT the current design (see `## Proposed approach` / `## Acceptance criteria` at the top).
 
-### Acceptance criteria (captain-approved direction)
-
-**AC-1 — The sonnet live cycle PASSES via correct bounded best-effort teardown + launcher kill (runtime-observable oracle).**
-Verified by: a live-e2e sonnet run where the FO performs the correct bounded teardown sequence (shutdown_request → member approval → bounded `TeamDelete` attempts) and the harness/launcher kills the subprocess — NO clean self-exit required, NO `exitCode==0` gate. `expectExit`-style flat-cap-then-fail is gone. By-construction-pending-live; MUST pass on a real sonnet run (the oracle yy's fix failed).
-
-**AC-2 — An offline fixture reproduces the dead-but-listed shape and the watcher grades it as correct best-effort teardown → PASS.**
-Verified by: a Go test (sibling to / extending `TestSonnetTeamDeleteHangReplay`) dripping a stream where the member APPROVES shutdown and its session ENDS, yet `TeamDelete` keeps failing `active member(s)`; the new grading step asserts the watcher OBSERVED the correct beats (shutdown_request sent + member approval + ≥1 bounded `TeamDelete` attempt) and PASSES (then the modelled `kill()` stops the proc). RED on a fixture where the FO did NOT do the correct teardown — never sent `shutdown_request`, OR never attempted `TeamDelete` — so the grade is behavioral, not "the proc was killed regardless." (The existing replay's `fakeProc`-never-exits tautology is replaced by a behavioral grade.)
-
-**AC-3 — The contract mandates bounded best-effort teardown + launcher-owned exit, and FORBIDS the unreachable/impossible framings.**
-Verified by: extending `TestTerminalTeardownRetriesToSuccess` so the required set asserts "bounded best-effort teardown" + a "terminal status, then hold" + "the launcher/process owner ends the subprocess" clause, and the NEGATING set ADDS "retry … to success" (now unreachable) and "hard-exit at the cap" / "residual cleanup at process death" / "the FO exits the process" (now impossible). An inverted edit re-introducing retry-to-success OR FO-self-exit reds it. (Prose-only ceiling — the behavioral oracle is AC-1.)
-
-### Test plan
-
-- Spike: DONE — the riskiest unknowns are empirically settled by (a) the raw `cap-confirm.jsonl` harness-reinvocation reproduction (sonnet+opus, `EXIT=124`) and (b) the real CI artifact's dead-but-listed timeline (member dies 14:37:30 / FO still sees it active 14:38:25+, upstream #38116/#57681). NO further live spike needed for the mechanism.
-- AC-2: offline Go test in `internal/ensigncycle/` (the dead-but-listed fixture + the new behavioral grade); sub-second, no model spend.
-- AC-3: contract oracle in `skills/integration/terminal_teardown_retry_test.go` (extend the directional-mandate lint); sub-second.
-- AC-1: one live-e2e sonnet cycle (~minutes, CI-only / Linux-bound), by-construction-pending-live.
-- **≤60s guard stays green.** The new grading step uses the existing ≤60s no-progress budget per beat and the `defer poller.kill()` for exit, so no timeout literal grows; `TestNoTimeoutLiteralExceeds60s` (live_budget_test.go) is unaffected. Confirm it stays green at validation.
-- High-stakes (FO contract + CI machinery) → detached adversarial audit before merge.
-
-> OPEN QUESTION (flagged, non-blocking; default assumption = live CI is the only consumer): are there real headless/cron `spacedock … -p` FO runs that gate on a CLEAN exit code? If so, they need a launcher-side timeout (a wrapper that bounds the run and kills it), NOT a contract change and NOT any reach into Claude's private team registry (captain rejected the config-rewrite host-hack). Default: only the live-e2e CI consumes the FO `-p` exit, and it already owns a `kill()`, so no extra launcher work is needed.
+1. **Original seed A+C — "hard-exit at the cap" (contract A) + "accept best-effort-teardown-then-exit" (test C).** RULED OUT: A is impossible — the `claude -p` harness will not let the subprocess self-exit while `members[]` is populated (proven, `EXIT=124` on sonnet+opus), so there is no process death the FO can cause and "residual cleanup at process death" never happens.
+2. **No-progress-reset reframe — make `expectExit` reset its deadline on stream activity so yy's retry-to-success reaches success within budget.** RULED OUT: it only widens the wait for a `TeamDelete` success that NEVER arrives (the dead member is never cleared from `members[]`, upstream #38116/#57681). It treated the bug as slow-settle timing; the CI artifact proved it is a never-settle registry defect. The ≤60s-guard analysis it produced still holds and carried forward (the current grading step likewise grows no literal).
 
 ## Stage Report: ideation
 
@@ -153,3 +137,13 @@ Team-lead supplied the ≤60s budget-guard constraint (`TestNoTimeoutLiteralExce
 
 ### Summary
 Reworked the ideation around the captain's approved pivot after the spikes + the real CI artifact settled the mechanism: the dispatched member approves shutdown and dies, but Claude Code never clears it from members[] (upstream #38116/#57681), so TeamDelete never succeeds (yy unreachable) AND the harness won't let claude -p self-exit while members[] is populated (A impossible — proven on sonnet+opus, EXIT=124, raw jsonl preserved). The fix is test-infra: the live cycle grades CORRECT bounded best-effort teardown (a stronger assertion than exitCode==0) then the launcher's kill() ends the subprocess; the contract is corrected to bounded-best-effort-then-stop with launcher-owned exit. Three ACs are real code/test gates; the ≤60s guard is untouched; the only open question (real -p consumers gating on clean exit) is flagged non-blocking with the launcher-timeout answer.
+
+## Stage Report: ideation (consolidation — one coherent current AC set)
+
+- DONE: Make the canonical sections SINGULAR and CURRENT; quarantine superseded material as labeled provenance
+  Replaced the dead `## Problem` (contract-ambiguous framing) with the verified dead-but-listed root cause (#38116/#57681); replaced the dead `## Proposed approach (A+C)` with the captain-approved best-effort-teardown+launcher-exit direction; DELETED the dead AC-1..AC-4 ("process EXITS"/"hard-exit at the cap") so exactly ONE `**AC-N` set (the 3 approved ACs) exists; replaced the old `## Test plan`. Moved the original A+C and the no-progress-reset reframe into `## Superseded directions (provenance)`. SPIKE RESULTS + Stage Reports kept as the audit trail. Frontmatter title left for the FO to fix.
+- DONE: Verify structure for the gate AC cross-check + 2a `ClassifyEntityACs` extractor
+  Confirmed exactly 3 `**AC-N` blocks (grep), one each of Problem/Proposed approach/Acceptance criteria/Test plan; the remaining "hard-exit at the cap" mentions are all in the FORBIDS/negating context, not prescriptive. Baselines green (TestTerminalTeardownRetriesToSuccess + TestNoTimeoutLiteralExceeds60s).
+
+### Summary
+Consolidation pass before staff review: I had appended the approved direction rather than replacing the superseded seed, leaving two contradictory `## Acceptance criteria` sets and dead canonical sections that would break the gate's AC cross-check and 2a's ClassifyEntityACs extractor. Rewrote Problem/Proposed approach/Acceptance criteria/Test plan to be singular and current (the captain-approved best-effort-teardown + launcher-owned-exit direction grounded in the #38116/#57681 dead-but-listed root cause), and quarantined the original A+C and the no-progress-reset reframe into a labeled `## Superseded directions (provenance)` section. The file now reads top-to-bottom as one coherent current ideation with exactly one AC set; nothing is lost — the dead directions and full spike/CI evidence remain as audit trail.
