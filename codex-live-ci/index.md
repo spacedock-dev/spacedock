@@ -275,3 +275,20 @@ The f4 code branch is rebased onto current `origin/next` with no new code edits 
 ### Summary
 
 Recommendation: PASSED for code commit `407b82efb836`. Caveats: the named r0 remote branch has been pruned so AC-1 used the r0 commit `528ffa17` ancestor check, the branch is now behind latest `origin/next` by three release-fix commits after fetch, and approved GitHub `codex-live` evidence is not yet available.
+
+## Stage Report: PR and CI follow-up
+
+- DONE: Rebased f4 onto current `origin/next` and pushed PR #278
+  The branch now ends at `883c5c54` and PR `spacedock-dev/spacedock#278` targets `next`.
+- DONE: Repaired two gate gaps found after the final rebase
+  Added `RUNNER_TEMP` to the release guard fixture so current `origin/next` tests pass after release notes moved under runner temp, and made the Codex gate assertion buildable under `go build ./...` by removing the non-test dependency on a `_test.go` helper.
+- DONE: Reran local gates after the rebase and fixes
+  `go build ./...`, `go test ./internal/ensigncycle`, `go test ./internal/release`, `go test ./...`, and `go test ./... -race` all passed; full and race suites each reported 833 passed tests in 12 packages.
+- DONE: Approved and observed live Runtime E2E CI
+  Run `26868900816` passed: `offline`, `codex-live`, `claude-live (claude-opus-4-8, CI-E2E-OPUS)`, and `claude-live (sonnet, CI-E2E)` all succeeded with artifacts uploaded.
+- DONE: Filed the real shared-scenario follow-up
+  New task `8y` / `real-shared-runtime-scenarios` tracks extracting host-neutral shared scenario definitions consumed by both Claude and Codex live runners.
+
+### Summary
+
+PR #278 is open, rebased on current `origin/next`, and has approved green Runtime Live E2E CI. f4 remains in validation pending captain gate approval.
