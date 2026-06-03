@@ -198,3 +198,18 @@ The focused scenario-key run passed 11 tests across `internal/journeymetrics`, `
 ### Summary
 
 Fixed the journey cost ledger axes so `mode` describes evidence/execution mode, `runtime` remains the host, and model names stay in `model`. The schema helpers no longer synthesize `mode` from `model`, preventing Codex characterization and aggregation paths from reintroducing the rejected shape.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Make Runtime Live E2E archive raw per-run journey metric JSON records from the live shared scenario jobs as the primary proof for this slice.
+  Commit 16cee94a adds a structural runtime-live workflow guard requiring active Claude/Codex shared-scenario runs and upload-artifact steps that include `live-artifacts/journey-metrics/**`.
+- DONE: Keep aggregation and release/post-processing as tested consumers rather than the core acceptance point.
+  Commit 16cee94a preserves the existing release workflow consumer checks while moving `TestWorkflowsPreserveAndPublishJourneyCosts` to call the live raw-metrics artifact guard first.
+- DONE: Preserve the mode/model correction: mode is execution/evidence mode, while model carries sonnet, opus, gpt-5-codex, and related model names.
+  Commit e46306e8 remains in the branch; the final scan only finds Codex characterization filling `model`, not `mode`.
+- DONE: Rerun focused journey-metrics/release tests plus full Go gates and write the implementation report.
+  Focused packages passed 110 tests; live-tag no-run compile passed; `go test ./...` and `go test ./... -race` each passed 893 tests after `gofmt -w ./cmd ./internal`.
+
+### Summary
+
+Adjusted the implementation evidence around the captain addendum: Runtime Live E2E now has a parsed workflow guard proving raw journey metric records are uploaded from both live shared scenario lanes. The release ledger builder remains covered as a downstream consumer, and the mode/model axis fix is preserved.
