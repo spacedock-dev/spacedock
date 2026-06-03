@@ -184,3 +184,21 @@ Gate-strength pass on the three ACs after staff review. The key fix: the observa
 
 ### Summary
 Closed the last gate-strength hole (M1/AC-2). The reviewer was right: the named RED fixture was the PRE-yy give-up shape, which an attempt-count grade would green (1 attempt ≤ cap). The fix is a contract-defined terminal-status MARKER + hold tail — the one beat unique to the fix (neither the pre-yy silent give-up nor the post-yy infinite retry emits it) — co-designed across AC-3 (contract mandates the verbatim sentinel), AC-2 (greens only on marker+hold; REDs BOTH authentic bug recordings: the existing pre-yy give-up AND a new post-yy retry-loop fixture captured from the real run 26891717026, shape verified 9/6/8, sha recorded), and AC-1 (live grade keys on marker+hold). The fixture is left for the implementation worktree, not committed from ideation. Structure unchanged (3 AC blocks); baseline oracle tests green.
+
+## Stage Report: implementation
+
+- DONE: CONTRACT REVERT + marker (AC-3): edit first-officer-shared-core.md (step 10) AND the Claude runtime adapter from retry-to-success → BOUNDED best-effort + verbatim marker + hold + launcher-owned exit; rename + INVERT the oracle
+  shared-core step 10 + Claude `## Terminal Team Teardown` rewritten to bounded best-effort then the verbatim `TERMINAL_TEARDOWN_BOUNDED: …holding for launcher.` marker + hold; launcher owns exit. `TestTerminalTeardownRetriesToSuccess` → `TestTerminalTeardownIsBoundedBestEffort`, phrase sets inverted (retry-to-success/until-succeeds/keep-retrying/FO-self-exit forbidden; bounded + verbatim marker + hold + launcher required). Commit 49198d56.
+- DONE: RE-VERIFY TestAwaitingCompletionStillBansPreCompletionTeamDelete stays GREEN
+  Terminal-only change; pre-completion `emit \`TeamDelete\`` ban intact — test green.
+- DONE: STREAMWATCHER GRADE (AC-1 machinery + AC-2): replace live_test.go's expectExit→exitCode==0 with a grade of the bounded best-effort tail; AC-2 offline greens fix shape, REDs both bug fixtures
+  Added `gradeTerminalTeardown` + `expectTerminalTeardownGrade` (streamwatch.go); live_test.go now grades marker+hold then `defer poller.kill()` reaps (no self-exit). AC-2 (teardown_grade_test.go): GREEN `sonnet_teamdelete_bounded_marker` (5 bounded attempts + marker + hold), RED #1 `sonnet_teamdelete_hang` (pre-yy give-up, no marker), RED #2 `sonnet_teamdelete_retryloop` (NEW, from real run 26891717026, 6 TeamDelete/8 active-member failures/no marker). Both bug fixtures RED for the right reason (marker absent). AC-1 machinery offline-proven in teardown_grade_watcher_test.go.
+- DONE: ≤60s guard stays green (no timeout literal grows)
+  New `holdConfirmDefault = 30s`; `TestNoTimeoutLiteralExceeds60s` + `TestLiveTestHasNoMonolithicDeadlineCtx` green.
+- DONE: PROVE IT — `go test ./...` green; AC-3 oracle REDs on inverted edit; AC-2 REDs both bug fixtures, GREENS the fix shape; pre-completion ban green
+  Full `go test ./...` green. AC-3 oracle verified RED on injected retry-to-success, FO-self-exit, AND marker-drop (each reverted). Live build compiles under `-tags live`.
+- SKIPPED: AC-1 (live sonnet run)
+  By-construction-pending-live — confirmed at validation/merge (captain holds that gate), NOT here.
+
+### Summary
+Reversed yy/#282's retry-to-success terminal-teardown contract to bounded best-effort + a verbatim `TERMINAL_TEARDOWN_BOUNDED` marker + hold, with the process exit owned by the launcher — the live AC-1 confirmation proved retry-to-success is unreachable (dead-but-listed member, upstream #38116/#57681) and an FO self-exit is impossible (harness keeps claude -p alive while members[] is populated). AC-3 inverts the contract oracle (rename + phrase-set flip, marker mandated verbatim); AC-2 grades the marker+hold tail and REDs both authentic bug recordings (the existing pre-yy give-up + a new retryloop fixture from real run 26891717026); the live test's exitCode==0 step is replaced by `expectTerminalTeardownGrade` graded on marker+hold then reaped by the deferred kill(). Every timeout literal stays ≤60s. Code on worktree branch (commit 49198d56); AC-1 live sonnet is by-construction-pending-live.
