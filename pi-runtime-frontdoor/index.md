@@ -62,8 +62,17 @@ Verified by: `go test ./... -count=1` and focused existing CLI tests for Claude/
 
 ## Stage Report: implementation
 
-- TODO: Implement the Pi front-door/install/doctor UX and tests.
+- DONE: Add `spacedock pi` launch routing with Pi-native resources.
+  Evidence: code commit `255bb0da` registers `pi` in the CLI command tree/help and adds `internal/cli/pi.go`. `TestPiCommandRegisteredInTopLevelHelp` and `TestPiFrontDoorLaunchesWithNativeResourcePaths` assert the argv begins with `pi`, loads the `pi-subagents` extension/skill plus local Spacedock first-officer/ensign skills, forwards Pi flags after `--`, and excludes Claude/Codex-only runtime tokens.
+- DONE: Add accepted, idempotent `spacedock install --host pi` behavior.
+  Evidence: `TestPiInstallAcceptedAndDoesNotUsePluginCommands` asserts the Pi install path does not call the Claude/Codex plugin install seam and reports ready when Pi resources are present. `TestPiInstallMissingSubagentsPrintsActionableInstructions` asserts the missing-substrate path exits as an instructive setup report with `pi install npm:pi-subagents` and `PI_SUBAGENTS_PACKAGE_ROOT` guidance.
+- DONE: Add stable `spacedock doctor --host pi` health checks.
+  Evidence: `TestPiDoctorReportsMissingAndHealthyRuntime` covers missing and healthy Pi runtime states for the Pi CLI, auth file, `pi-subagents` extension/skill, and local Spacedock skills.
+- DONE: Route live Pi proof through the Spacedock-owned front door.
+  Evidence: `TestLivePiFrontDoorSmoke` shells the current-checkout `spacedock pi` command with isolated `PI_CODING_AGENT_DIR`, temp session dir, copied OAuth auth, explicit `PI_SUBAGENTS_PACKAGE_ROOT`, and a split-root workflow fixture. It passed alongside the existing raw Pi smoke.
+- DONE: Preserve Claude/Codex behavior.
+  Evidence: fresh `go test ./... -count=1` and `go test ./... -race -count=1` passed, including existing CLI/front-door/install/doctor tests.
 
 ### Summary
 
-Implementation has been dispatched through the Pi-native `subagent(...)` runtime contract. The worker should update this report when code and verification evidence are ready.
+Implemented the Pi runtime front-door UX in code commit `255bb0da`. Spacedock now exposes `spacedock pi`, accepts `install --host pi`, and reports Pi runtime health via `doctor --host pi` without reusing Claude/Codex plugin commands or team-tool semantics. Verification passed with fresh baseline, race, and live Pi smoke commands, including `TestLivePiFrontDoorSmoke` through the new Spacedock-owned wrapper.
