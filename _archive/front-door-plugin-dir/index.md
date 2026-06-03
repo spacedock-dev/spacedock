@@ -2,7 +2,7 @@
 id: jgc29m3pjb80efvmrc5bkc2n
 title: spacedock claude --plugin-dir before `--` (captain dev workflow) + restore the live-e2e net
 status: validation
-source: captain (2026-06-02) — CI-E2E live-runtime e2e fails: cobra `spacedock claude` rejects --plugin-dir before `--`; the captain's primary dev workflow and the e2e net both depend on it. 0.19.3 keystone.
+source: "captain (2026-06-02) — CI-E2E live-runtime e2e fails: cobra `spacedock claude` rejects --plugin-dir before `--`; the captain's primary dev workflow and the e2e net both depend on it. 0.19.3 keystone."
 started: 2026-06-02T05:06:55Z
 completed: 2026-06-02T06:23:36Z
 verdict: PASSED
