@@ -43,10 +43,16 @@ jobs:
       - name: Extract release notes from the tag body
         run: |
           set -euo pipefail
-          git tag -l --format='%(contents:body)' "$GITHUB_REF_NAME" > release-notes.txt
-          # %(contents:body) always appends a trailing newline, so the file is
-          # never zero-byte; gate on stripped content so a whitespace/newline-only
-          # body (lightweight tag, subject-only tag, empty second -m) fails loudly.
+          # Re-fetch the tag annotation explicitly — actions/checkout@v4 sometimes
+          # drops the tag object even with fetch-tags: true, leaving %(contents:body)
+          # empty. A bare git fetch of the ref forces the annotation through.
+          git fetch origin "+refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}" --force
+          # Read the tag object directly via cat-file (subject + blank line + body)
+          # and extract everything after the first blank line. This is more robust
+          # than %(contents:body), which has surfaced as empty on macos runners.
+          git cat-file tag "$GITHUB_REF_NAME" | awk 'p{print; next} /^$/{p=1}' > release-notes.txt
+          # Guard against an empty body (a lightweight tag, or one cut outside the
+          # notes flow) so we fail loudly rather than publish an empty Release.
           if [ -z "$(tr -d '[:space:]' < release-notes.txt)" ]; then
             echo "::error::tag $GITHUB_REF_NAME has an empty annotated-tag body; cut it via 'spacedock-release notes <version>'" >&2
             exit 1
