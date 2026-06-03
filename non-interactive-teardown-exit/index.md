@@ -222,3 +222,16 @@ Reversed yy/#282's retry-to-success terminal-teardown contract to bounded best-e
 
 ### Summary
 PASSED. Both offline ACs verified thoroughly against the worktree code (HEAD eeb7033d — the impl report's cited SHA 49198d56 is a stale pre-squash ref; the code is correct). The load-bearing risk — AC-2 greening on the shutdown_request/TeamDelete beats both bug shapes also emit — is conclusively closed by mutation: both authentic bug recordings (pre-yy give-up + the real run-26891717026 retryloop) RED for verbatim MARKER ABSENCE, and the discriminator flips solely on the marker (append marker → green; strip marker → red). AC-3's oracle is inversion-resistant (REDs on injected retry-to-success, FO-self-exit, and marker-drop), the pre-completion TeamDelete ban survives, the ≤60s guard is untouched, and the verbatim marker is mandated byte-identically across the contract prose and every oracle. AC-1 is correctly by-construction-pending-live: the grade machinery is wired into the live test and compiles under `-tags live`; the live sonnet run is the captain's merge gate, confirmed there not here. The high-stakes detached adversarial audit runs as the separate parallel refuter (not this validation pass); its findings route through the normal feedback flow before the gate is presented clean.
+
+## Feedback Cycles
+
+### Cycle 1 — detached adversarial audit (2026-06-03)
+
+Validation PASSED, but the detached audit (high-stakes: FO contract + CI) found **3 Material test-strength holes** — the deliverable behavior is correct; the tests guarding it are evadable. Routed back to implementation; the gate is not presented until closed and re-audited.
+
+- **M1 — AC-3 oracle: retry-to-success re-introducible by near-synonym.** `terminal_teardown_retry_test.go` negatingPhrases are exact-substring and the required `hold`/`launcher` phrases are substrings of the marker `…holding for launcher.` (zero discrimination). Auditor edit "continues issuing settle-then-TeamDelete rounds until the registry finally clears" stayed GREEN. Fix: positive STOP/bounded anchors not satisfiable by the marker substring + broadened negating set.
+- **M2 — AC-3 oracle: FO-self-exit re-introducible (same root cause).** Auditor edit "the FO terminates its own runtime by `kill -9 $PPID`…launcher is only a backstop" stayed GREEN. Fix: launcher-exit anchor distinct from the marker + broadened self-exit negating set.
+- **M3 — ≤60s guard misses additive composites.** `live_budget_test.go` folds only `BinaryExpr` Op==MUL, not the enclosing ADD; `holdConfirmDefault = time.Minute + 30*time.Second` (90s) stayed GREEN. Fix: handle ADD (recurse+sum) + pin `holdConfirmDefault` ≤60s directly.
+- **Polish:** marker has 3 verbatim copies with no cross-equality test (add one); the pre-completion ban test is substring-presence not semantic.
+
+AC-2's marker-vs-beats discriminator was attacked hardest and held **CLEAN** (beats-only never greens; the marker is genuinely load-bearing).
