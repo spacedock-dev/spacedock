@@ -126,3 +126,16 @@ Implemented the release journey cost ledger as a checked Go metrics package, rel
 Recommendation: REJECTED. AC-1 passed via `TestTrackingOptInDoesNotOwnBehaviorOutcome`; AC-2 passed via the two Claude parser fixture tests; AC-3 passed via `TestCodexFixtureIsCharacterizedNotMeasured`; AC-4 passed via `TestAggregateLedgerMatchesGolden`; AC-6 passed via `TestBudgetPolicyIsExplicitAndCoarse`.
 
 AC-5 nominal release-tool checks passed via `TestJourneyCostsCommand*` and the workflow guard test, but the required detached audit found a material test-strength hole: substring checks are satisfied by comments, so they do not prove the release workflow actually runs `spacedock-release journey-costs`. Full gates: `go test ./...` passed 886 tests in 13 packages; `go test ./... -race` passed 886 tests in 13 packages. Formatting note: `gofmt -l ./cmd ./internal` reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`, none touched by commit `2b2e97d4`; validation left code unchanged.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Update the implementation so the release/workflow guard parses executable release workflow steps or otherwise proves the release job actually runs the journey-cost builder and publishes `journey-costs-vX.Y.Z.json`, not just comments or inert text.
+  Commit 9ade930d adds an executable-step guard that parses `run: |` blocks, ignores comments, joins shell continuations, and matches command prefixes.
+- DONE: Add or strengthen tests so the adversarial edit described above fails.
+  Commit 9ade930d adds tests for commented-out builder plus fake `{}` output and commented-out publish command.
+- DONE: Run focused tests needed for AC-5 and broader tests as appropriate.
+  `go test ./internal/release ./cmd/spacedock-release` passed 20 tests; `go test ./...` and `go test ./... -race` each passed 888 tests.
+
+### Summary
+
+Fixed the AC-5 guard so matching substrings in comments no longer count as release proof. The release workflow test now verifies executable builder and publish commands for `journey-costs-v${RELEASE_VERSION}.json` and keeps the prior release-tool command checks.
