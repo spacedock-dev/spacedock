@@ -1,7 +1,7 @@
 ---
 id: atwf2w6p68t9q1mda790dcfc
 title: "Non-interactive FO teardown — grade bounded best-effort + launcher-owned exit (dead-but-listed member: yy retry-to-success unreachable, FO self-exit impossible)"
-status: validation
+status: implementation
 source: live AC-1 confirmation of yy (PR #282) FAILED — both n3 #275 and 2a #277 sonnet cycles failed with yy's fix in the checkout; the sonnet FO looped 6 TeamDelete attempts in the settle-then-retry loop and never exited claude -p. Captain chose A+C (2026-06-03).
 score: "0.42"
 worktree: .worktrees/spacedock-ensign-non-interactive-teardown-exit
