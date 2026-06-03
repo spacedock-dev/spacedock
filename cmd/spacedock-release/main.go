@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 	"github.com/spacedock-dev/spacedock/internal/release"
 )
 
@@ -36,6 +38,8 @@ func main() {
 		os.Exit(stampVersion(os.Args[2:]))
 	case "bump-calendar":
 		os.Exit(bumpCalendar(os.Args[2:]))
+	case "journey-costs":
+		os.Exit(journeyCosts(os.Args[2:]))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
 	default:
@@ -43,6 +47,70 @@ func main() {
 		usage()
 		os.Exit(2)
 	}
+}
+
+func journeyCosts(args []string) int {
+	if len(args) < 5 {
+		fmt.Fprintln(os.Stderr, "spacedock-release journey-costs: need <release-version> --metrics-dir <dir> --out <path>")
+		return 2
+	}
+	version := strings.TrimPrefix(args[0], "v")
+	var metricsDir, out string
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--metrics-dir":
+			i++
+			if i >= len(args) {
+				fmt.Fprintln(os.Stderr, "spacedock-release journey-costs: --metrics-dir needs a value")
+				return 2
+			}
+			metricsDir = args[i]
+		case "--out":
+			i++
+			if i >= len(args) {
+				fmt.Fprintln(os.Stderr, "spacedock-release journey-costs: --out needs a value")
+				return 2
+			}
+			out = args[i]
+		default:
+			fmt.Fprintf(os.Stderr, "spacedock-release journey-costs: unknown argument %q\n", args[i])
+			return 2
+		}
+	}
+	if version == "" || metricsDir == "" || out == "" {
+		fmt.Fprintln(os.Stderr, "spacedock-release journey-costs: need <release-version> --metrics-dir <dir> --out <path>")
+		return 2
+	}
+	wantName := "journey-costs-v" + version + ".json"
+	if filepath.Base(out) != wantName {
+		fmt.Fprintf(os.Stderr, "spacedock-release journey-costs: output filename must be %s\n", wantName)
+		return 1
+	}
+	records, err := journeymetrics.ReadRecordsDir(metricsDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "read journey metrics: %v\n", err)
+		return 1
+	}
+	ledger, err := journeymetrics.AggregateLedger(version, records, time.Now().UTC())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "aggregate journey metrics: %v\n", err)
+		return 1
+	}
+	data, err := journeymetrics.MarshalLedger(ledger)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "render journey ledger: %v\n", err)
+		return 1
+	}
+	if err := os.MkdirAll(filepath.Dir(out), 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "create output dir: %v\n", err)
+		return 1
+	}
+	if err := os.WriteFile(out, data, 0o644); err != nil {
+		fmt.Fprintf(os.Stderr, "write %s: %v\n", out, err)
+		return 1
+	}
+	fmt.Printf("wrote %s (%d journeys)\n", out, len(records))
+	return 0
 }
 
 func stampVersion(args []string) int {
@@ -245,6 +313,7 @@ func usage() {
 Usage:
   spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
   spacedock-release bump-calendar <marketplace.json>
+  spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release notes <release-version>
 `)
 }

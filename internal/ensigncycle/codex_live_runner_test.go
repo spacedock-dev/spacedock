@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 // The Codex runner adapter: it turns a host-neutral sharedRuntimeScenario into a
@@ -29,6 +30,7 @@ type codexScenarioResult struct {
 	finalMessage string
 	jsonl        string
 	artifactDir  string
+	duration     time.Duration
 }
 
 type codexLiveScenario struct {
@@ -152,6 +154,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
+	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
@@ -164,6 +167,7 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
@@ -180,6 +184,7 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
 	}
+	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) codexScenarioResult {
@@ -216,7 +221,9 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
+	started := time.Now()
 	err = cmd.Run()
+	duration := time.Since(started)
 	if ctx.Err() == context.DeadlineExceeded {
 		t.Fatalf("codex exec did not finish within %s for %s; artifacts in %s", scenario.timeout, scenario.name, artifactDir)
 	}
@@ -228,6 +235,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 		finalMessage: readFile(t, finalPath),
 		jsonl:        readFile(t, jsonlPath),
 		artifactDir:  artifactDir,
+		duration:     duration,
 	}
 }
 

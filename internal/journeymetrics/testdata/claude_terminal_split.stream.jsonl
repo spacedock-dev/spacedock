@@ -1,0 +1,5 @@
+{"type":"system","subtype":"init","model":"claude-sonnet-4-6"}
+{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":10,"cache_creation_input_tokens":5,"cache_read_input_tokens":20},"content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"go test ./..."}}]}}
+{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":10,"cache_creation_input_tokens":5,"cache_read_input_tokens":20},"content":[{"type":"tool_use","id":"toolu_1","name":"Bash","input":{"command":"go test ./..."}}]}}
+{"type":"assistant","message":{"id":"msg_2","model":"claude-sonnet-4-6","usage":{"input_tokens":200,"output_tokens":20},"content":[{"type":"text","text":"Done."}]}}
+{"type":"result","subtype":"success","usage":{"input_tokens":500,"output_tokens":70,"cache_creation_input_tokens":30,"cache_read_input_tokens":40},"total_cost_usd":0.123,"modelUsage":{"claude-sonnet-4-6":{"inputTokens":500,"outputTokens":70,"cacheCreationInputTokens":30,"cacheReadInputTokens":40,"costUSD":0.123}}}
