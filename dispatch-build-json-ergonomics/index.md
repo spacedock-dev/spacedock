@@ -9,6 +9,7 @@ started: 2026-06-03T21:33:12Z
 completed:
 verdict:
 issue:
+mod-block: merge:pr-merge
 ---
 
 `spacedock dispatch build` consumes a JSON spec on stdin for initial ensign dispatch. That keeps programmatic callers simple, but it makes the FO hand-assemble a JSON object whose `checklist`, `scope_notes`, or `feedback_context` values often contain backticks (`` `sharedRuntimeScenarios()` ``), shell variables (`$CLAUDE_CODE_SESSION_ID`), and Markdown. Inline shell JSON is fragile, and the current FO runtime docs demonstrate `echo '<json>' | spacedock dispatch build`, which anchors the FO on the fragile path.
