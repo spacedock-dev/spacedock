@@ -107,3 +107,18 @@ Reworked the ideation gate findings without changing the frontmatter or touching
 ### Summary
 
 Implemented the release journey cost ledger as a checked Go metrics package, release-tool command, host fixture parsers, and live/release workflow path. Verified with `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and a live-tag compile check for the live runner hooks.
+
+## Stage Report: validation
+
+- DONE: Reproduce the implementation evidence for AC-1 through AC-6, including Go tests, release-tool behavior, workflow guards, and Codex characterization state.
+  Focused AC command passed 10 tests across `internal/journeymetrics`, `cmd/spacedock-release`, and `internal/release`; live-tag compile check passed 1 test.
+- DONE: Run the required high-stakes detached adversarial audit for CI/release machinery and record any material test-strength findings.
+  Material: a detached audit replaced the release builder with commented command text plus `{}` output, and `TestWorkflowsPreserveAndPublishJourneyCosts` still passed.
+- DONE: Write a validation report with a PASSED or REJECTED recommendation and evidence citations for every AC.
+  Recommendation: REJECTED. AC-1/2/3/4/6 passed by focused tests; AC-5 is rejected because the workflow guard can green-light a release job that never invokes the builder.
+
+### Summary
+
+Recommendation: REJECTED. AC-1 passed via `TestTrackingOptInDoesNotOwnBehaviorOutcome`; AC-2 passed via the two Claude parser fixture tests; AC-3 passed via `TestCodexFixtureIsCharacterizedNotMeasured`; AC-4 passed via `TestAggregateLedgerMatchesGolden`; AC-6 passed via `TestBudgetPolicyIsExplicitAndCoarse`.
+
+AC-5 nominal release-tool checks passed via `TestJourneyCostsCommand*` and the workflow guard test, but the required detached audit found a material test-strength hole: substring checks are satisfied by comments, so they do not prove the release workflow actually runs `spacedock-release journey-costs`. Full gates: `go test ./...` passed 886 tests in 13 packages; `go test ./... -race` passed 886 tests in 13 packages. Formatting note: `gofmt -l ./cmd ./internal` reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`, none touched by commit `2b2e97d4`; validation left code unchanged.
