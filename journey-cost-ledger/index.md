@@ -213,3 +213,18 @@ Fixed the journey cost ledger axes so `mode` describes evidence/execution mode, 
 ### Summary
 
 Adjusted the implementation evidence around the captain addendum: Runtime Live E2E now has a parsed workflow guard proving raw journey metric records are uploaded from both live shared scenario lanes. The release ledger builder remains covered as a downstream consumer, and the mode/model axis fix is preserved.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Reproduce the latest cycle-5 proof that Runtime Live E2E uploads raw journey metric JSON records from both Claude and Codex shared scenario lanes.
+  `go test ./internal/journeymetrics ./cmd/spacedock-release ./internal/release -count=1` passed 31 tests; `TestWorkflowsPreserveAndPublishJourneyCosts` checks active metrics env lines, executable shared-scenario runs, and post-run `live-artifacts/journey-metrics/**` uploads for both lanes.
+- DONE: Verify AC-1 through AC-6 against the current branch, including the corrected mode/model axes and keeping release aggregation as a downstream consumer.
+  Recommendation: PASSED. AC-1/6 pass via tracking and budget tests; AC-2 via Claude parser fixtures; AC-3 via Codex characterization; AC-4 via ledger golden; AC-5 via runtime-live raw artifact guard plus release-tool consumer tests. Mode remains `llm-live`/`codified`; models stay in `model`.
+- DONE: Run the required detached adversarial audit for the CI/release machinery plus focused/full Go gates, then write a PASSED or REJECTED validation report.
+  Detached audits failed as expected: removing the Codex journey-metrics upload yielded `Codex shared scenario job does not upload raw journey metrics`; commenting the release builder plus fake JSON yielded `release.yml has no executable journey-cost builder command`. Full gates passed: `gofmt -w ./cmd ./internal`, `go test ./...` 893 tests, and `go test ./... -race` 893 tests.
+
+### Summary
+
+Recommendation: PASSED. Cycle-5 validation confirms Runtime Live E2E now archives raw per-run journey metric JSON from both Claude and Codex shared scenario lanes, while release aggregation remains a checked downstream consumer rather than the primary proof.
+
+No material audit findings remain. The required `gofmt -w ./cmd ./internal` produced a mechanical formatting commit, `3ea0a132`, before the full Go gates were rerun.
