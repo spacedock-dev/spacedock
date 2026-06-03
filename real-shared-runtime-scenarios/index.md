@@ -9,7 +9,7 @@ verdict:
 score: "0.68"
 worktree: .worktrees/spacedock-ensign-real-shared-runtime-scenarios
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#281"
 ---
 
