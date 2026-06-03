@@ -6,7 +6,7 @@ source: sprint — captain (parser-modernization, post-bootstrap)
 score: "0.25"
 worktree: .worktrees/spacedock-ensign-yaml-parser-migration
 started: 2026-06-02T15:44:41Z
-mod-block: merge:pr-merge
+mod-block:
 pr: "#274"
 ---
 
