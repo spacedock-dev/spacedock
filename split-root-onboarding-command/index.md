@@ -3,10 +3,10 @@ id: kjne6h1jkft6b6ek3p3068jh
 title: One-command split-root onboarding — `spacedock state new` (birth the orphan state branch + linked worktree for an existing repo)
 status: validation
 source: "captain (2026-06-02) — real-repo split-root test on DataRecce/recce: storage mechanics work cleanly (zero code-branch churn, fresh-clone halt-gate + state init both correct), but first-time onboarding of an existing repo has no single command"
-completed:
-verdict:
+completed: 2026-06-03T08:25:33Z
+verdict: PASSED
 score: "0.24"
-worktree: .worktrees/spacedock-ensign-split-root-onboarding-command
+worktree:
 issue:
 started: 2026-06-03T07:09:59Z
 mod-block:
