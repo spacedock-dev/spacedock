@@ -174,6 +174,194 @@ func TestClassifierPrecisionRecallOnLiveCorpus(t *testing.T) {
 	}
 }
 
+// TestNoExternalProofGuardOnReadPaths locks the cycle-2 F1 regression: under
+// `require-external-proof: true` AND with a self-referential entity present,
+// the read surfaces (`sd status`, `--next`, `--boot`, `--next-id`) must exit 0.
+// The classifier gate fires only on the mutation surface (runSet terminal-set)
+// and the explicit `--validate` command; a read path failing on a flagged AC
+// would lock the FO out of the very listing they need to see the broken entity.
+func TestNoExternalProofGuardOnReadPaths(t *testing.T) {
+	env := pinnedEnv(t)
+	root := stageExternalProofFixture(t, "require-external-proof: true\n")
+
+	for _, args := range [][]string{
+		{"--workflow-dir", root},
+		{"--workflow-dir", root, "--next"},
+		{"--workflow-dir", root, "--boot"},
+		{"--workflow-dir", root, "--next-id"},
+	} {
+		name := strings.Join(args[2:], " ")
+		if name == "" {
+			name = "default-table"
+		}
+		t.Run(name, func(t *testing.T) {
+			nOut, nErr, nCode := runNative(t, root, env, args...)
+			if nCode != 0 {
+				t.Fatalf("read path %q must exit 0 under require-external-proof: true, got %d\nstdout=%q\nstderr=%q",
+					args, nCode, nOut, nErr)
+			}
+			if strings.Contains(nErr, "self-referential AC proof") {
+				t.Fatalf("read path %q must not emit the self-referential guard error, stderr=%q", args, nErr)
+			}
+		})
+	}
+
+	// --validate, on the other hand, MUST still fire — it's the explicit
+	// surface the gate keys on.
+	_, vErr, vCode := runNative(t, root, env, "--workflow-dir", root, "--validate")
+	if vCode != 1 || !strings.Contains(vErr, "self-referential AC proof") {
+		t.Fatalf("--validate must opt INTO the external-proof check, got code=%d stderr=%q", vCode, vErr)
+	}
+}
+
+// TestExternalTokensClearSelfPhrase locks the cycle-2 L3-F1/L3-F2/L3-F3/L3-F4
+// vocabulary additions: a self-phrased AC whose proof clause cites any of the
+// build/compile/lint, live-pilot (no literal-article dependency), release-
+// artifact, or commit/URL/GitHub families must NOT flag. Each subtest is a
+// minimal classifier-level body fixture proving the relevant token clears the
+// self-phrase.
+func TestExternalTokensClearSelfPhrase(t *testing.T) {
+	cases := []struct {
+		name   string
+		clause string
+	}{
+		// L3-F1: build/compile/vet/gofmt/lint.
+		{"go-build", "Verified by: `go build ./...` succeeds against this entity's renamed files."},
+		{"gofmt", "Verified by: `gofmt -l .` returns empty on this entity's tree."},
+		{"go-vet", "Verified by: `go vet ./...` succeeds on this entity's package."},
+		{"compile", "Verified by: a downstream caller compiles cleanly against this entity's new API."},
+		{"lint", "Verified by: a lint pass clears this entity's renamed identifiers."},
+
+		// L3-F2: generalized live-pilot vocabulary (no literal-article dependency).
+		{"drives-lifecycle", "Verified by: a behavioral pilot on a real entity drives this entity's lifecycle."},
+		{"pilots-merge", "Verified by: the FO pilots this entity through merge."},
+		{"runtime-behavior", "Verified by: runtime behavior of the registry drives this entity's mod-block clear."},
+
+		// L3-F3: release-artifact vocabulary.
+		{"brew", "Verified by: a `brew install` against this entity's cask succeeds."},
+		{"spctl", "Verified by: `spctl --assess --type execute` clears this entity's binary."},
+		{"goreleaser", "Verified by: a `goreleaser` run produces this entity's artifact."},
+		{"notarize", "Verified by: notarize a binary derived from this entity's commit."},
+
+		// L3-F4: commit/URL/GitHub/merged vocabulary.
+		{"commit-url", "Verified by: opening this entity's commit URL on GitHub renders the diff."},
+		{"merged", "Verified by: this entity's PR has merged to main."},
+		{"landed", "Verified by: the change landed on main in this entity's commit."},
+		{"hex-shape", "Verified by: this entity's resulting commit deadbeef carries the rename."},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			body := "**AC-1 — A property of this entity's design.**\n" + tc.clause + "\n"
+			flags := ClassifyEntityACs(body)
+			if len(flags) != 0 {
+				t.Fatalf("clause %q should clear the self-phrase, got flags=%+v", tc.clause, flags)
+			}
+		})
+	}
+}
+
+// TestSelfPhraseStillFlagsWithoutExternalToken locks that the vocabulary
+// additions did not over-correct: a truly self-referential AC (self-phrase
+// present, no external token) still flags. This is the recall side of the
+// precision/recall = 1.0 invariant.
+func TestSelfPhraseStillFlagsWithoutExternalToken(t *testing.T) {
+	cases := []string{
+		"**AC-1 — Intent.**\nVerified by: review of this entity's decision section.\n",
+		"**AC-2 — Intent.**\nVerified by: the entity's own decision states the intent.\n",
+		"**AC-3 — Intent.**\nVerified by: re-reading this entity's body confirms the intent.\n",
+	}
+	for i, body := range cases {
+		body := body
+		t.Run(acLabel(strings.Split(body, "\n")[0]), func(t *testing.T) {
+			flags := ClassifyEntityACs(body)
+			if len(flags) != 1 {
+				t.Fatalf("case %d should flag exactly once, got %+v", i, flags)
+			}
+		})
+	}
+}
+
+// TestExternalTokenInBacktickStillClears locks the cycle-2 L3-F3 strip-order
+// fix: a self-phrased AC whose external token sits inside backticks must
+// still clear. The fix runs externalTokenRe against the UNSTRIPPED clause so
+// `--cask` inside backticks (the corpus convention) is honored.
+func TestExternalTokenInBacktickStillClears(t *testing.T) {
+	body := "**AC-1 — A property of this entity's design.**\n" +
+		"Verified by: `--cask` against this entity's binary.\n"
+	flags := ClassifyEntityACs(body)
+	if len(flags) != 0 {
+		t.Fatalf("backtick-quoted external token must clear the self-phrase, got %+v", flags)
+	}
+}
+
+// TestQuotedSelfPhraseStillDoesNotFlag locks that the strip-order change did
+// not regress the original quote-stripping intent: a clause that QUOTES the
+// self-phrase as an example (not as the live proof) must still NOT flag.
+func TestQuotedSelfPhraseStillDoesNotFlag(t *testing.T) {
+	body := "**AC-1 — A property.**\n" +
+		"Verified by: a Go test refusing \"this entity's decision section\" as proof.\n"
+	flags := ClassifyEntityACs(body)
+	if len(flags) != 0 {
+		t.Fatalf("quoted self-phrase + external token must not flag, got %+v", flags)
+	}
+}
+
+// TestExternalProofPolicyEmptyAfterColonIsOff locks the cycle-2 F2 polish:
+// `require-external-proof:` (empty after colon, including comment-only and
+// null) coerces to OFF, byte-identical to absent. The error message
+// enumerates these as absent-equivalent shapes so a reader who hits the typo
+// guard understands them.
+func TestExternalProofPolicyEmptyAfterColonIsOff(t *testing.T) {
+	cases := []struct {
+		name        string
+		readmeOptIn string
+	}{
+		{"empty-after-colon", "require-external-proof:\n"},
+		{"comment-only", "require-external-proof: # off for now\n"},
+		{"explicit-null", "require-external-proof: null\n"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			readme := "---\nid-style: sequential\n" + tc.readmeOptIn + "---\n\n# Fixture\n"
+			if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			policy, err := resolveExternalProofPolicy(dir)
+			if err != nil {
+				t.Fatalf("empty/comment/null after colon should not error, got %v", err)
+			}
+			if policy != externalProofOff {
+				t.Fatalf("empty/comment/null after colon should resolve to OFF, got %v", policy)
+			}
+		})
+	}
+}
+
+// TestExternalProofPolicyTypoErrorEnumeratesShapes locks the cycle-2 F2
+// polish: the typo-rejection error message includes the absent-equivalent
+// shapes so a reader hitting the guard knows `key:` / `key: null` are valid.
+func TestExternalProofPolicyTypoErrorEnumeratesShapes(t *testing.T) {
+	dir := t.TempDir()
+	readme := "---\nid-style: sequential\nrequire-external-proof: tru\n---\n\n# Fixture\n"
+	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := resolveExternalProofPolicy(dir)
+	if err == nil {
+		t.Fatal("typo should reject loudly")
+	}
+	msg := err.Error()
+	for _, want := range []string{"'tru'", "absent", "empty", "null"} {
+		if !strings.Contains(msg, want) {
+			t.Fatalf("error %q should mention %q", msg, want)
+		}
+	}
+}
+
 // stageExternalProofFixture copies testdata/external-proof-workflow into a
 // fresh git-initialized temp dir, then rewrites the README's
 // `require-external-proof:` line to optIn (which is "" for the absent case or

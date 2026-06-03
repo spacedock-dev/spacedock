@@ -350,7 +350,12 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 // failOnValidationErrors prints validation errors to stderr and returns 1 when
 // any exist, else 0. Matches fail_on_validation_errors.
 func failOnValidationErrors(roots roots, idStyle string, stderr io.Writer) int {
-	errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, stderr)
+	// Read-path validation pre-check intentionally omits the external-proof
+	// sub-check: a self-referential AC must not lock the FO out of `sd status`
+	// / `--next` / `--boot` / `--next-id` — those are the surfaces they need to
+	// SEE the broken entity. The terminal-set guard in runSet still classifies
+	// directly, and the explicit `--validate` command opts the check in.
+	errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, false, stderr)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			fmt.Fprintln(stderr, err)

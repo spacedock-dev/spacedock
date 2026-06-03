@@ -54,13 +54,20 @@ var selfPhraseRes = []*regexp.Regexp{
 // externalTokenRe captures any token that proves the AC's proof cites
 // something runnable / observable outside the entity body. Presence of ANY
 // token clears the AC, so a CI run on the entity's PR no longer false-positives
-// even when the prose says "this entity's own PR".
+// even when the prose says "this entity's own PR". The build/compile/lint and
+// generalized live-pilot families (no literal-article dependency) clear the
+// adversarial families the cycle-1 audit surfaced; the release-artifact and
+// commit/GitHub families cover macOS-release and post-merge proof shapes.
 var externalTokenRe = regexp.MustCompile(`(?i)` + strings.Join([]string{
 	`\btest\b`, `\.go\b`, `exit\s`, `exit-code`, `exit code`, `command`, `\bstatus\b`,
 	`--\w+`, `fixture`, `golden`, `byte`, `on-disk`, `stdout`, `stderr`, `assert`, `parser`,
 	`mutator`, `frontmatter`, `code path`, `command/parser`,
-	`runs? the`, `running the`, `invok`, `drive the`, `driving the`,
+	`runs? the`, `running the`, `invok`,
+	`\bdrives?\b`, `\bdriving\b`, `\bpilots?\b`, `behavioral pilot`, `runtime behavior`,
 	`\bCI\b`, `\bPR\b`, `live job`, `green`, `workflow file`,
+	`\bbuild\b`, `\bcompil`, `\bvet\b`, `\bgofmt\b`, `\blint\b`,
+	`\bbrew\b`, `\bspctl\b`, `\bgoreleaser\b`, `\bnotariz`, `\bcask\b`, `\brelease\b`, `\bbinary\b`,
+	`\bcommit\b`, `\bURL\b`, `\bGitHub\b`, `\bGH\b`, `\bmerged\b`, `\blanded\b`, `\b[a-f0-9]{7,}\b`,
 }, "|"))
 
 // stripFrontmatter returns the body of an entity file — the bytes after the
@@ -112,12 +119,20 @@ func ClassifyEntityACs(body string) []ACFlag {
 		}
 		block := strings.Join(current, "\n")
 		clause := isolateProofClause(block)
+		// Quote-stripping protects the self-phrase match from a QUOTED example
+		// of the antipattern (a clause that quotes "this entity's decision
+		// section" as a fixture is not itself self-referential).
 		cleaned := quotedSpanRe.ReplaceAllString(clause, " ")
 		matched := matchSelfPhrase(cleaned)
 		if matched == "" {
 			return
 		}
-		if externalTokenRe.MatchString(cleaned) {
+		// External-token scanning runs over the UNSTRIPPED clause so a backtick-
+		// fenced external token (the corpus convention for `--cask` / `spctl` /
+		// `goreleaser` references) still clears the AC. Self-phrase matching
+		// against the stripped clause + external-token matching against the
+		// unstripped clause give the precision we want on both sides.
+		if externalTokenRe.MatchString(clause) {
 			return
 		}
 		flags = append(flags, ACFlag{
@@ -185,20 +200,22 @@ const (
 
 // resolveExternalProofPolicy reads the README's top-level
 // `require-external-proof:` key and returns the declared policy. An absent or
-// empty key, or an explicit `false`, defaults to externalProofOff —
-// byte-identical to a workflow that never declared the key. An unknown value
-// is rejected loudly rather than silently coerced, so a typo
-// (`require-external-proof: tru`) fails fast instead of silently allowing the
-// close.
+// empty key (including `key: # comment` and `key: null`, which yaml.v3
+// decodes to an empty scalar), or an explicit `false`, defaults to
+// externalProofOff — byte-identical to a workflow that never declared the
+// key. An unknown value is rejected loudly rather than silently coerced, so a
+// typo (`require-external-proof: tru`) fails fast instead of silently allowing
+// the close. The error message enumerates the absent-equivalent shapes so a
+// reader who hits the typo guard understands `key:` / `key: null` are valid.
 func resolveExternalProofPolicy(definitionDir string) (externalProofPolicy, error) {
 	value := strings.TrimSpace(ParseFrontmatter(filepath.Join(definitionDir, "README.md"))["require-external-proof"])
 	switch value {
-	case "", "false":
+	case "", "false", "null", "~":
 		return externalProofOff, nil
 	case "true":
 		return externalProofOn, nil
 	default:
-		return externalProofOff, fmt.Errorf("README require-external-proof: must be 'true' or 'false' (or absent for the default 'false'), not '%s'", value)
+		return externalProofOff, fmt.Errorf("README require-external-proof: must be 'true' or 'false' (or absent / empty / null for the default 'false'), not '%s'", value)
 	}
 }
 

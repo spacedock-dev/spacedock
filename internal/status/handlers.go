@@ -324,7 +324,9 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--validate cannot be combined with "+strings.Join(incompatible, ", "))
 		}
-		errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, stderr)
+		// Explicit --validate command opts INTO the external-proof sub-check.
+		// The read-path pre-check (failOnValidationErrors) passes false.
+		errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, true, stderr)
 		if len(errs) > 0 {
 			for _, er := range errs {
 				fmt.Fprintln(stderr, er)

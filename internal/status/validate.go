@@ -137,8 +137,13 @@ func validateWorkflowStageNames(definitionDir string) []string {
 // entities. Matches validate_workflow. definitionDir/entityDir are the absolute
 // README and entity roots; the workflow= evidence field uses the absolute
 // entityDir (the FO always passes an absolute --workflow-dir for enumerate ops,
-// so absolute == the oracle's literal here).
-func validateWorkflow(definitionDir, entityDir, idStyle string, stderr io.Writer) []string {
+// so absolute == the oracle's literal here). includeExternalProof scopes the
+// require-external-proof sub-check: only the explicit `--validate` command
+// passes true, so the read-path validation pre-check (cwd gate on
+// status/--next/--boot/--next-id) never fires the AC classifier. A read path
+// failing on a flagged AC would lock the FO out of the very listing they need
+// to see the broken entity.
+func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalProof bool, stderr io.Writer) []string {
 	var errs []string
 	errs = append(errs, findEntityFormConflicts(entityDir, entityDir, "active")...)
 	errs = append(errs, findEntityFormConflicts(filepath.Join(entityDir, "_archive"), PyJoin(entityDir, "_archive"), "archived")...)
@@ -157,6 +162,10 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, stderr io.Writer
 		errs = append(errs, validateSlug(entities, entityDir)...)
 	case "sd-b32":
 		errs = append(errs, validateSDB32(entities, entityDir, sdDisplay)...)
+	}
+
+	if !includeExternalProof {
+		return errs
 	}
 
 	// require-external-proof sub-check: when the workflow opts in, every
