@@ -1,13 +1,14 @@
 ---
 id: kjne6h1jkft6b6ek3p3068jh
 title: One-command split-root onboarding — `spacedock state new` (birth the orphan state branch + linked worktree for an existing repo)
-status: backlog
+status: ideation
 source: "captain (2026-06-02) — real-repo split-root test on DataRecce/recce: storage mechanics work cleanly (zero code-branch churn, fresh-clone halt-gate + state init both correct), but first-time onboarding of an existing repo has no single command"
 completed:
 verdict:
 score: "0.24"
 worktree:
 issue:
+started: 2026-06-03T07:09:59Z
 ---
 
 Captain validated split-root on a real repo (DataRecce/recce, isolated clone): zero-churn confirmed (code branch `git status` stays empty, log never sees a state commit), the fresh-clone halt-gate fires correctly, and `spacedock state init` re-checks-out the orphan worktree (`present:false` → `present:true`) on a real 90M repo. The gap is **onboarding**:

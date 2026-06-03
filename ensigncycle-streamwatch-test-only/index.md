@@ -1,11 +1,11 @@
 ---
 id: am0xw6d0t4k06kjk7va0efcr
 title: ensigncycle/streamwatch.go is test-supporting lib shipping in the production binary — rename to *_test.go to keep it out of release builds
-status: backlog
+status: ideation
 source: captain (2026-06-02) — observed 513 LOC in internal/ensigncycle/streamwatch.go that is test-only (zero non-test importers); cluster test-supporting lib so it does not ship in the binary
 score: "0.20"
 worktree:
-started:
+started: 2026-06-03T07:09:59Z
 completed:
 verdict:
 issue:
