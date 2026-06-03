@@ -1,10 +1,10 @@
 ---
 id: 0nadpgpzer0jhrvcxeg52az2
 title: reconcile auto-discovery (no --team-name) is not session-aware — newest-mtime team glob picks stale prior-session or parallel-session configs, poisoning roster-derived drift classes
-status: ideation
+status: implementation
 source: session-11 FO (2026-06-03) — observed bare `dispatch reconcile` resolve a two-day-old prior-session team config and report archived-entity agents as Class A; captain flagged it ("did reconcile not consider repeated or parallel sessions?")
 score: "0.19"
-worktree:
+worktree: .worktrees/spacedock-ensign-reconcile-session-awareness
 started: 2026-06-03T07:09:59Z
 completed:
 verdict:
