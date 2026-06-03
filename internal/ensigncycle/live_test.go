@@ -134,9 +134,11 @@ func TestLiveEnsignCycle(t *testing.T) {
 
 	// The proven upstream watch sequence: TeamCreate (teams mode engaged) → the
 	// single ensign dispatch closes (backlog→done is ONE dispatch that writes
-	// `## Stage Report: done`) → the FO subprocess exits. terminalize + archive
-	// are NOT watched as stream events — they are the post-exit filesystem state
-	// the end-state assertions below verify. Each step is bounded by its own
+	// `## Stage Report: done`) → the FO runs its BOUNDED best-effort terminal
+	// teardown and emits the terminal-status MARKER then HOLDS, at which point the
+	// deferred poller.kill() reaps the subprocess. terminalize + archive are NOT
+	// watched as stream events — they are the post-exit filesystem state the
+	// end-state assertions below verify. Each step is bounded by its own
 	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
@@ -154,12 +156,20 @@ func TestLiveEnsignCycle(t *testing.T) {
 	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
 		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
 	}
-	exitCode, err := watcher.expectExit(exitBudgetDefault)
-	if err != nil {
-		t.Fatalf("live cycle failed waiting for FO exit: %v", err)
-	}
-	if exitCode != 0 {
-		t.Fatalf("spacedock claude exited non-zero: code=%d", exitCode)
+	// Grade the BOUNDED best-effort terminal teardown instead of a clean exit. The
+	// live AC-1 confirmation proved a clean self-exit is impossible (the harness
+	// will not let claude -p exit while the team's members[] is populated, and the
+	// dead-but-listed member is never cleared — upstream #38116/#57681), so
+	// `exitCode==0` is unreachable and demanding it re-hangs the cycle. Instead we
+	// grade the FIX's unique tail: the FO emits the contract-mandated
+	// terminal-status MARKER and then HOLDS (no further teardown tool_use). The
+	// grade keys on the MARKER+hold, NOT on the shutdown_request/TeamDelete beats
+	// both bug shapes ALSO emit — so it greens ONLY on the fix, not on the run yy's
+	// fix failed. On a clean hold the deferred poller.kill() reaps the subprocess
+	// and the cycle PASSES. Both budgets stay ≤60s (the AC-1 timeout guard is
+	// unaffected).
+	if err := watcher.expectTerminalTeardownGrade(quietBudgetDefault, holdConfirmDefault); err != nil {
+		t.Fatalf("live cycle failed grading the terminal teardown: %v", err)
 	}
 
 	// Locate the entity at the REAL completed-cycle end-state. A full FO-to-done

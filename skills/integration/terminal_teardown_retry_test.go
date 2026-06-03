@@ -1,5 +1,5 @@
 // ABOUTME: Structural lint over the FO terminal-teardown contract — step 10 and the
-// ABOUTME: Claude runtime require team teardown to retry to success, not stop at the first failed TeamDelete.
+// ABOUTME: Claude runtime require BOUNDED best-effort teardown then a verbatim marker + hold; the launcher owns the exit.
 package integration
 
 import (
@@ -8,58 +8,83 @@ import (
 	"testing"
 )
 
-// TestTerminalTeardownRetriesToSuccess is a structural lint pinning the
-// sonnet-live-ci-flake fix: the FO terminal-teardown contract must require the
-// runtime team-teardown call to RETRY TO SUCCESS after the cooperative shutdown,
-// not end the turn on the first "active member(s)" failure. The archived sonnet
-// CI stream proved the defect — terminal TeamDelete raced the ensign's
-// cooperative shutdown, failed with "active member(s)", and the FO never retried,
-// so the claude -p subprocess never exited and the live cycle hung at expectExit.
+// terminalTeardownMarker is the contract-mandated terminal-status sentinel the FO
+// emits on cap-exhaustion of the bounded teardown. It is the load-bearing
+// discriminator the AC-2 offline grade and the AC-1 live grade key on: neither
+// bug shape emits it (the pre-yy give-up ends the turn silently after one failed
+// TeamDelete; the post-yy retry-loop retries TeamDelete past the cap and never
+// reaches a marker). The contract MUST mandate this string verbatim so the
+// streamwatcher has a fixed substring to grep — drop it from the contract and the
+// oracle has nothing to key on. Kept in sync with the same constant in
+// internal/ensigncycle (terminalTeardownMarker).
+const terminalTeardownMarker = "TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher."
+
+// TestTerminalTeardownIsBoundedBestEffort is a structural lint pinning the
+// REVERSAL of the sonnet-live-ci #282 contract: the FO terminal teardown is a
+// BOUNDED best-effort — a cooperative shutdown, then a bounded set of TeamDelete
+// attempts with an inter-attempt settle, then STOP, emit the verbatim
+// terminal-status marker, and HOLD (no further teardown tool calls). The PROCESS
+// EXIT is the launcher's responsibility, NOT the FO's.
 //
-// Inversion-resistant (cycle-1 audit fix): a bare substring-presence lint passes
-// even an INVERTED mandate ("End the turn on the first failure; do NOT re-send
-// shutdown_request; do NOT call TeamDelete again") because the positive grep
-// tokens survive. This lint instead asserts BOTH directions — the positive
-// mandate IS present AND the negating phrases are ABSENT — scoped to the
+// This INVERTS yy/#282's shipped mandate ("retry the team-teardown call to
+// success" / "keep settling and retrying the teardown until it succeeds" / "Only
+// a TeamDelete success lets the FO end its turn"). The live AC-1 confirmation
+// proved retry-to-success is UNREACHABLE: the dispatched member approves shutdown
+// and its session dies, but Claude Code never clears it from the team members[]
+// (upstream #38116/#57681), so TeamDelete never succeeds; and claude -p will not
+// self-exit while members[] is populated, so an FO-driven process exit is
+// impossible. The contract therefore cannot demand a TeamDelete success OR an FO
+// self-exit — it grades the FO's CORRECT bounded best-effort and hands the exit
+// to the launcher.
+//
+// Inversion-resistant (two-sided): the lint asserts BOTH the bounded-best-effort
+// mandate IS present (including the verbatim marker, the hold, and launcher-owned
+// exit) AND the retry-to-success / FO-self-exit phrases are ABSENT, scoped to the
 // terminal-teardown step only (shared-core step 10; the Claude `## Terminal Team
-// Teardown` section), so the audit's two inverting edits turn it RED.
+// Teardown` section). An edit re-introducing retry-to-success, or an FO self-exit,
+// or dropping the marker mandate, turns it RED.
 //
-// Oracle honesty: this lint asserts the contract carries the retry clause; it
-// does NOT prove the live FO obeys it. The behavioral oracle is the live-e2e CI
-// run (AC-1) — a prose-only rule's ceiling is "the wording is present," and
-// TeamDelete is a Claude-runtime tool with no spacedock-binary seam to gate. The
-// lint guards against the clause being dropped or INVERTED in a future edit.
-func TestTerminalTeardownRetriesToSuccess(t *testing.T) {
+// Oracle honesty: this lint asserts the contract carries the bounded-best-effort
+// + marker clause; it does NOT prove the live FO obeys it. The behavioral oracle
+// is the live-e2e CI run (AC-1). The lint guards against the clause being dropped
+// or re-inverted in a future edit.
+func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 	files := vendoredSkillFiles(t)
 
-	// negatingPhrases are the inversion fingerprints — the exact mandates the #275
-	// bug followed. Their PRESENCE in a terminal-teardown region means the contract
-	// was inverted (cycle-1) or gutted (cycle-2) back to the hang. Lower-cased; the
-	// regions are matched lower.
+	// negatingPhrases are the inversion fingerprints. Two groups:
+	//   - the ORIGINAL #275 give-up fingerprints (still forbidden — the terminal
+	//     teardown must not silently abandon on the first failure with no marker).
+	//   - the yy/#282 retry-to-success + FO-self-exit fingerprints now DISPROVEN
+	//     (retry-to-success is unreachable; FO self-exit is impossible). Their
+	//     presence in a terminal-teardown region means the contract was re-inverted
+	//     back to a demand the runtime cannot satisfy. Lower-cased; regions matched
+	//     lower.
 	negatingPhrases := []string{
-		// cycle-1 inversions: give up on the first failure / no retry.
-		"end the turn on the first",    // the inverted directive
-		"do not call teamdelete again", // the inverted no-retry directive
-		"do not re-send",               // the inverted no-cooperative-reshutdown directive
+		// #275 give-up inversions: give up on the first failure / no retry / no marker.
+		"end the turn on the first",    // the give-up directive
+		"do not call teamdelete again", // the no-retry directive
 		"do not retry",                 // any flat no-retry directive in this region
 		"stop at the first",            // give-up-on-first-failure phrasing
-		// cycle-2 gut-edits: the millisecond re-race + the non-interactive hang.
-		// NB: do NOT add a bare "immediately re-fire" — the CORRECT prose says
-		// "do NOT immediately re-fire", so that fingerprint would false-positive.
-		// The gut-edit's directive is the affirmative "immediately call TeamDelete
-		// again" (no leading "do NOT"), which correct prose never contains.
-		"immediately call teamdelete again",       // re-fire with no settle (re-loses the race, #275)
-		"surface to the captain and end the turn", // non-interactive cap-exhaustion hang
+		// yy/#282 retry-to-success + self-exit, now disproven by the live run.
+		"retry the team-teardown call to success",            // retry-to-success (unreachable)
+		"until `teamdelete` succeeds",                        // retry-to-success (unreachable)
+		"only a `teamdelete` success lets the fo end",        // retry-to-success exit gate
+		"keep settling and retrying the teardown until it",   // unbounded retry obligation
+		"keep the settle-then-`teamdelete` loop going",       // unbounded retry obligation
+		"hard-exit at the cap",                               // disproven FO self-exit
+		"residual cleanup at process death",                  // disproven FO self-exit
+		"the fo exits the process",                           // disproven FO self-exit
+		"the fo must keep the settle-then-`teamdelete` loop", // unbounded retry obligation
 	}
 
 	// Shared core, step 10 in Merge and Cleanup. Scope to step 10 ALONE — the
-	// other nine steps legitimately contain no retry language, and an inverting
+	// other nine steps legitimately contain no teardown language, and an inverting
 	// edit lands inside step 10, so a whole-section scope would dilute the signal.
 	// Then DROP the trailing delegation sentence ("…are the adapter's"): it NAMES
-	// settle/cap/non-interactive-exit while delegating them to the adapter, so a
+	// the cap/settle/marker while delegating their realization to the adapter, so a
 	// required-phrase that matched only there would let a gut-edit of the
-	// behavioral mandate pass green (the cycle-2 hole). The load-bearing clauses
-	// must appear in the BEHAVIORAL prose, not the delegation tail.
+	// behavioral mandate pass green. The load-bearing clauses must appear in the
+	// BEHAVIORAL prose, not the delegation tail.
 	core := files["first-officer/references/first-officer-shared-core.md"]
 	step10 := numberedStep(sectionAfter(core, "## Merge and Cleanup"), 10)
 	if step10 == "" {
@@ -68,35 +93,36 @@ func TestTerminalTeardownRetriesToSuccess(t *testing.T) {
 	step10Behavioral := stripDelegationTail(step10)
 	assertDirectionalMandate(t, "shared-core step 10", step10Behavioral, negatingPhrases,
 		[]string{
-			"retry the team-teardown call to success",                   // retry-to-success
-			"Do NOT end the turn",                                       // no give-up-on-first-failure
-			"wait a short settle interval before the next teardown",     // inter-attempt settle (load-bearing, not delegated)
-			"keep settling and retrying the teardown until it succeeds", // non-interactive cap-exhaustion exit obligation
-			"attempt cap", // bounded fast retries
+			"bounded best-effort",          // the bounded framing (not retry-to-success)
+			"attempt cap",                  // bounded fast retries
+			"wait a short settle interval", // inter-attempt settle (load-bearing, not delegated)
+			"then hold",                    // STOP-then-hold after the bound (no further teardown calls)
+			terminalTeardownMarker,         // the verbatim terminal-status marker (co-designed with the oracle)
+			"launcher",                     // the process exit is the launcher's responsibility
 		})
 
 	// Claude runtime: the Awaiting-Completion section already bans retrying
 	// TeamDelete BEFORE the completion signal (the pre-completion wait phase). The
-	// fix must distinguish that from the TERMINAL teardown phase, where TeamDelete
-	// MUST be retried to success WITH an inter-attempt settle and a non-interactive
-	// exit obligation. Scope to the `## Terminal Team Teardown` section. There is no
-	// delegation tail here (the Claude runtime IS the adapter realization), so the
-	// behavioral phrases are asserted directly.
+	// terminal teardown is a DIFFERENT phase: a BOUNDED set of TeamDelete attempts
+	// with an inter-attempt settle, then the verbatim marker + hold, with the exit
+	// owned by the launcher. Scope to the `## Terminal Team Teardown` section. The
+	// Claude runtime IS the adapter realization, so the behavioral phrases are
+	// asserted directly.
 	claude := files["first-officer/references/claude-first-officer-runtime.md"]
 	teardown := sectionAfter(claude, "## Terminal Team Teardown")
 	if teardown == "" {
-		t.Fatal("Claude FO runtime missing the `## Terminal Team Teardown` section (the retry-to-success realization of shared-core step 10)")
+		t.Fatal("Claude FO runtime missing the `## Terminal Team Teardown` section (the bounded-best-effort realization of shared-core step 10)")
 	}
 	assertDirectionalMandate(t, "Terminal Team Teardown", teardown, negatingPhrases,
 		[]string{
-			"TeamDelete",                          // names the call it retries
-			"active member",                       // names the race it retries past
-			"do NOT end the turn",                 // no give-up-on-first-failure
-			"wait for the settle before the next", // inter-attempt settle mandate
-			"sleep 2",                             // the concrete settle the gut-edit removes
-			"keep the settle-then-",               // non-interactive loop obligation (settle-then-TeamDelete loop)
-			"until `TeamDelete` succeeds",         // …kept going until success, not abandoned
-			"cap",                                 // bounded fast retries
+			"TeamDelete",           // names the call it attempts
+			"active member",        // names the race it attempts past
+			"wait for the settle",  // inter-attempt settle mandate
+			"sleep 2",              // the concrete settle
+			"attempt cap",          // bounded attempts
+			"hold",                 // STOP-then-hold after the bound
+			terminalTeardownMarker, // the verbatim terminal-status marker
+			"launcher",             // launcher-owned exit
 		})
 }
 
@@ -110,7 +136,7 @@ func assertDirectionalMandate(t *testing.T, label, region string, negating, requ
 	lower := strings.ToLower(region)
 	for _, neg := range negating {
 		if strings.Contains(lower, neg) {
-			t.Errorf("%s contains the inverted-mandate phrase %q — the terminal teardown must RETRY to success, not give up on the first failure", label, neg)
+			t.Errorf("%s contains the inverted-mandate phrase %q — the terminal teardown is BOUNDED best-effort then a marker + hold, NOT retry-to-success or an FO self-exit", label, neg)
 		}
 	}
 	for _, req := range required {
@@ -122,11 +148,11 @@ func assertDirectionalMandate(t *testing.T, label, region string, negating, requ
 
 // stripDelegationTail removes the trailing "…are the adapter's" delegation
 // sentence from a teardown step. That sentence NAMES the load-bearing concepts
-// (settle interval, cap value, non-interactive exit obligation) while delegating
-// their realization to the adapter — so a required-phrase that matched only there
-// would let a gut-edit of the BEHAVIORAL mandate pass green (the cycle-2 hole).
-// Dropping it forces the behavioral phrases to be asserted against the actionable
-// prose. If the delegation sentence is absent, the region is returned unchanged.
+// (settle interval, cap value, marker) while delegating their realization to the
+// adapter — so a required-phrase that matched only there would let a gut-edit of
+// the BEHAVIORAL mandate pass green. Dropping it forces the behavioral phrases to
+// be asserted against the actionable prose. If the delegation sentence is absent,
+// the region is returned unchanged.
 func stripDelegationTail(region string) string {
 	// Target the FINAL "are the adapter's" — the trailing delegation sentence.
 	// Step 10 also says "(roster and decomposition are the adapter's)" near its
@@ -180,8 +206,8 @@ func numberedStep(region string, n int) string {
 // TestAwaitingCompletionStillBansPreCompletionTeamDelete guards the boundary the
 // fix must NOT erode: BEFORE the ensign's completion signal, the FO must still
 // not emit TeamDelete (retrying it during the wait phase is the original
-// premature-teardown bug). The terminal retry clause is a separate phase; this
-// lint ensures the Awaiting-Completion ban survives the amendment.
+// premature-teardown bug). The terminal bounded-teardown clause is a separate
+// phase; this lint ensures the Awaiting-Completion ban survives the reversal.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	claude := vendoredSkillFiles(t)["first-officer/references/claude-first-officer-runtime.md"]
 	region := sectionAfter(claude, "## Awaiting Completion")
