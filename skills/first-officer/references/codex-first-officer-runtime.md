@@ -52,3 +52,7 @@ in the FO mailbox and then resumes the shared event loop.
 The captain is the user of the Codex session. Communicate gate results,
 clarifications, and status directly in the conversation. Do not invent a
 team-lead mailbox on Codex.
+
+## Backstop (Codex)
+
+None. There is no `spacedock dispatch reconcile` analog on Codex — no roster source, no drift classifier, no periodic sweep. A missed terminal teardown or supersede shutdown stays missed until session end; the shared-core boundary steps are the only enforcement.

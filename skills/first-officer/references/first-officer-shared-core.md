@@ -156,6 +156,8 @@ SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next st
 
 **If fresh dispatch:** Check whether the next stage has `feedback-to` pointing at the completed stage. If yes, keep the completed agent alive only while it remains addressable and eligible for later reuse. Otherwise, explicitly shut down the agent. Run `status --next` and dispatch the next stage.
 
+**Supersede-shutdown.** When fresh dispatch comes from a `-cycleN` increment or a feedback-rework re-entering the prior stage, shut down the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call to each; drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
+
 If the stage is gated:
 - never self-approve
 - present the stage report to the human operator per `## Gate Presentation` below
@@ -235,6 +237,7 @@ When an entity reaches its terminal stage:
 7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`
 8. Archive the entity into `{workflow_dir}/_archive/` with `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
 9. Remove the worktree (`git worktree remove {path}`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is still pending — the PR reviewer needs it on the remote. Remote-branch cleanup belongs to the PR merge, not the FO.
+10. **Teardown agents at terminal.** Derive the entity's agent cohort from the live team roster — every worker whose handle decomposes to this entity's slug (roster source and decomposition rule are the runtime adapter's). Issue the adapter's cooperative-shutdown call to each (best-effort, fire-and-forget) and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
 
 ### Ship-Local Ceremony
 
@@ -248,7 +251,7 @@ When the merge boundary has no PR host — the README declares `merge: local`, o
 4. Clear the mod-block in its own standalone `--set`: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=` (commit path-scoped). The clear MUST be separate from terminalization — the guard refuses combining `mod-block=` with terminal fields.
 5. Terminalize: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
 6. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
-7. Remove the worktree and delete the local branch as in Merge-and-Cleanup step 9.
+7. Remove the worktree and delete the local branch as in Merge-and-Cleanup step 9, then run the terminal agent teardown sweep as in Merge-and-Cleanup step 10. The teardown step is mandatory at the terminal boundary regardless of whether the merge ran locally or via a PR host.
 
 The set→invoke→clear sequence (steps 1, 2, 4) stays MANDATORY when a merge hook is registered, regardless of `merge: local`. The policy relaxes only the guard's pr-requirement; it does not authorize skipping the hook or terminalizing without having merged. `--force` is never part of this ceremony's happy path — if the guard refuses, a step was skipped, not a flag forgotten.
 

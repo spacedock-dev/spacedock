@@ -34,6 +34,15 @@ var claudeHelperTokens = []string{
 	"show-standing",
 	"member_exists",
 	"lookup_model",
+	// Claude-bound by virtue of LoadReconcileTeam's ~/.claude/teams roster read;
+	// the helper hard-fails at setup on a runtime without that on-disk source.
+	"spacedock dispatch reconcile",
+	// Class A/B/C/D/E are the named drift classes of that helper — same binding.
+	"Class A",
+	"Class B",
+	"Class C",
+	"Class D",
+	"Class E",
 }
 
 // A span counts as host-qualified only when it names BOTH runtimes by their
@@ -92,7 +101,7 @@ func TestClaudeAdapterOwnsRelocatedCommands(t *testing.T) {
 		t.Fatalf("read %s: %v", claudeRuntimePath, err)
 	}
 	body := string(data)
-	for _, want := range []string{"context-budget", "list-standing", "spawn-standing", "show-standing"} {
+	for _, want := range []string{"context-budget", "list-standing", "spawn-standing", "show-standing", "spacedock dispatch reconcile"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("Claude adapter %s does not name the relocated command %q", claudeRuntimePath, want)
 		}

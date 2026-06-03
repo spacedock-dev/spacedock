@@ -245,12 +245,23 @@ After each agent completion:
 
 These are FO-internal scheduling reads — parse them as JSON, not the padded human table. Each read below uses `--json` so the FO consumes a compact, byte-stable document (one rule: every value is a string) instead of scraping column padding that a token proxy can mangle. `--fields` narrows the read to the keys the FO needs. The `--json` envelopes are: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[{"id","slug","current","next","worktree"},…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim — JSON is for the machine reader, the table is for the human.
 
+0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir} [--team-name {team_name}]` (a) at boot, AFTER the split-root `pull --rebase` and BEFORE the first dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"A|B|C|D|E",…}]}`. Empty `drift[]` is green. Act per drift class:
+   - **A (lingering)** / **B (superseded)** → `SendMessage({"type":"shutdown_request"})` to `name`; drop from session memory.
+   - **C (un-advanced PR)** → enter Merge-and-Cleanup for the named slug.
+   - **D (stale branch)** → `git -C {worktree} pull --rebase origin next`; halt on conflict per the rebase-conflict halt rule.
+   - **E (stale local main)** → `git -C {repo} fetch origin next && git -C {repo} reset --hard origin/next && cd {repo} && go build -o spacedock ./cmd/spacedock`.
+
+   Non-zero helper exit (1 setup / 2 usage) surfaces to the captain; it does not block the loop. On drift, report one line: `reconcile: {N} entries: A={N_A} B={N_B} C={N_C} D={N_D} E={N_E} — acting`.
 1. **Check PR-pending entities** — Run `status --where "pr !=" --json --fields id,slug,pr`. For each entity in `entities`, check PR state via `gh pr view` and advance merged PRs. When advancing a merged PR, clear its `mod-block` if set: `status --set {slug} mod-block=`.
 2. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g., re-present the PR summary). Do not dispatch new work for a mod-blocked entity.
 3. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus the named frontmatter keys; `--fields` is additive over the fixed five, since the computed dispatch columns are not projectable).
-4. **If nothing is dispatchable** — Fire `idle` hooks, then re-run `status --next --json --fields id,slug`. Dispatch anything a hook unblocked. If still nothing, end the iteration.
+4. **If nothing is dispatchable** — Fire `idle` hooks, re-run the step-0 reconcile sweep, then re-run `status --next`. Dispatch anything either unblocked; otherwise end the iteration.
 
 Repeat from step 1 after each agent completion until the captain ends the session or, in single-entity mode, until the target entity is resolved.
+
+### Backstop (Claude)
+
+The shared core's terminal-teardown (step 10) and supersede-shutdown steps remain mandatory at their boundaries. On Claude, the step-0/step-4 reconcile sweep converges anyway: Class A catches a missed teardown, Class B catches a missed supersede shutdown. Cost of a miss: one extra event-loop cycle the agent burns.
 
 ## Mod-Block Enforcement at Terminal Transitions
 

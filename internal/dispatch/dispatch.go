@@ -63,6 +63,8 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			return 2
 		}
 		return runSpawnStanding(os.Getenv("HOME"), mod, team, stdout, stderr)
+	case "reconcile":
+		return runReconcile(args[1:], stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "error: unknown dispatch subcommand: %s\n", args[0])
 		printUsage(stderr)
@@ -143,5 +145,6 @@ func printUsage(w io.Writer) {
 Usage:
   spacedock dispatch build --workflow-dir DIR        (stdin JSON -> stdout JSON)
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+  spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include A,B,C,D,E]
 `)
 }
