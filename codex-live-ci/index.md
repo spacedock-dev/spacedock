@@ -247,3 +247,30 @@ The f4 code branch is now rebased on current `origin/next` and carries the share
 ### Summary
 
 The f4 code branch is rebased onto current `origin/next` with no new code edits beyond the rebase, now ending at `407b82ef`. Local verification proved the shared Codex live suite through real `codex exec --json` using isolated local ChatGPT auth, while preserving the Phase 0.A/r0 contract content and keeping unrelated formatting drift out of the branch.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 — f4 is stacked on r0 and therefore exercises the Codex runtime adapter.
+  The exact `origin/spacedock-ensign/codex-runtime-adapter` ref is deleted upstream, but `git merge-base --is-ancestor 528ffa17 HEAD` passed and live artifacts recorded `skills/first-officer/references/codex-first-officer-runtime.md` in the current-checkout plugin cache.
+- DONE: AC-2 — The Go live harness has shared runtime scenarios for the old Claude/Codex overlap.
+  `go test -count=1 ./internal/ensigncycle` passed and `TestCodexSharedScenarioDefinitions` requires `gate-guardrail`, `rejection-flow`, and `merge-hook-guardrail` with old Python provenance.
+- DONE: AC-3 — A real Codex runtime run executes the shared scenarios against the current checkout.
+  `env -u OPENAI_API_KEY ... go test -count=1 -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` passed all three scenarios in 280.62s using isolated local ChatGPT auth.
+- DONE: AC-4 — GitHub Actions has an approval-gated `codex-live` lane that runs the shared scenario suite against the current checkout.
+  `.github/workflows/runtime-live-e2e.yml` gates `codex-live` on `CI-E2E-CODEX`, uses only `OPENAI_API_KEY`, installs/logs in to Codex, builds local `spacedock`, installs the current checkout plugin, runs resolver/live tests, and uploads artifacts.
+- DONE: AC-5 — Codex plugin readiness is proven with real Codex CLI commands, not assumed from docs.
+  The live setup ran `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, `codex plugin list`, and the resolver smoke passed; artifacts show `spacedock@spacedock` installed from a generated local marketplace path, not remote `next`.
+- DONE: AC-6 — Evergreen docs explain Codex live setup and testing principles in `docs/dev/README.md`.
+  The Codex Live CI section covers local/CI auth, `CI-E2E-CODEX`, `OPENAI_API_KEY`, current-checkout marketplace loading, shared scenarios, live proof over static grep, and artifact preservation.
+- DONE: AC-7 — The implementation does not restore tautological static tests as the primary proof.
+  Evidence centers on real `codex exec --json`, resulting workflow state/output assertions, Codex plugin commands, focused Go tests, full Go gates, and race gates; no Python static workflow-grep proof was revived.
+- DONE: Run Go gates and required formatter command.
+  `gofmt -w ./cmd ./internal` ran, then gofmt-only drift in unrelated current-next files was restored; `go test -count=1 ./...` and `go test -count=1 ./... -race` each passed 833 tests in 12 packages.
+- DONE: Run detached adversarial audit for the CI/live-runtime surface.
+  In a throwaway checkout, deleting `merge-hook-guardrail` from `codexSharedScenarios()` made `TestCodexSharedScenarioDefinitions` fail with `[gate-guardrail rejection-flow], want ...`; no material test-strength hole found.
+- SKIPPED: Approved GitHub Actions `codex-live` run.
+  No approved Actions environment run was available locally; validation used the same live shared suite and current-checkout plugin path, but CI artifact evidence is still pending.
+
+### Summary
+
+Recommendation: PASSED for code commit `407b82efb836`. Caveats: the named r0 remote branch has been pruned so AC-1 used the r0 commit `528ffa17` ancestor check, the branch is now behind latest `origin/next` by three release-fix commits after fetch, and approved GitHub `codex-live` evidence is not yet available.
