@@ -207,3 +207,24 @@ The PR branch is rebased and ready to push after captain approval of the draft b
 ### Summary
 
 The prior f4 validation evidence is stale. The next implementation pass must stack f4 on r0 and turn the Codex live lane into a shared scenario suite that reuses the existing Claude journey shape.
+
+## Stage Report: implementation follow-up (cycle 2)
+
+- DONE: Reviewed and salvaged the staged WIP from the crashed worker
+  Code commit `4b24af74` keeps the current-checkout marketplace/local-auth harness and replaces the one-off Codex smoke target with shared scenario execution.
+- DONE: Completed coherent shared scenario definitions under `internal/ensigncycle`
+  `codexSharedScenarios()` now defines `gate-guardrail`, `rejection-flow`, and `merge-hook-guardrail` with old Python provenance, behavior intent, and live timeouts.
+- DONE: Ensured the live Codex suite is named `TestLiveCodexSharedScenarios` and runs all three shared scenarios
+  Final live run passed all subtests: gate guardrail 40.56s, rejection flow 170.55s, merge-hook guardrail 32.53s.
+- DONE: Preserved current-checkout Codex plugin marketplace loading and local auth behavior
+  The suite still installs `spacedock@spacedock` from a generated local marketplace, checks the r0 Codex runtime adapter in the plugin cache, and copies only `~/.codex/auth.json` into isolated `CODEX_HOME`.
+- DONE: Updated CI and evergreen docs for the shared suite
+  `.github/workflows/runtime-live-e2e.yml` now runs `TestLiveCodexSharedScenarios`; `docs/dev/README.md` documents the three scenarios, local auth, current-checkout plugin loading, and why static grep/host-only smoke is insufficient.
+- DONE: Ran required verification on the final rebased code branch
+  `gofmt -w ./cmd ./internal`, `go test ./internal/ensigncycle`, live shared suite, `go test ./...`, and `go test ./... -race` all passed on branch `spacedock-ensign/codex-live-ci`.
+- SKIPPED: Approved GitHub Actions `codex-live` run
+  No push or CI approval was performed because this dispatch explicitly said not to push either branch.
+
+### Summary
+
+The f4 code branch is now rebased on current `origin/next` and carries the shared Codex live suite at commit `4b24af74`. Local live verification used existing subscription auth with `OPENAI_API_KEY` unset and proved all three required shared scenarios through real `codex exec --json`.
