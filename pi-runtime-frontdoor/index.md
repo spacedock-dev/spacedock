@@ -76,3 +76,19 @@ Verified by: `go test ./... -count=1` and focused existing CLI tests for Claude/
 ### Summary
 
 Implemented the Pi runtime front-door UX in code commit `255bb0da`. Spacedock now exposes `spacedock pi`, accepts `install --host pi`, and reports Pi runtime health via `doctor --host pi` without reusing Claude/Codex plugin commands or team-tool semantics. Verification passed with fresh baseline, race, and live Pi smoke commands, including `TestLivePiFrontDoorSmoke` through the new Spacedock-owned wrapper.
+
+## Stage Report: validation
+
+- AC-1: PASSED. Commit `255bb0da` registers `spacedock pi` in the cobra command tree and top-level help. `internal/cli/pi.go` builds argv beginning with `pi`, `--extension <pi-subagents>/src/extension/index.ts`, `--skill <pi-subagents>/skills/pi-subagents`, and local Spacedock first-officer/ensign skill paths; `TestPiFrontDoorLaunchesWithNativeResourcePaths` asserts Claude/Codex-only tokens are absent.
+- AC-2: PASSED. `install --host pi` is accepted via `runInitWithPi`; focused tests show it does not call the Claude/Codex plugin install seam, reports ready when resources exist, and prints `pi install npm:pi-subagents` plus `PI_SUBAGENTS_PACKAGE_ROOT` guidance when the substrate is missing.
+- AC-3: PASSED. `doctor --host pi` reports Pi CLI, Pi auth, pi-subagents extension/skill, and Spacedock skill health with actionable remedies; focused tests cover missing and healthy states with expected exit codes.
+- AC-4: NOT PASSED for the required live validation command. `TestLivePiFrontDoorSmoke` itself passed through `spacedock pi`, but the requested combined live command failed because `TestLivePiSubagentEnsignSmoke` produced `## implementation report` instead of the asserted `## Stage Report: implementation`. No credential/package path was missing; Pi auth and `PI_SUBAGENTS_PACKAGE_ROOT` were available.
+- AC-5: PASSED. Baseline `go test ./... -count=1` and `go test ./... -race -count=1` passed from `.worktrees/spacedock-ensign-pi-runtime-support`, covering existing Claude/Codex front-door/install/doctor behavior.
+
+Validation commands:
+- PASS: `gofmt -w ./cmd ./internal` (no tracked product diffs after formatting).
+- PASS: `go test ./... -count=1`.
+- PASS: `go test ./... -race -count=1`.
+- FAIL: `go test -tags live -run 'TestLivePi(SubagentEnsignSmoke|FrontDoorSmoke)' ./internal/ensigncycle -v -count=1` (`TestLivePiFrontDoorSmoke` passed; `TestLivePiSubagentEnsignSmoke` failed on the expected stage-report heading).
+
+Recommendation: REJECTED
