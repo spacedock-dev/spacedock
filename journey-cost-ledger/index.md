@@ -139,3 +139,18 @@ AC-5 nominal release-tool checks passed via `TestJourneyCostsCommand*` and the w
 ### Summary
 
 Fixed the AC-5 guard so matching substrings in comments no longer count as release proof. The release workflow test now verifies executable builder and publish commands for `journey-costs-v${RELEASE_VERSION}.json` and keeps the prior release-tool command checks.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce AC-5 after the cycle-2 fix: release workflow guard must ignore comments/inert text and prove executable builder and publish commands.
+  Focused command passed 12 tests across `internal/release`, `cmd/spacedock-release`, and `internal/journeymetrics`; AC-5 guard tests include commented builder and commented publish rejection.
+- DONE: Rerun the detached adversarial audit by commenting out or faking the journey-cost builder/publish path and confirm the tests fail.
+  Throwaway audit clone failed `TestWorkflowsPreserveAndPublishJourneyCosts` on commented builder/fake `{}` with `no executable journey-cost builder command`, and failed publish-only edit with `no executable journey-cost release upload command`.
+- DONE: Re-check the full AC set and write a validation report with PASSED or REJECTED recommendation and evidence citations.
+  Recommendation: PASSED. AC-1/6 via tracking and budget tests; AC-2 via Claude parser fixtures; AC-3 via Codex characterization fixture; AC-4 via ledger golden; AC-5 via release command/workflow tests plus detached audit.
+
+### Summary
+
+Recommendation: PASSED. `go test ./...` and `go test ./... -race` each passed 888 tests across 13 packages; the focused AC command passed 12 tests across 3 packages, and detached adversarial edits now fail for executable-builder and executable-publish proof.
+
+Formatting note: `gofmt -l ./cmd ./internal` still reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`; validation left code unchanged rather than rewriting pre-existing unrelated formatting drift.
