@@ -1,7 +1,7 @@
 ---
 id: 4nef7frwwsrasfbntqfjd11c
 title: Track tool calls and token costs for release journeys
-status: validation
+status: implementation
 source: "captain (2026-06-02) - track tool calls and token consumption for common user journeys; serialize per release; mark selected test cases for token/turn tracking"
 started: 2026-06-02T16:53:20Z
 completed:
@@ -72,6 +72,7 @@ Verified by: Go tests over the budget policy assert that a journey with no budge
 ### Feedback Cycles
 
 - Cycle 1 (2026-06-03): validation rejected AC-5. Detached audit replaced the release builder with commented command text plus `{}` output, and `TestWorkflowsPreserveAndPublishJourneyCosts` still passed. Route back to implementation to make the workflow guard parse executable release steps or otherwise prove the release job actually runs `spacedock-release journey-costs`, not merely contains matching substrings in comments.
+- Cycle 2 (2026-06-03): captain review rejected the sample ledger shape. Refer to `m8` (`scenario-testing-principles`): a scenario is the natural-language spec, and codified tests plus LLM runs are executor implementations of that same spec; cost/coverage key by `scenario × {mode, runtime}`. The ledger keyed logical journeys as host-prefixed IDs such as `claude-gate-guardrail` and `codex-gate-guardrail`, but `8y` already established `gate-guardrail`, `rejection-flow`, and `merge-hook-guardrail` as host-neutral seed scenarios. Route back to implementation so cost tracking is keyed by the shared scenario/spec ID, for example `gate-guardrail`, with mode, runtime/executor, host, and model represented as variants or observations under that scenario. Preserve Claude `measured` versus Codex `characterized` states, but do not make those states separate logical journeys.
 
 ## Stage Report: ideation
 
