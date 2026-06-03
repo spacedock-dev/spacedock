@@ -7,7 +7,7 @@ import "time"
 // ID, its old Python provenance, the behavior intent it guards, and its live
 // timeout/cost class. It carries NO launch, auth, plugin, artifact, or transcript
 // field: those host-specific concerns live behind the per-host runner adapters
-// (the Codex runner in codex_live_test.go, the Claude runner in claude_live_test.go),
+// (the Codex runner in codex_live_runner_test.go, the Claude runner in claude_live_runner_test.go),
 // each of which implements the same scenario IDs. The shared coverage meta-tests
 // fail if either host lacks a runner for a shared scenario, so a scenario cannot
 // drift to one host only.
