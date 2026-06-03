@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block: 
 pr: "#272"
+archived: 2026-06-03T00:18:17Z
 ---
 
 `./spacedock install --host claude` runs a 3-command sequence (`internal/cli/host_exec.go:235-241` `installArgvSequence`):
