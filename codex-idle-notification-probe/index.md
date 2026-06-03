@@ -1,9 +1,9 @@
 ---
 id: gnanx8t260dyax3x6s841bgc
 title: Make the Codex no-wait subagent completion behavior retryable
-status: backlog
+status: ideation
 source: "captain (2026-06-03) — dogfood session found Codex may queue subagent completion notifications without explicit wait_agent; document a repeatable idle-wake probe in case Codex changes behavior"
-started:
+started: 2026-06-03T16:09:19Z
 completed:
 verdict:
 score: "0.26"
