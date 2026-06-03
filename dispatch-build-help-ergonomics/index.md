@@ -111,3 +111,16 @@ Verified by: the implementation changes no `dispatch build` JSON ingest semantic
 ### Summary
 
 Completed ideation for a narrow help-routing fix. The current failure is a dispatch-router validation-order problem, not a cobra parsing problem: `build` and `show-stage-def` validate required execution flags before recognizing help. The next stage should add subcommand help detection in `internal/dispatch.Run`, print focused stdout help for `build` and `show-stage-def`, and preserve the existing loud missing-flag errors for real invocations.
+
+## Stage Report: implementation
+
+- DONE: `build` and `show-stage-def` help flags exit 0 with stdout usage before required-flag validation.
+  Commit `9f9a7ef0` adds help-first routing; `go run ./cmd/spacedock dispatch build --help` and `show-stage-def --help` printed stdout usage.
+- DONE: Real missing-flag executions still exit 2 with the existing required-flag diagnostics.
+  `TestRequiredFlagGuard` now pins exit 2, empty stdout, and the existing required-flag messages for real invocations.
+- DONE: Focused tests cover the build JSON-field help text and the help-only/no-behavior-drift scope.
+  `internal/dispatch/help_test.go` covers `-h`/`--help`, JSON field substrings, and required-diagnostic absence; `go test ./internal/dispatch ./internal/cli` passed.
+
+### Summary
+
+Implemented the help-only dispatch router change in `internal/dispatch`: `build` and `show-stage-def` now detect `-h`/`--help` before required operational flag validation and print focused stdout usage. Added focused help tests and tightened the missing-flag guard; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all completed successfully.
