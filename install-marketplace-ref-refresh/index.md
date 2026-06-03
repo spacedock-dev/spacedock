@@ -4,10 +4,10 @@ title: spacedock install --host claude silently reuses stale marketplace ref (de
 status: validation
 source: captain (2026-06-02) — observed `./spacedock install --host claude` reports success but the marketplace add no-ops on "already on disk", so the @next ref never replaces the existing pin; the uninstall+install cycle then re-pulls from the stale ref
 score: "0.38"
-worktree: .worktrees/spacedock-ensign-install-marketplace-ref-refresh
+worktree: 
 started: 2026-06-02T21:14:43Z
-completed:
-verdict:
+completed: 2026-06-03T00:18:17Z
+verdict: PASSED
 issue:
 mod-block: 
 pr: "#272"
