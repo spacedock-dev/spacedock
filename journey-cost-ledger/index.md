@@ -184,3 +184,16 @@ Reworked the cost ledger around host-neutral scenario identity instead of host-p
 Recommendation: PASSED. AC-1 via `TestTrackingOptInDoesNotOwnBehaviorOutcome`; AC-2 via the two Claude parser fixture tests; AC-3 via `TestCodexFixtureIsCharacterizedNotMeasured`; AC-4 via `TestAggregateLedgerMatchesGolden`; AC-5 via `TestJourneyCostsCommand*` plus `TestWorkflowsPreserveAndPublishJourneyCosts`; AC-6 via `TestBudgetPolicyIsExplicitAndCoarse`.
 
 The focused scenario-key run passed 11 tests across `internal/journeymetrics`, `cmd/spacedock-release`, and `internal/ensigncycle`; live-tag parity added 1 no-spend coverage test, and the release workflow guard passed directly. A throwaway audit under the assigned worktree failed as expected when the ledger grouped by variant keys (`scenario_count: 2`) and when Codex characterized records claimed tokens. Full gates passed across the repo. Formatting note: `gofmt -l ./cmd ./internal` still reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`; validation left code unchanged per validation-only scope.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Replace model-name values in mode with execution/evidence mode values such as llm-live or codified, while preserving model in model.
+  Commit e46306e8 adds `ModeLLMLive`/`ModeCodified`, removes model fallback into `mode`, and keeps Codex characterization filling only `model`.
+- DONE: Update golden ledger and tests so Claude/Codex observations keep one scenario_id and runtime host, with model names absent from mode.
+  Commit e46306e8 updates the golden ledger, journey metrics tests, release-tool samples, and live metric hooks to use `mode: llm-live` with `runtime: claude/codex`.
+- DONE: Rerun focused journey-metrics/release tests plus full Go gates and write the implementation report.
+  Focused packages passed 107 tests; live-tag no-run compile passed; `go test ./...` and `go test ./... -race` each passed 890 tests after formatting.
+
+### Summary
+
+Fixed the journey cost ledger axes so `mode` describes evidence/execution mode, `runtime` remains the host, and model names stay in `model`. The schema helpers no longer synthesize `mode` from `model`, preventing Codex characterization and aggregation paths from reintroducing the rejected shape.
