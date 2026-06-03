@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-require-external-proof-guard
 issue:
-mod-block: merge:pr-merge
+mod-block:
 ---
 
 **What this is for (plain).** Today nothing stops a task from being marked finished when its "proof"
@@ -374,3 +374,34 @@ Built the require-external-proof guard: a single pure classifier (internal/statu
 ### Summary
 
 Recommendation: PASSED. All 5 ACs verified by runnable Go tests external to the entity body at HEAD 7f0d41f2; live-corpus test pins precision/recall = 1.0 on the real 271-AC corpus with the sole flag being the known canonical AC-6. The opt-in is correctly scoped per the captain's design note — default FALSE byte-identical to absent (TestExternalProofOptInDefaultOff covers both shapes), the classifier is invoked from exactly two terminal-mutating sites (handlers.go runSet + validate.go validateWorkflow), and read paths are never gated. Full repo `go test ./...` 820/820 green, `-race` internal/status 371/371 green. Mechanism unchanged from the spike; the vocabulary additions cleanly resolve the two false positives the 3.4× corpus expansion surfaced.
+
+### Feedback Cycles
+
+**Cycle 1 — 2026-06-03 — AUDIT REJECTED → feedback-to: implementation**
+
+Detached adversarial audit (Task `w6t1ku11a`, Run `wf_febd04f4-99d`, 4 lenses, 32 sub-agents) returned **MATERIAL-PRESENT** with 3 material + 4 polish findings after the validation gate PASSED. The headline material finding is a real correctness bug — validation's "read paths never gated" claim was based on a direct `grep for ClassifyEntityACs` (which found only 2 mutation sites) but missed the indirect path `runRead → failOnValidationErrors → validateWorkflow → ClassifyEntityACs` when `policy == externalProofOn`. Audit reproduced empirically: `sd status`/`--next`/`--boot`/`--next-id` all exit=1 under `require-external-proof: true`. Classic test-strength hole the audit catches: existing tests cover only the OFF read path; nothing locks ON read behavior.
+
+**Material findings — must address:**
+
+1. **F1 (Material) — read paths are gated by the external-proof guard.** With `require-external-proof: true`, `sd status`, `--next`, `--boot`, `--next-id` all exit code=1 emitting `Error: self-referential AC proof (AC-1): ...` for every flagged active entity. Root cause: `handlers.go:305` `runRead` → `native_runner.go:352` `failOnValidationErrors` → `validate.go:171-185` iterates active entities and emits errors when `policy == externalProofOn` BEFORE `printStatusTable`/`printNextTable`/`printBoot` run. The cycle-1 framing ("refuses terminal closes") is empirically false for routine reads — this is a scope leak.
+   **Fix:** restrict `failOnValidationErrors` (or the `externalProofOn` branch of `validateWorkflow`) so the AC-classifier gate runs ONLY on mutation surfaces (`runSet` terminal-set) and the explicit `--validate` command. Read paths (`--next`, `--boot`, `--where`, `--next-id`, default table) must bypass the gate. Add a read-path-under-ON regression test mirroring `TestExternalProofOptInDefaultOff`'s coverage but flipping the opt-in to TRUE — exits 0 on `sd status`, `--next`, `--boot`, `--next-id` even with a self-ref entity present.
+
+2. **L3-F1 (Material) — build/compile/vet/gofmt/lint vocabulary absent from `externalTokenRe`.** A self-phrased compile/build-only AC false-flags. The audit confirmed empirically with a constructed adversarial entity (`adversarial-build-only-test/index.md` AC-1) — `TestClassifierPrecisionRecallOnLiveCorpus` FAILED with the predicted flagged set `{external-tracker-checkpoint AC-6, adversarial-build-only-test AC-1}`. The live corpus escapes today only by accident (every existing build-only AC happens to include a `test`/`golden`/`fixture` token in the same clause).
+   **Fix:** extend `externalTokenRe` at `external_proof.go:58-64` with build/compile/vet/gofmt/lint vocabulary: `\bbuild\b`, `\bcompil`, `\bvet\b`, `\bgofmt\b`, `\blint\b`. Add `external_proof_test.go` cases for `go build ./...` / `gofmt -l .` / `go vet ./...` clauses against self-phrased entities.
+
+3. **L3-F2 (Material) — live-pilot proofs false-flag because `externalTokenRe` demands the literal article `the` after `drive`/`driving`.** The current tokens are `drive the`/`driving the` (literal adjacency required). Real legitimate phrasings (`drives the lifecycle`, `pilots this entity through merge`, `drives an entity through`) miss every token. Direct classifier run on a canonical AC body with phrasing "a behavioral pilot on a real entity drives this entity's lifecycle" FLAGGED with `MatchedPhrase=this entity's`.
+   **Fix:** generalize the live-pilot vocabulary to cover inflected/object forms (no literal-article dependency): `\bdrives?\b`, `\bdriving\b`, `\bpilots?\b`, `\bbehavioral pilot\b`, `\bruntime behavior\b`. Add fixtures asserting acceptance of canonical mod-registry / roborev-validation-hook phrasings.
+
+**Polish findings — fold in this cycle (small, adjacent):**
+
+- **F2 (Polish): comment-only opt-in `require-external-proof: # comment` silently coerces to OFF without diagnostic.** `resolveExternalProofPolicy` `TrimSpaces`s the value; `yaml.v3` decodes `key: # comment` as empty string → switch routes to `externalProofOff` with nil error. Loud-rejection error enumerates only `true`/`false`/absent. Reproduced empirically. Fix: either reject empty-after-colon as parse error, OR extend the rejection message to enumerate `empty/null` as an absent-equivalent shape; add boundary tests.
+
+- **L3-F3 (Polish): release-artifact vocabulary missing.** `\bbrew\b`, `\bspctl\b`, `\bgoreleaser\b`, `\bnotariz`, `\bcask\b`, `\brelease\b`, `\bbinary\b` are all absent from `externalTokenRe`. Self-phrased brew/spctl/notarize proofs false-flag. The live corpus's `notarize-macos-release/index.md` escapes only because its ACs don't use self-phrasing. Fix: add the release-domain tokens; also reconsider whether `quotedSpanRe` should apply before or after `externalTokenRe` (today it strips backtick spans first, so a self-phrased entity citing `` `--cask` `` in the proof re-FLAGS).
+
+- **L3-F4 (Polish): commit/URL/GitHub/merged vocabulary missing.** Tokens like `commit`, `URL`, `GitHub`, `GH`, `merged`, `landed`, and a 7+ hex-shape pattern aren't covered. Proofs of the form `opening this entity's commit URL on GitHub renders the diff` flag despite citing a real external artifact. Fix: extend the alternation with `\bcommit\b`, `\bURL\b`, `\bGitHub\b`, `\bGH\b`, `\bmerged\b`, `\blanded\b`, `\b[a-f0-9]{7,}\b`; lock with regression cases.
+
+- **L4-P2 (Polish): `classifierCallCount` is package-private and hand-bumpable.** An adversarial fork named `classifyEntityACsAlt` that hand-bumps the counter would defeat BOTH the structural single-definition test AND the runtime delta test. Polish-only because the higher-level guard tests still catch system-level invariant. Optional hardening: encapsulate the counter behind an internal interface that only `ClassifyEntityACs` can bump.
+
+**Scope for this cycle (audit-fix):** all 3 material findings + 4 polish findings. Surface is `internal/status/external_proof.go` (regex extensions + behavior change) + `internal/status/handlers.go` or `native_runner.go` (read-path gate restriction) + `internal/status/external_proof_test.go` + a new `TestNoExternalProofGuardOnReadPaths` regression test. The 5 cycle-1 named tests must still PASS after the changes (no regression).
+
+**Worktree:** existing `.worktrees/spacedock-ensign-require-external-proof-guard` on branch `spacedock-ensign/require-external-proof-guard` at HEAD `7f0d41f2`. Cycle-2 work stacks on top.
