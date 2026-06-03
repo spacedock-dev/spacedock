@@ -230,3 +230,20 @@ The prior f4 validation evidence is stale. The next implementation pass must sta
 ### Summary
 
 The f4 code branch is now rebased on current `origin/next` and carries the shared Codex live suite at commit `1aeb7a96` without unrelated `internal/status` churn. Local live verification used existing subscription auth with `OPENAI_API_KEY` unset and proved all three required shared scenarios through real `codex exec --json`; the follow-up cleanup reran focused/full Go gates and documented the upstream gofmt dirtiness separately.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Rebase f4 onto current origin/next without unrelated changes
+  Rebasing onto `origin/next` succeeded cleanly; f4 now carries `27c1ba5b`, `4c04a346`, and `407b82ef` on top of `1dfac9a5`, and the code worktree is clean.
+- DONE: Preserve shared Codex live scenario suite and Phase 0.A contract changes
+  `TestLiveCodexSharedScenarios`, the three shared scenarios, CI/docs wiring, and current-checkout plugin checks remain present; `git merge-base --is-ancestor 528ffa17 HEAD` passed after the named r0 remote branch had been pruned.
+- DONE: Rerun required gates and live shared suite when local auth allows
+  `gofmt -w ./cmd ./internal` was run, unrelated current-next formatting drift was restored, `go test ./internal/ensigncycle`, `go test ./...`, `go test ./... -race`, the resolver smoke, and `TestLiveCodexSharedScenarios` all passed.
+- DONE: Local live shared-suite artifacts prove current-checkout Codex setup
+  Local ChatGPT auth was available; the live run passed all three scenarios in 253.86s and artifacts show the generated marketplace plugin plus r0 Codex FO adapter in the plugin cache.
+- SKIPPED: Approved GitHub Actions `codex-live` run
+  No approved Actions environment run was available from this local worker; local live artifacts show `spacedock@spacedock` installed from a generated current-checkout marketplace and the r0 Codex FO adapter present in the plugin cache.
+
+### Summary
+
+The f4 code branch is rebased onto current `origin/next` with no new code edits beyond the rebase, now ending at `407b82ef`. Local verification proved the shared Codex live suite through real `codex exec --json` using isolated local ChatGPT auth, while preserving the Phase 0.A/r0 contract content and keeping unrelated formatting drift out of the branch.
