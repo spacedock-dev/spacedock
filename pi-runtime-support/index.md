@@ -198,3 +198,20 @@ Validation result: REJECTED. The offline contract gaps are now closed and the wo
 ### Summary
 
 Cycle 2 implements and runs the missing AC-2 live smoke. The first written live harness passed immediately, showing the product path was available once the isolated Pi home, copied OAuth credentials, explicit local `pi-subagents` extension path, local Spacedock skills, and split-root fixture were wired together. The harness was then tightened to run with a clean `HOME` so it cannot mutate or rely on global `~/.pi/agent` state beyond the copied auth file.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 Pi dispatch uses a Pi-native tool contract instead of Claude-compatible tool names.
+  Evidence: fresh uncached `go test ./... -count=1` passed, including `internal/dispatch` Pi host tests `TestBuildPiHostPromptShape` and `TestBuildPiHostPreservesSplitRootEntityPath`; fresh uncached `go test ./... -race -count=1` also passed.
+- DONE: AC-2 The default Pi ensign path can complete a real split-root workflow task through `pi-subagents` from an isolated Pi home that reuses existing OAuth credentials.
+  Evidence: fresh uncached `go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle -v -count=1` passed in 53.622s. The live harness copied `~/.pi/agent/auth.json` into a temp `PI_CODING_AGENT_DIR`, used a temp session dir and clean `HOME`, loaded local `pi-subagents` plus Spacedock skills, dispatched one Pi worker through `subagent(...)`, and asserted entity-body plus state-checkout git-log outcomes.
+- DONE: AC-3 Optional `pi-agent-teams` support is represented as an adapter over the `teams` action schema, not as Claude team emulation.
+  Evidence: fresh uncached `go test ./... -count=1` and `go test ./... -race -count=1` passed, including `internal/piruntime` tests `TestTeamsAdapterMapsLifecycleActions` and `TestTeamsAdapterPayloadsContainNoClaudeToolNames`.
+- DONE: AC-4 Follow-up routing cannot accept stale completion evidence.
+  Evidence: fresh uncached `go test ./... -count=1` and `go test ./... -race -count=1` passed, including `TestRegistryRejectsStaleCompletionAfterFollowup` and `TestRegistryPersistsRecords`.
+- DONE: AC-5 Split-root state paths are preserved in Pi dispatch prompts and tests.
+  Evidence: fresh uncached `go test ./... -count=1` and `go test ./... -race -count=1` passed, including `TestBuildPiHostPreservesSplitRootEntityPath`, and the live Pi smoke used a `state: .spacedock-state` split-root fixture with a folder-form entity in the state checkout.
+
+### Summary
+
+Validation result: PASSED. Code commit `4715da1e` closes the remaining AC-2 gap with live Pi evidence from an isolated Pi home that reuses the existing OAuth auth file. Fresh uncached baseline, race, and live-smoke verification all passed, and the code worktree was clean after verification.
