@@ -15,11 +15,11 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	unitResult, err := Track(dir, JourneySpec{
 		ScenarioID: "unit-fake",
 		Source:     "unit-test",
-		Mode:       "fake",
+		Mode:       ModeCodified,
 		Runtime:    "go-test",
 		Executor:   "codified",
 		Host:       "go-test",
-		Model:      "fake",
+		Model:      "fake-model",
 	}, func() BehaviorResult {
 		return BehaviorResult{Passed: true}
 	}, func() Observation {
@@ -42,7 +42,7 @@ func TestTrackingOptInDoesNotOwnBehaviorOutcome(t *testing.T) {
 	liveResult, err := Track(dir, JourneySpec{
 		ScenarioID: "live-fake",
 		Source:     "live-harness",
-		Mode:       "sonnet",
+		Mode:       ModeLLMLive,
 		Runtime:    "claude",
 		Executor:   "llm",
 		Host:       "claude",
@@ -124,7 +124,7 @@ func TestEmitRecordKeepsSharedScenarioObservationsDistinct(t *testing.T) {
 		{
 			SchemaVersion: RecordSchemaVersion,
 			ScenarioID:    "gate-guardrail",
-			Mode:          "sonnet",
+			Mode:          ModeLLMLive,
 			Runtime:       "claude",
 			Executor:      "llm",
 			Host:          "claude",
@@ -135,7 +135,7 @@ func TestEmitRecordKeepsSharedScenarioObservationsDistinct(t *testing.T) {
 		{
 			SchemaVersion: RecordSchemaVersion,
 			ScenarioID:    "gate-guardrail",
-			Mode:          "gpt-5-codex",
+			Mode:          ModeLLMLive,
 			Runtime:       "codex",
 			Executor:      "llm",
 			Host:          "codex",
@@ -170,6 +170,29 @@ func TestEmitRecordKeepsSharedScenarioObservationsDistinct(t *testing.T) {
 	}
 	if !seen["claude"] || !seen["codex"] {
 		t.Fatalf("shared scenario observations were not distinct: %#v", seen)
+	}
+}
+
+func TestBuildRecordDoesNotUseModelAsMode(t *testing.T) {
+	record := BuildRecord(JourneySpec{
+		ScenarioID: "gate-guardrail",
+		Source:     "live-harness",
+		Runtime:    "claude",
+		Executor:   "llm",
+		Host:       "claude",
+		Model:      "claude-sonnet-4-6",
+	}, BehaviorResult{Passed: true}, Observation{MetricsState: StateMeasured})
+	if record.Mode != "" {
+		t.Fatalf("mode = %q, want empty when only model is supplied", record.Mode)
+	}
+
+	ledger, err := AggregateLedger("0.20.0", []Record{record}, time.Date(2026, 6, 3, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("AggregateLedger: %v", err)
+	}
+	got := ledger.Scenarios[0].Observations[0]
+	if got.Mode != "" {
+		t.Fatalf("aggregated mode = %q, want empty rather than model fallback", got.Mode)
 	}
 }
 

@@ -32,7 +32,7 @@ func TestCodexFixtureIsCharacterizedNotMeasured(t *testing.T) {
 	record := CodexCharacterizedRecord(JourneySpec{
 		ScenarioID: "runtime-dispatch",
 		Source:     "live-harness",
-		Mode:       characterization.Model,
+		Mode:       ModeLLMLive,
 		Runtime:    "codex",
 		Executor:   "llm",
 		Host:       "codex",
@@ -43,6 +43,26 @@ func TestCodexFixtureIsCharacterizedNotMeasured(t *testing.T) {
 	}
 	if record.Tokens.Total != 0 {
 		t.Fatalf("characterized Codex record made an unverified token claim: %+v", record.Tokens)
+	}
+	if record.Mode != ModeLLMLive {
+		t.Fatalf("mode = %q, want llm-live", record.Mode)
+	}
+	if record.Model != characterization.Model {
+		t.Fatalf("model = %q, want characterization model %q", record.Model, characterization.Model)
+	}
+
+	recordWithoutMode := CodexCharacterizedRecord(JourneySpec{
+		ScenarioID: "runtime-dispatch",
+		Source:     "live-harness",
+		Runtime:    "codex",
+		Executor:   "llm",
+		Host:       "codex",
+	}, characterization, BehaviorResult{Passed: true})
+	if recordWithoutMode.Mode != "" {
+		t.Fatalf("mode without explicit evidence mode = %q, want empty rather than model fallback", recordWithoutMode.Mode)
+	}
+	if recordWithoutMode.Model != characterization.Model {
+		t.Fatalf("model without explicit model = %q, want characterization model %q", recordWithoutMode.Model, characterization.Model)
 	}
 
 	maxTokens := 1

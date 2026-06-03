@@ -42,7 +42,7 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 		SchemaVersion:   RecordSchemaVersion,
 		ScenarioID:      firstNonEmpty(spec.ScenarioID, spec.ID),
 		Source:          spec.Source,
-		Mode:            firstNonEmpty(spec.Mode, spec.Model),
+		Mode:            spec.Mode,
 		Runtime:         firstNonEmpty(spec.Runtime, spec.Host),
 		Executor:        spec.Executor,
 		Host:            spec.Host,
@@ -106,7 +106,6 @@ func normalizeRecord(record Record) Record {
 	record.SchemaVersion = RecordSchemaVersion
 	record.ScenarioID = firstNonEmpty(record.ScenarioID, record.JourneyID)
 	record.JourneyID = ""
-	record.Mode = firstNonEmpty(record.Mode, record.Model)
 	record.Runtime = firstNonEmpty(record.Runtime, record.Host)
 	record.Tokens = record.Tokens.withTotal()
 	record.ModelUsage = normalizeModelUsage(record.ModelUsage)

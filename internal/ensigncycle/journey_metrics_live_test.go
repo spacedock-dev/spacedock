@@ -25,7 +25,7 @@ func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, res
 	record := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
 		ScenarioID: scenario.name,
 		Source:     "live-harness",
-		Mode:       model,
+		Mode:       journeymetrics.ModeLLMLive,
 		Runtime:    "claude",
 		Executor:   "llm",
 		Host:       "claude",
@@ -49,7 +49,7 @@ func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, resu
 	record := journeymetrics.CodexCharacterizedRecord(journeymetrics.JourneySpec{
 		ScenarioID: scenario.name,
 		Source:     "live-harness",
-		Mode:       characterization.Model,
+		Mode:       journeymetrics.ModeLLMLive,
 		Runtime:    "codex",
 		Executor:   "llm",
 		Host:       "codex",

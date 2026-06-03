@@ -14,6 +14,11 @@ const (
 	StateCharacterized MetricsState = "characterized"
 )
 
+const (
+	ModeLLMLive  = "llm-live"
+	ModeCodified = "codified"
+)
+
 type JourneySpec struct {
 	// ID is a legacy alias for ScenarioID.
 	ID         string
@@ -153,7 +158,7 @@ func (r Record) MarshalJSON() ([]byte, error) {
 		SchemaVersion:   RecordSchemaVersion,
 		ScenarioID:      firstNonEmpty(r.ScenarioID, r.JourneyID),
 		Source:          r.Source,
-		Mode:            firstNonEmpty(r.Mode, r.Model),
+		Mode:            r.Mode,
 		Runtime:         firstNonEmpty(r.Runtime, r.Host),
 		Executor:        r.Executor,
 		Host:            r.Host,
