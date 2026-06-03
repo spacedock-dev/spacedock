@@ -5,6 +5,7 @@ package status
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -112,6 +113,50 @@ stages:
 			})
 		})
 	}
+}
+
+// TestValidateFlagsSelfRefACs locks AC-2: under `require-external-proof: true`,
+// `spacedock status --validate` emits one standard `entityEvidence`-shaped line
+// per flagged AC and exits 1; a workflow with no self-referential ACs returns
+// VALID exit 0. Drives the testdata/external-proof-workflow/ fixture.
+func TestValidateFlagsSelfRefACs(t *testing.T) {
+	env := pinnedEnv(t)
+
+	t.Run("flags-self-ref", func(t *testing.T) {
+		root := stageExternalProofFixture(t, "require-external-proof: true\n")
+
+		_, nErr, nCode := runNative(t, root, env, "--workflow-dir", root, "--validate")
+		if nCode != 1 {
+			t.Fatalf("--validate must exit 1 when self-ref ACs exist, got %d (stderr=%q)", nCode, nErr)
+		}
+		wantSubstr := "Error: self-referential AC proof (AC-1):"
+		if !strings.Contains(nErr, wantSubstr) {
+			t.Fatalf("stderr missing evidence line %q, got %q", wantSubstr, nErr)
+		}
+		for _, want := range []string{"workflow=", "scope=active", "slug=010-self-ref-only", "id=010", "path="} {
+			if !strings.Contains(nErr, want) {
+				t.Fatalf("stderr missing %q in evidence line, got %q", want, nErr)
+			}
+		}
+	})
+
+	t.Run("real-proof-only-valid", func(t *testing.T) {
+		root := stageExternalProofFixture(t, "require-external-proof: true\n")
+		// Delete the self-ref + force entities so only the real-proof one remains.
+		for _, name := range []string{"010-self-ref-only.md", "030-force-bypass.md"} {
+			if err := os.Remove(filepath.Join(root, name)); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		nOut, _, nCode := runNative(t, root, env, "--workflow-dir", root, "--validate")
+		if nCode != 0 {
+			t.Fatalf("--validate should return VALID with no self-ref ACs, got exit=%d", nCode)
+		}
+		if strings.TrimSpace(nOut) != "VALID" {
+			t.Fatalf("stdout should be VALID, got %q", nOut)
+		}
+	})
 }
 
 // TestNativeValidationGatesReads locks that a defect rejects an enumerate op

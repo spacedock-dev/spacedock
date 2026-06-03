@@ -214,6 +214,29 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		fmt.Fprintf(stderr, "Warning: --force overriding mod-block (%s) on entity %s\n", modBlock, slug)
 	}
 
+	// require-external-proof guard: when the workflow opts in, a terminal --set
+	// on an entity whose ACs are only self-referentially proven exits 1 and
+	// leaves the frontmatter untouched. Layered after mod-block + merge-hook so
+	// the order of guard messages mirrors the order of declared invariants.
+	// --force bypasses with a warning in the same idiom as the mod-block bypass.
+	proofPolicy, perr := resolveExternalProofPolicy(roots.definitionDir)
+	if perr != nil {
+		return errExit(stderr, perr.Error())
+	}
+	if proofPolicy == externalProofOn && isTerminalUpdate() {
+		flags := classifyEntityFile(entityPath)
+		if len(flags) > 0 {
+			if force {
+				fmt.Fprintf(stderr, "Warning: --force overriding require-external-proof on entity %s\n", slug)
+			} else {
+				return errExit(stderr, fmt.Sprintf(
+					"entity %s cannot advance to terminal — AC(s) [%s] have self-referential proof "+
+						"(no test, command, file, or on-disk-state cited). Add an external-proof clause to each, or use --force to bypass.",
+					slug, flaggedACLabels(flags)))
+			}
+		}
+	}
+
 	resolvedFields, err := updateFrontmatter(entityPath, set.updates)
 	if err != nil {
 		return errExit(stderr, err.Error())

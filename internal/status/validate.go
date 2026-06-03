@@ -158,6 +158,32 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, stderr io.Writer
 	case "sd-b32":
 		errs = append(errs, validateSDB32(entities, entityDir, sdDisplay)...)
 	}
+
+	// require-external-proof sub-check: when the workflow opts in, every
+	// active entity is classified and each flagged AC is emitted as a standard
+	// entityEvidence line. A typo in the README key is surfaced as the same
+	// kind of loud rejection findEntityFormConflicts uses for its own defects.
+	policy, perr := resolveExternalProofPolicy(definitionDir)
+	if perr != nil {
+		errs = append(errs, "Error: "+perr.Error())
+		return errs
+	}
+	if policy == externalProofOn {
+		for _, e := range entities {
+			if e.scope != "active" {
+				continue
+			}
+			for _, f := range classifyEntityFile(e.path) {
+				display := ""
+				if idStyle == "sd-b32" {
+					display = sdDisplay[e.storedID]
+				}
+				errs = append(errs, entityEvidence(e, entityDir,
+					"self-referential AC proof ("+acLabel(f.Header)+")", display))
+			}
+		}
+	}
+
 	return errs
 }
 
