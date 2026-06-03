@@ -146,8 +146,8 @@ func TestNoCrossFileRestatement(t *testing.T) {
 
 // proseSpan is one span with location and exception-class info.
 type proseSpan struct {
-	text         string
-	startLine    int
+	text           string
+	startLine      int
 	excludeOverlap bool
 }
 

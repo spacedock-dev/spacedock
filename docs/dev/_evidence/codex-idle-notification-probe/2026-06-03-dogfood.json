@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-06-03-dogfood",
+  "host": "codex",
+  "codex_cli_version": "codex-cli 0.136.0",
+  "session_started_at_utc": null,
+  "worker_handle": "Dalton (019e8e34-ec78-7691-b56d-14528a0a9f71)",
+  "worker_prompt": "You are a no-write Codex idle-wake probe. Do not read or write files, do not run tools, and do not modify state. Sleep for 30 seconds, then reply exactly: Done: idle-wake Codex notification probe completed.",
+  "worker_delay_seconds": 30,
+  "spawned_at_utc": null,
+  "fo_turn_ended_at_utc": null,
+  "idle_window_seconds": 90,
+  "first_user_activity_at_utc": null,
+  "final_status_notification_at_utc": null,
+  "notification_delivered_before_user_message": true,
+  "autonomous_wake_observed": false,
+  "classification": "queued_flush",
+  "interpretation": "The run proves queued mailbox delivery before the next captain message, not autonomous idle wake-up."
+}

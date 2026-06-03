@@ -33,13 +33,44 @@ context; otherwise dispatch a fresh worker from entity state.
 
 ## Awaiting Completion
 
-The Codex completion signal is the async final-status notification in the FO mailbox. `wait_agent` is only an optional accelerator when a critical-path step is blocked on the worker result.
+The Codex completion signal is the async final-status notification in the FO mailbox.
+`wait_agent` is an explicit foreground wait action, not the completion signal
+itself.
 
-A wait_agent timeout return is normal. It means no final-status mailbox update
-arrived before the deadline; it is not a failure, a zombie signal, or a teardown
-trigger.
+Before calling `wait_agent`, finish the available dispatch sequence: process
+ready final-status notifications, make gate decisions, apply resulting state
+transitions, and dispatch any newly dispatchable work. Call `wait_agent` only
+when no other dispatchable or gate-processing work is available and an
+unresolved worker completion is the next useful idle action. Non-critical
+background work may still end the FO turn and rely on the mailbox.
 
-Between dispatch and the async final-status notification, do not poll, re-dispatch, or close the worker. End the turn and let Codex deliver the mailbox notification. Close workers only after completion has been observed or when the captain explicitly requests shutdown.
+### Foreground wait
+
+The FO calls `wait_agent(handle)` as the next useful idle action after the
+scheduling priority above is exhausted. A wait_agent timeout return is normal and
+retryable with the same handle. It means no final-status mailbox update arrived
+before the deadline; it is not a failure, a zombie signal, or a teardown trigger.
+A captain message or shell-out during the wait is operator activity, not idle
+wake evidence.
+
+### Queued notification flushed by later activity
+
+The FO does not call `wait_agent`, ends the turn, and a later captain message,
+tool action, or shell-out causes Codex to deliver a worker final-status
+notification that had already been queued. This proves mailbox ordering, not
+autonomous FO wake-up.
+
+### Autonomous idle FO wake-up
+
+The FO does not call `wait_agent`, performs no later captain message, tool
+action, shell-out, or terminal job, and Codex starts a new assistant turn from
+the worker final-status notification alone. This is the only observation that
+proves no-wait idle wake-up.
+
+Between dispatch and the async final-status notification, do not poll, re-dispatch, or close the worker.
+Continue ready workflow work, foreground-wait only under the rule above, or end
+the turn and let Codex deliver the mailbox notification. Close workers only after
+completion has been observed or when the captain explicitly requests shutdown.
 
 ## Completion Signal
 
