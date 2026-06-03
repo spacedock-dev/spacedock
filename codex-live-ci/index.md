@@ -1,7 +1,7 @@
 ---
 id: f4h107he3s9swwz51ymr022m
 title: Enable Codex live CI by reusing shared runtime scenarios on top of r0
-status: implementation
+status: validation
 source: "captain (2026-06-02) — revive the useful old Python Codex live CI setup, ignore tautological static grep tests, and document setup/principles in docs/dev/README.md"
 started: 2026-06-02T17:59:45Z
 completed:
@@ -9,7 +9,7 @@ verdict:
 score: "0.72"
 worktree: .worktrees/spacedock-ensign-codex-live-ci
 issue:
-mod-block: 
+mod-block:
 ---
 
 The old Python-era live CI had the right Codex shape: a `codex-live` job with `CI-E2E-CODEX`, `OPENAI_API_KEY`, Codex CLI install, `codex login --with-api-key`, preserved artifacts, and a `make test-live-codex` target that reused scenario files also run by Claude. The useful overlap was three shared scenarios:
