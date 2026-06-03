@@ -50,10 +50,11 @@ jobs:
           # Read the tag object directly via cat-file (subject + blank line + body)
           # and extract everything after the first blank line. This is more robust
           # than %(contents:body), which has surfaced as empty on macos runners.
-          git cat-file tag "$GITHUB_REF_NAME" | awk 'p{print; next} /^$/{p=1}' > release-notes.txt
+          # Write outside the worktree so goreleaser's dirty-check stays clean.
+          git cat-file tag "$GITHUB_REF_NAME" | awk 'p{print; next} /^$/{p=1}' > "$RUNNER_TEMP/release-notes.txt"
           # Guard against an empty body (a lightweight tag, or one cut outside the
           # notes flow) so we fail loudly rather than publish an empty Release.
-          if [ -z "$(tr -d '[:space:]' < release-notes.txt)" ]; then
+          if [ -z "$(tr -d '[:space:]' < "$RUNNER_TEMP/release-notes.txt")" ]; then
             echo "::error::tag $GITHUB_REF_NAME has an empty annotated-tag body; cut it via 'spacedock-release notes <version>'" >&2
             exit 1
           fi
@@ -62,7 +63,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           version: "~> v2"
-          args: release --clean --release-notes release-notes.txt
+          args: release --clean --release-notes ${{ runner.temp }}/release-notes.txt
         env:
           # GITHUB_TOKEN creates the release on this repo. HOMEBREW_TAP_TOKEN is a
           # PAT with write access to spacedock-dev/homebrew-tap so the
