@@ -31,25 +31,83 @@ That is backwards for an operator or first officer trying to learn the command. 
 
 This is distinct from `dispatch-build-json-ergonomics`: that entity addresses the hand-built JSON payload. This one is only about help/usage routing.
 
+## Spike
+
+The riskiest unknown is whether this is a cobra-front-door issue or the dispatch router's own validation order. It is the dispatch router.
+
+Reproduced on current HEAD:
+
+```text
+$ go run ./cmd/spacedock dispatch build --help
+error: dispatch build requires --workflow-dir
+exit status 2
+
+$ go run ./cmd/spacedock dispatch show-stage-def --help
+error: dispatch show-stage-def requires --workflow-dir and --stage
+exit status 2
+```
+
+Code read: `internal/cli/cli.go` disables cobra flag parsing for `dispatch` and forwards the post-`dispatch` argv verbatim to `dispatch.Run`. In `internal/dispatch/dispatch.go`, the `build` branch calls `requireFlag` before it checks for help, and the `show-stage-def` branch calls `requireStageFlags` before it checks for help. The implementation should therefore live in the dispatch package: detect `-h`/`--help` for the recognized subcommand before required execution-flag validation, print subcommand help to stdout, and return 0.
+
 ## Proposed approach
 
-1. Teach `spacedock dispatch` to recognize `--help`, `-h`, or `help` for its subcommands before checking required execution flags.
-2. Add focused usage text for `dispatch build` and `dispatch show-stage-def` that names required flags, stdin shape, and examples.
-3. Preserve current loud errors for real invocations that omit required flags.
+1. Teach the `build` and `show-stage-def` branches in `internal/dispatch.Run` to recognize `--help` and `-h` before checking required execution flags.
+2. Add focused stdout help for `dispatch build` and `dispatch show-stage-def`.
+3. Keep the existing execution path unchanged when no help flag is present, including the current required-flag errors and exit code.
+4. Keep top-level dispatch routing and the other dispatch subcommands out of scope unless the implementation needs a tiny shared helper for help detection.
+
+## Usage expectations
+
+`dispatch build --help` should show:
+
+- `Usage: spacedock dispatch build --workflow-dir DIR` with stdin JSON called out explicitly.
+- The `--workflow-dir` flag and what it points at.
+- The stdin JSON contract fields used by the current command: `schema_version`, `entity_path`, `workflow_dir`, `stage`, and `checklist`.
+- A minimal JSON example or field list that makes clear `checklist` is an array of checklist strings.
+
+`dispatch show-stage-def --help` should show:
+
+- `Usage: spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE`.
+- `--workflow-dir` and `--stage` descriptions.
+
+## Out of scope
+
+- New input forms for `dispatch build`.
+- JSON schema printing or validation-only modes.
+- Host-default behavior.
+- FO runtime-document examples.
+- Any PR, mod, or broader dispatch ergonomics work. Coordinate those with `dispatch-build-json-ergonomics` instead.
 
 ## Acceptance criteria
 
 **AC-1 - Dispatch subcommand help is reachable without execution flags.**
-Verified by: Go tests over the CLI runner assert `spacedock dispatch build --help`, `spacedock dispatch build -h`, and `spacedock dispatch show-stage-def --help` exit 0, write usage to stdout, and do not emit required-flag errors.
+Verified by: Go tests assert `spacedock dispatch build --help`, `spacedock dispatch build -h`, `spacedock dispatch show-stage-def --help`, and `spacedock dispatch show-stage-def -h` exit 0, write usage to stdout, leave stderr empty, and do not emit required-flag errors.
 
 **AC-2 - Missing required flags still fail for real execution.**
-Verified by: Go tests assert `spacedock dispatch build` still exits non-zero with `requires --workflow-dir`, and `spacedock dispatch show-stage-def` still exits non-zero with `requires --workflow-dir and --stage`.
+Verified by: Go tests assert `spacedock dispatch build` still exits 2 with `requires --workflow-dir`, and `spacedock dispatch show-stage-def` still exits 2 with `requires --workflow-dir and --stage` when no help flag is present.
 
 **AC-3 - Help text explains the JSON stdin contract without forcing operators to infer it from tests.**
 Verified by: a golden or substring test over `dispatch build --help` asserts the output mentions `--workflow-dir`, stdin JSON, `schema_version`, `entity_path`, `stage`, and `checklist`.
 
+**AC-4 - The scope stays help-only.**
+Verified by: the implementation changes no `dispatch build` JSON ingest semantics and no `show-stage-def` stage extraction behavior; existing dispatch golden/error tests continue to pass unchanged except for newly added help fixtures/tests.
+
 ## Test plan
 
-- Add CLI or dispatch package tests for the help-before-required-flags cases.
-- Add regression tests for the existing missing-flag errors.
-- Run `go test ./internal/dispatch ./internal/cli` and the normal repo gate before merge.
+- Add a focused `internal/dispatch` test for help-before-required-flags: `build --help`, `build -h`, `show-stage-def --help`, and `show-stage-def -h` return 0, stdout contains `Usage:`, stderr is empty, and the required-flag diagnostics are absent. Cost: low.
+- Add or extend a routing regression test for real missing-flag execution: `build` and `show-stage-def` without flags still return exit 2 and the existing diagnostics. Cost: low.
+- Add a golden or substring assertion for `build --help` covering `--workflow-dir`, stdin JSON, `schema_version`, `entity_path`, `stage`, and `checklist`; include `show-stage-def` help assertions for `--workflow-dir` and `--stage`. Cost: low.
+- Run `go test ./internal/dispatch ./internal/cli` first, then the repo gate required by `AGENTS.md` before implementation completion.
+
+## Stage Report: ideation
+
+- DONE: Help-before-required-flags behavior is scoped separately from real missing-flag failures.
+  Reproduced the current failure and located the validation-order issue in `internal/dispatch.Run`; the proposed fix handles help before required flags only for recognized dispatch subcommands, while AC-2 preserves current real-invocation failures.
+- DONE: Usage expectations cover `build`, `show-stage-def`, and the JSON stdin contract fields.
+  Added explicit usage expectations for both subcommands and the `build` stdin JSON fields: `schema_version`, `entity_path`, `workflow_dir`, `stage`, and `checklist`.
+- DONE: Acceptance criteria and test plan are focused, failable, and low-risk to implement first.
+  ACs now assert observable exit codes, stdout/stderr placement, required diagnostic absence/presence, and a help-only scope guard. The test plan starts with focused dispatch tests before the broader repo gate.
+
+### Summary
+
+Completed ideation for a narrow help-routing fix. The current failure is a dispatch-router validation-order problem, not a cobra parsing problem: `build` and `show-stage-def` validate required execution flags before recognizing help. The next stage should add subcommand help detection in `internal/dispatch.Run`, print focused stdout help for `build` and `show-stage-def`, and preserve the existing loud missing-flag errors for real invocations.
