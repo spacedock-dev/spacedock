@@ -84,13 +84,15 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 		"until the registry", // "…until the registry clears/settles/empties"
 		"finally clears",     // "…until the registry finally clears"
 		// audit-cycle-1 FO-self-exit re-introductions (M2): the FO killing its own
-		// process group / runtime and demoting the launcher to a "backstop".
+		// process group / runtime and demoting the launcher to a "backstop". Scoped
+		// to the self-exit FINGERPRINTS, not over-broad: "terminates its own" (not a
+		// bare "the fo terminates", which a legit "the FO terminates the attempts"
+		// would false-red) and "launcher is only a" (not a bare "backstop", which
+		// any legit launcher-as-backstop phrasing would false-red).
 		"kill -9",            // self-kill via Bash
 		"$ppid",              // kill the parent process (the harness)
 		"terminates its own", // "the FO terminates its own runtime…"
-		"the fo terminates",  // FO-driven exit
 		"launcher is only a", // "…the launcher is only a backstop" (demotes launcher-owned exit)
-		"backstop",           // the launcher relegated to a backstop
 	}
 
 	// Shared core, step 10 in Merge and Cleanup. Scope to step 10 ALONE — the
@@ -260,12 +262,28 @@ func numberedStep(region string, n int) string {
 // premature-teardown bug). The terminal bounded-teardown clause is a separate
 // phase; this lint ensures the Awaiting-Completion ban survives the reversal.
 //
-// Semantic (not bare-substring) ban (audit-cycle-1 P2): a substring-PRESENCE
-// check on "emit `TeamDelete`" would pass an INVERTED ban ("you SHOULD emit
-// `TeamDelete` early") that keeps the token. This asserts the `emit \`TeamDelete\“
-// bullet sits under the negative "Do not:" framing AND carries its premature-
-// teardown rationale, AND forbids the affirmative re-introductions that flip a
-// ban into a directive.
+// Structural ban check, with an HONEST ceiling (audit-cycle-2 P2 correction): a
+// bare substring-PRESENCE check on "emit `TeamDelete`" passes an INVERTED ban
+// that keeps the token, and a CLOSED list of forbidden affirmative spellings
+// passes any affirmative phrased OUTSIDE the list (e.g. "it is fine to go ahead
+// and call `TeamDelete` right now"). This lint does two structural things that do
+// NOT depend on an exact spelling:
+//
+//  1. Positive framing anchors — the ban must remain a `- emit `TeamDelete“
+//     bullet under the `Do not:` prohibition, with the premature-teardown
+//     rationale. Flipping the ban into a directive drops the bullet form or the
+//     rationale.
+//  2. Affirmative-permission CO-OCCURRENCE scan — any line that pairs a
+//     permission cue (fine to / go ahead / should / may / ok to / feel free /
+//     allowed to) with a `TeamDelete` reference is flagged, regardless of the
+//     exact spelling. This catches the open class of "go ahead and call
+//     TeamDelete" re-introductions, not just a fixed four.
+//
+// HONEST CEILING: prose lints are inherently reword-evadable — a sufficiently
+// novel paraphrase of "you may tear down early" that uses none of the permission
+// cues above will still pass. This lint raises the bar to "the common affirmative
+// re-intros red AND the ban's positive framing is pinned"; the BEHAVIORAL oracle
+// for the ban surviving is the live-e2e run (AC-1), not this structural lint.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	claude := vendoredSkillFiles(t)["first-officer/references/claude-first-officer-runtime.md"]
 	region := sectionAfter(claude, "## Awaiting Completion")
@@ -275,9 +293,7 @@ func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	if !strings.Contains(region, "emit `TeamDelete`") {
 		t.Error("Awaiting Completion must still ban emitting TeamDelete before the completion signal arrives")
 	}
-	// The ban is a `- emit `TeamDelete`` bullet under the "Do not:" prohibition,
-	// with the premature-teardown rationale. An inverted ban that keeps the token
-	// but flips the framing drops one of these.
+	// (1) Positive framing anchors.
 	if !strings.Contains(region, "Do not:") {
 		t.Error("Awaiting Completion must keep the negative `Do not:` framing that governs the TeamDelete ban")
 	}
@@ -287,16 +303,21 @@ func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
 	if !strings.Contains(region, "tearing down is premature") {
 		t.Error("the TeamDelete ban must keep its premature-teardown rationale (the semantic that pins it as a ban, not a directive)")
 	}
-	// Forbid the affirmative re-introductions that flip the ban into a directive.
+	// (2) Affirmative-permission co-occurrence scan: any LINE pairing a permission
+	// cue with a TeamDelete reference is an affirmative re-intro, regardless of the
+	// exact wording. The legitimate `- emit `TeamDelete`` ban bullet carries NO
+	// permission cue, so it is not flagged; an inverted "it is fine to go ahead and
+	// call `TeamDelete` right now" line carries both and reds.
+	permissionCues := []string{"fine to", "go ahead", "should", "may ", "ok to", "okay to", "feel free", "allowed to"}
 	lower := strings.ToLower(region)
-	for _, affirm := range []string{
-		"should emit `teamdelete`",
-		"you may emit `teamdelete`",
-		"must emit `teamdelete`",
-		"emit `teamdelete` early",
-	} {
-		if strings.Contains(lower, affirm) {
-			t.Errorf("Awaiting Completion contains the affirmative phrase %q — the pre-completion TeamDelete ban was inverted into a directive", affirm)
+	for _, line := range strings.Split(lower, "\n") {
+		if !strings.Contains(line, "teamdelete") {
+			continue
+		}
+		for _, cue := range permissionCues {
+			if strings.Contains(line, cue) {
+				t.Errorf("Awaiting Completion line pairs a permission cue %q with TeamDelete — the pre-completion ban was inverted into an affirmative directive: %q", strings.TrimSpace(cue), strings.TrimSpace(line))
+			}
 		}
 	}
 }

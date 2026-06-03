@@ -101,11 +101,18 @@ func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 	})
 }
 
-// durationOf evaluates an expression to its real time.Duration, folding the
-// COMPOSITE forms a timeout literal can take: a bare `time.Unit` selector, a
-// `N * time.Unit` (or `time.Unit * N`) multiplication, an ADD/SUB of two
-// duration sub-expressions (so `time.Minute + 30*time.Second` folds to 90s — the
-// audit-cycle-1 M3 hole a MUL-only fold missed), and a parenthesized duration.
+// durationOf evaluates an expression to its real time.Duration, FULLY
+// COMPOSITIONALLY: every sub-expression recurses, so the COMPOSITE forms a
+// timeout literal can take all fold —
+//   - a bare `time.Unit` selector (`time.Second` = a 1× duration),
+//   - a parenthesized duration (`(40 * time.Second)`),
+//   - a `scalar * duration` (or `duration * scalar`) multiplication where the
+//     duration operand is itself folded recursively, so `2 * (40 * time.Second)`
+//     folds to 80s — the audit-cycle-2 hole a MUL branch that demanded a BARE
+//     `time.Unit` operand missed,
+//   - an ADD/SUB of two duration sub-expressions (`time.Minute + 30*time.Second`
+//     = 90s — the audit-cycle-1 hole a MUL-only fold missed).
+//
 // Returns isDuration=false for anything that is not a pure duration expression,
 // so the package's int arithmetic is skipped rather than mis-flagged.
 func durationOf(e ast.Expr) (time.Duration, bool) {
@@ -118,11 +125,18 @@ func durationOf(e ast.Expr) (time.Duration, bool) {
 	case *ast.BinaryExpr:
 		switch ex.Op {
 		case token.MUL:
-			if n, unit, ok := intAndUnit(ex.X, ex.Y); ok {
-				return time.Duration(n) * unit, true
+			// A duration MUL is `scalar * duration` in either order; the duration
+			// operand is folded RECURSIVELY, so a parenthesized or nested duration
+			// (e.g. `2 * (40 * time.Second)`) is not skipped.
+			if n, ok := intScalar(ex.X); ok {
+				if d, ok := durationOf(ex.Y); ok {
+					return time.Duration(n) * d, true
+				}
 			}
-			if n, unit, ok := intAndUnit(ex.Y, ex.X); ok {
-				return time.Duration(n) * unit, true
+			if n, ok := intScalar(ex.Y); ok {
+				if d, ok := durationOf(ex.X); ok {
+					return time.Duration(n) * d, true
+				}
 			}
 			return 0, false
 		case token.ADD, token.SUB:
@@ -142,22 +156,21 @@ func durationOf(e ast.Expr) (time.Duration, bool) {
 	return 0, false
 }
 
-// intAndUnit reports whether `a` is an integer literal and `b` is a time.Unit
-// selector, returning the parsed int and the unit's duration.
-func intAndUnit(a, b ast.Expr) (int64, time.Duration, bool) {
-	lit, ok := a.(*ast.BasicLit)
+// intScalar reports whether e is an integer literal, returning its value. A
+// parenthesized integer literal folds too, so `(2) * time.Second` is handled.
+func intScalar(e ast.Expr) (int64, bool) {
+	if p, ok := e.(*ast.ParenExpr); ok {
+		return intScalar(p.X)
+	}
+	lit, ok := e.(*ast.BasicLit)
 	if !ok || lit.Kind != token.INT {
-		return 0, 0, false
+		return 0, false
 	}
 	n, err := strconv.ParseInt(lit.Value, 0, 64)
 	if err != nil {
-		return 0, 0, false
+		return 0, false
 	}
-	unit, ok := timeUnitDuration(b)
-	if !ok {
-		return 0, 0, false
-	}
-	return n, unit, true
+	return n, true
 }
 
 // timeUnitDuration maps a `time.Nanosecond|Microsecond|Millisecond|Second|
