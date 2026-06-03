@@ -2,5 +2,6 @@
 0
 ===== stdout =====
 status: implementation -> done
+verdict:  -> passed
 
 ===== stderr =====

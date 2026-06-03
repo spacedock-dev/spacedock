@@ -36,7 +36,7 @@ func TestNativeEOFNewlineIdentity(t *testing.T) {
 			env := pinnedEnv(t)
 			nativeRoot := stageFixtureWith(t, "seq-workflow", map[string]string{"eof-entity.md": tc.body})
 
-			args := append([]string{"--workflow-dir", nativeRoot}, "--set", "eof-entity", "status=done")
+			args := append([]string{"--workflow-dir", nativeRoot}, "--set", "eof-entity", "status=done", "verdict=passed")
 			_, nErr, nCode := runNative(t, nativeRoot, env, args...)
 			if nCode != 0 {
 				t.Fatalf("native exit=%d stderr=%q", nCode, nErr)

@@ -38,7 +38,7 @@ func TestNativeConflictWarningParity(t *testing.T) {
 
 	// --set on the conflicting slug resolves via discovery (folder wins) and
 	// emits the warning, without running global validation.
-	args := append([]string{"--workflow-dir", nativeRoot}, "--set", "conflict", "status=done")
+	args := append([]string{"--workflow-dir", nativeRoot}, "--set", "conflict", "status=done", "verdict=passed")
 	nOut, nErr, nCode := runNative(t, nativeRoot, env, args...)
 
 	if !strings.Contains(nErr, "preferring folder form") {

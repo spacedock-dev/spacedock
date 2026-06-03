@@ -132,6 +132,12 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			postUpdateVerdict = strings.TrimSpace(u.value)
 		}
 	}
+	postUpdateStatus := strings.TrimSpace(currentFields["status"])
+	for _, u := range set.updates {
+		if u.field == "status" && u.hasValue {
+			postUpdateStatus = strings.TrimSpace(u.value)
+		}
+	}
 
 	if (modBlock != "" || clearingModBlock) && !force {
 		if isTerminalUpdate() {
@@ -159,6 +165,24 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	policy, perr := resolveMergePolicy(roots.definitionDir)
 	if perr != nil {
 		return errExit(stderr, perr.Error())
+	}
+
+	// Verdict gate: a terminal stage carries a finalized judgement, so refuse a
+	// --set that lands the entity in a terminal stage with no verdict (neither
+	// already set nor set in the same call). This is the mechanism behind
+	// shared-core's terminalize step (`completed verdict={verdict}`): without it
+	// an FO can advance status to a terminal stage and leave verdict empty (the
+	// live sonnet cycle's `status=done started` with no verdict). --force is the
+	// same escape hatch the mod-block / merge-hook guards honor. Policy-independent
+	// and composes with those guards — it checks the resulting state's status
+	// against the declared terminal stages, so it is a no-op when the workflow
+	// declares no stages block. Placed AFTER the merge-policy parse so an invalid
+	// `merge:` value (a workflow-config error) is still reported first.
+	if !force && terminalNames[postUpdateStatus] && postUpdateVerdict == "" {
+		return errExit(stderr, fmt.Sprintf(
+			"entity %s cannot advance to terminal stage '%s' without a verdict. "+
+				"Set verdict in the same --set call, or use --force.",
+			slug, postUpdateStatus))
 	}
 	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]

@@ -316,7 +316,7 @@ func TestSplitRootDefinitionDirModArmsGuard(t *testing.T) {
 		})
 		writeMergeMod(t, def)
 
-		out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review")
+		out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "verdict=passed")
 		if code != 1 {
 			t.Fatalf("terminal --set exit=%d, want 1 (def-dir merge mod must arm guard)\nstdout=%q stderr=%q", code, out, stderr)
 		}
@@ -366,8 +366,10 @@ func TestSplitRootStateDirModDoesNotRegister(t *testing.T) {
 		t.Fatalf("--boot should show MODS: none (state-dir mod must not register); got\n%s", bootOut)
 	}
 
-	// The terminal transition succeeds: the guard is unarmed.
-	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review")
+	// The terminal transition succeeds: the guard is unarmed. (A verdict is
+	// supplied so the policy-independent verdict gate does not intercept — this
+	// test targets the merge-hook guard being unarmed, not verdict absence.)
+	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "verdict=passed")
 	if code != 0 {
 		t.Fatalf("terminal --set exit=%d, want 0 (state-dir mod must not arm guard)\nstdout=%q stderr=%q", code, out, stderr)
 	}
@@ -404,7 +406,7 @@ func TestSplitRootMigrationNoGap(t *testing.T) {
 	}
 
 	// The terminal guard fires: the hook stayed registered through the migration.
-	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review")
+	out, stderr, code := runNative(t, def, env, "--workflow-dir", def, "--set", "add-login", "status=review", "verdict=passed")
 	if code != 1 {
 		t.Fatalf("terminal --set exit=%d, want 1 (hook must stay registered through migration)\nstdout=%q stderr=%q", code, out, stderr)
 	}
