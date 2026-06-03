@@ -4,10 +4,10 @@ title: Sonnet live-CI fails with a repeatable shape — FO subprocess ends its t
 status: validation
 source: session-10 — identical failure shape on PR #275 (n3 frontmatter-hash-quoting) and PR #277 (2a require-external-proof-guard); both offline-green + opus-green + sonnet-red. Two matching failures = mechanism issue, not random flake. Blocks merging n3 + 2a into 0.19.5.
 score: "0.19"
-worktree: .worktrees/spacedock-ensign-sonnet-live-ci-flake
+worktree:
 started: 2026-06-03T07:09:59Z
-completed:
-verdict:
+completed: 2026-06-03T14:30:41Z
+verdict: PASSED
 issue:
 mod-block:
 pr: "#282"
