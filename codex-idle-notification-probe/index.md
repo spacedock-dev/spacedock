@@ -1,13 +1,13 @@
 ---
 id: gnanx8t260dyax3x6s841bgc
 title: Make the Codex no-wait subagent completion behavior retryable
-status: validation
+status: done
 source: "captain (2026-06-03) — dogfood session found Codex may queue subagent completion notifications without explicit wait_agent; document a repeatable idle-wake probe in case Codex changes behavior"
 started: 2026-06-03T16:09:19Z
-completed:
-verdict:
+completed: 2026-06-03T21:30:06Z
+verdict: PASSED
 score: "0.26"
-worktree: .worktrees/spacedock-ensign-codex-idle-notification-probe
+worktree:
 issue:
 mod-block:
 pr: "#283"
