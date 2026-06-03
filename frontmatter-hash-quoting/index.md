@@ -11,31 +11,82 @@ worktree:
 issue:
 ---
 
-The frontmatter writer (`status --set`, and the seed/Write path) does not quote values that strict YAML would misparse. The line-hack status parser tolerates them, but strict YAML readers — GitHub's frontmatter renderer AND s0's own inline-comment strip — do not. Two classes observed live this session:
+The frontmatter writer used to emit `pr: #260` and `source: a: b` bare, so strict YAML readers (the new yaml.v3 reader landed in zj, GitHub's frontmatter renderer) read them as a comment-only line and a nested mapping respectively. zj (PR #274, just shipped at HEAD `75cc2b81`) closes the writer side of both classes at `internal/status/mutate.go` (`needsExplicitQuoting` + `setScalarValue`): a value with a leading `#`, an internal `: ` (colon-space), or a ` #`/`\t#` inline-comment trigger is double-quoted on every write. New writes are safe; the live in-session smoke confirmed it (this session set `pr=#273` PLAIN on qs and the writer round-tripped the value correctly).
 
-1. **Leading `#` → comment.** The pr-merge mod records `pr=#{N}`; `status --set pr=#260` writes it bare (`pr: #260`); s0's (#254) comment-strip then reads `#260` as a YAML comment → `pr` reads **empty**. Consequences: `status --where "pr !="` returns `[]` so the **pr-mod merge-detection silently misses every PR-pending entity**, and the terminal guard refuses a genuinely-merged entity ("pr field is empty"). Hit on jg #260 (terminalize blocked) and #258/#259 (invisible to merge-detection until re-quoted).
-2. **Internal `: ` (colon-space) → mapping.** A free-text value like `source: captain — reproduced LIVE: codex ...` parses, under strict YAML, as a nested mapping (`LIVE:` becomes a key) → GitHub renders the frontmatter as **"object not allowed"** (captain-observed on the state-branch entity views / PR audit links). The `source:` field is the prime victim (it routinely contains colons).
+What's left for n3, post-zj, is the legacy-data side: 13 archived entities still carry bare `pr: #N` values written before zj's writer policy. They are terminal (archived, never re-written by `--set`), but the yaml.v3 reader returns their `pr` field as the empty string and GitHub renders them broken. A one-time re-quote pass fixes them; no writer or contract change is needed.
 
-The AC-4 design (debrief 04) claimed "the writer auto-quotes `#`-bearing values to round-trip," but the gap is broader: it covers neither *leading*-`#` nor internal colon-space, and the same applies to other YAML indicators.
+## Current state (audited)
 
-**Workaround applied to live state (not a fix):** store quoted values (`pr="#N"`, `source="..."`). This session: re-quoted #258/#259 `pr`, terminalized jg, and quoted the `source:` of the three active colon-bearing entities (codex-plugin-list-parse-drift, orphan-status-drift, this one).
+- **Writer-quoting shipped (zj, post-zj baseline).** `needsExplicitQuoting` at `mutate.go:218-239` returns true for: a leading `#`, an internal `: `, a ` #`/`\t#` inline-comment trigger. `setScalarValue` at `mutate.go:199-216` applies `yaml.DoubleQuotedStyle` when it returns true. Confirmed by reading `internal/status/mutate.go` at HEAD and verified live: this session's `spacedock status --set qs pr=#273` PLAIN auto-quoted to `pr: "#273"` and round-trips.
+- **FO contract has no `pr='"#N"'` workaround to remove.** The pr-merge mod at `docs/dev/_mods/pr-merge.md:64` writes the value PLAIN today: `spacedock status --workflow-dir docs/dev --set {slug} pr=#{N}`. The first-officer shared core writes the local-merge sentinel PLAIN: `pr=local-merge:{short-sha}` (single colon, no following space → not a hazard). A repo-wide grep of `skills/`, `docs/dev/_mods/`, `mods/` for `pr='?"#`, `pr=\"#`, `pr='#` finds zero hits. The `pr="#260"` form the original entity body cited as a "workaround applied to live state" was a captain-typed escape on individual entity files before zj shipped, not contract text — there is nothing to delete.
+- **Legacy values that still misread, surveyed exhaustively.** A raw-vs-yaml.v3 audit (mimicking the production reader; throwaway scanner, deleted) over all 78 frontmatter blocks in `docs/dev/.spacedock-state/` (21 active + 57 archived) returns EXACTLY 13 hazards, all of class "bare `pr: #N`", all in archived entities — listed in the migration table below. The four other classes (colon-space `: `, `#`-comment inline trigger ` #`/`\t#`, other YAML indicators `! & * | > % @ \`` , leading/trailing whitespace) had ZERO matches anywhere. The session's earlier hand-fix of `_archive/front-door-plugin-dir/index.md`'s colon-bearing `source:` value (zj's spike's single live-parse hazard) is in the audit's clean baseline.
 
-## Fix direction (ideation hardens)
-- Preferred: the frontmatter writer auto-quotes any value strict YAML would misparse — a leading `#`/`!`/`&`/`*`/`>`/`|`/`%`/`@`/`` ` ``, a leading or trailing space, AND an internal `: ` (colon-space) — for every field, not only `pr`.
-- Plus a one-off **re-quote migration** of existing affected entities (active AND archived) — many archived `source:` values carry colons and render broken on GitHub today.
-- Alternatives to weigh: have the pr-merge mod record `pr="#{N}"` (narrow); reader-tolerate (doesn't fix GitHub render). Preferred is the writer fix — it makes ALL fields safe and is the only option that fixes the GitHub-render half.
+## Migration table (the 13 affected archived entities)
 
-## Acceptance criteria (provisional — harden at ideation)
+All status `done`, all hand-fixed by re-writing the line `pr: #N` → `pr: "#N"` in the state checkout. No `--set` invocation — these are terminal, the file is the artifact, the write is a single sed-equivalent line edit.
 
-**AC-1 — leading-`#` values round-trip.** `status --set field=#value` (e.g. `pr=#260`) writes a form that reads back the same value; `status --where "field !="` sees it; the pr-mod merge-detection + terminal guard work without manual re-quoting.
-Verified by: a round-trip + merge-detection test over a `pr=#N` entity, failing against the current bare-write and passing after.
+| slug | bare value | quoted value |
+|---|---|---|
+| architecture-review-cleanups | `pr: #247` | `pr: "#247"` |
+| claude-runtime-segregation | `pr: #246` | `pr: "#246"` |
+| cli-cobra-redesign | `pr: #241` | `pr: "#241"` |
+| cli-ergonomics | `pr: #242` | `pr: "#242"` |
+| host-neutrality-seam | `pr: #244` | `pr: "#244"` |
+| init-upgrade-and-contract-remedy | `pr: #240` | `pr: "#240"` |
+| live-e2e-pr-trigger-ergonomics | `pr: #245` | `pr: "#245"` |
+| merge-ceremony-ergonomics | `pr: #255` | `pr: "#255"` |
+| mods-definition-dir-location | `pr: #252` | `pr: "#252"` |
+| no-hidden-machine-dependencies | `pr: #249` | `pr: "#249"` |
+| ship-working-principles-in-contract | `pr: #248` | `pr: "#248"` |
+| split-root-collaboration-remote-resume | `pr: #256` | `pr: "#256"` |
+| status-enumeration-and-validation | `pr: #254` | `pr: "#254"` |
 
-**AC-2 — colon-bearing values are GitHub-YAML-parseable.** A `source:` (or any field) value containing `: ` is written quoted so a strict YAML parser reads it as a single scalar (no "object not allowed").
-Verified by: a strict-YAML parse test over a written entity with a colon-bearing field; assert it parses as a scalar.
+The set is small enough to hand-fix in one path-scoped state commit per file (or one path-scoped sweep) without writing a migration helper. A helper would be more code than the data it migrates, and zj's writer-quoting prevents the class from re-introducing itself.
 
-**AC-3 — existing affected entities are migrated.** A one-off pass re-quotes the colon/`#`-bearing frontmatter values across active + archived entities so the state branch renders cleanly on GitHub.
-Verified by: a scan asserting no active/archived entity has an unquoted colon-space or leading-`#` frontmatter value.
+## Acceptance criteria
+
+**AC-1 — every active + archived entity in `docs/dev/.spacedock-state/` round-trips its frontmatter `pr` field through a strict yaml.v3 read.** The 13 archived `pr: #N` entries above are re-quoted to `pr: "#N"`; no remaining `pr:` line decodes to the empty string when the file is parsed.
+Verified by: `spacedock status --workflow-dir docs/dev --include-archive --where "pr !="` returns a non-empty result (today it returns zero entities), and the row count matches the count of files that carry a `pr:` line. A throwaway raw-vs-yaml.v3 scan over the state-checkout tree, run from the captain's terminal, reports zero `pr`-empty-but-line-present mismatches.
+
+**AC-2 — the regression class is pinned by a Go test in `internal/status`.** A test asserts that for every `*/index.md` under `internal/status/testdata/` (existing fixtures), `parseFrontmatter` returns a non-empty value for any frontmatter key whose raw line is non-empty after the `key:` prefix and not a comment-only line. The same test catches a fresh-future leading-`#` regression in the writer policy.
+Verified by: a new `internal/status/no_yaml_silent_drop_test.go` adds `TestNoSilentYAMLValueDrop` that walks `testdata/`, parses each entity through `ParseFrontmatter`, and asserts no key with a raw non-empty value decodes to `""`. Adding a fixture with bare `pr: #99` makes the test fail; quoting it makes it pass. Test is green at HEAD against existing fixtures.
+
+**AC-3 — the legacy-data correction is committed to the state branch and visible on GitHub.** The 13 re-quoted entities land in `spacedock-state/dev` (path-scoped, one commit covering all 13 files is fine — they are terminal archive entities, no concurrent writer). GitHub's frontmatter rendering of any of the 13 entity URLs no longer shows an empty `pr:` row.
+Verified by: a `git log -- docs/dev/.spacedock-state/_archive/architecture-review-cleanups/index.md` shows the re-quote commit; opening one of the 13 entity files on GitHub renders the `pr` field as the quoted scalar string (`#247`), not as an empty value or a YAML error. The captain spot-checks one URL.
+
+## Out of scope
+
+- Re-implementing what zj already shipped (writer-quoting for `#`-leading + `: ` + ` #`/`\t#`).
+- Modifying yaml.v3 reader behavior (which is now the production reader; loud parse-failure on malformed input is the divergence #4 contract zj documented).
+- Other YAML-indicator classes not observed in any real value (`!`, `&`, `*`, `|`, `>`, `%`, `@`, backtick, leading/trailing space) — zero hits across 78 entities; deferred until a real hit appears, at which point zj's `needsExplicitQuoting` is the one place to extend.
+- The captain-mentioned colon-bearing `source:` GitHub-render issue beyond the single hand-fixed `_archive/front-door-plugin-dir/index.md` — that file already carries the quoted form in the current state checkout, and no other entity has the hazard.
+- A migration helper / walk-and-quote tool — 13 hand edits is cheaper than the helper + its idempotency test, and zj's writer prevents the class from re-introducing itself.
+
+## Test plan
+
+- **AC-1 verification — throwaway audit script.** A short Go program (or a `go run` snippet against `gopkg.in/yaml.v3`) walks the state checkout, parses each FM, and asserts zero `pr`-empty-but-line-present cases. Cost: trivial; runs in under a second over 78 files. Lives in `/tmp/` and is deleted after the implementer confirms 0 hits — it is the audit's run, not a test that ships.
+- **AC-2 verification — Go test in `internal/status`.** `TestNoSilentYAMLValueDrop` in a new `no_yaml_silent_drop_test.go`. Uses `filepath.WalkDir` over `testdata/`, opens each `index.md`-shaped file, isolates the FM via the existing `frontmatterSlice` helper, parses via `ParseFrontmatter`, and asserts that for every key whose raw `key:` line has a non-empty post-`:` substring (after trimming whitespace and stripping a leading-`#` inline-comment-only line), the decoded value is non-empty. To validate the test catches a real regression, the implementer adds a temporary `testdata/no-silent-drop-regression/index.md` fixture with `pr: #99` (bare), runs `go test ./internal/status -run TestNoSilentYAMLValueDrop` and watches it FAIL, then changes the fixture to `pr: "#99"` and watches it PASS. Cost: low (one new file, ~40 lines, no new dependencies). Altitude is right: the claim is about the reader-vs-writer contract, and the test exercises the actual reader on actual fixture files.
+- **AC-3 verification — git log + GitHub spot check.** No test framework needed; the verification is the commit landing and a captain-driven URL spot check on one of the 13 entities. Cost: trivial.
+
+**Total cost: LOW.** No new behavior in the binary; one Go test (~40 lines) plus 13 one-line hand edits in archived entity files. No fixture, CLI, or live-workflow tests beyond AC-2's unit test.
+
+## No spike needed
+
+zj already exercised the load-bearing mechanism (a yaml.v3 round-trip on real entities, including the leading-`#` writer-quoting and the colon-space writer-quoting) at its ideation. The throwaway audit script I ran for AC-1 (78 files scanned, 0 parse errors, 13 known-class mismatches) IS the post-zj exercise of the only remaining unknown: "are there hazard classes zj's spike missed?" Answer: no — the same hazard zj found (and resolved at the writer) is the entire legacy-data residue. The implementation composes proven behavior: the existing reader, the existing writer, and 13 one-line edits.
 
 ## Notes
-- `internal/status` lane (the frontmatter writer/quoting — mutate.go / frontmatter.go). Coordinate with the other status-lane items (terminal-guard-rejected-consistency, 2a).
-- 0.19.4-class per FO recommendation (don't delay the 0.19.3 codex/--plugin-dir patch; the workaround holds) — unless the captain folds it in.
+- `internal/status` lane (the regression-guard test + the legacy-data edits). No coordination needed with other status-lane items; the writer-policy lane (zj) is done.
+- 0.19.4-class per FO recommendation — but the work has shrunk to 13 one-line edits + 1 test, so a fold into 0.19.3 is also reasonable if the captain wants.
+
+## Stage Report: ideation
+
+- DONE: The scope is sharpened against the CURRENT post-zj baseline.
+  Read `internal/status/mutate.go` at HEAD `75cc2b81`: `needsExplicitQuoting` (lines 218-239) returns true for leading-`#`, internal `: ` (colon-space), AND ` #`/`\t#` inline-comment trigger; `setScalarValue` (lines 199-216) applies `DoubleQuotedStyle` when true. Confirmed in the body's "Current state (audited)" section. Repo-wide grep of `skills/`, `docs/dev/_mods/`, `mods/` for `pr='?"#`, `pr=\"#`, `pr='#` returns zero hits — the FO contract has no workaround to remove (the pr-merge mod and the FO core both write `pr=#{N}` and `pr=local-merge:{short-sha}` PLAIN, relying on zj's writer). A throwaway raw-vs-yaml.v3 audit over all 78 frontmatter blocks in `docs/dev/.spacedock-state/` returns EXACTLY 13 hazards, all class "bare `pr: #N`", all archived — listed in the body's migration table. Zero other hazard classes anywhere (colon-space, ` #` inline trigger, other YAML indicators).
+- DONE: The ACs are entity-level and each cites a runnable check outside the entity body.
+  AC-1 (`docs/dev/.spacedock-state/` is hazard-free) is verified by `spacedock status --workflow-dir docs/dev --include-archive --where "pr !="` returning a non-empty result (currently zero — the bug) plus a raw-vs-yaml audit reporting zero mismatches. AC-2 (regression-guard test) is verified by a new `TestNoSilentYAMLValueDrop` in `internal/status/no_yaml_silent_drop_test.go` that walks `testdata/`, asserts no key with a raw non-empty value decodes to `""`, and is exercise-validated by a temporary `pr: #99` fixture making it FAIL then `pr: "#99"` making it PASS. AC-3 (the 13 archived entities re-quoted and visible on GitHub) is verified by `git log` showing the commit and a captain spot-check on one of the 13 entity URLs.
+- DONE: A test plan that names Go-test verifications.
+  AC-2 names `TestNoSilentYAMLValueDrop` in `internal/status/no_yaml_silent_drop_test.go`. AC-1's audit is a throwaway `go run` script that does not ship. AC-3 is a git log + URL spot check. "No spike needed" is recorded with the proven mechanism: zj's spike already exercised yaml.v3 round-trip + writer-quoting on real entities; the throwaway audit I ran for this ideation is the post-zj exercise of "are there hazard classes zj missed?" — answer: no. Total cost LOW: 13 one-line edits + ~40 lines of Go test.
+
+### Summary
+
+Sharpened against the post-zj baseline: zj's writer-quoting at HEAD `75cc2b81` already covers leading-`#`, colon-space, and ` #`/`\t#`; the FO contract already writes `pr=#{N}` PLAIN with zero workaround sites to remove (confirmed by a repo-wide grep). What remains for n3 is the legacy-data residue: a raw-vs-yaml.v3 audit over all 78 frontmatter blocks in `docs/dev/.spacedock-state/` returns exactly 13 archived entities with bare `pr: #N` (yaml.v3 reads them as empty), and zero other hazard classes anywhere. ACs land at AC-1 (hazard-free state checkout, verified by a raw-vs-yaml scan + a `--where "pr !="` query that today returns zero), AC-2 (a new `TestNoSilentYAMLValueDrop` in `internal/status` pins the regression class on `testdata/`), and AC-3 (the 13 entity files re-quoted and visible on GitHub, verified by git log + spot check). No migration helper, no contract edit, no writer change — total work shrinks to ~40 lines of test + 13 one-line edits, scope honestly reflects that.
