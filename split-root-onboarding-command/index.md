@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-split-root-onboarding-command
 issue:
 started: 2026-06-03T07:09:59Z
 mod-block: merge:pr-merge
+pr: "#279"
 ---
 
 Captain validated split-root on a real repo (DataRecce/recce, isolated clone): zero-churn confirmed (code branch `git status` stays empty, log never sees a state commit), the fresh-clone halt-gate fires correctly, and `spacedock state init` re-checks-out the orphan worktree (`present:false` → `present:true`) on a real 90M repo. The gap is **onboarding**:
