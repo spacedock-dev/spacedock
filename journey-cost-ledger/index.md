@@ -155,3 +155,16 @@ Fixed the AC-5 guard so matching substrings in comments no longer count as relea
 Recommendation: PASSED. `go test ./...` and `go test ./... -race` each passed 888 tests across 13 packages; the focused AC command passed 12 tests across 3 packages, and detached adversarial edits now fail for executable-builder and executable-publish proof.
 
 Formatting note: `gofmt -l ./cmd ./internal` still reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`; validation left code unchanged rather than rewriting pre-existing unrelated formatting drift.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Re-key the ledger around a host-neutral scenario/spec ID, with executor/run variants carrying mode, runtime, host, model, and metrics_state.
+  Commit 80e41ace changes records to `scenario_id`, groups release ledgers under `scenarios[].observations[]`, and carries mode/runtime/executor/host/model per observation.
+- DONE: Update golden/release-tool tests so an 8y seed scenario sample is one logical scenario with Claude and Codex observations, not two host-prefixed journeys.
+  Commit 80e41ace updates the golden ledger and release-tool test so `gate-guardrail` has one scenario and two Claude/Codex observations.
+- DONE: Preserve measured versus characterized behavior, including Codex no-budget policy, and rerun focused plus full Go gates.
+  Focused tests passed 27 tests; live-tag compile path passed 5 tests; `go test ./...` and `go test ./... -race` each passed 889 tests across 13 packages.
+
+### Summary
+
+Reworked the cost ledger around host-neutral scenario identity instead of host-prefixed journey IDs. The release artifact now represents Claude measured and Codex characterized runs as observations of the same seed scenario, while the Codex characterized token-budget rejection remains covered.
