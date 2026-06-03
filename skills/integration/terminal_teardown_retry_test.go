@@ -32,39 +32,72 @@ import (
 func TestTerminalTeardownRetriesToSuccess(t *testing.T) {
 	files := vendoredSkillFiles(t)
 
-	// negatingPhrases are the inversion fingerprints — the exact mandate the #275
+	// negatingPhrases are the inversion fingerprints — the exact mandates the #275
 	// bug followed. Their PRESENCE in a terminal-teardown region means the contract
-	// was inverted back to the hang. Lower-cased; the regions are matched lower.
+	// was inverted (cycle-1) or gutted (cycle-2) back to the hang. Lower-cased; the
+	// regions are matched lower.
 	negatingPhrases := []string{
+		// cycle-1 inversions: give up on the first failure / no retry.
 		"end the turn on the first",    // the inverted directive
 		"do not call teamdelete again", // the inverted no-retry directive
 		"do not re-send",               // the inverted no-cooperative-reshutdown directive
 		"do not retry",                 // any flat no-retry directive in this region
 		"stop at the first",            // give-up-on-first-failure phrasing
+		// cycle-2 gut-edits: the millisecond re-race + the non-interactive hang.
+		// NB: do NOT add a bare "immediately re-fire" — the CORRECT prose says
+		// "do NOT immediately re-fire", so that fingerprint would false-positive.
+		// The gut-edit's directive is the affirmative "immediately call TeamDelete
+		// again" (no leading "do NOT"), which correct prose never contains.
+		"immediately call teamdelete again",       // re-fire with no settle (re-loses the race, #275)
+		"surface to the captain and end the turn", // non-interactive cap-exhaustion hang
 	}
 
 	// Shared core, step 10 in Merge and Cleanup. Scope to step 10 ALONE — the
 	// other nine steps legitimately contain no retry language, and an inverting
 	// edit lands inside step 10, so a whole-section scope would dilute the signal.
+	// Then DROP the trailing delegation sentence ("…are the adapter's"): it NAMES
+	// settle/cap/non-interactive-exit while delegating them to the adapter, so a
+	// required-phrase that matched only there would let a gut-edit of the
+	// behavioral mandate pass green (the cycle-2 hole). The load-bearing clauses
+	// must appear in the BEHAVIORAL prose, not the delegation tail.
 	core := files["first-officer/references/first-officer-shared-core.md"]
 	step10 := numberedStep(sectionAfter(core, "## Merge and Cleanup"), 10)
 	if step10 == "" {
 		t.Fatal("FO shared core missing Merge-and-Cleanup step 10 (terminal teardown)")
 	}
-	assertDirectionalMandate(t, "shared-core step 10", step10, negatingPhrases,
-		[]string{"retry the team-teardown call to success", "Do NOT end the turn", "settle", "attempt cap"})
+	step10Behavioral := stripDelegationTail(step10)
+	assertDirectionalMandate(t, "shared-core step 10", step10Behavioral, negatingPhrases,
+		[]string{
+			"retry the team-teardown call to success",                   // retry-to-success
+			"Do NOT end the turn",                                       // no give-up-on-first-failure
+			"wait a short settle interval before the next teardown",     // inter-attempt settle (load-bearing, not delegated)
+			"keep settling and retrying the teardown until it succeeds", // non-interactive cap-exhaustion exit obligation
+			"attempt cap", // bounded fast retries
+		})
 
 	// Claude runtime: the Awaiting-Completion section already bans retrying
 	// TeamDelete BEFORE the completion signal (the pre-completion wait phase). The
 	// fix must distinguish that from the TERMINAL teardown phase, where TeamDelete
-	// MUST be retried to success. Scope to the `## Terminal Team Teardown` section.
+	// MUST be retried to success WITH an inter-attempt settle and a non-interactive
+	// exit obligation. Scope to the `## Terminal Team Teardown` section. There is no
+	// delegation tail here (the Claude runtime IS the adapter realization), so the
+	// behavioral phrases are asserted directly.
 	claude := files["first-officer/references/claude-first-officer-runtime.md"]
 	teardown := sectionAfter(claude, "## Terminal Team Teardown")
 	if teardown == "" {
 		t.Fatal("Claude FO runtime missing the `## Terminal Team Teardown` section (the retry-to-success realization of shared-core step 10)")
 	}
 	assertDirectionalMandate(t, "Terminal Team Teardown", teardown, negatingPhrases,
-		[]string{"TeamDelete", "active member", "do NOT end the turn", "cap"})
+		[]string{
+			"TeamDelete",                          // names the call it retries
+			"active member",                       // names the race it retries past
+			"do NOT end the turn",                 // no give-up-on-first-failure
+			"wait for the settle before the next", // inter-attempt settle mandate
+			"sleep 2",                             // the concrete settle the gut-edit removes
+			"keep the settle-then-",               // non-interactive loop obligation (settle-then-TeamDelete loop)
+			"until `TeamDelete` succeeds",         // …kept going until success, not abandoned
+			"cap",                                 // bounded fast retries
+		})
 }
 
 // assertDirectionalMandate fails if any negating (inverted-mandate) phrase is
@@ -85,6 +118,33 @@ func assertDirectionalMandate(t *testing.T, label, region string, negating, requ
 			t.Errorf("%s missing required directional-mandate phrase %q", label, req)
 		}
 	}
+}
+
+// stripDelegationTail removes the trailing "…are the adapter's" delegation
+// sentence from a teardown step. That sentence NAMES the load-bearing concepts
+// (settle interval, cap value, non-interactive exit obligation) while delegating
+// their realization to the adapter — so a required-phrase that matched only there
+// would let a gut-edit of the BEHAVIORAL mandate pass green (the cycle-2 hole).
+// Dropping it forces the behavioral phrases to be asserted against the actionable
+// prose. If the delegation sentence is absent, the region is returned unchanged.
+func stripDelegationTail(region string) string {
+	// Target the FINAL "are the adapter's" — the trailing delegation sentence.
+	// Step 10 also says "(roster and decomposition are the adapter's)" near its
+	// start, so the first occurrence is the wrong one; the delegation tail is
+	// always the last.
+	marker := "are the adapter's"
+	idx := strings.LastIndex(region, marker)
+	if idx < 0 {
+		return region
+	}
+	// Cut back to the start of the sentence containing the marker. Sentences in
+	// this prose end with ". " or ".** "; find the last sentence boundary before
+	// the marker and drop everything from there.
+	head := region[:idx]
+	if cut := strings.LastIndex(head, ". "); cut >= 0 {
+		return region[:cut+1]
+	}
+	return region[:idx]
 }
 
 // numberedStep returns the body of the markdown ordered-list item beginning
