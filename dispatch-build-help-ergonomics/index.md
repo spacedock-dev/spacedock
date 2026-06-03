@@ -124,3 +124,16 @@ Completed ideation for a narrow help-routing fix. The current failure is a dispa
 ### Summary
 
 Implemented the help-only dispatch router change in `internal/dispatch`: `build` and `show-stage-def` now detect `-h`/`--help` before required operational flag validation and print focused stdout usage. Added focused help tests and tightened the missing-flag guard; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all completed successfully.
+
+## Stage Report: validation
+
+- DONE: AC-1 and AC-3 help output behavior is verified with command or test evidence.
+  Recommendation: PASSED. `go test ./internal/dispatch ./internal/cli` passed 324 tests across 2 packages, including the new `TestDispatchBuildHelpBeforeRequiredFlags` and `TestDispatchShowStageDefHelpBeforeRequiredFlags` coverage for `--help` and `-h`. Direct command checks also passed: `go run ./cmd/spacedock dispatch build --help`, `go run ./cmd/spacedock dispatch build -h`, `go run ./cmd/spacedock dispatch show-stage-def --help`, and `go run ./cmd/spacedock dispatch show-stage-def -h` all exited 0 and printed usage. A temporary built binary confirmed `dispatch build --help` and `dispatch show-stage-def --help` each exited 0, wrote usage to stdout, and wrote 0 stderr bytes. The `build --help` output includes `--workflow-dir`, stdin JSON, `schema_version`, `entity_path`, `workflow_dir`, `stage`, and `checklist`.
+- DONE: AC-2 missing required flags still fail with the existing diagnostics.
+  Recommendation: PASSED. The temporary built binary verified exact real-command failures: `dispatch build` exited 2 with empty stdout and `error: dispatch build requires --workflow-dir`; `dispatch show-stage-def` exited 2 with empty stdout and `error: dispatch show-stage-def requires --workflow-dir and --stage`. `TestRequiredFlagGuard` also passed in the focused package run.
+- DONE: AC-4 help-only scope is checked against changed files and existing dispatch behavior tests.
+  Recommendation: PASSED. `git diff --name-status origin/next...HEAD` shows only `internal/dispatch/dispatch.go`, `internal/dispatch/guard_test.go`, and `internal/dispatch/help_test.go` changed. The production delta is help detection and help text in the dispatch router; `internal/dispatch/build.go` and `internal/dispatch/showstagedef.go` are unchanged, so JSON ingest semantics and stage extraction behavior are not modified. Existing dispatch and CLI coverage passed via `go test ./internal/dispatch ./internal/cli`; repo-wide gates also passed via `go test ./...` and `go test ./... -race`, each reporting 885 tests across 12 packages. `gofmt -l ./cmd ./internal` produced no output.
+
+### Summary
+
+Validation PASSED for code branch HEAD `9f9a7ef0`. All acceptance criteria are satisfied by focused tests, direct command evidence, exact missing-flag exit checks, changed-file scope review, and full repo gates.
