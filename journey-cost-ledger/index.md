@@ -168,3 +168,18 @@ Formatting note: `gofmt -l ./cmd ./internal` still reports `internal/hostneutral
 ### Summary
 
 Reworked the cost ledger around host-neutral scenario identity instead of host-prefixed journey IDs. The release artifact now represents Claude measured and Codex characterized runs as observations of the same seed scenario, while the Codex characterized token-budget rejection remains covered.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify the ledger schema and golden output use one host-neutral 8y seed scenario with Claude and Codex observations, not host-prefixed logical journey IDs.
+  `TestAggregateLedgerMatchesGolden`, `TestJourneyCostsCommandWritesVersionedLedger`, and golden JSON inspection confirm one `gate-guardrail` scenario with Claude/Codex observations and no `claude-gate-guardrail` or `codex-gate-guardrail` logical IDs.
+- DONE: Re-check measured versus characterized behavior, especially Codex characterized token-budget rejection and absence of Codex token-cost claims.
+  `TestCodexFixtureIsCharacterizedNotMeasured` passed; a throwaway audit failed as expected when Codex characterized records claimed `Tokens.Total=1`, while the golden keeps Claude measured token/cost fields only.
+- DONE: Rerun focused scenario-key tests plus full repo gates, and write a PASSED or REJECTED validation report with AC coverage.
+  Recommendation: PASSED. Focused metrics/scenario, live-tag parity, release workflow, `go test ./...`, and `go test ./... -race` commands all passed.
+
+### Summary
+
+Recommendation: PASSED. AC-1 via `TestTrackingOptInDoesNotOwnBehaviorOutcome`; AC-2 via the two Claude parser fixture tests; AC-3 via `TestCodexFixtureIsCharacterizedNotMeasured`; AC-4 via `TestAggregateLedgerMatchesGolden`; AC-5 via `TestJourneyCostsCommand*` plus `TestWorkflowsPreserveAndPublishJourneyCosts`; AC-6 via `TestBudgetPolicyIsExplicitAndCoarse`.
+
+The focused scenario-key run passed 11 tests across `internal/journeymetrics`, `cmd/spacedock-release`, and `internal/ensigncycle`; live-tag parity added 1 no-spend coverage test, and the release workflow guard passed directly. A throwaway audit under the assigned worktree failed as expected when the ledger grouped by variant keys (`scenario_count: 2`) and when Codex characterized records claimed tokens. Full gates passed across the repo. Formatting note: `gofmt -l ./cmd ./internal` still reports `internal/hostneutrality/prose_inflator_locks_test.go`, `internal/status/fence_helpers_test.go`, and `internal/status/mutate.go`; validation left code unchanged per validation-only scope.
