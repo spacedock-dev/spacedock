@@ -94,3 +94,16 @@ Designed a release journey cost ledger that reuses selected tests as measurement
 ### Summary
 
 Reworked the ideation gate findings without changing the frontmatter or touching sibling entities. The spec now separates Claude measured parsing, Codex v0 characterization, and release-ledger production through a concrete release-tool path.
+
+## Stage Report: implementation
+
+- DONE: Implement `internal/journeymetrics` opt-in records, aggregation schema, and coarse budget policy with tests for AC-1, AC-4, and AC-6.
+  Commit 2b2e97d4 adds opt-in tracking, budget evaluation, versioned ledger aggregation, and focused tests including the golden ledger.
+- DONE: Implement Claude transcript parsing fixtures and Codex characterization fixtures so AC-2 and AC-3 distinguish measured versus characterized journeys.
+  Commit 2b2e97d4 adds Claude split-row/result fixtures and a Codex `codex-exec.jsonl` characterization fixture.
+- DONE: Wire the release/live CI artifact path through checked release-tool/workflow tests so AC-5 proves `journey-costs-vX.Y.Z.json` is produced and publishable.
+  Commit 2b2e97d4 adds `spacedock-release journey-costs`, live metrics artifact env/upload paths, release asset upload, and workflow guards.
+
+### Summary
+
+Implemented the release journey cost ledger as a checked Go metrics package, release-tool command, host fixture parsers, and live/release workflow path. Verified with `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and a live-tag compile check for the live runner hooks.
