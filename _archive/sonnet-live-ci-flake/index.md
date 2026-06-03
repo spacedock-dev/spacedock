@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block:
 pr: "#282"
+archived: 2026-06-03T14:30:41Z
 ---
 
 The live-e2e CI cycle passes on offline and on opus but **fails on sonnet with a repeatable shape** across two unrelated PRs (n3 #275, 2a #277). The cycle drives the entity to `done` correctly; the FO subprocess self-reports `terminal_reason: completed`, `is_error: false`. But the FO **never exits** — it gets stuck at terminal teardown when its `TeamDelete` fails ("active member(s)") and it does not retry to success. The test fails at `expectExit` ("FO subprocess did not exit within 1m0s"), not at the dispatch-close. Two identical failures on different PRs (plus an identical opus path that only passes by luck) confirm a mechanism issue, not a flake.
