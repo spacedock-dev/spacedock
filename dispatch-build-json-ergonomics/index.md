@@ -173,3 +173,7 @@ Implemented flag/file dispatch input, JSON schema/validate-only support, and non
 ### Summary
 
 Validation reproduced the implementation evidence for the flag/file input path, stdin JSON compatibility, env-derived host behavior, schema/validate-only behavior, and FO runtime doc invariants. The tests prove the current captain-directed behavior, including no silent Claude fallback under missing or ambiguous runtime host sources. Recommendation: PASSED.
+
+### PR Fix Note
+
+PR #287 offline/static failure fixed in code commit `7e9bf645` by making legacy dispatch fixtures supply explicit Claude host instead of inheriting local runtime markers. Verified with host markers removed via the targeted package command and full `go test ./...`, plus normal `go test ./...` and `gofmt -w ./cmd ./internal`.
