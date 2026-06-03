@@ -226,35 +226,62 @@ func (execHost) Launch(argv []string) error {
 	return syscall.Exec(bin, argv, os.Environ())
 }
 
-// installArgvSequence is the 3-command upgrade shape `Install` issues: pin the
-// marketplace source (@ref when a branch is set), uninstall the existing
-// spacedock@spacedock, then install it fresh. The uninstall step is what moves a
-// stale already-installed plugin off — plain `plugin install` no-ops when the
-// plugin is already installed. uninstall is itself a no-op on a fresh box, so the
-// sequence is safe on first install.
-func installArgvSequence(source, branch string) [][]string {
-	return [][]string{
-		{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)},
-		{"plugin", "uninstall", "spacedock@spacedock"},
-		{"plugin", "install", "spacedock@spacedock"},
+// installStep is one entry in the install upgrade sequence: an argv to pass to
+// the host CLI and a per-step tolerateExit flag. When tolerateExit is true,
+// Install treats a non-zero exit as recoverable (appends output, continues);
+// otherwise the non-zero exit aborts Install with a wrapped error. The flag is
+// co-located with the argv so the tolerance decision is visible to tests via
+// installArgvSequence rather than hidden in Install's control flow.
+type installStep struct {
+	argv         []string
+	tolerateExit bool
+}
+
+// installArgvSequence is the 4-command upgrade shape `Install` issues:
+// uninstall any existing spacedock@spacedock first (cause-and-effect — claude
+// tracks an installed plugin via its marketplace record, so the marketplace
+// remove later would orphan a live uninstall), drop the existing marketplace
+// declaration for spacedock (so the next add re-pins the @ref instead of
+// no-op'ing on "already on disk"), pin the marketplace source (@ref when a
+// branch is set), then install fresh. The tolerance asymmetry: BOTH cleanup
+// steps (plugin uninstall + marketplace remove) are tolerated as best-effort,
+// because claude exits 1 on the fresh-box cases ("Plugin not found in
+// installed plugins" for uninstall, "Marketplace 'spacedock' not found" for
+// remove) with no way to distinguish those from real failures via stable
+// stderr matching. BOTH pinning steps (marketplace add + plugin install) stay
+// fail-fast — they are the real-failure backstops that surface a broken
+// install (network, contract incompatibility, missing source).
+func installArgvSequence(source, branch string) []installStep {
+	return []installStep{
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)}},
+		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
 	}
 }
 
-// Install shells the host plugin upgrade sequence (marketplace add + uninstall +
-// install). The marketplace source is pinned to branch via @ref (Claude) when
-// set. Codex installs are not shelled here — runInit emits the documented prose
-// for that host.
+// Install shells the host plugin upgrade sequence (uninstall + marketplace
+// remove + add + install). The marketplace source is pinned to branch via @ref
+// (Claude) when set. The two cleanup steps (uninstall, marketplace remove) are
+// tolerated — their non-zero exits on a fresh-box ("not installed" / "not
+// found") are appended to combined output and the loop continues. The two
+// pinning steps (marketplace add, plugin install) are fail-fast and surface
+// real install failures. Codex installs are not shelled here — runInit emits
+// the documented prose for that host.
 func (execHost) Install(host, source, branch string) (string, error) {
 	if host != "claude" {
 		return "", fmt.Errorf("programmatic install is only supported for claude; codex install is documented prose")
 	}
 	var sb strings.Builder
-	for _, args := range installArgvSequence(source, branch) {
-		cmd := exec.Command(host, args...)
+	for _, step := range installArgvSequence(source, branch) {
+		cmd := exec.Command(host, step.argv...)
 		out, err := cmd.CombinedOutput()
 		sb.Write(out)
 		if err != nil {
-			return sb.String(), fmt.Errorf("%s %s: %w", host, strings.Join(args, " "), err)
+			if step.tolerateExit {
+				continue
+			}
+			return sb.String(), fmt.Errorf("%s %s: %w", host, strings.Join(step.argv, " "), err)
 		}
 	}
 	return sb.String(), nil
