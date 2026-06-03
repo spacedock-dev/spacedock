@@ -154,3 +154,20 @@ Cycle 2 incorporates the captain's host-derivation feedback: Codex derives from 
 ### Summary
 
 Implemented flag/file dispatch input, JSON schema/validate-only support, and non-defaulting host resolution from explicit host fields or `CODEX_THREAD_ID` / `CLAUDECODE`. Updated first-officer runtime docs away from inline shell JSON and added command-level plus instruction-text tests; code is committed as `cfa3b671`.
+
+## Stage Report: validation
+
+- DONE: AC-1 through AC-6 are verified with tests or command evidence outside the task body.
+  AC-1: `TestBuildFlagFileInputModePreservesLiteralChecklist`; AC-2/3/4: `TestBuildHostResolutionFromFlagJSONAndEnv` plus `TestBuildCodexHostPromptShape`; AC-5: `TestBuildSchemaAndValidateOnly`; AC-6: `TestFirstOfficerDispatchDocsUseFlagFileMode`.
+- DONE: Derived Codex/Claude host behavior and conflict/missing-source failures are specifically checked.
+  Focused `go test ./internal/dispatch -run 'TestBuildFlagFileInputModePreservesLiteralChecklist|TestBuildHostResolutionFromFlagJSONAndEnv|TestBuildSchemaAndValidateOnly' -count=1 -v` passed; exact Codex JSON-stdin test rerun as `TestBuildCodexHostPromptShape` passed.
+- DONE: Runtime-doc updates are checked for flag/file mode and banned inline shell JSON examples.
+  `go test ./skills/integration -run TestFirstOfficerDispatchDocsUseFlagFileMode -count=1 -v` passed; `rg` over FO runtime references showed the flag/file and host-derivation text, with no banned inline echo/heredoc examples.
+- DONE: Regression gates and formatting checks passed.
+  `go test ./...` passed 901 tests; `go test ./... -race` passed 901 tests; `gofmt -w ./cmd ./internal` left the implementation worktree clean.
+- DONE: Detached adversarial audit found no material hole.
+  In throwaway `.validation-audit-6pl738`, changing missing-host resolution to silently return Claude made `TestBuildHostResolutionFromFlagJSONAndEnv/missing-source` fail with `build unexpectedly exited 0`.
+
+### Summary
+
+Validation reproduced the implementation evidence for the flag/file input path, stdin JSON compatibility, env-derived host behavior, schema/validate-only behavior, and FO runtime doc invariants. The tests prove the current captain-directed behavior, including no silent Claude fallback under missing or ambiguous runtime host sources. Recommendation: PASSED.
