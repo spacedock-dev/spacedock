@@ -1,9 +1,9 @@
 ---
 id: n3md630s32x3x8zey698xkn6
 title: Frontmatter writer doesn't quote YAML-ambiguous values (leading-#, internal colon) — breaks pr-mod + GitHub render
-status: backlog
+status: ideation
 source: "FO (2026-06-02) — pr=#N eaten by s0's comment-strip (live: jg #260, #258, #259) AND captain-observed GitHub YAML parse errors on colon-bearing source values"
-started:
+started: 2026-06-03T00:51:44Z
 completed:
 verdict:
 score: "0.34"
