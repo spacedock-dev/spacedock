@@ -7,7 +7,7 @@ score: "0.30"
 worktree: 
 started: 2026-05-30T21:28:40Z
 mod-block: 
-pr: #242
+pr: "#242"
 completed: 2026-06-01T04:06:31Z
 verdict: PASSED
 archived: 2026-06-01T04:06:31Z

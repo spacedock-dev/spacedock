@@ -10,7 +10,7 @@ score: "0.34"
 worktree: 
 issue:
 mod-block: 
-pr: #244
+pr: "#244"
 archived: 2026-06-01T04:43:59Z
 ---
 

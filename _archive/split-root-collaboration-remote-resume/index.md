@@ -10,7 +10,7 @@ verdict: PASSED
 worktree: 
 issue:
 mod-block: 
-pr: #256
+pr: "#256"
 archived: 2026-06-01T22:07:23Z
 ---
 
