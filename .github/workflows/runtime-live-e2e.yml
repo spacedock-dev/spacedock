@@ -3,15 +3,16 @@
 # Triggers: workflow_dispatch (a maintainer triggers it manually) and
 # pull_request on `next`. It uses pull_request, NOT pull_request_target, so it
 # runs the PR-head version of the workflow and GitHub withholds repo secrets from
-# FORK PRs — untrusted fork code cannot exfiltrate ANTHROPIC_API_KEY because the
-# secret is simply absent for forks. Workflow-level permissions are read-only.
+# FORK PRs — untrusted fork code cannot exfiltrate live API keys because the
+# secrets are simply absent for forks. Workflow-level permissions are read-only.
 #
 # The offline job carries NO environment and NO secret: it builds + runs the
 # default Go suite (the live-tagged test compiles out) as the secret-free gate,
 # and runs unconditionally on every PR. Only the live job declares an
 # `environment:` (a required-reviewer approval gate, reviewer = clkao) and reads
-# ANTHROPIC_API_KEY. The live job is a matrix over two variants — sonnet (the
-# Python-land floor) on CI-E2E and claude-opus-4-8 on CI-E2E-OPUS — each its own
+# only the host-specific secret it needs: ANTHROPIC_API_KEY for Claude,
+# OPENAI_API_KEY for Codex. The Claude live job is a matrix over two variants:
+# sonnet (the Python-land floor) on CI-E2E and claude-opus-4-8 on CI-E2E-OPUS — each its own
 # separately-approved deployment. So a live PR run needs same-repo-or-no-secrets
 # + the per-variant environment approval; each variant pauses in `waiting` until
 # a maintainer approves its environment, so the API-spending dispatch cannot
@@ -27,6 +28,11 @@ on:
         required: false
         type: string
         default: ""
+      codex_version:
+        description: "Pin @openai/codex to a specific version (e.g. 0.136.0). Empty = npm latest."
+        required: false
+        type: string
+        default: ""
       effort:
         description: "Effort hint for the live run (low, high, xhigh). Default low."
         required: false
@@ -34,7 +40,7 @@ on:
         default: "low"
   # pull_request (NOT pull_request_target): runs the PR-head/next version of this
   # workflow, and withholds repo secrets from FORK PRs — a fork's malicious code
-  # cannot exfiltrate ANTHROPIC_API_KEY because the secret is simply absent.
+  # cannot exfiltrate live API keys because the secrets are simply absent.
   # Same-repo PRs get the secret; the live job stays per-variant environment-gated.
   pull_request:
     branches: [next]
@@ -170,4 +176,119 @@ jobs:
             ./spacedock
             ./live-e2e-transcript.txt
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
+          if-no-files-found: warn
+
+  codex-live:
+    needs: offline
+    runs-on: ubuntu-latest
+    environment:
+      name: CI-E2E-CODEX
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      SPACEDOCK_CODEX_LIVE_REQUIRED: "1"
+      SPACEDOCK_LIVE_ARTIFACT_DIR: ${{ github.workspace }}/live-artifacts/codex
+    steps:
+      - name: Check required secret
+        run: |
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "OPENAI_API_KEY is required for codex-live after CI-E2E-CODEX approval." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Codex CLI
+        env:
+          CODEX_VERSION: ${{ inputs.codex_version }}
+        run: |
+          if [ -n "$CODEX_VERSION" ]; then
+            npm install -g "@openai/codex@$CODEX_VERSION"
+          else
+            npm install -g @openai/codex
+          fi
+
+      - name: Login to Codex
+        run: |
+          printf '%s\n' "$OPENAI_API_KEY" | codex login --with-api-key
+          codex login status
+
+      - name: Build spacedock binary
+        run: |
+          go build -o ./spacedock ./cmd/spacedock
+          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
+          echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global init.defaultBranch main
+
+      - name: Install current checkout as Codex plugin
+        run: |
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
+          marketplace="$RUNNER_TEMP/spacedock-codex-marketplace"
+          mkdir -p "$marketplace/.agents/plugins" "$marketplace/plugins"
+          ln -s "$GITHUB_WORKSPACE" "$marketplace/plugins/spacedock"
+          cat > "$marketplace/.agents/plugins/marketplace.json" <<'JSON'
+          {
+            "name": "spacedock",
+            "plugins": [
+              {
+                "name": "spacedock",
+                "source": {
+                  "source": "local",
+                  "path": "./plugins/spacedock"
+                },
+                "policy": {
+                  "installation": "AVAILABLE",
+                  "authentication": "ON_INSTALL"
+                },
+                "category": "workflow"
+              }
+            ]
+          }
+          JSON
+          codex plugin marketplace add "$marketplace"
+          codex plugin add spacedock@spacedock
+          codex plugin list | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-plugin-list.txt"
+          if grep -q 'github.com\|ref `next`' "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-plugin-list.txt"; then
+            echo "codex-live must not install spacedock from remote next." >&2
+            exit 1
+          fi
+          if ! grep -Fq "$marketplace/plugins/spacedock" "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-plugin-list.txt"; then
+            echo "codex-live did not list the current checkout plugin path." >&2
+            exit 1
+          fi
+
+      - name: Verify Codex resolver against installed plugin
+        run: go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v
+
+      - name: Show tool versions
+        run: |
+          codex --version
+          go version
+          echo "### Codex live tool versions" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`codex --version\`: \`$(codex --version)\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run live Codex shared scenarios
+        run: go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+
+      - name: Upload live artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-live-e2e-codex-live
+          path: |
+            ./spacedock
+            live-artifacts/codex/**
           if-no-files-found: warn

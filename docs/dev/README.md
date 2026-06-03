@@ -143,6 +143,56 @@ To list the tasks ready for dispatch (the query the first officer runs each loop
 spacedock status --workflow-dir docs/dev --next
 ```
 
+## Codex Live CI
+
+The Codex live lane proves runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for running `codex exec --json`, observing its output, and checking the resulting workflow state.
+
+Local prerequisites:
+
+```bash
+npm install -g @openai/codex
+codex login
+go build -o ./spacedock ./cmd/spacedock
+export SPACEDOCK_BIN="$PWD/spacedock"
+export SPACEDOCK_REPO_ROOT="$PWD"
+```
+
+Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` when using the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
+
+Run the focused local shared suite:
+
+```bash
+go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+```
+
+Without either `OPENAI_API_KEY` or a readable local Codex `auth.json`, the live test skips locally. In GitHub Actions, the `codex-live` job sets `SPACEDOCK_CODEX_LIVE_REQUIRED=1`, so a missing `OPENAI_API_KEY` fails clearly after the `CI-E2E-CODEX` environment is approved.
+
+GitHub setup:
+
+- Environment: `CI-E2E-CODEX`
+- Secret on that environment or repository: `OPENAI_API_KEY`
+- Workflow: `.github/workflows/runtime-live-e2e.yml`
+- Artifact directory during the job: `live-artifacts/codex/`
+
+The CI job must test the current checkout, not `spacedock-dev/spacedock --ref next`. The supported mechanism is a generated local Codex marketplace under `$RUNNER_TEMP`:
+
+```text
+.agents/plugins/marketplace.json
+plugins/spacedock -> $GITHUB_WORKSPACE
+```
+
+The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job then runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. After that, `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` confirms Spacedock resolves the installed Codex manifest.
+
+The live Codex suite reuses the old shared Claude/Codex scenario overlap (`test_gate_guardrail.py --runtime codex`, `test_rejection_flow.py --runtime codex`, and `test_merge_hook_guardrail.py --runtime codex`) rather than a Codex-only host smoke:
+
+- `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
+- `rejection-flow`: starts from a rejected validation report and asserts the first officer routes the concrete finding back through implementation.
+- `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
+
+These scenarios invoke real headless Codex through `codex exec --json`, observe output, and check resulting workflow state. A one-off host-only smoke is not enough for Codex live CI because it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. JSONL, stderr, plugin listing, and final-message artifacts are uploaded for debugging.
+
+Codex live CI must run from the current PR checkout on top of current `origin/next`, which includes the r0 Codex runtime adapter merge. The live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the r0/next stack instead of an older branch or remote `next` install.
+
 ## Task Template
 
 ```yaml
