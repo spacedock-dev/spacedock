@@ -519,8 +519,15 @@ func reconcileEntityFM(fields map[string]string) string {
 	return b.String()
 }
 
-// teamConfigJSON renders a config.json the helper can parse.
+// teamConfigJSON renders a config.json the helper can parse, with the default
+// fixture lead session id.
 func teamConfigJSON(name string, members []claudeteam.ReconcileMember) string {
+	return teamConfigJSONWithSession(name, "session-fixture", members)
+}
+
+// teamConfigJSONWithSession renders a config.json carrying the given
+// leadSessionId so session-scoping tests can seed a match or a decoy.
+func teamConfigJSONWithSession(name, leadSessionID string, members []claudeteam.ReconcileMember) string {
 	type m struct {
 		Name      string `json:"name"`
 		AgentType string `json:"agentType"`
@@ -530,7 +537,7 @@ func teamConfigJSON(name string, members []claudeteam.ReconcileMember) string {
 		Name          string `json:"name"`
 		LeadSessionID string `json:"leadSessionId"`
 		Members       []m    `json:"members"`
-	}{Name: name, LeadSessionID: "session-fixture"}
+	}{Name: name, LeadSessionID: leadSessionID}
 	for _, x := range members {
 		out.Members = append(out.Members, m{x.Name, x.AgentType, x.Model})
 	}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 )
 
 // ReconcileMember is one team member as the reconcile sweep needs it: name,
@@ -22,9 +21,11 @@ type ReconcileMember struct {
 
 // ReconcileTeamState is what the reconcile loader returns: the resolved team
 // name (which the helper echoes back into the JSON envelope), the leadSessionId
-// (useful for narrowed discovery when --team-name is omitted), and the members
-// list. ConfigPath is the absolute path the loader resolved, primarily for
-// diagnostic stderr messages.
+// (the session-identity key auto-discovery matches against the current session
+// when --team-name is omitted), and the members list. ConfigPath is the absolute
+// path the loader resolved, primarily for diagnostic stderr messages. An empty
+// TeamName is the degrade-to-git-only sentinel: no session-scoped team resolved,
+// so the caller emits only the git/filesystem drift classes and no roster claims.
 type ReconcileTeamState struct {
 	TeamName      string
 	LeadSessionID string
@@ -34,13 +35,19 @@ type ReconcileTeamState struct {
 
 // LoadReconcileTeam loads the team config for the reconcile sweep. When
 // teamName is non-empty, that path is loaded directly; missing/unreadable is
-// an error. When teamName is empty, the loader scans ~/.claude/teams/*/config.json
-// for the most-recently-modified config that contains at least one
-// spacedock:ensign member — a stable proxy for "the live team in this session".
+// an error. When teamName is empty, auto-discovery scans
+// ~/.claude/teams/*/config.json for the config whose leadSessionId equals
+// sessionID (the current lead session) among configs carrying a spacedock:ensign
+// member. Exactly one session-id match resolves it. Zero matches, more than one
+// match, or an empty sessionID return the degrade-to-git-only sentinel (a
+// ReconcileTeamState with an empty TeamName and no error) rather than guessing —
+// a roster derived from a non-session-matched config could be a stale prior
+// session's or a parallel live session's team, so it is never trusted.
 //
-// Errors carry a stderr-ready message; the caller decides whether to surface as
-// exit-1 (setup failure) or exit-2 (usage).
-func LoadReconcileTeam(home, teamName string) (ReconcileTeamState, error) {
+// Errors carry a stderr-ready message; the caller surfaces them as exit-1 (setup
+// failure). The degrade sentinel is NOT an error: the sweep still runs and emits
+// the session-independent git/filesystem classes.
+func LoadReconcileTeam(home, teamName, sessionID string) (ReconcileTeamState, error) {
 	if teamName != "" {
 		cfgPath := filepath.Join(home, ".claude", "teams", teamName, "config.json")
 		if _, err := os.Stat(cfgPath); err != nil {
@@ -48,17 +55,19 @@ func LoadReconcileTeam(home, teamName string) (ReconcileTeamState, error) {
 		}
 		return loadReconcileConfigAt(cfgPath, teamName)
 	}
+	// Without a session id there is nothing to match against — degrade.
+	if sessionID == "" {
+		return ReconcileTeamState{}, nil
+	}
 	pattern := filepath.Join(home, ".claude", "teams", "*", "config.json")
 	matches, _ := filepath.Glob(pattern)
-	type candidate struct {
-		path string
-		name string
-		mod  int64
-	}
-	var cands []candidate
+	var hits []ReconcileTeamState
 	for _, p := range matches {
 		state, err := loadReconcileConfigAt(p, filepath.Base(filepath.Dir(p)))
 		if err != nil {
+			continue
+		}
+		if state.LeadSessionID != sessionID {
 			continue
 		}
 		hasEnsign := false
@@ -71,19 +80,14 @@ func LoadReconcileTeam(home, teamName string) (ReconcileTeamState, error) {
 		if !hasEnsign {
 			continue
 		}
-		info, err := os.Stat(p)
-		if err != nil {
-			continue
-		}
-		cands = append(cands, candidate{p, state.TeamName, info.ModTime().UnixNano()})
+		hits = append(hits, state)
 	}
-	if len(cands) == 0 {
-		return ReconcileTeamState{}, fmt.Errorf(
-			"no team config with a spacedock:ensign member found under %s",
-			filepath.Join(home, ".claude", "teams"))
+	// Exactly one session-scoped team is the trusted roster. Zero or multiple
+	// matches degrade — never guess which of several configs owns this session.
+	if len(hits) != 1 {
+		return ReconcileTeamState{}, nil
 	}
-	sort.Slice(cands, func(i, j int) bool { return cands[i].mod > cands[j].mod })
-	return loadReconcileConfigAt(cands[0].path, cands[0].name)
+	return hits[0], nil
 }
 
 // loadReconcileConfigAt decodes the config at path, returning the reconcile
