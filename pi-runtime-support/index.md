@@ -119,3 +119,16 @@ Verified by: fixture or CLI tests that build a Pi dispatch for `docs/dev` with `
 ### Summary
 
 The ideation result chooses a compatibility-first Pi runtime shape: default to bounded `pi-subagents` ensign dispatch, preserve PR #155's worker/session registry ideas for safe follow-up semantics, and treat `pi-agent-teams` as an adapter over its native `teams` action schema. The future implementation is scoped to skill/runtime docs, dispatch/front-door hooks, a small contract package, and tests, with PR/mod behavior explicitly out of scope.
+
+## Stage Report: implementation
+
+- DONE: Pi dispatch uses a Pi-native tool contract instead of Claude-compatible tool names.
+  Added `host: "pi"` support to `spacedock dispatch build`; `TestBuildPiHostPromptShape` fails on Claude team syntax and passes on the Pi read-dispatch-file / subagent-completion shape.
+- DONE: Pi runtime adapters are loadable from shipped skills.
+  Added `pi-first-officer-runtime.md` and `pi-ensign-runtime.md`, wired both SKILL.md files, and added `TestPiRuntimeAdaptersAreLoadable`.
+- DONE: Live-harness OAuth isolation requirement is captured for the future live smoke.
+  The Pi first-officer runtime doc now specifies isolated Pi config/session directories with copied auth, matching the entity's ideation decision.
+
+### Summary
+
+Implemented the first compatibility slice for Pi runtime support in code commit `f935a7b2`: `spacedock dispatch build` now accepts `host: "pi"` and emits Pi-native dispatch guidance without Claude team-tool signatures. The shipped skill surface now advertises and loads Pi first-officer/ensign runtime adapters; focused dispatch and skill integration tests pass.
