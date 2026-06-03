@@ -1,7 +1,7 @@
 ---
 id: yyqez6npx8qb11b5v7fgwjtf
 title: Sonnet live-CI fails with a repeatable shape — FO subprocess ends its turn after shutdown_request before the streamwatcher's expected dispatch-close fires
-status: implementation
+status: validation
 source: session-10 — identical failure shape on PR #275 (n3 frontmatter-hash-quoting) and PR #277 (2a require-external-proof-guard); both offline-green + opus-green + sonnet-red. Two matching failures = mechanism issue, not random flake. Blocks merging n3 + 2a into 0.19.5.
 score: "0.19"
 worktree: .worktrees/spacedock-ensign-sonnet-live-ci-flake
