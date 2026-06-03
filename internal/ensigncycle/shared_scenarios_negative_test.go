@@ -106,4 +106,18 @@ func TestMergeHookGuardrailNegativeBypass(t *testing.T) {
 	if err := assertMergeHookGuardHeld(before, before, "terminalized merge-check to done"); err == nil {
 		t.Fatal("expected a run with no terminal-guard refusal in observed to fail assertMergeHookGuardHeld")
 	}
+
+	// Isolating case for the `cannot advance to terminal` guard-error check: the
+	// observed output mentions a merge hook (so the mention check passes) but never
+	// reports the terminal-guard refusal — the FO touched the hook yet the guard
+	// never FIRED. This must still fail, and it fails ONLY on the guard-error
+	// check. Without this case, deleting that check leaves the suite green: every
+	// other merge-hook negative observed string also lacks the merge-hook mention,
+	// so they trip the earlier mention check and never exercise the guard-error
+	// clause. This is the one assertion proving the merge guard actually fired, so
+	// it must be independently covered.
+	hookMentionedNoGuard := "Inspected startup: workflow registers a merge hook [local-merge]. Proceeding without terminalization."
+	if err := assertMergeHookGuardHeld(before, before, hookMentionedNoGuard); err == nil {
+		t.Fatal("expected observed that mentions a merge hook but omits the terminal-guard refusal to fail assertMergeHookGuardHeld on the guard-error check")
+	}
 }
