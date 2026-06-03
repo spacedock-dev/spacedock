@@ -1,7 +1,7 @@
 ---
 id: 4nef7frwwsrasfbntqfjd11c
 title: Track tool calls and token costs for release journeys
-status: validation
+status: implementation
 source: "captain (2026-06-02) - track tool calls and token consumption for common user journeys; serialize per release; mark selected test cases for token/turn tracking"
 started: 2026-06-02T16:53:20Z
 completed:
@@ -68,6 +68,10 @@ Verified by: Go tests over the budget policy assert that a journey with no budge
 - A Codex characterization fixture test over captured `codex-exec.jsonl` output. This verifies the v0 schema surface and marks Codex records characterized, not measured, until a parser is added.
 - Release-tool tests for `cmd/spacedock-release journey-costs`, plus a workflow check that the live E2E job uploads metrics and the release job builds and publishes `journey-costs-vX.Y.Z.json`.
 - No Codex token parser or Codex budget gate until the characterization fixture proves the stable fields to consume.
+
+### Feedback Cycles
+
+- Cycle 1 (2026-06-03): validation rejected AC-5. Detached audit replaced the release builder with commented command text plus `{}` output, and `TestWorkflowsPreserveAndPublishJourneyCosts` still passed. Route back to implementation to make the workflow guard parse executable release steps or otherwise prove the release job actually runs `spacedock-release journey-costs`, not merely contains matching substrings in comments.
 
 ## Stage Report: ideation
 
