@@ -46,11 +46,19 @@ func TestSonnetTeamDeleteHangReplay(t *testing.T) {
 	src := &drippingLineSource{lines: lines}
 	proc := &fakeProc{} // never exits — the recorded FO subprocess hung at teardown.
 
+	// Capture every drained line into a transcript so step 3 can assert the
+	// watcher OBSERVED the captured TeamDelete-failure, not merely that a
+	// never-exiting proc trips expectExit. Without this the exit assertion is
+	// tautological: a fakeProc that never exits trips stepTimeout for ANY stream,
+	// even one truncated to drop the failure evidence. The transcript anchors the
+	// assertion to the recording's actual content (cycle-1 audit fix).
+	rec := &transcriptRecorder{}
+
 	// Shrink the budgets so the offline replay finishes in well under a second;
 	// the production budgets are 60s. The poll interval matches the unit test's
 	// fast cadence. One line drips per poll, so the whole 341-line stream drains
 	// over ~341 polls before the steps reach their assertions.
-	w := newStreamWatcher(src, proc, func(string) {})
+	w := newStreamWatcher(src, proc, rec.tee)
 	w.quietBudget = 2 * time.Second
 	w.exitBudget = 150 * time.Millisecond
 	w.pollInterval = time.Millisecond
@@ -74,26 +82,63 @@ func TestSonnetTeamDeleteHangReplay(t *testing.T) {
 		t.Fatalf("replay: exactly one dispatch should have closed, got closedCount=%d", w.closedCount)
 	}
 
-	// 3. expectExit hangs and kills the never-exiting proc. This is the localized
-	//    failure: terminal TeamDelete failed with "active member(s)" and the FO
-	//    never retried it to success, so the recorded subprocess never exits.
-	//    expectExit must trip a stepTimeout("expect_exit") AND kill the proc.
-	_, err := w.expectExit(w.exitBudget)
-	var st *stepTimeout
-	if !errors.As(err, &st) {
-		t.Fatalf("replay: expectExit must trip a *stepTimeout on the never-exiting proc, got %T: %v", err, err)
-	}
-	if st.label != "expect_exit" {
-		t.Errorf("replay: stepTimeout.label = %q, want expect_exit", st.label)
+	// 3. The recording must carry the diagnosed terminal-teardown failure, and the
+	//    watcher must hang at exit BECAUSE of it. Two coupled assertions:
+	//
+	//    (a) the watcher OBSERVED the captured TeamDelete-failure: the post-close
+	//        transcript contains the terminal TeamDelete tool_use AND its
+	//        "active member(s)" failure result AND the turn ending with
+	//        terminal_reason=completed (the FO going idle WITHOUT retrying). This
+	//        ties the test to the recording's content — truncating the stream to
+	//        drop L271-341 (the close, the TeamDelete, its failure, the no-retry
+	//        turn-end) removes these substrings and turns the test RED.
+	//
+	//    (b) given that observed failure, expectExit hangs and kills the
+	//        never-exiting proc. The hang is a CONSEQUENCE of the recorded
+	//        no-retry-after-failure, not an artifact of the fake proc alone.
+	if _, err := w.expectExit(w.exitBudget); err != nil {
+		var st *stepTimeout
+		if !errors.As(err, &st) {
+			t.Fatalf("replay: expectExit must trip a *stepTimeout on the never-exiting proc, got %T: %v", err, err)
+		}
+		if st.label != "expect_exit" {
+			t.Errorf("replay: stepTimeout.label = %q, want expect_exit", st.label)
+		}
+		// The localized failure message must name the exit step so a human reading
+		// a CI failure sees "did not exit", not a mislocalized dispatch-close stall.
+		if !strings.Contains(st.Error(), "did not exit") {
+			t.Errorf("replay: the trip message must localize the hang at exit: %q", st.Error())
+		}
+	} else {
+		t.Fatal("replay: expectExit must NOT return cleanly — the recorded subprocess hung at teardown")
 	}
 	if !proc.wasKilled() {
 		t.Error("replay: expectExit must kill the never-exiting subprocess on timeout")
 	}
 
-	// The localized failure message must name the exit step so a human reading a
-	// CI failure sees "did not exit", not a mislocalized dispatch-close stall.
-	if !strings.Contains(st.Error(), "did not exit") {
-		t.Errorf("replay: the trip message must localize the hang at exit: %q", st.Error())
+	// (a) The recording's diagnosed terminal-teardown beats, observed AFTER the
+	//     dispatch close. assertObservedAfterClose fails if any beat is missing or
+	//     out of order — so a truncated/altered fixture that drops the failure
+	//     evidence can no longer pass on the never-exiting proc alone.
+	transcript := rec.lines()
+	closeIdx := indexOfContainsAll(transcript, `"subtype":"task_notification"`, `"status":"completed"`)
+	if closeIdx < 0 {
+		t.Fatalf("replay: the dispatch-close task_notification must appear in the transcript")
+	}
+	postClose := transcript[closeIdx:]
+	assertObservedInOrder(t, postClose,
+		`"name":"TeamDelete"`,                         // the terminal teardown call
+		`Cannot cleanup team with 1 active member(s)`, // its failure — the diagnosed race
+		`"terminal_reason":"completed"`,               // the FO turn ends WITHOUT retrying
+	)
+
+	// And the recording must NOT contain a clean-exit beat after the failure —
+	// no result entry reporting a zero exit that would mean the FO recovered. A
+	// recovering (opus-like) stream would carry a later successful TeamDelete; its
+	// absence here is the no-retry hang. (The failure result is the only
+	// TeamDelete result in the post-close window.)
+	if got := countOccurrences(postClose, `"name":"TeamDelete"`); got != 1 {
+		t.Errorf("replay: the recording must show exactly one terminal TeamDelete (the failed, un-retried one), got %d — a retried/recovered stream is the opus path, not this sonnet hang", got)
 	}
 }
 
@@ -151,4 +196,84 @@ func (s *drippingLineSource) drain() []string {
 	line := s.lines[s.next]
 	s.next++
 	return []string{line}
+}
+
+// transcriptRecorder captures every line the watcher tees, in drain order, so a
+// test can assert which captured beats the watcher actually observed. The
+// watcher tees from its poll loop (a goroutine in the live test); guard with a
+// mutex even though this replay drives it single-goroutine.
+type transcriptRecorder struct {
+	mu  sync.Mutex
+	rec []string
+}
+
+func (r *transcriptRecorder) tee(line string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.rec = append(r.rec, line)
+}
+
+func (r *transcriptRecorder) lines() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := make([]string, len(r.rec))
+	copy(out, r.rec)
+	return out
+}
+
+// indexOfContains returns the index of the first line containing sub, or -1.
+func indexOfContains(lines []string, sub string) int {
+	for i, l := range lines {
+		if strings.Contains(l, sub) {
+			return i
+		}
+	}
+	return -1
+}
+
+// indexOfContainsAll returns the index of the first line containing every sub,
+// or -1. Used where a single JSON line carries the anchor fields non-adjacently
+// (the captured stream interleaves other keys between subtype and status).
+func indexOfContainsAll(lines []string, subs ...string) int {
+	for i, l := range lines {
+		all := true
+		for _, sub := range subs {
+			if !strings.Contains(l, sub) {
+				all = false
+				break
+			}
+		}
+		if all {
+			return i
+		}
+	}
+	return -1
+}
+
+// countOccurrences returns how many lines contain sub.
+func countOccurrences(lines []string, sub string) int {
+	n := 0
+	for _, l := range lines {
+		if strings.Contains(l, sub) {
+			n++
+		}
+	}
+	return n
+}
+
+// assertObservedInOrder fails unless each substring appears in lines, each at a
+// position at or after the previous one — the diagnosed beats in their recorded
+// order. A truncated or reordered fixture that drops the failure evidence fails
+// here, so the exit-hang assertion is no longer tautological.
+func assertObservedInOrder(t *testing.T, lines []string, subs ...string) {
+	t.Helper()
+	from := 0
+	for _, sub := range subs {
+		idx := indexOfContains(lines[from:], sub)
+		if idx < 0 {
+			t.Errorf("replay: the recording must contain the diagnosed beat %q in order after the prior beat", sub)
+			return
+		}
+		from += idx
+	}
 }
