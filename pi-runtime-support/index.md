@@ -131,4 +131,4 @@ The ideation result chooses a compatibility-first Pi runtime shape: default to b
 
 ### Summary
 
-Implemented the first compatibility slice for Pi runtime support in code commit `f935a7b2`: `spacedock dispatch build` now accepts `host: "pi"` and emits Pi-native dispatch guidance without Claude team-tool signatures. The shipped skill surface now advertises and loads Pi first-officer/ensign runtime adapters; focused dispatch and skill integration tests pass.
+Implemented the first compatibility slice for Pi runtime support in code commit `f935a7b2`, plus required gofmt cleanup in `672d5ba6`: `spacedock dispatch build` now accepts `host: "pi"` and emits Pi-native dispatch guidance without Claude team-tool signatures. The shipped skill surface now advertises and loads Pi first-officer/ensign runtime adapters; focused dispatch and skill integration tests pass.
