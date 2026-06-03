@@ -11,18 +11,53 @@ func TestWorkflowsPreserveAndPublishJourneyCosts(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	release := readWorkflow(t, "release.yml")
 
-	for _, want := range []string{
-		"SPACEDOCK_JOURNEY_METRICS_DIR",
-		"live-artifacts/journey-metrics/**",
-		"actions/upload-artifact@v4",
-	} {
-		if !strings.Contains(live, want) {
-			t.Fatalf("runtime-live-e2e.yml missing %q", want)
-		}
+	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(live); err != nil {
+		t.Fatal(err)
 	}
 
 	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRuntimeLiveWorkflowGuardRejectsCommentOnlyJourneyMetricUpload(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	adversarial := strings.ReplaceAll(live,
+		`live-artifacts/journey-metrics/**`,
+		`# live-artifacts/journey-metrics/**`)
+
+	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
+		t.Fatal("runtime live workflow guard accepted journey metrics paths that were only inert upload text")
+	}
+}
+
+func TestRuntimeLiveWorkflowGuardRejectsMissingCodexJourneyMetricUpload(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	first := strings.Index(live, `live-artifacts/journey-metrics/**`)
+	if first < 0 {
+		t.Fatal("fixture workflow missing first journey metrics upload path")
+	}
+	second := strings.Index(live[first+1:], `live-artifacts/journey-metrics/**`)
+	if second < 0 {
+		t.Fatal("fixture workflow missing second journey metrics upload path")
+	}
+	second += first + 1
+	adversarial := live[:second] + `live-artifacts/codex/**` + live[second+len(`live-artifacts/journey-metrics/**`):]
+
+	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
+		t.Fatal("runtime live workflow guard accepted a workflow where only one live job uploads journey metrics")
+	}
+}
+
+func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	adversarial := strings.Replace(live,
+		`go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
+		`# go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
+		1)
+
+	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
+		t.Fatal("runtime live workflow guard accepted a workflow without an executable Claude shared scenario run")
 	}
 }
 

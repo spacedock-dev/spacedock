@@ -6,9 +6,38 @@ import (
 )
 
 type workflowStep struct {
-	name string
-	uses string
-	run  string
+	name     string
+	uses     string
+	run      string
+	withPath string
+}
+
+func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
+	for _, want := range []string{
+		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
+		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/codex`,
+	} {
+		if !hasExecutableYAMLLine(workflow, want) {
+			return fmt.Errorf("runtime-live-e2e.yml missing active metrics env line %q", want)
+		}
+	}
+
+	steps := parseWorkflowSteps(workflow)
+	claudeRun := findExecutableStep(steps, "Run live Claude shared scenarios", "TestLiveClaudeSharedScenarios")
+	if claudeRun < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no executable Claude shared scenario run")
+	}
+	codexRun := findExecutableStep(steps, "Run live Codex shared scenarios", "TestLiveCodexSharedScenarios")
+	if codexRun < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
+	}
+	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {
+		return fmt.Errorf("runtime-live-e2e.yml Claude shared scenario job does not upload raw journey metrics")
+	}
+	if !hasJourneyMetricsUploadAfter(steps, codexRun, len(steps)) {
+		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
+	}
+	return nil
 }
 
 func assertReleaseWorkflowPublishesJourneyCosts(workflow string) error {
@@ -95,9 +124,76 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 				i++
 			}
 			step.run = strings.Join(block, "\n")
+		case strings.HasPrefix(trimmed, "run: "):
+			step.run = strings.Trim(strings.TrimPrefix(trimmed, "run: "), `"`)
+		case strings.HasPrefix(trimmed, "path: |"):
+			baseIndent := leadingSpaces(line)
+			var block []string
+			for i+1 < len(lines) {
+				next := lines[i+1]
+				if strings.TrimSpace(next) != "" && leadingSpaces(next) <= baseIndent {
+					break
+				}
+				block = append(block, next)
+				i++
+			}
+			step.withPath = strings.Join(block, "\n")
 		}
 	}
 	return steps
+}
+
+func findExecutableStep(steps []workflowStep, name, commandFragment string) int {
+	for i, step := range steps {
+		if step.name != name {
+			continue
+		}
+		for _, command := range executableShellCommands(step.run) {
+			if strings.Contains(command, commandFragment) {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+func hasJourneyMetricsUploadAfter(steps []workflowStep, start, stop int) bool {
+	for i := start + 1; i < stop && i < len(steps); i++ {
+		step := steps[i]
+		if !strings.HasPrefix(step.uses, "actions/upload-artifact@") {
+			continue
+		}
+		if pathBlockContainsLine(step.withPath, "live-artifacts/journey-metrics/**") {
+			return true
+		}
+	}
+	return false
+}
+
+func pathBlockContainsLine(block, want string) bool {
+	for _, raw := range strings.Split(block, "\n") {
+		line := strings.TrimSpace(raw)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if line == want {
+			return true
+		}
+	}
+	return false
+}
+
+func hasExecutableYAMLLine(doc, want string) bool {
+	for _, raw := range strings.Split(doc, "\n") {
+		line := strings.TrimSpace(raw)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if line == want {
+			return true
+		}
+	}
+	return false
 }
 
 func executableShellCommands(script string) []string {
