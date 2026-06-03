@@ -11,6 +11,7 @@ issue:
 started: 2026-06-02T21:14:43Z
 mod-block:
 pr: "#273"
+archived: 2026-06-03T00:47:30Z
 ---
 
 The FO leaks agents and reconciles reactively because every lifecycle rule keys off **FO session memory**, which drifts under context pressure (this session: the FO tracked "5 alive" when 7 were — the 7h implementer lingered after its entity merged+archived, and the superseded old-3g `-implementation`/`-validation` lingered after 3g re-ideated). Same root cause as the prose-pin tests: a "remember to shut down / remember to rebase" rule can't self-check. The fix is to **compute the reconciliation set from state** that already exists on disk (team `config.json` members[] + entity frontmatter + git refs), and to let a code gate flag drift the FO would otherwise miss.
