@@ -9,7 +9,7 @@ score: "0.24"
 worktree: .worktrees/spacedock-ensign-split-root-onboarding-command
 issue:
 started: 2026-06-03T07:09:59Z
-mod-block: merge:pr-merge
+mod-block:
 pr: "#279"
 ---
 
