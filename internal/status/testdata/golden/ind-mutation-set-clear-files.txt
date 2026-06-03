@@ -17,7 +17,7 @@ id: "002"
 title: Beta task
 status: ideation
 score: "0.50"
-source: 
+source:
 ---
 # Beta
 

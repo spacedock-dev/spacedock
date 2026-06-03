@@ -1,5 +1,5 @@
 // ABOUTME: Mutation engine — update_frontmatter (--set) and run_archive
-// ABOUTME: (--archive) with atomic temp+rename writes and the oracle's guards.
+// ABOUTME: (--archive) parse the FM slice into yaml.Node, mutate, re-marshal.
 package status
 
 import (
@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 // timestampFields auto-fill now() when given bare (no value). Matches
@@ -25,18 +27,48 @@ type fieldUpdate struct {
 	hasValue bool // false => bare timestamp field
 }
 
+// resolvedFields is the small insertion-order tracker the --set narration
+// emits in (field: old -> new lines, JSON changes, quiet pairs). Reader-side
+// ordering is the yaml.Node Content list; this struct's only job is to remember
+// which --set updates actually resolved (a bare timestamp on an already-set
+// field is skipped) and in what order they were requested.
+type resolvedFields struct {
+	order  []string
+	values map[string]string
+}
+
+func (r *resolvedFields) set(key, val string) {
+	if _, ok := r.values[key]; !ok {
+		r.order = append(r.order, key)
+	}
+	r.values[key] = val
+}
+
+func (r *resolvedFields) get(key string) (string, bool) {
+	v, ok := r.values[key]
+	return v, ok
+}
+
+func (r *resolvedFields) keys() []string { return r.order }
+
 // nowTimestamp returns the YYYY-MM-DDTHH:MM:SSZ stamp the oracle writes.
 func nowTimestamp() string {
 	return time.Now().UTC().Format("2006-01-02T15:04:05Z")
 }
 
-// updateFrontmatter rewrites matching top-level frontmatter lines in place,
-// inserting genuinely-missing fields before the closing ---, and returns the
-// resolved field->value map (in the order resolved). Bare timestamp fields skip
-// when already set. The write is atomic (temp file + rename) and preserves the
-// file's EOF-newline state byte-for-byte via split/join on "\n". Matches
-// update_frontmatter.
-func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) {
+// updateFrontmatter parses the in-fence YAML body into a yaml.Node, mutates
+// the target scalar node(s) or appends new K,V pairs for genuinely-missing
+// fields, and re-marshals. The yaml.v3 emitter is canonical, so the contract
+// is FIELD-exact, not byte-exact: unknown fields and key order survive
+// --set/--archive intact (the AC-2 contract); the rewritten YAML body may
+// renormalize visual whitespace (trailing whitespace, empty-value lines,
+// pre-comment whitespace) that does not change any value. The 5 documented
+// emitter normalizations are accepted observed behavior. Bare timestamp
+// fields skip when already set. The write is atomic and preserves the file's
+// EOF-newline state byte-for-byte: the splice replaces only the in-fence
+// body, leaving the opening/close fence lines and the post-fence body —
+// including the file's terminal newline state — untouched.
+func updateFrontmatter(path string, updates []fieldUpdate) (*resolvedFields, error) {
 	if !hasOpeningFence(path) {
 		return nil, fmt.Errorf("No frontmatter found in %s", path)
 	}
@@ -44,10 +76,8 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) 
 	if err != nil {
 		return nil, err
 	}
-	// Exact analog of Python content.split('\n') after the universal-newline
-	// read: normalize CRLF/CR to LF first (so the oracle's text-mode read is
-	// matched and a CRLF entity comes out LF), then split. The trailing empty
-	// element of a newline-terminated file is preserved so '\n'.join restores it.
+	// Universal-newline normalize (so a CRLF entity comes out LF), preserve
+	// the file's trailing-newline state through split/join on "\n".
 	lines := strings.Split(normalizeNewlines(string(data)), "\n")
 
 	fmStart, fmEnd := -1, -1
@@ -67,21 +97,49 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) 
 		return nil, fmt.Errorf("No frontmatter found in %s", path)
 	}
 
-	// Current values support skip-if-set for bare timestamp fields.
+	// Slice the in-fence YAML body and parse it into a yaml.Node we can
+	// mutate. Unchanged scalars survive FIELD-exact through re-marshal — same
+	// value, same key order — while the yaml.v3 emitter is free to re-emit
+	// the same value in its canonical form (the 5 documented normalizations).
+	// That is the seam's load-bearing property under AC-2's field-exact
+	// contract; pinned by TestUpdateFrontmatterNodeRoundTrip + the 5
+	// divergence tests.
+	fmBody := strings.Join(lines[fmStart+1:fmEnd], "\n") + "\n"
+	var doc yaml.Node
+	if err := yaml.Unmarshal([]byte(fmBody), &doc); err != nil {
+		return nil, fmt.Errorf("parse frontmatter %s: %w", path, err)
+	}
+	var mapping *yaml.Node
+	if len(doc.Content) > 0 && doc.Content[0].Kind == yaml.MappingNode {
+		mapping = doc.Content[0]
+	} else {
+		// Empty or non-mapping frontmatter — bootstrap a fresh mapping so we
+		// can append the resolved updates as a brand-new K,V list.
+		mapping = &yaml.Node{Kind: yaml.MappingNode}
+		doc = yaml.Node{Kind: yaml.DocumentNode, Content: []*yaml.Node{mapping}}
+	}
+
+	// Current values support skip-if-set for bare timestamp fields. Read the
+	// top-level scalars off the node; nested mappings render as empty (the
+	// indented-lines-ignored semantic).
 	current := map[string]string{}
-	for i := fmStart + 1; i < fmEnd; i++ {
-		line := lines[i]
-		if strings.Contains(line, ":") && !(len(line) > 0 && isSpaceByte(line[0])) {
-			k, v, _ := strings.Cut(line, ":")
-			current[strings.TrimSpace(k)] = strings.TrimSpace(v)
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		k := mapping.Content[i]
+		v := mapping.Content[i+1]
+		if k.Kind != yaml.ScalarNode {
+			continue
+		}
+		if v.Kind == yaml.ScalarNode {
+			current[k.Value] = v.Value
+		} else {
+			current[k.Value] = ""
 		}
 	}
 
 	now := nowTimestamp()
-	resolved := newOrderedMap()
+	resolved := &resolvedFields{values: map[string]string{}}
 	for _, u := range updates {
 		if !u.hasValue {
-			// Bare timestamp field — skip if already has a value.
 			if current[u.field] != "" {
 				continue
 			}
@@ -91,57 +149,95 @@ func updateFrontmatter(path string, updates []fieldUpdate) (*orderedMap, error) 
 		}
 	}
 
-	// Rewrite matching lines.
+	// Mutate matching scalar nodes; append new K,V pairs for genuinely
+	// missing fields before re-marshaling.
 	written := map[string]bool{}
-	for i := fmStart + 1; i < fmEnd; i++ {
-		line := lines[i]
-		if strings.Contains(line, ":") && !(len(line) > 0 && isSpaceByte(line[0])) {
-			k, _, _ := strings.Cut(line, ":")
-			key := strings.TrimSpace(k)
-			if val, ok := resolved.get(key); ok {
-				lines[i] = key + ": " + quoteForWrite(val)
-				written[key] = true
-			}
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		k := mapping.Content[i]
+		v := mapping.Content[i+1]
+		if k.Kind != yaml.ScalarNode {
+			continue
 		}
+		val, ok := resolved.get(k.Value)
+		if !ok {
+			continue
+		}
+		setScalarValue(v, val)
+		written[k.Value] = true
 	}
-
-	// Insert genuinely-missing fields before the closing ---.
 	for _, key := range resolved.keys() {
 		if written[key] {
 			continue
 		}
 		val, _ := resolved.get(key)
-		ins := key + ": " + quoteForWrite(val)
-		lines = append(lines[:fmEnd], append([]string{ins}, lines[fmEnd:]...)...)
-		fmEnd++
+		newKey := &yaml.Node{Kind: yaml.ScalarNode, Value: key}
+		newVal := &yaml.Node{Kind: yaml.ScalarNode}
+		setScalarValue(newVal, val)
+		mapping.Content = append(mapping.Content, newKey, newVal)
 	}
 
-	if err := atomicWrite(path, []byte(strings.Join(lines, "\n"))); err != nil {
+	out, err := yaml.Marshal(&doc)
+	if err != nil {
+		return nil, fmt.Errorf("marshal frontmatter %s: %w", path, err)
+	}
+	// yaml.Marshal terminates with "\n"; the in-fence splice expects each
+	// rewritten line as its own element of `lines`, with the join restoring
+	// the file's EOF state via the trailing empty element when present.
+	newBody := strings.TrimRight(string(out), "\n")
+	newLines := strings.Split(newBody, "\n")
+	rebuilt := make([]string, 0, len(lines)-(fmEnd-fmStart-1)+len(newLines))
+	rebuilt = append(rebuilt, lines[:fmStart+1]...)
+	rebuilt = append(rebuilt, newLines...)
+	rebuilt = append(rebuilt, lines[fmEnd:]...)
+
+	if err := atomicWrite(path, []byte(strings.Join(rebuilt, "\n"))); err != nil {
 		return nil, err
 	}
 	return resolved, nil
 }
 
-// quoteForWrite wraps a value in quotes when it carries a space-then-`#` (` #`)
-// so the reader's inline-comment strip does not later truncate it — the writer
-// half of the option-C round-trip contract. A value already wrapped in matched
-// surrounding quotes, or one with no ` #`, is written verbatim (byte
-// preservation). The quote char is chosen to avoid clashing with a quote the
-// value already contains (the hand-rolled parser does not unescape): prefer `"`,
-// fall back to `'` when the value contains `"` but not `'`. Matches the oracle's
-// quote_for_write.
-func quoteForWrite(val string) string {
-	if !strings.Contains(val, " #") && !strings.Contains(val, "\t#") {
-		return val
+// setScalarValue writes val into a scalar node and picks its quoting style
+// per the writer policy: a value YAML would otherwise parse as a mapping
+// (`: `) or a comment (` #`, `\t#`, leading `#`) is wrapped in double quotes
+// — the divergence #1 writer side plus the legacy option-C quoting — so the
+// reader round-trips it whole. Other values let yaml.v3 auto-decide: a plain
+// string emits plain, an existing scalar's style is RESET to the policy's
+// choice so a mutation does not drag along a stale quote shape. The tag is
+// cleared so yaml.v3 re-infers it from the value.
+func setScalarValue(node *yaml.Node, val string) {
+	node.Kind = yaml.ScalarNode
+	node.Value = val
+	node.Tag = ""
+	if needsExplicitQuoting(val) {
+		node.Style = yaml.DoubleQuotedStyle
+	} else {
+		node.Style = 0
 	}
-	if len(val) >= 2 && val[0] == val[len(val)-1] && (val[0] == '"' || val[0] == '\'') {
-		return val
-	}
-	if strings.Contains(val, "\"") && !strings.Contains(val, "'") {
-		return "'" + val + "'"
-	}
-	return "\"" + val + "\""
 }
+
+// needsExplicitQuoting is the writer policy: a value containing a colon-space
+// (`: `), a space-or-tab-then-`#` (` #`, `\t#`), or starting with `#` is
+// wrapped in double quotes. The colon-space case is divergence #1's writer
+// side — yaml.v3 would otherwise parse the unquoted form as a nested mapping.
+// The `#` cases preserve option-C round-trip: an unquoted whitespace-preceded
+// `#` is treated as a comment by yaml.v3 (so the value would be truncated on
+// a re-read), and a leading-`#` value is a comment-only line outright.
+func needsExplicitQuoting(val string) bool {
+	if val == "" {
+		return false
+	}
+	if strings.Contains(val, ": ") {
+		return true
+	}
+	if strings.Contains(val, " #") || strings.Contains(val, "\t#") {
+		return true
+	}
+	if val[0] == '#' {
+		return true
+	}
+	return false
+}
+
 
 // atomicWrite writes data to a temp file in the same directory and renames it
 // into place, so a reader never observes a half-written entity. The principle

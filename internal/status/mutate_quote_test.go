@@ -46,3 +46,31 @@ func TestUpdateFrontmatterQuotesHashValue(t *testing.T) {
 		t.Fatalf("expected a plain value written unquoted, got:\n%s", string(b))
 	}
 }
+
+// TestUpdateFrontmatterQuotesColonSpaceValue locks divergence #1's writer
+// side: when --set writes a value containing a colon-then-space (`: `), the
+// writer quotes it so the yaml.v3-backed reader does not see a nested mapping
+// indicator (and so the reader round-trips the value whole). yaml.v3 treats
+// an unquoted ` : ` as a mapping → parse error; the writer prevents that.
+func TestUpdateFrontmatterQuotesColonSpaceValue(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "e.md")
+	const seed = "---\nid: e\nstatus: backlog\nsource: roadmap\n---\nbody\n"
+	if err := os.WriteFile(path, []byte(seed), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := updateFrontmatter(path, []fieldUpdate{{field: "source", value: "e2e fails: cobra", hasValue: true}}); err != nil {
+		t.Fatalf("updateFrontmatter: %v", err)
+	}
+	b, _ := os.ReadFile(path)
+	written := string(b)
+	if !strings.Contains(written, `source: "e2e fails: cobra"`) && !strings.Contains(written, `source: 'e2e fails: cobra'`) {
+		t.Fatalf("expected colon-space value to be written quoted, got:\n%s", written)
+	}
+	// Round-trip: the reader yields the full value (quote-protected), not a
+	// parse failure or a mapping-misread.
+	if got := ParseFrontmatter(path)["source"]; got != "e2e fails: cobra" {
+		t.Fatalf("round-trip read = %q, want %q", got, "e2e fails: cobra")
+	}
+}
