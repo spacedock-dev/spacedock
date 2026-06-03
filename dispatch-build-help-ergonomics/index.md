@@ -9,6 +9,7 @@ started: 2026-06-03T21:34:29Z
 completed:
 verdict:
 issue:
+mod-block: merge:pr-merge
 ---
 
 The dispatch command's subcommand help is blocked by the same required-flag checks used for real execution. During first-officer dogfooding, trying to inspect `dispatch build` before constructing the JSON envelope failed with the operational error instead of showing help.
