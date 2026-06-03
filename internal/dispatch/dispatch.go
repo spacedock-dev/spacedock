@@ -251,7 +251,7 @@ func printUsage(w io.Writer) {
 
 Usage:
   spacedock dispatch build --workflow-dir DIR        (stdin JSON -> stdout JSON)
-  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [--host claude|codex]
+  spacedock dispatch build --workflow-dir DIR --entity-path FILE --stage STAGE --checklist-file FILE [--host claude|codex|pi]
   spacedock dispatch build --print-schema
   spacedock dispatch build --validate-only FILE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE

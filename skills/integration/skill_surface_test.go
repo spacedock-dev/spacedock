@@ -80,6 +80,30 @@ var referenceRe = regexp.MustCompile(`@?(references/[A-Za-z0-9_./-]+\.md)`)
 // (a ported skill pointing at a path that does not exist on `next`) fails here.
 // Brace-placeholder template paths (e.g. references/templates/{name}.md) are
 // resolved against their concrete siblings rather than the literal `{name}`.
+func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
+	root := skillsRoot(t)
+	cases := []struct {
+		skill string
+		ref   string
+	}{
+		{skill: "first-officer", ref: "references/pi-first-officer-runtime.md"},
+		{skill: "ensign", ref: "references/pi-ensign-runtime.md"},
+	}
+	for _, tc := range cases {
+		skillDir := filepath.Join(root, tc.skill)
+		data, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
+		if err != nil {
+			t.Fatalf("%s: %v", tc.skill, err)
+		}
+		if !strings.Contains(string(data), tc.ref) {
+			t.Errorf("%s/SKILL.md does not advertise Pi runtime adapter %s", tc.skill, tc.ref)
+		}
+		if _, err := os.Stat(filepath.Join(skillDir, tc.ref)); err != nil {
+			t.Errorf("%s: Pi runtime adapter %s is not loadable: %v", tc.skill, tc.ref, err)
+		}
+	}
+}
+
 func TestUserSkillReferenceClosureResolves(t *testing.T) {
 	root := skillsRoot(t)
 	for _, skill := range userSkills {
