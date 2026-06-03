@@ -9,6 +9,7 @@ verdict:
 score: 0.41
 worktree: .worktrees/spacedock-ensign-scenario-testing-principles
 issue:
+pr: local-merge:ffb829b8
 ---
 
 Establish the **semantic foundation** for scenario-based testing in Spacedock: what a *scenario* is, what an *executor* is, and the *variant axes* a scenario runs under — so `8y`'s shared runtime scenarios, `p4`'s live-verification gate, the authoring primitive, and `4n`'s cost-ledger all build on one shared model instead of re-inventing it. **Semantics first; syntax (Gherkin vs runbook, file layout, API) is explicitly deferred.**
