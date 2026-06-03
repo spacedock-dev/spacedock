@@ -101,3 +101,38 @@ Spiked the birth mechanism first (checklist item 1) before designing: the orphan
 ### Summary
 
 Implemented `spacedock state new` as the birth half of the split-root lifecycle, reusing the same README interpreters and the spiked `commissionSplitWorkflow` mechanic. Both captain-flagged defaults stand (leave the .gitignore edit for the operator; `state new` as `state init`'s inverse, not `commission --split`) — surface them at the validation gate. A live smoke surfaced a real bug the e2e `strings.Contains` assertion missed: the `.gitignore` entry was built with `filepath.Rel` against git's symlink-resolved `--show-toplevel` (`/var` → `/private/var` on macOS) vs. the unresolved `workflowDir`, yielding a garbage `../../…` path; fixed by deriving the entry from `git rev-parse --show-prefix`, and hardened the test to an exact-line check plus a `git check-ignore` behavioral assert.
+
+## Stage Report: validation
+
+**Recommendation: PASSED.**
+
+- DONE: Reproduce evidence for every AC (AC-1 birth, AC-2 round-trip with state init, AC-3 refusals, AC-4 no-remote, AC-5 inline-README): run state_new_test.go (15 tests) + go test ./...; confirm the symlink-resolved .gitignore-path fix holds via the exact-line + git check-ignore asserts.
+  `go test ./internal/cli -run 'TestStateNew|TestLsRemoteHasBranch' -v` → 15/15 named tests pass, zero skips (AC-1 `TestStateNewBirthsSplitRoot`, AC-2 `TestStateNewRoundTripsWithStateInit`, AC-3 `TestStateNewRefusesAlreadyBirthed` ×3 subtests, AC-4 `TestStateNewNoRemoteBestEffort`, AC-5 `TestStateNewInlineErrors`, unit `TestLsRemoteHasBranch` ×6). Full `go test ./...` 848/848, no FAIL/SKIP; `go build`/`go vet`/`gofmt -l` all clean.
+- DONE: Confirm the symlink-resolved .gitignore-path fix holds via the exact-line + git check-ignore asserts.
+  Live smoke in a real `/tmp`→`/private/tmp` symlinked repo (no remote): `state new` exits 0, births orphan `spacedock-state/dev` + linked worktree, writes the exact line `docs/dev/.spacedock-state/`, `git check-ignore` returns exit 0, `status --boot` shows `STATE_BACKEND: split-root` + `present: true`, code-branch porcelain shows only `?? .gitignore` (zero-churn holds), re-run refuses non-zero with no git fatal leak.
+- DONE: Confirm the two captain-flagged defaults are correctly reflected in the deliverable and surface them for the gate decision.
+  Verified in code + live: (1) `.gitignore` edit left for the operator — `appendGitignoreEntry` writes via `os.WriteFile`, never stages/commits; `runStateNew` prints "commit the .gitignore edit on your code branch"; the only commit in `state.go` is the orphan's `seed state`. (2) Surface is `spacedock state new` registered alongside `state init` (cli.go:327/329), NOT a `commission --split` flag — no `--split` exists; commission is only referenced in a doc-comment noting the README is its job. Both surfaced below for the gate.
+
+### Detached adversarial audit (high-stakes: on-disk git mutation surface)
+
+Ran on a separate detached checkout of dfd2daa8 (never the implementation worktree). 7 claim-breaking edits, all caught by the deliverable's own tests — no material findings:
+1. Revert the symlink fix to `filepath.Rel` against `--show-toplevel` → AC-1 fails at the exact-line check with the garbage `../../../../../../tmp/.../.spacedock-state/` path (confirms the report's claim that the old `strings.Contains` would have green-lit it).
+2. Leak `fatal:`/`already exists` into the occupied-path refusal → `assertNoGitFatal` (AC-3) fails.
+3. Suppress the no-remote push-later warning → AC-4 fails.
+4. Skip the orphan `git push` → AC-2 round-trip fails (fresh-clone `state init` can't fetch the orphan) — proves AC-2 is a true inverse check, not a tautology.
+5. Drop the `state init` redirect from the local-orphan refusal → AC-3 local-orphan subtest fails.
+6. Drop "split-root" from the inline error → AC-5 fails.
+7. Append a `!`-negation after the correct ignore line (exact-line check still passes) → the `git check-ignore` behavioral assert fails — confirms the two AC-1 guards are independent and the functional assert proves behavior, not a spelling match.
+
+### Captain decisions pending at the gate
+
+- **Default A (leave .gitignore edit for the operator):** `state new` writes the `.gitignore` line but does NOT commit it, printing the next step. Alternative was auto-commit on the operator's code branch (rejected as an outward-facing side effect the operator should own).
+- **Default B (`state new` vs `commission --split-root`):** shipped as `state new`, the mechanical inverse of `state init` reading the same README; the README stays commission's interactive job. `state new` is the thin primitive commission can later call.
+
+### Polish (non-blocking)
+
+- The shell-completion scripts (`internal/cli/cli.go` bash :518, zsh :538) complete the `state` subcommand with only `init --workflow-dir` — `new` is missing. `verbs_test.go` only asserts `new` appears as a top-level verb, so this gap is untested. Cosmetic (completion is "intentionally static, YAGNI" per the existing comment); does not affect any AC.
+
+### Summary
+
+All five acceptance criteria are verified with reproduced, out-of-body evidence (real-git e2e tests + a live smoke on a real symlinked macOS repo). 15/15 targeted tests and 848/848 full-suite pass; build/vet/gofmt clean. A detached adversarial audit refuted nothing material — all seven claim-breaking edits were caught, including confirmation that the hardened exact-line + `git check-ignore` asserts catch the symlink-path regression the original `strings.Contains` would have missed. Both captain-flagged defaults are correctly reflected and surfaced for the gate. One non-blocking polish item: `state new` is absent from the shell-completion scripts.
