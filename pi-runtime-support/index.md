@@ -1,6 +1,6 @@
 ---
 title: Pi runtime support — adapt Spacedock to pi-native teams/subagents
-status: validation
+status: implementation
 score: "0.36"
 source: captain (2026-06-03) — dogfood pi support from the prior PR #155 and evaluate pi-agent-teams / pi-subagents as usable ensign constructs
 issue: spacedock-dev/spacedock#155
@@ -132,6 +132,10 @@ The ideation result chooses a compatibility-first Pi runtime shape: default to b
 ### Summary
 
 Implemented the first compatibility slice for Pi runtime support in code commit `f935a7b2`, plus required gofmt cleanup in `672d5ba6`: `spacedock dispatch build` now accepts `host: "pi"` and emits Pi-native dispatch guidance without Claude team-tool signatures. The shipped skill surface now advertises and loads Pi first-officer/ensign runtime adapters; focused dispatch and skill integration tests pass.
+
+### Feedback Cycles
+
+- Cycle 1 validation rejected the first implementation slice: keep `f935a7b2`/`672d5ba6`, then add missing offline evidence for pi-agent-teams action mapping, stale-completion protection, and Pi-specific split-root dispatch paths before reattempting the live isolated-home subagent smoke.
 
 ## Stage Report: validation
 
