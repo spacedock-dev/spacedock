@@ -88,6 +88,7 @@ func stageReflowFixture(t *testing.T, reflow bool, feedbackContext string) reflo
 		"checklist": []string{"- Address the rejection findings"},
 		"team_name": "fixture-team",
 		"bare_mode": false,
+		"host":      "claude",
 	}
 	if reflow {
 		fields["is_feedback_reflow"] = true
@@ -176,6 +177,7 @@ func TestFeedbackReflowGoesRedOnBrokenOutput(t *testing.T) {
 			"checklist":          []string{"- Address the rejection findings"},
 			"team_name":          "fixture-team",
 			"bare_mode":          false,
+			"host":               "claude",
 			"is_feedback_reflow": true,
 			"feedback_context":   "",
 		})

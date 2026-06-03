@@ -32,6 +32,9 @@ type buildResult struct {
 // callers can assert on a known-good build.
 func runBuild(t *testing.T, root, workflowDir string, input map[string]any) buildResult {
 	t.Helper()
+	if _, ok := input["host"]; !ok {
+		input["host"] = "claude"
+	}
 	raw, err := json.Marshal(input)
 	if err != nil {
 		t.Fatal(err)
