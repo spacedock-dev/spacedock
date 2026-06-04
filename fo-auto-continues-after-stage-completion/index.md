@@ -1,12 +1,12 @@
 ---
 title: FO should auto-continue from completed non-gated stages to next-stage dispatch
-status: ideation
+status: implementation
 source: captain (2026-06-04) — FO stopped after implementation reporting instead of immediately advancing to validation; AI-engineer review found the current contract implies but does not enforce this lifecycle invariant
 score: "0.32"
 started: 2026-06-04T15:05:37Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-auto-continues-after-stage-completion
 issue:
 id: wmn2x3k7j0fjshvdz126ray3
 ---
