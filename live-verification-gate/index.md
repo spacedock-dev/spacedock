@@ -130,3 +130,22 @@ Reworked after staff REWORK (5 material findings, all verified against real code
 ### Summary (cycle 2)
 
 p4 is now a runtime-observable EXTENSION of 2a's `ClassifyEntityACs` at the SAME terminal `--set` guard under the SAME `require-external-proof` opt-in — not a parallel gate at `runArchive`, and not a new extractor. The riskiest unexercised mechanism (`ci-run:<id>` resolution) is spiked: a 404 refuses, a connectivity/auth error is indeterminate (never a false refusal). `--force` stays as a loud, self-incriminating escape. p4 depends on 2a landing and sequences after it.
+
+## Stage Report: implementation
+
+- DONE: AC-1 + AC-4 (the gate) — terminal `--set` guard refuses an uncited runtime-observable `live` AC under `require-external-proof: true`
+  `internal/status/live_proof.go` (`classifyLiveACs` reuses ep's block-walk + `isolateProofClause`; `resolveLiveCitation` three-way: ci-run:/session: resolve→pass, placeholder/404/absent→refuse, connectivity/auth→indeterminate tooling error not a refusal) + guard block in `handlers.go` beside ep's self-ref check (same opt-in, same `isTerminalUpdate`, inert when off). `--force` bypasses with a loud yy-naming warning. Commit b8f03087.
+- DONE: AC-4 yy-shape fixture refused + ci-run 3-way resolution unit test
+  `TestLiveRunGuardRefusesUncitedRuntimeAC` (yy-shape placeholder → exit 1, frontmatter untouched) + `TestResolveLiveCitationThreeWay` (real→citedAndReal, 404→definitivelyAbsent, connectivity→indeterminate via injected stub, offline). TDD: guard test written first, watched RED (exit 0, no guard), then GREEN.
+- DONE: Adversarial guard — both spike break-edits red the suite
+  never-classify-runtime (return nil) reds `TestLiveRunGuardRefusesUncitedRuntimeAC` + `TestClassifyLiveACs/yy-shape`; refuse-offline-too (over-gate) reds `TestLiveRunGuardNeverRefusesOfflineAC`. Restored, suite green.
+- DONE: AC-2 (the primitive) — live-scenario authorable outside ensigncycle, graded on durable outcomes, with a negative case
+  `internal/livescenario/scenario.go` (`Scenario{Runbook,Setup,Assert}` + `Run` + `Runner` seam). `TestScenarioGradesBrokenOutcomeNegative` proves a broken durable outcome (gate advanced to done, or no gate-review observed) reds the grade. `//go:build live` adapter `internal/ensigncycle/livescenario_adapter_live_test.go` drives the primitive through 8y's real Claude launch adapter — AC-2's runnable-by-a-real-agent half (vet-clean under `-tags live`).
+- DONE: AC-3 — dev template carries live-scenario-for-runtime-claims as a third opt-in recommended practice
+  New `### Live scenario for runtime claims` block in `skills/commission/references/templates/development.md` beside External-proof / Detached-audit (recording-proves-the-watcher / text-check-proves-the-words distinction). Locked by `internal/hostneutrality/live_scenario_practice_test.go` (presence check scoped to the Recommended-practices section).
+- DONE: Full offline `go test ./...` green; `go vet` clean
+  1020 passed in 13 packages; `go vet ./...` and `go vet -tags live ./internal/ensigncycle/` clean; `gofmt -l` clean.
+
+### Summary
+
+Re-anchored on ep's (#290) injected-vocabulary `ClassifyEntityACs` and layered a NEW runtime-observable dimension (`Verified by: live <ref>` lead) at the SAME terminal `--set` guard under the SAME `require-external-proof` opt-in. The live-run citation resolves three-way so a network blip is an indeterminate tooling error, never a false refusal. 8y's {runbook, setup, durable-outcome} triple is promoted into `internal/livescenario` — importable anywhere, graded on durable state/output with a real negative case, and runnable against the existing live launch adapter. AC-2's own live run (which produces its citation under AC-1's gate) is the validation-stage live exercise; the offline gradable core + the live adapter are both in place. Two notes for the FO: (1) AC-1/AC-4 guard machinery is the high-stakes status-mutation surface the detached audit should target; (2) AC-2's live half (`go test -tags live -run TestLivePrimitiveRunsAgainstClaudeAdapter`) needs a credential to produce the session/ci-run artifact that satisfies its own `Verified by: live …` citation.
