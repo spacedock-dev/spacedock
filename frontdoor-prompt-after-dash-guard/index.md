@@ -9,6 +9,7 @@ verdict:
 score: 0.28
 worktree: .worktrees/spacedock-ensign-frontdoor-prompt-after-dash-guard
 issue:
+mod-block: merge:pr-merge
 ---
 
 The front-door grammar (`internal/cli/frontdoor.go` `parseFrontDoorArgs`) splits args at `--`: tokens before `--` become the spacedock *task* (`fd.task`, `hasTask=true`), tokens after `--` forward verbatim to the host. The bootstrap prompt is only combined with the operator's prompt when the prompt is the task — `launchPrompt` returns `base + " " + task` only when `hasTask`. When the operator places their positional prompt AFTER `--` (intuitive, since "the prompt goes to claude"), it is classified as host passthrough, `hasTask` stays false, and the bare bootstrap is appended as a separate trailing positional after the operator's prompt. The host then receives two positionals and the spacedock bootstrap is effectively lost — the operator silently loses the launch-and-go preamble with no warning.
