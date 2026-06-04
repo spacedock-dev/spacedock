@@ -11,6 +11,7 @@ mod-block:
 pr: "#293"
 completed: 2026-06-04T07:02:49Z
 verdict: PASSED
+archived: 2026-06-04T07:02:49Z
 ---
 # Pi runtime support — adapt Spacedock to pi-native teams/subagents
 
