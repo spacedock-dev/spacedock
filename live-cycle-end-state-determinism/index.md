@@ -9,7 +9,7 @@ completed:
 verdict:
 issue:
 worktree: .worktrees/spacedock-ensign-live-cycle-end-state-determinism
-mod-block: merge:pr-merge
+mod-block:
 pr: "#295"
 ---
 
