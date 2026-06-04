@@ -4,7 +4,7 @@ How the shared ensign core executes on Claude Code.
 
 ## Agent Surface
 
-The ensign is dispatched by the first officer via the Agent tool. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, worktree path, and checklist.
+The ensign is dispatched by the first officer via the Agent tool. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
 
 ## Clarification
 

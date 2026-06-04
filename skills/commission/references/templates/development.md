@@ -112,6 +112,10 @@ Terminal state. The task's PR is merged and the entity is archived.
 
 These are proven dev-workflow disciplines a captain can adopt into this workflow's validation stage. They are recommended, not mandatory — the universal first-officer contract does not impose them, because a non-development workflow's acceptance proof may legitimately be a published artifact, a metric, or a human review rather than a test or command. Adopt them by copying the guidance into the `validation` stage's Outputs and Bad lists above when commissioning a code-shipping workflow.
 
+### Test-first authoring
+
+For a code or fixture deliverable, write the failing test first: write a test that captures the desired behavior, run it and watch it fail for the right reason, then write the minimum code to make it pass, and refactor green. The test is what the gate judges. This is a dev-workflow discipline — recommended, not mandatory; the universal contract does not impose it, because a non-development workflow's deliverable (a PRD, an analysis verdict, a published artifact) is judged against its own pre-fixed success criteria, not a test-first ritual.
+
 ### External-proof acceptance criteria
 
 At the validation gate, require that each AC's cited evidence comes from a check OUTSIDE the task body — a test, a command's output or exit code, a file the change produces, or the resulting on-disk state. An AC whose only cited proof is review of the task's own prose ("verified by reviewing this task's decision section") proves only that the prose exists; it can never fail, so it does not satisfy the AC. Reject self-referential ACs. If the task's only deliverable is a decision with nothing shipped, do not recommend PASSED — the decision belongs in the roadmap, not a terminal dev task. (Behavioral enforcement of this rule, when a workflow wants it, is a workflow-opt-in `spacedock status --validate` guard — the workflow declares it; it is not universal binary behavior.)
