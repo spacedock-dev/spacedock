@@ -1,14 +1,14 @@
 ---
 id: n1a2q2f3dvxm9ypbrvs6ryeg
 title: "Deterministic full multi-agent live cycle — re-promote the scoped TestLiveEnsignCycle end-state assertions"
-status: ideation
+status: implementation
 source: "captain (2026-06-04) — at #285 scoped TestLiveEnsignCycle's live gate to the teardown MARKER grade (deterministic, at's deliverable) and DEMOTED the full multi-agent end-state assertions (verdict / status:done / stage-report-shape / path-scoped-commit) to non-fatal logging, because the real FO+ensign lifecycle is non-deterministic. This entity tracks making that lifecycle deterministic enough to re-promote those assertions to hard."
 score: "0.35"
 started: 2026-06-04T06:30:55Z
 completed:
 verdict:
 issue:
-worktree:
+worktree: .worktrees/spacedock-ensign-live-cycle-end-state-determinism
 ---
 
 `at` (#285) unblocked the path to TestLiveEnsignCycle's full-lifecycle end-state assertions (by fixing the teardown hang), and that exposed that a single `claude -p` FO + a dispatched ensign cannot deterministically complete a full multi-stage lifecycle to a verdicted, archived terminal state. `at` shipped with the live gate SCOPED (teardown marker grade hard; end-state non-fatal/logged) so it wasn't blocked on an inherently-flaky assertion. This entity is the follow-up: make the full cycle deterministic, then re-promote the demoted assertions.
