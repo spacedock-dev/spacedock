@@ -1,10 +1,10 @@
 ---
 id: 3c0bcrn8p60wptvc12fsv5x2
 title: Hint ensigns to use todo/task tools when available — spike the placement + measure empirical impact
-status: backlog
+status: ideation
 source: "captain (2026-06-04) — empirically ensigns never convert the helper-built `### Completion checklist` into internal todos (TodoWrite=0 across all ensign transcripts; neither the ensign contract nor the dispatch file hints it). Hint ensigns to use todo/task tools IF the runtime has them — but spike the placement and show the empirical performance impact before committing."
 score: "0.27"
-started:
+started: 2026-06-04T22:27:44Z
 completed:
 verdict:
 worktree:
