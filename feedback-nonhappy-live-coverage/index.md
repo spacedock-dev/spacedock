@@ -177,3 +177,20 @@ Polish (fold in):
 - Validator nits: `docs/specs/scenario-testing-principles.md:55` says "three" host-neutral scenarios while the seed block now lists four; stale AC-number labels in `shared_coverage_meta_test.go` / `shared_scenarios_docs_test.go` comments.
 
 Re-run the validator after the fix; keep offline `go test ./...` green.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Material A — isolating negative for `assertThirdCycleEscalation`'s no-post-cycle-3-report check
+  Added `markerWithStrayReport` to `TestThirdCycleEscalationNegativeAutoBounce` (`shared_scenarios_negative_test.go`): marker present + 3 cycle entries + a stray post-cycle-3 `## Stage Report: implementation`, no other defect — only the report-count check rejects it. Mutation control: changing `reports > 1` → `reports > 99999` reds EXACTLY this case at `negative_test.go:151`, suite otherwise green (the validator's exact finding, now guarded). Commit b337483c.
+- DONE: Material B — `assertThirdCycleEscalation` asserts the entity stayed NON-terminal (park-not-advance)
+  Added `terminalStatus` regex + the `status: done` check mirroring `assertGateHeld`/`assertMergeHookGuardHeld`; added `markerButTerminalized` isolating negative (marker + 3 cycles + 1 impl report + `status: done`, no other defect). Mutation control: deleting the non-terminal check reds EXACTLY this case at `negative_test.go:170`, suite otherwise green.
+- DONE: Polish — section-scope the `- Cycle N:` + escalation-marker matches to the `### Feedback Cycles` section
+  Added `feedbackCyclesSection(entity)` (heading → next heading/EOF) + `nextHeading` regex; both the cycle-count and marker checks now run over the section, not the whole body. Added the out-of-section isolating case to `TestAssertThirdCycleEscalation`. Mutation control: matching the whole body reds EXACTLY that case at `shared_assertions_test.go:96`.
+- DONE: Polish — offline table test for `assertClaude/CodexReviewerReuse`
+  Moved both reuse asserts to a default-tag file `shared_reviewer_reuse_test.go` (stdlib-only, removed now-unused `encoding/json`/`fmt` imports from both live runners; `strings` retained in the Codex runner) and added `shared_reviewer_reuse_table_test.go`: wrong-recipient / unrelated-tool / loose-narration / empty all RED, real tool-call PASSES. Mutation control: stubbing `assertClaudeReviewerReuse` to `nil` reds all four negative subtests.
+- DONE: Polish — validator doc/comment nits
+  Dropped the stale "three" count in `scenario-testing-principles.md:55` (the seed block + `TestSeedScenariosDocLock` are the count source of truth — avoids the same drift recurring on the next scenario); realigned stale AC labels: `shared_coverage_meta_test.go` AC-2/AC-3 → AC-1, `shared_scenarios_docs_test.go` AC-6 → AC-5, negatives-file header generalized off the colliding AC-5 prefix.
+
+### Summary
+
+Cycle-2 fixes both Material items the detached audit found, each with its mutation control proven by exercising (not asserting): the no-post-cycle-3-report check and the new park-not-advance (non-terminal) check each now have a dedicated isolating negative that reds ONLY that check, confirmed by mutating each check and watching exactly the one case go red while the rest of the suite stays green. Folded in all polish: section-scoped the cycle/marker matches to the `### Feedback Cycles` section (with its own mutation-controlled isolating case), moved the host reviewer-reuse asserts to the offline lane behind a real table test (wrong-recipient/unrelated-tool/loose-narration all red), and cleared the doc/comment nits. Offline `go test ./...` green (1124/15 pkgs); the live lane compiles and the no-model live meta + reuse tests pass. The live legs (AC-3 both hosts, AC-4 live cycle) are unchanged and stay close-post-merge per the live-AC policy.
