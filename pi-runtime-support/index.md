@@ -6,9 +6,11 @@ source: captain (2026-06-03) — dogfood pi support from the prior PR #155 and e
 issue: spacedock-dev/spacedock#155
 id: s9kcdyb9r5t8addppnnce54j
 started: 2026-06-03T21:07:03Z
-worktree: .worktrees/spacedock-ensign-pi-runtime-support
+worktree:
 mod-block:
 pr: "#293"
+completed: 2026-06-04T07:02:49Z
+verdict: PASSED
 ---
 # Pi runtime support — adapt Spacedock to pi-native teams/subagents
 
