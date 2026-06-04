@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#277"
+archived: 2026-06-04T05:27:06Z
 ---
 
 **What this is for (plain).** Today nothing stops a task from being marked finished when its "proof"
