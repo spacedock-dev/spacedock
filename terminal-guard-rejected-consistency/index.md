@@ -81,3 +81,18 @@ Verified by: the contract reference text states it (prose-presence is legitimate
 ### Summary
 
 Confirmed the asymmetry empirically (scratch run on a copy of `testdata/merge-pr-workflow` with a `verdict: rejected` entity, empty `pr`/`mod-block`, default `merge: pr`): `--set status=done` → exit 0, `--archive` → exit 1 — reject-then-archive half-passes. Pinned the bug to the one missing `verdict != "rejected"` clause at `mutate.go:324` and the prose drift to two `first-officer-shared-core.md` enumerations (lines 214, 324) that name only `--force`/`merge: local` as escapes. Chose direction "exempt both" (a rejected entity never ran the merge ceremony, so the requirement is vacuous; "guard both" would push rejected entities onto a `--force` path the contract forbids), wrote three ACs (set/archive agree; mod-block-pending still refuses; prose names the escape) with a Go-unit-test plan mirroring the existing `assertMergeGolden` cases, and recorded the riskiest-unknown as already exercised. Flagged the stale "Python oracle :2648" reference as nonexistent and dropped it.
+
+## Stage Report: implementation
+
+- DONE: Make --set and --archive AGREE on verdict=rejected (chosen direction: exempt both). Add the missing `verdict != "rejected"` clause to the terminal-guard at internal/status/mutate.go.
+  Added the clause at the runArchive merge-hook guard (was mutate.go:343 on next; sibling already present at handlers.go:203). Commit f07babee.
+- DONE: Author the failing Go test FIRST (TDD): TestRejectedVerdictArchiveMatchesSet in internal/status/merge_policy_guard_test.go.
+  New fixture 040-rejected.md (verdict: rejected, empty pr/mod-block); test stages one root, runs --set status=done then --archive on the same entity, asserts exit codes agree. Confirmed RED on pre-fix code (set=0/archive=1 disagreement) and on a fix-revert (golden+exit mismatch); GREEN after fix.
+- DONE: AC-2 — a rejected entity with non-empty mod-block is STILL refused by --archive (policy-independent block survives).
+  New fixture 050-rejected-pending.md (verdict: rejected, mod-block: merge:local-merge); TestRejectedVerdictModBlockPendingArchiveRefuses asserts --archive exits 1 naming the pending mod-block.
+- DONE: Align contract prose (AC-3): the two FO terminal-guard enumerations must name the verdict=rejected escape alongside --force and merge: local.
+  Updated first-officer-shared-core.md at the terminalize-step bullet (:214) and the Mod-Block Enforcement bullet (:324) to name verdict=rejected on both surfaces. Commit f07babee.
+
+### Summary
+
+Added the one missing `verdict != "rejected"` clause to runArchive's merge-hook guard in internal/status/mutate.go so --archive matches the --set finalize path; both surfaces now let a rejected entity (empty pr/mod-block, default merge: pr) through without --force, while the policy-independent mod-block-pending guard still refuses a rejected entity with a live block. TDD strictly: wrote TestRejectedVerdictArchiveMatchesSet first (drives the native runner --set-then-archive on one staged root, asserts surfaces agree) and confirmed it reds on today's code AND on a fix-revert (golden + exit-code mismatch), then green after the fix. Aligned both FO contract enumerations to name the verdict=rejected escape. Full suite green: go build/vet clean, 980 tests passed.
