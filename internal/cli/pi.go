@@ -24,7 +24,7 @@ type execPiRuntimeOps struct{}
 
 func (execPiRuntimeOps) LookPath(name string) (string, error) { return exec.LookPath(name) }
 func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Stat(path); return err }
-func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv) }
+func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv, os.Environ()) }
 
 type piRuntimeConfig struct {
 	repoRoot        string

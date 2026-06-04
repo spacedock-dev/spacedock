@@ -4,6 +4,8 @@ Shared ensign semantics. Keep aligned with `agents/ensign.md` and the runtime ad
 
 ## Assignment
 
+**Launcher command invariant:** Generated fetch commands and any Spacedock helper calls should prefer `${SPACEDOCK_BIN:-spacedock}` so sessions launched by an explicit binary keep using that binary, while unset environments fall back to `spacedock` on `$PATH`.
+
 Read the assignment context provided by the first officer. It defines:
 - the entity
 - the stage

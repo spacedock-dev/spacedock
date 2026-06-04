@@ -14,11 +14,13 @@ Follow these phases in order. Do not skip or combine phases.
 
 ## Phase 1: Discovery
 
+**Launcher command invariant:** Prefer `${SPACEDOCK_BIN:-spacedock}` for Spacedock helper calls so an explicit front-door launcher remains the command source; when unset, fall back to `spacedock` on `$PATH`. Bare `spacedock` examples are shorthand for that expression.
+
 ### Step 1 — Identify the workflow
 
 The user may provide a workflow directory path as an argument. If they didn't, search for it:
 
-1. Run `spacedock status --discover`. It prints one resolved workflow directory path per line on stdout, scanning from the enclosing git repository root and pruning agent-managed worktrees (`.claude/worktrees/`) and other build/vendor noise.
+1. Run `${SPACEDOCK_BIN:-spacedock} status --discover`. It prints one resolved workflow directory path per line on stdout, scanning from the enclosing git repository root and pruning agent-managed worktrees (`.claude/worktrees/`) and other build/vendor noise.
 2. If exactly one path is returned, use it as `{dir}`. If multiple, ask which one. If none, report "No Spacedock workflow found."
 
 Store the confirmed path as `{dir}`.

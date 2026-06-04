@@ -6,6 +6,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -29,9 +32,9 @@ type hostOps interface {
 	// when no plugin is installed (a distinct, non-error state). A non-nil error
 	// means the host CLI itself failed.
 	ResolveManifest(host string) (string, error)
-	// Launch execs argv, replacing the current process on success (production) or
-	// recording it (test). It returns only on failure to launch.
-	Launch(argv []string) error
+	// Launch execs argv with env, replacing the current process on success
+	// (production) or recording it (test). It returns only on failure to launch.
+	Launch(argv []string, env []string) error
 	// Install issues the host plugin commands to install/update the plugin from
 	// source (optionally pinned to branch), returning combined output.
 	Install(host, source, branch string) (string, error)
@@ -44,6 +47,59 @@ type hostOps interface {
 // is a var (not a const) so the linker can stamp it, mirroring Version, and so
 // `SPACEDOCK_DEV_BRANCH` can override it; tests save/restore it.
 var devBranch = "next"
+
+var executablePath = os.Executable
+
+const spacedockBinEnv = "SPACEDOCK_BIN"
+
+func launchEnv(parent []string) []string {
+	env := withoutEnv(parent, spacedockBinEnv)
+	if bin, ok := resolvedLauncherBin(); ok {
+		env = append(env, spacedockBinEnv+"="+bin)
+	}
+	return env
+}
+
+func withoutEnv(env []string, key string) []string {
+	prefix := key + "="
+	out := make([]string, 0, len(env))
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			continue
+		}
+		out = append(out, entry)
+	}
+	return out
+}
+
+func resolvedLauncherBin() (string, bool) {
+	p, err := executablePath()
+	if err != nil || p == "" {
+		return "", false
+	}
+	abs, err := filepath.Abs(p)
+	if err != nil {
+		return "", false
+	}
+	if resolved, err := filepath.EvalSymlinks(abs); err == nil && executableFile(resolved) {
+		return resolved, true
+	}
+	if executableFile(abs) {
+		return abs, true
+	}
+	return "", false
+}
+
+func executableFile(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return info.Mode().Perm()&0o111 != 0
+}
 
 // gateHost resolves the installed manifest for host and compares it against
 // CONTRACT_VERSION. It returns whether launch is permitted. Only a Compatible
@@ -136,7 +192,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		argv = safehouse.Wrap(inner, extra)
 	}
 
-	if err := ops.Launch(argv); err != nil {
+	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
 	}
@@ -258,7 +314,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		argv = safehouse.Wrap(inner, extra)
 	}
 
-	if err := ops.Launch(argv); err != nil {
+	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: launch failed: %v\n", err)
 		return 1
 	}

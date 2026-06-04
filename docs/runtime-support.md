@@ -34,6 +34,10 @@ Add support in small layers. Each layer should have its own proof.
    - Prefer a temp workflow fixture, isolated host config/session dirs, and copied credentials over global host state.
    - Assert process exit, entity content, git log, and clean state. Do not pass by transcript phrasing.
 
+## Launcher binary propagation through wrappers
+
+`spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the process they exec, including the outer `safehouse -- ...` process when safehouse wrapping is active. Spacedock does not modify safehouse internals or assume a private passthrough mechanism; if a wrapper or runtime strips `SPACEDOCK_BIN` before the agent session observes it, the skill contract's `${SPACEDOCK_BIN:-spacedock}` convention degrades to the existing `$PATH` lookup.
+
 ## Acceptance checklist
 
 A new runtime support slice is not done until the entity or PR records evidence for each applicable item:

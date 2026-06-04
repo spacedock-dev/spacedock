@@ -6,7 +6,7 @@
   "subagent_type": "spacedock:ensign",
   "description": "Thing: backlog",
   "fetch_commands": [
-    "spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage backlog"
+    "${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage backlog"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md and treat its content as your assignment.",
@@ -42,7 +42,7 @@ Read the entity file at <ROOT>/thing.md for the current spec.
 
 ### Fetch commands
 
-    spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage backlog
+    ${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage backlog
 
 
 ### Completion Signal

@@ -6,7 +6,7 @@
   "subagent_type": "spacedock:ensign",
   "description": "Thing: implementation",
   "fetch_commands": [
-    "spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
+    "${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation.md and treat its content as your assignment.",
@@ -46,7 +46,7 @@ Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing/index.md 
 
 ### Fetch commands
 
-    spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
+    ${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
 
 
 ### Completion Signal

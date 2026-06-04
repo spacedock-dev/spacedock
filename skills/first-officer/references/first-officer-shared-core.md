@@ -4,9 +4,11 @@ Shared first-officer semantics. Keep aligned with `agents/first-officer.md` and 
 
 ## Startup
 
-1. **Contract version gate.** Before discovery or boot read, run `spacedock --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=1,<2`. Abort by class:
-   - **Binary absent or non-executable** — `spacedock --version` is not found or emits no parseable `contract <N>` token. ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — same missing binary.
-   - **Binary present but contract out of range** — `<N>` below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `spacedock doctor` for the per-class remedy.
+**Launcher command invariant:** When `SPACEDOCK_BIN` is set by `spacedock claude` or `spacedock codex`, prefer that launcher for every Spacedock helper call; when unset, empty, or unusable, fall back to `spacedock` on `$PATH`. Shell examples may use bare `spacedock` as shorthand for `${SPACEDOCK_BIN:-spacedock}`.
+
+1. **Contract version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=1,<2`. Abort by class:
+   - **Binary absent or non-executable** — `${SPACEDOCK_BIN:-spacedock} --version` is not found or emits no parseable `contract <N>` token. If `SPACEDOCK_BIN` is unusable, retry once with bare `spacedock` on `$PATH`; if still absent, ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — same missing binary.
+   - **Binary present but contract out of range** — `<N>` below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy (bare-shorthand: run `spacedock doctor` for the per-class remedy).
 
    In every class, do NOT proceed to discovery or `--boot`.
 2. Discover the project root with `git rev-parse --show-toplevel`.
@@ -26,11 +28,11 @@ Shared first-officer semantics. Keep aligned with `agents/first-officer.md` and 
 
 ## Status Viewer
 
-The `spacedock status` launcher owns path resolution and mutation guards; skill instructions stay declarative and never reference a plugin-private script path.
+The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutation guards; skill instructions stay declarative and never reference a plugin-private script path.
 
 Invoke it as:
 ```
-spacedock status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
+${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
 ```
 
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
