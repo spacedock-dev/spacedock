@@ -13,7 +13,7 @@ import (
 // userSkills is the published user skill surface: the five skills the host
 // discovers (each owns a SKILL.md). `integration` is deliberately absent — it
 // holds only *_test.go and must not publish.
-var userSkills = []string{"commission", "debrief", "refit", "ensign", "first-officer"}
+var userSkills = []string{"commission", "debrief", "refit", "ensign", "first-officer", "using-claude-team"}
 
 // TestUserSkillsPresentWithFrontmatter locks AC-1: each of the five user skills
 // ships a SKILL.md whose YAML frontmatter declares a `name` and a `description`.

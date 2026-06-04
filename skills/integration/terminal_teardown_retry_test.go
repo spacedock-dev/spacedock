@@ -135,17 +135,17 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 			"launcher's** responsibility, not the FO's", // launcher owns the exit, not the FO
 		})
 
-	// Claude runtime: the Awaiting-Completion section already bans retrying
-	// TeamDelete BEFORE the completion signal (the pre-completion wait phase). The
-	// terminal teardown is a DIFFERENT phase: a BOUNDED set of TeamDelete attempts
-	// with an inter-attempt settle, then STOP and emit the verbatim marker, with the
-	// exit owned by the launcher. Scope to the `## Terminal Team Teardown` section.
-	// The Claude runtime IS the adapter realization, so the behavioral phrases are
+	// The using-claude-team skill: the Awaiting-Completion section already bans
+	// retrying TeamDelete BEFORE the completion signal (the pre-completion wait
+	// phase). The terminal teardown is a DIFFERENT phase: a BOUNDED set of TeamDelete
+	// attempts with an inter-attempt settle, then STOP and emit the verbatim marker,
+	// with the exit owned by the launcher. Scope to the `## Terminal Team Teardown`
+	// section. The skill IS the adapter realization, so the behavioral phrases are
 	// asserted directly.
-	claude := files["first-officer/references/claude-first-officer-runtime.md"]
-	teardown := sectionAfter(claude, "## Terminal Team Teardown")
+	skill := usingClaudeTeamSkill(t)
+	teardown := sectionAfter(skill, "## Terminal Team Teardown")
 	if teardown == "" {
-		t.Fatal("Claude FO runtime missing the `## Terminal Team Teardown` section (the bounded-best-effort realization of shared-core step 10)")
+		t.Fatal("using-claude-team skill missing the `## Terminal Team Teardown` section (the bounded-best-effort realization of shared-core step 10)")
 	}
 	if !strings.Contains(teardown, terminalTeardownMarker) {
 		t.Errorf("Terminal Team Teardown missing the verbatim terminal-status marker %q", terminalTeardownMarker)
@@ -289,10 +289,10 @@ func numberedStep(region string, n int) string {
 // re-intros red AND the ban's positive framing is pinned"; the BEHAVIORAL oracle
 // for the ban surviving is the live-e2e run (AC-1), not this structural lint.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
-	claude := vendoredSkillFiles(t)["first-officer/references/claude-first-officer-runtime.md"]
-	region := sectionAfter(claude, "## Awaiting Completion")
+	skill := usingClaudeTeamSkill(t)
+	region := sectionAfter(skill, "## Awaiting Completion")
 	if region == "" {
-		t.Fatal("Claude FO runtime missing the `## Awaiting Completion` section")
+		t.Fatal("using-claude-team skill missing the `## Awaiting Completion` section")
 	}
 	if !strings.Contains(region, "emit `TeamDelete`") {
 		t.Error("Awaiting Completion must still ban emitting TeamDelete before the completion signal arrives")
