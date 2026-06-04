@@ -178,3 +178,27 @@ External/failable proof: tests run the resolver/skill command path with no `SPAC
 ## Stage Report: ideation
 
 DONE — Clarified why explicit-path front-door launches can silently switch to a different `$PATH` binary inside Claude/Codex sessions; proposed a compatibility-first `SPACEDOCK_BIN` launch env with env-then-PATH skill/command resolution; identified safehouse, symlink, relative path, `go run`, stale env, and host-runtime edge cases; defined external/failable acceptance criteria and a test plan covering launch env, resolver behavior, skill invariants, generated prompts, and safehouse smoke validation.
+
+## Stage Report: implementation
+
+DONE — Filed implementation result for product commit `ede26b09` (`launch: propagate spacedock binary path`) on branch `spacedock-ensign/launcher-binary-path-passthrough` in `.worktrees/spacedock-ensign-launcher-binary-path-passthrough`.
+
+DONE — AC-1 / AC-2: the implementation changes the front-door launch seam from `Launch(argv)` to `Launch(argv, env)` and injects launch-scoped `SPACEDOCK_BIN` for both Claude and Codex from the current resolved launcher executable. Tests cover resolved absolute/symlink paths, safehouse/resume launch argv preservation, stale parent `SPACEDOCK_BIN` replacement, and resolver-failure omission while launch continues.
+
+DONE — AC-3 / AC-4: generated dispatch fetch commands use `${SPACEDOCK_BIN:-spacedock}` through a shared renderer, golden dispatch outputs were updated, and FO/ensign/debrief skill text now documents the env-aware launcher invariant. Skill integration tests lock the invariant.
+
+DONE — AC-5: front-door tests prove `SPACEDOCK_BIN` is present in the outer safehouse exec environment. Safehouse internals were not changed; `docs/runtime-support.md` documents fallback/degraded behavior if a wrapper strips the variable before the inner runtime observes it.
+
+DONE — AC-6: unset or unresolvable launcher signal preserves launch behavior, and skill/dispatch command rendering falls back to `spacedock` via `${SPACEDOCK_BIN:-spacedock}`.
+
+DONE — Changed files in product commit: `docs/runtime-support.md`; `internal/cli/frontdoor.go`; `internal/cli/frontdoor_test.go`; `internal/cli/host_exec.go`; `internal/cli/pi.go`; `internal/dispatch/build.go`; `internal/dispatch/build_hazards_test.go`; `internal/dispatch/launcher_command.go`; `internal/dispatch/launcher_command_test.go`; `internal/dispatch/native_subcommands_routing_test.go`; dispatch golden files under `internal/dispatch/testdata/golden/`; `internal/ensigncycle/cycle_test.go`; `skills/debrief/SKILL.md`; `skills/ensign/references/ensign-shared-core.md`; `skills/first-officer/references/first-officer-shared-core.md`; `skills/integration/skill_text_test.go`.
+
+DONE — Validation reported by the implementation worker: `gofmt -w ./cmd ./internal`; focused front-door env tests with `go test ./internal/cli -run 'Test(ClaudeFrontDoorInjectsResolvedLauncherBin|ClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails|ClaudeFrontDoorLaunchEnvResolvesSymlink|CodexFrontDoorInjectsLauncherBinThroughSafehouseResume|ClaudeFrontDoorLaunchesOnCompatible|CodexFrontDoorLaunchesOnCompatible)' -count=1`; focused dispatch/skill tests with `go test ./internal/dispatch -run 'Test(Build|LauncherCommand)' -count=1` and `go test ./skills/integration -count=1`; full baseline `go test ./... -count=1`; race baseline `go test ./... -race -count=1`.
+
+SKIPPED — No product/source changes were made during this fixback because commit `ede26b09` already contained an implementation that could be honestly reported.
+
+SKIPPED — No live safehouse inner-environment smoke was added in this fixback; implementation evidence remains outer safehouse exec env coverage plus documented fallback if safehouse strips `SPACEDOCK_BIN`.
+
+FAILED — None for the implementation report filing.
+
+Residual risks: no live safehouse inner-env proof is recorded; generated shell fetch commands cover unset/empty `SPACEDOCK_BIN` directly while stale/non-executable launcher-path behavior relies on the documented contract/version-gate fallback guidance.
