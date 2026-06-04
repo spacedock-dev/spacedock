@@ -151,23 +151,9 @@ If the stage is gated:
 - never self-approve
 - present the stage report by invoking `Skill(skill="spacedock:present-gate")` and following its template + assembly rules
 - keep the worker alive while waiting at the gate
-- on a feedback gate recommending `REJECTED`, auto-bounce into the feedback rejection flow instead of waiting for manual review
-- on captain reject at a `feedback-to` stage, enter the Feedback Rejection Flow (priority over generic rejection)
+- on a feedback gate recommending `REJECTED`, invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it instead of waiting for manual review
+- on captain reject at a `feedback-to` stage, invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it (priority over generic rejection)
 - on captain approve to a non-terminal next stage, apply the reuse conditions. On reuse: keep the agent and SendMessage the next stage. On fresh: shut down the agent and any kept-alive `feedback-to` target the next stage does not need.
-
-## Feedback Rejection Flow
-
-When a feedback stage recommends REJECTED:
-
-1. Read the rejected stage's `feedback-to` target — the stage that receives the fix request, not the reviewer.
-2. Track cycles in `### Feedback Cycles` in the entity body.
-3. On cycle 3, escalate to the human instead of another round.
-4. Consult the budget probe (reuse condition 0). If the old ensign is over budget or the source is unavailable, shut down and fresh-dispatch; if no probe is declared, proceed to reuse below.
-5. Route findings back to the target stage in the same worktree using the existing handle when addressable and reuse conditions pass (`send_input` on Codex, `SendMessage` on Claude teams); otherwise shut down and fresh-dispatch. The routed message must carry the concrete next-stage assignment and fix work, not just an acknowledgment request. On Codex, do not treat the immediate `send_input` response as the new completion result — if the follow-up is on the entity's critical path, wait for the reused worker's next completion before advancing or shutting it down (entity-scoped wait, not a global scheduling stop).
-6. Re-run the reviewer after fixes.
-7. Re-enter the normal gate flow with the updated result.
-
-The FO owns `### Feedback Cycles`. Routing follows FO Write Scope: worktree-side when `worktree:` is set, main-side otherwise.
 
 ## Merge and Cleanup
 
