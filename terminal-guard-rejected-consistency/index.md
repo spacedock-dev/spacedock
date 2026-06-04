@@ -115,3 +115,14 @@ PASSED. All 3 ACs reproduced from fresh runs with evidence outside the task body
 ### Feedback Cycles
 
 **Cycle 1 (2026-06-04) — detached adversarial audit, material coverage hole.** The detached audit (`audit-terminal-guard-rejected-consistency`, checkout f07babee) refuted the validation's test-strength: the `--archive` merge-hook exemption is not regression-proofed. Adversarial edit — widen `verdict != "rejected"` to `verdict == ""` at `internal/status/mutate.go:347` (so any non-empty verdict, e.g. `verdict=passed`, escapes the guard) — left `go test ./internal/status/` fully GREEN. The `--set` side is pinned (caught) but `--archive` is not; no test drives a non-rejected non-empty-verdict entity through `--archive` expecting refusal. CODE is correct; coverage hole only. Routed back to implementation: add a fixture mirroring `040-rejected` with `verdict: passed` + an assertion that `--archive` exits 1 (must red under the widening probe, green on correct code).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Close the audit's --archive coverage hole — regression-proof the verdict exemption against over-widening.
+  Added fixture 060-passed-nosentinel.md (verdict: passed, empty pr/mod-block, default merge: pr) and TestNonRejectedVerdictArchiveStillRefuses asserting --archive exits 1 ("cannot be archived"). Commit 18f6fb9b.
+- DONE: Prove the new test bites — RED under the `verdict==""` over-widening probe, GREEN on correct `verdict != "rejected"` code; existing tests stay green.
+  Verified: under the probe the new test fails (native exit 0 vs golden 1) while the pre-existing 020-no-sentinel default-refuse test stays green (confirming it gave no signal — the audit's root cause). Restored code; go build/vet clean, go test ./... 981 passed (+1).
+
+### Summary
+
+Cycle 1 feedback (detached adversarial audit) found the --archive verdict exemption was not regression-proofed: widening `verdict != "rejected"` to `verdict == ""` (any non-empty verdict escapes the merge-hook guard) left the suite green, because the only default-refuse archive fixture had an empty verdict. Added a verdict=passed no-sentinel fixture (060) and TestNonRejectedVerdictArchiveStillRefuses asserting --archive still refuses it. Proved it bites: RED under the over-widening probe (with the pre-existing 020 test staying green, demonstrating the gap), GREEN on the correct code. Code unchanged — this is test-only coverage. Full suite 981 passed.
