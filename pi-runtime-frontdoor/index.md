@@ -136,3 +136,24 @@ Recommendation: PASSED
 ### Residual risks
 
 - The live Pi smoke remains dependent on local Pi credentials and a local `pi-subagents` package being available in future validation environments.
+
+## Stage Report: implementation (pi-subagents acceptance contract fix)
+
+- DONE: Updated the Pi first-officer runtime contract to forbid using the `subagent(... acceptance: ...)` contract for Spacedock stage dispatches through `pi-subagents` while preserving Pi dispatch through `subagent(...)`.
+- DONE: Documented the required rationale: Spacedock puts acceptance requirements in the task prompt/dispatch content and gates work through entity stage reports, product/state commits, and independent validation rather than same-agent acceptance finalization.
+- DONE: Added a focused instruction-text invariant test that scopes the rule to the Pi first-officer Dispatch section and checks the banned shape plus the Spacedock independent-validation rationale.
+
+Changed files:
+- `skills/first-officer/references/pi-first-officer-runtime.md`
+- `skills/integration/skill_surface_test.go`
+
+Product commit:
+- `7119e74d83b8d7077a8824d03399fa3928171b5e` (`fix pi subagent acceptance stage contract`)
+
+Tests run:
+- PASS: `go test ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- Not needed: `gofmt -w ./cmd ./internal` because no `cmd/` or `internal/` Go files changed. `gofmt` was run on `skills/integration/skill_surface_test.go`.
+
+Residual risks:
+- This is an instruction-surface invariant, so independent validation should still review the contract text for intended semantics.
