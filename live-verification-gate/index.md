@@ -1,7 +1,7 @@
 ---
 id: p48fjxe9e2rz23afaqmzj1pg
 title: Encode the live-verification requirement — gate runtime-observable ACs on a live run + promote 8y's shared scenarios to a first-class live-scenario primitive
-status: implementation
+status: validation
 source: captain (2026-06-03, session 11) — after yy's fix passed offline + 3 detached-audit cycles but FAILED its live run, the captain noted the live-verification rule is prose-only (yy slipped) AND that agents don't intuitively reach for "descriptive runbook → run a real agent → grade durable outcomes" live tests
 score: "0.40"
 worktree: .worktrees/spacedock-ensign-live-verification-gate
