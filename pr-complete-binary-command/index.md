@@ -74,6 +74,41 @@ This is a one-way migration (the roadmap's stated rule): once the command exists
 
 **Touched at implementation (cycle-2 addition to the file map):** `_mods/pr-merge.md` startup hook (the `MERGED` paragraph, ~line 15) and idle hook (~line 25) collapse to a command invocation. This is a NEW file in the change set beyond `first-officer-shared-core.md` — but it is a mod file, written by a dispatched worker (the FO does not edit mods directly per FO Write Scope), and it does NOT collide with the two siblings (which touch only shared-core), so it does not add to the serialization constraint.
 
+## Deterministic invocation — the trigger, not just the payload (cycle-3 resolution)
+
+The captain found a real seam in the cycle-2 resolution: *"i am not sure how the pr mod can inject deterministic command to this dispatch complete."* Cycle 2 made the PAYLOAD deterministic (6 ceremony steps → 1 command) but left the DELIVERY non-deterministic. A mod hook is **prose the FO interprets** — whether the invocation runs, with the right `{slug}`, at the right moment, still rides on FO judgment. "The mod collapses to a one-line invocation" is still a one-line invocation *the FO reads and decides to execute*. That is the gap: deterministic ceremony, FO-prose-dependent trigger.
+
+### Options for making the INVOCATION deterministic
+
+| Option | Mechanism | Verdict |
+|---|---|---|
+| **(1) `spacedock dispatch reconcile --act` (roadmap #6) is the trigger** | Reconcile ALREADY deterministically DETECTS the un-advanced merged PR — `classC` in `internal/dispatch/reconcile.go:531` flags exactly `pr` set + PR `MERGED` upstream + `status != "done"` ("the FO advancing reactively missed the merge"). Today it only emits a `driftItem` report; the FO acts on it via prose. `--act` has the BINARY run the Class C action — and the roadmap already SPECIFIES that action as "trigger `pr complete` on the slug (depends on #3)" (roadmap line ~234). So `reconcile --act` detects AND completes with NO FO prose in the loop. | **RECOMMENDED.** The detector already exists and is deterministic; #6 only adds the act-on-detection. p2 = deterministic payload; #6 = deterministic trigger. The two compose exactly as the roadmap's own #6→#3 dependency states. |
+| **(2) Mods declare an executable `run:` directive** | Change the mod-execution contract so a hook can carry a verbatim command the binary executes, not prose the FO interprets. | Rejected for p2. A real determinism mechanism, but it is a NEW mod-contract surface (parser, execution model, security/scope rules) far larger than p2, and it would deterministically fire the PR-OPEN hook too — which legitimately needs FO/captain judgment (the PR-approval guardrail). Over-broad: it makes the wrong things deterministic. If pursued, it is its own roadmap entry, not p2 scope. |
+| **(3) Accept residual trigger-prose** | Ceremony deterministic; the trigger stays one prose line the FO runs. | Rejected as the END state (accepted only as the INTERIM, see below). It is the least work but does not close the seam the captain named — the delivery stays FO-dependent. |
+
+### Resolution — recommend (1), with the mod re-scoped to PR-OPEN only
+
+The clean architecture is a **detector/actor split already latent in the codebase**:
+
+- **`reconcile` (binary) DETECTS** the merged-but-un-advanced PR (Class C — exists today, deterministic).
+- **`reconcile --act` (binary, #6) TRIGGERS** `dispatch complete {slug}` on that detection — deterministic delivery, deterministic payload, zero FO prose in the detect→complete loop.
+- **The `pr-merge` mod shrinks to OPENING the PR** — the genuinely outward-facing, judgment-requiring merge hook (the PR-approval guardrail: never push/create a PR without explicit captain approval). Post-merge advancement leaves the mod entirely; it becomes pure binary detect+complete.
+- **FO prose** keeps only what is irreducibly non-deterministic: the captain-gated PR open, and the team teardown (non-shell-able).
+
+This is why a `pr` namespace is wrong yet again at a third level: the post-merge completion is not even mod-triggered in the end state — it is reconcile-triggered. The command is lifecycle infrastructure that `reconcile --act` drives.
+
+### What p2 ships, and the interim
+
+p2 is **shippable alone** and its determinism story **completes when #6 lands**:
+
+- **p2 ships now:** `dispatch complete {slug}` — the deterministic, idempotent, guard-honoring ceremony payload (scope B1, unchanged from cycle 1/2). Its AC-1..AC-5 stand.
+- **p2 names #6 explicitly** as the deterministic trigger: it documents that Class C's `--act` action becomes "run `dispatch complete {slug}`", so the completion loop becomes fully deterministic once #6 ships. p2 does NOT implement `--act` (that is #6's scope) — but it writes the contract #6 consumes.
+- **INTERIM until #6 lands:** the `pr-merge` mod's post-merge hook (and the FO ship-local path) are **interim PROSE callers** of `dispatch complete` — cycle-2's collapse stands as the bridge. This is option (3) accepted *only as the interim*, explicitly temporary. When #6 lands, the mod's post-merge hook is deleted (advancement moves to `reconcile --act`); the mod retains only its PR-OPEN hook. The ship-local path keeps a thin FO-prose trigger (no PR → no reconcile Class C detection → reconcile cannot drive it; an FO/`merge: local` caller stays — acceptably, since ship-local is the rare host-less path and has no outward PR to gate).
+
+So the cycle-3 answer to *"how can the pr mod inject a deterministic command"*: **it cannot, and it should not be the mod's job.** The deterministic injector is `reconcile --act` (binary→binary); the mod's only deterministic-worthy job is the part that is binary already (detection lives in reconcile, not the mod's prose). p2 ships the payload and writes the #6 contract; the mod's post-merge prose is the explicitly-interim bridge.
+
+**Cross-entity note for the FO:** this elevates roadmap #6 (`reconcile --act`) from "medium leverage, queue later" to **the trigger that completes p2's determinism story.** File #6 as a follow-on whose Class C action is "invoke `dispatch complete`," sequenced AFTER p2 (the roadmap's #6→#3 dependency). p2 does not block on #6; #6 depends on p2.
+
 ## Recommended approach (firmed)
 
 `spacedock dispatch complete {slug}` orchestrates the existing, already-proven binary operations transactionally, ordered so a partial failure leaves a safe, re-runnable state:
@@ -110,6 +145,8 @@ The ONE genuinely-new integration risk is **transactional ordering + partial-fai
   *Verified by:* the post-implementation `first-officer-shared-core.md` Merge-and-Cleanup + Ship-Local Ceremony region is measurably shorter (state the measured before/after line + char count at implementation; target ≥30% reduction of those two blocks); the `pr-merge` mod's `MERGED` ceremony steps are replaced by the command invocation; AND a presence check that both surviving texts name `spacedock dispatch complete` and shared-core retains the FO-side team-teardown step.
 - **AC-5 (live safety-net — HARD requirement, captain: "we gotta have test to make that change"):** The change to the post-merge ceremony is covered by the `pr-lifecycle-from-boot` scenario, codified as a host-neutral scenario AND run live: boot a workflow → observe PR-pending + dispatchable startup state → let the PR lifecycle advance (the mod detects the merge and invokes the command) → the entity reaches the correct DURABLE terminal state (archived, `verdict: PASSED`, `worktree:` empty, terminal status) WITHOUT bypassing merge hooks or archival rules. This promotes `pr-lifecycle-from-boot` from prose-only (a prioritized-but-unbuilt scenario in `docs/specs/scenario-testing-principles.md`) into a real codified + live scenario.
   *Verified by:* (i) a new `pr-lifecycle-from-boot` entry in the `sharedRuntimeScenarios()` table (`internal/ensigncycle/shared_scenarios_test.go`) with a per-host runner each side, so the existing shared-coverage meta-tests red if either host lacks it; (ii) the seed-scenario lock test binding `docs/specs/scenario-testing-principles.md` to the table updated to include it (doc↔code lock stays green); (iii) an authored `livescenario.Scenario` ({Runbook, Setup, Assert}) whose `Assert` grades the durable BEFORE→AFTER entity state (archived + terminal + verdict + empty worktree), NOT transcript phrasing, runnable via the codified executor in CI and the LLM executor live. The live LLM-executor run is the producer proof the citation gate requires for the runtime-observable claim "the FO+mod actually complete the lifecycle from boot."
+- **AC-6 (cycle-3 — reconcile-drivable trigger contract):** `dispatch complete` is invocable as a pure binary→binary action — it takes exactly a `{slug}` (the same identity `reconcile`'s Class C already carries: `pr` set, PR `MERGED`, `status != done`) and returns a clean exit-code contract (0 on completion or already-complete no-op; non-zero only on a real precondition failure / guard refusal / state conflict) — so a future `reconcile --act` (#6) can chain it deterministically with no FO prose in the detect→complete loop. p2 ships the payload + this contract, NOT `--act` itself.
+  *Verified by:* a fixture invoking `spacedock dispatch complete {slug}` with ONLY a slug argument (no extra flags) over the exact Class C precondition state (`pr` set + merged + non-terminal) and asserting exit 0 + durable terminal state — i.e., the command consumes a `classC`-shaped record as-is. The exit-code contract (0 = done-or-noop, non-zero = real failure) is asserted across the AC-1/AC-2/AC-3 fixtures. This is the behavioral surface #6 binds to; #6's own `--act` wiring + Class-C-action test is out of p2 scope.
 
 ## Test plan
 
@@ -137,7 +174,8 @@ Additional files THIS entity touches (no sibling collision):
 ## Out of scope
 
 - The team-tool teardown (Claude tool, not shell-able — stays in the using-claude-team skill / runtime; survives as FO-side prose in Merge-and-Cleanup step 10).
-- Merge DETECTION (B2) — stays in the `pr-merge` mod's startup/idle hooks + the FO event-loop PR scan. The cycle-2 boundary resolution keeps detection in the mod but has the mod's detection step now CALL the command instead of re-listing the ceremony. The command's own precondition (merge already recorded) is the guard, not a second detector.
+- Merge DETECTION (B2) — already deterministic and already lives in `reconcile`'s Class C (`classC`, reconcile.go:531) + the `pr-merge` mod's startup/idle hooks + the FO scan. The command's own precondition (merge already recorded) is the guard, not a second detector.
+- The deterministic TRIGGER wiring — `reconcile --act` / roadmap #6 — is OUT of p2 scope (cycle-3). p2 ships the payload + the reconcile-drivable contract (AC-6); #6 implements `--act` and the Class-C-action test. #6 depends on p2; p2 does not block on #6.
 - #1 `state sync` and #2 `dispatch advance` themselves — sibling roadmap binary commands; file separately if/when Phase 1 is greenlit. This entity REUSES the state push/pull-rebase discipline #1 would wrap, but does not depend on #1 landing first.
 
 ## Notes
@@ -167,3 +205,16 @@ Firmed the design for `spacedock dispatch complete {slug}` (departing from the r
 ### Summary
 
 Cycle 2 resolves the captain's boundary reframing: the command is the ONE ceremony implementation, the `pr-merge` mod becomes a thin caller (its startup/idle hooks already duplicate the ceremony — they collapse to a single `spacedock dispatch complete {slug}` invocation), and the FO contract shrinks to naming the command; team teardown alone stays FO-side prose (non-shell-able). This kills a TRIPLE duplication, not just the FO copy, and re-confirms the non-`pr` name (the command serves both the PR-via-mod and direct local-merge callers). Added AC-5 making `pr-lifecycle-from-boot` a hard codified+live scenario via p4's livescenario primitive, promoting it from a prose-only roadmap entry into a real safety net graded on durable terminal state. The HIGH-STAKES surface now spans the status guard, CI/scenario machinery, AND the mod contract — detached audit at validation, staff review may precede the gate.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Resolve the deterministic-INVOCATION seam ("i am not sure how the pr mod can inject deterministic command to this dispatch complete").
+  Added `## Deterministic invocation` section. Confirmed by reading reconcile.go:531 (`classC`) + `_mods/pr-merge.md`: reconcile ALREADY deterministically detects the trigger condition (pr set + PR MERGED + status!=done) but only emits a driftItem report — the FO acts via prose. Weighed three options; recommended (1) `reconcile --act` (#6) as the deterministic trigger: the binary acts on its own Class C detection by running `dispatch complete`, no FO prose in the loop. The roadmap already specifies Class C's action as "trigger pr complete (depends on #3)". Rejected (2) executable `run:` mod directive (new mod-contract surface, over-broad — would also fire the judgment-requiring PR-open hook); rejected (3) residual trigger-prose as the END state but accepted it as the explicitly-interim bridge until #6.
+- DONE: Re-scope p2 accordingly + name #6 as the trigger.
+  p2 ships `dispatch complete` (payload, unchanged) + AC-6: the reconcile-drivable contract (slug-only invocation matching a classC record + clean exit-code contract) that #6 binds to. The `pr-merge` mod shrinks to OPENING the PR (the captain-gated, outward-facing hook); post-merge advancement leaves the mod for `reconcile --act` once #6 lands. Out-of-scope updated: #6 is the trigger follow-on, depends on p2, p2 does not block on it. The mod's post-merge prose (cycle-2 collapse) is the explicit interim until #6.
+- DONE: Keep everything from cycle 2.
+  Boundary table, AC-5 (pr-lifecycle-from-boot live test), AC-1..AC-4, scope B1, the transactional/partial-failure risk all retained. AC-6 added; Out-of-scope + Notes extended.
+
+### Summary
+
+Cycle 3 closes the seam the captain found: cycle-2 made the ceremony PAYLOAD deterministic but left DELIVERY on FO-prose interpretation. Resolution — a prose mod cannot deterministically inject the command and should not try; the deterministic injector is `reconcile --act` (#6), binary→binary, acting on reconcile's already-deterministic Class C detection (pr+MERGED+non-terminal, reconcile.go:531). p2 ships the deterministic payload (`dispatch complete`) plus AC-6's reconcile-drivable contract (slug-only invocation + clean exit codes) that #6 consumes; the `pr-merge` mod shrinks to the captain-gated PR-open hook, with its post-merge prose as the explicit interim bridge until #6 lands. p2 is shippable alone; the full determinism story completes with #6 (which depends on p2). HIGH-STAKES (mod contract + status/CI machinery) — detached audit at validation, staff review may precede the gate.
