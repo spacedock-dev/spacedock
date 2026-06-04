@@ -206,6 +206,7 @@ func TestPiFirstOfficerRuntimeLimitsManualPromptFallback(t *testing.T) {
 		}
 	}
 }
+
 func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path)")
 	root := skillsRoot(t)
