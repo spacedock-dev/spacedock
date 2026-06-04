@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block:
 pr: "#286"
+archived: 2026-06-04T01:14:44Z
 ---
 
 The dispatch command's subcommand help is blocked by the same required-flag checks used for real execution. During first-officer dogfooding, trying to inspect `dispatch build` before constructing the JSON envelope failed with the operational error instead of showing help.
