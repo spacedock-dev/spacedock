@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#289"
+archived: 2026-06-04T06:08:18Z
 ---
 
 Two related inconsistencies in how the terminal-transition guard treats `verdict=rejected`.
