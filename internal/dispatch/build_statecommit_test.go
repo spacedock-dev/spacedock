@@ -78,6 +78,95 @@ func TestStateCommitPathAbsoluteFromRelativeWorkflowDir(t *testing.T) {
 	}
 }
 
+// TestEntityPathAbsoluteFromRelativeInput pins AC-1: a dispatch built with a
+// RELATIVE entity_path must emit an ABSOLUTE path in BOTH the dispatch-body
+// entity-read line ("Read the entity file at <path>") AND the completion-signal
+// line ("Report written to <path>."). The dispatched ensign is a separate agent
+// whose cwd is not pinned to the workflow root, so a relative entity_path
+// resolves to a different / nonexistent file there — the "two entity files"
+// divergence. runBuild absolutizes entity_path against the process cwd, mirroring
+// the workflow_dir absolutization, so every emitted reference is cwd-independent.
+func TestEntityPathAbsoluteFromRelativeInput(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+
+	// Split-root workflow: the entity lives in the state checkout, which is the
+	// live-cycle shape this fix targets.
+	workflowDir := filepath.Join(root, "wf")
+	stateCheckout := filepath.Join(workflowDir, "state-checkout")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), readmeWorktree(true))
+
+	worktreeRel := ".worktrees/spacedock-ensign-thing"
+	if err := os.MkdirAll(filepath.Join(root, worktreeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	entityPath := filepath.Join(stateCheckout, "thing", "index.md")
+	writeFile(t, entityPath, entityFM("Thing", "implementation", worktreeRel))
+
+	gitInit(t, root)
+
+	// Derive a RELATIVE entity_path spelling from the process cwd, so runBuild's
+	// filepath.Abs resolution is the thing under test. (t.Chdir is go1.24+; this
+	// module targets go1.22, so the relative spelling is derived, not realized via
+	// a cwd change.)
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	entityRel, err := filepath.Rel(cwd, entityPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.IsAbs(entityRel) {
+		t.Fatalf("derived entity_path spelling is not relative: %q", entityRel)
+	}
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityRel,
+		"workflow_dir":   workflowDir,
+		"stage":          "implementation",
+		"checklist":      []string{"- a", "- b"},
+		"team_name":      "fixture-team",
+		"bare_mode":      false,
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	body := readDispatchBody(t, dispatchFilePathFromStdout(t, native.stdout))
+
+	// Pull the entity-read line's path and assert it is absolute.
+	readPath := extractTokenAfter(t, body, "Read the entity file at ", body)
+	if !filepath.IsAbs(readPath) {
+		t.Errorf("entity-read line path is not absolute: %q\n--- body ---\n%s", readPath, body)
+	}
+
+	// Pull the completion-signal line's path and assert it is absolute. The
+	// signal renders "Report written to <path>." with a trailing period, so trim
+	// it before the IsAbs check.
+	signalPath := strings.TrimSuffix(extractTokenAfter(t, body, "Report written to ", body), ".")
+	if !filepath.IsAbs(signalPath) {
+		t.Errorf("completion-signal line path is not absolute: %q\n--- body ---\n%s", signalPath, body)
+	}
+}
+
+// extractTokenAfter returns the whitespace-delimited token immediately following
+// marker in body, failing the test if the marker is absent.
+func extractTokenAfter(t *testing.T, body, marker, full string) string {
+	t.Helper()
+	idx := strings.Index(body, marker)
+	if idx < 0 {
+		t.Fatalf("body missing %q\n--- body ---\n%s", marker, full)
+	}
+	rest := body[idx+len(marker):]
+	end := strings.IndexAny(rest, " \n")
+	if end < 0 {
+		end = len(rest)
+	}
+	return rest[:end]
+}
+
 // TestSingleRootNoStateCommitGuidance (AC-3) pins the single-root negative: a
 // workflow with NO state: field must emit NEITHER the "This workflow is
 // split-root" sentence NOR a `git -C` state-commit command — for both a worktree

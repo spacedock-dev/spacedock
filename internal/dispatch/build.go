@@ -282,6 +282,19 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return buildError(stderr, 1, "entity file not readable at '%s'", entityPath)
 	}
 
+	// Absolutize entityPath against the process cwd, mirroring the workflowDir
+	// absolutization below. The dispatched ensign is a separate agent whose cwd is
+	// not pinned to the workflow root, so a relative entity_path resolves to a
+	// different / nonexistent file there — the "two entity files" divergence. The
+	// FO supplies entity_path itself (status emits no path field) and runs with
+	// cwd = workflow root, so it naturally passes a relative spelling; absolutizing
+	// here makes the entity-read line and the completion signal cwd-independent.
+	// After the readability error message, so that diagnostic shows the original
+	// spelling.
+	if abs, err := filepath.Abs(entityPath); err == nil {
+		entityPath = abs
+	}
+
 	// Absolutize workflowDir against the process cwd once, so every downstream
 	// join — README path, splitRootStateCheckout, the fetch line's --workflow-dir,
 	// and the state-commit guidance — inherits an absolute, cwd-independent base.
