@@ -1,13 +1,13 @@
 ---
 id: 6b8k79kbmzn8n48g2amf6q4m
 title: Terminal-guard verdict=rejected consistency — align contract prose + the --set/--archive asymmetry
-status: ideation
+status: implementation
 source: sprint-end antipattern reviews (2026-06-01) — 0.19.3 minor-findings bucket
 started: 2026-06-03T07:09:59Z
 completed:
 verdict:
 score: "0.26"
-worktree:
+worktree: .worktrees/spacedock-ensign-terminal-guard-rejected-consistency
 issue:
 ---
 
