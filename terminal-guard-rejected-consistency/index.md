@@ -1,7 +1,7 @@
 ---
 id: 6b8k79kbmzn8n48g2amf6q4m
 title: Terminal-guard verdict=rejected consistency — align contract prose + the --set/--archive asymmetry
-status: implementation
+status: validation
 source: sprint-end antipattern reviews (2026-06-01) — 0.19.3 minor-findings bucket
 started: 2026-06-03T07:09:59Z
 completed:
