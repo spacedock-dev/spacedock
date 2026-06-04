@@ -25,7 +25,7 @@ import (
 // liveBudgetSources are the source files on the live path whose timeout literals
 // must all be ≤60s: the streamWatcher (the per-step budget discipline) and the
 // live test that wires it.
-var liveBudgetSources = []string{"streamwatch.go", "live_test.go"}
+var liveBudgetSources = []string{"streamwatch_test.go", "live_test.go"}
 
 func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 	for _, file := range liveBudgetSources {
