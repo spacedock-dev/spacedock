@@ -224,6 +224,17 @@ Precision pass, not a teardown. M1: dropped the one banned literal that false-re
 
 Prose layer: lifted the two dev-specific Working-Practices bullets (test-first authoring → development.md opt-in; code-shaped deliverable → already at docs/dev/README.md:80) out of the universal ensign core, kept the two genuinely-universal bullets under a neutral "Proving your work" heading plus one discipline-neutral proof line, neutralized "CODE only" in both cores, and renamed the runtime adapters' field enumeration to "workflow location". Locked with a new `internal/hostneutrality/ensign_dev_leakage_locks_test.go` (4 tests) extending the proven prose-lock pattern. Code layer: parameterized `ClassifyEntityACs` to take the proof vocabulary as an injected `*regexp.Regexp`, renamed `externalTokenRe` → `devExternalTokens` as the sole dev-token site supplied through `classifyEntityFile`, with two AC-6 tests (structural seam + re-conflation guard, both with demonstrated negative-proof). Behavior-preserving: 2a's live-corpus invariant stays green at the identical flagged set. Pre-existing gofmt quirk on `external_proof.go`'s `quotedSpanRe` comment (line 37, untouched by this work, predates on HEAD) left as-is — out of change scope; all my additions are gofmt-clean. AC-5 left for the FO's validation-stage live dispatch + detached audit. Code committed on worktree branch (fbe957f0).
 
+### Feedback Cycles
+
+#### Cycle 1 — detached adversarial audit (5/6 probe classes strongly pinned; 1 Material + 1 Polish test-strength holes)
+
+- DONE: MATERIAL — AC-6's `TestKernelFreeOfDevVocabulary` was span-NAME-bound (scanned only the 4 named `kernelSpanNames`). Probe: a `devEscapeHatch(clause)` helper returning `gofmt|goreleaser|cask`, called from the kernel flush body, re-coupled the classification path to dev tokens yet stayed GREEN.
+  Rewrote the guard to scan the WHOLE non-test `external_proof.go` source MINUS the `devExternalTokens` var span (sole legitimate dev-token site) — whole-source-minus-allowlist, not a fixed span-name list. Proven to bite: the `devEscapeHatch`-style probe now REDs (catches `gofmt`+`goreleaser` outside the allowlisted var); clean code GREEN. Removed the now-orphaned `topLevelSpan` helper. Commit 0e697ff4.
+- DONE: POLISH — AC-2's `TestDevDisciplinesSurviveInDevHomes` anchored on "test-first", which the `### Test-first authoring` HEADING alone satisfied (deleting the guidance body kept it green).
+  Re-anchored on a body phrase ("watch it fail for the right reason") so the relocate-not-delete guarantee rests on the body, not the heading word. Proven to bite: deleting the guidance body now REDs. Commit 0e697ff4.
+
+Both fixes are test-strength only — `external_proof.go` production behavior unchanged. Full `go test ./...` green (993, 12 packages); gofmt/vet clean on the changed test files.
+
 ## Stage Report: validation
 
 - DONE: Independently reproduce the oracle ACs (AC-1..4 in ensign_dev_leakage_locks_test.go), proving each NEGATIVE half FIRES (insert banned → red → remove → green), not a tautology.
