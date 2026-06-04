@@ -1,13 +1,13 @@
 ---
 id: nz2aae5kfk1rb4e4z62vsnv1
 title: Front-door silently swallows a positional prompt placed after `--` — bootstrap never prepends
-status: validation
+status: done
 source: captain (2026-06-03, session 12) — launched `spacedock claude --safehouse-enable=… --plugin-dir "$(pwd)" -- --model … --effort ultracode '@/tmp/handoff.md'` and the bootstrap/default prompt never prepended; the `@file` after `--` was treated as host passthrough so hasTask=false
 started: 2026-06-04T06:30:55Z
-completed:
-verdict:
+completed: 2026-06-04T07:43:24Z
+verdict: PASSED
 score: 0.28
-worktree: .worktrees/spacedock-ensign-frontdoor-prompt-after-dash-guard
+worktree:
 issue:
 mod-block:
 pr: "#294"
