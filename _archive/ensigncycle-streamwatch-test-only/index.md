@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block:
 pr: "#288"
+archived: 2026-06-04T05:53:54Z
 ---
 
 `internal/ensigncycle/streamwatch.go` is the Go port of the upstream Python `FOStreamWatcher` (scripts/test_lib.py) and is used exclusively by the live-cycle tests in the same package. Every symbol is unexported. A whole-codebase scan confirms it is **the only non-test file with zero non-test importers** — every other production file is reached by some non-test caller.
