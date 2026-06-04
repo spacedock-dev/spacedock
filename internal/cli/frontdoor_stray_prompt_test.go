@@ -42,6 +42,37 @@ func TestClaudeStrayPromptAfterDashWarns(t *testing.T) {
 	}
 }
 
+// TestClaudeStrayPromptSession12Shape (AC-1, the captain's actual session-12
+// case): `--plugin-dir "$(pwd)" -- --model gpt-x '@/tmp/handoff.md'`. The
+// spacedock-injected `--plugin-dir <dir>` prefix (re-prepended to fd.passthrough
+// by parseFrontDoorArgs) must NOT shadow the operator's real stray prompt — the
+// warning names `@/tmp/handoff.md`, never the injected dir, and the inner argv is
+// unchanged.
+func TestClaudeStrayPromptSession12Shape(t *testing.T) {
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), []string{"--plugin-dir", "/co", "--", "--model", "gpt-x", "@/tmp/handoff.md"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	warn := stderr.String()
+	if !strings.Contains(warn, strayWarnMarker) {
+		t.Fatalf("stderr missing the stray-positional warning marker %q: %q", strayWarnMarker, warn)
+	}
+	if !strings.Contains(warn, "@/tmp/handoff.md") {
+		t.Fatalf("warning does not name the operator's stray positional: %q", warn)
+	}
+	if strings.Contains(warn, "/co") {
+		t.Fatalf("warning names the spacedock-injected --plugin-dir value (shadows the real prompt): %q", warn)
+	}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
+	if !equalArgv(fake.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v (warn must not change the argv)", fake.launchedArg, want)
+	}
+}
+
 // TestCodexStrayPromptAfterDashWarns (AC-1 positive, codex): the subcommand-less
 // passthrough leading with a value-taking flag still surfaces the stray prompt,
 // and the codex inner argv is unchanged.
@@ -107,6 +138,18 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 			args: []string{"task before", "--", "@/tmp/handoff.md"},
 			want: []string{"claude", "--agent", "spacedock:first-officer", "@/tmp/handoff.md", wantBootstrapPrompt + " task before"},
 		},
+		{
+			// An unrecognized `-`-prefixed flag's value must NOT get the prescriptive
+			// "put X before --" advice — it is likely that flag's value, so the guard
+			// stays silent rather than mis-advise. The argv is still unchanged.
+			name: "claude value of unrecognized flag — no wrong advice",
+			run: func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+				var stdout bytes.Buffer
+				return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+			},
+			args: []string{"--", "--some-new-flag", "the-value"},
+			want: []string{"claude", "--agent", "spacedock:first-officer", "--some-new-flag", "the-value", wantBootstrapPrompt},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -167,6 +210,22 @@ func TestStrayPromptAfterDashClassifier(t *testing.T) {
 			name:        "hasTask short-circuit suppresses",
 			passthrough: []string{"@/tmp/handoff.md"},
 			hasTask:     true,
+			host:        "claude",
+		},
+		{
+			// The spacedock-injected `--plugin-dir <dir>` prefix is a value-taking
+			// pair: the dir is NOT stray, and the operator's real prompt after it is.
+			name:           "spacedock-injected --plugin-dir prefix does not shadow the real prompt",
+			passthrough:    []string{"--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md"},
+			host:           "claude",
+			wantPositional: "@/tmp/handoff.md",
+			wantOK:         true,
+		},
+		{
+			// A value of an UNRECOGNIZED `-`-prefixed flag is ambiguous; the
+			// conservative fallback suppresses rather than prescribe wrong advice.
+			name:        "value of unrecognized flag suppresses (no wrong advice)",
+			passthrough: []string{"--some-new-flag", "the-value"},
 			host:        "claude",
 		},
 	}

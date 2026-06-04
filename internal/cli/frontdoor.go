@@ -275,18 +275,33 @@ func codexResume(passthrough []string) bool {
 
 // valueTakingHostFlags is the per-host set of host flags whose successor token is
 // the flag's value (space form), so that successor is NOT a stray positional. The
-// set is deliberately small and advisory-only: the assembled argv is unchanged
-// regardless of membership, so an unknown value-taking flag merely risks a
-// harmless extra warning on its value. A flag not in the set is treated as a
-// boolean (its successor is scanned independently).
+// assembled argv is unchanged regardless of membership; the set only tunes the
+// advisory's accuracy. `--plugin-dir` appears in BOTH sets because
+// parseFrontDoorArgs re-injects the spacedock-parsed `--plugin-dir <dir>` pair at
+// the FRONT of fd.passthrough — without it the classifier would name the injected
+// dir as the stray positional and shadow the operator's real prompt.
 var valueTakingHostFlags = map[string]map[string]bool{
 	"claude": {
 		"-p": true, "--print": true,
-		"--model":      true,
-		"--mcp-config": true,
+		"--model":                true,
+		"--mcp-config":           true,
+		"--permission-mode":      true,
+		"--add-dir":              true,
+		"--append-system-prompt": true,
+		"--settings":             true,
+		"--session-id":           true,
+		"--output-format":        true,
+		"--plugin-dir":           true,
 	},
 	"codex": {
 		"-m": true, "--model": true,
+		"--config":     true,
+		"-c":           true,
+		"--cd":         true,
+		"--image":      true,
+		"--sandbox":    true,
+		"--profile":    true,
+		"--plugin-dir": true,
 	},
 }
 
@@ -306,11 +321,19 @@ var leadingHostSubcommands = map[string]map[string]bool{
 //
 // It fires only when the operator gave no task before `--` (hasTask == false): a
 // task before `--` means the operator already placed their prompt, so a positional
-// after `--` is a deliberate host positional. A token is stray when it is non-flag
-// (does not start with `-`, and is not the bare `--` separator) AND it is not the
-// value of a recognized value-taking host flag AND the passthrough does not lead
-// with a known host subcommand whose arguments are legitimate. The check never
-// alters the assembled argv — runClaude/runCodex only write the warning to stderr.
+// after `--` is a deliberate host positional. A token is a candidate when it is
+// non-flag (does not start with `-`, and is not the bare `--` separator) AND the
+// passthrough does not lead with a known host subcommand whose arguments are
+// legitimate. A candidate is reported as stray only when we can be confident it is
+// NOT a host flag's value:
+//   - preceding a recognized value-taking host flag → it is that flag's value, skip;
+//   - preceding an UNRECOGNIZED `-`-prefixed flag → it MIGHT be that flag's value, so
+//     we suppress rather than give the actively-wrong "put X before --" advice;
+//   - otherwise (first token, or preceded by a positional or recognized boolean
+//     flag) → confidently stray.
+//
+// The check never alters the assembled argv — runClaude/runCodex only write the
+// warning to stderr.
 func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok bool) {
 	if fd.hasTask {
 		return "", false
@@ -324,8 +347,18 @@ func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok 
 		if tok == "--" || strings.HasPrefix(tok, "-") {
 			continue
 		}
-		if i > 0 && valueFlags[fd.passthrough[i-1]] {
-			continue // the value of a value-taking host flag (space form)
+		if i > 0 {
+			prev := fd.passthrough[i-1]
+			if valueFlags[prev] {
+				continue // the value of a recognized value-taking host flag (space form)
+			}
+			// An equals-form flag (`--flag=value`) carries its own value, so it never
+			// consumes the next token. Only a space-form `-`-prefixed flag is ambiguous:
+			// it could be a value-taking flag we don't recognize, so suppress rather
+			// than risk prescribing the wrong correction for what may be its value.
+			if strings.HasPrefix(prev, "-") && prev != "--" && !strings.Contains(prev, "=") {
+				continue
+			}
 		}
 		return tok, true
 	}
