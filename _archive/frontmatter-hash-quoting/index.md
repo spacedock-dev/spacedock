@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#275"
+archived: 2026-06-04T05:27:05Z
 ---
 
 The frontmatter writer used to emit `pr: #260` and `source: a: b` bare, so strict YAML readers (the new yaml.v3 reader landed in zj, GitHub's frontmatter renderer) read them as a comment-only line and a nested mapping respectively. zj (PR #274, just shipped at HEAD `75cc2b81`) closes the writer side of both classes at `internal/status/mutate.go` (`needsExplicitQuoting` + `setScalarValue`): a value with a leading `#`, an internal `: ` (colon-space), or a ` #`/`\t#` inline-comment trigger is double-quoted on every write. New writes are safe; the live in-session smoke confirmed it (this session set `pr=#273` PLAIN on qs and the writer round-tripped the value correctly).
