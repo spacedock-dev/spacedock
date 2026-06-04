@@ -276,10 +276,9 @@ func codexResume(passthrough []string) bool {
 // valueTakingHostFlags is the per-host set of host flags whose successor token is
 // the flag's value (space form), so that successor is NOT a stray positional. The
 // assembled argv is unchanged regardless of membership; the set only tunes the
-// advisory's accuracy. `--plugin-dir` appears in BOTH sets because
-// parseFrontDoorArgs re-injects the spacedock-parsed `--plugin-dir <dir>` pair at
-// the FRONT of fd.passthrough — without it the classifier would name the injected
-// dir as the stray positional and shadow the operator's real prompt.
+// advisory's accuracy. The spacedock-injected `--plugin-dir <dir>` prefix is NOT
+// handled here — skipInjectedPrefix strips it structurally before any scan — so
+// the prefix interaction stays in one place rather than threaded through this set.
 var valueTakingHostFlags = map[string]map[string]bool{
 	"claude": {
 		"-p": true, "--print": true,
@@ -291,17 +290,15 @@ var valueTakingHostFlags = map[string]map[string]bool{
 		"--settings":             true,
 		"--session-id":           true,
 		"--output-format":        true,
-		"--plugin-dir":           true,
 	},
 	"codex": {
 		"-m": true, "--model": true,
-		"--config":     true,
-		"-c":           true,
-		"--cd":         true,
-		"--image":      true,
-		"--sandbox":    true,
-		"--profile":    true,
-		"--plugin-dir": true,
+		"--config":  true,
+		"-c":        true,
+		"--cd":      true,
+		"--image":   true,
+		"--sandbox": true,
+		"--profile": true,
 	},
 }
 
@@ -313,6 +310,23 @@ var leadingHostSubcommands = map[string]map[string]bool{
 	"codex": {"exec": true, "resume": true},
 }
 
+// skipInjectedPrefix returns the passthrough slice past the spacedock-injected
+// leading `--plugin-dir <dir>` pairs. parseFrontDoorArgs re-prepends each
+// before-`--` `--plugin-dir` as a `--plugin-dir <dir>` pair at the FRONT of
+// fd.passthrough; that prefix is spacedock-owned, not operator after-`--` tokens,
+// so the classifier's subcommand and value-flag checks must run against the real
+// after-`--` tokens BEHIND it. `--plugin-dir` is the only flag parseFrontDoorArgs
+// re-prepends (the safehouse knobs live in fd.safehouseFlags, the booleans are
+// consumed), so it is the complete injected-prefix set. Skipping a leading
+// `--plugin-dir <dir>` pair is correct regardless of origin: the dir is the flag's
+// value, never a stray prompt.
+func skipInjectedPrefix(passthrough []string) []string {
+	for len(passthrough) >= 2 && passthrough[0] == "--plugin-dir" {
+		passthrough = passthrough[2:]
+	}
+	return passthrough
+}
+
 // strayPromptAfterDash is a pure read over the parsed front-door args that returns
 // the first stray positional in the after-`--` passthrough — an operator prompt
 // that was placed after `--` and so silently degrades to host passthrough instead
@@ -321,11 +335,15 @@ var leadingHostSubcommands = map[string]map[string]bool{
 //
 // It fires only when the operator gave no task before `--` (hasTask == false): a
 // task before `--` means the operator already placed their prompt, so a positional
-// after `--` is a deliberate host positional. A token is a candidate when it is
-// non-flag (does not start with `-`, and is not the bare `--` separator) AND the
-// passthrough does not lead with a known host subcommand whose arguments are
-// legitimate. A candidate is reported as stray only when we can be confident it is
-// NOT a host flag's value:
+// after `--` is a deliberate host positional. The classifier first skips the
+// spacedock-injected leading `--plugin-dir <dir>` prefix, then runs every check
+// against the real after-`--` tokens — so the subcommand exemption, the value-flag
+// scan, and any future per-token rule all see the operator's actual grammar
+// regardless of the injected prefix. A token is a candidate when it is non-flag
+// (does not start with `-`, and is not the bare `--` separator) AND the real tokens
+// do not lead with a known host subcommand whose arguments are legitimate. A
+// candidate is reported as stray only when we can be confident it is NOT a host
+// flag's value:
 //   - preceding a recognized value-taking host flag → it is that flag's value, skip;
 //   - preceding an UNRECOGNIZED `-`-prefixed flag → it MIGHT be that flag's value, so
 //     we suppress rather than give the actively-wrong "put X before --" advice;
@@ -338,17 +356,18 @@ func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok 
 	if fd.hasTask {
 		return "", false
 	}
+	tokens := skipInjectedPrefix(fd.passthrough)
 	subcommands := leadingHostSubcommands[host]
-	if len(fd.passthrough) > 0 && subcommands[fd.passthrough[0]] {
+	if len(tokens) > 0 && subcommands[tokens[0]] {
 		return "", false
 	}
 	valueFlags := valueTakingHostFlags[host]
-	for i, tok := range fd.passthrough {
+	for i, tok := range tokens {
 		if tok == "--" || strings.HasPrefix(tok, "-") {
 			continue
 		}
 		if i > 0 {
-			prev := fd.passthrough[i-1]
+			prev := tokens[i-1]
 			if valueFlags[prev] {
 				continue // the value of a recognized value-taking host flag (space form)
 			}
