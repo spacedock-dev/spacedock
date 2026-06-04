@@ -1,11 +1,11 @@
 ---
 id: p23sxe8ec3mmwgekvz9041a9
 title: "spacedock pr complete — collapse the Merge-and-Cleanup ceremony into one binary command"
-status: backlog
+status: ideation
 source: "captain (2026-06-04) — token-efficiency decomposition of first-officer-shared-core.md + the binary-simplification roadmap #3. Merge-and-Cleanup is MECHANICAL ceremony, so it routes to a binary command (not a lazy skill): collapsing it removes the prose outright. The FO ran this ceremony ~7x BY HAND this session (at/n3/2a/am/6b/ep/zd/p4 merges) — the heaviest, most error-prone sequence — the strongest single binary-command ROI."
 score: "0.36"
 worktree:
-started:
+started: 2026-06-04T07:20:48Z
 completed:
 verdict:
 issue:
