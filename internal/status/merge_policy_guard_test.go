@@ -144,6 +144,87 @@ func TestMergePrDefaultNoSentinelArchiveStillRefuses(t *testing.T) {
 	}
 }
 
+// TestRejectedVerdictArchiveMatchesSet (terminal-guard rejected-consistency AC-1):
+// under the default merge: pr policy with a registered merge hook, a rejected
+// entity (verdict: rejected, empty pr/mod-block) must be treated the SAME by --set
+// and --archive. A rejected entity never ran the merge ceremony, so the merge-hook
+// pr-requirement is vacuous for it: --set already exempts verdict=rejected, and
+// --archive must match. The two commands run on the SAME staged root in sequence
+// (reject → terminalize → archive), and the test asserts the surfaces AGREE.
+// RED on today's code: --set → exit 0, --archive → exit 1 (the asymmetry).
+// GREEN after the fix: both → exit 0.
+func TestRejectedVerdictArchiveMatchesSet(t *testing.T) {
+	env := pinnedEnv(t)
+	root := stageFixture(t, "merge-pr-workflow")
+
+	setArgs := []string{"--workflow-dir", root, "--set", "040-rejected", "status=done"}
+	setOut, setErr, setCode := runNative(t, root, env, setArgs...)
+	assertEnvelopeGolden(t, "merge-pr-rejected-set", goldenEnvelope{
+		stdout: normalize(setOut, root), stderr: normalize(setErr, root), exit: setCode,
+	})
+
+	archiveArgs := []string{"--workflow-dir", root, "--archive", "040-rejected"}
+	archiveOut, archiveErr, archiveCode := runNative(t, root, env, archiveArgs...)
+	assertEnvelopeGolden(t, "merge-pr-rejected-archive", goldenEnvelope{
+		stdout: normalize(archiveOut, root), stderr: normalize(archiveErr, root), exit: archiveCode,
+	})
+
+	if setCode != archiveCode {
+		t.Fatalf("--set and --archive must agree on verdict=rejected, got set=%d (stderr=%q) archive=%d (stderr=%q)",
+			setCode, setErr, archiveCode, archiveErr)
+	}
+	if setCode != 0 {
+		t.Fatalf("rejected-entity terminal --set should succeed (exit 0), got %d (stderr=%q)", setCode, setErr)
+	}
+	if archiveCode != 0 {
+		t.Fatalf("rejected-entity --archive should succeed (exit 0), got %d (stderr=%q)", archiveCode, archiveErr)
+	}
+}
+
+// TestRejectedVerdictModBlockPendingArchiveRefuses (terminal-guard rejected-
+// consistency AC-2): the verdict=rejected escape relaxes ONLY the merge-hook
+// pr-requirement, not the policy-independent mod-block-pending guard. A rejected
+// entity with a live mod-block must still be refused by --archive (exit 1), naming
+// the pending mod-block — the ceremony-separation invariant survives the verdict
+// escape just as it survives merge: local.
+func TestRejectedVerdictModBlockPendingArchiveRefuses(t *testing.T) {
+	code, out, errOut := assertMergeGolden(t, "merge-pr-rejected-pending-archive", "merge-pr-workflow",
+		"--archive", "050-rejected-pending")
+	if code != 1 {
+		t.Fatalf("rejected-but-mod-block-pending --archive must refuse (exit 1), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(errOut, "pending mod-block (merge:local-merge)") {
+		t.Fatalf("stderr should name the pending mod-block, got %q", errOut)
+	}
+	if out != "" {
+		t.Fatalf("stdout must be empty on rejection, got %q", out)
+	}
+}
+
+// TestNonRejectedVerdictArchiveStillRefuses (terminal-guard rejected-consistency,
+// over-wide-exemption complement): the verdict escape is scoped to verdict=rejected
+// ONLY. A NON-rejected, non-empty verdict (verdict: passed) with empty pr/mod-block
+// under the default merge: pr policy must STILL be refused by --archive — this is
+// exactly the case the merge-hook guard exists for (an accepted outcome claimed
+// without the merge ceremony). This pins the exemption against over-widening:
+// changing `verdict != "rejected"` to `verdict == ""` (any non-empty verdict
+// escapes) goes RED here. The existing default-refuse fixture (020-no-sentinel)
+// carries an EMPTY verdict, so it still refuses under that widening and gives no
+// signal — this case supplies the missing one.
+func TestNonRejectedVerdictArchiveStillRefuses(t *testing.T) {
+	code, out, errOut := assertMergeGolden(t, "merge-pr-passed-nosentinel-archive", "merge-pr-workflow",
+		"--archive", "060-passed-nosentinel")
+	if code != 1 {
+		t.Fatalf("non-rejected-verdict --archive must still refuse (exit 1), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(errOut, "cannot be archived") {
+		t.Fatalf("stderr should name the merge-hook archive refusal, got %q", errOut)
+	}
+	if out != "" {
+		t.Fatalf("stdout must be empty on rejection, got %q", out)
+	}
+}
+
 // TestSentinelDisplaysAsLocal (AC-2): a pr field of local-merge:{short-sha}
 // renders in the status table as `{short-sha} (local)`, distinguishable from a
 // real PR reference. Native and oracle must agree.
