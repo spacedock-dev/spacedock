@@ -1,6 +1,6 @@
 ---
 title: Pi intercom runtime capability probe
-status: implementation
+status: validation
 source: captain (2026-06-04) — Codex idle-notification evidence pattern may generalize to prove Pi intercom contact_supervisor runtime capability
 score: "0.31"
 started: 2026-06-04T00:00:00Z
