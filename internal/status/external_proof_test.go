@@ -426,20 +426,15 @@ func TestDevPathSuppliesDevVocabulary(t *testing.T) {
 	}
 }
 
-// kernelSpanNames are the source spans that make up the generic, workflow-
-// agnostic kernel: the classifier function, its generic helpers, and the
-// self-reference phrase table. None of these may name a dev-toolchain token.
-var kernelSpanNames = []string{
-	"func ClassifyEntityACs",
-	"func isolateProofClause",
-	"func matchSelfPhrase",
-	"var selfPhraseRes",
-}
-
-// TestKernelFreeOfDevVocabulary locks AC-6(b): the generic kernel's source
-// spans contain NO Go-toolchain literal. The dev vocabulary must live only in
-// the devExternalTokens var. Negative proof: re-hard-code a dev token inside
-// the kernel and this test goes red.
+// TestKernelFreeOfDevVocabulary locks AC-6(b): the dev-toolchain vocabulary
+// lives ONLY in the devExternalTokens var. The whole non-test source of
+// external_proof.go MINUS the devExternalTokens var span (the sole legitimate
+// dev-token site) must contain NO Go-toolchain literal. Scanning whole-source-
+// minus-allowlist rather than a fixed span-name list closes the hole where a
+// future "just add a small helper" (e.g. a devEscapeHatch naming the tokens
+// outside the named kernel spans) re-couples the classification path to dev
+// vocabulary undetected. Negative proof: hard-code a dev token anywhere outside
+// devExternalTokens and this test goes red.
 func TestKernelFreeOfDevVocabulary(t *testing.T) {
 	data, err := os.ReadFile("external_proof.go")
 	if err != nil {
@@ -447,41 +442,45 @@ func TestKernelFreeOfDevVocabulary(t *testing.T) {
 	}
 	src := string(data)
 
-	bannedDevLiterals := []string{`gofmt`, `goreleaser`, `\bvet\b`, `\.go\b`, `\bcask\b`}
+	// Excise the one legitimate dev-token site so the scan is whole-source-
+	// minus-allowlist. The var span runs from its declaration to the closing
+	// `}, "|"))` that ends the regexp.MustCompile(strings.Join(...)) call.
+	devSpan := devExternalTokensSpan(t, src)
+	if devSpan == "" {
+		t.Fatal("could not locate the devExternalTokens var span to allowlist")
+	}
+	scanned := strings.Replace(src, devSpan, "", 1)
 
-	for _, name := range kernelSpanNames {
-		span := topLevelSpan(t, src, name)
-		for _, banned := range bannedDevLiterals {
-			if strings.Contains(span, banned) {
-				t.Errorf("kernel span %q contains dev-toolchain literal %q — dev vocabulary leaked back into the generic kernel", name, banned)
-			}
+	bannedDevLiterals := []string{`gofmt`, `goreleaser`, `\bvet\b`, `\.go\b`, `\bcask\b`}
+	for _, banned := range bannedDevLiterals {
+		if strings.Contains(scanned, banned) {
+			t.Errorf("external_proof.go names dev-toolchain literal %q OUTSIDE the devExternalTokens var — dev vocabulary leaked back into the generic classification path", banned)
 		}
 	}
 }
 
-// topLevelSpan returns the source of the top-level declaration that begins with
-// decl (e.g. "func ClassifyEntityACs" or "var selfPhraseRes"), from that line
-// to the matching closing brace at column 0. Top-level Go declarations close on
-// a `}` (or `)`) in the first column, so the span ends at the first such line.
-func topLevelSpan(t *testing.T, src, decl string) string {
+// devExternalTokensSpan returns the source of the `var devExternalTokens = ...`
+// declaration, from its opening line to the `}, "|"))` line that closes the
+// strings.Join + regexp.MustCompile call. This is the sole site allowed to name
+// dev tokens; TestKernelFreeOfDevVocabulary excises it before scanning.
+func devExternalTokensSpan(t *testing.T, src string) string {
 	t.Helper()
 	lines := strings.Split(src, "\n")
 	start := -1
 	for i, line := range lines {
-		if strings.HasPrefix(line, decl) {
+		if strings.HasPrefix(line, "var devExternalTokens =") {
 			start = i
 			break
 		}
 	}
 	if start < 0 {
-		t.Fatalf("declaration %q not found in external_proof.go", decl)
+		return ""
 	}
-	for i := start + 1; i < len(lines); i++ {
-		if strings.HasPrefix(lines[i], "}") || strings.HasPrefix(lines[i], ")") {
+	for i := start; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], `}, "|"))`) {
 			return strings.Join(lines[start:i+1], "\n")
 		}
 	}
-	t.Fatalf("no top-level close found for %q", decl)
 	return ""
 }
 

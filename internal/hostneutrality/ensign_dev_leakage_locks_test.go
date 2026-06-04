@@ -137,8 +137,11 @@ var devHomePresence = []struct {
 	sectionRe *regexp.Regexp // when non-nil, the required clause must sit inside this section
 }{
 	{
-		path:      filepath.Join("..", "..", "skills", "commission", "references", "templates", "development.md"),
-		required:  "test-first",
+		path: filepath.Join("..", "..", "skills", "commission", "references", "templates", "development.md"),
+		// A body phrase from the relocated test-first guidance, NOT the
+		// "### Test-first authoring" heading word — so the relocate-not-delete
+		// guarantee rests on the guidance body, not the heading.
+		required:  "watch it fail for the right reason",
 		sectionRe: regexp.MustCompile(`(?is)## Recommended practices \(opt-in\).*`),
 	},
 	{
@@ -148,10 +151,11 @@ var devHomePresence = []struct {
 }
 
 // TestDevDisciplinesSurviveInDevHomes locks AC-2: the re-homed dev guidance is
-// present in its dev-specific home — development.md carries a test-first clause
-// inside its Recommended-practices section, and docs/dev/README.md retains the
-// "real, checkable change" deliverable-proof policy. Fails if a future edit
-// strips a dev home.
+// present in its dev-specific home — development.md carries the test-first
+// guidance BODY (a body phrase, not just the heading word) inside its
+// Recommended-practices section, and docs/dev/README.md retains the "real,
+// checkable change" deliverable-proof policy. Fails if a future edit strips a
+// dev home's guidance.
 func TestDevDisciplinesSurviveInDevHomes(t *testing.T) {
 	for _, h := range devHomePresence {
 		t.Run(filepath.Base(h.path), func(t *testing.T) {
