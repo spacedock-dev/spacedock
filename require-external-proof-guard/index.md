@@ -1,13 +1,13 @@
 ---
 id: 2adcrvj56b5camy1v70c4ncc
 title: Refuse to close a task whose only "proof" is re-reading its own write-up
-status: validation
+status: done
 source: hx decomposition (A of 3) — captain 2026-06-01; staff review
 score: "0.32"
 started: 2026-06-02T21:14:43Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-require-external-proof-guard
+completed: 2026-06-04T05:27:06Z
+verdict: PASSED
+worktree:
 issue:
 mod-block:
 pr: "#277"
