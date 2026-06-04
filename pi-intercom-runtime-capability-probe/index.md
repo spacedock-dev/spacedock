@@ -206,3 +206,34 @@ The task is ready for an implementation gate decision as a concrete design: impl
   - Added focused recipe/evidence/invariant tests that distinguish bridge-active setup evidence from behavioral talkback evidence and reject `passed` unless setup, progress, decision, exact `APPROVED` reply, resume, marker path, and `PI-INTERCOM-SMOKE-APPROVED` marker content are all present.
 - Residual risks:
   - Live Pi intercom child-to-supervisor talkback remains unproven until an operator runs the documented manual smoke with safe prerequisites and records a non-`not_run` evidence record.
+
+## Stage Report: validation
+
+- Validator worktree: `/Users/clkao/git/spacedock-research/spacedock-v1`
+- Implementation worktree inspected: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe`
+- Product commit inspected: `81a11d066fa369b1e70e25c9e7d46cc2693824b7` (`Add pi intercom runtime capability probe`)
+- State implementation report commit referenced: `78dc64df53a404e91433dd415531b131180d7265`
+- Validation output: `/Users/clkao/git/spacedock-research/spacedock-v1/validation/pi-intercom-runtime-capability-probe-validation.md`
+
+### AC evidence
+
+- AC-1 PASSED: `docs/dev/pi-intercom-runtime-capability-probe.md` defines the probe recipe and evidence contract; `skills/integration/pi_intercom_runtime_capability_test.go` reads the recipe/evidence and validates required sections, fields, classifications, and interpretation rules.
+- AC-2 PASSED: the recipe contains the exact child prompt requiring `contact_supervisor` `progress_update`, `contact_supervisor` `need_decision`, parent reply `APPROVED`, and marker content `PI-INTERCOM-SMOKE-APPROVED`; the recipe-shape test asserts these terms.
+- AC-3 PASSED: the evidence schema distinguishes setup/not-run from behavioral talkback success. The validator rejects `passed` without bridge-active setup, child tool availability, progress, decision, exact `APPROVED` reply, resume, marker path, and exact marker content, and rejects `setup_only` records claiming behavior.
+- AC-4 PASSED: docs preserve the doctor-vs-capability distinction with explicit necessary-but-insufficient wording and no claim that bridge-active alone proves supervisor talkback.
+- AC-5 PASSED for the static implementation scope: the live/manual smoke path documents durable JSON and marker requirements, and `passed` evidence is accepted only with the full progress/decision/reply/resume/marker chain. No live passed evidence was expected or claimed.
+- AC-6 PASSED: checked-in evidence `docs/dev/_evidence/pi-intercom-runtime-capability-probe/2026-06-04-not-run.json` is honestly classified as `not_run` and makes no progress, decision, resume, reply, or marker success claim.
+
+### Validation commands
+
+- `gofmt -l skills/integration/pi_intercom_runtime_capability_test.go` — passed with no output.
+- `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -count=1` — passed.
+- `go test ./skills/integration -count=1` — passed.
+- `go test ./... -count=1` — passed.
+
+### Residual risks
+
+- Live Pi child-to-supervisor talkback remains unproven until an operator runs the documented manual smoke and records durable non-`not_run` evidence.
+- Future live `passed` evidence should capture concrete setup package/version/path observations when available; the current schema allows nulls for unknown values as documented.
+
+Recommendation: PASSED
