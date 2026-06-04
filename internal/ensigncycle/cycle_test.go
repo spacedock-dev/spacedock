@@ -80,6 +80,7 @@ func stageFixture(t *testing.T) cycleFixture {
 		"checklist":      []string{"- Wire the seam", "- Prove it observably"},
 		"team_name":      "fixture-team",
 		"bare_mode":      false,
+		"host":           "claude",
 	})
 
 	var stdout, stderr strings.Builder

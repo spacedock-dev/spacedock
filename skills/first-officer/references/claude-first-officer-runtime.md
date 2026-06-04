@@ -79,31 +79,26 @@ Use the Agent tool to spawn each worker. **Use Agent() for initial dispatch** �
 
 **MANDATORY — Dispatch assembly via `spacedock dispatch build`:**
 
-Do NOT assemble `Agent()` prompts manually. Do NOT construct the `prompt` string yourself. Do NOT invent `name` values. ALWAYS pipe input through `spacedock dispatch build` and forward its output to `Agent()` verbatim. The key fields that MUST come from helper output are `subagent_type`, `name`, `team_name`, `model`, and `prompt` (which contains the completion signal). Manual assembly is a protocol violation except in the documented break-glass fallback below.
+Do NOT assemble `Agent()` prompts manually. Do NOT construct the `prompt` string yourself. Do NOT invent `name` values. ALWAYS route initial-dispatch input through `spacedock dispatch build` and forward its output to `Agent()` verbatim. The key fields that MUST come from helper output are `subagent_type`, `name`, `team_name`, `model`, and `prompt` (which contains the completion signal). Manual assembly is a protocol violation except in the documented break-glass fallback below.
 
 The only permitted path for initial `Agent()` dispatch is:
 
-1. **REQUIRED — Assemble the input JSON** from the entity, stage, and your judgment:
-   ```json
-   {
-     "schema_version": 2,
-     "entity_path": "{absolute path to entity file}",
-     "workflow_dir": "{absolute path to workflow directory}",
-     "stage": "{target stage name}",
-     "checklist": ["1. ...", "2. ..."],
-     "team_name": "{team_name or null if bare mode}",
-     "feedback_context": "{reviewer findings or null}",
-     "scope_notes": "{additional context or null}",
-     "bare_mode": false,
-     "is_feedback_reflow": false
-   }
+1. **REQUIRED — Write dispatch text inputs to files.** Create a checklist file with one checklist item per non-empty line. If scope notes or feedback context are needed, write each to its own file. Use files for Markdown, backticks, shell variables, reviewer text, and any other prose that would be fragile in shell quoting.
+2. **REQUIRED — Build the dispatch through the helper** (do NOT skip this step). `host` is normally derived from `CLAUDECODE`; pass `--host claude` only for deliberate tests or cross-host tooling:
    ```
-   `bare_mode` must reflect the current dispatch context — read it from live team state, never infer it from the stage. Set `is_feedback_reflow` to true only when routing a rejection back to its `feedback-to` target stage.
-2. **REQUIRED — Pipe the JSON to the helper** (do NOT skip this step):
+   spacedock dispatch build \
+     --workflow-dir {workflow_dir} \
+     --entity-path {entity_file_path} \
+     --stage {target_stage_name} \
+     --checklist-file {checklist_file} \
+     [--scope-notes-file {scope_notes_file}] \
+     [--feedback-context-file {feedback_context_file}] \
+     [--team-name {team_name} | --bare-mode] \
+     [--feedback-reflow]
    ```
-   echo '<json>' | spacedock dispatch build --workflow-dir {workflow_dir}
-   ```
-3. **REQUIRED — On exit 0, parse the stdout JSON and call `Agent()` with the emitted fields verbatim.** The `name`, `description`, `prompt`, and `model` fields MUST come from helper output unchanged. The `description` field is REQUIRED by the Agent tool — do not omit it. The `prompt` is a file-pointer (`Skill(...) ; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.`); the ensign Reads the file on first action and treats the body (including the SendMessage completion-signal section) as the inline assignment. Do not strip or rewrite the prompt. Forward `output.model` as the `Agent()` `model=` parameter when present; when null, OMIT the `model=` argument entirely (do NOT pass `model=None` — default-inheritance only applies when the argument is absent):
+   `--bare-mode` must reflect the current dispatch context — read it from live team state, never infer it from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage.
+3. **JSON compatibility path.** Programmatic callers may still provide the schema-version-2 JSON request object on stdin, and may inspect it with `spacedock dispatch build --print-schema` or validate a file with `spacedock dispatch build --validate-only {request_file}`. For first-officer dispatch, prefer the flag/file form above.
+4. **REQUIRED — On exit 0, parse the stdout JSON and call `Agent()` with the emitted fields verbatim.** The `name`, `description`, `prompt`, and `model` fields MUST come from helper output unchanged. The `description` field is REQUIRED by the Agent tool — do not omit it. The `prompt` is a file-pointer (`Skill(...) ; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.`); the ensign Reads the file on first action and treats the body (including the SendMessage completion-signal section) as the inline assignment. Do not strip or rewrite the prompt. Forward `output.model` as the `Agent()` `model=` parameter when present; when null, OMIT the `model=` argument entirely (do NOT pass `model=None` — default-inheritance only applies when the argument is absent):
    ```
    Agent(
        subagent_type=output.subagent_type,
@@ -114,7 +109,7 @@ The only permitted path for initial `Agent()` dispatch is:
        prompt=output.prompt              // ~175 chars; ensign Reads dispatch_file_path on first action
    )
    ```
-4. **On non-zero exit ONLY** (or if the binary is unavailable): read stderr, report the helper failure to the captain, and fall back to Break-Glass Manual Dispatch below. A zero-exit run is never a break-glass trigger.
+5. **On non-zero exit ONLY** (or if the binary is unavailable): read stderr, report the helper failure to the captain, and fall back to Break-Glass Manual Dispatch below. A zero-exit run is never a break-glass trigger.
 
 In bare mode, dispatch blocks until the subagent completes — concurrent dispatch is not possible. Dispatch one entity at a time and process completions inline.
 

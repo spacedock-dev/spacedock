@@ -32,6 +32,7 @@ func bareBuildFixture(t *testing.T) (root, stdin string) {
 		"stage":          "backlog",
 		"checklist":      []string{"- a", "- b"},
 		"bare_mode":      true,
+		"host":           "claude",
 	}, nil)
 	return root, stdin
 }

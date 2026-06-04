@@ -25,9 +25,39 @@ type runResult struct {
 // via the process env (set by the caller through t.Setenv) so the bare-mode
 // team-evidence probe is hermetic.
 func runNative(stdin string, args ...string) runResult {
+	if len(args) > 0 && args[0] == "build" {
+		return runNativeWithDefaultClaudeHost(stdin, args...)
+	}
+	return runNativePreservingHostEnv(stdin, args...)
+}
+
+// runNativePreservingHostEnv drives the native dispatch surface without
+// normalizing host-marker environment. Host-resolution tests use this helper to
+// assert CODEX_THREAD_ID / CLAUDECODE behavior directly.
+func runNativePreservingHostEnv(stdin string, args ...string) runResult {
 	var stdout, stderr bytes.Buffer
 	exit := Run(claudeteam.Probe, args, strings.NewReader(stdin), &stdout, &stderr)
 	return runResult{stdout.String(), stderr.String(), exit}
+}
+
+// runNativeWithDefaultClaudeHost keeps legacy build fixtures deterministic when
+// the developer's real shell happens to carry Codex runtime markers.
+func runNativeWithDefaultClaudeHost(stdin string, args ...string) runResult {
+	oldCodex, hadCodex := os.LookupEnv("CODEX_THREAD_ID")
+	oldClaude, hadClaude := os.LookupEnv("CLAUDECODE")
+	os.Unsetenv("CODEX_THREAD_ID")
+	os.Setenv("CLAUDECODE", "1")
+	defer restoreEnv("CODEX_THREAD_ID", oldCodex, hadCodex)
+	defer restoreEnv("CLAUDECODE", oldClaude, hadClaude)
+	return runNativePreservingHostEnv(stdin, args...)
+}
+
+func restoreEnv(key, value string, had bool) {
+	if had {
+		os.Setenv(key, value)
+		return
+	}
+	os.Unsetenv(key)
 }
 
 // readDispatchBody reads the dispatch body file the run wrote (the path is

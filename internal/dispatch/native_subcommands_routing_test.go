@@ -62,6 +62,7 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 		"checklist":      []string{"- a", "- b"},
 		"team_name":      "fixture-team",
 		"bare_mode":      false,
+		"host":           "claude",
 	}, nil)
 
 	var out, errBuf bytes.Buffer
@@ -104,6 +105,7 @@ func TestBuildOmitsStandingFetchLineWithoutMods(t *testing.T) {
 		"checklist":      []string{"- a", "- b"},
 		"team_name":      "fixture-team",
 		"bare_mode":      false,
+		"host":           "claude",
 	}, nil)
 
 	var out, errBuf bytes.Buffer
