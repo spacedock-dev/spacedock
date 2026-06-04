@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#296"
 ---
 
 `first-officer-shared-core.md` loads in full at every FO boot, but its `## Gate Presentation` block (the format template + the captain-facing assembly rules) is only needed at a gate. Lift it into a lazy spacedock-owned skill loaded via `Skill(skill=...)` at the gate-presentation point, the way zd (#291) lifted the team lifecycle to `using-claude-team`.
