@@ -113,6 +113,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			return 1
 		}
 	}
+	warnStrayPromptAfterDash(fd, "claude", "spacedock claude", stderr)
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
@@ -140,6 +141,25 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		return 1
 	}
 	return 0
+}
+
+// warnStrayPromptAfterDash emits an advisory stderr warning when a bare positional
+// appears after `--` with no task before it — almost always an operator prompt that
+// silently degrades to host passthrough so the spacedock launch prompt is never
+// prepended to it. The warning names the stray positional and the corrected form
+// (put the prompt BEFORE `--`). It does NOT alter the assembled host argv; the
+// launch is byte-identical with or without this call. `name` is the front-door
+// verb (`spacedock claude` / `spacedock codex`) so the message names a runnable fix.
+func warnStrayPromptAfterDash(fd frontDoorArgs, host, name string, stderr io.Writer) {
+	pos, ok := strayPromptAfterDash(fd, host)
+	if !ok {
+		return
+	}
+	fmt.Fprintf(stderr,
+		"%s: warning: positional %q after `--` is forwarded to the host as-is; "+
+			"the spacedock launch prompt was NOT prepended to it. "+
+			"To make it the launch prompt, put it BEFORE `--`: `%s %q -- …`\n",
+		name, pos, name, pos)
 }
 
 // launchPrompt returns the inner-argv launch prompt: `base + " " + task` when the
@@ -216,6 +236,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			return 1
 		}
 	}
+	warnStrayPromptAfterDash(fd, "codex", "spacedock codex", stderr)
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := codexResume(fd.passthrough)
@@ -250,6 +271,117 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 // is suppressed.
 func codexResume(passthrough []string) bool {
 	return len(passthrough) > 0 && passthrough[0] == "resume"
+}
+
+// valueTakingHostFlags is the per-host set of host flags whose successor token is
+// the flag's value (space form), so that successor is NOT a stray positional. The
+// assembled argv is unchanged regardless of membership; the set only tunes the
+// advisory's accuracy. The spacedock-injected `--plugin-dir <dir>` prefix is NOT
+// handled here — skipInjectedPrefix strips it structurally before any scan — so
+// the prefix interaction stays in one place rather than threaded through this set.
+var valueTakingHostFlags = map[string]map[string]bool{
+	"claude": {
+		"-p": true, "--print": true,
+		"--model":                true,
+		"--mcp-config":           true,
+		"--permission-mode":      true,
+		"--add-dir":              true,
+		"--append-system-prompt": true,
+		"--settings":             true,
+		"--session-id":           true,
+		"--output-format":        true,
+	},
+	"codex": {
+		"-m": true, "--model": true,
+		"--config":  true,
+		"-c":        true,
+		"--cd":      true,
+		"--image":   true,
+		"--sandbox": true,
+		"--profile": true,
+	},
+}
+
+// leadingHostSubcommands is the per-host set of known leading subcommands whose
+// positional arguments are legitimate (e.g. `codex exec <prompt>`,
+// `codex resume <id>`). When the passthrough leads with one, no after-`--`
+// positional is treated as stray.
+var leadingHostSubcommands = map[string]map[string]bool{
+	"codex": {"exec": true, "resume": true},
+}
+
+// skipInjectedPrefix returns the passthrough slice past the spacedock-injected
+// leading `--plugin-dir <dir>` pairs. parseFrontDoorArgs re-prepends each
+// before-`--` `--plugin-dir` as a `--plugin-dir <dir>` pair at the FRONT of
+// fd.passthrough; that prefix is spacedock-owned, not operator after-`--` tokens,
+// so the classifier's subcommand and value-flag checks must run against the real
+// after-`--` tokens BEHIND it. `--plugin-dir` is the only flag parseFrontDoorArgs
+// re-prepends (the safehouse knobs live in fd.safehouseFlags, the booleans are
+// consumed), so it is the complete injected-prefix set. Skipping a leading
+// `--plugin-dir <dir>` pair is correct regardless of origin: the dir is the flag's
+// value, never a stray prompt.
+func skipInjectedPrefix(passthrough []string) []string {
+	for len(passthrough) >= 2 && passthrough[0] == "--plugin-dir" {
+		passthrough = passthrough[2:]
+	}
+	return passthrough
+}
+
+// strayPromptAfterDash is a pure read over the parsed front-door args that returns
+// the first stray positional in the after-`--` passthrough — an operator prompt
+// that was placed after `--` and so silently degrades to host passthrough instead
+// of being prepended to the spacedock launch prompt. It returns ("", false) when
+// nothing is stray.
+//
+// It fires only when the operator gave no task before `--` (hasTask == false): a
+// task before `--` means the operator already placed their prompt, so a positional
+// after `--` is a deliberate host positional. The classifier first skips the
+// spacedock-injected leading `--plugin-dir <dir>` prefix, then runs every check
+// against the real after-`--` tokens — so the subcommand exemption, the value-flag
+// scan, and any future per-token rule all see the operator's actual grammar
+// regardless of the injected prefix. A token is a candidate when it is non-flag
+// (does not start with `-`, and is not the bare `--` separator) AND the real tokens
+// do not lead with a known host subcommand whose arguments are legitimate. A
+// candidate is reported as stray only when we can be confident it is NOT a host
+// flag's value:
+//   - preceding a recognized value-taking host flag → it is that flag's value, skip;
+//   - preceding an UNRECOGNIZED `-`-prefixed flag → it MIGHT be that flag's value, so
+//     we suppress rather than give the actively-wrong "put X before --" advice;
+//   - otherwise (first token, or preceded by a positional or recognized boolean
+//     flag) → confidently stray.
+//
+// The check never alters the assembled argv — runClaude/runCodex only write the
+// warning to stderr.
+func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok bool) {
+	if fd.hasTask {
+		return "", false
+	}
+	tokens := skipInjectedPrefix(fd.passthrough)
+	subcommands := leadingHostSubcommands[host]
+	if len(tokens) > 0 && subcommands[tokens[0]] {
+		return "", false
+	}
+	valueFlags := valueTakingHostFlags[host]
+	for i, tok := range tokens {
+		if tok == "--" || strings.HasPrefix(tok, "-") {
+			continue
+		}
+		if i > 0 {
+			prev := tokens[i-1]
+			if valueFlags[prev] {
+				continue // the value of a recognized value-taking host flag (space form)
+			}
+			// An equals-form flag (`--flag=value`) carries its own value, so it never
+			// consumes the next token. Only a space-form `-`-prefixed flag is ambiguous:
+			// it could be a value-taking flag we don't recognize, so suppress rather
+			// than risk prescribing the wrong correction for what may be its value.
+			if strings.HasPrefix(prev, "-") && prev != "--" && !strings.Contains(prev, "=") {
+				continue
+			}
+		}
+		return tok, true
+	}
+	return "", false
 }
 
 // frontDoorArgs is the parsed front-door grammar. The launchers read it to
