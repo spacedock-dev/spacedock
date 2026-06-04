@@ -84,3 +84,13 @@ Result: the test run FAILED on `TestNoTimeoutLiteralExceeds60s` — `live_budget
 
 ### Summary
 Confirmed the rename precondition empirically on HEAD and chose a single-file rename (split buys nothing). The throwaway spike caught a hidden dependency the original body missed — `live_budget_test.go:28` hardcodes the literal filename `"streamwatch.go"` and AST-parses it, so the rename is NOT pure: `TestNoTimeoutLiteralExceeds60s` fails until that literal becomes `"streamwatch_test.go"`. Updated the approach, added AC-3 for the guard, refined the test plan to a single two-file commit, and recorded the spike result. Spike reverted; working tree clean.
+
+## Stage Report: implementation
+
+- DONE: Rename internal/ensigncycle/streamwatch.go -> streamwatch_test.go and update the hardcoded filename literal that AST-parses it.
+  `git mv` rename (pure, 0 content change) + `live_budget_test.go:28` literal `"streamwatch.go"` -> `"streamwatch_test.go"`; committed together as 91156966 on branch spacedock-ensign/ensigncycle-streamwatch-test-only. TDD: ran TestNoTimeoutLiteralExceeds60s RED first (`parse streamwatch.go: ...no such file`), then green. `go build ./...` Success, `go test ./internal/ensigncycle/...` 92 passed — no source edits beyond rename + that one literal.
+- DONE: Produce AC evidence (AC-1 LOC drop + binary build; AC-3 guard test passes with renamed file).
+  AC-1: non-test LOC 11924 -> 11266 (drop 658; the file grew to 658 LOC off origin/next vs the 513 measured at the older HEAD 6526943e the body cited — the "modulo in-flight changes" caveat); `go build -o spacedock ./cmd/spacedock` Success. AC-2: `go build ./...` Success proves no non-test caller. AC-3: `go test ./internal/ensigncycle/ -run TestNoTimeoutLiteralExceeds60s` 1 passed; `liveBudgetSources` now lists `"streamwatch_test.go"`.
+
+### Summary
+Single-commit rename of streamwatch.go to streamwatch_test.go plus the one required literal update in live_budget_test.go, so the 658 LOC of test-only watcher infrastructure no longer compiles into the release binary. Followed TDD on the guard test (RED on stale literal, green after update). Non-test LOC dropped 11924 -> 11266; all three builds (`./...`, binary, package suite of 92 tests) green. The only deviation from the body is the LOC figure: the file is now 658 LOC (was 513 at the older cited HEAD), which fully accounts for the larger-than-expected drop; no other files were moved. Note: the package already contained pre-existing streamwatch_unit_test.go and streamwatch_regression_test.go — these were untouched.
