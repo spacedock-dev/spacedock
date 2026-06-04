@@ -1,0 +1,6 @@
+===== exit =====
+1
+===== stdout =====
+
+===== stderr =====
+Error: entity 050-rejected-pending has pending mod-block (merge:local-merge). Use --force to override.

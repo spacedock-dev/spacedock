@@ -211,7 +211,7 @@ When an entity reaches its terminal stage:
 1. If merge hooks are registered, set the mod-block before invoking:
    `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}`
    Commit: `mod-block: {slug} awaiting merge:{mod_name}`.
-   The mechanism enforces this — `status --set` and `status --archive` refuse terminal updates while merge hooks exist with both `pr` and `mod-block` empty. Tagging `mod-block` also lets session resume pick up which mod is blocking.
+   The mechanism enforces this — `status --set` and `status --archive` refuse terminal updates while merge hooks exist with both `pr` and `mod-block` empty, unless `--force`, `merge: local`, or `verdict=rejected` exempts (a rejected entity never ran the merge ceremony). Tagging `mod-block` also lets session resume pick up which mod is blocking.
 2. Run merge hooks before local merge, archival, or status advancement.
 3. Detect hook completion via the state delta. A hook blocks if (a) `pr` is now set, (b) its prose says to wait for captain approval and the captain has not responded, or (c) it declares an external wait. Otherwise it completed.
 4. If blocked, leave `mod-block` set, report the pending state, and do not local-merge.
@@ -321,7 +321,7 @@ Merge hooks can block (captain approval before pushing, waiting for PR merge). T
 - **Set** by the FO before invoking a merge hook: `mod-block=merge:{mod_name}`.
 - **Cleared** after the blocking action completes or the captain force-overrides. The clear runs in its own `--set` — combining `mod-block=` with terminal fields (`status={terminal}`, `completed`, `verdict`, `worktree=`) is refused without `--force`.
 - **Guarded** — `status --set` refuses terminal transitions while `mod-block` is non-empty unless `--force` is passed.
-- **Enforced at the mechanism level** — `status --set` and `status --archive` also refuse terminal transitions and archival when merge hooks (`_mods/*.md` with `## Hook: merge`) are registered AND `pr` is empty AND `mod-block` is empty. `--force` bypasses. `merge: local` exempts only the pr-requirement; the mod-block-pending and combined-clear refusals stay. See the Ship-Local Ceremony.
+- **Enforced at the mechanism level** — `status --set` and `status --archive` also refuse terminal transitions and archival when merge hooks (`_mods/*.md` with `## Hook: merge`) are registered AND `pr` is empty AND `mod-block` is empty. `--force` bypasses. `merge: local` exempts only the pr-requirement; `verdict=rejected` likewise exempts only the pr-requirement on both surfaces (a rejected entity never ran the merge ceremony, so the requirement is vacuous); the mod-block-pending and combined-clear refusals stay. See the Ship-Local Ceremony.
 - **Survives session resume** — the FO reads `mod-block` from frontmatter on boot and resumes the pending action.
 
 ## Standing Teammates

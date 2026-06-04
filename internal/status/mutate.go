@@ -334,13 +334,17 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 	// (pr set), is in flight (mod-block set, handled above), or --force. Under
 	// `merge: local` the pr-requirement is exempted — the workflow declared it
 	// merges locally, so an empty pr is expected at archival; the mod-block guard
-	// above (policy-independent) still catches an in-flight ceremony.
+	// above (policy-independent) still catches an in-flight ceremony. A
+	// `verdict: rejected` entity is also exempted: it never ran the merge ceremony
+	// (no PR to require, no merge to gate on), so the requirement is vacuous — this
+	// matches the --set finalize path (runSet), keeping reject-then-archive on the
+	// happy path without --force.
 	policy, perr := resolveMergePolicy(definitionDir)
 	if perr != nil {
 		fmt.Fprintf(stderr, "Error: %s\n", perr)
 		return 1
 	}
-	if !force && policy != mergeLocal && modBlock == "" && pr == "" {
+	if !force && policy != mergeLocal && verdict != "rejected" && modBlock == "" && pr == "" {
 		mergeHooks := scanMods(definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			fmt.Fprintf(stderr,
