@@ -96,3 +96,18 @@ Confirmed the asymmetry empirically (scratch run on a copy of `testdata/merge-pr
 ### Summary
 
 Added the one missing `verdict != "rejected"` clause to runArchive's merge-hook guard in internal/status/mutate.go so --archive matches the --set finalize path; both surfaces now let a rejected entity (empty pr/mod-block, default merge: pr) through without --force, while the policy-independent mod-block-pending guard still refuses a rejected entity with a live block. TDD strictly: wrote TestRejectedVerdictArchiveMatchesSet first (drives the native runner --set-then-archive on one staged root, asserts surfaces agree) and confirmed it reds on today's code AND on a fix-revert (golden + exit-code mismatch), then green after the fix. Aligned both FO contract enumerations to name the verdict=rejected escape. Full suite green: go build/vet clean, 980 tests passed.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 and AC-2 from a fresh run; confirm AC-1 would RED on a fix-revert (guard clause genuinely load-bearing).
+  `go test ./internal/status/ -run 'TestRejectedVerdictArchiveMatchesSet|TestRejectedVerdictModBlockPendingArchiveRefuses'` → 2 passed. AC-1 RED on fix-revert (removed verdict clause at mutate.go:347): exit mismatch native=1 golden=0. Both succeed without --force on today's code.
+- DONE: AC-2 — rejected + non-empty mod-block still refused by --archive, exit 1 naming the block.
+  `TestRejectedVerdictModBlockPendingArchiveRefuses` GREEN (golden merge-pr-rejected-pending-archive: exit 1, stderr names `pending mod-block (merge:local-merge)`). Also confirmed it stays green with the verdict clause reverted — proving the escape is narrow (relaxes only the merge-hook pr-requirement, not the policy-independent mod-block guard).
+- DONE: AC-3 — both FO contract enumerations name the verdict=rejected escape; guard clause landed at runArchive mirroring the handlers.go sibling; full offline suite green.
+  Contract: `first-officer-shared-core.md:214` (terminalize-step) and `:324` (Mod-Block Enforcement) both name `verdict=rejected` alongside `--force`/`merge: local`. Code: handlers.go:203 (`--set`) and mutate.go:347 (`--archive`) mirror each other. Only one contract copy exists (no vendored duplicate missed). `go test ./...` → 980 passed/12 pkgs, build+vet clean, raw exit 0.
+- DONE: Reject if the new guard test is weak — prove it reds on a regression, not merely passes on today's code.
+  Decisive proof: reverted the clause AND regenerated goldens (`-update`) so the golden-freeze passes against broken behavior — the test STILL failed at merge_policy_guard_test.go:173 (`--set and --archive must agree on verdict=rejected, got set=0 ... archive=1`). Test strength rests on the behavioral agreement assertion, not the golden spelling-freeze. All files restored to clean HEAD (git status: ok).
+
+### Summary
+
+PASSED. All 3 ACs reproduced from fresh runs with evidence outside the task body. AC-1/AC-2 are real Go unit tests driving the native binary; AC-3 is a contract-prose deliverable whose behavioral claim is independently gated by AC-1. The guard test is genuinely strong: it reds on a fix-revert even with goldens regenerated to match the broken behavior, because the load-bearing assertion is the explicit `setCode != archiveCode` agreement check, not the golden freeze. handlers.go (--set) and mutate.go (--archive) guards now mirror each other; both contract enumerations match code. Note for the FO: this is a HIGH-STAKES status mutation/guard surface — recommend the detached adversarial audit before merge per the validation stage's policy.
