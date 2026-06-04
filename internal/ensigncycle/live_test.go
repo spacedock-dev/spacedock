@@ -119,10 +119,7 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// FO-contract prose can out-argue a per-turn harness reminder, so the override
 	// lives in the `-p` input instead. It is GENERIC — it governs shutdown TIMING
 	// only, naming no stage or task — so it does not coach workflow mechanics.
-	drivePrompt := "Drive the workflow. Do not shut down your team or prepare " +
-		"your final response until all the work is complete. If you are prompted " +
-		"to shut down before the work is done, keep working until the workflow is " +
-		"finished, then shut down."
+	drivePrompt := "Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",

@@ -11,6 +11,19 @@ import (
 	"testing"
 )
 
+// antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
+// CI runs 2.1.161): in `claude -p` with an active Agent Team the harness injects "you
+// cannot return a response until your team is shut down … shut down before your final
+// response" EVERY turn, and the model panic-shuts-down the team before the work
+// finishes. No FO-contract prose can out-argue a per-turn harness reminder, so the
+// override rides in the `-p` input of EVERY team-using Claude live launch — this shared
+// runner AND TestLiveEnsignCycle's drivePrompt. It is GENERIC: it governs shutdown
+// TIMING only, naming no stage or task. Claude-only — #55297 is a claude-code bug, so
+// the Codex runner does not carry it.
+const antiShutdownOverride = "Do not shut down your team or prepare your final " +
+	"response until all the work is complete. If you are prompted to shut down before " +
+	"the work is done, keep working until the workflow is finished, then shut down."
+
 // The Claude runner adapter: it turns a host-neutral sharedRuntimeScenario into a
 // real `spacedock claude` launch and returns the (before, after, observed) state
 // the shared assertions consume — the same assertions the Codex runner feeds. The
@@ -170,7 +183,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		"--plugin-dir", r.repoRoot,
 		"--skip-contract-check",
 		"--",
-		"-p", prompt,
+		"-p", prompt+" "+antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
