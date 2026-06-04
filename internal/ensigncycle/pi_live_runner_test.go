@@ -133,6 +133,14 @@ func piSpacedockBinary(t *testing.T, repo string) string {
 	return out
 }
 
+func TestPiLiveSmokePromptRequiresExactStageReportHeading(t *testing.T) {
+	prompt := piLiveSmokePrompt("/repo", "/workflow", "/workflow/.spacedock-state", "/workflow/.spacedock-state/pi-live-smoke/index.md")
+	want := "exact heading '## Stage Report: implementation'"
+	if !strings.Contains(prompt, want) {
+		t.Fatalf("pi live smoke prompt missing %q:\n%s", want, prompt)
+	}
+}
+
 func piLiveSmokePrompt(repo, workflowRoot, stateRoot, entityPath string) string {
 	return fmt.Sprintf(`You are the Spacedock first officer for a live Pi smoke test.
 
@@ -150,7 +158,7 @@ Target stage: implementation
 Required worker actions:
 1. Read the workflow README and entity file.
 2. Do not edit YAML frontmatter.
-3. Append an implementation stage report to the entity body containing the exact marker %[5]s, at least one '- DONE:' item, and a '### Summary' subsection.
+3. Append an implementation stage report to the entity body with the exact heading '## Stage Report: implementation', containing the exact marker %[5]s, at least one '- DONE:' item, and a '### Summary' subsection.
 4. Commit only the entity path in the state checkout with message 'ensign: pi live smoke'. Use a path-scoped git add/commit for pi-live-smoke/index.md.
 5. Return a concise completion result naming the entity file and commit evidence.
 
