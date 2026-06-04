@@ -11,6 +11,7 @@ issue:
 worktree:
 mod-block:
 pr: "#295"
+archived: 2026-06-04T08:39:28Z
 ---
 
 `at` (#285) unblocked the path to TestLiveEnsignCycle's full-lifecycle end-state assertions (by fixing the teardown hang), and that exposed that a single `claude -p` FO + a dispatched ensign cannot deterministically complete a full multi-stage lifecycle to a verdicted, archived terminal state. `at` shipped with the live gate SCOPED (teardown marker grade hard; end-state non-fatal/logged) so it wasn't blocked on an inherently-flaky assertion. This entity is the follow-up: make the full cycle deterministic, then re-promote the demoted assertions.
