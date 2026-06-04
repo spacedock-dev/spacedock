@@ -201,6 +201,30 @@ func TestRejectedVerdictModBlockPendingArchiveRefuses(t *testing.T) {
 	}
 }
 
+// TestNonRejectedVerdictArchiveStillRefuses (terminal-guard rejected-consistency,
+// over-wide-exemption complement): the verdict escape is scoped to verdict=rejected
+// ONLY. A NON-rejected, non-empty verdict (verdict: passed) with empty pr/mod-block
+// under the default merge: pr policy must STILL be refused by --archive — this is
+// exactly the case the merge-hook guard exists for (an accepted outcome claimed
+// without the merge ceremony). This pins the exemption against over-widening:
+// changing `verdict != "rejected"` to `verdict == ""` (any non-empty verdict
+// escapes) goes RED here. The existing default-refuse fixture (020-no-sentinel)
+// carries an EMPTY verdict, so it still refuses under that widening and gives no
+// signal — this case supplies the missing one.
+func TestNonRejectedVerdictArchiveStillRefuses(t *testing.T) {
+	code, out, errOut := assertMergeGolden(t, "merge-pr-passed-nosentinel-archive", "merge-pr-workflow",
+		"--archive", "060-passed-nosentinel")
+	if code != 1 {
+		t.Fatalf("non-rejected-verdict --archive must still refuse (exit 1), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(errOut, "cannot be archived") {
+		t.Fatalf("stderr should name the merge-hook archive refusal, got %q", errOut)
+	}
+	if out != "" {
+		t.Fatalf("stdout must be empty on rejection, got %q", out)
+	}
+}
+
 // TestSentinelDisplaysAsLocal (AC-2): a pr field of local-merge:{short-sha}
 // renders in the status table as `{short-sha} (local)`, distinguishable from a
 // real PR reference. Native and oracle must agree.
