@@ -130,6 +130,12 @@ For high-stakes surfaces — a front-door launcher, the status/guard mutation pa
 
 The audit catches the class of hole where the test passes but would also pass on a broken future edit — which a green suite cannot see itself.
 
+### Live scenario for runtime claims
+
+Choose the proof at the claim's altitude. When an AC's truth is what an agent or model DOES at runtime — it actually exits, it actually clears the hang, it actually produces the right durable state — the proof is a scripted live scenario, not an offline proxy. A recording proves the WATCHER (the consumer reads a frozen stream correctly), never the PRODUCER (does the real model, reading the contract, actually exit?). A contract-text check proves the WORDS are present, never the behaviour. Both pass while the runtime claim is still false — exactly the slip where a fix passed every offline check and three adversarial audits, was merged `pending-live-run`, and the live retrigger then showed it never closed the flake.
+
+A live scenario is authored as a triple: a descriptive **runbook** (the prompt/instructions a real agent runs), a **setup** (the fixture/state the run starts from), and **durable-outcome assertions** (entity state before→after plus observed output — NOT transcript phrasing, which is non-deterministic). Run it against a real agent and grade on the durable outcomes, with at least one negative case where a deliberately broken outcome reds the grade. Mark such an AC `Verified by: live <ci-run:<id> | session:<path>>`; under an external-proof opt-in workflow the live-run guard refuses to terminalize it until that citation resolves, so `pending-live-run` is an enforced state, not a hopeful label.
+
 ## Workflow State
 
 View the workflow overview:
