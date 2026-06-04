@@ -1,6 +1,6 @@
 ---
 title: Pi runtime support — adapt Spacedock to pi-native teams/subagents
-status: validation
+status: done
 score: "0.36"
 source: captain (2026-06-03) — dogfood pi support from the prior PR #155 and evaluate pi-agent-teams / pi-subagents as usable ensign constructs
 issue: spacedock-dev/spacedock#155
