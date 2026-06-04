@@ -1,11 +1,11 @@
 ---
 id: zdwt24era9rdg622e683x91v
 title: Extract generic Claude-team orchestration out of the FO contract into a reusable `using-claude-team` skill; the FO contract keeps only spacedock-specific decisions
-status: backlog
+status: ideation
 source: captain (2026-06-03) — "can we move the team related thing into a separate skill? 10 steps, error-prone, there must be an easier way or some missing abstraction"
 score: "0.30"
 worktree:
-started:
+started: 2026-06-04T05:24:55Z
 completed:
 verdict:
 issue:
