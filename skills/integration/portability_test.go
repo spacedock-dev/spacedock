@@ -53,14 +53,20 @@ var internalHelperPaths = []string{
 	".agents/plugins/marketplace.json",
 }
 
-// isClaudeAdapter reports whether a shipped file is a Claude host-runtime
-// adapter (claude-*-runtime.md). Per zs #246 a `~/.claude/teams` read is the
-// legitimate, quarantined Claude coupling and lives exactly in these adapters,
-// so the personal-config check — and ONLY that check — excludes them. The
-// interpreter and internal-helper-path checks still apply to adapters.
+// isClaudeAdapter reports whether a shipped file is a Claude-host coupling
+// surface: the Claude host-runtime adapters (claude-*-runtime.md) and the
+// Claude-host-only using-claude-team skill. Per zs #246 a `~/.claude/teams` read
+// is the legitimate, quarantined Claude coupling; it lives in the runtime
+// adapters and — since the team-lifecycle extraction — in the using-claude-team
+// skill, which is Claude-specific by construction (no Codex analog). The
+// personal-config check — and ONLY that check — excludes these surfaces. The
+// interpreter and internal-helper-path checks still apply to them.
 func isClaudeAdapter(path string) bool {
 	base := filepath.Base(path)
-	return strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md")
+	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
+		return true
+	}
+	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md"))
 }
 
 // TestShippedSurfaceHasNoHiddenMachineDependency locks AC-1: the shipped

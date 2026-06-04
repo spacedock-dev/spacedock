@@ -22,13 +22,15 @@ import (
 // integration lint ties integration-const↔contract; together the three copies are
 // pinned to one prose source.
 //
-// The contract files are read via the in-repo layout path (the ensigncycle
-// package sits at internal/ensigncycle, so the FO references are two dirs up).
-// This is a fixed repo-relative path, not a machine-specific dependency.
+// The prose sources are the shared-core step-10 delegation and the
+// using-claude-team skill (the Claude realization that owns the terminal
+// teardown). They are read via the in-repo layout path (the ensigncycle package
+// sits at internal/ensigncycle, so the skill references are two dirs up). This is
+// a fixed repo-relative path, not a machine-specific dependency.
 func TestGradeMarkerMatchesContract(t *testing.T) {
 	contractFiles := []string{
 		filepath.Join("..", "..", "skills", "first-officer", "references", "first-officer-shared-core.md"),
-		filepath.Join("..", "..", "skills", "first-officer", "references", "claude-first-officer-runtime.md"),
+		filepath.Join("..", "..", "skills", "using-claude-team", "SKILL.md"),
 	}
 	for _, f := range contractFiles {
 		b, err := os.ReadFile(f)
