@@ -22,6 +22,8 @@ TestLiveEnsignCycle drives a REAL FO (`claude -p` + Agent Teams) that dispatches
 
 The teardown MARKER grade (`expectTerminalTeardownGrade`) and the TeamCreate→dispatch-close steps passed reliably across all runs — that is `at`'s deliverable and stays the hard assertion.
 
+3. **#55297 also hits the SHARED scenarios (not just the full cycle).** CI run `26926169461` (PR #285 @ `f6eb6bfc`) red'd `claude-live (sonnet)` on `TestLiveClaudeSharedScenarios/gate-guardrail` — `claude_live_runner_test.go:49: spacedock claude did not finish within 1m0s` (the FO HUNG in #55297's reminder loop). The shared scenarios launch via `claude_live_runner_test.go`'s `run` with the bare canonical prompt and NO override. **Captain directive: apply the #55297 `-p` override to EVERY `-p`+team live launch** (the shared runner + the full cycle). Even with the override, `gate-guardrail`'s 60s timeout may need lengthening or retry-tolerance (same residual non-determinism) — covered by this entity.
+
 ## What `at` left in place (the scoped state to build on)
 
 - `internal/ensigncycle/live_test.go`: teardown marker grade is HARD (`t.Fatalf`); the end-state assertions (`liveStageReportHeading`, `doneMarker`, `### Summary`, `checkboxBullet`, `status: done`, `verdict:`, `someCommitNamesOnly`) are NON-FATAL logging, with a comment referencing #55297 + this entity.
