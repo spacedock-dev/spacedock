@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-require-external-proof-guard
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#277"
 ---
 
