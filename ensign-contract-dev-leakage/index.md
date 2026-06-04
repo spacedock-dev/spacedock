@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#290"
 ---
 
 The shared ensign contract (`skills/ensign/references/ensign-shared-core.md`) is loaded by **every** dispatched ensign across all three commission templates (development, experiment, refinement). A detached adversarial audit confirmed it has absorbed dev-workflow-specific discipline — TDD authoring, a code-shaped closed deliverable list, and a "CODE only" worktree assumption — and asserts them as universal. The FO contract was already corrected to deliverable-shape-agnostic phrasing (`first-officer-shared-core.md` lines 342-353); the ensign contract is the **uncorrected twin**.
