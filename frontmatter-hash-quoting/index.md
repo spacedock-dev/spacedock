@@ -9,7 +9,7 @@ verdict:
 score: "0.34"
 worktree: .worktrees/spacedock-ensign-frontmatter-hash-quoting
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#275"
 ---
 
