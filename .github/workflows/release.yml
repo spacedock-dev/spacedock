@@ -59,6 +59,33 @@ jobs:
             exit 1
           fi
 
+      - name: Download latest journey metrics artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/runtime-live-artifacts" "$RUNNER_TEMP/journey-metrics"
+          run_id="$(gh run list --workflow "Runtime Live E2E" --branch next --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
+            echo "::error::no successful Runtime Live E2E run found on next for journey metrics" >&2
+            exit 1
+          fi
+          gh run download "$run_id" --dir "$RUNNER_TEMP/runtime-live-artifacts"
+          find "$RUNNER_TEMP/runtime-live-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;
+          if [ -z "$(find "$RUNNER_TEMP/journey-metrics" -name '*.json' -type f -print -quit)" ]; then
+            echo "::error::downloaded Runtime Live E2E artifacts contained no journey metrics JSON" >&2
+            exit 1
+          fi
+
+      - name: Build journey cost ledger
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          go run ./cmd/spacedock-release journey-costs "$RELEASE_VERSION" \
+            --metrics-dir "$RUNNER_TEMP/journey-metrics" \
+            --out "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"
+          test -s "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"
+
       - name: Run goreleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -71,6 +98,14 @@ jobs:
           # GITHUB_TOKEN cannot write to another repository).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Publish journey cost ledger
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber
 
       # AC-4: stamp the plugin manifests' `version` to the release so the host
       # plugin panel (`claude plugin list --json`) displays a version that tracks

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 // antiShutdownOverride counters upstream claude-code #55297 (a regression in 2.1.126;
@@ -47,6 +48,7 @@ type claudeScenarioResult struct {
 	finalMessage string
 	stream       string
 	artifactDir  string
+	duration     time.Duration
 }
 
 type claudeLiveScenario struct {
@@ -130,6 +132,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner claudeLiveRunner, scena
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }
 
 func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
@@ -142,6 +145,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }
 
 func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
@@ -158,6 +162,7 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
 	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }
 
 // run launches the real `spacedock claude` front door for one shared scenario and
@@ -198,7 +203,9 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	cmd.Stdout = &buf
 	cmd.Stderr = &buf
 
+	started := time.Now()
 	runErr := cmd.Run()
+	duration := time.Since(started)
 	stream := buf.String()
 	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
@@ -224,6 +231,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		finalMessage: finalMessage,
 		stream:       stream,
 		artifactDir:  artifactDir,
+		duration:     duration,
 	}
 }
 

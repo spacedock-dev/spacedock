@@ -31,16 +31,24 @@ The two executors check the *same* scenario at different fidelity. Treating "off
 
 ## Variant Axes
 
-A scenario executes as a tuple:
+A scenario produces one or more observations. Each observation is described by the scenario plus its execution axes:
 
 ```text
-scenario × {mode, runtime}
+scenario × {executor, mode, runtime, model?}
 ```
 
-- **runtime** — the host (claude / codex). Per-host runner adapters implement this axis.
-- **mode** — the model / effort (e.g. sonnet / opus).
+- **executor** — the implementation of the check (`codified` / `llm`).
+- **mode** — the evidence path used for the observation. Current modes are `codified` for deterministic Go/fixture checks and `llm-live` for a real model-backed agent run. Future modes may add replay or simulation, but a mode is never a model name.
+- **runtime** — the host or runner surface (`claude` / `codex`). Codified observations still carry runtime: they prove the modeled consumer behavior for that host. Live LLM observations prove the real producer for that same host.
+- **model** — the actual model used when the executor invokes one, such as `sonnet`, `opus`, or `gpt-5-codex`. Codified observations usually leave this empty.
 
-The `(scenario, mode, runtime)` tuple is the unit that is **run, graded, and measured**. It is the key the cost ledger uses, and the key a coverage matrix uses to demand parity across hosts and models.
+The baseline coverage matrix for each shared scenario is:
+
+```text
+runtime {claude, codex} × mode {codified, llm-live}
+```
+
+The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, graded, and measured**. When more than one model can run under the same mode/runtime pair, `model` is a separate observation dimension; do not fold it into `mode`. This is the key shape the cost ledger and coverage matrix use to compare hosts, evidence paths, and models without changing the scenario identity.
 
 ## Seed Scenarios
 
@@ -54,6 +62,20 @@ The first foundation is the three host-neutral runtime scenarios already shipped
 
 These IDs are the code-backed source of truth. They mirror the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; the seed IDs declared above must equal that table. This block is machine-readable so a lock test can bind the doc to the code and red on drift in either direction — adding, dropping, or renaming a scenario on one side without the other. This is what makes the doc the human-readable face of a code-backed truth rather than prose bound to nothing.
 
+## Prioritizing New Cross-Runtime Scenarios
+
+A scenario belongs in the shared cross-runtime set only when the same user journey should hold for every supported host. Host-specific probes, such as a Codex-only idle-notification experiment, should live in a host-runtime test lane instead of `sharedRuntimeScenarios()`.
+
+Prefer new scenarios that start from the first officer's normal event loop: boot the workflow, inspect startup state and dispatchable work, run the required action, and grade durable outcomes. This catches real producer behavior instead of only testing a helper in isolation.
+
+Prioritize these next shared scenarios:
+
+- `pr-lifecycle-from-boot` — boot a workflow, observe PR-pending and dispatchable state, let the PR lifecycle advance, and verify the entity reaches the correct durable state without bypassing merge hooks or archival rules.
+- `dispatch-before-wait` — with ready workflow work available, the first officer finishes dispatch/advance/gate handling before waiting for idle worker completion.
+- `split-root-bootstrap-resume` — from a fresh or stale split-root checkout, the first officer halts on missing state, initializes or pulls state, then resumes dispatch only after the entity directory is present.
+- `live-metrics-artifact-capture` — live Claude and Codex scenario runs emit raw per-run journey metrics and archive them as CI artifacts before any aggregation or post-processing.
+- `feedback-reuse-boundary` — after a rejected validation result, the first officer routes the concrete finding back to the implementation stage, chooses reuse or fresh dispatch by the runtime contract, and records the second-cycle durable outcome.
+
 ## The Model Consumers Build On
 
 These principles are the contract the cluster keys to. The consumers are separate entities/lanes that cite this doc and land their own enforcing tests.
@@ -62,7 +84,7 @@ These principles are the contract the cluster keys to. The consumers are separat
 
 - **Authoring primitive** — makes a scenario authorable outside the test package, so writing a scenario is as cheap as a Go test. This is the entity that decides the deferred syntax.
 
-- **Cost ledger** — keys cost by the `(scenario, mode, runtime)` tuple, with the scenario ID drawn from the shared seed IDs. Host-prefixed scenario keys (e.g. `claude-gate-guardrail`) are forbidden: the scenario identity is host-neutral, and `runtime` is a variant axis, not part of the scenario name. This makes cost attributable per scenario and comparable across variants.
+- **Cost ledger** — groups cost by scenario and variant axes, with the scenario ID drawn from the shared seed IDs. Host-prefixed scenario keys (e.g. `claude-gate-guardrail`) are forbidden: the scenario identity is host-neutral, `runtime` is a variant axis, and `model` is separate from `mode`. This makes cost attributable per scenario and comparable across hosts, modes, and models.
 
 ## Why This Dissolves the Offline/Live Split
 

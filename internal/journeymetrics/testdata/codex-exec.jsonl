@@ -1,0 +1,7 @@
+{"type":"session.started","session_id":"codex-test","model":"gpt-5-codex","cwd":"/tmp/workflow"}
+{"type":"turn.started","turn_id":"turn-1"}
+{"type":"tool_call.started","call_id":"call-1","name":"exec_command","arguments":{"cmd":"go test ./..."}}
+{"type":"tool_call.completed","call_id":"call-1","name":"exec_command","exit_code":0}
+{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Done."}]}
+{"type":"turn.completed","turn_id":"turn-1"}
+{"type":"session.completed","outcome":"success"}
