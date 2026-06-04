@@ -1,7 +1,7 @@
 ---
 id: a9nte184whfmz8ajzn4n51yr
 title: Extract Feedback Rejection Flow from first-officer-shared-core into a lazy spacedock-owned skill
-status: implementation
+status: validation
 source: "captain (2026-06-04) — token-efficiency decomposition of first-officer-shared-core.md. The Feedback Rejection Flow is needed only when a gate rejects (or a feedback stage recommends REJECTED), not in a session's first turns; defer it off the eager boot read via the zd lazy-skill pattern."
 score: "0.31"
 worktree: .worktrees/spacedock-ensign-feedback-rejection-flow-skill-extraction
