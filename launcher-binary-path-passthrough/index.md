@@ -237,3 +237,21 @@ Residual risks:
 - Safehouse inner environment behavior remains undocumented by runtime evidence; only the outer exec env is tested.
 - Stale/non-executable `SPACEDOCK_BIN` fallback is not implemented/tested as an env-aware resolver; `${SPACEDOCK_BIN:-spacedock}` will try a non-empty stale path rather than falling back by itself.
 - `gofmt -l` reports unrelated formatting drift in two existing `internal/status` files; validation did not edit product/source files per dispatch constraints.
+
+## Stage Report: implementation (validation fix)
+
+DONE — Fixed validation rejection for AC-3/AC-6 in product commit `a725ebdd` (`dispatch: fallback for unusable spacedock bin`) on branch `spacedock-ensign/launcher-binary-path-passthrough`. Generated dispatch fetch commands now render a shell launcher shim that uses executable `SPACEDOCK_BIN` when available and falls back to `spacedock` on `$PATH` when `SPACEDOCK_BIN` is unset, empty, missing/stale, or non-executable.
+
+DONE — Added resolver/command tests proving the generated command uses an executable `SPACEDOCK_BIN` and falls back to PATH for unset, empty, missing/stale, and non-executable values. Updated dispatch golden files and cycle assertions to lock the new rendered command surface.
+
+DONE — Fixed AC-5 evidence by adding a fixture-backed safehouse-shape smoke test. The fixture launches `safehouse --trust-workdir-config -- <inner-env-printer>` with `SPACEDOCK_BIN` in the outer environment and proves the inner child observes it, without modifying safehouse internals. Live safehouse remains absent in this environment, so real safehouse filtering behavior is still documented as a runtime risk.
+
+DONE — Preserved front-door argv/env behavior from prior commit `ede26b09`; no launcher argv shape changes were made in this fixback.
+
+DONE — Product changed files in fixback commit: `internal/cli/safehouse_env_smoke_test.go`; `internal/dispatch/build_hazards_test.go`; `internal/dispatch/launcher_command.go`; `internal/dispatch/launcher_command_test.go`; `internal/dispatch/native_subcommands_routing_test.go`; dispatch golden files under `internal/dispatch/testdata/golden/`; `internal/ensigncycle/cycle_test.go`.
+
+DONE — Validation run: `go test ./internal/dispatch -run TestLauncherCommand -count=1`; `go test ./internal/dispatch -run 'TestBuild|Test.*Parity' -update` to regenerate goldens; `go test ./internal/dispatch ./internal/cli ./internal/ensigncycle ./skills/integration -count=1`; `go test ./... -count=1`; `go test ./... -race -count=1`.
+
+Acceptance coverage after fixback: AC-1 PASSED (prior launch seam tests still pass); AC-2 PASSED (prior stale parent env replacement/failure omission tests still pass); AC-3 PASSED (executable env preference plus unset/empty/missing/non-executable fallback tests); AC-4 PASSED (generated dispatch goldens and skill invariant tests still pass); AC-5 PASSED with fixture-backed safehouse-shape inner-env smoke, with live safehouse unavailable; AC-6 PASSED (PATH fallback for absent and unusable signal is externally proven).
+
+Residual risks: no live `safehouse` binary was available, so the fixture proves the wrapper shape can preserve env but does not certify a specific installed safehouse implementation. Generated fetch commands are longer because each line carries its own POSIX shell fallback shim.
