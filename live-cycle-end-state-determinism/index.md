@@ -180,3 +180,22 @@ Shipped AC-1(1a) (absolute entity_path + offline contract test) and AC-2 (re-pro
 ### Summary (cycle 2)
 
 Closed the AC-1(1b) escalation by keying the dispatch-file path on team_name (the FO's preferred approach), which is collision-free for concurrent FOs / back-to-back runs AND deterministic in the goldens — unlike the content hash, which embeds per-run absolute paths and can't be frozen. Both AC-1 fixes (1a absolute entity_path + 1b team-keyed dispatch file) and the re-promoted hard end-state assertions are committed; the post-both-fixes confirmation is 5/5 consecutive genuine `-count=1` live greens with #55297 firing 0/5, satisfying AC-2's PREFERRED re-promote path with no tolerance. Full offline `go test ./...` (1004) + `go vet` (offline and live tag) all green.
+
+## Stage Report: implementation (feedback cycle 1 — decision reconciliation)
+
+- DONE: Implement 1b with Option B (team_name), drop the content hash — coupled with AC-2
+  Already landed in cycle 2 above (the FO's formal Option-B decision arrived after I had reimplemented per the prior CRITICAL update). No new code change needed: `build.go` keys the dispatch file on team_name (`9c6b7ae7`); the content-hash spike was dropped (no `crypto/sha256`/`encoding/hex` import remains). 1b + AC-2 are coupled exactly as directed — the hard re-promotion (`7c3a1e61`) is validated only against the post-1b binary.
+- DONE: Golden determinism without a non-deterministic token
+  Goldens carry the FIXED fixture team prefix (`fixture-team-…`), deterministic across runs; the `-update` regeneration changed ONLY that prefix on the 2 dispatch-path lines (audited), NOT to paper over a non-deterministic token. Parity tests green with no per-run token in any golden.
+- DONE: Offline test pinning distinct team_names → distinct dispatch-file paths
+  `TestDispatchFilePathCollisionFreeAcrossTeams` (two distinct team names, same slug+stage → distinct `dispatch_file_path`, first file not clobbered): RED before, GREEN after.
+- DONE: Bare mode — kept simple (flat path)
+  When team_name is absent (bare mode), the file keeps the flat `{derivedName}.md`. Bare dispatch is sequential single-agent and blocks until completion, so the cross-FO hazard is lower; no `bare/` subdir added (YAGNI — team mode is the hazard this fix targets).
+- DONE: Re-confirm live with 1b applied + re-promoted hard assertions still pass
+  Exceeded the "once or twice" ask: ran a fresh N=5 post-1b (the cycle-2 measurement), 5/5 genuine `-count=1` GREEN, `/tmp/spacedock-dispatch` deliberately NOT cleared between runs, each producing a per-team file (e.g. `002-002-20260604-0736-f9506ff9-spacedock-ensign-make-it-work-implementation.md` — no bare colliding name), all hard end-state assertions green, #55297 0/5.
+- SKIPPED: per-team subdir form (`/tmp/spacedock-dispatch/{team_name}/…`)
+  The decision left filename-vs-subdir as my call ("subdir is tidier" but optional). Kept the committed filename-prefix form (`{team_name}-{derivedName}.md`) — it closes the hazard identically, is already golden-deterministic and 5/5-live-validated; switching to the subdir now would re-burn golden regeneration + live re-confirmation for a cosmetic-only difference (smallest reasonable change).
+
+### Summary (feedback cycle 1)
+
+The FO's formal Option-B decision is fully satisfied by the committed cycle-2 work — team_name keying (content hash dropped), golden-deterministic via the fixed fixture team, bare mode kept flat, the cross-team offline test in place, and 1b coupled with the hard re-promotion validated against a post-1b binary across 5/5 genuine live greens. The only discretionary point — filename-prefix vs. per-team subdir — I kept as the committed filename-prefix form (explicitly my call), since it closes the hazard identically and is already validated; re-doing it for tidiness alone would needlessly re-burn goldens and live runs. No code changes this cycle; reconciliation only.
