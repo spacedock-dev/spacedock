@@ -157,3 +157,22 @@ Tests run:
 
 Residual risks:
 - This is an instruction-surface invariant, so independent validation should still review the contract text for intended semantics.
+
+## Stage Report: validation (pi-subagents acceptance contract fix)
+
+- VERIFIED: Inspected isolated implementation worktree `.worktrees/spacedock-ensign-pi-runtime-no-subagent-acceptance` on branch `spacedock-ensign/pi-runtime-no-subagent-acceptance` at product commit `7119e74d83b8d7077a8824d03399fa3928171b5e` (`fix pi subagent acceptance stage contract`). The product commit changes only `skills/first-officer/references/pi-first-officer-runtime.md` and `skills/integration/skill_surface_test.go`.
+- PASSED: Pi runtime still allows Pi-native dispatch through `subagent(...)`. The Dispatch section says a Pi first officer may dispatch via `subagent(...)` when available, with the emitted dispatch prompt/content, workflow directory, entity path, completion checklist, and Spacedock ensign/Pi adapter loading requirements.
+- PASSED: The Pi runtime now explicitly forbids `subagent(... acceptance: ...)` for Spacedock stage dispatches through `pi-subagents`, while instructing first officers to put acceptance requirements in the task prompt/dispatch content instead.
+- PASSED: The rationale is present and matches the Spacedock model: implementation-to-validation gating is via entity stage reports, product/state commits, and independent validation rather than same-agent acceptance finalization by the child that did the work.
+- PASSED: The invariant test `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages` scopes its check to the `## Dispatch` section and requires the banned acceptance-contract shape plus the task-prompt/dispatch-content and independent-validation rationale phrases.
+
+Validation commands:
+- PASS: `go test ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `gofmt -l skills/integration/skill_surface_test.go` produced no output.
+
+Recommendation: PASSED
+
+### Residual risks
+
+- This validation covers the instruction and invariant-test surface only. It did not run expensive live Pi smokes, consistent with the task scope.
