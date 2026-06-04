@@ -52,9 +52,12 @@ func TestRuntimeLiveWorkflowGuardRejectsMissingCodexJourneyMetricUpload(t *testi
 func TestRuntimeLiveWorkflowGuardRejectsMissingSharedScenarioRun(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	adversarial := strings.Replace(live,
-		`go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
-		`# go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
+		`go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
+		`# go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt`,
 		1)
+	if adversarial == live {
+		t.Fatal("fixture workflow missing Claude shared scenario run command")
+	}
 
 	if err := assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(adversarial); err == nil {
 		t.Fatal("runtime live workflow guard accepted a workflow without an executable Claude shared scenario run")
