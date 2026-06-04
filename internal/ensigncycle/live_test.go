@@ -210,32 +210,27 @@ func TestLiveEnsignCycle(t *testing.T) {
 	t.Logf("located entity at %s", where)
 
 	// The full-lifecycle END-STATE checks below (stage-report shape, terminal
-	// frontmatter, path-scoped commit) are LOGGED, NOT FAILED. They depend on
-	// non-deterministic multi-agent FO+ensign behavior under upstream claude-code
-	// bug #55297 (https://github.com/anthropics/claude-code/issues/55297 — the
-	// per-turn `claude -p` shutdown reminder that panic-shuts-down the team before
-	// the work finishes; the `-p` override above counters it but not always) PLUS
-	// an observed ensign stage-report path divergence (the dispatched ensign
-	// sometimes writes its report to a different `make-it-work.md` than the FO
-	// tracks). A non-deterministic multi-agent lifecycle cannot be a HARD gate, so
-	// these are non-fatal until that determinism is settled — re-promotion is
-	// tracked by entity `live-cycle-end-state-determinism`. The HARD live assertion
-	// (AC-1) is the teardown MARKER grade above; TeamCreate, dispatch-close, and
-	// entity-located stay hard too.
+	// frontmatter, path-scoped commit) are HARD assertions. They verify the REAL
+	// completed-and-archived end-state the multi-agent FO+ensign cycle produces.
+	// They sit AFTER the teardown MARKER grade (the hard AC from `at`/#285), so a
+	// run only reaches them once the FO emitted the terminal-status marker. Each
+	// gates on a PRESENT-and-CORRECT end state: a present-but-wrong end state (e.g.
+	// a malformed stage report, a wrong commit scope) is a real Spacedock
+	// regression and fails immediately — it is NEVER retried or masked.
 
 	// (a) the appended stage-report section has the protocol shape: heading, a
 	// DONE accounting marker, a Summary, and NO checkbox-bullet form.
 	if !liveStageReportHeading.MatchString(entity) {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity missing anchored stage-report heading\n%s", entity)
+		t.Errorf("entity missing anchored stage-report heading\n%s", entity)
 	}
 	if !doneMarker.MatchString(entity) {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity missing anchored - DONE: marker\n%s", entity)
+		t.Errorf("entity missing anchored - DONE: marker\n%s", entity)
 	}
 	if !strings.Contains(entity, "### Summary") {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity missing ### Summary\n%s", entity)
+		t.Errorf("entity missing ### Summary\n%s", entity)
 	}
 	if checkboxBullet.MatchString(entity) {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity contains forbidden checkbox-bullet stage-report markers\n%s", entity)
+		t.Errorf("entity contains forbidden checkbox-bullet stage-report markers\n%s", entity)
 	}
 
 	// (b) the FO finalized the cycle: the entity carries the terminal frontmatter
@@ -244,10 +239,10 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// `verdict: passed`) — both completed the full cycle — so the live test gates
 	// on the verdict being decided, not on a specific word.
 	if !frontmatterField.MatchString(entity) {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity missing terminal `status: done`\n%s", entity)
+		t.Errorf("entity missing terminal `status: done`\n%s", entity)
 	}
 	if !verdictSet.MatchString(entity) {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): entity missing a finalized (non-empty) `verdict:`\n%s", entity)
+		t.Errorf("entity missing a finalized (non-empty) `verdict:`\n%s", entity)
 	}
 
 	// (c) SOME commit in the history is path-scoped to the entity (names only the
@@ -257,7 +252,7 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// invariant is pinned deterministically by the skeleton's
 	// TestEnsignCycleMechanicalOutputs).
 	if !someCommitNamesOnly(t, root, "make-it-work") {
-		t.Logf("non-fatal (tracked in live-cycle-end-state-determinism #55297): no path-scoped commit named only the entity in the cycle history")
+		t.Errorf("no path-scoped commit named only the entity in the cycle history")
 	}
 }
 
