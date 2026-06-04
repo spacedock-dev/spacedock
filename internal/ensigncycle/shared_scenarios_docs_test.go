@@ -43,9 +43,11 @@ func TestSharedScenarioDocsContract(t *testing.T) {
 		"To add a shared runtime scenario",
 		// The parity guard the contract leans on.
 		"TestSharedScenarioRunnerCoverage",
-		// Local live commands for BOTH hosts.
-		"go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
-		"go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
+		// Local live commands for BOTH hosts. `-count=1` defeats a stale Go test
+		// cache replaying a prior pass without launching the model (the false-green
+		// that bit the live gate).
+		"go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
+		"go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
 	}
 	for _, clause := range mustContain {
 		if !strings.Contains(doc, clause) {

@@ -170,7 +170,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          go test -tags live -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+          go test -tags live -count=1 -run TestLiveEnsignCycle ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
 
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
@@ -181,7 +181,7 @@ jobs:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
-          go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
+          go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
 
       - name: Upload live artifacts
         if: always()
