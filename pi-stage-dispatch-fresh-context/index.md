@@ -15,23 +15,76 @@ Spacedock's Pi first-officer runtime should make stage dispatch context explicit
 
 ## Problem
 
-The current operating contract forbids `pi-subagents` acceptance contracts for Spacedock stages and recommends fresh redispatch for Pi feedback loops, but it does not yet guard the `context` parameter used when the FO calls the subagent harness. A forked implementation worker can accidentally inherit prior FO reasoning, validation expectations, or captain-side discussion that should not be part of an independent stage assignment.
+Pi support currently documents that Spacedock stage dispatches may use the Pi-native `subagent(...)` tool, must not use `pi-subagents` acceptance contracts, and should prefer fresh redispatch for follow-up/retry cycles. The missing guard is the `context` parameter passed to `subagent(...)`. If the FO omits it, the worker agent default can select forked context. That creates a hidden dependency on the FO transcript and can contaminate stage work with prior reasoning, validation expectations, captain-side discussion, or unrelated delegation state that was never part of the durable assignment.
 
-## Desired outcome
+This weakens the Spacedock workflow boundary in three ways:
 
-Make Spacedock stage dispatches through Pi/subagents explicitly fresh-context by default, and make violations visible in tests or runtime checks.
+1. **Independence is accidental.** Stage workers are expected to be seeded by the dispatch prompt, workflow directory, entity file, and assigned stage checklist. A forked worker may succeed only because inherited transcript context filled gaps in the assignment.
+2. **Validation can be biased.** A validation worker inheriting implementation discussion may test the implementer's assumptions rather than independently reproducing the acceptance criteria from the entity and resulting files.
+3. **Feedback cycles can become stale.** Reusing a previous subagent context for a retry can make an old completion or old mental model appear current unless the assignment is explicitly a manual/debug resume with durable epoch evidence.
+
+## Proposed approach
+
+Implement a compatibility-first guard around the Pi first-officer stage-dispatch contract:
+
+1. Update the Pi first-officer runtime guidance so any Spacedock stage dispatch through `pi-subagents` explicitly passes `context: "fresh"` to `subagent(...)`. The guidance should state that relying on the worker agent's default context is forbidden for Spacedock stages.
+2. Keep the existing rule that Spacedock stage dispatches must not use `subagent(... acceptance: ...)`. Acceptance requirements remain part of the dispatch prompt/entity contract, and completion remains proven by product/state commits plus entity stage reports and independent validation.
+3. Clarify follow-up and retry behavior: normal feedback/rework dispatch is a new fresh assignment cycle. Any non-fresh resume is an explicit manual/debug exception only, and it must be visibly marked as such and tied to durable entity-stage evidence such as worker metadata, stage, epoch, and current state.
+4. Add tests at the smallest enforceable surface:
+   - a skill-surface/instruction invariant test that parses `skills/first-officer/references/pi-first-officer-runtime.md` and fails unless the Dispatch section contains the required fresh-context invariant;
+   - extend the existing acceptance-contract invariant test so the fresh-context rule and no-acceptance rule are checked together for Pi stage dispatches;
+   - add or extend a follow-up/reuse invariant over the Follow-up section so normal retry cycles are fresh and manual/debug resume is the only documented exception.
+
+The first implementation can be instruction-text plus invariant tests because the current Pi stage dispatch path is runtime-guided rather than a typed Go dispatcher. If a later implementation introduces a structured Pi dispatch builder or adapter, this task's tests should move downward into that typed API and fail on an actual `subagent(...)` call without `context: "fresh"`.
+
+### Spike determination
+
+No live-runtime spike is needed for ideation: the design relies on existing, already-shipped mechanisms in this repo:
+
+- `skills/first-officer/references/pi-first-officer-runtime.md` already defines the Pi stage-dispatch contract;
+- `skills/integration/skill_surface_test.go` already contains `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages`, a failing static invariant over the same runtime guidance;
+- Pi subagent dispatch is already allowed by the current runtime contract, while Spacedock-owned acceptance via `subagent(... acceptance: ...)` is already forbidden.
+
+The riskiest unverified behavior is whether the live Pi host honors `context: "fresh"` exactly as named. That should be covered by a later live Pi runtime scenario if/when live Pi dispatch tests are added; it is not necessary to establish the instruction-level guard because this task's implementation target is the Spacedock dispatch contract and its repo tests.
+
+## Out of scope
+
+- Changing `launcher-binary-path-passthrough` or redispatching any existing worker.
+- Adding PR/mod behavior or changing non-Pi runtime dispatch semantics.
+- Banning subagent dispatch itself; Pi subagent dispatch remains allowed.
+- Reintroducing or depending on `pi-subagents` `acceptance` contracts for Spacedock stages.
+- Building a full typed Pi subagent adapter if the current code path is still instruction-driven.
+- Proving live Pi host behavior in CI unless the implementation already has a live Pi harness available at low cost.
 
 ## Acceptance criteria
 
-**AC-1 - Pi/Spacedock stage dispatch instructions require fresh subagent context.**
-Verified by: an instruction invariant test or runtime contract test that fails if the Pi first-officer stage dispatch guidance omits `context: "fresh"` or allows relying on the worker agent's default context.
+Each AC names an end-state property of the finished deliverable and cites proof outside this task body.
+
+**AC-1 - Pi/Spacedock stage dispatch instructions require explicit fresh subagent context.**
+Verified by: a Go test in `skills/integration` that reads `skills/first-officer/references/pi-first-officer-runtime.md`, isolates the `## Dispatch` section, and fails unless Spacedock stage dispatch guidance for `pi-subagents` requires `context: "fresh"` and forbids relying on the worker agent's default context.
 
 **AC-2 - Spacedock stage dispatches still avoid `pi-subagents` acceptance contracts.**
-Verified by: existing or extended integration tests over Pi first-officer runtime docs that require `subagent(...)` stage dispatches to put acceptance requirements in the task prompt and forbid `subagent(... acceptance: ...)`.
+Verified by: `go test ./skills/integration -run TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages` or its extended successor, which fails unless the Pi Dispatch section forbids `subagent(... acceptance: ...)` and says acceptance requirements live in the task prompt/dispatch content with completion proven by entity stage reports, product/state commits, and independent validation.
 
-**AC-3 - Feedback/retry dispatch remains a fresh assignment cycle unless explicitly marked as manual/debug resume.**
-Verified by: tests or docs invariants that distinguish normal stage dispatch from opt-in resume/debug tooling and require durable entity-stage evidence for every cycle.
+**AC-3 - Normal Pi feedback/retry dispatches are fresh assignment cycles, not context resumes.**
+Verified by: a Go test in `skills/integration` that reads the `## Follow-up and Reuse` section of `skills/first-officer/references/pi-first-officer-runtime.md` and fails unless normal follow-up/retry dispatch is documented as fresh by default, previous completions cannot satisfy a new epoch, and any non-fresh manual/debug resume is explicitly marked as an exception requiring durable metadata.
 
-## Notes
+**AC-4 - The repo-level test suite catches regressions in the Pi stage-dispatch contract.**
+Verified by: `go test ./...` after implementation, with the Pi skill-surface tests included in the normal suite and failing if the fresh-context or no-acceptance invariants are removed.
 
-This is separate from `launcher-binary-path-passthrough`. That task should be redispatched or continued under the corrected policy, but the policy/guard itself belongs in this separate entity.
+## Test plan
+
+- **Focused invariant tests (low cost, fixture/static-contract level):** add or extend tests in `skills/integration/skill_surface_test.go` that parse sections of `skills/first-officer/references/pi-first-officer-runtime.md`. These tests prove the shipped instruction contract carries the enforceable invariants at the same abstraction level as the current implementation.
+- **Baseline Go suite (medium cost):** run `go test ./...` to prove the new invariant tests are integrated into the repo's normal gate and no unrelated packages regress.
+- **Race suite (medium/high cost, optional unless implementation touches concurrent Go code):** if the implementation only changes skill prose and invariant tests, `go test ./... -race` is low-risk but not necessary to prove this text-contract change. If a typed dispatcher or runtime adapter is changed, run it before validation.
+- **Live Pi runtime smoke (defer unless harness exists):** when a durable live Pi harness is available, add a scenario that dispatches an implementation or validation stage with a sentinel string present only in the FO transcript and asserts the worker does not see it unless included in the dispatch prompt. This would prove host-level fresh context, but it is not required for the first instruction/test guard.
+
+## Stage report
+
+### Ideation — 2026-06-04
+
+- Read `docs/dev/README.md` and this entity.
+- Checked the current Pi runtime contract in `skills/first-officer/references/pi-first-officer-runtime.md`.
+- Found existing test coverage for the no-`acceptance` Pi stage-dispatch invariant in `skills/integration/skill_surface_test.go`.
+- Refined the problem, proposed approach, out-of-scope boundary, acceptance criteria, and test plan to align with current Pi contracts: subagent dispatch is allowed, `acceptance` contracts are forbidden, and feedback/retry defaults to fresh assignment cycles unless an explicit manual/debug resume is introduced with durable metadata.
+- Noted that `/Users/clkao/git/spacedock-research/spacedock-v1/context.md` and `/Users/clkao/git/spacedock-research/spacedock-v1/plan.md` were requested but are not present in this checkout.
