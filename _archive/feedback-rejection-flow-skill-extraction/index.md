@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block:
 pr: "#297"
+archived: 2026-06-04T20:23:42Z
 ---
 
 `first-officer-shared-core.md`'s `## Feedback Rejection Flow` (cycle tracking, route-to-feedback-to-target, 3-cycle escalation, budget-probe/reuse, re-run-reviewer) only fires on a rejection. Lift its PROCEDURE BODY into a lazy spacedock-owned skill loaded via `Skill(skill="spacedock:feedback-rejection-flow")` at the rejection-handling point (zd #291 pattern); the rejection DETECTION stays in the always-on skeleton.
