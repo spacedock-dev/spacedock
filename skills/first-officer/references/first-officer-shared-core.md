@@ -267,7 +267,7 @@ If removal fails on untracked files, the FO MUST:
 
 ### Split-Root Worktree Contract
 
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), a worktree stage isolates **CODE only**. Entities live in a separate, non-branched state checkout that a worktree of the main repo does not contain. The entity body and stage reports are written and committed to that state checkout at the entity's state-checkout path, **never** a worktree copy — the dispatch helper hands workers that path even under a worktree stage. The worktree still owns code: working directory, branch, and "commits MUST be on this branch" apply to code changes only. The `pr:`-mirrored-on-`main` exception is unaffected.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), a worktree stage isolates **the deliverable work product only**. Entities live in a separate, non-branched state checkout that a worktree of the main repo does not contain. The entity body and stage reports are written and committed to that state checkout at the entity's state-checkout path, **never** a worktree copy — the dispatch helper hands workers that path even under a worktree stage. The worktree still owns the deliverable: working directory, branch, and "commits MUST be on this branch" apply to deliverable-artifact changes only. The `pr:`-mirrored-on-`main` exception is unaffected.
 
 **Concurrency-safe state commits.** The state checkout is a single non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity, cross-attributing or clobbering it. Every writer MUST commit concurrency-safe, in preference:
 

@@ -4,7 +4,7 @@ How the shared ensign core executes on Codex.
 
 ## Agent Surface
 
-The ensign is dispatched through Codex multi-agent dispatch. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, worktree path, and checklist.
+The ensign is dispatched through Codex multi-agent dispatch. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
 
 Codex dispatch build prompts are file pointers. Read the named dispatch file directly and treat its content as the assignment; do not invoke a Claude `Skill(skill=...)` wrapper.
 

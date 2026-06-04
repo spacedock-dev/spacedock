@@ -51,14 +51,18 @@ var selfPhraseRes = []*regexp.Regexp{
 	regexp.MustCompile(`(?i)re-reading (this|the) (entity|task|body)`),
 }
 
-// externalTokenRe captures any token that proves the AC's proof cites
-// something runnable / observable outside the entity body. Presence of ANY
-// token clears the AC, so a CI run on the entity's PR no longer false-positives
-// even when the prose says "this entity's own PR". The build/compile/lint and
-// generalized live-pilot families (no literal-article dependency) clear the
-// adversarial families the cycle-1 audit surfaced; the release-artifact and
-// commit/GitHub families cover macOS-release and post-merge proof shapes.
-var externalTokenRe = regexp.MustCompile(`(?i)` + strings.Join([]string{
+// devExternalTokens is the DEV workflow's reading of "what counts as external"
+// — the proof vocabulary the generic kernel matches against when a dev workflow
+// opts in. It captures any token that proves the AC's proof cites something
+// runnable / observable outside the entity body. Presence of ANY token clears
+// the AC, so a CI run on the entity's PR no longer false-positives even when
+// the prose says "this entity's own PR". It mixes dev-toolchain tokens (the
+// Go/release/commit families) with generic proof-by-exercise tokens; the whole
+// set is the dev answer to "which tokens count". A non-dev workflow that one
+// day opts in supplies its own complete vocabulary rather than inheriting this
+// one. This is the SOLE site naming the dev tokens — the kernel takes the
+// vocabulary as an injected parameter and names none itself.
+var devExternalTokens = regexp.MustCompile(`(?i)` + strings.Join([]string{
 	`\btest\b`, `\.go\b`, `exit\s`, `exit-code`, `exit code`, `command`, `\bstatus\b`,
 	`--\w+`, `fixture`, `golden`, `byte`, `on-disk`, `stdout`, `stderr`, `assert`, `parser`,
 	`mutator`, `frontmatter`, `code path`, `command/parser`,
@@ -102,9 +106,12 @@ func stripFrontmatter(data []byte) string {
 // names the entity itself (and only the entity itself) as the verification. The
 // five-step algorithm: extract `**AC-N` blocks → isolate the clause from the
 // first proof marker onward → strip quoted spans → match a self-phrase →
-// require external-token absence. The classifier is pure — no I/O — so tests
+// require external-token absence. The external-token vocabulary is INJECTED by
+// the caller — the kernel owns the structural rule ("absence of an external
+// token is a flag") but names no domain tokens itself, so a non-dev workflow
+// can supply its own vocabulary. The classifier is pure — no I/O — so tests
 // drive it with literal strings.
-func ClassifyEntityACs(body string) []ACFlag {
+func ClassifyEntityACs(body string, externalTokens *regexp.Regexp) []ACFlag {
 	classifierCallCount++
 
 	var flags []ACFlag
@@ -128,11 +135,11 @@ func ClassifyEntityACs(body string) []ACFlag {
 			return
 		}
 		// External-token scanning runs over the UNSTRIPPED clause so a backtick-
-		// fenced external token (the corpus convention for `--cask` / `spctl` /
-		// `goreleaser` references) still clears the AC. Self-phrase matching
-		// against the stripped clause + external-token matching against the
-		// unstripped clause give the precision we want on both sides.
-		if externalTokenRe.MatchString(clause) {
+		// fenced external token (the corpus convention for fencing external
+		// references) still clears the AC. Self-phrase matching against the
+		// stripped clause + external-token matching against the unstripped
+		// clause give the precision we want on both sides.
+		if externalTokens.MatchString(clause) {
 			return
 		}
 		flags = append(flags, ACFlag{
@@ -228,7 +235,7 @@ func classifyEntityFile(path string) []ACFlag {
 	if err != nil {
 		return nil
 	}
-	return ClassifyEntityACs(stripFrontmatter(data))
+	return ClassifyEntityACs(stripFrontmatter(data), devExternalTokens)
 }
 
 // flaggedACLabels returns a `[AC-1,AC-3]` shaped string for an error message,

@@ -148,7 +148,7 @@ func TestClassifierPrecisionRecallOnLiveCorpus(t *testing.T) {
 		if err != nil {
 			return nil
 		}
-		for _, f := range ClassifyEntityACs(stripFrontmatter(data)) {
+		for _, f := range ClassifyEntityACs(stripFrontmatter(data), devExternalTokens) {
 			rel, _ := filepath.Rel(stateRoot, path)
 			hits = append(hits, hit{path: rel, label: acLabel(f.Header)})
 		}
@@ -254,7 +254,7 @@ func TestExternalTokensClearSelfPhrase(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			body := "**AC-1 — A property of this entity's design.**\n" + tc.clause + "\n"
-			flags := ClassifyEntityACs(body)
+			flags := ClassifyEntityACs(body, devExternalTokens)
 			if len(flags) != 0 {
 				t.Fatalf("clause %q should clear the self-phrase, got flags=%+v", tc.clause, flags)
 			}
@@ -275,7 +275,7 @@ func TestSelfPhraseStillFlagsWithoutExternalToken(t *testing.T) {
 	for i, body := range cases {
 		body := body
 		t.Run(acLabel(strings.Split(body, "\n")[0]), func(t *testing.T) {
-			flags := ClassifyEntityACs(body)
+			flags := ClassifyEntityACs(body, devExternalTokens)
 			if len(flags) != 1 {
 				t.Fatalf("case %d should flag exactly once, got %+v", i, flags)
 			}
@@ -290,7 +290,7 @@ func TestSelfPhraseStillFlagsWithoutExternalToken(t *testing.T) {
 func TestExternalTokenInBacktickStillClears(t *testing.T) {
 	body := "**AC-1 — A property of this entity's design.**\n" +
 		"Verified by: `--cask` against this entity's binary.\n"
-	flags := ClassifyEntityACs(body)
+	flags := ClassifyEntityACs(body, devExternalTokens)
 	if len(flags) != 0 {
 		t.Fatalf("backtick-quoted external token must clear the self-phrase, got %+v", flags)
 	}
@@ -302,7 +302,7 @@ func TestExternalTokenInBacktickStillClears(t *testing.T) {
 func TestQuotedSelfPhraseStillDoesNotFlag(t *testing.T) {
 	body := "**AC-1 — A property.**\n" +
 		"Verified by: a Go test refusing \"this entity's decision section\" as proof.\n"
-	flags := ClassifyEntityACs(body)
+	flags := ClassifyEntityACs(body, devExternalTokens)
 	if len(flags) != 0 {
 		t.Fatalf("quoted self-phrase + external token must not flag, got %+v", flags)
 	}
@@ -360,6 +360,128 @@ func TestExternalProofPolicyTypoErrorEnumeratesShapes(t *testing.T) {
 			t.Fatalf("error %q should mention %q", msg, want)
 		}
 	}
+}
+
+// TestClassifierKernelTakesInjectedTokens locks AC-6(a): the generic kernel
+// `ClassifyEntityACs` takes the external-token vocabulary as an injected
+// parameter — it is callable with a NON-dev token set and honors it, proving
+// the kernel never reaches for a package-global dev vocabulary. A separate
+// assertion drives the kernel with `devExternalTokens` over the same fixtures
+// TestExternalTokensClearSelfPhrase uses and gets the identical verdicts, so
+// the dev behavior is unchanged.
+func TestClassifierKernelTakesInjectedTokens(t *testing.T) {
+	// A self-phrased clause whose only external token is a NON-dev word
+	// ("p-value") that the dev vocabulary does NOT recognize.
+	body := "**AC-1 — A property of this entity's design.**\n" +
+		"Verified by: the reported p-value falls below this entity's pre-registered threshold.\n"
+
+	// Under the dev vocabulary the clause has no recognized external token, so
+	// the kernel flags it — proving the kernel applies the INJECTED set.
+	devFlags := ClassifyEntityACs(body, devExternalTokens)
+	if len(devFlags) != 1 {
+		t.Fatalf("under dev vocabulary the non-dev clause should flag (no dev token present), got %+v", devFlags)
+	}
+
+	// Inject a non-dev vocabulary that DOES recognize "p-value"; the same clause
+	// must now clear — the kernel honors whatever matcher the caller injects.
+	researchTokens := regexp.MustCompile(`(?i)p-value|dataset|\bDOI\b`)
+	researchFlags := ClassifyEntityACs(body, researchTokens)
+	if len(researchFlags) != 0 {
+		t.Fatalf("with an injected research vocabulary recognizing p-value the clause should clear, got %+v", researchFlags)
+	}
+
+	// Dev-behavior preservation: the kernel driven with devExternalTokens over
+	// TestExternalTokensClearSelfPhrase's fixtures yields the identical clear
+	// verdicts (no flags).
+	devFixtures := []string{
+		"Verified by: `go build ./...` succeeds against this entity's renamed files.",
+		"Verified by: `gofmt -l .` returns empty on this entity's tree.",
+		"Verified by: a `goreleaser` run produces this entity's artifact.",
+		"Verified by: this entity's PR has merged to main.",
+	}
+	for _, clause := range devFixtures {
+		fixtureBody := "**AC-1 — A property of this entity's design.**\n" + clause + "\n"
+		if flags := ClassifyEntityACs(fixtureBody, devExternalTokens); len(flags) != 0 {
+			t.Fatalf("dev clause %q should clear under devExternalTokens, got %+v", clause, flags)
+		}
+	}
+}
+
+// TestDevPathSuppliesDevVocabulary locks AC-6(a)'s supplier half: the dev
+// callers reach the kernel through classifyEntityFile, which must supply
+// devExternalTokens — verified by driving classifyEntityFile over a fixture
+// whose dev token clears the self-phrase. If classifyEntityFile failed to
+// inject the dev vocabulary, the dev clause would flag.
+func TestDevPathSuppliesDevVocabulary(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "index.md")
+	body := "---\nid: x\n---\n\n" +
+		"**AC-1 — A property of this entity's design.**\n" +
+		"Verified by: `go vet ./...` succeeds on this entity's package.\n"
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if flags := classifyEntityFile(path); len(flags) != 0 {
+		t.Fatalf("classifyEntityFile must supply devExternalTokens so the go-vet clause clears, got %+v", flags)
+	}
+}
+
+// TestKernelFreeOfDevVocabulary locks AC-6(b): the dev-toolchain vocabulary
+// lives ONLY in the devExternalTokens var. The whole non-test source of
+// external_proof.go MINUS the devExternalTokens var span (the sole legitimate
+// dev-token site) must contain NO Go-toolchain literal. Scanning whole-source-
+// minus-allowlist rather than a fixed span-name list closes the hole where a
+// future "just add a small helper" (e.g. a devEscapeHatch naming the tokens
+// outside the named kernel spans) re-couples the classification path to dev
+// vocabulary undetected. Negative proof: hard-code a dev token anywhere outside
+// devExternalTokens and this test goes red.
+func TestKernelFreeOfDevVocabulary(t *testing.T) {
+	data, err := os.ReadFile("external_proof.go")
+	if err != nil {
+		t.Fatalf("read external_proof.go: %v", err)
+	}
+	src := string(data)
+
+	// Excise the one legitimate dev-token site so the scan is whole-source-
+	// minus-allowlist. The var span runs from its declaration to the closing
+	// `}, "|"))` that ends the regexp.MustCompile(strings.Join(...)) call.
+	devSpan := devExternalTokensSpan(t, src)
+	if devSpan == "" {
+		t.Fatal("could not locate the devExternalTokens var span to allowlist")
+	}
+	scanned := strings.Replace(src, devSpan, "", 1)
+
+	bannedDevLiterals := []string{`gofmt`, `goreleaser`, `\bvet\b`, `\.go\b`, `\bcask\b`}
+	for _, banned := range bannedDevLiterals {
+		if strings.Contains(scanned, banned) {
+			t.Errorf("external_proof.go names dev-toolchain literal %q OUTSIDE the devExternalTokens var — dev vocabulary leaked back into the generic classification path", banned)
+		}
+	}
+}
+
+// devExternalTokensSpan returns the source of the `var devExternalTokens = ...`
+// declaration, from its opening line to the `}, "|"))` line that closes the
+// strings.Join + regexp.MustCompile call. This is the sole site allowed to name
+// dev tokens; TestKernelFreeOfDevVocabulary excises it before scanning.
+func devExternalTokensSpan(t *testing.T, src string) string {
+	t.Helper()
+	lines := strings.Split(src, "\n")
+	start := -1
+	for i, line := range lines {
+		if strings.HasPrefix(line, "var devExternalTokens =") {
+			start = i
+			break
+		}
+	}
+	if start < 0 {
+		return ""
+	}
+	for i := start; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], `}, "|"))`) {
+			return strings.Join(lines[start:i+1], "\n")
+		}
+	}
+	return ""
 }
 
 // stageExternalProofFixture copies testdata/external-proof-workflow into a

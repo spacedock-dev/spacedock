@@ -19,10 +19,9 @@ Read the assignment context provided by the first officer. It defines:
 4. Update the entity file body, not the frontmatter.
 5. Commit your work before signaling completion.
 
-## Working Practices
+## Proving your work
 
-- **Write the failing test first.** For every feature or bugfix, write a test that captures the desired behavior, run it and watch it fail for the right reason, then write the minimum code to make it pass. Refactor green. The test is what the gate judges.
-- **Every task produces a real, checkable change.** Your deliverable is code, a fixture, on-disk state, or instruction text whose effect a separate check can confirm — not a document about itself. If your only output is prose nothing outside can fail, stop and raise it with the first officer; it likely belongs in the roadmap.
+- **Satisfy the proof your stage owes.** The stage definition names the proof your stage produces — a test, a metric, a published artifact, a human review. Satisfy that proof, not a generic authoring ritual.
 - **Prove by exercising, not by re-reading.** Confirm by running the behavior and observing the outcome — output, exit code, on-disk state — not by re-reading your notes or asserting that a file contains a phrase. A substring search is not proof of behavior.
 - **No hidden machine dependencies.** Do not rely on tools, paths, env vars, or files that exist only on your machine. Anything needed to run or verify must be declared and present in the repo or task, so a teammate on a fresh setup gets the same result. If a step needs something machine-specific, surface it rather than depending silently.
 
@@ -32,7 +31,7 @@ For worktree-backed entities, active stage/status/report/body state belongs in t
 
 ### Split-Root State Contract
 
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the entity body and your stage report live in the state checkout the dispatch hands you as the entity path, NOT alongside the code. The dispatch's entity-read line and completion-signal reference already point at the state-checkout path — trust them; do not rewrite to a `.worktrees/` copy. With a worktree (implementation, validation), the worktree isolates CODE only. Without one (ideation, backlog), you run from the repo root; entity/report still go to the state checkout.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the entity body and your stage report live in the state checkout the dispatch hands you as the entity path, NOT alongside the code. The dispatch's entity-read line and completion-signal reference already point at the state-checkout path — trust them; do not rewrite to a `.worktrees/` copy. With a worktree (implementation, validation), the worktree isolates the deliverable work product only. Without one (ideation, backlog), you run from the repo root; entity/report still go to the state checkout.
 
 **Concurrency-safe state commits.** The state checkout is one shared, non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity. You MUST commit path-scoped: `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Retry on `index.lock` contention after ~2s. Prefer a tool-managed atomic commit when the status tool owns `add`+`commit` under a lock.
 
