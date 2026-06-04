@@ -134,3 +134,16 @@ Lifted the captain-facing `## Gate Presentation` block (gate-review template + n
 ### Summary
 
 PASSED. Independently verified all three ACs without trusting the implementer's report. AC-1/AC-2 oracles (7 named tests) are GREEN and I re-ran each negative half myself by real mutation — dropping a fingerprint, re-inlining the block, and swapping `Skill()` for an `@`-include each produced the expected RED, then I restored green. The moved block is byte-for-byte identical to origin/next 158-191 (matching SHA-256), the skill is free of dispatch-helper leak, and full offline `go test ./...` (15 packages) + `go build ./...` are green. AC-3 went beyond static readiness: a live Claude FO drive (`gate-guardrail`) on the decomposed contract produced a conforming gate message rendered from the lazy `spacedock:present-gate` skill, proving no behavior regression. No material finding from this validation; the detached adversarial audit runs in parallel.
+
+### Feedback Cycles
+
+#### Cycle 1 — detached adversarial audit (2026-06-04)
+
+Source: detached adversarial audit (4 isolated-worktree refuters on commit 735415f3). The validator independently recommended PASSED with a live AC-3 drive; this cycle routes the audit's test-strength findings to implementation before the gate is cleared. Findings re-tiered against the dev README proof policy (text-claim vs behavioral-claim):
+
+- **Routed to implementation (legitimate value/text invariants, not substring-for-behavior):**
+  1. **name==seam value-invariant** — assert `skills/present-gate/SKILL.md` frontmatter `name:` VALUE equals `present-gate` (the directory + the `Skill(skill="spacedock:present-gate")` seam). Today only the `name:` token presence is checked (`TestUserSkillsPresentWithFrontmatter`), so a name divergence that breaks resolution is caught only by the live AC-3 drive — a cheap static guard for a behavioral integration otherwise live-only.
+  2. **seam `@`-token structural check** — replace the enumerated `@`-include ban (`{@../present-gate, @present-gate}`, which misses the `@./` family) with a structural assertion: the `## Completion and Gates` seam carries `Skill(skill="spacedock:present-gate")` and NO present-gate `@`-token at all.
+  3. **`user-invocable: false`** — assert the by-design FO-internal flag value (currently zero test references).
+- **Dropped (over-tight / inherent text-test ceiling):** the audit's headline "byte-identity golden of the moved block vs origin/next 158-191" — a change-detector that would red every legitimate future rule edit. Faithfulness is already proven by the SHA-256 match at extraction (validator-reproduced); semantic drift is AC-3's behavioral job (which PASSED). Per the proof policy, a text test cannot prove semantic faithfulness.
+- **Re-validation:** static-only — the three new negatives must fire by real mutation, full suite + build green. AC-3 stays closed by the validator's live drive; no re-drive.
