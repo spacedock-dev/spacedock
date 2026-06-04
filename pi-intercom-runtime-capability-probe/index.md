@@ -183,3 +183,26 @@ Verified by: `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -
 ### Summary
 
 The task is ready for an implementation gate decision as a concrete design: implement a Codex-style runtime capability probe pattern, instantiate it for Pi intercom supervisor talkback, prove setup and behavior separately, and require durable evidence before any `passed` classification.
+
+## Stage Report: implementation
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe`
+- Product branch: `spacedock-ensign/pi-intercom-runtime-capability-probe`
+- Product commit: `81a11d066fa369b1e70e25c9e7d46cc2693824b7` (`Add pi intercom runtime capability probe`)
+- Changed product files:
+  - `docs/dev/pi-intercom-runtime-capability-probe.md`
+  - `docs/dev/_evidence/pi-intercom-runtime-capability-probe/2026-06-04-not-run.json`
+  - `skills/integration/pi_intercom_runtime_capability_test.go`
+- Tests run from implementation worktree:
+  - `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -count=1` — passed
+  - `go test ./skills/integration -count=1` — passed
+  - `go test ./... -count=1` — passed
+- Formatting:
+  - `gofmt -w skills/integration/pi_intercom_runtime_capability_test.go` — run for the new integration test
+  - `gofmt -w ./cmd ./internal` — not needed; no `cmd/` or `internal/` Go files changed
+- Implementation notes:
+  - Added a Codex-style runtime capability probe recipe for `pi-intercom-supervisor-talkback`.
+  - Added a non-passed `not_run` evidence fixture because no live Pi intercom smoke was run in this static implementation stage.
+  - Added focused recipe/evidence/invariant tests that distinguish bridge-active setup evidence from behavioral talkback evidence and reject `passed` unless setup, progress, decision, exact `APPROVED` reply, resume, marker path, and `PI-INTERCOM-SMOKE-APPROVED` marker content are all present.
+- Residual risks:
+  - Live Pi intercom child-to-supervisor talkback remains unproven until an operator runs the documented manual smoke with safe prerequisites and records a non-`not_run` evidence record.
