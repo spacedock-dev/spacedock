@@ -11,6 +11,7 @@ verdict: PASSED
 issue:
 mod-block:
 pr: "#291"
+archived: 2026-06-04T06:25:54Z
 ---
 
 The Claude-team lifecycle (~10 steps) is inlined in the FO contract (`first-officer-shared-core.md` + `claude-first-officer-runtime.md`), mixing **generic Claude-team-harness discipline** with **spacedock-specific decisions**. `claude-first-officer-runtime.md` is the single largest contract file (~8.8k tokens) and most of it is team mechanics. The ceremony is error-prone — this session the FO tripped the TeamCreate sequencing rule, the deferred-tool `SendMessage` hop, and the supersede-shutdown dance.
