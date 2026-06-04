@@ -298,8 +298,9 @@ The FO may write these on main — nothing else:
 - **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
 - **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
 - **State-transition commits** — dispatch, advance, merge boundary commits
+- **Workflow process docs** — the workflow `README.md` it runs (stage definitions, gates, proof policy, task template). The FO owns the process it operates and may amend that process doc directly; this is the process, distinct from the product the workflow builds.
 
-Off-limits for direct FO edits on main: code files (any language), test files, mod files in `_mods/` (refit or dispatched worker only — the FO runs mod hooks, does not write them), scaffolding files in `skills/` / `agents/` / `references/` / `plugin.json` / workflow `README.md` (the scaffolding guardrail), and entity body content beyond `### Feedback Cycles` (stage reports, design, implementation notes belong to dispatched workers).
+Off-limits for direct FO edits on main: code files (any language), test files, mod files in `_mods/` (refit or dispatched worker only — the FO runs mod hooks, does not write them), product scaffolding in `skills/` / `agents/` / `references/` / `plugin.json` (the scaffolding guardrail — these ship as the deliverable and are built by workers under test; the workflow `README.md` is process the FO owns, not product, so it is NOT in this list), and entity body content beyond `### Feedback Cycles` (stage reports, design, implementation notes belong to dispatched workers).
 
 Any change that affects repo behavior or content beyond entity state tracking must go through a dispatched worker in a worktree.
 
