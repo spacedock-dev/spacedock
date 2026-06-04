@@ -6,7 +6,7 @@
   "subagent_type": "spacedock:ensign",
   "description": "Thing: validation",
   "fetch_commands": [
-    "${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation.md and treat its content as your assignment.",
@@ -53,7 +53,7 @@ Limit to module X.
 
 ### Fetch commands
 
-    ${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage validation
+    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation
 
 
 ### Completion Signal

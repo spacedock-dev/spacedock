@@ -2,6 +2,6 @@
 // ABOUTME: Keeps launch-provided SPACEDOCK_BIN identity while preserving PATH fallback.
 package dispatch
 
-const launcherCommandExpr = "${SPACEDOCK_BIN:-spacedock}"
+const launcherCommandExpr = `spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher`
 
 func launcherCommand() string { return launcherCommandExpr }

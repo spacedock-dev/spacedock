@@ -82,7 +82,7 @@ func TestBuildEmitsStandingFetchLineUnderMods(t *testing.T) {
 	if !strings.Contains(env.FetchCommands[0], "show-stage-def") {
 		t.Errorf("first fetch line is not show-stage-def: %q", env.FetchCommands[0])
 	}
-	if !strings.Contains(env.FetchCommands[1], "${SPACEDOCK_BIN:-spacedock} dispatch show-standing") {
+	if !strings.Contains(env.FetchCommands[1], launcherCommand()+" dispatch show-standing") {
 		t.Errorf("second fetch line is not the native show-standing line: %q", env.FetchCommands[1])
 	}
 }

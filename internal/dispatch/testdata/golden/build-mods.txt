@@ -6,8 +6,8 @@
   "subagent_type": "spacedock:ensign",
   "description": "Thing: backlog",
   "fetch_commands": [
-    "${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage backlog",
-    "${SPACEDOCK_BIN:-spacedock} dispatch show-standing --workflow-dir <ROOT>"
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage backlog",
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-standing --workflow-dir <ROOT>"
   ],
   "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md",
   "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-backlog.md and treat its content as your assignment.",
@@ -43,8 +43,8 @@ Read the entity file at <ROOT>/thing.md for the current spec.
 
 ### Fetch commands
 
-    ${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir <ROOT> --stage backlog
-    ${SPACEDOCK_BIN:-spacedock} dispatch show-standing --workflow-dir <ROOT>
+    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage backlog
+    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-standing --workflow-dir <ROOT>
 
 
 ### Completion Signal

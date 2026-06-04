@@ -48,8 +48,9 @@ var (
 	// protocol — without grepping the protocol prose itself.
 	skillFirstAction = regexp.MustCompile(`(?m)^    Skill\(skill="spacedock:ensign"\)$`)
 	// fetchStageDef anchors the fetch-on-demand emit line that resolves the stage
-	// definition (the other half of the protocol-loading wiring).
-	fetchStageDef = regexp.MustCompile(`(?m)^    \$\{SPACEDOCK_BIN:-spacedock\} dispatch show-stage-def --workflow-dir `)
+	// definition (the other half of the protocol-loading wiring) through the
+	// executable SPACEDOCK_BIN-or-PATH fallback launcher shim.
+	fetchStageDef = regexp.MustCompile(`(?m)^    spacedock_launcher\(\) \{ .*; \}; spacedock_launcher dispatch show-stage-def --workflow-dir `)
 )
 
 // cycleFixture is a staged dispatch->ensign->stage environment.
