@@ -176,3 +176,28 @@ Recommendation: PASSED
 ### Residual risks
 
 - This validation covers the instruction and invariant-test surface only. It did not run expensive live Pi smokes, consistent with the task scope.
+
+## Stage Report: implementation (staff-review fixes)
+
+- Captain decision: Pi auth readiness is accepted as not this fixback's problem; no Pi auth readiness behavior was changed.
+- DONE: Restored non-Pi `--plugin-dir` setup compatibility by routing `install`/`doctor` for Claude/Codex through the existing non-Pi parsers without stripping `--plugin-dir`, so those commands reject the unsupported flag instead of silently ignoring it.
+- DONE: Kept Pi `--plugin-dir` setup support for `install --host pi` and `doctor --host pi` intact.
+- DONE: Updated stale `docs/runtime-support.md` wording to describe current `spacedock pi`, `spacedock install --host pi`, and `spacedock doctor --host pi` behavior.
+
+Changed files:
+- `internal/cli/pi.go`
+- `internal/cli/pi_frontdoor_test.go`
+- `docs/runtime-support.md`
+
+Product commit:
+- `b63c1cba242e5bdba31d8d2e9258b662449a7273` (`fix pi setup plugin-dir compatibility`)
+
+Tests run:
+- PASS: `gofmt -w ./cmd ./internal`
+- PASS: `go test ./internal/cli -run 'Test(PiInstallAcceptedAndDoesNotUsePluginCommands|PiInstallMissingSubagentsPrintsActionableInstructions|PiDoctorReportsMissingAndHealthyRuntime|NonPiSetupRejectsPluginDir)' -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+Residual risks:
+- Staff-review fixes were fixture/unit validated only; live Pi smoke was not rerun for this narrow compatibility/doc fixback.
+- Pi auth readiness behavior intentionally remains unchanged per captain decision.
