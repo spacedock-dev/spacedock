@@ -102,6 +102,7 @@ func rejectionReadme() string {
 		"      terminal: true\n" +
 		"---\n" +
 		"# Rejection Fixture\n\n" +
+		"This fixture exercises the full two-cycle rejection trajectory: a first REJECTED validation routes back to implementation, the rework applies the fix, and a second validation round (cycle 2) re-checks it.\n\n" +
 		"### implementation\n\n" +
 		"Apply the validation rejection by appending this exact standalone line to `rejection-task.md`:\n\n" +
 		"`" + rejectionFixMarker + "`\n\n" +
@@ -110,6 +111,8 @@ func rejectionReadme() string {
 		"### validation\n\n" +
 		"Reject the implementation when the exact fix marker is absent. If it is present, report PASSED.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
+		"### Feedback Cycles\n\n" +
+		"Track every validation round in a `### Feedback Cycles` section in `rejection-task.md`: append one `- Cycle N: <verdict>` line per validation round, numbered in order. Cycle 1 (the first REJECTED round) is already recorded; record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
 		"### done\n\nTerminal state.\n"
 }
 
@@ -133,7 +136,9 @@ func rejectionEntity() string {
 		"- FAILED: Fix marker is absent\n" +
 		"  REJECTED: expected exact line `" + rejectionFixMarker + "`, but it is missing. Route this back to implementation.\n" +
 		"\n### Summary\n\n" +
-		"Recommendation: REJECTED. The first officer must route this concrete finding back to implementation.\n"
+		"Recommendation: REJECTED. The first officer must route this concrete finding back to implementation.\n\n" +
+		"### Feedback Cycles\n\n" +
+		"- Cycle 1: REJECTED — fix marker absent, routing back to implementation.\n"
 }
 
 func rejectionPrompt() string {
@@ -141,8 +146,88 @@ func rejectionPrompt() string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: .",
 		"Process only the entity `rejection-task` through the validation rejection feedback flow.",
-		"The latest validation report already recommends REJECTED. Route the concrete finding back to the implementation target, dispatch a worker if needed, wait for the follow-up implementation completion, and then stop.",
-		"Do not advance the entity to validation again or to done. Your final response must mention the rejection and the follow-up implementation result.",
+		"The latest validation report already recommends REJECTED (cycle 1). Route the concrete finding back to the implementation target, dispatch a worker if needed, wait for the follow-up implementation completion, then re-run the validation reviewer for a second cycle and record `- Cycle 2:` per the workflow README. Reuse the kept-alive validation reviewer for the re-review rather than dispatching a fresh one.",
+		"Do not advance the entity to done. Your final response must mention the rejection and the second-cycle re-validation result.",
+	)
+}
+
+func writeEscalationWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), escalationReadme())
+	entityPath := filepath.Join(root, "escalation-task.md")
+	writeFile(t, entityPath, escalationEntity())
+	gitInit(t, root)
+	return entityPath
+}
+
+func escalationReadme() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: backlog\n" +
+		"      initial: true\n" +
+		"    - name: implementation\n" +
+		"    - name: validation\n" +
+		"      gate: true\n" +
+		"      feedback-to: implementation\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Escalation Fixture\n\n" +
+		"This fixture exercises the 3-cycle escalation guarantee: on the THIRD consecutive REJECTED validation the first officer must escalate to the human instead of routing back to implementation a fourth time.\n\n" +
+		"### implementation\n\n" +
+		"Apply the validation rejection by appending this exact standalone line to `escalation-task.md`:\n\n" +
+		"`" + rejectionFixMarker + "`\n\n" +
+		"Then append a `## Stage Report: implementation` section with one `- DONE:` item naming the fix.\n\n" +
+		"- **Outputs:** The exact fix marker and an implementation stage report.\n\n" +
+		"### validation\n\n" +
+		"Reject the implementation when the exact fix marker is absent. If it is present, report PASSED.\n\n" +
+		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
+		"### Feedback Cycles\n\n" +
+		"Track every rejection round in a `### Feedback Cycles` section in `escalation-task.md`: append one `- Cycle N: REJECTED` line per round, numbered in order.\n\n" +
+		"On the THIRD rejection, do NOT route back to implementation again. Instead escalate to the human: append this exact standalone line to the `### Feedback Cycles` section and stop without dispatching a fourth implementation round:\n\n" +
+		"`" + escalationMarker + "`\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func escalationEntity() string {
+	return "---\n" +
+		"id: escalation-task\n" +
+		"title: Escalation Task\n" +
+		"status: validation\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Escalation Task\n\n" +
+		"Two prior validation rejections have already routed back to implementation. The implementation still omits the exact fix marker, so the latest validation report below is the THIRD consecutive REJECTED.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: Initial implementation exists\n" +
+		"  The implementation has been reworked twice but still omits the required fix marker.\n" +
+		"\n### Summary\n\n" +
+		"Ready for validation; the fix marker is still absent.\n\n" +
+		"## Stage Report: validation\n\n" +
+		"- FAILED: Fix marker is absent\n" +
+		"  REJECTED: expected exact line `" + rejectionFixMarker + "`, but it is missing. This is the third consecutive rejection.\n" +
+		"\n### Summary\n\n" +
+		"Recommendation: REJECTED. This is the third consecutive rejection.\n\n" +
+		"### Feedback Cycles\n\n" +
+		"- Cycle 1: REJECTED — fix marker absent, routed back to implementation.\n" +
+		"- Cycle 2: REJECTED — fix marker still absent, routed back to implementation.\n"
+}
+
+func escalationPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"Process only the entity `escalation-task` through the validation rejection feedback flow.",
+		"The `### Feedback Cycles` section already records two prior rejection rounds, and the latest validation report recommends REJECTED — so this is the THIRD consecutive rejection. Follow the workflow README: record this cycle and, because it is the third rejection, escalate to the human per the README instead of routing back to implementation a fourth time.",
+		"Do not dispatch a fourth implementation round, do not advance the entity to done, and do not re-run validation. Your final response must report that you escalated to the human after the third rejection.",
 	)
 }
 

@@ -5,9 +5,12 @@ package ensigncycle
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -89,9 +92,10 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 // map lacks a runner for any sharedRuntimeScenarios() ID.
 func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, claudeLiveRunner, sharedRuntimeScenario){
-		"gate-guardrail":       runClaudeGateGuardrailScenario,
-		"rejection-flow":       runClaudeRejectionFlowScenario,
-		"merge-hook-guardrail": runClaudeMergeHookGuardrailScenario,
+		"gate-guardrail":              runClaudeGateGuardrailScenario,
+		"rejection-flow":              runClaudeRejectionFlowScenario,
+		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
+		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
 	}
 }
 
@@ -144,6 +148,71 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 	after := readFile(t, entityPath)
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	// AC-4 reviewer-reuse: on Claude teams the FO must reuse the kept-alive
+	// validation reviewer via a SendMessage tool call for the cycle-2 re-review,
+	// not dispatch a fresh one (the #141 keepalive contract the Go port dropped).
+	// Host-specific producer signal, graded by the runner — not the shared
+	// host-neutral assertion.
+	if err := assertClaudeReviewerReuse(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+}
+
+// assertClaudeReviewerReuse scans the stream-json transcript for a SendMessage
+// tool_use whose `to` targets the validation reviewer — the durable producer
+// signal that the FO reused the kept-alive reviewer for the cycle-2 re-review
+// rather than fresh-dispatching. It parses the tool_use JSON shape (not loose
+// prose), so it cannot be satisfied by the word "validation" appearing in
+// narration.
+func assertClaudeReviewerReuse(stream string) error {
+	for _, line := range strings.Split(stream, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var entry struct {
+			Type    string `json:"type"`
+			Message *struct {
+				Content []struct {
+					Type  string `json:"type"`
+					Name  string `json:"name"`
+					Input struct {
+						To string `json:"to"`
+					} `json:"input"`
+				} `json:"content"`
+			} `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(line), &entry); err != nil || entry.Message == nil {
+			continue
+		}
+		for _, block := range entry.Message.Content {
+			if block.Type == "tool_use" && block.Name == "SendMessage" &&
+				strings.Contains(strings.ToLower(block.Input.To), "validation") {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("no SendMessage tool_use targeting the validation reviewer found in the stream — the FO did not reuse the kept-alive reviewer for the cycle-2 re-review")
+}
+
+// runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
+// seeded with two prior rejection cycles at a 3rd REJECTED report and grades the
+// durable end-state: the FO must escalate to the human on the 3rd cycle, not
+// auto-bounce a 4th time. assertThirdCycleEscalation grades durable entity-body
+// state ALONE (cycle count + escalation marker + no post-cycle-3 implementation
+// report) — the reviewer-reuse signal is host-specific and lives in rejection-flow,
+// not here; this scenario is purely a host-neutral durable-state grade.
+func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeEscalationWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, escalationPrompt())
+	after := readFile(t, entityPath)
+	if err := assertThirdCycleEscalation(after); err != nil {
+		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }

@@ -29,8 +29,14 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 		{
 			name:          "rejection-flow",
 			oldPythonTest: "tests/test_rejection_flow.py",
-			intent:        "FO observes a rejected validation report and routes the concrete finding back through implementation.",
-			timeout:       4 * time.Minute,
+			intent:        "FO drives a two-cycle rejection trajectory — route back, re-implement, re-validate via reviewer reuse — restoring the dropped second cycle.",
+			timeout:       8 * time.Minute,
+		},
+		{
+			name:          "feedback-3-cycle-escalation",
+			oldPythonTest: "tests/test_rejection_flow.py",
+			intent:        "On the 3rd consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a 4th time.",
+			timeout:       8 * time.Minute,
 		},
 		{
 			name:          "merge-hook-guardrail",

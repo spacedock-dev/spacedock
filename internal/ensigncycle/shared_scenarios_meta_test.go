@@ -33,6 +33,7 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 	want := []string{
 		"gate-guardrail",
 		"rejection-flow",
+		"feedback-3-cycle-escalation",
 		"merge-hook-guardrail",
 	}
 	if !reflect.DeepEqual(got, want) {

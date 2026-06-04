@@ -46,38 +46,86 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 	}
 }
 
-func TestRejectionFlowNegativeMissingRoute(t *testing.T) {
+func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	rejectedObserved := "validation was REJECTED; routing the finding back to implementation"
 
-	// Missing rejection route: the FO never applied the fix nor routed the entity
-	// back. The fixture entity as-staged is still at status: validation with only
-	// the original implementation report — exactly the not-routed-back state. (The
-	// marker substring appears once, quoted inside the REJECTED finding; the
-	// assertion is not satisfied by that quote because it also requires a SECOND
-	// implementation report and status: implementation, which the un-routed state
+	// Missing rejection route: the FO never applied the fix nor drove a second
+	// cycle. The fixture entity as-staged is still at status: validation with only
+	// the original implementation report and the seeded Cycle 1 entry — exactly the
+	// not-routed-back state. (The marker substring appears twice, quoted inside the
+	// REJECTED finding and the README-mirroring fixture text; the assertion is not
+	// satisfied by those quotes because it also requires a SECOND implementation
+	// report and a SECOND `### Feedback Cycles` entry, which the un-routed state
 	// lacks — so a tautological marker-only assertion would falsely pass here while
 	// the behavior-oriented one correctly fails.)
 	notRouted := rejectionEntity()
 	if !strings.Contains(notRouted, "status: validation") {
 		t.Fatal("rejection fixture must start at status: validation")
 	}
-	if strings.Count(notRouted, "## Stage Report: implementation") != 1 {
+	if len(implementationReport.FindAllString(notRouted, -1)) != 1 {
 		t.Fatal("un-routed rejection fixture must carry exactly one implementation report")
 	}
 	if err := assertRejectionFlow(notRouted, rejectedObserved); err == nil {
-		t.Fatal("expected an un-routed rejection (still at validation, only one implementation report) to fail assertRejectionFlow")
+		t.Fatal("expected an un-routed rejection (one implementation report, one cycle) to fail assertRejectionFlow")
 	}
 
-	// A partial route — fix marker applied and a second implementation report, but
-	// the FO left status at validation (forgot to route the frontmatter back) —
-	// must still fail on the status check, not pass on transcript shape alone.
-	partialBody := rejectionEntity() +
+	// AC-4 single-cycle end-state — the Go-port regression the evolved scenario
+	// restores: the FO applied the fix and left a SECOND implementation report, but
+	// stopped after one cycle, never driving the second validation round (still only
+	// the seeded `- Cycle 1:` entry). The two-implementation-report check passes, so
+	// this MUST fail on the second-cycle check — proving the evolved assertion
+	// catches the single-route-back simplification the Python test never had.
+	singleCycle := rejectionEntity() +
 		"\n" + rejectionFixMarker + "\n\n## Stage Report: implementation\n\n- DONE: applied fix\n"
-	if strings.Count(partialBody, "## Stage Report: implementation") < 2 {
-		t.Fatal("partial-route body must carry a second implementation report")
+	if len(implementationReport.FindAllString(singleCycle, -1)) < 2 {
+		t.Fatal("single-cycle body must carry a second implementation report")
 	}
-	if err := assertRejectionFlow(partialBody, rejectedObserved); err == nil {
-		t.Fatal("expected a fix applied but status left at validation to fail assertRejectionFlow")
+	if len(feedbackCycleEntry.FindAllString(singleCycle, -1)) != 1 {
+		t.Fatal("single-cycle body must carry exactly one recorded cycle (the seeded Cycle 1)")
+	}
+	if err := assertRejectionFlow(singleCycle, rejectedObserved); err == nil {
+		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one recorded cycle) to fail assertRejectionFlow on the second-cycle check")
+	}
+}
+
+func TestThirdCycleEscalationNegativeAutoBounce(t *testing.T) {
+	// The escalated end-state the live run must reach passes: the real fixture plus
+	// the third cycle entry and the escalation marker, with NO new implementation
+	// report — the FO parked for the human instead of bouncing a fourth time.
+	escalated := escalationEntity() +
+		"- Cycle 3: REJECTED — third consecutive rejection.\n" +
+		escalationMarker + "\n"
+	if err := assertThirdCycleEscalation(escalated); err != nil {
+		t.Fatalf("escalated baseline must pass: %v", err)
+	}
+
+	// Broken end-state — 4th auto-bounce: built from the REAL fixture, the FO
+	// recorded a third cycle but routed back to implementation a fourth time (a new
+	// implementation report) instead of escalating, and recorded no marker. The
+	// state assertion must catch the extra implementation report even though the
+	// body still mentions three rejection rounds.
+	autoBounced := escalationEntity() +
+		"- Cycle 3: REJECTED — routed back to implementation again.\n\n" +
+		"## Stage Report: implementation\n\n- DONE: reworked a fourth time\n"
+	if implementationReport.MatchString(escalationEntity()) {
+		if len(implementationReport.FindAllString(autoBounced, -1)) != 2 {
+			t.Fatal("4th-auto-bounce body must carry two implementation reports built from the real fixture")
+		}
+	}
+	if err := assertThirdCycleEscalation(autoBounced); err == nil {
+		t.Fatal("expected a 4th auto-bounce (third cycle routed back + a new implementation report, no marker) to fail assertThirdCycleEscalation")
+	}
+
+	// Broken end-state — stalled at cycle 2: the real fixture as-staged carries only
+	// the two seeded cycle entries and no escalation marker — the FO never reached
+	// the third-cycle decision. Must fail on the cycle-count check, not pass on any
+	// transcript shape.
+	stalled := escalationEntity()
+	if got := len(feedbackCycleEntry.FindAllString(stalled, -1)); got != 2 {
+		t.Fatalf("escalation fixture must start with exactly two seeded `### Feedback Cycles` entries, got %d", got)
+	}
+	if err := assertThirdCycleEscalation(stalled); err == nil {
+		t.Fatal("expected a stalled-at-cycle-2 end-state (only two cycle entries, no marker) to fail assertThirdCycleEscalation")
 	}
 }
 
