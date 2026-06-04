@@ -1,13 +1,13 @@
 ---
 id: am0xw6d0t4k06kjk7va0efcr
 title: ensigncycle/streamwatch.go is test-supporting lib shipping in the production binary — rename to *_test.go to keep it out of release builds
-status: validation
+status: done
 source: captain (2026-06-02) — observed 513 LOC in internal/ensigncycle/streamwatch.go that is test-only (zero non-test importers); cluster test-supporting lib so it does not ship in the binary
 score: "0.20"
-worktree: .worktrees/spacedock-ensign-ensigncycle-streamwatch-test-only
+worktree:
 started: 2026-06-03T07:09:59Z
-completed:
-verdict:
+completed: 2026-06-04T05:53:54Z
+verdict: PASSED
 issue:
 mod-block:
 pr: "#288"
