@@ -64,20 +64,26 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// the binary gate before ever reaching TeamCreate (CI run 26839572693).
 	childEnv = withBinaryOnPath(childEnv, binary)
 
-	// Stage the SAME flat-entity backlog fixture the skeleton builds: a
-	// git-init'd root with a non-worktree workflow README and a flat entity in
-	// the initial (backlog) stage. The real FO drives it to the TERMINAL stage,
-	// so the ensign that finishes the cycle writes `## Stage Report: done`, which
-	// the stage-agnostic liveStageReportHeading regex matches.
+	// Stage a REALISTIC ≥3-stage lifecycle fixture: a git-init'd root with a
+	// non-worktree workflow README declaring backlog (initial) → implementation
+	// (work) → done (terminal), and a flat entity in the initial (backlog) stage.
+	// The distinct WORK stage between initial and terminal is what every real
+	// Spacedock workflow has: the FO dispatches backlog→implementation, the ensign
+	// works, then the FO TERMINALIZES implementation→done with a verdict — a
+	// distinct step from the dispatch (unlike a 2-stage backlog→done fixture, where
+	// the dispatch lands status on the terminal stage and the FO never runs a
+	// separate finalize, so no verdict is recorded). The real FO drives it to the
+	// TERMINAL stage, so the ensign that finishes writes `## Stage Report: done`,
+	// which the stage-agnostic liveStageReportHeading regex matches.
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "README.md"), readmeNonWorktree())
+	writeFile(t, filepath.Join(root, "README.md"), readmeRealisticLifecycle())
 	entityPath := filepath.Join(root, "make-it-work.md")
 	writeFile(t, entityPath, entityFixture())
 	gitInit(t, root)
 
 	task := "Discover the workflow in this directory and drive the single backlog " +
 		"entity make-it-work.md all the way to the done stage by dispatching an " +
-		"ensign for it. Do not stop until the entity reaches the terminal stage."
+		"ensign for each stage. Do not stop until the entity reaches the terminal stage."
 
 	// The real front door: `spacedock claude --plugin-dir <repo> --skip-contract-check
 	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-contract-check are
@@ -271,6 +277,41 @@ func repoRoot(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return root
+}
+
+// readmeRealisticLifecycle is the live cycle's workflow README: a realistic
+// ≥3-stage lifecycle — backlog (initial) → implementation (work) → done
+// (terminal) — matching every real Spacedock workflow. The distinct WORK stage
+// between initial and terminal makes the FO's TERMINALIZE step
+// (implementation→done with a verdict) DISTINCT from its DISPATCH step
+// (backlog→implementation): the FO records a verdict naturally at terminalization
+// and the M1 verdict gate has a real trigger. A 2-stage backlog→done fixture
+// collapses dispatch and terminalize onto the same stage, so the FO never runs a
+// distinct finalize and no verdict is recorded (the failure this fixture fixes).
+// It is live-only (kept beside the //go:build live test) so the offline minimal
+// fixture readmeNonWorktree — which the single-stage mechanical test pins — is
+// untouched. All stages are non-worktree to keep the flat-entity path.
+func readmeRealisticLifecycle() string {
+	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: backlog\n" +
+		"      initial: true\n" +
+		"    - name: implementation\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Fixture Workflow\n" +
+		"\n" +
+		"### backlog\n\nseed.\n\n- **Outputs:** a one-line note.\n\n" +
+		"### implementation\n\nDo the trivial work and write the note.\n\n- **Outputs:** the note recorded.\n\n" +
+		"### done\n\nterm.\n"
 }
 
 // isTeamCreate matches the FO's TeamCreate assistant tool_use — the first
