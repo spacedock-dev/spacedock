@@ -1,4 +1,4 @@
-// ABOUTME: AC-1 skill-surface audit — the five user skills ship with valid
+// ABOUTME: AC-1 skill-surface audit — the six user skills ship with valid
 // ABOUTME: SKILL.md + resolvable reference closure, integration is test-only.
 package integration
 
@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// userSkills is the published user skill surface: the five skills the host
+// userSkills is the published user skill surface: the six skills the host
 // discovers (each owns a SKILL.md). `integration` is deliberately absent — it
 // holds only *_test.go and must not publish.
 var userSkills = []string{"commission", "debrief", "refit", "ensign", "first-officer", "using-claude-team"}
