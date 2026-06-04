@@ -105,7 +105,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			"  1. Install Pi and authenticate so %s exists.\n"+
 			"  2. Install the subagent substrate, for example: pi install npm:pi-subagents\n"+
 			"  3. If pi-subagents is installed outside the default location, set PI_SUBAGENTS_PACKAGE_ROOT.\n"+
-			"  4. Re-run: spacedock doctor --host pi --plugin-dir %s\n\n", check.authPath, check.repoRoot)
+			"  4. Re-run: spacedock doctor --host pi\n\n", check.authPath)
 	printPiDoctorReport(stdout, check)
 	return 0
 }
@@ -175,6 +175,10 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 			}
 			i++
 		case "--plugin-dir":
+			if command == "install" {
+				fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
+				return "", false, "", 2
+			}
 			if i+1 >= len(args) {
 				fmt.Fprintf(stderr, "spacedock %s: --plugin-dir requires a path\n", command)
 				return "", false, "", 2

@@ -98,6 +98,23 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 	}
 }
 
+func TestPiInstallRejectsPluginDir(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	ops := &fakeHost{}
+	piOps := &fakePiRuntimeOps{}
+
+	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", "/checkout"}, ops, piOps, nil, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("exit=%d want 2; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "--plugin-dir is not supported") {
+		t.Fatalf("stderr should clearly reject install --plugin-dir, got %q", stderr.String())
+	}
+	if len(ops.installCmds) != 0 {
+		t.Fatalf("install seam called despite rejected --plugin-dir: %v", ops.installCmds)
+	}
+}
+
 func TestPiInstallAcceptedAndDoesNotUsePluginCommands(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
@@ -106,10 +123,10 @@ func TestPiInstallAcceptedAndDoesNotUsePluginCommands(t *testing.T) {
 	ops := &fakeHost{}
 	var stdout, stderr bytes.Buffer
 
-	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", repo}, ops, &fakePiRuntimeOps{
+	code := runInitWithPi(context.Background(), []string{"--host", "pi"}, ops, &fakePiRuntimeOps{
 		lookPath: map[string]string{"pi": "/bin/pi"},
 		statOK:   statOKForPiResources(repo, pkg),
-	}, piTestEnv(pkg, t.TempDir()), &stdout, &stderr)
+	}, append(piTestEnv(pkg, t.TempDir()), "SPACEDOCK_REPO_ROOT="+repo), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
@@ -130,13 +147,13 @@ func TestPiInstallMissingSubagentsPrintsActionableInstructions(t *testing.T) {
 	pkg := t.TempDir()
 	var stdout, stderr bytes.Buffer
 
-	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", repo}, &fakeHost{}, &fakePiRuntimeOps{
+	code := runInitWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, &fakePiRuntimeOps{
 		lookPath: map[string]string{"pi": "/bin/pi"},
 		statOK: map[string]bool{
 			filepath.Join(repo, "skills", "first-officer", "SKILL.md"): true,
 			filepath.Join(repo, "skills", "ensign", "SKILL.md"):        true,
 		},
-	}, piTestEnv(pkg, t.TempDir()), &stdout, &stderr)
+	}, append(piTestEnv(pkg, t.TempDir()), "SPACEDOCK_REPO_ROOT="+repo), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("install --host pi should be idempotent/instructive, exit=%d stderr=%q", code, stderr.String())
 	}
@@ -150,32 +167,37 @@ func TestPiInstallMissingSubagentsPrintsActionableInstructions(t *testing.T) {
 
 func TestNonPiSetupRejectsPluginDir(t *testing.T) {
 	for _, tc := range []struct {
-		name string
-		run  func(hostOps, io.Writer, io.Writer) int
+		name       string
+		run        func(hostOps, io.Writer, io.Writer) int
+		wantStderr string
 	}{
 		{
 			name: "install claude",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runInitWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
 			},
+			wantStderr: "--plugin-dir is not supported",
 		},
 		{
 			name: "install codex",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runInitWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
 			},
+			wantStderr: "--plugin-dir is not supported",
 		},
 		{
 			name: "doctor claude",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runDoctorWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
 			},
+			wantStderr: "unknown argument \"--plugin-dir\"",
 		},
 		{
 			name: "doctor codex",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runDoctorWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
 			},
+			wantStderr: "unknown argument \"--plugin-dir\"",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -186,8 +208,8 @@ func TestNonPiSetupRejectsPluginDir(t *testing.T) {
 			if code != 2 {
 				t.Fatalf("exit=%d want 2; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
 			}
-			if !strings.Contains(stderr.String(), "unknown argument \"--plugin-dir\"") {
-				t.Fatalf("stderr should reject --plugin-dir, got %q", stderr.String())
+			if !strings.Contains(stderr.String(), tc.wantStderr) {
+				t.Fatalf("stderr should contain %q, got %q", tc.wantStderr, stderr.String())
 			}
 			if len(ops.installCmds) != 0 {
 				t.Fatalf("install seam called despite rejected --plugin-dir: %v", ops.installCmds)

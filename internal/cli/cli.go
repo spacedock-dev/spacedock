@@ -248,7 +248,7 @@ func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writ
 Examples:
   spacedock install
   spacedock install --host codex
-  spacedock install --host pi --plugin-dir ./checkout
+  spacedock install --host pi
   spacedock install --check
 `)
 	return cmd
