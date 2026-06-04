@@ -40,3 +40,5 @@ Add `--act` to `spacedock dispatch reconcile` (roadmap #6), preserving dry-run-b
 ## Notes
 
 The determinism trio: p2 `pr-complete-binary-command` (payload) + this (trigger) + the live `pr-lifecycle-from-boot` scenario (p2 AC-5, proves the boot→PR→complete loop). Roadmap: docs/dev/_proposals/binary-simplification-roadmap.md #6. Sibling 0.19.6 contract-decomposition line: gate-presentation-skill-extraction, feedback-rejection-flow-skill-extraction.
+
+**Naming (captain, 2026-06-04):** p2's command is `spacedock dispatch advance {slug} --to done` (the terminal case of `dispatch advance`), NOT `dispatch complete`. So Class C's `--act` action above is "run `dispatch advance {slug} --to done`" — read every `dispatch complete` reference in this entity as that.
