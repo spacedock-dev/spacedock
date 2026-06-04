@@ -1,14 +1,15 @@
 ---
 id: xae5tx4hhyce916x034y3q9x
 title: Evaluate promoting feedback-rejection guarantees from prose to binary-enforced gates
-status: ideation
+status: done
 source: "captain (2026-06-04) — the a9 detached audit's dominant finding is that FO-behavioral guarantees living as contract prose (3-cycle escalation, budget-probe fail-safe) are immune to static tests and only sparsely covered by live scenarios. Where a guarantee is mechanizable, enforcing it in the binary (a guard / a tracked field) is the stronger fix than a live scenario — the 'code gate over prose-only rule' working principle. A third decomposition lever next to ceremony->binary (p2) and judgment->skill (t3/a9)."
 score: "0.24"
 started: 2026-06-04T20:04:39Z
-completed:
-verdict:
+completed: 2026-06-04T21:53:03Z
+verdict: rejected
 worktree:
 issue:
+archived: 2026-06-04T21:53:03Z
 ---
 
 The audit exposed that some FO-behavioral guarantees are inherently un-static-testable (a text oracle can't prove the FO obeys "escalate on cycle 3"), and live-scenario coverage for them is expensive. But several of these guarantees are **mechanizable** — the binary could track and enforce them deterministically, the way `status --set`/`--archive` already refuse a terminal transition without `pr`/`mod-block`. That eliminates the body-vs-label gap entirely (the guarantee is no longer prose).
