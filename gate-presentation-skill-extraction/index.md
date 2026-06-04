@@ -147,3 +147,16 @@ Source: detached adversarial audit (4 isolated-worktree refuters on commit 73541
   3. **`user-invocable: false`** — assert the by-design FO-internal flag value (currently zero test references).
 - **Dropped (over-tight / inherent text-test ceiling):** the audit's headline "byte-identity golden of the moved block vs origin/next 158-191" — a change-detector that would red every legitimate future rule edit. Faithfulness is already proven by the SHA-256 match at extraction (validator-reproduced); semantic drift is AC-3's behavioral job (which PASSED). Per the proof policy, a text test cannot prove semantic faithfulness.
 - **Re-validation:** static-only — the three new negatives must fire by real mutation, full suite + build green. AC-3 stays closed by the validator's live drive; no re-drive.
+
+### Feedback-Cycle-1 (test-strength hardening)
+
+Validator PASSED (incl. a live AC-3 drive) — deliverable behavior correct; this cycle is test-strength only, in `skills/integration/present_gate_test.go` (commit a54b55d4). FO core and the moved block untouched; no byte-identity golden added (deliberately dropped as over-tight).
+
+- DONE: name==seam value-invariant — new `TestPresentGateSkillNameMatchesSeam` asserts frontmatter `name:` VALUE equals `present-gate` (the directory name and the `Skill(skill="spacedock:present-gate")` seam), not just token presence.
+  Negative demonstrated: set name value to `bogus-name` → RED `frontmatter name is "bogus-name", want "present-gate"`; restored green.
+- DONE: seam `@`-token structural check — `TestFOCoreInvokesPresentGateSkill` replaces the enumerated ban (`@../present-gate`/`@present-gate`) with a structural regex scan `@(?:\.{1,2}/)*present-gate\b` over the `## Completion and Gates` region (Skill()-present AND no present-gate `@`-token).
+  Negative demonstrated: with the canonical `Skill()` call present, ALSO added `@./present-gate/SKILL.md` in the seam → RED `uses the disproven cross-skill @-include`; the old two-literal enum would have MISSED this `@./present-gate/...` family (verified: neither `@../present-gate` nor `@present-gate` is a substring of `@./present-gate/SKILL.md`); restored green.
+- DONE: `user-invocable: false` — new `TestPresentGateSkillIsFOInternal` asserts the frontmatter carries `user-invocable: false`.
+  Negative demonstrated: flipped to `true` → RED `user-invocable is "true", want "false"`; restored green.
+
+Full offline `go test ./...` → 1101 passed in 15 packages; `go build ./...` → success; `go vet ./skills/integration/` clean; `gofmt -l` empty. Working-tree diff vs prior code commit is `present_gate_test.go` only.
