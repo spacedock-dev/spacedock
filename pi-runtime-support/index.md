@@ -7,6 +7,7 @@ issue: spacedock-dev/spacedock#155
 id: s9kcdyb9r5t8addppnnce54j
 started: 2026-06-03T21:07:03Z
 worktree: .worktrees/spacedock-ensign-pi-runtime-support
+mod-block: merge:pr-merge
 ---
 # Pi runtime support — adapt Spacedock to pi-native teams/subagents
 
