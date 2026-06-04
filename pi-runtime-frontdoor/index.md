@@ -116,3 +116,23 @@ The validation rejection has been routed back through implementation with a narr
 ### Residual risks
 
 - Live Pi smoke still depends on local Pi credentials and `pi-subagents` availability in the validation environment.
+
+## Stage Report: validation (fix rerun)
+
+- AC-1: PASSED. Re-inspected the isolated fixback worktree on branch `spacedock-ensign/pi-runtime-frontdoor-fixback` at product commit `3bcaf487b8b57e810439ac9a39e7f345c8a08c34`. `spacedock pi` remains registered in help/routing, and `internal/cli/pi.go` launches argv beginning with `pi` plus Pi-native `--extension <pi-subagents>/src/extension/index.ts`, `--skill <pi-subagents>/skills/pi-subagents`, and local Spacedock first-officer/ensign skill paths. Focused tests still assert Claude/Codex-only tokens are absent.
+- AC-2: PASSED. `install --host pi` remains accepted and idempotent via the Pi runtime path. Focused tests verify the ready case, the missing-substrate instruction path (`pi install npm:pi-subagents` and `PI_SUBAGENTS_PACKAGE_ROOT`), and that the Claude/Codex plugin install seam is not called.
+- AC-3: PASSED. `doctor --host pi` still reports actionable Pi runtime health for the Pi CLI, auth file, pi-subagents extension/skill, and Spacedock skill paths, with missing and healthy fixture coverage and stable exit-code behavior.
+- AC-4: PASSED. Inspected product fix commit `3bcaf487`; it adds `TestPiLiveSmokePromptRequiresExactStageReportHeading` and changes the raw Pi live smoke prompt to require the exact heading `## Stage Report: implementation`, matching the existing smoke assertion. Fresh combined live command passed for both `TestLivePiSubagentEnsignSmoke` and `TestLivePiFrontDoorSmoke` with available Pi auth and pi-subagents package path.
+- AC-5: PASSED. Fresh baseline and race suites passed from the isolated fixback worktree, covering existing Claude/Codex front-door/install/doctor behavior.
+
+Validation commands:
+- PASS: `gofmt -w ./cmd ./internal` (no tracked product diffs after formatting).
+- PASS: `go test ./... -count=1`.
+- PASS: `go test ./... -race -count=1`.
+- PASS: `go test -tags live -run 'TestLivePi(SubagentEnsignSmoke|FrontDoorSmoke)' ./internal/ensigncycle -v -count=1` (`TestLivePiSubagentEnsignSmoke` passed in 217.73s; `TestLivePiFrontDoorSmoke` passed in 78.10s).
+
+Recommendation: PASSED
+
+### Residual risks
+
+- The live Pi smoke remains dependent on local Pi credentials and a local `pi-subagents` package being available in future validation environments.
