@@ -81,9 +81,15 @@ func TestLiveEnsignCycle(t *testing.T) {
 	writeFile(t, entityPath, entityFixture())
 	gitInit(t, root)
 
-	task := "Discover the workflow in this directory and drive the single backlog " +
-		"entity make-it-work.md all the way to the done stage by dispatching an " +
-		"ensign for each stage. Do not stop until the entity reaches the terminal stage."
+	// The canonical neutral runtime-scenario prompt (README §Shared runtime
+	// scenarios; the same string every shared fixture uses). The fixture supplies
+	// the context — a single backlog entity in a backlog→implementation→done
+	// workflow — and the FO acts from its contract; no coaching ("drive to done",
+	// "dispatch for each stage", "do not stop") is injected. Coaching is exactly the
+	// arbitrary instruction the scenario-prompt rule forbids, and it misframes the
+	// FO's job (dispatch ensigns vs. drive the entity to a verdicted, archived
+	// terminal state).
+	task := "Use $spacedock:first-officer for this whole run."
 
 	// The real front door: `spacedock claude --plugin-dir <repo> --skip-contract-check
 	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-contract-check are
