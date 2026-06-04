@@ -201,3 +201,24 @@ Tests run:
 Residual risks:
 - Staff-review fixes were fixture/unit validated only; live Pi smoke was not rerun for this narrow compatibility/doc fixback.
 - Pi auth readiness behavior intentionally remains unchanged per captain decision.
+
+## Stage Report: validation (staff-review fixes)
+
+- VERIFIED: Read the latest `## Stage Report: implementation (staff-review fixes)` and inspected isolated worktree `.worktrees/spacedock-ensign-pi-frontdoor-polish-fix` on branch `spacedock-ensign/pi-frontdoor-polish-fix` at product commit `b63c1cba242e5bdba31d8d2e9258b662449a7273` (`fix pi setup plugin-dir compatibility`). Changed product files are limited to `internal/cli/pi.go`, `internal/cli/pi_frontdoor_test.go`, and `docs/runtime-support.md`.
+- PASSED: Non-Pi `--plugin-dir` compatibility fix is present. `runInitWithPi` and `runDoctorWithPi` now forward the original args to Claude/Codex setup paths instead of stripping `--plugin-dir`, so the existing non-Pi parsers reject the unsupported flag. `TestNonPiSetupRejectsPluginDir` covers install/doctor for Claude and Codex, expects exit code 2 and `unknown argument "--plugin-dir"`, and verifies the plugin install seam is not called.
+- PASSED: Pi `--plugin-dir` compatibility remains intact. The Pi setup parser still accepts `--plugin-dir` for `--host pi`, and focused install/doctor tests invoke Pi setup with `--plugin-dir` and pass through the Pi runtime config path.
+- PASSED: `docs/runtime-support.md` no longer says Pi install is future work. It now describes `spacedock pi` as the front door, `spacedock install --host pi` as an idempotent readiness check/setup guide, and `spacedock doctor --host pi` as reporting Pi CLI, auth, `pi-subagents`, and Spacedock skill health. It also documents that Pi setup commands accept `--plugin-dir <spacedock checkout>`.
+- VERIFIED: Captain decision about auth is documented in the implementation report. The product diff does not change auth readiness behavior; unchanged Pi doctor/auth wording remains limited to reporting/checking the existing auth file.
+
+Validation commands:
+- PASS: `gofmt -w ./cmd ./internal` (no tracked product diffs after formatting).
+- PASS: `go test ./internal/cli -run 'Test(PiInstallAcceptedAndDoesNotUsePluginCommands|PiInstallMissingSubagentsPrintsActionableInstructions|PiDoctorReportsMissingAndHealthyRuntime|NonPiSetupRejectsPluginDir)' -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+Recommendation: PASSED
+
+### Residual risks
+
+- Validation was limited to CLI compatibility/docs as requested; no live Pi smoke was run.
+- Pi auth readiness remains unchanged by captain decision and was not evaluated as a blocker for this fixback.
