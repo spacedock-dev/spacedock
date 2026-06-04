@@ -4,8 +4,6 @@ package ensigncycle
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -178,34 +176,6 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
-}
-
-// assertCodexReviewerReuse scans the `codex exec --json` transcript for a
-// `send_input` tool call whose arguments reference the validation worker — the
-// durable producer signal that the FO reused the kept-alive reviewer for the
-// cycle-2 re-review rather than fresh-dispatching. It matches the tool-call event's
-// `name` field (the adapter's `send_input` reuse call, per
-// codex-first-officer-runtime.md), not loose narration, so the FO merely writing
-// the words does not satisfy it.
-func assertCodexReviewerReuse(jsonl string) error {
-	for _, line := range strings.Split(jsonl, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		var event struct {
-			Type      string          `json:"type"`
-			Name      string          `json:"name"`
-			Arguments json.RawMessage `json:"arguments"`
-		}
-		if err := json.Unmarshal([]byte(line), &event); err != nil {
-			continue
-		}
-		if event.Name == "send_input" && strings.Contains(strings.ToLower(string(event.Arguments)), "validation") {
-			return nil
-		}
-	}
-	return fmt.Errorf("no send_input tool call targeting the validation worker found in the transcript — the FO did not reuse the kept-alive reviewer for the cycle-2 re-review")
 }
 
 // runCodexFeedback3CycleEscalationScenario drives the real FO against a fixture

@@ -4,7 +4,7 @@ package ensigncycle
 
 import "testing"
 
-// TestSharedScenarioRunnerCoverage is the AC-2/AC-3 parity guard against drift: it
+// TestSharedScenarioRunnerCoverage is the AC-1 parity guard against drift: it
 // iterates the host-neutral sharedRuntimeScenarios() table and fails if EITHER the
 // Codex runner map or the Claude runner map lacks a runner for any shared scenario
 // ID. A scenario that exists for one host only — the exact split this task closes

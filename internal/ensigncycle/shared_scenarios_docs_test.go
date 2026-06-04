@@ -59,7 +59,7 @@ func TestSeedScenariosDocLock(t *testing.T) {
 	}
 }
 
-// TestSharedScenarioDocsContract is the AC-6 guard: docs/dev/README.md documents
+// TestSharedScenarioDocsContract is the AC-5 README-contract guard: docs/dev/README.md documents
 // the shared-scenario contract — how to add a scenario, what belongs in the
 // host-neutral definition, what belongs in each runner, and the local Claude/Codex/Pi
 // live commands. The README IS the claim here (the contract is the evergreen doc),

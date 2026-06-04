@@ -80,6 +80,21 @@ func TestAssertThirdCycleEscalation(t *testing.T) {
 	if err := assertThirdCycleEscalation(threeCyclesNoMarker); err == nil {
 		t.Fatal("expected three cycles recorded but no escalation marker to fail on the marker check")
 	}
+
+	// Section-scoping: the seeded entity has two in-section cycle entries; a third
+	// `- Cycle 3:` line and the marker placed OUTSIDE the `### Feedback Cycles`
+	// section (here, in a trailing stage report) must NOT count. Only two in-section
+	// entries remain, so this fails on the cycle-count check — proving the matches
+	// are scoped to the section, not the whole body.
+	strayOutsideSection := escalationEntity() +
+		"\n## Stage Report: validation\n\n- Cycle 3: REJECTED — stray, out of section.\n" +
+		escalationMarker + "\n"
+	if got := len(feedbackCycleEntry.FindAllString(strayOutsideSection, -1)); got != 3 {
+		t.Fatalf("section-scoping case must have three `- Cycle N:` lines body-wide (two in-section + one stray), got %d", got)
+	}
+	if err := assertThirdCycleEscalation(strayOutsideSection); err == nil {
+		t.Fatal("expected a third cycle entry + marker placed outside the `### Feedback Cycles` section to fail — the matches must be section-scoped")
+	}
 }
 
 func TestAssertMergeHookGuardHeld(t *testing.T) {

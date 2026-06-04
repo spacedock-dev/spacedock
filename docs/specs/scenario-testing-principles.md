@@ -52,7 +52,7 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 
 ## Seed Scenarios
 
-The first foundation is the three host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
+The first foundation is the host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO halts at a human gate and presents the review without self-approval, mutation, or archival.

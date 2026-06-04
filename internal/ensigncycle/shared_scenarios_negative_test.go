@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// AC-5: each shared scenario's assertion is behavior/state oriented, not a
-// transcript-shape tautology. For every shared scenario these cases build the
+// Negative-case discipline: each shared scenario's assertion is behavior/state
+// oriented, not a transcript-shape tautology. For every shared scenario these cases build the
 // SPECIFIC broken end-state the scenario guards against — from the real shared
 // fixture, not an arbitrary string — and prove the assertion goes red. A
 // tautological assertion (one that only checks the transcript echoed a phrase)
@@ -126,6 +126,48 @@ func TestThirdCycleEscalationNegativeAutoBounce(t *testing.T) {
 	}
 	if err := assertThirdCycleEscalation(stalled); err == nil {
 		t.Fatal("expected a stalled-at-cycle-2 end-state (only two cycle entries, no marker) to fail assertThirdCycleEscalation")
+	}
+
+	// Isolating case for the no-post-cycle-3-report check: marker present AND three
+	// recorded cycles (so the cycle-count and marker checks BOTH pass), but a stray
+	// post-cycle-3 `## Stage Report: implementation` — the ONLY defect. This must
+	// still fail, and it fails ONLY on the report-count check. Without this case,
+	// deleting that check leaves the suite green: every OTHER escalation negative
+	// that carries a stray report also lacks the marker, so they red on the marker
+	// check first and never exercise the report-count clause. This is the one
+	// assertion proving the FO did not auto-bounce a fourth time, so it must be
+	// independently covered.
+	markerWithStrayReport := escalationEntity() +
+		"- Cycle 3: REJECTED — third consecutive rejection.\n" +
+		escalationMarker + "\n\n" +
+		"## Stage Report: implementation\n\n- DONE: stray fourth-round report\n"
+	if !strings.Contains(markerWithStrayReport, escalationMarker) {
+		t.Fatal("report-count isolating case must carry the escalation marker so it passes the marker check")
+	}
+	if got := len(feedbackCycleEntry.FindAllString(markerWithStrayReport, -1)); got < 3 {
+		t.Fatalf("report-count isolating case must carry at least three cycle entries, got %d", got)
+	}
+	if err := assertThirdCycleEscalation(markerWithStrayReport); err == nil {
+		t.Fatal("expected a marker-present, three-cycle end-state with a stray post-cycle-3 implementation report to fail assertThirdCycleEscalation on the report-count check")
+	}
+
+	// Isolating case for the park-not-advance (non-terminal) check: marker present,
+	// three recorded cycles, exactly one implementation report (so the cycle-count,
+	// marker, and report-count checks ALL pass), but the FO terminalized the entity
+	// to status: done — escalate-then-terminalize, auto-resolving instead of parking
+	// for the human (the escalation prompt says "do not advance to done"). This must
+	// still fail, and it fails ONLY on the non-terminal check.
+	markerButTerminalized := strings.Replace(escalationEntity(), "status: validation", "status: done", 1) +
+		"- Cycle 3: REJECTED — third consecutive rejection.\n" +
+		escalationMarker + "\n"
+	if !strings.Contains(markerButTerminalized, "status: done") {
+		t.Fatal("non-terminal isolating case must carry status: done")
+	}
+	if got := len(implementationReport.FindAllString(markerButTerminalized, -1)); got != 1 {
+		t.Fatalf("non-terminal isolating case must carry exactly one implementation report so only the non-terminal check rejects it, got %d", got)
+	}
+	if err := assertThirdCycleEscalation(markerButTerminalized); err == nil {
+		t.Fatal("expected a marker-present but terminalized (status: done) end-state to fail assertThirdCycleEscalation on the park-not-advance check")
 	}
 }
 

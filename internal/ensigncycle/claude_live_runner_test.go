@@ -5,12 +5,9 @@ package ensigncycle
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 )
@@ -158,43 +155,6 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
-}
-
-// assertClaudeReviewerReuse scans the stream-json transcript for a SendMessage
-// tool_use whose `to` targets the validation reviewer — the durable producer
-// signal that the FO reused the kept-alive reviewer for the cycle-2 re-review
-// rather than fresh-dispatching. It parses the tool_use JSON shape (not loose
-// prose), so it cannot be satisfied by the word "validation" appearing in
-// narration.
-func assertClaudeReviewerReuse(stream string) error {
-	for _, line := range strings.Split(stream, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		var entry struct {
-			Type    string `json:"type"`
-			Message *struct {
-				Content []struct {
-					Type  string `json:"type"`
-					Name  string `json:"name"`
-					Input struct {
-						To string `json:"to"`
-					} `json:"input"`
-				} `json:"content"`
-			} `json:"message"`
-		}
-		if err := json.Unmarshal([]byte(line), &entry); err != nil || entry.Message == nil {
-			continue
-		}
-		for _, block := range entry.Message.Content {
-			if block.Type == "tool_use" && block.Name == "SendMessage" &&
-				strings.Contains(strings.ToLower(block.Input.To), "validation") {
-				return nil
-			}
-		}
-	}
-	return fmt.Errorf("no SendMessage tool_use targeting the validation reviewer found in the stream — the FO did not reuse the kept-alive reviewer for the cycle-2 re-review")
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
