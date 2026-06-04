@@ -202,3 +202,38 @@ SKIPPED — No live safehouse inner-environment smoke was added in this fixback;
 FAILED — None for the implementation report filing.
 
 Residual risks: no live safehouse inner-env proof is recorded; generated shell fetch commands cover unset/empty `SPACEDOCK_BIN` directly while stale/non-executable launcher-path behavior relies on the documented contract/version-gate fallback guidance.
+
+## Stage Report: validation
+
+REJECTED — Validated product commit `ede26b09` (`launch: propagate spacedock binary path`) in `.worktrees/spacedock-ensign-launcher-binary-path-passthrough` on branch `spacedock-ensign/launcher-binary-path-passthrough`. The implementation covers the core launcher env injection and generated command invariant, but the acceptance set is not fully satisfied because AC-5 lacks a safehouse inner-environment smoke/fixture and AC-3/AC-6 do not prove fallback for a stale/non-executable `SPACEDOCK_BIN` beyond the shell unset/empty fallback expression.
+
+Evidence reviewed:
+- `internal/cli/frontdoor.go` now changes `hostOps.Launch` to accept `env []string`, removes any parent `SPACEDOCK_BIN`, resolves `os.Executable()` to an absolute executable path with symlink resolution, and passes `launchEnv(os.Environ())` for both `runClaude` and `runCodex`.
+- `internal/cli/frontdoor_test.go` proves Claude env injection, stale parent env replacement, resolver-failure omission, symlink resolution, and Codex safehouse/resume outer exec env injection while preserving argv.
+- `internal/dispatch/launcher_command.go`, `internal/dispatch/build.go`, dispatch golden files, and skill text tests prove generated fetch commands and shared FO/ensign/debrief text use/document `${SPACEDOCK_BIN:-spacedock}`.
+- `docs/runtime-support.md` documents that safehouse receives the env and that behavior degrades to `$PATH` if a wrapper strips `SPACEDOCK_BIN`; however, no live or fixture-backed proof shows whether the inner host/child observes the variable.
+
+Acceptance criteria:
+- AC-1 PASSED: focused CLI tests assert Claude and Codex pass child env with `SPACEDOCK_BIN` while preserving plain/safehouse/resume argv.
+- AC-2 PASSED: focused CLI tests assert parent `SPACEDOCK_BIN=/old/spacedock` is replaced and that resolver failure omits the stale value while launch continues.
+- AC-3 PARTIAL: generated command tests prove the env-aware `${SPACEDOCK_BIN:-spacedock}` command string and unset/empty shell fallback, but there is no resolver or command test proving fallback when `SPACEDOCK_BIN` is set to a non-executable/stale path.
+- AC-4 PASSED: skill integration tests require the `${SPACEDOCK_BIN:-spacedock}` invariant in FO, ensign, and debrief surfaces, and dispatch golden/focused tests cover generated fetch commands.
+- AC-5 FAILED: `safehouse` is not installed in this validation environment (`command -v safehouse` found nothing), and the product commit does not add a safehouse fixture or live smoke that launches a trivial env-printing child through the same wrap shape to record whether `SPACEDOCK_BIN` reaches the inner process.
+- AC-6 PARTIAL: absent/unresolvable launcher signal preserves launch behavior and generated shell commands fall back when the variable is unset/empty, but non-executable/stale-env fallback is not externally proven.
+
+Commands run:
+- `git -C .worktrees/spacedock-ensign-launcher-binary-path-passthrough status --short --branch && git -C ... rev-parse --short HEAD && git -C ... branch --show-current`
+- `git show --stat --oneline HEAD && git show --name-only --format=fuller HEAD`
+- `gofmt -l ./cmd ./internal` (reported pre-existing formatting drift in `internal/status/external_proof.go` and `internal/status/no_yaml_silent_drop_test.go`; no files were edited)
+- `go test ./internal/cli -run 'Test(ClaudeFrontDoorInjectsResolvedLauncherBin|ClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails|ClaudeFrontDoorLaunchEnvResolvesSymlink|CodexFrontDoorInjectsLauncherBinThroughSafehouseResume|ClaudeFrontDoorLaunchesOnCompatible|CodexFrontDoorLaunchesOnCompatible)' -count=1` — passed
+- `go test ./internal/dispatch -run 'Test(Build|LauncherCommand)' -count=1` — passed
+- `go test ./skills/integration -run 'Test.*Spacedock.*|Test.*Launcher.*|Test.*Skill.*' -count=1` — passed
+- `command -v safehouse || true && safehouse --help 2>&1 | head -60 || true` — safehouse not found
+- `go test ./... -count=1` — passed
+- `go test ./... -race -count=1` — passed
+- `git status --short` in the product worktree — clean
+
+Residual risks:
+- Safehouse inner environment behavior remains undocumented by runtime evidence; only the outer exec env is tested.
+- Stale/non-executable `SPACEDOCK_BIN` fallback is not implemented/tested as an env-aware resolver; `${SPACEDOCK_BIN:-spacedock}` will try a non-empty stale path rather than falling back by itself.
+- `gofmt -l` reports unrelated formatting drift in two existing `internal/status` files; validation did not edit product/source files per dispatch constraints.
