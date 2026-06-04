@@ -13,22 +13,98 @@ issue:
 
 `first-officer-shared-core.md` loads in full at every FO boot, but its `## Gate Presentation` block (the format template + the captain-facing assembly rules) is only needed at a gate. Lift it into a lazy spacedock-owned skill loaded via `Skill(skill=...)` at the gate-presentation point, the way zd (#291) lifted the team lifecycle to `using-claude-team`.
 
-## Proposed approach (ideation firms)
+## Decision (settled at ideation)
 
-Move the `## Gate Presentation` section (template + the captain-facing assembly rules: lede-first/decision-last, chosen-direction-required, cite-the-report, reviewer-tiers, etc.) into a new lazy skill; replace it in the FO core with a `Skill(skill=...)` invocation anchored at the gate-handling step. Judgment/format content → lazy skill (NOT a binary command — it is FO prose, not mechanical ceremony).
+The captain's direction is endorsed and confirmed: `## Gate Presentation` is **judgment/format prose** (a captain-facing rendering template + 9 assembly rules), not mechanical shell-able ceremony, so it routes to a **lazy skill** (`spacedock:present-gate`), NOT a binary command. This is the zd #291 lever-2 pattern (the ceremony counterpart `pr-complete-binary-command` correctly routes to a binary; this one does not). Skill-vs-binary is not re-litigated — see `## Out of scope`.
 
-**Two load-bearing constraints (from the zd audit + the superpowers comparison):**
-1. **Faithfulness** — the assembly rules are welded into how the FO adjudicates gates; a dropped clause is a correctness regression. zd-grade faithfulness audit (normalized diff of moved text vs pre-change).
-2. **Load-trigger discoverability** — the `Skill()` invocation must sit at the gate-handling point in the always-on skeleton, or the FO won't load it when a gate arrives.
+## The boundary cut (the hard question, resolved by grounding against the live file)
 
-Keep it spacedock-owned (no external superpowers dependency).
+The hard question: `## Gate Presentation` sits directly next to the gate-DECISION logic in `## Completion and Gates`. The cut must put the **rendering** in the skill and keep the **decide-to-gate + AC-cross-check policy** always-on (it fires in the event loop on every completion, before any presentation exists).
 
-## Acceptance criteria (seed)
+Ground-truthed against `skills/first-officer/references/first-officer-shared-core.md` (363 lines, 2026-06-04):
 
-- **AC-1 (seed):** The Gate Presentation block is ABSENT from `first-officer-shared-core.md` and PRESENT in the new skill; the FO core carries a `Skill()` invocation at the gate point — verified by an instruction-text oracle (the zd AC-1 pattern: fingerprint-absent-from-core / present-in-skill + invocation-present).
-- **AC-2 (seed):** Faithfulness — moved text semantically complete (normalized diff; host-neutrality/portability oracles green).
-- **AC-3 (seed):** No regression — a live FO drive that reaches a gate presents it correctly (closes via fresh session against the built plugin).
+**MOVES to `skills/present-gate/SKILL.md` — the whole `## Gate Presentation` section, lines 158-191 inclusive:**
+- the `Gate review:` format template (the fenced block, lines 162-177)
+- `### Captain-facing assembly rules` and all 9 numbered rules (lines 179-191): lede-first/decision-last, chosen-direction-required-as-FO-prose, cite-the-report/one-line-gist-roll-up, reviewer-findings-in-priority-tiers (`Material:`/`Polish:`), recommendation-appears-once, bounce-back-names-concrete-asks, no-format-pedantry-asides, one-sentence-worktree-heads-up, target-15-25-lines.
+
+This block is **pure "how to render a gate to the captain."** It is the only place the template and the `Material:`/`Polish:` tier vocabulary appear (grep-confirmed: `Reviewer findings`/`Material:` live only at 172 and 186, both inside this section).
+
+**STAYS always-on in `## Completion and Gates` (lines 116-156) — the decide-to-gate + AC-cross-check policy:**
+- the checklist-review + `{N} done, {N} skipped, {N} failed` count (118-125)
+- the **AC coverage cross-check** ("At every gate, scan `## Acceptance criteria` … REJECT if this stage was the natural place to address it", 127) — this is the gate DECISION, not the rendering, and it fires before any presentation
+- reuse-vs-fresh conditions, model-mismatch diagnostic, supersede-shutdown (129-148)
+- the gated-stage handling list (150-156): **never self-approve**, keep-worker-alive, the feedback-rejection auto-bounce, approve/reject routing.
+
+**The cut is clean — proven by grounding, not asserted.** The ONLY textual coupling between the decision logic and the presentation content is the single cross-reference at line 152: `- present the stage report per \`## Gate Presentation\` below`. Nothing outside 158-191 references the template, the assembly rules, or the `Material:`/`Polish:` vocabulary (grep-confirmed across the whole file and both runtime adapters — zero adapter cross-refs). So the entanglement is exactly one pointer line, and that line becomes the load-trigger.
+
+**Load-trigger anchor (the always-on skeleton point):** line 152's cross-ref
+`- present the stage report per \`## Gate Presentation\` below`
+becomes
+`- present the stage report by invoking \`Skill(skill="spacedock:present-gate")\` and following its template + assembly rules`.
+The anchor sits inside the gated-stage handling list in `## Completion and Gates`, the exact event-loop point where the FO has decided a gate must be presented — so the skill loads precisely when (and only when) a gate arrives. This is the same handoff zd settled: an already-loaded FO invoking `Skill()` mid-run to pull the lazy block into live context.
+
+## Riskiest-unknown exercise (the integration handoff — RUN, not asserted)
+
+The design's load-bearing mechanism is the cross-skill `Skill()` mid-run handoff: a running FO that has ALREADY loaded its contract invokes `Skill(skill="spacedock:present-gate")` mid-run and receives the body into its live context. zd #291 demonstrated this exact handoff; I re-ran it in THIS ideation session to confirm it independently: as an agent that loaded `spacedock:ensign` at session start, I invoked `Skill(skill="spacedock:refit")` mid-run (an inert probe — its instructions were not followed) and the full refit skill body landed in my live context immediately. PASS, demonstrated. The boundary-separation unknown (does presentation cleanly detach from decision logic) was the OTHER riskiest unknown — resolved above by grounding: the cut is a single cross-ref line.
+
+**Secondary finding inherited from zd (load-bearing for AC-3):** a SKILL.md created DURING a session is NOT registered mid-session — the host's skill registry is built at session start. So `skills/present-gate/SKILL.md` must SHIP in the plugin (it will, via `"skills": "./skills/"` auto-discovery), and AC-3's live drive MUST run a FRESH FO session against a build where `skills/present-gate/` already exists, not create-then-invoke within one session.
+
+**Skill auto-discovery is proven:** `.claude-plugin/plugin.json` declares `"skills": "./skills/"`, so a new `skills/present-gate/SKILL.md` is auto-registered as `spacedock:present-gate` with no manifest edit (the mechanism that registers the existing six user skills, locked by `TestUserSkillsPresentWithFrontmatter`). Implementation MUST add `"present-gate"` to the `userSkills` slice in `skills/integration/skill_surface_test.go:16` so the frontmatter + reference-closure oracles cover it (zd did the same for `using-claude-team`).
+
+## Sequencing with siblings (three tasks edit `first-officer-shared-core.md`)
+
+Three lever-2/3 siblings touch this one file; implementations MUST serialize to avoid clobbering. Named touched sections:
+- **THIS task (gate-presentation):** deletes `## Gate Presentation` (158-191) and edits ONE line (152) inside `## Completion and Gates`.
+- **`feedback-rejection-flow-skill-extraction` (a9):** deletes `## Feedback Rejection Flow` (193-205) and edits the rejection-detection point — lines 154-155 inside `## Completion and Gates` (`on a feedback gate recommending REJECTED, auto-bounce…` / `on captain reject at a feedback-to stage…`). **OVERLAP RISK with this task: both edit the gated-stage handling list in `## Completion and Gates` (this task line 152, a9 lines 154-155).** Adjacent lines, same list — serialize; whichever lands second rebases its one-line edit onto the other.
+- **`pr-complete-binary-command` (p2):** rewrites `## Merge and Cleanup` (207-226) + `### Ship-Local Ceremony` (228-242) into a binary invocation. **No overlap** with `## Completion and Gates` or `## Gate Presentation` — disjoint sections; only file-level serialization needed.
+
+The token-budget-guard idea is DROPPED — not referenced.
+
+## Proposed approach
+
+Create `skills/present-gate/SKILL.md` (frontmatter `name: present-gate`, `description: …`, `user-invocable: false` — it is FO-internal like `using-claude-team`) carrying the `## Gate Presentation` section text MOVED VERBATIM (template + 9 assembly rules), keeping it spacedock-owned (no external superpowers dependency). Delete those lines from `first-officer-shared-core.md` and rewrite line 152's cross-ref into the `Skill(skill="spacedock:present-gate")` invocation. Add `"present-gate"` to `userSkills` in `skill_surface_test.go`. Judgment/format content → lazy skill (NOT a binary command).
+
+## Acceptance criteria
+
+Proof is presence/absence over the instruction files (legitimate per the README: "a presence check over instruction files proving they carry a required clause or stay free of a banned token is proof at the claim's own level"), scoped with `sectionAfter` to defeat free-floating-substring false-passes, plus the live drive for AC-3. AC-1/AC-2 oracles EXTEND the proven `skills/integration/skill_text_test.go` pattern (its `vendoredSkillFiles` reader + `sectionAfter` region-scoping + presence/absence assertions) and zd #291's `using_claude_team_test.go` shape — kept consistent.
+
+- **AC-1 — The Gate-Presentation block lives in `skills/present-gate/SKILL.md` and no longer appears in `first-officer-shared-core.md`; the FO core invokes the skill at the gate point instead of re-stating the block.**
+  Verified by a Go oracle (new `skills/integration/present_gate_test.go`) that:
+  - (a) **Presence in the skill** — reads `skills/present-gate/SKILL.md` and asserts each moved fingerprint is present: template → `"Gate review: {entity title}"`; assembly rules → `"Lede first, decision last"`, `"Chosen direction is required as FO prose"`, `"No format-pedantry asides"`, `"Target length: 15-25 lines"`. (Each verified unique-1 in the live FO core 2026-06-04.)
+  - (b) **Absence from the FO core** — asserts those same fingerprint literals are NO LONGER present in `first-officer-shared-core.md` (moved, not duplicated). Negative-proof: re-inlining the block re-introduces a fingerprint and flips this RED.
+  - (c) **Integration via invocation** — asserts `first-officer-shared-core.md`'s `## Completion and Gates` section (scoped via `sectionAfter("## Completion and Gates")`) contains `Skill(skill="spacedock:present-gate")` and does NOT contain a cross-skill `@`-include (`@../present-gate` or `@present-gate`) — locking the spike-settled mechanism (zd disproved the `@`-include; only `Skill()` is valid).
+  - **Scoping caveat:** AC-1(b) absence checks are WHOLE-FILE `strings.Contains` over `first-officer-shared-core.md`, NOT region-scoped — region-scoping an absence check would false-pass content that moved elsewhere in the file. AC-1(c) is region-scoped to `## Completion and Gates` for the POSITIVE `Skill(...)`-present / `@`-absent assertions only.
+- **AC-2 — Faithfulness: the moved text is semantically complete (no dropped assembly rule) and host-neutral/portable; the skill ships in the plugin.**
+  Verified by: (a) the oracle asserting `skills/present-gate/SKILL.md` carries ALL NINE assembly-rule fingerprints (one literal per rule — the count is the teeth: a dropped rule reds the absence of its fingerprint); (b) `"present-gate"` is added to `userSkills` so `TestUserSkillsPresentWithFrontmatter` + `TestUserSkillReferenceClosureResolves` cover the new skill (frontmatter valid, no dangling refs, ships via `"skills": "./skills/"`); (c) implementation performs a normalized diff of the moved block against `git show origin/next:…first-officer-shared-core.md` and records byte-level faithfulness in the validation report (the zd faithfulness-audit step). The skill is FREE of any new spacedock-dispatch-helper leak — the gate-presentation prose is FO judgment, not shell wiring, so no `spacedock dispatch`/`spacedock status` token should appear; assert their absence from `skills/present-gate/SKILL.md`.
+- **AC-3 — No behavior regression: the decomposed contract still presents a gate correctly on a real drive.**
+  Verified by a live FO driving a cycle that REACHES A GATE (dispatch → gate presentation) on the decomposed contract against the built plugin, producing a gate message that conforms to the moved template (lede-first spine, chosen-direction line, recommendation-once, decision line). Closes via a FRESH FO session (skills register at boot — the zd secondary finding above). HIGH-STAKES surface (the FO operating contract): per the README's complex-skill-integration guidance, staff review MAY precede the ideation gate, and a detached adversarial audit runs before merge — the auditor probes that AC-1's negative halves fire by real mutation, that the `Skill()` seam is not an `@`-include, and that the live drive actually rendered a conforming gate (not just dispatched).
+
+## Test plan
+
+- **AC-1/AC-2 — Go instruction-text oracles** in a new `skills/integration/present_gate_test.go`, extending the proven `skill_text_test.go`/`using_claude_team_test.go` pattern (`vendoredSkillFiles` reader + `sectionAfter` region-scoping + presence/absence literal tables). Add `skills/present-gate/SKILL.md` to a `vendoredSkillFiles`-style reader (or read it directly). Demonstrate each negative half by real mutation (remove a fingerprint → RED; re-inline the block → RED; swap `Skill()` for `@`-include → RED), then restore green. Cost: low — text invariants over instruction files, no new harness, same package/shape as the in-repo precedent.
+- **AC-2 faithfulness** — normalized diff of the moved block vs `origin/next`, recorded in the validation report. Cost: low.
+- **AC-3 — one live FO cycle to a gate** on the decomposed contract against the built plugin. Cost: medium (one live drive, fresh session). Same live-dispatch mechanism the workflow already exercises; a regression check on the decomposed contract, not an unverified handoff (the handoff is demonstrated above).
+- Full offline `go test ./...` + `go build ./...` green before validation; AC-3 is the FO/validation-stage live drive.
+
+## Out of scope
+
+- **Re-litigating skill-vs-binary** — settled: judgment/format prose → lazy skill (the captain endorsed this; the ceremony counterpart is the separate `pr-complete-binary-command`).
+- **Moving the gate-DECISION logic** (AC cross-check, self-approve prohibition, reuse-vs-fresh) — stays always-on in `## Completion and Gates`; only the rendering moves.
+- **The token-budget-guard idea** — DROPPED, not part of this task.
+- **An external superpowers dependency** — the skill is spacedock-owned by construction.
+- **Editing the sibling-owned sections** (`## Feedback Rejection Flow`, `## Merge and Cleanup`) — those are a9/p2's tasks; this task only serializes against them.
 
 ## Notes
 
-Split from the umbrella analysis (see the binary-simplification roadmap, refreshed 2026-06-04, and sibling tasks). Template + faithfulness-audit pattern: zd `extract-team-orchestration-skill` (#291). Siblings: `feedback-rejection-flow-skill-extraction` (same lever), `pr-complete-binary-command` (Merge-and-Cleanup → binary, the ceremony counterpart).
+Split from the umbrella analysis (binary-simplification roadmap, refreshed 2026-06-04). Template + faithfulness-audit pattern: zd `extract-team-orchestration-skill` (#291). Siblings: `feedback-rejection-flow-skill-extraction` (a9, same lever, OVERLAPS in `## Completion and Gates`), `pr-complete-binary-command` (p2, Merge-and-Cleanup → binary, disjoint section). Ground-truthed this ideation (2026-06-04): FO core 363 lines; `## Gate Presentation` is lines 158-191; the only coupling is the cross-ref at line 152; each AC-1 fingerprint (`Gate review: {entity title}`, `Lede first, decision last`, `Chosen direction is required as FO prose`, `No format-pedantry asides`, `Target length: 15-25 lines`) is unique-1; `Reviewer findings`/`Material:` appear only inside 158-191; zero gate-presentation cross-refs in either runtime adapter.
+
+## Stage Report: ideation
+
+- DONE: Confirm the skill direction (the captain endorses a `present-gate` skill) and design the BOUNDARY precisely. Decide exactly which lines move to the `present-gate` skill vs which STAY always-on. Name the skill (`present-gate`) and the load-trigger anchor point. Exercise/record the riskiest unknown.
+  Confirmed in `## Decision`; boundary settled in `## The boundary cut` grounded against the live 363-line file: the WHOLE `## Gate Presentation` (158-191, template + 9 assembly rules) MOVES; the decide-to-gate + AC-cross-check + self-approve + reuse logic in `## Completion and Gates` (116-156) STAYS always-on. Cut is clean — the ONLY coupling is the single cross-ref at line 152 (grep-confirmed: `Reviewer findings`/`Material:` live only at 172/186; zero adapter cross-refs). Skill = `spacedock:present-gate`; load-trigger anchor = line 152 rewritten to `Skill(skill="spacedock:present-gate")` inside the gated-stage handling list. Riskiest unknown EXERCISED: re-ran the cross-skill `Skill()` mid-run handoff in this session (already-loaded `spacedock:ensign` → invoked `Skill(skill="spacedock:refit")` mid-run → its body landed in live context). PASS, demonstrated; not asserted.
+- DONE: AC-1/AC-2/AC-3 oracle plan (the zd pattern). Ground the fingerprints against the live file.
+  Written in `## Acceptance criteria` + `## Test plan`. AC-1: fingerprint-absent-from-core / present-in-skill + `Skill()`-present / `@`-absent (region-scoped to `## Completion and Gates`), extending `skill_text_test.go`/`using_claude_team_test.go`. AC-2: all 9 assembly-rule fingerprints present in skill (count = teeth), `"present-gate"` added to `userSkills` so frontmatter+closure oracles cover it, normalized faithfulness diff vs `origin/next`, no spacedock-helper leak. AC-3: live FO drive reaching a gate against the built plugin (fresh session — skills register at boot). Fingerprints ground-truthed unique-1 against the live file: `Gate review: {entity title}`, `Lede first, decision last`, `Chosen direction is required as FO prose`, `No format-pedantry asides`, `Target length: 15-25 lines`.
+
+### Summary
+
+Confirmed the captain-endorsed `present-gate` lazy-skill direction and resolved the hard boundary question by grounding against the live FO core: the entire `## Gate Presentation` section (158-191) detaches cleanly because its only coupling to the always-on gate-DECISION logic is one cross-reference line (152), which becomes the `Skill(skill="spacedock:present-gate")` load-trigger inside the gated-stage handling list. The AC cross-check, self-approve prohibition, and reuse-vs-fresh policy stay always-on. Re-ran the cross-skill `Skill()` mid-run handoff this session to independently confirm zd #291's load-bearing mechanism (PASS, demonstrated), and inherited its secondary finding that the new skill must ship in the plugin (AC-3 needs a fresh FO session). Named the three-way sibling sequencing: this task and `feedback-rejection-flow` (a9) both edit the gated-stage handling list in `## Completion and Gates` (adjacent lines — serialize), while `pr-complete-binary` (p2) edits disjoint sections.
