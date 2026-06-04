@@ -4,10 +4,10 @@ title: Track tool calls and token costs for release journeys
 status: validation
 source: "captain (2026-06-02) - track tool calls and token consumption for common user journeys; serialize per release; mark selected test cases for token/turn tracking"
 started: 2026-06-02T16:53:20Z
-completed:
-verdict:
+completed: 2026-06-04T06:50:08Z
+verdict: PASSED
 score: "0.29"
-worktree: .worktrees/spacedock-ensign-journey-cost-ledger
+worktree:
 issue:
 mod-block:
 pr: "#284"
