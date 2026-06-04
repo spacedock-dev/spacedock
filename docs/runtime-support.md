@@ -172,7 +172,7 @@ After subagent(...) returns, you as first officer must verify the entity file co
 
 ## Skill install and load paths
 
-For Pi, there is no Spacedock `install --host pi` yet. The proven live path loads local resources explicitly:
+For Pi, `spacedock pi` launches the proven front door by loading local resources explicitly:
 
 ```text
 <spacedock checkout>/skills/first-officer
@@ -181,4 +181,4 @@ For Pi, there is no Spacedock `install --host pi` yet. The proven live path load
 ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
 ```
 
-When `spacedock install --host pi` is added, it should reproduce this proven shape without requiring the user to manually relogin or copy package files. It should not mutate global `~/.pi/agent` during live tests; tests should keep using isolated Pi homes with copied auth.
+`spacedock install --host pi` is an idempotent readiness check and setup guide for that substrate; it does not install a Claude/Codex-style marketplace plugin. `spacedock doctor --host pi` reports the Pi CLI, auth file, `pi-subagents` extension/skill, and local Spacedock skill health. Both commands accept `--plugin-dir <spacedock checkout>` for the local skill checkout. Live tests should not mutate global `~/.pi/agent`; they should keep using isolated Pi homes with copied auth.

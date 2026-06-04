@@ -87,7 +87,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return code
 	}
 	if host != "pi" {
-		return runInit(ctx, stripPluginDirArg(args), hostOps, stdout, stderr)
+		return runInit(ctx, args, hostOps, stdout, stderr)
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
@@ -116,7 +116,7 @@ func runDoctorWithPi(ctx context.Context, args []string, hostOps hostOps, piOps 
 		return code
 	}
 	if host != "pi" {
-		return runDoctor(ctx, stripPluginDirArg(args), hostOps, stdout, stderr)
+		return runDoctor(ctx, args, hostOps, stdout, stderr)
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
@@ -187,18 +187,6 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 		}
 	}
 	return host, check, pluginDir, 0
-}
-
-func stripPluginDirArg(args []string) []string {
-	out := make([]string, 0, len(args))
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--plugin-dir" && i+1 < len(args) {
-			i++
-			continue
-		}
-		out = append(out, args[i])
-	}
-	return out
 }
 
 func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig {

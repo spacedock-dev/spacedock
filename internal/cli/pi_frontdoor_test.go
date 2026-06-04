@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -144,6 +145,54 @@ func TestPiInstallMissingSubagentsPrintsActionableInstructions(t *testing.T) {
 		if !strings.Contains(out, want) {
 			t.Fatalf("missing-subagents output missing %q:\n%s", want, out)
 		}
+	}
+}
+
+func TestNonPiSetupRejectsPluginDir(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		run  func(hostOps, io.Writer, io.Writer) int
+	}{
+		{
+			name: "install claude",
+			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
+				return runInitWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
+			},
+		},
+		{
+			name: "install codex",
+			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
+				return runInitWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
+			},
+		},
+		{
+			name: "doctor claude",
+			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
+				return runDoctorWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
+			},
+		},
+		{
+			name: "doctor codex",
+			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
+				return runDoctorWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ops := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := tc.run(ops, &stdout, &stderr)
+			if code != 2 {
+				t.Fatalf("exit=%d want 2; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+			}
+			if !strings.Contains(stderr.String(), "unknown argument \"--plugin-dir\"") {
+				t.Fatalf("stderr should reject --plugin-dir, got %q", stderr.String())
+			}
+			if len(ops.installCmds) != 0 {
+				t.Fatalf("install seam called despite rejected --plugin-dir: %v", ops.installCmds)
+			}
+		})
 	}
 }
 
