@@ -5,6 +5,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -95,12 +96,21 @@ func TestGatePresentationAbsentFromFOCore(t *testing.T) {
 	}
 }
 
+// presentGateAtInclude matches an `@`-prefixed path token that resolves toward
+// the present-gate skill — `@present-gate`, `@./present-gate`,
+// `@../present-gate/SKILL.md`, etc. The leading `@` plus any run of relative-path
+// segments (`./`, `../`, bare) ending in a `present-gate` path component is the
+// disproven cross-skill include the seam must NOT use. A structural scan, not an
+// enumerated literal table — it catches the `@./present-gate/...` family the old
+// enum missed.
+var presentGateAtInclude = regexp.MustCompile(`@(?:\.{1,2}/)*present-gate\b`)
+
 // TestFOCoreInvokesPresentGateSkill locks AC-1(c): the FO core's `## Completion
 // and Gates` section invokes the skill via Skill(...) at the gate point and does
 // NOT use the spike-disproven cross-skill @-include. Region-scoped to
 // `## Completion and Gates` (the positive Skill()-present / @-absent assertions
-// only). The Skill(...) literal is the integration seam; the @-form is the
-// disproven mechanism.
+// only). The Skill(...) literal is the integration seam; any `@`-token resolving
+// toward present-gate is the disproven mechanism.
 func TestFOCoreInvokesPresentGateSkill(t *testing.T) {
 	fo := foCore(t)
 	region := sectionAfter(fo, "## Completion and Gates")
@@ -110,10 +120,8 @@ func TestFOCoreInvokesPresentGateSkill(t *testing.T) {
 	if !strings.Contains(region, `Skill(skill="spacedock:present-gate")`) {
 		t.Errorf("`## Completion and Gates` section does not invoke Skill(skill=\"spacedock:present-gate\")")
 	}
-	for _, banned := range []string{"@../present-gate", "@present-gate"} {
-		if strings.Contains(region, banned) {
-			t.Errorf("`## Completion and Gates` section uses the disproven cross-skill @-include %q", banned)
-		}
+	if m := presentGateAtInclude.FindString(region); m != "" {
+		t.Errorf("`## Completion and Gates` section uses the disproven cross-skill @-include %q", m)
 	}
 }
 
@@ -135,5 +143,55 @@ func TestPresentGateSkillFreeOfDispatchHelperLeak(t *testing.T) {
 		if strings.Contains(skill, banned) {
 			t.Errorf("present-gate SKILL.md leaks spacedock dispatch-helper token %q (gate-presentation prose is FO judgment, not shell wiring)", banned)
 		}
+	}
+}
+
+// presentGateFrontmatterValue returns the trimmed scalar value of a top-level
+// `key:` line in skills/present-gate/SKILL.md's YAML frontmatter, with any
+// surrounding quotes stripped. The bool reports whether the key was found.
+func presentGateFrontmatterValue(t *testing.T, key string) (string, bool) {
+	t.Helper()
+	fm, ok := frontmatter(presentGateSkill(t))
+	if !ok {
+		t.Fatal("present-gate SKILL.md has no YAML frontmatter block")
+	}
+	prefix := key + ":"
+	for _, line := range strings.Split(fm, "\n") {
+		if strings.HasPrefix(line, prefix) {
+			v := strings.TrimSpace(strings.TrimPrefix(line, prefix))
+			v = strings.Trim(v, `"'`)
+			return v, true
+		}
+	}
+	return "", false
+}
+
+// TestPresentGateSkillNameMatchesSeam locks AC-2: the frontmatter `name:` VALUE
+// equals `present-gate` — the directory name AND the
+// `Skill(skill="spacedock:present-gate")` invocation seam. Token-presence alone
+// (skill_surface_test.go) would pass a renamed skill that the seam no longer
+// reaches; binding the value to the seam target catches that drift. Negative-
+// proof: a bogus name value reds this.
+func TestPresentGateSkillNameMatchesSeam(t *testing.T) {
+	name, ok := presentGateFrontmatterValue(t, "name")
+	if !ok {
+		t.Fatal("present-gate SKILL.md frontmatter has no name field")
+	}
+	if name != "present-gate" {
+		t.Errorf("present-gate SKILL.md frontmatter name is %q, want %q (the directory name and the Skill(skill=\"spacedock:present-gate\") seam)", name, "present-gate")
+	}
+}
+
+// TestPresentGateSkillIsFOInternal locks AC-2: the frontmatter carries
+// `user-invocable: false` — the skill is FO-internal (loaded mid-run via
+// Skill()), not a captain-facing user skill. Negative-proof: flipping to `true`
+// reds this.
+func TestPresentGateSkillIsFOInternal(t *testing.T) {
+	v, ok := presentGateFrontmatterValue(t, "user-invocable")
+	if !ok {
+		t.Fatal("present-gate SKILL.md frontmatter has no user-invocable field")
+	}
+	if v != "false" {
+		t.Errorf("present-gate SKILL.md frontmatter user-invocable is %q, want \"false\" (the skill is FO-internal)", v)
 	}
 }
