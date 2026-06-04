@@ -5,9 +5,11 @@ score: "0.44"
 source: captain (2026-06-03) — after AC-2 proved Pi subagent dispatch, expose the working runtime contract as user-facing Spacedock commands
 id: mfa9gb6kpcc14b5ca0gphv2m
 started: 2026-06-03T00:00:00Z
-worktree: .worktrees/spacedock-ensign-pi-install-no-plugin-dir
+worktree:
 mod-block:
 pr: "#293"
+completed: 2026-06-04T07:02:49Z
+verdict: PASSED
 ---
 # Pi runtime front door and install UX
 
