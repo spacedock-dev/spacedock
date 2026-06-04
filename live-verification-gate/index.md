@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#292"
 ---
 
 The requirement that a **runtime-observable AC** (one whose truth can only be decided by running the real producer) be confirmed by a **live run** is encoded only as advisory prose — the README validation stage and the merge-on-proof bar in handoffs. Nothing refuses to mark such an AC PASSED until a live run is on the record. `yy` (sonnet-live-ci-flake, #282) was marked `pending-live-run` and merged with its live AC unconfirmed; the post-merge live retrigger then revealed the fix doesn't actually close the flake. This violates the workflow's own Working Principle ("prefer a code gate over a prose-only rule; a prose-only rule has a ceiling of wording-present, which is not behavior").
