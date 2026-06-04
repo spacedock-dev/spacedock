@@ -237,6 +237,47 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		}
 	}
 
+	// live-run guard: a runtime-observable AC (one whose truth can only be
+	// decided by RUNNING the real producer) declares itself with the explicit
+	// `Verified by: live <ref>` convention. Under the SAME require-external-proof
+	// opt-in, a terminal --set is refused unless every such AC cites a RESOLVABLE
+	// live run. Resolution is three-way: a ci-run:/session: that resolves passes;
+	// a placeholder / definitive 404 / absent .jsonl refuses; a connectivity-or-
+	// auth error reaching GitHub is INDETERMINATE — surfaced as a tooling error,
+	// NOT a refusal, so a network blip never masquerades as a missing live run
+	// (the yy slip). An offline-checkable AC (any non-`live` clause) is untouched.
+	// --force bypasses with a loud, risk-naming warning. Layered after the self-
+	// referential check so it rides the same opt-in and the same terminal guard.
+	if proofPolicy == externalProofOn && isTerminalUpdate() {
+		data, rdErr := os.ReadFile(entityPath)
+		if rdErr == nil {
+			for _, lf := range classifyLiveACs(stripFrontmatter(data)) {
+				res := resolveLiveCitation(lf.Citation, nil)
+				switch res.kind {
+				case indeterminate:
+					return errExit(stderr, fmt.Sprintf(
+						"entity %s: live-run citation for %s could not be checked: %v "+
+							"(tooling error, not a refusal — retry when connectivity is restored, or use --force).",
+						slug, acLabel(lf.Header), res.err))
+				case definitivelyAbsent:
+					if force {
+						fmt.Fprintf(stderr,
+							"Warning: --force overriding live-run requirement on entity %s — runtime-observable AC %s "+
+								"is being terminalized without a cited live run (this is exactly the yy slip)\n",
+							slug, acLabel(lf.Header))
+					} else {
+						return errExit(stderr, fmt.Sprintf(
+							"entity %s cannot advance to terminal — runtime-observable AC %s declares `Verified by: live …` "+
+								"but cites no resolvable live run (citation %q). Cite a resolvable ci-run:<id> or session:<path>, "+
+								"OR if the run exists check your token's repo scope (a private/unscoped-token repo returns a masked 404), "+
+								"or use --force to bypass.",
+							slug, acLabel(lf.Header), lf.Citation))
+					}
+				}
+			}
+		}
+	}
+
 	resolvedFields, err := updateFrontmatter(entityPath, set.updates)
 	if err != nil {
 		return errExit(stderr, err.Error())
