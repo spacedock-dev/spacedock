@@ -1,10 +1,10 @@
 ---
 id: t3w3s0q6a89me2kjkrgpz7nq
 title: Extract Gate Presentation from first-officer-shared-core into a lazy spacedock-owned skill
-status: ideation
+status: implementation
 source: "captain (2026-06-04) — token-efficiency decomposition of first-officer-shared-core.md (~9,730 tok, the largest boot-read file). Gate Presentation (the template + captain-facing assembly rules) is judgment/format prose needed only when presenting a gate, not in a session's first turns; defer it off the eager boot read via the zd lazy-skill pattern."
 score: "0.33"
-worktree:
+worktree: .worktrees/spacedock-ensign-gate-presentation-skill-extraction
 started: 2026-06-04T07:20:48Z
 completed:
 verdict:
