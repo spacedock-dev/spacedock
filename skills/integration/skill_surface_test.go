@@ -138,6 +138,74 @@ func TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages(t *testing.T
 	}
 }
 
+func TestPiFirstOfficerRuntimeRequiresDispatchBuildArtifactForStages(t *testing.T) {
+	markNonAC(t, "Pi dispatch builder behavior is exercised by internal/dispatch build_pi_host tests and the Pi live runner; this is the shipped FO instruction-surface lint that requires FO to consume the generated dispatch artifact")
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	dispatch := sectionAfter(string(data), "## Dispatch")
+	if dispatch == "" {
+		t.Fatal("Pi first-officer runtime is missing the Dispatch section")
+	}
+
+	required := []string{
+		"spacedock dispatch build",
+		"host: \"pi\"",
+		"assignment source of truth",
+		"entity slug/name",
+		"entity path",
+		"workflow directory",
+		"target stage",
+		"worktree path",
+		"completion checklist",
+		"emitted dispatch file prompt or dispatch file content",
+		"without composing a replacement assignment",
+		"context: \"fresh\"",
+		"phase",
+		"label",
+		"additive",
+		"must not redefine or replace",
+	}
+	for _, want := range required {
+		if !strings.Contains(dispatch, want) {
+			t.Errorf("Pi first-officer Dispatch section does not contain required dispatch-build invariant %q", want)
+		}
+	}
+}
+
+func TestPiFirstOfficerRuntimeLimitsManualPromptFallback(t *testing.T) {
+	markNonAC(t, "Pi dispatch builder behavior is exercised by internal/dispatch build_pi_host tests and the Pi live runner; this is the shipped FO instruction-surface lint limiting manual prompt composition to break-glass fallback")
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	dispatch := sectionAfter(string(data), "## Dispatch")
+	if dispatch == "" {
+		t.Fatal("Pi first-officer runtime is missing the Dispatch section")
+	}
+
+	required := []string{
+		"Manual Pi prompt composition",
+		"break-glass fallback only",
+		"spacedock dispatch build",
+		"unavailable",
+		"exits non-zero",
+		"explicitly debugging the dispatch builder",
+		"record the builder failure or unavailability reason",
+		"minimum canonical schema facts",
+		"auditable",
+	}
+	for _, want := range required {
+		if !strings.Contains(dispatch, want) {
+			t.Errorf("Pi first-officer Dispatch section does not contain required manual-fallback invariant %q", want)
+		}
+	}
+}
 func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path)")
 	root := skillsRoot(t)
