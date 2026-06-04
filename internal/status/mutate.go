@@ -302,12 +302,32 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 	fields := ParseFrontmatter(sourcePath)
 	modBlock := strings.TrimSpace(fields["mod-block"])
 	pr := strings.TrimSpace(fields["pr"])
+	verdict := strings.TrimSpace(fields["verdict"])
 	if modBlock != "" {
 		if !force {
 			fmt.Fprintf(stderr, "Error: entity %s has pending mod-block (%s). Use --force to override.\n", slug, modBlock)
 			return 1
 		}
 		fmt.Fprintf(stderr, "Warning: --force overriding mod-block (%s) on entity %s\n", modBlock, slug)
+	}
+
+	// Verdict gate: archiving a TERMINAL entity finalizes it, so it requires a
+	// verdict — the same gate the --set finalize path enforces (handlers.go
+	// runSet), closed here so finalization-by-archive cannot route around it.
+	// Scoped to entities whose status is a declared terminal stage (data-driven
+	// over the README, not hardcoded 'done'); archiving a non-terminal entity is
+	// not a finalize and is unaffected. --force bypasses.
+	if verdict == "" && !force {
+		readme := filepath.Join(definitionDir, "README.md")
+		if fileExists(readme) {
+			status := strings.TrimSpace(fields["status"])
+			for _, s := range parseStagesBlock(readme) {
+				if s.terminal && s.Name == status {
+					fmt.Fprintf(stderr, "Error: entity %s cannot be archived from terminal stage '%s' without a verdict. Set verdict first, or use --force.\n", slug, status)
+					return 1
+				}
+			}
+		}
 	}
 
 	// Merge-hook invariant: archival is terminal. Refuse unless the hook ran

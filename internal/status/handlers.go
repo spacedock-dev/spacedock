@@ -132,6 +132,26 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 			postUpdateVerdict = strings.TrimSpace(u.value)
 		}
 	}
+	// finalizing reports whether this --set performs the FINALIZE action: setting
+	// `completed` from empty to non-empty. `completed` is a timestamp field, so a
+	// bare `completed` (no value) auto-fills now() when currently empty — both the
+	// bare and the valued form finalize. This is the contract terminalize shape
+	// (shared-core step 7: `completed verdict={verdict} worktree=`); it is the
+	// signal the verdict gate keys on, NOT `status==terminal` alone, so a bare
+	// dispatch-into-terminal (`status=done started`, no `completed`) is not gated.
+	finalizing := false
+	for _, u := range set.updates {
+		if u.field != "completed" {
+			continue
+		}
+		newCompleted := u.value
+		if !u.hasValue { // bare timestamp auto-fills now() only when currently empty
+			newCompleted = "filled"
+		}
+		if strings.TrimSpace(currentFields["completed"]) == "" && strings.TrimSpace(newCompleted) != "" {
+			finalizing = true
+		}
+	}
 
 	if (modBlock != "" || clearingModBlock) && !force {
 		if isTerminalUpdate() {
@@ -159,6 +179,26 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 	policy, perr := resolveMergePolicy(roots.definitionDir)
 	if perr != nil {
 		return errExit(stderr, perr.Error())
+	}
+
+	// Verdict gate: a finalized entity carries a verdict, so refuse the FINALIZE
+	// action (setting `completed`) with no verdict (neither already set nor set in
+	// the same call). This is the mechanism behind shared-core's terminalize step
+	// (`completed verdict={verdict} worktree=`): without it an FO can finalize and
+	// leave verdict empty. It keys on the finalize action, NOT on `status==terminal`
+	// alone — a bare dispatch-into-terminal (`status=done started`, no `completed`)
+	// is a legitimate verdict-less transition (the verdict is the outcome of work
+	// that has not happened yet), so it passes; gating on status alone wrongly
+	// blocked the dispatch step of a backlog→done workflow and made the live cycle
+	// flaky. --force is the same escape hatch the mod-block / merge-hook guards
+	// honor. Policy-independent and composes with those guards. Placed AFTER the
+	// merge-policy parse so an invalid `merge:` value (a workflow-config error) is
+	// still reported first.
+	if !force && finalizing && postUpdateVerdict == "" {
+		return errExit(stderr, fmt.Sprintf(
+			"entity %s cannot be finalized (`completed`) without a verdict. "+
+				"Set verdict in the same --set call, or use --force.",
+			slug))
 	}
 	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]

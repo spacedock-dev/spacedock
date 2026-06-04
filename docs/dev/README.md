@@ -202,13 +202,13 @@ export SPACEDOCK_REPO_ROOT="$PWD"
 Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`):
 
 ```bash
-go test -tags live -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
+go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
 ```
 
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
 
 ```bash
-go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
 The parity and definition guards run with no model spend — useful before paying for a live run:

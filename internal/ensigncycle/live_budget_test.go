@@ -36,10 +36,16 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			be, ok := n.(*ast.BinaryExpr)
-			if !ok || be.Op != token.MUL {
+			if !ok {
 				return true
 			}
-			d, isDuration := durationOfMul(be)
+			// Evaluate the WHOLE binary expression as a duration — folding ADD/SUB
+			// composites, not just a bare MUL. `time.Minute + 30*time.Second`
+			// evaluates to 90s here; a MUL-only fold would see 30s and miss the sum
+			// (the audit-cycle-1 M3 hole). On a successful duration fold, check the
+			// total and return false so we do NOT descend and re-flag the inner MUL
+			// operands separately.
+			d, isDuration := durationOf(be)
 			if !isDuration {
 				return true
 			}
@@ -47,8 +53,29 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 				t.Errorf("%s: timeout literal %q evaluates to %s, exceeding the 60s cap (AC-1)",
 					file, exprText(fset, be), d)
 			}
-			return true
+			return false
 		})
+	}
+}
+
+// TestBudgetConstantsAreUnder60s pins the live path's budget constants to their
+// REAL evaluated values at compile time — a direct value check that complements
+// the source-AST guard above. The AST guard reasons about the SPELLING of every
+// timeout literal in the file; this asserts the actual constants the live cycle
+// uses are each ≤60s. Together they catch both an over-budget literal anywhere in
+// the source AND an over-budget VALUE on the specific constants the watcher
+// drives (e.g. a `quietBudgetDefault = time.Minute + 30*time.Second` = 90s — the
+// audit-cycle-1 additive-composite hole — reds here directly regardless of how it
+// is spelled).
+func TestBudgetConstantsAreUnder60s(t *testing.T) {
+	const budgetCap = 60 * time.Second
+	for name, d := range map[string]time.Duration{
+		"quietBudgetDefault": quietBudgetDefault,
+		"exitBudgetDefault":  exitBudgetDefault,
+	} {
+		if d > budgetCap {
+			t.Errorf("%s = %s exceeds the 60s cap (AC-1)", name, d)
+		}
 	}
 }
 
@@ -74,36 +101,76 @@ func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 	})
 }
 
-// durationOfMul evaluates a `N * time.Unit` (or `time.Unit * N`) binary
-// expression to its real time.Duration. Returns isDuration=false when the
-// expression is not an int-times-time.Unit shape, so non-duration multiplications
-// (and the package's int arithmetic) are skipped rather than mis-flagged.
-func durationOfMul(be *ast.BinaryExpr) (time.Duration, bool) {
-	if n, unit, ok := intAndUnit(be.X, be.Y); ok {
-		return time.Duration(n) * unit, true
-	}
-	if n, unit, ok := intAndUnit(be.Y, be.X); ok {
-		return time.Duration(n) * unit, true
+// durationOf evaluates an expression to its real time.Duration, FULLY
+// COMPOSITIONALLY: every sub-expression recurses, so the COMPOSITE forms a
+// timeout literal can take all fold —
+//   - a bare `time.Unit` selector (`time.Second` = a 1× duration),
+//   - a parenthesized duration (`(40 * time.Second)`),
+//   - a `scalar * duration` (or `duration * scalar`) multiplication where the
+//     duration operand is itself folded recursively, so `2 * (40 * time.Second)`
+//     folds to 80s — the audit-cycle-2 hole a MUL branch that demanded a BARE
+//     `time.Unit` operand missed,
+//   - an ADD/SUB of two duration sub-expressions (`time.Minute + 30*time.Second`
+//     = 90s — the audit-cycle-1 hole a MUL-only fold missed).
+//
+// Returns isDuration=false for anything that is not a pure duration expression,
+// so the package's int arithmetic is skipped rather than mis-flagged.
+func durationOf(e ast.Expr) (time.Duration, bool) {
+	switch ex := e.(type) {
+	case *ast.ParenExpr:
+		return durationOf(ex.X)
+	case *ast.SelectorExpr:
+		// A bare `time.Second` etc. is a 1× duration.
+		return timeUnitDuration(ex)
+	case *ast.BinaryExpr:
+		switch ex.Op {
+		case token.MUL:
+			// A duration MUL is `scalar * duration` in either order; the duration
+			// operand is folded RECURSIVELY, so a parenthesized or nested duration
+			// (e.g. `2 * (40 * time.Second)`) is not skipped.
+			if n, ok := intScalar(ex.X); ok {
+				if d, ok := durationOf(ex.Y); ok {
+					return time.Duration(n) * d, true
+				}
+			}
+			if n, ok := intScalar(ex.Y); ok {
+				if d, ok := durationOf(ex.X); ok {
+					return time.Duration(n) * d, true
+				}
+			}
+			return 0, false
+		case token.ADD, token.SUB:
+			// A duration ADD/SUB requires BOTH operands to be durations; otherwise
+			// it is not a duration expression (e.g. `len(x) + 1`).
+			lhs, lok := durationOf(ex.X)
+			rhs, rok := durationOf(ex.Y)
+			if !lok || !rok {
+				return 0, false
+			}
+			if ex.Op == token.ADD {
+				return lhs + rhs, true
+			}
+			return lhs - rhs, true
+		}
 	}
 	return 0, false
 }
 
-// intAndUnit reports whether `a` is an integer literal and `b` is a time.Unit
-// selector, returning the parsed int and the unit's duration.
-func intAndUnit(a, b ast.Expr) (int64, time.Duration, bool) {
-	lit, ok := a.(*ast.BasicLit)
+// intScalar reports whether e is an integer literal, returning its value. A
+// parenthesized integer literal folds too, so `(2) * time.Second` is handled.
+func intScalar(e ast.Expr) (int64, bool) {
+	if p, ok := e.(*ast.ParenExpr); ok {
+		return intScalar(p.X)
+	}
+	lit, ok := e.(*ast.BasicLit)
 	if !ok || lit.Kind != token.INT {
-		return 0, 0, false
+		return 0, false
 	}
 	n, err := strconv.ParseInt(lit.Value, 0, 64)
 	if err != nil {
-		return 0, 0, false
+		return 0, false
 	}
-	unit, ok := timeUnitDuration(b)
-	if !ok {
-		return 0, 0, false
-	}
-	return n, unit, true
+	return n, true
 }
 
 // timeUnitDuration maps a `time.Nanosecond|Microsecond|Millisecond|Second|

@@ -32,7 +32,7 @@ func assertMergeGolden(t *testing.T, name, fixture string, args ...string) (int,
 // though a merge hook is registered — the policy exempts the pr-requirement.
 func TestMergeLocalNoSentinelTerminalSetSucceeds(t *testing.T) {
 	code, _, errOut := assertMergeGolden(t, "merge-local-nosentinel-set", "merge-local-workflow",
-		"--set", "020-no-sentinel", "status=done")
+		"--set", "020-no-sentinel", "status=done", "verdict=passed")
 	if code != 0 {
 		t.Fatalf("merge: local terminal --set should succeed (exit 0), got %d (stderr=%q)", code, errOut)
 	}
@@ -54,7 +54,7 @@ func TestMergeLocalNoSentinelArchiveSucceeds(t *testing.T) {
 // merge regardless of policy.
 func TestSentinelSatisfiesGuardTerminalSet(t *testing.T) {
 	code, _, errOut := assertMergeGolden(t, "merge-sentinel-set", "merge-local-workflow",
-		"--set", "010-sentinel", "status=done")
+		"--set", "010-sentinel", "status=done", "verdict=passed")
 	if code != 0 {
 		t.Fatalf("sentinel terminal --set should succeed (exit 0), got %d (stderr=%q)", code, errOut)
 	}
@@ -116,7 +116,7 @@ func TestMergeLocalCombinedClearAndTerminalizeRefused(t *testing.T) {
 // byte-identical-to-today guarantee for un-declared workflows.
 func TestMergePrDefaultNoSentinelStillRefuses(t *testing.T) {
 	code, out, errOut := assertMergeGolden(t, "merge-pr-default-nosentinel-set", "merge-pr-workflow",
-		"--set", "020-no-sentinel", "status=done")
+		"--set", "020-no-sentinel", "status=done", "verdict=passed")
 	if code != 1 {
 		t.Fatalf("default-policy terminal --set must still refuse (exit 1), got %d", code)
 	}
@@ -174,7 +174,7 @@ func TestMergeLocalEntityActuallyAdvances(t *testing.T) {
 	env := pinnedEnv(t)
 	root := stageFixture(t, "merge-local-workflow")
 	_, errOut, code := runNative(t, root, env,
-		"--workflow-dir", root, "--set", "020-no-sentinel", "status=done")
+		"--workflow-dir", root, "--set", "020-no-sentinel", "status=done", "verdict=passed")
 	if code != 0 {
 		t.Fatalf("terminal --set should succeed, got %d (stderr=%q)", code, errOut)
 	}
