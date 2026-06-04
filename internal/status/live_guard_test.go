@@ -71,6 +71,13 @@ func TestLiveRunGuardRefusesUncitedRuntimeAC(t *testing.T) {
 	if !strings.Contains(nErr, "live run") && !strings.Contains(nErr, "live-run") {
 		t.Fatalf("diagnostic must name the live-run requirement, got %q", nErr)
 	}
+	// The masked-404 case (a private/unscoped-token repo where the run exists but
+	// gh returns 404) also lands as definitivelyAbsent → refuse. The diagnostic
+	// must name BOTH remediations so a token-scope failure is not sent chasing a
+	// wrong fix: cite a resolvable ref OR check the token's repo scope.
+	if !strings.Contains(strings.ToLower(nErr), "scope") {
+		t.Fatalf("refusal diagnostic must name the token-scope remediation (masked-404), got %q", nErr)
+	}
 	fm := readFrontmatter(t, entityPath)
 	if !strings.Contains(fm, "status: implementation") {
 		t.Fatalf("frontmatter must be untouched on refusal, got %s", fm)

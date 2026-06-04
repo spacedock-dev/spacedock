@@ -3,6 +3,7 @@
 package status
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -106,6 +107,55 @@ func TestResolveLiveCitationThreeWay(t *testing.T) {
 			res := resolveLiveCitation("ci-run:12345", tc.stub)
 			if res.kind != tc.want {
 				t.Fatalf("want kind %v, got %v (err=%v)", tc.want, res.kind, res.err)
+			}
+		})
+	}
+}
+
+// TestClassifyGhRunOutput locks the connectivity-vs-404 discriminator at the
+// crux: the pure classification of (gh exit, combined output) into the three-way
+// outcome, fed LITERAL gh error strings — no shelling. A genuine parenthesized
+// `(HTTP 404)` is the ONLY definitivelyAbsent signal; every other failure
+// (auth, rate-limit, DNS/connect, a 5xx gateway body that merely CONTAINS the
+// words "Not Found") is INDETERMINATE, never a false refusal. This is the
+// network-blip-can't-masquerade-as-missing-run guarantee the change rests on.
+func TestClassifyGhRunOutput(t *testing.T) {
+	exitErr := errors.New("exit status 1")
+	cases := []struct {
+		name     string
+		runErr   error
+		combined string
+		want     liveResolutionKind
+	}{
+		{"success-exists", nil, `{"id":123,"status":"completed"}`, citedAndReal},
+		{"genuine-parenthesized-404", exitErr, "gh: Not Found (HTTP 404)", definitivelyAbsent},
+		{"bad-credentials-401", exitErr, "gh: Bad credentials (HTTP 401)", indeterminate},
+		{"rate-limit-403", exitErr, "gh: API rate limit exceeded (HTTP 403)", indeterminate},
+		{"dns-connect-fail", exitErr, "dial tcp: lookup api.github.com: no such host", indeterminate},
+		{
+			// A proxy/gateway 5xx page whose BODY contains the bare words "Not
+			// Found" must NOT flip to absent — the bare-substring false-refuse.
+			name:     "gateway-502-body-contains-not-found",
+			runErr:   exitErr,
+			combined: "<html><title>502 Bad Gateway</title><body>The page was Not Found on the upstream server</body></html>",
+			want:     indeterminate,
+		},
+		{
+			// Masked-404: a private/unscoped-token repo where the run EXISTS but
+			// gh returns the parenthesized 404. Policy: still refuse (can't prove
+			// existence) — but the diagnostic, tested separately, names the scope
+			// remediation. Here we only assert the kind.
+			name:     "masked-404-still-absent",
+			runErr:   exitErr,
+			combined: "gh: Not Found (HTTP 404)",
+			want:     definitivelyAbsent,
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if got := classifyGhRunOutput(tc.runErr, []byte(tc.combined)); got != tc.want {
+				t.Fatalf("classifyGhRunOutput(%v, %q) = %v, want %v", tc.runErr, tc.combined, got, tc.want)
 			}
 		})
 	}

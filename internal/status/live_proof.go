@@ -157,27 +157,55 @@ func resolveLiveCitation(citation string, resolver ciRunResolver) liveResolution
 	}
 }
 
-// notFoundRe matches the definitive `gh api` 404 signal — `HTTP 404` / `Not
-// Found (HTTP 404)`. A 404 means the run genuinely does not exist (refuse); any
-// OTHER non-zero exit is a connectivity/auth failure (indeterminate).
-var notFoundRe = regexp.MustCompile(`(?i)HTTP 404|Not Found`)
+// notFoundRe matches gh's DEFINITIVE 404 token — the PARENTHESIZED `(HTTP 404)`
+// form gh emits on a genuine Not-Found (`gh: Not Found (HTTP 404)`). Anchoring to
+// the parenthesized form is load-bearing: a bare `Not Found` substring matches a
+// proxy/gateway 5xx body that merely contains the words, which would FALSE-REFUSE
+// a valid entity (the exact network-blip-masquerades-as-missing-run regression
+// this guard exists to prevent). Only the parenthesized token is gh's own 404.
+var notFoundRe = regexp.MustCompile(`\(HTTP 404\)`)
 
-// ghCiRunResolver shells to `gh api repos/{owner}/{repo}/actions/runs/<id>` to
-// decide whether a CI run exists. Exit 0 → exists. A `gh`-not-on-PATH or a
-// non-404 error → connectivity (indeterminate). A definitive `HTTP 404` in
-// stderr → absent. This is the cleanest signal `gh` gives (per the ideation
-// spike): a definitive 404 vs other error text.
+// classifyGhRunOutput is the pure three-way discriminator over a `gh api` run
+// probe's (exit-error, combined stdout+stderr). It is the crux of the
+// connectivity-vs-404 distinction, factored out of the shell so it is testable
+// with literal gh error strings:
+//   - exit 0 → citedAndReal (the run resolved).
+//   - a genuine parenthesized `(HTTP 404)` → definitivelyAbsent (refuse). NOTE:
+//     a private/unscoped-token repo where the run EXISTS also yields a masked
+//     404 (GitHub returns 404 not 403 to avoid leaking existence) — we still
+//     refuse (cannot prove existence) but the gate diagnostic names the
+//     token-scope remediation so a scope failure isn't sent chasing a wrong fix.
+//   - any OTHER non-zero exit (auth 401, rate-limit 403, DNS/connect failure, a
+//     5xx gateway body that merely contains the words "Not Found") →
+//     indeterminate: a tooling error, NOT a refusal, so a blip never masquerades
+//     as a missing live run.
+func classifyGhRunOutput(runErr error, combined []byte) liveResolutionKind {
+	if runErr == nil {
+		return citedAndReal
+	}
+	if notFoundRe.Match(combined) {
+		return definitivelyAbsent
+	}
+	return indeterminate
+}
+
+// ghCiRunResolver shells to `gh api repos/{owner}/{repo}/actions/runs/<id>` and
+// maps the result through classifyGhRunOutput. A `gh`-not-on-PATH is itself a
+// connectivity (indeterminate) condition. The (bool, error) seam keeps the
+// ciRunResolver contract: a definitive 404 → (false, nil); anything else
+// non-zero → (false, errConnectivity); exit 0 → (true, nil).
 func ghCiRunResolver(id string) (bool, error) {
 	if _, err := exec.LookPath("gh"); err != nil {
 		return false, errConnectivity
 	}
 	cmd := exec.Command("gh", "api", "repos/{owner}/{repo}/actions/runs/"+id)
 	combined, err := cmd.CombinedOutput()
-	if err == nil {
+	switch classifyGhRunOutput(err, combined) {
+	case citedAndReal:
 		return true, nil
-	}
-	if notFoundRe.Match(combined) {
+	case definitivelyAbsent:
 		return false, nil
+	default:
+		return false, errConnectivity
 	}
-	return false, errConnectivity
 }

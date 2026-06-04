@@ -268,7 +268,9 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 					} else {
 						return errExit(stderr, fmt.Sprintf(
 							"entity %s cannot advance to terminal — runtime-observable AC %s declares `Verified by: live …` "+
-								"but cites no resolvable live run (citation %q). Cite a real ci-run:<id> or session:<path>, or use --force to bypass.",
+								"but cites no resolvable live run (citation %q). Cite a resolvable ci-run:<id> or session:<path>, "+
+								"OR if the run exists check your token's repo scope (a private/unscoped-token repo returns a masked 404), "+
+								"or use --force to bypass.",
 							slug, acLabel(lf.Header), lf.Citation))
 					}
 				}
