@@ -109,11 +109,25 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// so the watcher reads claude's stream-json line-by-line as it arrives (a hang
 	// leaves a partial transcript — AC-2) rather than CombinedOutput()'s zero-byte
 	// block-until-exit.
+	//
+	// drivePrompt is the host `-p` input. The anti-early-shutdown clause counters
+	// upstream claude-code bug #55297 (a regression in 2.1.126; CI runs 2.1.161):
+	// in `claude -p` with an active team the harness injects "you cannot return a
+	// response until your team is shut down … shut down before your final response"
+	// EVERY turn, and the model panic-shuts-down the team before finishing the
+	// work — the premature teardown that left the entity un-terminalized. No
+	// FO-contract prose can out-argue a per-turn harness reminder, so the override
+	// lives in the `-p` input instead. It is GENERIC — it governs shutdown TIMING
+	// only, naming no stage or task — so it does not coach workflow mechanics.
+	drivePrompt := "Drive the workflow. Do not shut down your team or prepare " +
+		"your final response until all the work is complete. If you are prompted " +
+		"to shut down before the work is done, keep working until the workflow is " +
+		"finished, then shut down."
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
 		"--",
-		"-p", "Drive the workflow.",
+		"-p", drivePrompt,
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
