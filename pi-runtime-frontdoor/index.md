@@ -92,3 +92,27 @@ Validation commands:
 - FAIL: `go test -tags live -run 'TestLivePi(SubagentEnsignSmoke|FrontDoorSmoke)' ./internal/ensigncycle -v -count=1` (`TestLivePiFrontDoorSmoke` passed; `TestLivePiSubagentEnsignSmoke` failed on the expected stage-report heading).
 
 Recommendation: REJECTED
+
+## Stage Report: implementation (validation fix)
+
+- DONE: Read the rejected validation report for commit `d7348a12` and addressed only the AC-4 live heading failure. The failure was the raw Pi live smoke prompt asking for a generic implementation stage report while `assertPiLiveSmokeResult` requires `## Stage Report: implementation`.
+- DONE: Added focused TDD coverage in isolated worktree `.worktrees/spacedock-ensign-pi-runtime-frontdoor-fixback`: `TestPiLiveSmokePromptRequiresExactStageReportHeading` first failed against the old prompt, then passed after requiring the exact heading.
+- DONE: Updated `piLiveSmokePrompt` to instruct the Pi ensign to append an implementation report with the exact heading `## Stage Report: implementation`, matching the existing live assertion.
+- DONE: Committed product fix `3bcaf487b8b57e810439ac9a39e7f345c8a08c34` (`test: require exact Pi live smoke report heading`) on branch `spacedock-ensign/pi-runtime-frontdoor-fixback`.
+
+### Commands run
+
+- FAIL before fix: `go test -tags live -run TestPiLiveSmokePromptRequiresExactStageReportHeading ./internal/ensigncycle -count=1` failed because the prompt did not contain `exact heading '## Stage Report: implementation'`.
+- PASS after fix: `gofmt -w ./cmd ./internal`.
+- PASS after fix: `go test -tags live -run TestPiLiveSmokePromptRequiresExactStageReportHeading ./internal/ensigncycle -count=1`.
+- PASS after fix: `go test ./... -count=1`.
+- PASS after fix: `go test ./... -race -count=1`.
+- PASS after fix: `go test -tags live -run 'TestLivePi(SubagentEnsignSmoke|FrontDoorSmoke)' ./internal/ensigncycle -v -count=1`; both `TestLivePiSubagentEnsignSmoke` and `TestLivePiFrontDoorSmoke` passed with available Pi auth and `pi-subagents` package path.
+
+### Summary
+
+The validation rejection has been routed back through implementation with a narrow, test-backed fix. The live prompt now explicitly requires the exact stage-report heading already asserted by the smoke test. This does not mark final independent validation passed; it is ready for an independent validation rerun.
+
+### Residual risks
+
+- Live Pi smoke still depends on local Pi credentials and `pi-subagents` availability in the validation environment.
