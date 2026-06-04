@@ -127,3 +127,29 @@ Validation commands reported by implementation worker:
 ### Residual risks
 
 - No full FO live Pi dispatch execution path was exercised in this slice; coverage is at the dispatch-builder, wrapper-helper, and guidance-invariant seams.
+
+## Stage Report: validation
+
+Recommendation: REJECTED
+
+Validated product commit: `613cb0867561469c8bad1dc3cc43ed6e9f45072a` (`Ensure Pi dispatch wraps build artifacts`).
+
+Commands run:
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact status --short --branch`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact rev-parse HEAD`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact show --stat --oneline --decorate --no-renames 613cb086`
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+Acceptance criteria evidence:
+- AC-1 PASSED: `skills/first-officer/references/pi-first-officer-runtime.md` Dispatch section requires `spacedock dispatch build` with `host: "pi"`, calls the build artifact the assignment source of truth, and says to forward the emitted dispatch file prompt/content without composing a replacement assignment. `skills/integration/skill_surface_test.go` includes `TestPiFirstOfficerRuntimeRequiresDispatchBuildArtifactForStages` locking those invariants.
+- AC-2 PASSED: `internal/piruntime/subagents.go` adds `SubagentStageDispatch`; `internal/piruntime/subagents_test.go` asserts `context: "fresh"`, phase/label preservation, exact assignment preservation, and no serialized `acceptance` field. `internal/dispatch/build_pi_host_test.go` wraps a real Pi dispatch-build prompt and asserts the wrapper task equals the builder prompt.
+- AC-3 PASSED: `internal/dispatch/build_pi_host_test.go` builds a real `host: "pi"` artifact from a temp split-root workflow and asserts builder-derived title/slug-stage path, target stage, entity path, workflow dir stage-definition command, worktree path, and checklist facts appear in the dispatch body; it also asserts the wrapper forwards the dispatch file path.
+- AC-4 PASSED: `internal/piruntime/subagents_test.go` asserts the wrapper JSON omits `acceptance`; `skills/integration/skill_surface_test.go` includes `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages` over the Pi FO Dispatch guidance.
+- AC-5 PASSED: `skills/first-officer/references/pi-first-officer-runtime.md` documents manual Pi prompt composition as break-glass only for builder unavailable/non-zero or explicit builder debugging, with required reason recording and canonical schema facts; `TestPiFirstOfficerRuntimeLimitsManualPromptFallback` locks that guidance.
+- AC-6 REJECTED: no focused runtime/fixture smoke runs a stage dispatch through the FO/Pi path or checks durable evidence such as process exit plus state/report content and state-checkout git log. The new builder/wrapper tests are useful seam coverage, but they stop before an FO/Pi stage dispatch and do not verify state/report evidence outside the transcript. The implementation report also explicitly marked live Pi FO dispatch smoke as skipped.
+
+Residual risks:
+- The concrete FO/Pi dispatch execution path remains unproven by durable fixture/live evidence.
+- Guidance tests are string-invariant checks; they do not prove a first officer actually invokes `SubagentStageDispatch` or handles builder fallback at runtime.
