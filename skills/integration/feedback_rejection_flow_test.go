@@ -85,20 +85,28 @@ func TestFeedbackProcedureAbsentFromFOCore(t *testing.T) {
 	}
 }
 
-// feedbackAtToken matches any `@`-prefixed path token in a region — the
-// structural cross-skill @-include ban. The seam must invoke via Skill(...), the
-// proven mechanism; ANY `@`-token in the detection region is the disproven
-// @-include family (`@feedback-rejection-flow`, `@../feedback-rejection-flow`,
-// `@./feedback-rejection-flow/SKILL.md`, …). A whole-region @-ban, not a two-
-// literal enum — the `## Completion and Gates` region carries no legitimate `@`
-// token (ground-truthed), so any `@` there is the disproven include.
-var feedbackAtToken = regexp.MustCompile(`@\S`)
+// feedbackAtInclude matches an `@`-prefixed path token resolving toward the
+// feedback-rejection-flow skill — `@feedback-rejection-flow`,
+// `@../feedback-rejection-flow`, `@./feedback-rejection-flow/SKILL.md`, etc. The
+// leading `@` plus any run of relative-path segments (`./`, `../`, bare) ending
+// in a `feedback-rejection-flow` path component is the disproven cross-skill
+// include the seam must NOT use. Structural (not a two-literal enum), and scanned
+// whole-file: a stale `@feedback-rejection-flow` re-introduced in ANY core
+// section — not just the detection region — is the disproven mechanism. A bare
+// `@\S` whole-file ban would false-fire on a legitimate unrelated
+// `@references/...` include the core may later carry; this name-targeted form
+// only fires on the feedback-rejection-flow include family.
+var feedbackAtInclude = regexp.MustCompile(`@(?:\.{1,2}/)*feedback-rejection-flow\b`)
 
-// TestFOCoreInvokesFeedbackRejectionSkill locks AC-1(c): the FO core's
-// `## Completion and Gates` section invokes the skill via Skill(...) at the
-// rejection-detection point and uses NO cross-skill @-include. Region-scoped to
-// `## Completion and Gates`. The Skill(...) literal is the integration seam; ANY
-// `@`-token in the region is the disproven mechanism.
+// TestFOCoreInvokesFeedbackRejectionSkill locks AC-1(c): the FO core invokes the
+// skill via Skill(...) at the rejection-detection point and uses NO cross-skill
+// @-include toward feedback-rejection-flow ANYWHERE in the file. The positive
+// Skill(...) check is region-scoped to `## Completion and Gates` (the seam lives
+// at the detection point); the @-include ban is WHOLE-FILE so a stale include
+// re-introduced in any other section (e.g. `## Merge and Cleanup`) is caught, not
+// just one in the detection region. The Skill(...) literal is the integration
+// seam; any `@`-token resolving toward feedback-rejection-flow is the disproven
+// mechanism.
 func TestFOCoreInvokesFeedbackRejectionSkill(t *testing.T) {
 	fo := foCore(t)
 	region := sectionAfter(fo, "## Completion and Gates")
@@ -108,8 +116,8 @@ func TestFOCoreInvokesFeedbackRejectionSkill(t *testing.T) {
 	if !strings.Contains(region, `Skill(skill="spacedock:feedback-rejection-flow")`) {
 		t.Errorf("`## Completion and Gates` section does not invoke Skill(skill=\"spacedock:feedback-rejection-flow\")")
 	}
-	if m := feedbackAtToken.FindString(region); m != "" {
-		t.Errorf("`## Completion and Gates` section uses a disproven cross-skill @-include (token %q)", m)
+	if m := feedbackAtInclude.FindString(fo); m != "" {
+		t.Errorf("first-officer-shared-core.md uses a disproven cross-skill @-include toward feedback-rejection-flow (token %q)", m)
 	}
 }
 
