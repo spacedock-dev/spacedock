@@ -1,9 +1,9 @@
 ---
 title: Pi subagent reuse and feedback-to resume semantics
-status: backlog
+status: ideation
 source: captain (2026-06-04) — Pi runtime can technically resume subagents, but Spacedock has not proven reusable worker semantics for feedback-to loops or token/cost tradeoffs
 score: "0.33"
-started:
+started: 2026-06-04T00:00:00Z
 completed:
 verdict:
 worktree:
