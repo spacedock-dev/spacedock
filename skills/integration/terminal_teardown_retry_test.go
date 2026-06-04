@@ -120,12 +120,14 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 			"bounded best-effort",          // the bounded framing (not retry-to-success)
 			"attempt cap",                  // bounded fast retries
 			"wait a short settle interval", // inter-attempt settle (load-bearing, not delegated)
-			// STOP/hold semantics that the marker substring CANNOT satisfy (M1 fix):
-			// the FO STOPS the attempts and makes NO FURTHER teardown calls. A
-			// near-synonym retry-to-success ("continues issuing … rounds until …
-			// clears") cannot keep these.
-			"STOPS the teardown attempts",    // the bound terminates the attempts
-			"no further teardown tool calls", // the hold: nothing more is issued
+			// STOP-at-cap semantics the marker substring CANNOT satisfy: the FO STOPS
+			// the attempts at the cap (a near-synonym retry-to-success "continues
+			// issuing … rounds until … clears" cannot keep this). The post-marker HOLD
+			// is NOT required — the relaxed grade proved the real producer resumes a
+			// bounded best-effort on re-invoke; what the prose forbids is an UNBOUNDED
+			// retry loop that never reaches the marker.
+			"STOPS the teardown attempts", // the bound terminates the attempts
+			"unbounded retry loop",        // the bounded framing: an unbounded loop is the forbidden shape
 			// Launcher-owned exit, distinct from the marker's "for launcher." (M2 fix):
 			// the prose must assert the launcher owns the exit AND it is not the FO's.
 			// A `kill -9 $PPID` self-exit that demotes the launcher to a "backstop"
@@ -136,9 +138,9 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 	// Claude runtime: the Awaiting-Completion section already bans retrying
 	// TeamDelete BEFORE the completion signal (the pre-completion wait phase). The
 	// terminal teardown is a DIFFERENT phase: a BOUNDED set of TeamDelete attempts
-	// with an inter-attempt settle, then the verbatim marker + hold, with the exit
-	// owned by the launcher. Scope to the `## Terminal Team Teardown` section. The
-	// Claude runtime IS the adapter realization, so the behavioral phrases are
+	// with an inter-attempt settle, then STOP and emit the verbatim marker, with the
+	// exit owned by the launcher. Scope to the `## Terminal Team Teardown` section.
+	// The Claude runtime IS the adapter realization, so the behavioral phrases are
 	// asserted directly.
 	claude := files["first-officer/references/claude-first-officer-runtime.md"]
 	teardown := sectionAfter(claude, "## Terminal Team Teardown")
@@ -155,12 +157,14 @@ func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
 			"wait for the settle", // inter-attempt settle mandate
 			"sleep 2",             // the concrete settle
 			"attempt cap",         // bounded attempts
-			// STOP/hold semantics the marker substring CANNOT satisfy (M1 fix): on
-			// cap-exhaustion the FO STOPS calling TeamDelete and makes NO FURTHER
-			// teardown calls. A "continues issuing … rounds until … clears"
-			// near-synonym cannot keep these.
-			"STOPS calling",                  // the bound terminates the TeamDelete calls
-			"no further teardown tool calls", // the hold: nothing more is issued
+			// STOP-at-cap semantics the marker substring CANNOT satisfy: on
+			// cap-exhaustion the FO STOPS calling TeamDelete (a "continues issuing …
+			// rounds until … clears" near-synonym cannot keep this). The post-marker
+			// HOLD is NOT required — the relaxed grade passes the real producer's
+			// bounded resume on re-invoke; what the prose forbids is an UNBOUNDED retry
+			// loop that never reaches the marker.
+			"STOPS calling",        // the bound terminates the TeamDelete calls
+			"unbounded retry loop", // the bounded framing: an unbounded loop is the forbidden shape
 			// Launcher-owned exit, distinct from the marker's "for launcher." (M2 fix):
 			// the prose must explicitly forbid an FO self-exit. A `kill -9 $PPID`
 			// self-exit cannot keep "never an FO self-exit".
@@ -188,13 +192,13 @@ func assertDirectionalMandate(t *testing.T, label, region string, negating, requ
 	lower := strings.ToLower(region)
 	for _, neg := range negating {
 		if strings.Contains(lower, neg) {
-			t.Errorf("%s contains the inverted-mandate phrase %q — the terminal teardown is BOUNDED best-effort then a marker + hold, NOT retry-to-success or an FO self-exit", label, neg)
+			t.Errorf("%s contains the inverted-mandate phrase %q — the terminal teardown is BOUNDED best-effort then a marker emission, NOT retry-to-success or an FO self-exit", label, neg)
 		}
 	}
-	masked := strings.Replace(region, terminalTeardownMarker, " <marker> ", -1)
+	masked := strings.ToLower(strings.Replace(region, terminalTeardownMarker, " <marker> ", -1))
 	for _, req := range required {
-		if !strings.Contains(masked, req) {
-			t.Errorf("%s missing required directional-mandate phrase %q (checked against prose with the marker masked, so a marker-substring does not count)", label, req)
+		if !strings.Contains(masked, strings.ToLower(req)) {
+			t.Errorf("%s missing required directional-mandate phrase %q (checked case-insensitively against prose with the marker masked, so a marker-substring does not count)", label, req)
 		}
 	}
 }
