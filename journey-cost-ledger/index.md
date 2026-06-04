@@ -9,7 +9,7 @@ verdict:
 score: "0.29"
 worktree: .worktrees/spacedock-ensign-journey-cost-ledger
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#284"
 ---
 
