@@ -8,8 +8,8 @@
   "fetch_commands": [
     "spacedock dispatch show-stage-def --workflow-dir <ROOT> --stage defaultsmodel"
   ],
-  "dispatch_file_path": "/tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md",
-  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
+  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md",
+  "prompt": "Skill(skill=\"spacedock:ensign\"); then Read /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-defaultsmodel.md and treat its content as your assignment.",
   "model": "haiku",
   "name": "spacedock-ensign-thing-defaultsmodel",
   "team_name": "fixture-team"

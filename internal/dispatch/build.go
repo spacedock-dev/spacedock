@@ -282,6 +282,19 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return buildError(stderr, 1, "entity file not readable at '%s'", entityPath)
 	}
 
+	// Absolutize entityPath against the process cwd, mirroring the workflowDir
+	// absolutization below. The dispatched ensign is a separate agent whose cwd is
+	// not pinned to the workflow root, so a relative entity_path resolves to a
+	// different / nonexistent file there — the "two entity files" divergence. The
+	// FO supplies entity_path itself (status emits no path field) and runs with
+	// cwd = workflow root, so it naturally passes a relative spelling; absolutizing
+	// here makes the entity-read line and the completion signal cwd-independent.
+	// After the readability error message, so that diagnostic shows the original
+	// spelling.
+	if abs, err := filepath.Abs(entityPath); err == nil {
+		entityPath = abs
+	}
+
 	// Absolutize workflowDir against the process cwd once, so every downstream
 	// join — README path, splitRootStateCheckout, the fetch line's --workflow-dir,
 	// and the state-commit guidance — inherits an absolute, cwd-independent base.
@@ -544,9 +557,21 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return 0
 	}
 
-	// v2 file-pointer: write the body to a deterministic path; emit a tiny prompt
-	// the ensign Reads on first action.
-	dispatchFilePath := filepath.Join(dispatchFileDir, derivedName+".md")
+	// v2 file-pointer: write the body to a collision-free path under the shared
+	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
+	// {derivedName}.md is identical across every dispatch of one slug+stage, so two
+	// concurrent FOs — or back-to-back runs of one fixture — alias the same file
+	// and an ensign can Read a STALE prior dispatch's entity pointer. Each real FO
+	// TeamCreate yields a unique team name (`{project}-{dir}-{YYYYMMDD-HHMM}-
+	// {shortuuid}`), so keying the file on the team name disambiguates every team-
+	// mode dispatch. Bare-mode dispatches (no team name) block until the subagent
+	// completes — they cannot alias within a session — so they keep the plain name.
+	// derivedName stays the readable team-member name; only the on-disk path is keyed.
+	dispatchFileName := derivedName
+	if teamName != "" {
+		dispatchFileName = teamName + "-" + derivedName
+	}
+	dispatchFilePath := filepath.Join(dispatchFileDir, dispatchFileName+".md")
 	if err := os.MkdirAll(dispatchFileDir, 0o755); err != nil {
 		fmt.Fprintf(stderr, "dispatch_file_write_failed: %s: %s\n", dispatchFilePath, err)
 		return 1

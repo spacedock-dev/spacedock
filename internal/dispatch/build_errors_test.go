@@ -230,10 +230,11 @@ func TestBuildStrEErrors(t *testing.T) {
 		ep := writeFlatEntity(t, wd, "backlog", "")
 		stdin := `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"],"team_name":"t"}`
 
-		// Force the write to fail: make the deterministic dispatch-file path a
-		// directory so open()/WriteFile cannot write a regular file there. Clear
-		// any leftover regular file other fixtures wrote at this same path first.
-		derived := "spacedock-ensign-thing-backlog"
+		// Force the write to fail: make the dispatch-file path a directory so
+		// open()/WriteFile cannot write a regular file there. Clear any leftover
+		// regular file other fixtures wrote at this same path first. The path is
+		// keyed on the team name ("t" here) to match the collision-free derivation.
+		derived := "t-spacedock-ensign-thing-backlog"
 		target := filepath.Join(dispatchFileDir, derived+".md")
 		if err := os.RemoveAll(target); err != nil {
 			t.Fatal(err)
