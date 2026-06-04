@@ -9,6 +9,7 @@ verdict:
 score: "0.26"
 worktree: .worktrees/spacedock-ensign-terminal-guard-rejected-consistency
 issue:
+mod-block: merge:pr-merge
 ---
 
 Two related inconsistencies in how the terminal-transition guard treats `verdict=rejected`.
