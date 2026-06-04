@@ -7,6 +7,7 @@ id: mfa9gb6kpcc14b5ca0gphv2m
 started: 2026-06-03T00:00:00Z
 worktree: .worktrees/spacedock-ensign-pi-install-no-plugin-dir
 mod-block: merge:pr-merge
+pr: "#293"
 ---
 # Pi runtime front door and install UX
 
