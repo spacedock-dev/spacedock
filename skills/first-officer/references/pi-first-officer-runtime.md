@@ -17,6 +17,8 @@ Use `spacedock dispatch build` with `host: "pi"` in the input JSON. Forward the 
 
 A Pi first officer may dispatch via `subagent(...)` when that tool is available. The task must include the emitted dispatch-file prompt or the dispatch file content, the workflow directory, the entity path, and the completion checklist. The child must load the Spacedock ensign skill and Pi ensign runtime adapter before working.
 
+For Spacedock stage dispatches through `pi-subagents`, do not use the `subagent(... acceptance: ...)` contract. Put acceptance requirements in the task prompt/dispatch content instead. Spacedock owns the independent implementation-to-validation workflow: the gate is verification via entity stage reports, product/state commits, and independent validation, not same-agent acceptance finalization by the child that did the work.
+
 ## Awaiting Completion
 
 For `pi-subagents`, the completion signal is the subagent result returned to the parent. After the result arrives, read the entity file and verify the stage report exactly as the shared core requires. Do not advance state based only on a cheerful worker summary.

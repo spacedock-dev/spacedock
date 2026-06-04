@@ -104,6 +104,37 @@ func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
 	}
 }
 
+func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	content := string(data)
+	dispatch := sectionAfter(content, "## Dispatch")
+	if dispatch == "" {
+		t.Fatal("Pi first-officer runtime is missing the Dispatch section")
+	}
+
+	required := []string{
+		"pi-subagents",
+		"subagent(... acceptance: ...)",
+		"do not use",
+		"task prompt/dispatch content",
+		"independent implementation-to-validation workflow",
+		"entity stage reports",
+		"product/state commits",
+		"independent validation",
+		"not same-agent acceptance finalization",
+	}
+	for _, want := range required {
+		if !strings.Contains(dispatch, want) {
+			t.Errorf("Pi first-officer Dispatch section does not contain required acceptance-contract invariant %q", want)
+		}
+	}
+}
+
 func TestUserSkillReferenceClosureResolves(t *testing.T) {
 	root := skillsRoot(t)
 	for _, skill := range userSkills {
