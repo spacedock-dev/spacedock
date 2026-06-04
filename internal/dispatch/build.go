@@ -557,9 +557,21 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return 0
 	}
 
-	// v2 file-pointer: write the body to a deterministic path; emit a tiny prompt
-	// the ensign Reads on first action.
-	dispatchFilePath := filepath.Join(dispatchFileDir, derivedName+".md")
+	// v2 file-pointer: write the body to a collision-free path under the shared
+	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
+	// {derivedName}.md is identical across every dispatch of one slug+stage, so two
+	// concurrent FOs — or back-to-back runs of one fixture — alias the same file
+	// and an ensign can Read a STALE prior dispatch's entity pointer. Each real FO
+	// TeamCreate yields a unique team name (`{project}-{dir}-{YYYYMMDD-HHMM}-
+	// {shortuuid}`), so keying the file on the team name disambiguates every team-
+	// mode dispatch. Bare-mode dispatches (no team name) block until the subagent
+	// completes — they cannot alias within a session — so they keep the plain name.
+	// derivedName stays the readable team-member name; only the on-disk path is keyed.
+	dispatchFileName := derivedName
+	if teamName != "" {
+		dispatchFileName = teamName + "-" + derivedName
+	}
+	dispatchFilePath := filepath.Join(dispatchFileDir, dispatchFileName+".md")
 	if err := os.MkdirAll(dispatchFileDir, 0o755); err != nil {
 		fmt.Fprintf(stderr, "dispatch_file_write_failed: %s: %s\n", dispatchFilePath, err)
 		return 1
