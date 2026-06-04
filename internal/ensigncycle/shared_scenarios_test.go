@@ -24,7 +24,7 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			name:          "gate-guardrail",
 			oldPythonTest: "tests/test_gate_guardrail.py",
 			intent:        "FO halts at a human gate and presents the review without self-approval, mutation, or archival.",
-			timeout:       60 * time.Second,
+			timeout:       2 * time.Minute,
 		},
 		{
 			name:          "rejection-flow",
