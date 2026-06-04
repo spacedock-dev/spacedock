@@ -25,6 +25,8 @@ For Spacedock stage dispatches through `pi-subagents`, do not use the `subagent(
 
 For `pi-subagents`, the completion signal is the subagent result returned to the parent. After the result arrives, read the entity file and verify the stage report exactly as the shared core requires. Do not advance state based only on a cheerful worker summary.
 
+Verifying the stage report is not the end of the parent's turn. Once the report is verified for a non-gated, non-terminal stage, the parent MUST continue the shared `## Completion and Gates` lifecycle in the same turn — advance the entity and dispatch the next stage (a fresh subagent when the next stage is `fresh: true`) — and only then return its final response. It does not return a completion-only result for the captain to resume from, unless the shared core's halt spans apply (next stage gated, terminal, blocked, or awaiting a captain decision).
+
 For `pi-agent-teams`, completion is observed through the adapter's task/member notification and then verified against the entity file. The adapter should expose a clear completed/failed result to the first officer; the entity stage report remains the source of truth.
 
 ## Follow-up and Reuse

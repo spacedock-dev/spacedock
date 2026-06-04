@@ -95,6 +95,7 @@ A task moves to implementation once its design is approved. The work here is to 
 
 - **Inputs:** The fleshed-out task body from ideation with approach and acceptance criteria
 - **Outputs:** The deliverable committed to the relevant repo or state checkout, with a summary of what was produced and where
+- Implementation completion is not a stopping point: once the deliverable is committed and the stage report filed, the entity routes immediately to independent `validation` dispatch — a fresh validator, since `validation` is `fresh: true` — unless a gate, blocker, terminal ceremony, or captain decision intervenes. The FO does not park a completed implementation and wait.
 - **Good:** Minimal changes that satisfy acceptance criteria, clean Go packages, stable CLI output, tests where appropriate, and a self-contained deliverable
 - **Bad:** Over-engineering, unrelated refactoring, skipping tests, ignoring edge cases identified in ideation, or leaving the deliverable incomplete for validation to finish
 

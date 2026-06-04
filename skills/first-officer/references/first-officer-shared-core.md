@@ -130,6 +130,8 @@ The checklist review produces an explicit count summary: `{N} done, {N} skipped,
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
+**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per below) BEFORE ending its turn. It does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's own next action, not the captain's. The only spans that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a rebase-conflict halt, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
+
 A completed worker is reusable only when the worker is still addressable through a live runtime handle AND all reuse conditions below pass. Otherwise dispatch fresh.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
