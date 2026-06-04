@@ -1,10 +1,10 @@
 ---
 id: xae5tx4hhyce916x034y3q9x
 title: Evaluate promoting feedback-rejection guarantees from prose to binary-enforced gates
-status: backlog
+status: ideation
 source: "captain (2026-06-04) — the a9 detached audit's dominant finding is that FO-behavioral guarantees living as contract prose (3-cycle escalation, budget-probe fail-safe) are immune to static tests and only sparsely covered by live scenarios. Where a guarantee is mechanizable, enforcing it in the binary (a guard / a tracked field) is the stronger fix than a live scenario — the 'code gate over prose-only rule' working principle. A third decomposition lever next to ceremony->binary (p2) and judgment->skill (t3/a9)."
 score: "0.24"
-started:
+started: 2026-06-04T20:04:39Z
 completed:
 verdict:
 worktree:

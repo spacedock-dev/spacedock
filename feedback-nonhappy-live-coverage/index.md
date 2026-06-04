@@ -1,10 +1,10 @@
 ---
 id: gq9g4vrz03kgd8w46cvf09k7
 title: Live-scenario coverage for the non-happy feedback-rejection paths
-status: backlog
+status: ideation
 source: "captain (2026-06-04) — a9 detached audit surfaced that the feedback-rejection non-happy-path guarantees are guarded only by review + the single-cycle live scenario. Investigation: the old tests/test_rejection_flow.py drove 2 full cycles + reviewer-reuse; the current Go rejection-flow scenario simplified to a single route-back; and NEITHER era ever drove the 3rd-cycle escalation or the budget-probe fail-safe. Use the existing prose-based shared-scenario runner to exercise these."
 score: "0.30"
-started:
+started: 2026-06-04T20:04:39Z
 completed:
 verdict:
 worktree:
