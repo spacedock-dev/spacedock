@@ -138,6 +138,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 	root.AddCommand(
 		newClaudeCommand(ctx, env, dir, stdout, stderr),
 		newCodexCommand(ctx, env, dir, stdout, stderr),
+		newPiCommand(ctx, env, dir, stdout, stderr),
 		newInstallCommand(ctx, env, stdout, stderr),
 		newDoctorCommand(ctx, env, stdout, stderr),
 		newStatusCommand(ctx, env, dir, stdin, stdout, stderr, runner),
@@ -197,6 +198,28 @@ func newCodexCommand(ctx context.Context, env []string, dir string, stdout, stde
 	return cmd
 }
 
+// newPiCommand wires `spacedock pi` to Pi's native skill/extension resource
+// loading instead of Claude/Codex plugin or team-tool semantics.
+func newPiCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                "pi [task] [-- pi-flags]",
+		Short:              "Start Pi as your Spacedock first officer",
+		GroupID:            "launch",
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if wantsHelp(args) {
+				return cmd.Help()
+			}
+			if code := runPi(ctx, args, dir, env, execPiRuntimeOps{}, stdout, stderr); code != 0 {
+				return exitCodeError{code}
+			}
+			return nil
+		},
+	}
+	setPiHelp(cmd, stdout)
+	return cmd
+}
+
 // newInstallCommand wires `spacedock install` (the renamed `init`). Behavior is
 // unchanged from init: install the per-host plugin then run doctor (claude), or
 // emit the documented codex add prose. DisableFlagParsing keeps the post-subcommand
@@ -204,7 +227,7 @@ func newCodexCommand(ctx context.Context, env []string, dir string, stdout, stde
 // exactly as before); `-h`/`--help` is intercepted here.
 func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "install [--host claude|codex] [--check]",
+		Use:                "install [--host claude|codex|pi] [--check]",
 		Short:              "Install the Spacedock plugin for a host, then check it",
 		GroupID:            "setup",
 		DisableFlagParsing: true,
@@ -213,18 +236,19 @@ func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writ
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
-			if code := runInit(ctx, args, execHost{}, stdout, stderr); code != 0 {
+			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
 		},
 	}
-	cmd.Flags().String("host", "claude", "Host to install the plugin for (claude or codex)")
+	cmd.Flags().String("host", "claude", "Host to install the plugin for (claude, codex, or pi)")
 	cmd.Flags().Bool("check", false, "Run the compatibility report without installing")
 	setSetupHelp(cmd, stdout, `
 Examples:
   spacedock install
   spacedock install --host codex
+  spacedock install --host pi
   spacedock install --check
 `)
 	return cmd
@@ -234,7 +258,7 @@ Examples:
 // `--host`/`--plugin-manifest` handling preserved verbatim.
 func newDoctorCommand(ctx context.Context, env []string, stdout, stderr io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:                "doctor [--host claude|codex]",
+		Use:                "doctor [--host claude|codex|pi]",
 		Short:              "Check the installed plugin and this binary are compatible",
 		GroupID:            "setup",
 		DisableFlagParsing: true,
@@ -243,18 +267,19 @@ func newDoctorCommand(ctx context.Context, env []string, stdout, stderr io.Write
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
-			if code := runDoctor(ctx, args, execHost{}, stdout, stderr); code != 0 {
+			if code := runDoctorWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
 		},
 	}
-	cmd.Flags().String("host", "claude", "Host to check (claude or codex)")
+	cmd.Flags().String("host", "claude", "Host to check (claude, codex, or pi)")
 	cmd.Flags().String("plugin-manifest", "", "Read this manifest directly instead of resolving the installed plugin")
 	setSetupHelp(cmd, stdout, `
 Examples:
   spacedock doctor
   spacedock doctor --host codex
+  spacedock doctor --host pi --plugin-dir ./checkout
 `)
 	return cmd
 }
@@ -507,7 +532,7 @@ _spacedock() {
   local cur prev verbs status_flags
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  verbs="claude codex install doctor status new state completion dispatch --version --help"
+  verbs="claude codex pi install doctor status new state completion dispatch --version --help"
   status_flags="--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
@@ -527,7 +552,7 @@ const zshCompletion = `#compdef spacedock
 # spacedock zsh completion
 _spacedock() {
   local -a verbs status_flags
-  verbs=(claude codex install doctor status new state completion dispatch --version --help)
+  verbs=(claude codex pi install doctor status new state completion dispatch --version --help)
   status_flags=(--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
   if (( CURRENT == 2 )); then
     compadd -- $verbs

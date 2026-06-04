@@ -53,3 +53,9 @@ Cut releases from `next` via an annotated `vX.Y.Z` tag — see `docs/releasing.m
 - Keep skill instructions declarative. Let the binary own path resolution and mutation guards.
 - Add skill smoke tests before changing first-officer or ensign command text.
 - Preserve current FO/ensign write-scope rules: the first officer mutates entity state; ensigns write assigned code, reports, and artifacts.
+
+## Runtime Support
+
+- When adding a new runtime host or debugging first-contact runtime friction, read `docs/runtime-support.md` first.
+- Use the documented "assume it already works" operating prompt before declaring a host impossible due to auth setup, extension/package discovery, or tool-shape mismatch.
+- Prove runtime claims with live or fixture-backed durable state evidence: process exit, entity body, state-checkout git log, and clean status. Do not substitute transcript phrasing or instruction-prose grep for behavior.

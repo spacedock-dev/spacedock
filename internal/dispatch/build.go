@@ -182,10 +182,10 @@ func rawJSON(v any) json.RawMessage {
 
 func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (string, error) {
 	if flagHost != "" && !validBuildHost(flagHost) {
-		return "", fmt.Errorf("unsupported host %q (want claude or codex)", flagHost)
+		return "", fmt.Errorf("unsupported host %q (want claude, codex, or pi)", flagHost)
 	}
 	if jsonHost != "" && !validBuildHost(jsonHost) {
-		return "", fmt.Errorf("unsupported host %q (want claude or codex)", jsonHost)
+		return "", fmt.Errorf("unsupported host %q (want claude, codex, or pi)", jsonHost)
 	}
 	if flagHost != "" && jsonHost != "" && flagHost != jsonHost {
 		return "", fmt.Errorf("conflicting explicit host sources: --host=%q, JSON host=%q", flagHost, jsonHost)
@@ -200,7 +200,7 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 	codex := getenv("CODEX_THREAD_ID") != ""
 	claude := getenv("CLAUDECODE") != ""
 	if codex && claude {
-		return "", fmt.Errorf("ambiguous runtime host sources: CODEX_THREAD_ID and CLAUDECODE are both set; pass --host claude or --host codex")
+		return "", fmt.Errorf("ambiguous runtime host sources: CODEX_THREAD_ID and CLAUDECODE are both set; pass --host claude, codex, or pi")
 	}
 	if codex {
 		return "codex", nil
@@ -212,7 +212,7 @@ func resolveBuildHost(flagHost, jsonHost string, getenv func(string) string) (st
 }
 
 func validBuildHost(host string) bool {
-	return host == "claude" || host == "codex"
+	return host == "claude" || host == "codex" || host == "pi"
 }
 
 func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields map[string]json.RawMessage, stdout, stderr io.Writer) int {
@@ -588,6 +588,16 @@ func firstActionBlock(host string) string {
 			"Do not try to invoke a Claude skill wrapper; Codex dispatch uses this file " +
 			"pointer as the contract surface.\n"
 	}
+	if host == "pi" {
+		return "## First action\n" +
+			"\n" +
+			"Read this dispatch file directly and treat its content as your operating contract and assignment.\n" +
+			"\n" +
+			"This file contains the shared ensign discipline entry points (stage-report format, polling, " +
+			"worktree ownership, and completion protocol) plus the stage-specific assignment. " +
+			"Pi dispatch is delivered through a Pi-native substrate such as pi-subagents; the Pi subagent completion result " +
+			"is the completion signal observed by the first officer. Do not emit Claude team-tool calls.\n"
+	}
 	return "## First action\n" +
 		"\n" +
 		"Before anything else, invoke your operating contract:\n" +
@@ -612,6 +622,15 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 				"Do not emit a Claude `SendMessage` call; the Codex mailbox notification is the completion signal.",
 			entityTitle, stage, entityFileRef)
 	}
+	if host == "pi" {
+		return fmt.Sprintf(
+			"\n\n### Completion Signal\n\n"+
+				"When you finish (after all commits and stage report writes are done), return one concise final message in this Pi worker turn:\n\n"+
+				"    Done: %s completed %s. Report written to %s.\n\n"+
+				"The first officer observes completion through the Pi subagent completion result. "+
+				"Do not emit Claude message-tool calls; Pi dispatch completion is the worker's final result.",
+			entityTitle, stage, entityFileRef)
+	}
 	return fmt.Sprintf(
 		"\n\n### Completion Signal\n\n"+
 			"When you finish (after all commits and stage report writes are done), "+
@@ -627,7 +646,7 @@ func completionSignalBlock(host, entityTitle, stage, entityFileRef string) strin
 }
 
 func dispatchPointerPrompt(host, dispatchFilePath string) string {
-	if host == "codex" {
+	if host == "codex" || host == "pi" {
 		return fmt.Sprintf("Read %s and treat its content as your assignment.", dispatchFilePath)
 	}
 	return fmt.Sprintf(
@@ -722,7 +741,7 @@ func emitBuildSchema(stdout io.Writer) int {
 			},
 			"host": map[string]any{
 				"type": "string",
-				"enum": []string{"claude", "codex"},
+				"enum": []string{"claude", "codex", "pi"},
 			},
 		},
 	}

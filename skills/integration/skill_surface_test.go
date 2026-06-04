@@ -80,6 +80,61 @@ var referenceRe = regexp.MustCompile(`@?(references/[A-Za-z0-9_./-]+\.md)`)
 // (a ported skill pointing at a path that does not exist on `next`) fails here.
 // Brace-placeholder template paths (e.g. references/templates/{name}.md) are
 // resolved against their concrete siblings rather than the literal `{name}`.
+func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
+	root := skillsRoot(t)
+	cases := []struct {
+		skill string
+		ref   string
+	}{
+		{skill: "first-officer", ref: "references/pi-first-officer-runtime.md"},
+		{skill: "ensign", ref: "references/pi-ensign-runtime.md"},
+	}
+	for _, tc := range cases {
+		skillDir := filepath.Join(root, tc.skill)
+		data, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
+		if err != nil {
+			t.Fatalf("%s: %v", tc.skill, err)
+		}
+		if !strings.Contains(string(data), tc.ref) {
+			t.Errorf("%s/SKILL.md does not advertise Pi runtime adapter %s", tc.skill, tc.ref)
+		}
+		if _, err := os.Stat(filepath.Join(skillDir, tc.ref)); err != nil {
+			t.Errorf("%s: Pi runtime adapter %s is not loadable: %v", tc.skill, tc.ref, err)
+		}
+	}
+}
+
+func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	content := string(data)
+	dispatch := sectionAfter(content, "## Dispatch")
+	if dispatch == "" {
+		t.Fatal("Pi first-officer runtime is missing the Dispatch section")
+	}
+
+	required := []string{
+		"pi-subagents",
+		"subagent(... acceptance: ...)",
+		"do not use",
+		"task prompt/dispatch content",
+		"independent implementation-to-validation workflow",
+		"entity stage reports",
+		"product/state commits",
+		"independent validation",
+		"not same-agent acceptance finalization",
+	}
+	for _, want := range required {
+		if !strings.Contains(dispatch, want) {
+			t.Errorf("Pi first-officer Dispatch section does not contain required acceptance-contract invariant %q", want)
+		}
+	}
+}
+
 func TestUserSkillReferenceClosureResolves(t *testing.T) {
 	root := skillsRoot(t)
 	for _, skill := range userSkills {

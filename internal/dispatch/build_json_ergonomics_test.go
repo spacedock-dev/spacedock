@@ -148,7 +148,7 @@ func TestBuildHostResolutionFromFlagJSONAndEnv(t *testing.T) {
 		root, _ := buildHostFixture(t)
 
 		native := runNativePreservingHostEnv(buildHostStdin(t, root, nil), "build", "--workflow-dir", root, "--host", "banana")
-		assertBuildHostError(t, native, "unsupported host", "claude or codex")
+		assertBuildHostError(t, native, "unsupported host", "claude, codex, or pi")
 	})
 
 	t.Run("missing-source", func(t *testing.T) {
@@ -203,8 +203,8 @@ func TestBuildSchemaAndValidateOnly(t *testing.T) {
 		if !ok {
 			t.Fatalf("schema missing host property:\n%s", native.stdout)
 		}
-		if got := strings.Join(anyStrings(host["enum"]), ","); got != "claude,codex" {
-			t.Fatalf("host enum = %q, want claude,codex", got)
+		if got := strings.Join(anyStrings(host["enum"]), ","); got != "claude,codex,pi" {
+			t.Fatalf("host enum = %q, want claude,codex,pi", got)
 		}
 		if containsAnyString(schema["required"], "host") {
 			t.Fatalf("host must be optional in schema required list:\n%s", native.stdout)
