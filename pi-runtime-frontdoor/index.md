@@ -222,3 +222,35 @@ Recommendation: PASSED
 
 - Validation was limited to CLI compatibility/docs as requested; no live Pi smoke was run.
 - Pi auth readiness remains unchanged by captain decision and was not evaluated as a blocker for this fixback.
+
+## Stage Report: implementation (install plugin-dir correction)
+
+### Captain decision
+
+- Do not support `spacedock install --host pi --plugin-dir ...` for this slice.
+- Preserve `spacedock pi --plugin-dir ...` launch support.
+- Preserve `spacedock doctor --host pi --plugin-dir ...` diagnostics support.
+- Do not change Pi auth readiness behavior.
+
+### Changed files
+
+- `internal/cli/pi.go`: rejects `--plugin-dir` during `install` parsing with a clear usage error, keeps doctor parsing unchanged, and removes plugin-dir from install next-step prose.
+- `internal/cli/pi_frontdoor_test.go`: adds focused rejection coverage for `install --host pi --plugin-dir /checkout`; updates install readiness/instruction tests to use `SPACEDOCK_REPO_ROOT`; keeps doctor and Pi launch plugin-dir coverage.
+- `internal/cli/cli.go`: removes the install help example that showed `--plugin-dir` for Pi install.
+- `docs/runtime-support.md`: documents that Pi install does not accept `--plugin-dir`, while Pi doctor still accepts it for local checkout diagnostics.
+
+### Product commit
+
+- `8f2c55a469d491a724bce4a9f44efa665716ce89` (`pi install rejects plugin-dir`)
+
+### Tests
+
+- PASS: `gofmt -w ./cmd ./internal`
+- PASS: `go test ./internal/cli -run 'TestPi(InstallRejectsPluginDir|InstallAcceptedAndDoesNotUsePluginCommands|InstallMissingSubagentsPrintsActionableInstructions|DoctorReportsMissingAndHealthyRuntime|FrontDoorLaunchesWithNativeResourcePaths)|TestNonPiSetupRejectsPluginDir' -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+### Residual risks
+
+- `spacedock install --host pi` still resolves the checkout through the existing cwd/`SPACEDOCK_REPO_ROOT` path logic; local dev checkout path improvements remain intentionally deferred.
+- Pi auth readiness behavior was not changed; launch readiness still excludes auth while doctor health includes it.
