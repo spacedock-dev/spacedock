@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#284"
+archived: 2026-06-04T06:51:28Z
 ---
 
 Spacedock has behavior tests and live workflow tests, but it does not preserve a release-to-release view of agent cost. The missing artifact is a stable, redacted journey ledger: for selected user journeys, record tool calls, turns, token usage, duration, host/model metadata, and outcome, then publish the aggregate with each release.
