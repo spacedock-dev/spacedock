@@ -94,3 +94,13 @@ Confirmed the rename precondition empirically on HEAD and chose a single-file re
 
 ### Summary
 Single-commit rename of streamwatch.go to streamwatch_test.go plus the one required literal update in live_budget_test.go, so the 658 LOC of test-only watcher infrastructure no longer compiles into the release binary. Followed TDD on the guard test (RED on stale literal, green after update). Non-test LOC dropped 11924 -> 11266; all three builds (`./...`, binary, package suite of 92 tests) green. The only deviation from the body is the LOC figure: the file is now 658 LOC (was 513 at the older cited HEAD), which fully accounts for the larger-than-expected drop; no other files were moved. Note: the package already contained pre-existing streamwatch_unit_test.go and streamwatch_regression_test.go — these were untouched.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce the evidence for each AC: AC-1 (non-test LOC drops materially vs origin/next AND `go build -o spacedock ./cmd/spacedock` succeeds), AC-2 (`go build ./...` succeeds), AC-3 (`go test ./internal/ensigncycle/ -run TestNoTimeoutLiteralExceeds60s` passes and liveBudgetSources lists "streamwatch_test.go").
+  AC-1: non-test LOC 11924 (origin/next) -> 11266 (HEAD) = drop 658, exactly the renamed file's size; binary build OK. AC-2: `go build ./...` Success. AC-3: literal is `"streamwatch_test.go"` (live_budget_test.go:28); targeted test 1 passed.
+- DONE: Confirm the change is MINIMAL and correct: `git diff origin/next...HEAD` shows ONLY the rename + the single live_budget_test.go literal update; full offline suite green. Recommend PASSED or REJECTED.
+  Diff is exactly the rename (content byte-identical: `git diff origin/next:streamwatch.go HEAD:streamwatch_test.go` empty, exit 0) + one-line literal change. `go test ./...` 978 passed, exit 0. No detached audit needed (low blast radius: pure rename + one test literal).
+
+### Summary
+Independently reproduced all AC evidence on a fresh run in the worktree (HEAD 91156966 off origin/next). The rename is verifiably pure — the renamed file's content is byte-identical to origin/next's streamwatch.go (empty diff). The only content edit is the required live_budget_test.go:28 literal update, which the targeted guard test confirms tracks the renamed file. Full offline suite green (978 passed). Recommendation: PASSED.
