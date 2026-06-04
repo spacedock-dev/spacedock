@@ -92,3 +92,38 @@ Verified by: a focused fixture or live Pi test that runs a stage dispatch from a
 - Read `docs/dev/README.md` workflow rules and this entity fully.
 - Reframed the task around assignment source of truth rather than fresh-context boundaries.
 - Added the proposed canonical dispatch-build flow, additive Pi wrapper constraints, no-acceptance rule, break-glass fallback, acceptance criteria with external/failable proof, and a staged test plan.
+
+## Stage Report: implementation
+
+- DONE: Pi FO guidance requires canonical dispatch-builder assignment content.
+  Evidence: product commit `613cb086` updates `skills/first-officer/references/pi-first-officer-runtime.md`; `skills/integration/skill_surface_test.go` now requires the Dispatch section to use `spacedock dispatch build` with `host: "pi"`, forward the emitted dispatch-file prompt/content, and avoid replacement hand-written assignments.
+- DONE: Pi subagent wrapper fields are additive to the builder artifact.
+  Evidence: `internal/piruntime/subagents.go` adds `SubagentStageDispatch`; `internal/piruntime/subagents_test.go` asserts the wrapper carries `context: "fresh"`, optional `phase`/`label`, no acceptance contract, and the exact builder assignment text.
+- DONE: Pi dispatch artifacts expose the stage facts needed for naming/audit.
+  Evidence: `internal/dispatch/build_pi_host_test.go` now builds a real `host: "pi"` artifact and asserts title/slug-stage path, target stage, entity path, workflow directory stage-definition command, worktree path, and checklist facts are present and survive wrapping.
+- DONE: Same-agent acceptance remains forbidden for Spacedock stage dispatches.
+  Evidence: wrapper tests assert no `acceptance` field is emitted; skill-surface tests retain the `subagent(... acceptance: ...)` ban and require prompt/entity-based acceptance proof.
+- DONE: Manual prompt fallback is documented as break-glass/debug only.
+  Evidence: skill-surface invariant requires fallback guidance to mention builder failure/unavailability/debug, observable reason reporting, and canonical schema facts.
+- SKIPPED: Live Pi FO dispatch smoke.
+  Rationale: this implementation slice proves dispatch-builder, wrapper-helper, and guidance-invariant seams. No full FO live Pi execution path was added.
+
+Changed files:
+- `internal/piruntime/subagents.go`
+- `internal/piruntime/subagents_test.go`
+- `internal/dispatch/build_pi_host_test.go`
+- `skills/first-officer/references/pi-first-officer-runtime.md`
+- `skills/integration/skill_surface_test.go`
+
+Product commit:
+- `613cb086` (`Ensure Pi dispatch wraps build artifacts`)
+
+Validation commands reported by implementation worker:
+- PASS: `gofmt -w ./cmd ./internal` (incidental unrelated `internal/status/*` gofmt churn reverted before commit)
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+### Residual risks
+
+- No full FO live Pi dispatch execution path was exercised in this slice; coverage is at the dispatch-builder, wrapper-helper, and guidance-invariant seams.
