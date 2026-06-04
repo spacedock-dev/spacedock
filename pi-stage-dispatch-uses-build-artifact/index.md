@@ -1,9 +1,9 @@
 ---
 title: Pi stage dispatches should use dispatch build artifacts, not hand-rolled prompts
-status: backlog
+status: ideation
 source: captain (2026-06-04) — FO manually composed Pi subagent task prompts for fc/d2 instead of routing the canonical spacedock dispatch build artifact that carries entity slug/stage context
 score: "0.30"
-started:
+started: 2026-06-04T08:05:59Z
 completed:
 verdict:
 worktree:
