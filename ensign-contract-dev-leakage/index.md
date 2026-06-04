@@ -1,13 +1,13 @@
 ---
 id: ep0ra3zjf4hhkhx5rrkwsxbb
 title: Universal ensign contract has absorbed dev-workflow assumptions (TDD, code-only deliverables, "CODE only" worktree) — re-home dev policy out of the shared core
-status: validation
+status: done
 source: session-10 detached audit (Task waymqcmru, 2026-06-03) — overall verdict MATERIAL-PRESENT; validated the captain's grilling instinct ("why am I seeing dev-workflow specific ones like TDD in the universal contract?")
 score: "0.19"
-worktree: .worktrees/spacedock-ensign-ensign-contract-dev-leakage
+worktree:
 started: 2026-06-03T07:09:59Z
-completed:
-verdict:
+completed: 2026-06-04T06:22:23Z
+verdict: PASSED
 issue:
 mod-block:
 pr: "#290"
