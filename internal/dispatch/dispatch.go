@@ -25,12 +25,20 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 
 	switch args[0] {
 	case "build":
+		if wantsHelp(args[1:]) {
+			printBuildUsage(stdout)
+			return 0
+		}
 		workflowDir, code := requireFlag(args[1:], "--workflow-dir", stderr)
 		if code != 0 {
 			return code
 		}
 		return runBuild(probe, workflowDir, stdin, stdout, stderr)
 	case "show-stage-def":
+		if wantsHelp(args[1:]) {
+			printShowStageDefUsage(stdout)
+			return 0
+		}
 		workflowDir, stage, code := requireStageFlags(args[1:], stderr)
 		if code != 0 {
 			return code
@@ -70,6 +78,20 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 		printUsage(stderr)
 		return 2
 	}
+}
+
+// wantsHelp reports whether args request subcommand help. Stop at -- so future
+// passthrough forms can carry a literal --help without changing this contract.
+func wantsHelp(args []string) bool {
+	for _, a := range args {
+		if a == "--" {
+			return false
+		}
+		if a == "-h" || a == "--help" {
+			return true
+		}
+	}
+	return false
 }
 
 // requireFlag returns the value of a single required `name value` flag. A
@@ -146,5 +168,38 @@ Usage:
   spacedock dispatch build --workflow-dir DIR        (stdin JSON -> stdout JSON)
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include A,B,C,D,E]
+`)
+}
+
+func printBuildUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  spacedock dispatch build --workflow-dir DIR
+
+Build an ensign dispatch artifact from stdin JSON and write the JSON envelope to stdout.
+
+Flags:
+  --workflow-dir DIR   Workflow definition directory containing README.md.
+
+Stdin JSON fields:
+  schema_version  Dispatch schema version. The current supported value is 2.
+  entity_path     Path to the entity file for this dispatch.
+  workflow_dir    Workflow directory for the dispatch request.
+  stage           Stage name to dispatch.
+  checklist       Array of checklist strings for the dispatched worker.
+
+Example:
+  {"schema_version":2,"entity_path":"thing.md","workflow_dir":".","stage":"implementation","checklist":["DONE: run tests"]}
+`)
+}
+
+func printShowStageDefUsage(w io.Writer) {
+	fmt.Fprint(w, `Usage:
+  spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+
+Print the workflow README section for a stage.
+
+Flags:
+  --workflow-dir DIR   Workflow definition directory containing README.md.
+  --stage STAGE        Stage name whose definition should be printed.
 `)
 }

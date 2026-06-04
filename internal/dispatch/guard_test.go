@@ -35,20 +35,26 @@ func TestUnknownSubcommandGuard(t *testing.T) {
 func TestRequiredFlagGuard(t *testing.T) {
 	t.Run("build-missing-workflow-dir", func(t *testing.T) {
 		res := runNative(`{}`, "build")
-		if res.exit == 0 {
-			t.Errorf("build without --workflow-dir exited 0")
+		if res.exit != 2 {
+			t.Errorf("build without --workflow-dir exit=%d, want 2", res.exit)
 		}
-		if !strings.Contains(res.stderr, "--workflow-dir") {
-			t.Errorf("build missing-flag diagnostic lacks --workflow-dir:\n%q", res.stderr)
+		if res.stdout != "" {
+			t.Errorf("build without --workflow-dir stdout=%q, want empty", res.stdout)
+		}
+		if !strings.Contains(res.stderr, "requires --workflow-dir") {
+			t.Errorf("build missing-flag diagnostic lacks required text:\n%q", res.stderr)
 		}
 	})
 	t.Run("show-stage-def-missing-stage", func(t *testing.T) {
 		res := runNative("", "show-stage-def", "--workflow-dir", "/tmp")
-		if res.exit == 0 {
-			t.Errorf("show-stage-def without --stage exited 0")
+		if res.exit != 2 {
+			t.Errorf("show-stage-def without --stage exit=%d, want 2", res.exit)
 		}
-		if !strings.Contains(res.stderr, "--stage") {
-			t.Errorf("show-stage-def missing-flag diagnostic lacks --stage:\n%q", res.stderr)
+		if res.stdout != "" {
+			t.Errorf("show-stage-def without --stage stdout=%q, want empty", res.stdout)
+		}
+		if !strings.Contains(res.stderr, "requires --workflow-dir and --stage") {
+			t.Errorf("show-stage-def missing-flag diagnostic lacks required text:\n%q", res.stderr)
 		}
 	})
 }
