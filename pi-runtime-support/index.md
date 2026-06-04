@@ -8,6 +8,7 @@ id: s9kcdyb9r5t8addppnnce54j
 started: 2026-06-03T21:07:03Z
 worktree: .worktrees/spacedock-ensign-pi-runtime-support
 mod-block: merge:pr-merge
+pr: "#293"
 ---
 # Pi runtime support — adapt Spacedock to pi-native teams/subagents
 
