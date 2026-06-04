@@ -255,3 +255,28 @@ DONE — Validation run: `go test ./internal/dispatch -run TestLauncherCommand -
 Acceptance coverage after fixback: AC-1 PASSED (prior launch seam tests still pass); AC-2 PASSED (prior stale parent env replacement/failure omission tests still pass); AC-3 PASSED (executable env preference plus unset/empty/missing/non-executable fallback tests); AC-4 PASSED (generated dispatch goldens and skill invariant tests still pass); AC-5 PASSED with fixture-backed safehouse-shape inner-env smoke, with live safehouse unavailable; AC-6 PASSED (PATH fallback for absent and unusable signal is externally proven).
 
 Residual risks: no live `safehouse` binary was available, so the fixture proves the wrapper shape can preserve env but does not certify a specific installed safehouse implementation. Generated fetch commands are longer because each line carries its own POSIX shell fallback shim.
+
+## Stage Report: validation rerun
+
+PASSED — Validated product commits `ede26b09` (`launch: propagate spacedock binary path`) and `a725ebdd` (`dispatch: fallback for unusable spacedock bin`) in `.worktrees/spacedock-ensign-launcher-binary-path-passthrough` on branch `spacedock-ensign/launcher-binary-path-passthrough`. The fixback closes the prior rejection: generated helper commands now prefer an executable `SPACEDOCK_BIN` but fall back to `spacedock` on `$PATH` when the signal is unset, empty, stale/missing, or non-executable, and a fixture-backed safehouse-shape smoke proves the wrapper argv shape can preserve `SPACEDOCK_BIN` into an inner child. Live `safehouse` is unavailable in this validation environment (`command -v safehouse` produced no path), so real installed-safehouse filtering remains a residual runtime risk rather than a validation blocker.
+
+Acceptance criteria:
+- AC-1 PASSED: `internal/cli/frontdoor_test.go` asserts Claude and Codex launch envs include the resolved absolute launcher path while preserving plain, resume, and safehouse-wrapped argv shapes.
+- AC-2 PASSED: front-door tests assert parent `SPACEDOCK_BIN=/old/spacedock` is replaced and resolution failure omits a stale/partial child env value while launch continues.
+- AC-3 PASSED: `internal/dispatch/launcher_command_test.go` executes the rendered shell launcher, proving executable `SPACEDOCK_BIN` preference and `$PATH` fallback for unset, empty, missing/stale, and non-executable values.
+- AC-4 PASSED: skill integration tests require the `${SPACEDOCK_BIN:-spacedock}` invariant in FO/ensign/debrief surfaces, and dispatch tests/goldens lock generated fetch-command rendering.
+- AC-5 PASSED with fixture evidence: `TestSafehouseShapePreservesSpacedockBinToInnerChildFixture` launches `safehouse --trust-workdir-config -- <inner-env-printer>` through a fixture wrapper and observes `SPACEDOCK_BIN` in the inner child; live safehouse is not installed here.
+- AC-6 PASSED: generated shell command tests prove fallback to the same `spacedock` PATH token when the signal is absent or unusable.
+
+Commands run:
+- `git -C .worktrees/spacedock-ensign-launcher-binary-path-passthrough status --short --branch && git -C ... log --oneline -5`
+- `git show --stat --oneline ede26b09 && git show --stat --oneline a725ebdd && command -v safehouse || true`
+- `gofmt -l ./cmd ./internal` — reported pre-existing formatting drift in `internal/status/external_proof.go` and `internal/status/no_yaml_silent_drop_test.go`; no product files were edited.
+- `go test ./internal/cli -run 'Test(ClaudeFrontDoorInjectsResolvedLauncherBin|ClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails|ClaudeFrontDoorLaunchEnvResolvesSymlink|CodexFrontDoorInjectsLauncherBinThroughSafehouseResume|SafehouseShapePreservesSpacedockBinToInnerChildFixture|ClaudeFrontDoorLaunchesOnCompatible|CodexFrontDoorLaunchesOnCompatible)' -count=1` — passed.
+- `go test ./internal/dispatch -run 'Test(Build|LauncherCommand)' -count=1` — passed.
+- `go test ./skills/integration -count=1` — passed.
+- `go test ./... -count=1` — passed.
+- `go test ./... -race -count=1` — passed.
+- `git status --short` in the product worktree — clean.
+
+Residual risks: live `safehouse` binary behavior remains unverified because the command is not installed in this environment; fixture evidence proves only the intended wrapper shape. Generated fetch commands are longer due to the per-line POSIX shell fallback shim. Unrelated `gofmt -l` drift remains in two `internal/status` files and was not modified under the no-source-edit validation constraint.
