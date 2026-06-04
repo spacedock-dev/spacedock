@@ -9,7 +9,7 @@ started: 2026-06-03T21:33:12Z
 completed:
 verdict:
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#287"
 ---
 
