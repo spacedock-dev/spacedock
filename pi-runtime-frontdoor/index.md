@@ -254,3 +254,26 @@ Recommendation: PASSED
 
 - `spacedock install --host pi` still resolves the checkout through the existing cwd/`SPACEDOCK_REPO_ROOT` path logic; local dev checkout path improvements remain intentionally deferred.
 - Pi auth readiness behavior was not changed; launch readiness still excludes auth while doctor health includes it.
+
+## Stage Report: validation (install plugin-dir correction)
+
+- VERIFIED: Read the latest `## Stage Report: implementation (install plugin-dir correction)` and inspected isolated worktree `.worktrees/spacedock-ensign-pi-install-no-plugin-dir` on branch `spacedock-ensign/pi-install-no-plugin-dir` at product commit `8f2c55a469d491a724bce4a9f44efa665716ce89` (`pi install rejects plugin-dir`). Changed product files are `internal/cli/pi.go`, `internal/cli/pi_frontdoor_test.go`, `internal/cli/cli.go`, and `docs/runtime-support.md`.
+- PASSED: `spacedock install --host pi --plugin-dir /checkout` now rejects before runtime checks with exit code 2 and a clear message: `spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout`. Focused coverage is `TestPiInstallRejectsPluginDir`.
+- PASSED: `spacedock install --host pi` still works as the Pi readiness/check/instructions path. The ready fixture reports `Pi runtime ready` without calling Claude/Codex plugin install seams, and the missing-substrate fixture prints actionable `pi install npm:pi-subagents` and `PI_SUBAGENTS_PACKAGE_ROOT` guidance. The install next-step prose no longer suggests `--plugin-dir`.
+- PASSED: `spacedock pi --plugin-dir /checkout` remains supported. `parsePiFrontDoorArgs` still accepts repeatable `--plugin-dir`, `runPi` resolves the local skill checkout from it, and `TestPiFrontDoorLaunchesWithNativeResourcePaths` verifies Pi-native extension/skill argv with local Spacedock first-officer/ensign paths.
+- PASSED: `spacedock doctor --host pi --plugin-dir /checkout` remains intentionally supported for local checkout diagnostics. `parsePiSetupArgs` only rejects `--plugin-dir` for `install`, and `TestPiDoctorReportsMissingAndHealthyRuntime` still exercises doctor with `--plugin-dir` in missing and healthy cases.
+- PASSED: Docs/help no longer claim Pi install accepts `--plugin-dir`. `internal/cli/cli.go` install examples now show `spacedock install --host pi` without `--plugin-dir`, while doctor help still shows `spacedock doctor --host pi --plugin-dir ./checkout`; `docs/runtime-support.md` explicitly says Pi install does not accept `--plugin-dir` and documents `SPACEDOCK_REPO_ROOT`/working-directory resolution instead.
+- VERIFIED: Pi auth readiness behavior was not changed. `piRuntimeLaunchReady` still excludes auth, `piDoctorHealthy` still requires auth, and the auth check/report text remains limited to doctor health.
+
+Validation commands:
+- PASS: `gofmt -w ./cmd ./internal` (no tracked product diffs after formatting).
+- PASS: `go test ./internal/cli -run 'TestPi(InstallRejectsPluginDir|InstallAcceptedAndDoesNotUsePluginCommands|InstallMissingSubagentsPrintsActionableInstructions|DoctorReportsMissingAndHealthyRuntime|FrontDoorLaunchesWithNativeResourcePaths)|TestNonPiSetupRejectsPluginDir' -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+Recommendation: PASSED
+
+### Residual risks
+
+- Validation was limited to CLI/docs as requested; no live Pi smoke was run.
+- `spacedock install --host pi` still relies on the existing working-directory or `SPACEDOCK_REPO_ROOT` checkout resolution path by design.
