@@ -1,7 +1,7 @@
 ---
 id: gq9g4vrz03kgd8w46cvf09k7
 title: Live-scenario coverage for the non-happy feedback-rejection paths
-status: validation
+status: implementation
 source: "captain (2026-06-04) — a9 detached audit surfaced that the feedback-rejection non-happy-path guarantees are guarded only by review + the single-cycle live scenario. Investigation: the old tests/test_rejection_flow.py drove 2 full cycles + reviewer-reuse; the current Go rejection-flow scenario simplified to a single route-back; and NEITHER era ever drove the 3rd-cycle escalation or the budget-probe fail-safe. Use the existing prose-based shared-scenario runner to exercise these."
 score: "0.30"
 started: 2026-06-04T20:04:39Z
@@ -162,3 +162,18 @@ Authored the `feedback-3-cycle-escalation` shared scenario (host-neutral durable
 ### Summary
 
 PASSED. Every AC's OUTSIDE-body evidence was reproduced by exercising the behavior, not re-reading: the full offline suite is green (1112/15) and each named oracle was driven to RED on the exact broken end-state it guards (gutted/weakened assertion, removed host runner, drifted doc/README clause), proving they are behavioral oracles rather than substring tautologies. The two dispatch-flagged risks are clear: dropping the `status: implementation` check did NOT weaken `assertRejectionFlow` (the ≥2-cycle-entry check reds the single-cycle regression, and the correct 2-cycle end-state sits at validation-passed), and the reviewer-reuse assertions require a real SendMessage/send_input tool-call targeting the validation reviewer (red on prose, red on other tools, red on wrong target). No AC has self-referential-only proof. AC-3/AC-4 are runtime-observable; their offline halves pass and the live legs are recommended close-post-merge because this workflow does not opt into the live-run guard — the same path the sibling `fo-auto-continues` validation took. Polish-only nits (non-blocking): the spec body's line 55 says "three" host-neutral scenarios while the seed block now lists four; and stale AC-number labels in test comments (`shared_coverage_meta_test.go` "AC-2/AC-3", `shared_scenarios_docs_test.go` "AC-6") don't match this entity's AC-1/AC-5 numbering — cosmetic, no behavioral gap. Awaiting the detached adversarial auditor's Material findings, which join this gate.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED via detached adversarial audit (2026-06-04).** The validator recommended PASSED on the offline suite; the detached audit (separate checkout of `7e03d5ea`) found two material test-strength holes the green suite structurally cannot see. Routed to `implementation` (reused impl ensign, `reuse_ok` 14.3%, same worktree). The live legs stay close-post-merge per the live-AC policy — unaffected by this cycle.
+
+Material (fix both):
+- **A — `assertThirdCycleEscalation` report-count check has no isolating negative** (`internal/ensigncycle/shared_assertions_impl_test.go`, the `reports > 1` clause). Mutation: changing it to `reports > 99999` (deleting the no-post-cycle-3-report guard) leaves the whole suite GREEN — every existing negative carrying the stray report ALSO lacks the escalation marker, so each reds on the marker check first and never exercises the report-count clause. Add an isolating negative: marker present + cycle-3 + a stray post-cycle-3 implementation report and no other defect, which ONLY the report-count check rejects (mirror the merge-hook suite's dedicated isolating case at `shared_scenarios_negative_test.go:167`).
+- **B — `assertThirdCycleEscalation` does not check the entity stayed non-terminal.** A marker-written-but-terminalized end-state (`status: done`) PASSES — the FO wrote the escalation marker AND terminalized the entity (auto-resolving instead of parking for the human; the escalation prompt says "do not advance to done"). Add a park-not-advance check (status NOT terminal) mirroring `assertGateHeld`/`assertMergeHookGuardHeld`, with its own isolating negative.
+
+Polish (fold in):
+- Section-scope the escalation-marker + `- Cycle N:` matches to the `### Feedback Cycles` section (currently matched anywhere in the body).
+- Add a cheap OFFLINE table test for `assertClaude/CodexReviewerReuse` (currently exercised only by the model-spending live runners) using the wrong-recipient / unrelated-tool / loose-narration shapes the audit + the validator's live-probe already exercised.
+- Validator nits: `docs/specs/scenario-testing-principles.md:55` says "three" host-neutral scenarios while the seed block now lists four; stale AC-number labels in `shared_coverage_meta_test.go` / `shared_scenarios_docs_test.go` comments.
+
+Re-run the validator after the fix; keep offline `go test ./...` green.
