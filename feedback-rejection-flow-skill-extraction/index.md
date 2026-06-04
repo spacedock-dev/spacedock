@@ -130,3 +130,14 @@ Re-grounded against the post-t3 (#296) core, then performed the procedure-vs-det
 ### Summary
 
 PASSED. All three ACs verified by checks outside the entity prose. AC-1/AC-2: 10 oracles green, and I independently reproduced every negative half by real mutation→RED→restore (not trusting the report). AC-2 faithfulness is byte-exact (sha `1f24e1eb`, empty diff vs the pre-extraction block at bdeb5f33). AC-3: a fresh FO against the built plugin drove the full reject→route→re-review cycle — the lazy `Skill(skill="spacedock:feedback-rejection-flow")` loaded at the rejection point, the FO routed the concrete finding back through `### Feedback Cycles` (which stayed always-on) to `status: implementation`, and a 2nd implementation report with the exact fix marker proves the re-review path, not just the reject. One non-blocking note: the implementation's whole-tree "gofmt -l clean" claim is inaccurate (two pre-existing unrelated files flag), but the change's own files are clean. No material adversarial finding — the test plan's three auditor probes (re-inline→absence reds, `@`-include→part-c reds, live drive reached re-review) all reproduced.
+
+### Feedback Cycles
+
+#### Cycle 1 — detached adversarial audit (2026-06-04)
+
+Source: an independent detached adversarial auditor on commit 98629283 (separate throwaway worktree). Findings re-tiered against the dev README proof policy:
+
+- **Routed to implementation (Material, minor):** the structural `@`-ban is region-scoped to `## Completion and Gates`, so a stale `@feedback-rejection-flow` include re-introduced in any OTHER FO-core section is invisible. Fix: add a **whole-file** `@feedback-rejection-flow`-include absence assertion (the procedure-absence check is already whole-file; make the seam-include ban whole-file too).
+- **Accepted ceiling (not blockers, consistent with t3):** the body-vs-label gap — the body oracles assert substring-presence, so an edit that keeps a fingerprint while gutting/inverting the operative prose (mis-route to reviewer, kill cycle-tracking, gut reuse-conditions/budget-probe, gut bare-mode) stays green. A text oracle cannot prove semantic faithfulness; the deliverable is byte-exact-faithful (sha `1f24e1eb`) + AC-3-behaviorally-validated, and a9 did not introduce the gap (the prose was never standing-behaviorally-tested). The real lever is filed: `feedback-nonhappy-live-coverage` (gq, live-scenario) + `feedback-guarantee-binary-gate` (xa, promote-to-binary). Paraphrase-re-inline is the same inherent ceiling.
+- **Polish:** `@\S` is a blanket `@`-ban — a future legitimate `@` in the gate region would false-fire (loud, not silent; acceptable today).
+- **Re-validation after the fix:** static-only — the new whole-file `@`-absence negative must fire by real mutation, full suite + build green. AC-3 stays closed from the prior live drive.
