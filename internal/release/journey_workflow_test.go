@@ -160,8 +160,9 @@ func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) 
 // hardened guard binds `needs:` to the OWNING job (the one carrying the
 // goreleaser action) and must RED on this edge — while the SAFE one-way
 // `journey-ledger: needs: goreleaser` edge in the real file does NOT trip it.
-// The edge is injected in every YAML shape `needs:` can take (scalar, flow
-// sequence, and block list) so no single re-coupling syntax evades the guard.
+// The edge is injected in every YAML shape `needs:` can take — scalar, flow
+// sequence, block list, the same three with a trailing inline `# comment`, and a
+// block list split by a blank line — so no syntactic variation evades the guard.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
 	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
@@ -175,6 +176,10 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 		{"scalar", "    needs: journey-ledger\n"},
 		{"flow sequence", "    needs: [journey-ledger]\n"},
 		{"block list", "    needs:\n      - journey-ledger\n"},
+		{"scalar with inline comment", "    needs: journey-ledger  # required for the upload\n"},
+		{"flow sequence with inline comment", "    needs: [journey-ledger]  # required for the upload\n"},
+		{"block list with inline comment", "    needs:\n      - journey-ledger  # required for the upload\n"},
+		{"block list split by a blank line", "    needs:\n      - some-other-gate\n\n      - journey-ledger\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			adversarial := strings.Replace(release,
@@ -187,6 +192,47 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 
 			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
 				t.Fatalf("release workflow guard accepted a goreleaser job that needs the journey-ledger job via %s form (re-coupling the cut to the never-fired run)", tc.name)
+			}
+		})
+	}
+}
+
+// TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape is the direction
+// twin of the rejection test: the SAFE one-way edge `journey-ledger: needs:
+// goreleaser` (the upload waits for the Release goreleaser creates) must stay
+// GREEN no matter which YAML shape it is written in. The guard binds `needs:` to
+// the OWNING job, so rewriting the real file's reverse edge into scalar, flow,
+// block-list, their inline-comment variants, or a blank-line-split block list
+// must NOT trip the goreleaser→journey-ledger check.
+func TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	const realEdge = "  journey-ledger:\n    needs: goreleaser\n"
+	if !strings.Contains(release, realEdge) {
+		t.Fatalf("fixture workflow missing the journey-ledger needs: goreleaser edge to rewrite")
+	}
+
+	for _, tc := range []struct {
+		name      string
+		needsForm string
+	}{
+		// The flow/block/comment/blank-line shapes differ from the real file's
+		// scalar edge, so the rewrite is exercised; the scalar baseline itself is
+		// the real file the parent guard already passes.
+		{"flow sequence", "    needs: [goreleaser]\n"},
+		{"block list", "    needs:\n      - goreleaser\n"},
+		{"scalar with inline comment", "    needs: goreleaser  # upload waits for the Release\n"},
+		{"flow sequence with inline comment", "    needs: [goreleaser]  # upload waits for the Release\n"},
+		{"block list with inline comment", "    needs:\n      - goreleaser  # upload waits for the Release\n"},
+		{"block list split by a blank line", "    needs:\n      - goreleaser\n\n      - some-other-gate\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rewritten := strings.Replace(release, realEdge, "  journey-ledger:\n"+tc.needsForm, 1)
+			if rewritten == release {
+				t.Fatal("rewrite of the journey-ledger needs edge did not apply")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s form: %v", tc.name, err)
 			}
 		})
 	}

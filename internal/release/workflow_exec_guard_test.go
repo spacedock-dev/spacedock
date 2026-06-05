@@ -3,6 +3,8 @@ package release
 import (
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type workflowStep struct {
@@ -300,10 +302,12 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 }
 
 // parseWorkflowJobs partitions a workflow into its top-level jobs (the 2-space
-// indented keys under `jobs:`), capturing each job's declared `needs:` edges and
-// the steps it owns. This is the job-aware view the separation guard needs: the
-// flat parseWorkflowSteps cannot tell which job a `needs:` edge or step belongs
-// to, so a `goreleaser → journey-ledger` edge would otherwise be invisible.
+// indented keys under `jobs:`), pairing each job's `needs:` edges (from a real
+// YAML parse, parseJobNeeds) with the steps it owns (sliced from the job's text
+// span and run through the flat step parser). This is the job-aware view the
+// separation guard needs: the flat parseWorkflowSteps cannot tell which job a
+// step belongs to, so a `goreleaser → journey-ledger` edge would otherwise be
+// invisible.
 func parseWorkflowJobs(workflow string) []workflowJob {
 	lines := strings.Split(workflow, "\n")
 	jobsStart := -1
@@ -316,6 +320,12 @@ func parseWorkflowJobs(workflow string) []workflowJob {
 	if jobsStart < 0 {
 		return nil
 	}
+
+	// `needs:` edges come from a real YAML parse (parseJobNeeds), not the
+	// line-walk: needs is the security-relevant field for the separation guard,
+	// and a hand-rolled scan misses comment-trailed entries, blank-line-split
+	// block lists, anchors, and quoting that a parser handles for free.
+	needsByJob := parseJobNeeds(workflow)
 
 	var jobs []workflowJob
 	for i := jobsStart; i < len(lines); i++ {
@@ -330,28 +340,9 @@ func parseWorkflowJobs(workflow string) []workflowJob {
 			break
 		}
 		if leadingSpaces(line) == 2 && strings.HasSuffix(trimmed, ":") {
-			jobs = append(jobs, workflowJob{name: strings.TrimSuffix(trimmed, ":")})
+			name := strings.TrimSuffix(trimmed, ":")
+			jobs = append(jobs, workflowJob{name: name, needs: needsByJob[name]})
 			continue
-		}
-		if len(jobs) == 0 {
-			continue
-		}
-		job := &jobs[len(jobs)-1]
-		if leadingSpaces(line) == 4 && strings.HasPrefix(trimmed, "needs:") {
-			job.needs = parseNeeds(trimmed)
-			// Block-list form: a bare `needs:` followed by deeper-indented
-			// `- name` entries. Consume those entries here so the edge is not
-			// invisible to the separation guard.
-			for i+1 < len(lines) {
-				next := strings.TrimSpace(lines[i+1])
-				if !strings.HasPrefix(next, "- ") {
-					break
-				}
-				if name := strings.Trim(strings.TrimSpace(strings.TrimPrefix(next, "- ")), `"'`); name != "" {
-					job.needs = append(job.needs, name)
-				}
-				i++
-			}
 		}
 	}
 
@@ -377,21 +368,37 @@ func parseWorkflowJobs(workflow string) []workflowJob {
 	return jobs
 }
 
-// parseNeeds reads the `needs:` LINE itself: scalar (`needs: goreleaser`) or
-// flow sequence (`needs: [a, b]`). A bare `needs:` line yields no edges here —
-// the block-list entries that follow it on deeper-indented `- name` lines are
-// consumed by parseWorkflowJobs, which has the surrounding lines parseNeeds
-// cannot see.
-func parseNeeds(trimmed string) []string {
-	rest := strings.TrimSpace(strings.TrimPrefix(trimmed, "needs:"))
-	if rest == "" {
+// parseJobNeeds reads every job's `needs:` edges via a real YAML parse, keyed by
+// job name. GitHub Actions allows `needs:` as a scalar (`needs: a`) or a
+// sequence (flow `[a, b]` or block list); yaml.v3 normalizes all of them — and
+// strips inline `# comments`, tolerates blank lines between block-list entries,
+// and resolves quoting and anchors — so no syntactic shape of a re-coupling
+// edge can hide from the separation guard. A workflow that does not parse as
+// YAML yields no edges (the guard's other checks still run against the text).
+func parseJobNeeds(workflow string) map[string][]string {
+	var doc struct {
+		Jobs map[string]struct {
+			Needs yaml.Node `yaml:"needs"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal([]byte(workflow), &doc); err != nil {
 		return nil
 	}
-	rest = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(rest, "["), "]"))
-	var out []string
-	for _, part := range strings.Split(rest, ",") {
-		if name := strings.Trim(strings.TrimSpace(part), `"'`); name != "" {
-			out = append(out, name)
+	out := make(map[string][]string, len(doc.Jobs))
+	for name, job := range doc.Jobs {
+		switch job.Needs.Kind {
+		case yaml.ScalarNode:
+			if job.Needs.Value != "" {
+				out[name] = []string{job.Needs.Value}
+			}
+		case yaml.SequenceNode:
+			var needs []string
+			for _, item := range job.Needs.Content {
+				if item.Kind == yaml.ScalarNode && item.Value != "" {
+					needs = append(needs, item.Value)
+				}
+			}
+			out[name] = needs
 		}
 	}
 	return out
