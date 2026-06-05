@@ -10,6 +10,7 @@ completed:
 verdict:
 issue:
 mod-block: merge:pr-merge
+pr: "#298"
 ---
 
 When `spacedock claude` or `spacedock codex` launches a first-officer session, the session's operating contract later shells out to `spacedock` for status and dispatch helpers (`spacedock status`, `spacedock dispatch build`, `spacedock dispatch reconcile`, and related checks). Those calls currently resolve through the session's `$PATH`, not through the binary that performed the front-door launch.
