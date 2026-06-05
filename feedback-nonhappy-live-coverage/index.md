@@ -1,7 +1,7 @@
 ---
 id: gq9g4vrz03kgd8w46cvf09k7
 title: Live-scenario coverage for the non-happy feedback-rejection paths
-status: validation
+status: implementation
 source: "captain (2026-06-04) — a9 detached audit surfaced that the feedback-rejection non-happy-path guarantees are guarded only by review + the single-cycle live scenario. Investigation: the old tests/test_rejection_flow.py drove 2 full cycles + reviewer-reuse; the current Go rejection-flow scenario simplified to a single route-back; and NEITHER era ever drove the 3rd-cycle escalation or the budget-probe fail-safe. Use the existing prose-based shared-scenario runner to exercise these."
 score: "0.30"
 started: 2026-06-04T20:04:39Z
@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-feedback-nonhappy-live-coverage
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#302"
 ---
 
@@ -211,3 +211,21 @@ Cycle-2 fixes both Material items the detached audit found, each with its mutati
 ### Summary
 
 PASSED (cycle 2). Both Material audit findings are closed and independently verified by re-running in the worktree, not by trusting the implementation report: each mutation control reds EXACTLY the single isolating negative the team-lead named (Material A → `negative_test.go:151`; Material B → `negative_test.go:170`; section-scope polish → `shared_assertions_test.go:96`; reviewer-reuse stub-to-nil → the 4 negative subtests per host), with the rest of the suite green in every case — proving the new checks are not green-on-everything tautologies. The reviewer-reuse asserts moved to the offline lane without breaking the live wiring, and both cycle-1 Polish nits I flagged (the stale "three" count and stale AC-number comment labels) are now cleared. Full offline suite green 1124/15; live lane compiles. The AC-3/AC-4 live legs are unchanged and remain close-post-merge per the existing live-AC policy — team-lead handles the run-now-vs-defer call at the gate.
+
+### Feedback Cycles (cont.)
+
+**Cycle 3 — live CI REJECTED (the close-post-merge live legs failed); captain-directed Option A: drive cycle-1 validation LIVE.** Validation PASSED cycle 2 on the OFFLINE halves and recommended the AC-3/AC-4 LIVE legs close-post-merge; PR #302 opened. The deferred live legs then failed across all three lanes in CI run `26997516907`. Root cause (AC-4): the `rejection-flow` fixture seeds Cycle 1 as ALREADY-rejected (a pre-written validation report), so NO cycle-1 validation reviewer is ever spawned/kept-alive; with nothing to reuse, the FO correctly fresh-spawns the cycle-2 validator and `assertClaude/CodexReviewerReuse` (which requires a real SendMessage/send_input to a kept-alive reviewer) fails. This is NOT an FO behavior regression — the keep-reviewer-alive + reuse-conditions instruction survived the #296/#297 extractions verbatim and test-guarded, and the transcript shows the FO explicitly noting "this session did not expose a prior reviewer id" before correctly fresh-spawning. The flaw is the fixture: it asserts reuse without ever creating a reviewer to reuse, and validation never caught it because the live leg was deferred close-post-merge.
+
+Failure across all three lanes (run `26997516907`):
+- **claude-live (sonnet):** `claude_live_runner_test.go:64: no SendMessage tool_use targeting the validation reviewer found... the FO did not reuse the kept-alive reviewer for the cycle-2 re-review` — the unsatisfiable reuse assertion.
+- **codex-live:** `no send_input tool call targeting the validation worker` — same root cause.
+- **claude-live (opus):** `spacedock claude did not finish within 8m0s` → `panic: test timed out after 10m0s` — the 2-cycle scenario is too heavy for the per-scenario timeout (a SEPARATE symptom to fix, not the reuse bug).
+
+Captain decision **Option A**: make reviewer-reuse REAL rather than drop it. Routed to implementation (fresh dispatch into the same worktree; cycle-1/2 workers torn down). **Escalation note:** this is the 3rd feedback round, but it is CAPTAIN-DIRECTED — the human chose the fix direction — so the 3-cycle escalation's intent (human judgment on a multi-cycle entity) is satisfied, not an unsupervised auto-bounce.
+
+Fix scope (Option A):
+1. **Redesign the `rejection-flow` fixture so cycle-1 validation runs LIVE.** Start the scenario BEFORE cycle-1 validation (not from a pre-written rejection) so the FO drives a real cycle-1 validation — spawning a reviewer that is KEPT ALIVE entering the feedback flow — then routes back, re-implements (cycle 2), and re-validates by REUSING the kept-alive cycle-1 reviewer. Only then can `assertClaude/CodexReviewerReuse` observe a genuine reuse signal. Keep the durable 2-cycle end-state assertions; the reuse signal is now reachable. Update the offline negative(s) so a fixture that never creates a reusable reviewer (or a run that never reuses one) reds — the test must fail on the very shape that shipped here.
+2. **Right-size the per-scenario live timeout** for the now-heavier `rejection-flow` (cycle-1-live + cycle-2 ≈ 3+ live phases). Opus exceeded 8m. Size the timeout against a real MEASURED run, not a guess; trim wasteful scenario steps without losing the reuse signal.
+3. **The FO runs the live drive locally** (Claude + Codex, benchmark-token rotated) to CONFIRM the reuse signal fires before re-pushing to CI — this validates the fix AND positively settles the reviewer-reuse-regression question (the live leg is now run, not deferred).
+
+Re-run the validator after the fix; keep offline `go test ./...` green. High-stakes CI/scaffolding surface → detached adversarial audit before re-merge. The PR #302 stays open as the merge vehicle; pushing the fix re-runs its lanes.
