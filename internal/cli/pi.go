@@ -27,28 +27,41 @@ func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Sta
 func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv, os.Environ()) }
 
 type piRuntimeConfig struct {
-	repoRoot        string
-	packageRoot     string
-	extensionPath   string
-	subagentsSkill  string
-	firstOfficer    string
-	ensign          string
-	authPath        string
-	openAIAPIKey    string
-	pluginDirSource string
+	repoRoot              string
+	packageRoot           string
+	intercomPackageRoot   string
+	extensionPath         string
+	subagentsSkill        string
+	firstOfficer          string
+	ensign                string
+	authPath              string
+	openAIAPIKey          string
+	sessionDir            string
+	pluginDirSource       string
+	packageRootSource     string
+	intercomPackageSource string
+	authPathSource        string
+	sessionDirSource      string
 }
 
 type piCheckResult struct {
-	piBinOK          bool
-	piBin            string
-	authOK           bool
-	extensionOK      bool
-	subagentsSkillOK bool
-	firstOfficerOK   bool
-	ensignOK         bool
-	packageRoot      string
-	repoRoot         string
-	authPath         string
+	piBinOK             bool
+	piBin               string
+	piIntercomBinOK     bool
+	piIntercomBin       string
+	subagentsDoctorOK   bool
+	subagentsDoctorBin  string
+	authOK              bool
+	extensionOK         bool
+	subagentsSkillOK    bool
+	intercomPackageOK   bool
+	firstOfficerOK      bool
+	ensignOK            bool
+	packageRoot         string
+	intercomPackageRoot string
+	repoRoot            string
+	authPath            string
+	sessionDir          string
 }
 
 func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
@@ -93,7 +106,8 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
 	if piRuntimeLaunchReady(check) {
-		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  Spacedock skills: %s\n", check.packageRoot, check.repoRoot)
+		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  pi-intercom: %s\n  Spacedock skills: %s\n", check.packageRoot, check.intercomPackageRoot, check.repoRoot)
+		printPiSupervisorTalkbackBoundary(stdout)
 		return 0
 	}
 	if checkOnly {
@@ -105,8 +119,9 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			"Required next steps:\n"+
 			"  1. Install Pi and authenticate so %s exists.\n"+
 			"  2. Install the subagent substrate, for example: pi install npm:pi-subagents\n"+
-			"  3. If pi-subagents is installed outside the default location, set PI_SUBAGENTS_PACKAGE_ROOT.\n"+
-			"  4. Re-run: spacedock doctor --host pi\n\n", check.authPath)
+			"  3. Install the supervisor-talkback substrate so pi-intercom and subagents-doctor are on PATH.\n"+
+			"  4. If pi-subagents or pi-intercom are installed outside the default locations, set PI_SUBAGENTS_PACKAGE_ROOT and PI_INTERCOM_PACKAGE_ROOT.\n"+
+			"  5. Re-run: spacedock doctor --host pi\n\n", check.authPath)
 	printPiDoctorReport(stdout, check)
 	return 0
 }
@@ -196,6 +211,10 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 
 func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig {
 	envMap := envMap(env)
+	home := envMap["HOME"]
+	if home == "" {
+		home = os.Getenv("HOME")
+	}
 	repo := pluginDir
 	pluginDirSource := "--plugin-dir"
 	if repo == "" {
@@ -207,50 +226,79 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 		pluginDirSource = "working directory"
 	}
 	pkg := envMap["PI_SUBAGENTS_PACKAGE_ROOT"]
+	pkgSource := "PI_SUBAGENTS_PACKAGE_ROOT"
 	if pkg == "" {
-		home := envMap["HOME"]
-		if home == "" {
-			home = os.Getenv("HOME")
-		}
 		pkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-subagents")
+		pkgSource = "default ~/.pi/agent/npm/node_modules/pi-subagents"
+	}
+	intercomPkg := envMap["PI_INTERCOM_PACKAGE_ROOT"]
+	intercomPkgSource := "PI_INTERCOM_PACKAGE_ROOT"
+	if intercomPkg == "" {
+		intercomPkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom")
+		intercomPkgSource = "default ~/.pi/agent/npm/node_modules/pi-intercom"
 	}
 	authRoot := envMap["PI_CODING_AGENT_DIR"]
 	authPath := ""
+	authPathSource := "PI_CODING_AGENT_DIR"
 	if authRoot != "" {
 		authPath = filepath.Join(authRoot, "auth.json")
 	} else {
-		home := envMap["HOME"]
-		if home == "" {
-			home = os.Getenv("HOME")
-		}
 		authPath = filepath.Join(home, ".pi", "agent", "auth.json")
+		authPathSource = "default ~/.pi/agent/auth.json"
+	}
+	sessionDir := envMap["PI_CODING_AGENT_SESSION_DIR"]
+	sessionDirSource := "PI_CODING_AGENT_SESSION_DIR"
+	if sessionDir == "" {
+		sessionDir = filepath.Join(home, ".pi", "agent", "sessions")
+		sessionDirSource = "default ~/.pi/agent/sessions"
 	}
 	return piRuntimeConfig{
-		repoRoot:        repo,
-		packageRoot:     pkg,
-		extensionPath:   filepath.Join(pkg, "src", "extension", "index.ts"),
-		subagentsSkill:  filepath.Join(pkg, "skills", "pi-subagents"),
-		firstOfficer:    filepath.Join(repo, "skills", "first-officer", "SKILL.md"),
-		ensign:          filepath.Join(repo, "skills", "ensign", "SKILL.md"),
-		authPath:        authPath,
-		openAIAPIKey:    envMap["OPENAI_API_KEY"],
-		pluginDirSource: pluginDirSource,
+		repoRoot:              repo,
+		packageRoot:           pkg,
+		intercomPackageRoot:   intercomPkg,
+		extensionPath:         filepath.Join(pkg, "src", "extension", "index.ts"),
+		subagentsSkill:        filepath.Join(pkg, "skills", "pi-subagents"),
+		firstOfficer:          filepath.Join(repo, "skills", "first-officer", "SKILL.md"),
+		ensign:                filepath.Join(repo, "skills", "ensign", "SKILL.md"),
+		authPath:              authPath,
+		openAIAPIKey:          envMap["OPENAI_API_KEY"],
+		sessionDir:            sessionDir,
+		pluginDirSource:       pluginDirSource,
+		packageRootSource:     pkgSource,
+		intercomPackageSource: intercomPkgSource,
+		authPathSource:        authPathSource,
+		sessionDirSource:      sessionDirSource,
 	}
 }
 
 func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	bin, err := ops.LookPath("pi")
-	res := piCheckResult{piBinOK: err == nil, piBin: bin, packageRoot: cfg.packageRoot, repoRoot: cfg.repoRoot, authPath: cfg.authPath}
+	intercomBin, intercomErr := ops.LookPath("pi-intercom")
+	doctorBin, doctorErr := ops.LookPath("subagents-doctor")
+	res := piCheckResult{
+		piBinOK:             err == nil,
+		piBin:               bin,
+		piIntercomBinOK:     intercomErr == nil,
+		piIntercomBin:       intercomBin,
+		subagentsDoctorOK:   doctorErr == nil,
+		subagentsDoctorBin:  doctorBin,
+		packageRoot:         cfg.packageRoot,
+		intercomPackageRoot: cfg.intercomPackageRoot,
+		repoRoot:            cfg.repoRoot,
+		authPath:            cfg.authPath,
+		sessionDir:          cfg.sessionDir,
+	}
 	res.authOK = ops.Stat(cfg.authPath) == nil || strings.TrimSpace(cfg.openAIAPIKey) != ""
 	res.extensionOK = ops.Stat(cfg.extensionPath) == nil
 	res.subagentsSkillOK = ops.Stat(filepath.Join(cfg.subagentsSkill, "SKILL.md")) == nil
+	res.intercomPackageOK = ops.Stat(cfg.intercomPackageRoot) == nil
 	res.firstOfficerOK = ops.Stat(cfg.firstOfficer) == nil
 	res.ensignOK = ops.Stat(cfg.ensign) == nil
 	return res
 }
 
 func piRuntimeLaunchReady(c piCheckResult) bool {
-	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.firstOfficerOK && c.ensignOK
+	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.piIntercomBinOK && c.subagentsDoctorOK && c.intercomPackageOK && c.firstOfficerOK && c.ensignOK
 }
 
 func piDoctorHealthy(c piCheckResult) bool {
@@ -270,8 +318,19 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.authOK, "Pi auth", c.authPath, "run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR")
 	printPiCheck(w, c.extensionOK, "pi-subagents extension", filepath.Join(c.packageRoot, "src", "extension", "index.ts"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
 	printPiCheck(w, c.subagentsSkillOK, "pi-subagents skill", filepath.Join(c.packageRoot, "skills", "pi-subagents"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
+	fmt.Fprintf(w, "INFO Pi auth/session dirs: auth=%s session=%s\n", c.authPath, c.sessionDir)
+	fmt.Fprintln(w, "Supervisor-talkback setup prerequisites")
+	printPiCheck(w, c.piIntercomBinOK, "pi-intercom command", c.piIntercomBin, "install the pi-intercom package and ensure `pi-intercom` is on PATH")
+	printPiCheck(w, c.subagentsDoctorOK, "subagents-doctor bridge-health command", c.subagentsDoctorBin, "install pi-subagents/pi-intercom bridge tooling and ensure `subagents-doctor` is on PATH")
+	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
 	printPiCheck(w, c.firstOfficerOK, "Spacedock first-officer skill", filepath.Join(c.repoRoot, "skills", "first-officer"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
 	printPiCheck(w, c.ensignOK, "Spacedock ensign skill", filepath.Join(c.repoRoot, "skills", "ensign"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
+	printPiSupervisorTalkbackBoundary(w)
+}
+
+func printPiSupervisorTalkbackBoundary(w io.Writer) {
+	fmt.Fprintln(w, "NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.")
+	fmt.Fprintln(w, "NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.")
 }
 
 func printPiCheck(w io.Writer, ok bool, label, path, remedy string) {
