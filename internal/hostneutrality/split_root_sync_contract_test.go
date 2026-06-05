@@ -40,10 +40,18 @@ func assertAll(t *testing.T, name, text string, tokens []string) {
 	}
 }
 
-// TestFOHaltGateProse pins B5: the FO core carries the boot halt-gate keyed on
-// the Phase-A boot fields (split-root && entity_dir_present false → halt dispatch,
-// point at `spacedock state init`).
+// TestFOHaltGateProse is a non-AC text-consistency lint: it asserts the FO core
+// carries the boot halt-gate prose keyed on the boot fields (split-root &&
+// entity_dir_present false → HALT, point at `spacedock state init`). Per the proof
+// policy this presence check does NOT prove the FO halts; an inverted clause keeps
+// every token. The behavioral halves are proven by real command-level tests: the
+// binary EMITS the halt signal (internal/status TestBootJSONStateBackendEntityDirAbsent
+// observes `entity_dir_present: false` + `state_backend: split-root` for an
+// uninitialized split-root) and the recovery the FO points at WORKS
+// (internal/cli TestStateInitResumesFreshClone drives `spacedock state init` and
+// observes the state checkout materialize). This lint guards the prose tokens.
 func TestFOHaltGateProse(t *testing.T) {
+	markNonAC(t, "internal/status TestBootJSONStateBackendEntityDirAbsent (binary emits the halt signal) + internal/cli TestStateInitResumesFreshClone (the state-init recovery works)")
 	text := readSkill(t, foCorePath)
 	assertAll(t, "FO core (B5 halt-gate)", text, []string{
 		"state_backend",
@@ -54,10 +62,16 @@ func TestFOHaltGateProse(t *testing.T) {
 	})
 }
 
-// TestFOSyncProse pins the FO half of B6: pull --rebase on boot, push after a
-// state commit, and the M-3 rebase-conflict halt (abort + surface + no
-// force-push, no auto-resolve).
+// TestFOSyncProse is a non-AC text-consistency lint: it asserts the FO core
+// carries the B6 sync prose (pull --rebase, push origin, the M-3 rebase-conflict
+// halt: abort + no force-push + no auto-resolve). Per the proof policy this
+// presence check does NOT prove the FO performs the sync. The behavior is proven
+// by real two-writer git e2e tests: internal/cli TestTwoWriterSyncHappyPath
+// (push → non-ff rejection → pull --rebase → re-push, observed on real clones) and
+// TestTwoWriterSameEntityConflictHalts (CONFLICT detected, rebase --abort, no
+// force-push). This lint guards the prose tokens.
 func TestFOSyncProse(t *testing.T) {
+	markNonAC(t, "internal/cli TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts (real 2-writer git push/pull-rebase/conflict-halt e2e)")
 	text := readSkill(t, foCorePath)
 	assertAll(t, "FO core (B6 sync)", text, []string{
 		"pull --rebase",
@@ -69,10 +83,13 @@ func TestFOSyncProse(t *testing.T) {
 	})
 }
 
-// TestEnsignSyncProse pins the ensign half of B6: push after committing, pull
-// --rebase on a push rejection, and the M-3 rebase-conflict halt (abort +
-// surface + no force-push, no auto-resolve), alongside the path-scoped rule.
+// TestEnsignSyncProse is a non-AC text-consistency lint: it asserts the ensign
+// core carries the B6 sync prose (push origin, pull --rebase, the M-3
+// rebase-conflict halt) alongside the path-scoped rule. Same behavioral oracle as
+// the FO half: the real two-writer git e2e in internal/cli proves the push/pull-
+// rebase/conflict-halt behavior the prose describes; this lint guards the tokens.
 func TestEnsignSyncProse(t *testing.T) {
+	markNonAC(t, "internal/cli TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts (real 2-writer git push/pull-rebase/conflict-halt e2e)")
 	text := readSkill(t, ensignCorePath)
 	assertAll(t, "ensign core (B6 sync)", text, []string{
 		"push origin",
@@ -83,10 +100,16 @@ func TestEnsignSyncProse(t *testing.T) {
 	})
 }
 
-// TestCommissionJourneyProse pins B3: the commission SKILL.md carries the
-// journey-1 orphan-branch mechanics (clear inherited tree, linked worktree,
-// state init pointer) and the journey-2 $inline prose.
+// TestCommissionJourneyProse is a non-AC text-consistency lint: it asserts the
+// commission SKILL.md carries the journey-1 orphan-branch mechanics (clear
+// inherited tree, linked worktree, state-init pointer) and the journey-2 $inline
+// prose. Per the proof policy this presence check does NOT prove the mechanics
+// work. The behavior is proven by real command-level tests that drive the orphan
+// birth/resume: internal/cli TestStateNewBirthsSplitRoot + TestCommissionOrphanBranchScaffolding
+// (the orphan branch is created with a cleared tree as a linked worktree) and
+// TestStateInitInlineNoOp (the $inline branch). This lint guards the prose tokens.
 func TestCommissionJourneyProse(t *testing.T) {
+	markNonAC(t, "internal/cli TestStateNewBirthsSplitRoot + TestCommissionOrphanBranchScaffolding + TestStateInitInlineNoOp (real orphan-birth/resume + inline command e2e)")
 	text := readSkill(t, commissionSkillPath)
 	assertAll(t, "commission SKILL.md (journeys)", text, []string{
 		"checkout --orphan",
