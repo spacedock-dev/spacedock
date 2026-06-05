@@ -1,7 +1,7 @@
 ---
-title: Pi intercom runtime capability probe
-status: validation
-source: captain (2026-06-04) — Codex idle-notification evidence pattern may generalize to prove Pi intercom contact_supervisor runtime capability
+title: Pi intercom supervisor-talkback spike
+status: ideation
+source: captain (2026-06-04) — prove whether Pi child subagents can message the first officer through contact_supervisor, then use that spike to define the real runtime-support implementation
 score: "0.31"
 started: 2026-06-04T00:00:00Z
 completed:
@@ -9,13 +9,13 @@ verdict:
 worktree: .worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe
 issue:
 id: cq9kb7cdpp9y48tn8gwzmqzq
-mod-block: merge:pr-merge
-pr: "#301"
 ---
 
-# Pi intercom runtime capability probe
+# Pi intercom supervisor-talkback spike
 
-Create a generalized runtime capability probe pattern, using Pi intercom supervisor talkback as the first target capability.
+Prove whether the current Pi runtime can support the behavior Spacedock actually needs: a child subagent sending progress and decision messages back to the first officer, receiving the FO's reply, resuming, and leaving durable evidence after the reply.
+
+This entity is an **ideation/spike**, not the implementation of runtime support. The spike result should define the follow-up build task. In particular, checked-in probe recipes and evidence records are supporting artifacts; they are not the product goal by themselves.
 
 ## Problem
 
@@ -29,7 +29,9 @@ Note: the requested Pi runtime docs (`docs/runtime-support.md` and `skills/ensig
 
 ## Proposed approach
 
-Add a reusable runtime capability probe pattern and instantiate it for Pi intercom supervisor talkback.
+Run the smallest end-to-end Pi supervisor-talkback exercise first, record what it proves, and use that evidence to define the actual implementation task.
+
+The expected implementation follow-up is to make Spacedock's Pi runtime readiness surface (`spacedock install/doctor --host pi`, and any launch/runtime docs it drives) verify and explain the required Pi subagent/intercom prerequisites. That build task should clearly distinguish setup checks from live behavioral proof.
 
 ### Reusable probe pattern
 
@@ -143,25 +145,19 @@ Implementation should pay the riskiest bill first after adding the static recipe
 
 ## Acceptance criteria
 
-Each criterion is an end-state property of the implemented task and names proof outside this task body that can fail.
+These criteria define what the spike must answer before a build task is ready. They are not claiming that Pi runtime-support implementation is complete.
 
-**AC-1 - Runtime capability probes have a documented reusable recipe and evidence contract.**
-Verified by: a focused integration test that reads the new runtime capability probe recipe and evidence JSON files, parses them, and fails if required sections, required evidence fields, allowed classifications, or interpretation rules are missing.
+**AC-1 - The Pi supervisor-talkback mechanism is classified from live behavior, not setup prose.**
+Verified by: a live Pi child subagent run that exercises `contact_supervisor` progress and decision paths, with durable output showing whether the child could reach the FO, receive a reply, resume, and write a post-reply marker.
 
-**AC-2 - Pi intercom supervisor talkback is represented as a concrete capability probe.**
-Verified by: a recipe-shape test that fails unless the Pi probe contains the exact child prompt requiring `contact_supervisor` `progress_update`, `contact_supervisor` `need_decision`, supervisor reply `APPROVED`, and durable marker content `PI-INTERCOM-SMOKE-APPROVED`.
+**AC-2 - The spike records setup-vs-behavior boundaries for the follow-up build.**
+Verified by: the entity body naming which observations are only setup evidence (for example package/bridge/doctor availability) and which observations prove actual child-to-FO talkback behavior.
 
-**AC-3 - Setup evidence cannot be mistaken for talkback capability evidence.**
-Verified by: evidence-schema tests that fail any `passed` record lacking both setup fields (`subagents_doctor_bridge_active`, resolved package/version/path data) and behavioral fields (`child_tool_available`, progress observed, decision observed, reply content, child resumed, marker path/content), and fail any `setup_only` record that asserts full behavioral success.
+**AC-3 - The spike produces an implementation-ready follow-up target.**
+Verified by: this entity naming the next build task's intended product change: extend Spacedock's Pi readiness/runtime surface (starting with `spacedock install/doctor --host pi`) to verify/report the required Pi subagent/intercom prerequisites without claiming that setup checks alone prove live talkback.
 
-**AC-4 - Runtime/probe docs preserve the doctor-vs-capability distinction.**
-Verified by: docs/probe invariant tests over the relevant recipe/runtime instruction files that require wording equivalent to “bridge active is necessary but insufficient” and reject wording that says or implies `subagents-doctor` bridge-active alone proves supervisor talkback.
-
-**AC-5 - A live/manual Pi intercom smoke path can produce durable pass/fail evidence.**
-Verified by: a documented live/manual command path that writes one JSON evidence record and a marker file; the evidence-schema test accepts `passed` only when the marker content is `PI-INTERCOM-SMOKE-APPROVED`, the parent observed progress, the parent replied `APPROVED` to the decision request, and the child resumed after that reply.
-
-**AC-6 - Probe evidence remains reproducible and reviewable without live runtime access.**
-Verified by: `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -count=1` or the implementation's equivalent focused package command passing against checked-in recipe/evidence fixtures, including a non-passed fixture such as `not_run` or `setup_only` when no live smoke has been recorded.
+**AC-4 - Any checked-in evidence remains honest and reviewable.**
+Verified by: evidence records or stage reports preserving non-passed attempts as non-passed, and marking a `passed` result only when the live progress → decision → FO reply → child resume → marker chain was observed.
 
 ## Test plan
 
