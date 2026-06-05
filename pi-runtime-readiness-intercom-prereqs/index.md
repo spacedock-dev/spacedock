@@ -128,3 +128,57 @@ Verified by: existing and new CLI tests still cover Pi CLI/auth, `pi-subagents` 
 ### Summary
 
 Implemented Pi doctor/install supervisor-talkback prerequisite readiness reporting with required `pi-intercom`, `subagents-doctor`, and intercom package-root checks, preserving the cq setup-vs-live-proof boundary in CLI output, tests, and runtime docs.
+### Stage Report: validation
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs`
+- Product branch: `spacedock-ensign/pi-runtime-readiness-intercom-prereqs`
+- Product commit validated: `8c6a2e8683a4552b8a6c627d632f7463e48f4c55` (`cli: report pi supervisor talkback prerequisites`)
+- Recommendation: **REJECT / needs fix before merge**
+
+#### AC evidence
+
+- AC-1: Mostly satisfied. `spacedock doctor --host pi` now prints a `Supervisor-talkback setup prerequisites` section with `pi-intercom command`, `subagents-doctor bridge-health command`, and `pi-intercom package root` rows, plus remedies and the resolved intercom package root/auth/session paths.
+- AC-2: Satisfied for supervisor-talkback prerequisites. Missing `pi-intercom`, `subagents-doctor`, or `PI_INTERCOM_PACKAGE_ROOT` fixture state exits non-zero and names the missing prerequisite.
+- AC-3: **Not satisfied.** `spacedock install --host pi --check` does not consistently use the same readiness model/exit behavior as doctor. With all Pi/subagents/intercom prerequisites present but auth missing, install `--check` returns 0 and prints `Pi runtime ready`, while doctor returns 1 and reports `MISSING Pi auth` for the same fixture. This violates the AC requirement that install check output and exit behavior match doctor for readiness gating, and regresses the existing Pi auth readiness surface.
+- AC-4: Partially satisfied. Unit tests cover env/default resolution for `PI_SUBAGENTS_PACKAGE_ROOT`, `PI_INTERCOM_PACKAGE_ROOT`, `PI_CODING_AGENT_DIR`, and `PI_CODING_AGENT_SESSION_DIR`; doctor output includes resolved paths. The tests do not strongly assert exact printed env-derived intercom/auth/session paths, but behavior is present.
+- AC-5: Satisfied. CLI output and `docs/runtime-support.md` keep the necessary-but-insufficient setup-vs-live-proof boundary and reference the cq-style `pi-intercom-supervisor-talkback` probe/evidence chain.
+- AC-6: **Not satisfied due to AC-3 auth mismatch.** Doctor still covers Pi auth, but install `--check` can report ready despite missing auth because the early `piRuntimeLaunchReady` path ignores `authOK`.
+
+#### External/failable evidence for rejection
+
+Using fake `pi`, `pi-intercom`, and `subagents-doctor` commands, valid package/skill paths, and no auth file:
+
+```text
+$ spacedock install --host pi --check
+exit=0
+Pi runtime ready.
+  pi-subagents: <tmp>/pi-subagents
+  pi-intercom: <tmp>/pi-intercom
+  Spacedock skills: <worktree>
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+
+$ spacedock doctor --host pi
+exit=1
+Pi runtime check
+OK pi CLI: <tmp>/bin/pi
+MISSING Pi auth: <tmp>/home/.pi/agent/auth.json
+  remedy: run `pi` login/auth flow; live tests copy this file into an isolated PI_CODING_AGENT_DIR
+...
+```
+
+Root cause: `runInitWithPi` checks `piRuntimeLaunchReady(check)` before honoring `--check`, and `piRuntimeLaunchReady` intentionally excludes `authOK`; `piDoctorHealthy` includes auth. Therefore install `--check` bypasses the doctor readiness gate whenever launch prerequisites are present but auth is absent.
+
+#### Validation commands
+
+- `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs status --short --branch` — confirmed branch `spacedock-ensign/pi-runtime-readiness-intercom-prereqs` at `8c6a2e8683a4552b8a6c627d632f7463e48f4c55`.
+- `git show --stat --patch 8c6a2e8683a4552b8a6c627d632f7463e48f4c55 -- internal/cli/pi.go internal/cli/pi_frontdoor_test.go docs/runtime-support.md` — inspected implementation and tests.
+- `go test ./internal/cli -count=1` — passed.
+- `go test ./... -count=1` — passed.
+- `go test ./... -race` — passed.
+- Manual CLI fixture with fake commands/package roots and missing auth — install `--check` exited 0 while doctor exited 1, as shown above.
+
+#### Residual risks / requested fix
+
+- Fix `install --host pi --check` so it uses the same readiness/exit model as doctor, including Pi auth, rather than short-circuiting through `piRuntimeLaunchReady`.
+- Add a regression test for the missing-auth install `--check` case; the current tests pass because the healthy install path omits auth and does not exercise check-mode parity with doctor.
