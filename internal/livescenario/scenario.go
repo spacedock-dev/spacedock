@@ -68,7 +68,7 @@ func Run(ctx context.Context, dir string, sc Scenario, runner Runner) error {
 	if err != nil {
 		return fmt.Errorf("scenario %q launch failed: %w", sc.Name, err)
 	}
-	after, err := readEntityState(entityPath)
+	after, err := readPostRunState(entityPath)
 	if err != nil {
 		return fmt.Errorf("scenario %q could not read post-run state: %w", sc.Name, err)
 	}
@@ -78,10 +78,29 @@ func Run(ctx context.Context, dir string, sc Scenario, runner Runner) error {
 	return nil
 }
 
-// readEntityState reads the entity file's body bytes into an EntityState.
+// readEntityState reads the entity file's body bytes into an EntityState. The
+// pre-run read uses this: the staged entity must exist, so a missing file is a
+// setup error.
 func readEntityState(entityPath string) (EntityState, error) {
 	data, err := os.ReadFile(entityPath)
 	if err != nil {
+		return EntityState{}, err
+	}
+	return EntityState{Body: string(data)}, nil
+}
+
+// readPostRunState reads the entity body after the run. A real agent may move or
+// remove the entity (e.g. archiving a terminalized entity), which is a legitimate
+// durable OUTCOME the Assert should grade — not a Run-level read error. So a
+// vanished entity yields an empty-body EntityState rather than failing the run;
+// the Assert decides whether that is a pass or a fail (and, being workflow-aware,
+// can locate the moved copy itself).
+func readPostRunState(entityPath string) (EntityState, error) {
+	data, err := os.ReadFile(entityPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return EntityState{Body: ""}, nil
+		}
 		return EntityState{}, err
 	}
 	return EntityState{Body: string(data)}, nil

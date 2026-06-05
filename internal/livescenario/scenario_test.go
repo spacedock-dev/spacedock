@@ -55,6 +55,7 @@ func (e *gradeError) Error() string { return e.msg }
 // (ensigncycle) supplies the real launch behind //go:build live.
 type stubRunner struct {
 	mutateAfter func(beforeBody string) string
+	removeAfter bool
 	observed    string
 }
 
@@ -62,6 +63,12 @@ func (s stubRunner) Launch(ctx context.Context, dir, entityPath, runbook string)
 	beforeBody, err := os.ReadFile(entityPath)
 	if err != nil {
 		return "", err
+	}
+	if s.removeAfter {
+		if rerr := os.Remove(entityPath); rerr != nil {
+			return "", rerr
+		}
+		return s.observed, nil
 	}
 	if s.mutateAfter != nil {
 		if werr := os.WriteFile(entityPath, []byte(s.mutateAfter(string(beforeBody))), 0o644); werr != nil {
@@ -120,5 +127,34 @@ func TestScenarioSetupFailureSurfaces(t *testing.T) {
 	sc.Setup = func(dir string) (string, error) { return "", errDurable("setup blew up") }
 	if err := Run(context.Background(), t.TempDir(), sc, stubRunner{observed: "x"}); err == nil {
 		t.Fatal("a setup failure must surface as a run failure, not a PASS")
+	}
+}
+
+// TestScenarioVanishedEntityReachesAssert locks the tolerant post-run read: when
+// the agent moves or removes the entity during the run (e.g. archiving a
+// terminalized entity), Run does NOT fail with a read error — it hands the Assert
+// an empty-body after-state so the Assert can grade the outcome (and, being
+// workflow-aware, locate the moved copy). A scenario that grades an empty after as
+// FAIL sees the FAIL; a scenario that accepts it sees the PASS — Run never
+// pre-empts that decision with its own read error.
+func TestScenarioVanishedEntityReachesAssert(t *testing.T) {
+	var sawAfter EntityState
+	sc := Scenario{
+		Name:    "vanished-entity",
+		Runbook: "remove the entity",
+		Setup: func(dir string) (string, error) {
+			path := filepath.Join(dir, "entity.md")
+			return path, os.WriteFile(path, []byte("status: implementation\n"), 0o644)
+		},
+		Assert: func(before, after EntityState, observed string) error {
+			sawAfter = after
+			return nil // accept — the Assert, not Run, owns the vanished-entity verdict
+		},
+	}
+	if err := Run(context.Background(), t.TempDir(), sc, stubRunner{removeAfter: true, observed: "archived"}); err != nil {
+		t.Fatalf("a vanished post-run entity must reach the Assert, not fail Run: %v", err)
+	}
+	if sawAfter.Body != "" {
+		t.Fatalf("vanished post-run entity should yield an empty after-body, got %q", sawAfter.Body)
 	}
 }

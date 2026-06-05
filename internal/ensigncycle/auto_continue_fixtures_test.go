@@ -114,7 +114,9 @@ func autoContinueEntity() string {
 // officer` with no "drive to done" coaching. It points the FO at the workflow and
 // the one parked entity and asks it to proceed normally. It deliberately does NOT
 // tell the FO to advance, dispatch, or validate — whether it does so is exactly
-// the behavior under test.
+// the behavior under test. Run non-interactively (`claude -p`), the FO enters
+// single-entity mode and drives the parked implementation forward on its own; a
+// broken FO stops after the implementation report instead.
 func autoContinuePrompt() string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
