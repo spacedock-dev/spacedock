@@ -3,7 +3,6 @@
 package ensigncycle
 
 import (
-	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -214,6 +213,12 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
+// run launches `codex exec --json` for one shared scenario. Liveness is guarded by
+// the per-stage STALL-WATCHDOG, not a whole-run basket: the --json stdout is read
+// incrementally through streamWithStallWatchdog, which resets a stageStallTimeout
+// (60s) timer on every event line and kills the process only when the stream goes
+// silent that long. Codex emits frequent item.* events during a live run, so a
+// genuine multi-minute run is never false-killed; a true hang is killed in 60s.
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) codexScenarioResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -224,9 +229,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	jsonlPath := filepath.Join(artifactDir, "codex-exec.jsonl")
 	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
 
-	ctx, cancel := context.WithTimeout(context.Background(), scenario.timeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, r.codexBin,
+	cmd := exec.Command(r.codexBin,
 		"exec",
 		"--json",
 		"--dangerously-bypass-approvals-and-sandbox",
@@ -235,32 +238,43 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 		prompt,
 	)
 	cmd.Env = r.env
-	stdout, err := os.Create(jsonlPath)
-	if err != nil {
-		t.Fatal(err)
+	stdout, pipeErr := cmd.StdoutPipe()
+	if pipeErr != nil {
+		t.Fatal(pipeErr)
 	}
-	defer stdout.Close()
 	stderr, err := os.Create(stderrPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stderr.Close()
-	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 
 	started := time.Now()
-	err = cmd.Run()
-	duration := time.Since(started)
-	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("codex exec did not finish within %s for %s; artifacts in %s", scenario.timeout, scenario.name, artifactDir)
+	if startErr := cmd.Start(); startErr != nil {
+		t.Fatalf("codex exec failed to start for %s: %v", scenario.name, startErr)
 	}
-	if err != nil {
-		t.Fatalf("codex exec failed for %s: %v; artifacts in %s", scenario.name, err, artifactDir)
+
+	// The watchdog reads the --json stream to completion (clean EOF) OR kills the
+	// process on a 60s stall; killing EOFs the StdoutPipe so the watchdog returns.
+	jsonl, stallErr := streamWithStallWatchdog(stdout, stageStallTimeout, func() {
+		_ = cmd.Process.Kill()
+	})
+	waitErr := cmd.Wait()
+	duration := time.Since(started)
+
+	if writeErr := os.WriteFile(jsonlPath, []byte(jsonl), 0o644); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+	if stallErr != nil {
+		t.Fatalf("%v (scenario %s); artifacts in %s", stallErr, scenario.name, artifactDir)
+	}
+	if waitErr != nil {
+		t.Fatalf("codex exec failed for %s: %v; artifacts in %s", scenario.name, waitErr, artifactDir)
 	}
 
 	return codexScenarioResult{
 		finalMessage: readFile(t, finalPath),
-		jsonl:        readFile(t, jsonlPath),
+		jsonl:        jsonl,
 		artifactDir:  artifactDir,
 		duration:     duration,
 	}

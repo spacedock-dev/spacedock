@@ -4,7 +4,6 @@ package ensigncycle
 
 import (
 	"bytes"
-	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,6 +201,14 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 // `--` and forwards verbatim to claude. The observed source is the stream's
 // result/success event via extractClaudeFinalMessage — a 401/is_error result is a
 // LOUD launch failure here, never fed into a scenario assertion.
+//
+// Liveness is guarded by the per-stage STALL-WATCHDOG, not a whole-run basket: the
+// stream-json stdout is read incrementally through streamWithStallWatchdog, which
+// resets a stageStallTimeout (60s) timer on every line and kills the process only
+// when the stream goes silent that long. A genuine multi-minute run of sequential
+// model work (every FO turn + ensign stage completes well under 60s, and claude
+// emits frequent thinking_tokens liveness lines) is never false-killed; a true
+// hang is killed in 60s, fail-fast.
 func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) claudeScenarioResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -211,9 +218,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	streamPath := filepath.Join(artifactDir, "claude-stream.jsonl")
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
-	ctx, cancel := context.WithTimeout(context.Background(), scenario.timeout)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, r.binary, "claude",
+	cmd := exec.Command(r.binary, "claude",
 		"--plugin-dir", r.repoRoot,
 		"--skip-contract-check",
 		"--",
@@ -226,21 +231,39 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	cmd.Dir = workflowRoot
 	cmd.Env = r.env
 
-	// stdout carries the stream-json transcript; stderr is folded in so a launch
-	// error (e.g. a stale-token 401 printed to stderr) is captured alongside it.
-	var buf bytes.Buffer
-	cmd.Stdout = &buf
-	cmd.Stderr = &buf
+	// stdout carries the stream-json transcript the watchdog watches for liveness;
+	// stderr is captured separately and folded into the artifact so a launch error
+	// (e.g. a stale-token 401 printed to stderr) is still visible.
+	stdout, pipeErr := cmd.StdoutPipe()
+	if pipeErr != nil {
+		t.Fatal(pipeErr)
+	}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	started := time.Now()
-	runErr := cmd.Run()
+	if startErr := cmd.Start(); startErr != nil {
+		t.Fatalf("spacedock claude failed to start for %s: %v", scenario.name, startErr)
+	}
+
+	// The watchdog reads the stream to completion (clean EOF) OR kills the process
+	// on a 60s stall. Killing makes the StdoutPipe EOF, so the watchdog returns; we
+	// then Wait() to reap the process.
+	stream, stallErr := streamWithStallWatchdog(stdout, stageStallTimeout, func() {
+		_ = cmd.Process.Kill()
+	})
+	waitErr := cmd.Wait()
 	duration := time.Since(started)
-	stream := buf.String()
+
+	stderrText := stderrBuf.String()
+	if stderrText != "" {
+		stream += stderrText
+	}
 	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
 	}
-	if ctx.Err() == context.DeadlineExceeded {
-		t.Fatalf("spacedock claude did not finish within %s for %s; artifacts in %s", scenario.timeout, scenario.name, artifactDir)
+	if stallErr != nil {
+		t.Fatalf("%v (scenario %s); artifacts in %s\nStream tail:\n%s", stallErr, scenario.name, artifactDir, tail(stream, 4000))
 	}
 
 	// Extract the final message from the stream's result/success event (the
@@ -249,8 +272,8 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	// failure, so a stale credential never feeds the 401 text into an assertion.
 	finalMessage, extractErr := extractClaudeFinalMessage(stream)
 	if extractErr != nil {
-		t.Fatalf("claude launch failed for %s (run err=%v): %v; artifacts in %s\nStream tail:\n%s",
-			scenario.name, runErr, extractErr, artifactDir, tail(stream, 4000))
+		t.Fatalf("claude launch failed for %s (wait err=%v): %v; artifacts in %s\nStream tail:\n%s",
+			scenario.name, waitErr, extractErr, artifactDir, tail(stream, 4000))
 	}
 	if writeErr := os.WriteFile(finalPath, []byte(finalMessage), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
