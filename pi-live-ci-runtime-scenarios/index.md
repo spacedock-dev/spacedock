@@ -62,3 +62,27 @@ Verified by: workflow structure and focused tests preserving the existing offlin
 - The exact CI install/auth path for Pi with `OPENAI_API_KEY` may need iteration; do not treat first-contact setup friction as proof the lane is impossible.
 - Running the full shared scenario suite through Pi may expose real runtime gaps. Unsupported scenarios should be tracked honestly rather than hidden.
 - Live Pi spend should remain environment-gated like Claude/Codex.
+
+## Stage Report: implementation
+
+### Summary
+Implemented a Pi Runtime Live E2E lane and codified current Pi shared-scenario coverage status. Product commit: `05ba04af ci: add pi runtime live lane`.
+
+### Checklist
+- DONE: Added `pi-live` to `.github/workflows/runtime-live-e2e.yml` behind the `offline` gate and `CI-E2E-PI`, using `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1`, and Pi-specific artifact paths.
+- DONE: Added CI setup for `pi-coding-agent`, `pi-subagents`, `pi-intercom`, current-checkout `SPACEDOCK_REPO_ROOT`, and a `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"` verification step.
+- DONE: Added Pi shared-scenario coverage metadata and parity checks that require every shared scenario to have an explicit Pi `live`/`codified`/`gap` entry; the existing scenarios are honestly marked `gap` until live-safe Pi shared runners exist.
+- DONE: Kept durable Pi assertions in `TestLivePiFrontDoorSmoke` / smoke helpers: process success, entity body marker/stage report, state git log commit, and clean state checkout path.
+- DONE: Taught Pi doctor/live auth checks to accept `OPENAI_API_KEY` as CI auth, while still copying local Pi OAuth auth when available.
+- DONE: Preserved Claude/Codex lanes and extended workflow guard tests so Pi additions do not replace their shared scenario runs or artifact uploads.
+
+### Validation
+- `go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage|TestSharedRuntimeScenarioDefinitions|TestPiLiveSmokePromptRequiresExactStageReportHeading' ./internal/ensigncycle -v` — PASS.
+- `go test ./internal/cli ./internal/release ./internal/ensigncycle -count=1` — PASS.
+- `go test ./... -count=1` — PASS.
+- `go test -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage|TestLivePiFrontDoorSmoke' ./internal/ensigncycle -v` — PASS, including local live Pi front-door smoke.
+- `go test ./... -race` — PASS.
+
+### Open risks
+- Pi shared scenarios are not yet full live LLM runners for `gate-guardrail`, `rejection-flow`, or `merge-hook-guardrail`; the implementation records them as explicit gaps rather than pretending coverage.
+- First CI execution may still expose package-install or auth-environment friction for `pi-coding-agent` / `pi-subagents`; the lane is environment-gated and fails loudly after approval.
