@@ -31,6 +31,7 @@ func vendoredSkillFiles(t *testing.T) map[string]string {
 		"first-officer/references/claude-first-officer-runtime.md",
 		"first-officer/references/codex-first-officer-runtime.md",
 		"ensign/references/ensign-shared-core.md",
+		"debrief/SKILL.md",
 	}
 	out := make(map[string]string, len(rel))
 	for _, r := range rel {
@@ -108,6 +109,20 @@ func TestNoPRMergeOrModBehaviorIntroduced(t *testing.T) {
 // TestFirstOfficerDispatchDocsUseFlagFileMode locks the dispatch-build
 // ergonomics contract: the FO runtime docs must teach file-backed dispatch input
 // and runtime-derived host selection, not inline shell JSON.
+func TestSkillSurfaceDocumentsSpacedockBinInvariant(t *testing.T) {
+	files := vendoredSkillFiles(t)
+	for _, name := range []string{
+		"first-officer/references/first-officer-shared-core.md",
+		"ensign/references/ensign-shared-core.md",
+		"debrief/SKILL.md",
+	} {
+		content := files[name]
+		if !strings.Contains(content, "${SPACEDOCK_BIN:-spacedock}") {
+			t.Errorf("%s does not document the env-aware spacedock launcher invariant", name)
+		}
+	}
+}
+
 func TestFirstOfficerDispatchDocsUseFlagFileMode(t *testing.T) {
 	files := vendoredSkillFiles(t)
 	claude := files["first-officer/references/claude-first-officer-runtime.md"]

@@ -218,12 +218,12 @@ func marketplaceAddArg(source, branch string) string {
 // Launch replaces the current process with argv via execve, so the host CLI
 // owns the terminal (interactive `claude --agent …`). It returns only when exec
 // itself fails.
-func (execHost) Launch(argv []string) error {
+func (execHost) Launch(argv []string, env []string) error {
 	bin, err := exec.LookPath(argv[0])
 	if err != nil {
 		return err
 	}
-	return syscall.Exec(bin, argv, os.Environ())
+	return syscall.Exec(bin, argv, env)
 }
 
 // installStep is one entry in the install upgrade sequence: an argv to pass to

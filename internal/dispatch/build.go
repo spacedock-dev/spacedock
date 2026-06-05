@@ -462,8 +462,8 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// fetch line targets `spacedock dispatch show-stage-def` so the dispatch path
 	// stays Python-free (the one intentional divergence from the oracle).
 	fetchCommands := []string{
-		fmt.Sprintf("spacedock dispatch show-stage-def --workflow-dir %s --stage %s",
-			shlexQuote(workflowDir), shlexQuote(stage)),
+		fmt.Sprintf("%s dispatch show-stage-def --workflow-dir %s --stage %s",
+			launcherCommand(), shlexQuote(workflowDir), shlexQuote(stage)),
 	}
 
 	// 3. Worktree instructions (conditional). Under split root the state-commit
@@ -533,7 +533,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// claude-team→spacedock dispatch rewrite as the show-stage-def line).
 	if len(EnumerateDeclaredStandingTeammates(workflowDir, teamName)) > 0 {
 		fetchCommands = append(fetchCommands,
-			fmt.Sprintf("spacedock dispatch show-standing --workflow-dir %s", shlexQuote(workflowDir)))
+			fmt.Sprintf("%s dispatch show-standing --workflow-dir %s", launcherCommand(), shlexQuote(workflowDir)))
 	}
 
 	// Emit the `### Fetch commands` block.

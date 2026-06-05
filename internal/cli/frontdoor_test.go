@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -18,6 +19,7 @@ type fakeHost struct {
 	manifest    string
 	resolveErr  error
 	launchedArg []string // argv captured by Launch
+	launchedEnv []string // env captured by Launch
 	launchErr   error
 	installCmds []string // host commands captured by Install
 	installOut  string
@@ -27,8 +29,9 @@ func (f *fakeHost) ResolveManifest(host string) (string, error) {
 	return f.manifest, f.resolveErr
 }
 
-func (f *fakeHost) Launch(argv []string) error {
+func (f *fakeHost) Launch(argv []string, env []string) error {
 	f.launchedArg = argv
+	f.launchedEnv = env
 	return f.launchErr
 }
 
@@ -57,6 +60,36 @@ func tooOldBinaryManifest(t *testing.T) string {
 	return p
 }
 
+func withExecutablePath(t *testing.T, path string, err error) {
+	t.Helper()
+	orig := executablePath
+	executablePath = func() (string, error) { return path, err }
+	t.Cleanup(func() { executablePath = orig })
+}
+
+func executableFixture(t *testing.T) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "spacedock")
+	if err := os.WriteFile(p, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	real, err := filepath.EvalSymlinks(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return real
+}
+
+func envValue(env []string, key string) (string, bool) {
+	prefix := key + "="
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			return strings.TrimPrefix(entry, prefix), true
+		}
+	}
+	return "", false
+}
+
 // TestClaudeFrontDoorLaunchesOnCompatible: on a compatible contract the front
 // door invokes the launch seam with argv beginning `claude --agent
 // spacedock:first-officer` and passes through the operator's trailing args.
@@ -77,6 +110,60 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 
 // TestClaudeFrontDoorFailFastOnMismatch: on a mismatch verdict the launch seam is
 // NOT invoked and the process exits non-zero with the pinned remedy on stderr.
+func TestClaudeFrontDoorInjectsResolvedLauncherBin(t *testing.T) {
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	t.Setenv(spacedockBinEnv, "/old/spacedock")
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	if !ok || got != bin {
+		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
+	}
+}
+
+func TestClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails(t *testing.T) {
+	withExecutablePath(t, "", errors.New("boom"))
+	t.Setenv(spacedockBinEnv, "/old/spacedock")
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); ok {
+		t.Fatalf("%s in launch env = %q, want omitted", spacedockBinEnv, got)
+	}
+}
+
+func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
+	real := executableFixture(t)
+	link := filepath.Join(t.TempDir(), "spacedock-link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	withExecutablePath(t, link, nil)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); !ok || got != real {
+		t.Fatalf("%s = %q, %v; want symlink target %q, true", spacedockBinEnv, got, ok, real)
+	}
+}
+
 func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 	var stdout, stderr bytes.Buffer
@@ -226,6 +313,30 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 
 // TestCodexFrontDoorFailFastOnMismatch: codex fails fast on a mismatch verdict
 // with the pinned remedy and does NOT launch.
+func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	t.Setenv(spacedockBinEnv, "/old/spacedock")
+	dir := safehouseFixtureDir(t)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), []string{"--", "resume", "abc123"}, dir, fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	wantArgv := []string{"safehouse", "--trust-workdir-config", "--",
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "resume", "abc123"}
+	if !equalArgv(fake.launchedArg, wantArgv) {
+		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
+	}
+	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	if !ok || got != bin {
+		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
+	}
+}
+
 func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 	var stdout, stderr bytes.Buffer
