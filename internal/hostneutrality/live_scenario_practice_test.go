@@ -26,6 +26,7 @@ var recommendedPracticesSectionRe = regexp.MustCompile(`(?is)## Recommended prac
 // of presence check that guards the existing recommended-practice blocks; the
 // claim is about the text itself, so proof at the claim's own level is legit.
 func TestLiveScenarioRecommendedPracticePresent(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the dev-template text itself (the live-scenario practice is documented); proof at the claim's own level")
 	path := filepath.Join("..", "..", "skills", "commission", "references", "templates", "development.md")
 	body, err := os.ReadFile(path)
 	if err != nil {

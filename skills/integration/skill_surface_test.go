@@ -18,6 +18,7 @@ var userSkills = []string{"commission", "debrief", "refit", "ensign", "first-off
 // TestUserSkillsPresentWithFrontmatter locks AC-1: each of the five user skills
 // ships a SKILL.md whose YAML frontmatter declares a `name` and a `description`.
 func TestUserSkillsPresentWithFrontmatter(t *testing.T) {
+	markNonAC(t, "n/a — structural config lint (each SKILL.md frontmatter declares name+description); the skill-discovery behavior is exercised by the host loading the surface")
 	root := skillsRoot(t)
 	for _, skill := range userSkills {
 		path := filepath.Join(root, skill, "SKILL.md")
@@ -81,6 +82,7 @@ var referenceRe = regexp.MustCompile(`@?(references/[A-Za-z0-9_./-]+\.md)`)
 // Brace-placeholder template paths (e.g. references/templates/{name}.md) are
 // resolved against their concrete siblings rather than the literal `{name}`.
 func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
+	markCodeBoundInvariant(t, "os.Stat against the real skill tree (the adapter file must resolve on disk) — an independent filesystem source, not the SKILL.md text")
 	root := skillsRoot(t)
 	cases := []struct {
 		skill string
@@ -105,6 +107,7 @@ func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
 }
 
 func TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages(t *testing.T) {
+	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path with fresh context)")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
 	data, err := os.ReadFile(path)
@@ -136,6 +139,7 @@ func TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages(t *testing.T
 }
 
 func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
+	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path)")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
 	data, err := os.ReadFile(path)
@@ -167,6 +171,7 @@ func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 }
 
 func TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault(t *testing.T) {
+	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path; fresh-redispatch is the default it drives)")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
 	data, err := os.ReadFile(path)
@@ -202,6 +207,7 @@ func TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault(t *testing.T) {
 }
 
 func TestUserSkillReferenceClosureResolves(t *testing.T) {
+	markCodeBoundInvariant(t, "os.Stat against the real skill tree (every @references/ path must resolve on disk) — an independent filesystem source")
 	root := skillsRoot(t)
 	for _, skill := range userSkills {
 		skillDir := filepath.Join(root, skill)
@@ -235,6 +241,7 @@ func TestUserSkillReferenceClosureResolves(t *testing.T) {
 // The reconciled surface calls `spacedock status`; a blind-copied python-era
 // path fails here.
 func TestNoPluginPrivateStatusPathInUserSkills(t *testing.T) {
+	markNonAC(t, "behavioral coverage: the launcher smoke seam (TestLauncherListSetArchive drives the real `spacedock status` binary) + internal/status/* prove the positive `spacedock status` path; this is the structural-absence complement over the shipped skill surface no positive seam can prove")
 	root := skillsRoot(t)
 	repo := repoRoot(t)
 	banned := []string{

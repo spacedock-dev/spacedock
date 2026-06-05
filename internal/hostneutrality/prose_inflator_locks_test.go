@@ -69,6 +69,7 @@ var auditTrailRegexes = []*regexp.Regexp{
 // the swept HEAD is clean; a deliberately-inserted regression of any banned
 // phrase fails the test (positive proof of lock-in).
 func TestNoAuditTrailExposition(t *testing.T) {
+	markNonAC(t, "text-hygiene lint, NOT a behavioral claim — a property of the text (the contract files stay free of audit-trail exposition). No behavioral oracle and no independent code source: it is prose-inflation hygiene, valued for catching history-as-meta-comment re-inflating the dispatch load.")
 	for _, path := range contractProseFiles {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			body, err := os.ReadFile(path)
@@ -109,6 +110,7 @@ func TestNoAuditTrailExposition(t *testing.T) {
 //
 // Threshold: 12 contiguous words.
 func TestNoCrossFileRestatement(t *testing.T) {
+	markCodeBoundInvariant(t, "12-word n-grams sourced from a DIFFERENT file (the runtime adapter cores) than the shared cores under test")
 	// Build the n-gram set from the runtime adapter cores, excluding
 	// exception spans.
 	adapterNGrams := map[string]string{}

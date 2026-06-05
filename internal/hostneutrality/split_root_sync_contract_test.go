@@ -40,10 +40,20 @@ func assertAll(t *testing.T, name, text string, tokens []string) {
 	}
 }
 
-// TestFOHaltGateProse pins B5: the FO core carries the boot halt-gate keyed on
-// the Phase-A boot fields (split-root && entity_dir_present false → halt dispatch,
-// point at `spacedock state init`).
+// TestFOHaltGateProse is a non-AC text-consistency lint: it asserts the FO core
+// carries the boot halt-gate prose keyed on the boot fields (split-root &&
+// entity_dir_present false → HALT, point at `spacedock state init`). Per the proof
+// policy this presence check does NOT prove the FO halts; an inverted clause keeps
+// every token. The MECHANISM is proven by command-level tests — the binary EMITS
+// the halt signal (internal/status TestBootJSONStateBackendEntityDirAbsent observes
+// `entity_dir_present: false` + `state_backend: split-root`) and the `spacedock
+// state init` recovery WORKS (internal/cli TestStateInitResumesFreshClone) — but
+// the OWED behavioral proof that the FO actually HALTs on that signal (rather than
+// running state init silently and proceeding) is a live drive, tracked as task
+// ev3e (fo-halt-sync-journey-live-drives). This lint guards the prose tokens until
+// ev3e lands the live oracle.
 func TestFOHaltGateProse(t *testing.T) {
+	markNonAC(t, "OWED live drive: task ev3e (fo-halt-sync-journey-live-drives). Mechanism today: internal/status TestBootJSONStateBackendEntityDirAbsent (binary emits the halt signal) + internal/cli TestStateInitResumesFreshClone (recovery works)")
 	text := readSkill(t, foCorePath)
 	assertAll(t, "FO core (B5 halt-gate)", text, []string{
 		"state_backend",
@@ -54,10 +64,20 @@ func TestFOHaltGateProse(t *testing.T) {
 	})
 }
 
-// TestFOSyncProse pins the FO half of B6: pull --rebase on boot, push after a
-// state commit, and the M-3 rebase-conflict halt (abort + surface + no
-// force-push, no auto-resolve).
+// TestFOSyncProse is a non-AC text-consistency lint: it asserts the FO core
+// carries the B6 sync prose (pull --rebase, push origin, the M-3 rebase-conflict
+// halt: abort + no force-push + no auto-resolve). Per the proof policy this
+// presence check does NOT prove the FO performs the sync. The git MECHANICS are
+// already oracle-covered by real two-writer e2e — internal/cli state_sync_test.go
+// (TestTwoWriterSyncHappyPath: push → non-ff rejection → pull --rebase → re-push;
+// TestTwoWriterSameEntityConflictHalts: CONFLICT → rebase --abort, no force-push)
+// and internal/dispatch build_statecommit_test.go. The remaining behavioral
+// proof — that the FO actually ISSUES this sync at the contract points — rides
+// task ev3e's halt drive (fo-halt-sync-journey-live-drives), where ev3e's ideation
+// folded the sync/journey residual into the halt scenario. This lint guards the
+// prose tokens.
 func TestFOSyncProse(t *testing.T) {
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Sync MECHANICS already oracle-covered: internal/cli state_sync_test.go (TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts) + internal/dispatch build_statecommit_test.go (TestStateCommitGuidanceResolvesPaths)")
 	text := readSkill(t, foCorePath)
 	assertAll(t, "FO core (B6 sync)", text, []string{
 		"pull --rebase",
@@ -69,10 +89,15 @@ func TestFOSyncProse(t *testing.T) {
 	})
 }
 
-// TestEnsignSyncProse pins the ensign half of B6: push after committing, pull
-// --rebase on a push rejection, and the M-3 rebase-conflict halt (abort +
-// surface + no force-push, no auto-resolve), alongside the path-scoped rule.
+// TestEnsignSyncProse is a non-AC text-consistency lint: it asserts the ensign
+// core carries the B6 sync prose (push origin, pull --rebase, the M-3
+// rebase-conflict halt) alongside the path-scoped rule. Same disposition as the FO
+// half: the git MECHANICS are oracle-covered by the real two-writer e2e in
+// internal/cli + build_statecommit_test.go; the remaining behavioral proof that
+// the ensign ISSUES this sync after its state commits rides task ev3e's halt drive
+// (fo-halt-sync-journey-live-drives). This lint guards the tokens.
 func TestEnsignSyncProse(t *testing.T) {
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Sync MECHANICS already oracle-covered: internal/cli state_sync_test.go (TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts) + internal/dispatch build_statecommit_test.go (TestStateCommitGuidanceResolvesPaths)")
 	text := readSkill(t, ensignCorePath)
 	assertAll(t, "ensign core (B6 sync)", text, []string{
 		"push origin",
@@ -83,10 +108,19 @@ func TestEnsignSyncProse(t *testing.T) {
 	})
 }
 
-// TestCommissionJourneyProse pins B3: the commission SKILL.md carries the
-// journey-1 orphan-branch mechanics (clear inherited tree, linked worktree,
-// state init pointer) and the journey-2 $inline prose.
+// TestCommissionJourneyProse is a non-AC text-consistency lint: it asserts the
+// commission SKILL.md carries the journey-1 orphan-branch mechanics (clear
+// inherited tree, linked worktree, state-init pointer) and the journey-2 $inline
+// prose. Per the proof policy this presence check does NOT prove the mechanics
+// work. The orphan-birth/resume MECHANICS are oracle-covered by command-level
+// tests — internal/cli state_new_test.go (TestStateNewBirthsSplitRoot) +
+// state_init_test.go (TestCommissionOrphanBranchScaffolding: orphan branch with a
+// cleared tree as a linked worktree; TestStateInitInlineNoOp: the $inline branch).
+// The remaining behavioral proof that the commission FLOW drives these journeys
+// rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). This lint guards
+// the prose tokens.
 func TestCommissionJourneyProse(t *testing.T) {
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Journey MECHANICS already oracle-covered: internal/cli state_init_test.go (TestStateInitResumesFreshClone + TestCommissionOrphanBranchScaffolding + TestStateInitInlineNoOp) + state_new_test.go (TestStateNewBirthsSplitRoot)")
 	text := readSkill(t, commissionSkillPath)
 	assertAll(t, "commission SKILL.md (journeys)", text, []string{
 		"checkout --orphan",

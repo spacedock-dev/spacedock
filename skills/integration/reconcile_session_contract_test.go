@@ -61,6 +61,7 @@ func reconcileStep0Region(t *testing.T, text string) string {
 // anywhere in the file. A paraphrase that drops the precondition (re-inviting the
 // unsafe bare-fallback) fails this.
 func TestReconcileStep0RequiresTeamIdentityForRoster(t *testing.T) {
+	markNonAC(t, "internal/dispatch reconcile_session_test.go (TestReconcileSessionMatchedDiscovery, TestReconcileExplicitTeamNameIgnoresSession, TestReconcileDegradeEmitsGitClasses) — the code gates enforcing the team-identity->roster-class behavior")
 	region := reconcileStep0Region(t, claudeFORuntime(t))
 
 	// The region must tie roster reconciliation to a required team identity.
@@ -90,6 +91,7 @@ func TestReconcileStep0RequiresTeamIdentityForRoster(t *testing.T) {
 // to an unsafe heuristic. The bracketed-optional form is exactly the wording the
 // entity flagged as inviting the bare unsafe invocation.
 func TestReconcileStep0DropsOptionalTeamNameFraming(t *testing.T) {
+	markNonAC(t, "internal/dispatch reconcile_session_test.go (TestReconcileExplicitTeamNameIgnoresSession + TestReconcileGateSuppressesEvenWithPopulatedRoster) — the code gates that make bare reconcile git-only")
 	region := reconcileStep0Region(t, claudeFORuntime(t))
 	if strings.Contains(region, "[--team-name {team_name}]") {
 		t.Errorf("step-0 region still frames --team-name as a bracketed-optional flag, re-inviting the unsafe bare fallback:\n%s", region)

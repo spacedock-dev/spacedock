@@ -21,7 +21,16 @@ var codexIdleNotificationClassifications = map[string]bool{
 	"no_notification_observed": true,
 }
 
+// TestCodexIdleNotificationRuntimeContract is a non-AC text-consistency lint: it
+// asserts the Codex runtime adapter's `## Awaiting Completion` section carries the
+// three outcome headings + scheduling-priority clauses and stays free of
+// blanket-foreground-wait wording. Per the proof policy this presence check does
+// NOT prove the FO observes the idle-notification semantics; the behavior is
+// proven by the captured idle-wake evidence (TestCodexIdleNotificationEvidenceSchema
+// validates real recorded probe runs) and the Codex live runner's
+// awaiting-completion path. This lint guards the adapter clauses.
 func TestCodexIdleNotificationRuntimeContract(t *testing.T) {
+	markNonAC(t, "TestCodexIdleNotificationEvidenceSchema (captured idle-wake evidence) + Codex live runner awaiting-completion path")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "codex-first-officer-runtime.md")
 	data, err := os.ReadFile(path)

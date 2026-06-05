@@ -45,9 +45,14 @@ func vendoredSkillFiles(t *testing.T) map[string]string {
 	return out
 }
 
-// TestNoPluginStatusPathInVendoredSkills locks AC-1: no file in the vendored
-// skill instruction surface references the plugin-private status path.
+// TestNoPluginStatusPathInVendoredSkills is a non-AC structural absence lint: no
+// file in the vendored skill instruction surface references the plugin-private
+// status path or the {spacedock_plugin_dir} token. This is a structural negative
+// over the on-disk surface, not a behavioral claim; the real status invocation
+// path is exercised by internal/status. The lint catches a blind-copied python-era
+// path being re-introduced into the instruction text.
 func TestNoPluginStatusPathInVendoredSkills(t *testing.T) {
+	markNonAC(t, "n/a — structural absence over the instruction surface; status behavior via internal/status")
 	for name, content := range vendoredSkillFiles(t) {
 		if strings.Contains(content, "skills/commission/bin/status") {
 			t.Errorf("%s references plugin-private status path 'skills/commission/bin/status'", name)
@@ -75,6 +80,7 @@ func TestNoPluginStatusPathInVendoredSkills(t *testing.T) {
 // NOT bare prose-grep — it asserts a structural negative over the amendments,
 // not the presence of an instruction clause.
 func TestNoPRMergeOrModBehaviorIntroduced(t *testing.T) {
+	markNonAC(t, "n/a — structural absence scope-fence over the amendment regions; merge/dispatch lifecycle behavior via internal/status guards")
 	files := vendoredSkillFiles(t)
 
 	// The only `## Hook:` text legitimately present is the pre-existing Mod Hook
@@ -106,10 +112,14 @@ func TestNoPRMergeOrModBehaviorIntroduced(t *testing.T) {
 	}
 }
 
-// TestFirstOfficerDispatchDocsUseFlagFileMode locks the dispatch-build
-// ergonomics contract: the FO runtime docs must teach file-backed dispatch input
-// and runtime-derived host selection, not inline shell JSON.
+// TestSkillSurfaceDocumentsSpacedockBinInvariant is a non-AC text-consistency
+// lint: the FO/ensign/debrief surface documents the env-aware
+// `${SPACEDOCK_BIN:-spacedock}` launcher token. The actual launcher-resolution
+// behavior is exercised by the front-door tests in internal/cli (the binary path
+// propagation), not by this presence check; this only guards that the documented
+// invocation token is not silently dropped from the instruction surface.
 func TestSkillSurfaceDocumentsSpacedockBinInvariant(t *testing.T) {
+	markNonAC(t, "internal/cli front-door tests (spacedock binary path propagation)")
 	files := vendoredSkillFiles(t)
 	for _, name := range []string{
 		"first-officer/references/first-officer-shared-core.md",
@@ -123,16 +133,32 @@ func TestSkillSurfaceDocumentsSpacedockBinInvariant(t *testing.T) {
 	}
 }
 
+// TestFirstOfficerDispatchDocsUseFlagFileMode is a code-bound invariant on the
+// dispatch-build ergonomics contract: the FO runtime docs must teach the
+// file-backed dispatch-build flags the BINARY actually parses (derived from
+// dispatch.go's isBuildRequestFlag via spacedockBuildRequestFlags), not inline
+// shell JSON. The required-flag set comes from code, not a literal frozen against
+// the docs, so renaming a build flag in the router makes the docs check diverge
+// and red. The banned inline-JSON absence and the host-derivation tokens
+// (CLAUDECODE / CODEX_THREAD_ID env vars) are documented alongside.
 func TestFirstOfficerDispatchDocsUseFlagFileMode(t *testing.T) {
+	markCodeBoundInvariant(t, "spacedockBuildRequestFlags (dispatch.go isBuildRequestFlag)")
 	files := vendoredSkillFiles(t)
 	claude := files["first-officer/references/claude-first-officer-runtime.md"]
 	codex := files["first-officer/references/codex-first-officer-runtime.md"]
 
+	// The primary file-backed flags the docs must teach are the intersection of the
+	// binary's build-request flags with the load-bearing trio the dispatch contract
+	// names; binding to the code source means a renamed flag reds here.
+	wantFlags := intersect(spacedockBuildRequestFlags(t), "--entity-path", "--stage", "--checklist-file")
+	if len(wantFlags) != 3 {
+		t.Fatalf("the binary no longer defines all of --entity-path/--stage/--checklist-file as build-request flags; derived %v", wantFlags)
+	}
 	for name, content := range map[string]string{
 		"claude-first-officer-runtime.md": claude,
 		"codex-first-officer-runtime.md":  codex,
 	} {
-		for _, want := range []string{"--entity-path", "--stage", "--checklist-file"} {
+		for _, want := range wantFlags {
 			if !strings.Contains(content, want) {
 				t.Errorf("%s primary dispatch docs do not mention %s", name, want)
 			}
@@ -219,6 +245,7 @@ func commissionStateBackendDecisionRows(t *testing.T) map[string]string {
 // which pins the two-row shape and each row's bound outcome rather than prose
 // wording, and FAILS if a branch is dropped, merged, or rebound to the wrong path.
 func TestCommissionStateBackendDecisionRule(t *testing.T) {
+	markNonAC(t, "n/a — structural two-row decision-table self-consistency (no Go scaffolder takes standalone-vs-code-repo and emits frontmatter); the split-root behavior is proven by internal/cli TestStateNewBirthsSplitRoot")
 	rows := commissionStateBackendDecisionRows(t)
 	splitRoot, hasSplit := rows["Split-root"]
 	inline, hasInline := rows["Inline"]
