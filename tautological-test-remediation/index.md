@@ -1,7 +1,7 @@
 ---
 id: hwk58jy8akxhwzdydq8ztzrc
 title: Remediate the 54 tautological tests — mutation-verify, then convert / re-bind / demote
-status: validation
+status: implementation
 source: "captain (2026-06-04) — the tautological-test sweep (Workflow w71il5awf, this session) found 54 of 61 instruction-file-assertion tests are tautological (banned as behavioral proof per the proof-policy f8b257cf). Concentrated in the contract-decomposition extraction tests + the hostneutrality/prose-lock suite. Captain: file and dispatch."
 score: "0.32"
 started: 2026-06-05T01:14:49Z
@@ -326,3 +326,13 @@ CYCLE NOTE for the FO (not a blocker, a process flag): this is the 3rd validatio
 ### Summary (cycle 3 validation)
 
 Re-validated the cycle-3 positive/taint redesign by reproduction: the match-axis positive rule is real and load-bearing (re-adding an enumerated gate makes strings.Index evade in both packages; the exact cycle-2 audit plant REDs both then GREENs), M2 (strings.Join) and M3 (struct-field+method) RED-then-GREEN in both with methods discovered, 4 mechanisms independently mutation-controlled, 1131 offline green, vet + live build clean, the verified-sound prior work untouched, and the cycle-2 P1 closed with a genuine docs/dev-vs-skill discrimination. REJECTED on one new MATERIAL audit finding: the reader-axis taint misses the `[]string`/`...string`-param and `range`-loop-variable flow — a real undeclared presence-check over an ingested skill file via a `[]string`+range read evades BOTH sweeps (re-confirmed). It is the same recurring enumerated-shape class as cycles 1-2, unoccupied today but the exact class AC-3 exists to close. Bounce-back is bounded to taint the slice/range flow in both sweeps plus a planted control on that flow; the FO carries the cycle-3 escalation call (bounded fix vs. type-backed taint vs. recorded-caveat acceptance).
+
+### Feedback Cycles (cont.)
+
+#### Cycle 3 — validation REJECTED (recurring reader-flow class); captain escalation → Option C: ship match-axis, fork reader-axis, honest-scope the guard
+
+This is the **3-cycle escalation point** of the feedback discipline. Cycles 1, 2, and 3 each found and closed instances of ONE class — an enumerated-shape incompleteness in the sweep's reader-flow taint (cycle-1: 4 reader shapes; cycle-2: M2 strings.Join + M3 struct/method + the match axis; cycle-3: M-D `[]string`/range). Both the detached audit and the cycle-3 validator independently flagged that enumeration closes instances, not the class. Per the escalation discipline the FO did NOT auto-bounce a 4th time; it escalated to the captain.
+
+**Captain decision (Option C):** ship the verified-sound deliverable now — the match-axis positive-rule closure (M1/M2/M3 confirmed closed, load-bearing) and the 56 demoted/re-bound tests, the actual remediation this task was filed for — with the guard's *claimed guarantee* honestly scoped; **fork the reader-axis robustness** (M-A unrecognized surfaces like AGENTS.md/mods, M-B cross-package, M-C package-var, M-D `[]string`/range) to a filed follow-up, `sweep-guard-reader-axis-invert` (id `4qnn7dbzkyh9qv65t618vtxy`), whose ideation weighs the invert/positive predicate and a go/types+SSA-backed taint that closes the class definitionally. The detached adversarial audit is the named backstop for the forked classes.
+
+**Remaining hwk work (this cycle, captain-directed, bounded — NOT a reader-axis fix):** correct the guard's overclaiming documentation so it states its real guarantee instead of the falsified universal. The guard doc comments + body currently claim it catches a tautology "regardless of match idiom OR path-construction/flow shape / through ANY indirection"; the audit + validation falsified that on the reader axis. Honest-scope it to: detects in-package reads of recognized instruction paths via the enumerated flow shapes it actually covers; KNOWN out-of-scope (tracked in `sweep-guard-reader-axis-invert`, backstopped by the detached audit) — cross-package reads, package-var-from-another-file paths, `[]string`/`...string`+range/slice-element flow, and unrecognized instruction surfaces (AGENTS.md, mods/*.md). No detection logic changes; the verified-sound match-axis closure, the covered reader shapes, the 4 mechanism controls, re-binds, demotions, occupant oracles, and halt/sync/journey all stay exactly as validated. Routed to implementation in the same worktree; comment/doc-only.
