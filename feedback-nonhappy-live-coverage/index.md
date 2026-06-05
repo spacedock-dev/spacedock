@@ -302,3 +302,15 @@ The captain reversed the cycle-5 reversal: KEEP the cycle-4 committed version (Y
 ### Summary
 
 cycle-5 (unify onto the existing 60s streamWatcher) is REVERTED per the captain reversing course on new opus evidence (zero heartbeats during sub-agent dispatches → 60s is flaky on opus). The final committed state is the cycle-4 version: the standalone 120s per-stage stall-watchdog with the audited `TestStageStallTimeoutIsCaptainApprovedException` pin (drift-guarded, captain-approved exception) + the 40m loose command-line backstop. The team-lead's two cycle-5 concerns (DRY-unify onto streamWatcher; the live-cycle's own 60s quietBudgetDefault opus exposure) are filed as a SEPARATE follow-up (a deliberate live-cycle-path + fleet-wide refactor), not churned here. The timeout re-fix is DONE; team-lead runs the authoritative watchdog-equipped live drive (both hosts) against this committed code before re-pushing #302.
+
+## Stage Report: implementation (cycle 7 — cycle-6 revert UNDONE; unify-at-60s is FINAL)
+
+The captain settled the 60s↔120s oscillation: KEEP the cycle-5 unify-at-60s (the cleaner state), and stop speculating on the inconclusive offline metric — the 60s-vs-raise question is decided by the LIVE DRIVE, not a reading of the timestamped gap. So the cycle-6 revert (which restored the standalone 120s watchdog) is itself reverted.
+
+- DONE: `git revert` of the cycle-6 revert (aa162a53) → commit cf97198d
+  HEAD content is now byte-identical to the cycle-5 unify commit 5171982e (`git diff 5171982e HEAD` is empty): ONE mechanism (the shared `streamWatcher` reused via `drainToExit`, byte-for-byte the TestLiveEnsignCycle wiring), `quietBudgetDefault = 60s` respecting the standing guard, the AC-1 guard STRENGTHENED to cover the shared-runner files, TestLiveEnsignCycle untouched, DRY. The standalone watchdog + its exception pin are gone.
+- DONE: Offline `go test ./...` green (1147/15); live lane vet+build clean.
+
+### Summary
+
+Final state = the unify-at-60s (cycle 5): the shared-scenario runners reuse the mature `streamWatcher` at the standing 60s `quietBudgetDefault`, the AC-1 ≤60s guard now covers them (a >60s literal there reds it), and there is no second timeout mechanism. The 60s-vs-raise decision is now purely empirical — team-lead's authoritative opus rejection-flow live drive at 60s: complete → 60s ships as-is; genuine false-kill (stall trips before proc-exit) → captain-approved raise WITH the false-kill data + a guard exception. The team-lead's DRY follow-up is superseded (the unify is done here); only the open question of TestLiveEnsignCycle's own 60s wanting a measured check remains as a rescoped follow-up. Cycle-3 reuse work untouched throughout. Timeout re-fix DONE.
