@@ -5,9 +5,9 @@ status: validation
 source: "captain (2026-06-04) — the tautological-test sweep (Workflow w71il5awf, this session) found 54 of 61 instruction-file-assertion tests are tautological (banned as behavioral proof per the proof-policy f8b257cf). Concentrated in the contract-decomposition extraction tests + the hostneutrality/prose-lock suite. Captain: file and dispatch."
 score: "0.32"
 started: 2026-06-05T01:14:49Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-tautological-test-remediation
+completed: 2026-06-05T15:44:24Z
+verdict: PASSED
+worktree:
 issue:
 mod-block:
 pr: "#306"
