@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe
 issue:
 id: cq9kb7cdpp9y48tn8gwzmqzq
 mod-block: merge:pr-merge
+pr: "#301"
 ---
 
 # Pi intercom runtime capability probe
