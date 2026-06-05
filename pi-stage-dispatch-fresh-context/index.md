@@ -9,7 +9,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-pi-stage-dispatch-fresh-context
 issue:
 id: d2w8z614c0q1yssmyr33a38y
-mod-block: merge:pr-merge
+mod-block:
 pr: "#299"
 ---
 
