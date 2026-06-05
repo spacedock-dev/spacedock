@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-tautological-test-remediation
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#306"
 ---
 
