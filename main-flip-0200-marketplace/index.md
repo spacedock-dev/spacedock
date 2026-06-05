@@ -16,15 +16,14 @@ The 0.19.6 capstone: once the line is tested/green, cut **0.20.0 on main** and *
 ## Hard prerequisites (gate this milestone)
 
 - **`release-gate-job-separation-fix` (bqqr) MUST land first** — without it the cut fails the Runtime-Live-E2E gate (like 0.19.5).
-- **The 0.19.6 line tested/green** — in particular gq (feedback-nonhappy-live-coverage) merged, and the pi-line settled. ("once tested" — define the gate: which lanes/scenarios green on `next` constitute "tested".)
+- **The 0.19.6 line ALL GREEN** — captain's "tested" gate = all lanes/scenarios green on the branch (gq merged, the pi-line settled, all live + offline green). No partial-green cut.
 
-## Direction (for ideation — CLARIFY the specifics with the captain)
+## Direction (captain-clarified 2026-06-05)
 
-Open questions to settle before/at ideation (flagged to the captain at filing):
-- **What exactly does "flip the marketplace" mean?** Repoint the marketplace source/ref from the `next` branch to `main` (so `spacedock claude`/`codex` install pulls stable 0.20.0)? A version pin? Both Claude + Codex marketplaces? (Relates to `s0cq install-marketplace-ref-refresh` — the stale-ref bug — and `44 bundle-asset-distribution`.)
-- **Is main currently a release branch, or does this establish main-as-release?** ("flip main readiness" implies main becomes the stable channel.)
-- **Version:** 0.20.0 (a minor bump from the 0.19.x line) — confirm the bump rationale (contract change? feature line?).
-- **The "tested" gate** — the explicit green-criteria on `next` that authorize the cut.
+- **The flip = `next` becomes `origin/main`.** Make `main` the release branch carrying what `next` holds; the marketplace serves from `main` (the stable channel) instead of `next`. This is the "flip main readiness."
+- **Version = 0.20.0, the FIRST actual release.** NO contract change — the contract stays at 1; 0.20.0 is the first real (non-dev) release, not a contract bump.
+- **Bundling is OUT — figure it out later.** The `44 bundle-asset-distribution` (plugin-into-binary, --plugin-dir) path is NOT part of this milestone; the captain explicitly deferred it. This milestone is the branch/marketplace flip + the cut, not the packaging mechanism.
+- Note the related stale-ref bug `s0cq install-marketplace-ref-refresh` — a clean marketplace flip likely needs that fix so the new `main` ref actually replaces the old `next` pin (don't let the flip no-op on a stale ref).
 
 ## Out of scope
 
