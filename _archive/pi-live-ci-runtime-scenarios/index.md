@@ -11,6 +11,7 @@ issue:
 id: z8wm1jdhzmq4rcm0rzxw7bf5
 pr: "#305"
 mod-block:
+archived: 2026-06-05T15:50:00Z
 ---
 
 # Add Pi to runtime-live CI and shared runtime scenarios
