@@ -16,6 +16,7 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	for _, want := range []string{
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/claude/${{ matrix.model }}`,
 		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/codex`,
+		`SPACEDOCK_JOURNEY_METRICS_DIR: ${{ github.workspace }}/live-artifacts/journey-metrics/pi`,
 	} {
 		if !hasExecutableYAMLLine(workflow, want) {
 			return fmt.Errorf("runtime-live-e2e.yml missing active metrics env line %q", want)
@@ -31,11 +32,31 @@ func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
 	if codexRun < 0 {
 		return fmt.Errorf("runtime-live-e2e.yml has no executable Codex shared scenario run")
 	}
+	piCoverageRun := findExecutableStep(steps, "Run Pi shared scenario coverage guard", "TestPiSharedScenarioCoverage")
+	if piCoverageRun < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi shared scenario coverage guard")
+	}
+	piSmokeRun := findExecutableStep(steps, "Run live Pi front-door smoke", "TestLivePiFrontDoorSmoke")
+	if piSmokeRun < 0 {
+		return fmt.Errorf("runtime-live-e2e.yml has no executable Pi front-door smoke")
+	}
+	if !hasExecutableYAMLLine(workflow, `OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}`) || !hasExecutableYAMLLine(workflow, `SPACEDOCK_PI_LIVE_REQUIRED: "1"`) || !hasExecutableYAMLLine(workflow, `name: CI-E2E-PI`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job is missing its OpenAI secret, required flag, or CI-E2E-PI environment")
+	}
+	if !workflowHasExecutableCommandContaining(workflow, "pi install npm:pi-subagents") || !workflowHasExecutableCommandContaining(workflow, "pi install npm:pi-intercom") {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not install required Pi substrates")
+	}
+	if !workflowHasExecutableCommandContaining(workflow, `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"`) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not verify current-checkout Spacedock skills")
+	}
 	if !hasJourneyMetricsUploadAfter(steps, claudeRun, codexRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Claude shared scenario job does not upload raw journey metrics")
 	}
-	if !hasJourneyMetricsUploadAfter(steps, codexRun, len(steps)) {
+	if !hasJourneyMetricsUploadAfter(steps, codexRun, piCoverageRun) {
 		return fmt.Errorf("runtime-live-e2e.yml Codex shared scenario job does not upload raw journey metrics")
+	}
+	if !hasJourneyMetricsUploadAfter(steps, piSmokeRun, len(steps)) {
+		return fmt.Errorf("runtime-live-e2e.yml Pi live job does not upload raw journey metrics")
 	}
 	return nil
 }
@@ -155,6 +176,17 @@ func findExecutableStep(steps []workflowStep, name, commandFragment string) int 
 		}
 	}
 	return -1
+}
+
+func workflowHasExecutableCommandContaining(workflow, want string) bool {
+	for _, step := range parseWorkflowSteps(workflow) {
+		for _, command := range executableShellCommands(step.run) {
+			if strings.Contains(command, want) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func hasJourneyMetricsUploadAfter(steps []workflowStep, start, stop int) bool {

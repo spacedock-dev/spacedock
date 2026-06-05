@@ -240,6 +240,20 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 		}
 	})
 
+	t.Run("openai-api-key-auth", func(t *testing.T) {
+		var stdout, stderr bytes.Buffer
+		code := runDoctorWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", repo}, &fakeHost{}, &fakePiRuntimeOps{
+			lookPath: map[string]string{"pi": "/bin/pi"},
+			statOK:   statOKForPiResources(repo, pkg),
+		}, append(piTestEnv(pkg, home), "OPENAI_API_KEY=test-key"), &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+		}
+		if !strings.Contains(stdout.String(), "OK Pi auth") {
+			t.Fatalf("OpenAI-key doctor output should accept env auth:\n%s", stdout.String())
+		}
+	})
+
 	t.Run("healthy", func(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		statOK := statOKForPiResources(repo, pkg)

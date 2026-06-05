@@ -61,7 +61,7 @@ func newPiLiveSmokeFixture(t *testing.T, name, repo, piSubagentsRoot, binary str
 	piHome := t.TempDir()
 	sessionDir := t.TempDir()
 	cleanHome := t.TempDir()
-	seedPiLocalAuth(t, piHome, os.Getenv("HOME"))
+	seedPiLiveAuth(t, piHome, os.Getenv("HOME"), os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
 	workflowRoot, stateRoot, entityPath = writePiSplitRootSmokeWorkflow(t)
 	artifactDir = filepath.Join(piLiveArtifactDir(t, name), "run")
 	if err := os.MkdirAll(filepath.Join(artifactDir, "sessions"), 0o755); err != nil {
@@ -214,23 +214,32 @@ func piLiveSmokeEntity() string {
 
 func seedPiLocalAuth(t *testing.T, piHome, realHome string) {
 	t.Helper()
-	if realHome == "" {
-		t.Skip("no HOME set; cannot locate ~/.pi/agent/auth.json for Pi live smoke")
+	seedPiLiveAuth(t, piHome, realHome, os.Getenv("OPENAI_API_KEY"), os.Getenv("SPACEDOCK_PI_LIVE_REQUIRED"))
+}
+
+func seedPiLiveAuth(t *testing.T, piHome, realHome, openAIAPIKey, required string) {
+	t.Helper()
+	if realHome != "" {
+		authPath := filepath.Join(realHome, ".pi", "agent", "auth.json")
+		b, err := os.ReadFile(authPath)
+		if err == nil && strings.TrimSpace(string(b)) != "" {
+			if err := os.MkdirAll(piHome, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(piHome, "auth.json"), b, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			return
+		}
 	}
-	authPath := filepath.Join(realHome, ".pi", "agent", "auth.json")
-	b, err := os.ReadFile(authPath)
-	if err != nil {
-		t.Skipf("no live Pi auth available: expected %s; run pi login or provide the auth file", authPath)
+	if strings.TrimSpace(openAIAPIKey) != "" {
+		return
 	}
-	if strings.TrimSpace(string(b)) == "" {
-		t.Skipf("live Pi auth file is empty: %s", authPath)
+	message := "no live Pi auth available: expected ~/.pi/agent/auth.json or OPENAI_API_KEY"
+	if required != "" {
+		t.Fatal(message + " for the approval-gated pi-live lane")
 	}
-	if err := os.MkdirAll(piHome, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(piHome, "auth.json"), b, 0o600); err != nil {
-		t.Fatal(err)
-	}
+	t.Skip(message + "; run pi login or set OPENAI_API_KEY to run the live Pi suite")
 }
 
 func piLiveEnv(piHome, sessionDir, cleanHome, binaryDir, piSubagentsRoot string) []string {
