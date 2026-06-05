@@ -120,3 +120,27 @@ PASSED. The implementation satisfies AC-1 through AC-6 for the current bootstrap
 ### Feedback Cycles
 
 - Cycle 1: CI `pi-live` failed in PR #305 at `Install Pi CLI and substrates`. Root cause from GitHub job `79683273580`: `npm install -g pi-coding-agent` installed unscoped `pi-coding-agent@0.0.1`, which does not provide the `pi` binary; the next line failed with `/home/runner/...sh: line 6: pi: command not found`. Fix should install the real scoped Pi package (observed local package: `@earendil-works/pi-coding-agent`, bin `pi`) rather than the unscoped package. Supply-chain constraint from captain: do **not** pin versions for the live lane. Prefer package-name correctness plus npm supply-chain friction such as an age gate if the runner npm supports it, safer flags such as `--no-audit --no-fund` and `--ignore-scripts` where compatible, and post-install verification of installed package names/versions/bin/resource paths before running live smoke. Triage note: local npm 11.8.0 warns `min-release-age` is an unknown user config, and GitHub used npm 10.8.2, so do not assume npm enforces that option without a guard/probe.
+
+## Stage Report: implementation follow-up
+
+### Summary
+Fixed the PR #305 Pi live install failure without version pinning, per captain/FO correction. Product commit: `dab54ef7 ci: fix pi live cli install`.
+
+### Changes
+- Replaced the wrong unscoped `pi-coding-agent` install with the real scoped `@earendil-works/pi-coding-agent` package.
+- Removed the Pi version workflow input and exact version pin requirements from the Pi live lane.
+- Switched Pi substrate setup from `pi install npm:...` to direct npm installation into `$HOME/.pi/agent/npm`, preserving `PI_SUBAGENTS_PACKAGE_ROOT` as the actual installed `pi-subagents` root.
+- Kept non-pinning supply-chain controls: exact package names, `--no-audit --no-fund`, `--ignore-scripts` where used, executable `pi` verification, installed package name/version/bin checks, and resource path checks for `pi-subagents`.
+- Added a runner probe for npm `min-release-age`; if unsupported, the workflow logs that it is relying on package-name and post-install verification controls instead of assuming an age gate exists.
+- Updated workflow guard tests to reject the unscoped Pi CLI package and reject unverified Pi installs, without requiring exact version pins.
+
+### Validation
+- `go test ./internal/release ./internal/ensigncycle -count=1` — PASS.
+- `go test ./internal/release -run 'TestRuntimeLiveWorkflowGuardRejects(UnscopedPiPackage|UnverifiedPiPackageInstall)|TestWorkflowsPreserveAndPublishJourneyCosts' -count=1 -v` — PASS.
+- `go test ./... -count=1` — PASS in the assigned worktree.
+- Local npm probe: `npm --version` = 11.8.0; `npm config get min-release-age` emits `Unknown user config "min-release-age"`, so the workflow now probes before attempting to use that control.
+- Local npm package-shape checks: `npm view @earendil-works/pi-coding-agent bin --json` reports `{"pi":"dist/cli.js"}`; `npm view pi-subagents version` reports `0.28.0`; `npm view pi-intercom version` reports `0.6.0`.
+
+### Push status
+- Product push over SSH failed due missing public-key auth.
+- Product push over HTTPS failed because the available OAuth token lacks `workflow` scope for updating `.github/workflows/runtime-live-e2e.yml`.
