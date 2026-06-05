@@ -1,12 +1,12 @@
 ---
 title: Pi stage dispatches should force fresh subagent context
-status: ideation
+status: implementation
 source: captain (2026-06-04) — FO mistakenly dispatched a Spacedock implementation worker with pi-subagents context=fork; stage workers should be fresh and independent
 score: "0.29"
 started: 2026-06-04T07:38:36Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-stage-dispatch-fresh-context
 issue:
 id: d2w8z614c0q1yssmyr33a38y
 ---
