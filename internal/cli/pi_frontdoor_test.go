@@ -227,6 +227,7 @@ func TestPiInstallCheckFailsForMissingSupervisorTalkbackPrerequisites(t *testing
 	statOK := statOKForPiResources(repo, pkg)
 	statOK[filepath.Join(home, ".pi", "agent", "auth.json")] = true
 	delete(statOK, pkg+"-intercom")
+	delete(statOK, filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"))
 	var stdout, stderr bytes.Buffer
 
 	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--check"}, &fakeHost{}, &fakePiRuntimeOps{
@@ -237,7 +238,7 @@ func TestPiInstallCheckFailsForMissingSupervisorTalkbackPrerequisites(t *testing
 		t.Fatalf("install --host pi --check exit=0 want non-zero for missing supervisor-talkback prerequisites; stdout=%q", stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"MISSING pi-intercom command", "MISSING subagents-doctor bridge-health command", "MISSING pi-intercom package root", "PI_INTERCOM_PACKAGE_ROOT"} {
+	for _, want := range []string{"OK pi-subagents intercom bridge", "MISSING pi-intercom package root", "MISSING pi-intercom skill", "PI_INTERCOM_PACKAGE_ROOT"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("install check output missing %q:\n%s", want, out)
 		}
@@ -260,7 +261,7 @@ func TestPiInstallCheckFailsForMissingAuthLikeDoctor(t *testing.T) {
 		t.Fatalf("install --host pi --check exit=0 want non-zero for missing Pi auth; stdout=%q", stdout.String())
 	}
 	out := stdout.String()
-	for _, want := range []string{"Pi runtime check", "MISSING Pi auth", filepath.Join(home, ".pi", "agent", "auth.json"), "OK pi-intercom command"} {
+	for _, want := range []string{"Pi runtime check", "MISSING Pi auth", filepath.Join(home, ".pi", "agent", "auth.json"), "OK pi-intercom package root", "OK pi-intercom skill"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("install check missing-auth output missing %q:\n%s", want, out)
 		}
@@ -316,7 +317,7 @@ func TestRuntimeSupportDocsKeepPiDoctorVsLiveTalkbackBoundary(t *testing.T) {
 	text := string(doc)
 	for _, want := range []string{
 		"pi-intercom",
-		"subagents-doctor",
+		"intercom bridge",
 		"necessary setup checks but insufficient to prove live supervisor talkback",
 		"progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence",
 		"pi-intercom-supervisor-talkback",
@@ -342,9 +343,14 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 			t.Fatalf("exit=0 want non-zero for missing pi runtime")
 		}
 		out := stdout.String()
-		for _, want := range []string{"Pi runtime check", "MISSING pi CLI", "MISSING Pi auth", "MISSING pi-subagents", "Supervisor-talkback setup prerequisites", "MISSING pi-intercom command", "MISSING subagents-doctor bridge-health command", "necessary supervisor-talkback setup prerequisites only"} {
+		for _, want := range []string{"Pi runtime check", "MISSING pi CLI", "MISSING Pi auth", "MISSING pi-subagents", "Supervisor-talkback setup prerequisites", "MISSING pi-subagents intercom bridge", "MISSING pi-intercom package root", "MISSING pi-intercom skill", "necessary supervisor-talkback setup prerequisites only"} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("missing doctor output missing %q:\n%s", want, out)
+			}
+		}
+		for _, notWant := range []string{"pi-intercom command", "subagents-doctor bridge-health command"} {
+			if strings.Contains(out, notWant) {
+				t.Fatalf("doctor output should not require unstable command contract %q:\n%s", notWant, out)
 			}
 		}
 	})
@@ -375,7 +381,7 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 			t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 		}
 		out := stdout.String()
-		for _, want := range []string{"OK pi CLI", "OK Pi auth", "OK pi-subagents extension", "OK pi-intercom command", "OK subagents-doctor bridge-health command", "OK pi-intercom package root", "OK Spacedock first-officer skill", "OK Spacedock ensign skill", "live child talkback", "durable marker probe"} {
+		for _, want := range []string{"OK pi CLI", "OK Pi auth", "OK pi-subagents extension", "OK pi-subagents intercom bridge", "OK pi-intercom package root", "OK pi-intercom skill", "OK Spacedock first-officer skill", "OK Spacedock ensign skill", "live child talkback", "durable marker probe"} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("healthy doctor output missing %q:\n%s", want, out)
 			}
@@ -412,19 +418,19 @@ func writeFileWithDirs(t *testing.T, path, content string) {
 
 func statOKForPiResources(repo, pkg string) map[string]bool {
 	return map[string]bool{
-		filepath.Join(pkg, "src", "extension", "index.ts"):         true,
-		filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):   true,
-		filepath.Join(repo, "skills", "first-officer", "SKILL.md"): true,
-		filepath.Join(repo, "skills", "ensign", "SKILL.md"):        true,
+		filepath.Join(pkg, "src", "extension", "index.ts"):          true,
+		filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):    true,
+		filepath.Join(pkg, "src", "intercom", "intercom-bridge.ts"): true,
+		filepath.Join(repo, "skills", "first-officer", "SKILL.md"):  true,
+		filepath.Join(repo, "skills", "ensign", "SKILL.md"):         true,
 		pkg + "-intercom": true,
+		filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"): true,
 	}
 }
 
 func piHealthyPathFixtures() map[string]string {
 	return map[string]string{
-		"pi":               "/bin/pi",
-		"pi-intercom":      "/bin/pi-intercom",
-		"subagents-doctor": "/bin/subagents-doctor",
+		"pi": "/bin/pi",
 	}
 }
 

@@ -45,23 +45,21 @@ type piRuntimeConfig struct {
 }
 
 type piCheckResult struct {
-	piBinOK             bool
-	piBin               string
-	piIntercomBinOK     bool
-	piIntercomBin       string
-	subagentsDoctorOK   bool
-	subagentsDoctorBin  string
-	authOK              bool
-	extensionOK         bool
-	subagentsSkillOK    bool
-	intercomPackageOK   bool
-	firstOfficerOK      bool
-	ensignOK            bool
-	packageRoot         string
-	intercomPackageRoot string
-	repoRoot            string
-	authPath            string
-	sessionDir          string
+	piBinOK                   bool
+	piBin                     string
+	authOK                    bool
+	extensionOK               bool
+	subagentsSkillOK          bool
+	subagentsIntercomBridgeOK bool
+	intercomPackageOK         bool
+	intercomSkillOK           bool
+	firstOfficerOK            bool
+	ensignOK                  bool
+	packageRoot               string
+	intercomPackageRoot       string
+	repoRoot                  string
+	authPath                  string
+	sessionDir                string
 }
 
 func runPi(ctx context.Context, args []string, dir string, env []string, ops piRuntimeOps, stdout, stderr io.Writer) int {
@@ -119,7 +117,7 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 			"Required next steps:\n"+
 			"  1. Install Pi and authenticate so %s exists.\n"+
 			"  2. Install the subagent substrate, for example: pi install npm:pi-subagents\n"+
-			"  3. Install the supervisor-talkback substrate so pi-intercom and subagents-doctor are on PATH.\n"+
+			"  3. Install the supervisor-talkback substrate, for example: pi install npm:pi-intercom or npm install pi-intercom into the Pi npm root.\n"+
 			"  4. If pi-subagents or pi-intercom are installed outside the default locations, set PI_SUBAGENTS_PACKAGE_ROOT and PI_INTERCOM_PACKAGE_ROOT.\n"+
 			"  5. Re-run: spacedock doctor --host pi\n\n", check.authPath)
 	printPiDoctorReport(stdout, check)
@@ -273,15 +271,9 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 
 func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	bin, err := ops.LookPath("pi")
-	intercomBin, intercomErr := ops.LookPath("pi-intercom")
-	doctorBin, doctorErr := ops.LookPath("subagents-doctor")
 	res := piCheckResult{
 		piBinOK:             err == nil,
 		piBin:               bin,
-		piIntercomBinOK:     intercomErr == nil,
-		piIntercomBin:       intercomBin,
-		subagentsDoctorOK:   doctorErr == nil,
-		subagentsDoctorBin:  doctorBin,
 		packageRoot:         cfg.packageRoot,
 		intercomPackageRoot: cfg.intercomPackageRoot,
 		repoRoot:            cfg.repoRoot,
@@ -291,14 +283,16 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	res.authOK = ops.Stat(cfg.authPath) == nil || strings.TrimSpace(cfg.openAIAPIKey) != ""
 	res.extensionOK = ops.Stat(cfg.extensionPath) == nil
 	res.subagentsSkillOK = ops.Stat(filepath.Join(cfg.subagentsSkill, "SKILL.md")) == nil
+	res.subagentsIntercomBridgeOK = ops.Stat(filepath.Join(cfg.packageRoot, "src", "intercom", "intercom-bridge.ts")) == nil
 	res.intercomPackageOK = ops.Stat(cfg.intercomPackageRoot) == nil
+	res.intercomSkillOK = ops.Stat(filepath.Join(cfg.intercomPackageRoot, "skills", "pi-intercom", "SKILL.md")) == nil
 	res.firstOfficerOK = ops.Stat(cfg.firstOfficer) == nil
 	res.ensignOK = ops.Stat(cfg.ensign) == nil
 	return res
 }
 
 func piRuntimeLaunchReady(c piCheckResult) bool {
-	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.piIntercomBinOK && c.subagentsDoctorOK && c.intercomPackageOK && c.firstOfficerOK && c.ensignOK
+	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.firstOfficerOK && c.ensignOK
 }
 
 func piDoctorHealthy(c piCheckResult) bool {
@@ -320,9 +314,9 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.subagentsSkillOK, "pi-subagents skill", filepath.Join(c.packageRoot, "skills", "pi-subagents"), "run `pi install npm:pi-subagents` or set PI_SUBAGENTS_PACKAGE_ROOT")
 	fmt.Fprintf(w, "INFO Pi auth/session dirs: auth=%s session=%s\n", c.authPath, c.sessionDir)
 	fmt.Fprintln(w, "Supervisor-talkback setup prerequisites")
-	printPiCheck(w, c.piIntercomBinOK, "pi-intercom command", c.piIntercomBin, "install the pi-intercom package and ensure `pi-intercom` is on PATH")
-	printPiCheck(w, c.subagentsDoctorOK, "subagents-doctor bridge-health command", c.subagentsDoctorBin, "install pi-subagents/pi-intercom bridge tooling and ensure `subagents-doctor` is on PATH")
+	printPiCheck(w, c.subagentsIntercomBridgeOK, "pi-subagents intercom bridge", filepath.Join(c.packageRoot, "src", "intercom", "intercom-bridge.ts"), "install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge")
 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
+	printPiCheck(w, c.intercomSkillOK, "pi-intercom skill", filepath.Join(c.intercomPackageRoot, "skills", "pi-intercom"), "install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md")
 	printPiCheck(w, c.firstOfficerOK, "Spacedock first-officer skill", filepath.Join(c.repoRoot, "skills", "first-officer"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
 	printPiCheck(w, c.ensignOK, "Spacedock ensign skill", filepath.Join(c.repoRoot, "skills", "ensign"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
 	printPiSupervisorTalkbackBoundary(w)
