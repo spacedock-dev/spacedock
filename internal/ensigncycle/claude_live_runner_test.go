@@ -204,11 +204,11 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 //
 // Liveness is guarded by the per-stage STALL-WATCHDOG, not a whole-run basket: the
 // stream-json stdout is read incrementally through streamWithStallWatchdog, which
-// resets a stageStallTimeout (60s) timer on every line and kills the process only
+// resets a stageStallTimeout (120s) timer on every line and kills the process only
 // when the stream goes silent that long. A genuine multi-minute run of sequential
-// model work (every FO turn + ensign stage completes well under 60s, and claude
-// emits frequent thinking_tokens liveness lines) is never false-killed; a true
-// hang is killed in 60s, fail-fast.
+// model work (the longest measured FO-stream-silence gap was 59.1s on opus while a
+// sub-agent works; claude emits frequent thinking_tokens liveness lines) is never
+// false-killed; a true hang is killed in 120s, fail-fast.
 func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) claudeScenarioResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -247,7 +247,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	}
 
 	// The watchdog reads the stream to completion (clean EOF) OR kills the process
-	// on a 60s stall. Killing makes the StdoutPipe EOF, so the watchdog returns; we
+	// on a 120s stall. Killing makes the StdoutPipe EOF, so the watchdog returns; we
 	// then Wait() to reap the process.
 	stream, stallErr := streamWithStallWatchdog(stdout, stageStallTimeout, func() {
 		_ = cmd.Process.Kill()

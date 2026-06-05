@@ -79,6 +79,25 @@ func TestBudgetConstantsAreUnder60s(t *testing.T) {
 	}
 }
 
+// TestStageStallTimeoutIsCaptainApprovedException pins the shared-scenario runners'
+// per-stage stall budget to its SINGLE captain-approved value. stageStallTimeout
+// (120s) is the one sanctioned exception to the strict-60s AC-1 rule: the measured
+// max FO-stream-silence gap is 59.1s on opus (a sub-agent dispatch blocks the FO
+// top-level stream), so a 60s budget is CI-flaky and 120s gives ~2x margin while
+// staying a precise hang-detector. This test makes the exception AUDITED, not
+// silently evaded: the value lives in stall_watchdog_test.go, which the AST
+// `TestNoTimeoutLiteralExceeds60s` guard does NOT scan (it scans the 60s-regime
+// files streamwatch_test.go + live_test.go), so without this pin a future edit
+// could bump the watchdog budget arbitrarily with no guard. Drift here reds and
+// forces re-approval of any new value.
+func TestStageStallTimeoutIsCaptainApprovedException(t *testing.T) {
+	const captainApproved = 120 * time.Second
+	if stageStallTimeout != captainApproved {
+		t.Errorf("stageStallTimeout = %s, want the captain-approved %s (the single sanctioned >60s exception; "+
+			"a new value needs captain re-approval and this pin updated)", stageStallTimeout, captainApproved)
+	}
+}
+
 func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "live_test.go", nil, 0)

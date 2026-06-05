@@ -9,11 +9,12 @@ import (
 )
 
 // Offline unit tests for the per-stage stall-watchdog. They drive synthetic
-// streams (no model) so the 60s liveness guard's behavior is pinned cheaply: a
+// streams (no model) so the liveness guard's behavior is pinned cheaply: a
 // normal-cadence stream passes through; a stream that goes silent past the budget
 // is killed + fails fast. They use a SHORT test budget so the suite stays fast —
 // streamWithStallWatchdog takes the budget as an argument precisely so the offline
-// test can shrink it while production uses stageStallTimeout (60s).
+// test can shrink it while production uses stageStallTimeout (120s, the
+// captain-approved exception pinned by TestStageStallTimeoutIsCaptainApprovedException).
 
 // TestStallWatchdogPassesNormalCadenceStream: lines arriving within the budget are
 // copied through and the watchdog never fires (clean EOF, nil error).

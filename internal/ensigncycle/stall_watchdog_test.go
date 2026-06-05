@@ -11,25 +11,33 @@ import (
 // bans long basket/binary timeouts: a live scenario may take minutes of GENUINE
 // sequential model work (a 4-stage rejection-flow shares one `spacedock claude -p`
 // process because reviewer-reuse needs the reviewer alive across the route-back),
-// but every UNIT of progress — each FO turn, each ensign stage — completes well
-// under 60s, and the host stream emits frequent liveness events (Claude
-// thinking_tokens, Codex item.* events). So the rule-compliant guard is not a
-// whole-run deadline but a STALL detector: reset a timer on every received stream
-// line, and kill the process only when NO line arrives for stallTimeout. That
-// catches a true hang (the opus-panic signature was a stalled stage) precisely,
-// while never false-killing slow-but-live thinking.
+// but the host stream keeps emitting liveness events (Claude thinking_tokens,
+// Codex item.* events) — the longest measured gap between events was 59.1s on opus
+// (a sub-agent dispatch blocks the FO top-level stream while the child works). So
+// the rule-compliant guard is not a whole-run deadline but a STALL detector: reset
+// a timer on every received stream line, and kill the process only when NO line
+// arrives for stallTimeout. That catches a true hang (the opus-panic signature was
+// a stalled stage) precisely, while never false-killing slow-but-live thinking.
 
 // stageStallTimeout is the per-stage liveness budget: if the host stream emits no
 // line for this long the stage is treated as hung and the process is killed.
-const stageStallTimeout = 60 * time.Second
+//
+// 120s is a captain-approved exception to the strict-60s per-stage rule, justified
+// by measurement: the max FO-stream-silence gap is 59.1s on opus (a sub-agent
+// dispatch blocks the FO top-level stream while the child works; sonnet's max gap
+// was 28.3s). A 60s budget leaves only ~1s opus margin → CI-flaky under
+// rate-limit/load variance, so 120s gives ~2x margin over the measured opus max
+// while staying a tight, precise hang-detector — 2 minutes of TOTAL stream silence
+// is a genuine hang, not slow-but-live thinking.
+const stageStallTimeout = 120 * time.Second
 
 // streamWithStallWatchdog copies r line-by-line into a returned buffer, resetting
 // a stall timer on every line. If no line arrives for stallTimeout it invokes
 // onStall (the caller's process-kill) and returns the bytes read so far plus a
 // non-nil stall error. On clean EOF it returns the full output and a nil error.
 // It is host-neutral: the Claude and Codex runners both feed it their process
-// stdout pipe and a kill closure, so the 60s liveness guard is identical across
-// hosts and exercised offline without a model.
+// stdout pipe and a kill closure, so the stageStallTimeout liveness guard is
+// identical across hosts and exercised offline without a model.
 func streamWithStallWatchdog(r io.Reader, stallTimeout time.Duration, onStall func()) (string, error) {
 	lines := make(chan string)
 	readErr := make(chan error, 1)

@@ -216,9 +216,9 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 // run launches `codex exec --json` for one shared scenario. Liveness is guarded by
 // the per-stage STALL-WATCHDOG, not a whole-run basket: the --json stdout is read
 // incrementally through streamWithStallWatchdog, which resets a stageStallTimeout
-// (60s) timer on every event line and kills the process only when the stream goes
+// (120s) timer on every event line and kills the process only when the stream goes
 // silent that long. Codex emits frequent item.* events during a live run, so a
-// genuine multi-minute run is never false-killed; a true hang is killed in 60s.
+// genuine multi-minute run is never false-killed; a true hang is killed in 120s.
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) codexScenarioResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -255,7 +255,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	}
 
 	// The watchdog reads the --json stream to completion (clean EOF) OR kills the
-	// process on a 60s stall; killing EOFs the StdoutPipe so the watchdog returns.
+	// process on a 120s stall; killing EOFs the StdoutPipe so the watchdog returns.
 	jsonl, stallErr := streamWithStallWatchdog(stdout, stageStallTimeout, func() {
 		_ = cmd.Process.Kill()
 	})

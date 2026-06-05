@@ -201,7 +201,7 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`). The explicit `-timeout 40m` covers the full serial suite — the two-cycle `rejection-flow` drives four live ensign phases (impl → validation REJECT → re-implement → re-validation reusing the kept-alive reviewer) and alone measured ~14 min on sonnet, well over Go's default 10m binary timeout:
+Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`). The `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario serial-suite wall-time (~27m opus). The REAL liveness guard is the per-stage stall-watchdog in the runners (it kills a hang precisely at 120s of stream silence); the 40m ceiling never fires in a healthy run, it only bounds a pathological progressing-but-runaway loop and keeps the suite off Go's too-short default 10m binary timeout:
 
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
