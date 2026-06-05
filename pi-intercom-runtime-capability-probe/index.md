@@ -237,3 +237,46 @@ The task is ready for an implementation gate decision as a concrete design: impl
 - Future live `passed` evidence should capture concrete setup package/version/path observations when available; the current schema allows nulls for unknown values as documented.
 
 Recommendation: PASSED
+
+## Stage Report: validation (2026-06-05 follow-up)
+
+- Validator worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe`
+- Product commit inspected before validation evidence update: `81a11d066fa369b1e70e25c9e7d46cc2693824b7` (`Add pi intercom runtime capability probe`)
+- Product commit added by validation: `a50bb349dbef34d0d39638c8747478cb5b4ade6e` (`Record pi intercom validation not-run evidence`)
+- Evidence paths:
+  - `docs/dev/_evidence/pi-intercom-runtime-capability-probe/2026-06-04-not-run.json`
+  - `docs/dev/_evidence/pi-intercom-runtime-capability-probe/2026-06-05-validation-not-run.json`
+- Output artifact: `/tmp/cq-validation-output.md`
+
+### Live smoke prerequisite check
+
+- `pi` was available at `/Users/clkao/.local/state/fnm_multishells/28390_1780511451715/bin/pi` and reported version `0.78.0`.
+- `pi-subagents` was available at `/Users/clkao/.local/state/fnm_multishells/28390_1780511451715/bin/pi-subagents`; invoking `pi-subagents --version` printed install output rather than a clean version string.
+- `subagents-doctor` was not found on `PATH`.
+- `pi-intercom` was not found on `PATH`.
+- Live Pi intercom supervisor-talkback smoke was not run because the documented prerequisites were incomplete and this child worker must not use parent-only subagent orchestration. The validation evidence is honestly classified as `not_run`; no progress, decision, resume, reply, or marker behavior is claimed.
+
+### AC evidence
+
+- AC-1 PASSED: the recipe and tests define and enforce a reusable runtime capability probe recipe/evidence contract.
+- AC-2 PASSED: the recipe contains the exact child prompt requiring `contact_supervisor` `progress_update`, `contact_supervisor` `need_decision`, supervisor reply `APPROVED`, and marker content `PI-INTERCOM-SMOKE-APPROVED`.
+- AC-3 PASSED: tests reject over-claimed `passed` evidence and reject `setup_only` records that assert child talkback behavior.
+- AC-4 PASSED: recipe wording preserves the necessary-but-insufficient doctor-vs-capability distinction.
+- AC-5 PASSED for documented/manual path shape, but LIVE BEHAVIOR NOT PROVEN: only `not_run` evidence exists in this validation.
+- AC-6 PASSED: checked-in non-passed evidence is reproducible without live runtime access and passes schema validation.
+
+### Validation commands
+
+- `command -v subagents-doctor || true; command -v pi || true; command -v pi-subagents || true; command -v pi-intercom || true` — `pi` and `pi-subagents` found; `subagents-doctor` and `pi-intercom` not found.
+- `pi --version` — `0.78.0`.
+- `pi-subagents --help` — succeeded and documented installation directory `/Users/clkao/.pi/agent/extensions/subagent`.
+- `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -count=1` — passed.
+- `go test ./skills/integration -count=1` — passed.
+- `go test ./... -count=1` — passed.
+
+### Residual risks
+
+- Runtime child-to-supervisor talkback remains unproven until a parent Pi session with `subagents-doctor` and `pi-intercom` available runs the documented smoke and records non-`not_run` evidence.
+- The validation probe did not produce a marker file because the live child was not launched.
+
+Recommendation: PASSED for static recipe/schema/probe implementation; NOT PASSED as live runtime capability proof.
