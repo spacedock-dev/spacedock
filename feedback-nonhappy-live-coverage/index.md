@@ -246,3 +246,24 @@ Re-run the validator after the fix; keep offline `go test ./...` green. High-sta
 ### Summary
 
 Closed the PR #302 live-lane failure with Option A (make reviewer-reuse REAL). The dispatch's hypothesis was fixture-only; a local live run of BOTH hosts revealed a SECOND, independent flaw — the reuse assertions matched a "validation" NAME, but the FO addresses a kept-alive reviewer by its opaque handle (Claude agentId / Codex receiver thread), so the genuine reuse signal was invisible. Fixed both: the fixture now starts before cycle-1 validation (a real reviewer is spawned + kept alive + reused), and each reuse assertion correlates the validation spawn → its handle → the reuse call (proven on the real recorded transcripts the old assertions RED'd, and mutation-controlled offline). Timeout sized from a MEASURED run (sonnet 13.65m / Codex 5.5m): per-scenario 22m + CI/local `go test -timeout 40m`. The wall-time is dominated (77%) by headless teams-mode inbox-polling, not the fixture, which is already minimal. Offline `go test ./...` green (1144/15); live lane compiles. The authoritative end-to-end live PASS (both hosts, benchmark-token rotated) stays with the FO per the dispatch — my detached background runs were repeatedly SIGTERM'd by team-thread events (setsid blocked in-sandbox), but the mechanism + reuse signal are proven on the real recorded transcripts captured this session.
+
+## Stage Report: implementation (cycle 4 — timeout-mechanism re-fix)
+
+- DONE: Per-stage stall-watchdog replaces the banned basket timeout
+  `streamWithStallWatchdog` (default-tag, host-neutral) streams the host stdout and resets a `stageStallTimeout` timer on every line, killing + failing fast only on stream silence past the budget. Both the Claude and Codex shared-scenario runners stream through it instead of `context.WithTimeout(scenario.timeout)`. Offline unit tests (synthetic streams, no model) + mutation controls: disabling the reset false-kills a normal stream; removing the kill/error path hangs a stalled stream. Commit 9eb4c0e5.
+- DONE: Decision A — removed the banned per-scenario `timeout` field from `sharedRuntimeScenario` + all 4 table values
+  Both out-of-scope live adapters (`claudeRunnerAdapter` via livescenario_adapter, auto_continue) reach the host through `claudeLiveRunner.run`, so they inherit the watchdog MECHANICALLY (no restructuring, no per-call deadline, no follow-up). Parity meta-test dropped the `timeout > 0` + ordering assertions; kept the host-neutrality field-set + no-host-named-field checks (now also banning a timeout field). Commit 8882ad17.
+- DONE: 120s watchdog budget (captain-approved exception) + audited, not evaded
+  Discovered a STANDING AC-1 60s-cap regime (`live_budget_test.go` + the pre-existing `streamWatcher`/`quietBudgetDefault` in `live_test.go`) the 120s would silently evade (the AST guard scans only streamwatch_test.go + live_test.go, not my file). Flagged to team-lead; rather than evade, added `TestStageStallTimeoutIsCaptainApprovedException` pinning `stageStallTimeout == 120s` so the exception is AUDITED — drift reds + forces re-approval. Mutation-confirmed (90s reds the pin).
+- DONE: `-timeout 40m` LOOSE BACKSTOP on both CI commands + README locals; doc-contract + release/journey guards re-pinned + mutation-confirmed
+  40m sized above the full 4-scenario serial-suite wall-time (~27m opus); the 120s watchdog is the real guard. Comments corrected to the "backstop only" framing. Mutation-confirmed: drifting the workflow command reds the release guard (`journey_workflow_test.go:59`); drifting the README command reds `TestSharedScenarioDocsContract` (`docs_test.go:109`).
+
+### Timeout sizing (measured)
+
+Captain-approved exception to the strict-60s per-stage rule, grounded in measurement (team-lead's instrumented run; my earlier 13.65m figure was a misread inner result-event — superseded):
+
+- **rejection-flow end-to-end:** sonnet 6.16m, opus 8.98m.
+- **Max FO-stream-silence gap (the watchdog's discriminator):** sonnet 28.3s, opus 59.1s (a sub-agent dispatch blocks the FO top-level stream while the child works).
+- **Per-stage stall-watchdog budget = 120s:** ~2x margin over the measured opus max-gap (59.1s); a 60s budget leaves ~1s opus margin → CI-flaky. Still a tight, precise hang-detector (2 min total stream silence = genuine hang).
+- **Full 4-scenario serial suite ≈ 27m opus** (rejection-flow 8.98m + the heavier 3-cycle escalation + gate + merge-hook).
+- **Go `-timeout 40m` = LOOSE BACKSTOP only,** sized above the ~27m full-suite wall-time; it never fires in a healthy run (the 120s watchdog catches hangs precisely), only bounding a pathological progressing-but-runaway loop, and keeps the suite off Go's too-short default 10m binary timeout. Captain-approved.
