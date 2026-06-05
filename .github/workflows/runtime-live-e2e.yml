@@ -33,11 +33,6 @@ on:
         required: false
         type: string
         default: ""
-      pi_version:
-        description: "Pin pi-coding-agent to a specific version (e.g. 2.0.5). Empty = npm latest."
-        required: false
-        type: string
-        default: ""
       effort:
         description: "Effort hint for the live run (low, high, xhigh). Default low."
         required: false
@@ -350,18 +345,29 @@ jobs:
           node-version: "20"
 
       - name: Install Pi CLI and substrates
-        env:
-          PI_VERSION: ${{ inputs.pi_version }}
         run: |
-          if [ -n "$PI_VERSION" ]; then
-            npm install -g "pi-coding-agent@$PI_VERSION"
-          else
-            npm install -g pi-coding-agent
-          fi
+          npm --version
+          NPM_BEFORE="$(node -e 'console.log(new Date(Date.now() - 24*60*60*1000).toISOString())')"
+          echo "Using npm --before age gate for pi-live installs: $NPM_BEFORE"
+
+          npm install -g @earendil-works/pi-coding-agent --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev
+          command -v pi
+          test -x "$(command -v pi)"
           pi --version
-          pi install npm:pi-subagents
-          pi install npm:pi-intercom
-          echo "PI_SUBAGENTS_PACKAGE_ROOT=$HOME/.pi/agent/npm/node_modules/pi-subagents" >> "$GITHUB_ENV"
+          global_npm_root="$(npm root -g)"
+          node -e "const p=require('$global_npm_root/@earendil-works/pi-coding-agent/package.json'); if (p.name !== '@earendil-works/pi-coding-agent') throw new Error('unexpected Pi package name '+p.name); if (!p.bin || p.bin.pi !== 'dist/cli.js') throw new Error('unexpected Pi bin '+JSON.stringify(p.bin)); console.log('verified '+p.name+'@'+p.version+' bin pi='+p.bin.pi)"
+
+          pi_npm_root="$HOME/.pi/agent/npm"
+          mkdir -p "$pi_npm_root"
+          npm install --prefix "$pi_npm_root" \
+            pi-subagents \
+            pi-intercom \
+            --before="$NPM_BEFORE" --ignore-scripts --no-audit --no-fund --omit=dev
+          node -e "const p=require('$pi_npm_root/node_modules/pi-subagents/package.json'); if (p.name !== 'pi-subagents') throw new Error('unexpected pi-subagents package name '+p.name); console.log('verified '+p.name+'@'+p.version)"
+          node -e "const p=require('$pi_npm_root/node_modules/pi-intercom/package.json'); if (p.name !== 'pi-intercom') throw new Error('unexpected pi-intercom package name '+p.name); console.log('verified '+p.name+'@'+p.version)"
+          test -f "$pi_npm_root/node_modules/pi-subagents/src/extension/index.ts"
+          test -f "$pi_npm_root/node_modules/pi-subagents/skills/pi-subagents/SKILL.md"
+          echo "PI_SUBAGENTS_PACKAGE_ROOT=$pi_npm_root/node_modules/pi-subagents" >> "$GITHUB_ENV"
 
       - name: Build spacedock binary
         run: |
