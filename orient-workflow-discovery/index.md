@@ -1,7 +1,7 @@
 ---
 id: 19fhrfae24d221wzgqm4zarn
 title: Bring workflow-discovery into spacedock — orient on a project's implicit agent workflow as the front-door to commission
-status: validation
+status: implementation
 source: "captain (2026-06-05) — 'check the prototype orient skill in ~/.claude, this is the workflow discovery thing we should bring in.' Prototype at ~/.claude/skills/orient/SKILL.md."
 score: "0.33"
 started: 2026-06-05T19:10:17Z
@@ -177,3 +177,7 @@ Shipped `skills/survey/SKILL.md` as a user-invocable spacedock skill porting the
 ### Summary
 
 REJECTED. The two prototype-bug fixes (project-column filter, agent-aware Codex extraction) genuinely work and were proven by running the skill's query block against a Codex-inclusive DB — but the shipped skill's own step-1 sync command does NOT produce that DB on this repo: a bare `agentsview sync` exhausts its 600s timeout on the ~16k+ Claude backlog and never reaches the Codex sessions, so `/spacedock:survey` as written returns an empty/Claude-only report missing the exact Codex history the skill was built for (the headline use case). Codex ingestion requires `CODEX_SESSIONS_DIR=~/.codex/sessions` or masking Claude, which the skill never does. Secondary: AC-1 (launch), AC-3 (comparison prose), and AC-4 (commission hand-off) were proven only by structural lint / template inspection, not by an outside-the-skill behavioral run — AC-1's own test self-annotates that it does not exercise skill discovery. AC-5 (absent + no-history) and the TCC-safe read routing are correct and proven by running. Recommend: fix step-1 to scope/freshen Codex (e.g. `CODEX_SESSIONS_DIR` or a per-project incremental that reaches Codex within timeout) and prove AC-2 end-to-end through the SHIPPED command, then add an actual launch/hand-off behavioral exercise for AC-1/AC-3/AC-4.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED (2026-06-05).** Route back to implementation to fix the shipped `/spacedock:survey` happy path and its proof gaps. Material findings: the skill's own step-1 `AGENT_VIEWER_DATA_DIR=... timeout 600 agentsview sync` does not produce a Codex-inclusive DB on this repo, so AC-2 fails through the shipped command; `/spacedock:survey` launch behavior, scaffold comparison prose, and the commission hand-off are still proven only by structural lint or template inspection. Required fixback: scope/freshen Codex ingestion in the shipped command path, prove AC-2 end-to-end through that path, and add behavioral exercises for AC-1/AC-3/AC-4.
