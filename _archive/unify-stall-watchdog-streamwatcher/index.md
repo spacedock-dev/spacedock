@@ -9,6 +9,7 @@ completed:
 verdict: rejected
 worktree:
 issue:
+archived: 2026-06-05T15:59:12Z
 ---
 
 `internal/ensigncycle` now carries TWO parallel no-progress stall mechanisms with the same "reset the deadline on every drained line" design:
