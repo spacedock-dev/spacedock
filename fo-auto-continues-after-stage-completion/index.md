@@ -1,6 +1,6 @@
 ---
 title: FO should auto-continue from completed non-gated stages to next-stage dispatch
-status: validation
+status: implementation
 source: captain (2026-06-04) — FO stopped after implementation reporting instead of immediately advancing to validation; AI-engineer review found the current contract implies but does not enforce this lifecycle invariant
 score: "0.32"
 started: 2026-06-04T15:05:37Z
@@ -182,3 +182,14 @@ Reproduced every AC's outside-body evidence by exercising, not re-reading: the t
 ### Validation recommendation: PASSED — with the AC-5 live half driven post-merge
 
 All offline proof is green and adversarially sound. AC-1/2/3 (contract text), AC-4 (scenario definition), and AC-5's offline negative are fully satisfied and survive refutation. AC-5's live half is the one residual: the behavioral proof that a real FO actually advances requires a credentialed run (`go test -tags live -run TestLiveAutoContinueAfterImplementation`) producing the `live <ci-run:|session:>` citation. Because the dev workflow does NOT opt into the live-run terminalize guard, this citation is advisory here rather than enforced, and the live run spends an external credential plus minutes of wallclock. Per the live-AC A/C policy (a runtime-observable claim's live half may close post-merge when the guard is not opt-in), I recommend driving the live half post-merge and recording the `live <…>` citation on AC-5 then, rather than blocking this gate on a credential spend. If the captain wants the live half driven before merge, that is the conservative alternative and the infrastructure is ready (test compiles, skips cleanly without a credential). Detached adversarial audit: the two adversarial edits this entity's Test plan names as owed (a meaning-inverting paraphrase that keeps a near-synonym; a transcript that narrates advancement over an unchanged state) were both reproduced here and both caught by the deliverable's own tests — refuted nothing material. The team-lead should fold in the parallel detached auditor's findings before presenting the gate.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED: re-scope to behavioral-only proof, reproduce on Pi (proof-policy `f8b257cf` + captain).** The detached audit showed AC-1/2/3's presence oracles are negation-defeatable, and the captain has since ruled and shipped (`f8b257cf`) that a string-match over an instruction file the model ingests NEVER satisfies a behavioral AC — so AC-1/2/3 are not valid proof. Routed to `implementation` (reused impl ensign, `reuse_ok` 13.2%, same worktree). New scope:
+
+- **Drop AC-1/2/3 presence oracles entirely** (banned tautologies). KEEP the three contract clauses themselves (the fix is real authoring, not an AC). Finding 2 (the dropped-`terminal` halt-exception hole) is moot once the oracle is gone.
+- **Rebase onto current origin/next (`f8b257cf`)** — it now carries the proof-policy edit to the dev-README's ideation/validation/done sections; your `### implementation` Outputs clause is a disjoint section and coexists.
+- **Reproduce the auto-continue behavior with a LIVE drive — on Pi (the origin runtime where the bug bit), via `internal/ensigncycle/pi_live_runner_test.go`** — plus the existing Claude AC-5 drive. RUN both (benchmark-token is rotated); do NOT defer. The bug was a `pi-subagents` failure; proving the fix on Claude alone never touches the origin. If Pi live infra is genuinely unavailable in this env, that is a finding — report it, drive the Claude leg at minimum, and flag the Pi gap; do not fake it. Keep the offline state-grader negative (it grades produced state — legitimate).
+- The entity's real proof is now: the behavior reproduced live (Pi + Claude) + the offline state-grader. No presence oracles.
+
+Re-validate after; the validator must reject any presence-oracle-only AC per the new policy.
