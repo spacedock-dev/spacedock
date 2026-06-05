@@ -55,15 +55,15 @@ func markCodeBoundInvariant(t *testing.T, source string) {
 
 // ingestedFileReaders are the helper functions in this package that read an
 // instruction file the model ingests (a contract, a workflow README, a skill
-// body). A test that calls one of these AND matches its result with
-// strings.Contains / strings.Count / a regexp is a presence/absence check over an
-// ingested file — exactly the shape the proof policy bans as standalone
-// behavioral proof. The AC-3 sweep treats such a test as tautological-unless it
-// declares markNonAC, or unless it instead binds the expected value to a code-side
-// source (a re-bound Bucket-B invariant — those read the constant, not just the
-// file). The sweep distinguishes the two by the markNonAC declaration: a re-bound
-// invariant whose expectation diverges from the file does not need the marker,
-// because its expected value is independent; a pure text-consistency lint does.
+// body) — the seed of the reader set the sweep grows to a fixpoint. A test that
+// calls one of these (the READ — how it then inspects the bytes is irrelevant under
+// the match-axis positive rule) is a presence/absence check over an ingested file,
+// exactly the shape the proof policy bans as standalone behavioral proof. The AC-3
+// sweep treats such a test as tautological unless it declares markNonAC, or unless
+// it binds the expected value to a code-side source (a re-bound Bucket-B invariant —
+// markCodeBoundInvariant). The sweep distinguishes the two by the declaration: a
+// re-bound invariant whose expectation diverges from the file declares
+// markCodeBoundInvariant; a pure text-consistency lint declares markNonAC.
 var ingestedFileReaders = map[string]bool{
 	"foCore":                            true,
 	"foRuntime":                         true,
@@ -76,26 +76,45 @@ var ingestedFileReaders = map[string]bool{
 }
 
 // TestNoUndeclaredTautologicalProof is the AC-3 sweep, re-runnable offline. It
-// parses every *_test.go in this package and flags any test function that READS an
-// ingested instruction file's content (by any flow — a reader helper, a tainted
-// os.ReadFile/os.Open, a WalkDir-collected `.md`) unless it self-classifies via
-// markNonAC or markCodeBoundInvariant. The count of undeclared offenders is the
-// AC-3 metric: it must be zero.
+// parses every *_test.go in this package and flags any test function that READS a
+// recognized instruction file's content — via a reader helper, a tainted
+// os.ReadFile/os.Open, or a WalkDir-collected `.md`, through the flow shapes the
+// reader-axis taint covers (below) — unless it self-classifies via markNonAC or
+// markCodeBoundInvariant. The count of undeclared offenders is the AC-3 metric: it
+// must be zero.
 //
-// The sweep keys on the READ, not on how the bytes are then inspected. The proof
-// policy bans a presence/absence match over an ingested file as standalone
-// behavioral proof; the match can be performed by any of an unbounded set of idioms
-// (strings.Contains/Index/EqualFold, bytes.*, regexp.Regexp.Match, len(Split)>1, a
-// bare `==`), so enumerating "match functions" is whack-a-mole. The positive rule
-// instead requires: a test that ingests instruction-file content MUST declare its
-// proof standing, regardless of how it inspects the bytes. A legitimate
-// content-read (a re-bound invariant, a structural-absence lint) declares
-// markCodeBoundInvariant / markNonAC; only an undeclared ingest is an offender.
+// What the guard actually guarantees (two axes, with one closed and one bounded):
+//
+//   - MATCH axis (closed, universal, load-bearing): the sweep keys on the READ, not
+//     on how the bytes are then inspected. ONCE a read of a recognized instruction
+//     file is detected, the test MUST declare regardless of the inspection idiom —
+//     strings.Contains/Index/EqualFold, bytes.*, regexp.Regexp.Match, len(Split)>1,
+//     a bare `==`, anything. Enumerating "match functions" was whack-a-mole; this
+//     rule closes the whole class because the trigger is the ingest, not the match.
+//
+//   - READER axis (covered flow shapes, NOT exhaustive): a read is detected for an
+//     in-package read of a RECOGNIZED instruction path (a skill-tree/contract
+//     segment, isInstructionPathLiteral) reaching a read sink through these flows: a
+//     bare-`string` parameter, a `:=`/`=` local, a struct field, a method receiver,
+//     a closure capture; with the path built by `+` / strings.Join / filepath.Join /
+//     fmt.Sprintf. A transitive helper chain is followed to a fixpoint.
+//
+// KNOWN OUT-OF-SCOPE (tracked in the follow-up task sweep-guard-reader-axis-invert,
+// id 4qnn7dbzkyh9qv65t618vtxy, backstopped by the detached adversarial audit before
+// merge — NOT silently dropped):
+//   - M-A: unrecognized instruction surfaces (AGENTS.md, mods/*.md) — not in the
+//     instructionPathSegments predicate.
+//   - M-B: cross-package reads (a read whose reader helper lives in another package).
+//   - M-C: a path held in a package var defined in another file of this package.
+//   - M-D: `[]string`/`...string`-param + range/slice-element flow.
+// These are the same recurring enumerated-shape reader-flow class cycles 1-3 each
+// closed instances of; the follow-up weighs an invert/positive predicate and a
+// go/types+SSA taint that closes the class definitionally.
 //
 // This sweep is itself a code-side invariant over real parsed test source, not a
 // text match over an instruction file — its expected value (which reads reach an
 // instruction file) is independent of any contract prose, so it can fail when a
-// future edit adds an undeclared ingest.
+// future edit adds an undeclared ingest through a covered flow.
 func TestNoUndeclaredTautologicalProof(t *testing.T) {
 	offenders := sweepUndeclaredTautologies(t, ".")
 	for _, o := range offenders {
@@ -202,15 +221,24 @@ func sweepUndeclaredTautologies(t *testing.T, dir string) []string {
 	return sortedUnique(offenders)
 }
 
-// readsInstructionContent reports whether fn ingests an instruction file's content
-// by any flow. It is the positive/taint replacement for the Cycle-1/2 allow-lists
-// (readsParamPath + walksForMarkdown + constStringConcat-only `+` concat): rather
-// than enumerate read idioms, it taints every string value derived from an
-// instruction-file path — however the path is built (`+`, strings.Join,
-// filepath.Join, fmt.Sprintf, a struct field, a method receiver, a param) — and
-// reports a read when a tainted path flows into ANY read sink (os.ReadFile/os.Open/
+// readsInstructionContent reports whether fn ingests a recognized instruction
+// file's content through the reader-axis flow shapes the taint COVERS — it is the
+// positive/taint replacement for the Cycle-1/2 allow-lists (readsParamPath +
+// walksForMarkdown + constStringConcat-only `+` concat), but it covers a bounded
+// set of flows, not an exhaustive one. It taints a string derived from a recognized
+// instruction-file path (a skill-tree/contract segment, isInstructionPathLiteral)
+// built by `+` / strings.Join / filepath.Join / fmt.Sprintf and flowed through a
+// bare-`string` param, a `:=`/`=` local, a struct field, or a method receiver, and
+// reports a read when a tainted path flows into a read sink (os.ReadFile/os.Open/
 // io.ReadAll/bufio scanner-reader), or when fn WalkDir/Walks a tree collecting
 // instruction `.md` files (the reader-of-many shape its callers then read).
+//
+// NOT covered (tracked in sweep-guard-reader-axis-invert, id
+// 4qnn7dbzkyh9qv65t618vtxy, audit-backstopped): `[]string`/`...string`-param +
+// range/slice-element flow (M-D), cross-package reader helpers (M-B), a package var
+// defined in another file of this package (M-C), and unrecognized surfaces like
+// AGENTS.md / mods/*.md (M-A). See TestNoUndeclaredTautologicalProof's doc for the
+// full honest bound.
 func readsInstructionContent(fn *ast.FuncDecl, taintedFields map[string]bool) bool {
 	tainted := instructionTaintedNames(fn, taintedFields)
 	found := false
@@ -372,11 +400,13 @@ func lvalueName(e ast.Expr) string {
 
 // exprInstructionTainted reports whether an expression carries an instruction-file
 // path taint: it references a tainted name (ident or `recv.field` selector), an
-// instruction-path string literal/segment, a known instruction path ident, or is
-// built from any of these via the path-building idioms (`+`, strings.Join,
-// filepath.Join, fmt.Sprintf, string(...)). The over-approximation is deliberate:
-// the policy wants every ingest of an instruction file declared, and a read whose
-// path is built from an instruction segment by ANY means is such an ingest.
+// instruction-path string literal/segment, or a known instruction path ident,
+// anywhere in its subtree — so the `+` / strings.Join / filepath.Join / fmt.Sprintf
+// path-build idioms (whose tainted operand is a node in the subtree) are covered.
+// The over-approximation toward flagging is deliberate. It does NOT cover a taint
+// carried in a slice element or recovered via a range variable (M-D) — see
+// readsInstructionContent's NOT-covered note and the follow-up
+// sweep-guard-reader-axis-invert.
 func exprInstructionTainted(expr ast.Expr, tainted map[string]bool) bool {
 	hit := false
 	ast.Inspect(expr, func(n ast.Node) bool {
@@ -443,19 +473,26 @@ func isStringyType(t ast.Expr) bool {
 	return ok && id.Name == "string"
 }
 
-// instructionPathSegments are skill-tree / contract path segments that mark a path
-// literal as targeting an instruction file the model ingests (a skill, contract,
-// agent, or runtime adapter) rather than a binary-parsed artifact (a manifest
-// .json) or a dev-only doc (docs/dev/*.md recipes are NOT an LLM instruction
-// surface and are intentionally out of scope — Cycle-2 P1 divergence: the sweep
-// scopes to the shipped skill/contract surface, not every `.md` in the repo).
+// instructionPathSegments are the skill-tree / contract path segments that mark a
+// path literal as targeting an instruction file the model ingests (a skill,
+// contract, agent, or runtime adapter) rather than a binary-parsed artifact (a
+// manifest .json) or a dev-only doc (docs/dev/*.md recipes are NOT an LLM
+// instruction surface and are intentionally out of scope — Cycle-2 P1 divergence:
+// the sweep scopes to the shipped skill/contract surface, not every `.md` in the
+// repo).
 //
-// This is the positive instruction-surface predicate: a path with any of these
-// segments is an instruction path however it is built. It replaces the Cycle-1
-// `.md`-suffix-AND-segment pair (which a split/Join-built suffix evaded) — a path
-// fragment carrying a skill-tree segment is instruction-tainted even before a `.md`
-// suffix is appended, so `strings.Join([]string{"…/first-officer-shared-core","md"},".")`
-// taints on the segment in the base.
+// This is the RECOGNIZED-instruction-surface predicate (a deliberate bound, not a
+// universal one): a path carrying one of these listed segments is an instruction
+// path. A path fragment carrying a segment is instruction-tainted even before a
+// `.md` suffix is appended, so strings.Join([]string{"…/first-officer-shared-core",
+// "md"}, ".") taints on the segment in the base (closing the Cycle-1
+// `.md`-suffix-AND-segment pair a split/Join-built suffix evaded).
+//
+// KNOWN OUT-OF-SCOPE surfaces (M-A, tracked in sweep-guard-reader-axis-invert, id
+// 4qnn7dbzkyh9qv65t618vtxy): a real instruction surface whose path carries NONE of
+// these segments — e.g. AGENTS.md or mods/*.md — is not recognized and a read of it
+// is not flagged. The follow-up weighs an invert/positive predicate that recognizes
+// the instruction surface definitionally rather than by this enumerated list.
 var instructionPathSegments = map[string]bool{
 	"skills":        true,
 	"references":    true,
