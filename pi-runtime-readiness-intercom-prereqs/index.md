@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs
 issue:
 id: qj2m6f3v8n9c0p4r7t1x5kz2
 mod-block: merge:pr-merge
+pr: "#304"
 ---
 
 # Pi readiness checks should report intercom supervisor-talkback prerequisites
