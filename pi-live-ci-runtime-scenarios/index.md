@@ -1,6 +1,6 @@
 ---
 title: Add Pi to runtime-live CI and shared runtime scenarios
-status: implementation
+status: done
 source: captain (2026-06-05) — PRs that affect Pi runtime support need a Pi live lane using OPENAI_API_KEY; local/CI coverage should run most shared scenarios through Pi, either LLM-live or codified where a scenario is not yet live-safe
 score: "0.33"
 started: 2026-06-05T00:00:00Z
