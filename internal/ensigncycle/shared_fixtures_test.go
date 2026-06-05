@@ -102,17 +102,19 @@ func rejectionReadme() string {
 		"      terminal: true\n" +
 		"---\n" +
 		"# Rejection Fixture\n\n" +
-		"This fixture exercises the full two-cycle rejection trajectory: a first REJECTED validation routes back to implementation, the rework applies the fix, and a second validation round (cycle 2) re-checks it.\n\n" +
+		"This fixture exercises the full two-cycle rejection trajectory LIVE, starting before the first validation: a first implementation deliberately omits the fix, a first validation REJECTS it and routes back to implementation, the rework applies the fix, and a second validation round (cycle 2) re-checks it and PASSES.\n\n" +
 		"### implementation\n\n" +
-		"Apply the validation rejection by appending this exact standalone line to `rejection-task.md`:\n\n" +
-		"`" + rejectionFixMarker + "`\n\n" +
-		"Then append a `## Stage Report: implementation` section with one `- DONE:` item naming the fix.\n\n" +
-		"- **Outputs:** The exact fix marker and an implementation stage report.\n\n" +
+		"This stage runs once per cycle. Decide which round you are in by checking `rejection-task.md` for a `## Stage Report: validation` section recommending REJECTED:\n\n" +
+		"- **First round (no REJECTED validation report present yet):** deliberately OMIT the fix marker. Append a `## Stage Report: implementation` section with one `- DONE:` item noting the initial implementation does not yet carry the fix marker. Do NOT write the marker line. This is the buggy round the first validation must reject.\n" +
+		"- **Rework round (a REJECTED validation report is present):** apply the fix by appending this exact standalone line to `rejection-task.md`:\n\n" +
+		"  `" + rejectionFixMarker + "`\n\n" +
+		"  Then append a second `## Stage Report: implementation` section with one `- DONE:` item naming the fix.\n\n" +
+		"- **Outputs:** An implementation stage report; on the rework round, the exact fix marker as well.\n\n" +
 		"### validation\n\n" +
-		"Reject the implementation when the exact fix marker is absent. If it is present, report PASSED.\n\n" +
+		"Reject the implementation when the exact fix marker `" + rejectionFixMarker + "` is absent from `rejection-task.md`; report PASSED when it is present. Append a `## Stage Report: validation` section recording the verdict. Keep this review LIGHT — inspect only for the marker line; do not read or run unrelated code.\n\n" +
 		"- **Outputs:** A PASSED or REJECTED validation stage report.\n\n" +
 		"### Feedback Cycles\n\n" +
-		"Track every validation round in a `### Feedback Cycles` section in `rejection-task.md`: append one `- Cycle N: <verdict>` line per validation round, numbered in order. Cycle 1 (the first REJECTED round) is already recorded; record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
+		"Track every validation round in a `### Feedback Cycles` section in `rejection-task.md`: append one `- Cycle N: <verdict>` line per validation round, numbered in order. The first REJECTED round is `- Cycle 1: REJECTED`; record `- Cycle 2: PASSED` after the re-validation passes.\n\n" +
 		"### done\n\nTerminal state.\n"
 }
 
@@ -120,34 +122,22 @@ func rejectionEntity() string {
 	return "---\n" +
 		"id: rejection-task\n" +
 		"title: Rejection Task\n" +
-		"status: validation\n" +
+		"status: implementation\n" +
 		"completed:\n" +
 		"verdict:\n" +
 		"worktree:\n" +
 		"---\n" +
 		"# Rejection Task\n\n" +
-		"The implementation is intentionally missing the exact fix marker.\n\n" +
-		"## Stage Report: implementation\n\n" +
-		"- DONE: Initial implementation exists\n" +
-		"  The initial implementation deliberately omits the required fix marker.\n" +
-		"\n### Summary\n\n" +
-		"Ready for validation.\n\n" +
-		"## Stage Report: validation\n\n" +
-		"- FAILED: Fix marker is absent\n" +
-		"  REJECTED: expected exact line `" + rejectionFixMarker + "`, but it is missing. Route this back to implementation.\n" +
-		"\n### Summary\n\n" +
-		"Recommendation: REJECTED. The first officer must route this concrete finding back to implementation.\n\n" +
-		"### Feedback Cycles\n\n" +
-		"- Cycle 1: REJECTED — fix marker absent, routing back to implementation.\n"
+		"This task starts at implementation, before any validation has run. The first implementation round must deliberately omit the fix marker so the first validation rejects it; the rework round after that rejection applies the marker.\n"
 }
 
 func rejectionPrompt() string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: .",
-		"Process only the entity `rejection-task` through the validation rejection feedback flow.",
-		"The latest validation report already recommends REJECTED (cycle 1). Route the concrete finding back to the implementation target, dispatch a worker if needed, wait for the follow-up implementation completion, then re-run the validation reviewer for a second cycle and record `- Cycle 2:` per the workflow README. Reuse the kept-alive validation reviewer for the re-review rather than dispatching a fresh one.",
-		"Do not advance the entity to done. Your final response must mention the rejection and the second-cycle re-validation result.",
+		"Process only the entity `rejection-task`, which starts at implementation, through a full two-cycle rejection feedback flow.",
+		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target, wait for the rework to apply the fix, then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, REUSE the kept-alive validation reviewer rather than dispatching a fresh one.",
+		"Do not advance the entity to done. Your final response must mention the first-cycle rejection and the second-cycle re-validation result.",
 	)
 }
 

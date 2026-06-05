@@ -49,42 +49,66 @@ func TestGateGuardrailNegativeBrokenStateTransition(t *testing.T) {
 func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	rejectedObserved := "validation was REJECTED; routing the finding back to implementation"
 
-	// Missing rejection route: the FO never applied the fix nor drove a second
-	// cycle. The fixture entity as-staged is still at status: validation with only
-	// the original implementation report and the seeded Cycle 1 entry — exactly the
-	// not-routed-back state. (The marker substring appears twice, quoted inside the
-	// REJECTED finding and the README-mirroring fixture text; the assertion is not
-	// satisfied by those quotes because it also requires a SECOND implementation
-	// report and a SECOND `### Feedback Cycles` entry, which the un-routed state
-	// lacks — so a tautological marker-only assertion would falsely pass here while
-	// the behavior-oriented one correctly fails.)
-	notRouted := rejectionEntity()
-	if !strings.Contains(notRouted, "status: validation") {
-		t.Fatal("rejection fixture must start at status: validation")
+	// Un-driven fixture: the rejection scenario now starts BEFORE the first
+	// validation, at status: implementation with NO stage reports and NO seeded
+	// rejection. The seeded fixture must NOT pre-satisfy assertRejectionFlow — a live
+	// pass requires the real producer to drive BOTH cycles (omit the fix, get
+	// rejected, rework, re-validate). If this seeded state passed, a live run that did
+	// nothing would falsely pass.
+	seeded := rejectionEntity()
+	if !strings.Contains(seeded, "status: implementation") {
+		t.Fatal("rejection fixture must now start at status: implementation, before the first validation")
 	}
-	if len(implementationReport.FindAllString(notRouted, -1)) != 1 {
-		t.Fatal("un-routed rejection fixture must carry exactly one implementation report")
+	if got := len(implementationReport.FindAllString(seeded, -1)); got != 0 {
+		t.Fatalf("rejection fixture must start with no implementation reports (live producer writes them), got %d", got)
 	}
-	if err := assertRejectionFlow(notRouted, rejectedObserved); err == nil {
-		t.Fatal("expected an un-routed rejection (one implementation report, one cycle) to fail assertRejectionFlow")
+	if err := assertRejectionFlow(seeded, rejectedObserved); err == nil {
+		t.Fatal("expected the un-driven rejection fixture (no reports, no cycles) to fail assertRejectionFlow")
+	}
+
+	// No-reviewer-created shape — the exact flaw that shipped on PR #302. The OLD
+	// fixture pre-wrote a `## Stage Report: validation` REJECTED, so cycle-1
+	// validation never ran live, no reviewer was ever spawned, and the cycle-2
+	// reviewer-reuse signal was unreachable: the FO correctly fresh-dispatched. The
+	// redesigned fixture must NOT pre-contain a validation report, so the FO drives a
+	// real cycle-1 validation that spawns a reviewer to keep alive and reuse.
+	if strings.Contains(seeded, "## Stage Report: validation") {
+		t.Fatal("rejection fixture must NOT pre-contain a validation report — a pre-written cycle-1 rejection means no live reviewer is ever spawned, making the cycle-2 reviewer-reuse signal unreachable (the PR #302 regression)")
 	}
 
 	// AC-4 single-cycle end-state — the Go-port regression the evolved scenario
 	// restores: the FO applied the fix and left a SECOND implementation report, but
-	// stopped after one cycle, never driving the second validation round (still only
-	// the seeded `- Cycle 1:` entry). The two-implementation-report check passes, so
-	// this MUST fail on the second-cycle check — proving the evolved assertion
-	// catches the single-route-back simplification the Python test never had.
-	singleCycle := rejectionEntity() +
-		"\n" + rejectionFixMarker + "\n\n## Stage Report: implementation\n\n- DONE: applied fix\n"
+	// stopped after one cycle, never driving the second validation round (only one
+	// recorded cycle). The two-implementation-report check passes, so this MUST fail
+	// on the second-cycle check — proving the evolved assertion catches the
+	// single-route-back simplification the Python test never had.
+	singleCycle := "---\nstatus: implementation\n---\n# Rejection Task\n\n" +
+		rejectionFixMarker + "\n\n" +
+		"## Stage Report: implementation\n\n- DONE: initial (no marker)\n\n" +
+		"## Stage Report: implementation\n\n- DONE: applied fix\n\n" +
+		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n"
 	if len(implementationReport.FindAllString(singleCycle, -1)) < 2 {
 		t.Fatal("single-cycle body must carry a second implementation report")
 	}
 	if len(feedbackCycleEntry.FindAllString(singleCycle, -1)) != 1 {
-		t.Fatal("single-cycle body must carry exactly one recorded cycle (the seeded Cycle 1)")
+		t.Fatal("single-cycle body must carry exactly one recorded cycle (only Cycle 1)")
 	}
 	if err := assertRejectionFlow(singleCycle, rejectedObserved); err == nil {
 		t.Fatal("expected a single-cycle end-state (fix applied, second implementation report, but only one recorded cycle) to fail assertRejectionFlow on the second-cycle check")
+	}
+
+	// No-reuse run shape — the producer-signal half of the shipped flaw. A run whose
+	// transcript never carries a reuse tool-call (because no reviewer was kept alive
+	// to reuse) must RED on the host reuse assertions. This is the offline pin for
+	// "a run that never creates-or-reuses a reviewer"; the live legs grade the real
+	// transcript.
+	noReuseClaude := `{"type":"assistant","message":{"content":[{"type":"text","text":"fresh-dispatching a new validation reviewer; no prior reviewer to reuse"}]}}`
+	if err := assertClaudeReviewerReuse(noReuseClaude); err == nil {
+		t.Fatal("expected a transcript that never reuses a reviewer to fail assertClaudeReviewerReuse")
+	}
+	noReuseCodex := `{"type":"message","role":"assistant","content":"fresh-dispatching a new validation worker; no prior worker to reuse"}`
+	if err := assertCodexReviewerReuse(noReuseCodex); err == nil {
+		t.Fatal("expected a transcript that never reuses a reviewer to fail assertCodexReviewerReuse")
 	}
 }
 

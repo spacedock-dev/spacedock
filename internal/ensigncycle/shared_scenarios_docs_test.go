@@ -98,9 +98,10 @@ func TestSharedScenarioDocsContract(t *testing.T) {
 		"TestSharedScenarioRunnerCoverage",
 		// Local live commands for BOTH hosts. `-count=1` defeats a stale Go test
 		// cache replaying a prior pass without launching the model (the false-green
-		// that bit the live gate).
-		"go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
-		"go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
+		// that bit the live gate); `-timeout 40m` covers the full serial suite — the
+		// two-cycle rejection-flow alone exceeds Go's default 10m binary timeout.
+		"go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
+		"go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
 		"go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v",
 	}
 	for _, clause := range mustContain {

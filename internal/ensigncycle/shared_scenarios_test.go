@@ -30,7 +30,13 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			name:          "rejection-flow",
 			oldPythonTest: "tests/test_rejection_flow.py",
 			intent:        "FO drives a two-cycle rejection trajectory — route back, re-implement, re-validate via reviewer reuse — restoring the dropped second cycle.",
-			timeout:       8 * time.Minute,
+			// Sized against a MEASURED local sonnet run of the now-heavier
+			// before-cycle-1 fixture: 4 live ensign phases (impl-c1 → val-c1 REJECT →
+			// impl-rework → val-c2 reuse) totalled 13.65 min end-to-end (~3.1 min of
+			// ensign work + ~10.5 min headless teams-mode inbox-polling/orchestration
+			// overhead, which the fixture cannot trim). 22m leaves margin for the
+			// slower opus lane; the old 8m predates the live cycle-1 validation phase.
+			timeout:       22 * time.Minute,
 		},
 		{
 			name:          "feedback-3-cycle-escalation",
