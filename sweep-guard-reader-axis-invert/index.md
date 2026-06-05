@@ -1,9 +1,9 @@
 ---
 id: 4qnn7dbzkyh9qv65t618vtxy
-title: AC-3 sweep reader-axis — invert the in-package read predicate + bound the cross-package/package-var gaps
+title: AC-3 sweep reader-axis — NET-REMOVE the detection machinery; rely on the detached audit backstop
 status: backlog
-source: "first-officer (2026-06-05) — hwk (tautological-test-remediation) Option-C scope-fork (captain-decided). hwk's cycle-3 positive/taint redesign CLOSED the match axis (ingest⇒declare, M1/M2/M3 confirmed closed). A detached adversarial audit then found the READER axis reintroduced the same allow-list failure mode on three new shapes. Captain decision: ship hwk's match-axis closure + the 56 remediated tests now with the guard's guarantee honestly scoped; fork the reader-axis hardening here."
-score: "0.22"
+source: "captain (2026-06-05) — re-scoped from 'invert/harden the reader-axis sweep' to NET REMOVAL. Captain directive: 'i want to see net removal, not more crap to mark crap or detect crap.' The hwk merge added ~1525 lines of go/ast sweep machinery (the bulk = the reader-axis taint/discovery), which is BOTH the heaviest part AND the incomplete part (M-A/B/C/D evade it). The detached adversarial audit caught every reader-axis hole the static sweep missed — so the audit, not a static guard, is the right backstop for that axis."
+score: "0.40"
 started:
 completed:
 verdict:
@@ -11,39 +11,30 @@ worktree:
 issue:
 ---
 
-The two AC-3 tautology sweeps (`TestNoUndeclaredTautologicalProof` in `skills/integration/`, `TestNoUndeclaredHostneutralityTautology` in `internal/hostneutrality/`) detect an undeclared instruction-file presence-check only when its READ is discovered. hwk closed the match axis (any inspection idiom over ingested bytes now triggers "must declare") but the reader-discovery side still rests on recognizers a genuine read can sit outside of. A detached adversarial audit (hwk cycle-3, HEAD `ea0441d6`) proved three evasions stay GREEN.
+hwk shipped a standing AC-3 sweep whose MATCH axis ("a test that reads instruction-file bytes and inspects them must declare markNonAC/markCodeBoundInvariant, regardless of idiom") is small, universal, and sound — keep it. But its READER axis (the `readsInstructionContent` taint analysis: param/struct-field/method/closure flow + path-construction discovery + the transitive reader fixpoint) is the bulk of the ~1525 added lines AND is known-incomplete: a detached adversarial audit found four evasion classes that sail through (M-A unrecognized surfaces like AGENTS.md/mods, M-B cross-package reads, M-C package-var paths, M-D []string/range flow). Each hardening cycle bolted on more detection code and the audit still found the next hole — the classic enumeration trap the proof-policy itself warns against.
 
-## The audit findings (concrete, reproducible)
-
-- **M-A — `isInstructionPathLiteral` segment allow-list misses real instruction surfaces.** A path whose literal carries none of the recognized segments (`skills`/`references`/`agents`/`first-officer`/`ensign`/`commission`/`present-gate`/`SKILL.md`) evades. Confirmed GREEN: an undeclared `os.ReadFile`+match over `AGENTS.md` (repo root; `agents` ≠ case-sensitive `AGENTS`) and over `mods/pr-merge.md` (FO-facing `## Hook: startup`). Positive control over `skills/refit/SKILL.md` REDs, proving the sweep is alive and the gap is purely the segment list.
-- **M-B — cross-package reads are invisible.** The sweep AST-scans only its own package's `*_test.go`. A read via another package's helper (e.g. `internal/dispatch.ParseModMetadata` over `skills/present-gate/SKILL.md`) stays GREEN even with a fully recognized instruction path — the read sink lives in another package.
-- **M-C — package-level `var` path escapes per-function taint.** A recognized `.md` literal in a package-level `var` initializer (not the test function body), read via `os.ReadFile(thatVar)`, evades — `instructionTaintedNames` seeds only from the test fn body; HN's `instructionPathIdents` is itself a hand-listed allow-list.
-- **M-D — `[]string`/`...string`-param and `range`-loop-variable flow escapes the taint** (hwk cycle-3 validation, detached audit at `ea0441d6`). The taint seeds only on bare-`string` params (`isStringyType`) and propagates only through `*ast.AssignStmt`; a `.md` literal sitting in a `[]string` composite read element-by-element in a `range` loop never reaches the read sink. Confirmed GREEN on BOTH sweeps: `paths := []string{"…/first-officer-shared-core.md"}; for _, p := range paths { b,_ := os.ReadFile(p); strings.Contains(string(b), "present-gate") }`, no marker. A `[]string`-param reader helper evades identically. (Closure-capture IS covered; the gap is the slice/range edge.)
-
-These four are instances of ONE class: the reader-flow taint is an *enumerated set of AST flow shapes* (cycles 1–3 each closed the instances found, not the class). The recurrence is the signal that enumeration is the wrong tool here.
+**The decision (captain): stop detecting. NET-REMOVE the reader-axis machinery.** A per-package go/ast static scan structurally CANNOT see a cross-package read or a path built in another file — so chasing completeness is futile. The detached adversarial audit already caught every reader-axis hole the sweep missed; the audit IS the right, complete-enough backstop for that axis. The deliverable here is a **net-negative diff**: less code, not more.
 
 ## Direction (for ideation)
 
-The auditor's thesis (and the proof-policy's own lesson, already learned on the match axis): the segment/ident lists and same-package scan cannot be made exhaustive by enumeration — extending the lists just moves the hole. The honest fixes are scope-defining:
-
-- **Invert the in-package read predicate** — treat ANY `os.ReadFile`/`Open`/`io.ReadAll`/`bufio` over ANY `.md`/instruction path as a read-to-declare, requiring a positive *non-instruction* exemption (a finite, reviewable exemption list — `.json` manifests, `docs/dev` recipes), instead of a positive instruction-recognizer. This structurally closes M-A and the whole unrecognized-path class.
-- **M-B (cross-package) and M-C (package-var-from-another-file)**: decide per ideation — either extend discovery (cross-package reader resolution; package-var taint), OR formally BOUND the guard's guarantee to "in-package reads via recognized flows" and DOCUMENT M-B/M-C as out-of-scope structural limits of a per-package AST scan, with the detached adversarial audit as the named backstop for those classes. A per-package static meta-test structurally cannot see another package's read; claiming it does would be the false-universal the proof-policy bans.
-- **Consider a go/types + SSA-backed taint instead of AST-shape enumeration** (raised by the hwk cycle-3 validator). Real type information + SSA value-flow would close the reader-flow class *definitionally* (M-A unrecognized-segment, M-D slice/range, and the param/field/method/var shapes all become "a value derived from an instruction-file path reaches a read sink," regardless of syntactic shape) rather than chasing one more AST shape per cycle. Weigh the cost (a `golang.org/x/tools/go/ssa` pass over the test packages) against the bounded-but-recurring AST approach on this high-stakes oracle. This is the candidate that actually stops the whack-a-mole; ideation should cost it.
+- **Remove** the reader-axis taint/discovery machinery: `readsInstructionContent` and its helpers (param-flow, struct-field/method/closure tracking, path-construction reconstruction, the transitive reader fixpoint) plus the reader-axis planted-control tests that only exist to exercise that machinery.
+- **Keep** the minimal MATCH-axis core: a test that reads an instruction file's bytes and inspects them must self-classify (markNonAC / markCodeBoundInvariant). This is the universal, sound, small part — do not regress it.
+- **Replace** the reader-axis static guarantee with a documented stance: the reader axis (does an undeclared instruction-file presence-check hide via an undiscovered read shape?) is covered by the **detached adversarial audit** required at every high-stakes-surface gate (validation-stage policy), NOT by a static sweep. Record this explicitly so it is a deliberate, audited scope boundary, not a silent gap.
+- Measure the removal: report the before/after line count of the two `nonac_marker_test.go` files; the net diff for this task MUST be negative.
+- Supersedes the prior "invert / go-types+SSA taint" direction — do NOT build an SSA pass; that is still "more machinery to detect crap." If ideation concludes some minimal reader signal is genuinely worth keeping, that is a finding to bring back, but the default + the captain's stated intent is removal.
 
 ## Out of scope
 
-The match-axis closure, the 56 remediated tests, the four cycle-1 reader shapes, and the cycle-2/3 mutation controls — all verified sound and shipped with hwk. This task is solely the reader-axis robustness + an honest guarantee statement.
+The match-axis core, the 56 demotions/re-binds, and the standing match-axis sweep + its self-test (all shipped in hwk #306) stay. This task removes the reader-axis detection machinery only.
 
 ## Acceptance criteria
 
-Each AC names a finished-state property + how an outside-the-body check verifies it (proof-policy: a planted-control test that REDs on the evasion shape then GREENs once caught — never a prose assertion).
+**AC-1 — the reader-axis detection machinery is removed; the diff is net-negative.**
+Verified by: the `readsInstructionContent` taint machinery + its reader-axis planted controls are gone (grep/AST shows the helpers removed); `git diff --stat` for this task reports more deletions than insertions in the two `nonac_marker_test.go` files; offline `go test ./...` stays green.
 
-**AC-1 — M-A closed: an undeclared read+match over any `.md` instruction surface the prior segment list missed (AGENTS.md, mods/*.md, and a path with no recognized segment literal) REDs both sweeps.**
-Verified by: a planted-control case driving the AGENTS.md and mods/*.md shapes RED-then-GREEN in BOTH packages.
-
-**AC-2 — M-B, M-C, and M-D are either closed or honestly bounded.**
-Verified by: if closed — planted controls for a cross-package read, a package-var path, and a `[]string`/range flow REDing both sweeps; if bounded — a documented scope statement on each sweep naming the out-of-scope class + the audit backstop, and a test/assertion that the guard's doc no longer claims the falsified universal.
+**AC-2 — the match-axis core still enforces "ingest ⇒ declare" and the reader-axis is documented as audit-backstopped.**
+Verified by: a planted undeclared match-axis tautology (read instruction bytes + inspect, no marker) still REDs the sweep (the match-axis guard is intact, mutation-controlled); and the sweep's doc + the validation-stage policy state the reader axis is covered by the detached adversarial audit, not the static sweep (a reader-shape evasion is a documented, audited boundary — no longer claimed as guarded).
 
 ## Test plan
 
-Reuse hwk's planted-control harness (real undeclared presence-check over a genuine instruction file, no marker, run the production sweep, observe RED/GREEN, restore). Offline Go, minutes. High-stakes shipped-test oracle → a detached adversarial audit on the result before merge.
+Offline Go refactor: delete the reader-axis machinery + its controls, keep the match-axis sweep + its mutation control, confirm `go test ./...` green and the diff net-negative. High-stakes shipped-test surface → a detached adversarial audit on the result (confirming the match-axis core still catches its class, and the removal didn't break the demotions/re-binds) before merge.
