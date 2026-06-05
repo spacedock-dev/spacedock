@@ -9,6 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-tautological-test-remediation
 issue:
+mod-block: merge:pr-merge
 ---
 
 The tautological-test sweep flagged the instruction-file-assertion tests as tautological: they match a substring/absence over an instruction file the model ingests (the FO/ensign contracts, a workflow README, a skill) and so cannot fail meaningfully — a meaning-inverting clause that keeps the substring still passes. Per the proof-policy (`f8b257cf`), such a check never stands as behavioral proof.
