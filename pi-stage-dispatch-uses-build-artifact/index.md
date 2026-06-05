@@ -153,3 +153,36 @@ Acceptance criteria evidence:
 Residual risks:
 - The concrete FO/Pi dispatch execution path remains unproven by durable fixture/live evidence.
 - Guidance tests are string-invariant checks; they do not prove a first officer actually invokes `SubagentStageDispatch` or handles builder fallback at runtime.
+
+## Stage Report: implementation fixback
+
+- DONE: Added focused AC-6 fixture smoke through the FO/Pi dispatch path.
+  Evidence: product commit `2f46b7e6` adds `TestPiStageDispatchSmokeUsesBuildArtifactThroughWrapper` in `internal/dispatch/build_pi_host_test.go`. The test builds a real `host: "pi"` dispatch artifact, wraps it with `piruntime.SubagentStageDispatch`, runs a fixture Pi worker as a subprocess, and requires the worker to read the dispatch artifact rather than transcript text.
+- DONE: The smoke checks durable evidence outside transcript.
+  Evidence: the fixture worker appends a stage report to a split-root entity, commits that entity path in a temp state checkout with message `fixture Pi stage report`, and the parent test verifies process exit, entity report content, state-checkout git log, and clean path-scoped state status.
+- DONE: AC-1..AC-5 remain covered by the existing guidance, wrapper, and builder tests from product commit `613cb086`, and the fixback keeps those tests green.
+
+Changed files:
+- `internal/dispatch/build_pi_host_test.go`
+
+Product commits:
+- `613cb086` (`Ensure Pi dispatch wraps build artifacts`)
+- `2f46b7e6` (`Add Pi stage dispatch smoke fixture`)
+
+Validation commands run by implementation fixback worker:
+- PASS: `gofmt -w internal/dispatch/build_pi_host_test.go`
+- PASS: `go test ./internal/dispatch -run 'TestPiStageDispatchSmoke|TestBuildPiHost' -count=1`
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+AC coverage:
+- AC-1: PASS, retained skill-surface invariant requiring `spacedock dispatch build` with `host: "pi"` as the assignment source.
+- AC-2: PASS, retained wrapper helper/test and smoke wrapper use of `context: "fresh"`, phase, and label around the builder prompt.
+- AC-3: PASS, retained builder fact assertions and added smoke worker assertions over entity path, workflow stage-def command, worktree path, stage, title, and checklist in the actual dispatch file.
+- AC-4: PASS, retained no-acceptance assertions and added smoke assertion that wrapper JSON does not serialize `acceptance`.
+- AC-5: PASS, retained break-glass fallback guidance invariant.
+- AC-6: PASS, added failable fixture smoke with subprocess result plus durable state/report/git-log evidence.
+
+Residual risks:
+- The smoke uses a fixture Pi worker process rather than a live Pi runtime session; it proves the FO/Pi artifact-and-wrapper path with durable state evidence without depending on external Pi availability.
