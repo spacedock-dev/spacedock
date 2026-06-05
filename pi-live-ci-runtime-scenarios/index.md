@@ -9,6 +9,8 @@ verdict:
 worktree: .worktrees/spacedock-ensign-pi-live-ci-runtime-scenarios
 issue:
 id: z8wm1jdhzmq4rcm0rzxw7bf5
+pr: "#305"
+mod-block: merge:pr-merge
 ---
 
 # Add Pi to runtime-live CI and shared runtime scenarios
