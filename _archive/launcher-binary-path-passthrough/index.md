@@ -1,7 +1,7 @@
 ---
 id: fcfe02dk6nbwk9pw896d3eff
 title: Front-door launcher doesn't propagate its own binary path ($0) to the launched claude/codex session — the in-session skill falls back to $PATH spacedock instead of the launching binary
-status: validation
+status: done
 source: captain (2026-06-03) — `/path/to/spacedock claude …` does not preserve `$0` for the skill to know which spacedock launched it; need a way to pass env from the spacedock CLI over (safehouse permitting) to claude/codex, and have the skill use the env or default to $PATH
 score: "0.28"
 worktree:
