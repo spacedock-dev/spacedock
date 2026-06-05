@@ -208,3 +208,76 @@ Root cause: `runInitWithPi` checks `piRuntimeLaunchReady(check)` before honoring
 ### Summary
 
 Fixed the validation rejection by making Pi install check mode use doctor readiness before the launch-readiness shortcut, and added missing-auth regression coverage.
+
+### Stage Report: validation rerun
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs`
+- Product branch: `spacedock-ensign/pi-runtime-readiness-intercom-prereqs`
+- Product commits validated:
+  - `8c6a2e8683a4552b8a6c627d632f7463e48f4c55` (`cli: report pi supervisor talkback prerequisites`)
+  - `546207eaa80d` (`cli: align pi install check with doctor readiness`)
+- Recommendation: **PASS / mergeable**
+
+#### AC evidence
+
+- AC-1: Satisfied. `doctor --host pi` prints a `Supervisor-talkback setup prerequisites` section with explicit `pi-intercom command`, `subagents-doctor bridge-health command`, and `pi-intercom package root` rows, actionable remedies in missing fixtures, and resolved auth/session/package paths.
+- AC-2: Satisfied. Fixture tests cover all-present doctor exit 0 and missing runtime/prerequisite exit non-zero; missing intercom rows name the missing prerequisites and remedies.
+- AC-3: Satisfied after fixback. `install --host pi --check` now enters the same doctor report/exit path before the non-check launch-readiness shortcut. The prior rejection was falsified with an external fake-PATH/manual fixture: with Pi/subagents/intercom setup present but auth absent, both `install --host pi --check` and `doctor --host pi` exited 1 and printed `MISSING Pi auth`; `install --check` no longer printed `Pi runtime ready`.
+- AC-4: Satisfied. `TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions` and `TestPiRuntimeConfigDefaultsIntercomAndAuthPathsUnderHome` assert env/default resolution for `PI_SUBAGENTS_PACKAGE_ROOT`, `PI_INTERCOM_PACKAGE_ROOT`, `PI_CODING_AGENT_DIR`, `PI_CODING_AGENT_SESSION_DIR`, auth path, session dir, extension path, and skill paths. The doctor output also prints the resolved paths.
+- AC-5: Satisfied. CLI output and `docs/runtime-support.md` state that doctor/install checks are necessary setup checks but insufficient to prove live supervisor talkback, and preserve the cq-style progress -> decision request -> supervisor reply -> child resume -> durable marker proof boundary.
+- AC-6: Satisfied. Existing Pi CLI/auth/pi-subagents/Spacedock skill checks remain in the readiness model and fixture matrix; non-Pi install/doctor plugin-dir behavior tests still pass.
+
+#### External/failable evidence
+
+Manual fake-PATH fixture with executable `pi`, `pi-intercom`, and `subagents-doctor`, readable `pi-subagents` extension/skill paths, readable `PI_INTERCOM_PACKAGE_ROOT`, Spacedock skills from the product worktree, and no auth file:
+
+```text
+$ spacedock install --host pi --check
+exit=1
+Pi runtime check
+OK pi CLI: <tmp>/bin/pi
+MISSING Pi auth: <tmp>/home/.pi/agent/auth.json
+OK pi-subagents extension: <tmp>/pi-subagents/src/extension/index.ts
+OK pi-subagents skill: <tmp>/pi-subagents/skills/pi-subagents
+INFO Pi auth/session dirs: auth=<tmp>/home/.pi/agent/auth.json session=<tmp>/home/.pi/agent/sessions
+Supervisor-talkback setup prerequisites
+OK pi-intercom command: <tmp>/bin/pi-intercom
+OK subagents-doctor bridge-health command: <tmp>/bin/subagents-doctor
+OK pi-intercom package root: <tmp>/pi-intercom
+OK Spacedock first-officer skill: <worktree>/skills/first-officer
+OK Spacedock ensign skill: <worktree>/skills/ensign
+NOTE: These checks verify necessary supervisor-talkback setup prerequisites only; they are insufficient to prove live child talkback.
+NOTE: Live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe for pi-intercom-supervisor-talkback.
+
+$ spacedock doctor --host pi
+exit=1
+Pi runtime check
+OK pi CLI: <tmp>/bin/pi
+MISSING Pi auth: <tmp>/home/.pi/agent/auth.json
+...
+OK pi-intercom command: <tmp>/bin/pi-intercom
+OK subagents-doctor bridge-health command: <tmp>/bin/subagents-doctor
+OK pi-intercom package root: <tmp>/pi-intercom
+```
+
+Manual healthy fixture with the same prerequisites plus `<tmp>/home/.pi/agent/auth.json` exited 0 for `doctor --host pi` and printed all Pi/subagents/intercom/Spacedock skill rows as `OK` while retaining the live-proof warning.
+
+#### Validation commands
+
+- `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs status --short --branch` — confirmed branch `spacedock-ensign/pi-runtime-readiness-intercom-prereqs` at `546207eaa80d` with no product edits from validation.
+- `git show --stat --oneline 8c6a2e8683a4552b8a6c627d632f7463e48f4c55` — inspected product implementation commit (`internal/cli/pi.go`, `internal/cli/pi_frontdoor_test.go`, `docs/runtime-support.md`).
+- `git show --stat --oneline 546207eaa80d` — inspected fixback commit (`internal/cli/pi.go`, `internal/cli/pi_frontdoor_test.go`).
+- `go test ./internal/cli -count=1` — passed.
+- `go test ./... -count=1` — passed.
+- `go test ./... -race` — passed.
+- Manual fake-PATH missing-auth parity check for `install --host pi --check` and `doctor --host pi` — both exited 1 with `MISSING Pi auth`; prior rejection no longer reproduces.
+- Manual fake-PATH healthy doctor check — exited 0 with supervisor-talkback prerequisite rows and live-proof warning.
+
+#### Residual risks
+
+- No new live Pi supervisor-talkback probe was run; this validation only confirms setup readiness behavior and fixture-backed CLI tests, consistent with the task scope.
+- The implementation hard-codes `pi-intercom`, `subagents-doctor`, and `PI_INTERCOM_PACKAGE_ROOT` as required setup contracts; future Pi substrate naming changes will require product/test updates.
+
+### Summary
+
+Validated the implementation and fixback. The prior install-check/auth mismatch is fixed, all acceptance criteria are satisfied with fixture and manual CLI evidence, and the setup-vs-live-proof boundary remains explicit.
