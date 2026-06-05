@@ -43,6 +43,7 @@ func subsectionAfter(text, heading string) string {
 // TestMergeLocalNoSentinelTerminalSetSucceeds and siblings), so this lint does
 // not grep the ceremony prose for force-related wording.
 func TestShipLocalCeremonyBlockExists(t *testing.T) {
+	markNonAC(t, "internal/status merge_policy_guard_test.go (TestMergeLocalNoSentinelTerminalSetSucceeds and siblings)")
 	fo := vendoredSkillFiles(t)["first-officer/references/first-officer-shared-core.md"]
 	region := subsectionAfter(fo, "### Ship-Local Ceremony")
 	if region == "" {

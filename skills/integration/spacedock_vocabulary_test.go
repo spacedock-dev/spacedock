@@ -86,6 +86,46 @@ func spacedockDispatchSubcommands(t *testing.T) []string {
 	return subs
 }
 
+// spacedockBuildRequestFlags AST-extracts the dispatch-build request flag names
+// the binary accepts, from the `case "--entity-path", ...` in dispatch.go's
+// isBuildRequestFlag. These are the real flags the build path parses — an
+// independent code-side source for the "docs teach file-backed dispatch input"
+// invariant: a flag renamed in code shifts the set, so a docs check binding to it
+// tracks the binary's actual flag surface rather than a frozen literal.
+func spacedockBuildRequestFlags(t *testing.T) []string {
+	t.Helper()
+	src := filepath.Join(repoRoot(t), "internal", "dispatch", "dispatch.go")
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, src, nil, 0)
+	if err != nil {
+		t.Fatalf("parse dispatch.go: %v", err)
+	}
+	var flags []string
+	ast.Inspect(f, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "isBuildRequestFlag" {
+			return true
+		}
+		ast.Inspect(fn, func(m ast.Node) bool {
+			cc, ok := m.(*ast.CaseClause)
+			if !ok {
+				return true
+			}
+			for _, e := range cc.List {
+				if lit, ok := e.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+					flags = append(flags, trimQuotes(lit.Value))
+				}
+			}
+			return true
+		})
+		return false
+	})
+	if len(flags) == 0 {
+		t.Fatal("extracted zero build-request flags from isBuildRequestFlag in dispatch.go")
+	}
+	return flags
+}
+
 // spacedockTopLevelCommands AST-extracts the binary's top-level command names
 // from the `Use: "<name> ..."` fields of the cobra commands in internal/cli/cli.go.
 // The first word of each Use string is the command verb (`status`, `dispatch`,
@@ -241,6 +281,22 @@ func isHyphenated(s string) bool {
 		}
 	}
 	return false
+}
+
+// intersect returns the want values that appear in have — used to derive the
+// load-bearing subset of a code-extracted set without hardcoding the full set.
+func intersect(have []string, want ...string) []string {
+	present := map[string]bool{}
+	for _, h := range have {
+		present[h] = true
+	}
+	var out []string
+	for _, w := range want {
+		if present[w] {
+			out = append(out, w)
+		}
+	}
+	return out
 }
 
 func trimQuotes(s string) string {

@@ -49,6 +49,7 @@ const terminalTeardownMarker = "TERMINAL_TEARDOWN_BOUNDED: best-effort teardown 
 // is the live-e2e CI run (AC-1). The lint guards against the clause being dropped
 // or re-inverted in a future edit.
 func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
+	markNonAC(t, "live-e2e CI run (AC-1) — the streamwatcher graders TestTerminalTeardownGrade* observe the FO's bounded teardown")
 	files := vendoredSkillFiles(t)
 
 	// negatingPhrases are the inversion fingerprints. Two groups:
@@ -289,6 +290,7 @@ func numberedStep(region string, n int) string {
 // re-intros red AND the ban's positive framing is pinned"; the BEHAVIORAL oracle
 // for the ban surviving is the live-e2e run (AC-1), not this structural lint.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
+	markNonAC(t, "live-e2e run (AC-1) — the awaiting-completion idle/teardown behavior is graded by the streamwatcher in internal/ensigncycle")
 	skill := usingClaudeTeamSkill(t)
 	region := sectionAfter(skill, "## Awaiting Completion")
 	if region == "" {
