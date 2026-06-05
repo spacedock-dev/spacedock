@@ -21,28 +21,45 @@ var sharedCorePath = filepath.Join("..", "..", "skills", "first-officer", "refer
 var claudeRuntimePath = filepath.Join("..", "..", "skills", "first-officer", "references",
 	"claude-first-officer-runtime.md")
 
-// claudeHelperTokens are the named Claude-runtime helper commands / functions that
-// must not appear UNQUALIFIED in the generic core. Each is a Claude-only mechanism
-// (a binary subcommand or a ~/.claude-reading helper function), not a cross-runtime
-// capability. A bare mention inside a host-qualified span is allowed; an unqualified
-// algorithm step that names one fails.
-var claudeHelperTokens = []string{
+// claudeHelperProseTokens are the Claude-runtime helper names that have NO code
+// subcommand source — ~/.claude-reading helper functions and the named drift
+// classes of the reconcile helper. They are authored prose tokens; the
+// code-sourced subcommands (context-budget, *-standing, reconcile) are added at
+// test time from the dispatch router via claudeHelperTokens(t), so the banned set
+// has an independent code source that shifts when the router changes.
+var claudeHelperProseTokens = []string{
 	"claude-team",
-	"context-budget",
-	"spawn-standing",
-	"list-standing",
-	"show-standing",
 	"member_exists",
 	"lookup_model",
-	// Claude-bound by virtue of LoadReconcileTeam's ~/.claude/teams roster read;
-	// the helper hard-fails at setup on a runtime without that on-disk source.
-	"spacedock dispatch reconcile",
-	// Class A/B/C/D/E are the named drift classes of that helper — same binding.
+	// Class A/B/C/D/E are the named drift classes of the reconcile helper.
 	"Class A",
 	"Class B",
 	"Class C",
 	"Class D",
 	"Class E",
+}
+
+// claudeHelperTokens combines the code-sourced Claude-coupled dispatch subcommands
+// (derived from the router, qualified `spacedock dispatch reconcile` for the
+// roster-reading helper) with the authored prose tokens. The subcommand half binds
+// to dispatch.go, so the banned set diverges from the generic core when a
+// subcommand is renamed in code — that divergence is what makes the unqualified-
+// helper check a real invariant rather than a self-match.
+func claudeHelperTokens(t *testing.T) []string {
+	t.Helper()
+	subs := dispatchSubcommands(t)
+	tokens := append([]string{}, claudeHelperProseTokens...)
+	for _, sub := range []string{"context-budget", "spawn-standing", "list-standing", "show-standing"} {
+		if !subs[sub] {
+			t.Fatalf("dispatch router no longer exposes Claude-coupled helper %q", sub)
+		}
+		tokens = append(tokens, sub)
+	}
+	if !subs["reconcile"] {
+		t.Fatal("dispatch router no longer exposes the reconcile subcommand")
+	}
+	tokens = append(tokens, "spacedock dispatch reconcile")
+	return tokens
 }
 
 // A span counts as host-qualified only when it names BOTH runtimes by their
@@ -66,10 +83,12 @@ const (
 // `claude-team context-budget` reuse step makes it fail; the line-207
 // `send_input on Codex, SendMessage on Claude teams` span passes (host-qualified).
 func TestSharedCoreHasNoUnqualifiedClaudeHelpers(t *testing.T) {
+	markCodeBoundInvariant(t, "dispatchSubcommands (dispatch.go) supplies the Claude-coupled helper subcommand tokens")
 	spans := parseSpans(t, sharedCorePath)
+	helperTokens := claudeHelperTokens(t)
 	var violations []string
 	for _, sp := range spans {
-		for _, tok := range claudeHelperTokens {
+		for _, tok := range helperTokens {
 			if !strings.Contains(sp.text, tok) {
 				continue
 			}
@@ -91,17 +110,34 @@ func TestSharedCoreHasNoUnqualifiedClaudeHelpers(t *testing.T) {
 	}
 }
 
-// TestClaudeAdapterOwnsRelocatedCommands confirms the relocation landed: the
-// concrete Claude invocation of each relocated capability lives in the Claude
-// adapter. This is the other half of the invariant — the commands did not vanish,
-// they moved. Asserts the adapter names the four subcommand surfaces.
+// TestClaudeAdapterOwnsRelocatedCommands is a code-bound invariant confirming the
+// relocation landed: the Claude adapter names each relocated dispatch-helper
+// subcommand. The required set is DERIVED from the dispatch router's actual
+// subcommands (dispatchSubcommands over dispatch.go), not literals frozen against
+// the adapter — so a subcommand renamed in the router shifts the expectation and
+// reds here if the adapter still names the old one (or drops the new one). The
+// commands did not vanish, they moved; this is the presence half of the
+// relocation invariant.
 func TestClaudeAdapterOwnsRelocatedCommands(t *testing.T) {
+	markCodeBoundInvariant(t, "dispatchSubcommands (internal/dispatch/dispatch.go router)")
 	data, err := os.ReadFile(claudeRuntimePath)
 	if err != nil {
 		t.Fatalf("read %s: %v", claudeRuntimePath, err)
 	}
 	body := string(data)
-	for _, want := range []string{"context-budget", "list-standing", "spawn-standing", "show-standing", "spacedock dispatch reconcile"} {
+	subs := dispatchSubcommands(t)
+	// The relocated Claude-coupled helpers — each must be a real router subcommand
+	// (so the anchor cannot name a command the binary does not route) and must
+	// appear in the adapter.
+	relocated := []string{"context-budget", "list-standing", "spawn-standing", "show-standing", "reconcile"}
+	for _, sub := range relocated {
+		if !subs[sub] {
+			t.Fatalf("the dispatch router no longer exposes %q — the relocated-command set diverged from the binary", sub)
+		}
+		want := sub
+		if sub == "reconcile" {
+			want = "spacedock dispatch reconcile" // the qualified form the adapter documents
+		}
 		if !strings.Contains(body, want) {
 			t.Errorf("Claude adapter %s does not name the relocated command %q", claudeRuntimePath, want)
 		}

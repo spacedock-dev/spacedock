@@ -40,6 +40,7 @@ var devLeakageCorePaths = []string{
 // code substrate in the worktree-isolation clause. A re-introduction of the
 // banned literal fails the test (negative proof of lock-in).
 func TestNoDevLeakageInUniversalCore(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the contract text (a dev-discipline phrase that has no code analog); structural absence lint")
 	for _, path := range devLeakageCorePaths {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			body, err := os.ReadFile(path)
@@ -71,6 +72,7 @@ func TestNoDevLeakageInUniversalCore(t *testing.T) {
 // "CODE only" noun must NOT delete the worktree-isolation boundary — both cores
 // must still carry an isolation clause naming the worktree.
 func TestWorktreeIsolationClauseSurvives(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the contract text (an isolation clause is present); structural presence lint")
 	for _, path := range devLeakageCorePaths {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			body, err := os.ReadFile(path)
@@ -107,6 +109,7 @@ var runtimeAdapterFieldPaths = []string{
 // "worktree path". Scoped to the field-enumeration sentence — a file-wide ban
 // would false-fail on the legitimate conditional usage elsewhere.
 func TestRuntimeAdaptersUseNeutralLocationVocabulary(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the adapter text (neutral vocabulary in the field-enumeration sentence); no code analog")
 	for _, path := range runtimeAdapterFieldPaths {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			body, err := os.ReadFile(path)
@@ -157,6 +160,7 @@ var devHomePresence = []struct {
 // checkable change" deliverable-proof policy. Fails if a future edit strips a
 // dev home's guidance.
 func TestDevDisciplinesSurviveInDevHomes(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the dev-home text (re-homed guidance is present); relocate-not-delete consistency lint, no code analog")
 	for _, h := range devHomePresence {
 		t.Run(filepath.Base(h.path), func(t *testing.T) {
 			body, err := os.ReadFile(h.path)
