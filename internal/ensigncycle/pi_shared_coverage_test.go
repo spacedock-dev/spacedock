@@ -19,6 +19,10 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer rejection-flow runner.",
 		},
+		"feedback-3-cycle-escalation": {
+			mode:   "gap",
+			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer 3-cycle-escalation runner.",
+		},
 		"merge-hook-guardrail": {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer merge-hook runner.",
