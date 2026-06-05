@@ -182,3 +182,29 @@ Root cause: `runInitWithPi` checks `piRuntimeLaunchReady(check)` before honoring
 
 - Fix `install --host pi --check` so it uses the same readiness/exit model as doctor, including Pi auth, rather than short-circuiting through `piRuntimeLaunchReady`.
 - Add a regression test for the missing-auth install `--check` case; the current tests pass because the healthy install path omits auth and does not exercise check-mode parity with doctor.
+
+## Stage Report: implementation fixback
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs`
+- Product branch: `spacedock-ensign/pi-runtime-readiness-intercom-prereqs`
+- Product commit: `546207eaa80d` (`cli: align pi install check with doctor readiness`)
+- Changed product files:
+  - `internal/cli/pi.go`
+  - `internal/cli/pi_frontdoor_test.go`
+- DONE: Moved `install --host pi --check` ahead of the non-check launch-readiness shortcut so check mode always prints the doctor report and returns `piDoctorExit`, including Pi auth.
+- DONE: Preserved non-check install behavior: it still reports `Pi runtime ready` using launch readiness when launch prerequisites are present, without making auth a non-check install blocker.
+- DONE: Added a regression test for the missing-auth parity case so install check now fails with `MISSING Pi auth` instead of printing ready.
+- Validation commands:
+  - `gofmt -w internal/cli/pi.go internal/cli/pi_frontdoor_test.go` — passed
+  - `go test ./internal/cli -count=1` — passed
+  - `go test ./... -count=1` — passed
+  - `go test ./... -race` — passed
+- AC coverage:
+  - AC-3: fixed; `install --host pi --check` now uses the same doctor readiness/exit model, including Pi auth.
+  - AC-6: fixed for the rejected auth mismatch; Pi auth readiness remains a failing check-mode gate.
+- Residual risks:
+  - No new live Pi probe was run; this fix is covered by fixture tests and preserves the setup-vs-live-proof boundary.
+
+### Summary
+
+Fixed the validation rejection by making Pi install check mode use doctor readiness before the launch-readiness shortcut, and added missing-auth regression coverage.
