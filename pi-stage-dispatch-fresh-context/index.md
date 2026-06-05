@@ -103,3 +103,37 @@ Verified by: `go test ./...` after implementation, with the Pi skill-surface tes
   - `go test ./... -race`
 - AC coverage: AC-1 covered by `TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages`; AC-2 covered by `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages`; AC-3 covered by `TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault`; AC-4 covered by `go test ./...` including `skills/integration`.
 - Residual risk: live Pi host behavior for the exact `context: "fresh"` argument remains unproven by this instruction-level guard and should be covered later by a live Pi harness if available.
+
+### Validation — 2026-06-04 (d2 validation)
+
+Recommendation: PASSED.
+
+Validated product commit `ea80f3a2edb0fc2eeb07bb7eef7c8012c6e47324` in `.worktrees/spacedock-ensign-pi-stage-dispatch-fresh-context` on branch `spacedock-ensign/pi-stage-dispatch-fresh-context`.
+
+Evidence reviewed:
+- Product commit changes only `skills/first-officer/references/pi-first-officer-runtime.md` and `skills/integration/skill_surface_test.go`.
+- `## Dispatch` now requires Spacedock Pi stage dispatches through `pi-subagents` to call `subagent(...)` with explicit `context: "fresh"` and forbids relying on the worker agent default context.
+- `## Dispatch` still forbids `subagent(... acceptance: ...)` for Spacedock stage dispatches and keeps acceptance/completion proof in task prompt/dispatch content, entity stage reports, product/state commits, and independent validation.
+- `## Follow-up and Reuse` now documents normal follow-up/retry dispatches as fresh assignment cycles, requires epoch increment, forbids previous completions satisfying the new epoch, and restricts non-fresh resume to an explicit manual/debug exception tied to durable metadata.
+- Added invariant tests: `TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages`, `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages`, and `TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault`.
+
+Commands run from the product worktree:
+- `git rev-parse HEAD` → `ea80f3a2edb0fc2eeb07bb7eef7c8012c6e47324`.
+- `git status --short --branch` → `## spacedock-ensign/pi-stage-dispatch-fresh-context...origin/next [ahead 1]`.
+- `git show --stat --oneline --decorate --no-renames HEAD`.
+- `git show --name-only --format=fuller --no-renames HEAD`.
+- `go test ./skills/integration -run 'TestPiFirstOfficerRuntime(RequiresFreshSubagentContextForStages|ForbidsSubagentAcceptanceForStages|FollowupsAreFreshByDefault)' -count=1` → PASS.
+- `go test ./skills/integration -count=1` → PASS.
+- `go test ./... -count=1` → PASS.
+- `go test ./... -race -count=1` → PASS.
+- `git status --short` → clean.
+
+AC evidence:
+- AC-1: PASS — focused invariant test `TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages` passed and the Dispatch section contains the required explicit `context: "fresh"`/no-default-context language.
+- AC-2: PASS — focused invariant test `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages` passed and the Dispatch section keeps `subagent(... acceptance: ...)` forbidden for Spacedock stages.
+- AC-3: PASS — focused invariant test `TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault` passed and the Follow-up and Reuse section documents fresh retry cycles plus the manual/debug-only non-fresh exception with durable metadata.
+- AC-4: PASS — `go test ./... -count=1` passed with the Pi skill-surface tests included in the normal suite.
+
+Residual risks:
+- Live Pi host behavior for the exact `context: "fresh"` argument remains unproven; this task intentionally validates the instruction-level guard and static invariants only.
+- The requested root `context.md` and `plan.md` files were absent in the parent checkout, so validation used the dispatch assignment file and entity state as the available operating contract.
