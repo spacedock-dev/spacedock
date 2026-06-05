@@ -10,6 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-feedback-nonhappy-live-coverage
 issue:
 mod-block: merge:pr-merge
+pr: "#302"
 ---
 
 The feedback-rejection procedure carries non-happy-path behavioral guarantees that no standing test exercises. The a9 detached audit (commit 98629283) demonstrated each is gut-able while the suite stays green, because the static oracles assert only substring-presence of the prose, not the behavior. Add live-scenario coverage via the existing prose-based shared-scenario runner.
