@@ -105,14 +105,14 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
+	if checkOnly {
+		printPiDoctorReport(stdout, check)
+		return piDoctorExit(check)
+	}
 	if piRuntimeLaunchReady(check) {
 		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  pi-intercom: %s\n  Spacedock skills: %s\n", check.packageRoot, check.intercomPackageRoot, check.repoRoot)
 		printPiSupervisorTalkbackBoundary(stdout)
 		return 0
-	}
-	if checkOnly {
-		printPiDoctorReport(stdout, check)
-		return piDoctorExit(check)
 	}
 	fmt.Fprintf(stdout,
 		"Pi runtime setup incomplete.\n\n"+

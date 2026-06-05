@@ -244,6 +244,32 @@ func TestPiInstallCheckFailsForMissingSupervisorTalkbackPrerequisites(t *testing
 	}
 }
 
+func TestPiInstallCheckFailsForMissingAuthLikeDoctor(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	home := t.TempDir()
+	var stdout, stderr bytes.Buffer
+
+	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--check"}, &fakeHost{}, &fakePiRuntimeOps{
+		lookPath: piHealthyPathFixtures(),
+		statOK:   statOKForPiResources(repo, pkg),
+	}, append(piTestEnv(pkg, home), "SPACEDOCK_REPO_ROOT="+repo), &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("install --host pi --check exit=0 want non-zero for missing Pi auth; stdout=%q", stdout.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{"Pi runtime check", "MISSING Pi auth", filepath.Join(home, ".pi", "agent", "auth.json"), "OK pi-intercom command"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("install check missing-auth output missing %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "Pi runtime ready") {
+		t.Fatalf("install check with missing auth should not print ready:\n%s", out)
+	}
+}
+
 func TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions(t *testing.T) {
 	repo := filepath.Join(t.TempDir(), "repo")
 	subagents := filepath.Join(t.TempDir(), "pi-subagents")
