@@ -138,7 +138,6 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 		"You are working on: Canonical Stage",
 		"Stage: implementation",
 		"Read the entity file at " + entityPath,
-		"spacedock dispatch show-stage-def --workflow-dir " + shlexQuote(root) + " --stage implementation",
 		"Your working directory for CODE is " + worktreePath,
 		"All CODE reads and writes MUST use paths under " + worktreePath,
 		"- keep the builder assignment",
@@ -148,6 +147,7 @@ func TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper(t *testin
 			t.Fatalf("Pi dispatch artifact missing builder-derived fact %q:\n%s", want, body)
 		}
 	}
+	assertRenderedStageDefCommand(t, body, root, "implementation")
 	if !strings.Contains(wrapped.Task, out.DispatchFile) {
 		t.Fatalf("Pi wrapper does not forward dispatch file path %s in task %q", out.DispatchFile, wrapped.Task)
 	}
@@ -271,19 +271,20 @@ func TestPiStageDispatchSmokeFixtureWorker(t *testing.T) {
 	entityPath := os.Getenv("SPACEDOCK_PI_ENTITY_PATH")
 	workflowDir := os.Getenv("SPACEDOCK_PI_WORKFLOW_DIR")
 	worktreePath := os.Getenv("SPACEDOCK_PI_WORKTREE_PATH")
+	dispatchText := string(dispatchBody)
 	for _, want := range []string{
 		"You are working on: Smoke Stage",
 		"Stage: implementation",
 		"Read the entity file at " + entityPath,
 		"Your working directory for CODE is " + worktreePath,
-		"spacedock dispatch show-stage-def --workflow-dir " + shlexQuote(workflowDir) + " --stage implementation",
 		"- run the fixture Pi worker",
 		"- append durable stage report",
 	} {
-		if !strings.Contains(string(dispatchBody), want) {
+		if !strings.Contains(dispatchText, want) {
 			t.Fatalf("dispatch artifact missing %q:\n%s", want, dispatchBody)
 		}
 	}
+	assertRenderedStageDefCommand(t, dispatchText, workflowDir, "implementation")
 
 	report := fmt.Sprintf(`
 ## Stage Report: implementation fixback smoke
@@ -315,6 +316,19 @@ func TestPiStageDispatchSmokeFixtureWorker(t *testing.T) {
 		cmd := exec.Command("git", append([]string{"-C", stateDir}, args...)...)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+}
+
+func assertRenderedStageDefCommand(t *testing.T, body, workflowDir, stage string) {
+	t.Helper()
+	semantic := "dispatch show-stage-def --workflow-dir " + shlexQuote(workflowDir) + " --stage " + stage
+	for _, want := range []string{
+		"spacedock_launcher() {",
+		"spacedock_launcher " + semantic,
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("dispatch artifact missing rendered stage-definition command %q:\n%s", want, body)
 		}
 	}
 }
