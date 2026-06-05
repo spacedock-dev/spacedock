@@ -1,14 +1,15 @@
 ---
 id: 3c0bcrn8p60wptvc12fsv5x2
 title: Hint ensigns to use todo/task tools when available — spike the placement + measure empirical impact
-status: ideation
+status: done
 source: "captain (2026-06-04) — empirically ensigns never convert the helper-built `### Completion checklist` into internal todos (TodoWrite=0 across all ensign transcripts; neither the ensign contract nor the dispatch file hints it). Hint ensigns to use todo/task tools IF the runtime has them — but spike the placement and show the empirical performance impact before committing."
 score: "0.27"
 started: 2026-06-04T22:27:44Z
-completed:
-verdict:
+completed: 2026-06-05T01:11:11Z
+verdict: rejected
 worktree:
 issue:
+archived: 2026-06-05T01:11:11Z
 ---
 
 The `spacedock dispatch build` helper assembles a `### Completion checklist` into every ensign dispatch, but ensigns consume it as prose and never externalize it as a tracked todo/task list (verified this session: `TodoWrite`=0 across all ensign transcripts; `skills/ensign/` and the dispatch file carry no todo/task guidance). A todo/task hint could improve mid-stage captain visibility (Shift+Down into the ensign pane shows live progress) and possibly ensign completeness/focus — but only where the runtime actually has such tools, and only if it earns its token/wallclock cost. Hint the ensign to use them **if available**.
