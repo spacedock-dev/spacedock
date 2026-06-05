@@ -11,6 +11,7 @@ issue:
 id: wmn2x3k7j0fjshvdz126ray3
 mod-block:
 pr: "#303"
+archived: 2026-06-05T06:20:57Z
 ---
 
 The first officer should not stop after an implementation worker completes and the implementation stage report is filed. For a non-gated, non-terminal stage, the FO should continue the workflow lifecycle: verify the stage report, advance to the next stage, and dispatch the next worker — all before ending its turn. In the dev workflow, that means implementation completion immediately advances to validation and dispatches an independent fresh validator unless a gate, terminal merge ceremony, blocker, or captain decision interrupts.
