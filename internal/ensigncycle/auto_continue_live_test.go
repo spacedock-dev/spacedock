@@ -40,8 +40,8 @@ func TestLiveAutoContinueAfterImplementation(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	// Implementation completion → validator dispatch → (single-entity) gate
 	// auto-resolve → merge/terminalize runs TWO full agent runs serially (the FO
-	// and the fresh validator). Liveness is the runner's per-stage stall-watchdog,
-	// not a per-call basket — those are banned.
+	// and the fresh validator). Liveness is the runner's per-stage no-progress quiet
+	// budget (the shared streamWatcher), not a per-call basket — those are banned.
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
 
 	var workflowDir string
