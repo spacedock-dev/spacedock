@@ -245,6 +245,7 @@ func commissionStateBackendDecisionRows(t *testing.T) map[string]string {
 // which pins the two-row shape and each row's bound outcome rather than prose
 // wording, and FAILS if a branch is dropped, merged, or rebound to the wrong path.
 func TestCommissionStateBackendDecisionRule(t *testing.T) {
+	markNonAC(t, "n/a — structural two-row decision-table self-consistency (no Go scaffolder takes standalone-vs-code-repo and emits frontmatter); the split-root behavior is proven by internal/cli TestStateNewBirthsSplitRoot")
 	rows := commissionStateBackendDecisionRows(t)
 	splitRoot, hasSplit := rows["Split-root"]
 	inline, hasInline := rows["Inline"]

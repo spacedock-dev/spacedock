@@ -40,6 +40,7 @@ func shippedInstructionFiles(t *testing.T) map[string]string {
 // instructions a clean-room contributor reads. The check is case-insensitive so
 // "Oracle"/"ORACLE" cannot sneak through.
 func TestShippedInstructionsCarryNoInsiderJargon(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the shipped instruction text (plain language, no insider jargon); banned-token absence lint with no behavior to drive")
 	bannedJargon := []string{"oracle"}
 	for label, content := range shippedInstructionFiles(t) {
 		lower := strings.ToLower(content)
@@ -59,6 +60,7 @@ func TestShippedInstructionsCarryNoInsiderJargon(t *testing.T) {
 // wording is doc review, not a Go assertion, and a paraphrase that keeps the
 // heading is not something this lint should pass or fail on.
 func TestFOContractCarriesWorkingPrinciplesSection(t *testing.T) {
+	markNonAC(t, "n/a — the claim is about the contract text (a structural section-heading anchor); no behavior to drive")
 	fo := shippedInstructionFiles(t)["FO contract (first-officer-shared-core.md)"]
 	if !strings.Contains(fo, "## Working Principles") {
 		t.Errorf("FO contract missing the `## Working Principles` section heading")

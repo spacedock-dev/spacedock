@@ -41,6 +41,7 @@ var embeddedRangeRe = regexp.MustCompile(`>=\s*\d+\s*,\s*<\s*\d+`)
 // behaviorally by internal/contract/gate_test.go, which drives a real spacedock
 // stub --version and observes discover invoked 0×/1×.
 func TestStartupEmbeddedRangeBracketsContractVersion(t *testing.T) {
+	markCodeBoundInvariant(t, "contract.CONTRACT_VERSION (the binary's contract version) — the embedded range must bracket the independent code value")
 	startup := sectionAfter(foSharedCore(t), "## Startup")
 	raw := embeddedRangeRe.FindString(startup)
 	if raw == "" {
@@ -103,6 +104,7 @@ func startupStep1(t *testing.T) string {
 // which is proof at the claim's own level, not a behavioral claim a code gate
 // could enforce here.
 func TestStartupAbortSplitsByBinaryPresence(t *testing.T) {
+	markNonAC(t, "n/a — doc-as-deliverable: the binary is absent by definition of this failure mode, so the contract prose IS the only artifact present; proof at the claim's own level")
 	step1 := startupStep1(t)
 
 	const (
@@ -179,6 +181,7 @@ func TestStartupAbortSplitsByBinaryPresence(t *testing.T) {
 // that the gate guidance is NOT duplicated across prose files — which a code
 // change can violate and this test would catch.
 func TestStartupGateGuidanceHasSingleProseSource(t *testing.T) {
+	markNonAC(t, "n/a — structural single-source/dedup invariant over the .md surface; the contract-version gate behavior is proven by TestStartupEmbeddedRangeBracketsContractVersion + TestStartupAbortSplitsByBinaryPresence")
 	root := repoRoot(t)
 	// Markers unique to the startup-gate abort prose. A second .md file carrying
 	// any of these would be a drift-prone mirror of the single source of truth.

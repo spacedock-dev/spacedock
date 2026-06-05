@@ -124,7 +124,7 @@ func sweepUndeclaredTautologies(t *testing.T, dir string) []string {
 	if err != nil {
 		t.Fatalf("read package dir %s: %v", dir, err)
 	}
-	var offenders []string
+	var files []*ast.File
 	for _, ent := range entries {
 		name := ent.Name()
 		if ent.IsDir() || !strings.HasSuffix(name, "_test.go") {
@@ -134,18 +134,76 @@ func sweepUndeclaredTautologies(t *testing.T, dir string) []string {
 		if err != nil {
 			t.Fatalf("parse %s: %v", name, err)
 		}
+		files = append(files, f)
+	}
+
+	// First pass: discover the package's instruction-file reader helpers — any
+	// non-test func that directly reads a `.md` skill-tree file. Seeded with the
+	// named helpers (some, like vendoredSkillFiles, return a map rather than
+	// reading a `.md` literal directly). This auto-detection keeps the sweep from
+	// silently drifting when a new foSharedCore/claudeFORuntime-style reader is
+	// added — the new helper is discovered, so a test calling it is still caught.
+	readers := map[string]bool{}
+	for r := range ingestedFileReaders {
+		readers[r] = true
+	}
+	// Collect every non-test func's calls + strings once, then grow the reader set
+	// to a fixpoint: a func is a reader if it directly reads a `.md` skill-tree file
+	// OR it calls a known reader (transitive, e.g. a test → startupStep1 →
+	// foSharedCore → os.ReadFile chain). The fixpoint closes the multi-hop helper
+	// gap an adversary could otherwise hide a tautology behind.
+	helperCalls := map[string]map[string]bool{}
+	for _, f := range files {
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil || strings.HasPrefix(fn.Name.Name, "Test") {
+				continue
+			}
+			calls, strs := collectCallsAndStrings(fn)
+			helperCalls[fn.Name.Name] = calls
+			if (calls["ReadFile"] || calls["Open"]) && readsInstructionPath(strs) {
+				readers[fn.Name.Name] = true
+			}
+		}
+	}
+	for grew := true; grew; {
+		grew = false
+		for name, calls := range helperCalls {
+			if readers[name] {
+				continue
+			}
+			for r := range readers {
+				if calls[r] {
+					readers[name] = true
+					grew = true
+					break
+				}
+			}
+		}
+	}
+
+	var offenders []string
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "Test") {
 				continue
 			}
-			calls := collectCalledFuncs(fn)
+			calls, strs := collectCallsAndStrings(fn)
 			readsIngested := false
-			for r := range ingestedFileReaders {
+			for r := range readers {
 				if calls[r] {
 					readsIngested = true
 					break
 				}
+			}
+			// A direct os.ReadFile/os.Open in the test body whose path is an
+			// instruction-file location is also an ingested-file read. The path is an
+			// instruction file when the test carries a `.md`-suffixed string literal
+			// AND a skill-tree path segment. A `.json` manifest read (parsed by the
+			// binary, Bucket D) does not match.
+			if (calls["ReadFile"] || calls["Open"]) && readsInstructionPath(strs) {
+				readsIngested = true
 			}
 			matches := false
 			for m := range matchFuncs {
@@ -163,26 +221,64 @@ func sweepUndeclaredTautologies(t *testing.T, dir string) []string {
 	return sortedUnique(offenders)
 }
 
-// collectCalledFuncs walks a function body and returns the set of called function
-// names (both bare `foo(...)` and selector `pkg.Foo(...)` — the trailing selector
-// name). It is used to detect ingested-file reads, substring/regex matches, and
-// the markNonAC declaration inside one test.
-func collectCalledFuncs(fn *ast.FuncDecl) map[string]bool {
-	out := map[string]bool{}
+// collectCallsAndStrings walks a function body and returns the set of called
+// function names (bare `foo(...)` and selector `pkg.Foo(...)` trailing name) plus
+// the set of string-literal values. The call set detects ingested-file reads,
+// substring/regex matches, and the markNonAC/markCodeBoundInvariant declarations;
+// the string set detects a direct os.ReadFile of an instruction-file path literal.
+func collectCallsAndStrings(fn *ast.FuncDecl) (calls map[string]bool, strs map[string]bool) {
+	calls = map[string]bool{}
+	strs = map[string]bool{}
 	ast.Inspect(fn, func(n ast.Node) bool {
-		call, ok := n.(*ast.CallExpr)
-		if !ok {
-			return true
-		}
-		switch f := call.Fun.(type) {
-		case *ast.Ident:
-			out[f.Name] = true
-		case *ast.SelectorExpr:
-			out[f.Sel.Name] = true
+		switch node := n.(type) {
+		case *ast.CallExpr:
+			switch f := node.Fun.(type) {
+			case *ast.Ident:
+				calls[f.Name] = true
+			case *ast.SelectorExpr:
+				calls[f.Sel.Name] = true
+			}
+		case *ast.BasicLit:
+			if node.Kind == token.STRING {
+				strs[strings.Trim(node.Value, "`\"")] = true
+			}
 		}
 		return true
 	})
-	return out
+	return calls, strs
+}
+
+// readInstructionPathSegments are skill-tree path segments that, alongside a `.md`
+// literal in the same test, mark a direct os.ReadFile as targeting an instruction
+// file the model ingests (a skill, contract, agent, or runtime adapter) rather
+// than a binary-parsed artifact (a manifest .json).
+var readInstructionPathSegments = map[string]bool{
+	"references":    true,
+	"agents":        true,
+	"first-officer": true,
+	"ensign":        true,
+	"commission":    true,
+	"present-gate":  true,
+	"SKILL.md":      true,
+}
+
+// readsInstructionPath reports whether a test's string literals indicate a read of
+// an instruction file: a `.md`-suffixed literal plus a skill-tree segment (or a
+// full skill-tree path in one literal). A `.json` read never matches.
+func readsInstructionPath(strs map[string]bool) bool {
+	hasMD := false
+	hasSegment := false
+	for s := range strs {
+		if strings.HasSuffix(s, ".md") {
+			hasMD = true
+		}
+		for seg := range readInstructionPathSegments {
+			if s == seg || strings.Contains(s, seg) {
+				hasSegment = true
+			}
+		}
+	}
+	return hasMD && hasSegment
 }
 
 // TestSweepDetectsAnUndeclaredTautology is the mutation control for the AC-3
