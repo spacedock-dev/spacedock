@@ -69,38 +69,24 @@ var instructionPathIdents = map[string]bool{
 	"devHomePresence":          true,
 }
 
-var matchFuncs = map[string]bool{
-	"Contains":              true,
-	"Count":                 true,
-	"HasPrefix":             true,
-	"HasSuffix":             true,
-	"FindString":            true,
-	"FindStringIndex":       true,
-	"FindStringSubmatch":    true,
-	"MatchString":           true,
-	"FindAllStringSubmatch": true,
-	// Package match-helpers: a test that drives one of these over an instruction
-	// file is still a presence/restatement check even though the strings.Contains
-	// lives one frame down. assertAll matches a required-token list; the span
-	// parsers set up a per-span token scan or a cross-file n-gram restatement check.
-	"assertAll":                 true,
-	"parseSpans":                true,
-	"parseProseSpansForOverlap": true,
-}
-
 // TestNoUndeclaredHostneutralityTautology is the AC-3 sweep for this package,
 // re-runnable offline. It parses every *_test.go and flags any test function that
-// reads a markdown INSTRUCTION file (an instructionFileReader call, or os.ReadFile/
-// os.Open of an instructionPathIdent) AND matches it with a substring/regex call,
-// UNLESS the test self-classifies via markNonAC or markCodeBoundInvariant. The
-// go/parser code-scan invariants (host_neutrality_test.go over .go source) and the
-// spanHostQualified unit test are NOT flagged: they read no instruction file or
-// match no ingested text. The undeclared-offender count is the AC-3 metric; it
+// READS a markdown INSTRUCTION file's content — by any flow: a named reader helper,
+// a tainted os.ReadFile/os.Open/io read, or a WalkDir-collected `.md` — UNLESS it
+// self-classifies via markNonAC or markCodeBoundInvariant. The go/parser code-scan
+// invariants (host_neutrality_test.go's scanFile over .go source via parser.ParseFile,
+// NOT a content read sink) and the spanHostQualified unit test are NOT flagged: they
+// read no instruction file. The undeclared-offender count is the AC-3 metric; it
 // must be zero.
+//
+// The sweep keys on the READ, not on how the bytes are inspected: any inspection
+// idiom (strings.Contains/Index/EqualFold, bytes.*, regexp.Regexp.Match, a bare ==)
+// is covered because the trigger is the ingest itself. A legitimate content-read (a
+// re-bound invariant, a text-hygiene lint) declares markCodeBoundInvariant/markNonAC.
 func TestNoUndeclaredHostneutralityTautology(t *testing.T) {
 	offenders := sweepHostneutralityTautologies(t, ".")
 	for _, o := range offenders {
-		t.Errorf("%s reads a markdown instruction file and matches it as a standalone claim without self-classifying — call markNonAC (with its behavioral oracle) or markCodeBoundInvariant (with its independent source)", o)
+		t.Errorf("%s reads a markdown instruction file's content without self-classifying — call markNonAC (with its behavioral oracle) or markCodeBoundInvariant (with its independent source); how the bytes are inspected does not matter", o)
 	}
 	if len(offenders) > 0 {
 		t.Fatalf("AC-3 sweep: %d undeclared tautological-behavioral-proof test(s) in hostneutrality; the count must be zero", len(offenders))
@@ -128,14 +114,15 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 	}
 
 	// First pass: discover this package's instruction-file reader helpers, then grow
-	// the set to a fixpoint so a tautology cannot hide one hop down. Seeded with the
-	// named readers; a func is ALSO a reader if it reads an instruction file directly
-	// (a `.md` skill-tree literal in its own body, OR a value built from its own
-	// string parameter — the readSkill(t, path) shape, where the caller supplies the
-	// `.md` path), OR it WalkDir/Walks a tree collecting `.md` files, OR (transitive)
-	// it calls a known reader. The fixpoint closes the multi-hop-helper gap the
-	// integration sweep already guards; without it a `wrap(t){return readSkill(t,
-	// foCorePath)}` wrapper would leave a tautology behind it undetected.
+	// the set to a fixpoint so a read cannot hide behind a helper chain. Seeded with
+	// the named readers; a func is ALSO a reader if it ingests instruction content
+	// directly (readsInstructionContent — a tainted ReadFile/Open/io read, or a
+	// WalkDir-collected `.md`) OR (transitive) it calls a known reader. Methods are
+	// NOT skipped: a reader can be a method on a fixture struct (the s.path /
+	// method-receiver flow). The code-scan helper scanFile is NOT a reader: it uses
+	// parser.ParseFile (not a content read sink) over a `../dispatch` path (no
+	// instruction taint).
+	taintedFields := instructionTaintedFields(files)
 	readers := map[string]bool{}
 	for r := range instructionFileReaders {
 		readers[r] = true
@@ -144,13 +131,11 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv != nil || strings.HasPrefix(fn.Name.Name, "Test") {
+			if !ok || strings.HasPrefix(fn.Name.Name, "Test") {
 				continue
 			}
-			calls, idents, strs := collectCallsAndIdents(fn)
-			helperCalls[fn.Name.Name] = calls
-			directLiteral := (calls["ReadFile"] || calls["Open"]) && (hasMarkdownLiteral(strs) || readsInstructionIdent(calls, idents))
-			if directLiteral || readsParamPath(fn) || walksForMarkdown(calls, strs) {
+			helperCalls[fn.Name.Name] = collectCalls(fn)
+			if readsInstructionContent(fn, taintedFields) {
 				readers[fn.Name.Name] = true
 			}
 		}
@@ -171,35 +156,27 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 		}
 	}
 
+	// Second pass: a test is an offender if it ingests instruction-file content —
+	// directly (readsInstructionContent) or via a discovered reader helper — and does
+	// NOT declare its proof standing. The sweep keys on the READ, not a match-func
+	// allowlist.
 	var offenders []string
 	for _, f := range files {
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "Test") {
+			if !ok || !strings.HasPrefix(fn.Name.Name, "Test") {
 				continue
 			}
-			calls, idents, strs := collectCallsAndIdents(fn)
-			readsInstruction := false
+			calls := collectCalls(fn)
+			readsInstruction := readsInstructionContent(fn, taintedFields)
 			for r := range readers {
 				if calls[r] {
 					readsInstruction = true
 					break
 				}
 			}
-			// os.ReadFile/os.Open of an instruction-path ident OR an inline `.md`
-			// path literal (including a split `name + "." + "md"` reconstructed by
-			// collectCallsAndIdents) is also a read of an instruction file.
-			if (calls["ReadFile"] || calls["Open"]) && (readsInstructionIdent(calls, idents) || hasMarkdownLiteral(strs)) {
-				readsInstruction = true
-			}
-			matches := false
-			for m := range matchFuncs {
-				if calls[m] {
-					matches = true
-				}
-			}
 			declared := calls["markNonAC"] || calls["markCodeBoundInvariant"]
-			if readsInstruction && matches && !declared {
+			if readsInstruction && !declared {
 				offenders = append(offenders, fn.Name.Name)
 			}
 		}
@@ -207,50 +184,43 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 	return sortedUniqueHN(offenders)
 }
 
-// readsInstructionIdent reports whether a function reads an instruction-path
-// package variable (foCorePath, ensignCorePath, …) via os.ReadFile/os.Open.
-func readsInstructionIdent(calls, idents map[string]bool) bool {
-	if !calls["ReadFile"] && !calls["Open"] {
-		return false
-	}
-	for id := range instructionPathIdents {
-		if idents[id] {
-			return true
-		}
-	}
-	return false
-}
-
-// hasMarkdownLiteral reports whether any collected string (a literal or a
-// reconstructed constant concatenation) ends in `.md` — a markdown instruction
-// path literal.
-func hasMarkdownLiteral(strs map[string]bool) bool {
-	for s := range strs {
-		if strings.HasSuffix(s, ".md") {
-			return true
-		}
-	}
-	return false
-}
-
-// readsParamPath reports whether fn os.ReadFile/os.Open's a value derived from one
-// of its own string parameters — the path-arg reader shape (readSkill(t, path)
-// reads `path`). The `.md` literal lives in the CALLER, so a body-literal scan
-// misses it; this catches it by tracking parameter flow into the read argument.
-func readsParamPath(fn *ast.FuncDecl) bool {
-	params := map[string]bool{}
-	if fn.Type.Params != nil {
-		for _, field := range fn.Type.Params.List {
-			if id, ok := field.Type.(*ast.Ident); ok && id.Name == "string" {
-				for _, name := range field.Names {
-					params[name.Name] = true
-				}
+// collectCalls walks a function body and returns the set of called function names
+// (bare and selector trailing name), used to detect reader-helper calls and the
+// markNonAC / markCodeBoundInvariant declarations.
+func collectCalls(fn *ast.FuncDecl) map[string]bool {
+	calls := map[string]bool{}
+	ast.Inspect(fn, func(n ast.Node) bool {
+		if call, ok := n.(*ast.CallExpr); ok {
+			switch f := call.Fun.(type) {
+			case *ast.Ident:
+				calls[f.Name] = true
+			case *ast.SelectorExpr:
+				calls[f.Sel.Name] = true
 			}
 		}
-	}
-	if len(params) == 0 {
-		return false
-	}
+		return true
+	})
+	return calls
+}
+
+// readSinks are the call selectors that ingest a file's content given a path.
+var readSinks = map[string]bool{
+	"ReadFile":   true, // os.ReadFile
+	"Open":       true, // os.Open
+	"ReadAll":    true, // io.ReadAll
+	"NewScanner": true, // bufio.NewScanner
+	"NewReader":  true, // bufio.NewReader
+}
+
+// readsInstructionContent reports whether fn ingests an instruction file's content
+// by any flow — the positive/taint replacement for the Cycle-1/2 allow-lists. It
+// taints every string derived from an instruction-file path (a `.md` skill-tree
+// literal/segment, an instructionPathIdent package var, a param, a package-wide
+// struct field, a local built via +/strings.Join/filepath.Join/fmt.Sprintf) and
+// reports a read when a tainted path flows into any read sink (ReadFile/Open/
+// ReadAll/bufio), or when fn WalkDir/Walks a tree collecting instruction `.md`.
+func readsInstructionContent(fn *ast.FuncDecl, taintedFields map[string]bool) bool {
+	tainted := instructionTaintedNames(fn, taintedFields)
 	found := false
 	ast.Inspect(fn, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
@@ -258,97 +228,191 @@ func readsParamPath(fn *ast.FuncDecl) bool {
 			return true
 		}
 		sel, ok := call.Fun.(*ast.SelectorExpr)
-		if !ok || (sel.Sel.Name != "ReadFile" && sel.Sel.Name != "Open") {
+		if !ok {
 			return true
 		}
-		for _, arg := range call.Args {
-			ast.Inspect(arg, func(m ast.Node) bool {
-				if id, ok := m.(*ast.Ident); ok && params[id.Name] {
+		if readSinks[sel.Sel.Name] {
+			for _, arg := range call.Args {
+				if exprInstructionTainted(arg, tainted) || readsTaintedField(arg, taintedFields) {
 					found = true
 				}
-				return true
-			})
+			}
+		}
+		if (sel.Sel.Name == "WalkDir" || sel.Sel.Name == "Walk") && fnFiltersInstructionMarkdown(fn) {
+			found = true
 		}
 		return true
 	})
 	return found
 }
 
-// walksForMarkdown reports whether fn WalkDir/Walks a tree collecting `.md` files —
-// the shippedSkillText shape, a reader-of-many whose callers read+match each
-// returned path. The signal: a filepath.WalkDir/Walk call AND a `.md` suffix the
-// body filters on (carried in strs, which includes split-`.md` concatenations).
-func walksForMarkdown(calls, strs map[string]bool) bool {
-	if !calls["WalkDir"] && !calls["Walk"] {
-		return false
-	}
-	return hasMarkdownLiteral(strs)
+// readsTaintedField reports whether expr reads a struct field whose name is in the
+// package-wide instruction-tainted-field set — the s.path / method-receiver flow.
+func readsTaintedField(expr ast.Expr, taintedFields map[string]bool) bool {
+	hit := false
+	ast.Inspect(expr, func(n ast.Node) bool {
+		if sel, ok := n.(*ast.SelectorExpr); ok && taintedFields[sel.Sel.Name] {
+			hit = true
+		}
+		return true
+	})
+	return hit
 }
 
-// collectCallsAndIdents walks a function body, returning the set of called
-// function names (bare + selector trailing name) and the set of referenced
-// identifier names. The ident set lets the sweep detect an os.ReadFile applied to a
-// package-level instruction-path variable.
-//
-// The string set ALSO carries the constant value of any string-`+` concatenation
-// (e.g. `name + "." + "md"`), so a constructed `.md` suffix cannot evade the
-// `.md`-literal detection by splitting the suffix across operands.
-func collectCallsAndIdents(fn *ast.FuncDecl) (calls map[string]bool, idents map[string]bool, strs map[string]bool) {
-	calls = map[string]bool{}
-	idents = map[string]bool{}
-	strs = map[string]bool{}
-	ast.Inspect(fn, func(n ast.Node) bool {
-		switch node := n.(type) {
-		case *ast.CallExpr:
-			switch f := node.Fun.(type) {
-			case *ast.Ident:
-				calls[f.Name] = true
-			case *ast.SelectorExpr:
-				calls[f.Sel.Name] = true
+// instructionTaintedFields scans every struct composite literal and field
+// assignment across the package, returning the set of FIELD NAMES ever assigned an
+// instruction-file path. Keyed by field name (no type info at parse time) — an
+// over-approximation that errs toward flagging, which the proof policy wants.
+func instructionTaintedFields(files []*ast.File) map[string]bool {
+	fields := map[string]bool{}
+	for _, f := range files {
+		ast.Inspect(f, func(n ast.Node) bool {
+			switch node := n.(type) {
+			case *ast.KeyValueExpr:
+				if key, ok := node.Key.(*ast.Ident); ok && exprInstructionTainted(node.Value, nil) {
+					fields[key.Name] = true
+				}
+			case *ast.AssignStmt:
+				for i, rhs := range node.Rhs {
+					if i >= len(node.Lhs) {
+						break
+					}
+					if sel, ok := node.Lhs[i].(*ast.SelectorExpr); ok && exprInstructionTainted(rhs, nil) {
+						fields[sel.Sel.Name] = true
+					}
+				}
+			}
+			return true
+		})
+	}
+	return fields
+}
+
+// instructionTaintedNames computes the set of names (params, locals, recv.field
+// selectors) in fn holding a string derived from an instruction-file path. Every
+// string parameter is tainted (a helper that reads a string param is a path-arg
+// reader — the caller supplies the .md path). It propagates through := / = to a
+// fixpoint, including a local assigned from a package-wide tainted field.
+func instructionTaintedNames(fn *ast.FuncDecl, taintedFields map[string]bool) map[string]bool {
+	tainted := map[string]bool{}
+	if fn.Type.Params != nil {
+		for _, field := range fn.Type.Params.List {
+			if id, ok := field.Type.(*ast.Ident); ok && id.Name == "string" {
+				for _, name := range field.Names {
+					tainted[name.Name] = true
+				}
+			}
+		}
+	}
+	for grew := true; grew; {
+		grew = false
+		ast.Inspect(fn, func(n ast.Node) bool {
+			assign, ok := n.(*ast.AssignStmt)
+			if !ok {
+				return true
+			}
+			for i, rhs := range assign.Rhs {
+				if i >= len(assign.Lhs) {
+					break
+				}
+				if !exprInstructionTainted(rhs, tainted) && !readsTaintedField(rhs, taintedFields) {
+					continue
+				}
+				if name := lvalueName(assign.Lhs[i]); name != "" && !tainted[name] {
+					tainted[name] = true
+					grew = true
+				}
+			}
+			return true
+		})
+	}
+	return tainted
+}
+
+// lvalueName renders an assignable target as a taint key: a bare ident or a
+// selector `recv.field`.
+func lvalueName(e ast.Expr) string {
+	switch x := e.(type) {
+	case *ast.Ident:
+		return x.Name
+	case *ast.SelectorExpr:
+		if inner, ok := x.X.(*ast.Ident); ok {
+			return inner.Name + "." + x.Sel.Name
+		}
+		return x.Sel.Name
+	}
+	return ""
+}
+
+// exprInstructionTainted reports whether expr carries an instruction-file path
+// taint: a tainted name, an instruction-path literal/segment, a known
+// instructionPathIdent package var, or a build of any of these via the path-build
+// idioms (+/strings.Join/filepath.Join/fmt.Sprintf/string(...)).
+func exprInstructionTainted(expr ast.Expr, tainted map[string]bool) bool {
+	hit := false
+	ast.Inspect(expr, func(n ast.Node) bool {
+		switch x := n.(type) {
+		case *ast.BasicLit:
+			if x.Kind == token.STRING && isInstructionPathLiteral(strings.Trim(x.Value, "`\"")) {
+				hit = true
 			}
 		case *ast.Ident:
-			idents[node.Name] = true
-		case *ast.BasicLit:
-			if node.Kind == token.STRING {
-				strs[strings.Trim(node.Value, "`\"")] = true
+			if tainted[x.Name] || instructionPathIdents[x.Name] {
+				hit = true
 			}
-		case *ast.BinaryExpr:
-			if node.Op == token.ADD {
-				if joined, ok := constStringConcat(node); ok {
-					strs[joined] = true
-				}
+		case *ast.SelectorExpr:
+			if inner, ok := x.X.(*ast.Ident); ok && tainted[inner.Name+"."+x.Sel.Name] {
+				hit = true
 			}
 		}
 		return true
 	})
-	return calls, idents, strs
+	return hit
 }
 
-// constStringConcat reconstructs the constant value of a `+` expression whose
-// operands are string literals (or nested string-literal `+` expressions),
-// treating a non-literal operand as an empty segment so the literal tail still
-// reconstructs (`base + "." + "md"` -> `.md`-suffixed). Returns ok=false when no
-// string literal participates.
-func constStringConcat(expr ast.Expr) (string, bool) {
-	switch e := expr.(type) {
-	case *ast.BasicLit:
-		if e.Kind == token.STRING {
-			return strings.Trim(e.Value, "`\""), true
+// fnFiltersInstructionMarkdown reports whether fn's body filters paths by a `.md`
+// suffix — the WalkDir-collector signal.
+func fnFiltersInstructionMarkdown(fn *ast.FuncDecl) bool {
+	hit := false
+	ast.Inspect(fn, func(n ast.Node) bool {
+		if lit, ok := n.(*ast.BasicLit); ok && lit.Kind == token.STRING {
+			if strings.HasSuffix(strings.Trim(lit.Value, "`\""), ".md") {
+				hit = true
+			}
 		}
-		return "", false
-	case *ast.BinaryExpr:
-		if e.Op != token.ADD {
-			return "", false
-		}
-		l, lok := constStringConcat(e.X)
-		r, rok := constStringConcat(e.Y)
-		if !lok && !rok {
-			return "", false
-		}
-		return l + r, true
-	default:
-		return "", false
+		return true
+	})
+	return hit
+}
+
+// instructionPathSegments are skill-tree / contract path segments that mark a path
+// literal as an instruction file. The positive instruction-surface predicate (a
+// path with any segment is instruction however it is built); replaces the
+// `.md`-suffix-only detection that a Join/split-built suffix evaded.
+var instructionPathSegments = map[string]bool{
+	"skills":        true,
+	"references":    true,
+	"agents":        true,
+	"first-officer": true,
+	"ensign":        true,
+	"commission":    true,
+	"present-gate":  true,
+	"SKILL.md":      true,
+}
+
+// isInstructionPathLiteral reports whether a string literal is (a fragment of) an
+// instruction-file path: it carries a skill-tree/contract segment. A `.json`
+// manifest path carries none and is not instruction.
+func isInstructionPathLiteral(s string) bool {
+	if strings.HasSuffix(s, ".json") {
+		return false
 	}
+	for seg := range instructionPathSegments {
+		if s == seg || strings.Contains(s, seg) {
+			return true
+		}
+	}
+	return false
 }
 
 func sortedUniqueHN(in []string) []string {
@@ -523,6 +587,66 @@ func TestSplitSuffixHN(t *T) {
 }
 `
 	assertRedThenGreenHN(t, "split-.md suffix", "TestSplitSuffixHN", splitMD)
+
+	// Shape 5 (Cycle-3 M1, match axis) — the ingested bytes are inspected with a
+	// match idiom OUTSIDE the old matchFuncs allowlist. The positive rule keys on the
+	// READ (readSkill), so HOW the bytes are inspected is irrelevant.
+	matchIndex := `package fixture
+import "strings"
+func TestMatchIndexHN(t *T) {
+	text := readSkill(t, foCorePath)
+	if strings.Index(text, "HALT") < 0 { t.Error("x") }
+}
+`
+	assertRedThenGreenHN(t, "match via strings.Index (no Contains)", "TestMatchIndexHN", matchIndex)
+
+	matchBytesRegexp := `package fixture
+import "regexp"
+func TestMatchBytesRegexpHN(t *T) {
+	text := readSkill(t, foCorePath)
+	re := regexp.MustCompile("HALT")
+	if !re.Match([]byte(text)) { t.Error("x") }
+}
+`
+	assertRedThenGreenHN(t, "match via regexp.Regexp.Match([]byte)", "TestMatchBytesRegexpHN", matchBytesRegexp)
+
+	// Shape 6 (Cycle-3 M2, reader axis) — the `.md` path is built with strings.Join,
+	// not `+`. The base fragment carries a skill-tree segment so it taints before the
+	// suffix is appended.
+	joinPath := `package fixture
+import (
+	"os"
+	"strings"
+)
+func TestJoinPathHN(t *T) {
+	base := "../../skills/first-officer/references/first-officer-shared-core"
+	p := strings.Join([]string{base, "md"}, ".")
+	b, _ := os.ReadFile(p)
+	if strings.Index(string(b), "x") < 0 { t.Error("y") }
+}
+`
+	assertRedThenGreenHN(t, "strings.Join-built .md path", "TestJoinPathHN", joinPath)
+
+	// Shape 7 (Cycle-3 M3, reader axis) — the `.md` path flows through a struct field
+	// and the read happens via a METHOD on that struct; discovery must include methods
+	// and taint the package-wide field.
+	structMethod := `package fixture
+import (
+	"os"
+	"strings"
+)
+type fixt struct { path string }
+func (f *fixt) read(t *T) string {
+	b, _ := os.ReadFile(f.path)
+	return string(b)
+}
+func TestStructMethodHN(t *T) {
+	f := &fixt{path: "../../skills/first-officer/references/first-officer-shared-core.md"}
+	s := f.read(t)
+	if strings.Contains(s, "x") { _ = s }
+}
+`
+	assertRedThenGreenHN(t, "struct-field + method-receiver path flow", "TestStructMethodHN", structMethod)
 }
 
 // assertRedThenGreenHN plants fixtureSrc, runs the HN sweep, requires offenderName
