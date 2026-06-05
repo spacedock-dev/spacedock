@@ -1,6 +1,6 @@
 ---
 title: Add Pi to runtime-live CI and shared runtime scenarios
-status: validation
+status: implementation
 source: captain (2026-06-05) — PRs that affect Pi runtime support need a Pi live lane using OPENAI_API_KEY; local/CI coverage should run most shared scenarios through Pi, either LLM-live or codified where a scenario is not yet live-safe
 score: "0.33"
 started: 2026-06-05T00:00:00Z
@@ -116,3 +116,7 @@ Validated product commit `05ba04af` on branch `spacedock-ensign/pi-live-ci-runti
 
 ### Recommendation
 PASSED. The implementation satisfies AC-1 through AC-6 for the current bootstrap scope, with the explicit residual risk that Pi shared scenarios are gap-tracked rather than live/codified runners.
+
+### Feedback Cycles
+
+- Cycle 1: CI `pi-live` failed in PR #305 at `Install Pi CLI and substrates`. Root cause from GitHub job `79683273580`: `npm install -g pi-coding-agent` installed unscoped `pi-coding-agent@0.0.1`, which does not provide the `pi` binary; the next line failed with `/home/runner/...sh: line 6: pi: command not found`. Fix should install the real scoped Pi package (observed local package: `@earendil-works/pi-coding-agent`, npm latest `0.78.1`, bin `pi`) and avoid unpinned/latest npm installs in the live lane. Supply-chain constraint: pin top-level npm packages/versions, avoid arbitrary latest, prefer `--ignore-scripts --no-audit --no-fund --omit=dev` where compatible, and verify installed package names/versions/bin/resource paths before running live smoke.
