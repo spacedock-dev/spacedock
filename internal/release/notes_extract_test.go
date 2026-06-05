@@ -55,10 +55,13 @@ func TestAnnotatedTagBodyRoundTrips(t *testing.T) {
 
 // guardConditionRe pulls the empty-body guard condition out of release.yml's
 // "Extract release notes from the tag body" step, e.g. the `[ -z "..." ]` test
-// inside `if <cond>; then`. The test runs the REAL guard string from the
-// workflow, so a regression (e.g. back to the dead `[ ! -s release-notes.txt ]`
-// form) breaks this test instead of silently shipping a blank-body Release.
-var guardConditionRe = regexp.MustCompile(`(?m)^\s*if (\[.*\]); then\s*$`)
+// inside `if <cond>; then`. The condition is anchored on `release-notes.txt` so
+// it selects this guard specifically rather than any other `if [ ... ]; then`
+// line in the file (the journey-ledger download step also carries one). The test
+// runs the REAL guard string from the workflow, so a regression (e.g. back to
+// the dead `[ ! -s release-notes.txt ]` form) breaks this test instead of
+// silently shipping a blank-body Release.
+var guardConditionRe = regexp.MustCompile(`(?m)^\s*if (\[.*release-notes\.txt.*\]); then\s*$`)
 
 // TestReleaseYAMLGuardRejectsEmptyBody locks the release.yml empty-body guard:
 // `git tag -l --format='%(contents:body)'` always appends a trailing newline, so

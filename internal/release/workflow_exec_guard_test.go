@@ -7,9 +7,22 @@ import (
 
 type workflowStep struct {
 	name     string
+	id       string
+	ifCond   string
 	uses     string
 	run      string
 	withPath string
+}
+
+// workflowJob is a top-level entry under `jobs:` — its name, its declared
+// `needs:` edges, and the steps it owns. The job graph is parsed separately from
+// the flat step list so the separation guard can bind a `needs:` edge to the
+// OWNING job (the job carrying the goreleaser action) rather than matching the
+// edge anywhere in the document.
+type workflowJob struct {
+	name  string
+	needs []string
+	steps []workflowStep
 }
 
 func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
@@ -122,6 +135,109 @@ func assertReleaseWorkflowPublishesJourneyCosts(workflow string) error {
 	if publishStep <= builderStep {
 		return fmt.Errorf("release.yml publishes journey costs before building them")
 	}
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(workflow); err != nil {
+		return err
+	}
+	return nil
+}
+
+// assertGoreleaserDoesNotNeedJourneyLedger binds the separation invariant to the
+// job DAG: the job that carries the goreleaser action must NOT declare `needs:`
+// on the job that builds the journey-cost ledger. That edge would re-block the
+// cut on the never-fired Runtime-Live-E2E run (the exact bug this separation
+// closes). The edge is bound to the OWNING job — found by which job holds the
+// goreleaser action vs. which holds the journey-cost builder — so the SAFE
+// reverse edge (journey-ledger needs: goreleaser, required so `gh release upload`
+// runs after the Release exists) does not false-trip the check.
+func assertGoreleaserDoesNotNeedJourneyLedger(workflow string) error {
+	jobs := parseWorkflowJobs(workflow)
+	goreleaserJob, ledgerJob := "", ""
+	for _, job := range jobs {
+		for _, step := range job.steps {
+			if strings.HasPrefix(step.uses, "goreleaser/goreleaser-action@") {
+				goreleaserJob = job.name
+			}
+			for _, command := range executableShellCommands(step.run) {
+				if isJourneyCostBuilder(command) {
+					ledgerJob = job.name
+				}
+			}
+		}
+	}
+	if goreleaserJob == "" {
+		return fmt.Errorf("release.yml has no job carrying the goreleaser action")
+	}
+	if ledgerJob == "" {
+		return fmt.Errorf("release.yml has no job carrying the journey-cost builder")
+	}
+	if goreleaserJob == ledgerJob {
+		// Single-job layout: no cross-job needs edge to re-block the cut.
+		return nil
+	}
+	for _, job := range jobs {
+		if job.name != goreleaserJob {
+			continue
+		}
+		for _, need := range job.needs {
+			if need == ledgerJob {
+				return fmt.Errorf("release.yml goreleaser job %q declares needs: %q — re-blocking the cut on the journey-ledger job", goreleaserJob, ledgerJob)
+			}
+		}
+	}
+	return nil
+}
+
+// assertReleaseLedgerStepsSkipWhenNoProducerRun proves POLICY 1's job-level
+// skip: the journey-cost builder and its release-upload step must be GATED on
+// the download step's producer-found output, so a producer-less / empty-dir cut
+// SKIPS them (journey-ledger job green) instead of running `journey-costs` over
+// an empty dir and REDding the job. It locates the download step by its emitted
+// `found=` output and requires both the builder step and the upload step to
+// carry an `if:` referencing that step's `found` output.
+func assertReleaseLedgerStepsSkipWhenNoProducerRun(workflow string) error {
+	steps := parseWorkflowSteps(workflow)
+
+	downloadID := ""
+	for _, step := range steps {
+		if step.id == "" {
+			continue
+		}
+		for _, command := range executableShellCommands(step.run) {
+			if strings.Contains(command, `found=false`) && strings.Contains(command, `"$GITHUB_OUTPUT"`) {
+				downloadID = step.id
+			}
+		}
+	}
+	if downloadID == "" {
+		return fmt.Errorf("release.yml has no download step with an id that emits found=false to $GITHUB_OUTPUT (the non-fatal skip flag)")
+	}
+
+	gate := fmt.Sprintf("steps.%s.outputs.found == 'true'", downloadID)
+	builderGated, publishGated := false, false
+	for _, step := range steps {
+		isBuilder, isPublish := false, false
+		for _, command := range executableShellCommands(step.run) {
+			if isJourneyCostBuilder(command) {
+				isBuilder = true
+			}
+			if strings.HasPrefix(command, `gh release upload `) &&
+				strings.Contains(command, `"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`) {
+				isPublish = true
+			}
+		}
+		if isBuilder && step.ifCond == gate {
+			builderGated = true
+		}
+		if isPublish && step.ifCond == gate {
+			publishGated = true
+		}
+	}
+	if !builderGated {
+		return fmt.Errorf("release.yml journey-cost builder is not gated on %q; a producer-less cut would run journey-costs over an empty dir and RED the journey-ledger job", gate)
+	}
+	if !publishGated {
+		return fmt.Errorf("release.yml journey-cost publish step is not gated on %q; a producer-less cut would attempt an upload of a missing ledger", gate)
+	}
 	return nil
 }
 
@@ -146,6 +262,10 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 		}
 		step := &steps[len(steps)-1]
 		switch {
+		case strings.HasPrefix(trimmed, "id: "):
+			step.id = strings.Trim(strings.TrimPrefix(trimmed, "id: "), `"`)
+		case strings.HasPrefix(trimmed, "if: "):
+			step.ifCond = strings.TrimSpace(strings.TrimPrefix(trimmed, "if: "))
 		case strings.HasPrefix(trimmed, "uses: "):
 			step.uses = strings.Trim(strings.TrimPrefix(trimmed, "uses: "), `"`)
 		case strings.HasPrefix(trimmed, "run: |"):
@@ -179,6 +299,92 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 	return steps
 }
 
+// parseWorkflowJobs partitions a workflow into its top-level jobs (the 2-space
+// indented keys under `jobs:`), capturing each job's declared `needs:` edges and
+// the steps it owns. This is the job-aware view the separation guard needs: the
+// flat parseWorkflowSteps cannot tell which job a `needs:` edge or step belongs
+// to, so a `goreleaser → journey-ledger` edge would otherwise be invisible.
+func parseWorkflowJobs(workflow string) []workflowJob {
+	lines := strings.Split(workflow, "\n")
+	jobsStart := -1
+	for i, line := range lines {
+		if strings.TrimSpace(line) == "jobs:" && leadingSpaces(line) == 0 {
+			jobsStart = i + 1
+			break
+		}
+	}
+	if jobsStart < 0 {
+		return nil
+	}
+
+	var jobs []workflowJob
+	for i := jobsStart; i < len(lines); i++ {
+		line := lines[i]
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+			continue
+		}
+		// A top-level key at column 0 ends the jobs block (e.g. a trailing
+		// document key). Job keys sit at exactly 2-space indent.
+		if leadingSpaces(line) == 0 {
+			break
+		}
+		if leadingSpaces(line) == 2 && strings.HasSuffix(trimmed, ":") {
+			jobs = append(jobs, workflowJob{name: strings.TrimSuffix(trimmed, ":")})
+			continue
+		}
+		if len(jobs) == 0 {
+			continue
+		}
+		job := &jobs[len(jobs)-1]
+		if leadingSpaces(line) == 4 && strings.HasPrefix(trimmed, "needs:") {
+			job.needs = parseNeeds(trimmed)
+		}
+	}
+
+	// Attach steps by slicing each job's text span and reusing the flat parser.
+	jobHeaderAt := func(name string) int {
+		for i := jobsStart; i < len(lines); i++ {
+			if leadingSpaces(lines[i]) == 2 && strings.TrimSpace(lines[i]) == name+":" {
+				return i
+			}
+		}
+		return -1
+	}
+	for j := range jobs {
+		start := jobHeaderAt(jobs[j].name)
+		end := len(lines)
+		if j+1 < len(jobs) {
+			end = jobHeaderAt(jobs[j+1].name)
+		}
+		if start >= 0 && end > start {
+			jobs[j].steps = parseWorkflowSteps(strings.Join(lines[start:end], "\n"))
+		}
+	}
+	return jobs
+}
+
+// parseNeeds reads a job's `needs:` declaration in any of YAML's three shapes —
+// scalar (`needs: goreleaser`), flow sequence (`needs: [a, b]`), or (when the
+// line is just `needs:`) an empty set the caller treats as no edge. Block-list
+// form is not used in this repo's workflows and is not parsed here.
+func parseNeeds(trimmed string) []string {
+	rest := strings.TrimSpace(strings.TrimPrefix(trimmed, "needs:"))
+	if rest == "" {
+		return nil
+	}
+	rest = strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(rest, "["), "]"))
+	var out []string
+	for _, part := range strings.Split(rest, ",") {
+		if name := strings.Trim(strings.TrimSpace(part), `"'`); name != "" {
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// findExecutableStep returns the index of the step named name whose run block
+// contains commandFragment, or -1.
 func findExecutableStep(steps []workflowStep, name, commandFragment string) int {
 	for i, step := range steps {
 		if step.name != name {
