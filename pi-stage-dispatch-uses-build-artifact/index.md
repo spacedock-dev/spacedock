@@ -186,3 +186,37 @@ AC coverage:
 
 Residual risks:
 - The smoke uses a fixture Pi worker process rather than a live Pi runtime session; it proves the FO/Pi artifact-and-wrapper path with durable state evidence without depending on external Pi availability.
+
+## Stage Report: validation z6
+
+Recommendation: PASSED
+
+Validated product commits:
+- `613cb0867561469c8bad1dc3cc43ed6e9f45072a` (`Ensure Pi dispatch wraps build artifacts`)
+- `2f46b7e6ce6dc740486c3b364989029efae5c116` (`Add Pi stage dispatch smoke fixture`)
+
+Commands run:
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact status --short --branch`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact log --oneline -5`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact show --stat --oneline --decorate --no-renames 613cb086`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact show --stat --oneline --decorate --no-renames 2f46b7e6`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact branch --show-current`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact rev-parse HEAD`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact status --short`
+- PASS: `go test ./internal/dispatch -run 'TestPiStageDispatchSmoke|TestBuildPiHost' -count=1`
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+- PASS: final product and state `git status --short` checks were clean before this validation report append.
+
+Acceptance criteria evidence:
+- AC-1 PASSED: `skills/first-officer/references/pi-first-officer-runtime.md` Dispatch guidance requires `spacedock dispatch build` with `host: "pi"`, the dispatch artifact as assignment source of truth, and forwarding emitted dispatch prompt/content without composing a replacement assignment. `skills/integration/skill_surface_test.go` locks these requirements in `TestPiFirstOfficerRuntimeRequiresDispatchBuildArtifactForStages`.
+- AC-2 PASSED: `internal/piruntime.SubagentStageDispatch` adds `context: "fresh"` plus optional phase/label around the supplied assignment; `internal/piruntime/subagents_test.go` verifies exact assignment preservation and no serialized `acceptance`; `internal/dispatch/build_pi_host_test.go` wraps a real Pi build prompt and asserts it is forwarded unchanged.
+- AC-3 PASSED: `TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper` builds a real split-root `host: "pi"` artifact and asserts builder-derived title/slug-stage path, target stage, entity path, workflow stage-def command, worktree path, and checklist facts are present and that the wrapper forwards the dispatch file path.
+- AC-4 PASSED: wrapper JSON is asserted not to contain `acceptance` in both piruntime tests and the AC-6 smoke fixture; skill-surface guidance test also forbids `subagent(... acceptance: ...)` for Spacedock stage dispatches.
+- AC-5 PASSED: `TestPiFirstOfficerRuntimeLimitsManualPromptFallback` verifies guidance limits manual Pi prompt composition to builder unavailable/non-zero or explicit builder debugging and requires recording an auditable failure/unavailability reason with minimum canonical schema facts.
+- AC-6 PASSED: product commit `2f46b7e6` adds `TestPiStageDispatchSmokeUsesBuildArtifactThroughWrapper`, a failable fixture smoke that builds a Pi dispatch artifact, wraps it, runs a fixture Pi worker subprocess, requires the worker to read the dispatch file, appends a durable stage report, commits the entity path in a temp state checkout, and verifies process exit, state/report content, state git log (`fixture Pi stage report`), and clean path-scoped state status.
+
+Residual risks:
+- AC-6 uses a fixture Pi worker subprocess, not a live external Pi runtime session; this is acceptable for the stated fixture/live option but does not prove external runtime availability.
+- The product branch is ahead of and behind `origin/next` in the worktree status observed at validation start; validation was performed on the assigned commits at HEAD without rebasing or editing product files.
