@@ -6,7 +6,7 @@ source: "first-officer (2026-06-05) — surfaced during gq (feedback-nonhappy-li
 score: "0.20"
 started:
 completed:
-verdict:
+verdict: rejected
 worktree:
 issue:
 ---
