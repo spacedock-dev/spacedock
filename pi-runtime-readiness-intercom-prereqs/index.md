@@ -96,3 +96,35 @@ Verified by: existing and new CLI tests still cover Pi CLI/auth, `pi-subagents` 
 - Adding PR/mod behavior or new workflow semantics.
 - Treating setup checks, bridge-active output, or doctor success as live talkback proof.
 - Editing the cq entity except to read it for context.
+
+## Stage Report: implementation
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs`
+- Product branch: `spacedock-ensign/pi-runtime-readiness-intercom-prereqs`
+- Product commit: `8c6a2e8683a4552b8a6c627d632f7463e48f4c55` (`cli: report pi supervisor talkback prerequisites`)
+- Changed product files:
+  - `internal/cli/pi.go`
+  - `internal/cli/pi_frontdoor_test.go`
+  - `docs/runtime-support.md`
+- DONE: Extended the Pi runtime readiness model to resolve/report `PI_INTERCOM_PACKAGE_ROOT`, `PI_CODING_AGENT_SESSION_DIR`, `pi-intercom`, and `subagents-doctor` alongside the existing Pi CLI/auth/pi-subagents/Spacedock skill checks.
+- DONE: Made doctor and install check readiness fail when required supervisor-talkback prerequisites are missing, while non-check install remains idempotent/instructive.
+- DONE: Added command output and docs wording that setup checks are necessary but insufficient; live proof still requires the cq-style progress -> decision -> supervisor reply -> child resume -> durable marker probe.
+- DONE: Updated CLI tests for healthy/missing Pi doctor output, install output/exit behavior, environment path resolution, and runtime-support documentation invariants.
+- Validation commands:
+  - `gofmt -w internal/cli/pi.go internal/cli/pi_frontdoor_test.go` — passed
+  - `go test ./internal/cli -count=1` — passed
+  - `go test ./... -count=1` — passed
+  - `go test ./... -race` — passed
+- AC coverage:
+  - AC-1/AC-2: `TestPiDoctorReportsMissingAndHealthyRuntime` covers explicit supervisor-talkback rows, remedies, all-present exit 0, and missing prerequisites non-zero.
+  - AC-3: `TestPiInstallAcceptedAndDoesNotUsePluginCommands`, `TestPiInstallMissingSubagentsPrintsActionableInstructions`, and `TestPiInstallCheckFailsForMissingSupervisorTalkbackPrerequisites` cover install and install `--check` behavior without plugin mutation.
+  - AC-4: `TestPiRuntimeConfigResolvesEnvPathsForSubagentsIntercomAuthAndSessions` and `TestPiRuntimeConfigDefaultsIntercomAndAuthPathsUnderHome` pin env/default path resolution.
+  - AC-5: command-output assertions plus `TestRuntimeSupportDocsKeepPiDoctorVsLiveTalkbackBoundary` pin the setup-vs-live-proof boundary.
+  - AC-6: existing Pi CLI/auth/pi-subagents/Spacedock skill checks remain in the doctor/install fixture matrix and non-Pi plugin-dir behavior tests still pass.
+- Residual risks:
+  - The implementation treats `pi-intercom`, `subagents-doctor`, and `PI_INTERCOM_PACKAGE_ROOT` as required readiness prerequisites per this task; if the Pi substrate later changes its stable package/command names, these rows will need adjustment.
+  - The readiness checks verify availability/path setup only and do not run the live `pi-intercom-supervisor-talkback` probe.
+
+### Summary
+
+Implemented Pi doctor/install supervisor-talkback prerequisite readiness reporting with required `pi-intercom`, `subagents-doctor`, and intercom package-root checks, preserving the cq setup-vs-live-proof boundary in CLI output, tests, and runtime docs.
