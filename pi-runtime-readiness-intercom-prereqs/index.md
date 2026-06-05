@@ -1,6 +1,6 @@
 ---
 title: Pi readiness checks should report intercom supervisor-talkback prerequisites
-status: validation
+status: implementation
 source: captain (2026-06-04) — follow-up from cq pi-intercom-supervisor-talkback spike after live passed evidence showed the behavior can work but current Pi doctor/install only check base runtime setup
 score: "0.32"
 started: 2026-06-04T00:00:00Z
@@ -283,3 +283,7 @@ Manual healthy fixture with the same prerequisites plus `<tmp>/home/.pi/agent/au
 ### Summary
 
 Validated the implementation and fixback. The prior install-check/auth mismatch is fixed, all acceptance criteria are satisfied with fixture and manual CLI evidence, and the setup-vs-live-proof boundary remains explicit.
+
+### Feedback Cycles (CI pi-live setup)
+
+- Cycle 1: After rebasing PR #304 on #305, `pi-live` failed in run `27002853609`, job `79687248919`, at `Run live Pi front-door smoke`. Install/setup completed and verified `pi-subagents@0.28.0` plus `pi-intercom@0.6.0`, but `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"` reported `MISSING pi-intercom command` and `MISSING subagents-doctor bridge-health command` while `OK pi-intercom package root`. The live smoke then failed immediately with `spacedock pi: Pi runtime is not ready`. Root-cause direction: qj's readiness model now requires PATH commands that the #305 pi-live setup does not provide. Fix the Pi CI setup/readiness integration so the required intercom/doctor commands are actually available in CI, or adjust the readiness model only if live evidence proves those commands are not stable package contracts. Preserve no-version-pinning and npm `--before` age-gate behavior from #305.
