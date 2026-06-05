@@ -114,7 +114,7 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 	if err != nil {
 		t.Fatalf("read package dir %s: %v", dir, err)
 	}
-	var offenders []string
+	var files []*ast.File
 	for _, ent := range entries {
 		name := ent.Name()
 		if ent.IsDir() || !strings.HasSuffix(name, "_test.go") {
@@ -124,6 +124,55 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 		if err != nil {
 			t.Fatalf("parse %s: %v", name, err)
 		}
+		files = append(files, f)
+	}
+
+	// First pass: discover this package's instruction-file reader helpers, then grow
+	// the set to a fixpoint so a tautology cannot hide one hop down. Seeded with the
+	// named readers; a func is ALSO a reader if it reads an instruction file directly
+	// (a `.md` skill-tree literal in its own body, OR a value built from its own
+	// string parameter — the readSkill(t, path) shape, where the caller supplies the
+	// `.md` path), OR it WalkDir/Walks a tree collecting `.md` files, OR (transitive)
+	// it calls a known reader. The fixpoint closes the multi-hop-helper gap the
+	// integration sweep already guards; without it a `wrap(t){return readSkill(t,
+	// foCorePath)}` wrapper would leave a tautology behind it undetected.
+	readers := map[string]bool{}
+	for r := range instructionFileReaders {
+		readers[r] = true
+	}
+	helperCalls := map[string]map[string]bool{}
+	for _, f := range files {
+		for _, decl := range f.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv != nil || strings.HasPrefix(fn.Name.Name, "Test") {
+				continue
+			}
+			calls, idents, strs := collectCallsAndIdents(fn)
+			helperCalls[fn.Name.Name] = calls
+			directLiteral := (calls["ReadFile"] || calls["Open"]) && (hasMarkdownLiteral(strs) || readsInstructionIdent(calls, idents))
+			if directLiteral || readsParamPath(fn) || walksForMarkdown(calls, strs) {
+				readers[fn.Name.Name] = true
+			}
+		}
+	}
+	for grew := true; grew; {
+		grew = false
+		for name, calls := range helperCalls {
+			if readers[name] {
+				continue
+			}
+			for r := range readers {
+				if calls[r] {
+					readers[name] = true
+					grew = true
+					break
+				}
+			}
+		}
+	}
+
+	var offenders []string
+	for _, f := range files {
 		for _, decl := range f.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
 			if !ok || fn.Recv != nil || !strings.HasPrefix(fn.Name.Name, "Test") {
@@ -131,24 +180,17 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 			}
 			calls, idents, strs := collectCallsAndIdents(fn)
 			readsInstruction := false
-			for r := range instructionFileReaders {
+			for r := range readers {
 				if calls[r] {
 					readsInstruction = true
+					break
 				}
 			}
 			// os.ReadFile/os.Open of an instruction-path ident OR an inline `.md`
-			// path literal is also a read of an instruction file.
-			if calls["ReadFile"] || calls["Open"] {
-				for id := range instructionPathIdents {
-					if idents[id] {
-						readsInstruction = true
-					}
-				}
-				for s := range strs {
-					if strings.HasSuffix(s, ".md") {
-						readsInstruction = true
-					}
-				}
+			// path literal (including a split `name + "." + "md"` reconstructed by
+			// collectCallsAndIdents) is also a read of an instruction file.
+			if (calls["ReadFile"] || calls["Open"]) && (readsInstructionIdent(calls, idents) || hasMarkdownLiteral(strs)) {
+				readsInstruction = true
 			}
 			matches := false
 			for m := range matchFuncs {
@@ -165,10 +207,92 @@ func sweepHostneutralityTautologies(t *testing.T, dir string) []string {
 	return sortedUniqueHN(offenders)
 }
 
+// readsInstructionIdent reports whether a function reads an instruction-path
+// package variable (foCorePath, ensignCorePath, …) via os.ReadFile/os.Open.
+func readsInstructionIdent(calls, idents map[string]bool) bool {
+	if !calls["ReadFile"] && !calls["Open"] {
+		return false
+	}
+	for id := range instructionPathIdents {
+		if idents[id] {
+			return true
+		}
+	}
+	return false
+}
+
+// hasMarkdownLiteral reports whether any collected string (a literal or a
+// reconstructed constant concatenation) ends in `.md` — a markdown instruction
+// path literal.
+func hasMarkdownLiteral(strs map[string]bool) bool {
+	for s := range strs {
+		if strings.HasSuffix(s, ".md") {
+			return true
+		}
+	}
+	return false
+}
+
+// readsParamPath reports whether fn os.ReadFile/os.Open's a value derived from one
+// of its own string parameters — the path-arg reader shape (readSkill(t, path)
+// reads `path`). The `.md` literal lives in the CALLER, so a body-literal scan
+// misses it; this catches it by tracking parameter flow into the read argument.
+func readsParamPath(fn *ast.FuncDecl) bool {
+	params := map[string]bool{}
+	if fn.Type.Params != nil {
+		for _, field := range fn.Type.Params.List {
+			if id, ok := field.Type.(*ast.Ident); ok && id.Name == "string" {
+				for _, name := range field.Names {
+					params[name.Name] = true
+				}
+			}
+		}
+	}
+	if len(params) == 0 {
+		return false
+	}
+	found := false
+	ast.Inspect(fn, func(n ast.Node) bool {
+		call, ok := n.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok || (sel.Sel.Name != "ReadFile" && sel.Sel.Name != "Open") {
+			return true
+		}
+		for _, arg := range call.Args {
+			ast.Inspect(arg, func(m ast.Node) bool {
+				if id, ok := m.(*ast.Ident); ok && params[id.Name] {
+					found = true
+				}
+				return true
+			})
+		}
+		return true
+	})
+	return found
+}
+
+// walksForMarkdown reports whether fn WalkDir/Walks a tree collecting `.md` files —
+// the shippedSkillText shape, a reader-of-many whose callers read+match each
+// returned path. The signal: a filepath.WalkDir/Walk call AND a `.md` suffix the
+// body filters on (carried in strs, which includes split-`.md` concatenations).
+func walksForMarkdown(calls, strs map[string]bool) bool {
+	if !calls["WalkDir"] && !calls["Walk"] {
+		return false
+	}
+	return hasMarkdownLiteral(strs)
+}
+
 // collectCallsAndIdents walks a function body, returning the set of called
 // function names (bare + selector trailing name) and the set of referenced
 // identifier names. The ident set lets the sweep detect an os.ReadFile applied to a
 // package-level instruction-path variable.
+//
+// The string set ALSO carries the constant value of any string-`+` concatenation
+// (e.g. `name + "." + "md"`), so a constructed `.md` suffix cannot evade the
+// `.md`-literal detection by splitting the suffix across operands.
 func collectCallsAndIdents(fn *ast.FuncDecl) (calls map[string]bool, idents map[string]bool, strs map[string]bool) {
 	calls = map[string]bool{}
 	idents = map[string]bool{}
@@ -188,10 +312,43 @@ func collectCallsAndIdents(fn *ast.FuncDecl) (calls map[string]bool, idents map[
 			if node.Kind == token.STRING {
 				strs[strings.Trim(node.Value, "`\"")] = true
 			}
+		case *ast.BinaryExpr:
+			if node.Op == token.ADD {
+				if joined, ok := constStringConcat(node); ok {
+					strs[joined] = true
+				}
+			}
 		}
 		return true
 	})
 	return calls, idents, strs
+}
+
+// constStringConcat reconstructs the constant value of a `+` expression whose
+// operands are string literals (or nested string-literal `+` expressions),
+// treating a non-literal operand as an empty segment so the literal tail still
+// reconstructs (`base + "." + "md"` -> `.md`-suffixed). Returns ok=false when no
+// string literal participates.
+func constStringConcat(expr ast.Expr) (string, bool) {
+	switch e := expr.(type) {
+	case *ast.BasicLit:
+		if e.Kind == token.STRING {
+			return strings.Trim(e.Value, "`\""), true
+		}
+		return "", false
+	case *ast.BinaryExpr:
+		if e.Op != token.ADD {
+			return "", false
+		}
+		l, lok := constStringConcat(e.X)
+		r, rok := constStringConcat(e.Y)
+		if !lok && !rok {
+			return "", false
+		}
+		return l + r, true
+	default:
+		return "", false
+	}
 }
 
 func sortedUniqueHN(in []string) []string {
@@ -262,6 +419,139 @@ func TestCodeScanHN(t *T) {
 	}
 	if !containsStrHN(off, "TestUndeclaredHN") {
 		t.Fatalf("adding declared/codescan fixtures must not stop the sweep flagging the undeclared one; offenders=%v", off)
+	}
+
+	// A multi-hop-helper tautology — the read hidden one frame down behind a wrapper
+	// that calls the named reader — must also be flagged: the transitive reader
+	// fixpoint propagates reader-ness up the call chain. Before the fixpoint the HN
+	// sweep left this GREEN (the validation Cycle-1 finding 1).
+	multiHop := `package fixture
+import "strings"
+func wrapHop(t *T) string { return readSkill(t, foCorePath) }
+func TestMultiHopUndeclaredHN(t *T) {
+	text := wrapHop(t)
+	if strings.Contains(text, "x") { _ = text }
+}
+`
+	dir2 := t.TempDir()
+	writeFixture(t, dir2+"/multihop_test.go", multiHop)
+	off = sweepHostneutralityTautologies(t, dir2)
+	if !containsStrHN(off, "TestMultiHopUndeclaredHN") {
+		t.Fatalf("sweep failed to flag a multi-hop-helper tautology (transitive reader fixpoint not working); offenders=%v", off)
+	}
+}
+
+// TestHostneutralitySweepDetectsEvasionShapes is the planted-control mutation test
+// for the reader-discovery evasion shapes the validation audit proved the HN sweep
+// missed (the integration sweep already guarded these; this ports the guard). Each
+// case plants a synthetic offender reaching an instruction file through a shape the
+// naive named-reader/`.md`-literal detection cannot see, runs the sweep, asserts it
+// REDs, then plants the declared form and asserts it GREENs. A regression removing a
+// discovery mechanism leaves the matching case un-flagged, failing this control.
+func TestHostneutralitySweepDetectsEvasionShapes(t *testing.T) {
+	// Shape 1 — multi-hop transitive helper: the tautology hides one hop down behind
+	// a wrapper that calls the named reader readSkill. The fixpoint must propagate
+	// reader-ness up the chain. This is the finding-1 control: before the fixpoint,
+	// the HN sweep left this GREEN.
+	multiHop := `package fixture
+import "strings"
+func wrapHop(t *T) string {
+	return readSkill(t, foCorePath)
+}
+func TestMultiHopHN(t *T) {
+	text := wrapHop(t)
+	if strings.Contains(text, "x") { _ = text }
+}
+`
+	assertRedThenGreenHN(t, "multi-hop transitive helper", "TestMultiHopHN", multiHop)
+
+	// Shape 2 — path-arg reader: a NEW helper (not in the named map) os.ReadFile's a
+	// value built from its own path parameter; the `.md` literal lives in the caller.
+	pathArg := `package fixture
+import (
+	"os"
+	"strings"
+)
+func readArg(t *T, path string) string {
+	b, _ := os.ReadFile(path)
+	return string(b)
+}
+func TestPathArgHN(t *T) {
+	text := readArg(t, "../../skills/first-officer/references/first-officer-shared-core.md")
+	if strings.Contains(text, "x") { _ = text }
+}
+`
+	assertRedThenGreenHN(t, "path-arg reader", "TestPathArgHN", pathArg)
+
+	// Shape 3 — WalkDir collector: a helper WalkDirs a tree returning `.md` paths the
+	// caller reads+matches.
+	walkDir := `package fixture
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+func walkSkills(t *T, base string) []string {
+	var out []string
+	filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
+		if !d.IsDir() && strings.HasSuffix(p, ".md") { out = append(out, p) }
+		return nil
+	})
+	return out
+}
+func TestWalkDirHN(t *T) {
+	for _, p := range walkSkills(t, "../../skills") {
+		b, _ := os.ReadFile(p)
+		if strings.Contains(string(b), "x") { _ = b }
+	}
+}
+`
+	assertRedThenGreenHN(t, "WalkDir collector", "TestWalkDirHN", walkDir)
+
+	// Shape 4 — split-".md" suffix: the read path is built as base + "." + "md", so
+	// no single literal carries the `.md` suffix; constStringConcat must rejoin it.
+	splitMD := `package fixture
+import (
+	"os"
+	"path/filepath"
+	"strings"
+)
+func TestSplitSuffixHN(t *T) {
+	p := filepath.Join("..", "..", "skills", "first-officer", "references", "first-officer-shared-core" + "." + "md")
+	b, _ := os.ReadFile(p)
+	if strings.Contains(string(b), "x") { _ = b }
+}
+`
+	assertRedThenGreenHN(t, "split-.md suffix", "TestSplitSuffixHN", splitMD)
+}
+
+// assertRedThenGreenHN plants fixtureSrc, runs the HN sweep, requires offenderName
+// flagged (RED on the evasion shape), then rewrites the test with a markNonAC
+// declaration and requires it cleared (GREEN once declared).
+func assertRedThenGreenHN(t *testing.T, shape, offenderName, fixtureSrc string) {
+	t.Helper()
+	dir := t.TempDir()
+	writeFixture(t, dir+"/evasion_test.go", fixtureSrc)
+	off := sweepHostneutralityTautologies(t, dir)
+	if !containsStrHN(off, offenderName) {
+		t.Fatalf("%s: HN sweep failed to flag the evasion offender %s; offenders=%v", shape, offenderName, off)
+	}
+
+	declaredSrc := strings.Replace(
+		fixtureSrc,
+		"func "+offenderName+"(t *T) {",
+		"func "+offenderName+`(t *T) {
+	markNonAC(t, "declared evasion-shape fixture")`,
+		1,
+	)
+	if declaredSrc == fixtureSrc {
+		t.Fatalf("%s: could not inject markNonAC into the fixture for %s (signature not found)", shape, offenderName)
+	}
+	dir2 := t.TempDir()
+	writeFixture(t, dir2+"/evasion_test.go", declaredSrc)
+	off = sweepHostneutralityTautologies(t, dir2)
+	if containsStrHN(off, offenderName) {
+		t.Fatalf("%s: HN sweep still flagged %s after it declared markNonAC; offenders=%v", shape, offenderName, off)
 	}
 }
 
