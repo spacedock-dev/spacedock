@@ -9,14 +9,11 @@ import "testing"
 // live runners; here they cost milliseconds and pin the discriminating behavior.
 
 func TestAssertClaudeReviewerReuse(t *testing.T) {
-	// A real SendMessage tool_use whose `to` names the validation reviewer — the
-	// name-addressed reuse shape.
-	realReuse := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-validation","message":"re-review the fix"}}]}}`
-
-	// The agentId-addressed reuse shape — the actual shape the FO emits in a Claude
-	// team. A validation-stage Agent spawn returns an agentId on completion; the FO
-	// resumes that completed reviewer by agentId (not name) for the cycle-2 re-review.
-	// Both events must be present and correlated for this to pass.
+	// The agentId-addressed reuse shape — one shape the FO emits in a Claude team
+	// (a teams-mode kept-alive completed agent can be resumed by the agentId its
+	// spawn returned). A validation-stage Agent spawn (exactly one) returns an
+	// agentId on completion; the FO resumes THAT reviewer by agentId for the cycle-2
+	// re-review. Both events must be present and correlated for this to pass.
 	validationSpawn := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_V","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign"}}]}}`
 	validationResult := `{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_V","content":[{"type":"text","text":"Verdict: REJECTED."},{"type":"text","text":"agentId: a94abe89c85f9f4cc (use SendMessage with to: 'a94abe89c85f9f4cc' to continue this agent)"}]}]}}`
 	reuseByAgentID := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"a94abe89c85f9f4cc","message":"re-review: the fix marker is now present"}}]}}`
@@ -36,13 +33,31 @@ func TestAssertClaudeReviewerReuse(t *testing.T) {
 	// NOT pass.
 	uncorrelatedAgentID := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"adeadbeef0000000","message":"re-review"}}]}}`
 
+	// Genuine NAME-addressed reuse: the FO spawns the cycle-1 validation reviewer
+	// ONCE, then re-engages it for cycle 2 by its spawn NAME (the production shape —
+	// testdata/*.jsonl address members by name, not agentId). Exactly one validation
+	// spawn + a name-message to it = genuine reuse → PASS.
+	nameSpawnValidation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_NV","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign"}}]}}`
+	reuseByName := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-validation","message":"re-review: the fix marker is now present"}}]}}`
+	nameReuse := nameSpawnValidation + "\n" + reuseByName
+
+	// FRESH-DISPATCH false-pass (the #302/cycle-8 hole): the FO drives cycle-1
+	// validation (spawn #1), then FRESH-dispatches the cycle-2 validator (a SECOND
+	// validation Agent spawn — the FORBIDDEN behavior the #141 keepalive contract
+	// prohibits) and kicks it off by its validation NAME. The old assertion greened
+	// this on the bare name substring; the strengthened one must RED it — two
+	// validation spawns means the FO did NOT reuse the kept-alive cycle-1 reviewer.
+	freshCycle2Spawn := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_FV","input":{"description":"Rejection Task: validation (cycle 2)","subagent_type":"spacedock:ensign"}}]}}`
+	freshDispatchNameMessage := nameSpawnValidation + "\n" + freshCycle2Spawn + "\n" + reuseByName
+
 	cases := []struct {
 		name    string
 		stream  string
 		wantErr bool
 	}{
-		{"real SendMessage to validation by name", realReuse, false},
+		{"genuine name-addressed reuse (one validation spawn)", nameReuse, false},
 		{"reuse by correlated validation agentId", agentIDReuse, false},
+		{"fresh cycle-2 dispatch + name message must RED", freshDispatchNameMessage, true},
 		{
 			"loose narration only",
 			`{"type":"assistant","message":{"content":[{"type":"text","text":"I will reuse the validation reviewer via SendMessage."}]}}`,
@@ -88,12 +103,25 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 
 	realReuse := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + reuseValidation
 
+	// FRESH-DISPATCH false-pass (the cycle-8 M2 hole): the FO drives cycle-1
+	// validation (spawn #1 → vThread), then FRESH-spawns a SECOND cycle-2 validation
+	// reviewer (vThread2 — its prompt also names validation) and send_inputs to THAT
+	// new thread. The old assertion bound ANY validation-prompt spawn as "the
+	// validation thread", so a send_input to the fresh cycle-2 thread passed as
+	// "reuse". The strengthened assertion must RED it: two validation spawn_agents
+	// means the FO fresh-dispatched, it did not reuse the kept-alive cycle-1 reviewer.
+	const vThread2 = "019e9696-2b4b-8592-cf42-b2f92e64fd7e"
+	freshCycle2Spawn := `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["` + vThread2 + `"],"prompt":"Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-validation.md and treat its content as your assignment."}}`
+	sendInputToFresh := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"send_input","receiver_thread_ids":["` + vThread2 + `"],"prompt":"Re-run validation for rejection-task as cycle 2."}}`
+	freshDispatch := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + freshCycle2Spawn + "\n" + sendInputToFresh
+
 	cases := []struct {
 		name    string
 		jsonl   string
 		wantErr bool
 	}{
 		{"real send_input to the validation reviewer thread", realReuse, false},
+		{"fresh cycle-2 spawn_agent + send_input must RED", freshDispatch, true},
 		{
 			"loose narration only",
 			`{"type":"item.completed","item":{"type":"agent_message","text":"I will send_input to the validation worker."}}`,
