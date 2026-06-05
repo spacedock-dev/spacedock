@@ -254,3 +254,35 @@ AC coverage:
 
 Residual risks:
 - The smoke remains a fixture Pi worker subprocess rather than a live external Pi runtime session.
+
+## Stage Report: validation z6 rerun
+
+Recommendation: PASSED
+
+Validated product commits:
+- `b68bb89ebde8f00adec99b9de239aae3478fce4c` (`Ensure Pi dispatch wraps build artifacts`)
+- `7b289f5ab6fa05a73b0ea53ffdaf24736d823c08` (`Add Pi stage dispatch smoke fixture`)
+- `f1aec20183e700dbee7f00a89b54e7abc10c4e2c` (`Fix Pi dispatch stage-def wrapper assertions`)
+
+Commands run:
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact status --short --branch`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact log --oneline -5`
+- PASS: `git -C /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact show --stat --oneline --decorate --no-renames b68bb89e 7b289f5a f1aec201`
+- PASS: `spacedock dispatch show-stage-def --workflow-dir /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev --stage validation`
+- PASS: `go test ./internal/dispatch -run 'TestPiStageDispatchSmoke|TestBuildPiHost' -count=1`
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+- PASS: final product `git status --short` was clean before this report append.
+
+Acceptance criteria evidence:
+- AC-1 PASSED: Pi FO guidance requires `spacedock dispatch build` with `host: "pi"`, treats the build artifact as the assignment source of truth, and requires forwarding emitted prompt/content without composing a replacement. Locked by `TestPiFirstOfficerRuntimeRequiresDispatchBuildArtifactForStages`.
+- AC-2 PASSED: `internal/piruntime.SubagentStageDispatch` adds only Pi transport fields (`context: "fresh"`, optional phase/label) around the supplied assignment, preserves the assignment exactly, and serializes no `acceptance` field; dispatch tests wrap a real builder prompt unchanged.
+- AC-3 PASSED: `TestBuildPiHostArtifactCarriesCanonicalStageFactsThroughPiWrapper` verifies builder-derived title/slug-stage path, target stage, entity path, workflow directory, worktree path, checklist facts, and the launcher-rendered semantic `dispatch show-stage-def` invocation survive through the Pi wrapper.
+- AC-4 PASSED: wrapper and smoke tests assert no serialized `acceptance`; skill-surface tests forbid `subagent(... acceptance: ...)` for Spacedock stage dispatches while preserving acceptance content inside canonical dispatch/checklists.
+- AC-5 PASSED: guidance invariant test keeps manual Pi prompt composition limited to builder unavailable/non-zero or explicit builder debugging and requires an auditable failure/unavailability reason plus canonical schema facts.
+- AC-6 PASSED: `TestPiStageDispatchSmokeUsesBuildArtifactThroughWrapper` builds a Pi dispatch artifact, wraps it, runs a fixture Pi worker subprocess, requires reading the dispatch artifact, appends a durable stage report, commits the entity path in a temp state checkout, and verifies process exit, state/report content, state git log, and clean path-scoped state status.
+
+Residual risks:
+- AC-6 is fixture-backed, not a live external Pi runtime session; it proves the artifact/wrapper path and durable state evidence without proving external Pi runtime availability.
+- Guidance tests remain string-invariant checks for FO prose; runtime proof of an actual human FO using the helper is represented by the fixture seam, not a live orchestrator run.
