@@ -20,8 +20,8 @@ import (
 // that a scenario is now authored against the importable livescenario primitive
 // rather than buried in this package's test files. The adapter copies the staged
 // dir's contents into the runner's own workflow root and forwards the launch.
-// Liveness is the claudeLiveRunner's own per-stage no-progress quiet budget (the
-// shared streamWatcher) — no per-call basket timeout (those are banned).
+// Liveness is the claudeLiveRunner's own per-stage stall-watchdog — no per-call
+// basket timeout (those are banned).
 type claudeRunnerAdapter struct {
 	t      *testing.T
 	runner claudeLiveRunner

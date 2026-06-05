@@ -180,11 +180,10 @@ jobs:
       #
       # `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario
       # serial-suite wall-time (~27m opus: rejection-flow 8.98m measured + the
-      # heavier 3-cycle escalation + gate + merge-hook). The REAL guard is the
-      # per-stage no-progress quiet budget (the streamWatcher's quietBudgetDefault,
-      # 60s) in the runners: it resets on every stream line and kills a hang at 60s
-      # of stream SILENCE. This ceiling never fires in a healthy run, it only bounds
-      # a pathological progressing-but-runaway loop.
+      # heavier 3-cycle escalation + gate + merge-hook). The REAL guard is the 120s
+      # per-stage stall-watchdog in the runners (it kills a hang precisely at 120s of
+      # stream silence); this ceiling never fires in a healthy run, it only bounds a
+      # pathological progressing-but-runaway loop.
       - name: Run live Claude shared scenarios
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}

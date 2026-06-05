@@ -3,7 +3,7 @@
 package ensigncycle
 
 import (
-	"io"
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,14 +202,13 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 // result/success event via extractClaudeFinalMessage — a 401/is_error result is a
 // LOUD launch failure here, never fed into a scenario assertion.
 //
-// Liveness is the EXISTING streamWatcher (the Go port of the upstream
-// FOStreamWatcher, shared with TestLiveEnsignCycle) — one mechanism, no second
-// impl. drainToExit runs the process to exit while accumulating the full
-// transcript, bounded by the per-step no-progress quietBudgetDefault (60s): the
-// deadline resets on every drained line, so a genuine multi-minute run of
-// sequential model work never trips as long as the stream keeps moving, and only
-// silence past the budget kills the process — the same ≤60s AC-1-guarded discipline
-// the live cycle uses.
+// Liveness is guarded by the per-stage STALL-WATCHDOG, not a whole-run basket: the
+// stream-json stdout is read incrementally through streamWithStallWatchdog, which
+// resets a stageStallTimeout (120s) timer on every line and kills the process only
+// when the stream goes silent that long. A genuine multi-minute run of sequential
+// model work (the longest measured FO-stream-silence gap was 59.1s on opus while a
+// sub-agent works; claude emits frequent thinking_tokens liveness lines) is never
+// false-killed; a true hang is killed in 120s, fail-fast.
 func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) claudeScenarioResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
@@ -232,33 +231,39 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	cmd.Dir = workflowRoot
 	cmd.Env = r.env
 
-	// stdout carries the stream-json transcript the watcher drains for liveness;
-	// stderr is folded into the same pipe so a launch error (e.g. a stale-token 401
-	// printed to stderr) lands in the transcript too — matching the live cycle's
-	// wiring. The cmdPoller closes the pipe write-end on exit so the scanner EOFs.
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
+	// stdout carries the stream-json transcript the watchdog watches for liveness;
+	// stderr is captured separately and folded into the artifact so a launch error
+	// (e.g. a stale-token 401 printed to stderr) is still visible.
+	stdout, pipeErr := cmd.StdoutPipe()
+	if pipeErr != nil {
+		t.Fatal(pipeErr)
+	}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	started := time.Now()
 	if startErr := cmd.Start(); startErr != nil {
 		t.Fatalf("spacedock claude failed to start for %s: %v", scenario.name, startErr)
 	}
-	poller := newCmdPoller(cmd, pw)
-	defer poller.kill()
-	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
 
-	// drainToExit runs the process to exit accumulating the full transcript, OR
-	// kills it on a 60s no-progress stall (the per-step quiet budget). The deferred
-	// poller.kill() reaps the process on every exit path.
-	stream, stallErr := watcher.drainToExit(quietBudgetDefault, "claude shared scenario "+scenario.name)
+	// The watchdog reads the stream to completion (clean EOF) OR kills the process
+	// on a 120s stall. Killing makes the StdoutPipe EOF, so the watchdog returns; we
+	// then Wait() to reap the process.
+	stream, stallErr := streamWithStallWatchdog(stdout, stageStallTimeout, func() {
+		_ = cmd.Process.Kill()
+	})
+	waitErr := cmd.Wait()
 	duration := time.Since(started)
 
+	stderrText := stderrBuf.String()
+	if stderrText != "" {
+		stream += stderrText
+	}
 	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 	if stallErr != nil {
-		t.Fatalf("%v\nArtifacts: %s", stallErr, artifactDir)
+		t.Fatalf("%v (scenario %s); artifacts in %s\nStream tail:\n%s", stallErr, scenario.name, artifactDir, tail(stream, 4000))
 	}
 
 	// Extract the final message from the stream's result/success event (the
@@ -267,8 +272,8 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	// failure, so a stale credential never feeds the 401 text into an assertion.
 	finalMessage, extractErr := extractClaudeFinalMessage(stream)
 	if extractErr != nil {
-		t.Fatalf("claude launch failed for %s: %v; artifacts in %s\nStream tail:\n%s",
-			scenario.name, extractErr, artifactDir, tail(stream, 4000))
+		t.Fatalf("claude launch failed for %s (wait err=%v): %v; artifacts in %s\nStream tail:\n%s",
+			scenario.name, waitErr, extractErr, artifactDir, tail(stream, 4000))
 	}
 	if writeErr := os.WriteFile(finalPath, []byte(finalMessage), 0o644); writeErr != nil {
 		t.Fatal(writeErr)

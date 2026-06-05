@@ -268,47 +268,6 @@ func (w *streamWatcher) expectExit(budget time.Duration) (int, error) {
 	}
 }
 
-// drainToExit runs the subprocess to exit while accumulating the FULL transcript,
-// bounded by the SAME no-progress quiet budget as expect: the deadline resets to
-// now+budget on every drained line, so a stage that legitimately runs for minutes
-// never trips as long as the stream keeps moving; only genuine silence past the
-// budget trips. It is the predicate-FREE sibling of expect for callers that do not
-// watch for a specific step but need the whole stream graded after the run (the
-// shared-scenario runners, whose host-neutral + host-specific assertions consume
-// the full transcript). On a quiet-budget stall it kills the subprocess and trips
-// stepTimeout(label); on clean exit it returns the full transcript joined by
-// newlines. This is the ONE per-stage liveness guard for the shared runners — the
-// same streamWatcher the live cycle uses, no second mechanism.
-func (w *streamWatcher) drainToExit(budget time.Duration, label string) (string, error) {
-	deadline := time.Now().Add(budget)
-	for {
-		_, drained := w.drainEntries()
-		if drained > 0 {
-			deadline = time.Now().Add(budget)
-		}
-		if _, exited := w.proc.poll(); exited {
-			w.drainEntries() // final drain so the last lines land in the transcript
-			return w.fullTranscript(), nil
-		}
-		if time.Now().After(deadline) {
-			w.proc.kill()
-			return w.fullTranscript(), &stepTimeout{
-				label: label,
-				msg: fmt.Sprintf("%s made no stream progress within %s (no-progress quiet budget) — a hung stage; killed the subprocess.\nTranscript tail:\n%s",
-					label, budget, w.transcriptTail()),
-			}
-		}
-		time.Sleep(w.pollInterval)
-	}
-}
-
-// fullTranscript returns every drained stream line joined by newlines — the whole
-// transcript the shared-scenario assertions consume (distinct from transcriptTail,
-// the bounded tail used only in failure messages).
-func (w *streamWatcher) fullTranscript() string {
-	return strings.Join(w.transcript, "\n")
-}
-
 // expectTerminalTeardownGrade grades the FO's bounded best-effort terminal
 // teardown WITHOUT requiring a clean self-exit (impossible: the harness will not
 // let claude -p exit while the team's members[] is populated) AND WITHOUT

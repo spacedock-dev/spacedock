@@ -99,9 +99,9 @@ func TestSharedScenarioDocsContract(t *testing.T) {
 		// Local live commands for BOTH hosts. `-count=1` defeats a stale Go test
 		// cache replaying a prior pass without launching the model (the false-green
 		// that bit the live gate); `-timeout 40m` is a LOOSE BACKSTOP above the full
-		// 4-scenario serial-suite wall-time (~27m opus) — the real guard is the
-		// per-stage 60s no-progress quiet budget (the streamWatcher), and 40m keeps
-		// the suite off Go's too-short 10m default binary timeout.
+		// 4-scenario serial-suite wall-time (~27m opus) — the real guard is the 120s
+		// per-stage stall-watchdog, and 40m keeps the suite off Go's too-short 10m
+		// default binary timeout.
 		"go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
 		"go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
 		"go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v",
