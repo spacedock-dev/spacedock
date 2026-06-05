@@ -1,7 +1,7 @@
 ---
 id: bqqr8vzz152n8bk2dqf1rw4q
 title: Release-gate fix — job-separation + tag-body OPTION B so the 0.19.6/0.20.0 cut doesn't fail like 0.19.5
-status: validation
+status: implementation
 source: "captain + handoff (2026-06-05) — THE cut blocker, hard prerequisite for the main-flip/0.20.0 milestone. `release.yml` hard-requires a Runtime-Live-E2E on `next` that never auto-runs there, so the cut fails (like 0.19.5). Grounded analysis: Workflow task w569jug9c (session #08)."
 score: "0.42"
 started: 2026-06-05T19:05:55Z
@@ -146,3 +146,5 @@ Closed the M1 block-list evasion the cycle-1 detached audit found: `parseWorkflo
 ### Summary (cycle 2)
 
 PASSED. The cycle-1 detached audit's M1 block-list evasion is closed and verified by exercise, not prose: all three `needs:` shapes (scalar/flow/block-list) RED the re-coupling edge, the block-list mutation reds ONLY its subtest, and an extra refutation pass over four uncovered block-list shapes (quoted/multi-job/deeper-indent/spacing) found no residual evasion — the fix robustly closes the class, not just the committed shape. The safe reverse edge stays tolerated in both scalar (real file) and block-list form (probe). P1 is genuinely behavior-tested: removing `|| true` reds both the gh-error and missing-gh subtests (exit 1 / 127); empty-list stays green. No regression — the skip-gating, AC-1 job-level skip-consequence, the load-bearing AC-2 release-notes.txt anchor, and all existing mutation controls remain intact; internal/release 34/34, offline ./... 1176, vet+build clean. Detached adversarial audit refuted nothing material. Standing handoff unchanged: ledger POPULATION depends on the Codex peer's 4n producer (out of scope, not a blocker, flagged for the gate).
+
+**Cycle 2 — re-validation PASSED (offline), re-audit found the M1 fix has its own evasions (2026-06-05).** The cycle-1 block-list fix works, but the re-audit found the hand-rolled `parseNeeds` still has shape blind spots that defeat ALL paths: M1a — an inline comment (`- journey-ledger  # required`, and the scalar/flow equivalents) re-couples goreleaser→journey-ledger yet stays GREEN (the parser never strips `#…`; the file's own safe edge is itself comment-documented); M1b — a blank line between block-list entries drops later entries (the loop `break`s on the first non-`- ` line). This is the enumeration trap one level down — each shape patched, the next evades. ROOT FIX (captain net-removal instinct applied): stop hand-rolling the needs-parser; parse the workflow with `gopkg.in/yaml.v3` (the canonical parser the audit itself used to confirm coupling) and read `goreleaser.needs` directly, killing the whole shape-evasion class. Routed to implementation (cycle 2). P1 confirmed sound; no regression; safe reverse edge tolerated.
