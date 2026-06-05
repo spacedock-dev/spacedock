@@ -4,9 +4,9 @@ status: validation
 source: captain (2026-06-04) — FO mistakenly dispatched a Spacedock implementation worker with pi-subagents context=fork; stage workers should be fresh and independent
 score: "0.29"
 started: 2026-06-04T07:38:36Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-stage-dispatch-fresh-context
+completed: 2026-06-05T04:38:35Z
+verdict: PASSED
+worktree:
 issue:
 id: d2w8z614c0q1yssmyr33a38y
 mod-block:
