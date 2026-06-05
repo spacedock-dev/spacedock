@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
 )
@@ -41,8 +40,9 @@ func TestLiveAutoContinueAfterImplementation(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	// Implementation completion → validator dispatch → (single-entity) gate
 	// auto-resolve → merge/terminalize runs TWO full agent runs serially (the FO
-	// and the fresh validator), so the budget is generous.
-	adapter := claudeRunnerAdapter{t: t, runner: runner, timeout: 15 * time.Minute}
+	// and the fresh validator). Liveness is the runner's per-stage no-progress quiet
+	// budget (the shared streamWatcher), not a per-call basket — those are banned.
+	adapter := claudeRunnerAdapter{t: t, runner: runner}
 
 	var workflowDir string
 	sc := livescenario.Scenario{

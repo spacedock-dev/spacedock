@@ -52,11 +52,12 @@ The `(scenario, mode, runtime)` tuple is the primary variant row that is **run, 
 
 ## Seed Scenarios
 
-The first foundation is the three host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
+The first foundation is the host-neutral runtime scenarios already shipped and held in host parity by the shared coverage tests. They are the named seed instances:
 
 <!-- seed-scenarios -->
 - `gate-guardrail` — the FO halts at a human gate and presents the review without self-approval, mutation, or archival.
-- `rejection-flow` — the FO observes a rejected validation report and routes the concrete finding back through implementation.
+- `rejection-flow` — the FO drives a two-cycle rejection trajectory: route the finding back through implementation, re-implement, and re-validate a second cycle reusing the kept-alive reviewer.
+- `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.
 <!-- /seed-scenarios -->
 

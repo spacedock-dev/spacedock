@@ -177,12 +177,20 @@ jobs:
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
       # spacedock claude front door. This is the AC-4 proof that both runtime lanes
       # exercise the shared scenario table, not separate per-host smokes.
+      #
+      # `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario
+      # serial-suite wall-time (~27m opus: rejection-flow 8.98m measured + the
+      # heavier 3-cycle escalation + gate + merge-hook). The REAL guard is the
+      # per-stage no-progress quiet budget (the streamWatcher's quietBudgetDefault,
+      # 60s) in the runners: it resets on every stream line and kills a hang at 60s
+      # of stream SILENCE. This ceiling never fires in a healthy run, it only bounds
+      # a pathological progressing-but-runaway loop.
       - name: Run live Claude shared scenarios
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
-          go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
+          go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
 
       - name: Upload live artifacts
         if: always()
@@ -302,7 +310,7 @@ jobs:
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run live Codex shared scenarios
-        run: go test -tags live -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+        run: go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 
       - name: Upload live artifacts
         if: always()

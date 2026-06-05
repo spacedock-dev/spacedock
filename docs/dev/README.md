@@ -173,10 +173,11 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 | `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
 
-The three shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
+The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
 
 - `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
-- `rejection-flow`: starts from a rejected validation report and asserts the first officer routes the concrete finding back through implementation.
+- `rejection-flow`: drives a two-cycle rejection trajectory — route the concrete finding back through implementation, re-implement, and re-validate a second cycle reusing the kept-alive reviewer — restoring the second cycle the Go port dropped.
+- `feedback-3-cycle-escalation`: starts from two prior rejection cycles at a third REJECTED validation and asserts the first officer escalates to the human on the third cycle instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
 
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
@@ -200,16 +201,16 @@ export SPACEDOCK_BIN="$PWD/spacedock"
 export SPACEDOCK_REPO_ROOT="$PWD"
 ```
 
-Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`):
+Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`). The `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario serial-suite wall-time (~27m opus). The REAL liveness guard is the per-stage no-progress quiet budget (the shared `streamWatcher`, 60s) in the runners: it resets on every stream line and kills a hang at 60s of stream silence. The 40m ceiling never fires in a healthy run, it only bounds a pathological progressing-but-runaway loop and keeps the suite off Go's too-short default 10m binary timeout:
 
 ```bash
-go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
+go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
 ```
 
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
 
 ```bash
-go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
 Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.

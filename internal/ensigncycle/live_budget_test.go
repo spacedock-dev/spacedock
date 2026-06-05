@@ -23,9 +23,17 @@ import (
 // covers the live path from the offline suite with no model spend.
 
 // liveBudgetSources are the source files on the live path whose timeout literals
-// must all be ≤60s: the streamWatcher (the per-step budget discipline) and the
-// live test that wires it.
-var liveBudgetSources = []string{"streamwatch_test.go", "live_test.go"}
+// must all be ≤60s: the streamWatcher (the per-step budget discipline), the live
+// test that wires it, and the shared-scenario runners that ALSO drive the watcher.
+// The shared runners were the unguarded gap that let the old per-scenario basket
+// timeout exist; scanning them here brings them under the same ≤60s discipline, so
+// they can never carry a >60s literal again.
+var liveBudgetSources = []string{
+	"streamwatch_test.go",
+	"live_test.go",
+	"claude_live_runner_test.go",
+	"codex_live_runner_test.go",
+}
 
 func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 	for _, file := range liveBudgetSources {
@@ -79,6 +87,48 @@ func TestBudgetConstantsAreUnder60s(t *testing.T) {
 	}
 }
 
+// TestDurationOfFoldsScalarSpellings pins durationOf's scalar fold over the
+// spellings the cycle-8 audit named — most importantly the `time.Duration(N)`
+// integer conversion a basket could hide behind to dodge the BasicLit scalar
+// match. Each foldable spelling must evaluate to its real duration (so the AST
+// guard would flag it when >60s); the float-conversion form is correctly NOT
+// statically foldable (the value-guard on the wired consts is its backstop).
+func TestDurationOfFoldsScalarSpellings(t *testing.T) {
+	foldable := map[string]time.Duration{
+		"time.Second":                      time.Second,
+		"120 * time.Second":                120 * time.Second,
+		"time.Duration(120) * time.Second": 120 * time.Second, // the cycle-8 conversion evasion
+		"time.Duration(2) * time.Minute":   2 * time.Minute,
+		"time.Minute + 30*time.Second":     time.Minute + 30*time.Second,
+		"2 * (40 * time.Second)":           80 * time.Second,
+	}
+	for src, want := range foldable {
+		expr, err := parser.ParseExpr(src)
+		if err != nil {
+			t.Fatalf("parse %q: %v", src, err)
+		}
+		got, ok := durationOf(expr)
+		if !ok {
+			t.Errorf("durationOf(%q) did not fold; the AST guard would miss it", src)
+			continue
+		}
+		if got != want {
+			t.Errorf("durationOf(%q) = %s, want %s", src, got, want)
+		}
+	}
+
+	// A float conversion is NOT statically foldable here — durationOf returns
+	// false, by design. The wired-const value-guard (TestBudgetConstantsAreUnder60s)
+	// is the backstop for any spelling the AST fold cannot resolve.
+	floatExpr, err := parser.ParseExpr("time.Duration(1.5 * float64(time.Minute))")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := durationOf(floatExpr); ok {
+		t.Error("durationOf unexpectedly folded a float conversion; that form is left to the const value-guard")
+	}
+}
+
 func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "live_test.go", nil, 0)
@@ -105,6 +155,9 @@ func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 // COMPOSITIONALLY: every sub-expression recurses, so the COMPOSITE forms a
 // timeout literal can take all fold —
 //   - a bare `time.Unit` selector (`time.Second` = a 1× duration),
+//   - a `time.Duration(N)` integer conversion (`time.Duration(120)` = 120ns,
+//     so `time.Duration(120) * time.Second` folds to 120s — the cycle-8 hole a
+//     BasicLit-only scalar match missed),
 //   - a parenthesized duration (`(40 * time.Second)`),
 //   - a `scalar * duration` (or `duration * scalar`) multiplication where the
 //     duration operand is itself folded recursively, so `2 * (40 * time.Second)`
@@ -113,8 +166,12 @@ func TestLiveTestHasNoMonolithicDeadlineCtx(t *testing.T) {
 //   - an ADD/SUB of two duration sub-expressions (`time.Minute + 30*time.Second`
 //     = 90s — the audit-cycle-1 hole a MUL-only fold missed).
 //
-// Returns isDuration=false for anything that is not a pure duration expression,
-// so the package's int arithmetic is skipped rather than mis-flagged.
+// Returns isDuration=false for anything that is not a STATICALLY-FOLDABLE duration
+// expression, so the package's int arithmetic is skipped rather than mis-flagged.
+// Forms it cannot statically fold (a float conversion, a const-ident or runtime
+// scalar) yield false here; the wired live budget constants are the authoritative
+// backstop — TestBudgetConstantsAreUnder60s value-checks their REAL compile-time
+// values, catching any spelling the AST fold cannot.
 func durationOf(e ast.Expr) (time.Duration, bool) {
 	switch ex := e.(type) {
 	case *ast.ParenExpr:
@@ -122,6 +179,12 @@ func durationOf(e ast.Expr) (time.Duration, bool) {
 	case *ast.SelectorExpr:
 		// A bare `time.Second` etc. is a 1× duration.
 		return timeUnitDuration(ex)
+	case *ast.CallExpr:
+		// A `time.Duration(N)` integer conversion is a duration of N nanoseconds.
+		if n, ok := timeDurationConversion(ex); ok {
+			return time.Duration(n), true
+		}
+		return 0, false
 	case *ast.BinaryExpr:
 		switch ex.Op {
 		case token.MUL:
@@ -156,11 +219,31 @@ func durationOf(e ast.Expr) (time.Duration, bool) {
 	return 0, false
 }
 
-// intScalar reports whether e is an integer literal, returning its value. A
-// parenthesized integer literal folds too, so `(2) * time.Second` is handled.
+// timeDurationConversion folds a `time.Duration(N)` integer conversion to N. The
+// scalar form a basket could hide behind to dodge the BasicLit scalar match:
+// `time.Duration(120) * time.Second` evaluates to 120s here.
+func timeDurationConversion(call *ast.CallExpr) (int64, bool) {
+	sel, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != "Duration" {
+		return 0, false
+	}
+	pkg, ok := sel.X.(*ast.Ident)
+	if !ok || pkg.Name != "time" || len(call.Args) != 1 {
+		return 0, false
+	}
+	return intScalar(call.Args[0])
+}
+
+// intScalar reports whether e is a statically-foldable integer scalar, returning
+// its value. A parenthesized integer literal folds too (`(2) * time.Second`), as
+// does a `time.Duration(N)` conversion used in scalar position
+// (`time.Duration(120) * time.Second`).
 func intScalar(e ast.Expr) (int64, bool) {
 	if p, ok := e.(*ast.ParenExpr); ok {
 		return intScalar(p.X)
+	}
+	if call, ok := e.(*ast.CallExpr); ok {
+		return timeDurationConversion(call)
 	}
 	lit, ok := e.(*ast.BasicLit)
 	if !ok || lit.Kind != token.INT {
