@@ -4,15 +4,16 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 )
 
 // TestSharedRuntimeScenarioDefinitions is the AC-1 guard: the shared runtime
 // scenarios are defined once, in host-neutral code. It pins the scenario ID set,
-// requires every scenario to carry its runtime-neutral facts (provenance, intent,
-// positive live timeout), and reflects over the table type to prove it encodes NO
-// Claude-only or Codex-only field — the structural guard against a runner concern
-// (auth, plugin, launch) leaking back into the shared definition.
+// requires every scenario to carry its runtime-neutral facts (provenance, intent),
+// and reflects over the table type to prove it encodes NO Claude-only or Codex-only
+// field — the structural guard against a runner concern (auth, plugin, launch,
+// timeout) leaking back into the shared definition. There is NO per-scenario
+// timeout field: liveness is the runners' per-stage stall-watchdog, not a banned
+// per-scenario basket.
 func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 	scenarios := sharedRuntimeScenarios()
 
@@ -24,9 +25,6 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 		}
 		if scenario.intent == "" {
 			t.Fatalf("scenario %q is missing its shared behavior intent", scenario.name)
-		}
-		if scenario.timeout <= 0 {
-			t.Fatalf("scenario %q timeout = %s, want positive live timeout", scenario.name, scenario.timeout)
 		}
 	}
 
@@ -40,25 +38,16 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 		t.Fatalf("shared runtime scenarios = %v, want %v", got, want)
 	}
 
-	timeoutByName := map[string]time.Duration{}
-	for _, scenario := range scenarios {
-		timeoutByName[scenario.name] = scenario.timeout
-	}
-	if timeoutByName["rejection-flow"] <= timeoutByName["gate-guardrail"] {
-		t.Fatalf("rejection-flow timeout = %s, want more budget than gate-guardrail timeout %s",
-			timeoutByName["rejection-flow"], timeoutByName["gate-guardrail"])
-	}
-
 	// AC-1: the host-neutral table type encodes ONLY runtime-neutral facts. Any
 	// field naming a single host (codex/claude) would mean a runner concern leaked
 	// into the shared definition, the exact parity drift this table exists to
-	// prevent. Pin the exact field set and reject any host-named field.
+	// prevent. A timeout field is likewise banned — liveness is the runners'
+	// stall-watchdog. Pin the exact field set and reject any host-named field.
 	typ := reflect.TypeOf(sharedRuntimeScenario{})
 	wantFields := map[string]bool{
 		"name":          true,
 		"oldPythonTest": true,
 		"intent":        true,
-		"timeout":       true,
 	}
 	if typ.NumField() != len(wantFields) {
 		t.Fatalf("sharedRuntimeScenario has %d fields, want %d host-neutral fields", typ.NumField(), len(wantFields))

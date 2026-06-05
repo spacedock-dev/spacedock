@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/livescenario"
 )
@@ -21,17 +20,18 @@ import (
 // that a scenario is now authored against the importable livescenario primitive
 // rather than buried in this package's test files. The adapter copies the staged
 // dir's contents into the runner's own workflow root and forwards the launch.
+// Liveness is the claudeLiveRunner's own per-stage stall-watchdog — no per-call
+// basket timeout (those are banned).
 type claudeRunnerAdapter struct {
-	t       *testing.T
-	runner  claudeLiveRunner
-	timeout time.Duration
+	t      *testing.T
+	runner claudeLiveRunner
 }
 
 func (a claudeRunnerAdapter) Launch(ctx context.Context, dir, entityPath, runbook string) (string, error) {
 	// gitInit so the FO front door sees a workflow git root (the live adapter's
 	// fixtures are always git-initialized).
 	gitInit(a.t, dir)
-	scenario := sharedRuntimeScenario{name: "livescenario-primitive", timeout: a.timeout}
+	scenario := sharedRuntimeScenario{name: "livescenario-primitive"}
 	result := a.runner.run(a.t, scenario, dir, runbook+" "+antiShutdownOverride)
 	return result.finalMessage + "\n" + result.stream, nil
 }
@@ -46,7 +46,7 @@ func (a claudeRunnerAdapter) Launch(ctx context.Context, dir, entityPath, runboo
 // own `Verified by: live …` citation under AC-1's gate — p4 eating its own gate.
 func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
-	adapter := claudeRunnerAdapter{t: t, runner: runner, timeout: 2 * time.Minute}
+	adapter := claudeRunnerAdapter{t: t, runner: runner}
 
 	sc := livescenario.Scenario{
 		Name:    "gate-held-via-primitive",
