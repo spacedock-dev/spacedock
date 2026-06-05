@@ -266,4 +266,27 @@ Captain-approved exception to the strict-60s per-stage rule, grounded in measure
 - **Max FO-stream-silence gap (the watchdog's discriminator):** sonnet 28.3s, opus 59.1s (a sub-agent dispatch blocks the FO top-level stream while the child works).
 - **Per-stage stall-watchdog budget = 120s:** ~2x margin over the measured opus max-gap (59.1s); a 60s budget leaves ~1s opus margin → CI-flaky. Still a tight, precise hang-detector (2 min total stream silence = genuine hang).
 - **Full 4-scenario serial suite ≈ 27m opus** (rejection-flow 8.98m + the heavier 3-cycle escalation + gate + merge-hook).
-- **Go `-timeout 40m` = LOOSE BACKSTOP only,** sized above the ~27m full-suite wall-time; it never fires in a healthy run (the 120s watchdog catches hangs precisely), only bounding a pathological progressing-but-runaway loop, and keeps the suite off Go's too-short default 10m binary timeout. Captain-approved.
+- **Go `-timeout 40m` = LOOSE BACKSTOP only,** sized above the ~27m full-suite wall-time; it never fires in a healthy run (the per-stage quiet budget catches hangs precisely), only bounding a pathological progressing-but-runaway loop, and keeps the suite off Go's too-short default 10m binary timeout. Captain-approved.
+
+## Stage Report: implementation (cycle 5 — REVERSE 120s; unify on the existing 60s streamWatcher)
+
+The cycle-4 120s exception is REVERSED per captain ruling. Reasons: (1) a standing codified guard (`TestNoTimeoutLiteralExceeds60s`) already encodes the ≤60s discipline, and setting 120s in a file it didn't scan was a silent end-run; (2) the 59.1s "max gap" was measured on TIMESTAMPED events only, but the watcher resets on EVERY drained line (incl. untimestamped assistant lines between them), so true inter-line silence is ≤59.1s and likely much less — the 60s budget was never actually at ~1s margin. Chosen path: UNIFY (X) at 60s, lower-blast than the framed X.
+
+- DONE: Unify onto the EXISTING `streamWatcher` — one mechanism (DRY)
+  Removed the duplicate `streamWithStallWatchdog` + its files (`stall_watchdog_test.go`, `stall_watchdog_unit_test.go`). Added `streamWatcher.drainToExit(budget, label)` — the predicate-free sibling of `expect`: runs the process to exit accumulating the full transcript, resets the no-progress deadline on every drained line, kills + trips `stepTimeout` on `quietBudgetDefault` (60s) silence. Both the Claude and Codex shared-scenario runners now wire `io.Pipe` + `newCmdPoller` + `newStreamWatcher` + `drainToExit(quietBudgetDefault)` (the same path `TestLiveEnsignCycle` uses), with `defer poller.kill()`. The wiring reuse was CLEAN — no restructuring; the runner files carry zero duration literals now.
+- DONE: KEEP `quietBudgetDefault = 60s`; do NOT weaken the AC-1 guard or touch `TestLiveEnsignCycle`
+  The 120s exception pin (`TestStageStallTimeoutIsCaptainApprovedException`) is removed; `quietBudgetDefault`/`exitBudgetDefault` stay 60s. `TestLiveEnsignCycle` is byte-unchanged.
+- DONE: STRENGTHEN the AC-1 guard — extend its file-list to the shared runners
+  `liveBudgetSources` now also scans `claude_live_runner_test.go` + `codex_live_runner_test.go` (the unguarded gap that let the old 22m basket exist). Mutation-confirmed: injecting a 90s literal into the codex runner reds `TestNoTimeoutLiteralExceeds60s` at the runner file. After this, the shared runners can never carry a >60s literal again.
+- DONE: Offline unit-test `drainToExit`, mutation-controlled
+  Three default-tag tests over synthetic streams (full-transcript-on-exit / resets-on-activity / kills-stalled). Mutation controls: disabling the deadline reset false-kills the progressing stream; removing the kill/error path hangs the stalled stream (caught by the test `-timeout`).
+- DONE: Keep `-timeout 40m` command-line backstop; reframe comments to the 60s guard
+  40m stays (a command-line flag, outside the AC-1 source-literal guard); CI + README + doc-contract comments now say the real guard is the per-stage 60s no-progress quiet budget (the streamWatcher), not a 120s watchdog. Guards mutation-confirmed (workflow/README command drift reds the release/doc-contract pins).
+
+### Summary
+
+Reversed the cycle-4 120s on the captain's call and unified onto the pre-existing `streamWatcher` at 60s — the honest, lower-blast fix. The shared-scenario runners (which previously had only the monolithic basket, now removed) reuse the SAME no-progress quiet-budget mechanism the live cycle uses, via a new predicate-free `drainToExit`; the duplicate watchdog is deleted. Crucially the standing AC-1 ≤60s guard is STRENGTHENED, not evaded: its file-list now covers the shared runners (mutation-confirmed a 90s literal there reds it). The 60s-vs-opus-flake question is left to team-lead's authoritative opus live drive at 60s (the watcher resets per-line, so it tests TRUE silence, not the timestamped-gap overestimate). Offline `go test ./...` green (1147/15); live lane vet+build clean; the cycle-3 reuse work is untouched.
+
+### Timeout sizing (measured) — cycle-5 correction
+
+Supersedes the cycle-4 120s note above. Per-stage liveness = the existing `streamWatcher` `quietBudgetDefault` = **60s** (unchanged; the standing AC-1-guarded budget, now extended to cover the shared runners). The 59.1s opus "max gap" was a TIMESTAMPED-event measurement; the watcher resets on every drained line (incl. the untimestamped assistant lines between timestamped events), so true inter-line silence is ≤59.1s and likely far less — 60s is not at ~1s margin. The Go `-timeout 40m` command-line loose backstop (above the ~27m full-suite wall-time) is unchanged. Whether 60s genuinely holds on opus is settled EMPIRICALLY by team-lead's authoritative opus live drive at 60s, not by the timestamped-gap overestimate.
