@@ -1,12 +1,12 @@
 ---
 title: Pi intercom supervisor-talkback spike
-status: ideation
+status: done
 source: captain (2026-06-04) — prove whether Pi child subagents can message the first officer through contact_supervisor, then use that spike to define the real runtime-support implementation
 score: "0.31"
 started: 2026-06-04T00:00:00Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe
+completed: 2026-06-05T15:59:17Z
+verdict: PASSED
+worktree:
 issue:
 id: cq9kb7cdpp9y48tn8gwzmqzq
 ---
