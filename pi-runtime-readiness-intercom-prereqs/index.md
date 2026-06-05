@@ -287,3 +287,33 @@ Validated the implementation and fixback. The prior install-check/auth mismatch 
 ### Feedback Cycles (CI pi-live setup)
 
 - Cycle 1: After rebasing PR #304 on #305, `pi-live` failed in run `27002853609`, job `79687248919`, at `Run live Pi front-door smoke`. Install/setup completed and verified `pi-subagents@0.28.0` plus `pi-intercom@0.6.0`, but `spacedock doctor --host pi --plugin-dir "$GITHUB_WORKSPACE"` reported `MISSING pi-intercom command` and `MISSING subagents-doctor bridge-health command` while `OK pi-intercom package root`. The live smoke then failed immediately with `spacedock pi: Pi runtime is not ready`. Root-cause direction: qj's readiness model now requires PATH commands that the #305 pi-live setup does not provide. Fix the Pi CI setup/readiness integration so the required intercom/doctor commands are actually available in CI, or adjust the readiness model only if live evidence proves those commands are not stable package contracts. Preserve no-version-pinning and npm `--before` age-gate behavior from #305.
+
+## Stage Report: implementation CI setup/readiness fix
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs`
+- Product branch: `spacedock-ensign/pi-runtime-readiness-intercom-prereqs`
+- Product commit: `904ec2ba` (`ci: align pi readiness with package resources`)
+- Changed product files:
+  - `.github/workflows/runtime-live-e2e.yml`
+  - `internal/cli/pi.go`
+  - `internal/cli/pi_frontdoor_test.go`
+  - `internal/release/workflow_exec_guard_test.go`
+  - `docs/runtime-support.md`
+- DONE: Probed current npm package metadata/resources and found `pi-intercom@0.6.0` exposes no package bin and `pi-subagents@0.28.0` exposes `pi-subagents`, not `subagents-doctor`; therefore `pi-intercom`/`subagents-doctor` are not stable PATH command contracts for the current packages.
+- DONE: Revised Pi readiness from command-shim requirements to stable package/resource prerequisites: `pi-subagents` intercom bridge source, `PI_INTERCOM_PACKAGE_ROOT`, and the `pi-intercom` skill resource.
+- DONE: Updated pi-live CI setup to export `PI_INTERCOM_PACKAGE_ROOT` and verify the bridge/skill resource paths installed by the versionless npm `--before` substrate install, while preserving the scoped Pi CLI install, no version pinning, and package verification.
+- DONE: Added/updated CLI and workflow guard tests so readiness no longer requires absent command shims and CI verifies the same package/resource contract doctor expects.
+- Validation commands:
+  - `npm view pi-intercom@0.6.0 bin --json && npm view pi-subagents@0.28.0 bin --json` — confirmed no `pi-intercom`/`subagents-doctor` bins in current package metadata.
+  - `npm pack pi-intercom@0.6.0 --json && npm pack pi-subagents@0.28.0 --json` — confirmed `pi-intercom/skills/pi-intercom/SKILL.md` and `pi-subagents/src/intercom/intercom-bridge.ts` package resources.
+  - `gofmt -w internal/cli/pi.go internal/cli/pi_frontdoor_test.go internal/release/workflow_exec_guard_test.go` — passed.
+  - `go test ./internal/cli ./internal/release ./internal/ensigncycle -count=1` — passed.
+  - `go test ./... -count=1` — passed.
+  - `go test ./... -race` — passed.
+- Residual risks:
+  - No new live Pi supervisor-talkback probe was run; this fix targets setup/readiness and the CI mismatch.
+  - If future Pi packages add stable command contracts, readiness can add them back as explicit tested rows.
+
+### Summary
+
+Fixed the pi-live CI/readiness mismatch by replacing absent `pi-intercom`/`subagents-doctor` command requirements with current stable package-resource checks and aligning the CI setup guard with that contract.
