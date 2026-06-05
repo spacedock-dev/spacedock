@@ -1,7 +1,7 @@
 ---
 id: gq9g4vrz03kgd8w46cvf09k7
 title: Live-scenario coverage for the non-happy feedback-rejection paths
-status: validation
+status: implementation
 source: "captain (2026-06-04) — a9 detached audit surfaced that the feedback-rejection non-happy-path guarantees are guarded only by review + the single-cycle live scenario. Investigation: the old tests/test_rejection_flow.py drove 2 full cycles + reviewer-reuse; the current Go rejection-flow scenario simplified to a single route-back; and NEITHER era ever drove the 3rd-cycle escalation or the budget-probe fail-safe. Use the existing prose-based shared-scenario runner to exercise these."
 score: "0.30"
 started: 2026-06-04T20:04:39Z
@@ -341,3 +341,25 @@ LIVE: a genuine gap, not a pass. AC-3 and AC-4 are runtime-observable, and the c
 ### Recommendation
 
 PASSED on the offline deliverable (AC-1 static/parity, AC-2, AC-4 offline, AC-5 — all falsifiable and green). REJECTED-pending on the AC-3/AC-4 LIVE legs until the fix is pushed and a reproducible LLM-executor citation exists (a green CI live lane on cf97198d, or the team-lead's opus-drive artifact attached to the entity). This is a high-stakes CI/scaffolding surface — a detached adversarial audit on a detached checkout of the merge result should join this gate before re-merge, per the validation stage's detached-audit policy.
+
+### Feedback Cycles (cont.)
+
+#### Cycle 8 — validation + detached audit REJECTED: the reuse assertions false-pass a fresh-dispatch (the exact violation they guard)
+
+The FO's parallel detached adversarial audit (detached at cf97198d) found TWO MATERIAL holes the offline validation MISSED — the validation gutted the agentId-correlation path and confirmed it reds the wrong-handle cases, but never tested the fresh-dispatch + name-message bypass. This is the proof-policy thesis again: the validation tested the shapes it thought of; the independent refuter found the one it didn't.
+
+- **M1 (Claude reuse assertion, MATERIAL).** `assertClaudeReviewerReuse` passes on EITHER the correlated `validationAgentIDs[to]` (sound) OR a bare `strings.Contains(strings.ToLower(to), "validation")` name substring with NO correlation and NO fresh-dispatch check. A run where the FO FRESH-dispatches the cycle-2 validator (an `Agent` spawn — the forbidden behavior) and kicks it off with `SendMessage to:"spacedock-ensign-{slug}-validation"` GREENS the assertion. Isolation-proven: the same fresh-dispatch transcript WITHOUT the name SendMessage correctly fails; adding only the name-routed SendMessage flips it green. AND the docstring's "resumed by agentId, not name" claim is CONTRADICTED by the real recorded transcripts (`testdata/*.jsonl`), which address members by SPAWN NAME (`"to":"spacedock-ensign-…-done"`) — so the name path is the one that actually fires in production, and it cannot distinguish a kept-alive cycle-1 reviewer from a freshly-spawned cycle-2 reviewer messaged by its validation name.
+- **M2 (Codex reuse assertion, MATERIAL).** `assertCodexReviewerReuse` binds the "validation thread" from ANY `spawn_agent` whose prompt matches validation, so a genuine no-reuse Codex run that FRESH-spawns a cycle-2 validator (its prompt mentions validation) + `send_input`s to it PASSES as "reuse." No cycle-1-vs-cycle-2 distinction.
+
+Net: the keepalive contract (#141) these assertions were rebuilt to enforce is NOT enforced against the most likely failure mode — a regressed FO that fresh-dispatches the cycle-2 reviewer would still GREEN both CI lanes. The whole Claude rejection-flow gate greens on a degenerate end-state (marker + 2 impl reports + 2 cycle entries) + a fresh-dispatch+name-message stream.
+
+**Consequence for the FO's live evidence:** because the assertion false-passes a fresh-dispatch, the team-lead's local opus rejection-flow PASS (594s) is NOT conclusive proof that genuine reuse fired — the strengthened assertion needs a RE-DRIVE to confirm.
+
+**Fix (audit-specified, bounded):**
+1. Strengthen BOTH reuse assertions to require genuine reuse of the cycle-1 reviewer's handle/thread AND the ABSENCE of a fresh cycle-2 validation `Agent`/`spawn_agent`. The robust discriminator (name-addressed production): a fresh cycle-2 reviewer means a NEW spawn occurred; genuine reuse means NO new validation spawn + a message to the cycle-1 reviewer's existing handle. Drop or tighten the operation-blind name/prompt fallback so a fresh `Agent`/`spawn_agent` for cycle-2 cannot satisfy "reuse." Correct the docstring's agentId-not-name claim to match the recorded name-addressed shape.
+2. Mutation-control: a planted fresh-dispatch + name/prompt-message transcript REDS the strengthened assertion in BOTH host paths; a genuine kept-alive-reuse transcript PASSES. Add these to the offline reuse table tests.
+3. **Polish (AC-1 guard, non-blocking — close while in there):** `TestNoTimeoutLiteralExceeds60s`'s `durationOf`/`intScalar` only matches `*ast.BasicLit` integers, so `time.Duration(120)*time.Second`, a const-ident scalar (`const n=120; n*time.Second`), `time.Duration(1.5*float64(time.Minute))`, and runtime arithmetic evade the AST scan. Tighten the scalar matcher OR ensure any new live budget const is value-guarded like `quietBudgetDefault`. (Mitigated today: the wired budgets are value-guarded, so this is a guard-completeness gap, not a current defect.)
+
+**After the fix — close the live-citation gap (the validation's load-bearing point):** re-drive the live legs (FO, both hosts) against the STRENGTHENED assertion to confirm (a) genuine reuse fires and (b) the assertion now correctly distinguishes it from a fresh-dispatch; push cf97198d's successor to #302 so CI's claude-live (sonnet+opus) + codex-live exercise AC-3/AC-4 against the fix — the green CI run id becomes the cited artifact. The cycle-7 60s decision rides on the same re-drive (a false-kill re-opens AC-1, but the prior isolated opus drive held at 60s, so this is confirmation not re-litigation).
+
+Scope guard: the offline ACs the validation verified sound (AC-1 static/parity, AC-2, AC-5, the fixture redesign, the timeout unify at 60s) stay as-is. This cycle is the reuse-assertion strengthening (M1+M2) + the AC-1 guard polish. High-stakes CI surface → another detached audit on the result before re-merge. Routed to implementation in the same worktree.
