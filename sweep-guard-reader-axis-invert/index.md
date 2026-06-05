@@ -1,7 +1,7 @@
 ---
 id: 4qnn7dbzkyh9qv65t618vtxy
 title: AC-3 sweep reader-axis — NET-REMOVE the detection machinery; rely on the detached audit backstop
-status: implementation
+status: validation
 source: "captain (2026-06-05) — re-scoped from 'invert/harden the reader-axis sweep' to NET REMOVAL. Captain directive: 'i want to see net removal, not more crap to mark crap or detect crap.' The hwk merge added ~1525 lines of go/ast sweep machinery (the bulk = the reader-axis taint/discovery), which is BOTH the heaviest part AND the incomplete part (M-A/B/C/D evade it). The detached adversarial audit caught every reader-axis hole the static sweep missed — so the audit, not a static guard, is the right backstop for that axis."
 score: "0.40"
 started: 2026-06-05T19:10:17Z
