@@ -290,3 +290,15 @@ Reversed the cycle-4 120s on the captain's call and unified onto the pre-existin
 ### Timeout sizing (measured) — cycle-5 correction
 
 Supersedes the cycle-4 120s note above. Per-stage liveness = the existing `streamWatcher` `quietBudgetDefault` = **60s** (unchanged; the standing AC-1-guarded budget, now extended to cover the shared runners). The 59.1s opus "max gap" was a TIMESTAMPED-event measurement; the watcher resets on every drained line (incl. the untimestamped assistant lines between timestamped events), so true inter-line silence is ≤59.1s and likely far less — 60s is not at ~1s margin. The Go `-timeout 40m` command-line loose backstop (above the ~27m full-suite wall-time) is unchanged. Whether 60s genuinely holds on opus is settled EMPIRICALLY by team-lead's authoritative opus live drive at 60s, not by the timestamped-gap overestimate.
+
+## Stage Report: implementation (cycle 6 — cycle-5 unify REVERTED; 120s + audited pin is final)
+
+The captain reversed the cycle-5 reversal: KEEP the cycle-4 committed version (Y — the 120s `stageStallTimeout` watchdog + the `TestStageStallTimeoutIsCaptainApprovedException` audited pin). New evidence backs 120s, not 60s: an offline read of the opus stream found the 59.1s timestamped-gap carries only ~3 sparse untimestamped lines, and opus emits ZERO task_progress heartbeats during sub-agent dispatches — so 60s is genuinely razor-thin/flaky on opus, NOT the overestimate cycle-5 assumed. The audited-exception pin is the honest way to carry a captain-approved >60s exception (documented + drift-guarded, not silently evading the standing 60s AC-1 guard).
+
+- DONE: `git revert` of the cycle-5 unify commit (5171982e) → commit aa162a53
+  HEAD content is now byte-identical to the blessed cycle-4 commit f247c9d9 (`git diff f247c9d9 HEAD` is empty). The standalone `streamWithStallWatchdog` + its offline unit test are restored; `stageStallTimeout = 120s`; the exception pin is back. Used revert (not reset) for an auditable history of the back-and-forth.
+- DONE: Offline `go test ./...` green (1147/15); live lane vet+build clean; exception pin + watchdog unit tests pass.
+
+### Summary
+
+cycle-5 (unify onto the existing 60s streamWatcher) is REVERTED per the captain reversing course on new opus evidence (zero heartbeats during sub-agent dispatches → 60s is flaky on opus). The final committed state is the cycle-4 version: the standalone 120s per-stage stall-watchdog with the audited `TestStageStallTimeoutIsCaptainApprovedException` pin (drift-guarded, captain-approved exception) + the 40m loose command-line backstop. The team-lead's two cycle-5 concerns (DRY-unify onto streamWatcher; the live-cycle's own 60s quietBudgetDefault opus exposure) are filed as a SEPARATE follow-up (a deliberate live-cycle-path + fleet-wide refactor), not churned here. The timeout re-fix is DONE; team-lead runs the authoritative watchdog-equipped live drive (both hosts) against this committed code before re-pushing #302.
