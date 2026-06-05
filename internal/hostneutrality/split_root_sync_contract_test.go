@@ -67,15 +67,17 @@ func TestFOHaltGateProse(t *testing.T) {
 // TestFOSyncProse is a non-AC text-consistency lint: it asserts the FO core
 // carries the B6 sync prose (pull --rebase, push origin, the M-3 rebase-conflict
 // halt: abort + no force-push + no auto-resolve). Per the proof policy this
-// presence check does NOT prove the FO performs the sync. The git MECHANISM is
-// proven by real two-writer e2e — internal/cli TestTwoWriterSyncHappyPath
-// (push → non-ff rejection → pull --rebase → re-push on real clones) and
-// TestTwoWriterSameEntityConflictHalts (CONFLICT → rebase --abort, no force-push)
-// — but the OWED proof that the FO/ensign actually RUNS this sync at the contract
-// points is a live drive, tracked as task ev3e (fo-halt-sync-journey-live-drives).
-// This lint guards the prose tokens until ev3e lands the live oracle.
+// presence check does NOT prove the FO performs the sync. The git MECHANICS are
+// already oracle-covered by real two-writer e2e — internal/cli state_sync_test.go
+// (TestTwoWriterSyncHappyPath: push → non-ff rejection → pull --rebase → re-push;
+// TestTwoWriterSameEntityConflictHalts: CONFLICT → rebase --abort, no force-push)
+// and internal/dispatch build_statecommit_test.go. The remaining behavioral
+// proof — that the FO actually ISSUES this sync at the contract points — rides
+// task ev3e's halt drive (fo-halt-sync-journey-live-drives), where ev3e's ideation
+// folded the sync/journey residual into the halt scenario. This lint guards the
+// prose tokens.
 func TestFOSyncProse(t *testing.T) {
-	markNonAC(t, "OWED live drive: task ev3e (fo-halt-sync-journey-live-drives). Mechanism today: internal/cli TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts (real 2-writer git push/pull-rebase/conflict-halt)")
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Sync MECHANICS already oracle-covered: internal/cli state_sync_test.go (TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts) + internal/dispatch build_statecommit_test.go (TestStateCommitGuidanceResolvesPaths)")
 	text := readSkill(t, foCorePath)
 	assertAll(t, "FO core (B6 sync)", text, []string{
 		"pull --rebase",
@@ -90,12 +92,12 @@ func TestFOSyncProse(t *testing.T) {
 // TestEnsignSyncProse is a non-AC text-consistency lint: it asserts the ensign
 // core carries the B6 sync prose (push origin, pull --rebase, the M-3
 // rebase-conflict halt) alongside the path-scoped rule. Same disposition as the FO
-// half: the git MECHANISM is proven by the real two-writer e2e in internal/cli,
-// but the OWED proof that the ensign RUNS this sync after its state commits is a
-// live drive, tracked as task ev3e (fo-halt-sync-journey-live-drives). This lint
-// guards the tokens until ev3e lands the live oracle.
+// half: the git MECHANICS are oracle-covered by the real two-writer e2e in
+// internal/cli + build_statecommit_test.go; the remaining behavioral proof that
+// the ensign ISSUES this sync after its state commits rides task ev3e's halt drive
+// (fo-halt-sync-journey-live-drives). This lint guards the tokens.
 func TestEnsignSyncProse(t *testing.T) {
-	markNonAC(t, "OWED live drive: task ev3e (fo-halt-sync-journey-live-drives). Mechanism today: internal/cli TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts (real 2-writer git push/pull-rebase/conflict-halt)")
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Sync MECHANICS already oracle-covered: internal/cli state_sync_test.go (TestTwoWriterSyncHappyPath + TestTwoWriterSameEntityConflictHalts) + internal/dispatch build_statecommit_test.go (TestStateCommitGuidanceResolvesPaths)")
 	text := readSkill(t, ensignCorePath)
 	assertAll(t, "ensign core (B6 sync)", text, []string{
 		"push origin",
@@ -110,15 +112,15 @@ func TestEnsignSyncProse(t *testing.T) {
 // commission SKILL.md carries the journey-1 orphan-branch mechanics (clear
 // inherited tree, linked worktree, state-init pointer) and the journey-2 $inline
 // prose. Per the proof policy this presence check does NOT prove the mechanics
-// work. The orphan-birth/resume MECHANISM is proven by command-level tests —
-// internal/cli TestStateNewBirthsSplitRoot + TestCommissionOrphanBranchScaffolding
-// (orphan branch created with a cleared tree as a linked worktree) and
-// TestStateInitInlineNoOp ($inline branch) — but the OWED proof that the
-// commission FLOW drives these journeys is a live drive, tracked as task ev3e
-// (fo-halt-sync-journey-live-drives). This lint guards the prose tokens until ev3e
-// lands the live oracle.
+// work. The orphan-birth/resume MECHANICS are oracle-covered by command-level
+// tests — internal/cli state_new_test.go (TestStateNewBirthsSplitRoot) +
+// state_init_test.go (TestCommissionOrphanBranchScaffolding: orphan branch with a
+// cleared tree as a linked worktree; TestStateInitInlineNoOp: the $inline branch).
+// The remaining behavioral proof that the commission FLOW drives these journeys
+// rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). This lint guards
+// the prose tokens.
 func TestCommissionJourneyProse(t *testing.T) {
-	markNonAC(t, "OWED live drive: task ev3e (fo-halt-sync-journey-live-drives). Mechanism today: internal/cli TestStateNewBirthsSplitRoot + TestCommissionOrphanBranchScaffolding + TestStateInitInlineNoOp (real orphan-birth/resume + inline e2e)")
+	markNonAC(t, "behavioral-issuance rides task ev3e's halt drive (fo-halt-sync-journey-live-drives). Journey MECHANICS already oracle-covered: internal/cli state_init_test.go (TestStateInitResumesFreshClone + TestCommissionOrphanBranchScaffolding + TestStateInitInlineNoOp) + state_new_test.go (TestStateNewBirthsSplitRoot)")
 	text := readSkill(t, commissionSkillPath)
 	assertAll(t, "commission SKILL.md (journeys)", text, []string{
 		"checkout --orphan",
