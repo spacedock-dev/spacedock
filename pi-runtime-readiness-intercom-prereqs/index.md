@@ -1,6 +1,6 @@
 ---
 title: Pi readiness checks should report intercom supervisor-talkback prerequisites
-status: ideation
+status: implementation
 source: captain (2026-06-04) — follow-up from cq pi-intercom-supervisor-talkback spike after live passed evidence showed the behavior can work but current Pi doctor/install only check base runtime setup
 score: "0.32"
 started: 2026-06-04T00:00:00Z
