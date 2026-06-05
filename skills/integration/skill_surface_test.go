@@ -107,6 +107,7 @@ func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
 }
 
 func TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages(t *testing.T) {
+	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path with fresh context)")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
 	data, err := os.ReadFile(path)
@@ -170,6 +171,7 @@ func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 }
 
 func TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault(t *testing.T) {
+	markNonAC(t, "Pi live runner (internal/ensigncycle TestLivePiSubagentEnsignSmoke exercises the Pi subagent dispatch path; fresh-redispatch is the default it drives)")
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
 	data, err := os.ReadFile(path)
@@ -239,6 +241,7 @@ func TestUserSkillReferenceClosureResolves(t *testing.T) {
 // The reconciled surface calls `spacedock status`; a blind-copied python-era
 // path fails here.
 func TestNoPluginPrivateStatusPathInUserSkills(t *testing.T) {
+	markNonAC(t, "behavioral coverage: the launcher smoke seam (TestLauncherListSetArchive drives the real `spacedock status` binary) + internal/status/* prove the positive `spacedock status` path; this is the structural-absence complement over the shipped skill surface no positive seam can prove")
 	root := skillsRoot(t)
 	repo := repoRoot(t)
 	banned := []string{

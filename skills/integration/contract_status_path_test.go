@@ -32,6 +32,7 @@ var pluginPrivateStatusRefs = []string{
 // and only this structural scan over the contract bytes catches it. This is NOT
 // bare prose-grep — it asserts a structural negative the system depends on.
 func TestNoPluginPrivateStatusPathInContracts(t *testing.T) {
+	markNonAC(t, "behavioral coverage: the launcher smoke seam (TestLauncherListSetArchive drives the real `spacedock status` binary for list/set/archive) + internal/status/* prove the positive `spacedock status` path; this is the structural-absence complement no positive seam can prove")
 	root := skillsRoot(t)
 	fo := readSkill(t, root, "first-officer/references/first-officer-shared-core.md")
 	ensign := readSkill(t, root, "ensign/references/ensign-shared-core.md")

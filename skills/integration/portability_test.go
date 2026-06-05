@@ -76,6 +76,7 @@ func isClaudeAdapter(path string) bool {
 // future scope bug that empties shippedSkillText fails loudly rather than
 // passing vacuously.
 func TestShippedSurfaceHasNoHiddenMachineDependency(t *testing.T) {
+	markNonAC(t, "n/a — pure portability property of the shipped instruction surface (a clean install names no HOME-config/interpreter/plugin-private path). No positive behavioral seam can prove this absence; the empty-walk guard below keeps it from passing vacuously")
 	root := skillsRoot(t)
 	repo := repoRoot(t)
 	files := shippedSkillText(t, root, repo)
@@ -128,6 +129,7 @@ func TestShippedSurfaceHasNoHiddenMachineDependency(t *testing.T) {
 // distinguishes, which would otherwise let TestShippedSurfaceHasNoHiddenMachineDependency
 // pass for the wrong reason.
 func TestPortabilityCheckDiscriminatesHostSpecific(t *testing.T) {
+	markNonAC(t, "n/a — pure portability property: the positive controls for the discriminator in TestShippedSurfaceHasNoHiddenMachineDependency (the Claude-adapter ~/.claude exclusion is load-bearing, the HOME-rooted regex does not false-positive on project-relative .claude/ paths). A property of the shipped surface, not a behavioral claim")
 	root := skillsRoot(t)
 	repo := repoRoot(t)
 	files := shippedSkillText(t, root, repo)
