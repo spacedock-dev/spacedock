@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-pi-stage-dispatch-fresh-context
 issue:
 id: d2w8z614c0q1yssmyr33a38y
 mod-block: merge:pr-merge
+pr: "#299"
 ---
 
 Spacedock's Pi first-officer runtime should make stage dispatch context explicit. During `launcher-binary-path-passthrough`, the FO dispatched an implementation worker with `context: "fork"` because the builtin worker agent defaults to forked context. That preserved parent context but conflicts with the intended Spacedock stage model: implementation and validation workers should receive the assignment/context from the dispatch prompt and entity state, not inherit the FO session transcript by default.
