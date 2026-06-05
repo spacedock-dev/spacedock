@@ -222,3 +222,35 @@ Acceptance criteria evidence:
 Residual risks:
 - AC-6 uses a fixture Pi worker subprocess, not a live external Pi runtime session; this is acceptable for the stated fixture/live option but does not prove external runtime availability.
 - The product branch is ahead of and behind `origin/next` in the worktree status observed at validation start; validation was performed on the assigned commits at HEAD without rebasing or editing product files.
+
+## Stage Report: implementation z6 CI fixback
+
+- DONE: Fixed the PR #300 offline `internal/dispatch` failure caused by launcher-command rendering from PR #298.
+  Evidence: product commit `f1aec201` updates `internal/dispatch/build_pi_host_test.go` so Pi dispatch tests no longer require the obsolete bare `spacedock dispatch show-stage-def ...` substring.
+- DONE: The builder/wrapper tests now assert the current semantic stage-definition command survives launcher rendering.
+  Evidence: added `assertRenderedStageDefCommand`, which requires the rendered `spacedock_launcher() { ... }` shim and the semantic `spacedock_launcher dispatch show-stage-def --workflow-dir ... --stage implementation` invocation in both the canonical artifact test and fixture smoke worker.
+- DONE: Existing AC coverage is preserved: canonical build artifact source, additive fresh Pi wrapper, builder-derived stage facts, no same-agent acceptance, break-glass fallback guidance, and fixture smoke durable evidence all remain covered.
+
+Changed files:
+- `internal/dispatch/build_pi_host_test.go`
+
+Product commits:
+- `f1aec201` (`Fix Pi dispatch stage-def wrapper assertions`)
+
+Validation commands run:
+- PASS: `gofmt -w internal/dispatch/build_pi_host_test.go`
+- PASS: `go test ./internal/dispatch -run 'TestPiStageDispatchSmoke|TestBuildPiHost' -count=1`
+- PASS: `go test ./internal/piruntime ./internal/dispatch ./skills/integration -count=1`
+- PASS: `go test ./... -count=1`
+- PASS: `go test ./... -race -count=1`
+
+AC coverage:
+- AC-1: PASS, retained skill-surface invariant requiring `spacedock dispatch build` with `host: "pi"` as assignment source.
+- AC-2: PASS, retained wrapper helper/test; the fixture smoke continues to use the Pi wrapper around the builder prompt.
+- AC-3: PASS, builder fact assertions now accept current launcher-rendered stage-def commands while still checking the semantic `dispatch show-stage-def` invocation.
+- AC-4: PASS, no-acceptance assertions remain unchanged.
+- AC-5: PASS, break-glass fallback guidance invariant remains unchanged.
+- AC-6: PASS, fixture smoke now validates the current launcher-rendered fetch command and durable state/report/git-log evidence.
+
+Residual risks:
+- The smoke remains a fixture Pi worker subprocess rather than a live external Pi runtime session.
