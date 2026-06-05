@@ -1,10 +1,10 @@
 ---
 id: ev3e0nmknh98sn365ky163en
 title: Behavioral live drives for the FO halt/sync/journey contract behaviors (the Bucket-A cluster with no existing drive)
-status: backlog
+status: ideation
 source: "captain (2026-06-05) — split from hwk (tautological-test-remediation) per the (b) phasing call. hwk demotes the halt/sync/journey presence checks to honest non-AC lints; this task supplies their real behavioral proof — a new cross-host live scenario (split-root-halt) plus the sync/journey behaviors that today have NO live drive."
 score: "0.33"
-started:
+started: 2026-06-05T04:40:09Z
 completed:
 verdict:
 worktree:
