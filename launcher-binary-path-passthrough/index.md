@@ -4,10 +4,10 @@ title: Front-door launcher doesn't propagate its own binary path ($0) to the lau
 status: validation
 source: captain (2026-06-03) — `/path/to/spacedock claude …` does not preserve `$0` for the skill to know which spacedock launched it; need a way to pass env from the spacedock CLI over (safehouse permitting) to claude/codex, and have the skill use the env or default to $PATH
 score: "0.28"
-worktree: .worktrees/spacedock-ensign-launcher-binary-path-passthrough
+worktree:
 started: 2026-06-04T00:00:00Z
-completed:
-verdict:
+completed: 2026-06-05T04:26:36Z
+verdict: PASSED
 issue:
 mod-block:
 pr: "#298"
