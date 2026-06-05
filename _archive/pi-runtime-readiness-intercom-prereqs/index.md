@@ -11,6 +11,7 @@ issue:
 id: qj2m6f3v8n9c0p4r7t1x5kz2
 mod-block:
 pr: "#304"
+archived: 2026-06-05T15:45:44Z
 ---
 
 # Pi readiness checks should report intercom supervisor-talkback prerequisites
