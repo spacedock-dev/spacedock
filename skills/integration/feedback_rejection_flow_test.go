@@ -42,9 +42,17 @@ func feedbackRejectionFlowSkill(t *testing.T) string {
 	return string(b)
 }
 
-// TestFeedbackProcedurePresentInSkill locks AC-1(a): the moved procedure
-// fingerprints are present in skills/feedback-rejection-flow/SKILL.md.
+// TestFeedbackProcedurePresentInSkill is a non-AC text-consistency lint: the
+// moved procedure fingerprints are present in
+// skills/feedback-rejection-flow/SKILL.md — the prose MOVED here. Per the proof
+// policy this presence check does NOT prove the FO follows the procedure; an
+// inverted skill body keeps every fingerprint. The behavior — the FO observes a
+// REJECTED report and routes the concrete finding back through implementation — is
+// proven by the live rejection-flow scenario (runClaudeRejectionFlowScenario /
+// runCodexRejectionFlowScenario, asserted by assertRejectionFlow) and its offline
+// mutation control TestRejectionFlowNegativeMissingRoute.
 func TestFeedbackProcedurePresentInSkill(t *testing.T) {
+	markNonAC(t, "live rejection-flow scenario (assertRejectionFlow) + TestRejectionFlowNegativeMissingRoute")
 	skill := feedbackRejectionFlowSkill(t)
 	for name, fp := range feedbackProcedureFingerprints {
 		if !strings.Contains(skill, fp) {
@@ -53,10 +61,15 @@ func TestFeedbackProcedurePresentInSkill(t *testing.T) {
 	}
 }
 
-// TestFeedbackFaithfulnessClausesPresentInSkill locks AC-2 (faithfulness): the
-// two mis-route-on-loss clauses — the Codex `send_input` non-completion caveat
-// and the `feedback-to` target-read clause — are present in the skill body.
+// TestFeedbackFaithfulnessClausesPresentInSkill is a non-AC text-consistency
+// lint: the two mis-route-on-loss clauses — the Codex `send_input` non-completion
+// caveat and the `feedback-to` target-read clause — are present in the skill body.
+// This is text authoring, not behavioral proof; the behavior that the FO routes
+// the fix to the feedback-to target (not the reviewer) is proven by the live
+// rejection-flow scenario, which asserts the entity returns to status:
+// implementation with the fix applied.
 func TestFeedbackFaithfulnessClausesPresentInSkill(t *testing.T) {
+	markNonAC(t, "live rejection-flow scenario (assertRejectionFlow) + TestRejectionFlowNegativeMissingRoute")
 	skill := feedbackRejectionFlowSkill(t)
 	for name, fp := range feedbackFaithfulnessFingerprints {
 		if !strings.Contains(skill, fp) {
@@ -65,13 +78,16 @@ func TestFeedbackFaithfulnessClausesPresentInSkill(t *testing.T) {
 	}
 }
 
-// TestFeedbackProcedureAbsentFromFOCore locks AC-1(b): the moved procedure
-// fingerprints (and the faithfulness clauses, which moved with the body) are NO
-// LONGER present in first-officer-shared-core.md — moved, not duplicated. Whole-
-// file (NOT region-scoped): region-scoping an absence check would false-pass
-// content that moved elsewhere in the file. Negative-proof: re-inlining the
-// procedure re-introduces a fingerprint and flips this RED.
+// TestFeedbackProcedureAbsentFromFOCore is a non-AC text-consistency lint (dedup):
+// the moved procedure fingerprints (and the faithfulness clauses, which moved with
+// the body) are NO LONGER present in first-officer-shared-core.md — moved, not
+// duplicated. Whole-file (NOT region-scoped): region-scoping an absence check
+// would false-pass content that moved elsewhere. This is a structural dedup
+// property, not a behavioral claim; the FO's rejection behavior is proven by the
+// live rejection-flow scenario. Re-inlining the procedure re-introduces a
+// fingerprint and flips this RED.
 func TestFeedbackProcedureAbsentFromFOCore(t *testing.T) {
+	markNonAC(t, "dedup lint; behavior via live rejection-flow scenario (assertRejectionFlow)")
 	fo := foCore(t)
 	for name, fp := range feedbackProcedureFingerprints {
 		if strings.Contains(fo, fp) {
@@ -98,16 +114,18 @@ func TestFeedbackProcedureAbsentFromFOCore(t *testing.T) {
 // only fires on the feedback-rejection-flow include family.
 var feedbackAtInclude = regexp.MustCompile(`@(?:\.{1,2}/)*feedback-rejection-flow\b`)
 
-// TestFOCoreInvokesFeedbackRejectionSkill locks AC-1(c): the FO core invokes the
-// skill via Skill(...) at the rejection-detection point and uses NO cross-skill
-// @-include toward feedback-rejection-flow ANYWHERE in the file. The positive
-// Skill(...) check is region-scoped to `## Completion and Gates` (the seam lives
-// at the detection point); the @-include ban is WHOLE-FILE so a stale include
-// re-introduced in any other section (e.g. `## Merge and Cleanup`) is caught, not
-// just one in the detection region. The Skill(...) literal is the integration
-// seam; any `@`-token resolving toward feedback-rejection-flow is the disproven
-// mechanism.
+// TestFOCoreInvokesFeedbackRejectionSkill is a non-AC text-consistency lint: it
+// asserts the FO core carries the Skill(skill="spacedock:feedback-rejection-flow")
+// invocation literal at the rejection-detection point and no disproven
+// cross-skill @-include. Per the proof policy this presence check does NOT prove
+// the FO invokes the skill on a rejection: an inverted clause ("NEVER invoke
+// feedback-rejection-flow; just wait") keeps the Skill(...) substring and passes
+// (verified in ideation). The behavior — the FO routes a REJECTED finding back
+// through implementation — is proven only by the live rejection-flow scenario
+// (assertRejectionFlow). This lint guards the seam STRING and bans the @-include
+// mechanism; it is the text half, not the behavioral proof.
 func TestFOCoreInvokesFeedbackRejectionSkill(t *testing.T) {
+	markNonAC(t, "live rejection-flow scenario (assertRejectionFlow) + TestRejectionFlowNegativeMissingRoute")
 	fo := foCore(t)
 	region := sectionAfter(fo, "## Completion and Gates")
 	if region == "" {
@@ -121,11 +139,15 @@ func TestFOCoreInvokesFeedbackRejectionSkill(t *testing.T) {
 	}
 }
 
-// TestAlwaysOnMachineryRetainedInFOCore locks AC-1(d): the referenced always-on
-// machinery did NOT move with the procedure. The FO Write Scope `### Feedback
-// Cycles` write-scope bullet and the reuse-conditions/budget-probe block stay in
-// the FO core. Negative-proof: deleting either anchor reds this.
+// TestAlwaysOnMachineryRetainedInFOCore is a non-AC text-consistency lint (the
+// retention sibling of the dedup checks): the referenced always-on machinery did
+// NOT move with the procedure — the FO Write Scope `### Feedback Cycles` bullet
+// and the reuse-conditions block stay in the FO core. This is a structural
+// retention property, not a behavioral claim; that the FO actually tracks feedback
+// cycles is proven by the live rejection-flow scenario. Deleting either anchor
+// reds this.
 func TestAlwaysOnMachineryRetainedInFOCore(t *testing.T) {
+	markNonAC(t, "retention lint; behavior via live rejection-flow scenario (assertRejectionFlow)")
 	fo := foCore(t)
 	for name, anchor := range map[string]string{
 		"feedback-cycles-write-scope": "**`### Feedback Cycles` section**",
@@ -137,12 +159,15 @@ func TestAlwaysOnMachineryRetainedInFOCore(t *testing.T) {
 	}
 }
 
-// TestClaudeBareModeSeamStaysConsistent locks AC-2 (seam): the Claude adapter's
-// `## Feedback Rejection Flow (bare mode)` seam stays — still present, still the
-// sequential-dispatch sentence and the keep-reviewer-alive sentence. The seam is
-// a Claude-runtime execution mode, NOT moved into the runtime-neutral skill.
-// Negative-proof: removing the seam (or either sentence) reds this.
+// TestClaudeBareModeSeamStaysConsistent is a non-AC text-consistency lint: the
+// Claude adapter's `## Feedback Rejection Flow (bare mode)` seam stays present
+// with its sequential-dispatch and keep-reviewer-alive sentences — the seam is a
+// Claude-runtime execution mode, not moved into the runtime-neutral skill. This
+// is text authoring, not behavioral proof; the live rejection-flow scenario
+// (Claude runner) exercises the bare-mode path for real. Removing the seam reds
+// this.
 func TestClaudeBareModeSeamStaysConsistent(t *testing.T) {
+	markNonAC(t, "live rejection-flow scenario, Claude runner (assertRejectionFlow)")
 	claude := vendoredSkillFiles(t)["first-officer/references/claude-first-officer-runtime.md"]
 	for name, fp := range map[string]string{
 		"bare-mode-heading":   "## Feedback Rejection Flow (bare mode)",
@@ -175,32 +200,48 @@ func feedbackRejectionFrontmatterValue(t *testing.T, key string) (string, bool) 
 	return "", false
 }
 
-// TestFeedbackRejectionSkillNameMatchesSeam locks AC-2 (hardened seam): the
-// frontmatter `name:` VALUE equals `feedback-rejection-flow` — the directory name
-// AND the `Skill(skill="spacedock:feedback-rejection-flow")` invocation seam.
-// Token-presence alone (skill_surface_test.go) would pass a renamed skill the
-// seam no longer reaches; binding the value to the seam target catches that
-// drift. Negative-proof: a bogus name value reds this.
+// feedbackRejectionSeamLiteral is the seam name the FO contract invokes; the
+// re-bound checks read the expected value from the contract, not from the skill
+// file under test.
+const feedbackRejectionSeamLiteral = "feedback-rejection-flow"
+
+// TestFeedbackRejectionSkillNameMatchesSeam is a code-bound invariant: the skill's
+// frontmatter `name:` equals the seam name the FO CONTRACT invokes
+// (Skill(skill="spacedock:NAME") in first-officer-shared-core.md). The expected
+// value comes from the contract, not the skill file under test — renaming either
+// side makes the two diverge and reds this, catching a renamed skill the FO
+// invocation no longer reaches.
 func TestFeedbackRejectionSkillNameMatchesSeam(t *testing.T) {
+	markCodeBoundInvariant(t, "FO contract Skill(skill=\"spacedock:feedback-rejection-flow\") invocation (first-officer-shared-core.md)")
 	name, ok := feedbackRejectionFrontmatterValue(t, "name")
 	if !ok {
 		t.Fatal("feedback-rejection-flow SKILL.md frontmatter has no name field")
 	}
-	if name != "feedback-rejection-flow" {
-		t.Errorf("feedback-rejection-flow SKILL.md frontmatter name is %q, want %q (the directory name and the Skill(skill=\"spacedock:feedback-rejection-flow\") seam)", name, "feedback-rejection-flow")
+	seam := invokedSeamName(foCore(t), feedbackRejectionSeamLiteral)
+	if seam == "" {
+		t.Fatalf("FO contract does not invoke Skill(skill=\"spacedock:%s\") — the seam the skill name must match is gone", feedbackRejectionSeamLiteral)
+	}
+	if name != seam {
+		t.Errorf("feedback-rejection-flow SKILL.md frontmatter name is %q, but the FO contract invokes the seam %q — a renamed skill the FO invocation no longer reaches", name, seam)
 	}
 }
 
-// TestFeedbackRejectionSkillIsFOInternal locks AC-2 (hardened seam): the
-// frontmatter carries `user-invocable: false` — the skill is FO-internal (loaded
-// mid-run via Skill()), not a captain-facing user skill. Negative-proof: flipping
-// to `true` reds this.
+// TestFeedbackRejectionSkillIsFOInternal is a code-bound invariant binding the
+// skill's `user-invocable` frontmatter to its ROLE: a skill the FO invokes mid-run
+// via Skill(skill="spacedock:NAME") is FO-internal and MUST be
+// `user-invocable: false`. The expected value is REQUIRED by the contract invoking
+// the seam (an independent source), not a free literal; flipping the frontmatter
+// to `true` while the FO still invokes the seam reds this.
 func TestFeedbackRejectionSkillIsFOInternal(t *testing.T) {
+	markCodeBoundInvariant(t, "FO contract Skill(skill=\"spacedock:feedback-rejection-flow\") invocation implies FO-internal")
+	if invokedSeamName(foCore(t), feedbackRejectionSeamLiteral) == "" {
+		t.Fatalf("FO contract does not invoke the feedback-rejection-flow seam — the FO-internal premise no longer holds")
+	}
 	v, ok := feedbackRejectionFrontmatterValue(t, "user-invocable")
 	if !ok {
 		t.Fatal("feedback-rejection-flow SKILL.md frontmatter has no user-invocable field")
 	}
 	if v != "false" {
-		t.Errorf("feedback-rejection-flow SKILL.md frontmatter user-invocable is %q, want \"false\" (the skill is FO-internal)", v)
+		t.Errorf("feedback-rejection-flow SKILL.md frontmatter user-invocable is %q, but the FO contract invokes it as a mid-run seam — an FO-internal skill must be user-invocable: false", v)
 	}
 }
