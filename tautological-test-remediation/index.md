@@ -152,3 +152,22 @@ Applying the litmus to the EXTRA offenders (team-lead point 4): each behavioral 
 - TestAwaitingCompletionStillBansPreCompletionTeamDelete → the pre-completion-TeamDelete ban (don't TeamDelete before a worker's completion signal) has NO dedicated drive (distinct from the terminal-teardown HANG the #285 grade + TestSonnetTeamDeleteHangReplay cover). Exercised IMPLICITLY by every live team scenario (a premature teardown breaks the run) but with no dedicated mutation-controlled assertion. FLAGGED to team-lead as an owed follow-up — not silently capped, not built in hwk.
 
 All other extra offenders are text/structural claims (proof at the claim's own level) or code-bound invariants (contract.CONTRACT_VERSION, os.Stat closure, dispatch-flag/subcommand surface) or already name a code-gate behavioral oracle (reconcile_session_test, merge_policy_guard_test, the contract-version gate tests).
+
+### Demote-vs-rebind split + actual final counts (team-lead-endorsed refinement)
+
+The proof-policy litmus governs OVER the ideation bucket LABELS (those were a static guess; the mutation-verify + real code is the source of truth). Re-bind ONLY where a genuine independent code source exists; demote honestly otherwise — no artificial re-bind theater.
+
+Final counts (real test functions carrying each marker, excluding the sweep meta-test fixtures):
+- skills/integration/: 11 RE-BOUND (markCodeBoundInvariant), 30 DEMOTED (markNonAC) = 41 text-matching tests classified.
+- internal/hostneutrality/: 4 RE-BOUND, 11 DEMOTED = 15.
+- Total: 15 re-bound + 41 demoted = 56 presence/absence checks classified; both standing AC-3 sweeps report zero UNDECLARED.
+
+Re-bound (genuine independent code source): present-gate/feedback seam-name + FO-internal (FO contract's Skill() invocation), the leak/decision/flag checks (dispatch router + cli.go verbs + status stage keys + isBuildRequestFlag), TestStartupEmbeddedRangeBracketsContractVersion (contract.CONTRACT_VERSION), TestPiRuntimeAdaptersAreLoadable + TestUserSkillReferenceClosureResolves (os.Stat on the real tree), TestCodexRuntimeAdaptersAreLoadable (CODEX_THREAD_ID from build.go), TestClaudeAdapterOwnsRelocatedCommands + TestSharedCoreHasNoUnqualifiedClaudeHelpers (dispatch subcommands), TestNoCrossFileRestatement (different-file n-grams).
+
+Demoted, with their disposition explicit:
+- Bucket-A behavioral demotions name a live/command-level drive (gate-guardrail, rejection-flow, team scenarios, #285 teardown-grade, reconcile_session code gates, contract-version gate tests).
+- The four halt/sync/journey: behavioral-issuance rides ev3e's halt drive; sync/journey MECHANICS already oracle-covered (state_sync_test.go, build_statecommit_test.go, state_init_test.go / state_new_test.go).
+- The prose-only dev-hygiene checks (TestNoDevLeakageInUniversalCore, TestWorktreeIsolationClauseSurvives, TestRuntimeAdaptersUseNeutralLocationVocabulary, TestDevDisciplinesSurviveInDevHomes, TestNoAuditTrailExposition) demoted as TEXT-HYGIENE lints — a property of the text, NOT behavioral claims, with NO behavioral-oracle pointer (no genuine independent source exists; a forced re-bind would be theater). They keep their value catching accidental dev-leakage.
+- One no-drive behavioral claim beyond halt/sync/journey: TestAwaitingCompletionStillBansPreCompletionTeamDelete (pre-completion-TeamDelete ban) — flagged OWED to team-lead for a follow-up (team-teardown-timing scope, distinct from ev3e).
+
+Adversarially validated against the live detached audit (transient zzz_planted_*.go probes observed): both sweeps RED on a multi-hop-helper tautology and a direct os.ReadFile(.md)+match with no marker, in both packages.
