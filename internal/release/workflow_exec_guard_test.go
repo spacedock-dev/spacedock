@@ -339,6 +339,19 @@ func parseWorkflowJobs(workflow string) []workflowJob {
 		job := &jobs[len(jobs)-1]
 		if leadingSpaces(line) == 4 && strings.HasPrefix(trimmed, "needs:") {
 			job.needs = parseNeeds(trimmed)
+			// Block-list form: a bare `needs:` followed by deeper-indented
+			// `- name` entries. Consume those entries here so the edge is not
+			// invisible to the separation guard.
+			for i+1 < len(lines) {
+				next := strings.TrimSpace(lines[i+1])
+				if !strings.HasPrefix(next, "- ") {
+					break
+				}
+				if name := strings.Trim(strings.TrimSpace(strings.TrimPrefix(next, "- ")), `"'`); name != "" {
+					job.needs = append(job.needs, name)
+				}
+				i++
+			}
 		}
 	}
 
@@ -364,10 +377,11 @@ func parseWorkflowJobs(workflow string) []workflowJob {
 	return jobs
 }
 
-// parseNeeds reads a job's `needs:` declaration in any of YAML's three shapes —
-// scalar (`needs: goreleaser`), flow sequence (`needs: [a, b]`), or (when the
-// line is just `needs:`) an empty set the caller treats as no edge. Block-list
-// form is not used in this repo's workflows and is not parsed here.
+// parseNeeds reads the `needs:` LINE itself: scalar (`needs: goreleaser`) or
+// flow sequence (`needs: [a, b]`). A bare `needs:` line yields no edges here —
+// the block-list entries that follow it on deeper-indented `- name` lines are
+// consumed by parseWorkflowJobs, which has the surrounding lines parseNeeds
+// cannot see.
 func parseNeeds(trimmed string) []string {
 	rest := strings.TrimSpace(strings.TrimPrefix(trimmed, "needs:"))
 	if rest == "" {

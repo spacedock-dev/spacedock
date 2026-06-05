@@ -160,21 +160,35 @@ func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) 
 // hardened guard binds `needs:` to the OWNING job (the one carrying the
 // goreleaser action) and must RED on this edge — while the SAFE one-way
 // `journey-ledger: needs: goreleaser` edge in the real file does NOT trip it.
+// The edge is injected in every YAML shape `needs:` can take (scalar, flow
+// sequence, and block list) so no single re-coupling syntax evades the guard.
 func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
 	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
 		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
 	}
-	adversarial := strings.Replace(release,
-		"  goreleaser:\n    runs-on: macos-latest",
-		"  goreleaser:\n    needs: journey-ledger\n    runs-on: macos-latest",
-		1)
-	if adversarial == release {
-		t.Fatal("fixture workflow missing the goreleaser job header to mutate")
-	}
 
-	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
-		t.Fatal("release workflow guard accepted a goreleaser job that needs the journey-ledger job (re-coupling the cut to the never-fired run)")
+	for _, tc := range []struct {
+		name      string
+		needsForm string
+	}{
+		{"scalar", "    needs: journey-ledger\n"},
+		{"flow sequence", "    needs: [journey-ledger]\n"},
+		{"block list", "    needs:\n      - journey-ledger\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			adversarial := strings.Replace(release,
+				"  goreleaser:\n    runs-on: macos-latest",
+				"  goreleaser:\n"+tc.needsForm+"    runs-on: macos-latest",
+				1)
+			if adversarial == release {
+				t.Fatal("fixture workflow missing the goreleaser job header to mutate")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+				t.Fatalf("release workflow guard accepted a goreleaser job that needs the journey-ledger job via %s form (re-coupling the cut to the never-fired run)", tc.name)
+			}
+		})
 	}
 }
 
@@ -260,6 +274,67 @@ func TestReleaseDownloadSkipBranchExitsZeroOnEmptyRunList(t *testing.T) {
 	}
 	if !strings.Contains(string(gotOutput), "found=false") {
 		t.Errorf("download skip branch did not emit found=false to $GITHUB_OUTPUT; got:\n%s", gotOutput)
+	}
+}
+
+// TestReleaseDownloadSkipBranchToleratesGhError EXERCISES the download step's
+// degradation when the `gh run list` query itself fails — a gh error or a
+// missing gh on PATH. Under `set -euo pipefail` an un-guarded command
+// substitution would abort the step (RED the journey-ledger job); the `|| true`
+// degrades it to an empty run_id so the no-run skip branch fires (exit 0,
+// found=false) and the cut is never blocked by a best-effort ledger query.
+func TestReleaseDownloadSkipBranchToleratesGhError(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	script := extractStepRun(t, release, "Download latest journey metrics artifacts")
+
+	for _, tc := range []struct {
+		name   string
+		ghStub string // empty ghStub means: do not put gh on PATH at all
+	}{
+		{"gh exits non-zero", "#!/bin/sh\necho 'gh: API rate limit exceeded' >&2\nexit 1\n"},
+		{"gh missing from PATH", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			binDir := filepath.Join(dir, "bin")
+			if err := os.MkdirAll(binDir, 0o755); err != nil {
+				t.Fatalf("mkdir bin: %v", err)
+			}
+			// PATH carries system utilities (mkdir/find/awk) plus binDir, but NOT
+			// the directories a real gh lives in — so the gh seen by the script is
+			// exactly the stub we write here, or nothing when we write none.
+			path := binDir + string(os.PathListSeparator) + "/usr/bin" + string(os.PathListSeparator) + "/bin"
+			if tc.ghStub != "" {
+				if err := os.WriteFile(filepath.Join(binDir, "gh"), []byte(tc.ghStub), 0o755); err != nil {
+					t.Fatalf("write gh stub: %v", err)
+				}
+			}
+			outPath := filepath.Join(dir, "github_output")
+			if err := os.WriteFile(outPath, nil, 0o644); err != nil {
+				t.Fatalf("seed github_output: %v", err)
+			}
+
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Dir = dir
+			cmd.Env = append(os.Environ(),
+				"PATH="+path,
+				"RUNNER_TEMP="+dir,
+				"GITHUB_OUTPUT="+outPath,
+				"GH_TOKEN=stub",
+			)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("download step aborted on a gh query failure (want exit 0, found=false): %v\n%s", err, out)
+			}
+
+			gotOutput, err := os.ReadFile(outPath)
+			if err != nil {
+				t.Fatalf("read github_output: %v", err)
+			}
+			if !strings.Contains(string(gotOutput), "found=false") {
+				t.Errorf("download step did not emit found=false to $GITHUB_OUTPUT on a gh query failure; got:\n%s", gotOutput)
+			}
+		})
 	}
 }
 

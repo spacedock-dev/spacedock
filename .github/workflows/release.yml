@@ -49,7 +49,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/runtime-live-artifacts" "$RUNNER_TEMP/journey-metrics"
-          run_id="$(gh run list --workflow "Runtime Live E2E" --branch next --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          # `|| true` degrades a gh error (or a missing gh) to an empty run_id so
+          # the no-run skip branch below fires (found=false, exit 0) instead of
+          # aborting under set -e. The journey ledger is best-effort; a query
+          # failure must never RED the cut.
+          run_id="$(gh run list --workflow "Runtime Live E2E" --branch next --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
           if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
             echo "::warning::no successful Runtime Live E2E run found on next; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"
