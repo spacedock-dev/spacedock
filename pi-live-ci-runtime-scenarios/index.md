@@ -4,9 +4,9 @@ status: implementation
 source: captain (2026-06-05) — PRs that affect Pi runtime support need a Pi live lane using OPENAI_API_KEY; local/CI coverage should run most shared scenarios through Pi, either LLM-live or codified where a scenario is not yet live-safe
 score: "0.33"
 started: 2026-06-05T00:00:00Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-live-ci-runtime-scenarios
+completed: 2026-06-05T15:50:00Z
+verdict: PASSED
+worktree:
 issue:
 id: z8wm1jdhzmq4rcm0rzxw7bf5
 pr: "#305"
