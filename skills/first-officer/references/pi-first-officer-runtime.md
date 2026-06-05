@@ -17,6 +17,8 @@ Use `spacedock dispatch build` with `host: "pi"` in the input JSON. Forward the 
 
 A Pi first officer may dispatch via `subagent(...)` when that tool is available. The task must include the emitted dispatch-file prompt or the dispatch file content, the workflow directory, the entity path, and the completion checklist. The child must load the Spacedock ensign skill and Pi ensign runtime adapter before working.
 
+For Spacedock stage dispatches through `pi-subagents`, call `subagent(...)` with explicit `context: "fresh"`. Do not rely on the worker agent's default context; Spacedock stage workers must be seeded by the task prompt/dispatch content, workflow directory, entity file, and completion checklist rather than inherited first-officer transcript context.
+
 For Spacedock stage dispatches through `pi-subagents`, do not use the `subagent(... acceptance: ...)` contract. Put acceptance requirements in the task prompt/dispatch content instead. Spacedock owns the independent implementation-to-validation workflow: the gate is verification via entity stage reports, product/state commits, and independent validation, not same-agent acceptance finalization by the child that did the work.
 
 ## Awaiting Completion
@@ -27,7 +29,9 @@ For `pi-agent-teams`, completion is observed through the adapter's task/member n
 
 ## Follow-up and Reuse
 
-Fresh redispatch is the default safe behavior for the first Pi slice. If a Pi substrate exposes a resumable worker handle, record only the minimum metadata needed to prevent stale reuse mistakes: worker label, substrate, run/session handle, entity slug, stage, state, and completion epoch. A follow-up assignment must increment the epoch, and a previous completion must never satisfy the new epoch.
+Fresh redispatch is the default safe behavior for the first Pi slice. Normal follow-up and retry dispatches are fresh assignment cycles, not context resumes. If a Pi substrate exposes a resumable worker handle, record only the minimum metadata needed to prevent stale reuse mistakes: worker label, substrate, run/session handle, entity slug, stage, state, and completion epoch. A follow-up assignment must increment the epoch, and a previous completion must never satisfy the new epoch.
+
+A non-fresh resume is only allowed as an explicit manual/debug exception. Mark the dispatch visibly as a manual/debug resume and tie it to durable metadata in the entity stage evidence, including worker label, substrate, run/session handle, entity slug, stage, state, and completion epoch.
 
 ## Shutdown
 

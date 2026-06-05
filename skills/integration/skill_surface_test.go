@@ -104,6 +104,37 @@ func TestPiRuntimeAdaptersAreLoadable(t *testing.T) {
 	}
 }
 
+func TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages(t *testing.T) {
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	content := string(data)
+	dispatch := sectionAfter(content, "## Dispatch")
+	if dispatch == "" {
+		t.Fatal("Pi first-officer runtime is missing the Dispatch section")
+	}
+
+	required := []string{
+		"Spacedock stage dispatches",
+		"pi-subagents",
+		"subagent(...)",
+		"context: \"fresh\"",
+		"Do not rely on the worker agent's default context",
+		"task prompt/dispatch content",
+		"workflow directory",
+		"entity file",
+		"completion checklist",
+	}
+	for _, want := range required {
+		if !strings.Contains(dispatch, want) {
+			t.Errorf("Pi first-officer Dispatch section does not contain required fresh-context invariant %q", want)
+		}
+	}
+}
+
 func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 	root := skillsRoot(t)
 	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
@@ -131,6 +162,41 @@ func TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages(t *testing.T) {
 	for _, want := range required {
 		if !strings.Contains(dispatch, want) {
 			t.Errorf("Pi first-officer Dispatch section does not contain required acceptance-contract invariant %q", want)
+		}
+	}
+}
+
+func TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault(t *testing.T) {
+	root := skillsRoot(t)
+	path := filepath.Join(root, "first-officer", "references", "pi-first-officer-runtime.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read Pi first-officer runtime: %v", err)
+	}
+	content := string(data)
+	followup := sectionAfter(content, "## Follow-up and Reuse")
+	if followup == "" {
+		t.Fatal("Pi first-officer runtime is missing the Follow-up and Reuse section")
+	}
+
+	required := []string{
+		"Fresh redispatch is the default safe behavior",
+		"Normal follow-up and retry dispatches are fresh assignment cycles",
+		"not context resumes",
+		"increment the epoch",
+		"previous completion must never satisfy the new epoch",
+		"non-fresh resume is only allowed as an explicit manual/debug exception",
+		"worker label",
+		"substrate",
+		"run/session handle",
+		"entity slug",
+		"stage",
+		"state",
+		"completion epoch",
+	}
+	for _, want := range required {
+		if !strings.Contains(followup, want) {
+			t.Errorf("Pi first-officer Follow-up and Reuse section does not contain required fresh-retry invariant %q", want)
 		}
 	}
 }
