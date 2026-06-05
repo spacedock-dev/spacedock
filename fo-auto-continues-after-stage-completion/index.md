@@ -9,7 +9,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-fo-auto-continues-after-stage-completion
 issue:
 id: wmn2x3k7j0fjshvdz126ray3
-mod-block: merge:pr-merge
+mod-block:
 pr: "#303"
 ---
 
