@@ -9,7 +9,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-pi-runtime-readiness-intercom-prereqs
 issue:
 id: qj2m6f3v8n9c0p4r7t1x5kz2
-mod-block: merge:pr-merge
+mod-block:
 pr: "#304"
 ---
 
