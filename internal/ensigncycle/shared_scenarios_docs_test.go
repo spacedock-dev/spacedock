@@ -9,7 +9,7 @@ import (
 
 // TestSharedScenarioDocsContract is the AC-6 guard: docs/dev/README.md documents
 // the shared-scenario contract — how to add a scenario, what belongs in the
-// host-neutral definition, what belongs in each runner, and the local Claude/Codex
+// host-neutral definition, what belongs in each runner, and the local Claude/Codex/Pi
 // live commands. The README IS the claim here (the contract is the evergreen doc),
 // so a presence check over its real text is proof at the claim's own level: it
 // fails if a future edit drops a required clause. The required-clause set is
@@ -39,6 +39,7 @@ func TestSharedScenarioDocsContract(t *testing.T) {
 		"runner adapter",
 		"codexScenarioRunners()",
 		"claudeScenarioRunners()",
+		"pi_shared_coverage_test.go",
 		// How to add a shared scenario.
 		"To add a shared runtime scenario",
 		// The parity guard the contract leans on.
@@ -48,6 +49,7 @@ func TestSharedScenarioDocsContract(t *testing.T) {
 		// that bit the live gate).
 		"go test -tags live -count=1 -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v",
 		"go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v",
+		"go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v",
 	}
 	for _, clause := range mustContain {
 		if !strings.Contains(doc, clause) {

@@ -34,6 +34,7 @@ type piRuntimeConfig struct {
 	firstOfficer    string
 	ensign          string
 	authPath        string
+	openAIAPIKey    string
 	pluginDirSource string
 }
 
@@ -232,6 +233,7 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 		firstOfficer:    filepath.Join(repo, "skills", "first-officer", "SKILL.md"),
 		ensign:          filepath.Join(repo, "skills", "ensign", "SKILL.md"),
 		authPath:        authPath,
+		openAIAPIKey:    envMap["OPENAI_API_KEY"],
 		pluginDirSource: pluginDirSource,
 	}
 }
@@ -239,7 +241,7 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	bin, err := ops.LookPath("pi")
 	res := piCheckResult{piBinOK: err == nil, piBin: bin, packageRoot: cfg.packageRoot, repoRoot: cfg.repoRoot, authPath: cfg.authPath}
-	res.authOK = ops.Stat(cfg.authPath) == nil
+	res.authOK = ops.Stat(cfg.authPath) == nil || strings.TrimSpace(cfg.openAIAPIKey) != ""
 	res.extensionOK = ops.Stat(cfg.extensionPath) == nil
 	res.subagentsSkillOK = ops.Stat(filepath.Join(cfg.subagentsSkill, "SKILL.md")) == nil
 	res.firstOfficerOK = ops.Stat(cfg.firstOfficer) == nil

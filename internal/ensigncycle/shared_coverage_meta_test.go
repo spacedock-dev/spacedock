@@ -14,6 +14,7 @@ import "testing"
 func TestSharedScenarioRunnerCoverage(t *testing.T) {
 	codexRunners := codexScenarioRunners()
 	claudeRunners := claudeScenarioRunners()
+	piCoverage := piSharedScenarioCoverageMap()
 
 	scenarios := sharedRuntimeScenarios()
 	if len(scenarios) == 0 {
@@ -26,6 +27,9 @@ func TestSharedScenarioRunnerCoverage(t *testing.T) {
 		}
 		if claudeRunners[scenario.name] == nil {
 			t.Errorf("shared scenario %q has no Claude runner", scenario.name)
+		}
+		if _, ok := piCoverage[scenario.name]; !ok {
+			t.Errorf("shared scenario %q has no Pi live/codified/gap coverage entry", scenario.name)
 		}
 	}
 
@@ -44,6 +48,11 @@ func TestSharedScenarioRunnerCoverage(t *testing.T) {
 	for name := range claudeRunners {
 		if !defined[name] {
 			t.Errorf("Claude runner %q has no shared scenario definition", name)
+		}
+	}
+	for name := range piCoverage {
+		if !defined[name] {
+			t.Errorf("Pi coverage entry %q has no shared scenario definition", name)
 		}
 	}
 }

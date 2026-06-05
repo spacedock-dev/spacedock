@@ -148,7 +148,7 @@ spacedock status --workflow-dir docs/dev --next
 
 The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
 
-A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, two per-host runner adapters (Claude and Codex) implementing the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
+A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, per-host runner adapters (Claude and Codex today, with Pi tracked through an explicit live/codified/gap coverage map until its shared runners are live-safe) implementing or accounting for the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
 
 ### Shared runtime scenarios
 
@@ -159,7 +159,7 @@ The scenario surface lives in `internal/ensigncycle` and splits into four host-n
 | Scenario table | `shared_scenarios_test.go` (`sharedRuntimeScenarios()`) | Yes |
 | Fixtures + prompts | `shared_fixtures_test.go` | Yes |
 | Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
-| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go` | No — one per host |
+| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_coverage_test.go` | No — one per host; Pi currently records explicit live/codified/gap status for each shared scenario |
 
 The shared table (`sharedRuntimeScenario`) carries ONLY runtime-neutral facts: scenario `name` (ID), `oldPythonTest` provenance, behavior `intent`, and a live `timeout`. It encodes NO launch, auth, plugin, artifact, or transcript field — `TestSharedRuntimeScenarioDefinitions` reflects over the type and fails if any field names a single host.
 
@@ -188,7 +188,7 @@ Assertions prefer durable workflow state over transcript phrasing: entity frontm
 3. Add a host-neutral assertion over `(before, after, observed)` strings (or reuse an existing one) and at least one offline negative case in `shared_scenarios_negative_test.go` that builds the broken end-state and proves the assertion goes red.
 4. Add a runner entry for the new `name` to BOTH `codexScenarioRunners()` and `claudeScenarioRunners()`. `TestSharedScenarioRunnerCoverage` fails until both hosts cover it.
 
-The shared coverage meta-test enforces parity in both directions: every shared scenario must have a runner for each host, and every runner must map to a defined scenario.
+The shared coverage meta-test enforces parity in both directions: every shared scenario must have a Claude and Codex runner plus a Pi live/codified/gap coverage entry, and every runner or Pi coverage entry must map to a defined scenario.
 
 ### Local live execution
 
@@ -212,13 +212,19 @@ Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex l
 go test -tags live -count=1 -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
 ```
 
+Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.
+
+```bash
+go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
+```
+
 The parity and definition guards run with no model spend — useful before paying for a live run:
 
 ```bash
-go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions' ./internal/ensigncycle -v
+go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions|TestPiSharedScenarioCoverage' ./internal/ensigncycle -v
 ```
 
-Without auth, the respective live suite skips locally (Claude/Codex), except in CI where the lane requires it.
+Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
 
 ### GitHub setup
 
@@ -226,8 +232,9 @@ Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go te
 
 - `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke) AND `TestLiveClaudeSharedScenarios` (the shared suite). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
 - `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
+- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard plus `TestLivePiFrontDoorSmoke`, and uploads artifacts under `live-artifacts/pi/`.
 
-Both live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
+All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
 
 ```text
 .agents/plugins/marketplace.json
