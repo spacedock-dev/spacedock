@@ -1,6 +1,6 @@
 ---
 title: FO should auto-continue from completed non-gated stages to next-stage dispatch
-status: validation
+status: implementation
 source: captain (2026-06-04) — FO stopped after implementation reporting instead of immediately advancing to validation; AI-engineer review found the current contract implies but does not enforce this lifecycle invariant
 score: "0.32"
 started: 2026-06-04T15:05:37Z
@@ -193,6 +193,12 @@ All offline proof is green and adversarially sound. AC-1/2/3 (contract text), AC
 - The entity's real proof is now: the behavior reproduced live (Pi + Claude) + the offline state-grader. No presence oracles.
 
 Re-validate after; the validator must reject any presence-oracle-only AC per the new policy.
+
+**Cycle 2 — validation REJECTED: narrow body-only AC reconciliation (no code change).** Substance is PASS-grade — the validator independently confirmed the Claude live proof (session e59d1f3b), the durable-state grader, the honest Pi env-gap, offline green, and a clean merge-tree; the detached audit refuted nothing material. The ONE block: the entity's `## Acceptance criteria` (AC-1/2/3/4) + `## Test plan` STILL cite the now-DELETED presence oracles ("Verified by: a Go presence oracle…") — a presence-oracle behavioral AC surviving in the contract body, banned by `f8b257cf` (the policy catching itself). Routed to implementation via **FRESH dispatch** (the prior impl ensign is over budget, `reuse_ok` false). Fix (body-only, NO code change — the `auto_continue_*` tests + the three clauses are correct):
+- Rewrite AC-1/2/3 → the three contract clauses are present = real authoring, NOT an AC.
+- Collapse AC-4/AC-5 into the single behavioral AC: the Claude live regression (session e59d1f3b) + the offline state-grader; the Pi origin-leg cited as env-blocked, owed to a provisioning follow-up.
+- Update `## Test plan` to drop the presence-oracle references.
+Note (audit polish, non-blocking): the Claude runbook carries a generic `antiShutdownOverride` adjacent to the behavior (the durable-state grade gates regardless); the pi-runtime clause's only behavioral proof is the env-blocked Pi leg. This is cycle 2 — a 3rd rejection escalates to the human instead of a 4th bounce.
 
 ## Stage Report: implementation (cycle 2)
 
