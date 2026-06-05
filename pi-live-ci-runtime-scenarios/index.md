@@ -144,3 +144,23 @@ Fixed the PR #305 Pi live install failure without version pinning, per captain/F
 ### Push status
 - Product push over SSH failed due missing public-key auth.
 - Product push over HTTPS failed because the available OAuth token lacks `workflow` scope for updating `.github/workflows/runtime-live-e2e.yml`.
+
+## Stage Report: implementation follow-up correction
+
+### Summary
+Applied the follow-up correction to use npm's native `--before` age gate instead of `min-release-age` probing. Product commit amended to `011cd1d7 ci: fix pi live cli install`.
+
+### Changes
+- Removed the `min-release-age` probe/config path from the Pi live lane.
+- Kept versionless installs while computing `NPM_BEFORE` as a 24-hour-old ISO timestamp with Node.
+- Passed `--before="$NPM_BEFORE"` to every Pi live npm install: global `@earendil-works/pi-coding-agent` and direct `$HOME/.pi/agent/npm` installation of `pi-subagents pi-intercom`.
+- Preserved `--no-audit --no-fund` and `--ignore-scripts` on the Pi live npm installs, plus post-install package name/version/bin/resource path verification.
+- Updated workflow guards to require `NPM_BEFORE`/`--before`, reject obsolete `min-release-age`, continue rejecting unscoped `pi-coding-agent`, and reject unverified Pi package installs.
+
+### Validation
+- `go test ./internal/release -run 'TestWorkflowsPreserveAndPublishJourneyCosts|TestRuntimeLiveWorkflowGuardRejects(UnscopedPiPackage|MissingPiBeforeAgeGate|ObsoletePiMinReleaseAgeProbe|UnverifiedPiPackageInstall)' -count=1 -v` — PASS.
+- `go test ./internal/release ./internal/ensigncycle -count=1` — PASS.
+- `go test ./... -count=1` — PASS.
+
+### Push status
+- Product push over HTTPS was attempted after this correction and failed because the available OAuth token lacks `workflow` scope for updating `.github/workflows/runtime-live-e2e.yml`.
