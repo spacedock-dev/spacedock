@@ -1,7 +1,7 @@
 ---
 id: bqqr8vzz152n8bk2dqf1rw4q
 title: Release-gate fix — job-separation + tag-body OPTION B so the 0.19.6/0.20.0 cut doesn't fail like 0.19.5
-status: validation
+status: implementation
 source: "captain + handoff (2026-06-05) — THE cut blocker, hard prerequisite for the main-flip/0.20.0 milestone. `release.yml` hard-requires a Runtime-Live-E2E on `next` that never auto-runs there, so the cut fails (like 0.19.5). Grounded analysis: Workflow task w569jug9c (session #08)."
 score: "0.42"
 started: 2026-06-05T19:05:55Z
@@ -116,3 +116,7 @@ Split release.yml into journey-ledger + goreleaser siblings: journey-ledger auth
 ### Summary
 
 PASSED. The cut-unblock and its code gate hold against the post-separation release.yml, validated by exercise not prose: yq confirms the DAG contract (goreleaser.needs=null, journey-ledger one-way needs: goreleaser, document-order [journey-ledger, goreleaser], Build/Publish gated on download_metrics.found); full repo suite green (28/28 in internal/release, all packages ok, vet+build clean). Adversarial mutation-confirm refuted nothing material: re-coupling edge (scalar+flow), stripped gate, and inverted skip-exit each RED the owning suite, and the real file's safe reverse edge stays green. AC-2 OPTION B round-trips through real git; the selector-regex repair is justified (the old greedy regex mis-selected the download condition). Standing handoff unchanged: ledger POPULATION depends on the Codex peer's 4n producer — out of this fix's scope, not a blocker, flagged for the gate.
+
+### Feedback Cycles
+
+**Cycle 1 — validation PASSED, detached adversarial audit found one MATERIAL guard hole (2026-06-05).** The validator recommended PASSED (cut-unblock + skip-gating sound; 28/28 + offline green). The detached audit (separate checkout of f1d2d871) found **M1**: the owning-job guard's `parseNeeds` (`internal/release/workflow_exec_guard_test.go:371`) only parses scalar/flow `needs:` — a future `goreleaser: needs:` written as a YAML BLOCK-LIST (`needs:` then `- journey-ledger`) EVADES `assertGoreleaserDoesNotNeedJourneyLedger` (parseWorkflowJobs reports goreleaser needs=[]), so the guard greenlights a real re-coupling edge, defeating its purpose. Scalar/flow/`[journey-ledger]`/multi-element forms are all correctly rejected; only the block-list shape evades, and the committed test injects only the scalar form. Routed to implementation (fresh dispatch — prior impl worker lost in the session crash; same worktree). Polish P1 (non-blocking): the download skip-branch reds on gh-error/missing-gh under `set -euo pipefail` (only empty-list is non-fatal) — matches the "no run exists" contract, does not block the cut.
