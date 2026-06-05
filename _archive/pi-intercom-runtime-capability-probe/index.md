@@ -9,6 +9,7 @@ verdict: PASSED
 worktree:
 issue:
 id: cq9kb7cdpp9y48tn8gwzmqzq
+archived: 2026-06-05T15:59:17Z
 ---
 
 # Pi intercom supervisor-talkback spike
