@@ -280,3 +280,39 @@ Recommendation: PASSED
 - The validation probe did not produce a marker file because the live child was not launched.
 
 Recommendation: PASSED for static recipe/schema/probe implementation; NOT PASSED as live runtime capability proof.
+
+## Stage Report: validation follow-up live evidence (2026-06-05)
+
+- Product worktree: `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-pi-intercom-runtime-capability-probe`
+- Product branch: `spacedock-ensign/pi-intercom-runtime-capability-probe`
+- Product commit added: `ff4e7362982fbfac8001e2f8d89875b5f13ae373` (`Record passed pi intercom live evidence`)
+- Evidence added: `docs/dev/_evidence/pi-intercom-runtime-capability-probe/2026-06-05-passed-live-talkback.json`
+- Live probe run id: `4395f7ae-5ff7-41c2-9f80-7845f6b57439`
+- Output artifact: `/tmp/cq-live-evidence-record-output.md`
+
+### Live evidence result
+
+- PASSED: recorded the already-observed Pi intercom supervisor-talkback run as `classification: "passed"` for capability `pi-intercom-supervisor-talkback`.
+- PASSED: preserved existing non-passed evidence records; no not-run evidence was deleted.
+- PASSED: checked the supplied durable proof paths without rerunning the live probe:
+  - Probe output log: `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/pi-subagents-uid-501/async-subagent-runs/4395f7ae-5ff7-41c2-9f80-7845f6b57439/output-0.log`
+  - Probe events log: `/var/folders/h1/vnssm1dj6ks4nzzvx8y29yjm0000gn/T/pi-subagents-uid-501/async-subagent-runs/4395f7ae-5ff7-41c2-9f80-7845f6b57439/events.jsonl`
+  - Probe child output: `/tmp/cq-live-probe-output.md`
+  - Marker file: `/tmp/pi-intercom-runtime-capability-probe-Avf2Rx/pi-intercom-smoke-marker.txt`
+- PASSED: output evidence showed `contact_supervisor` `progress_update`, `contact_supervisor` `need_decision`, supervisor reply `APPROVED`, child resume, successful marker write, and completion.
+- PASSED: marker content was exactly `PI-INTERCOM-SMOKE-APPROVED`.
+
+### Validation commands
+
+- `go test ./skills/integration -run 'PiIntercom|RuntimeCapability' -count=1` — passed.
+- `go test ./skills/integration -count=1` — passed.
+- `go test ./... -count=1` — passed.
+- `gofmt` — not run; no Go files changed.
+
+### Residual risks
+
+- The passed record relies on the FO-supplied and locally readable live probe logs; it does not rerun the live probe.
+- Pi CLI, pi-subagents, and pi-intercom versions were not captured for the already-observed run and are recorded as `null`.
+- The evidence records bridge-active setup as true for this passed run because the Pi child was successfully launched through the intercom-capable runtime and completed the required talkback behavior; no separate `subagents-doctor` output was captured in the supplied live evidence.
+
+Recommendation: PASSED live Pi intercom supervisor-talkback evidence is now recorded and accepted by the checked-in schema tests.
