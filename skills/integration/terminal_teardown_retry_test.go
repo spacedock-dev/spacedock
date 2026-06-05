@@ -49,7 +49,7 @@ const terminalTeardownMarker = "TERMINAL_TEARDOWN_BOUNDED: best-effort teardown 
 // is the live-e2e CI run (AC-1). The lint guards against the clause being dropped
 // or re-inverted in a future edit.
 func TestTerminalTeardownIsBoundedBestEffort(t *testing.T) {
-	markNonAC(t, "live-e2e CI run (AC-1) — the streamwatcher graders TestTerminalTeardownGrade* observe the FO's bounded teardown")
+	markNonAC(t, "internal/ensigncycle teardown-grade drive (#285): TestTerminalTeardownGradePassesOnMarkerEmission + TestTerminalTeardownGradeFailsWhenMarkerNeverEmitted (expectTerminalTeardownGrade over real/synthetic streams) + the live-e2e CI run (AC-1)")
 	files := vendoredSkillFiles(t)
 
 	// negatingPhrases are the inversion fingerprints. Two groups:
@@ -287,10 +287,19 @@ func numberedStep(region string, n int) string {
 // HONEST CEILING: prose lints are inherently reword-evadable — a sufficiently
 // novel paraphrase of "you may tear down early" that uses none of the permission
 // cues above will still pass. This lint raises the bar to "the common affirmative
-// re-intros red AND the ban's positive framing is pinned"; the BEHAVIORAL oracle
-// for the ban surviving is the live-e2e run (AC-1), not this structural lint.
+// re-intros red AND the ban's positive framing is pinned"; it is NOT the
+// behavioral proof.
+//
+// Behavioral coverage: every live team scenario (gate-guardrail, rejection-flow)
+// dispatches a real ensign and awaits its completion, so a premature
+// pre-completion TeamDelete would break those runs — the ban is exercised
+// implicitly. There is NO dedicated mutation-controlled drive that ASSERTS the
+// pre-completion-TeamDelete ban specifically (distinct from the terminal-teardown
+// HANG covered by the #285 teardown-grade and TestSonnetTeamDeleteHangReplay).
+// That dedicated drive is OWED and flagged to team-lead for a follow-up task; it
+// is NOT silently capped here.
 func TestAwaitingCompletionStillBansPreCompletionTeamDelete(t *testing.T) {
-	markNonAC(t, "live-e2e run (AC-1) — the awaiting-completion idle/teardown behavior is graded by the streamwatcher in internal/ensigncycle")
+	markNonAC(t, "OWED dedicated drive (flagged to team-lead, follow-up TBD): the pre-completion-TeamDelete ban. Implicit today: every live team scenario (gate-guardrail/rejection-flow) awaits a real ensign completion, so a premature teardown breaks the run")
 	skill := usingClaudeTeamSkill(t)
 	region := sectionAfter(skill, "## Awaiting Completion")
 	if region == "" {
