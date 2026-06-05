@@ -88,3 +88,18 @@ Verified by: `go test ./...` after implementation, with the Pi skill-surface tes
 - Found existing test coverage for the no-`acceptance` Pi stage-dispatch invariant in `skills/integration/skill_surface_test.go`.
 - Refined the problem, proposed approach, out-of-scope boundary, acceptance criteria, and test plan to align with current Pi contracts: subagent dispatch is allowed, `acceptance` contracts are forbidden, and feedback/retry defaults to fresh assignment cycles unless an explicit manual/debug resume is introduced with durable metadata.
 - Noted that `/Users/clkao/git/spacedock-research/spacedock-v1/context.md` and `/Users/clkao/git/spacedock-research/spacedock-v1/plan.md` were requested but are not present in this checkout.
+
+### Implementation — 2026-06-04
+
+- Updated the Pi first-officer runtime dispatch contract so Spacedock stage dispatches through `pi-subagents` must call `subagent(...)` with explicit `context: "fresh"` and must not rely on the worker agent default context.
+- Preserved the no-`subagent(... acceptance: ...)` invariant for Spacedock stage dispatches; acceptance remains in the task prompt/dispatch content and completion proof remains entity stage reports, product/state commits, and independent validation.
+- Clarified Follow-up and Reuse guidance so normal follow-up/retry dispatches are fresh assignment cycles, previous completions cannot satisfy a new epoch, and non-fresh resume is only a marked manual/debug exception tied to durable metadata.
+- Added skill-surface invariant tests for explicit fresh Pi stage context and fresh follow-up/retry behavior, alongside the existing no-acceptance-contract invariant.
+- Product commit: `ea80f3a2` (`Require fresh Pi stage dispatch context`).
+- Validation run from the product worktree:
+  - `go test ./skills/integration`
+  - `go test ./...`
+  - `gofmt -w ./cmd ./internal` (temporarily reformatted two unrelated comments under `internal/status`; those unrelated changes were reverted before commit)
+  - `go test ./... -race`
+- AC coverage: AC-1 covered by `TestPiFirstOfficerRuntimeRequiresFreshSubagentContextForStages`; AC-2 covered by `TestPiFirstOfficerRuntimeForbidsSubagentAcceptanceForStages`; AC-3 covered by `TestPiFirstOfficerRuntimeFollowupsAreFreshByDefault`; AC-4 covered by `go test ./...` including `skills/integration`.
+- Residual risk: live Pi host behavior for the exact `context: "fresh"` argument remains unproven by this instruction-level guard and should be covered later by a live Pi harness if available.
