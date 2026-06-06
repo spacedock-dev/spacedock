@@ -1,7 +1,7 @@
 ---
 id: 5hn35sfb4aenhzjfrr15g9jp
 title: Codex foreground wait should tell the captain Esc only returns control
-status: validation
+status: implementation
 source: "FO dogfood (2026-06-06) - Codex runtime text documents foreground wait semantics, but does not tell the operator before wait_agent that Esc/interrupt is safe and does not mean the worker failed or should be closed."
 score: "0.24"
 worktree: .worktrees/spacedock-ensign-codex-foreground-wait-escape-hint
@@ -158,3 +158,7 @@ Implemented the Codex foreground-wait operator hint in the source runtime adapte
 ### Summary
 
 Recommendation: REJECTED. The delivered runtime/probe wording is scoped correctly and the normal test gates pass, but the contractlint proof can green-light the opposite terminal-lifecycle claim; implementation should tighten the assertion so a negated `not failed, closed, or redispatched` regression fails before this validates.
+
+### Feedback Cycles
+
+**Cycle 1 - validation REJECTED (2026-06-06).** The runtime/probe wording is scoped correctly and focused/full/race gates passed, but the detached mutation audit found the proof is too weak: changing the runtime claim to say the worker is failed/closed/redispatched still leaves `go test ./internal/contractlint -run TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape -count=1` green. Required fixback: tighten the quarantined contractlint assertion so a negated terminal-lifecycle claim fails, preserve the foreground-wait scope and same-handle retry semantics, then re-run focused contractlint/runtime tests plus `go test ./...` and `go test ./... -race`.
