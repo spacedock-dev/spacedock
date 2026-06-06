@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-sweep-guard-reader-axis-invert
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#310"
 ---
 
