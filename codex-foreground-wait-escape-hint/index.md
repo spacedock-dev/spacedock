@@ -1,11 +1,12 @@
 ---
 id: 5hn35sfb4aenhzjfrr15g9jp
 title: Codex foreground wait should tell the captain Esc only returns control
-status: backlog
+status: ideation
 source: "FO dogfood (2026-06-06) - Codex runtime text documents foreground wait semantics, but does not tell the operator before wait_agent that Esc/interrupt is safe and does not mean the worker failed or should be closed."
 score: "0.24"
 worktree: ""
 issue:
+started: 2026-06-06T04:16:46Z
 ---
 
 Codex foreground waits are easy to misread from the operator seat. The runtime
