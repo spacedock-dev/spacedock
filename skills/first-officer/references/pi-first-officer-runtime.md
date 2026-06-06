@@ -13,9 +13,11 @@ The Spacedock contract talks in terms of dispatch, completion, follow-up, and sh
 
 ## Dispatch
 
-Use `spacedock dispatch build` with `host: "pi"` in the input JSON. Forward the emitted dispatch file prompt to the Pi worker without rewriting it into Claude syntax. For the first slice, dispatch should normally run with `bare_mode: true`: the Pi subagent result is the completion signal, so no `team_name` is required.
+Use `spacedock dispatch build` with `host: "pi"` in the input JSON. The build artifact is the assignment source of truth: it carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. Forward the emitted dispatch file prompt or dispatch file content to the Pi worker without composing a replacement assignment and without rewriting it into Claude syntax. For the first slice, dispatch should normally run with `bare_mode: true`: the Pi subagent result is the completion signal, so no `team_name` is required.
 
-A Pi first officer may dispatch via `subagent(...)` when that tool is available. The task must include the emitted dispatch-file prompt or the dispatch file content, the workflow directory, the entity path, and the completion checklist. The child must load the Spacedock ensign skill and Pi ensign runtime adapter before working.
+A Pi first officer may dispatch via `subagent(...)` when that tool is available. The wrapper may add only Pi transport metadata around the build artifact: `context: "fresh"` plus optional human-facing `phase` / `label` values. Those wrapper fields are additive; they must not redefine or replace the builder-derived slug/name, workflow directory, entity path, target stage, worktree path, completion checklist, or completion contract. The child must load the Spacedock ensign skill and Pi ensign runtime adapter before working.
+
+Manual Pi prompt composition is a break-glass fallback only when `spacedock dispatch build` is unavailable, exits non-zero, or the developer is explicitly debugging the dispatch builder. Any fallback must record the builder failure or unavailability reason and include the minimum canonical schema facts so the degraded dispatch is auditable.
 
 For Spacedock stage dispatches through `pi-subagents`, call `subagent(...)` with explicit `context: "fresh"`. Do not rely on the worker agent's default context; Spacedock stage workers must be seeded by the task prompt/dispatch content, workflow directory, entity file, and completion checklist rather than inherited first-officer transcript context.
 
