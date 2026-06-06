@@ -1,7 +1,7 @@
 ---
 id: 5hn35sfb4aenhzjfrr15g9jp
 title: Codex foreground wait should tell the captain Esc only returns control
-status: implementation
+status: validation
 source: "FO dogfood (2026-06-06) - Codex runtime text documents foreground wait semantics, but does not tell the operator before wait_agent that Esc/interrupt is safe and does not mean the worker failed or should be closed."
 score: "0.24"
 worktree: .worktrees/spacedock-ensign-codex-foreground-wait-escape-hint
