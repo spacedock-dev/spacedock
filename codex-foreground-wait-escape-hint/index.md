@@ -175,3 +175,16 @@ Recommendation: REJECTED. The delivered runtime/probe wording is scoped correctl
 ### Summary
 
 Cycle 2 fixes the validation finding by making the quarantined contractlint proof reject affirmative terminal-lifecycle wording, not just require lifecycle words to appear. The accepted foreground-wait and probe text remain unchanged; the mutation audit now fails on the unsafe wording and the focused/full/race gates pass.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-check the cycle-2 fixback: the quarantined contractlint test must fail when the Codex foreground-wait section says Esc/operator interruption marks the worker failed, closes it, or redispatches it.
+  Evidence: temporary mutation changed the runtime claim to `worker is failed, closed, or redispatched`; `go test ./internal/contractlint -run TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape -count=1` failed as intended, then the file was restored.
+- DONE: Confirm accepted behavior is preserved: runtime/probe wording still scopes the hint to explicit foreground wait, same-handle retry remains intact, and no blanket wait-after-dispatch wording appears.
+  Evidence: `go test ./internal/contractlint -run 'TestCodex|TestForegroundWait' -count=1` passed 8 tests and `go test ./skills/integration -run 'TestCodexIdleNotification|TestCodexForegroundWaitEscapeHint' -count=1` passed 1 test.
+- DONE: Run focused contractlint/runtime tests plus `go test ./...` and `go test ./... -race`; verify the worktree/PR diff is limited to the foreground-wait runtime/probe text and contractlint test.
+  Evidence: `gofmt -w ./cmd ./internal`, `go test ./...` passed 1131 tests in 16 packages, `go test ./... -race` passed 1131 tests in 16 packages, and `git diff --name-status origin/next...HEAD` lists only `docs/dev/codex-idle-notification-probe.md`, `internal/contractlint/codex_foreground_wait_shape_test.go`, and `skills/first-officer/references/codex-first-officer-runtime.md`.
+
+### Summary
+
+Recommendation: PASSED. Cycle 2 closes the validation finding: the quarantined contractlint test now fails on affirmative terminal-lifecycle wording, the accepted foreground-wait and probe behavior remains intact, and the focused/full/race gates all pass.
