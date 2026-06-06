@@ -124,3 +124,16 @@ Validation reproduced the main Claude behavior and the required baseline checks:
 ### Summary
 
 Cycle 2 closes the validation test-strength gap without changing front-door production behavior. Codex mismatch and both no-plugin forms now assert no install and no launch, while the existing Claude auto-install contract remains covered by the focused front-door suite.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: reproduce Claude no-plugin auto-install/default launch plus --no-install refusal, and confirm real mismatches still fail fast
+  Focused front-door run passed 13/13, covering `TestClaudeFrontDoorNoPluginAutoInstalls`, `TestClaudeFrontDoorNoPluginNoInstallRefuses`, `TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls`, and `TestClaudeFrontDoorFailFastOnMismatch`.
+- DONE: reproduce strengthened Codex mismatch/no-plugin no-install/no-launch assertions and run focused front-door/full/race gates
+  Focused run passed 13/13; `go test ./internal/cli -count=1` passed 222 tests; `go test ./...` and `go test ./... -race` each passed 1199 tests in 15 packages; `gofmt -w ./cmd ./internal` left the code worktree clean.
+- DONE: run a detached adversarial audit for the front-door launcher surface and report any Material findings
+  Detached checkout under `.audit/frontdoor-audit`: Codex install-on-failure mutation failed 4/4 targeted tests, Claude no-plugin-without-install mutation failed 3 targeted assertions, and Claude mismatch-install mutation failed `TestClaudeFrontDoorFailFastOnMismatch`; no Material findings remain.
+
+### Summary
+
+Cycle 2 validation reproduced AC-1 and AC-2 with executable front-door tests and confirmed the implementation branch stays clean under focused, full, race, and formatting gates. The detached adversarial audit specifically re-tested the prior Codex test-strength gap and found the strengthened assertions now catch install attempts on Codex mismatch and no-plugin paths. Recommendation: PASSED.
