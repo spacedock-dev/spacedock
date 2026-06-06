@@ -1,13 +1,13 @@
 # Fresh-install journey
 
 This walks a fresh install of Spacedock end to end on a clean Mac, naming the
-observable command at each step and the output you should see. There are two
-install lanes:
+observable command at each step and the output you should see. After the
+`v0.20.0` main flip, there are two install lanes:
 
-- **Released lane (brew)** — the published, tagged release. Available only after
-  the first tagged release is cut.
-- **Dev lane (`--plugin-dir`)** — a source build from `next`. The captain's
-  primary development workflow today.
+- **Stable lane (`main`)** — the published, tagged release. Homebrew artifacts
+  and marketplace plugin installs resolve from `main`.
+- **Dev-only lane (`next` + `--plugin-dir`)** — a source build from `next`, used
+  for development and pre-stable publishing tests.
 
 Each documented command is one you can run and observe the stated output.
 
@@ -17,19 +17,19 @@ Spacedock is two pieces that install separately:
 
 1. **The `spacedock` binary** — the launcher and contract gate.
 2. **The host plugin** (`spacedock:first-officer` / `spacedock:ensign` skills and
-   named agents) — loaded by Claude Code / Codex. The released lane installs it
-   through the host's marketplace; the dev lane loads it from your checkout with
-   `--plugin-dir`.
+   named agents) — loaded by Claude Code / Codex. The stable lane installs it
+   through the host's marketplace from `main`; the dev lane loads it from your
+   checkout with `--plugin-dir`.
 
 [safehouse](https://agent-safehouse.dev) is a separate runtime dependency used
 to sandbox launches. It is NOT installed by either lane — install it yourself
 when you want sandboxed runs.
 
-## Released lane (brew)
+## Stable lane (`main` + brew)
 
-> The brew lane is available only after the first tagged release. Until then the
-> formula ships a placeholder url + sha256 and `brew install` will not fetch a
-> real binary — use the dev lane below.
+> The stable lane is available after `v0.20.0` is cut from `main`. Before that
+> flip, the formula may still carry placeholder release data — use the dev-only
+> lane below.
 
 1. **Install the binary.**
 
@@ -61,9 +61,9 @@ when you want sandboxed runs.
    spacedock install --host claude
    ```
 
-   Adds the `spacedock-dev/spacedock` marketplace plugin for Claude Code, then
-   runs the contract doctor. The published plugin carries
-   `requires-contract: ">=1,<2"` so the doctor reports
+   Adds the `spacedock-dev/spacedock` marketplace plugin for Claude Code from
+   the stable `main` lane, then runs the contract doctor. The published plugin
+   carries `requires-contract: ">=1,<2"` so the doctor reports
    `OK: binary contract 1 satisfies plugin range >=1,<2.`
 
 4. **Launch.**
@@ -77,19 +77,37 @@ when you want sandboxed runs.
    spacedock:first-officer`. When a `.safehouse` profile is present in the
    working directory the launch is wrapped through safehouse.
 
-## Dev lane (`--plugin-dir`)
+## Upgrade and skew checks
+
+`spacedock doctor` is the compatibility source of truth. When it reports a
+stale installed plugin on the stable lane, rerun:
+
+```bash
+spacedock install --host claude
+```
+
+That refreshes the released plugin from `main` once the `0.20.0` lane exists. If
+the `spacedock` binary itself is missing, install the binary first with Homebrew,
+then run `spacedock install --host claude`.
+
+The `0.20.0` release still owes isolated upgrade-path confirmation for old
+`0.12.x` plugins with no usable binary and for `0.19.x` binary/plugin skew.
+Until that gate lands, docs should not promise automatic recovery for those
+cases.
+
+## Dev-only lane (`next` + `--plugin-dir`)
 
 This lane builds from source and loads the repo's own vendored plugin straight
 from disk — no marketplace install, and `--plugin-dir` relaxes the contract gate
 because the local checkout supersedes any installed plugin.
 
-`next` has no release artifact — the release pipeline triggers on `v*` tags
-only, so there is no `brew install …@next`. The `@next` lane is a source build.
-Three source routes, each with different version-stamp behavior:
+`next` has no stable release artifact, so there is no `brew install ...@next`.
+The `@next` lane is a source-build or dev-publish path. Three source routes,
+each with different version-stamp behavior:
 
 | Route | Command | `spacedock --version` reports |
 |---|---|---|
-| Local checkout (recommended) | `git clone … && go build -o spacedock ./cmd/spacedock` | the default `Version` (unstamped), `(contract 1)` correct |
+| Local checkout (recommended) | `git clone --branch next https://github.com/spacedock-dev/spacedock && cd spacedock && go build -o spacedock ./cmd/spacedock` | the default `Version` (unstamped), `(contract 1)` correct |
 | Toolchain fallback | `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next` | the default `Version` (unstamped — `go install` does not pass release ldflags), NOT a git-describe pre-release identifier |
 | Dev snapshot | `goreleaser release --snapshot --clean` | a snapshot-stamped tarball, not published |
 
@@ -99,7 +117,7 @@ yield a stamped version.
 1. **Clone and build.**
 
    ```bash
-   git clone https://github.com/spacedock-dev/spacedock
+   git clone --branch next https://github.com/spacedock-dev/spacedock
    cd spacedock
    go build -o spacedock ./cmd/spacedock
    ```

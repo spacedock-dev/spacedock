@@ -1,41 +1,89 @@
 # Releasing Spacedock
 
-Releases are cut from `next` (the source of truth). `origin/main` is vestigial —
-do not push or merge to it. A release is a `vX.Y.Z` annotated-tag push, which
-triggers `.github/workflows/release.yml`.
+This document describes the post-main-flip release lane. Starting with
+`v0.20.0`, stable releases are cut from `main`; `next` remains a dev-only branch
+for source builds and pre-stable publishing tests. Do not present `next` as the
+stable marketplace source after the flip.
 
-## What the tag push does
+## 0.20.0 Main Flip
 
-`release.yml` runs one goreleaser job on `macos-latest` that:
+The `0.20.0` release is the branch transition. It must not ship until the release
+gate fixes, runtime-live checks, README/install reconciliation, and upgrade-path
+confirmation have passed.
 
-- cross-builds the darwin arm64 + amd64 tarballs and `checksums.txt`, stamping
-  `git describe --tags` into `internal/cli.Version` (so the binary reports the
-  release version);
-- publishes the GitHub Release with those assets;
-- bumps the `spacedock-dev/homebrew-tap` cask (via the `HOMEBREW_TAP_TOKEN`
-  secret — a PAT, since the default `GITHUB_TOKEN` can't write cross-repo);
-- stamps the plugin manifests' `version` on `next`
-  (`spacedock-release stamp-version`, idempotent).
-
-Pushing the tag is therefore by itself sufficient to stamp `next` — the manual
-bump in the steps below just pre-stamps (release.yml then finds it already done
-and no-ops). Its real value is producing a reviewable annotated-tag changelog
-before publishing.
-
-## Cutting a release
-
-1. Ensure all release content is merged to `next`. Choose the version `X.Y.Z`.
-
-2. Create a release worktree off `next`:
+1. Record the current pre-v1 `origin/main` SHA, then archive it:
 
    ```bash
-   git worktree add .worktrees/release-X.Y.Z -b release/X.Y.Z origin/next
+   git fetch origin main next
+   preflip_main="$(git rev-parse origin/main)"
+   git tag -a v0-archived "$preflip_main" -m "archive pre-v1 main before 0.20.0 flip"
+   git push origin v0-archived
+   ```
+
+2. Prepare the release line from `origin/next`. The release-prep commit must
+   stamp `0.20.0`, move stable marketplace references to `main`, and remove the
+   released-binary install pin to `next`. Keep any dev-only `next` publish path
+   separate.
+
+   ```bash
+   git worktree add .worktrees/release-0.20.0 -b release/0.20.0 origin/next
+   ```
+
+3. Replace `origin/main` with the prepared line using a guarded update. The
+   lease must name the pre-flip `main` SHA recorded in step 1:
+
+   ```bash
+   git push origin --force-with-lease=main:"$preflip_main" release/0.20.0:main
+   ```
+
+   Do not delete `next`. After the flip, `main` is the stable branch and `next`
+   is the dev-only branch.
+
+4. Cut and push the annotated `v0.20.0` tag from the `main` release line:
+
+   ```bash
+   git fetch origin main
+   git switch release/0.20.0
+   git reset --hard origin/main
+   git tag -a v0.20.0 -F <changelog-file>
+   git push origin v0.20.0
+   ```
+
+Before pushing the tag, verify `.github/workflows/release.yml` and
+`.goreleaser.yaml` no longer stamp or pin the stable release to `next`. Those
+release-mechanics changes are part of the main-flip release work, not this docs
+reconciliation.
+
+## What the Tag Push Does
+
+Once the main-flip release mechanics are in place, `release.yml` runs one
+goreleaser job on `macos-latest` that:
+
+- cross-builds the darwin arm64 and amd64 tarballs plus `checksums.txt`,
+  stamping `git describe --tags` into `internal/cli.Version`;
+- publishes the GitHub Release with those assets;
+- bumps the `spacedock-dev/homebrew-tap` cask via `HOMEBREW_TAP_TOKEN`;
+- stamps the plugin manifests' `version` on `main`;
+- keeps the marketplace entry serving the stable plugin from `main`.
+
+The tag push is therefore enough to publish the stable release once the release
+config targets `main`. A manual release-prep commit is still useful because it
+produces a reviewable annotated-tag changelog and manifest diff before the tag
+is pushed.
+
+## Cutting a Stable Release After 0.20.0
+
+1. Ensure all release content is merged to `main`. Choose the version `X.Y.Z`.
+
+2. Create a release worktree off `main`:
+
+   ```bash
+   git worktree add .worktrees/release-X.Y.Z -b release/X.Y.Z origin/main
    ```
 
 3. Bump the version stamps with the release tool, then commit. `stamp-version`
    writes the release `X.Y.Z` into the plugin manifests; `bump-calendar` advances
-   the marketplace entry's separate `0.0.YYYYMMDDNN` calendar key (the
-   `claude plugin update` re-pull key) — they stamp different files, so both run:
+   the marketplace entry's separate `0.0.YYYYMMDDNN` calendar key:
 
    ```bash
    go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
@@ -46,14 +94,14 @@ before publishing.
 4. Write a changelog. Summarize the commits since the last tag into plain text:
 
    ```bash
-   git log $(git describe --tags --abbrev=0 origin/next)..HEAD --oneline
+   git log $(git describe --tags --abbrev=0 origin/main)..HEAD --oneline
    ```
 
-   One sentence naming the release theme, then user-value-led `- ` bullets (lead
-   with what upgrading gives you). Ignore workflow-state churn
+   One sentence names the release theme, then user-value-led `- ` bullets name
+   what upgrading gives users. Ignore workflow-state churn
    (dispatch/advance/archive/mod-block/pr/report commits).
 
-5. Create the annotated tag (local, nothing pushed):
+5. Create the annotated tag locally:
 
    ```bash
    git tag -a vX.Y.Z -F <changelog-file>
@@ -63,19 +111,17 @@ before publishing.
 
    ```bash
    git show vX.Y.Z
-   git diff origin/next..release/X.Y.Z
+   git diff origin/main..release/X.Y.Z
    ```
 
    To amend the changelog: `git tag -d vX.Y.Z` then re-tag.
 
-7. Publish (after confirmation):
+7. Publish after confirmation:
 
    ```bash
-   git push origin release/X.Y.Z:next   # fast-forwards next with the stamp
-   git push origin vX.Y.Z               # triggers release.yml
+   git push origin release/X.Y.Z:main
+   git push origin vX.Y.Z
    ```
-
-   NEVER push `origin/main`.
 
 8. Clean up:
 
@@ -84,10 +130,20 @@ before publishing.
    git branch -d release/X.Y.Z
    ```
 
+## Dev-Only `next` Publishing
+
+Keep `next` for development. Source builds may use
+`go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
+checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
+bump the marketplace calendar key for dev testers.
+
+Do not send stable users to `next`. If a command or manifest uses `@next`, it is
+a dev-only path.
+
 ## Notes
 
-- Don't stamp the version via a pull request; the release branch + annotated tag
-  IS the mechanism.
+- Do not stamp the version via a pull request; the release branch and annotated
+  tag are the release mechanism.
 - macOS binaries are adhoc-signed, not yet notarized; the Homebrew cask's
   postflight strips the `com.apple.quarantine` xattr as the interim Gatekeeper
   fix until Developer-ID notarization lands.

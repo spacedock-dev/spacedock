@@ -1,6 +1,11 @@
 # Spacedock v1
 
-Spacedock v1 is the Go launcher and compatibility bridge for the next Spacedock command surface.
+Spacedock runs multi-step agent work through plain-text workflows. You define
+the stages, Spacedock dispatches the right agent for each stage, and the work
+record lives on disk so a long task can survive context limits and resume later.
+
+This repository contains the Go launcher and compatibility bridge for the next
+Spacedock command surface.
 
 The first implementation target is conservative:
 
@@ -16,7 +21,8 @@ The development workflow for this repo lives in `docs/dev/README.md`. Runtime en
 Two lanes — see [`docs/install-journey.md`](docs/install-journey.md) for the
 step-by-step journey with the observable output at each step.
 
-**Released lane (brew)** — available after the first tagged release:
+**Stable lane (`main`)** — starting with `v0.20.0`, tagged releases, Homebrew
+artifacts, and marketplace plugin installs come from `main`:
 
 ```bash
 brew tap spacedock-dev/homebrew-tap
@@ -25,14 +31,15 @@ spacedock install --host claude
 ```
 
 The no-tap one-liner `brew install spacedock-dev/homebrew-tap/spacedock` is
-equivalent.
+equivalent. In the stable lane, `spacedock install` resolves the released
+marketplace plugin from `spacedock-dev/spacedock` on `main`, not from `next`.
 
-**Dev lane (`--plugin-dir`)** — source build from `next`, the primary dev
-workflow (`next` has no release artifact — the pipeline triggers on `v*` tags
-only, so `@next` is a source build, not brew):
+**Dev-only lane (`next` + `--plugin-dir`)** — source build from `next`, the
+primary development workflow. `next` has no Homebrew artifact, and `@next` is a
+source-build or dev-publish path, not the stable install path:
 
 ```bash
-git clone https://github.com/spacedock-dev/spacedock
+git clone --branch next https://github.com/spacedock-dev/spacedock
 cd spacedock
 go build -o spacedock ./cmd/spacedock
 ./spacedock claude --plugin-dir "$PWD" -- "your task"
@@ -48,9 +55,10 @@ plugin is out of date (predates this binary's contract), reinstall it:
 spacedock install --host claude
 ```
 
-`spacedock install` reinstalls from `spacedock-dev/spacedock@next`, replacing a
-stale already-installed plugin (it uninstalls before installing, since a plain
-`plugin install` no-ops when the plugin is already present).
+On the stable lane, `spacedock install` refreshes the released plugin from
+`main`. The old-plugin/no-binary and binary/plugin-skew journeys still need
+their release-gate confirmation before the `0.20.0` flip; this docs update does
+not claim those upgrade paths are automatic yet.
 
 [safehouse](https://agent-safehouse.dev) is a separate runtime dependency for
 sandboxed launches — not installed by either lane. A `.safehouse` profile in the
