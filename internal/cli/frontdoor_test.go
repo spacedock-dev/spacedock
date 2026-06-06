@@ -400,11 +400,46 @@ func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("exit = 0, want non-zero on mismatch")
 	}
+	if len(fake.installCmds) != 0 {
+		t.Fatalf("install seam invoked on codex mismatch: %v", fake.installCmds)
+	}
 	if fake.launchedArg != nil {
 		t.Fatalf("launch seam invoked on mismatch: %v", fake.launchedArg)
 	}
 	if !strings.Contains(stderr.String(), "too-old-binary") {
 		t.Fatalf("stderr missing pinned remedy: %q", stderr.String())
+	}
+}
+
+func TestCodexFrontDoorNoPluginFailsFastWithoutInstalling(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "no-such-dir", ".codex-plugin", "plugin.json")
+	cases := []struct {
+		name     string
+		manifest string
+	}{
+		{name: "empty manifest", manifest: ""},
+		{name: "missing manifest", manifest: missing},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tc.manifest}
+			var stdout, stderr bytes.Buffer
+
+			code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code == 0 {
+				t.Fatalf("exit = 0, want non-zero when codex has no plugin")
+			}
+			if len(fake.installCmds) != 0 {
+				t.Fatalf("install seam invoked on codex no-plugin path: %v", fake.installCmds)
+			}
+			if fake.launchedArg != nil {
+				t.Fatalf("launch seam invoked on codex no-plugin path: %v", fake.launchedArg)
+			}
+			if !strings.Contains(stderr.String(), "codex plugin") {
+				t.Fatalf("stderr missing codex no-plugin remedy: %q", stderr.String())
+			}
+		})
 	}
 }
 
