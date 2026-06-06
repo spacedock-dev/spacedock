@@ -36,9 +36,8 @@ var acHeaderRe = regexp.MustCompile(`^\*\*AC-`)
 // clause taken to block end.
 var proofMarkerRe = regexp.MustCompile(`(?i)(verified by|oracle:|proof:|end state[:.])`)
 
-// quotedSpanRe matches every double-quoted span (`"..."`) and backtick-fenced
-// span (`` `...` ``) so a quoted example of the antipattern is excluded from
-// the self-phrase match.
+// quotedSpanRe matches every double-quoted span and every backtick-fenced span
+// so a quoted example of the antipattern is excluded from the self-phrase match.
 var quotedSpanRe = regexp.MustCompile("\"[^\"]*\"|`[^`]*`")
 
 // selfPhraseRes are the case-insensitive self-reference phrases the

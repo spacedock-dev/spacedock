@@ -13,7 +13,7 @@ import (
 // TestNoSilentYAMLValueDrop walks every index.md fixture under testdata/,
 // extracts each top-level frontmatter line's raw post-`:` substring, parses the
 // file through ParseFrontmatter, and asserts that no key whose raw value is
-// non-empty (and not an explicit empty quoted scalar `""` / `''`) decodes to
+// non-empty (and not an explicit empty quoted scalar) decodes to
 // the empty string. The canonical failure is `pr: #N` — yaml.v3 treats `#N` as
 // a comment and drops the value silently. The writer-quoting policy in
 // mutate.go (needsExplicitQuoting + setScalarValue) prevents this on every

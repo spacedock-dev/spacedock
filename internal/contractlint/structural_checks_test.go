@@ -1,0 +1,393 @@
+// ABOUTME: The ONLY legal instruction-file reads in tests — structural checks a
+// ABOUTME: machine can see (ref-closure, frontmatter-validity, structural-absence, dedup, no-machine-dependency).
+package contractlint
+
+import (
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+)
+
+// This file is the single quarantined read path the boundary guard exempts. Every
+// check here is STRUCTURAL — it catches a defect a machine can see without reading
+// prose for meaning. No check asserts an instruction file contains its own prose
+// (prose-grep), and none asserts the prose matches a code value as a stand-in for a
+// behavior test (code-bound). See boundary_guard_test.go for the full policy.
+
+// userSkills is the published user-skill surface: each owns a SKILL.md the host
+// discovers. The test-only `integration` package is deliberately absent.
+var userSkills = []string{
+	"commission", "debrief", "refit", "ensign",
+	"first-officer", "using-claude-team", "present-gate", "feedback-rejection-flow",
+}
+
+// skillsRoot is the shipped skill tree under test.
+func skillsRoot(t *testing.T) string {
+	t.Helper()
+	return filepath.Join(repoRoot(t), "skills")
+}
+
+// frontmatter returns the YAML frontmatter block (between the leading `---` and the
+// next `---`) and whether the document opened with one.
+func frontmatter(doc string) (string, bool) {
+	if !strings.HasPrefix(doc, "---\n") {
+		return "", false
+	}
+	rest := doc[len("---\n"):]
+	end := strings.Index(rest, "\n---")
+	if end < 0 {
+		return "", false
+	}
+	return rest[:end], true
+}
+
+// TestUserSkillsParseWithFrontmatter is a frontmatter-VALIDITY check: each user
+// skill ships a SKILL.md whose YAML frontmatter block parses and declares a `name`
+// and a `description` key. A malformed or keyless frontmatter block fails host
+// discovery — a real structural defect, not a prose property.
+func TestUserSkillsParseWithFrontmatter(t *testing.T) {
+	root := skillsRoot(t)
+	for _, skill := range userSkills {
+		path := filepath.Join(root, skill, "SKILL.md")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("user skill %q has no SKILL.md at %s: %v", skill, path, err)
+			continue
+		}
+		fm, ok := frontmatter(string(data))
+		if !ok {
+			t.Errorf("%s/SKILL.md has no parseable YAML frontmatter block", skill)
+			continue
+		}
+		if !frontmatterHasKey(fm, "name") {
+			t.Errorf("%s/SKILL.md frontmatter declares no `name` key", skill)
+		}
+		if !frontmatterHasKey(fm, "description") {
+			t.Errorf("%s/SKILL.md frontmatter declares no `description` key", skill)
+		}
+	}
+}
+
+// frontmatterHasKey reports whether a top-level `key:` line is declared in a parsed
+// frontmatter block. Structural (a declared key), not a prose match on its value.
+func frontmatterHasKey(fm, key string) bool {
+	prefix := key + ":"
+	for _, line := range strings.Split(fm, "\n") {
+		if strings.HasPrefix(line, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// referenceRe matches the two reference-include forms a SKILL.md uses: an
+// `@references/foo.md` directive and a bare `references/foo.md` read path.
+var referenceRe = regexp.MustCompile(`@?(references/[A-Za-z0-9_./-]+\.md)`)
+
+// TestUserSkillReferenceClosureResolves is a ref-CLOSURE check: every
+// `@references/...md` / `references/...md` path mentioned in a user SKILL.md
+// resolves to a real file on disk under that skill's directory. A dangling
+// reference (a ported skill pointing at a path that does not exist) is a real
+// structural defect the host would hit at load time. Brace-placeholder template
+// paths resolve against their concrete siblings.
+func TestUserSkillReferenceClosureResolves(t *testing.T) {
+	root := skillsRoot(t)
+	for _, skill := range userSkills {
+		skillDir := filepath.Join(root, skill)
+		data, err := os.ReadFile(filepath.Join(skillDir, "SKILL.md"))
+		if err != nil {
+			t.Errorf("%s: %v", skill, err)
+			continue
+		}
+		for _, m := range referenceRe.FindAllStringSubmatch(string(data), -1) {
+			rel := m[1]
+			if strings.Contains(rel, "{") {
+				parent := filepath.Join(skillDir, filepath.Dir(rel))
+				glob, _ := filepath.Glob(filepath.Join(parent, "*.md"))
+				if len(glob) == 0 {
+					t.Errorf("%s: templated reference %q has no concrete .md under %s", skill, rel, parent)
+				}
+				continue
+			}
+			if _, err := os.Stat(filepath.Join(skillDir, rel)); err != nil {
+				t.Errorf("%s: dangling reference %q (resolved %s): %v", skill, rel, filepath.Join(skillDir, rel), err)
+			}
+		}
+	}
+}
+
+// piRuntimeAdapters are the Pi runtime adapter references each host-aware skill
+// must ship as a loadable file on disk.
+var piRuntimeAdapters = []struct{ skill, ref string }{
+	{skill: "first-officer", ref: "references/pi-first-officer-runtime.md"},
+	{skill: "ensign", ref: "references/pi-ensign-runtime.md"},
+}
+
+// TestPiRuntimeAdaptersResolveOnDisk is a ref-CLOSURE check: each declared Pi
+// runtime adapter resolves to a real file on disk. (The retired prose-grep half —
+// asserting the SKILL.md advertises the ref string — is gone; that the file LOADS
+// is the structural fact, proven by os.Stat.)
+func TestPiRuntimeAdaptersResolveOnDisk(t *testing.T) {
+	root := skillsRoot(t)
+	for _, tc := range piRuntimeAdapters {
+		path := filepath.Join(root, tc.skill, tc.ref)
+		if _, err := os.Stat(path); err != nil {
+			t.Errorf("%s: Pi runtime adapter %s is not loadable on disk: %v", tc.skill, tc.ref, err)
+		}
+	}
+}
+
+// retiredPluginPrivatePaths are the plugin-private status paths the shipped
+// instruction surface must NEVER name once it calls `spacedock status`. A
+// re-introduced reference silently breaks the launcher contract on a fresh install.
+var retiredPluginPrivatePaths = []string{
+	"skills/commission/bin/status",
+	"commission/bin/status",
+	"{spacedock_plugin_dir}",
+	".agents/plugins/marketplace.json",
+}
+
+// TestRetiredPluginPrivatePathsAbsent is a structural-ABSENCE check: no shipped
+// instruction file (skills/**/*.md excluding the test-only integration dir, plus
+// the canonical mods/) names a retired plugin-private status path. No positive
+// behavioral seam can prove an absence; a re-introduced path is a real defect a
+// fresh install would hit. (Consolidates the three prior near-duplicate
+// plugin-private-path absence checks into one read path.)
+func TestRetiredPluginPrivatePathsAbsent(t *testing.T) {
+	files := shippedInstructionMarkdown(t)
+	if len(files) == 0 {
+		t.Fatal("walked zero shipped instruction files — scope bug; the absence check would pass vacuously")
+	}
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		content := string(data)
+		for _, p := range retiredPluginPrivatePaths {
+			if strings.Contains(content, p) {
+				t.Errorf("%s names retired plugin-private path %q — it does not exist on a fresh install", path, p)
+			}
+		}
+	}
+}
+
+// TestNoUnexpectedModHookOrPRMergeIntroduced is a structural-ABSENCE check over
+// the shipped surface: outside the pre-existing hook convention docs and the
+// canonical pr-merge mod, instruction files must not introduce lifecycle-mod
+// headings or PR-merge invocations. A new `## Hook:` mod or PR-merge command in a
+// skill silently changes dispatch lifecycle, so the allowed files are explicit.
+func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
+	allowedHookFiles := map[string]bool{
+		filepath.Join("mods", "pr-merge.md"):                                                      true,
+		filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"): true,
+		filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"):    true,
+	}
+	allowedPRMergeFiles := map[string]bool{
+		filepath.Join("mods", "pr-merge.md"): true,
+	}
+	prMergeMarkers := []string{"gh pr merge", "git merge --no-ff", "git merge --ff-only main"}
+	root := repoRoot(t)
+	for _, path := range shippedInstructionMarkdown(t) {
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			t.Errorf("rel %s: %v", path, err)
+			continue
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		content := string(data)
+		if strings.Contains(content, "## Hook:") && !allowedHookFiles[rel] {
+			t.Errorf("%s introduces a lifecycle hook heading outside the allowed hook surfaces", rel)
+		}
+		for _, marker := range prMergeMarkers {
+			if strings.Contains(content, marker) && !allowedPRMergeFiles[rel] {
+				t.Errorf("%s introduces PR-merge invocation %q outside the canonical pr-merge mod", rel, marker)
+			}
+		}
+	}
+}
+
+// TestStartupGateGuidanceHasSingleSource is a DEDUP / single-source check: the
+// startup-gate abort guidance lives in exactly ONE prose file
+// (first-officer-shared-core.md), and agents/first-officer.md delegates rather than
+// mirroring it. A second copy would let the two surfaces drift — a real structural
+// defect (not a prose property): the count of files carrying the gate markers must
+// be exactly one.
+func TestStartupGateGuidanceHasSingleSource(t *testing.T) {
+	root := repoRoot(t)
+	markers := []string{"Contract version gate", "per-class remedy", "spacedock doctor"}
+
+	var sources []string
+	for _, tree := range []string{"skills", "agents"} {
+		base := filepath.Join(root, tree)
+		err := filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() || filepath.Ext(p) != ".md" {
+				return nil
+			}
+			b, readErr := os.ReadFile(p)
+			if readErr != nil {
+				return readErr
+			}
+			text := string(b)
+			for _, m := range markers {
+				if strings.Contains(text, m) {
+					rel, _ := filepath.Rel(root, p)
+					sources = append(sources, rel)
+					return nil
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("walk %s: %v", tree, err)
+		}
+	}
+
+	const sole = "skills/first-officer/references/first-officer-shared-core.md"
+	if len(sources) != 1 || sources[0] != sole {
+		t.Errorf("startup-gate prose has sources %v, want exactly [%s] (single source of truth)", sources, sole)
+	}
+}
+
+// homeRootedClaudeRe matches only HOME-rooted personal-config forms: a `~/.claude`
+// tilde path, or `$HOME` / `os.UserHomeDir` joined with `.claude` on the same line.
+// It does NOT match a project-relative `.claude/` path, which exists in any checkout
+// and is portable.
+var homeRootedClaudeRe = regexp.MustCompile(`~/\.claude|\$HOME[^\n]*\.claude|os\.UserHomeDir[^\n]*\.claude`)
+
+// interpreterRe matches an interpreter-on-PATH dependency: a `python`/`python3`
+// shell-out or a `commission/bin/...` plugin-private helper invocation.
+var interpreterRe = regexp.MustCompile(`\bpython3?\b|commission/bin`)
+
+// machineDependentPaths are plugin-private absolute paths that do not exist on a
+// fresh install.
+var machineDependentPaths = []string{
+	"skills/commission/bin/status",
+	"{spacedock_plugin_dir}",
+	".agents/plugins/marketplace.json",
+}
+
+// isClaudeAdapter reports whether a shipped file is a Claude-host coupling surface
+// (a claude-*-runtime.md adapter or the Claude-only using-claude-team skill), where
+// a `~/.claude/teams` read is the legitimate quarantined coupling. ONLY the
+// personal-config check excludes these; the interpreter / machine-path checks apply.
+func isClaudeAdapter(path string) bool {
+	base := filepath.Base(path)
+	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
+		return true
+	}
+	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md"))
+}
+
+// TestShippedSurfaceHasNoHiddenMachineDependency is a no-MACHINE-DEPENDENCY
+// structural-absence check: the shipped instruction surface names none of three
+// non-portable markers — a HOME-rooted personal-config path, an interpreter-on-PATH
+// shell-out, or a plugin-private absolute path. A clean install must run for any
+// user; a re-introduced marker is a real defect that breaks a fresh install. The
+// empty-walk guard keeps it from passing vacuously.
+func TestShippedSurfaceHasNoHiddenMachineDependency(t *testing.T) {
+	files := shippedInstructionMarkdown(t)
+	if len(files) == 0 {
+		t.Fatal("walked zero shipped instruction files — scope bug; the portability check would pass vacuously")
+	}
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		content := string(data)
+		if !isClaudeAdapter(path) {
+			if m := homeRootedClaudeRe.FindString(content); m != "" {
+				t.Errorf("%s carries a HOME-rooted personal-config dependency %q — a clean install has no such file", path, m)
+			}
+		}
+		if m := interpreterRe.FindString(content); m != "" {
+			t.Errorf("%s carries an interpreter-on-PATH dependency %q — the dispatch path must not assume an installed interpreter/helper", path, m)
+		}
+		for _, p := range machineDependentPaths {
+			if strings.Contains(content, p) {
+				t.Errorf("%s bakes in plugin-private path %q — it does not exist on a fresh install", path, p)
+			}
+		}
+	}
+}
+
+// TestPortabilityCheckDiscriminatesHostSpecific is the DISCRIMINATOR control for
+// the no-machine-dependency check: it proves — against the real shipped surface —
+// that the legitimately host-specific forms are present yet not flagged, so the
+// absence check is not vacuous. The Claude adapter's `~/.claude/teams` read is
+// present (the adapter exclusion is load-bearing), and the project-relative
+// `.claude/` paths are present yet the HOME-rooted regex does not match them.
+func TestPortabilityCheckDiscriminatesHostSpecific(t *testing.T) {
+	files := shippedInstructionMarkdown(t)
+	var sawAdapterHomeClaude, sawProjectRelativeClaude bool
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		content := string(data)
+		if isClaudeAdapter(path) && strings.Contains(content, "~/.claude") {
+			sawAdapterHomeClaude = true
+		}
+		if !isClaudeAdapter(path) {
+			for _, line := range strings.Split(content, "\n") {
+				if !strings.Contains(line, ".claude/") {
+					continue
+				}
+				if strings.Contains(line, "~/.claude") || strings.Contains(line, "$HOME") {
+					continue
+				}
+				sawProjectRelativeClaude = true
+				if homeRootedClaudeRe.MatchString(line) {
+					t.Errorf("%s: project-relative .claude line wrongly matched the HOME-rooted regex (false positive): %q", path, strings.TrimSpace(line))
+				}
+			}
+		}
+	}
+	if !sawAdapterHomeClaude {
+		t.Error("positive control missing: no Claude adapter carries a ~/.claude read — the adapter exclusion is no longer load-bearing")
+	}
+	if !sawProjectRelativeClaude {
+		t.Error("positive control missing: no shipped file carries a project-relative .claude/ path — the discriminator has nothing to discriminate")
+	}
+}
+
+// shippedInstructionMarkdown returns every markdown file under skills/ (excluding
+// the test-only integration dir) plus the canonical mods/ — the full shipped
+// instruction surface the structural-absence and portability checks walk. This is
+// the single instruction-surface walk for the quarantine package.
+func shippedInstructionMarkdown(t *testing.T) []string {
+	t.Helper()
+	root := repoRoot(t)
+	var out []string
+	walk := func(base string) {
+		filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() && d.Name() == "integration" {
+				return filepath.SkipDir
+			}
+			if !d.IsDir() && strings.HasSuffix(p, ".md") {
+				out = append(out, p)
+			}
+			return nil
+		})
+	}
+	walk(filepath.Join(root, "skills"))
+	walk(filepath.Join(root, "mods"))
+	return out
+}
