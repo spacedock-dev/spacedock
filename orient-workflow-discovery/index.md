@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-orient-workflow-discovery
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#309"
 ---
 
