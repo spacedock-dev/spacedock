@@ -183,3 +183,16 @@ The classification (Workflow wzj36glyp) found 37/61 instruction-file reads are b
 ### Summary
 
 Implemented the captain's re-scope as net removal: the marker permission-slip model and old AC-3/prose/code-bound lint files are gone, while the genuinely structural instruction-file reads now live in `internal/contractlint` behind a thin direct-read boundary guard. The code diff is 863 insertions / 4801 deletions, with old marker/sweep terms absent by `rg` and the final full suites passing at 1083 tests across 16 packages, including race. Two owed behavior-test concerns were not hidden behind lints: the dedicated pre-completion `TeamDelete` drive and the ev3e FO halt/sync/journey live-drive coverage remain explicit follow-ups.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify the old markNonAC/markCodeBoundInvariant model and AC-3 taint/prose/code-bound lint files are gone, and structural instruction reads live only in internal/contractlint.
+  HEAD `67c55b38`: `rg` for marker/taint helper names has 0 matches; `find` finds 0 `nonac_marker_test.go`; `git diff --name-status origin/next...HEAD` deletes the old HN/integration prose/code-bound lint files and adds only `internal/contractlint/*` for the remaining instruction-read checks.
+- DONE: Prove the thin boundary guard catches an out-of-quarantine instruction-file read, and confirm the kept structural checks are not prose-grep or code-bound behavior substitutes.
+  `go test ./internal/contractlint -v` passed 11 tests including planted guard controls; detached audit planted `internal/hostneutrality/audit_instruction_leak_test.go` and `TestNoInstructionReadsOutsideQuarantine` failed naming that offender. Kept checks are frontmatter/ref-closure/structural-absence/dedup/no-machine-dependency checks; the old prose/code-bound substitute files are deleted.
+- DONE: Run focused contractlint/hostneutrality/integration tests plus go test ./..., go test ./... -race, and a detached adversarial audit on the implementation HEAD.
+  `gofmt -w ./cmd ./internal` clean; `go test ./internal/contractlint` = 11 passed; `go test ./internal/hostneutrality ./skills/integration ./internal/contractlint` = 20 passed; `go test ./...` and `go test ./... -race` = 1083 passed in 16 packages; `spacedock status --workflow-dir docs/dev --validate` = VALID. Detached audit on a throwaway checkout of `67c55b38` caught planted out-of-quarantine read, gutted detector, missing skill frontmatter description, and retired plugin-private path; clean audit checkout then passed `go test ./internal/contractlint`.
+
+### Summary
+
+PASSED. The re-scoped implementation removes the marker permission-slip model and old AC-3/prose/code-bound instruction-read lint files, keeps only structural instruction-file checks in `internal/contractlint`, and proves the ban-by-default boundary guard with live RED controls. The detached adversarial audit refuted nothing material; all focused, full, race, formatting, and workflow-validation checks passed, and both the code worktree and state checkout were clean before this report append.
