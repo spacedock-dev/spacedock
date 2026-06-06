@@ -272,3 +272,16 @@ PASS on all three checklist items, each proven by RUNNING (never a grep over SKI
 ### Summary
 
 Closed the guard-strength fixback in commit f1ae2da1: the fixture now models the recency-truncation failure mode, and the extraction test mutation-proves that losing `ORDER BY status ASC` hides the OPEN frontier. The required focused and integration tests pass from the dispatched worktree, and the full repo/race gates pass. The required formatter also exposed two unstable doc-comment quote examples under `internal/status`; those comments were rewritten plainly so `gofmt -w ./cmd ./internal` stays readable and stable.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Reproduce the cycle-5 ordering guard: the fixture has enough newer answered rows that removing ORDER BY status ASC would truncate the OPEN frontier.
+  Temporarily removed `ORDER BY status ASC` from the shipped survey DECISIONS query; `go test ./skills/integration/ -run TestSurveyExtractionSurfacesClaudeSignals -count=1` failed as intended with `Test framework` missing from DECISIONS and the OPEN-frontier assertion firing, then the shipped query was restored.
+- DONE: Re-run the focused survey extraction test plus go test ./skills/integration/ and verify AC coverage remains intact.
+  Restored worktree results: focused extraction test = 1 passed; `go test ./skills/integration/` = 68 passed. Extra project gates also passed: `go test ./...` = 1201 passed and `go test ./... -race` = 1201 passed.
+- DONE: Check for unintended gofmt/comment churn from the required formatter and report whether it is relevant to the task.
+  `gofmt -w ./cmd ./internal` exited cleanly and left no diff. The `f1ae2da1` `internal/status` edits are comment-only quote-wording rewrites from the formatter/readability cleanup and are not relevant to survey behavior.
+
+### Summary
+
+PASSED. The cycle-5 fixture now regression-guards the load-bearing OPEN-first ordering: removing the sort key truncates the OPEN frontier and reds the focused test. The required focused, integration, full, and race test gates pass from the dispatched worktree, and the formatter produced no additional churn.
