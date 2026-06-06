@@ -1,7 +1,7 @@
 ---
 id: rbjkna5jem4vgj3vtv072gzq
 title: spacedock claude auto-installs the plugin when absent (--no-install opt-out)
-status: validation
+status: implementation
 source: "captain (2026-06-05) — friction F8: `spacedock claude` refuses to launch with no installed plugin, forcing the user to pass --skip-contract-check (a launch blocker). Captain direction: 'we need something simpler [than task 44]. maybe just install the plugin unless --no-install is specified in spacedock claude.' Interim relief; task 44 (bundle-into-binary) is the eventual structural fix but is deferred."
 score: "0.36"
 started: 2026-06-06T03:06:22Z
@@ -107,3 +107,7 @@ Implementation is committed on `spacedock-ensign/spacedock-claude-auto-install-p
 ### Summary
 
 Validation reproduced the main Claude behavior and the required baseline checks: `gofmt -w ./cmd ./internal` left the worktree clean, focused front-door tests passed, `go test ./...` passed, and `go test ./... -race` passed. Recommendation: REJECTED until the Codex regression scope is either narrowed or covered with an assertion that Codex mismatch/no-plugin paths do not invoke plugin installation.
+
+### Feedback Cycles
+
+**Cycle 1 - validation REJECTED (2026-06-06).** Route back to implementation for one Material test-strength gap. Claude no-plugin auto-install and `--no-install` behavior are proven, and Claude mismatch fail-fast is mutation-guarded. The remaining gap is Codex regression scope: a detached mutation adding `ops.Install("codex", ...)` on Codex mismatch stayed green. Required fixback: add or strengthen front-door tests so Codex mismatch/no-plugin paths assert no install invocation and no launch where applicable; keep Codex behavior compatible-or-fail and do not add Codex auto-install semantics. Re-run the focused front-door test set, `go test ./internal/cli`, `go test ./...`, `go test ./... -race`, and record evidence in a new implementation report.
