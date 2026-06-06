@@ -162,3 +162,16 @@ Recommendation: REJECTED. The delivered runtime/probe wording is scoped correctl
 ### Feedback Cycles
 
 **Cycle 1 - validation REJECTED (2026-06-06).** The runtime/probe wording is scoped correctly and focused/full/race gates passed, but the detached mutation audit found the proof is too weak: changing the runtime claim to say the worker is failed/closed/redispatched still leaves `go test ./internal/contractlint -run TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape -count=1` green. Required fixback: tighten the quarantined contractlint assertion so a negated terminal-lifecycle claim fails, preserve the foreground-wait scope and same-handle retry semantics, then re-run focused contractlint/runtime tests plus `go test ./...` and `go test ./... -race`.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Tighten `internal/contractlint` coverage so a negated terminal-lifecycle claim in the Codex foreground-wait runtime text fails: the section must not green-light wording that says Esc/operator interruption marks the worker failed, closes it, or redispatches it.
+  Evidence: code commit `24dc57ba` adds terminal-mutation controls and replaces token-presence checking with explicit negated lifecycle assertion; the pre-fix red run failed for both unsafe fixtures.
+- DONE: Preserve the accepted behavior: hint remains in explicit foreground-wait guidance only, same-handle retry remains intact, no blanket wait-after-dispatch wording, and the idle-notification probe recipe still treats operator interruption as a non-terminal foreground-wait return.
+  Evidence: no runtime/probe wording changed in cycle 2; focused contractlint/runtime tests passed and the only code diff is `internal/contractlint/codex_foreground_wait_shape_test.go`.
+- DONE: Re-run focused contractlint/runtime tests plus `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; record the mutation audit result and gates in the stage report.
+  Evidence: mutation audit changed the runtime claim to `worker is failed, closed, or redispatched` and `go test ./internal/contractlint -run TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape -count=1` failed as intended; after restore, focused tests passed, `gofmt -w ./cmd ./internal` ran, `go test ./...` passed 1131 tests in 16 packages, and `go test ./... -race` passed 1131 tests in 16 packages.
+
+### Summary
+
+Cycle 2 fixes the validation finding by making the quarantined contractlint proof reject affirmative terminal-lifecycle wording, not just require lifecycle words to appear. The accepted foreground-wait and probe text remain unchanged; the mutation audit now fails on the unsafe wording and the focused/full/race gates pass.
