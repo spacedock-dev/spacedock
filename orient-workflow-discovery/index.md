@@ -301,3 +301,16 @@ Material findings to fix before re-entering validation:
 5. Drop the unrelated comment-only churn in `internal/status/external_proof.go` and `internal/status/no_yaml_silent_drop_test.go`; it is not part of survey behavior and should not ride the 19 PR.
 
 Required fixback: rebase/reconcile with 4q if that lands first, remove or relocate the SKILL.md-reading tests according to the quarantine rule, preserve the meaningful behavior coverage by running code/fixtures rather than instruction prose, then rerun the focused survey tests plus `go test ./...` and `go test ./... -race`. The PR may remain open, but it must not merge until these 4q proof-policy violations are closed.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: remove or relocate the new survey SKILL.md-reading tests so no behavior proof parses instruction/prompt files outside the 4q contractlint quarantine
+  Code commit `484cb087`: survey extraction/scaffold tests now execute `skills/survey/bin/scan-project` and `skills/survey/bin/detect-scaffold`; `survey_comparison_test.go` was deleted, and survey registration moved into quarantined `internal/contractlint`.
+- DONE: preserve meaningful survey behavior coverage by running real code, fixtures, or live behavior instead of prose/template/code-bound lints over SKILL.md
+  Kept the production-shaped SQL fixture rows; focused survey tests pass (`6 passed`), and mutation-removing `ORDER BY status ASC` from the scan artifact reds the extraction test by truncating the OPEN frontier.
+- DONE: reconcile the 19 branch with 4q's contractlint shape, drop unrelated internal/status comment churn, and rerun focused survey tests plus go test ./... and go test ./... -race
+  Merged the 4q quarantine shape, removed the legacy instruction-surface lints, left `internal/status` clean in the PR diff, ran `gofmt -w ./cmd ./internal`, `go test ./skills/integration` = 14 passed, `go test ./internal/contractlint` = 12 passed, `go test ./...` = 1124 passed, final `go test ./... -race` = 1124 passed.
+
+### Summary
+
+Closed the 4q proof-policy rejection by moving survey's runnable scan/classifier logic out of `SKILL.md` and into executable artifacts that the skill invokes and the tests run. The SQL fixture remains the production-shaped data source, including the newer answered rows that prove OPEN-first ordering is load-bearing, while structural instruction reads are quarantined in `internal/contractlint`. Code branch `spacedock-ensign/orient-workflow-discovery` is pushed with commit `484cb087`.
