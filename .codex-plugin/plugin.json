@@ -1,6 +1,6 @@
 {
   "name": "spacedock",
-  "version": "0.19.5",
+  "version": "0.19.6",
   "description": "Turn directories of markdown files into structured workflows operated by AI agents",
   "author": {
     "name": "CL Kao"
