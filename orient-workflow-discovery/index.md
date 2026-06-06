@@ -1,7 +1,7 @@
 ---
 id: 19fhrfae24d221wzgqm4zarn
 title: Bring workflow-discovery into spacedock — orient on a project's implicit agent workflow as the front-door to commission
-status: validation
+status: implementation
 source: "captain (2026-06-05) — 'check the prototype orient skill in ~/.claude, this is the workflow discovery thing we should bring in.' Prototype at ~/.claude/skills/orient/SKILL.md."
 score: "0.33"
 started: 2026-06-05T19:10:17Z
@@ -287,3 +287,17 @@ Closed the guard-strength fixback in commit f1ae2da1: the fixture now models the
 ### Summary
 
 PASSED. The cycle-5 fixture now regression-guards the load-bearing OPEN-first ordering: removing the sort key truncates the OPEN frontier and reds the focused test. The required focused, integration, full, and race test gates pass from the dispatched worktree, and the formatter produced no additional churn.
+
+### Feedback Cycles
+
+**Cycle 5 - FO 4q review REJECTED at PR gate (#309, 2026-06-06).** CI remains stopped/cancelled per captain request. A post-4q review found the survey branch is not mergeable under the newly validated proof policy: tests must not read instruction/prompt files to prove prose, mine embedded scripts, or keep code-bound consistency lints as behavior substitutes. The surviving legal instruction-surface reads are structural only and live in `internal/contractlint` quarantine behind the boundary guard.
+
+Material findings to fix before re-entering validation:
+
+1. `skills/integration/survey_extraction_test.go` and `skills/integration/survey_scaffold_test.go` read `skills/survey/SKILL.md`, extract fenced bash blocks, and execute those blocks as the code under test. Under 4q this is still an instruction-file read outside quarantine and a code-bound SKILL.md test. Move the agentsview scan and scaffold classifier into real testable artifacts (for example a script/helper/fixture that the skill references or invokes) and have tests execute that artifact, not parse `SKILL.md`.
+2. `skills/integration/survey_comparison_test.go` is a `markNonAC` prose/template grep over `SKILL.md` and explicitly says the live behavior is elsewhere. Delete it or replace it with a real behavioral exercise that drives the synthesis/commission handoff and observes filled, differing output. Do not preserve the prose grep in `skills/integration`.
+3. `skills/integration/survey_registration_test.go` adds a structural SKILL.md frontmatter/discovery read in `skills/integration`. If this check is still needed, move it into `internal/contractlint` as a structural quarantine check and wire it into the boundary model; otherwise replace it with a host/launcher behavior test for `/spacedock:survey`.
+4. The `survey` exemption added to `skills/integration/portability_test.go` and the `survey` addition to `skill_surface_test.go` touch the legacy instruction-surface lint area that 4q is removing/relocating. Reconcile the branch with 4q's `internal/contractlint` shape instead of extending legacy lints.
+5. Drop the unrelated comment-only churn in `internal/status/external_proof.go` and `internal/status/no_yaml_silent_drop_test.go`; it is not part of survey behavior and should not ride the 19 PR.
+
+Required fixback: rebase/reconcile with 4q if that lands first, remove or relocate the SKILL.md-reading tests according to the quarantine rule, preserve the meaningful behavior coverage by running code/fixtures rather than instruction prose, then rerun the focused survey tests plus `go test ./...` and `go test ./... -race`. The PR may remain open, but it must not merge until these 4q proof-policy violations are closed.
