@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
 // fakeHost records every seam interaction and returns canned results so the
@@ -164,6 +166,10 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 	}
 }
 
+// TestClaudeFrontDoorFailFastOnMismatch (AC-2): a real version mismatch still
+// fails fast even without --no-install — auto-install must NOT paper over an
+// incompatibility. The verdict reaches runClaude's mismatch branch, not the
+// no-plugin branch, so no install is invoked and no launch is reached.
 func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 	var stdout, stderr bytes.Buffer
@@ -173,6 +179,9 @@ func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("exit = 0, want non-zero on mismatch")
 	}
+	if len(fake.installCmds) != 0 {
+		t.Fatalf("auto-install invoked over a mismatch: %v", fake.installCmds)
+	}
 	if fake.launchedArg != nil {
 		t.Fatalf("launch seam invoked on mismatch: %v", fake.launchedArg)
 	}
@@ -181,47 +190,92 @@ func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 	}
 }
 
-// TestClaudeFrontDoorUnresolvableManifestFailsFast: an unresolvable manifest
-// (no installed plugin) is NOT treated as compatible — the front door warns and
-// exits non-zero WITHOUT launching.
-func TestClaudeFrontDoorUnresolvableManifestFailsFast(t *testing.T) {
+// TestClaudeFrontDoorNoPluginAutoInstalls (AC-1a): with no installed plugin and
+// no flags the front door auto-installs the plugin then launches a working
+// session — the single command the user typed yields a working FO session
+// rather than refusing. Install-invocation and launch-reached are observed
+// behaviors recorded by the stub, not a string match.
+func TestClaudeFrontDoorNoPluginAutoInstalls(t *testing.T) {
 	fake := &fakeHost{manifest: ""} // no plugin found
 	var stdout, stderr bytes.Buffer
 
 	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
 
-	if code == 0 {
-		t.Fatalf("exit = 0, want non-zero when manifest unresolvable")
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 when no plugin → auto-install + launch (stderr=%q)", code, stderr.String())
 	}
-	if fake.launchedArg != nil {
-		t.Fatalf("launch seam invoked with unresolvable manifest: %v", fake.launchedArg)
+	if len(fake.installCmds) == 0 {
+		t.Fatalf("install seam not invoked: auto-install did not run")
 	}
-	if !strings.Contains(stderr.String(), "spacedock doctor") && !strings.Contains(stderr.String(), "spacedock install") {
-		t.Fatalf("stderr missing actionable remedy pointer: %q", stderr.String())
+	if fake.launchedArg == nil {
+		t.Fatalf("launch seam not invoked after auto-install")
 	}
 }
 
-// TestClaudeFrontDoorNonEmptyMissingManifestFailsFast: a host that reports a
-// non-empty installPath to a directory LACKING the plugin manifest must NOT
-// launch. The resolver returned a path, but the file does not exist — the gate
-// must reject the no-plugin-found verdict by inspecting the verdict, not the
-// doctor exit code (which is 0 for a non-fatal no-plugin report).
-func TestClaudeFrontDoorNonEmptyMissingManifestFailsFast(t *testing.T) {
-	missing := filepath.Join(t.TempDir(), "no-such-dir", ".claude-plugin", "plugin.json")
-	fake := &fakeHost{manifest: missing} // non-empty path, but the file is absent
+// TestClaudeFrontDoorNoPluginNoInstallRefuses (AC-1b): --no-install preserves
+// the old refuse-and-instruct behavior — no install, no launch, non-zero exit,
+// with the actionable instruct message on stderr.
+func TestClaudeFrontDoorNoPluginNoInstallRefuses(t *testing.T) {
+	fake := &fakeHost{manifest: ""} // no plugin found
 	var stdout, stderr bytes.Buffer
 
-	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+	code := runClaude(context.Background(), []string{"--no-install"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
 
 	if code == 0 {
-		t.Fatalf("exit = 0, want non-zero when resolved manifest path is missing")
+		t.Fatalf("exit = 0, want non-zero with --no-install and no plugin")
+	}
+	if len(fake.installCmds) != 0 {
+		t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
 	}
 	if fake.launchedArg != nil {
-		t.Fatalf("launch seam invoked with a missing manifest: %v", fake.launchedArg)
+		t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
 	}
-	if !strings.Contains(stderr.String(), "spacedock doctor") && !strings.Contains(stderr.String(), "spacedock install") {
-		t.Fatalf("stderr missing actionable remedy pointer: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "spacedock install") {
+		t.Fatalf("stderr missing actionable instruct message: %q", stderr.String())
 	}
+}
+
+// TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls: a host that reports a
+// non-empty installPath to a directory LACKING the plugin manifest is the
+// NoPluginFound verdict from a phantom installPath — the plugin genuinely is not
+// on disk, so the default auto-installs (a deliberate behavior change recorded in
+// ideation). --no-install preserves the refuse-and-instruct arm.
+func TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "no-such-dir", ".claude-plugin", "plugin.json")
+
+	t.Run("default auto-installs", func(t *testing.T) {
+		fake := &fakeHost{manifest: missing} // non-empty path, but the file is absent
+		var stdout, stderr bytes.Buffer
+
+		code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 when phantom manifest → auto-install + launch (stderr=%q)", code, stderr.String())
+		}
+		if len(fake.installCmds) == 0 {
+			t.Fatalf("install seam not invoked for a phantom (missing) manifest")
+		}
+		if fake.launchedArg == nil {
+			t.Fatalf("launch seam not invoked after auto-install for a phantom manifest")
+		}
+	})
+
+	t.Run("--no-install refuses", func(t *testing.T) {
+		fake := &fakeHost{manifest: missing}
+		var stdout, stderr bytes.Buffer
+
+		code := runClaude(context.Background(), []string{"--no-install"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+		if code == 0 {
+			t.Fatalf("exit = 0, want non-zero with --no-install and a phantom manifest")
+		}
+		if len(fake.installCmds) != 0 {
+			t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
+		}
+		if fake.launchedArg != nil {
+			t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
+		}
+	})
 }
 
 // TestGateRemedyNamesLiveInstallCommand: every gateHost remedy must point at a
@@ -244,8 +298,8 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			var stderr bytes.Buffer
-			if ok := gateHost(tc.fake, "claude", &stderr); ok {
-				t.Fatalf("gateHost = ok, want denied for %s", tc.name)
+			if v := gateHost(tc.fake, "claude", &stderr); v == contract.Compatible {
+				t.Fatalf("gateHost = Compatible, want denied for %s", tc.name)
 			}
 			remedy := stderr.String()
 			if !strings.Contains(remedy, "spacedock install") {
@@ -346,11 +400,46 @@ func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("exit = 0, want non-zero on mismatch")
 	}
+	if len(fake.installCmds) != 0 {
+		t.Fatalf("install seam invoked on codex mismatch: %v", fake.installCmds)
+	}
 	if fake.launchedArg != nil {
 		t.Fatalf("launch seam invoked on mismatch: %v", fake.launchedArg)
 	}
 	if !strings.Contains(stderr.String(), "too-old-binary") {
 		t.Fatalf("stderr missing pinned remedy: %q", stderr.String())
+	}
+}
+
+func TestCodexFrontDoorNoPluginFailsFastWithoutInstalling(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "no-such-dir", ".codex-plugin", "plugin.json")
+	cases := []struct {
+		name     string
+		manifest string
+	}{
+		{name: "empty manifest", manifest: ""},
+		{name: "missing manifest", manifest: missing},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tc.manifest}
+			var stdout, stderr bytes.Buffer
+
+			code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code == 0 {
+				t.Fatalf("exit = 0, want non-zero when codex has no plugin")
+			}
+			if len(fake.installCmds) != 0 {
+				t.Fatalf("install seam invoked on codex no-plugin path: %v", fake.installCmds)
+			}
+			if fake.launchedArg != nil {
+				t.Fatalf("launch seam invoked on codex no-plugin path: %v", fake.launchedArg)
+			}
+			if !strings.Contains(stderr.String(), "codex plugin") {
+				t.Fatalf("stderr missing codex no-plugin remedy: %q", stderr.String())
+			}
+		})
 	}
 }
 

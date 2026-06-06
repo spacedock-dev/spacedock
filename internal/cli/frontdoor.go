@@ -102,44 +102,50 @@ func executableFile(path string) bool {
 }
 
 // gateHost resolves the installed manifest for host and compares it against
-// CONTRACT_VERSION. It returns whether launch is permitted. Only a Compatible
-// verdict permits launch; everything else (a host-CLI error, no installed
-// plugin, a resolved-but-missing manifest, a mismatch, or a malformed range) is
-// NOT compatible — the front door's fail-fast job — so launch is denied with an
-// actionable message. The gate inspects the VERDICT, not a doctor exit code:
-// RunDoctor maps no-plugin-found to exit 0 (a non-fatal report), so a non-empty
-// installPath to a missing manifest would otherwise slip through as "compatible".
-func gateHost(ops hostOps, host string, stderr io.Writer) (ok bool) {
+// CONTRACT_VERSION, returning the verdict so the caller can distinguish a
+// missing plugin (NoPluginFound — recoverable by installing) from an
+// incompatibility (a mismatch — auto-installing would just fail again). Both
+// no-plugin states (an empty manifestPath AND a resolved-but-missing manifest)
+// collapse to NoPluginFound; a host-CLI resolve error maps to MalformedRange so
+// it stays a hard fail (a broken host CLI is not a missing plugin). The gate
+// inspects the VERDICT, not a doctor exit code: RunDoctor maps no-plugin-found to
+// exit 0 (a non-fatal report), so a non-empty installPath to a missing manifest
+// would otherwise slip through as "compatible". gateHost prints the actionable
+// remedy for every non-Compatible verdict; the caller decides whether to act on
+// it (auto-install) or fail fast.
+func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 	manifestPath, err := ops.ResolveManifest(host)
 	if err != nil {
 		fmt.Fprintf(stderr,
 			"Spacedock: could not resolve the installed %s plugin (%v). "+
 				"Run `spacedock doctor` or `spacedock install --host %s`.\n", host, err, host)
-		return false
+		return contract.MalformedRange
 	}
 	if manifestPath == "" {
 		fmt.Fprintf(stderr,
 			"Spacedock: no installed %s plugin found. "+
 				"Run `spacedock install --host %s` (or `spacedock claude --skip-contract-check` to bootstrap).\n", host, host)
-		return false
+		return contract.NoPluginFound
 	}
 	res := contract.ManifestVerdict(manifestPath, host, devBranch)
-	if res.Verdict == contract.Compatible {
-		return true
-	}
 	if res.Verdict == contract.NoPluginFound {
 		fmt.Fprintf(stderr,
 			"Spacedock: the installed %s plugin reported a manifest path that does not exist (%s). "+
 				"Run `spacedock install --host %s` (or `spacedock claude --skip-contract-check` to bootstrap).\n",
 			host, manifestPath, host)
-		return false
+		return contract.NoPluginFound
 	}
-	fmt.Fprintln(stderr, res.Message)
-	return false
+	if res.Verdict != contract.Compatible {
+		fmt.Fprintln(stderr, res.Message)
+	}
+	return res.Verdict
 }
 
-// runClaude is the `spacedock claude` front door: version-gate (fail fast), then
-// launch the first officer. The launch is interposed through
+// runClaude is the `spacedock claude` front door: version-gate, then launch the
+// first officer. The gate fails fast on a contract mismatch, but a missing plugin
+// (NoPluginFound) auto-installs the plugin and proceeds to launch so the single
+// command the user typed yields a working session — `--no-install` opts out,
+// preserving the refuse-and-instruct behavior. The launch is interposed through
 // `safehouse --trust-workdir-config [extra] -- claude --dangerously-skip-permissions …`
 // when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
 // `--safehouse-*` knob} is given; otherwise it is plain `claude --agent
@@ -165,7 +171,25 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	// plugin's contract verdict is irrelevant — it relaxes the gate exactly like
 	// an explicit `--skip-contract-check`.
 	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
-		if !gateHost(ops, "claude", stderr) {
+		switch gateHost(ops, "claude", stderr) {
+		case contract.Compatible:
+			// proceed to launch
+		case contract.NoPluginFound:
+			// No plugin on disk: the single command the user typed should yield a
+			// working session. Auto-install the plugin then launch, unless the
+			// operator opted out with --no-install (gateHost already printed the
+			// instruct remedy, so just fail fast).
+			if fd.noInstall {
+				return 1
+			}
+			if _, err := ops.Install("claude", marketplaceSource, devBranch); err != nil {
+				fmt.Fprintf(stderr, "spacedock claude: auto-install failed: %v\n", err)
+				return 1
+			}
+		default:
+			// A mismatch / malformed range / host-CLI resolve error: auto-installing
+			// would not fix an incompatibility, so fail fast (gateHost already
+			// printed the message).
 			return 1
 		}
 	}
@@ -287,8 +311,11 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
+	// Codex keeps the all-or-nothing gate: any non-Compatible verdict fails fast.
+	// The no-plugin auto-install is Claude-only (Install rejects non-claude hosts),
+	// and codex has no --plugin-dir equivalent, so there is nothing to auto-install.
 	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
-		if !gateHost(ops, "codex", stderr) {
+		if gateHost(ops, "codex", stderr) != contract.Compatible {
 			return 1
 		}
 	}
@@ -456,6 +483,9 @@ type frontDoorArgs struct {
 	safehouseFlags []string
 	// skipCheck is set by `--skip-contract-check` (bypasses the contract gate).
 	skipCheck bool
+	// noInstall is set by `--no-install` (opt out of the no-plugin auto-install,
+	// preserving the refuse-and-instruct behavior).
+	noInstall bool
 }
 
 // frontDoorFlags binds the spacedock-owned front-door flags onto a pflag.FlagSet
@@ -468,6 +498,7 @@ type frontDoorArgs struct {
 type frontDoorFlags struct {
 	safehouse *bool
 	skipCheck *bool
+	noInstall *bool
 	enable    *[]string
 	addDirs   *[]string
 	addDirsRO *[]string
@@ -480,6 +511,8 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 			"Force the safehouse sandbox wrap even without a .safehouse profile in the directory"),
 		skipCheck: fs.Bool("skip-contract-check", false,
 			"Bypass the contract gate and launch without resolving the installed plugin (bootstrap)"),
+		noInstall: fs.Bool("no-install", false,
+			"Do not auto-install the plugin when none is found; refuse and print install instructions instead"),
 		enable: fs.StringArray("safehouse-enable", nil,
 			"Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker"),
 		addDirs: fs.StringArray("safehouse-add-dirs", nil,
@@ -512,6 +545,7 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 
 	fd.forceSafehouse = *flags.safehouse
 	fd.skipCheck = *flags.skipCheck
+	fd.noInstall = *flags.noInstall
 	for _, v := range *flags.enable {
 		fd.safehouseFlags = append(fd.safehouseFlags, "enable="+v)
 	}
