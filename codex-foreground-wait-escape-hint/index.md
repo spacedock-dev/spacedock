@@ -132,3 +132,16 @@ passing after the focused implementation.
 ### Summary
 
 The ideation pass narrows the work to a Codex foreground-wait operator hint: before `wait_agent`, tell the captain Esc/interruption only returns control and does not fail, close, or redispatch the worker. It explicitly avoids changing the archived idle-wake taxonomy or the active follow-up reuse task, and gives implementation a focused test path plus the required repo gates.
+
+## Stage Report: implementation
+
+- DONE: Add the Codex foreground-wait operator hint in the source runtime guidance: before `wait_agent(handle)`, the FO tells the captain Esc/operator interruption only returns control and does not fail, close, or redispatch the worker; preserve same-handle retry semantics and the idle-notification taxonomy.
+  Evidence: code commit `f305f1c5` updates `skills/first-officer/references/codex-first-officer-runtime.md` and preserves same-handle wording.
+- DONE: Keep proof 4q-compliant: if a test reads first-officer runtime instruction text, put it in `internal/contractlint` as a quarantined structural check; do not add behavior-proof greps over `SKILL.md`/runtime prose in `skills/integration`.
+  Evidence: code commit `f305f1c5` adds `internal/contractlint/codex_foreground_wait_shape_test.go`; `go test ./internal/contractlint -count=1` passed.
+- DONE: Update the idle-notification probe recipe if needed so operator interruption is a non-terminal foreground-wait return, then run focused tests plus `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+  Evidence: code commit `f305f1c5` updates `docs/dev/codex-idle-notification-probe.md`; focused tests, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed.
+
+### Summary
+
+Implemented the Codex foreground-wait operator hint in the source runtime adapter and aligned the idle-notification probe recipe so Esc/operator interruption is a non-terminal return of control with same-handle retry. Added quarantined contractlint structural coverage for the runtime section and probe recipe, then ran the required focused and full repo gates.
