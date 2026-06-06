@@ -145,3 +145,16 @@ The ideation pass narrows the work to a Codex foreground-wait operator hint: bef
 ### Summary
 
 Implemented the Codex foreground-wait operator hint in the source runtime adapter and aligned the idle-notification probe recipe so Esc/operator interruption is a non-terminal return of control with same-handle retry. Added quarantined contractlint structural coverage for the runtime section and probe recipe, then ran the required focused and full repo gates.
+
+## Stage Report: validation
+
+- DONE: Verify the Codex foreground-wait runtime guidance tells the captain before `wait_agent(handle)` that Esc/operator interruption only returns control and does not mark the worker failed, close it, or redispatch it; same-handle retry semantics remain intact.
+  Evidence: `skills/first-officer/references/codex-first-officer-runtime.md` places the hint in `### Foreground wait`; `go test ./internal/contractlint -run TestCodex -count=1` passed.
+- DONE: Verify the hint is scoped to explicit foreground wait only: no blanket wait-after-dispatch behavior, no idle-wake taxonomy regression, and the probe recipe treats operator interruption as a non-terminal foreground-wait return.
+  Evidence: `rg` found no blanket wait-after-dispatch wording; `go test ./skills/integration -run 'TestCodexIdleNotification|TestCodexForegroundWaitEscapeHint' -count=1` passed with the existing idle-notification schema test.
+- FAILED: Verify proof-policy shape and gates: instruction-text reads are quarantined in `internal/contractlint`, not `skills/integration`; run focused contractlint/runtime tests plus `go test ./...` and `go test ./... -race` or report exact blockers.
+  Evidence: the text-read tests are quarantined in `internal/contractlint`, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all passed; however a detached mutation audit changed the runtime claim to say the worker is failed/closed/redispatched and `go test ./internal/contractlint -run TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape -count=1` still passed, so AC-1's "fails unless" proof is too weak.
+
+### Summary
+
+Recommendation: REJECTED. The delivered runtime/probe wording is scoped correctly and the normal test gates pass, but the contractlint proof can green-light the opposite terminal-lifecycle claim; implementation should tighten the assertion so a negated `not failed, closed, or redispatched` regression fails before this validates.
