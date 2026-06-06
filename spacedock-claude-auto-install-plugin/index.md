@@ -94,3 +94,16 @@ Fleshed out the no-plugin auto-install design on `internal/cli/frontdoor.go`: `g
 ### Summary
 
 Implementation is committed on `spacedock-ensign/spacedock-claude-auto-install-plugin`: Claude now treats NoPluginFound as recoverable by installing the plugin and then launching, while `--no-install` preserves the old refuse-and-instruct path. Real contract mismatches still hard-fail, Codex keeps the compatible-or-fail gate, and the required focused, full, race, and formatting checks were run successfully.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 with tests: NoPluginFound auto-installs and launches by default, while --no-install refuses without install or launch.
+  Focused front-door run passed 10/10, including `TestClaudeFrontDoorNoPluginAutoInstalls`, `TestClaudeFrontDoorNoPluginNoInstallRefuses`, and `TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls`; `go test ./...` and `go test ./... -race` each passed 1196 tests in 15 packages.
+- FAILED: Reproduce AC-2 and regression scope: real mismatches still fail fast without installing, and Codex front-door behavior remains unchanged.
+  Claude mismatch evidence reproduced (`TestClaudeFrontDoorFailFastOnMismatch` passed and a detached mutation adding Claude mismatch install failed the test), but the Codex regression scope has a Material test-strength gap: a detached mutation adding `ops.Install("codex", ...)` on Codex mismatch still let `TestCodexFrontDoorFailFastOnMismatch` pass.
+- DONE: Because this is a front-door launcher change, run a detached adversarial audit on a separate checkout of the implementation HEAD and report Material/Polish findings.
+  Detached audit checkout of `5b50cbc8`: Claude no-plugin skip-install mutation failed `TestClaudeFrontDoorNoPluginAutoInstalls`; Claude mismatch install mutation failed `TestClaudeFrontDoorFailFastOnMismatch`; Codex mismatch install mutation stayed green, Material finding above.
+
+### Summary
+
+Validation reproduced the main Claude behavior and the required baseline checks: `gofmt -w ./cmd ./internal` left the worktree clean, focused front-door tests passed, `go test ./...` passed, and `go test ./... -race` passed. Recommendation: REJECTED until the Codex regression scope is either narrowed or covered with an assertion that Codex mismatch/no-plugin paths do not invoke plugin installation.
