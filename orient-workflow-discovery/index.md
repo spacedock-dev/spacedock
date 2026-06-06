@@ -10,6 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-orient-workflow-discovery
 issue:
 mod-block: merge:pr-merge
+pr: "#309"
 ---
 
 There is a working prototype `orient` skill (`~/.claude/skills/orient/SKILL.md`) that reconstructs a project's IMPLICIT workflow from its AI-agent session history: the inferred loop, the workstreams, the recent decisions, and — load-bearing — the OPEN decisions (abandoned/unanswered forks) plus an interruption count (how often the human had to step in). It reads agentsview's multi-agent session DB (`~/.agentsview/sessions.db`) with plain `sqlite3` queries. Its closing pitch is exactly the spacedock thesis: "spacedock turns these [interruptions] into gates so the agent advances on its own between your calls."
