@@ -98,18 +98,25 @@ func TestClaudeNoSafehouseLaunchesPlain(t *testing.T) {
 	}
 }
 
-// AC-3: plugin-gate failure SHORT-CIRCUITS before any safehouse logic. Even with
-// .safehouse present AND safehouse binary absent, the missing-plugin gate fires
-// first: plugin remedy on stderr, NO safehouse hint, Launch never called.
+// AC-3: a refused plugin gate SHORT-CIRCUITS before any safehouse logic. With
+// .safehouse present AND safehouse binary absent, --no-install (which refuses the
+// no-plugin case rather than auto-installing) fails at the plugin gate first:
+// plugin remedy on stderr, NO safehouse hint, Launch never called. (Without
+// --no-install the no-plugin case auto-installs and proceeds, so the gate is no
+// longer a fail-fast there — the short-circuit-before-safehouse invariant lives
+// on the refuse path.)
 func TestClaudePluginGateShortCircuitsBeforeSafehouse(t *testing.T) {
 	dir := safehouseFixtureDir(t)
 	fake := &fakeHost{manifest: ""} // no plugin
 	var stdout, stderr bytes.Buffer
 
-	code := runClaude(context.Background(), nil, dir, fake, lookMissing, &stdout, &stderr)
+	code := runClaude(context.Background(), []string{"--no-install"}, dir, fake, lookMissing, &stdout, &stderr)
 
 	if code == 0 {
 		t.Fatalf("exit = 0, want non-zero when plugin gate fails")
+	}
+	if len(fake.installCmds) != 0 {
+		t.Fatalf("install invoked despite --no-install: %v", fake.installCmds)
 	}
 	if fake.launchedArg != nil {
 		t.Fatalf("Launch invoked despite plugin-gate failure: %v", fake.launchedArg)
