@@ -8,7 +8,7 @@ worktree: .worktrees/spacedock-ensign-codex-foreground-wait-escape-hint
 issue:
 started: 2026-06-06T04:16:46Z
 pr: "#312"
-mod-block: merge:pr-merge
+mod-block:
 ---
 
 Codex foreground waits are easy to misread from the operator seat. The runtime
