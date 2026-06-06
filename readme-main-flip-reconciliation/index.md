@@ -5,8 +5,8 @@ status: validation
 source: "captain (2026-06-06) - before flipping main, reconcile README/install docs; consider existing README PRs #213 and #220."
 score: "0.39"
 started: 2026-06-06T06:06:33Z
-completed:
-verdict:
+completed: 2026-06-06T06:25:18Z
+verdict: PASSED
 worktree: .worktrees/spacedock-ensign-readme-main-flip-reconciliation
 issue:
 ---
@@ -113,3 +113,22 @@ than claim it already works.
 ### Summary
 
 Docs now describe stable installs and releases as post-flip `main` lane behavior while keeping `next` for development-only source builds and pre-stable publishing. No release-mechanics code, branch flip, or upgrade-path behavior was implemented; the docs call out that those release gates remain owed before `0.20.0`.
+
+## Stage Report: validation
+
+- DONE: AC-1 stable install docs describe the post-flip `main` lane.
+  Evidence: commit `9fae02f7` changes only `README.md`, `docs/install-journey.md`, and `docs/releasing.md`. `README.md:24-35` says tagged releases, Homebrew artifacts, and marketplace plugin installs come from `main`, with `spacedock install --host claude` resolving `spacedock-dev/spacedock` on `main`, not `next`. `docs/install-journey.md:7-8`, `28-67` name the stable `main` lane and the brew/plugin install path from `main`. Focused stale-language scan over the three changed docs found no residual `spacedock-dev/spacedock@next`, `clkao/spacedock`, `vestigial`, or `NEVER push` stable-install wording.
+- DONE: AC-2 dev docs keep `next` as a dev-only channel.
+  Evidence: `README.md:37-45` keeps the source-build lane on `next` with `--plugin-dir` and explicitly says `@next` is not the stable install path. `docs/install-journey.md:9-10`, `98-115`, and `117-165` keep the dev-only source routes, including local `next` checkout, `go install ...@next`, dev snapshot, and `--plugin-dir`. `docs/releasing.md:133-141` keeps `next` for source builds and deliberate `next-publish`, then says commands or manifests using `@next` are dev-only.
+- DONE: AC-3 release docs match the intended branch mechanics.
+  Evidence: `docs/releasing.md:3-6` now says stable releases start from `main` at `v0.20.0` and `next` is dev-only. `docs/releasing.md:14-20` records archiving current pre-v1 `origin/main` as `v0-archived`; `32-40` records guarded replacement with `--force-with-lease=main:"$preflip_main"` while preserving `next`; `42-50` records cutting `v0.20.0` from the `main` release line. `docs/releasing.md:52-55` explicitly leaves `.github/workflows/release.yml` and `.goreleaser.yaml` retargeting as pending main-flip release work, so the unchanged `.goreleaser.yaml` `@next` comment is not presented as shipped stable behavior. `docs/releasing.md:74-123` changes later stable release mechanics to `origin/main` and `release/X.Y.Z:main`.
+- DONE: AC-4 existing README PRs were considered without importing stale old-main behavior.
+  Evidence: `gh pr view 213 --json number,title,headRefName,baseRefName,body,url,state` returned open PR #213, branch `spacedock-readme-problem-rewrite`, title `docs(readme): lead with the problem Spacedock solves`, targeting old `main`; `gh pr diff 213 --patch --color never` showed reusable pain/mechanism/state-outside-agent README opening material. The resulting `README.md:3-5` adapts that mechanism into the conservative current README. `gh pr view 220` returned open PR #220, branch `docs/readme-refactor-newcomer-friendly`, title `docs: refactor README for newcomers (developer and non-developer)`, also targeting old `main`; `gh pr diff 220` showed newcomer scenario/example framing but also old install commands such as `claude plugin marketplace add clkao/spacedock && claude plugin install spacedock`. The product docs reject that stale install behavior and instead use brew plus `spacedock install --host claude` on `main` (`README.md:27-35`, `docs/install-journey.md:34-67`). The implementation report records the same reuse/adapt/reject split at lines 108-109 of this entity.
+- DONE: AC-5 upgrade-path docs do not promise unshipped behavior.
+  Evidence: `README.md:51-61` says stale-plugin recovery is `spacedock doctor` plus `spacedock install --host claude`, then explicitly says old-plugin/no-binary and binary/plugin-skew journeys still need release-gate confirmation before the `0.20.0` flip. `docs/install-journey.md:80-96` makes `doctor` the compatibility source of truth, says missing binary means install Homebrew first, and does not promise automatic recovery for old `0.12.x` no-binary or `0.19.x` skew cases. No release-mechanics code, branch flip, or upgrade-path behavior was added in commit `9fae02f7`.
+- DONE: Verification evidence reproduced.
+  Evidence: `gofmt -w ./cmd ./internal` exited 0; `git diff --check` exited 0; `go test ./...` passed 1138 tests in 16 packages; `go test ./... -race` passed 1138 tests in 16 packages. Product worktree status before this state-report edit was clean except for branch `spacedock-ensign/readme-main-flip-reconciliation` being one commit ahead with implementation commit `9fae02f7`.
+
+### Summary
+
+Recommendation: PASSED. All five ACs are satisfied by the product diff and reproduced checks. The docs now send stable users to `main`, preserve `next` as dev-only, document the `v0-archived` / guarded-main-replacement / `v0.20.0` main-tag mechanics, account for PRs #213 and #220 without importing their old-main install behavior, and avoid promising unshipped upgrade recovery. Detached adversarial audit was not triggered: this is a docs-only validation and the release machinery itself remains explicitly pending.
