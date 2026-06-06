@@ -98,3 +98,18 @@ than claim it already works.
 - If tests are blocked by unrelated local state, report the exact blocker and
   run the narrowest relevant checks that still prove the docs build or references
   resolve.
+
+## Stage Report: implementation
+
+- DONE: Stable install/release docs describe the post-flip `main` lane and no longer present `next` as the stable marketplace source.
+  Evidence: code commit `9fae02f7` updates `README.md`, `docs/install-journey.md`, and `docs/releasing.md`; focused stale-language `rg` returned no matches in those docs.
+- DONE: Dev docs preserve `next` as a dev-only channel and release docs record the archive-current-main, guarded replacement, and 0.20.0 main-tag mechanics.
+  Evidence: `docs/releasing.md` now records `v0-archived`, `--force-with-lease=main:<sha>`, `v0.20.0` tagging from `main`, and a dev-only `next` publishing section.
+- DONE: Implementation report explicitly says what was reused, adapted, or rejected from README PRs #213 and #220, and docs do not overclaim unshipped upgrade-path behavior.
+  Evidence: reused/adapted PR #213's problem-led opener; adapted PR #220's newcomer lane/example framing; rejected both PRs' stale old-main install commands and marketplace behavior; docs state upgrade-path confirmation is still owed.
+- DONE: Verification.
+  Evidence: `gofmt -w ./cmd ./internal`; `go test ./...` passed 1138 tests in 16 packages; `go test ./... -race` passed 1138 tests in 16 packages; `git diff --check` passed.
+
+### Summary
+
+Docs now describe stable installs and releases as post-flip `main` lane behavior while keeping `next` for development-only source builds and pre-stable publishing. No release-mechanics code, branch flip, or upgrade-path behavior was implemented; the docs call out that those release gates remain owed before `0.20.0`.
