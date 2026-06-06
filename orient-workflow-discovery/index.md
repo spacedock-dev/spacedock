@@ -1,7 +1,7 @@
 ---
 id: 19fhrfae24d221wzgqm4zarn
 title: Bring workflow-discovery into spacedock — orient on a project's implicit agent workflow as the front-door to commission
-status: validation
+status: implementation
 source: "captain (2026-06-05) — 'check the prototype orient skill in ~/.claude, this is the workflow discovery thing we should bring in.' Prototype at ~/.claude/skills/orient/SKILL.md."
 score: "0.33"
 started: 2026-06-05T19:10:17Z
@@ -255,3 +255,7 @@ Cycle-4 fix for the one Material finding: the OPEN-decision frontier was dead be
 ### Summary
 
 PASS on all three checklist items, each proven by RUNNING (never a grep over SKILL.md). The cycle-3 blocker is genuinely closed: the SHIPPED step-1+step-2 on this repo's real Claude history now surfaces 6 OPEN forks (was 0) — proven load-bearing because the dead `result_content IS NULL` heuristic gives `dead_NULL_OPEN=0` on the same live DB (whole-DB null_or_empty=0, confirming production emits a non-empty result for every decision) while the shipped marker classification gives 6, all genuine non-answers (3 rejections, 2 `<tool_use_error>`, 1 bare echo). The reseeded fixture matches the production shape and is mutation-confirmed: reverting to the dead NULL classification REDs `survey_extraction_test.go` at the OPEN assertion (the exact tautology the prior NULL fixture masked), as does the over-loose `IS NOT NULL` inverse the cycle-3 audit warned about. No regression: M-1/M-5/M-2/M-3 green, portability discrimination + tautology sweep green, offline `go test ./...` EXIT=0 (14 pkgs, no failures), build+vet clean. The detached adversarial audit refuted nothing in the shipped behavior but found ONE Material guard-strength gap: the 2-row fixture cannot catch a regression that removes `ORDER BY status ASC`, the ordering that keeps the load-bearing OPEN frontier from being truncated by the recency LIMIT — the ordering is live-proven correct but not committed-test-guarded. Recommend PASS; surface the audit finding for a cheap fixture-extension follow-up (or, if the FO/captain treats the Material audit finding as blocking per the audit policy, a one-task fixback to add the ordering guard). This is the cycle-4 resolution of cycle 3 — escalation threshold context noted.
+
+### Feedback Cycles
+
+**Cycle 4 fixback - detached audit guard-strength gap (2026-06-06).** The cycle-4 behavior is accepted as correct, but the detached audit found the committed fixture does not protect the load-bearing `ORDER BY status ASC` that keeps OPEN decisions ahead of the recency `LIMIT`. Captain/FO selected Option A: do the cheap fixback now instead of merging with a follow-up. Required implementation: extend `skills/integration/testdata/survey/fixture-sessions.sql` and the corresponding extraction test so at least three answered decisions are newer than the OPEN row; removing the ordering must then RED because the OPEN frontier is truncated. Re-run the focused survey extraction test and `go test ./skills/integration/`; validation should re-check that the ordering guard is mutation-proven.
