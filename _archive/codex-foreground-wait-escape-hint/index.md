@@ -11,6 +11,7 @@ pr: "#312"
 mod-block:
 completed: 2026-06-06T04:59:49Z
 verdict: PASSED
+archived: 2026-06-06T04:59:58Z
 ---
 
 Codex foreground waits are easy to misread from the operator seat. The runtime
