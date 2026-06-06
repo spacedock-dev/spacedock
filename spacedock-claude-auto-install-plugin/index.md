@@ -9,7 +9,7 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-spacedock-claude-auto-install-plugin
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#311"
 ---
 
