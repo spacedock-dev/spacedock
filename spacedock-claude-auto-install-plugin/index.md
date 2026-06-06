@@ -111,3 +111,16 @@ Validation reproduced the main Claude behavior and the required baseline checks:
 ### Feedback Cycles
 
 **Cycle 1 - validation REJECTED (2026-06-06).** Route back to implementation for one Material test-strength gap. Claude no-plugin auto-install and `--no-install` behavior are proven, and Claude mismatch fail-fast is mutation-guarded. The remaining gap is Codex regression scope: a detached mutation adding `ops.Install("codex", ...)` on Codex mismatch stayed green. Required fixback: add or strengthen front-door tests so Codex mismatch/no-plugin paths assert no install invocation and no launch where applicable; keep Codex behavior compatible-or-fail and do not add Codex auto-install semantics. Re-run the focused front-door test set, `go test ./internal/cli`, `go test ./...`, `go test ./... -race`, and record evidence in a new implementation report.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Strengthen Codex front-door tests so Codex mismatch/no-plugin paths assert no install invocation and no launch where applicable.
+  Commit `32b4afce` adds a no-install assertion to `TestCodexFrontDoorFailFastOnMismatch` and new `TestCodexFrontDoorNoPluginFailsFastWithoutInstalling` coverage for empty and phantom manifests; a temporary Codex install mutation failed these tests 4/4 before being reverted.
+- DONE: Preserve scope: Claude NoPluginFound auto-installs by default, --no-install refuses, and Codex remains compatible-or-fail with no Codex auto-install semantics.
+  No production code changed in cycle 2; focused front-door tests passed 13/13, covering Claude auto-install/no-install, Claude mismatch, Codex compatible, Codex mismatch, and Codex no-plugin fail-fast behavior.
+- DONE: Run the focused front-door tests, go test ./internal/cli, go test ./..., go test ./... -race, and record the results in the stage report.
+  Ran `gofmt -w ./cmd ./internal`, focused `go test ./internal/cli -run 'TestClaudeFrontDoor(NoPlugin|FailFastOnMismatch|NonEmptyMissingManifest|SkipContractCheckBootstrap)|TestCodexFrontDoor(FailFastOnMismatch|NoPluginFailsFastWithoutInstalling|LaunchesOnCompatible)|TestClaudePluginGateShortCircuitsBeforeSafehouse' -count=1 -v` (13 passed), `go test ./internal/cli -count=1` (222 passed), `go test ./...` (1199 passed in 15 packages), and `go test ./... -race` (1199 passed in 15 packages).
+
+### Summary
+
+Cycle 2 closes the validation test-strength gap without changing front-door production behavior. Codex mismatch and both no-plugin forms now assert no install and no launch, while the existing Claude auto-install contract remains covered by the focused front-door suite.
