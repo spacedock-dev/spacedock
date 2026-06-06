@@ -1,7 +1,7 @@
 ---
 id: rbjkna5jem4vgj3vtv072gzq
 title: spacedock claude auto-installs the plugin when absent (--no-install opt-out)
-status: implementation
+status: validation
 source: "captain (2026-06-05) — friction F8: `spacedock claude` refuses to launch with no installed plugin, forcing the user to pass --skip-contract-check (a launch blocker). Captain direction: 'we need something simpler [than task 44]. maybe just install the plugin unless --no-install is specified in spacedock claude.' Interim relief; task 44 (bundle-into-binary) is the eventual structural fix but is deferred."
 score: "0.36"
 started: 2026-06-06T03:06:22Z
