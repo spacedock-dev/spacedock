@@ -81,3 +81,16 @@ TDD order: write AC-1a/AC-1b/AC-2 (red), make `gateHost` return the verdict + `r
 ### Summary
 
 Fleshed out the no-plugin auto-install design on `internal/cli/frontdoor.go`: `gateHost` returns `contract.Verdict`, `runClaude` switches `NoPluginFound`→(`--no-install`? instruct-exit : install-then-launch) and any mismatch→hard-fail, plus a `--no-install` pflag. Spiked the riskiest unknown first against the real `fakeHost` stubs — all three ACs proven (install-invoked/launch-reached/exit observed, not string-matched) — then reverted the throwaway. The spike surfaced one concrete finding now on the record: the two existing `*FailFastOnMismatch`-style no-plugin tests encode the old fail-fast contract and must be migrated to default-auto-installs with `--no-install` as the new fail-fast arm. Two open decisions (re-gate-after-install vs proceed; phantom-installPath treatment) are recorded with recommendations for the implementer to settle at the gate.
+
+## Stage Report: implementation
+
+- DONE: Confirm the committed front-door change makes spacedock claude auto-install on NoPluginFound and launch by default, while --no-install refuses with the install instruction.
+  Commit `74f6da8b` implements `gateHost` verdict routing, Claude NoPluginFound auto-install, `--no-install`, and tests; focused front-door run passed 10/10 including `TestClaudeFrontDoorNoPluginAutoInstalls` and `TestClaudeFrontDoorNoPluginNoInstallRefuses`.
+- DONE: Confirm real version mismatches still fail fast without installing and Codex front-door behavior remains unchanged.
+  Focused run passed `TestClaudeFrontDoorFailFastOnMismatch`, `TestCodexFrontDoorFailFastOnMismatch`, and `TestCodexFrontDoorLaunchesOnCompatible`; Claude mismatch asserts no install and no launch.
+- DONE: Run the focused frontdoor tests plus the appropriate Go test suite, commit any missing fixes, and write the implementation stage report with evidence.
+  Ran `go test ./internal/cli -run 'TestClaudeFrontDoor(NoPlugin|FailFastOnMismatch|NonEmptyMissingManifest|SkipContractCheckBootstrap)|TestCodexFrontDoor(FailFastOnMismatch|LaunchesOnCompatible)|TestClaudePluginGateShortCircuitsBeforeSafehouse' -count=1 -v` (10 passed), `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; commits `74f6da8b` and `5b50cbc8` are on the implementation branch.
+
+### Summary
+
+Implementation is committed on `spacedock-ensign/spacedock-claude-auto-install-plugin`: Claude now treats NoPluginFound as recoverable by installing the plugin and then launching, while `--no-install` preserves the old refuse-and-instruct path. Real contract mismatches still hard-fail, Codex keeps the compatible-or-fail gate, and the required focused, full, race, and formatting checks were run successfully.
