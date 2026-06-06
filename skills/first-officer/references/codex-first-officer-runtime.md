@@ -66,8 +66,11 @@ The FO calls `wait_agent(handle)` as the next useful idle action after the
 scheduling priority above is exhausted. A wait_agent timeout return is normal and
 retryable with the same handle. It means no final-status mailbox update arrived
 before the deadline; it is not a failure, a zombie signal, or a teardown trigger.
-A captain message or shell-out during the wait is operator activity, not idle
-wake evidence.
+Before calling `wait_agent`, tell the captain that pressing Esc or otherwise
+causing an operator interruption only returns control; the worker is not failed,
+closed, or redispatched, and the next foreground wait retries the same handle. A
+captain message or shell-out during the wait is operator activity, not idle wake
+evidence.
 
 ### Queued notification flushed by later activity
 

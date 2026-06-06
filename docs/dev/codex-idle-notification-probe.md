@@ -23,8 +23,10 @@ must be treated as operator activity, not idle wake evidence.
 1. Dispatch a worker with the exact no-write prompt and record its handle.
 2. When there is no ready workflow work, call `wait_agent(handle)`.
 3. Record whether the call returns a timeout or a final status.
-4. If captain input or another non-stopping interruption occurs, retry the same
-   handle and record the next timeout or final status.
+4. If captain input, Esc, or another operator interruption returns control,
+   record it as a non-terminal foreground-wait return; do not classify it as a
+   worker final status, failure, closure, redispatch, or idle wake-up. Retry the
+   same handle and record the next timeout or final status.
 5. Classify a final status observed through this explicit wait path as
    `foreground_wait`.
 
@@ -54,7 +56,9 @@ must be treated as operator activity, not idle wake evidence.
 ## Interpretation Rules
 
 - `foreground_wait`: `wait_agent(handle)` returned the worker timeout or final
-  status path, and any interruption was followed by a retry of the same handle.
+  status path, and any operator interruption that returned control was recorded
+  as a non-terminal foreground-wait return followed by a retry of the same
+  handle.
 - `queued_flush`: no foreground wait was used, but later captain, tool, or
   shell-out activity caused a queued worker final-status notification to appear.
 - `autonomous_idle_wake`: no foreground wait and no later activity occurred, and
