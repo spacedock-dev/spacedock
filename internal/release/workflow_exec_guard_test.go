@@ -3,13 +3,28 @@ package release
 import (
 	"fmt"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type workflowStep struct {
 	name     string
+	id       string
+	ifCond   string
 	uses     string
 	run      string
 	withPath string
+}
+
+// workflowJob is a top-level entry under `jobs:` — its name, its declared
+// `needs:` edges, and the steps it owns. The job graph is parsed separately from
+// the flat step list so the separation guard can bind a `needs:` edge to the
+// OWNING job (the job carrying the goreleaser action) rather than matching the
+// edge anywhere in the document.
+type workflowJob struct {
+	name  string
+	needs []string
+	steps []workflowStep
 }
 
 func assertRuntimeLiveWorkflowUploadsRawJourneyMetrics(workflow string) error {
@@ -122,6 +137,113 @@ func assertReleaseWorkflowPublishesJourneyCosts(workflow string) error {
 	if publishStep <= builderStep {
 		return fmt.Errorf("release.yml publishes journey costs before building them")
 	}
+	if err := assertGoreleaserDoesNotNeedJourneyLedger(workflow); err != nil {
+		return err
+	}
+	return nil
+}
+
+// assertGoreleaserDoesNotNeedJourneyLedger binds the separation invariant to the
+// job DAG: no job carrying the goreleaser action may declare `needs:` on a job
+// that builds the journey-cost ledger. That edge would re-block the cut on the
+// never-fired Runtime-Live-E2E run (the exact bug this separation closes). It
+// collects ALL goreleaser-action carriers and ALL ledger-builder carriers and
+// rejects if ANY carrier→ledger edge exists — so the result does not depend on
+// Go's randomized map-iteration order (a last-wins scan over a multi-carrier
+// workflow would be latently flaky). The SAFE reverse edge (journey-ledger
+// needs: goreleaser, required so `gh release upload` runs after the Release
+// exists) points the other way and does not false-trip the check; a job that is
+// itself both carriers cannot need itself, so the self-pair is skipped.
+func assertGoreleaserDoesNotNeedJourneyLedger(workflow string) error {
+	jobs := parseWorkflowJobs(workflow)
+	ledgerJobs := map[string]bool{}
+	var goreleaserCarriers []workflowJob
+	for _, job := range jobs {
+		isGoreleaser, isLedger := false, false
+		for _, step := range job.steps {
+			if strings.HasPrefix(step.uses, "goreleaser/goreleaser-action@") {
+				isGoreleaser = true
+			}
+			for _, command := range executableShellCommands(step.run) {
+				if isJourneyCostBuilder(command) {
+					isLedger = true
+				}
+			}
+		}
+		if isLedger {
+			ledgerJobs[job.name] = true
+		}
+		if isGoreleaser {
+			goreleaserCarriers = append(goreleaserCarriers, job)
+		}
+	}
+	if len(goreleaserCarriers) == 0 {
+		return fmt.Errorf("release.yml has no job carrying the goreleaser action")
+	}
+	if len(ledgerJobs) == 0 {
+		return fmt.Errorf("release.yml has no job carrying the journey-cost builder")
+	}
+	for _, carrier := range goreleaserCarriers {
+		for _, need := range carrier.needs {
+			if need != carrier.name && ledgerJobs[need] {
+				return fmt.Errorf("release.yml goreleaser job %q declares needs: %q — re-blocking the cut on the journey-ledger job", carrier.name, need)
+			}
+		}
+	}
+	return nil
+}
+
+// assertReleaseLedgerStepsSkipWhenNoProducerRun proves POLICY 1's job-level
+// skip: the journey-cost builder and its release-upload step must be GATED on
+// the download step's producer-found output, so a producer-less / empty-dir cut
+// SKIPS them (journey-ledger job green) instead of running `journey-costs` over
+// an empty dir and REDding the job. It locates the download step by its emitted
+// `found=` output and requires both the builder step and the upload step to
+// carry an `if:` referencing that step's `found` output.
+func assertReleaseLedgerStepsSkipWhenNoProducerRun(workflow string) error {
+	steps := parseWorkflowSteps(workflow)
+
+	downloadID := ""
+	for _, step := range steps {
+		if step.id == "" {
+			continue
+		}
+		for _, command := range executableShellCommands(step.run) {
+			if strings.Contains(command, `found=false`) && strings.Contains(command, `"$GITHUB_OUTPUT"`) {
+				downloadID = step.id
+			}
+		}
+	}
+	if downloadID == "" {
+		return fmt.Errorf("release.yml has no download step with an id that emits found=false to $GITHUB_OUTPUT (the non-fatal skip flag)")
+	}
+
+	gate := fmt.Sprintf("steps.%s.outputs.found == 'true'", downloadID)
+	builderGated, publishGated := false, false
+	for _, step := range steps {
+		isBuilder, isPublish := false, false
+		for _, command := range executableShellCommands(step.run) {
+			if isJourneyCostBuilder(command) {
+				isBuilder = true
+			}
+			if strings.HasPrefix(command, `gh release upload `) &&
+				strings.Contains(command, `"$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json"`) {
+				isPublish = true
+			}
+		}
+		if isBuilder && step.ifCond == gate {
+			builderGated = true
+		}
+		if isPublish && step.ifCond == gate {
+			publishGated = true
+		}
+	}
+	if !builderGated {
+		return fmt.Errorf("release.yml journey-cost builder is not gated on %q; a producer-less cut would run journey-costs over an empty dir and RED the journey-ledger job", gate)
+	}
+	if !publishGated {
+		return fmt.Errorf("release.yml journey-cost publish step is not gated on %q; a producer-less cut would attempt an upload of a missing ledger", gate)
+	}
 	return nil
 }
 
@@ -146,6 +268,10 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 		}
 		step := &steps[len(steps)-1]
 		switch {
+		case strings.HasPrefix(trimmed, "id: "):
+			step.id = strings.Trim(strings.TrimPrefix(trimmed, "id: "), `"`)
+		case strings.HasPrefix(trimmed, "if: "):
+			step.ifCond = strings.TrimSpace(strings.TrimPrefix(trimmed, "if: "))
 		case strings.HasPrefix(trimmed, "uses: "):
 			step.uses = strings.Trim(strings.TrimPrefix(trimmed, "uses: "), `"`)
 		case strings.HasPrefix(trimmed, "run: |"):
@@ -179,6 +305,75 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 	return steps
 }
 
+// parseWorkflowJobs reads the workflow's whole job graph — job names, their
+// `needs:` edges, and the steps each owns — from a single gopkg.in/yaml.v3 pass.
+// Job identity is the security-relevant axis for the separation guard, and a
+// real YAML parse resolves what a line-walk cannot: anchored/aliased needs
+// (`needs: *anchor`), quoted job keys (`"goreleaser":`), comment-trailed and
+// blank-line-split sequences, and flow/block/scalar forms all normalize the same
+// way GitHub Actions resolves them. A workflow that does not parse as YAML
+// yields no jobs (the guard's text-level checks still run against the source).
+func parseWorkflowJobs(workflow string) []workflowJob {
+	var doc struct {
+		Jobs map[string]struct {
+			Needs needsList `yaml:"needs"`
+			Steps []struct {
+				Name string `yaml:"name"`
+				ID   string `yaml:"id"`
+				If   string `yaml:"if"`
+				Uses string `yaml:"uses"`
+				Run  string `yaml:"run"`
+			} `yaml:"steps"`
+		} `yaml:"jobs"`
+	}
+	if err := yaml.Unmarshal([]byte(workflow), &doc); err != nil {
+		return nil
+	}
+	var jobs []workflowJob
+	for name, job := range doc.Jobs {
+		wj := workflowJob{name: name, needs: job.Needs}
+		for _, step := range job.Steps {
+			wj.steps = append(wj.steps, workflowStep{
+				name:   step.Name,
+				id:     step.ID,
+				ifCond: step.If,
+				uses:   step.Uses,
+				run:    step.Run,
+			})
+		}
+		jobs = append(jobs, wj)
+	}
+	return jobs
+}
+
+// needsList decodes a job's `needs:` — GitHub Actions allows a scalar
+// (`needs: a`) or a sequence (flow `[a, b]` or block list), and either may be an
+// anchor/alias. Decoding through this custom type lets yaml.v3 resolve aliases
+// to their anchored value and normalize quoting before we read the names, so no
+// `needs:` shape can hide a re-coupling edge from the separation guard.
+type needsList []string
+
+func (n *needsList) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		if value.Value != "" {
+			*n = needsList{value.Value}
+		}
+		return nil
+	case yaml.SequenceNode:
+		var names []string
+		if err := value.Decode(&names); err != nil {
+			return err
+		}
+		*n = names
+		return nil
+	default:
+		return nil
+	}
+}
+
+// findExecutableStep returns the index of the step named name whose run block
+// contains commandFragment, or -1.
 func findExecutableStep(steps []workflowStep, name, commandFragment string) int {
 	for i, step := range steps {
 		if step.name != name {

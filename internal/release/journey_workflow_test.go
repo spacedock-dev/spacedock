@@ -1,7 +1,9 @@
 package release
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -151,6 +153,475 @@ func TestReleaseWorkflowGuardRejectsCommentOnlyJourneyCostPublish(t *testing.T) 
 	if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
 		t.Fatal("release workflow guard accepted a commented publish command")
 	}
+}
+
+// TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger injects the exact
+// re-coupling bug this separation closes: a `needs: journey-ledger` edge on the
+// goreleaser job re-blocks the cut on the never-fired Runtime-Live-E2E run. The
+// hardened guard binds `needs:` to the OWNING job (the one carrying the
+// goreleaser action) and must RED on this edge — while the SAFE one-way
+// `journey-ledger: needs: goreleaser` edge in the real file does NOT trip it.
+// The edge is injected in every YAML shape `needs:` can take — scalar, flow
+// sequence, block list, the same three with a trailing inline `# comment`, and a
+// block list split by a blank line — so no syntactic variation evades the guard.
+func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name      string
+		needsForm string
+	}{
+		{"scalar", "    needs: journey-ledger\n"},
+		{"flow sequence", "    needs: [journey-ledger]\n"},
+		{"block list", "    needs:\n      - journey-ledger\n"},
+		{"scalar with inline comment", "    needs: journey-ledger  # required for the upload\n"},
+		{"flow sequence with inline comment", "    needs: [journey-ledger]  # required for the upload\n"},
+		{"block list with inline comment", "    needs:\n      - journey-ledger  # required for the upload\n"},
+		{"block list split by a blank line", "    needs:\n      - some-other-gate\n\n      - journey-ledger\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			adversarial := strings.Replace(release,
+				"  goreleaser:\n    runs-on: macos-latest",
+				"  goreleaser:\n"+tc.needsForm+"    runs-on: macos-latest",
+				1)
+			if adversarial == release {
+				t.Fatal("fixture workflow missing the goreleaser job header to mutate")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+				t.Fatalf("release workflow guard accepted a goreleaser job that needs the journey-ledger job via %s form (re-coupling the cut to the never-fired run)", tc.name)
+			}
+		})
+	}
+}
+
+// TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes
+// attacks the OTHER half of the edge — the job-identity end — with YAML shapes a
+// line-walk over the raw text cannot see but the real GHA YAML resolver does:
+//   - alias: an `&anchor` on journey-ledger's needs and a `*anchor` on
+//     goreleaser's needs — GHA resolves the alias to `[goreleaser, journey-ledger]`
+//     so goreleaser really does need journey-ledger.
+//   - quoted job key: `"goreleaser":` is the same job key as `goreleaser:` to a
+//     YAML parser, so a `needs: journey-ledger` under it is a real re-coupling.
+//
+// Both must RED. Because the whole job graph (names + alias-resolved needs +
+// step attribution) comes from one yaml.v3 pass, no job-identity shape evades.
+func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name   string
+		mutate func(string) string
+	}{
+		{
+			"anchor/alias needs", func(s string) string {
+				// Anchor a list containing journey-ledger on the reverse edge, then
+				// alias it onto goreleaser — GHA resolves *grx so goreleaser needs
+				// journey-ledger.
+				s = strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  journey-ledger:\n    needs: &grx [goreleaser, journey-ledger]\n", 1)
+				return strings.Replace(s,
+					"  goreleaser:\n    runs-on: macos-latest",
+					"  goreleaser:\n    needs: *grx\n    runs-on: macos-latest", 1)
+			},
+		},
+		{
+			"quoted job key", func(s string) string {
+				return strings.Replace(s,
+					"  goreleaser:\n    runs-on: macos-latest",
+					"  \"goreleaser\":\n    needs: journey-ledger\n    runs-on: macos-latest", 1)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			adversarial := tc.mutate(release)
+			if adversarial == release {
+				t.Fatal("fixture workflow shape to mutate not found")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+				t.Fatalf("release workflow guard accepted a goreleaser→journey-ledger re-coupling via %s (the job-identity end evaded the guard)", tc.name)
+			}
+		})
+	}
+}
+
+// goreleaserCarrierJob is a second job that ALSO runs the goreleaser action,
+// used to build multi-carrier fixtures. The `%s` is its `needs:` block (may be
+// empty). It must be authored before the real goreleaser job's text so the
+// flat document-order builder<=goreleaser guard stays satisfied.
+const goreleaserCarrierJob = `  goreleaser-extra:
+%s    runs-on: macos-latest
+    steps:
+      - name: Run goreleaser (extra carrier)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+`
+
+// insertGoreleaserCarrier authors a second goreleaser-action job (with the given
+// needs block) just before the real goreleaser job in the workflow text.
+func insertGoreleaserCarrier(t *testing.T, workflow, needsBlock string) string {
+	t.Helper()
+	const anchor = "  goreleaser:\n    runs-on: macos-latest"
+	if !strings.Contains(workflow, anchor) {
+		t.Fatal("fixture workflow missing the goreleaser job header to anchor a second carrier before")
+	}
+	carrier := fmt.Sprintf(goreleaserCarrierJob, needsBlock)
+	return strings.Replace(workflow, anchor, carrier+anchor, 1)
+}
+
+// TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger proves
+// the guard is DETERMINISTIC across multiple goreleaser-action carriers. With two
+// jobs running the goreleaser action — one declaring `needs: journey-ledger` —
+// a guard that inspected only the LAST map-iterated carrier would greenlight on
+// ~the fraction of runs that iterate the safe carrier last (Go map order is
+// random). The collect-all guard rejects on ANY goreleaser carrier → ledger
+// edge, so it must RED on EVERY run. Asserted over many iterations so a
+// last-wins regression cannot hide behind a lucky map order.
+func TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	adversarial := insertGoreleaserCarrier(t, release, "    needs: journey-ledger\n")
+	if adversarial == release {
+		t.Fatal("multi-carrier mutation did not apply")
+	}
+
+	const runs = 200
+	for i := 0; i < runs; i++ {
+		if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			t.Fatalf("run %d/%d: guard accepted a multi-carrier workflow where a goreleaser-action job needs journey-ledger (last-wins map-order flakiness)", i+1, runs)
+		}
+	}
+}
+
+// TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape is the safe twin: two
+// goreleaser-action carriers, NEITHER needing the journey-ledger job (the extra
+// carrier needs nothing). The collect-all guard must stay GREEN on every run —
+// multiple carriers are not themselves a re-coupling.
+func TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	safe := insertGoreleaserCarrier(t, release, "")
+	if safe == release {
+		t.Fatal("multi-carrier safe mutation did not apply")
+	}
+
+	const runs = 200
+	for i := 0; i < runs; i++ {
+		if err := assertReleaseWorkflowPublishesJourneyCosts(safe); err != nil {
+			t.Fatalf("run %d/%d: guard wrongly rejected a safe multi-carrier workflow (extra goreleaser carrier needs nothing): %v", i+1, runs, err)
+		}
+	}
+}
+
+// TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape is the direction
+// twin of the rejection test: the SAFE one-way edge `journey-ledger: needs:
+// goreleaser` (the upload waits for the Release goreleaser creates) must stay
+// GREEN no matter which YAML shape it is written in. The guard binds `needs:` to
+// the OWNING job, so rewriting the real file's reverse edge into scalar, flow,
+// block-list, their inline-comment variants, or a blank-line-split block list
+// must NOT trip the goreleaser→journey-ledger check.
+func TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	const realEdge = "  journey-ledger:\n    needs: goreleaser\n"
+	if !strings.Contains(release, realEdge) {
+		t.Fatalf("fixture workflow missing the journey-ledger needs: goreleaser edge to rewrite")
+	}
+
+	for _, tc := range []struct {
+		name      string
+		needsForm string
+	}{
+		// The flow/block/comment/blank-line shapes differ from the real file's
+		// scalar edge, so the rewrite is exercised; the scalar baseline itself is
+		// the real file the parent guard already passes.
+		{"flow sequence", "    needs: [goreleaser]\n"},
+		{"block list", "    needs:\n      - goreleaser\n"},
+		{"scalar with inline comment", "    needs: goreleaser  # upload waits for the Release\n"},
+		{"flow sequence with inline comment", "    needs: [goreleaser]  # upload waits for the Release\n"},
+		{"block list with inline comment", "    needs:\n      - goreleaser  # upload waits for the Release\n"},
+		{"block list split by a blank line", "    needs:\n      - goreleaser\n\n      - some-other-gate\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rewritten := strings.Replace(release, realEdge, "  journey-ledger:\n"+tc.needsForm, 1)
+			if rewritten == release {
+				t.Fatal("rewrite of the journey-ledger needs edge did not apply")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s form: %v", tc.name, err)
+			}
+		})
+	}
+}
+
+// TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes is the
+// direction twin of the job-identity rejection test: an anchor/alias on the SAFE
+// reverse edge, or a quoted journey-ledger job key, must NOT trip the guard —
+// the edge still points journey-ledger → goreleaser, the required upload order,
+// not the cut-blocking reverse.
+func TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+
+	for _, tc := range []struct {
+		name   string
+		mutate func(string) string
+	}{
+		{
+			"anchor/alias needs", func(s string) string {
+				// Anchor goreleaser on a one-off carrier job, alias it onto the
+				// journey-ledger reverse edge — still journey-ledger → goreleaser.
+				return strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  journey-ledger:\n    needs: &grx [goreleaser]\n", 1)
+			},
+		},
+		{
+			"quoted job key", func(s string) string {
+				return strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  \"journey-ledger\":\n    needs: goreleaser\n", 1)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rewritten := tc.mutate(release)
+			if rewritten == release {
+				t.Fatal("rewrite of the safe reverse edge did not apply")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s: %v", tc.name, err)
+			}
+		})
+	}
+}
+
+// TestReleaseWorkflowJobGraphMatchesGitHubActions asserts the parsed job graph of
+// the real release.yml matches what GitHub Actions resolves: goreleaser has NO
+// `needs:` (it cuts regardless), and journey-ledger needs ONLY goreleaser (the
+// one-way upload-ordering edge). This pins the parser to GHA semantics so a
+// future parse regression that drops or invents an edge is caught directly, not
+// only through the guard.
+func TestReleaseWorkflowJobGraphMatchesGitHubActions(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	needs := map[string][]string{}
+	for _, job := range parseWorkflowJobs(release) {
+		needs[job.name] = []string(job.needs)
+	}
+
+	if _, ok := needs["goreleaser"]; !ok {
+		t.Fatalf("parsed graph missing the goreleaser job; got jobs %v", keysOf(needs))
+	}
+	if len(needs["goreleaser"]) != 0 {
+		t.Errorf("goreleaser must have no needs (cuts regardless); got %v", needs["goreleaser"])
+	}
+	if got := needs["journey-ledger"]; len(got) != 1 || got[0] != "goreleaser" {
+		t.Errorf("journey-ledger must need only goreleaser; got %v", got)
+	}
+}
+
+func keysOf(m map[string][]string) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
+}
+
+// TestReleaseWorkflowSkipsLedgerWhenNoProducerRun proves the JOB-LEVEL skip
+// consequence of POLICY 1: when the download step finds no producer run it must
+// not merely exit 0 — the downstream Build/Publish-ledger steps must be GATED on
+// the download step's producer-found output, so a producer-less / empty-dir cut
+// SKIPS those steps (journey-ledger job green) instead of hard-failing the
+// `journey-costs` builder over an empty dir (journey-ledger job RED). Parsed
+// from the real release.yml, not matched against prose.
+func TestReleaseWorkflowSkipsLedgerWhenNoProducerRun(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(release); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestReleaseWorkflowGuardRejectsUngatedLedgerBuild is the adversarial twin of
+// the skip-consequence proof: strip the producer-found `if:` gate off the Build
+// step and the guard must RED, because an ungated builder runs `journey-costs`
+// over an empty dir on a producer-less cut and REDs the journey-ledger job —
+// the exact failure POLICY 1 closes.
+func TestReleaseWorkflowGuardRejectsUngatedLedgerBuild(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(release); err != nil {
+		t.Fatalf("real release.yml unexpectedly fails the skip-consequence guard before mutation: %v", err)
+	}
+	adversarial := strings.Replace(release,
+		"      - name: Build journey cost ledger\n        if: steps.download_metrics.outputs.found == 'true'\n",
+		"      - name: Build journey cost ledger\n",
+		1)
+	if adversarial == release {
+		t.Fatal("fixture workflow missing the gated Build journey cost ledger step to mutate")
+	}
+
+	if err := assertReleaseLedgerStepsSkipWhenNoProducerRun(adversarial); err == nil {
+		t.Fatal("release workflow guard accepted an ungated Build step that would RED the journey-ledger job on a producer-less cut")
+	}
+}
+
+// TestReleaseDownloadSkipBranchExitsZeroOnEmptyRunList EXERCISES the download
+// step's missing-run branch: it runs the REAL download script extracted from
+// release.yml against a stubbed `gh` that returns an empty run list, and asserts
+// the script exits 0 (non-fatal skip, not the old exit 1) and emits
+// `found=false` to $GITHUB_OUTPUT so the downstream gate skips. This is the
+// behavior-level proof of the skip branch, not a substring check.
+func TestReleaseDownloadSkipBranchExitsZeroOnEmptyRunList(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	script := extractStepRun(t, release, "Download latest journey metrics artifacts")
+
+	dir := t.TempDir()
+	// Stub `gh` on PATH so the download step's `gh run list ... --jq '.[0].databaseId'`
+	// yields the empty-result string the real CLI returns when no run matches.
+	binDir := filepath.Join(dir, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatalf("mkdir bin: %v", err)
+	}
+	ghStub := "#!/bin/sh\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(binDir, "gh"), []byte(ghStub), 0o755); err != nil {
+		t.Fatalf("write gh stub: %v", err)
+	}
+	outPath := filepath.Join(dir, "github_output")
+	if err := os.WriteFile(outPath, nil, 0o644); err != nil {
+		t.Fatalf("seed github_output: %v", err)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"RUNNER_TEMP="+dir,
+		"GITHUB_OUTPUT="+outPath,
+		"GH_TOKEN=stub",
+	)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("download skip branch exited non-zero (want exit 0 on empty run list): %v\n%s", err, out)
+	}
+
+	gotOutput, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read github_output: %v", err)
+	}
+	if !strings.Contains(string(gotOutput), "found=false") {
+		t.Errorf("download skip branch did not emit found=false to $GITHUB_OUTPUT; got:\n%s", gotOutput)
+	}
+}
+
+// TestReleaseDownloadSkipBranchToleratesGhError EXERCISES the download step's
+// degradation when the `gh run list` query itself fails — a gh error or a
+// missing gh on PATH. Under `set -euo pipefail` an un-guarded command
+// substitution would abort the step (RED the journey-ledger job); the `|| true`
+// degrades it to an empty run_id so the no-run skip branch fires (exit 0,
+// found=false) and the cut is never blocked by a best-effort ledger query.
+func TestReleaseDownloadSkipBranchToleratesGhError(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	script := extractStepRun(t, release, "Download latest journey metrics artifacts")
+
+	for _, tc := range []struct {
+		name   string
+		ghStub string // empty ghStub means: do not put gh on PATH at all
+	}{
+		{"gh exits non-zero", "#!/bin/sh\necho 'gh: API rate limit exceeded' >&2\nexit 1\n"},
+		{"gh missing from PATH", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			binDir := filepath.Join(dir, "bin")
+			if err := os.MkdirAll(binDir, 0o755); err != nil {
+				t.Fatalf("mkdir bin: %v", err)
+			}
+			// PATH carries system utilities (mkdir/find/awk) plus binDir, but NOT
+			// the directories a real gh lives in — so the gh seen by the script is
+			// exactly the stub we write here, or nothing when we write none.
+			path := binDir + string(os.PathListSeparator) + "/usr/bin" + string(os.PathListSeparator) + "/bin"
+			if tc.ghStub != "" {
+				if err := os.WriteFile(filepath.Join(binDir, "gh"), []byte(tc.ghStub), 0o755); err != nil {
+					t.Fatalf("write gh stub: %v", err)
+				}
+			}
+			outPath := filepath.Join(dir, "github_output")
+			if err := os.WriteFile(outPath, nil, 0o644); err != nil {
+				t.Fatalf("seed github_output: %v", err)
+			}
+
+			cmd := exec.Command("bash", "-c", script)
+			cmd.Dir = dir
+			cmd.Env = append(os.Environ(),
+				"PATH="+path,
+				"RUNNER_TEMP="+dir,
+				"GITHUB_OUTPUT="+outPath,
+				"GH_TOKEN=stub",
+			)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("download step aborted on a gh query failure (want exit 0, found=false): %v\n%s", err, out)
+			}
+
+			gotOutput, err := os.ReadFile(outPath)
+			if err != nil {
+				t.Fatalf("read github_output: %v", err)
+			}
+			if !strings.Contains(string(gotOutput), "found=false") {
+				t.Errorf("download step did not emit found=false to $GITHUB_OUTPUT on a gh query failure; got:\n%s", gotOutput)
+			}
+		})
+	}
+}
+
+// extractStepRun pulls a named step's `run: |` block out of a workflow document,
+// dedented to a runnable shell script, so tests exercise the EXACT script CI
+// runs rather than a hand-copied duplicate.
+func extractStepRun(t *testing.T, workflow, stepName string) string {
+	t.Helper()
+	for _, step := range parseWorkflowSteps(workflow) {
+		if step.name == stepName {
+			if step.run == "" {
+				t.Fatalf("step %q has no run block", stepName)
+			}
+			return dedent(step.run)
+		}
+	}
+	t.Fatalf("workflow has no step named %q", stepName)
+	return ""
+}
+
+// dedent strips the common leading-space indent off every non-blank line of a
+// `run:` block so the extracted YAML script runs under a shell.
+func dedent(block string) string {
+	lines := strings.Split(block, "\n")
+	min := -1
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		n := len(line) - len(strings.TrimLeft(line, " "))
+		if min < 0 || n < min {
+			min = n
+		}
+	}
+	if min <= 0 {
+		return block
+	}
+	for i, line := range lines {
+		if len(line) >= min {
+			lines[i] = line[min:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func readWorkflow(t *testing.T, name string) string {
