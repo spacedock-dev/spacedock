@@ -259,3 +259,16 @@ PASS on all three checklist items, each proven by RUNNING (never a grep over SKI
 ### Feedback Cycles
 
 **Cycle 4 fixback - detached audit guard-strength gap (2026-06-06).** The cycle-4 behavior is accepted as correct, but the detached audit found the committed fixture does not protect the load-bearing `ORDER BY status ASC` that keeps OPEN decisions ahead of the recency `LIMIT`. Captain/FO selected Option A: do the cheap fixback now instead of merging with a follow-up. Required implementation: extend `skills/integration/testdata/survey/fixture-sessions.sql` and the corresponding extraction test so at least three answered decisions are newer than the OPEN row; removing the ordering must then RED because the OPEN frontier is truncated. Re-run the focused survey extraction test and `go test ./skills/integration/`; validation should re-check that the ordering guard is mutation-proven.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Extend the survey extraction fixture with at least three answered decisions newer than the OPEN row so the recency LIMIT would otherwise hide OPEN.
+  Added 20 newer answered Claude `AskUserQuestion` rows after the OPEN row, enough to fill the shipped `LIMIT 20` window if OPEN-first ordering is removed (code commit f1ae2da1).
+- DONE: Update the extraction test so removing ORDER BY status ASC fails because the OPEN frontier is truncated.
+  `TestSurveyExtractionSurfacesClaudeSignals` now asserts the OPEN frontier leads DECISIONS; mutation removing `ORDER BY status ASC` failed with `Test framework` missing and the OPEN-frontier assertion firing.
+- DONE: Run the focused survey extraction test and go test ./skills/integration/ from the worktree, and record the results in the stage report.
+  `go test ./skills/integration/ -run TestSurveyExtractionSurfacesClaudeSignals -count=1` = 1 passed; `go test ./skills/integration/` = 68 passed. Extra project gates: `gofmt -w ./cmd ./internal`; `go test ./...` = 1201 passed; `go test ./... -race` = 1201 passed.
+
+### Summary
+
+Closed the guard-strength fixback in commit f1ae2da1: the fixture now models the recency-truncation failure mode, and the extraction test mutation-proves that losing `ORDER BY status ASC` hides the OPEN frontier. The required focused and integration tests pass from the dispatched worktree, and the full repo/race gates pass. The required formatter also exposed two unstable doc-comment quote examples under `internal/status`; those comments were rewritten plainly so `gofmt -w ./cmd ./internal` stays readable and stable.
