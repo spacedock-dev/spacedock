@@ -1,7 +1,7 @@
 ---
 id: bqqr8vzz152n8bk2dqf1rw4q
 title: Release-gate fix — job-separation + tag-body OPTION B so the 0.19.6/0.20.0 cut doesn't fail like 0.19.5
-status: validation
+status: implementation
 source: "captain + handoff (2026-06-05) — THE cut blocker, hard prerequisite for the main-flip/0.20.0 milestone. `release.yml` hard-requires a Runtime-Live-E2E on `next` that never auto-runs there, so the cut fails (like 0.19.5). Grounded analysis: Workflow task w569jug9c (session #08)."
 score: "0.42"
 started: 2026-06-05T19:05:55Z
@@ -174,3 +174,5 @@ Took the captain/FO root-fix: deleted the hand-rolled `parseNeeds` (the enumerat
 ### Summary (cycle 3)
 
 PASSED. The cycle-2 audit's enumeration-trap finding is closed at the class level: cycle-3 replaced the hand-rolled parser with `gopkg.in/yaml.v3` (direct dep, go.mod:8), and validation proves by exercise — not prose — that this kills the whole shape-evasion class. All 7 re-coupling forms (scalar/flow/block × {plain, M1a inline-comment} + M1b blank-line block) RED; the 6-shape tolerance test keeps the safe reverse edge GREEN; the mutation-confirm (neuter parseJobNeeds → all 7 rejection subtests RED, tolerance + real-file GREEN) shows the rejection tests are load-bearing and non-tautological. A detached adversarial refutation over 7 EXOTIC uncovered shapes found parseJobNeeds in lockstep with a canonical yaml.v3 reparse — no residual evasion. No regression: release.yml byte-identical since bd1fb72b (P1 `|| true`, release-notes.txt anchor, skip-gating intact); internal/release 45/45, offline ./... 1187, vet+build clean. AC-1 (cut-unblock + code-gated separation) and AC-2 (double-`-m` tag body) both carry reproducible non-self-referential evidence. Standing handoff unchanged: ledger POPULATION depends on the Codex peer's 4n producer — out of scope, not a blocker, flagged for the gate.
+
+**Cycle 3 — re-validation PASSED, re-audit found a job-IDENTITY seam; captain directed CONTINUE (escalation) — complete the conversion (2026-06-05).** The cycle-3 yaml.v3 fix closed the needs-VALUE shape class (scalar/flow/block + comments + blank-line + merge-key all reject; safe reverse edge tolerated), but the re-audit found 2 residual evasions in the JOB-IDENTITY half (still a hand-rolled line-walk): M1 — `needs: *anchor` resolves to a yaml.AliasNode that parseJobNeeds' ScalarNode/SequenceNode switch doesn't handle → no edge (GHA resolves the alias); M2 — a quoted job key `"goreleaser":` is taken literally by the line-walk → needsByJob lookup miss → needs=[]. 3rd feedback round → escalated; captain directed continue. Fix (cycle 4): parse the WHOLE job graph (names + alias-resolved needs) from ONE yaml.v3 pass and attribute goreleaser/builder via that structure — removing the last hand-rolled line-walk seam. Cut-unblock + skip-gating + AC-2 stay sound (3 audits); release.yml untouched.
