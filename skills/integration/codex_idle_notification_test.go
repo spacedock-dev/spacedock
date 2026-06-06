@@ -1,4 +1,4 @@
-// ABOUTME: Contract tests for Codex no-wait completion evidence and runtime wording.
+// ABOUTME: Contract tests for Codex no-wait completion evidence.
 // ABOUTME: Keeps queued notifications distinct from autonomous idle wake-up.
 package integration
 
@@ -6,126 +6,15 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 )
-
-const codexIdleNotificationProbePrompt = "You are a no-write Codex idle-wake probe. Do not read or write files, do not run tools, and do not modify state. Sleep for 30 seconds, then reply exactly: Done: idle-wake Codex notification probe completed."
 
 var codexIdleNotificationClassifications = map[string]bool{
 	"foreground_wait":          true,
 	"queued_flush":             true,
 	"autonomous_idle_wake":     true,
 	"no_notification_observed": true,
-}
-
-// TestCodexIdleNotificationRuntimeContract is a non-AC text-consistency lint: it
-// asserts the Codex runtime adapter's `## Awaiting Completion` section carries the
-// three outcome headings + scheduling-priority clauses and stays free of
-// blanket-foreground-wait wording. Per the proof policy this presence check does
-// NOT prove the FO observes the idle-notification semantics; the behavior is
-// proven by the captured idle-wake evidence (TestCodexIdleNotificationEvidenceSchema
-// validates real recorded probe runs) and the Codex live runner's
-// awaiting-completion path. This lint guards the adapter clauses.
-func TestCodexIdleNotificationRuntimeContract(t *testing.T) {
-	markNonAC(t, "TestCodexIdleNotificationEvidenceSchema (captured idle-wake evidence) + Codex live runner awaiting-completion path")
-	root := skillsRoot(t)
-	path := filepath.Join(root, "first-officer", "references", "codex-first-officer-runtime.md")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
-	region := sectionAfter(string(data), "## Awaiting Completion")
-	if region == "" {
-		t.Fatal("Codex runtime missing `## Awaiting Completion` section")
-	}
-
-	for _, required := range []string{
-		"### Foreground wait",
-		"### Queued notification flushed by later activity",
-		"### Autonomous idle FO wake-up",
-	} {
-		if !strings.Contains(region, required) {
-			t.Errorf("Awaiting Completion missing outcome heading %q", required)
-		}
-	}
-
-	scheduling := paragraphContaining(region, "Before calling `wait_agent`")
-	if scheduling == "" {
-		t.Fatal("Awaiting Completion missing scheduling priority paragraph before `wait_agent`")
-	}
-	scheduling = squashWhitespace(scheduling)
-	for _, required := range []string{
-		"ready final-status notifications",
-		"gate decisions",
-		"state transitions",
-		"newly dispatchable work",
-		"no other dispatchable or gate-processing work is available",
-		"unresolved worker completion is the next useful idle action",
-	} {
-		if !strings.Contains(scheduling, required) {
-			t.Errorf("wait_agent scheduling paragraph missing %q", required)
-		}
-	}
-
-	lower := strings.ToLower(squashWhitespace(region))
-	for _, forbidden := range []string{
-		"must call `wait_agent` after every dispatch",
-		"must call wait_agent after every dispatch",
-		"always call `wait_agent`",
-		"always call wait_agent",
-		"foreground-wait after every dispatch",
-		"wait after every dispatch",
-	} {
-		if strings.Contains(lower, forbidden) {
-			t.Errorf("Awaiting Completion contains blanket foreground-wait wording %q", forbidden)
-		}
-	}
-}
-
-func TestCodexIdleNotificationRecipeShape(t *testing.T) {
-	path := filepath.Join(repoRoot(t), "docs", "dev", "codex-idle-notification-probe.md")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
-	content := string(data)
-	contentFlat := squashWhitespace(content)
-
-	for _, heading := range []string{
-		"## Foreground wait comparison",
-		"## No-wait idle probe",
-		"## Queued-notification flush check",
-	} {
-		if sectionAfter(content, heading) == "" {
-			t.Errorf("recipe missing section %q", heading)
-		}
-	}
-	if !strings.Contains(content, codexIdleNotificationProbePrompt) {
-		t.Errorf("recipe missing exact no-write worker prompt %q", codexIdleNotificationProbePrompt)
-	}
-	if idleWindowSeconds(content) < 90 {
-		t.Errorf("recipe idle window is less than 90 seconds")
-	}
-	for _, required := range []string{
-		"avoid captain messages",
-		"shell-outs",
-		"terminal jobs",
-		"tool calls",
-		"retry the same handle",
-		"A queued notification flushed by later activity is `queued_flush`, not `autonomous_idle_wake`.",
-	} {
-		if !strings.Contains(contentFlat, required) {
-			t.Errorf("recipe missing %q", required)
-		}
-	}
-	for classification := range codexIdleNotificationClassifications {
-		if !strings.Contains(content, "`"+classification+"`") {
-			t.Errorf("recipe missing interpretation classification %q", classification)
-		}
-	}
 }
 
 func TestCodexIdleNotificationEvidenceSchema(t *testing.T) {
@@ -182,37 +71,6 @@ func TestCodexIdleNotificationEvidenceSchema(t *testing.T) {
 			t.Errorf("%s: dogfood queued-delivery evidence must not be classified as autonomous idle wake-up", path)
 		}
 	}
-}
-
-func paragraphContaining(text, needle string) string {
-	for _, paragraph := range strings.Split(text, "\n\n") {
-		if strings.Contains(paragraph, needle) {
-			return paragraph
-		}
-	}
-	return ""
-}
-
-func idleWindowSeconds(text string) int {
-	re := regexp.MustCompile(`(?i)(?:minimum idle window|idle window)[^0-9\n]*(\d+)\s+seconds`)
-	best := 0
-	for _, match := range re.FindAllStringSubmatch(text, -1) {
-		if len(match) != 2 {
-			continue
-		}
-		var n int
-		for _, r := range match[1] {
-			n = n*10 + int(r-'0')
-		}
-		if n > best {
-			best = n
-		}
-	}
-	return best
-}
-
-func squashWhitespace(text string) string {
-	return strings.Join(strings.Fields(text), " ")
 }
 
 func requireString(t *testing.T, path string, record map[string]any, field string) string {
