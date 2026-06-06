@@ -301,107 +301,71 @@ func parseWorkflowSteps(workflow string) []workflowStep {
 	return steps
 }
 
-// parseWorkflowJobs partitions a workflow into its top-level jobs (the 2-space
-// indented keys under `jobs:`), pairing each job's `needs:` edges (from a real
-// YAML parse, parseJobNeeds) with the steps it owns (sliced from the job's text
-// span and run through the flat step parser). This is the job-aware view the
-// separation guard needs: the flat parseWorkflowSteps cannot tell which job a
-// step belongs to, so a `goreleaser → journey-ledger` edge would otherwise be
-// invisible.
+// parseWorkflowJobs reads the workflow's whole job graph — job names, their
+// `needs:` edges, and the steps each owns — from a single gopkg.in/yaml.v3 pass.
+// Job identity is the security-relevant axis for the separation guard, and a
+// real YAML parse resolves what a line-walk cannot: anchored/aliased needs
+// (`needs: *anchor`), quoted job keys (`"goreleaser":`), comment-trailed and
+// blank-line-split sequences, and flow/block/scalar forms all normalize the same
+// way GitHub Actions resolves them. A workflow that does not parse as YAML
+// yields no jobs (the guard's text-level checks still run against the source).
 func parseWorkflowJobs(workflow string) []workflowJob {
-	lines := strings.Split(workflow, "\n")
-	jobsStart := -1
-	for i, line := range lines {
-		if strings.TrimSpace(line) == "jobs:" && leadingSpaces(line) == 0 {
-			jobsStart = i + 1
-			break
-		}
-	}
-	if jobsStart < 0 {
-		return nil
-	}
-
-	// `needs:` edges come from a real YAML parse (parseJobNeeds), not the
-	// line-walk: needs is the security-relevant field for the separation guard,
-	// and a hand-rolled scan misses comment-trailed entries, blank-line-split
-	// block lists, anchors, and quoting that a parser handles for free.
-	needsByJob := parseJobNeeds(workflow)
-
-	var jobs []workflowJob
-	for i := jobsStart; i < len(lines); i++ {
-		line := lines[i]
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" || strings.HasPrefix(trimmed, "#") {
-			continue
-		}
-		// A top-level key at column 0 ends the jobs block (e.g. a trailing
-		// document key). Job keys sit at exactly 2-space indent.
-		if leadingSpaces(line) == 0 {
-			break
-		}
-		if leadingSpaces(line) == 2 && strings.HasSuffix(trimmed, ":") {
-			name := strings.TrimSuffix(trimmed, ":")
-			jobs = append(jobs, workflowJob{name: name, needs: needsByJob[name]})
-			continue
-		}
-	}
-
-	// Attach steps by slicing each job's text span and reusing the flat parser.
-	jobHeaderAt := func(name string) int {
-		for i := jobsStart; i < len(lines); i++ {
-			if leadingSpaces(lines[i]) == 2 && strings.TrimSpace(lines[i]) == name+":" {
-				return i
-			}
-		}
-		return -1
-	}
-	for j := range jobs {
-		start := jobHeaderAt(jobs[j].name)
-		end := len(lines)
-		if j+1 < len(jobs) {
-			end = jobHeaderAt(jobs[j+1].name)
-		}
-		if start >= 0 && end > start {
-			jobs[j].steps = parseWorkflowSteps(strings.Join(lines[start:end], "\n"))
-		}
-	}
-	return jobs
-}
-
-// parseJobNeeds reads every job's `needs:` edges via a real YAML parse, keyed by
-// job name. GitHub Actions allows `needs:` as a scalar (`needs: a`) or a
-// sequence (flow `[a, b]` or block list); yaml.v3 normalizes all of them — and
-// strips inline `# comments`, tolerates blank lines between block-list entries,
-// and resolves quoting and anchors — so no syntactic shape of a re-coupling
-// edge can hide from the separation guard. A workflow that does not parse as
-// YAML yields no edges (the guard's other checks still run against the text).
-func parseJobNeeds(workflow string) map[string][]string {
 	var doc struct {
 		Jobs map[string]struct {
-			Needs yaml.Node `yaml:"needs"`
+			Needs needsList `yaml:"needs"`
+			Steps []struct {
+				Name string `yaml:"name"`
+				ID   string `yaml:"id"`
+				If   string `yaml:"if"`
+				Uses string `yaml:"uses"`
+				Run  string `yaml:"run"`
+			} `yaml:"steps"`
 		} `yaml:"jobs"`
 	}
 	if err := yaml.Unmarshal([]byte(workflow), &doc); err != nil {
 		return nil
 	}
-	out := make(map[string][]string, len(doc.Jobs))
+	var jobs []workflowJob
 	for name, job := range doc.Jobs {
-		switch job.Needs.Kind {
-		case yaml.ScalarNode:
-			if job.Needs.Value != "" {
-				out[name] = []string{job.Needs.Value}
-			}
-		case yaml.SequenceNode:
-			var needs []string
-			for _, item := range job.Needs.Content {
-				if item.Kind == yaml.ScalarNode && item.Value != "" {
-					needs = append(needs, item.Value)
-				}
-			}
-			out[name] = needs
+		wj := workflowJob{name: name, needs: job.Needs}
+		for _, step := range job.Steps {
+			wj.steps = append(wj.steps, workflowStep{
+				name:   step.Name,
+				id:     step.ID,
+				ifCond: step.If,
+				uses:   step.Uses,
+				run:    step.Run,
+			})
 		}
+		jobs = append(jobs, wj)
 	}
-	return out
+	return jobs
+}
+
+// needsList decodes a job's `needs:` — GitHub Actions allows a scalar
+// (`needs: a`) or a sequence (flow `[a, b]` or block list), and either may be an
+// anchor/alias. Decoding through this custom type lets yaml.v3 resolve aliases
+// to their anchored value and normalize quoting before we read the names, so no
+// `needs:` shape can hide a re-coupling edge from the separation guard.
+type needsList []string
+
+func (n *needsList) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		if value.Value != "" {
+			*n = needsList{value.Value}
+		}
+		return nil
+	case yaml.SequenceNode:
+		var names []string
+		if err := value.Decode(&names); err != nil {
+			return err
+		}
+		*n = names
+		return nil
+	default:
+		return nil
+	}
 }
 
 // findExecutableStep returns the index of the step named name whose run block

@@ -197,6 +197,61 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 	}
 }
 
+// TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes
+// attacks the OTHER half of the edge — the job-identity end — with YAML shapes a
+// line-walk over the raw text cannot see but the real GHA YAML resolver does:
+//   - alias: an `&anchor` on journey-ledger's needs and a `*anchor` on
+//     goreleaser's needs — GHA resolves the alias to `[goreleaser, journey-ledger]`
+//     so goreleaser really does need journey-ledger.
+//   - quoted job key: `"goreleaser":` is the same job key as `goreleaser:` to a
+//     YAML parser, so a `needs: journey-ledger` under it is a real re-coupling.
+//
+// Both must RED. Because the whole job graph (names + alias-resolved needs +
+// step attribution) comes from one yaml.v3 pass, no job-identity shape evades.
+func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentityShapes(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	if err := assertReleaseWorkflowPublishesJourneyCosts(release); err != nil {
+		t.Fatalf("real release.yml unexpectedly fails the guard before mutation: %v", err)
+	}
+
+	for _, tc := range []struct {
+		name   string
+		mutate func(string) string
+	}{
+		{
+			"anchor/alias needs", func(s string) string {
+				// Anchor a list containing journey-ledger on the reverse edge, then
+				// alias it onto goreleaser — GHA resolves *grx so goreleaser needs
+				// journey-ledger.
+				s = strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  journey-ledger:\n    needs: &grx [goreleaser, journey-ledger]\n", 1)
+				return strings.Replace(s,
+					"  goreleaser:\n    runs-on: macos-latest",
+					"  goreleaser:\n    needs: *grx\n    runs-on: macos-latest", 1)
+			},
+		},
+		{
+			"quoted job key", func(s string) string {
+				return strings.Replace(s,
+					"  goreleaser:\n    runs-on: macos-latest",
+					"  \"goreleaser\":\n    needs: journey-ledger\n    runs-on: macos-latest", 1)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			adversarial := tc.mutate(release)
+			if adversarial == release {
+				t.Fatal("fixture workflow shape to mutate not found")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+				t.Fatalf("release workflow guard accepted a goreleaser→journey-ledger re-coupling via %s (the job-identity end evaded the guard)", tc.name)
+			}
+		})
+	}
+}
+
 // TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape is the direction
 // twin of the rejection test: the SAFE one-way edge `journey-ledger: needs:
 // goreleaser` (the upload waits for the Release goreleaser creates) must stay
@@ -236,6 +291,80 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeInEveryShape(t *testing.T) 
 			}
 		})
 	}
+}
+
+// TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes is the
+// direction twin of the job-identity rejection test: an anchor/alias on the SAFE
+// reverse edge, or a quoted journey-ledger job key, must NOT trip the guard —
+// the edge still points journey-ledger → goreleaser, the required upload order,
+// not the cut-blocking reverse.
+func TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+
+	for _, tc := range []struct {
+		name   string
+		mutate func(string) string
+	}{
+		{
+			"anchor/alias needs", func(s string) string {
+				// Anchor goreleaser on a one-off carrier job, alias it onto the
+				// journey-ledger reverse edge — still journey-ledger → goreleaser.
+				return strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  journey-ledger:\n    needs: &grx [goreleaser]\n", 1)
+			},
+		},
+		{
+			"quoted job key", func(s string) string {
+				return strings.Replace(s,
+					"  journey-ledger:\n    needs: goreleaser\n",
+					"  \"journey-ledger\":\n    needs: goreleaser\n", 1)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rewritten := tc.mutate(release)
+			if rewritten == release {
+				t.Fatal("rewrite of the safe reverse edge did not apply")
+			}
+
+			if err := assertReleaseWorkflowPublishesJourneyCosts(rewritten); err != nil {
+				t.Fatalf("release workflow guard wrongly rejected the SAFE reverse edge via %s: %v", tc.name, err)
+			}
+		})
+	}
+}
+
+// TestReleaseWorkflowJobGraphMatchesGitHubActions asserts the parsed job graph of
+// the real release.yml matches what GitHub Actions resolves: goreleaser has NO
+// `needs:` (it cuts regardless), and journey-ledger needs ONLY goreleaser (the
+// one-way upload-ordering edge). This pins the parser to GHA semantics so a
+// future parse regression that drops or invents an edge is caught directly, not
+// only through the guard.
+func TestReleaseWorkflowJobGraphMatchesGitHubActions(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	needs := map[string][]string{}
+	for _, job := range parseWorkflowJobs(release) {
+		needs[job.name] = []string(job.needs)
+	}
+
+	if _, ok := needs["goreleaser"]; !ok {
+		t.Fatalf("parsed graph missing the goreleaser job; got jobs %v", keysOf(needs))
+	}
+	if len(needs["goreleaser"]) != 0 {
+		t.Errorf("goreleaser must have no needs (cuts regardless); got %v", needs["goreleaser"])
+	}
+	if got := needs["journey-ledger"]; len(got) != 1 || got[0] != "goreleaser" {
+		t.Errorf("journey-ledger must need only goreleaser; got %v", got)
+	}
+}
+
+func keysOf(m map[string][]string) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }
 
 // TestReleaseWorkflowSkipsLedgerWhenNoProducerRun proves the JOB-LEVEL skip
