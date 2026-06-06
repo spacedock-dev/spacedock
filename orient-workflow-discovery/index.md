@@ -1,13 +1,13 @@
 ---
 id: 19fhrfae24d221wzgqm4zarn
 title: Bring workflow-discovery into spacedock — orient on a project's implicit agent workflow as the front-door to commission
-status: validation
+status: done
 source: "captain (2026-06-05) — 'check the prototype orient skill in ~/.claude, this is the workflow discovery thing we should bring in.' Prototype at ~/.claude/skills/orient/SKILL.md."
 score: "0.33"
 started: 2026-06-05T19:10:17Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-orient-workflow-discovery
+completed: 2026-06-06T04:37:34Z
+verdict: PASSED
+worktree:
 issue:
 mod-block:
 pr: "#309"
