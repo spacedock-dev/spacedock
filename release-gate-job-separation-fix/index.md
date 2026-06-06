@@ -10,6 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-release-gate-job-separation-fix
 issue:
 mod-block: merge:pr-merge
+pr: "#308"
 ---
 
 ## Problem
