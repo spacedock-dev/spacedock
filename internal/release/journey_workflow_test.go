@@ -1,6 +1,7 @@
 package release
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -249,6 +250,74 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentitySh
 				t.Fatalf("release workflow guard accepted a goreleaser→journey-ledger re-coupling via %s (the job-identity end evaded the guard)", tc.name)
 			}
 		})
+	}
+}
+
+// goreleaserCarrierJob is a second job that ALSO runs the goreleaser action,
+// used to build multi-carrier fixtures. The `%s` is its `needs:` block (may be
+// empty). It must be authored before the real goreleaser job's text so the
+// flat document-order builder<=goreleaser guard stays satisfied.
+const goreleaserCarrierJob = `  goreleaser-extra:
+%s    runs-on: macos-latest
+    steps:
+      - name: Run goreleaser (extra carrier)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+`
+
+// insertGoreleaserCarrier authors a second goreleaser-action job (with the given
+// needs block) just before the real goreleaser job in the workflow text.
+func insertGoreleaserCarrier(t *testing.T, workflow, needsBlock string) string {
+	t.Helper()
+	const anchor = "  goreleaser:\n    runs-on: macos-latest"
+	if !strings.Contains(workflow, anchor) {
+		t.Fatal("fixture workflow missing the goreleaser job header to anchor a second carrier before")
+	}
+	carrier := fmt.Sprintf(goreleaserCarrierJob, needsBlock)
+	return strings.Replace(workflow, anchor, carrier+anchor, 1)
+}
+
+// TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger proves
+// the guard is DETERMINISTIC across multiple goreleaser-action carriers. With two
+// jobs running the goreleaser action — one declaring `needs: journey-ledger` —
+// a guard that inspected only the LAST map-iterated carrier would greenlight on
+// ~the fraction of runs that iterate the safe carrier last (Go map order is
+// random). The collect-all guard rejects on ANY goreleaser carrier → ledger
+// edge, so it must RED on EVERY run. Asserted over many iterations so a
+// last-wins regression cannot hide behind a lucky map order.
+func TestReleaseWorkflowGuardRejectsMultiCarrierGoreleaserNeedsJourneyLedger(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	adversarial := insertGoreleaserCarrier(t, release, "    needs: journey-ledger\n")
+	if adversarial == release {
+		t.Fatal("multi-carrier mutation did not apply")
+	}
+
+	const runs = 200
+	for i := 0; i < runs; i++ {
+		if err := assertReleaseWorkflowPublishesJourneyCosts(adversarial); err == nil {
+			t.Fatalf("run %d/%d: guard accepted a multi-carrier workflow where a goreleaser-action job needs journey-ledger (last-wins map-order flakiness)", i+1, runs)
+		}
+	}
+}
+
+// TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape is the safe twin: two
+// goreleaser-action carriers, NEITHER needing the journey-ledger job (the extra
+// carrier needs nothing). The collect-all guard must stay GREEN on every run —
+// multiple carriers are not themselves a re-coupling.
+func TestReleaseWorkflowGuardToleratesMultiCarrierSafeShape(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	safe := insertGoreleaserCarrier(t, release, "")
+	if safe == release {
+		t.Fatal("multi-carrier safe mutation did not apply")
+	}
+
+	const runs = 200
+	for i := 0; i < runs; i++ {
+		if err := assertReleaseWorkflowPublishesJourneyCosts(safe); err != nil {
+			t.Fatalf("run %d/%d: guard wrongly rejected a safe multi-carrier workflow (extra goreleaser carrier needs nothing): %v", i+1, runs, err)
+		}
 	}
 }
 

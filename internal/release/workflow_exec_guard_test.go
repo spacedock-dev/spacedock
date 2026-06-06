@@ -144,45 +144,49 @@ func assertReleaseWorkflowPublishesJourneyCosts(workflow string) error {
 }
 
 // assertGoreleaserDoesNotNeedJourneyLedger binds the separation invariant to the
-// job DAG: the job that carries the goreleaser action must NOT declare `needs:`
-// on the job that builds the journey-cost ledger. That edge would re-block the
-// cut on the never-fired Runtime-Live-E2E run (the exact bug this separation
-// closes). The edge is bound to the OWNING job — found by which job holds the
-// goreleaser action vs. which holds the journey-cost builder — so the SAFE
-// reverse edge (journey-ledger needs: goreleaser, required so `gh release upload`
-// runs after the Release exists) does not false-trip the check.
+// job DAG: no job carrying the goreleaser action may declare `needs:` on a job
+// that builds the journey-cost ledger. That edge would re-block the cut on the
+// never-fired Runtime-Live-E2E run (the exact bug this separation closes). It
+// collects ALL goreleaser-action carriers and ALL ledger-builder carriers and
+// rejects if ANY carrier→ledger edge exists — so the result does not depend on
+// Go's randomized map-iteration order (a last-wins scan over a multi-carrier
+// workflow would be latently flaky). The SAFE reverse edge (journey-ledger
+// needs: goreleaser, required so `gh release upload` runs after the Release
+// exists) points the other way and does not false-trip the check; a job that is
+// itself both carriers cannot need itself, so the self-pair is skipped.
 func assertGoreleaserDoesNotNeedJourneyLedger(workflow string) error {
 	jobs := parseWorkflowJobs(workflow)
-	goreleaserJob, ledgerJob := "", ""
+	ledgerJobs := map[string]bool{}
+	var goreleaserCarriers []workflowJob
 	for _, job := range jobs {
+		isGoreleaser, isLedger := false, false
 		for _, step := range job.steps {
 			if strings.HasPrefix(step.uses, "goreleaser/goreleaser-action@") {
-				goreleaserJob = job.name
+				isGoreleaser = true
 			}
 			for _, command := range executableShellCommands(step.run) {
 				if isJourneyCostBuilder(command) {
-					ledgerJob = job.name
+					isLedger = true
 				}
 			}
 		}
+		if isLedger {
+			ledgerJobs[job.name] = true
+		}
+		if isGoreleaser {
+			goreleaserCarriers = append(goreleaserCarriers, job)
+		}
 	}
-	if goreleaserJob == "" {
+	if len(goreleaserCarriers) == 0 {
 		return fmt.Errorf("release.yml has no job carrying the goreleaser action")
 	}
-	if ledgerJob == "" {
+	if len(ledgerJobs) == 0 {
 		return fmt.Errorf("release.yml has no job carrying the journey-cost builder")
 	}
-	if goreleaserJob == ledgerJob {
-		// Single-job layout: no cross-job needs edge to re-block the cut.
-		return nil
-	}
-	for _, job := range jobs {
-		if job.name != goreleaserJob {
-			continue
-		}
-		for _, need := range job.needs {
-			if need == ledgerJob {
-				return fmt.Errorf("release.yml goreleaser job %q declares needs: %q — re-blocking the cut on the journey-ledger job", goreleaserJob, ledgerJob)
+	for _, carrier := range goreleaserCarriers {
+		for _, need := range carrier.needs {
+			if need != carrier.name && ledgerJobs[need] {
+				return fmt.Errorf("release.yml goreleaser job %q declares needs: %q — re-blocking the cut on the journey-ledger job", carrier.name, need)
 			}
 		}
 	}
