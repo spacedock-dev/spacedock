@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#310"
+archived: 2026-06-06T04:10:16Z
 ---
 
 hwk shipped a standing AC-3 sweep whose MATCH axis ("a test that reads instruction-file bytes and inspects them must declare markNonAC/markCodeBoundInvariant, regardless of idiom") is small, universal, and sound — keep it. But its READER axis (the `readsInstructionContent` taint analysis: param/struct-field/method/closure flow + path-construction discovery + the transitive reader fixpoint) is the bulk of the ~1525 added lines AND is known-incomplete: a detached adversarial audit found four evasion classes that sail through (M-A unrecognized surfaces like AGENTS.md/mods, M-B cross-package reads, M-C package-var paths, M-D []string/range flow). Each hardening cycle bolted on more detection code and the audit still found the next hole — the classic enumeration trap the proof-policy itself warns against.
