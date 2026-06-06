@@ -1,13 +1,13 @@
 ---
 id: bqqr8vzz152n8bk2dqf1rw4q
 title: Release-gate fix — job-separation + tag-body OPTION B so the 0.19.6/0.20.0 cut doesn't fail like 0.19.5
-status: validation
+status: done
 source: "captain + handoff (2026-06-05) — THE cut blocker, hard prerequisite for the main-flip/0.20.0 milestone. `release.yml` hard-requires a Runtime-Live-E2E on `next` that never auto-runs there, so the cut fails (like 0.19.5). Grounded analysis: Workflow task w569jug9c (session #08)."
 score: "0.42"
 started: 2026-06-05T19:05:55Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-release-gate-job-separation-fix
+completed: 2026-06-06T02:44:27Z
+verdict: PASSED
+worktree:
 issue:
 mod-block:
 pr: "#308"
