@@ -19,7 +19,7 @@ import (
 // userSkills is the published user-skill surface: each owns a SKILL.md the host
 // discovers. The test-only `integration` package is deliberately absent.
 var userSkills = []string{
-	"commission", "debrief", "refit", "ensign",
+	"commission", "debrief", "refit", "survey", "ensign",
 	"first-officer", "using-claude-team", "present-gate", "feedback-rejection-flow",
 }
 
@@ -80,6 +80,75 @@ func frontmatterHasKey(fm, key string) bool {
 		}
 	}
 	return false
+}
+
+// frontmatterField returns the trimmed scalar value of a top-level `key:` line in
+// a flat frontmatter block.
+func frontmatterField(fm, key string) string {
+	prefix := key + ":"
+	for _, line := range strings.Split(fm, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, prefix) {
+			return strings.TrimSpace(strings.TrimPrefix(trimmed, prefix))
+		}
+	}
+	return ""
+}
+
+// discoverUserInvocableSkills scans the shipped skills tree the way the host does:
+// every subdirectory with a SKILL.md whose frontmatter declares `user-invocable: true`
+// is exposed as `/spacedock:<name>`.
+func discoverUserInvocableSkills(t *testing.T) map[string]string {
+	t.Helper()
+	root := skillsRoot(t)
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatalf("read skills root %s: %v", root, err)
+	}
+	out := map[string]string{}
+	for _, e := range entries {
+		if !e.IsDir() || e.Name() == "integration" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(root, e.Name(), "SKILL.md"))
+		if err != nil {
+			continue
+		}
+		fm, ok := frontmatter(string(data))
+		if !ok || frontmatterField(fm, "user-invocable") != "true" {
+			continue
+		}
+		name := frontmatterField(fm, "name")
+		if name == "" {
+			t.Errorf("user-invocable skill dir %q has no name field", e.Name())
+			continue
+		}
+		out[name] = e.Name()
+	}
+	return out
+}
+
+// TestSurveyIsDiscoverableUserCommand is a structural frontmatter/discovery check
+// kept inside the instruction-read quarantine. The behavior proof for survey's scan
+// lives in skills/integration; this check only guards that the host can discover the
+// `/spacedock:survey` command from the shipped skill tree.
+func TestSurveyIsDiscoverableUserCommand(t *testing.T) {
+	discovered := discoverUserInvocableSkills(t)
+	dir, ok := discovered["survey"]
+	if !ok {
+		t.Fatalf("survey is not discoverable as /spacedock:survey; discovered user commands: %v", sortedUniqueKeys(discovered))
+	}
+	if dir != "survey" {
+		t.Errorf("survey command resolves from dir %q, want skills/survey", dir)
+	}
+}
+
+func sortedUniqueKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return sortedUnique(keys)
 }
 
 // referenceRe matches the two reference-include forms a SKILL.md uses: an
@@ -286,7 +355,8 @@ func isClaudeAdapter(path string) bool {
 	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
 		return true
 	}
-	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md"))
+	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md")) ||
+		strings.Contains(path, filepath.Join("survey", "SKILL.md"))
 }
 
 // TestShippedSurfaceHasNoHiddenMachineDependency is a no-MACHINE-DEPENDENCY

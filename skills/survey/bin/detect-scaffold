@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "## SCAFFOLD"
+
+shopt -s nullglob 2>/dev/null || true
+
+has_superpowers_skill_name() {
+  local name
+  for path in .claude/skills/*; do
+    [ -e "$path" ] || continue
+    name=$(basename "$path")
+    case "$name" in
+      brainstorming|writing-plans|executing-plans|subagent-driven-development)
+        return 0
+        ;;
+    esac
+  done
+  return 1
+}
+
+similar_names() {
+  local path name count=0 out=""
+  for path in .claude/skills/* .claude/commands/*; do
+    [ -e "$path" ] || continue
+    name=$(basename "$path")
+    out="${out:+$out,}$name"
+    count=$((count + 1))
+    [ "$count" -ge 5 ] && break
+  done
+  printf "%s" "$out"
+}
+
+if [ -d .claude/skills/superpowers ] || grep -rqs "superpowers" .claude-plugin/ 2>/dev/null || has_superpowers_skill_name; then
+  echo "superpowers"
+elif [ -d .claude/skills/gsd ] || [ -d .claude/skills/get-shit-done ] || [ -d .claude/commands/gsd ] || ls GSD.md gsd.md .gsd >/dev/null 2>&1; then
+  echo "gsd"
+elif [ -d .claude/skills ] || [ -d .claude/commands ]; then
+  echo "similar: $(similar_names)"
+else
+  echo "none"
+fi
