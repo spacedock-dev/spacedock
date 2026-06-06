@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#311"
+archived: 2026-06-06T04:24:29Z
 ---
 
 `spacedock claude` runs a fail-fast contract gate before launch (`internal/cli/frontdoor.go:167-171`, `gateHost(ops, "claude", stderr)`) that denies when no plugin is installed AND no `--plugin-dir` is passed. With no installed plugin, `ResolveManifest` returns empty and the gate prints "no installed claude plugin found. Run `spacedock install --host claude` (or --skip-contract-check to bootstrap)" and exits 1. No-plugin is the most common first-run state, yet the only advertised escape is a niche bootstrap flag or a separate install round-trip — so a fresh user is blocked from the one command they tried.
