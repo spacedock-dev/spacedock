@@ -1,7 +1,7 @@
 ---
 id: 4qnn7dbzkyh9qv65t618vtxy
 title: AC-3 sweep reader-axis — NET-REMOVE the detection machinery; rely on the detached audit backstop
-status: validation
+status: implementation
 source: "captain (2026-06-05) — re-scoped from 'invert/harden the reader-axis sweep' to NET REMOVAL. Captain directive: 'i want to see net removal, not more crap to mark crap or detect crap.' The hwk merge added ~1525 lines of go/ast sweep machinery (the bulk = the reader-axis taint/discovery), which is BOTH the heaviest part AND the incomplete part (M-A/B/C/D evade it). The detached adversarial audit caught every reader-axis hole the static sweep missed — so the audit, not a static guard, is the right backstop for that axis."
 score: "0.40"
 started: 2026-06-05T19:10:17Z
@@ -160,3 +160,13 @@ NET-REMOVED the reader-axis taint-flow machinery from both AC-3 sweep files per 
 ### Summary
 
 PASSED. All three ACs verified by checks outside the task body — grep (machinery gone), `git diff --numstat` (HN -324 / integ -364, both net-negative), `go test ./...` (1164 passed), the two mutation controls (genuine RED→GREEN, source-read), a demotion-text byte-diff vs origin/next (50 markNonAC + 17 markCodeBoundInvariant intact; only synthetic evasion-fixture literals dropped), and `spacedock status --validate` (VALID). The required detached adversarial audit on the merge result refuted nothing Material: five adversarial edits (gutted sweeps, broken declaration/exclusion checks, alternate idioms, direct-literal read) were each caught by the kept match-axis sweep or its mutation control, confirming the net-removal did not weaken the surviving guard and that "zero offenders" is a live result, not a vacuous one.
+
+### Re-scope — captain decision 2026-06-06: DELETE the anti-pattern, don't detect it
+
+The classification (Workflow wzj36glyp) found 37/61 instruction-file reads are banned prose-grep tautologies; only 24 had any independent reason. The captain's decision goes further: **KILL the code-bound reads too.** A "code-bound" read (prose-must-match-a-code-value) is a *consistency lint*, not a behavior test. Captain: *"code-bound — kill them. if there's no corresponding behavior tests, i don't know what we are doing."* A prose⟷code consistency check that substitutes for a real behavior test is the same anti-pattern one level up — delete it; if the behavior matters there must be a BEHAVIOR test, and if there's none, the lint was never proving the behavior.
+
+**End-state (replaces the reader-axis-flow removal and a'/b'/c'/d'):**
+1. DELETE all prose-grep (34 C + 1 D + 2 prose-E) AND all code-bound (13 A) instruction-file reads — ~50 of 61. For EACH: if the behavior is proven elsewhere (a real behavior test / live drive) → delete the read; if the behavior genuinely matters but is UNTESTED → delete the read AND file the owed behavior test (the deletion is a forcing function that surfaces the real coverage gap — never silently lose a real concern, never keep the tautology). Report the per-read categorization.
+2. DELETE the markNonAC / markCodeBoundInvariant marker model AND the taint-flow AC-3 sweep machinery entirely. markNonAC was a permission slip for the anti-pattern.
+3. KEEP ONLY the ~11 genuinely-structural reads (ref-closure / frontmatter-validity / structural-absence / dedup / line-floor — a real non-prose defect, not a prose property). Quarantine them in a dedicated package + a THIN boundary guard (or commit hook) that BANS any instruction-file read outside it. Ban-by-default; the quarantine is the only legal place. No taint-flow, no per-read markers.
+4. CAPTURE THE PRINCIPLE WITH EMPHASIS where test-authors will see it (a prominent doc/package comment in the tests dir): instruction/prompt files are NOT read in tests except in the quarantine package for structural checks; NO prose-grep (asserting a file contains its own text); NO code-bound consistency lint as a behavior substitute; behavior is proven by RUNNING it, never by reading prose. So this does not reappear. (The workflow README proof-policy [FO-owned] gets the same amplification; shipped-scaffolding propagation is task ey.)
