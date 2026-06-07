@@ -1,86 +1,144 @@
-# Spacedock v1
+# Spacedock
 
-Spacedock runs multi-step agent work through plain-text workflows. You define
-the stages, Spacedock dispatches the right agent for each stage, and the work
-record lives on disk so a long task can survive context limits and resume later.
+Hand an agent a multi-step job and it drifts, skips steps, or invents its own
+path. Hand it a workflow and it follows the workflow.
 
-This repository contains the Go launcher and compatibility bridge for the next
-Spacedock command surface.
+Spacedock runs agent work through stages you define. Each stage gets a fresh
+context, an explicit gate, and a structured report. Reviewers are allowed to
+push back. State lives outside the agent, so work survives the context limit and
+picks up the next session where it left off.
 
-The first implementation target is conservative:
+**You want Spacedock if:**
 
-- provide a `spacedock` binary entry point;
-- preserve current `status` behavior through a vendored compatibility path;
-- prove per-workflow `.spacedock-state` state checkouts with the README symlink model;
-- then replace the symlink dependency with native split-root status handling.
+- **You delegate repeatable work to agents** — the same pipeline run over many
+  inputs (code reviews, content drafts, outreach batches) — and you want each
+  run to finish, not stop halfway. Spacedock dispatches a fresh agent per stage,
+  with an approval gate where your judgment actually matters.
+- **You don't trust single-agent output** on its own. Spacedock review stages
+  push back instead of rubber-stamping, with a 3-strikes escalation so you only
+  see what the reviewer couldn't resolve.
+- **Your work spans days or weeks** — a blog draft, a launch plan, a multi-week
+  benchmark. Spacedock holds artifact state outside the agent, so the next
+  session resumes instead of restarts.
 
-The development workflow for this repo lives in `docs/dev/README.md`. Runtime entities for that workflow live in `docs/dev/.spacedock-state/`, which is intended to be a separate git checkout or nested state repo.
+## What's different
+
+- **Approval gates with structured evidence.** Every gate comes with a stage
+  report: findings, verdicts, artifacts, anomalies. You approve, redirect, or
+  bounce back without sifting through raw output.
+- **Adversarial review gates.** Review stages can be configured to push back
+  rather than rubber-stamp, targeting thin evidence and work that looks busy
+  without proving its claim.
+- **Plan in batches, decide as work flows back.** Queue many work items at once;
+  agents advance each through its stages while you handle approvals as they
+  surface.
+- **The workflow learns with you.** When a pattern emerges — a stage that never
+  fires, a gate that keeps bouncing the same issue — the first officer helps you
+  adjust the workflow.
+- **Isolation when needed.** Stages that touch shared state run in their own git
+  worktree; lightweight stages run inline.
+- **Work doesn't die at the context limit.** When an agent runs out of context,
+  a successor carries forward what's in flight.
 
 ## Install
 
-Two lanes — see [`docs/install-journey.md`](docs/install-journey.md) for the
-step-by-step journey with the observable output at each step.
+Spacedock is two pieces: the `spacedock` launcher and a host plugin (the
+first-officer and ensign agents) loaded by Claude Code or Codex.
 
-**Stable lane (`main`)** — starting with `v0.20.0`, tagged releases, Homebrew
-artifacts, and marketplace plugin installs come from `main`:
+Install the launcher with Homebrew, then add the plugin:
 
 ```bash
-brew tap spacedock-dev/homebrew-tap
-brew install spacedock
+brew install spacedock-dev/homebrew-tap/spacedock
 spacedock install --host claude
 ```
 
-The no-tap one-liner `brew install spacedock-dev/homebrew-tap/spacedock` is
-equivalent. In the stable lane, `spacedock install` resolves the released
-marketplace plugin from `spacedock-dev/spacedock` on `main`, not from `next`.
-
-**Dev-only lane (`next` + `--plugin-dir`)** — source build from `next`, the
-primary development workflow. `next` has no Homebrew artifact, and `@next` is a
-source-build or dev-publish path, not the stable install path:
+That installs the launcher, adds the Spacedock plugin to Claude Code, and runs a
+compatibility check. Now launch the first officer with a task:
 
 ```bash
-git clone --branch next https://github.com/spacedock-dev/spacedock
-cd spacedock
-go build -o spacedock ./cmd/spacedock
-./spacedock claude --plugin-dir "$PWD" -- "your task"
+spacedock claude -- "your task"
 ```
 
-`--plugin-dir` loads the repo's own vendored `spacedock:first-officer` /
-`spacedock:ensign` skills and relaxes the contract gate.
+See [`docs/install-journey.md`](docs/install-journey.md) for the full first-run
+walkthrough, the Codex path, and a from-source build for development.
 
-**Upgrade a stale plugin** — when `spacedock doctor` reports your installed
-plugin is out of date (predates this binary's contract), reinstall it:
+> [agent-safehouse](https://agent-safehouse.dev) is an optional sandbox for
+> agent runs — install it separately. A `.safehouse` profile in the working
+> directory (or a `--safehouse` flag) wraps the launch through it.
+
+## Quick start
+
+Commission a workflow by describing what you want it to do:
 
 ```bash
-spacedock install --host claude
+spacedock claude -- "/commission Email triage: fetch, categorize, and act on my
+Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (triage
+in:inbox, categorize, propose an action per email as a table) -> approval
+(Captain reviews the proposal) -> execute (carry out approved actions). Walk me
+through Gmail setup if needed."
 ```
 
-On the stable lane, `spacedock install` refreshes the released plugin from
-`main`. The old-plugin/no-binary and binary/plugin-skew journeys still need
-their release-gate confirmation before the `0.20.0` flip; this docs update does
-not claim those upgrade paths are automatic yet.
+The first officer commissions the workflow, dispatches an ensign to gather your
+inbox, then pauses with a categorized proposal and waits for your approval
+before touching anything.
 
-[safehouse](https://agent-safehouse.dev) is a separate runtime dependency for
-sandboxed launches — not installed by either lane. A `.safehouse` profile in the
-working directory (or the `--safehouse` / `--safehouse-<key>=…` flags) wraps the
-launch through it.
+For a development workflow:
+
+```bash
+spacedock claude -- "/commission Dev task workflow: design -> plan -> implement
+-> review, with the design and implementation plan inlined in each work item,
+implementation on isolated worktrees with strict TDD, design and review gated
+for approval."
+```
+
+## How it works
+
+A workflow is a directory of markdown work item files plus a README that defines
+the stages, the schema, and the gates. There are three roles:
+
+| Role | Who |
+|------|-----|
+| **Captain** | You. You define the mission and make the calls at approval gates. |
+| **First Officer** | The orchestrator agent that runs the workflow and reports to you at gates. |
+| **Ensign** | The worker agent that moves one item forward through one stage. |
+
+The first officer reads the workflow README, checks which items are ready to
+advance, and dispatches ensigns. Stages that need isolation run in their own git
+worktree; lightweight stages run inline. At a gate the first officer pauses and
+presents the ensign's stage report: approve, redo with feedback, or reject.
+Rejected work bounces back to an earlier stage for revision, with a hard cap so
+you never get stuck in a loop.
+
+A work item carries everything in its body:
+
+```yaml
+---
+id: 054
+title: Session debrief command
+status: done
+---
+
+Problem statement, design notes, acceptance criteria, and stage reports all
+live in the body of this file as the work moves through its stages.
+```
+
+When you end a session, `/spacedock:debrief` captures what happened — commits,
+state changes, decisions, open issues — into a record the next session picks up.
+When a new Spacedock release is out, `/spacedock:refit` upgrades your workflow
+scaffolding while keeping local modifications.
 
 ## Usage
 
 ```bash
-spacedock claude [host-flags…] [--safehouse…] -- "task"   # launch claude --agent spacedock:first-officer
-spacedock codex  [host-flags…] [--safehouse…] -- "task"   # launch codex with the spacedock:first-officer skill
-spacedock --version                                       # spacedock <version> (contract 1)
-spacedock doctor                                          # contract compatibility verdict
+spacedock claude [host-flags…] [--safehouse…] -- "task"   # launch the first officer in Claude Code
+spacedock codex  [host-flags…] [--safehouse…] -- "task"   # launch the first officer in Codex
+spacedock doctor                                          # plugin compatibility check
+spacedock --version                                       # print the installed version
 ```
 
 Flags before `--` pass through to the host; the bare text after `--` is the
-launch task. `--skip-contract-check` bypasses the contract gate (bootstrap
-only); a `--plugin-dir` launch relaxes it without the flag.
+launch task.
 
-## Commands
+## License
 
-```bash
-go test ./...
-go run ./cmd/spacedock --help
-```
+Spacedock is released under the [Apache License 2.0](LICENSE).
