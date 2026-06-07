@@ -42,10 +42,13 @@ minority.
    self-invocation from the tally (self-pollution — it is 1026/1045 of the tally
    on this repo, see ## Spike results).
 2. **Identity scoping — coalesce a repo across keys** (#318). Scope by repo identity
-   via `git rev-parse --git-common-dir` (NOT `--show-toplevel`, which returns the
-   worktree/subdir root) / path-prefix boundary / `worktree_project_mappings` override;
-   union all sessions under the repo; surface folded-in keys + blank-`cwd` count;
-   deterministic (no fuzzy name matching). No-regression for single-checkout repos.
+   via `git rev-parse --path-format=absolute --git-common-dir` (NOT plain
+   `--git-common-dir`, which returns a RELATIVE path from root/subdir; NOT
+   `--show-toplevel`, which returns the worktree/subdir root) / path-prefix boundary /
+   `worktree_project_mappings` override; union all sessions under the repo; surface
+   folded-in keys + blank-`cwd` count; deterministic (no fuzzy name matching).
+   No-regression for single-checkout repos. (`--path-format` needs git ≥2.31; not in
+   a git repo or older git → fall back to `basename(pwd)`, today's behavior.)
 3. **Identity from edits** (#317.2). A WORK-BY-AREA tally bucketing `Edit/Write`
    `input_json.$.file_path` by package; report "what this is" (edits) separately
    from "where you stop" (decisions); treat edits to external sibling repos
@@ -67,10 +70,25 @@ minority.
   scoping/scaffold fix passes green doing nothing (the invisible-fix trap).
   Defaults match production: `cwd`/`git_branch` default `''` (NOT NULL), blank rows
   store `''` not NULL — so blank-`cwd` handling is exercised, not skipped.
+  (`git_branch` + `category` are seeded for production-shape fidelity / #316 reuse
+  only — no in-scope AC queries them; YAGNI, don't wire a query for them.)
 - Build ONE shared git-init test helper (parts 2 and 4 need a real git repo +
   worktree; today fixtures are static file trees). The helper `git init`s a temp
-  repo, adds a worktree, and returns paths so a test can `cmd.Dir` into a subdir or
-  worktree and exercise the real `git rev-parse --git-common-dir` resolution.
+  repo, adds a worktree, and returns repo-root / subdir / worktree paths so a test can
+  `cmd.Dir` into a subdir or worktree and exercise the real
+  `git rev-parse --path-format=absolute --git-common-dir` resolution. The helper must
+  `t.Skip` (not `t.Fatal`) if `git worktree add` is unavailable (ancient git / sandbox),
+  matching `buildFixtureDB`'s skip-not-fail discipline — a minimal box stays runnable
+  without a false pass.
+- Build a path-coupling step (the M2 mechanism): the static `fixture-sessions.sql`
+  carries STABLE marker tokens (`__REPO_ROOT__`, `__SUBDIR__`, `__WORKTREE__`,
+  `__EXTERNAL__`) in the `sessions.cwd` and the Edit/Write `input_json.$.file_path`
+  fields; a `coupleFixtureToRepo(t, db, repo)` helper runs path-scoped `UPDATE`s after
+  the static build to rewrite those tokens to the git-init helper's RUNTIME dirs. Without
+  this, the union (`cwd LIKE '<git-root-prefix>%'`) and the internal-vs-external
+  bucketing can never see the helper's runtime path, so AC-2/AC-4/AC-5's RED-levers
+  could not fire. This is what realizes "signal from a real on-disk path, never a
+  fixture boolean."
 - Seed at least one anonymized fixture from a REAL agentsview `sessions.db` dump so
   Skill/Edit/decision shapes match production (all fixtures today are hand-authored —
   the validate-on-real-data gap; closes it once for the whole cluster). The spike
@@ -142,15 +160,27 @@ yields: `spacedock:ensign` 964, `spacedock:first-officer` 24, `spacedock:debrief
   So survey run from the split-root state checkout or any worktree reports "no agent
   history" while 1198 sessions sit under the agentsview key. 149 sessions in the DB
   have a cwd whose basename ≠ the repo basename — all invisible to the basename key.
-- `git rev-parse --git-common-dir` resolves the repo root from any subdir/worktree;
-  `--show-toplevel` does NOT (returns the worktree/subdir as root):
-  - from `docs/dev/.spacedock-state`: `--show-toplevel`=`…/.spacedock-state` (TRAP),
-    `dirname(--git-common-dir)`=`…/spacedock-v1` (correct);
-  - from external worktree `/private/tmp/spacedock-audit-autoinstall-7462`:
-    `--show-toplevel`=that worktree (TRAP), `dirname(--git-common-dir)`=`…/spacedock-v1`.
-  → `PROJECT = sanitize(basename(dirname(git rev-parse --git-common-dir)))`, falling
-  back to `basename(pwd)` when not in a git repo, makes scan-project's key match
-  agentsview's key from any subdir/worktree.
+- The scoping FORMULA: plain `git rev-parse --git-common-dir` is NOT safe — it
+  returns a RELATIVE path from the repo root and intermediate subdirs, so
+  `basename(dirname(...))` regresses the exact subdir case #318 is about. Re-grounded
+  this session (git 2.39.5) across all four cases:
+  - plain `--git-common-dir`: from repo root → `.git` → `basename(dirname)`=`.` (WRONG);
+    from `docs/dev` → `../../.git` → `..` (WRONG); from `docs/dev/.spacedock-state` →
+    `…/spacedock-v1/.git` → `spacedock-v1` (right, but only because git returns
+    absolute when common-dir is outside the cwd's own `.git` chain — not reliable).
+  - `git rev-parse --path-format=absolute --git-common-dir`: returns
+    `…/spacedock-v1/.git` from repo root, `docs/dev`, `docs/dev/.spacedock-state`,
+    AND the external worktree `/private/tmp/spacedock-audit-autoinstall-7462` — so
+    `basename(dirname(...))`=`spacedock-v1` EVERYWHERE.
+  - `--show-toplevel` is the other trap (returns the worktree/subdir as root):
+    from `.spacedock-state` → `…/.spacedock-state`; from the external worktree →
+    that worktree dir.
+  - non-git dir → `--path-format=absolute --git-common-dir` exits 128 → fall back.
+  → `PROJECT = sanitize(basename(dirname(git rev-parse --path-format=absolute --git-common-dir)))`,
+  falling back to `basename(pwd)` when not in a git repo OR git is older than 2.31
+  (the `--path-format` floor), makes scan-project's key match agentsview's key from
+  any subdir/worktree. `--path-format` is a single git ≥2.31 dependency; the fallback
+  preserves today's behavior on older git.
 - The prior dogfood note (a DIFFERENT product: main + sibling + deploy + 4 worktrees)
   recorded agentsview itself fragmenting into 7 project keys: 31 reported vs 71
   coalesced (56% of sessions, 18% of decisions dropped). So BOTH failure modes are
@@ -264,16 +294,37 @@ a proxy-only impl goes RED. NO SKILL.md substring tests — every check runs the
 `survey_*_test.go` pattern). The expected values come from the FIXTURE rows / the
 real on-disk git repo — an independent source that can diverge from the skill text.
 
-**AC-1 — Fixture foundation carries the ground-truth signals.**
+**AC-1 — Fixture foundation carries the ground-truth signals AND couples to runtime paths.**
 The committed fixture DB has `sessions.cwd`, `sessions.git_branch`,
 `tool_calls.skill_name`, `tool_calls.category` (defaults matching production: `cwd`/
 `git_branch` NOT NULL default `''`), at least one fixture is seeded from anonymized
 REAL `sessions.db` shapes (namespaced + bare `skill_name`, `Your questions have been
-answered:` / `The user doesn't want to proceed` decision results), and a shared
-git-init test helper materializes a real temp git repo + worktree.
-- Verified by: the fixture DB builds (`buildFixtureDB` succeeds) and a test asserts
-  the four columns exist and the git-init helper returns a path where
-  `git rev-parse --git-common-dir` resolves — RED if any column or the helper is
+answered:` / `The user doesn't want to proceed` decision results), a shared
+git-init test helper materializes a real temp git repo + worktree, AND there is a
+path-coupling step that rewrites the fixture DB's runtime-dependent paths to the
+git-init helper's actual dirs so the on-disk-path-based ACs can fire.
+- The `git_branch` and `category` columns are seeded for production-shape fidelity
+  and #316 reuse only — no in-scope AC queries them; they exist so the fixture matches
+  the real schema, not because a query reads them (do NOT wire a query for them: YAGNI).
+- **Path-coupling mechanism (settles M2 — the named mechanism, pick this one).**
+  `buildFixtureDB` ingests `fixture-sessions.sql` verbatim (no templating), but the
+  union/bucketing ACs need fixture `sessions.cwd` and Edit/Write `input_json.$.file_path`
+  to sit UNDER the git-init helper's `t.TempDir()` repo prefix, which is known only at
+  RUNTIME. The mechanism: a `coupleFixtureToRepo(t, db, repo)` helper runs, AFTER the
+  static build, `UPDATE sessions SET cwd=? WHERE id=?` (repo-root / subdir / worktree /
+  external-sibling rows mapped to the helper's real dirs) and the corresponding
+  `UPDATE tool_calls SET input_json=json_set(input_json,'$.file_path',?) WHERE id=?`
+  for the Edit/Write rows. The static SQL carries STABLE marker tokens
+  (`__REPO_ROOT__`, `__SUBDIR__`, `__WORKTREE__`, `__EXTERNAL__`) in those fields so
+  the coupling step knows which rows to rewrite to which helper dir. This keeps the
+  committed `.sql` readable and the runtime path injection explicit and localized; the
+  scan then sees real on-disk paths, never a fixture-provided boolean.
+- Verified by: the fixture DB builds (`buildFixtureDB` succeeds), `coupleFixtureToRepo`
+  rewrites the marker rows to the helper's real dirs (a test asserts a coupled
+  `sessions.cwd` equals the helper's subdir path — RED if the marker is left
+  un-substituted), a test asserts the four columns exist, and the git-init helper
+  returns a path where `git rev-parse --path-format=absolute --git-common-dir`
+  resolves to the repo root — RED if any column, the helper, or the coupling is
   missing. (Foundation AC: it is the prerequisite the other ACs' RED-levers stand on.)
 
 **AC-2 — Identity scoping coalesces a repo across keys (#318).**
@@ -285,11 +336,16 @@ totals — not the single basename-key subset; it lists the folded-in keys and a
 blank-`cwd` count; a populated `worktree_project_mappings` row overrides path-prefix
 inference; a single-checkout fixture is unchanged (no regression); coalescing is
 deterministic (git-root / prefix / mapping only).
-- Verified by: an integration test that `cmd.Dir`s into the helper's subdir/worktree
-  and asserts the coalesced count. RED-lever: a worktree-cwd row under a DIFFERENT
-  project key carrying a UNIQUE decision header — a basename-only impl drops it and
-  the header is absent from output; the git-root impl unions it in. The expected
-  count comes from the fixture rows, not the skill text.
+- Verified by: an integration test that builds the fixture DB, calls
+  `coupleFixtureToRepo` to rewrite the `__SUBDIR__`/`__WORKTREE__`/`__REPO_ROOT__`
+  cwd-marker rows to the git-init helper's real dirs, then `cmd.Dir`s into the
+  helper's subdir/worktree and asserts the coalesced count. RED-lever: a
+  worktree-cwd row (coupled to the helper's worktree dir) under a DIFFERENT project
+  key carrying a UNIQUE decision header — a basename-only impl (or the broken plain
+  `--git-common-dir` formula run from the subdir) drops it and the header is absent
+  from output; the corrected `--path-format=absolute --git-common-dir` impl unions it
+  in. The expected count comes from the fixture rows + the helper's real on-disk repo,
+  not the skill text.
 
 **AC-3 — Scaffold detection is multi-label + behavioral (#319, #317.1).**
 `detect-scaffold` emits ALL matched scaffolds (not the first ladder winner); the
@@ -298,23 +354,30 @@ installed-but-unused / recovered from the join of file-probe × `skill_name` usa
 with `family:skill` + bare-name normalization and `spacedock:*` self-invocation
 EXCLUDED.
 - Verified by: (a) a two-scaffold fixture repo → `detect-scaffold` test asserts BOTH
-  labels (extends `survey_scaffold_test.go`); (b) a fixture DB whose `tool_calls` has
-  `superpowers:*` rows but whose disk tree has NO superpowers files → SCAFFOLD-USAGE
-  reports superpowers as **recovered** (RED-lever: a file-only impl reports `none`);
-  (c) a fixture DB dominated by `spacedock:ensign` rows → the tally does NOT report
-  spacedock (self-pollution excluded; RED-lever: a no-exclusion impl reports
-  spacedock). Expected labels come from the fixture file tree + DB rows.
+  labels (extends `survey_scaffold_test.go`); (b) and (c) are DISTINCT DB rows in the
+  same fixture so a family-table bug fails them diagnosably — (b) `superpowers:*` (and
+  a bare `running-research-spikes`) rows whose disk tree has NO superpowers files →
+  SCAFFOLD-USAGE reports superpowers as **recovered** (RED-lever: a file-only impl
+  reports `none`), and SEPARATELY (c) `spacedock:ensign`-dominated rows → the tally
+  does NOT report spacedock (self-pollution excluded; RED-lever: a no-exclusion impl
+  reports spacedock). Keeping (b) and (c) as separate rows means a normalization bug
+  that mis-buckets the `superpowers` family is distinguishable from one that fails to
+  exclude the `spacedock` family. Expected labels come from the fixture file tree + DB rows.
 
 **AC-4 — Identity from edits: WORK-BY-AREA (#317.2).**
 `scan-project` emits a `## WORK-BY-AREA` section bucketing `Edit`/`Write`
 `input_json.$.file_path` by package under the repo root, all-time alongside recent,
 reported separately from decisions; paths OUTSIDE the repo root are bucketed as
 external references, not repo identity.
-- Verified by: a fixture DB with Edit/Write rows whose `file_path` spans two repo
-  packages + one external-sibling path → the test asserts both internal packages
-  appear with counts and the external path is segregated as a reference. RED-lever:
-  the external path's package name must NOT appear among the repo-identity buckets.
-  Expected buckets come from the fixture rows.
+- Verified by: a fixture DB with Edit/Write rows whose `file_path` carries the
+  `__REPO_ROOT__/<pkg>` markers for two repo packages plus an `__EXTERNAL__` marker,
+  coupled via `coupleFixtureToRepo` so the repo-package paths resolve UNDER the
+  git-init helper's repo root while the external path resolves outside it → the test
+  asserts both internal packages appear with counts and the external path is
+  segregated as a reference. RED-lever: the external path's package name must NOT
+  appear among the repo-identity buckets — which is decidable only because internal vs
+  external is measured against the helper's real repo-root prefix, not a fixture flag.
+  Expected buckets come from the fixture rows coupled to the helper's real dirs.
 
 **AC-5 — OPEN frontier is cross-checked against the repo (#320).**
 The OPEN frontier is split shipped (drop) / decided-not-shipped (backlog) /
@@ -323,16 +386,20 @@ repo (merged PRs / git log / working tree); DROP happens ONLY on a confident mat
 with no repo signal the frontier degrades to transcript-only with every OPEN flagged
 `unverified`; and the `ExitPlanMode "User has approved your plan"` result reads
 `done`, not OPEN.
-- Verified by: (a) an integration test using the git-init helper to build a real
-  repo whose git log confidently references one OPEN fork's header → that fork is
-  classified shipped (dropped) while an unreferenced OPEN fork stays on the frontier
-  (RED-lever: "shipped" derived from the REAL on-disk git log, never a
+- Verified by: (a) an integration test that wires the OPEN headers (static SQL) and
+  the "shipped" git log (helper repo) to the SAME run: the git-init helper makes a
+  real commit whose subject confidently references ONE of the fixture's OPEN-fork
+  decision headers (the test reads that header text from the fixture and writes it
+  into the helper's commit message, so the two sides share one source of truth), then
+  runs the cross-check with the helper repo as the repo root → that fork is classified
+  shipped (dropped) while an unreferenced OPEN fork stays on the frontier (RED-lever:
+  "shipped" is derived from the REAL on-disk git log of the helper repo, never a
   fixture-provided boolean — a transcript-only impl keeps the merged fork on the
-  frontier); (b) a no-git-repo case → the frontier is emitted transcript-only and
-  flagged `unverified`; (c) a fixture `ExitPlanMode` row with
-  `User has approved your plan` → DECISIONS marks it `done` (RED-lever: today's
-  three-prefix impl marks it OPEN). Expected classifications come from the real git
-  repo + fixture rows.
+  frontier); (b) a no-git-repo case (run the cross-check with a non-repo dir) → the
+  frontier is emitted transcript-only and flagged `unverified`; (c) a fixture
+  `ExitPlanMode` row with `User has approved your plan` → DECISIONS marks it `done`
+  (RED-lever: today's three-prefix impl marks it OPEN). Expected classifications come
+  from the real git repo + fixture rows.
 
 ## Test plan
 
@@ -344,16 +411,23 @@ with no repo signal the frontier degrades to transcript-only with every OPEN fla
   stays runnable without a false pass (matches `buildFixtureDB`).
 - **Fixtures (the foundation, AC-1):**
   - extend `testdata/survey/fixture-sessions.sql` DDL with the four columns +
-    defaults, and add rows exercising the new scope (a subdir-cwd session, a
-    worktree-cwd session under a different project key, `Skill` rows with namespaced +
-    bare + `spacedock:*` self skill_names, Edit/Write rows with internal + external
-    file_paths, an `ExitPlanMode` approved row);
+    defaults, and add rows exercising the new scope, with `cwd` / Edit-Write
+    `file_path` fields carrying the `__REPO_ROOT__` / `__SUBDIR__` / `__WORKTREE__` /
+    `__EXTERNAL__` marker tokens (a subdir-cwd session, a worktree-cwd session under a
+    different project key, `Skill` rows with namespaced + bare + `spacedock:*` self
+    skill_names — keeping the recovered-`superpowers` and the excluded-`spacedock`
+    cases as DISTINCT rows, Edit/Write rows with internal + external file_paths, an
+    `ExitPlanMode` approved row);
   - one anonymized real-shape fixture (counts kept, identifiers stripped) so the
     Skill/Edit/decision shapes match production;
   - a shared `gitInitHelper(t)` that `git init`s a temp repo, adds a worktree, and
-    returns repo-root / subdir / worktree paths.
+    returns repo-root / subdir / worktree paths — `t.Skip` (not `t.Fatal`) when
+    `git worktree add` fails (ancient git / sandbox);
+  - a `coupleFixtureToRepo(t, db, repo)` that rewrites the marker tokens to the
+    helper's runtime dirs after `buildFixtureDB` (the M2 coupling).
 - **No-fixture-boolean rule:** "shipped" (AC-5) and "coalesced from a worktree"
-  (AC-2) are derived from a REAL on-disk git repo built by the helper, never a
+  (AC-2) and "external vs internal edit" (AC-4) are derived from a REAL on-disk git
+  repo built by the helper and COUPLED into the fixture cwd/path rows, never a
   fixture-provided flag — that is what makes the proxy-only impl RED.
 - **Cost/complexity:** medium. Fixture DDL extension + git-init helper are the bulk
   of the new scaffolding (shared across AC-2/AC-4/AC-5). The four behavioral ACs are
@@ -361,10 +435,12 @@ with no repo signal the frontier degrades to transcript-only with every OPEN fla
   proved the live read is sandbox-blocked, so the committed-fixture path is the only
   CI-safe surface and it is sufficient.
 - **No spike outstanding:** the two named risky unknowns (skill_name shape; cwd/git
-  scoping against real data) are grounded in ## Spike results; the queries there seed
-  the implementation's first tests. The remaining mechanisms (sqlite3 fixture build,
-  `cmd.Dir` exec, `git rev-parse --git-common-dir`) are already proven by the
-  existing tests + the spike.
+  scoping against real data) are grounded in ## Spike results, INCLUDING the corrected
+  `--path-format=absolute --git-common-dir` formula re-grounded across root / subdir /
+  state-checkout / worktree / non-git this session; the queries there seed the
+  implementation's first tests. The remaining mechanisms (sqlite3 fixture build,
+  `cmd.Dir` exec, `git rev-parse --path-format=absolute --git-common-dir`, post-build
+  `UPDATE` path-coupling) are already proven by the existing tests + the spike.
 
 ## Reused / deferred from #316 and #317.3
 
@@ -395,3 +471,17 @@ and #316 (deferred). These reports get closed after this task lands; no 1-1 mapp
 ### Summary
 
 Grounded the two riskiest unknowns against a fresh real-data sync before committing the design: the spike CORRECTED the body's premise — agentsview already coalesces this repo's worktrees into one project key, so the #318 bug is that `scan-project`'s OWN `basename(pwd)` key diverges from agentsview's repo-rooted key (0 sessions from a subdir/worktree), fixed by `dirname(git rev-parse --git-common-dir)`; and confirmed `spacedock:*` self-pollution dominates the skill_name tally (1026/1045), making self-exclusion load-bearing. Settled all three forks (two-binary scaffold contract with a DB tally in scan-project + family-normalization table; 3-bucket OPEN taxonomy with confident-match-only drop + mandatory unverified degrade; keep-as-one), specified the fixture foundation that defeats the invisible-fix trap (DDL extension + git-init helper + real-data fixture), and wrote five behavioral ACs each with an outside-the-body RED-on-proxy lever. Also surfaced the load-bearing sandbox/TCC fact: tests must build a fixture DB from committed SQL (existing pattern), never depend on a live agentsview read.
+
+## Stage Report: ideation (cycle 2)
+
+Revision against the independent staff review's two material defects + polish.
+
+- DONE: M1 — the #318 scoping FORMULA was broken (plain `git rev-parse --git-common-dir` returns a RELATIVE path from root/subdir, so `basename(dirname(...))` regresses the exact subdir case #318 targets). Re-grounded the corrected `git rev-parse --path-format=absolute --git-common-dir` across root / `docs/dev` / `.spacedock-state` / external-worktree / non-git this session (git 2.39.5); fixed the formula in ## In scope item 2, ## Spike results scoping section (now shows broken-vs-fixed per-case), and AC-2; stated the git ≥2.31 floor + the `basename(pwd)` fallback.
+  Evidence: spike output — plain form gives `.`/`..` from root/subdir (WRONG); `--path-format=absolute` gives `spacedock-v1` from all four locations; non-git exits 128 → fallback.
+- DONE: M2 — the proof-harness coupling for AC-2/AC-4/AC-5 was unspecified (`buildFixtureDB` ingests static SQL verbatim, but the union/bucketing match the git-init helper's RUNTIME `t.TempDir()` prefix). Specified the mechanism in ## Foundation, AC-1, AC-2, AC-4, AC-5, and ## Test plan: static SQL carries `__REPO_ROOT__`/`__SUBDIR__`/`__WORKTREE__`/`__EXTERNAL__` marker tokens in `sessions.cwd` + Edit/Write `input_json.$.file_path`; a `coupleFixtureToRepo(t, db, repo)` helper rewrites them to the helper's real dirs via path-scoped `UPDATE` after the static build, so the scan sees real on-disk paths.
+  Evidence: AC-1 now has a coupling Verified-by (coupled cwd equals the helper's subdir path, RED if un-substituted); AC-5 shares one source of truth between the fixture OPEN header and the helper's commit subject.
+- DONE: Polish — (a) `git_branch`/`category` flagged seed-only/YAGNI (no AC queries them) in AC-1 + ## Foundation; (b) AC-3 recovered-`superpowers` and excluded-`spacedock` cases made DISTINCT rows for diagnosable family-table failures; (c) git-init helper specified to `t.Skip` (not `t.Fatal`) when `git worktree add` is unavailable, matching `buildFixtureDB`.
+
+### Summary
+
+The corrected scoping formula is `PROJECT = sanitize(basename(dirname(git rev-parse --path-format=absolute --git-common-dir)))` with a `basename(pwd)` fallback for non-git / git <2.31 — re-grounded across all four location cases before writing it, so the body no longer ships a formula that regresses the subdir case #318 exists to fix. The M2 proof-harness coupling is now a named, realizable mechanism (marker tokens in static SQL + a post-build `coupleFixtureToRepo` UPDATE keyed to the git-init helper's runtime dirs), so AC-2/AC-4/AC-5's "real on-disk path, never a fixture boolean" RED-levers can actually fire. Fork settlements, taxonomy, proof philosophy, and the rest of the spike are unchanged — confirmed sound by the review.
