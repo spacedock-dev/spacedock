@@ -1,10 +1,11 @@
 # Spacedock
 
 **Spacedock is a multi-agent orchestrator where nothing ships without a decision.**
-It lives inside your agent. Each stage ends at a gate. The work arrives with its
-evidence, measured against a predefined bar for what good looks like. The human
-partner or a delegated agent says yes, sends it back, or escalates. Either way
-the decision gets recorded, with its evidence and its reason.
+It lives inside your existing agent, like Claude Code or Codex. Each stage ends
+at a gate. The work arrives with its evidence, measured against a predefined bar
+for what good looks like. The human partner or a delegated agent says yes, sends
+it back, or escalates. Either way the decision gets recorded, with its evidence
+and its reason.
 
 **Why?**
 
@@ -15,9 +16,9 @@ the decision gets recorded, with its evidence and its reason.
 - You're the agent, and you stall every few steps waiting on a human who isn't
   watching, with no clear scope and no clear bar for done, so you ask and then
   you wait.
-- It's one broken loop on both ends, because generation got cheap and
-  verification didn't. Every task still ends in a decision, and right now nobody
-  owns it. It lands on whoever's awake.
+- Both of you are stuck on the same root cause. Generation got cheap; judgment
+  didn't. Every task still ends in a decision, and no one owns it, so it falls on
+  whoever's around.
 
 **Start with what you already built.** Point Spacedock at a project you
 vibe-coded into spaghetti and run `/spacedock:survey`. It reads your own agent
@@ -27,25 +28,25 @@ waiting on you.
 
 ## What's different
 
-- **The maker doesn't judge itself.** Review stages are adversarial by default.
-  They push back on thin evidence and work that looks busy without proving its
-  claim. A 3-strikes escalation means you only see what the reviewer couldn't
-  settle.
+- **The agent doesn't get to judge its own work.** Review stages are adversarial
+  by default. They push back on thin evidence and work that looks busy without
+  proving its claim.
 - **Every decision leaves a trail.** Each gate carries a stage report: findings,
   verdicts, artifacts, anomalies. You decide on evidence, not the transcript.
   The record outlives the reviewer, so you can trace a bad result back to the
   call that caused it.
-- **You set the bar; the agent works to it.** Each stage declares what done
-  means. The agent runs to that line on its own. You show up at the gate, not in
-  the loop.
-- **The bar sharpens as you go.** When a stage never fires, or a gate keeps
-  bouncing the same issue, the first officer helps you adjust the workflow. Good
-  is discovered, not declared up front.
+- **The bar sharpens as you use it.** Each stage declares what good means, and
+  the agent works to that line on its own. When a standard turns out fuzzy in
+  practice, the agent works it out and proposes an update to the stage. The more
+  you use it, the sharper the bar.
 - **Batch the work; decide as it flows back.** Queue many items at once. Agents
   advance each through its stages. You handle gates as they surface, not one
   session at a time.
 - **Isolation when it matters.** Stages that touch shared state run in their own
   git worktree. Lighter stages run inline.
+- **Native sandbox, zero wrapping.** Drop a `.safehouse` profile in the project
+  and Spacedock runs the agent sandboxed automatically. The `--safehouse` flags
+  tune it per launch.
 - **Work survives the context limit.** When an agent runs out of context, a
   successor carries forward what's in flight.
 
@@ -56,18 +57,19 @@ first-officer and ensign agents) loaded by Claude Code, Codex, or Pi. Install th
 launcher with Homebrew:
 
 ```bash
-brew install spacedock-dev/homebrew-tap/spacedock
+brew tap spacedock-dev/homebrew-tap
+brew install spacedock
 ```
 
-Then launch. The first command installs the plugin if it's missing, so a single
-line gets you a working session:
+Then launch. The first launch sets up the plugin for you, so a single line gets
+you a working session. Point it at a project you already have and let it survey:
 
 ```bash
-spacedock claude "your task"
+spacedock claude "/spacedock:survey"
 ```
 
-Using Codex or Pi instead? Swap the subcommand: `spacedock codex "your task"` or
-`spacedock pi "your task"`.
+Using Codex or Pi instead? Swap the subcommand: `spacedock codex "/spacedock:survey"`
+or `spacedock pi "/spacedock:survey"`.
 
 To stay current: `brew upgrade spacedock` updates the launcher; `spacedock
 install` refreshes the plugin. Run `spacedock doctor` any time to confirm the

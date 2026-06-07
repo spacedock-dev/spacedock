@@ -10,15 +10,16 @@ Spacedock is two pieces that install separately:
 2. **The host plugin.** The first-officer and ensign agents, loaded by your
    agent (Claude Code, Codex, or Pi).
 
-The recommended setup installs the launcher with Homebrew, and the first launch
-adds the plugin for you. A from-source build is available for development.
+The recommended setup installs the launcher with Homebrew, then adds the plugin.
+A from-source build is available for development.
 
 ## Install with Homebrew (recommended)
 
 1. **Install the launcher.**
 
    ```bash
-   brew install spacedock-dev/homebrew-tap/spacedock
+   brew tap spacedock-dev/homebrew-tap
+   brew install spacedock
    ```
 
 2. **Confirm it.**
@@ -38,16 +39,15 @@ adds the plugin for you. A from-source build is available for development.
    Adds the Spacedock plugin to Claude Code and runs a compatibility check that
    reports `OK` when the launcher and plugin match.
 
-4. **Launch.**
+4. **Launch.** Point it at a project you already have and let it survey.
 
    ```bash
-   spacedock claude "your task"
+   spacedock claude "/spacedock:survey"
    ```
 
-   Starts the first officer in Claude Code with your task. If the plugin isn't
-   installed yet, this first launch installs it for you, then proceeds. When a
-   `.safehouse` profile is present in the working directory the launch is wrapped
-   through the sandbox.
+   Starts the first officer in Claude Code and runs the survey. When a
+   `.safehouse` profile is present in the working directory, the launch runs
+   sandboxed.
 
 ## Use Codex or Pi instead
 
