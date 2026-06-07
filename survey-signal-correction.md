@@ -14,24 +14,56 @@ issue:
 `spacedock:survey` decides "what this project is and where it stands" from THIN
 PROXIES while the ground truth sits unread right next to it. One root cause — the
 same proof-policy class we already fence (trust a proxy over ground truth) —
-manifest across the skill's two artifacts (`skills/survey/bin/detect-scaffold`,
-`skills/survey/bin/scan-project`). Verified against live code + a freshly-synced
-real `sessions.db` this session (see ## Spike results):
+manifest across the skill's scan + scaffold-detection logic. Verified against live
+code + a freshly-synced real `sessions.db` this session (see ## Spike results):
 
-- `detect-scaffold` prints `none` on THIS spacedock repo — the skill can't
+- The scaffold probe prints `none` on THIS spacedock repo — the skill can't
   recognize its own home (file-only probe of `.claude/skills` etc.).
 - `tool_calls.skill_name` is populated (1045 `Skill`-call rows in the spike sync;
   `spacedock:ensign`×964, `superpowers:*`, bare `running-research-spikes`) and
   never queried — the behavioral truth of which scaffolds ran is ignored.
-- `scan-project` scopes by `basename(pwd)`, but agentsview keys every session by
-  the RESOLVED repo-root basename. Run from a subdir/worktree the two keys diverge
-  and survey finds 0 sessions while 1198 sit under the agentsview key (spike).
+- The scan scopes by `basename(pwd)`, but agentsview keys every session by the
+  RESOLVED repo-root basename. Run from a subdir/worktree the two keys diverge and
+  survey finds 0 sessions while 1198 sit under the agentsview key (spike).
 - The OPEN-decision "NEEDS YOU" frontier is transcript-only and over-reports
   (forks already merged read as still-open).
 
 This is the highest-value survey work because it makes the skill CORRECT for its
 ACTUAL users (greenfield / other-scaffold repos), not the spacedock-incumbent
 minority.
+
+## Structure (captain redirect 2026-06-07 — supersedes #309)
+
+#309 moved survey's logic INTO `skills/survey/bin/{scan-project,detect-scaffold}`.
+This task SUPERSEDES that resolution: the shipped survey skill carries NO bundled
+`bin/` scripts. The four signal-corrections below ship as:
+
+- a **recommended-SQL reference file** `skills/survey/references/queries.sql` —
+  annotated, ONE labeled query per concern (scaffold-usage tally; git-root scoping;
+  WORK-BY-AREA; decision/OPEN detection). The SQL lives ONLY in the reference file,
+  NEVER fenced in SKILL.md prose (a fenced query + a test parsing it would re-trip
+  the proof-policy ban on parsing SKILL.md as the artifact).
+- **SKILL.md PROSE** orchestrates: resolve the repo root via
+  `git rev-parse --path-format=absolute --git-common-dir` (fallback `basename(pwd)`
+  for non-git / git <2.31), run the recommended queries from the reference file,
+  apply the multi-label scaffold classification + family-normalization (EXCLUDING
+  `spacedock:*` self-invocation), cross-check the OPEN frontier against the repo
+  (confident-match-only drop + mandatory `unverified` degrade), assemble the report.
+- the existing `bin/scan-project` and `bin/detect-scaffold` are DELETED.
+
+**Lighter proof bar (captain redirect).** Survey is ONBOARDING: a wrong orientation
+report is a SOFT failure (low blast radius), not a broken pipeline, and report
+EFFICACY is monitored by a SEPARATE project. So the heavy proof machinery a higher
+blast radius would justify is NOT warranted here. The proof surface is:
+- a LIGHT smoke test that the recommended queries (the reference file) run against a
+  committed production-shaped fixture DB and return the expected SHAPE/rows — this
+  pins the one thing worth pinning (SQL extraction correctness; catches a broken
+  query or schema drift). The smoke test READS and RUNS the `.sql` reference file —
+  it executes the artifact, it does not parse SKILL.md prose, preserving the 4q
+  "tests run artifacts, not instruction text" property.
+- a LIVE drive of the skill (run `/spacedock:survey`, observe the corrected report)
+  for orchestration correctness. Ongoing report-efficacy is the separate project's
+  concern — out of scope here.
 
 ## In scope (one cohesive deliverable)
 
@@ -61,38 +93,39 @@ minority.
    else keep on the frontier). Mandatory transcript-only degrade, flagged
    `unverified`, when no repo signal. Fold in the cheap independent fix: the
    `ExitPlanMode "User has approved your plan"` prefix matches none of the three
-   done-prefixes today (`scan-project`), so approved plans fall to OPEN.
+   done-prefixes the decision query checks today, so approved plans fall to OPEN.
 
 ## Foundation (prerequisite — ideation owns the design, implementation ships it)
 
-- Extend the test fixture DDL with `cwd` / `git_branch` (on `sessions`) and
-  `skill_name` / `category` (on `tool_calls`) — they are ABSENT today, so a naive
-  scoping/scaffold fix passes green doing nothing (the invisible-fix trap).
-  Defaults match production: `cwd`/`git_branch` default `''` (NOT NULL), blank rows
-  store `''` not NULL — so blank-`cwd` handling is exercised, not skipped.
-  (`git_branch` + `category` are seeded for production-shape fidelity / #316 reuse
-  only — no in-scope AC queries them; YAGNI, don't wire a query for them.)
-- Build ONE shared git-init test helper (parts 2 and 4 need a real git repo +
-  worktree; today fixtures are static file trees). The helper `git init`s a temp
-  repo, adds a worktree, and returns repo-root / subdir / worktree paths so a test can
-  `cmd.Dir` into a subdir or worktree and exercise the real
-  `git rev-parse --path-format=absolute --git-common-dir` resolution. The helper must
-  `t.Skip` (not `t.Fatal`) if `git worktree add` is unavailable (ancient git / sandbox),
-  matching `buildFixtureDB`'s skip-not-fail discipline — a minimal box stays runnable
-  without a false pass.
-- Build a path-coupling step (the M2 mechanism): the static `fixture-sessions.sql`
-  carries STABLE marker tokens (`__REPO_ROOT__`, `__SUBDIR__`, `__WORKTREE__`,
-  `__EXTERNAL__`) in the `sessions.cwd` and the Edit/Write `input_json.$.file_path`
-  fields; a `coupleFixtureToRepo(t, db, repo)` helper runs path-scoped `UPDATE`s after
-  the static build to rewrite those tokens to the git-init helper's RUNTIME dirs. Without
-  this, the union (`cwd LIKE '<git-root-prefix>%'`) and the internal-vs-external
-  bucketing can never see the helper's runtime path, so AC-2/AC-4/AC-5's RED-levers
-  could not fire. This is what realizes "signal from a real on-disk path, never a
-  fixture boolean."
+Under the lighter proof bar, the foundation is one production-shaped fixture DB the
+smoke test runs the recommended queries against — NOT the heavy machinery a higher
+blast radius would need. Explicitly DROPPED from the prior cycle (captain redirect):
+the git-init test helper, the `coupleFixtureToRepo` / marker-token coupling, the
+per-AC RED-lever rigor, and any DDL extension that existed only to feed the coupling.
+
+- Extend the fixture DDL with `cwd` (on `sessions`) and `skill_name` (on
+  `tool_calls`) — they are ABSENT today, so the new scoping + scaffold-usage queries
+  would compile and return nothing against the current fixture (the invisible-fix
+  trap: the smoke test must have the columns to assert the corrected SHAPE). Defaults
+  match production: `cwd` TEXT NOT NULL DEFAULT `''` (blank stored as `''`, not NULL).
+  Seed `git_branch` / `category` too IF it keeps the fixture production-shaped, but no
+  query reads them (YAGNI — don't wire a query for them).
 - Seed at least one anonymized fixture from a REAL agentsview `sessions.db` dump so
-  Skill/Edit/decision shapes match production (all fixtures today are hand-authored —
-  the validate-on-real-data gap; closes it once for the whole cluster). The spike
-  already pulled the real shapes (## Spike results); the fixture encodes them.
+  Skill/scaffold/decision/edit shapes match production (all fixtures today are
+  hand-authored — the validate-on-real-data gap; closes it once for the whole
+  cluster). The spike already pulled the real shapes (## Spike results); the fixture
+  encodes them: namespaced + bare `skill_name`, `spacedock:*` self-rows, a
+  `superpowers:*` recovered case, `Your questions have been answered:` /
+  `The user doesn't want to proceed` decision results, an `ExitPlanMode` approved row,
+  Edit/Write `input_json.$.file_path` rows, and `cwd` values under one repo root
+  spanning a subdir + a worktree-style path so the git-root scoping query has
+  something to coalesce.
+- The git-root scoping query in the reference file is exercised by the smoke test
+  with the fixture's `cwd` rows as the corpus and a fixed repo-root prefix as the
+  bound parameter — no live git repo needed for the SMOKE bar (the live drive
+  exercises the real `git rev-parse` resolution). This is the deliberate
+  light-vs-heavy trade: pin the SQL extraction, leave end-to-end orchestration to the
+  live drive.
 
 ## Out of scope
 
@@ -211,21 +244,20 @@ done/OPEN detection is correct and must be preserved under the new scope.
 
 ## Design forks — SETTLED
 
-### Fork 1 — the unified detect-scaffold contract
+### Fork 1 — the scaffold-detection contract (no bin/; SQL reference + SKILL.md prose)
 
-**Where the DB tally lives.** `detect-scaffold` is file-only and has NO `$DB`.
-`scan-project` already opens `$DB` and already owns the repo scope (and gains the
-git-root scope from part 2). Settled: **keep two binaries; add the behavioral tally
-to `scan-project` as a new `## SCAFFOLD-USAGE` section** (it has the DB + the scoped
-session set), keep `detect-scaffold` as the FILE probe but make it **multi-label**
-(emit every matched scaffold, one per line, not a single ladder winner). SKILL.md
-step 3 joins the two outputs into the 3-bucket classification. Rationale: each binary
-keeps a single responsibility; no DB dependency is forced onto the file probe; the
-join is cheap and already where the comparative-benefit logic lives.
-- Rejected: a new `bin/recognize-scaffold` doing both (duplicates scan-project's DB
-  open + scope; two places to keep the scope correct).
-- Rejected: folding the file probe into scan-project (couples two independent
-  signals; breaks the existing `detect-scaffold` test surface and `cmd.Dir` pattern).
+**Where the logic lives** (settled by the captain redirect). NO bundled `bin/`. The
+two signals reconcile in SKILL.md prose:
+- the **file probe** (does `.claude/skills/superpowers` etc. exist on disk) is
+  SKILL.md prose — a multi-label check that names EVERY matched scaffold, not a
+  single ladder winner.
+- the **behavioral tally** is the `scaffold-usage` query in
+  `references/queries.sql`: a `tool_calls.skill_name` GROUP BY over the git-root-scoped
+  session set, run by SKILL.md prose. SKILL.md joins the two into the 3-bucket
+  classification.
+- Rejected (superseded): a `bin/scan-project` SCAFFOLD-USAGE section or a
+  `bin/recognize-scaffold` (the redirect removes all bundled bin/; the tally is a
+  labeled query the prose runs, the classification is prose).
 
 **The 3-bucket scaffold classification** (join of file probe × usage tally):
 - `file-present + invoked` → **active** (reported plainly).
@@ -236,14 +268,15 @@ join is cheap and already where the comparative-benefit logic lives.
 **`skill_name` → family normalization** (grounded above): split on first `:`, prefix
 is the family; bare names map via a small superpowers-discipline name set → family
 `superpowers`; **exclude family `spacedock`** (self-pollution). The family set is a
-table, not an if-ladder — adding a `spacedock` family row later (#316) is data, not a
-contract change, satisfying the EXTENSIBLE requirement.
+prose table, not an if-ladder — adding a `spacedock` family row later (#316) is a prose
+edit, not a contract change, satisfying the EXTENSIBLE requirement.
 
-**`detect-scaffold` multi-label.** Today's ladder (`if superpowers; elif gsd; elif
-similar; else none`) becomes: probe each scaffold independently, print every match
-(`superpowers`, `gsd`, `similar: <names>` as appropriate), print `none` only when no
-probe matched. The existing per-fixture test (`survey_scaffold_test.go`) still passes
-for single-scaffold fixtures; a new two-scaffold fixture asserts BOTH labels emit.
+**Multi-label file probe.** Today's single-winner ladder (`if superpowers; elif gsd;
+elif similar; else none`) becomes prose that probes each scaffold independently and
+names every match (`superpowers`, `gsd`, `similar: <names>`), reporting `none` only
+when no probe matched. The scaffold-usage query is what the smoke test pins (it
+catches a broken tally / schema drift); the prose join + multi-label probe are
+exercised by the live drive.
 
 ### Fork 2 — #320 OPEN-vs-repo taxonomy + conservative-match + degrade
 
@@ -265,182 +298,137 @@ fork is flagged **`unverified`** in the report — never silently presented as
 authoritative. The degrade is the default, not an error.
 
 **ExitPlanMode cheap fix** folded in here: add `User has approved your plan` (and the
-`User approved` variants) to the done-prefix set in `scan-project` DECISIONS so an
-approved plan reads `done`, not OPEN. Independent, fixture-provable, one-line.
+`User approved` variants) to the done-prefix set in the `decision/OPEN-detection`
+query in `references/queries.sql` so an approved plan reads `done`, not OPEN.
+Independent, smoke-pinnable (a fixture `ExitPlanMode` approved row → the query returns
+`done`), one line of SQL.
 
 **Where the cross-check runs.** The repo cross-reference needs `git log` / merged-PR
-data + the working tree — that is the survey driver's job (SKILL.md step 4 already
-narrates the report). Settled: `scan-project` emits the raw transcript-OPEN frontier
-(as today); the cross-check + 3-bucket split is a new step the SKILL.md step-4 report
-performs against the repo, with the conservative/degrade rules above. The
-behavioral, testable half is a small helper the SKILL invokes — a `bin/` cross-check
-that takes the OPEN headers + the repo root and returns shipped/backlog/open — so the
-classification is exercised by a test, not left as SKILL prose. (Implementation may
-fold it into scan-project or a sibling `bin/`; the AC is the behavior, not the file.)
+data + the working tree. Under the no-bin/ structure: the `decision/OPEN-detection`
+query in `references/queries.sql` emits the raw transcript-OPEN frontier (smoke-pinned
+shape); the cross-check + 3-bucket split + conservative/degrade rules are SKILL.md
+PROSE the survey driver runs against the repo (`git log` / merged-PR / working tree).
+The 3-bucket classification's correctness is exercised by the LIVE drive (the lighter
+proof bar), not a dedicated bin/ helper test — onboarding's low blast radius +
+external efficacy monitoring justify proving orchestration by live run rather than
+unit-pinning every branch.
 
 ### Fork 3 — split?
 
-**Keep as one.** The four sub-parts share the fixture foundation (the DDL extension,
-the git-init helper, the real-data fixture) — splitting would duplicate or serialize
-that foundation. The parts are independent enough to implement in sequence within one
+**Keep as one.** The four sub-parts share the structure (the `references/queries.sql`
+reference file, the SKILL.md prose orchestration, the one production-shaped fixture)
+and one live drive proves them together — splitting would duplicate the reference file
+and the fixture. The parts are independent enough to implement in sequence within one
 task but share enough scaffolding that one entity is correct. Default honored.
 
-## Acceptance criteria (entity-level; each "Verified by" names an outside check)
+## Acceptance criteria (entity-level; lighter onboarding bar — captain redirect)
 
-Proof discipline (non-negotiable — proof-policy class): every AC reads the
-ground-truth signal that already exists AND a committed fixture carries that signal so
-a proxy-only impl goes RED. NO SKILL.md substring tests — every check runs the real
-`bin/` script via `cmd.Dir` against committed fixtures (the existing
-`survey_*_test.go` pattern). The expected values come from the FIXTURE rows / the
-real on-disk git repo — an independent source that can diverge from the skill text.
+Proof bar (the redirect's lighter bar): the ONE thing worth pinning is SQL-extraction
+correctness — a query-smoke test that runs the `references/queries.sql` queries
+against a committed production-shaped fixture DB and asserts the corrected SHAPE/rows
+(catches a broken query or schema drift). The smoke test EXECUTES the `.sql` artifact;
+it does NOT parse SKILL.md prose, preserving the 4q "tests run artifacts, not
+instruction text" property. Orchestration correctness (the prose join, the cross-check
+3-bucket split, the report assembly) is proven by a LIVE drive of `/spacedock:survey`.
+Ongoing report efficacy is the separate monitoring project's concern — out of scope.
 
-**AC-1 — Fixture foundation carries the ground-truth signals AND couples to runtime paths.**
-The committed fixture DB has `sessions.cwd`, `sessions.git_branch`,
-`tool_calls.skill_name`, `tool_calls.category` (defaults matching production: `cwd`/
-`git_branch` NOT NULL default `''`), at least one fixture is seeded from anonymized
-REAL `sessions.db` shapes (namespaced + bare `skill_name`, `Your questions have been
-answered:` / `The user doesn't want to proceed` decision results), a shared
-git-init test helper materializes a real temp git repo + worktree, AND there is a
-path-coupling step that rewrites the fixture DB's runtime-dependent paths to the
-git-init helper's actual dirs so the on-disk-path-based ACs can fire.
-- The `git_branch` and `category` columns are seeded for production-shape fidelity
-  and #316 reuse only — no in-scope AC queries them; they exist so the fixture matches
-  the real schema, not because a query reads them (do NOT wire a query for them: YAGNI).
-- **Path-coupling mechanism (settles M2 — the named mechanism, pick this one).**
-  `buildFixtureDB` ingests `fixture-sessions.sql` verbatim (no templating), but the
-  union/bucketing ACs need fixture `sessions.cwd` and Edit/Write `input_json.$.file_path`
-  to sit UNDER the git-init helper's `t.TempDir()` repo prefix, which is known only at
-  RUNTIME. The mechanism: a `coupleFixtureToRepo(t, db, repo)` helper runs, AFTER the
-  static build, `UPDATE sessions SET cwd=? WHERE id=?` (repo-root / subdir / worktree /
-  external-sibling rows mapped to the helper's real dirs) and the corresponding
-  `UPDATE tool_calls SET input_json=json_set(input_json,'$.file_path',?) WHERE id=?`
-  for the Edit/Write rows. The static SQL carries STABLE marker tokens
-  (`__REPO_ROOT__`, `__SUBDIR__`, `__WORKTREE__`, `__EXTERNAL__`) in those fields so
-  the coupling step knows which rows to rewrite to which helper dir. This keeps the
-  committed `.sql` readable and the runtime path injection explicit and localized; the
-  scan then sees real on-disk paths, never a fixture-provided boolean.
-- Verified by: the fixture DB builds (`buildFixtureDB` succeeds), `coupleFixtureToRepo`
-  rewrites the marker rows to the helper's real dirs (a test asserts a coupled
-  `sessions.cwd` equals the helper's subdir path — RED if the marker is left
-  un-substituted), a test asserts the four columns exist, and the git-init helper
-  returns a path where `git rev-parse --path-format=absolute --git-common-dir`
-  resolves to the repo root — RED if any column, the helper, or the coupling is
-  missing. (Foundation AC: it is the prerequisite the other ACs' RED-levers stand on.)
+**AC-1 — No bundled bin/; logic is SQL-reference + SKILL.md prose (supersedes #309).**
+`skills/survey/bin/scan-project` and `bin/detect-scaffold` are removed; the recommended
+SQL lives in `skills/survey/references/queries.sql` (annotated, one labeled query per
+concern: scaffold-usage tally, git-root scoping, WORK-BY-AREA, decision/OPEN
+detection); SKILL.md prose orchestrates resolution + classification + cross-check +
+report. No SQL is fenced in SKILL.md.
+- Verified by: the query-smoke test reads `references/queries.sql` (RED if the file is
+  absent — this is what catches a missing/renamed reference file, since contractlint's
+  `referenceRe` only covers `.md` paths and won't enforce a `.sql` reference); the
+  deleted `bin/` paths no longer exist (the updated integration tests no longer
+  `exec.Command` them — the re-point is specified in ## Test plan); a live drive runs
+  the skill without invoking a bundled script.
 
-**AC-2 — Identity scoping coalesces a repo across keys (#318).**
-Run against a fixture DB whose sessions span the repo root cwd, a subdir cwd, and a
-worktree cwd (distinct agentsview `project` keys), with the scan invoked from a
-SUBDIR/worktree via the git-init helper, survey reports ONE identity whose session
-count / date range / decision + interruption totals equal the git-root-coalesced
-totals — not the single basename-key subset; it lists the folded-in keys and a
-blank-`cwd` count; a populated `worktree_project_mappings` row overrides path-prefix
-inference; a single-checkout fixture is unchanged (no regression); coalescing is
-deterministic (git-root / prefix / mapping only).
-- Verified by: an integration test that builds the fixture DB, calls
-  `coupleFixtureToRepo` to rewrite the `__SUBDIR__`/`__WORKTREE__`/`__REPO_ROOT__`
-  cwd-marker rows to the git-init helper's real dirs, then `cmd.Dir`s into the
-  helper's subdir/worktree and asserts the coalesced count. RED-lever: a
-  worktree-cwd row (coupled to the helper's worktree dir) under a DIFFERENT project
-  key carrying a UNIQUE decision header — a basename-only impl (or the broken plain
-  `--git-common-dir` formula run from the subdir) drops it and the header is absent
-  from output; the corrected `--path-format=absolute --git-common-dir` impl unions it
-  in. The expected count comes from the fixture rows + the helper's real on-disk repo,
-  not the skill text.
+**AC-2 — The recommended queries return the corrected data on the fixture (light smoke).**
+Run against the committed production-shaped fixture DB (extended with `cwd` +
+`skill_name`), each labeled query in `references/queries.sql` returns the corrected
+shape: the git-root scoping query, bound to a repo-root prefix, coalesces the fixture's
+subdir + worktree-style `cwd` rows into ONE identity (more sessions than a single
+basename key would yield); the scaffold-usage tally GROUPs `skill_name` by family,
+reports a `superpowers` row with NO files (recovered) and EXCLUDES the
+`spacedock:*`-dominated self rows; the WORK-BY-AREA query buckets Edit/Write
+`input_json.$.file_path` and separates a path under the repo-root prefix from one
+outside it; the decision/OPEN query marks an `ExitPlanMode "User has approved your
+plan"` row as `done` and a rejected row as OPEN.
+- Verified by: a Go query-smoke test (extends the `buildFixtureDB` pattern) that
+  `sqlite3`-runs each labeled query against the fixture and asserts the row shape.
+  Expected values come from the FIXTURE rows — an independent source that diverges from
+  the skill text. RED on a broken query, a dropped self-exclusion, a wrong prefix
+  bound, or schema drift. `t.Skip` (not fail) when `sqlite3` is absent (matches
+  `buildFixtureDB`). This is the deliberately light bar: it pins extraction, not the
+  full orchestration.
 
-**AC-3 — Scaffold detection is multi-label + behavioral (#319, #317.1).**
-`detect-scaffold` emits ALL matched scaffolds (not the first ladder winner); the
-`scan-project` `## SCAFFOLD-USAGE` tally classifies each scaffold as active /
-installed-but-unused / recovered from the join of file-probe × `skill_name` usage,
-with `family:skill` + bare-name normalization and `spacedock:*` self-invocation
-EXCLUDED.
-- Verified by: (a) a two-scaffold fixture repo → `detect-scaffold` test asserts BOTH
-  labels (extends `survey_scaffold_test.go`); (b) and (c) are DISTINCT DB rows in the
-  same fixture so a family-table bug fails them diagnosably — (b) `superpowers:*` (and
-  a bare `running-research-spikes`) rows whose disk tree has NO superpowers files →
-  SCAFFOLD-USAGE reports superpowers as **recovered** (RED-lever: a file-only impl
-  reports `none`), and SEPARATELY (c) `spacedock:ensign`-dominated rows → the tally
-  does NOT report spacedock (self-pollution excluded; RED-lever: a no-exclusion impl
-  reports spacedock). Keeping (b) and (c) as separate rows means a normalization bug
-  that mis-buckets the `superpowers` family is distinguishable from one that fails to
-  exclude the `spacedock` family. Expected labels come from the fixture file tree + DB rows.
-
-**AC-4 — Identity from edits: WORK-BY-AREA (#317.2).**
-`scan-project` emits a `## WORK-BY-AREA` section bucketing `Edit`/`Write`
-`input_json.$.file_path` by package under the repo root, all-time alongside recent,
-reported separately from decisions; paths OUTSIDE the repo root are bucketed as
-external references, not repo identity.
-- Verified by: a fixture DB with Edit/Write rows whose `file_path` carries the
-  `__REPO_ROOT__/<pkg>` markers for two repo packages plus an `__EXTERNAL__` marker,
-  coupled via `coupleFixtureToRepo` so the repo-package paths resolve UNDER the
-  git-init helper's repo root while the external path resolves outside it → the test
-  asserts both internal packages appear with counts and the external path is
-  segregated as a reference. RED-lever: the external path's package name must NOT
-  appear among the repo-identity buckets — which is decidable only because internal vs
-  external is measured against the helper's real repo-root prefix, not a fixture flag.
-  Expected buckets come from the fixture rows coupled to the helper's real dirs.
-
-**AC-5 — OPEN frontier is cross-checked against the repo (#320).**
-The OPEN frontier is split shipped (drop) / decided-not-shipped (backlog) /
-never-decided (true open) by cross-referencing each OPEN fork against the on-disk git
-repo (merged PRs / git log / working tree); DROP happens ONLY on a confident match;
-with no repo signal the frontier degrades to transcript-only with every OPEN flagged
-`unverified`; and the `ExitPlanMode "User has approved your plan"` result reads
-`done`, not OPEN.
-- Verified by: (a) an integration test that wires the OPEN headers (static SQL) and
-  the "shipped" git log (helper repo) to the SAME run: the git-init helper makes a
-  real commit whose subject confidently references ONE of the fixture's OPEN-fork
-  decision headers (the test reads that header text from the fixture and writes it
-  into the helper's commit message, so the two sides share one source of truth), then
-  runs the cross-check with the helper repo as the repo root → that fork is classified
-  shipped (dropped) while an unreferenced OPEN fork stays on the frontier (RED-lever:
-  "shipped" is derived from the REAL on-disk git log of the helper repo, never a
-  fixture-provided boolean — a transcript-only impl keeps the merged fork on the
-  frontier); (b) a no-git-repo case (run the cross-check with a non-repo dir) → the
-  frontier is emitted transcript-only and flagged `unverified`; (c) a fixture
-  `ExitPlanMode` row with `User has approved your plan` → DECISIONS marks it `done`
-  (RED-lever: today's three-prefix impl marks it OPEN). Expected classifications come
-  from the real git repo + fixture rows.
+**AC-3 — A live drive shows the corrected report.**
+A live run of `/spacedock:survey` on a real multi-worktree repo produces a report that
+reflects the four corrections: the session count reflects the git-root-coalesced scope
+(not the basename subset), the scaffold line is multi-label with self-invocation
+excluded, a WORK-BY-AREA section appears, and the OPEN frontier is cross-checked
+(shipped forks dropped or, with no repo signal, flagged `unverified`).
+- Verified by: a live drive (the redirect's named orchestration proof), captured in
+  the validation stage — observe the rendered report, not a SKILL.md substring. This is
+  the orchestration half the smoke test deliberately does not cover; onboarding's low
+  blast radius + external efficacy monitoring justify a live observation rather than
+  unit-pinning every prose branch.
 
 ## Test plan
 
-- **Surface:** Go integration tests under `skills/integration/`, extending the
-  existing `survey_extraction_test.go` / `survey_scaffold_test.go` pattern — run the
-  real `bin/scan-project` and `bin/detect-scaffold` via `exec.Command` + `cmd.Dir`
-  against committed fixtures. NO new test framework. `sqlite3` + `git` + `bash` are
-  the executors; tests `t.Skip` (not fail) when a tool is absent so a minimal box
-  stays runnable without a false pass (matches `buildFixtureDB`).
-- **Fixtures (the foundation, AC-1):**
-  - extend `testdata/survey/fixture-sessions.sql` DDL with the four columns +
-    defaults, and add rows exercising the new scope, with `cwd` / Edit-Write
-    `file_path` fields carrying the `__REPO_ROOT__` / `__SUBDIR__` / `__WORKTREE__` /
-    `__EXTERNAL__` marker tokens (a subdir-cwd session, a worktree-cwd session under a
-    different project key, `Skill` rows with namespaced + bare + `spacedock:*` self
-    skill_names — keeping the recovered-`superpowers` and the excluded-`spacedock`
-    cases as DISTINCT rows, Edit/Write rows with internal + external file_paths, an
-    `ExitPlanMode` approved row);
-  - one anonymized real-shape fixture (counts kept, identifiers stripped) so the
-    Skill/Edit/decision shapes match production;
-  - a shared `gitInitHelper(t)` that `git init`s a temp repo, adds a worktree, and
-    returns repo-root / subdir / worktree paths — `t.Skip` (not `t.Fatal`) when
-    `git worktree add` fails (ancient git / sandbox);
-  - a `coupleFixtureToRepo(t, db, repo)` that rewrites the marker tokens to the
-    helper's runtime dirs after `buildFixtureDB` (the M2 coupling).
-- **No-fixture-boolean rule:** "shipped" (AC-5) and "coalesced from a worktree"
-  (AC-2) and "external vs internal edit" (AC-4) are derived from a REAL on-disk git
-  repo built by the helper and COUPLED into the fixture cwd/path rows, never a
-  fixture-provided flag — that is what makes the proxy-only impl RED.
-- **Cost/complexity:** medium. Fixture DDL extension + git-init helper are the bulk
-  of the new scaffolding (shared across AC-2/AC-4/AC-5). The four behavioral ACs are
-  ~1 focused test each. No live workflow / live agentsview dependency — the spike
-  proved the live read is sandbox-blocked, so the committed-fixture path is the only
-  CI-safe surface and it is sufficient.
+- **Surface:** ONE Go query-smoke test under `skills/integration/`, extending the
+  existing `buildFixtureDB` pattern — `sqlite3`-run each labeled query from
+  `references/queries.sql` against the committed fixture and assert the corrected row
+  shape (AC-2). NO new test framework, NO git-init helper, NO coupleFixtureToRepo, NO
+  per-AC RED-lever rigor (all dropped per the redirect's lighter bar). `t.Skip` (not
+  fail) when `sqlite3` is absent so a minimal box stays runnable (matches
+  `buildFixtureDB`).
+- **Fixture (the one production-shaped DB):**
+  - extend `testdata/survey/fixture-sessions.sql` DDL with `cwd` (sessions) +
+    `skill_name` (tool_calls), defaults matching production (`cwd` TEXT NOT NULL
+    DEFAULT `''`); add rows exercising the corrected queries: `cwd` rows under one
+    repo-root prefix spanning a subdir + a worktree-style path (git-root scoping),
+    `Skill` rows with namespaced + bare + `spacedock:*` self names keeping the
+    recovered-`superpowers` and excluded-`spacedock` cases DISTINCT (scaffold-usage),
+    Edit/Write `input_json.$.file_path` rows under + outside the repo-root prefix
+    (WORK-BY-AREA), an `ExitPlanMode` approved row + a rejected row (decision/OPEN);
+  - keep the rows anonymized-real-shape (counts kept, identifiers stripped) so the
+    queries run against production-shaped data. The smoke binds a FIXED repo-root
+    prefix string for the scoping/bucketing queries — no live git repo for the smoke
+    bar.
+- **Re-point the existing integration tests (AC-1):** `survey_extraction_test.go` and
+  `survey_scaffold_test.go` `exec.Command` the now-deleted `bin/scan-project` /
+  `bin/detect-scaffold`. Re-point them to the query-smoke surface (or replace with the
+  light query-smoke) and REMOVE every reference to the deleted scripts — a stale
+  `exec.Command` on a deleted path would fail the suite.
+- **Contractlint check (AC-1):** `internal/contractlint/structural_checks_test.go` —
+  `TestSurveyIsDiscoverableUserCommand` (frontmatter discovery) is UNAFFECTED;
+  `TestUserSkillReferenceClosureResolves`'s `referenceRe` matches only `.md` paths, so
+  a `references/queries.sql` reference is NOT enforced by it (the smoke test is what
+  catches a missing reference file — note this asymmetry, do not add a `.sql` arm to
+  the closure check unless the captain asks); `isClaudeAdapter` already exempts
+  `survey/SKILL.md` from the HOME-rooted personal-config check, and the `interpreterRe`
+  check forbids only `python`/`commission/bin` — NOT `git`/`sqlite3`/`agentsview` — so
+  moving the shell orchestration into SKILL.md prose does NOT trip contractlint
+  (verified against the regex definitions this session). No contractlint change is
+  required by the restructure; confirm the suite stays green.
+- **Live drive (AC-3):** run `/spacedock:survey` on a real multi-worktree repo in the
+  validation stage; observe the corrected report (coalesced scope, multi-label
+  self-excluded scaffold, WORK-BY-AREA, cross-checked frontier). The redirect's named
+  orchestration proof.
+- **Cost/complexity:** LOW (down from medium — the heavy scaffolding is dropped). One
+  query-smoke test + one fixture-DDL extension + re-point two existing tests + one live
+  drive. No live agentsview dependency for the smoke (sandbox-blocked per the spike);
+  the committed-fixture query-smoke is the CI-safe surface.
 - **No spike outstanding:** the two named risky unknowns (skill_name shape; cwd/git
   scoping against real data) are grounded in ## Spike results, INCLUDING the corrected
   `--path-format=absolute --git-common-dir` formula re-grounded across root / subdir /
   state-checkout / worktree / non-git this session; the queries there seed the
-  implementation's first tests. The remaining mechanisms (sqlite3 fixture build,
-  `cmd.Dir` exec, `git rev-parse --path-format=absolute --git-common-dir`, post-build
-  `UPDATE` path-coupling) are already proven by the existing tests + the spike.
+  reference file's first queries. The remaining mechanisms (sqlite3 fixture build,
+  `git rev-parse --path-format=absolute --git-common-dir`, the contractlint regexes not
+  matching `git`/`sqlite3`) are already proven by the existing tests + the spike.
 
 ## Reused / deferred from #316 and #317.3
 
@@ -485,3 +473,20 @@ Revision against the independent staff review's two material defects + polish.
 ### Summary
 
 The corrected scoping formula is `PROJECT = sanitize(basename(dirname(git rev-parse --path-format=absolute --git-common-dir)))` with a `basename(pwd)` fallback for non-git / git <2.31 — re-grounded across all four location cases before writing it, so the body no longer ships a formula that regresses the subdir case #318 exists to fix. The M2 proof-harness coupling is now a named, realizable mechanism (marker tokens in static SQL + a post-build `coupleFixtureToRepo` UPDATE keyed to the git-init helper's runtime dirs), so AC-2/AC-4/AC-5's "real on-disk path, never a fixture boolean" RED-levers can actually fire. Fork settlements, taxonomy, proof philosophy, and the rest of the spike are unchanged — confirmed sound by the review.
+
+## Stage Report: ideation (cycle 3)
+
+Captain redirect (2026-06-07): two design changes — no bundled bin/ (supersedes #309),
+lighter onboarding proof bar. Substance of the four fixes kept; structure + proof bar
+changed.
+
+- DONE: Change 1 — NO bundled bin/ scripts (supersedes #309). Added ## Structure: the bundled `bin/scan-project` + `bin/detect-scaffold` are DELETED; their SQL moves to a recommended-SQL REFERENCE FILE `skills/survey/references/queries.sql` (one labeled query per concern), their scoping / file-probe / classification / report-assembly move to SKILL.md PROSE; SQL is NEVER fenced in SKILL.md (would re-trip the 4q ban). Rewrote Fork 1 (no-bin/ contract), Fork 2 (cross-check is prose; ExitPlanMode fix is one SQL line in the reference), Fork 3 (shares the reference + fixture).
+  Evidence: ## Structure section + Fork 1/2/3 rewrites; AC-1 asserts the bin/ paths are gone + the reference file is read.
+- DONE: Change 2 — LIGHTER testing (onboarding = low blast radius; efficacy monitored by a separate project). DROPPED the git-init helper, coupleFixtureToRepo / marker-token coupling, per-AC RED-lever rigor, and the coupling-only DDL. New proof = a query-smoke test (recommended queries run against a committed production-shaped fixture, assert corrected shape) + a live drive of `/spacedock:survey`. Rewrote ## Foundation, ## Acceptance criteria (5 heavy ACs → 3 light: AC-1 structure, AC-2 query-smoke, AC-3 live drive), ## Test plan.
+  Evidence: ## Acceptance criteria + ## Test plan now specify ONE query-smoke test + one fixture-DDL extension (cwd + skill_name only) + a live drive; heavy machinery explicitly listed as DROPPED.
+- DONE: Update existing tests + contractlint. Test plan re-points `survey_extraction_test.go` + `survey_scaffold_test.go` off the deleted `exec.Command(bin/...)` to the query-smoke surface, removing all deleted-script references. Checked `internal/contractlint/structural_checks_test.go` this session: discovery check unaffected; `referenceRe` matches only `.md` (so a `.sql` reference is not enforced by the closure check — the smoke catches a missing reference file); `isClaudeAdapter` already exempts survey/SKILL.md from the HOME-rooted check, and `interpreterRe` forbids only `python`/`commission/bin` — NOT `git`/`sqlite3`/`agentsview` — so moving shell orchestration into SKILL.md prose does NOT trip contractlint. No contractlint change required; confirm green.
+  Evidence: ## Test plan "Re-point the existing integration tests" + "Contractlint check" bullets, grounded against the regex definitions (`interpreterRe = python3?|commission/bin`; `referenceRe` requires `\.md`).
+
+### Summary
+
+The four signal-corrections are intact (#318 git-root scoping via `--path-format=absolute --git-common-dir`; #319 multi-label + behavioral scaffold detection with `spacedock:*` excluded; #317.2 WORK-BY-AREA; #320 OPEN-vs-repo + the ExitPlanMode done-prefix fix), now expressed as one annotated `references/queries.sql` (one labeled query per concern) + SKILL.md prose orchestration, with NO bundled bin/ — this supersedes #309's bin/-script resolution. The proof bar drops to onboarding-appropriate light: a query-smoke that EXECUTES the `.sql` reference against a production-shaped fixture (pins SQL-extraction correctness, preserves the 4q "tests run artifacts, not SKILL.md prose" property) plus a live `/spacedock:survey` drive for orchestration; the heavy git-init/coupling/RED-lever machinery is dropped because survey is low-blast-radius onboarding whose efficacy is monitored elsewhere. Verified against the contractlint regexes that the prose-shell restructure (git/sqlite3/agentsview) does not trip any structural check, so no contractlint change is required.
