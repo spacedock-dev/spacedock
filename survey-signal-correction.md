@@ -1,7 +1,7 @@
 ---
 id: xnh4gc2zqe67j8tbxh926r9j
 title: Survey signal-correction — read the ground-truth signals (sessions.db + repo), not thin proxies
-status: validation
+status: implementation
 source: "captain (2026-06-07) - combined fix for the survey-skill dogfood issue cluster spacedock-dev/spacedock#318/#319/#320 (+ #317 umbrella). One task, not 1-1: the reports close after this ships. #316 (detect-spacedock incumbent + audit/meta-loop flip) is OUT of scope (serves spacedock-incumbent users, a minority) - park as a separate roadmap proposal."
 started: 2026-06-07T18:57:58Z
 completed:
@@ -530,3 +530,15 @@ The query-smoke's expected values come from the FIXTURE rows (`testdata/survey/f
 ### Summary
 
 Reproduced the AC-2 query-smoke (4/4 subtests pass) and proved its teeth by reverting all three claimed fixes in `references/queries.sql` to RED in turn, then restoring byte-identical. Verified AC-1 structure (no bin/, 4 labeled queries, no fenced SQL, no stale exec.Command) and full hygiene (1140 tests, contractlint 20/20, gofmt + vet clean) from outside the body. AC-3's full live drive is sandbox/TCC-blocked, so confirmed instead that the SKILL.md prose is internally consistent with the SQL reference (run_query names ↔ labeled queries, awk extraction works) and that the #318 git-root coalesce resolves identically from four checkout locations live — flagging the full live drive as captain-supplied evidence pending at the gate. Recommend PRUNE for the orphaned scaffolds fixture. Verdict: PASSED.
+
+## Feedback Cycles
+
+### Cycle 1 — 2026-06-07 — REJECTED at validation gate (captain, via the AC-3 live drive)
+
+Validation recommended PASSED on the testable bar (AC-1/AC-2), but the captain's AC-3 live drive — re-running the worktree skill via `--plugin-dir` against another project (`spacedock-landing`) — surfaced a BLOCKING bug in §1 (the scoped sync): the survey aborts before it can produce a report. Recurring across runs, so AC-3 (a live drive shows the corrected report) is not met.
+
+**Finding (blocking, §1 scoped-sync, `SKILL.md` ~lines 45-47):** the symlink-farm enumeration uses `shopt -s nullglob 2>/dev/null` (a BASH builtin — a silent no-op in zsh) followed by an unmatched glob `for d in "$CLAUDE_ROOT/$DASH_CWD" "$CLAUDE_ROOT/$DASH_CWD"-*`. Under zsh's default `nomatch`, the unmatched `…-*` glob is a HARD error (`no matches found`, exit 1), so the sync — and the whole survey — aborts. The skill runs under zsh on the captain's machine (and the agent Bash tool), so `shopt`/`nullglob` does nothing. Observed: `(eval): no matches found: …-landing-*`.
+
+**Routed to:** implementation (validation's `feedback-to`), same worktree, the held-alive impl worker (budget 14.2%, reuse OK).
+
+**Fix:** make the symlink-farm enumeration zsh-safe and shell-portable — replace the `shopt -s nullglob` + bare-glob loop with a `find` over `$CLAUDE_ROOT` matching `$DASH_CWD` and `$DASH_CWD-*` (the model's own workaround; portable across bash/zsh, no `nomatch` trap), preserving the exact-dir + `-*`-siblings behavior. Sweep the rest of §1/§2 for any other bare globs / bash-isms that break under zsh. Re-confirm the query-smoke still passes; the captain re-runs the AC-3 live drive after.
