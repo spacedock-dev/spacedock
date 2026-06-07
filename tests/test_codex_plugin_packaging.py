@@ -103,11 +103,11 @@ def test_docs_and_skill_surfaces_describe_codex_authority_and_legacy_compatibili
     refit = read_text("skills/refit/SKILL.md")
     debrief = read_text("skills/debrief/SKILL.md")
 
-    assert ".codex-plugin/plugin.json" in readme
-    assert ".agents/plugins/marketplace.json" in readme
-    assert "plugins/spacedock" in readme
-    assert "~/.agents/skills/spacedock" in readme
-    assert "legacy" in readme.lower()
+    # The README documents the CLI-based Codex install; the repo-local
+    # manifest authority and legacy-compatibility details live on the
+    # skill surfaces asserted below.
+    assert "spacedock install --host codex" in readme
+    assert "spacedock codex" in readme
 
     for text in (commission, refit, debrief):
         assert ".codex-plugin/plugin.json" in text
