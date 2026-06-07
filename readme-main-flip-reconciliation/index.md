@@ -1,12 +1,12 @@
 ---
 id: nbz0yjvmqm6gda6csw8yef7k
 title: README reconciliation for main flip and 0.20.0 install paths
-status: validation
+status: implementation
 source: "captain (2026-06-06) - before flipping main, reconcile README/install docs; consider existing README PRs #213 and #220."
 score: "0.39"
 started: 2026-06-06T06:06:33Z
-completed: 2026-06-06T06:25:18Z
-verdict: PASSED
+completed:
+verdict:
 worktree: .worktrees/spacedock-ensign-readme-main-flip-reconciliation
 issue:
 ---
@@ -132,3 +132,18 @@ Docs now describe stable installs and releases as post-flip `main` lane behavior
 ### Summary
 
 Recommendation: PASSED. All five ACs are satisfied by the product diff and reproduced checks. The docs now send stable users to `main`, preserve `next` as dev-only, document the `v0-archived` / guarded-main-replacement / `v0.20.0` main-tag mechanics, account for PRs #213 and #220 without importing their old-main install behavior, and avoid promising unshipped upgrade recovery. Detached adversarial audit was not triggered: this is a docs-only validation and the release machinery itself remains explicitly pending.
+
+### Feedback Cycles
+
+#### Cycle 1 — 2026-06-06 — REJECTED at validation gate (captain)
+
+The validation report recommended PASSED, but the captain rejected the deliverable at the gate: the user-facing content is garbage. The validation false-passed because AC-1..AC-5 only check fact-reconciliation (stale `@next` language removed, correct branch mechanics) and never check reader quality.
+
+**Finding — why it's garbage:**
+- **Maintainer voice, not user voice.** The `README.md` intro reads as an internal implementation roadmap ("compatibility bridge for the next command surface", "vendored compatibility path", "replace the symlink dependency with native split-root status handling"). `docs/install-journey.md` is wall-to-wall internals: the meaning of the `(contract 1)` token, `requires-contract` ranges, "go install does not pass release ldflags", `goreleaser` snapshot, an ldflags version-stamp table.
+- **Future-conditional flip tense** throughout ("after the v0.20.0 flip", "the stable lane is available after v0.20.0 is cut", "before that flip use the dev lane") — reads like release notes and tells today's reader the stable path doesn't work yet.
+- **Branch-mechanics-first framing** ("Stable lane `main`" / "Dev-only lane `next`") instead of user-goal-first. PRs #213/#220's problem-led, newcomer framing was claimed-considered (AC-4) but not adopted in the prose.
+
+**Routed to:** implementation (validation's `feedback-to`), same worktree, fresh ensign (prior ensign dead — no live team).
+
+**Direction (captain, 2026-06-06):** Reader-first rewrite of the two user-facing docs (`README.md` + `docs/install-journey.md`); leave `docs/releasing.md` as-is. Lead with the problem / user value, harvest the framing from open PRs #213 (problem-led opener) and #220 (newcomer-friendly), write present-tense end-state prose, ONE clean stable install path, strip dev-internal jargon out of the user docs. Organize the install content so it can become the Install section of a public-facing **MkDocs Material** docs site — standing up the generator + Pages publish is a separate fast-follow task (`mkdocs-material-docs-site`), NOT this task. Update the entity ACs + test plan to add checkable reader-quality criteria before re-validating. Full brief in the dispatch scope notes.
