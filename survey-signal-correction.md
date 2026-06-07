@@ -542,3 +542,18 @@ Validation recommended PASSED on the testable bar (AC-1/AC-2), but the captain's
 **Routed to:** implementation (validation's `feedback-to`), same worktree, the held-alive impl worker (budget 14.2%, reuse OK).
 
 **Fix:** make the symlink-farm enumeration zsh-safe and shell-portable — replace the `shopt -s nullglob` + bare-glob loop with a `find` over `$CLAUDE_ROOT` matching `$DASH_CWD` and `$DASH_CWD-*` (the model's own workaround; portable across bash/zsh, no `nomatch` trap), preserving the exact-dir + `-*`-siblings behavior. Sweep the rest of §1/§2 for any other bare globs / bash-isms that break under zsh. Re-confirm the query-smoke still passes; the captain re-runs the AC-3 live drive after.
+
+## Stage Report: implementation (cycle 1)
+
+Cycle-1 §1/§2 shell-portability fix. Worktree branch `spacedock-ensign/survey-signal-correction`, commit e59c0861 (SKILL.md only, +8/-3). No query/AC change.
+
+- DONE: Fix the §1 scoped-sync symlink farm — replace `shopt -s nullglob` + bare-glob loop with a portable `find`-based enumeration, no nomatch trap, empty match yields zero links not an error.
+  Root cause reproduced: under `zsh -c`, the unmatched `$DASH_CWD-*` glob is a HARD error (`no matches found`, exit 1); `shopt -s nullglob` is a zsh no-op. Replaced with `find "$CLAUDE_ROOT" -maxdepth 1 -type d \( -name "$DASH_CWD" -o -name "$DASH_CWD-*" \) -print0 | while IFS= read -r -d '' d; do ln -s …`. Ran the SHIPPED §1 block verbatim under BOTH bash and zsh: match → links exact cwd dir + every `-*` worktree sibling (3/3, unrelated proj excluded); no-match → 0 links, exit 0 (the original bug trigger no longer aborts). `set -e`-safe.
+- DONE: Sweep §1/§2 for other zsh-unsafe constructs.
+  `grep` over SKILL.md: 0 `shopt`/`nullglob`/`extglob`, 0 `[[ ]]`, no other bare/unquoted shell globs (the §3 file probe is PROSE, not a glob the model runs verbatim); the only `read` in shell is the new `read -r -d ''`. Clean.
+- DONE: Re-confirm query-smoke green; gofmt + go test ./... clean; commit on the worktree branch.
+  Query logic / `references/queries.sql` / fixture / ACs UNCHANGED. `go test ./skills/integration/ -run TestSurveyQuerySmoke` 5/5; `go test ./...` 1140/1140 across 16 packages; `internal/contractlint` 20/20; `gofmt -l` clean; no forbidden interpreter tokens / fenced SQL in SKILL.md. Committed e59c0861.
+
+### Summary
+
+The §1 scoped-sync aborted under zsh because `shopt -s nullglob` is a bash-only no-op there and the unmatched `$DASH_CWD-*` glob hits zsh's default `nomatch` hard error — the AC-3 live drive surfaced it as `no matches found: …-landing-*`. Replaced the glob loop with a `find -print0 | while read -r -d ''` enumeration that is portable across bash and zsh, has no nomatch trap, and links zero dirs (exit 0) on an empty match so the "no Claude sessions → no agent history" path still flows. Proved by running the shipped §1 block verbatim under both shells (match=3 links, no-match=0 links/exit 0). Swept the rest of §1/§2 — no other zsh-unsafe constructs remain. Query logic, queries.sql, fixture, and AC structure untouched; smoke + full suite + contractlint + gofmt all green. The captain re-runs the AC-3 live drive.
