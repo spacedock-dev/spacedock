@@ -42,9 +42,14 @@ CLAUDE_ROOT="${CLAUDE_PROJECTS_DIR:-$HOME/.claude/projects}"
 DASH_CWD=$(pwd | sed 's#/#-#g')                      # ~/.claude/projects dir-name convention
 NARROW="$SURVEY_DB_DIR/claude-narrow"
 rm -rf "$NARROW"; mkdir -p "$NARROW"
-shopt -s nullglob 2>/dev/null
-for d in "$CLAUDE_ROOT/$DASH_CWD" "$CLAUDE_ROOT/$DASH_CWD"-*; do
-  [ -d "$d" ] && ln -s "$d" "$NARROW/$(basename "$d")"
+# Enumerate this project's Claude session dirs with find, not a shell glob: an unmatched
+# `…-*` glob is a HARD error under zsh's default nomatch (and the skill runs under
+# whatever shell the user has). find matches the exact dash-encoded cwd dir plus every
+# `<cwd>-*` worktree sibling, and an empty match links nothing without erroring — so the
+# "no Claude sessions for this project" path still flows to step 2's "no agent history".
+find "$CLAUDE_ROOT" -maxdepth 1 -type d \( -name "$DASH_CWD" -o -name "$DASH_CWD-*" \) -print0 2>/dev/null |
+while IFS= read -r -d '' d; do
+  ln -s "$d" "$NARROW/$(basename "$d")"
 done
 
 AGENTSVIEW_DATA_DIR="$SURVEY_DB_DIR" CLAUDE_PROJECTS_DIR="$NARROW" timeout 300 agentsview sync
