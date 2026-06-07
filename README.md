@@ -1,6 +1,6 @@
 # Spacedock
 
-**Spacedock is a workflow orchestrator where nothing ships without a decision.**
+**Spacedock is a multi-agent orchestrator where nothing ships without a decision.**
 It lives inside your agent. Each stage ends at a gate. The work arrives with its
 evidence, measured against a predefined bar for what good looks like. The human
 partner or a delegated agent says yes, sends it back, or escalates. Either way
