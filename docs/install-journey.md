@@ -6,12 +6,12 @@ result.
 
 Spacedock is two pieces that install separately:
 
-1. **The `spacedock` launcher** — the command you run to start a session.
-2. **The host plugin** — the first-officer and ensign agents, loaded by Claude
-   Code or Codex.
+1. **The `spacedock` launcher.** The command you run to start a session.
+2. **The host plugin.** The first-officer and ensign agents, loaded by your
+   agent (Claude Code, Codex, or Pi).
 
-The recommended setup installs the launcher with Homebrew and adds the plugin
-with one command. A from-source build is available for development.
+The recommended setup installs the launcher with Homebrew, and the first launch
+adds the plugin for you. A from-source build is available for development.
 
 ## Install with Homebrew (recommended)
 
@@ -41,33 +41,34 @@ with one command. A from-source build is available for development.
 4. **Launch.**
 
    ```bash
-   spacedock claude -- "your task"
+   spacedock claude "your task"
    ```
 
-   Starts the first officer in Claude Code with your task. When a `.safehouse`
-   profile is present in the working directory the launch is wrapped through the
-   sandbox.
+   Starts the first officer in Claude Code with your task. If the plugin isn't
+   installed yet, this first launch installs it for you, then proceeds. When a
+   `.safehouse` profile is present in the working directory the launch is wrapped
+   through the sandbox.
 
-## Use Codex instead
+## Use Codex or Pi instead
 
-Codex support is available but experimental; Claude Code is the primary surface.
+Codex and Pi are supported but experimental. Claude Code is the primary surface.
 
 1. **Install the launcher** (same Homebrew step as above).
 
-2. **Add the plugin.**
+2. **Add the plugin** for your host.
 
    ```bash
-   spacedock install --host codex
+   spacedock install --host codex      # or: --host pi
    ```
 
    Codex installs plugins from your shell rather than programmatically, so this
-   prints the two `codex plugin` commands to run. Run them, then use the
+   prints the `codex plugin` commands to run. Run them, then use the
    first-officer skill in your Codex session.
 
-3. **Launch.**
+3. **Launch** with the matching subcommand.
 
    ```bash
-   spacedock codex -- "your task"
+   spacedock codex "your task"         # or: spacedock pi "your task"
    ```
 
 ## Build from source (for development)
@@ -95,13 +96,14 @@ local changes take effect immediately.
 3. **Launch with the local plugin.**
 
    ```bash
-   ./spacedock claude --plugin-dir "$PWD" -- "your task"
+   ./spacedock claude "your task" -- --plugin-dir "$PWD"
    ```
 
-   `--plugin-dir` loads the first-officer and ensign agents from your checkout
-   instead of the installed plugin, so edits to the repo are live.
+   `--plugin-dir` is a host flag, so it rides after `--`. It loads the
+   first-officer and ensign agents from your checkout instead of the installed
+   plugin, so edits to the repo are live.
 
-The `next` branch is the development channel — it has no Homebrew release, so
+The `next` branch is the development channel. It has no Homebrew release, so
 there is no `brew install` for it. Use the Homebrew path above for a stable
 install.
 
@@ -119,11 +121,11 @@ first, then run `spacedock install --host claude`.
 
 ## Command grammar
 
-The front door is `spacedock claude [host-flags…] [--safehouse…] -- "task"`
-(and the same shape for `spacedock codex`):
+The front door is `spacedock claude "task" [--safehouse…] [-- host-flags…]`
+(and the same shape for `spacedock codex` and `spacedock pi`):
 
-- Flags before `--` pass through to the host (`claude` / `codex`), including
-  `--plugin-dir`, `--resume`, `--model`, and the like.
-- The bare text after `--` is the launch task, handed to the first officer.
+- The task comes first. It's handed to the first officer as the launch prompt.
+- Anything after `--` forwards verbatim to the host (`claude` / `codex` / `pi`),
+  including `--plugin-dir`, `--resume`, `--model`, and the like.
 - `--safehouse` forces the launch through the sandbox; a `.safehouse` profile in
   the working directory does the same automatically.
