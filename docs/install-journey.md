@@ -36,7 +36,7 @@ A from-source build is available for development.
    spacedock install --host claude
    ```
 
-   Adds the Spacedock plugin to Claude Code and runs a compatibility check that
+   Adds the Spacedock plugin to Claude Code and runs a compatibility check. It
    reports `OK` when the launcher and plugin match.
 
 4. **Launch.** Point it at a project you already have and let it survey.
@@ -74,8 +74,8 @@ Codex and Pi are supported but experimental. Claude Code is the primary surface.
 ## Build from source (for development)
 
 Use this when you're working on Spacedock itself. It builds the launcher from
-the development branch and loads the plugin straight from your checkout, so your
-local changes take effect immediately.
+the development branch and loads the plugin from your checkout, so local changes
+take effect immediately.
 
 1. **Clone and build.**
 
@@ -101,11 +101,10 @@ local changes take effect immediately.
 
    `--plugin-dir` is a host flag, so it rides after `--`. It loads the
    first-officer and ensign agents from your checkout instead of the installed
-   plugin, so edits to the repo are live.
+   plugin. Edits to the repo are live.
 
-The `next` branch is the development channel. It has no Homebrew release, so
-there is no `brew install` for it. Use the Homebrew path above for a stable
-install.
+The `next` branch is the development channel. It has no Homebrew release. Use the
+Homebrew path above for a stable install.
 
 ## Keep things in sync
 
@@ -127,5 +126,5 @@ The front door is `spacedock claude "task" [--safehouse…] [-- host-flags…]`
 - The task comes first. It's handed to the first officer as the launch prompt.
 - Anything after `--` forwards verbatim to the host (`claude` / `codex` / `pi`),
   including `--plugin-dir`, `--resume`, `--model`, and the like.
-- `--safehouse` forces the launch through the sandbox; a `.safehouse` profile in
+- `--safehouse` forces the launch through the sandbox. A `.safehouse` profile in
   the working directory does the same automatically.
