@@ -1,11 +1,11 @@
 # Spacedock
 
 **Spacedock is a multi-agent orchestrator where nothing ships without a decision.**
-It lives inside your existing agent, like Claude Code or Codex. Each stage ends
-at a gate. The work arrives with its evidence, measured against a predefined bar
-for what good looks like. The human partner or a delegated agent says yes, sends
-it back, or escalates. Either way the decision gets recorded, with its evidence
-and its reason.
+It lives inside your existing agent: Claude Code or Codex. It breaks work into
+stages and surfaces the decisions each stage needs, batched for you. Each
+decision arrives with evidence measured against a predefined bar for what good
+looks like. You approve, send back, or escalate. Or you delegate the call to an
+agent. Either way, the decision is recorded with its evidence and reason.
 
 **Why?**
 
