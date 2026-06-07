@@ -20,64 +20,71 @@ The first officer coordinates the flow: it dispatches workers to advance each wo
 
 ## Quick Start
 
-**Prerequisites:** Claude Code or Codex CLI.
+**Prerequisites:** [Homebrew](https://brew.sh) and a host CLI — Claude Code (primary), Codex CLI, or Pi.
+
+Spacedock installs as two pieces: the `spacedock` binary (the launcher and contract gate) and the host plugin (the `spacedock:first-officer` / `spacedock:ensign` skills and agents).
 
 ### Claude Code
 
-1. Install the plugin:
+1. Install the binary:
 
    ```bash
-   claude plugin marketplace add clkao/spacedock && claude plugin install spacedock
+   brew install spacedock-dev/homebrew-tap/spacedock
    ```
 
-2. Commission a workflow with your own mission prompt:
+2. Install the host plugin:
 
    ```bash
-   claude --agent spacedock:first-officer "/commission <your mission prompt>"
+   spacedock install --host claude
    ```
 
-3. Or start from one of these example workflows — copy and run:
+   This adds the plugin from the `spacedock-dev/spacedock` marketplace and runs the contract doctor — expect `OK: binary contract 1 satisfies plugin range >=1,<2.`
+
+3. Commission a workflow with your own mission prompt:
+
+   ```bash
+   spacedock claude "/commission <your mission prompt>"
+   ```
+
+   `spacedock claude` launches `claude --agent spacedock:first-officer` behind the contract gate. Tokens after `--` forward verbatim to the host, e.g. `spacedock claude "task" -- --model opus`.
+
+4. Or start from one of these example workflows — copy and run:
 
    **Email triage:**
    ```bash
-   claude --agent spacedock:first-officer "/commission Email triage: fetch, categorize, and act on Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (use gws-cli, triage in:inbox and read email body if necessary, categorize, propose action per email, output as table) → approval (Captain reviews proposal) -> execute (carry out approved actions, do not mark as read). Use gws-cli (https://github.com/googleworkspace/cli/tree/main/skills/gws-gmail), GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<account> for different accounts. Walk me through gws-cli setup if not already done."
+   spacedock claude "/commission Email triage: fetch, categorize, and act on Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (use gws-cli, triage in:inbox and read email body if necessary, categorize, propose action per email, output as table) → approval (Captain reviews proposal) -> execute (carry out approved actions, do not mark as read). Use gws-cli (https://github.com/googleworkspace/cli/tree/main/skills/gws-gmail), GOOGLE_WORKSPACE_CLI_CONFIG_DIR=~/.config/gws/<account> for different accounts. Walk me through gws-cli setup if not already done."
    ```
 
    **[Superpowers](https://github.com/obra/superpowers)-style dev task workflow:**
    ```bash
-   claude --agent spacedock:first-officer "/commission Dev task workflow: superpowers-style design → plan → implement → review with ## Design and ## Implementation Plan inlined in the entity body (no separate spec/plan files), implement on isolated worktrees with strict TDD, design and review gated for approval."
+   spacedock claude "/commission Dev task workflow: superpowers-style design → plan → implement → review with ## Design and ## Implementation Plan inlined in the entity body (no separate spec/plan files), implement on isolated worktrees with strict TDD, design and review gated for approval."
    ```
 
-### Codex CLI
+### Codex CLI and Pi
 
-1. Clone Spacedock and start Codex from the repo root:
+The same two steps with a different `--host`, then launch with the matching subcommand:
 
-   ```bash
-   git clone https://github.com/clkao/spacedock.git /path/to/spacedock
-   cd /path/to/spacedock
-   codex --enable multi_agent
-   ```
-
-2. Restart Codex if it was already open, then open `/plugins` and install **Spacedock** from the repo-local marketplace entry.
-
-   The authoritative Codex plugin manifest is `.codex-plugin/plugin.json`, and the authoritative local catalog is `.agents/plugins/marketplace.json`. That catalog points to `./plugins/spacedock`, which is a checked-in symlink to the repository root so Codex loads the real plugin package directly.
-
-3. Prompt Codex to use the first-officer skill and commission your workflow:
-
-   ```bash
-   Use the spacedock:first-officer skill to run /commission <your mission prompt> in this directory.
-   ```
-
-   Legacy compatibility: older Codex setups can still expose `~/.agents/skills/spacedock` directly:
-
-   ```bash
-   mkdir -p ~/.agents/skills
-   ln -s /path/to/spacedock/skills ~/.agents/skills/spacedock
-   ```
-
-   The `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` files remain synchronized legacy mirrors of the Codex-first metadata for migration compatibility.
+```bash
+spacedock install --host codex            # or: --host pi
+spacedock codex "/commission <your mission prompt>"   # or: spacedock pi "..."
+```
 
 > Codex multi-agent is experimental. The Claude Code path is the primary supported surface.
+
+### Upgrading
+
+```bash
+brew upgrade spacedock
+spacedock install --host claude
+```
+
+Run `spacedock doctor` any time to check that the installed plugin and binary are contract-compatible; rerun `spacedock install` when it reports the plugin is stale. (A plain `claude plugin update` will not pick up new releases — the plugin ships through `spacedock install`.)
+
+### Sandboxing and source builds
+
+[safehouse](https://agent-safehouse.dev) is a separate runtime dependency for sandboxed launches — not installed by brew. A `.safehouse` profile in the working directory (or the `--safehouse` flags) wraps the launch through it.
+
+To build from source and load the repo's own plugin checkout with `--plugin-dir`, see the [fresh-install journey](https://github.com/spacedock-dev/spacedock/blob/next/docs/install-journey.md).
 
 ## Supported models
 
@@ -100,7 +107,7 @@ Problem statement, design notes, acceptance criteria, and stage reports
 all live in the body of this file as the work moves through stages.
 ```
 
-See [a completed example](https://github.com/clkao/spacedock/blob/main/docs/plans/_archive/session-debrief.md) from Spacedock's own workflow.
+See [a completed example](https://github.com/spacedock-dev/spacedock/blob/main/docs/plans/_archive/session-debrief.md) from Spacedock's own workflow.
 
 ## Concepts
 
@@ -122,7 +129,7 @@ See [a completed example](https://github.com/clkao/spacedock/blob/main/docs/plan
 
 ## How It Works
 
-The first officer reads the workflow README, checks work item statuses, and dispatches ensigns for items ready to advance. Stages that need isolation (typically implementation work with commits) run inside their own git worktree; lightweight stages (design, review, triage) run inline. At approval gates the first officer pauses and presents the ensign's stage report for your review: approve, redo with feedback, or reject. Rejected work automatically bounces back for revision in a fresh round of the earlier stage, with a hard cap so you never get stuck in an infinite loop. When you end a session, `/spacedock:debrief` captures what happened (commits, task state changes, decisions, open issues) into a record the next session picks up automatically (see [an example debrief](https://github.com/clkao/spacedock/blob/main/docs/plans/_debriefs/2026-04-09-01.md) from a real session).
+The first officer reads the workflow README, checks work item statuses, and dispatches ensigns for items ready to advance. Stages that need isolation (typically implementation work with commits) run inside their own git worktree; lightweight stages (design, review, triage) run inline. At approval gates the first officer pauses and presents the ensign's stage report for your review: approve, redo with feedback, or reject. Rejected work automatically bounces back for revision in a fresh round of the earlier stage, with a hard cap so you never get stuck in an infinite loop. When you end a session, `/spacedock:debrief` captures what happened (commits, task state changes, decisions, open issues) into a record the next session picks up automatically (see [an example debrief](https://github.com/spacedock-dev/spacedock/blob/main/docs/plans/_debriefs/2026-04-09-01.md) from a real session).
 
 ## What Gets Generated
 
@@ -146,7 +153,7 @@ When a new Spacedock release is available, use `/spacedock:refit` to upgrade you
 
 ## Tips
 
-- **Run Spacedock inside a sandbox.** Recommended: [agent-safehouse](https://github.com/eugene1g/agent-safehouse) (macOS), [packnplay](https://github.com/obra/packnplay), a devcontainer, or a VM.
+- **Run Spacedock inside a sandbox.** Recommended: [safehouse](https://agent-safehouse.dev) (macOS, integrates with the `--safehouse` launch flags), [packnplay](https://github.com/obra/packnplay), a devcontainer, or a VM.
 - **Talk directly to an ensign.** Claude Code supports agent team chat: while a dispatched ensign is running, you can `Shift+Up` / `Shift+Down` to switch panes and give the ensign feedback directly instead of routing everything through the first officer.
 
 ## Use Cases
