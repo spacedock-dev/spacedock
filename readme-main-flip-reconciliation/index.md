@@ -89,11 +89,39 @@ accurate to current or explicitly planned behavior. If the current behavior is
 not yet implemented, docs should point to the pending confirmation work rather
 than claim it already works.
 
+**AC-6 - README leads with the problem and user value, not an implementation roadmap.**
+Verified by: `README.md` opens with the problem Spacedock solves and a "you want
+Spacedock if" reader framing, not an internal implementation roadmap. The
+maintainer-voiced intro (the launcher/"command surface" roadmap, the conservative
+implementation-target bullets) is gone.
+
+**AC-7 - The user docs carry none of the dev-internal jargon.**
+Verified by: a greppable content lint over the two DELIVERABLE docs
+(`README.md`, `docs/install-journey.md`) — the product files themselves, with
+expected values that can fail — returns no matches for `ldflags`, `goreleaser`,
+`requires-contract`, the `(contract N)` token explanation, `force-with-lease`,
+`split-root`, `vendored`, the version-stamp route table, or the branch-"lane"
+framing as the organizing principle.
+
+**AC-8 - The user docs read present-tense end-state, not a transition narrative.**
+Verified by: a greppable lint over the two deliverable docs returns no
+future-conditional flip wording (`after the flip`, `after v0.20.0`, `before that
+flip`, `not yet`, `still owed`, `pre-flip`/`post-flip` as user-facing hedging).
+The stable install path is described as working today, with ONE clean stable
+route (brew + `spacedock install --host claude`) and a concise dev/source path.
+
 ## Test plan
 
 - Inspect current `origin/next` docs and the open README PRs #213 and #220.
 - Update the docs so stable `main`, dev-only `next`, and the 0.20.0 flip plan are
   not contradictory.
+- Confirm `README.md` opens with the problem/user value (AC-6) — read the opener.
+- Run a greppable jargon strip-list lint over the two deliverable docs (AC-7):
+  no `ldflags`, `goreleaser`, `requires-contract`, `(contract N)` token
+  explanation, `force-with-lease`, `split-root`, `vendored`, version-stamp route
+  table, or branch-"lane" framing. Expect no matches.
+- Run a greppable present-tense lint over the two deliverable docs (AC-8): no
+  future-conditional flip wording. Expect no matches.
 - Run focused doc checks where available, then at least `go test ./...`.
 - If tests are blocked by unrelated local state, report the exact blocker and
   run the narrowest relevant checks that still prove the docs build or references
@@ -147,3 +175,16 @@ The validation report recommended PASSED, but the captain rejected the deliverab
 **Routed to:** implementation (validation's `feedback-to`), same worktree, fresh ensign (prior ensign dead — no live team).
 
 **Direction (captain, 2026-06-06):** Reader-first rewrite of the two user-facing docs (`README.md` + `docs/install-journey.md`); leave `docs/releasing.md` as-is. Lead with the problem / user value, harvest the framing from open PRs #213 (problem-led opener) and #220 (newcomer-friendly), write present-tense end-state prose, ONE clean stable install path, strip dev-internal jargon out of the user docs. Organize the install content so it can become the Install section of a public-facing **MkDocs Material** docs site — standing up the generator + Pages publish is a separate fast-follow task (`mkdocs-material-docs-site`), NOT this task. Update the entity ACs + test plan to add checkable reader-quality criteria before re-validating. Full brief in the dispatch scope notes.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Rewrite README.md and docs/install-journey.md reader-first: problem-led opener harvested from PRs #213/#220, present-tense end-state, ONE clean stable install path; strip dev-internal jargon out of the user docs.
+  Code commit `238f8606` rewrites both docs in user voice. README opens with PR #213's problem-led opener ("Hand an agent a multi-step job and it drifts…") + "You want Spacedock if" axes; install-journey is a clean step-by-step with observable output per step.
+- DONE: Keep install/release FACTS correct (stable installs from main post-flip, next stays dev-only) and record the #213/#220 reuse/reject in the report; leave docs/releasing.md unchanged; shape the install content as a clean install guide ready to become a MkDocs site Install page.
+  Stable path is `brew install spacedock-dev/homebrew-tap/spacedock` + `spacedock install --host claude` (resolves the plugin from the default branch — `main` post-flip; verified against `internal/cli/frontdoor.go:43-49`, `init.go:13-31`). `next` kept as the from-source dev channel in install-journey. `docs/releasing.md` untouched (commit touches only the two docs). No mkdocs.yml/nav/CI added.
+- DONE: Update the entity acceptance criteria + test plan to add checkable reader-quality criteria; keep gofmt and go test ./... green.
+  Added AC-6 (problem-led opener), AC-7 (jargon strip-list greppable lint over the deliverable docs), AC-8 (present-tense end-state lint); extended the test plan with the matching lints. `gofmt -l` clean; `go test ./...` 1141 passed across all 16 packages (raw exit 0, including `internal/status` — the dispatch's known debrief-frontmatter failure did not occur).
+
+### Summary
+
+Cycle-1 reconciled the facts but read as a maintainer-voiced transition narrative; the captain rejected it at the validation gate. This cycle rewrites the two user-facing docs reader-first in present tense: README leads with the problem and user value, install-journey is a clean install guide. Reused PR #213's problem-led opener and "you want Spacedock if" axes and #220's newcomer scenario/role framing; rejected both PRs' stale old-`main` install commands (`claude plugin marketplace add clkao/spacedock`) in favor of the brew + `spacedock install --host claude` stable path. The dev-internal jargon (ldflags, goreleaser, the contract-token explanation, requires-contract ranges, force-with-lease, branch-"lane" framing, split-root/vendored) is stripped from the user docs and proven absent by the AC-7/AC-8 greppable lints over the product files. `docs/releasing.md` left as-is.
