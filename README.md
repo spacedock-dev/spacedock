@@ -32,18 +32,18 @@ waiting on you.
   claim. A 3-strikes escalation means you only see what the reviewer couldn't
   settle.
 - **Every decision leaves a trail.** Each gate carries a stage report: findings,
-  verdicts, artifacts, anomalies. You decide on the evidence, not the
-  transcript. The record outlives the reviewer, so you can walk a bad result
-  back to the call that caused it.
-- **You set the bar, the agent works to it.** Each stage declares what done
+  verdicts, artifacts, anomalies. You decide on evidence, not the transcript.
+  The record outlives the reviewer, so you can trace a bad result back to the
+  call that caused it.
+- **You set the bar; the agent works to it.** Each stage declares what done
   means. The agent runs to that line on its own. You show up at the gate, not in
   the loop.
-- **The bar sharpens as you go.** When a pattern shows up, a stage that never
-  fires or a gate that keeps bouncing the same issue, the first officer helps
-  you adjust the workflow. Good is discovered, not declared up front.
-- **Batch the work, decide as it flows back.** Queue many items at once. Agents
-  advance each through its stages. You handle gates as they surface instead of
-  one session at a time.
+- **The bar sharpens as you go.** When a stage never fires, or a gate keeps
+  bouncing the same issue, the first officer helps you adjust the workflow. Good
+  is discovered, not declared up front.
+- **Batch the work; decide as it flows back.** Queue many items at once. Agents
+  advance each through its stages. You handle gates as they surface, not one
+  session at a time.
 - **Isolation when it matters.** Stages that touch shared state run in their own
   git worktree. Lighter stages run inline.
 - **Work survives the context limit.** When an agent runs out of context, a
@@ -52,15 +52,15 @@ waiting on you.
 ## Install
 
 Spacedock is two pieces: the `spacedock` launcher and a host plugin (the
-first-officer and ensign agents) loaded by your agent. Install the launcher with
-Homebrew:
+first-officer and ensign agents) loaded by Claude Code, Codex, or Pi. Install the
+launcher with Homebrew:
 
 ```bash
 brew install spacedock-dev/homebrew-tap/spacedock
 ```
 
-Then launch. The first command installs the plugin for you if it's missing, so a
-single line gets you a working session:
+Then launch. The first command installs the plugin if it's missing, so a single
+line gets you a working session:
 
 ```bash
 spacedock claude "your task"
@@ -69,10 +69,10 @@ spacedock claude "your task"
 Using Codex or Pi instead? Swap the subcommand: `spacedock codex "your task"` or
 `spacedock pi "your task"`.
 
-To keep things current, `brew upgrade spacedock` updates the launcher and
-`spacedock install` refreshes the plugin. Run `spacedock doctor` any time to
-check that the launcher and plugin are compatible. (A plain `claude plugin
-update` will not pick up new releases; the plugin ships through `spacedock`.)
+To stay current: `brew upgrade spacedock` updates the launcher; `spacedock
+install` refreshes the plugin. Run `spacedock doctor` any time to confirm the
+launcher and plugin are compatible. A plain `claude plugin update` will not pick
+up new releases. The plugin ships through `spacedock`.
 
 See [`docs/install-journey.md`](docs/install-journey.md) for the full first-run
 walkthrough, the Codex and Pi paths, and a from-source build for development.
@@ -83,7 +83,7 @@ walkthrough, the Codex and Pi paths, and a from-source build for development.
 
 ## Quick start
 
-Commission a workflow by describing what you want it to do:
+Commission a workflow by describing what you want:
 
 ```bash
 spacedock claude "/commission Email triage: fetch, categorize, and act on my
@@ -93,9 +93,9 @@ in:inbox, categorize, propose an action per email as a table) -> approval
 through Gmail setup if needed."
 ```
 
-The first officer commissions the workflow, dispatches an ensign to gather your
-inbox, then pauses with a categorized proposal and waits for your approval
-before touching anything.
+The first officer commissions the workflow and dispatches an ensign to gather
+your inbox. It then pauses with a categorized proposal and waits for your
+approval before touching anything.
 
 For a development workflow:
 
@@ -109,10 +109,10 @@ for approval."
 ## How it works
 
 A workflow is a directory of plain-text work item files plus a README that
-defines the stages, the schema, and the gates. Everything about a work item, the
-problem, the design notes, the bar for done, the stage reports, lives in the
-file itself, so the state survives a session and the next one picks up where you
-left off. There are three roles:
+defines the stages, the schema, and the gates. Everything about a work item lives
+in the file itself: the problem, the design notes, the bar for done, the stage
+reports. State survives a session; the next one picks up where you left off.
+Three roles:
 
 | Role | Who |
 |------|-----|
@@ -122,16 +122,16 @@ left off. There are three roles:
 
 The first officer reads the workflow README, checks which items are ready to
 advance, and dispatches ensigns. Stages that need isolation run in their own git
-worktree; lightweight stages run inline. At a gate the first officer pauses and
+worktree; lightweight stages run inline. At a gate, the first officer pauses and
 presents the stage report for a decision: approve, redo with feedback, or
 reject. Some gates wait on you; others resolve through a delegated agent review.
-Rejected work bounces back to an earlier stage for revision, with a hard cap so
-you never get stuck in a loop.
+Rejected work bounces back to an earlier stage for revision. A hard cap prevents
+loops.
 
-When you end a session, `/spacedock:debrief` captures what happened. Commits,
-state changes, decisions, open issues, all into a record the next session picks
-up. When a new Spacedock release is out, `/spacedock:refit` upgrades your
-workflow scaffolding while keeping local modifications.
+When you end a session, `/spacedock:debrief` captures what happened: commits,
+state changes, decisions, open issues, all in a record the next session picks up.
+When a new Spacedock release is out, `/spacedock:refit` upgrades your workflow
+scaffolding while keeping local modifications.
 
 ## Usage
 
