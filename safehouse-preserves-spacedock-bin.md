@@ -24,7 +24,15 @@ Impact (HIGH for dev/test): a safehouse-wrapped dev launch appears to use the de
 
 ## Proposed approach
 
-Ideation fills this in. Likely: have safehouse preserve/allowlist `SPACEDOCK_BIN` (and any sibling launcher env the front door injects) across the sandbox boundary, OR have the front door re-assert `SPACEDOCK_BIN` inside the wrapped environment. Determine which side owns the fix (safehouse config vs. front-door launch) during ideation; if it is a safehouse-side concern, this task may reduce to documenting the boundary + the required allowlist entry rather than a code change here.
+**Re-assert `SPACEDOCK_BIN` in the inner argv** when (and only when) safehouse wrapping is active. The spike (below) located the strip in safehouse, not spacedock, and confirmed spacedock cannot own safehouse's env policy — so the env-only propagation that exists today (`launchEnv` setting `SPACEDOCK_BIN` on the outer `safehouse` process) cannot survive the boundary. The fix rides the value in argv, which safehouse hands to the inner host verbatim past `--` (already proven by the AC-6 launcher smoke).
+
+Concretely: when `runClaude` / `runCodex` decide to wrap (`wrap == true`), prefix the inner argv with an `env SPACEDOCK_BIN=<resolved-bin> …` token group, so the wrapped argv becomes
+
+    safehouse --trust-workdir-config [extra] -- env SPACEDOCK_BIN=<bin> claude --dangerously-skip-permissions --agent spacedock:first-officer …
+
+(and the codex analog). The value is the same `resolvedLauncherBin()` result `launchEnv` already computes; factor that resolution so the argv prefix and the env both read one source. The prefix is added ONLY on the wrap path — the unwrapped launch inherits `SPACEDOCK_BIN` directly through `launchEnv`, so no argv change there. When `resolvedLauncherBin()` returns no binary (resolution failed), emit no prefix — never inject an empty or stale value (mirrors the existing `launchEnv` omit-on-failure behavior).
+
+Why not the safehouse-allowlist side: spacedock's standing design stance (docs/runtime-support.md) is that it "does not modify safehouse internals or assume a private passthrough mechanism." An allowlist entry would live in safehouse's own config/profile schema, which spacedock neither writes nor controls, and would silently regress if the operator's safehouse profile lacked it. The argv re-assert is self-contained in the front door, needs nothing from safehouse beyond the verbatim argv handoff it already does, and degrades safely (no prefix when the bin can't be resolved). The doc-only/allowlist outcome the seed sketched is therefore NOT the chosen path — it is recorded here as rejected, with the reason.
 
 ## Out of scope
 
@@ -33,11 +41,43 @@ Ideation fills this in. Likely: have safehouse preserve/allowlist `SPACEDOCK_BIN
 
 ## Acceptance criteria
 
-Ideation/implementation fills in. Sketch:
+- **AC-1 — Wrapped claude argv carries the re-asserted binary.** A safehouse-wrapped `spacedock claude` launch produces an inner argv that re-asserts `SPACEDOCK_BIN=<resolvedLauncherBin>` ahead of the `claude` token, so the value survives any env-scrubbing wrapper.
+  *Verified by:* a `runClaude` oracle in `internal/cli/safehouse_frontdoor_test.go` asserting the exact wrapped `want` argv now contains `env SPACEDOCK_BIN=<fixtureBin>` between `--` and `claude` (extends `TestClaudeSafehousePresentWrapsArgv`). Fails on a wrapped argv missing the prefix.
+- **AC-2 — Wrapped codex argv carries the re-asserted binary.** The codex analog: a safehouse-wrapped `spacedock codex` launch re-asserts `SPACEDOCK_BIN=<bin>` ahead of the `codex` token.
+  *Verified by:* a `runCodex` oracle asserting the wrapped `want` argv (extends `TestCodexSafehousePresentWrapsArgv`).
+- **AC-3 — Unwrapped launch is unchanged.** An unsandboxed launch (no `.safehouse`, no `--safehouse*`) carries NO `env SPACEDOCK_BIN=…` prefix; `SPACEDOCK_BIN` still reaches the host through `launchEnv` as today.
+  *Verified by:* `TestClaudeNoSafehouseLaunchesPlain` / `TestCodexNoSafehouseLaunchesPlainNoBypass` extended to assert the `env`/`SPACEDOCK_BIN=` tokens appear nowhere in the unwrapped argv (the `env` token is absent), AND `TestClaudeFrontDoorInjectsResolvedLauncherBin` still passes (env path intact).
+- **AC-4 — No prefix when the binary cannot be resolved.** When `resolvedLauncherBin()` returns no binary, the wrapped argv carries no `env SPACEDOCK_BIN=` prefix (never an empty/blank value), exactly as `launchEnv` omits the env entry today.
+  *Verified by:* a `runClaude` oracle with `executablePath` stubbed to error (reuse `withExecutablePath(t, "", err)`), asserting the wrapped argv has no `SPACEDOCK_BIN=` token.
+- **AC-5 — The re-asserted value survives an env-scrubbing wrapper end to end.** Driven through a fake `safehouse` that *strips* `SPACEDOCK_BIN` from its environment before exec'ing the inner command, the in-session helper resolves to the launching binary, not the PATH `spacedock`.
+  *Verified by:* a fixture smoke (the corrected `safehouse_env_smoke_test.go`) whose fake safehouse `unset`s `SPACEDOCK_BIN` and whose inner probe prints the resolved binary via the real `spacedock_launcher` expression from `internal/dispatch/launcher_command.go`; the test asserts the probe reports `<bin>`, not the PATH fallback. This is the regression oracle the current smoke fails to be (its fake safehouse `exec "$@"` preserves env, so it passes for the wrong reason — see Spike).
 
-- A safehouse-wrapped `spacedock claude`/`codex` launch resolves helper calls to the launching binary, not the PATH binary (verified by launching a dev binary under safehouse and observing the in-session helper resolves to it — e.g. a probe that reports the resolved binary path/version, compared against the PATH binary's).
-- If the resolution is a documentation/allowlist fix rather than code, the required safehouse env allowlist entry is documented and the doc names the failure it prevents.
+## Spike — riskiest mechanism exercised first
+
+The riskiest unknown was "which side strips the env, and is there a spacedock-owned fix?" Exercised before committing to the approach:
+
+- **Bug reproduced live, in this very session.** The ideation ran inside a safehouse-wrapped FO session (`APP_SANDBOX_CONTAINER_ID=agent-safehouse`, `CLAUDE_CODE_AGENT=spacedock:first-officer`, `SAFEHOUSE_CLAUDE_VSCODE_MODE=reuse` present). In that session `SPACEDOCK_BIN` was **unset**, and `which spacedock` resolved `/opt/homebrew/bin/spacedock` → `…/Caskroom/spacedock/0.19.4/spacedock` (md5 `bb4a4c6d…`), a DIFFERENT binary from the dev build `…/spacedock-v1/spacedock` (md5 `6f68258a…`). The dispatch fetch commands therefore drove the released 0.19.4 binary, not the dev one — the silent divergence this task exists to kill, observed directly.
+- **Strip side located = safehouse, not spacedock.** Spacedock's side is proven correct: `TestClaudeFrontDoorInjectsResolvedLauncherBin` asserts `launchEnv` sets `SPACEDOCK_BIN` on the launched (outer `safehouse`) process. Yet inside the sandbox many other vars survived (`PATH`, `HOME`, `SSH_AUTH_SOCK`, `EDITOR`, all `CLAUDE_CODE_*`, `SAFEHOUSE_*`) while `SPACEDOCK_BIN` did not — safehouse selectively drops it across its boundary.
+- **Fix mechanism validated (throwaway probe, `/tmp/spike-spacedock-bin`).** With a fake `safehouse` that `unset`s `SPACEDOCK_BIN` then execs the inner argv: (A) env-only propagation → inner helper falls to PATH fallback (reproduces the bug); (B) prefixing the inner argv with `env SPACEDOCK_BIN=<bin>` → inner helper resolves `<bin>`. The value survives the scrub because it rides argv, which safehouse passes verbatim past `--` (AC-6 launcher smoke already proved the verbatim handoff). `/usr/bin/env` is present and portable; a single `VAR=val` token is one argv element, so host flags after it are unaffected; the unwrapped path needs no prefix.
+- **No remaining unverified mechanism.** The implementation composes already-proven behavior: spacedock's env set (proven), safehouse's verbatim argv handoff (proven, AC-6), and the `env VAR=val` argv prefix (proven by the probe above). Implementation is fixture/unit-testable with no live safehouse required.
 
 ## Test plan
 
-Ideation/implementation fills in. The riskiest unknown is which side propagates env — exercise it first: launch a dev binary under safehouse with a deliberately-different PATH binary and observe which one the in-session helper resolves to (before/after the fix).
+All checks are fixture/unit level in `internal/cli` — no live safehouse binary needed (the riskiest path is already exercised above, and the real safehouse cannot be nested inside the dev sandbox anyway).
+
+- **AC-1/AC-2/AC-3/AC-4 — argv oracles** (`internal/cli/safehouse_frontdoor_test.go`, `frontdoor_test.go`): extend the existing `want`-argv assertions for `runClaude`/`runCodex`. Cost: low — these files already pin the exact wrapped/unwrapped argv; the change is adding the `env SPACEDOCK_BIN=<bin>` tokens to the wrapped `want` slices and an absence assertion to the unwrapped ones. Pattern: pure Go table/oracle tests against the `fakeHost.launchedArg` recorder. No new fixtures.
+- **AC-5 — end-to-end env-scrub smoke** (`internal/cli/safehouse_env_smoke_test.go`, corrected): replace the env-preserving fake safehouse (`exec "$@"`) with an env-scrubbing one (`unset SPACEDOCK_BIN; exec "$@"`), and make the inner probe use the real `spacedock_launcher` expression so the test fails before the fix (PATH fallback) and passes after (re-asserted bin). Cost: low — temp-dir shell fixtures, the existing test's shape. This is the load-bearing correction: the current smoke passes for the wrong reason.
+- **Regression guard:** keep `TestClaudeFrontDoorInjectsResolvedLauncherBin` green (the env path stays wired for the unwrapped case).
+
+Estimated complexity: small. One resolution helper factored out of `launchEnv`, one argv-prefix call on each wrap path, ~5 test touch-points. No live workflow test required; no fixture data beyond the temp shell scripts already in use.
+
+## Stage Report: ideation
+
+- DONE: Exercise the riskiest mechanism FIRST: launch a dev binary under safehouse with a deliberately-different PATH binary and observe which one the in-session helper resolves — this proves the SPACEDOCK_BIN strip AND locates which side owns the fix (safehouse config vs front-door re-assert).
+  Reproduced live in-session: SPACEDOCK_BIN unset under `APP_SANDBOX_CONTAINER_ID=agent-safehouse`, PATH `spacedock`=Caskroom 0.19.4 (md5 bb4a4c6d…) ≠ dev build (md5 6f68258a…); strip located in safehouse (env path proven by `TestClaudeFrontDoorInjectsResolvedLauncherBin`); fix-side = front-door argv re-assert.
+- DONE: Produce AC + test plan: a safehouse-wrapped launch resolves helper calls to the launching binary (or the documented allowlist), verified by a probe comparing the resolved binary path/version against the PATH binary's.
+  AC-1..AC-5 added (wrapped claude/codex argv carries `env SPACEDOCK_BIN=<bin>`, unwrapped unchanged, omit-on-unresolved, end-to-end env-scrub smoke); test plan maps each to `internal/cli` oracles + the corrected `safehouse_env_smoke_test.go`.
+
+### Summary
+
+The bug reproduced live: this ideation ran inside a safehouse-wrapped session with SPACEDOCK_BIN stripped and the PATH binary (released 0.19.4) differing from the dev build, so helper calls silently drove the wrong binary. The strip is on safehouse's side; spacedock's env-set is already correct, so the spacedock-owned fix is to re-assert `SPACEDOCK_BIN` in the inner argv (`env VAR=val` prefix) only on the wrap path — validated by a throwaway scrubbing-safehouse probe (env-only → PATH fallback; argv-prefix → resolves the bin). The safehouse-allowlist/doc-only path the seed sketched is recorded as rejected (spacedock does not own safehouse config). One notable test-design correction: the existing `safehouse_env_smoke_test.go` passes for the wrong reason (its fake safehouse preserves env), so AC-5 turns it into a real env-scrub regression oracle.
