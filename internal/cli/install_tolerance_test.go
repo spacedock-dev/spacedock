@@ -91,25 +91,36 @@ func TestInstallFailsFastOnAddStep(t *testing.T) {
 	}
 }
 
-// writeClaudeStub writes a `claude` shell script under a temp dir and returns
-// the dir (suitable for PATH prepend). The stub echoes
+// writeClaudeStub writes a `claude` host stub (see writeHostStub).
+func writeClaudeStub(t *testing.T, failOn string) string {
+	t.Helper()
+	return writeHostStub(t, "claude", failOn)
+}
+
+// writeHostStub writes a host CLI shell script named binName under a temp dir and
+// returns the dir (suitable for PATH prepend). The stub echoes
 // `stub:<joined args>:exit=<code>` to stdout, then exits with code 1 if the
 // argv joined with single spaces starts with failOn, else exit 0. failOn is
 // quoted into the case pattern so it can contain spaces (e.g. "plugin
-// marketplace remove"). This lets a single helper drive both "fail on remove"
-// and "fail on add" tests.
-func writeClaudeStub(t *testing.T, failOn string) string {
+// marketplace remove"). An empty failOn never matches, so every step exits 0.
+// This lets a single helper drive both "fail on <step>" and all-zero tests for
+// either host binary.
+func writeHostStub(t *testing.T, binName, failOn string) string {
 	t.Helper()
 	dir := t.TempDir()
-	path := filepath.Join(dir, "claude")
-	body := `#!/bin/sh
-args="$*"
-case "$args" in
-"` + failOn + `"*)
+	path := filepath.Join(dir, binName)
+	matchArm := ""
+	if failOn != "" {
+		matchArm = `"` + failOn + `"*)
   echo "stub:$args:exit=1"
   exit 1
   ;;
-*)
+`
+	}
+	body := `#!/bin/sh
+args="$*"
+case "$args" in
+` + matchArm + `*)
   echo "stub:$args:exit=0"
   exit 0
   ;;

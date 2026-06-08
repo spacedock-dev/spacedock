@@ -29,9 +29,9 @@ type pluginListEntry struct {
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path
 // for host, or "" (no error) when no plugin is installed. The two hosts resolve
 // differently: Claude reports an installPath in `claude plugin list --json`;
-// Codex 0.136.0 has no --json (it rejects the flag, exit 2) and its text listing
-// carries no install path, so the Codex path confirms the install via the text
-// listing and resolves the manifest under the deterministic Codex plugin cache.
+// Codex's `plugin list --json` carries no install path (only an installed flag,
+// different schema), so the Codex path confirms the install via the text listing
+// and resolves the manifest under the deterministic Codex plugin cache.
 func (e execHost) ResolveManifest(host string) (string, error) {
 	if host == "codex" {
 		return e.resolveCodexManifest()
@@ -63,10 +63,11 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 }
 
 // resolveCodexManifest confirms spacedock@spacedock is installed via the text
-// `codex plugin list` (no --json — 0.136.0 rejects it) and resolves the manifest
-// under the Codex plugin cache. Codex installs land at
-// <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json;
-// the listing carries no install path, so the cache layout is the resolver.
+// `codex plugin list` and resolves the manifest under the Codex plugin cache.
+// Codex's listing carries no install path (its `--json` form has one only for
+// the marketplace root, not the cached plugin), so the deterministic cache
+// layout is the resolver. Codex installs land at
+// <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json.
 // Returns "" (no error) when the plugin is not installed or no cached manifest
 // exists for it yet.
 func (execHost) resolveCodexManifest() (string, error) {
@@ -260,20 +261,50 @@ func installArgvSequence(source, branch string) []installStep {
 	}
 }
 
-// Install shells the host plugin upgrade sequence (uninstall + marketplace
-// remove + add + install). The marketplace source is pinned to branch via @ref
-// (Claude) when set. The two cleanup steps (uninstall, marketplace remove) are
-// tolerated — their non-zero exits on a fresh-box ("not installed" / "not
-// found") are appended to combined output and the loop continues. The two
-// pinning steps (marketplace add, plugin install) are fail-fast and surface
-// real install failures. Codex installs are not shelled here — runInit emits
-// the documented prose for that host.
+// codexInstallArgvSequence is the codex analog of installArgvSequence: the same
+// 4-command cleanup-then-pin shape, but in codex's verb vocabulary (`plugin
+// remove` / `plugin add`, not claude's `uninstall` / `install`) and pinning the
+// branch via codex's own `--ref <branch>` flag (a separate argv token), NOT the
+// claude `source@branch` shorthand. `--ref` and its value are OMITTED when branch
+// is empty (the default-branch install). The tolerance asymmetry matches claude:
+// BOTH cleanup steps (plugin remove + marketplace remove) are tolerated — on a
+// fresh box `plugin remove` exits 0 (idempotent) but `marketplace remove` exits 1
+// ("marketplace `spacedock` is not configured or installed"), and neither is a
+// real failure. BOTH pinning steps (marketplace add + plugin add) stay fail-fast
+// — they are the real-failure backstops.
+func codexInstallArgvSequence(source, branch string) []installStep {
+	addArgv := []string{"plugin", "marketplace", "add", source}
+	if branch != "" {
+		addArgv = append(addArgv, "--ref", branch)
+	}
+	return []installStep{
+		{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: addArgv},
+		{argv: []string{"plugin", "add", "spacedock@spacedock"}},
+	}
+}
+
+// Install shells the host plugin upgrade sequence (cleanup-then-pin) for claude
+// or codex, returning combined output. Each host uses its own verb vocabulary and
+// branch-pinning form (claude `source@branch` shorthand; codex `--ref <branch>`),
+// supplied by installArgvSequence / codexInstallArgvSequence. The two cleanup
+// steps are tolerated — their non-zero exits on a fresh-box ("not installed" /
+// "not found") are appended to combined output and the loop continues. The two
+// pinning steps (marketplace add, plugin install/add) are fail-fast and surface
+// real install failures.
 func (execHost) Install(host, source, branch string) (string, error) {
-	if host != "claude" {
-		return "", fmt.Errorf("programmatic install is only supported for claude; codex install is documented prose")
+	var steps []installStep
+	switch host {
+	case "claude":
+		steps = installArgvSequence(source, branch)
+	case "codex":
+		steps = codexInstallArgvSequence(source, branch)
+	default:
+		return "", fmt.Errorf("programmatic install is supported for claude and codex, not %q", host)
 	}
 	var sb strings.Builder
-	for _, step := range installArgvSequence(source, branch) {
+	for _, step := range steps {
 		cmd := exec.Command(host, step.argv...)
 		out, err := cmd.CombinedOutput()
 		sb.Write(out)

@@ -426,7 +426,14 @@ func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
 	assertGateMismatchMessage(t, stderr.String())
 }
 
-func TestCodexFrontDoorNoPluginFailsFastWithoutInstalling(t *testing.T) {
+// TestCodexFrontDoorNoPluginAutoInstalls (AC-2): with no installed codex plugin
+// and no flags the front door auto-installs the plugin then launches a working
+// session — the single command the user typed yields a working FO session rather
+// than refusing. Both no-plugin verdicts (an empty manifest AND a phantom
+// installPath to an absent manifest) auto-install, matching the claude branch.
+// The recorded install seam ({host, source, branch}) and the captured launch argv
+// are the independent sources of truth.
+func TestCodexFrontDoorNoPluginAutoInstalls(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-such-dir", ".codex-plugin", "plugin.json")
 	cases := []struct {
 		name     string
@@ -442,14 +449,48 @@ func TestCodexFrontDoorNoPluginFailsFastWithoutInstalling(t *testing.T) {
 
 			code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
 
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 when codex has no plugin → auto-install + launch (stderr=%q)", code, stderr.String())
+			}
+			wantInstall := []string{"codex", marketplaceSource, devBranch}
+			if !equalArgv(fake.installCmds, wantInstall) {
+				t.Fatalf("install seam = %v, want %v (the {host, source, branch} seam)", fake.installCmds, wantInstall)
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked after codex auto-install")
+			}
+		})
+	}
+}
+
+// TestCodexFrontDoorNoPluginNoInstallRefuses (AC-3): --no-install preserves the
+// refuse-and-instruct behavior — no install, no launch, non-zero exit, with the
+// codex no-plugin remedy on stderr. This is the migrated assertion from the old
+// fail-fast test, now gated behind --no-install. Both no-plugin verdicts refuse.
+func TestCodexFrontDoorNoPluginNoInstallRefuses(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "no-such-dir", ".codex-plugin", "plugin.json")
+	cases := []struct {
+		name     string
+		manifest string
+	}{
+		{name: "empty manifest", manifest: ""},
+		{name: "missing manifest", manifest: missing},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tc.manifest}
+			var stdout, stderr bytes.Buffer
+
+			code := runCodex(context.Background(), []string{"--no-install"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
 			if code == 0 {
-				t.Fatalf("exit = 0, want non-zero when codex has no plugin")
+				t.Fatalf("exit = 0, want non-zero with --no-install and no codex plugin")
 			}
 			if len(fake.installCmds) != 0 {
-				t.Fatalf("install seam invoked on codex no-plugin path: %v", fake.installCmds)
+				t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
 			}
 			if fake.launchedArg != nil {
-				t.Fatalf("launch seam invoked on codex no-plugin path: %v", fake.launchedArg)
+				t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
 			}
 			if !strings.Contains(stderr.String(), "codex plugin") {
 				t.Fatalf("stderr missing codex no-plugin remedy: %q", stderr.String())
