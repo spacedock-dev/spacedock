@@ -14,6 +14,7 @@ group: dev-quality
 sprint-readiness: ready
 mod-block:
 pr: "#333"
+archived: 2026-06-08T22:41:54Z
 ---
 
 Add a generic **operating-voice convention** to the shared agent contract: when an agent produces captain-facing or operating prose (gate presentations, status reports, the dispatch package, conversation), it refers to entities by the workflow's declared `entity-label` / `entity-label-plural` — resolved from the README it already read at boot — instead of the generic "entity". The convention is generic ("use the workflow's declared label"), never a hardcoded "task". The contract *mechanics* stay generic "entity"; only the human-facing *output* localizes.
