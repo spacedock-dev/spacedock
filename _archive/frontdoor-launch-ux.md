@@ -14,6 +14,7 @@ sprint: 0199-pre-flip-mechanics
 sprint-readiness: ready
 mod-block:
 pr: "#336"
+archived: 2026-06-08T23:14:36Z
 ---
 
 Make the `spacedock codex` (and `claude`) launch experience honest and useful: don't tell the user to install manually right before silently auto-installing, show a short pre-launch info banner, and ship a neutral bootstrap prompt.
