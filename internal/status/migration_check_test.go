@@ -61,18 +61,13 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 		filepath.Join(repoRoot, "docs"),
 	}
 	var checked int
+	var visited []string
 	walk := func(root string, path string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
 		if info.IsDir() {
-			// Debriefs are session records with their own frontmatter shape
-			// (session-date, sequence, first-commit) — not entity fixtures the
-			// migration check governs. Their bare-YAML date scalars parse as
-			// time.Time in a direct yaml.v3 decode but as strings through the
-			// reader, which is expected for non-entity frontmatter and outside
-			// this check's scope.
-			if info.Name() == "_debriefs" {
+			if isMigrationCheckPrunedDir(info.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
@@ -80,6 +75,7 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 		if !strings.HasSuffix(path, ".md") {
 			return nil
 		}
+		visited = append(visited, path)
 		data, err := os.ReadFile(path)
 		if err != nil {
 			t.Errorf("read %s: %v", path, err)
@@ -142,10 +138,109 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 			t.Fatalf("walk %s: %v", root, err)
 		}
 	}
+	// Positive prune proof on the live corpus: on a dev machine the split-root
+	// state checkout materializes under docs/dev/.spacedock-state and the walk
+	// roots include docs/. If the prune regressed, the ~100 machine-local
+	// entity files there would show up in visited. Assert no visited path
+	// crosses the state tree. (On CI the tree is absent, so this is a no-op
+	// there; the hermetic temp-fixture proof lives in
+	// TestMigrationCheckPrunesStateTree.)
+	stateSep := string(filepath.Separator) + ".spacedock-state" + string(filepath.Separator)
+	for _, p := range visited {
+		if strings.Contains(p, stateSep) {
+			t.Errorf("walk descended into the pruned .spacedock-state tree: %s", p)
+		}
+	}
+	// Non-vacuous guard: the walk MUST still validate real entity files so the
+	// consistency check above can actually fire. A prune that dropped checked to
+	// zero would silently disable the migration check.
 	if checked == 0 {
-		t.Fatal("walked no frontmatters — repo layout changed?")
+		t.Fatal("walked no frontmatters — repo layout changed or the prune over-reached?")
 	}
 	t.Logf("migration-check verified %d frontmatters across fixtures + live", checked)
+}
+
+// isMigrationCheckPrunedDir reports whether the migration-check walk skips a
+// directory whole. The .spacedock-state tree is the gitignored split-root state
+// checkout: on a dev machine it materializes under docs/dev/ and holds ~100
+// machine-local entity files (active entities plus _debriefs session records)
+// the migration check was never meant to govern; on CI the tree is absent and
+// the prune is moot. The debriefs in particular carry their own frontmatter
+// shape (session-date, sequence, first-commit), whose bare-YAML date scalars
+// decode as time.Time directly but as strings through the reader — expected for
+// non-entity frontmatter and outside this check's scope. Pruning the tree
+// wholesale matches the established sibling prunes in handlers.go
+// (discoverIgnoreDirs) and boundary_guard_test.go.
+func isMigrationCheckPrunedDir(name string) bool {
+	return name == ".spacedock-state"
+}
+
+// TestMigrationCheckPrunesStateTree is the hermetic, CI-stable positive proof
+// that the migration-check walk prunes the .spacedock-state tree wholesale
+// rather than name-matching individual subdirs. It plants a temp tree holding a
+// real entity alongside a .spacedock-state subtree, drives filepath.Walk
+// through the same isMigrationCheckPrunedDir predicate the migration check uses,
+// and asserts the state subtree is never visited while the real entity is —
+// which keeps the checked>0 guard in TestMigrationCheckFixturesParseConsistently
+// non-vacuous (the prune does not also swallow legitimate entities).
+func TestMigrationCheckPrunesStateTree(t *testing.T) {
+	root := t.TempDir()
+
+	// A real entity outside the state tree — the walk MUST visit this one.
+	liveDir := filepath.Join(root, "live")
+	if err := os.MkdirAll(liveDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	liveEntity := filepath.Join(liveDir, "entity.md")
+	if err := os.WriteFile(liveEntity, []byte("---\nid: live-1\nstatus: done\n---\n\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// A machine-local entity inside the pruned state tree — the walk must NOT
+	// visit this one. Its frontmatter is a colon-space hazard that the live
+	// migration-check consistency walk would flag if it ever read it, which is
+	// exactly why the state tree is pruned.
+	stateDir := filepath.Join(root, "docs", "dev", ".spacedock-state")
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	poison := filepath.Join(stateDir, "index.md")
+	if err := os.WriteFile(poison, []byte("---\nsource: a: b: c\n---\n\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var visited []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if info.IsDir() {
+			if isMigrationCheckPrunedDir(info.Name()) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if strings.HasSuffix(path, ".md") {
+			visited = append(visited, path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk %s: %v", root, err)
+	}
+
+	visitedLive := false
+	for _, p := range visited {
+		if p == poison {
+			t.Errorf("walk descended into the pruned .spacedock-state tree: visited %s", p)
+		}
+		if p == liveEntity {
+			visitedLive = true
+		}
+	}
+	if !visitedLive {
+		t.Fatalf("walk did not visit the real entity %s — the prune over-reached", liveEntity)
+	}
 }
 
 // scalarString renders a yaml.v3-decoded scalar back to the string the
