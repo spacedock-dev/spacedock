@@ -80,12 +80,12 @@ Release, verifies it against the release `checksums.txt`, and installs the
 **Sandboxing on Linux.** Spacedock's safehouse integration behaves the same on
 Linux as on macOS: when a `.safehouse` profile is present in the working
 directory, Spacedock wraps the launch through the `safehouse` command. Spacedock
-itself does not ship a sandbox — it detects the profile and delegates. So a run
-is actually sandboxed only when a Linux-capable `safehouse` binary is installed
-on your `PATH`. When the binary is absent, Spacedock prints an install hint and
-the launch proceeds **unsandboxed**. Install safehouse separately if you need
-the sandbox on Linux; the macOS-only Gatekeeper/quarantine handling does not
-apply on Linux and is not needed there.
+does not ship a sandbox — it detects the profile and delegates. A run is
+sandboxed only when a Linux-capable `safehouse` binary is on your `PATH`. When
+the binary is absent, Spacedock prints an install hint and the launch proceeds
+**unsandboxed**. Install safehouse separately if you need the sandbox on Linux;
+the macOS-only Gatekeeper/quarantine handling does not apply on Linux and is not
+needed there.
 
 ## Use Codex or Pi instead
 
