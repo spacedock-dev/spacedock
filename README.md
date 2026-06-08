@@ -31,8 +31,9 @@ waiting on you.
 - **The agent doesn't get to judge its own work.** Review stages are adversarial
   by default. They push back on thin evidence and work that looks busy without
   proving its claim.
-- **Every decision leaves a trail.** Each gate carries a stage report: findings,
-  verdicts, artifacts, anomalies. You decide on evidence, not the transcript.
+- **Every decision leaves a trail.** Each gate, the decision point at the end of
+  a stage, carries a stage report: findings, verdicts, artifacts, anomalies. You
+  decide on evidence, not the transcript.
   The record outlives the reviewer, so you can trace a bad result back to the
   call that caused it.
 - **The bar sharpens as you use it.** Each stage declares what good means, and
