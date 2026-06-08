@@ -9,7 +9,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-pi-stage-dispatch-uses-build-artifact
 issue:
 id: z68h8vwxeetp011b1484c2jx
-mod-block: merge:pr-merge
+mod-block:
 pr: "#300"
 ---
 
