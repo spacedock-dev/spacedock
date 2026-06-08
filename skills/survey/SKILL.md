@@ -31,7 +31,7 @@ if ! agentsview --version >/dev/null 2>&1; then echo "AGENTSVIEW MISSING"; fi
 
 If it prints `AGENTSVIEW MISSING`: tell the user agentsview is needed (it ingests the agent logs this skill reads), **ask consent**, and only on a yes run the install (`brew install --cask agentsview`; fallback `curl -fsSL https://agentsview.io/install.sh | bash`). NEVER install without an explicit yes — stop at the consent prompt otherwise.
 
-With the binary present, sync — but **scope the sync to this project**. A bare `agentsview sync` enumerates the ENTIRE `~/.claude/projects` history (16k+ sessions, growing): on a real machine that walk exhausts any sane timeout, so the survey data dir ends up empty or partial. The fix is to narrow Claude's source root to just this repo's session directories before syncing, so the walk is bounded and this project's Claude sessions land in seconds:
+With the binary present, sync — but **scope the CLAUDE source to this project**. A bare `agentsview sync` enumerates the ENTIRE `~/.claude/projects` history (16k+ sessions, growing): on a real machine that walk exhausts any sane timeout, so the survey data dir ends up empty or partial. The fix is to narrow Claude's source root to just this repo's session directories before syncing, so the walk is bounded and this project's Claude sessions land in seconds. The narrowing applies ONLY to Claude (`CLAUDE_PROJECTS_DIR`); the same `agentsview sync` ALSO walks the other agents' default source dirs unscoped — notably Codex (`~/.codex/sessions`), which is what populates the `codex-presence` count in step 2 (Codex is a small backlog, so leaving it unscoped is cheap). You always run this sync as part of the survey — see below.
 
 ```bash
 mkdir -p "$SURVEY_DB_DIR"
@@ -57,7 +57,7 @@ done
 AGENTSVIEW_DATA_DIR="$SURVEY_DB_DIR" CLAUDE_PROJECTS_DIR="$NARROW" timeout 300 agentsview sync
 ```
 
-The survey data dir persists between runs, so a re-survey of the same project is incremental (seconds). Do not pass `--full` — a full resync re-ingests everything and can fill the disk. If the symlink farm is empty (this project has no Claude sessions under `~/.claude/projects`), the synced DB has no history for it; step 2 reports "no agent history" and stops.
+**Always run this sync as part of the survey — never query a pre-existing `SURVEY_DB_DIR` without re-syncing first.** The data dir persists between runs so the re-sync is incremental (seconds), but it is the sync that refreshes BOTH this project's Claude sessions AND the Codex backlog into the DB. A persisted dir left over from an earlier survey can be missing newer sessions — or, if it predates Codex on disk, missing Codex entirely — so the step-2 `codex-presence` count would read a stale 0. The incremental sync backfills them (no `--full` needed); skipping the sync is what produces a wrong 0. Do not pass `--full` — a full resync re-ingests everything and can fill the disk. If the symlink farm is empty (this project has no Claude sessions under `~/.claude/projects`), the synced DB has no Claude history for it; step 2 reports "no agent history" and stops.
 
 If `agentsview sync` fails (network, disk, permissions), report the exact failure and stop — do not fall back to raw `~/.agentsview/` reads (they fail under TCC).
 
