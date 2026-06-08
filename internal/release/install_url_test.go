@@ -97,7 +97,10 @@ func goosArch(t *testing.T) (string, string) {
 }
 
 // runInstallPrintTarget runs install.sh in its inspection mode (no download, no
-// install) and parses the `key=value` lines it prints into a map.
+// install) and parses the `key=value` lines it prints into a map. The script's
+// production path makes its OWN live GitHub call to resolve the latest tag; a
+// network/transport failure there SKIPS (the live network is this test's one
+// flaky dependency), while a logic failure (malformed output) hard-fails.
 func runInstallPrintTarget(t *testing.T) map[string]string {
 	t.Helper()
 	script := filepath.Join("..", "..", "install.sh")
@@ -105,6 +108,9 @@ func runInstallPrintTarget(t *testing.T) map[string]string {
 	cmd.Env = append([]string{"SPACEDOCK_PRINT_TARGET=1"}, scrubInstallEnv()...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if strings.Contains(string(out), "could not resolve the latest release tag") {
+			t.Skipf("install.sh could not reach the GitHub releases API; skipping live AC-3 URL check:\n%s", out)
+		}
 		t.Fatalf("install.sh SPACEDOCK_PRINT_TARGET=1 failed: %v\n%s", err, out)
 	}
 	fields := map[string]string{}
