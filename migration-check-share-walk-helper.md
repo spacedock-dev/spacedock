@@ -37,3 +37,13 @@ Ideation/implementation fills in (small — likely fast-track). Sketch:
 ## Test plan
 
 The existing `migration_check_test.go` assertions carry over against the shared helper. `go test ./internal/status -run TestMigrationCheck` green. Small, mechanical; candidate for fast-track (no gate).
+
+## Stage Report: implementation
+
+- DONE: Extract the migration-check walk-step composition (info.IsDir() → filepath.SkipDir wrapping isMigrationCheckPrunedDir) into ONE shared helper in the production internal/status package; both the production migration-check AND TestMigrationCheckPrunesStateTree drive that single helper; the test no longer inlines its own filepath.Walk callback composition.
+  New production file internal/status/migration_check.go defines migrationCheckWalkDir + the moved isMigrationCheckPrunedDir; both walk callbacks (migration_check_test.go:69 consistency walk, :199 prune walk) call it. Commit ec44dc05 on branch spacedock-ensign/migration-check-share-walk-helper.
+- DONE: The existing prune assertions stay green against the shared helper (.spacedock-state subtree never visited AND the real entity IS visited).
+  go test ./internal/status -run TestMigrationCheckPrunesStateTree → 1 passed. Full package: 447 passed, 1 skipped, 1 pre-existing unrelated FAIL.
+
+### Summary
+Both walk callbacks duplicated the same info.IsDir()→isMigrationCheckPrunedDir→filepath.SkipDir step, and the predicate lived only in the test file. Moved the predicate to a new production file internal/status/migration_check.go and added migrationCheckWalkDir wrapping it; both the live consistency walk and the hermetic prune test now drive the one shared walk-step, so the prune composition is defined and tested once. The pre-existing RED TestMigrationCheckFixturesParseConsistently (docs/roadmap/0198-pre-flip-hardening/debrief.md unquoted session-date scalar, migration_check_test.go:115) is the documented separate item owned elsewhere — not touched, not introduced by this change (the walk still visits 58 frontmatters and the .spacedock-state prune assertion does not fire).
