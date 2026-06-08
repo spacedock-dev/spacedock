@@ -12,7 +12,7 @@ issue:
 sprint: 019x-pre-flip-cleanups
 group: dispatch-hygiene
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#325"
 ---
 
