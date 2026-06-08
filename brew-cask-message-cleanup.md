@@ -1,13 +1,13 @@
 ---
 id: 78zrmrh8j3fv2b1t7bh77ykr
 title: Clean up the Homebrew cask caveats — drop the xattr note, shrink the safehouse wall
-status: validation
+status: done
 source: "captain (2026-06-08, flip-line) - the brew cask install message is too verbose. The postflight hook already auto-clears com.apple.quarantine, so the manual xattr fallback is redundant; the safehouse block is a wall of text. Just briefly recommend installing safehouse + agentsview."
 started: 2026-06-08T03:54:12Z
-completed:
-verdict:
+completed: 2026-06-08T05:22:59Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-brew-cask-message-cleanup
+worktree:
 issue:
 sprint: 019x-pre-flip-cleanups
 group: release-hygiene
