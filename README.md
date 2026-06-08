@@ -16,8 +16,8 @@ agent. Either way, the decision is recorded with its evidence and reason.
 - You're the agent, and you stall every few steps waiting on a human who isn't
   watching, with no clear scope and no clear bar for done, so you ask and then
   you wait.
-- Both of you are stuck on the same root cause. Generation got cheap; judgment
-  didn't. Every task still ends in a decision, and no one owns it, so it falls on
+- Generation got cheap. Your attention and judgment are now the bottleneck.
+  Every task still ends in a decision, and no one owns it, so it falls on
   whoever's around.
 
 **Start with what you already built.** Point Spacedock at a project you
