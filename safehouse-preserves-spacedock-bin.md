@@ -12,6 +12,7 @@ issue:
 sprint: 0199-pre-flip-mechanics
 group: dev-quality
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 A safehouse-wrapped `spacedock claude` / `spacedock codex` should keep using the binary that launched it. Today the launcher-injected `SPACEDOCK_BIN` is lost across the safehouse boundary, so every in-session helper call silently falls back to the `spacedock` on `$PATH`.
