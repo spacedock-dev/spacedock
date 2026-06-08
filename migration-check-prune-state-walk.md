@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: test-hygiene
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#327"
 ---
 
 Two test-hygiene cleanups surfaced by the 019x post-sprint audit. Bounded (the suite is green); a consistency fix, not a correctness bug.
