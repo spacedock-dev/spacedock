@@ -13,6 +13,7 @@ group: test-hygiene
 sprint: 0199-pre-flip-mechanics
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#331"
 ---
 
 Extract the migration-check walk-step composition into a shared helper that both the production check and the hermetic prune test call, so the prune composition is tested once instead of re-implemented in the test.
