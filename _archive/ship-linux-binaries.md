@@ -14,6 +14,7 @@ group: distribution
 sprint-readiness: ready
 mod-block:
 pr: "#332"
+archived: 2026-06-08T22:41:53Z
 ---
 
 Ship Linux binaries and give Linux users an install path, before the 0.20.0 cut. The code is already portable — the gap is release packaging + distribution.
