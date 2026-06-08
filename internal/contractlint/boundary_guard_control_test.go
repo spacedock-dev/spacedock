@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -124,6 +125,53 @@ func TestLeak(t *T) {
 	for _, o := range offenders {
 		if filepath.Dir(o) == quarantinePkg {
 			t.Fatalf("sweep wrongly flagged the quarantine package's own read %q; the quarantine is the legal read path", o)
+		}
+	}
+}
+
+// TestBoundaryGuardSweepSkipsAgentWorktrees pins that the sweep prunes the
+// untracked agent-team worktree trees — both the Spacedock `.worktrees` and the
+// Claude-Code `.claude` scratch. Those checkouts hold copies of instruction
+// files that are not the repo's shipped surface, so an instruction read living
+// inside one must NOT be reported as an offender. A real out-of-quarantine
+// offender alongside them proves the sweep is still live, not skipping wholesale.
+func TestBoundaryGuardSweepSkipsAgentWorktrees(t *testing.T) {
+	root := t.TempDir()
+
+	instructionRead := `package fixture
+func TestReadsInstruction(t *T) {
+	data, _ := os.ReadFile("skills/integration/SKILL.md")
+	_ = data
+}
+`
+	// A real offender outside the quarantine -> must be flagged.
+	policedDir := filepath.Join(root, "internal", "hostneutrality")
+	if err := os.MkdirAll(policedDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFixture(t, filepath.Join(policedDir, "leak_test.go"), instructionRead)
+
+	// The same instruction read planted inside each agent-worktree scratch tree
+	// -> must NOT be flagged.
+	scratchDirs := []string{
+		filepath.Join(root, ".worktrees", "agent-spacedock", "skills", "integration"),
+		filepath.Join(root, ".claude", "worktrees", "agent-claude", "skills", "integration"),
+	}
+	for _, dir := range scratchDirs {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		writeFixture(t, filepath.Join(dir, "skill_surface_test.go"), instructionRead)
+	}
+
+	offenders := sweepInstructionReadsOutsideQuarantine(t, root)
+	if !contains(offenders, filepath.Join("internal", "hostneutrality", "leak_test.go")) {
+		t.Fatalf("sweep failed to flag the real out-of-quarantine read; offenders=%v", offenders)
+	}
+	for _, o := range offenders {
+		if strings.HasPrefix(o, ".worktrees"+string(filepath.Separator)) ||
+			strings.HasPrefix(o, ".claude"+string(filepath.Separator)) {
+			t.Fatalf("sweep flagged an agent-worktree scratch read %q; those trees are untracked agent checkouts, not the shipped surface", o)
 		}
 	}
 }
