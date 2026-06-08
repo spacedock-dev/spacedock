@@ -14,6 +14,7 @@ mod-block:
 sprint: 019x-pre-flip-cleanups
 group: readme
 sprint-readiness: ready
+archived: 2026-06-08T05:16:09Z
 ---
 
 The main-flip milestone needs README and install-facing docs that describe the
