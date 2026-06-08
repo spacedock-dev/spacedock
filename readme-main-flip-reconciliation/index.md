@@ -10,7 +10,7 @@ verdict:
 worktree: .worktrees/spacedock-ensign-readme-main-flip-reconciliation
 issue:
 pr: "#322"
-mod-block: merge:pr-merge
+mod-block:
 sprint: 019x-pre-flip-cleanups
 group: readme
 sprint-readiness: ready
