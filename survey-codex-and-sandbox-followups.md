@@ -1,16 +1,17 @@
 ---
 id: 47rx3x8a809wx35vx6rbqqhv
 title: Survey Codex body-surfacing + sandbox honesty (0.19.9 follow-ups from vh)
-status: backlog
+status: ideation
 source: "captain (2026-06-08) — deferred from vh (survey-skill-correctness-pass, 0.19.8). vh's live drive proved the codex-presence COUNT fires (61), but Codex sessions are not surfaced in the survey body, and a sandbox-denied ~/.codex yields a silent confident 0. Captain: file these as a bundled 0.19.9 candidate."
 score: "0.25"
-started:
+started: 2026-06-08T19:37:02Z
 completed:
 verdict:
 worktree:
 issue:
 group: survey
 sprint-readiness: ready
+sprint: 0199-pre-flip-mechanics
 ---
 
 Three survey follow-ups deferred from vh (0.19.8) to 0.19.9. They share the survey skill (`skills/survey/SKILL.md` + `references/queries.sql`) and the agentsview Codex/sandbox theme. Ideation should confirm whether they ship as one task or split — D1 (body-surfacing) is the largest and has an upstream dependency; D2/D3 are small honesty fixes. **0.19.9 candidate per captain (2026-06-08); roadmap/sprint assignment is the captain's.**
