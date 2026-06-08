@@ -473,3 +473,146 @@ missed). The `th` overlap is genuinely disjoint — verified against th's real l
 code, not the body's claim. "No spike needed" holds (`DiscoverWorkflowDir` is a proven walk-up).
 No material findings; two polish notes (a wording inaccuracy in the th-overlap description, and
 an under-pinned banner-on-resume case).
+
+---
+
+# 47rx re-review (cycle 6)
+
+Independent re-review of ONLY the three CHANGED deliverables of the re-ideated survey
+body-rendering pass: **F (corrected, AC-7)**, **G (new, AC-8)**, **C (sharpened, AC-5)**. D1
+(depth ii) and E (de-narrate scaffold) are UNCHANGED from the `sound` final-review pass above
+and were NOT re-litigated. I verified the load-bearing claims by exercising them — the F
+strip mechanism in sqlite3, the F-spike subagent-exclusion ratio against the live synced DB,
+and the AC-8 banned phrasings against the shipped SKILL.md — not by trusting the body.
+
+**Verdict — `sound`. Nothing material.** All three changed deliverables target real,
+verified positions in the shipped `SKILL.md`/`queries.sql`; F's strip-to-logical-area
+mechanism is correct and its proof plan is honest (not a dodge); G's AC bottoms out on a
+concrete fail-able banned-phrase floor plus an honestly-scoped captain judgment; C/AC-5 pins
+both pre-body stop shapes. Three polish notes.
+
+## Material
+
+**Nothing material.** I tried hardest to break F (it was WRONG before) and G (a prose-framing
+change, the classic tautology trap) and could not find a correctness, mechanism, or
+proof-policy hole that should change the gate or the AC set.
+
+### F (AC-7) — strip mechanism verified, proof plan honest (not a dodge)
+
+- **The strip-to-logical-area mechanism is sound — I ran it.** I prototyped the corrected
+  query in sqlite3 over the exact path shapes the body names: two worktree edits
+  (`/repo/proj/.worktrees/issue-42/src/{render,palette}.ts`), a main-checkout
+  `/repo/proj/src/main.ts`, a `docs/spec.md`, a `.claude/memory.md`, a `.beads/tracker.db`,
+  and a genuine external `/other/sibling/lib.ts`. Stripping a leading `.worktrees/<wt>/` (and
+  `.claude/worktrees/<wt>/`) then bucketing by the next segment yields the corrected partition
+  exactly: both worktree `src/` edits AND the main `src/` edit fold into `src` (3), `docs` is
+  product, `.claude`/`.beads` keep their segment (for the `kind` demote tag), and the external
+  sibling demotes to `<external>`. The substr arithmetic the body asserts
+  (`…/.worktrees/<wt>/internal/status/live_proof.go` → `internal`) is correct.
+
+- **AC-7a is a NON-VACUOUS independent oracle — I proved the strip is load-bearing.** Running
+  the CURRENT shipped `work-by-area` (no strip, `queries.sql` #317.2) over the same worktree
+  `src/` edit mis-buckets it to `.worktrees` (separate from the `src` main edit), NOT to `src`.
+  So AC-7a's non-vacuousness lever is real: a query missing the strip yields `.worktrees=1`
+  instead of `src=2` and reds the assertion. A worktree `src/` edit that bucketed to
+  `external` would fail — the partition is the fixture's path segments, not SKILL.md prose.
+
+- **The "torahmap + fixture" proof plan is HONEST, not a dodge — verified against live data.**
+  The body's §3 claim (this repo is a POOR F live-drive target because its worktree work hides
+  in EXCLUDED subagent sessions) checks out against the persisted synced DB: of **7327**
+  `agent='claude'` worktree-`internal/` edits in this repo, **7324** are in subagent sessions
+  the survey filters out (`file_path LIKE '%/subagents/%'`) and only **3** are in main
+  sessions. (The body said 7468/7680 — absolute counts drift as sessions land, but the ratio
+  is exactly as claimed: ~99.96% excluded.) The current `.worktrees` bucket on this repo is
+  exactly 3 — so a live F drive HERE would fold 3 edits and demonstrate nothing at scale. The
+  ensign correctly makes the worktree FIXTURE the primary F oracle (query-smoke, oracle = the
+  partition) and torahmap (a `work-on-issue.sh` human-in-worktree project, whose worktree edits
+  land in MAIN sessions) the live-drive target. This is a sufficient proof plan that matches
+  where the surveyable signal actually lives — not an evasion of a failing drive.
+
+- **The subagent-exclusion follow-up is correctly flagged, not silently folded.** The body
+  surfaces (Out-of-scope, §3) that whether to ALSO count subagent-session edits is a separate
+  scope call risking re-introduced noise, and leaves it for the captain — the right call;
+  folding it into F would be over-reach.
+
+### G (AC-8) — NOT a tautology; bottoms out on a concrete fail-able floor
+
+The hard question was whether AC-8 degrades to "the skill says what the skill says." It does
+not, because the banned automate-the-human-out phrasings are CONCRETE verbatim strings
+currently rendered, so their ABSENCE in the post-G rendered output is an independent,
+fail-able signal. I confirmed all four exist verbatim in the shipped `SKILL.md`:
+- `advances on its own between your calls` — line 187 (superpowers pitch)
+- `without you re-driving each` — line 190 (gsd pitch)
+- `where spacedock can help` — line 177 (INTERRUPTIONS title)
+- `times you stepped in` — line 178 (INTERRUPTIONS body)
+
+So a half-done G that leaves any of these in the rendered offer reds AC-8's banned-phrase check
+— that is a before/after on real text, not self-reference. The POSITIVE half (the rendered
+offer "exhibits the tracking framing") is necessarily a human/reviewer judgment, and AC-8
+honestly says so ("the AC is a human/reviewer judgment of the rendered text against the two
+contrasting frames … plus the banned-phrase-absence check"). The judgment half alone would be
+soft, but it rides on the hard banned-phrase floor — AC-8 has at least one independent fail-able
+signal AND an honestly-scoped captain judgment. Non-tautological. (G's targets — the commission
+bridge `:182-211`, INTERRUPTIONS `:177-179`, NEEDS YOU `:168-169` — all exist as the body
+claims.)
+
+### C (AC-5) — pins both pre-body stop shapes
+
+AC-5 forbids "NO intervening pre-body stop of ANY shape — neither the 'Want me to lay it out?'
+single-confirm NOR a multi-option menu", with the transcript oracle being "no
+AskUserQuestion/stop between the headline and the synthesis, AND exactly one stop — the
+commission offer — at the end." That pins BOTH the shipped single-confirm (`SKILL.md:145`+`147`,
+which I confirmed is the real target) AND the agent-improvised 5-option menu the captain
+actually hit. The removal is precise (the "wait for a yes" + "Want me to lay it out?" block →
+render-through headline), and the end commission offer (`:200`) is explicitly preserved so
+dropping the pre-body gate cannot also drop the real decision. Sound.
+
+## Polish
+
+- **(F, AC-7a) tag both mechanics branches AND prove the strip on a NESTED area too.** This
+  echoes the prior-pass polish note (`<external>` is the ELSE branch; `.worktrees`/`.claude*`
+  are in-root segments). With corrected-F the `.worktrees/<wt>/` prefix is STRIPPED (not a
+  demote bucket), so the demote set is now `.claude`/`.beads`/`.git` + the `<external>` ELSE
+  branch — the fixture should assert a `.claude` row demotes AND an `<external>` row sorts below
+  product, so both demote branches are proven. Add one nested-area assertion too: a
+  `.worktrees/<wt>/internal/dispatch/build.go` edit must bucket to `internal` (the strip yields
+  `internal/dispatch/build.go`, first segment `internal`) — it confirms the strip handles a
+  deeper path, not just a one-level `src/x`. My sqlite3 prototype shows this works; pin it so a
+  future regression to a two-level strip reds. Non-blocking.
+
+- **(C, AC-5) "exactly one stop" is implicitly the NON-DEGRADED path.** The survey flow has two
+  legitimate EARLIER stops C does NOT touch and AC-5 should not be read to forbid: the
+  `AGENTSVIEW MISSING` install-consent prompt (`SKILL.md:32`) and the `scoping=0` "no agent
+  history" stop (`:106`). Neither fires on a normal survey (agentsview present, history exists),
+  so on the drive's happy path AC-5's "exactly one stop — the commission offer" is exactly
+  right. Worth one clause in the AC or test plan noting the count is over the non-degraded path,
+  so a validation drive that legitimately hits the install-consent prompt isn't misread as an
+  AC-5 failure. Non-blocking; the live drive runs the happy path where the claim holds verbatim.
+
+- **(G, AC-8) the banned-phrase list should be the asserted floor, not just narrative.** AC-8
+  names the banned phrasings inline; the live-drive check should assert the rendered output
+  contains NONE of the four concrete strings I verified above (`advances on its own between your
+  calls`, `without you re-driving each`, the INTERRUPTIONS-as-problem title, the
+  reduce/minimize-involvement claim) as an explicit absence check, with the positive
+  tracking-framing left to captain judgment — exactly as the body frames it. Keep the banned set
+  as concrete strings (not a paraphrase) so the floor stays fail-able. Non-blocking — the body
+  already scopes it this way; this just pins the floor as the asserted half.
+
+## Summary (47rx re-review cycle 6)
+
+The three changed deliverables are `sound`, nothing material. **F is corrected and verified:**
+I ran the strip-to-logical-area mechanism in sqlite3 (worktree `src/` + main `src/` both fold
+to `src`; `.claude`/`.beads`/`<external>` demote) and proved AC-7a's non-vacuousness lever is
+real (the shipped no-strip query mis-buckets a worktree `src/` edit to `.worktrees`). The
+"torahmap + fixture" proof plan is HONEST, not a dodge — the live synced DB confirms 7324/7327
+of this repo's worktree-`internal/` edits are in EXCLUDED subagent sessions (only 3 in main
+sessions), so a live F drive here would show nothing; putting the gate-able proof on a worktree
+fixture and the live drive on a `work-on-issue.sh` project (torahmap) matches where the signal
+lives. **G is non-tautological:** the four banned automate-the-human-out phrasings are concrete
+verbatim strings in the shipped SKILL.md (lines 187/190/177/178), so AC-8's banned-phrase-absence
+check is an independent fail-able floor — the AC honestly scopes the positive framing to a
+captain judgment riding on that floor, not "the skill says what the skill says." **C/AC-5 pins
+both pre-body stop shapes** (single-confirm AND menu) with a transcript oracle. Three polish
+notes: tag both F mechanics branches + a nested-area strip assertion; note AC-5's "exactly one
+stop" is the non-degraded path (install-consent / no-history stops are legitimate); keep AC-8's
+banned set as concrete asserted strings. None block the gate.
