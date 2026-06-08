@@ -1,10 +1,10 @@
 ---
 id: 4tqngghpq91dsc17g0njh25m
 title: survey — agentsview install-detection false-negatives under sandbox (asks to install when `agentsview --version` works)
-status: backlog
+status: ideation
 source: "captain manual install-path test (2026-06-08) — running /spacedock:survey under sandbox, the skill detected agentsview as NOT installed and asked to `brew install --cask agentsview`, but `agentsview --version` → v0.32.1 (installed). The detection is sandbox-flawed."
 score: "0.27"
-started:
+started: 2026-06-08T15:48:51Z
 completed:
 verdict:
 worktree:
