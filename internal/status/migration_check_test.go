@@ -66,7 +66,7 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 		if walkErr != nil {
 			return walkErr
 		}
-		if action, dir := migrationCheckWalkDir(info); dir {
+		if action, dir := migrationCheckWalkDir(path, info); dir {
 			return action
 		}
 		if !strings.HasSuffix(path, ".md") {
@@ -158,13 +158,14 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 }
 
 // TestMigrationCheckPrunesStateTree is the hermetic, CI-stable positive proof
-// that the migration-check walk prunes the .spacedock-state tree wholesale
-// rather than name-matching individual subdirs. It plants a temp tree holding a
-// real entity alongside a .spacedock-state subtree, drives filepath.Walk
-// through the same migrationCheckWalkDir step the production migration check
-// uses, and asserts the state subtree is never visited while the real entity is —
-// which keeps the checked>0 guard in TestMigrationCheckFixturesParseConsistently
-// non-vacuous (the prune does not also swallow legitimate entities).
+// that the migration-check walk prunes the non-entity trees wholesale rather
+// than name-matching individual subdirs. It plants a temp tree holding a real
+// entity alongside both pruned subtrees — a .spacedock-state checkout and a
+// docs/roadmap strategy tree — drives filepath.Walk through the same
+// migrationCheckWalkDir step the production migration check uses, and asserts
+// neither pruned subtree is visited while the real entity is — which keeps the
+// checked>0 guard in TestMigrationCheckFixturesParseConsistently non-vacuous
+// (the prune does not also swallow legitimate entities).
 func TestMigrationCheckPrunesStateTree(t *testing.T) {
 	root := t.TempDir()
 
@@ -191,12 +192,26 @@ func TestMigrationCheckPrunesStateTree(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// A session debrief inside the pruned docs/roadmap strategy tree — the walk
+	// must NOT visit this one either. Its bare-YAML session-date scalar decodes as
+	// time.Time directly but as a string through the reader, so the consistency
+	// walk would flag it if it ever read it. The roadmap tree is the strategy
+	// layer (non-entity by design), pruned wholesale for the same reason.
+	roadmapDir := filepath.Join(root, "docs", "roadmap", "0198-pre-flip-hardening")
+	if err := os.MkdirAll(roadmapDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	debrief := filepath.Join(roadmapDir, "debrief.md")
+	if err := os.WriteFile(debrief, []byte("---\nsession-date: 2026-06-08\n---\n\nbody\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
 	var visited []string
 	err := filepath.Walk(root, func(path string, info os.FileInfo, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
-		if action, dir := migrationCheckWalkDir(info); dir {
+		if action, dir := migrationCheckWalkDir(path, info); dir {
 			return action
 		}
 		if strings.HasSuffix(path, ".md") {
@@ -212,6 +227,9 @@ func TestMigrationCheckPrunesStateTree(t *testing.T) {
 	for _, p := range visited {
 		if p == poison {
 			t.Errorf("walk descended into the pruned .spacedock-state tree: visited %s", p)
+		}
+		if p == debrief {
+			t.Errorf("walk descended into the pruned docs/roadmap tree: visited %s", p)
 		}
 		if p == liveEntity {
 			visitedLive = true
