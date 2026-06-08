@@ -12,6 +12,7 @@ issue:
 sprint: 019x-pre-flip-cleanups
 group: dispatch-hygiene
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 n1a's 1b keys the dispatch-file path on `team_name` (`/tmp/spacedock-dispatch/{teamName}-{derivedName}.md`). The audit found two non-blocking polish items in `internal/dispatch/build.go`.
