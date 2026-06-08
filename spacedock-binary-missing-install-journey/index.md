@@ -1,10 +1,10 @@
 ---
 id: qak50v1d6pghavfc0ewg5hjd
 title: Binary-missing journey — help the user install spacedock + show they can launch with `spacedock claude`
-status: backlog
+status: ideation
 source: "captain (2026-06-05) — 0.19.6 readiness. When the spacedock binary is absent/non-executable, the user should get a helpful install-and-launch journey (a hint that helps them install the binary, then shows they can launch with `spacedock claude`), not a bare abort."
 score: "0.32"
-started:
+started: 2026-06-08T02:14:39Z
 completed:
 verdict:
 worktree:
