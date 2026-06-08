@@ -134,24 +134,38 @@ func noPluginRemedy(host string) string {
 }
 
 // launchBanner writes a short pre-launch orientation banner to w before the host
-// is handed control: the spacedock version, the workflow detected from dir (its
-// path relative to dir, via status.DiscoverWorkflowDir — the same walk-up that
-// recognizes a commissioned workflow by its README's `commissioned-by: spacedock@`
-// field — or "none detected (launching anyway)" when launched outside one), and a
+// is handed control: the spacedock version, the workflow detected from dir, and a
 // one-line orientation pointer. Callers suppress it on a resume (the operator is
 // continuing a session, not starting one).
+//
+// The workflow is found by status.DiscoverWorkflowDir (the walk-up that
+// recognizes a commissioned workflow by its README's `commissioned-by: spacedock@`
+// field) and rendered as a recognizable path — its location relative to the
+// enclosing git repository root (so a workflow at <repo>/docs/dev reads `docs/dev`,
+// orienting the operator to WHICH workflow). When the workflow is not under a git
+// repo (or is itself the repo root), it falls back to the workflow dir's own name;
+// it never renders the cwd-relative `.`/`..` (which would defeat the orientation).
+// "none detected (launching anyway)" is shown when launched outside any workflow.
 func launchBanner(host, dir string, w io.Writer) {
 	detected := "none detected (launching anyway)"
 	if workflowDir, ok := status.DiscoverWorkflowDir(dir); ok {
-		if rel, err := filepath.Rel(dir, workflowDir); err == nil {
-			detected = rel
-		} else {
-			detected = workflowDir
-		}
+		detected = workflowLabel(workflowDir)
 	}
 	fmt.Fprintf(w, "spacedock %s · first officer launching %s\n", Version, host)
 	fmt.Fprintf(w, "Workflow: %s\n", detected)
 	fmt.Fprintf(w, "%s is starting as your first officer; run `spacedock status` inside the session for the queue.\n", host)
+}
+
+// workflowLabel renders a discovered workflow dir as a recognizable path: its
+// location relative to the enclosing git repository root when that is a real
+// parent (e.g. `docs/dev`), else the workflow dir's own base name. It never
+// returns `.` or a `..`-escaping path.
+func workflowLabel(workflowDir string) string {
+	repoRoot := status.FindGitRoot(workflowDir)
+	if rel, err := filepath.Rel(repoRoot, workflowDir); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+		return rel
+	}
+	return filepath.Base(workflowDir)
 }
 
 // gateHost resolves the installed manifest for host and compares it against

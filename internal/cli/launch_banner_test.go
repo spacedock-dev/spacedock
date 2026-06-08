@@ -11,30 +11,45 @@ import (
 	"testing"
 )
 
-// commissionedWorkflowDir returns a temp dir holding a README.md whose
-// frontmatter declares `commissioned-by: spacedock@…` — the same predicate
-// DiscoverWorkflowDir recognizes. The returned dir is the workflow root; tests
-// launch the banner from a SUBDIRECTORY so the discovered workflow is a real
-// ancestor and the rendered rel path is non-trivial. The expectation is sourced
-// from this fixture, independent of frontdoor.go.
-func commissionedWorkflowDir(t *testing.T) string {
+// commissionWorkflowAt writes a README.md whose frontmatter declares
+// `commissioned-by: spacedock@…` — the same predicate DiscoverWorkflowDir
+// recognizes — at the given absolute dir, creating it first.
+func commissionWorkflowAt(t *testing.T, dir string) {
 	t.Helper()
-	dir := t.TempDir()
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	readme := "---\ncommissioned-by: spacedock@1.0\nid-style: sequential\n---\n# WF\n"
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return dir
+}
+
+// gitRepoFixture returns a temp dir holding a `.git` directory so FindGitRoot
+// resolves it as the enclosing repository root.
+func gitRepoFixture(t *testing.T) string {
+	t.Helper()
+	repo := t.TempDir()
+	if err := os.Mkdir(filepath.Join(repo, ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return repo
 }
 
 // TestLaunchBannerNamesDetectedWorkflow (AC-B): launched from inside a
-// commissioned workflow, the banner names the workflow's path relative to the
-// launch dir; launched outside any workflow, it reads "none detected". Both
-// carry the version line naming cli.Version.
+// commissioned workflow, the banner names the workflow's path RELATIVE TO THE
+// GIT REPO ROOT (so a workflow at <repo>/docs/dev reads `Workflow: docs/dev`, a
+// recognizable path that orients the operator to which workflow) — never the
+// cwd-relative `.`/`..`. Outside any workflow it reads "none detected"; inside a
+// workflow with no enclosing `.git`, it falls back to the workflow dir's name
+// (never `.`/`..`). Every case carries the version line naming cli.Version. The
+// fixture's repo-relative location is the independent expected value.
 func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
-	t.Run("inside a commissioned workflow", func(t *testing.T) {
-		root := commissionedWorkflowDir(t)
-		sub := filepath.Join(root, "nested", "deep")
+	t.Run("inside a commissioned workflow under a git repo", func(t *testing.T) {
+		repo := gitRepoFixture(t)
+		workflow := filepath.Join(repo, "docs", "dev")
+		commissionWorkflowAt(t, workflow)
+		sub := filepath.Join(workflow, "nested", "deep")
 		if err := os.MkdirAll(sub, 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -45,12 +60,33 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		if !strings.Contains(out, "spacedock "+Version) {
 			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+Version, out)
 		}
-		wantRel, err := filepath.Rel(sub, root)
-		if err != nil {
-			t.Fatal(err)
+		// Repo-relative: the workflow sits at docs/dev under the repo root, so the
+		// banner must name docs/dev regardless of how deep the launch dir is.
+		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")) {
+			t.Fatalf("banner workflow line does not name the repo-relative path docs/dev: %q", out)
 		}
-		if !strings.Contains(out, "Workflow: "+wantRel) {
-			t.Fatalf("banner workflow line does not name the detected rel path %q: %q", wantRel, out)
+		if strings.Contains(out, "Workflow: .") {
+			t.Fatalf("banner workflow line is the cwd-relative `.`/`..` form, not the repo-relative path: %q", out)
+		}
+		if strings.Contains(out, "none detected") {
+			t.Fatalf("banner reads none detected inside a commissioned workflow: %q", out)
+		}
+	})
+
+	t.Run("commissioned workflow with no enclosing git repo falls back to the workflow name", func(t *testing.T) {
+		// A workflow dir with no `.git` on the way up: FindGitRoot finds nothing, so
+		// the banner falls back to the workflow dir's own name — never `.`/`..`.
+		workflow := t.TempDir()
+		commissionWorkflowAt(t, workflow)
+		var buf bytes.Buffer
+		launchBanner("codex", workflow, &buf)
+
+		out := buf.String()
+		if !strings.Contains(out, "Workflow: "+filepath.Base(workflow)) {
+			t.Fatalf("banner fallback does not name the workflow dir base %q: %q", filepath.Base(workflow), out)
+		}
+		if strings.Contains(out, "Workflow: .\n") || strings.Contains(out, "Workflow: ..") {
+			t.Fatalf("banner fallback is the cwd-relative `.`/`..` form: %q", out)
 		}
 		if strings.Contains(out, "none detected") {
 			t.Fatalf("banner reads none detected inside a commissioned workflow: %q", out)
