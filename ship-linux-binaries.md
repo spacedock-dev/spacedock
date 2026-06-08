@@ -27,22 +27,68 @@ The code already works on Linux: `runtime-live-e2e.yml`'s offline gate (`runs-on
 1. **Build (one-liner):** add `linux` to goreleaser `builds.goos` (amd64 + arm64) and the matching `archives` (the existing `name_template` `{ProjectName}_{Version}_{Os}_{Arch}` already yields `spacedock_{version}_linux_{arch}.tar.gz`). Pure-Go cross-compile from the existing runner.
 2. **Distribution — a `curl | sh` installer (recommended):** add `install.sh` that detects OS/arch, downloads the matching tarball from the latest GitHub Release (verifying against `checksums.txt`), and installs `spacedock` to `~/.local/bin` (or `/usr/local/bin`). Universal — works on Linux AND macOS; brew stays the mac-preferred path. No Linuxbrew requirement, no new package infra. Document the Linux/script path in `docs/install-journey.md`.
    - Alternatives considered (ideation can revisit): Homebrew formula on Linuxbrew (loses the cask's Gatekeeper postflight, uncommon); deb/rpm/AUR packages (heavier maintenance); `go install` (dev-only, unstamped).
-3. **Linux runtime caveats:** the host CLIs (Claude Code / Codex / Pi) run on Linux. The macOS release steps (adhoc signing, `com.apple.quarantine` / Gatekeeper, notarization) do NOT apply to Linux. **safehouse** on Linux is a separate question — its sandbox is macOS-oriented; confirm Linux support or state the Linux sandbox story honestly rather than implying it works (do not overclaim, per the README proof-policy).
+3. **Linux runtime caveats:** the host CLIs (Claude Code / Codex / Pi) run on Linux. The macOS release steps (adhoc signing, `com.apple.quarantine` / Gatekeeper, notarization) do NOT apply to Linux, so the cask's `xattr -dr com.apple.quarantine` post-install has no Linux analogue (and is not needed). The bare `spacedock` binary is statically linked (`CGO_ENABLED=0`), so it runs on Linux with no shared-library dependencies (the spike's `file` output confirms `statically linked` ELF).
+4. **safehouse on Linux (stated honestly, not implied to work):** spacedock does NOT implement the sandbox — `internal/safehouse` only (a) detects a `.safehouse` profile in the workdir, (b) checks whether a `safehouse` binary is resolvable on `PATH`, and (c) wraps the inner command as `safehouse --trust-workdir-config … -- <inner>`. That seam is pure argv composition and platform-agnostic: it behaves identically on Linux. **What is NOT proven by this task** is whether the external `safehouse` binary itself runs on Linux — that is a safehouse-side concern (the install hint points users at the upstream safehouse repo). So the honest Linux story is: *spacedock's sandbox integration works on Linux exactly as on macOS, but sandboxing only actually happens if a Linux-capable `safehouse` binary is installed; when it is absent spacedock prints its existing install-hint and the user can launch unsandboxed.* The README's "Native sandbox integration — drop a profile and Spacedock runs the agent sandboxed" claim stays true on Linux only to the extent the `safehouse` binary is present; the docs must not imply spacedock ships or guarantees a Linux sandbox. This task ships no safehouse code — it only states this fact in `docs/install-journey.md` (and does not over-claim).
 
 ## Out of scope
 
 - The two-channel brew tap / per-channel `devBranch` stamp / next-publish pipeline (separate flip release-mechanics).
 - safehouse's own Linux sandbox implementation (a safehouse-side concern) — this task only states the Linux story honestly.
+- deb/rpm/AUR native packages and a Linuxbrew formula (heavier maintenance; revisit later if demanded). The `curl | sh` installer covers the Linux need without new package infra.
+- Notarization / Developer-ID signing (a macOS-only concern, already tracked separately).
+
+## Riskiest-mechanism spike (done — result on the record)
+
+The design's load-bearing unverified mechanism was: *does goreleaser actually cross-compile and archive `linux/amd64` + `linux/arm64` tarballs from the existing runner, given only a one-line `goos` addition?* Paid that bill first.
+
+**Exercise:** copied `.goreleaser.yaml` to a throwaway config with `linux` added to `builds.goos` (nothing else changed) and ran `goreleaser release --snapshot --clean --skip=publish,homebrew` (goreleaser v2.16.0, matching the config's `version: 2`) on the macOS dev host.
+
+**Result (exit 0):** all four targets built (`darwin_amd64`, `darwin_arm64`, `linux_amd64`, `linux_arm64`) and four `tar.gz` archives + `checksums.txt` were produced. The archive name template yielded the predicted `spacedock_{version}_linux_{arch}.tar.gz`. `file` on the extracted binaries reports `ELF 64-bit LSB executable, x86-64, statically linked` (amd64) and `ELF 64-bit LSB executable, ARM aarch64, statically linked` (arm64) — genuine, dependency-free Linux binaries, with the bare `spacedock` at the archive root (alongside the auto-included `README.md`). The native darwin binary from the same run ran and reported its stamped version (`spacedock 0.19.8-snapshot-… (contract 1)`), confirming the version-stamp path the install AC depends on. `checksums.txt` covered all four tarballs.
+
+This de-risks the entire build half: the change is genuinely a one-line `goos` addition, pure-Go cross-compile, no new toolchain. The install half's only unproven external is the GitHub "resolve latest release" call, addressed in the test plan below (also probed live: the API returns `tag_name` + per-asset `browser_download_url`, unauthenticated, and the current `v0.19.7` release confirms ONLY darwin assets exist today — the exact gap this task closes).
 
 ## Acceptance criteria
 
-Ideation/implementation fills in. Sketch:
+Each criterion is an end-state property with an independent, fail-able check (not a re-read of this task).
 
-- A `v*` release publishes `linux/amd64` + `linux/arm64` tarballs alongside the darwin ones (verified by the release artifact list / a goreleaser `--snapshot` producing them).
-- The `install.sh` installs a runnable `spacedock` on Linux AND macOS from a Release tarball (verified by a fixture/CI run that fetches + installs + `spacedock --version` works), checksum-verified.
-- `docs/install-journey.md` documents the Linux install path.
-- The safehouse-on-Linux story is stated accurately (not implied to work if it doesn't).
+1. **A `v*` release publishes `linux/amd64` + `linux/arm64` tarballs alongside the darwin ones.**
+   *Verified by:* the goreleaser config's `builds.goos` includes `linux`, exercised by `goreleaser release --snapshot --clean --skip=publish,homebrew` whose `dist/` contains `spacedock_*_linux_amd64.tar.gz` and `spacedock_*_linux_arm64.tar.gz`, each an extractable tarball with a bare `spacedock` ELF at root, and `checksums.txt` listing both. A guard test in `internal/release` asserts the config parses and its build target set includes the two linux pairs (the expected value — the linux/{amd64,arm64} target set — is independent of the YAML it checks: a config that drops linux fails it).
+
+2. **`install.sh` installs a runnable `spacedock` on Linux AND macOS from a Release tarball, checksum-verified.**
+   *Verified by:* a CI job on a `[ubuntu-latest, macos-latest]` matrix that (a) runs `goreleaser release --snapshot --clean --skip=publish,homebrew` so the runner's native-OS tarball exists locally, (b) runs `install.sh` pointed at that local dist (via an injectable source override), and (c) asserts the installed `spacedock --version` exits 0 and prints the stamped version. The macOS leg runs the darwin binary; the ubuntu leg runs the linux binary — both real, no mocks. A tamper case (corrupt the tarball or its checksum line) asserts `install.sh` exits non-zero and installs nothing, proving the checksum gate is load-bearing.
+
+3. **`install.sh` resolves and fetches the latest GitHub Release tarball for the detected OS/arch.**
+   *Verified by:* a test that drives the installer's OS/arch detection (`uname -s`/`-m` → `{darwin,linux}` × `{amd64,arm64}`) and latest-version resolution against the GitHub API and asserts the constructed asset name + download URL match the live release's published asset for this host. (The production fetch path; the local-dist override in AC-2 isolates the OS-logic from network flakiness, this one proves the network path's URL construction.)
+
+4. **`docs/install-journey.md` documents the Linux install path** (the `curl | sh` line) and states the safehouse-on-Linux story accurately.
+   *Verified by:* the doc carries a runnable `curl … install.sh | sh` invocation for Linux and a safehouse note that does NOT claim spacedock ships a Linux sandbox (it states sandboxing requires a Linux-capable `safehouse` binary, matching `internal/safehouse`'s detect-and-wrap-only behavior). Checkable by a test/CI grep that the Linux install line is present AND that the doc does not assert an unqualified "sandboxed on Linux" claim. *(Note: a grep over a doc is a weak proof on its own — it asserts wording, not behavior. The load-bearing behavioral proofs are AC-1/AC-2/AC-3; AC-4 is documentation correctness, and the honesty of the safehouse wording is a human/reviewer judgment at the gate, not a machine assertion.)*
+
+5. **The macOS release path is unregressed.**
+   *Verified by:* the existing `internal/release` guard tests (`release_test.go`, `workflow_exec_guard_test.go`) stay green, and the snapshot still produces both darwin tarballs + the homebrew cask generation is unaffected (the `homebrew_casks` block is darwin-only by asset and is left untouched).
 
 ## Test plan
 
-Ideation/implementation fills in. `goreleaser release --snapshot --clean` produces the linux tarballs (offline check); a CI/fixture run of `install.sh` against a Release tarball asserts `spacedock --version`; a content check that install-journey carries the Linux path.
+| What | How | Cost | Type |
+| --- | --- | --- | --- |
+| Linux tarballs are built (AC-1) | `goreleaser release --snapshot --clean --skip=publish,homebrew`; assert `dist/` has both linux tarballs + checksums; extract + `file` shows ELF. Already done as the spike — implementation re-runs it as the offline gate. | seconds (~7s observed) | offline goreleaser snapshot, run in CI |
+| Config guard (AC-1) | Go test in `internal/release` that loads `.goreleaser.yaml` and asserts the build target set ⊇ {linux/amd64, linux/arm64, darwin/amd64, darwin/arm64}. Fails if a future edit drops linux. | ms | Go unit test |
+| `install.sh` end-to-end on both OSes (AC-2) | CI matrix `[ubuntu-latest, macos-latest]`: snapshot → `install.sh --from <local-dist>` → `spacedock --version` exits 0. Real binaries, no mocks. | ~1–2 min/leg | CI job (new) |
+| Checksum gate is load-bearing (AC-2) | Same harness, corrupt a tarball byte (or its checksum line); assert `install.sh` exits non-zero and the install dir is empty. | seconds | shell test in the CI job |
+| OS/arch + latest-version resolution (AC-3) | Test driving detection + URL construction against the live GitHub API (unauthenticated); assert the asset name/URL matches the host's published asset. Skippable offline; runs in CI. | seconds | CI / integration test |
+| install-journey carries the Linux path + honest safehouse note (AC-4) | grep/content check in CI that the `curl … | sh` Linux line is present and no unqualified "sandboxed on Linux" claim exists. | ms | content check |
+| macOS path unregressed (AC-5) | `go test ./internal/release/...` stays green; snapshot still emits both darwin tarballs. | seconds | existing Go tests + snapshot |
+
+**Implementation note on the `install.sh` source override (AC-2/AC-3 seam):** the installer needs one injectable input — *where to fetch the tarball from*. Production resolves the latest GitHub Release; the test passes a local snapshot `dist/` directory. This is the single seam that lets AC-2 run the full extract/checksum/install/`--version` path with a real native binary on each CI OS without first publishing a Linux release (chicken-and-egg), while AC-3 separately proves the production GitHub-resolution path. Keep the override a plain env var or flag (e.g. `SPACEDOCK_INSTALL_FROM=<dir|url>`), not a code branch that diverges behavior — the same extract/verify/install logic runs in both.
+
+## Stage Report: ideation
+
+- DONE: Exercise the riskiest mechanism FIRST: run goreleaser --snapshot (or equivalent) and record that it produces linux/amd64 + linux/arm64 tarballs alongside darwin — the artifact list is the evidence.
+  Ran `goreleaser release --snapshot --clean --skip=publish,homebrew` (v2.16.0) against a throwaway config with `linux` added to `builds.goos`; exit 0, produced all four tarballs (`darwin_{amd64,arm64}`, `linux_{amd64,arm64}`) + `checksums.txt`; `file` confirms statically-linked ELF x86-64 / ARM aarch64 binaries with bare `spacedock` at root. Result recorded in the body's "Riskiest-mechanism spike" section.
+- DONE: Design the curl|sh installer (OS/arch detect, fetch latest Release tarball, checksum-verify, install to ~/.local/bin) with AC + test plan proving a runnable spacedock on Linux AND macOS — not a doc about it.
+  AC-2/AC-3 specify a `[ubuntu-latest, macos-latest]` CI matrix that snapshots, runs `install.sh` against the local native-OS tarball via a `SPACEDOCK_INSTALL_FROM` source override, and asserts `spacedock --version` exits 0 on each OS (real binaries, no mocks), plus a tamper case proving the checksum gate. GitHub latest-release resolution probed live (returns `tag_name` + per-asset `browser_download_url`, unauthenticated).
+- DONE: State the safehouse-on-Linux story honestly (do not imply the sandbox works on Linux if it doesn't); keep it in scope as a stated fact.
+  Read `internal/safehouse/safehouse.go`: spacedock only detects a `.safehouse` profile, checks the `safehouse` binary on PATH, and wraps argv — it ships no sandbox. Proposed-approach item 4 states this: the integration seam is platform-agnostic, but actual sandboxing on Linux requires a Linux-capable external `safehouse` binary; the docs must not imply spacedock guarantees a Linux sandbox.
+
+### Summary
+
+Fleshed out the entity with a concrete problem statement, proposed approach (one-line goreleaser `goos` add + a universal `curl | sh` installer), five entity-level ACs each with an independent fail-able check, and a test-plan table. Paid the riskiest bill first: a throwaway goreleaser `--snapshot` proved the linux tarballs build and are genuine static ELF binaries from the existing macOS runner — the build half is de-risked to a one-line change. Key honesty call recorded: spacedock's safehouse seam works identically on Linux, but spacedock ships no sandbox, so the Linux sandbox story is gated on an external Linux-capable `safehouse` binary and the docs must not over-claim. Skipped comm-officer polish: the document's value is its load-bearing technical precision (tables + AC blocks), not prose style.
