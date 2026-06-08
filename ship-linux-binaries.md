@@ -12,6 +12,7 @@ issue: "spacedock-dev/spacedock#321"
 sprint: 0199-pre-flip-mechanics
 group: distribution
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 Ship Linux binaries and give Linux users an install path, before the 0.20.0 cut. The code is already portable — the gap is release packaging + distribution.
