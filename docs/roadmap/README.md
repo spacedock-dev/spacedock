@@ -47,10 +47,11 @@ the ideation ensigns (they would grade their own work).
 **Drive — Commander (a separate, cold-booted session)**
 - [ ] **Implementation → validation → done** per member; **detached adversarial audit at validation** for every high-stakes surface (front-door, status guards, shipped scaffolding, CI / release machinery)
 - [ ] **Merge** each to `next` (PR-merge); keep state commits concurrency-safe
-- [ ] **Cut the release** — bump the 3 manifests + tag `vN.N.N`, push `next` + tag *(captain authorizes)*
+- [ ] **⚠️ Pre-cut antipattern audit** — with all members merged to `next` and the tag **not yet fired**, dispatch an *independent* reviewer (staff-eng persona; not the Commander, not the implementers) over the assembled sprint to catch cross-cutting antipatterns + integration holes **before they ship**. Ship-blockers are fixed before the cut; non-blockers are recorded for the next sprint. The whole value is being *before* the tag — run it after, and the antipattern has already shipped.
+- [ ] **Cut the release** — `go test ./...` green from the root, bump the 3 manifests + tag `vN.N.N`, push `next` + tag *(captain authorizes)*
 
 **Close — Shaping FO**
-- [ ] **⚠️ Post-sprint antipattern audit** — dispatch an *independent* reviewer (staff-eng persona) *after* the cut; it catches what shipped wrong, and its findings **seed the next sprint's backlog** (e.g. `kb` came straight out of the 019x post-sprint audit)
+- [ ] **Seed the next sprint** — fold the pre-cut audit's recorded (deferred / non-blocking) findings into the next sprint's backlog (e.g. `kb` came straight out of the 019x sprint's antipattern findings) + a light post-cut release verification (some release-machinery issues only manifest when the tag actually fires).
 
 ## Sprint sequence
 
