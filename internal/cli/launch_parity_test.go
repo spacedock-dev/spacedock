@@ -23,7 +23,7 @@ func TestSafehouseEnableForwardsRepeatedFlags(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--enable=ssh", "--enable=docker", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -45,7 +45,7 @@ func TestSafehouseAddDirsForwardsPathGrants(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--add-dirs=/a", "--add-dirs-ro=/b", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -87,7 +87,7 @@ func TestClaudeForceSafehouseWrapsNoProfile(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -110,7 +110,7 @@ func TestCodexForceSafehouseWrapsNoProfile(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -132,7 +132,7 @@ func TestKnobImpliesSandboxOnNoProfile(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
 		want := []string{"safehouse", "--trust-workdir-config", "--enable=docker", "--",
-			"env", spacedockBinEnv + "=" + bin,
+			"/usr/bin/env", spacedockBinEnv + "=" + bin,
 			"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -149,7 +149,7 @@ func TestKnobImpliesSandboxOnNoProfile(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
 		want := []string{"safehouse", "--trust-workdir-config", "--enable=docker", "--",
-			"env", spacedockBinEnv + "=" + bin,
+			"/usr/bin/env", spacedockBinEnv + "=" + bin,
 			"codex", "--dangerously-bypass-approvals-and-sandbox", wantCodexBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)

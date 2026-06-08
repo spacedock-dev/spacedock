@@ -96,7 +96,7 @@ func TestCodexStrayPromptAfterDashWarns(t *testing.T) {
 		t.Fatalf("warning does not name the stray positional: %q", warn)
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", "@/tmp/handoff.md", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v (warn must not change the argv)", fake.launchedArg, want)

@@ -79,8 +79,9 @@ func TestSafehouseScrubPreservedThroughArgvReassert(t *testing.T) {
 	}
 	markerBinary(t, filepath.Join(pathDir, "spacedock"), "PATH-FALLBACK")
 	// Build a clean env (no inherited PATH or SPACEDOCK_BIN to collide): pathDir
-	// holds the ONLY `spacedock` on PATH; the system dirs follow so `env`, `sh`, and
-	// coreutils the probe/wrapper need still resolve.
+	// holds the ONLY `spacedock` on PATH; the system dirs follow so `sh` and the
+	// coreutils the probe/wrapper need still resolve (the re-assert itself uses the
+	// absolute /usr/bin/env, so it needs no PATH entry).
 	base := withoutEnv(withoutEnv(os.Environ(), "PATH"), spacedockBinEnv)
 	scrubEnv := append(base,
 		"PATH="+pathDir+":/usr/bin:/bin",

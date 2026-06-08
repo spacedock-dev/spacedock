@@ -60,16 +60,22 @@ func launchEnv(parent []string) []string {
 	return env
 }
 
-// launcherBinArgvPrefix returns the `env SPACEDOCK_BIN=<bin>` argv token pair that
-// re-asserts the launching binary inside the inner host argv, so the value
-// survives a wrapper that scrubs SPACEDOCK_BIN from the environment (safehouse
-// does). It reads the same resolvedLauncherBin() source as launchEnv, and mirrors
-// its omit-on-failure: when no binary resolves it returns nil — never a blank
-// value. Callers prepend it to the inner argv on the wrap path only; the
+// envBinary is the absolute path to env used in the inner-argv re-assert prefix.
+// A bare `env` would depend on env being on the sandbox PATH — if it is not, the
+// launch itself fails; the absolute path is PATH-independent (the ideation spike
+// confirmed /usr/bin/env is present and portable in the sandbox).
+const envBinary = "/usr/bin/env"
+
+// launcherBinArgvPrefix returns the `/usr/bin/env SPACEDOCK_BIN=<bin>` argv token
+// pair that re-asserts the launching binary inside the inner host argv, so the
+// value survives a wrapper that scrubs SPACEDOCK_BIN from the environment
+// (safehouse does). It reads the same resolvedLauncherBin() source as launchEnv,
+// and mirrors its omit-on-failure: when no binary resolves it returns nil — never
+// a blank value. Callers prepend it to the inner argv on the wrap path only; the
 // unwrapped launch inherits SPACEDOCK_BIN directly through launchEnv.
 func launcherBinArgvPrefix() []string {
 	if bin, ok := resolvedLauncherBin(); ok {
-		return []string{"env", spacedockBinEnv + "=" + bin}
+		return []string{envBinary, spacedockBinEnv + "=" + bin}
 	}
 	return nil
 }

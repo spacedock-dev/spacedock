@@ -50,7 +50,7 @@ func TestClaudeSafehousePresentWrapsArgv(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer",
 		"--foo", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
@@ -131,7 +131,7 @@ func TestClaudeNoSafehouseLaunchesPlain(t *testing.T) {
 		// AC-3: the argv re-assert is wrap-path-only; an unwrapped launch carries no
 		// `env`/`SPACEDOCK_BIN=` prefix (SPACEDOCK_BIN still reaches the host through
 		// launchEnv, asserted by TestClaudeFrontDoorInjectsResolvedLauncherBin).
-		if tok == "env" || strings.HasPrefix(tok, spacedockBinEnv+"=") {
+		if tok == envBinary || strings.HasPrefix(tok, spacedockBinEnv+"=") {
 			t.Fatalf("unsandboxed launch carried the argv re-assert prefix %q: %v", tok, fake.launchedArg)
 		}
 	}
@@ -212,7 +212,7 @@ func TestCodexSafehousePresentWrapsArgv(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
-		"env", spacedockBinEnv + "=" + bin,
+		"/usr/bin/env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox",
 		"--foo", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
@@ -271,7 +271,7 @@ func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 		// AC-3: the argv re-assert is wrap-path-only; an unwrapped launch carries no
 		// `env`/`SPACEDOCK_BIN=` prefix (SPACEDOCK_BIN still reaches the host through
 		// launchEnv).
-		if tok == "env" || strings.HasPrefix(tok, spacedockBinEnv+"=") {
+		if tok == envBinary || strings.HasPrefix(tok, spacedockBinEnv+"=") {
 			t.Fatalf("unsandboxed codex launch carried the argv re-assert prefix %q: %v", tok, fake.launchedArg)
 		}
 	}
@@ -356,7 +356,7 @@ func TestClaudeResumeFamilySuppressesBootstrapPrompt(t *testing.T) {
 				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 			}
 			want := []string{"safehouse", "--trust-workdir-config", "--",
-				"env", spacedockBinEnv + "=" + bin,
+				"/usr/bin/env", spacedockBinEnv + "=" + bin,
 				"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", tc.arg}
 			if !equalArgv(fake.launchedArg, want) {
 				t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
