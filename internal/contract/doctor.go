@@ -77,8 +77,6 @@ func RunDoctor(manifestPath, host, branch, binaryVersion string, stdout, stderr 
 	switch res.Verdict {
 	case Compatible:
 		fmt.Fprintln(stdout, res.Message)
-		fmt.Fprintln(stdout, "Note: hosts emit a load-time warning for the 'requires-contract' field; "+
-			"this is expected — the host ignores the field and spacedock reads it itself.")
 		return 0
 	case NoPluginFound:
 		fmt.Fprintln(stdout, res.Message)
