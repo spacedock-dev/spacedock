@@ -1,13 +1,13 @@
 ---
 id: vh5rzxexn9wc7dedex7cepzy
 title: Survey skill correctness pass — agentsview git-root model fix + codex-cwd + scaffold-fact + sandbox probe (consolidates 69/1p/4t)
-status: validation
+status: done
 source: "captain (2026-06-08) — preflight B2 + consolidation directive. The survey members 69/1p/4t all edit skills/survey/SKILL.md and share one agentsview model; 69's spike disproved the cwd-basename keying the survey teaches. Consolidate into ONE coherent survey-skill pass on the corrected git-root-basename model."
 score: "0.3"
 started: 2026-06-08T17:02:54Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-survey-skill-correctness-pass
+completed: 2026-06-08T19:25:47Z
+verdict: PASSED
+worktree:
 issue:
 sprint: 0198-pre-flip-hardening
 group: survey
