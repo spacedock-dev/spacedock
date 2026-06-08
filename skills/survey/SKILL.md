@@ -10,7 +10,7 @@ user-invocable: true
 
 Survey is the first thing you run on unfamiliar ground: it reconstructs what the AI agents in this project have implicitly been doing, from their session history. It reports the inferred workflow, the workstreams, the recent decisions, and — load-bearing — the OPEN decisions (the abandoned or unanswered forks) plus how often the human had to step in. Then it offers to commission a real spacedock workflow with explicit gates from what it found.
 
-It reads **agentsview**'s session DB and is strictly read-only — the recommended queries live in `references/queries.sql` (one labeled query per concern) so nothing is a black box. For now it surveys **Claude Code** history (the decision and interruption signals below are Claude's); agentsview also ingests Codex, Gemini, and more, and surfacing those agents' decision signals is a deferred follow-up. The closing move is the discovery → commission bridge: the OPEN decisions become candidate gates, the workstreams become candidate entities, the inferred loop becomes the stage list.
+It reads **agentsview**'s session DB and is strictly read-only — the recommended queries live in `references/queries.sql` (one labeled query per concern) so nothing is a black box. For now it surveys **Claude Code** history (the decision and interruption signals below are Claude's); agentsview also ingests Codex, Gemini, and more, and surfacing those agents' decision/scaffold/work signals is a deferred follow-up — the one exception is a flagged Codex *presence* count (step 2), since Codex sessions land with no recorded cwd and would otherwise vanish silently. The closing move is the discovery → commission bridge: the OPEN decisions become candidate gates, the workstreams become candidate entities, the inferred loop becomes the stage list.
 
 Run the four steps in order: **check agentsview → scan → recognize scaffold → report and offer**.
 
@@ -18,13 +18,15 @@ Run the four steps in order: **check agentsview → scan → recognize scaffold 
 
 ## 1. Check agentsview, then sync THIS project only (scoped)
 
-This skill may run in a sandboxed agent that **cannot read `~/.agentsview/` directly** (macOS TCC denies raw FS access to a limited-permission process, even though the `agentsview` binary itself reads it). So do NOT `sqlite3 ~/.agentsview/sessions.db` blindly. Instead, drive the read through the `agentsview` binary into a process-readable data directory under `AGENTSVIEW_DATA_DIR`, then query that copy:
+This skill may run in a sandboxed agent that **cannot read `~/.agentsview/` directly** (macOS TCC denies raw FS access to a limited-permission process, even though the `agentsview` binary itself reads it). So do NOT `sqlite3 ~/.agentsview/sessions.db` blindly. Instead, drive the read through the `agentsview` binary into a process-readable data directory under `AGENTSVIEW_DATA_DIR`, then query that copy.
+
+Probe for the binary by **invoking it**, not by walking `PATH`. A `command -v agentsview` (or `which`/`test -x`/`stat`) is an FS-access lookup the sandbox's Seatbelt can deny while still allowing `execve` — so the lookup false-negatives even though `agentsview` runs fine. `agentsview --version` is the execve that survives whatever the survey's real through-the-binary reads survive; `>/dev/null 2>&1` suppresses both the present banner and the absent "not found" so only the `AGENTSVIEW MISSING` sentinel reaches the agent (silent ⇒ present; sentinel ⇒ absent):
 
 ```bash
 SURVEY_DB_DIR="${SPACEDOCK_SURVEY_DB_DIR:-${TMPDIR:-/tmp}/spacedock-survey}"
 DB="$SURVEY_DB_DIR/sessions.db"
 
-if ! command -v agentsview >/dev/null; then echo "AGENTSVIEW MISSING"; fi
+if ! agentsview --version >/dev/null 2>&1; then echo "AGENTSVIEW MISSING"; fi
 ```
 
 If it prints `AGENTSVIEW MISSING`: tell the user agentsview is needed (it ingests the agent logs this skill reads), **ask consent**, and only on a yes run the install (`brew install --cask agentsview`; fallback `curl -fsSL https://agentsview.io/install.sh | bash`). NEVER install without an explicit yes — stop at the consent prompt otherwise.
@@ -61,13 +63,14 @@ If `agentsview sync` fails (network, disk, permissions), report the exact failur
 
 ## 2. Scan the project
 
-**Scope by repo IDENTITY, not by `basename(pwd)`.** agentsview keys each session by the basename of its working directory, so a subdir checkout, a worktree, or the split-root state dir each get a DIFFERENT `project` key even though they are ONE repo — run from any of those and a `basename(pwd)` filter finds zero sessions while the real history sits under a sibling key. Resolve the repo root once, then scope every query to the cwds UNDER that root so the divergent keys coalesce:
+**Scope by repo IDENTITY, not by `project` name.** agentsview keys each session's `project` by the **git-root basename** (normalized: non-alphanumerics → `_`), so EVERY checkout of one repo — the root, a subdir, a worktree, the split-root state dir — already shares the SAME `project` key. The risk is the INVERSE: that basename key COLLIDES with a same-basename sibling repo elsewhere on disk, so a `project = <basename>` filter would fold an unrelated repo's sessions into this one. Resolve the repo root once, then scope every query by the absolute cwd-prefix so a same-basename sibling stays out:
 
 ```bash
 # Repo-root identity: the parent of the common .git dir resolves to the SAME absolute
-# path from the repo root, a subdir, the state checkout, or a linked worktree — so it
-# coalesces every checkout of one repo. --path-format=absolute needs git >= 2.31; if
-# this is not a git repo or git is older, fall back to the cwd itself (today's behavior).
+# path from the repo root, a subdir, the state checkout, or a linked worktree — so the
+# cwd-prefix admits every checkout of THIS repo while excluding a same-basename sibling
+# elsewhere on disk. --path-format=absolute needs git >= 2.31; if this is not a git repo
+# or git is older, fall back to the cwd itself (today's behavior).
 if REPO_GIT=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null); then
   REPO_ROOT=$(dirname "$REPO_GIT")
 else
@@ -75,25 +78,34 @@ else
 fi
 ```
 
-Bind `REPO_ROOT` as the `:repo_root` parameter of the queries in `references/queries.sql`. The session-scoping subquery there matches `cwd = :repo_root OR cwd LIKE :repo_root || '/%'` — the cwd AT the root and everything strictly under it, excluding a sibling like `…/proj-other`. Run a labeled query by name (the SQL stays in the reference file; this only extracts and runs it):
+Bind `REPO_ROOT` as the `:repo_root` parameter of the queries in `references/queries.sql`. The session-scoping subquery there matches `cwd = :repo_root OR cwd LIKE :repo_root || '/%'` — the cwd AT the root and everything strictly under it. Because `project` collides across same-basename repos, this absolute cwd-prefix is the ONLY column that keeps a same-basename sibling like `…/other/proj` out of scope. Run a labeled query by name (the SQL stays in the reference file; this only extracts and runs it):
 
 ```bash
 SURVEY_SKILL_DIR="${SPACEDOCK_SURVEY_SKILL_DIR:-skills/survey}"
 QUERIES="$SURVEY_SKILL_DIR/references/queries.sql"
 
-run_query() {  # run_query <name> — runs the labeled query, :repo_root bound to REPO_ROOT
+# :repo_project is the git-root basename agentsview keys `project` by, with the SAME
+# normalization agentsview applies (non-alphanumerics → `_`, e.g. spacedock-v1 →
+# spacedock_v1). It is read ONLY by codex-presence (Codex sessions land cwd='', so they
+# can't be cwd-prefix-scoped — they match by project name alone).
+REPO_PROJECT=$(printf '%s' "$(basename "$REPO_ROOT")" | tr -c '[:alnum:]' '_')
+
+run_query() {  # run_query <name> — :repo_root → REPO_ROOT, :repo_project → REPO_PROJECT
   local q
   q=$(awk -v n="$1" '$0=="-- name: "n{f=1;next} /^-- name: /{f=0} f && $0 !~ /^--/{print}' "$QUERIES")
-  printf ".param set :repo_root '%s'\n%s\n" "$REPO_ROOT" "$q" | sqlite3 "$DB"
+  printf ".param set :repo_root '%s'\n.param set :repo_project '%s'\n%s\n" "$REPO_ROOT" "$REPO_PROJECT" "$q" | sqlite3 "$DB"
 }
 
-run_query scoping        # #318 — sessions|folded_keys|blank_cwd|span over the coalesced repo
+run_query scoping        # #318 — sessions|blank_cwd|span over the cwd-prefix-scoped repo
+run_query codex-presence # #69 — flagged Codex count|blank_cwd by project NAME (cwd unrecorded)
 run_query scaffold-usage # #319 — behavioral skill_name family tally (spacedock self EXCLUDED)
 run_query work-by-area   # #317.2 — Edit/Write file_path bucketed by package (external = reference)
 run_query decision-open  # #320 — AskUserQuestion/ExitPlanMode frontier; OPEN sorts first
 ```
 
-`scoping` returns `sessions=0` → there is no Claude agent history for this repo; say so and stop. Nothing to discover. (Survey reads Claude history only for now; a repo whose only agent history is Codex/Gemini will report "no agent history" here — surfacing those agents is a deferred follow-up.) When `folded_keys > 1`, the repo had its history split across several agentsview keys (subdir / worktree / state checkout) and the scoping coalesced them — note in the report how many keys were folded in, and the `blank_cwd` count if non-zero (sessions agentsview never captured a cwd for, which the repo-root scope cannot place).
+`scoping` returns `sessions=0` → there is no Claude agent history for this repo; say so and stop. Nothing to discover. (Survey reads Claude history only for now; a repo whose only agent history is Codex/Gemini will report "no agent history" here — surfacing those agents is a deferred follow-up.) Note the `blank_cwd` count in the report if non-zero (sessions agentsview never captured a cwd for, which the repo-root scope cannot place).
+
+`codex-presence` returns the count of `agent='codex'` sessions matching this repo's `project` name and the blank-cwd sum among them. agentsview does not persist Codex cwd, so these can only be matched by the git-root-basename `project`, which COLLIDES with a same-basename sibling repo — so the count may include an unrelated same-named repo's Codex sessions. It is a presence flag only; these sessions are NEVER counted in the Claude `scoping`/`scaffold-usage`/`work-by-area` sets. When the count is `> 0`, the report renders a hint line (step 4) stating the count and that the match is by project NAME only.
 
 **Honest signal accounting.** The `decision-open` rows are the human-decision points; `OPEN` = still needs the human, and you lead the report with those. For the interruption total, count the AskUserQuestion / ExitPlanMode decisions plus the hard-veto markers Claude sessions retain (`[Request interrupted` / `Request interrupted by user` / `doesn't want to proceed` in the message stream), over the same repo-scoped session set; `pct = total*100/user_turns`. Never dress an empty section up as "no decisions" — if a section is empty, say the run found none of that signal.
 
@@ -110,13 +122,11 @@ Recognize the scaffold from TWO signals and reconcile them — a file probe (wha
 
 **Behavioral tally.** The `scaffold-usage` rows are a `family → invocations` tally normalized from `tool_calls.skill_name` (`superpowers:brainstorming` and the bare `running-research-spikes` both fold to family `superpowers`); the `spacedock` family is excluded because survey/ensign self-invocation otherwise dominates and would make every repo read as "uses spacedock".
 
-**Join into a 3-bucket classification.** For each family that appears in EITHER signal:
+**Join and state the fact.** For each family that appears in EITHER signal, state the two observed facts plainly: its invocation count (the behavioral tally) and whether it is checked in on disk (the file probe). Do not classify into buckets — just say what is true. The case worth calling out by name is the one the file-only probe misses entirely: a family invoked but NOT on disk was **recovered from behavior, not files** — say exactly that, with the count. For example:
 
-- **file-present + invoked** → **active** — report it plainly;
-- **file-present + never-invoked** → **installed-but-unused** — flag it (installed, not yet adopted);
-- **not-file-present + invoked** → **recovered** — report it; this is the case the file-only probe misses entirely, recovered by the behavioral signal.
+> `superpowers was recovered from behavior, not files: 186 skill invocations, but no checked-in .claude/skills/superpowers. Other recovered one-offs: plan-writing, using-git-worktrees, systematic-debug, simplify, debugging.`
 
-The classification drives the comparative benefit in the report (step 4). The probe reads files; the comparison's *numbers* come from the scan (step 2).
+A family on disk and invoked is stated plainly (family + count + present on disk); a family on disk but never invoked is stated as installed-but-not-yet-invoked. The state-the-fact statement drives the comparative benefit in the report (step 4). The probe reads files; the *numbers* come from the scan (step 2).
 
 ## 4. Confirm, then report and offer
 
@@ -140,10 +150,11 @@ Then synthesize this, one screen:
 
 ```
 PROJECT: {basename}     {sessions} Claude sessions · {date range}
-  {if folded_keys>1: coalesced from {folded_keys} agentsview keys}{if blank_cwd>0: · {blank_cwd} uncaptured-cwd sessions}
+  {if blank_cwd>0: {blank_cwd} uncaptured-cwd sessions}
+  {if codex-presence>0: {codex_sessions} Codex sessions match this repo by project NAME only (agentsview does not record Codex cwd) — may include a same-named sibling repo; the Claude-scoped body below does not cover them}
 
 SCAFFOLD
-  {the multi-label classification: each family + its bucket — active / installed-but-unused / recovered; or "none"}
+  {state-the-fact per family: family + invocation count + on-disk presence; call out a family invoked but not on disk as "recovered from behavior, not files"; or "none"}
 
 INFERRED WORKFLOW
   {the implicit loop across the decisions + prompts, as an arrow chain} — {one honest line}
@@ -206,4 +217,4 @@ On a **no**, stop — the survey stands on its own as an orientation.
 - **Decisions + stats are data, not invention.** `OPEN` = still needs the human; lead the report with the true-open forks. The transcript scan can't tell shipped from open — that's what the step-4 repo cross-check is for; drop a fork to "shipped" only on a confident match, and flag the whole frontier `unverified` when there's no repo signal.
 - **Work-by-area is identity, not a to-do list.** The `work-by-area` buckets say WHAT this project is (where edits land); an `<external>` bucket is edits to a sibling repo — a reference, not this project's identity. Report it separately from the decision frontier (where you stop).
 - **Fill every slot, never invent.** Every `{slot}` in the report and the comparison comes from the step-2 numbers; a literal `{slot}` shown to the user is a bug. If a section's signal is empty (no OPEN decisions, no interruptions, no edits), say the run found none — never dress an empty section up as "no decisions."
-- **Claude-only for now.** Survey reads Claude history; Codex/Gemini decision signals are a deferred follow-up. Don't imply a Codex/Gemini-only project has "no history" in the user-facing wording beyond what step 2 reports.
+- **Claude-only body, with a flagged Codex presence count.** The report body (workflow, workstreams, decisions, work-by-area, scaffold) is built from Claude history; Codex/Gemini decision/scaffold/work signals are a deferred follow-up. The lone Codex signal is the step-2 presence count, rendered as the step-4 hint line when `> 0` — a count and a name-only-match caveat, nothing more. A repo whose ONLY history is Codex still reports "no agent history" at the `scoping=0` stop (the Claude body has nothing); don't imply otherwise beyond what step 2 reports.
