@@ -33,7 +33,8 @@ not a context transfer.
 | # | Sprint | Deliverable (the value it unlocks) | State |
 |---|--------|------------------------------------|-------|
 | 1 | [`019x-pre-flip-cleanups`](019x-pre-flip-cleanups/) | spacedock **0.19.7** cut on `next` with the pre-flip cleanups landed | ✅ delivered — 0.19.7 cut (#322–326) |
-| 2 | `0200-flip` (capstone) | **0.20.0** cut on `main` + marketplace flipped | backlog (shaped, not driven here) |
+| 2 | [`0198-pre-flip-hardening`](0198-pre-flip-hardening/) | spacedock **0.19.8** — binary/version/install UX (`qa`) + survey polish + hardening | shaping |
+| 3 | `0200-flip` (capstone) | **0.20.0** cut on `main` + marketplace flipped | backlog |
 
 Post-flip candidates (not yet sprints): a published docs site (`wv` + `e6`),
 distribution everywhere (`v3` linux + `5w` notarize + `44` bundle), and the
