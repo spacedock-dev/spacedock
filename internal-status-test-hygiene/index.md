@@ -42,4 +42,19 @@ Cleanup/hygiene task (the change is the fix plus the now-passing command). Surfa
 
 ### Summary
 
-Chose the exclude-`_debriefs/` direction (smaller, correct: debriefs are session records with a distinct frontmatter shape, not entity fixtures the migration check governs) over normalizing date scalars, which would have altered the consistency oracle. The proof — `go test ./...` from the repo root with `.spacedock-state` present — passes. NOTE for validation: a SEPARATE, pre-existing failure surfaces when running `go test ./...` from root on THIS machine — `TestNoInstructionReadsOutsideQuarantine` (internal/contractlint) walks into untracked machine-local agent-team checkouts under `.claude/worktrees/agent-*/` (its sweep skips `.worktrees` but not `.claude/worktrees`). That is out of this task's scope and not a repo defect (the `.claude/` tree is untracked scratch); flagging it for visibility, not fixing it.
+Chose the exclude-`_debriefs/` direction (smaller, correct: debriefs are session records with a distinct frontmatter shape, not entity fixtures the migration check governs) over normalizing date scalars, which would have altered the consistency oracle. The proof — `go test ./...` from the repo root with `.spacedock-state` present — passes. NOTE for validation: a SEPARATE, pre-existing failure surfaces when running `go test ./...` from root on THIS machine — `TestNoInstructionReadsOutsideQuarantine` (internal/contractlint) walks into untracked machine-local agent-team checkouts under `.claude/worktrees/agent-*/` (its sweep skips `.worktrees` but not `.claude/worktrees`). That is out of this task's scope and not a repo defect (the `.claude/` tree is untracked scratch); flagging it for visibility, not fixing it. [SUPERSEDED — see cycle 2: team-lead extended the AC to cover this; now fixed.]
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: AC: go test ./... passes from the repo ROOT (extended) — fix TestNoInstructionReadsOutsideQuarantine (the contractlint sweep tripping on `.claude/worktrees/agent-*`)
+  Added `.claude` to the boundary sweep's `SkipDir` case in `boundary_guard_test.go:88`, alongside `.worktrees` (worktree commit 160780cc). `.claude/worktrees/agent-*` are untracked Claude-Code agent-team checkouts — the same class of agent scratch as `.worktrees`, not the repo's shipped instruction surface.
+- DONE: Regression test that does not depend on the live `.claude` tree
+  TDD: added `TestBoundaryGuardSweepSkipsAgentWorktrees` (`boundary_guard_control_test.go`) — plants an instruction-read fixture inside both a `.worktrees/agent-*/skills/integration/` and a `.claude/worktrees/agent-*/skills/integration/` temp-dir path, asserts neither is reported while a real out-of-quarantine read still is. Confirmed RED before the fix (flagged the `.claude` path), GREEN after. Full contractlint package: 21 passed.
+- DONE: End-to-end proof, `go test ./...` green from root with live `.claude` scratch present
+  Copied all three changed files into the main repo (which has `.spacedock-state` and 8 live `.claude/worktrees/agent-*` dirs), ran `go test ./...` from root = `1142 passed` (no files moved aside), then reverted the main-repo copies to pristine. The whole AC is now satisfied without machine-local set-aside.
+- DONE: gofmt / vet clean
+  `gofmt -l .` empty in the worktree; `go vet ./internal/contractlint/` clean.
+
+### Summary (cycle 2)
+
+Per team-lead's extension, fixed the sibling failure I had flagged — the contractlint boundary sweep now prunes `.claude` the same minimal, same-theme way it already prunes `.worktrees`. With both worktree commits (6fe40471 migration-check, 160780cc contractlint), `go test ./...` from the repo root is genuinely green (`1142 passed`) with `.spacedock-state` and live `.claude/worktrees` scratch present. No new AC was needed; this completes the same "go test green from root" criterion. Both changes are test-only and minimal.
