@@ -37,4 +37,11 @@ Step 2 folds the marketplace ref flip (`next→main`) + calendar-key bump onto t
 
 ## Resolution
 
-_Folds in progress — k6d ensign (M1, P2, P5), pj ensign (M3, M4, M5, P1, P3, P4, P5), fresh nzb ensign (M2). Resolutions recorded here as each fold lands, then the ideation gates are presented._
+All five Material findings folded and FO-verified by reading the revised sections (not just the ensign reports):
+
+- **M1 (k6d, `94724ea4`)** — AC-b/M2 reframed to single-target `next→main`; the phantom edge arm deleted; the guard replaced with a **tri-surface agreement check** (release.yml stamp ↔ `.goreleaser.yaml` stable devBranch ↔ marketplace.json ref) across three independently-authored files — non-tautological, with honest pre-flip (binary-side pair green) / at-flip (full `==main`) sequencing. P2 (AC-c relabeled non-regression) + P5 (citations `:161/:172`) folded.
+- **M3 (pj, `fc9cd169`)** — the tag-the-green-tip invariant now freezes `next` from step 3 (record `$PREPARED`) through step 7 (tag); runbook adds the freeze + a post-step-4 `headSha == $PREPARED` re-verify (re-record+re-dispatch on mismatch). Closes the workflow_dispatch-binds-to-tip hazard.
+- **M4 + M5 (pj, `fc9cd169`)** — one fix: the calendar-bump is held OUT of the pre-flip fold and lands on `main` post-flip (runbook step 8); AC-7 pinned to that single mechanism. Removes the transient stale-payload window (`next` serving `ref:main` while `main` is the old tip) and the dual-owner punt. P1/P3/P4/P5 folded (single-target wording, strict-semver guard demoted to optional follow-up, AC-4 machine-anchor option, citations).
+- **M2 (nzb, `fd9960c1`)** — AC-4 reframed to "`go test ./internal/release/` green over the WHOLE package"; a new "Implementation co-edit" section names the four byte-literal `goreleaser:`/`runs-on` anchors (:187/:231/:238/:274) + the no-`needs` assertion (:424) as required co-edits owned by nzb. The ensign re-reproduced the 14-failure break empirically and restored clean.
+
+**Status: READY** — all Material findings closed; the six polish items are folded or recorded. Ideation gates presented to the captain.
