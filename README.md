@@ -46,20 +46,18 @@ waiting on you.
   session at a time.
 - **Isolation when it matters.** Stages that touch shared state run in their own
   git worktree. Lighter stages run inline.
-- **Native sandbox integration.** Drop a `.safehouse` profile in the project and
-  Spacedock runs the agent sandboxed. safehouse is an optional dependency,
-  installed separately. The `--safehouse` flags tune it per launch.
+- **Sandboxing built in.** Drop a profile in the project and Spacedock runs the
+  agent sandboxed.
 - **Work survives the context limit.** When an agent runs out of context, a
   successor carries forward what's in flight.
 
 ## Install
 
-Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
-or Pi. Install one of those first.
+Prerequisite: a coding agent harness. Claude Code, Codex, and Pi are tier-1
+supported; through skill systems it also runs in most other harnesses, including
+Hermes-class agents.
 
-Spacedock itself is two pieces: the `spacedock` launcher and a host plugin (the
-first-officer and ensign agents) that the harness loads. Install the launcher
-with Homebrew:
+Install with Homebrew:
 
 ```bash
 brew tap spacedock-dev/homebrew-tap
@@ -76,17 +74,8 @@ spacedock claude "/spacedock:survey"
 Using Codex or Pi instead? Swap the subcommand: `spacedock codex "/spacedock:survey"`
 or `spacedock pi "/spacedock:survey"`.
 
-To stay current: `brew upgrade spacedock` updates the launcher; `spacedock
-install` refreshes the plugin. Run `spacedock doctor` any time to confirm the
-launcher and plugin are compatible. A plain `claude plugin update` will not pick
-up new releases. The plugin ships through `spacedock`.
-
 See [`docs/install-journey.md`](docs/install-journey.md) for the full first-run
 walkthrough, the Codex and Pi paths, and a from-source build for development.
-
-> [safehouse](https://agent-safehouse.dev) is an optional sandbox for agent
-> runs. Install it separately. A `.safehouse` profile in the working directory
-> (or a `--safehouse` flag) wraps the launch through it.
 
 ## Quick start
 
