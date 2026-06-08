@@ -110,6 +110,23 @@ flip`, `not yet`, `still owed`, `pre-flip`/`post-flip` as user-facing hedging).
 The stable install path is described as working today, with ONE clean stable
 route (brew + `spacedock install --host claude`) and a concise dev/source path.
 
+**AC-9 - The README leads on the decision and makes no claim it cannot back.**
+Verified by: reading the opener and `## What's different`. The README frames the
+decision as the unit ("nothing ships without a decision"; the human partner or a
+delegated agent approves, sends back, or escalates; every decision is recorded
+with evidence and reason) and names the category honestly (a multi-agent
+orchestrator that plugs into a coding-agent harness — Claude Code, Codex, or Pi —
+not "an agent" and not a built-in sandbox). Differentiator claims are grounded in
+a concrete mechanism, not left as "it learns" hand-waving: the review bullet
+states review runs as a separate fresh-context stage with no access to the
+maker's reasoning; the bar-sharpens bullet states the agent proposes a
+stage-criteria edit the captain approves and `/spacedock:debrief` carries
+learnings forward. The sandbox is described as optional `safehouse` integration,
+installed separately, not a native built-in. Terms are glossed before or at first
+use (e.g. "gate"). Verified against `internal/cli/frontdoor.go` (harness-only
+auto-install, `--safehouse` wrap) and the workflow README (`validation` is a
+`fresh: true` stage).
+
 ## Test plan
 
 - Inspect current `origin/next` docs and the open README PRs #213 and #220.
@@ -122,6 +139,15 @@ route (brew + `spacedock install --host claude`) and a concise dev/source path.
   table, or branch-"lane" framing. Expect no matches.
 - Run a greppable present-tense lint over the two deliverable docs (AC-8): no
   future-conditional flip wording. Expect no matches.
+- Confirm the decision-first frame and honest claims (AC-9): read the opener and
+  `## What's different`; check the harness framing (not "agent"), the grounded
+  review and bar-sharpens mechanisms, and the optional-`safehouse` sandbox
+  wording against `internal/cli/frontdoor.go` and the workflow README's
+  `fresh: true` validation stage.
+- Verify the launch grammar in every command example: the task comes BEFORE `--`
+  and host flags ride AFTER (`spacedock claude "task" -- --plugin-dir "$PWD"`),
+  matching `internal/cli/frontdoor.go` (the prior `-- "task"` form was wrong and
+  the binary warns against it).
 - Run focused doc checks where available, then at least `go test ./...`.
 - If tests are blocked by unrelated local state, report the exact blocker and
   run the narrowest relevant checks that still prove the docs build or references
@@ -203,3 +229,33 @@ Cycle-1 reconciled the facts but read as a maintainer-voiced transition narrativ
 ### Summary
 
 Recommendation: PASSED. The two user docs now read reader-first: README opens with the problem and "You want Spacedock if" framing (not an implementation roadmap), install-journey is a clean present-tense install guide with one stable path (brew + `spacedock install --host claude`) and `next` as the from-source dev channel. The AC-7 jargon lint and AC-8 present-tense lint both return zero genuine matches over the deliverable docs (two apparent FAILs were the substrings inside `rubber-stamp` and `allowed`, plus the roles table — not real violations). Key process catch: the first lint pass was vacuous because the zsh/`ugrep` harness never read the files; re-running against `/usr/bin/grep` with a sanity probe made the proof real. AC-1..AC-5 facts hold; the docs make no unshipped main-resolution promise even though the binary still pins `next`. `docs/releasing.md` unchanged from cycle-1. `go test ./...` green (1141/16). No detached adversarial audit required (docs-only, low blast radius).
+
+#### Cycle 2 — 2026-06-07 — captain re-direction (decision-first reframe), interactive
+
+Cycle-2 validation PASSED, but the captain reopened the README in a direct interactive working session. The reader-first rewrite was correct but the README still led on the workflow mechanism rather than the product's actual thesis. New direction (positioning v3, captured in the captain's reference docs): the DECISION is the unit; the workflow is second-level (it shapes decisions). Rework the README to lead on that, keep a strict house voice, and harden every claim against an experienced-power-user (ICP) read.
+
+**Direction applied (captain, interactive, 2026-06-07):**
+- Reframe the opener around the decision: "a multi-agent orchestrator where nothing ships without a decision"; two-audience symptom list (human and agent); root cause "generation got cheap, your attention and judgment are the bottleneck"; the survey probe (`/spacedock:survey`) as the first move.
+- House voice: no em dashes, short consecutive sentences, no "X, Y, just Z" parallelism, present tense, power-user audience. Every prose edit routed through the `comm-officer` teammate (Strunk/Elements-of-Style) before applying.
+- Fix the category honestly: Spacedock plugs into a coding-agent HARNESS (Claude Code/Codex/Pi), it is not "an agent"; sandbox is OPTIONAL `safehouse` integration, not native built-in.
+- Ground differentiator claims in mechanism (review = separate fresh-context stage; bar-sharpens = agent proposes a stage-criteria edit you approve + `/spacedock:debrief`).
+- FACT FIX (load-bearing, found via PR #315 + verified in `internal/cli/frontdoor.go`): the launch grammar is task-BEFORE-`--`, host-flags-after. The prior `spacedock claude -- "task"` form in both docs was wrong and the binary warns against it. Corrected all examples.
+- Parallel ICP review (3 fresh reviewers, competitive bounty) run via the first officer; the captain triaged the findings and the approved set was applied.
+- Updated entity: added AC-9 (decision-first frame + honest, mechanism-grounded claims) and the matching test-plan checks.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Reframe README decision-first per positioning v3 (decision is the unit; workflow is the second-level mechanism) and keep the house voice.
+  Opener rewritten to "a multi-agent orchestrator where nothing ships without a decision" with the two-audience "Why?" symptom list and the `/spacedock:survey` first move. All prose routed through the `comm-officer` teammate (Elements-of-Style) before applying. Code commits `c647c266`, `c933ec6d`, `a11985c4`, `8d87acc6`, `28ad2680`, `334ddc95`, `a9b3c0f7`, `86fbed0f`, `64090d52`, `e882cb1d` on branch `spacedock-ensign/readme-main-flip-reconciliation`.
+- DONE: Correct the launch grammar across both docs (the cycle-2 fact bug).
+  Task before `--`, host flags after; `--plugin-dir` moved after `--`. Verified against `internal/cli/frontdoor.go:527-537` (grammar inversion) and the binary's own stray-prompt warning (`frontdoor.go:226-242`). Cross-checked with first-party PR #315, which verified the same against the live v0.19.6 binary. Greppable check: zero `claude -- "`/`codex -- "`/`pi -- "` occurrences remain.
+- DONE: Make every claim honest and ICP-hardened.
+  Category fixed to coding-agent HARNESS (not "agent"); sandbox reframed to optional `safehouse` integration installed separately (dropped the false "native sandbox, zero wrapping"); review and bar-sharpens bullets grounded in real mechanism (verified `validation` is `fresh: true` in the workflow README; auto-install is Claude-only and `--safehouse` wrap real in `frontdoor.go`); "gate" glossed on first use; Quick start namespaced to `/spacedock:commission` and reordered dev-first with the Gmail example's integration dependency noted; brew install restored the explicit `brew tap` step; install-journey reconciled so the Claude path is a single auto-installing launch (Codex/Pi keep the manual step); a coding-agent-harness prerequisite line added to both docs.
+- DONE: PR #315 reconciliation recorded; entity ACs + test plan updated.
+  Our PR supersedes #315 (it absorbed #315's correct install facts and adds the full reader-first decision-first rewrite #315 never touched); nothing from #315 merges in. Filed follow-ups: post-flip "see a real workflow" example link, and a ban on README-substring prose-grep assertions in `tests/test_codex_plugin_packaging.py` when it lands on main. Added AC-9 + matching test-plan checks above.
+- DONE: Verification.
+  `gofmt -l ./cmd ./internal` clean; `git diff --check` clean; `go test ./...` exit 0, 1141 passed in 16 packages (including `internal/status` — the known debrief-frontmatter failure did not occur). Greppable lints over `README.md` + `docs/install-journey.md`: zero em dashes, zero dev-internal jargon, zero un-namespaced `/commission`, zero stale `-- "task"` grammar.
+
+### Summary
+
+After cycle-2 validation passed, the captain reopened the README interactively and re-directed it from "reader-first about the workflow" to "decision-first about the product" (positioning v3: the decision is the unit). The README now leads on the decision, names the category honestly (harness, not agent; optional sandbox, not native), and grounds its differentiator claims in real mechanism rather than "it learns" hand-waving. A load-bearing fact bug was caught and fixed (launch grammar is task-before-`--`, verified against `frontdoor.go` and first-party PR #315). Every prose edit went through the comm-officer for house-voice consistency; a competitive 3-reviewer ICP bounty surfaced the issues, the captain triaged them, and the approved set was applied. PR #315 is superseded by this work. `go test ./...` green (1141/16); all content lints clean. Ready for re-validation against AC-1..AC-9.
