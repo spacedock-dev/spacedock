@@ -47,3 +47,18 @@ The existing `migration_check_test.go` assertions carry over against the shared 
 
 ### Summary
 Both walk callbacks duplicated the same info.IsDir()→isMigrationCheckPrunedDir→filepath.SkipDir step, and the predicate lived only in the test file. Moved the predicate to a new production file internal/status/migration_check.go and added migrationCheckWalkDir wrapping it; both the live consistency walk and the hermetic prune test now drive the one shared walk-step, so the prune composition is defined and tested once. The pre-existing RED TestMigrationCheckFixturesParseConsistently (docs/roadmap/0198-pre-flip-hardening/debrief.md unquoted session-date scalar, migration_check_test.go:115) is the documented separate item owned elsewhere — not touched, not introduced by this change (the walk still visits 58 frontmatters and the .spacedock-state prune assertion does not fire).
+
+## Stage Report: implementation (cycle 2)
+
+Scope addition (captain-approved, relayed by team-lead): also FIX the pre-existing migration-check RED (TestMigrationCheckFixturesParseConsistently), folding the prune widening into the shared walk-step. The earlier "do not fix" instruction was reversed.
+
+- DONE: Primary deliverable unchanged — the shared walk-step refactor (migrationCheckWalkDir + isMigrationCheckPrunedDir in production internal/status/migration_check.go; both walk callbacks drive it; no inlined composition in the test).
+  Commit ec44dc05; helper signature widened to take path in 8e72b5f2.
+- DONE: Root-cause fix for the RED — widen the shared prune predicate so the docs/roadmap strategy tree (non-entity by design) is pruned wholesale, matching the path-aware sibling prune in boundary_guard_test.go. NOT a date-quote band-aid.
+  isMigrationCheckPrunedDir now also skips a `roadmap` dir directly under `docs`. The debrief's bare-YAML session-date scalar (decodes as time.Time directly but string through the reader) is the same non-entity shape as the already-pruned .spacedock-state _debriefs. Commit 8e72b5f2.
+- DONE: NEW AC — go test ./internal/status FULLY GREEN; BOTH TestMigrationCheckPrunesStateTree AND TestMigrationCheckFixturesParseConsistently pass.
+  448 passed, 0 failed, 0 skipped (was 447/1 fail/1 skip). Full repo: go test ./... → 1172 passed, 16 packages.
+- DONE: TDD — confirmed the RED first (migration_check_test.go:115 session-date mismatch), then greened it; extended the hermetic prune test to plant a docs/roadmap debrief and assert it is pruned. Proved non-vacuous: reverting the roadmap branch reds TestMigrationCheckPrunesStateTree at the new docs/roadmap assertion.
+
+### Summary
+The pre-existing RED was a scope-creep of the migration-check walk into docs/roadmap — the strategy layer, which holds session debriefs (same session-date non-entity shape as the pruned .spacedock-state _debriefs) but no entity frontmatter. Fixed at root by widening the SHARED prune predicate (the exact composition this task centralized) to skip docs/roadmap wholesale, path-aware to match boundary_guard_test.go, rather than quoting the one date. The hermetic prune test now covers the new branch (planted roadmap debrief, asserted pruned, non-vacuity confirmed). go test ./internal/status fully green; full repo green.
