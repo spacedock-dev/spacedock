@@ -12,7 +12,7 @@ issue:
 group: test-hygiene
 sprint: 0199-pre-flip-mechanics
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#331"
 ---
 
