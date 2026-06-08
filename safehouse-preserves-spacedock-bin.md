@@ -1,13 +1,13 @@
 ---
 id: thdf22bca6gn4xr8tra9r4z4
 title: safehouse-wrapped `spacedock claude`/`codex` loses launcher-injected SPACEDOCK_BIN (runs PATH binary, not the launched one)
-status: validation
+status: done
 source: "FO OWED (HIGH), carried from the 2026-06-08-01 debrief, unfiled until now (captain-nodded 2026-06-08). A safehouse-wrapped launch does not propagate the launcher-injected SPACEDOCK_BIN, so helper calls run the PATH binary instead of the one that was launched. Workaround: export SPACEDOCK_BIN=<dev binary>."
 started: 2026-06-08T18:17:44Z
-completed:
-verdict:
+completed: 2026-06-08T22:48:50Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-safehouse-preserves-spacedock-bin
+worktree:
 issue:
 sprint: 0199-pre-flip-mechanics
 group: dev-quality
