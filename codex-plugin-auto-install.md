@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: binary-ux
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#329"
 ---
 
 Bring the front-door plugin auto-install to the Codex binary-first path, now that codex-cli 0.137.0 supports adding a marketplace + plugin non-interactively. Mirror the #311 Claude shape: on the front door, a missing plugin (`NoPluginFound`) auto-installs and proceeds to launch so the single command the user typed yields a working first-officer session; `--no-install` opts out; a contract mismatch still fails fast.
