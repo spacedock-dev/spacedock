@@ -14,6 +14,7 @@ group: binary-ux
 sprint-readiness: ready
 mod-block:
 pr: "#328"
+archived: 2026-06-08T18:01:47Z
 ---
 
 This task is the user-facing binary/version/upgrade UX, covering THREE cases the
