@@ -54,14 +54,20 @@ Scope addition (captain-approved, relayed by team-lead): also FIX the pre-existi
 
 - DONE: Primary deliverable unchanged — the shared walk-step refactor (migrationCheckWalkDir + isMigrationCheckPrunedDir in production internal/status/migration_check.go; both walk callbacks drive it; no inlined composition in the test).
   Commit ec44dc05; helper signature widened to take path in 8e72b5f2.
-- DONE: Root-cause fix for the RED — widen the shared prune predicate so the docs/roadmap strategy tree (non-entity by design) is pruned wholesale, matching the path-aware sibling prune in boundary_guard_test.go. NOT a date-quote band-aid.
+- DONE: Root-cause fix for the RED — widen the shared prune predicate so the docs/roadmap strategy tree (non-entity by design) is pruned wholesale. Path-aware (a `roadmap` dir directly under a `docs` dir) because `roadmap` is a generic basename that must be qualified by its parent, unlike the reserved `.spacedock-state` name. NOT a date-quote band-aid.
   isMigrationCheckPrunedDir now also skips a `roadmap` dir directly under `docs`. The debrief's bare-YAML session-date scalar (decodes as time.Time directly but string through the reader) is the same non-entity shape as the already-pruned .spacedock-state _debriefs. Commit 8e72b5f2.
 - DONE: NEW AC — go test ./internal/status FULLY GREEN; BOTH TestMigrationCheckPrunesStateTree AND TestMigrationCheckFixturesParseConsistently pass.
   448 passed, 0 failed, 0 skipped (was 447/1 fail/1 skip). Full repo: go test ./... → 1172 passed, 16 packages.
 - DONE: TDD — confirmed the RED first (migration_check_test.go:115 session-date mismatch), then greened it; extended the hermetic prune test to plant a docs/roadmap debrief and assert it is pruned. Proved non-vacuous: reverting the roadmap branch reds TestMigrationCheckPrunesStateTree at the new docs/roadmap assertion.
 
 ### Summary
-The pre-existing RED was a scope-creep of the migration-check walk into docs/roadmap — the strategy layer, which holds session debriefs (same session-date non-entity shape as the pruned .spacedock-state _debriefs) but no entity frontmatter. Fixed at root by widening the SHARED prune predicate (the exact composition this task centralized) to skip docs/roadmap wholesale, path-aware to match boundary_guard_test.go, rather than quoting the one date. The hermetic prune test now covers the new branch (planted roadmap debrief, asserted pruned, non-vacuity confirmed). go test ./internal/status fully green; full repo green.
+The pre-existing RED was a scope-creep of the migration-check walk into docs/roadmap — the strategy layer, which holds session debriefs (same session-date non-entity shape as the pruned .spacedock-state _debriefs) but no entity frontmatter. Fixed at root by widening the SHARED prune predicate (the exact composition this task centralized) to skip docs/roadmap wholesale — path-aware (a `roadmap` dir under `docs`) because the basename is generic, rather than quoting the one date. The hermetic prune test now covers the new branch (planted roadmap debrief, asserted pruned, non-vacuity confirmed). go test ./internal/status fully green; full repo green.
+
+## Stage Report: implementation (pre-merge polish + rebase)
+
+- DONE: Fix the validator's polish finding (no-false-comments rule) — drop the false precedent citations from the migration_check.go comment AND the cycle-2 summary above. discoverIgnoreDirs prunes .spacedock-state but NOT roadmap; boundary_guard_test.go lives in internal/contractlint, not this package. The docs/roadmap prune is the only one of its kind here, now stated self-containedly (both trees hold non-entity frontmatter the migration check does not govern). Code-comment commit ffca15e5 (pre-rebase SHA).
+- DONE: Rebase the worktree branch onto origin/next — clean, no conflicts. origin/next advanced by exactly one file (docs/roadmap/0199-pre-flip-mechanics/staff-review.md), which my prune already skips; zero overlap with my two migration-check files. Branch is now linear on origin/next 84b2005b; my 3 commits reapplied as 89375a42 / d9d4b31a / 6545a420.
+- DONE: Re-run go test ./... on the rebased branch — 1172 passed, 16 packages, 0 fail. Both TestMigrationCheckPrunesStateTree and TestMigrationCheckFixturesParseConsistently green; gofmt + go vet clean. Code branch NOT pushed (team-lead opens the PR at the merge ceremony).
 
 ## Stage Report: validation
 
