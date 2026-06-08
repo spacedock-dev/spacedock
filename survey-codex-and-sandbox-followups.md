@@ -1,13 +1,13 @@
 ---
 id: 47rx3x8a809wx35vx6rbqqhv
 title: Survey skill body-rendering pass — Codex workstreams (depth ii) + scaffold/work-area/confirm fixes
-status: ideation
+status: implementation
 source: "captain (2026-06-08) — deferred from vh (survey-skill-correctness-pass, 0.19.8). vh's live drive proved the codex-presence COUNT fires (61), but Codex sessions are not surfaced in the survey body, and a sandbox-denied ~/.codex yields a silent confident 0. Captain: file these as a bundled 0.19.9 candidate."
 score: "0.25"
 started: 2026-06-08T19:37:02Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-survey-codex-and-sandbox-followups
 issue:
 group: survey
 sprint-readiness: ready
