@@ -1,13 +1,13 @@
 ---
 id: qyc6g8bmvcdsj7bdz7sjwgbn
 title: internal/status test-hygiene — go test from root fails on debrief frontmatter, plus gofmt-dirty files
-status: validation
+status: done
 source: "captain (2026-06-04) — surfaced by the xa ideation ensign and verified this session. `go test ./...` from the project root fails because TestMigrationCheckFixturesParseConsistently scans the .spacedock-state debrief fixtures; two internal/status files are also gofmt-dirty on next."
 score: "0.26"
 started: 2026-06-08T05:11:44Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-internal-status-test-hygiene
+completed: 2026-06-08T05:40:39Z
+verdict: PASSED
+worktree:
 issue:
 sprint: 019x-pre-flip-cleanups
 group: release-hygiene
