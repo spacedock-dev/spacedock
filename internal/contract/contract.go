@@ -141,9 +141,9 @@ func compareWithManifest(c int, raw, host, branch, manifestPath, pluginVersion, 
 	}
 	switch {
 	case c < lo:
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "The plugin needs a newer binary.", tooOldBinaryRemedy())}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
 	case c >= hi:
-		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "The binary needs a newer plugin.", tooOldPluginRemedy(host))}
+		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
 		return Result{Verdict: Compatible, Message: fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)}
 	}
@@ -164,9 +164,9 @@ func mismatchMessage(binaryVersion, pluginVersion, direction, remedy string) str
 // Homebrew upgrade, keeps the source-build fallback, and names the binary-vs-plugin
 // distinction (refreshing the plugin instead is a different command).
 func tooOldBinaryRemedy() string {
-	return "  Upgrade the binary: brew upgrade spacedock\n" +
+	return "  Upgrade via Homebrew: brew upgrade spacedock\n" +
 		"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
-		"  To refresh the plugin instead: spacedock install."
+		"  Or refresh the plugin instead: spacedock install"
 }
 
 // tooOldPluginRemedy is the pinned too-old-plugin remedy line, parameterized by

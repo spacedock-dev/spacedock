@@ -27,8 +27,8 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 		wantProceed   bool
 		wantPinned    string // abort-message substring (empty when proceeding)
 	}{
-		{"too-old-binary-aborts", "0", ">=1,<2", false, "The plugin needs a newer binary."},
-		{"too-old-plugin-aborts", "5", ">=1,<2", false, "The binary needs a newer plugin."},
+		{"too-old-binary-aborts", "0", ">=1,<2", false, "Upgrade the binary to continue."},
+		{"too-old-plugin-aborts", "5", ">=1,<2", false, "Update the plugin to continue."},
 		{"compatible-proceeds", "1", ">=1,<2", true, ""},
 	}
 	for _, c := range cases {

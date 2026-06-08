@@ -73,9 +73,9 @@ func TestCompare(t *testing.T) {
 		{"compatible-exact", 1, ">=1,<2", Compatible, ""},
 		{"compatible-forward-tolerant", 2, ">=1,<3", Compatible, ""},
 		{"compatible-lower-edge", 1, ">=1,<3", Compatible, ""},
-		{"too-old-binary", 1, ">=2,<3", TooOldBinary, "The plugin needs a newer binary."},
-		{"too-old-plugin-at-hi", 2, ">=1,<2", TooOldPlugin, "The binary needs a newer plugin."},
-		{"too-old-plugin-above-hi", 5, ">=1,<2", TooOldPlugin, "The binary needs a newer plugin."},
+		{"too-old-binary", 1, ">=2,<3", TooOldBinary, "Upgrade the binary to continue."},
+		{"too-old-plugin-at-hi", 2, ">=1,<2", TooOldPlugin, "Update the plugin to continue."},
+		{"too-old-plugin-above-hi", 5, ">=1,<2", TooOldPlugin, "Update the plugin to continue."},
 		{"malformed", 1, ">=1", MalformedRange, "malformed contract range"},
 		{"predates-contract-empty", 1, "", PluginPredatesContract, "spacedock install --host claude"},
 	}

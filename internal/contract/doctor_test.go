@@ -33,14 +33,14 @@ func TestDoctorVerdicts(t *testing.T) {
 			manifest:   "too-old-binary.json",
 			host:       "claude",
 			wantExit:   1,
-			wantStderr: "The plugin needs a newer binary.",
+			wantStderr: "Upgrade the binary to continue.",
 		},
 		{
 			name:       "too-old-plugin",
 			manifest:   "too-old-plugin.json",
 			host:       "claude",
 			wantExit:   1,
-			wantStderr: "The binary needs a newer plugin.",
+			wantStderr: "Update the plugin to continue.",
 		},
 		{
 			name:       "malformed-range",
