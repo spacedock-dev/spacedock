@@ -60,6 +60,20 @@ func launchEnv(parent []string) []string {
 	return env
 }
 
+// launcherBinArgvPrefix returns the `env SPACEDOCK_BIN=<bin>` argv token pair that
+// re-asserts the launching binary inside the inner host argv, so the value
+// survives a wrapper that scrubs SPACEDOCK_BIN from the environment (safehouse
+// does). It reads the same resolvedLauncherBin() source as launchEnv, and mirrors
+// its omit-on-failure: when no binary resolves it returns nil — never a blank
+// value. Callers prepend it to the inner argv on the wrap path only; the
+// unwrapped launch inherits SPACEDOCK_BIN directly through launchEnv.
+func launcherBinArgvPrefix() []string {
+	if bin, ok := resolvedLauncherBin(); ok {
+		return []string{"env", spacedockBinEnv + "=" + bin}
+	}
+	return nil
+}
+
 func withoutEnv(env []string, key string) []string {
 	prefix := key + "="
 	out := make([]string, 0, len(env))
@@ -213,7 +227,11 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		argv = safehouse.Wrap(inner, extra)
+		// Re-assert SPACEDOCK_BIN inside the inner argv: safehouse scrubs it from
+		// the environment, so the env-only propagation through launchEnv does not
+		// survive the boundary. The prefix rides argv, which safehouse hands to the
+		// inner host verbatim past `--`. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(append(launcherBinArgvPrefix(), inner...), extra)
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
@@ -359,7 +377,11 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		argv = safehouse.Wrap(inner, extra)
+		// Re-assert SPACEDOCK_BIN inside the inner argv: safehouse scrubs it from
+		// the environment, so the env-only propagation through launchEnv does not
+		// survive the boundary. The prefix rides argv, which safehouse hands to the
+		// inner host verbatim past `--`. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(append(launcherBinArgvPrefix(), inner...), extra)
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {

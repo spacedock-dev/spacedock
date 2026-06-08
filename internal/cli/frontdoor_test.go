@@ -367,6 +367,8 @@ func TestClaudeFrontDoorSkipContractCheckBootstrap(t *testing.T) {
 // through the operator's trailing args before the FO-skill prompt.
 func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 	dir := safehouseFixtureDir(t)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -376,6 +378,7 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
+		"env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
@@ -398,6 +401,7 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	wantArgv := []string{"safehouse", "--trust-workdir-config", "--",
+		"env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox", "resume", "abc123"}
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)

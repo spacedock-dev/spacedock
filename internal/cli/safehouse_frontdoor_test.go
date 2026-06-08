@@ -34,9 +34,37 @@ func safehouseFixtureDir(t *testing.T) string {
 }
 
 // AC-1: .safehouse present → canonical safehouse-wrapped argv with the bootstrap
-// prompt appended LAST, after the operator passthrough.
+// prompt appended LAST, after the operator passthrough. The wrapped argv
+// re-asserts `env SPACEDOCK_BIN=<resolvedLauncherBin>` between `--` and `claude`
+// so the launcher binary survives any env-scrubbing safehouse wrapper.
 func TestClaudeSafehousePresentWrapsArgv(t *testing.T) {
 	dir := safehouseFixtureDir(t)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), []string{"--", "--foo"}, dir, fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	want := []string{"safehouse", "--trust-workdir-config", "--",
+		"env", spacedockBinEnv + "=" + bin,
+		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer",
+		"--foo", wantBootstrapPrompt}
+	if !equalArgv(fake.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+	}
+}
+
+// AC-4: when resolvedLauncherBin() cannot resolve a binary (executablePath
+// errors), the wrapped argv carries NO `env SPACEDOCK_BIN=` prefix — never a
+// blank value — exactly as launchEnv omits the env entry. The wrap is otherwise
+// the canonical shape (no prefix tokens between `--` and `claude`).
+func TestClaudeSafehouseWrapsWithoutPrefixWhenBinUnresolved(t *testing.T) {
+	dir := safehouseFixtureDir(t)
+	withExecutablePath(t, "", errors.New("boom"))
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -50,6 +78,11 @@ func TestClaudeSafehousePresentWrapsArgv(t *testing.T) {
 		"--foo", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+	}
+	for _, tok := range fake.launchedArg {
+		if strings.HasPrefix(tok, spacedockBinEnv+"=") {
+			t.Fatalf("wrapped argv carried a SPACEDOCK_BIN= token despite unresolved bin: %v", fake.launchedArg)
+		}
 	}
 }
 
@@ -94,6 +127,12 @@ func TestClaudeNoSafehouseLaunchesPlain(t *testing.T) {
 		}
 		if tok == "--dangerously-skip-permissions" {
 			t.Fatalf("unsandboxed launch carried --dangerously-skip-permissions: %v", fake.launchedArg)
+		}
+		// AC-3: the argv re-assert is wrap-path-only; an unwrapped launch carries no
+		// `env`/`SPACEDOCK_BIN=` prefix (SPACEDOCK_BIN still reaches the host through
+		// launchEnv, asserted by TestClaudeFrontDoorInjectsResolvedLauncherBin).
+		if tok == "env" || strings.HasPrefix(tok, spacedockBinEnv+"=") {
+			t.Fatalf("unsandboxed launch carried the argv re-assert prefix %q: %v", tok, fake.launchedArg)
 		}
 	}
 }
@@ -157,9 +196,13 @@ const wantCodexBootstrapPrompt = "You totally got this. Take your time. I love y
 
 // codex AC-1: .safehouse present → canonical safehouse-wrapped codex argv with
 // codex's own sandbox bypassed and the FO-skill prompt appended LAST, after the
-// operator passthrough. Mirrors runClaude's dir+lookPath threading.
+// operator passthrough. Mirrors runClaude's dir+lookPath threading. The wrapped
+// argv re-asserts `env SPACEDOCK_BIN=<resolvedLauncherBin>` between `--` and
+// `codex` so the launcher binary survives any env-scrubbing safehouse wrapper.
 func TestCodexSafehousePresentWrapsArgv(t *testing.T) {
 	dir := safehouseFixtureDir(t)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -169,6 +212,7 @@ func TestCodexSafehousePresentWrapsArgv(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--",
+		"env", spacedockBinEnv + "=" + bin,
 		"codex", "--dangerously-bypass-approvals-and-sandbox",
 		"--foo", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
@@ -223,6 +267,12 @@ func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 		}
 		if tok == "--dangerously-bypass-approvals-and-sandbox" {
 			t.Fatalf("unsandboxed codex launch carried the bypass flag: %v", fake.launchedArg)
+		}
+		// AC-3: the argv re-assert is wrap-path-only; an unwrapped launch carries no
+		// `env`/`SPACEDOCK_BIN=` prefix (SPACEDOCK_BIN still reaches the host through
+		// launchEnv).
+		if tok == "env" || strings.HasPrefix(tok, spacedockBinEnv+"=") {
+			t.Fatalf("unsandboxed codex launch carried the argv re-assert prefix %q: %v", tok, fake.launchedArg)
 		}
 	}
 }
@@ -295,6 +345,8 @@ func TestClaudeResumeFamilySuppressesBootstrapPrompt(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := safehouseFixtureDir(t)
+			bin := executableFixture(t)
+			withExecutablePath(t, bin, nil)
 			fake := &fakeHost{manifest: compatibleManifest(t)}
 			var stdout, stderr bytes.Buffer
 
@@ -304,6 +356,7 @@ func TestClaudeResumeFamilySuppressesBootstrapPrompt(t *testing.T) {
 				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 			}
 			want := []string{"safehouse", "--trust-workdir-config", "--",
+				"env", spacedockBinEnv + "=" + bin,
 				"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", tc.arg}
 			if !equalArgv(fake.launchedArg, want) {
 				t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
