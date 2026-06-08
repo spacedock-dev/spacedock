@@ -1,5 +1,5 @@
 // ABOUTME: AC-B oracles for the pre-launch info banner — version line + detected
-// ABOUTME: workflow rel-path (commissioned README) vs none-detected (bare dir).
+// ABOUTME: workflow (repo-wide discovery, noise-pruned) vs none/multiple.
 package cli
 
 import (
@@ -12,7 +12,7 @@ import (
 )
 
 // commissionWorkflowAt writes a README.md whose frontmatter declares
-// `commissioned-by: spacedock@…` — the same predicate DiscoverWorkflowDir
+// `commissioned-by: spacedock@…` — the same predicate the workflow discovery
 // recognizes — at the given absolute dir, creating it first.
 func commissionWorkflowAt(t *testing.T, dir string) {
 	t.Helper()
@@ -36,53 +36,104 @@ func gitRepoFixture(t *testing.T) string {
 	return repo
 }
 
-// TestLaunchBannerNamesDetectedWorkflow (AC-B): launched from inside a
-// commissioned workflow, the banner names the workflow's path RELATIVE TO THE
-// GIT REPO ROOT (so a workflow at <repo>/docs/dev reads `Workflow: docs/dev`, a
-// recognizable path that orients the operator to which workflow) — never the
-// cwd-relative `.`/`..`. Outside any workflow it reads "none detected"; inside a
-// workflow with no enclosing `.git`, it falls back to the workflow dir's name
-// (never `.`/`..`). Every case carries the version line naming cli.Version. The
-// fixture's repo-relative location is the independent expected value.
+// TestLaunchBannerNamesDetectedWorkflow (AC-B): the banner finds the repo's REAL
+// top-level workflow from ANY launch dir (the enclosing git repo is scanned
+// downward, with linked/agent-worktree + VCS noise pruned), and names it relative
+// to the repo root (e.g. `docs/dev`). From the repo root, from inside the
+// workflow, and from a deep subdir it names the same workflow. A noise copy under
+// `.claude/worktrees/...` (a real concern: agent worktrees are full repo checkouts
+// each carrying a `docs/dev`) is NOT named and does NOT inflate the count. Outside
+// any workflow it reads "none detected"; with more than one top-level workflow it
+// reads the count + a pointer to `spacedock status`. The fixture layout is the
+// independent expected value.
 func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
-	t.Run("inside a commissioned workflow under a git repo", func(t *testing.T) {
-		repo := gitRepoFixture(t)
-		workflow := filepath.Join(repo, "docs", "dev")
-		commissionWorkflowAt(t, workflow)
-		sub := filepath.Join(workflow, "nested", "deep")
-		if err := os.MkdirAll(sub, 0o755); err != nil {
+	// repoWithRealWorkflowAndNoise builds a temp git repo with the single real
+	// workflow at <repo>/docs/dev plus noise copies under agent/linked worktree
+	// checkouts (<repo>/.claude/worktrees/agent-x and <repo>/.worktrees/wt-y), each
+	// rooted by its own `.git` gitlink as a real worktree is. Only docs/dev is a
+	// real top-level workflow; the nested checkouts must be pruned wholesale.
+	gitlinkAt := func(t *testing.T, dir string) {
+		t.Helper()
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
 		}
+		if err := os.WriteFile(filepath.Join(dir, ".git"), []byte("gitdir: /elsewhere\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	repoWithRealWorkflowAndNoise := func(t *testing.T) (repo, realWorkflow string) {
+		t.Helper()
+		repo = gitRepoFixture(t)
+		realWorkflow = filepath.Join(repo, "docs", "dev")
+		commissionWorkflowAt(t, realWorkflow)
+		gitlinkAt(t, filepath.Join(repo, ".claude", "worktrees", "agent-x"))
+		commissionWorkflowAt(t, filepath.Join(repo, ".claude", "worktrees", "agent-x", "docs", "dev"))
+		gitlinkAt(t, filepath.Join(repo, ".worktrees", "wt-y"))
+		commissionWorkflowAt(t, filepath.Join(repo, ".worktrees", "wt-y", "docs", "dev"))
+		return repo, realWorkflow
+	}
+
+	t.Run("from the repo root names the real workflow, not the .claude/.worktrees noise", func(t *testing.T) {
+		repo, _ := repoWithRealWorkflowAndNoise(t)
 		var buf bytes.Buffer
-		launchBanner("claude", sub, &buf)
+		launchBanner("claude", repo, &buf)
 
 		out := buf.String()
 		if !strings.Contains(out, "spacedock "+Version) {
 			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+Version, out)
 		}
-		// Repo-relative: the workflow sits at docs/dev under the repo root, so the
-		// banner must name docs/dev regardless of how deep the launch dir is.
-		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")) {
-			t.Fatalf("banner workflow line does not name the repo-relative path docs/dev: %q", out)
-		}
-		if strings.Contains(out, "Workflow: .") {
-			t.Fatalf("banner workflow line is the cwd-relative `.`/`..` form, not the repo-relative path: %q", out)
+		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")+"\n") {
+			t.Fatalf("banner from repo root does not name the real workflow docs/dev: %q", out)
 		}
 		if strings.Contains(out, "none detected") {
-			t.Fatalf("banner reads none detected inside a commissioned workflow: %q", out)
+			t.Fatalf("banner reads none detected from the repo root of a repo with a real workflow: %q", out)
+		}
+		if strings.Contains(out, "workflows detected") {
+			t.Fatalf("banner counted the .claude/.worktrees noise copies as extra workflows: %q", out)
+		}
+	})
+
+	t.Run("from a deep subdir of the workflow names the same workflow", func(t *testing.T) {
+		repo, realWorkflow := repoWithRealWorkflowAndNoise(t)
+		sub := filepath.Join(realWorkflow, "nested", "deep")
+		if err := os.MkdirAll(sub, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		var buf bytes.Buffer
+		launchBanner("codex", sub, &buf)
+
+		out := buf.String()
+		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")+"\n") {
+			t.Fatalf("banner from a deep subdir of repo %s does not name docs/dev: %q", repo, out)
+		}
+	})
+
+	t.Run("more than one real top-level workflow reports the count + status pointer", func(t *testing.T) {
+		repo := gitRepoFixture(t)
+		commissionWorkflowAt(t, filepath.Join(repo, "docs", "dev"))
+		commissionWorkflowAt(t, filepath.Join(repo, "ops", "release"))
+		var buf bytes.Buffer
+		launchBanner("claude", repo, &buf)
+
+		out := buf.String()
+		if !strings.Contains(out, "2 workflows detected (run `spacedock status` to pick)") {
+			t.Fatalf("banner does not report the 2-workflow count + pointer: %q", out)
+		}
+		if strings.Contains(out, "none detected") {
+			t.Fatalf("banner reads none detected with two real workflows: %q", out)
 		}
 	})
 
 	t.Run("commissioned workflow with no enclosing git repo falls back to the workflow name", func(t *testing.T) {
-		// A workflow dir with no `.git` on the way up: FindGitRoot finds nothing, so
-		// the banner falls back to the workflow dir's own name — never `.`/`..`.
+		// A workflow dir with no `.git` on the way up: the discovery falls back to
+		// the bounded walk-up and renders the workflow dir's own name — never `.`/`..`.
 		workflow := t.TempDir()
 		commissionWorkflowAt(t, workflow)
 		var buf bytes.Buffer
 		launchBanner("codex", workflow, &buf)
 
 		out := buf.String()
-		if !strings.Contains(out, "Workflow: "+filepath.Base(workflow)) {
+		if !strings.Contains(out, "Workflow: "+filepath.Base(workflow)+"\n") {
 			t.Fatalf("banner fallback does not name the workflow dir base %q: %q", filepath.Base(workflow), out)
 		}
 		if strings.Contains(out, "Workflow: .\n") || strings.Contains(out, "Workflow: ..") {
@@ -94,7 +145,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	})
 
 	t.Run("outside any workflow", func(t *testing.T) {
-		bare := t.TempDir() // no commissioned README on the way up to the temp root
+		bare := t.TempDir() // no commissioned README in or above this temp dir
 		var buf bytes.Buffer
 		launchBanner("codex", bare, &buf)
 

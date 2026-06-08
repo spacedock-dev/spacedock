@@ -21,10 +21,8 @@ import (
 // bootstrapPrompt is the fixed launch-and-go message appended as the last inner
 // argv token so a fresh `spacedock claude` session starts the first officer
 // rather than opening an idle agent. It is omitted when `--resume` is forwarded
-// (a resume already carries its own session intent). claude selects the first
-// officer through the `--agent spacedock:first-officer` flag already in the
-// argv, so the prompt only needs a neutral launch-and-go.
-const bootstrapPrompt = "Engage as the Spacedock first officer for this session."
+// (a resume already carries its own session intent).
+const bootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage."
 
 // hostOps is the injectable seam the front-door, init, and doctor paths depend
 // on. Production backs it with real `claude`/`codex` plugin commands and exec;
@@ -137,35 +135,62 @@ func noPluginRemedy(host string) string {
 // is handed control: the spacedock version, the workflow detected from dir, and a
 // one-line orientation pointer. Callers suppress it on a resume (the operator is
 // continuing a session, not starting one).
-//
-// The workflow is found by status.DiscoverWorkflowDir (the walk-up that
-// recognizes a commissioned workflow by its README's `commissioned-by: spacedock@`
-// field) and rendered as a recognizable path — its location relative to the
-// enclosing git repository root (so a workflow at <repo>/docs/dev reads `docs/dev`,
-// orienting the operator to WHICH workflow). When the workflow is not under a git
-// repo (or is itself the repo root), it falls back to the workflow dir's own name;
-// it never renders the cwd-relative `.`/`..` (which would defeat the orientation).
-// "none detected (launching anyway)" is shown when launched outside any workflow.
 func launchBanner(host, dir string, w io.Writer) {
-	detected := "none detected (launching anyway)"
-	if workflowDir, ok := status.DiscoverWorkflowDir(dir); ok {
-		detected = workflowLabel(workflowDir)
-	}
 	fmt.Fprintf(w, "spacedock %s · first officer launching %s\n", Version, host)
-	fmt.Fprintf(w, "Workflow: %s\n", detected)
+	fmt.Fprintf(w, "Workflow: %s\n", detectedWorkflow(dir))
 	fmt.Fprintf(w, "%s is starting as your first officer; run `spacedock status` inside the session for the queue.\n", host)
 }
 
-// workflowLabel renders a discovered workflow dir as a recognizable path: its
-// location relative to the enclosing git repository root when that is a real
-// parent (e.g. `docs/dev`), else the workflow dir's own base name. It never
-// returns `.` or a `..`-escaping path.
-func workflowLabel(workflowDir string) string {
-	repoRoot := status.FindGitRoot(workflowDir)
-	if rel, err := filepath.Rel(repoRoot, workflowDir); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
+// detectedWorkflow names the workflow the launch belongs to, found from ANY
+// launch dir. When dir is inside a git repo, the whole repo is scanned downward
+// (status.DiscoverWorkflows, which prunes the linked/agent-worktree + VCS noise),
+// so launching from the repo root resolves the repo's real workflow rather than
+// missing it. A single workflow is named by its path relative to the repo root
+// (e.g. `docs/dev`); two or more report the count plus a pointer to `spacedock
+// status`. With no enclosing git repo, a bounded walk-up names a workflow at or
+// above dir. The result is never the cwd-relative `.`/`..`; "none detected
+// (launching anyway)" is shown when no workflow is found.
+func detectedWorkflow(dir string) string {
+	const noneDetected = "none detected (launching anyway)"
+	repoRoot := status.FindGitRoot(dir)
+	gitEntry := filepath.Join(repoRoot, ".git")
+	if dirExists(gitEntry) || fileExists(gitEntry) { // .git is a dir (repo) or a file (worktree gitlink)
+		workflows := status.DiscoverWorkflows(repoRoot)
+		switch len(workflows) {
+		case 0:
+			return noneDetected
+		case 1:
+			return workflowLabel(repoRoot, workflows[0])
+		default:
+			return fmt.Sprintf("%d workflows detected (run `spacedock status` to pick)", len(workflows))
+		}
+	}
+	// No enclosing git repo: a bounded walk-up names a workflow at or above dir.
+	if workflowDir, ok := status.DiscoverWorkflowDir(dir); ok {
+		return workflowLabel(repoRoot, workflowDir)
+	}
+	return noneDetected
+}
+
+// workflowLabel renders a workflow dir as a recognizable path relative to base
+// (e.g. `docs/dev` relative to the repo root), falling back to the workflow dir's
+// own base name. It never returns `.` or a `..`-escaping path. Both paths are
+// resolved through symlinks first so a base that is a symlinked parent (e.g.
+// macOS's /var → /private/var temp dirs) still yields the clean relative path
+// rather than a spurious `..`-escape.
+func workflowLabel(base, workflowDir string) string {
+	if rel, err := filepath.Rel(realpath(base), realpath(workflowDir)); err == nil && rel != "." && !strings.HasPrefix(rel, "..") {
 		return rel
 	}
 	return filepath.Base(workflowDir)
+}
+
+// realpath resolves path through symlinks, returning the original on error.
+func realpath(path string) string {
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	return path
 }
 
 // gateHost resolves the installed manifest for host and compares it against
@@ -357,9 +382,8 @@ func containsResume(args []string) bool {
 // officer. Codex has no `--agent` analog (spike-confirmed: no agent/skill-select
 // flag on the top-level, `exec`, or `plugin` surfaces), so the only FO-selection
 // injection point is the positional prompt — this prompt names the
-// `spacedock:first-officer` skill explicitly. That `Assume $spacedock:first-officer`
-// clause is load-bearing (codex has no flag to select the FO) and MUST stay.
-const codexBootstrapPrompt = "Engage as the Spacedock first officer for this session. Assume $spacedock:first-officer for the entire session."
+// `spacedock:first-officer` skill explicitly.
+const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
 
 // runCodex is the `spacedock codex` front door: version-gate, then launch the
 // first officer. The gate fails fast on a contract mismatch, but a missing plugin

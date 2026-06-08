@@ -14,10 +14,8 @@ import (
 
 // bootstrapPrompt is the fixed launch-and-go FO prompt the launcher appends as
 // the last inner-argv token. Pinned here so the oracles fail loudly if the
-// production constant drifts. This is an independent hand-written copy of the
-// production literal — production drift fails the argv-shape oracles, and any
-// residual personal/relay flavor fails the absence assertions.
-const wantBootstrapPrompt = "Engage as the Spacedock first officer for this session."
+// production constant drifts.
+const wantBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage."
 
 // lookFound resolves any binary (safehouse Available → ok).
 func lookFound(string) (string, error) { return "/usr/bin/safehouse", nil }
@@ -233,7 +231,7 @@ func TestClaudeSafehousePresentButBinaryMissing(t *testing.T) {
 // appends as the last inner-argv token. Pinned here so the codex oracles fail
 // loudly if the production constant drifts. The load-bearing invariant is the
 // literal `spacedock:first-officer` skill-name token (codex has no --agent).
-const wantCodexBootstrapPrompt = "Engage as the Spacedock first officer for this session. Assume $spacedock:first-officer for the entire session."
+const wantCodexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
 
 // codex AC-2: .safehouse present → canonical safehouse-wrapped codex argv with
 // codex's own sandbox bypassed and the FO-skill prompt appended LAST, after the
@@ -333,49 +331,6 @@ func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 			t.Fatalf("unsandboxed codex launch carried --env-pass: %v", fake.launchedArg)
 		}
 	}
-}
-
-// AC-D: the launched inner argv's bootstrap-prompt token carries NO personal /
-// relay flavor text. This is the absence half of the oracle — the argv-shape
-// tests above pin the prompt to the new neutral literal, and this asserts the
-// dropped phrases never reappear (production drift back to the old text reds
-// here even if a future literal still happened to equal-compare). The codex
-// token additionally MUST keep the load-bearing `Assume $spacedock:first-officer`
-// clause (codex has no `--agent` flag to select the FO).
-func TestLaunchedPromptDropsPersonalFlavor(t *testing.T) {
-	banned := []string{"I love you", "tell all subagents", "tell all", "team members"}
-
-	t.Run("claude", func(t *testing.T) {
-		fake := &fakeHost{manifest: compatibleManifest(t)}
-		var stdout, stderr bytes.Buffer
-		if code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr); code != 0 {
-			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
-		}
-		prompt := fake.launchedArg[len(fake.launchedArg)-1]
-		for _, phrase := range banned {
-			if strings.Contains(prompt, phrase) {
-				t.Fatalf("claude launch prompt carries personal/relay text %q: %q", phrase, prompt)
-			}
-		}
-	})
-
-	t.Run("codex keeps FO clause", func(t *testing.T) {
-		dir := safehouseFixtureDir(t)
-		fake := &fakeHost{manifest: compatibleManifest(t)}
-		var stdout, stderr bytes.Buffer
-		if code := runCodex(context.Background(), nil, dir, fake, lookFound, &stdout, &stderr); code != 0 {
-			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
-		}
-		prompt := fake.launchedArg[len(fake.launchedArg)-1]
-		for _, phrase := range banned {
-			if strings.Contains(prompt, phrase) {
-				t.Fatalf("codex launch prompt carries personal/relay text %q: %q", phrase, prompt)
-			}
-		}
-		if !strings.Contains(prompt, "Assume $spacedock:first-officer for the entire session.") {
-			t.Fatalf("codex launch prompt dropped the load-bearing FO clause: %q", prompt)
-		}
-	})
 }
 
 // codex AC-3 analog: a refused plugin gate SHORT-CIRCUITS before any safehouse
