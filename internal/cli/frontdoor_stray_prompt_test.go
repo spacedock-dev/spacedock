@@ -78,6 +78,8 @@ func TestClaudeStrayPromptSession12Shape(t *testing.T) {
 // and the codex inner argv is unchanged.
 func TestCodexStrayPromptAfterDashWarns(t *testing.T) {
 	dir := safehouseFixtureDir(t)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -93,7 +95,7 @@ func TestCodexStrayPromptAfterDashWarns(t *testing.T) {
 	if !strings.Contains(warn, "@/tmp/handoff.md") {
 		t.Fatalf("warning does not name the stray positional: %q", warn)
 	}
-	want := []string{"safehouse", "--trust-workdir-config", "--",
+	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
 		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", "@/tmp/handoff.md", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v (warn must not change the argv)", fake.launchedArg, want)

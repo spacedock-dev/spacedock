@@ -213,7 +213,7 @@ func TestBuildSpaceBearingPath(t *testing.T) {
 	env := goldenEnvelope{res: normRun(native, root, home), body: normPaths(nativeBody, root, home)}
 	assertGolden(t, "build-space-path", env)
 	// Explicit: the space-bearing dir is single-quoted in the native fetch line.
-	wantQuoted := launcherCommand() + " dispatch show-stage-def --workflow-dir '" + workflowDir + "' --stage backlog"
+	wantQuoted := LauncherCommand() + " dispatch show-stage-def --workflow-dir '" + workflowDir + "' --stage backlog"
 	if !strings.Contains(nativeBody, wantQuoted) {
 		t.Errorf("native fetch line not shlex-quoted for space path:\nwant contains: %s\ngot:\n%s", wantQuoted, nativeBody)
 	}

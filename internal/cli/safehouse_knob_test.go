@@ -55,6 +55,8 @@ func TestSafehouseKnobFormsEquivalent(t *testing.T) {
 // passthrough). Driven through runClaude to the recorded launch.
 func TestSafehouseAddDirsSpaceFormNoLeak(t *testing.T) {
 	dir := safehouseFixtureDir(t)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -65,7 +67,7 @@ func TestSafehouseAddDirsSpaceFormNoLeak(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"safehouse", "--trust-workdir-config", "--add-dirs=/home/a", "--add-dirs=/home/b", "--",
+	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--add-dirs=/home/a", "--add-dirs=/home/b", "--",
 		"claude", "--dangerously-skip-permissions", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)

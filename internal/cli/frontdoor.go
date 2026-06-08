@@ -60,6 +60,22 @@ func launchEnv(parent []string) []string {
 	return env
 }
 
+// launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
+// that tell safehouse to forward SPACEDOCK_BIN from its (the launching process's)
+// environment into the otherwise-sanitized sandbox, so the launcher binary the
+// helper calls resolve survives the boundary. launchEnv already sets SPACEDOCK_BIN
+// on the safehouse process; this flag carries it through. It is gated on the same
+// resolvedLauncherBin() source as launchEnv and mirrors its omit-on-failure: when
+// no binary resolves, no flag — never a stale pass-through. Returned as safehouse
+// wrap flags (before `--`) so the inner program safehouse sees stays the real host
+// (claude/codex), keeping its program-keyed profile auto-detection intact.
+func launcherBinEnvPassFlags() []string {
+	if _, ok := resolvedLauncherBin(); ok {
+		return []string{"--env-pass", spacedockBinEnv}
+	}
+	return nil
+}
+
 func withoutEnv(env []string, key string) []string {
 	prefix := key + "="
 	out := make([]string, 0, len(env))
@@ -213,7 +229,12 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		argv = safehouse.Wrap(inner, extra)
+		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
+		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
+		// it into the sandbox. It rides the safehouse flags (before `--`), so the
+		// inner program stays `claude` and safehouse's program-keyed profile
+		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
@@ -359,7 +380,12 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		argv = safehouse.Wrap(inner, extra)
+		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
+		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
+		// it into the sandbox. It rides the safehouse flags (before `--`), so the
+		// inner program stays `codex` and safehouse's program-keyed profile
+		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {

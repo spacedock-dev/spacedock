@@ -48,7 +48,7 @@ func TestLauncherCommandFallsBackToPathWhenSpacedockBinUnsetEmptyOrUnusable(t *t
 
 func runLauncherCommand(t *testing.T, env []string, pathDirs []string, arg string) string {
 	t.Helper()
-	cmd := exec.Command("sh", "-c", launcherCommand()+" "+arg)
+	cmd := exec.Command("sh", "-c", LauncherCommand()+" "+arg)
 	cmd.Env = append(os.Environ(), env...)
 	if pathDirs != nil {
 		cmd.Env = append(cmd.Env, "PATH="+strings.Join(pathDirs, string(os.PathListSeparator)))
