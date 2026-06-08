@@ -14,6 +14,7 @@ sprint-readiness: ready
 sprint: 0199-pre-flip-mechanics
 mod-block:
 pr: "#335"
+archived: 2026-06-08T22:55:26Z
 ---
 
 **47rx is the survey-skill body-rendering pass for 0.19.9** (`skills/survey/SKILL.md` + `references/queries.sql`). Five deliverables, all body-rendering, all bottoming out on a live drive (survey discipline — no SKILL.md grep as a behavioral AC). **Re-ideated 2026-06-08 after the captain's real survey run on the torahmap project refuted F and added G:**
