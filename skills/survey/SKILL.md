@@ -10,7 +10,7 @@ user-invocable: true
 
 Survey is the first thing you run on unfamiliar ground: it reconstructs what the AI agents in this project have implicitly been doing, from their session history. It reports the inferred workflow, the workstreams, the recent decisions, and — load-bearing — the OPEN decisions (the abandoned or unanswered forks) plus how often the human had to step in. Then it offers to commission a real spacedock workflow with explicit gates from what it found.
 
-It reads **agentsview**'s session DB and is strictly read-only — the recommended queries live in `references/queries.sql` (one labeled query per concern) so nothing is a black box. For now it surveys **Claude Code** history (the decision and interruption signals below are Claude's); agentsview also ingests Codex, Gemini, and more, and surfacing those agents' decision/scaffold/work signals is a deferred follow-up — the one exception is a flagged Codex *presence* count (step 2), since Codex sessions land with no recorded cwd and would otherwise vanish silently. The closing move is the discovery → commission bridge: the OPEN decisions become candidate gates, the workstreams become candidate entities, the inferred loop becomes the stage list.
+It reads **agentsview**'s session DB and is strictly read-only — the recommended queries live in `references/queries.sql` (one labeled query per concern) so nothing is a black box. The decision and interruption signals below are **Claude Code**'s; **Codex** is surfaced too, as its own body section (a workdir-attributed count + workstream clusters + activity), since Codex sessions land with no recorded cwd and need the `exec_command.$.workdir` signal to be scoped to this repo. Gemini and per-file Codex work-by-area remain deferred follow-ups. The closing move is the discovery → commission bridge: the OPEN decisions become candidate gates, the workstreams become candidate entities, the inferred loop becomes the stage list — and the offer is keyed to each track's MODE (automation for mechanical tracks, book-keeping for exploration tracks).
 
 Run the four steps in order: **check agentsview → scan → recognize scaffold → report and offer**.
 
@@ -96,16 +96,24 @@ run_query() {  # run_query <name> — :repo_root → REPO_ROOT, :repo_project �
   printf ".param set :repo_root '%s'\n.param set :repo_project '%s'\n%s\n" "$REPO_ROOT" "$REPO_PROJECT" "$q" | sqlite3 "$DB"
 }
 
-run_query scoping        # #318 — sessions|blank_cwd|span over the cwd-prefix-scoped repo
-run_query codex-presence # #69 — flagged Codex count|blank_cwd by project NAME (cwd unrecorded)
-run_query scaffold-usage # #319 — behavioral skill_name family tally (spacedock self EXCLUDED)
-run_query work-by-area   # #317.2 — Edit/Write file_path bucketed by package (external = reference)
-run_query decision-open  # #320 — AskUserQuestion/ExitPlanMode frontier; OPEN sorts first
+run_query scoping            # #318 — sessions|blank_cwd|span over the cwd-prefix-scoped repo
+run_query codex-presence     # #69  — flagged Codex count|blank_cwd by project NAME (cwd unrecorded)
+run_query codex-scoped       # #321 — Codex attributed by exec_command.$.workdir prefix (sibling-free)
+run_query codex-workstreams  # #322 — cluster codex-scoped sessions into ensign-task workstreams
+run_query codex-activity     # #323 — exec_command/update_plan/spawn_agent tally over the codex-scoped set
+run_query scaffold-usage     # #319 — behavioral skill_name family tally (spacedock self EXCLUDED)
+run_query work-by-area       # #317.2 — Edit/Write file_path → LOGICAL area (worktree prefix stripped) + kind
+run_query decision-open      # #320 — AskUserQuestion/ExitPlanMode frontier; OPEN sorts first
+run_query mode-classification # #324 — classify each git_branch track mechanical/exploration/unlabeled
 ```
 
 `scoping` returns `sessions=0` → there is no Claude agent history for this repo; say so and stop. Nothing to discover. (Survey reads Claude history only for now; a repo whose only agent history is Codex/Gemini will report "no agent history" here — surfacing those agents is a deferred follow-up.) Note the `blank_cwd` count in the report if non-zero (sessions agentsview never captured a cwd for, which the repo-root scope cannot place).
 
-`codex-presence` returns the count of `agent='codex'` sessions matching this repo's `project` name, plus the blank-cwd sum among them. Because agentsview does not persist Codex cwd, matches are by git-root-basename `project` only — a same-basename sibling repo will collide, so the count may include unrelated Codex sessions. Treat it as a presence flag only; these sessions are never counted in the Claude `scoping`, `scaffold-usage`, or `work-by-area` sets. When the count is `> 0`, the report renders a hint line (step 4) stating the count and that the match is by project NAME only.
+`codex-presence` returns the count of `agent='codex'` sessions matching this repo's `project` name, plus the blank-cwd sum among them. Because agentsview does not persist Codex cwd, matches are by git-root-basename `project` only — a same-basename sibling repo will collide, so the count may include unrelated Codex sessions. Treat it as a presence flag only; these sessions are never counted in the Claude `scoping`, `scaffold-usage`, or `work-by-area` sets. The body Codex section is built from the `codex-scoped` set below instead — when `codex-presence > codex-scoped`, the gap is the name-only superset (possible sibling), and the report says so.
+
+**Codex body signals (`codex-scoped`, `codex-workstreams`, `codex-activity`).** agentsview persists no Codex session cwd, but a Codex session's `exec_command` tool calls carry `$.workdir` (the absolute working directory of each shell command). `codex-scoped` attributes a Codex session to THIS repo when it has an `exec_command` whose `$.workdir` is under the repo-root prefix — the workdir analogue of the Claude cwd-prefix scope, so it admits this repo's Codex and EXCLUDES a same-basename sibling (whose workdirs fall under a different prefix). Over that sibling-free set, `codex-workstreams` clusters the sessions into ensign-task workstreams from each `first_message` (the runnable 3-case rule: dispatch-file read → `{TASK}` with the stage suffix stripped; `Spacedock task/entity` backtick → the backtick-quoted `{TASK}`; else `(unlabeled)`), and `codex-activity` tallies the per-tool activity (`exec_command`/`update_plan`/`spawn_agent`). These are the Codex body section (step 4) — the workstreams surface real Codex tracks the Claude-only body misses. All from the agentsview DB; no raw-rollout parsing. (Per-file Codex work-by-area and a source-health signal are deferred — they need an upstream agentsview ingestion change.)
+
+**Track modes (`mode-classification`).** `mode-classification` labels each `git_branch` track `mechanical` (low veto + gate-pass-dominant + issue→worktree→PR loop markers + code edits), `exploration` (high veto + a rejected/cancelled path + prose/`.md` edits), or `unlabeled` (neither signature clearly dominant). The report reads the per-track `mode` to label WORKSTREAMS and to pick the right commission offer per track (step 4) — automation for mechanical, book-keeping for exploration, generic book-keeping for unlabeled (never a guessed automation pitch).
 
 **Honest signal accounting.** The `decision-open` rows are the human-decision points; `OPEN` = still needs the human, and you lead the report with those. For the interruption total, count the AskUserQuestion / ExitPlanMode decisions plus the hard-veto markers Claude sessions retain (`[Request interrupted` / `Request interrupted by user` / `doesn't want to proceed` in the message stream), over the same repo-scoped session set; `pct = total*100/user_turns`. Never dress an empty section up as "no decisions" — if a section is empty, say the run found none of that signal.
 
@@ -122,13 +130,13 @@ Recognize the scaffold from TWO signals and reconcile them — a file probe (wha
 
 **Behavioral tally.** The `scaffold-usage` rows are a `family → invocations` tally normalized from `tool_calls.skill_name` (`superpowers:brainstorming` and the bare `running-research-spikes` both fold to family `superpowers`); the `spacedock` family is excluded because survey/ensign self-invocation otherwise dominates and would make every repo read as "uses spacedock".
 
-**Join and state the fact.** For each family appearing in either signal, state two observed facts plainly: its invocation count (the behavioral tally) and whether it is checked in on disk (the file probe). Do not classify into buckets — state what is true. The one case worth naming explicitly is the one the file-only probe misses: a family invoked but absent from disk was **recovered from behavior, not files** — say exactly that, with the count. For example:
+**Join and state the fact.** For each family appearing in either signal, state two observed facts plainly: its invocation count (the behavioral tally) and whether it is checked in on disk (the file probe). Do not narrate HOW the family was discovered (behavior vs files) — state only the usage + on-disk fact. For a family invoked but absent from disk, state the count and that it is not checked in. For example:
 
-> `superpowers was recovered from behavior, not files: 186 skill invocations, but no checked-in .claude/skills/superpowers. Other recovered one-offs: plan-writing, using-git-worktrees, systematic-debug, simplify, debugging.`
+> `superpowers: 186 invocations (not checked in). Other one-offs: plan-writing, using-git-worktrees, systematic-debug, simplify, debugging.`
 
 A family on disk and invoked is stated plainly (family + count + present on disk); a family on disk but never invoked is stated as installed-but-not-yet-invoked. The state-the-fact statement drives the comparative benefit in the report (step 4). The probe reads files; the *numbers* come from the scan (step 2).
 
-## 4. Confirm, then report and offer
+## 4. Report and offer
 
 Every `{slot}` below is a FILL slot: substitute the real value from the step-2 scan before you show the user. A literal `{slot}` (or a `<…>` angle token) left in what you present is a bug — never show the user an unfilled slot. If a slot has no data (e.g. zero OPEN decisions), drop that line rather than printing an empty slot.
 
@@ -142,31 +150,38 @@ Every `{slot}` below is a FILL slot: substitute the real value from the step-2 s
 
 **Mandatory degrade.** When NO repo signal is available (not a git repo, or `git log` / PR lookup fails or is empty), the frontier degrades to transcript-only and EVERY OPEN fork is flagged **`unverified`** in the report — never silently presented as authoritative. The degrade is the default behavior, not an error.
 
-Tell the user what you found and wait for a yes:
+Lead with the one-line headline, then render the body DIRECTLY in the same turn — do NOT stop and ask first. The survey is read-only orientation: the body IS the value, and a pre-body confirm/menu is a round-trip with no decision behind it (and risks ending with no survey at all). The ONLY stop in this flow is the end-of-report commission OFFER (the real decision). So emit the headline and flow straight into the synthesis fence:
 
-> Found **{N} sessions** in `{project}` (`{date range}`), with **{D} decision points** and **{V} interruptions**. Want me to lay it out?
-
-Then synthesize this, one screen:
+> Found **{N} sessions** in `{project}` (`{date range}`), with **{D} decision points** and **{V} interruptions** — here's the lay of the land:
 
 ```
 PROJECT: {basename}     {sessions} Claude sessions · {date range}
   {if blank_cwd>0: {blank_cwd} uncaptured-cwd sessions}
-  {if codex-presence>0: {codex_sessions} Codex sessions match this repo by project NAME only (agentsview does not record Codex cwd) — may include a same-named sibling repo; the Claude-scoped body below does not cover them}
+
+CODEX   (only if codex-scoped>0; workdir-attributed, distinct from the name-only presence flag)
+  {codex_scoped_sessions} Codex sessions attributed to this repo by exec_command working dir
+  {if codex-presence>codex-scoped: (codex-presence matches {codex_sessions} by project NAME only — may include a same-named sibling; the workdir-attributed count above is sibling-free)}
+  workstreams: {the codex-workstreams clusters — workstream → session count; (unlabeled) last}
+  activity: {the codex-activity tally — exec_command {n}, update_plan {n}, spawn_agent {n}}
 
 SCAFFOLD
-  {state-the-fact per family: family + invocation count + on-disk presence; call out a family invoked but not on disk as "recovered from behavior, not files"; or "none"}
+  {state-the-fact per family: family + invocation count + on-disk presence — e.g. "superpowers: 186 invocations (not checked in). Other one-offs: …"; or "none"}
 
 INFERRED WORKFLOW
   {the implicit loop across the decisions + prompts, as an arrow chain} — {one honest line}
 
-WORKSTREAMS
-  {cluster the decisions + prompts into tracks; one line each, status glyph}
+WORKSTREAMS                                              mode
+  {cluster the decisions + prompts into tracks; one line each, status glyph + the mode-classification label (mechanical / exploration / unlabeled) per track}
 
-WORK BY AREA   (what this is — where edits land)
-  {the work-by-area buckets: package — {edits}; an <external> bucket is edits to a sibling repo (a reference, not this project)}
+WORK BY AREA   (logical areas; worktree edits attributed to their area — F)
+  {the product work-by-area buckets (kind=product), by edit count: area — {edits}}
+  {if any kind=config: (+ {sum} edits in .claude/.beads/.git config + <external> sibling refs, footnoted)}
 
 NEEDS YOU   (only if any decision is still OPEN after the repo cross-check)
-  ⚠ {the true-open forks — never-decided questions; lead with them}{if degraded: each flagged unverified (no repo signal)}
+  {if any OPEN exploration track: exploration (tracked, prioritized — work you're holding, not bottlenecks):}
+  ◐ {the open EXPLORATION forks — deliberately-held threads}
+  {if any OPEN mechanical track: mechanical (automatable backlog — gate-and-drive candidates):}
+  ⚠ {the open MECHANICAL forks — never-decided questions}{if degraded: each flagged unverified (no repo signal)}
 
 BACKLOG   (only if any fork was decided-not-shipped)
   {decided forks with no shipped artifact yet}
@@ -174,30 +189,30 @@ BACKLOG   (only if any fork was decided-not-shipped)
 RECENT DECISIONS  (answered or shipped)
   {the rest: header — short question}
 
-INTERRUPTIONS  (where spacedock can help)
-  {total} times you stepped in across {sessions} sessions — {decisions} decision points
-  + {vetoes} course-corrections, {pct}% of your turns.
+INTERRUPTIONS
+  {if any exploration track: exploration tracks: {n} steers across {m} sessions — this IS the work; book-keeping tracks the threads}
+  {if any mechanical track: mechanical tracks: {n} steps across {m} sessions — gates + autonomy would carry these between your calls}
 ```
 
 ### The discovery → commission bridge (close every report with this)
 
-After the synthesis, recognize the scaffold (step 3) and offer a COMPARABLE spacedock workflow, with a benefit stated **concretely and comparatively**, anchored to the actual scan numbers — never a placeholder, never a generic pitch. As in the synthesis above, every `{slot}` is a FILL slot: substitute the real step-2 number/forks before you show the user; a literal `{slot}` in your output is a bug. Use the per-scaffold framing:
+After the synthesis, offer spacedock — but key the offer to the MODE of each track (from the `mode-classification` query). Two modes call for two DIFFERENT things; do NOT make one undifferentiated automate-everything pitch. As in the synthesis above, every `{slot}` is a FILL slot: substitute the real step-2 numbers/forks/track-names before you show the user; a literal `{slot}` in your output is a bug.
 
-- **superpowers** is a library of disciplines an agent invokes (brainstorming → writing-plans → executing-plans → subagent-driven-development), with human interruption left implicit — *the human decides when to step in.* Offer a spacedock workflow that maps those disciplines to stages (ideation → implementation → validation) and makes the interruption points EXPLICIT gates. State it tied to the scan's interruption count:
-  > superpowers gives your agent the *plays* but leaves *when you step in* up to you — this scan counted **{V} interruptions across {N} sessions** where you had to. A spacedock workflow turns those into explicit approval gates, so the agent advances on its own between your calls and only stops where you marked a gate.
+**For the MECHANICAL tracks (mode=mechanical) — offer AUTOMATION.** These are disciplined routine execution (the issue→worktree→PR loop, routine implementation): gate the crucial decisions and let the agent drive the loop between gates. Keep the gate-and-autonomy pitch — it is CORRECT for these. State it tied to the scan (the mechanical tracks' names + their gate-pass count or the interruption count). The per-scaffold flavor sharpens the automation offer:
+  - **superpowers** maps its disciplines (brainstorming → writing-plans → executing-plans → subagent-driven-development) to stages with the interruption points made EXPLICIT gates.
+  - **gsd / get-shit-done** maps its fixed phases to stages + durable entity state so several work items move concurrently, pausing only at gates.
+  > For your MECHANICAL tracks (**{the mechanical track names}**): a spacedock workflow that gates the crucial decisions and lets the agent drive the loop between gates — these passed **{the gate-pass count}**, so the agent can carry them and stop only where you marked a gate.
 
-- **gsd / get-shit-done** runs a fixed phase sequence per task, one task at a time. Offer a spacedock workflow that maps the gsd phases to stages and adds gates + durable entity state, so multiple work items move through the same phases concurrently and pause only at gates. State it tied to the OPEN forks:
-  > gsd drives one task through its phases; spacedock tracks every work item through the same stages as durable on-disk state, gates the steps you flagged as needing you (this scan found these OPEN forks: **{the actual OPEN decisions}**), and lets several run in parallel without you re-driving each.
+**For the EXPLORATION tracks (mode=exploration) — offer BOOK-KEEPING, never automation.** These are human-driven creative/exploratory work (writing/content, design exploration, steering an agent that drifts): the involvement IS the point. Offer spacedock as structure for the parallel threads — track each draft/path and its state (in-flight / paused-by-choice / abandoned) so several run in parallel without losing which is which. An open thread is tracked-prioritized work, NOT a bottleneck; a cancelled path is a valid tracked outcome, NOT a failure. The exploration offer MUST NOT contain "advances on its own", "without you re-driving each", "minimize involvement", or any automate-the-human-out framing.
+  > For your EXPLORATION tracks (**{the exploration track names}**): spacedock as book-keeping — track each draft/design path and its state (in-flight / paused-by-choice / abandoned) so you run several in parallel without losing which is which. The **{the cancelled-path count}** cancelled paths are tracked outcomes, not failures; the involvement is the point, so there's no automation here — just structure for the threads.
 
-- **similar / unknown scaffold** — name it (use the names the step-3 detection emitted), then offer the generic spacedock benefit (gates from the interruption count, entity state, parallelism) without inventing a false-specific comparison.
+**For UNLABELED tracks (mode=unlabeled) — generic book-keeping**, never a guessed automation pitch (the asymmetry favors not mis-offering: a missed automation offer is cheap; a wrong automation pitch at creative work is the misread to avoid).
 
-- **none** — offer the generic spacedock benefit anchored to the interruption count and OPEN forks.
-
-The two comparisons MUST differ — superpowers-vs-spacedock (implicit-interruption → explicit-gates) is a different claim from gsd-vs-spacedock (single-task-phases → parallel-gated-entities). Each must cite a real scan number (the filled `{V}`/`{N}` or the filled OPEN forks), not a placeholder.
+If a project carries BOTH modes, make BOTH offers (they MUST differ — the mechanical one keeps the gate-and-drive pitch; the exploration one carries none of the automate-the-human-out framing). If it carries only one mode, make only that offer. **none** scaffold → the generic spacedock benefit, mode-keyed the same way. Each offer must cite a real scan number (filled track names, gate-pass count, OPEN forks, or cancelled-path count), not a placeholder.
 
 Then make the offer:
 
-> Want me to commission a spacedock workflow from this?
+> Want me to commission a spacedock workflow from this{if both modes: — gated automation for the mechanical tracks, thread book-keeping for the exploration tracks}?
 
 On a **yes**, invoke commission in batch mode, supplying inputs derived from the scan (commission already accepts batch design inputs in its first message — see its Batch Mode). Assemble:
 
@@ -215,6 +230,7 @@ On a **no**, stop — the survey stands on its own as an orientation.
 - **Project name** = path basename.
 - **Workflow + workstreams: infer them**, primarily from the decisions (the `PROMPTS` are sparse/noisy — secondary). Be honest when a track is one-off or stalled.
 - **Decisions + stats are data, not invention.** `OPEN` = still needs the human; lead the report with the true-open forks. The transcript scan can't tell shipped from open — that's what the step-4 repo cross-check is for; drop a fork to "shipped" only on a confident match, and flag the whole frontier `unverified` when there's no repo signal.
-- **Work-by-area is identity, not a to-do list.** The `work-by-area` buckets say WHAT this project is (where edits land); an `<external>` bucket is edits to a sibling repo — a reference, not this project's identity. Report it separately from the decision frontier (where you stop).
+- **Work-by-area is identity, not a to-do list.** The `work-by-area` buckets say WHAT this project is (where edits land), by LOGICAL area regardless of physical location — a worktree edit is attributed to its area (a worktree `src/` edit is `src`), so worktree-based product work is not hidden. The lead lists product areas (`kind=product`) by edit count; genuine config (`.claude`/`.beads`/`.git`) and an `<external>` sibling-repo path demote to a footnote (`kind=config`) — still counted, just not the project's identity. Report it separately from the decision frontier (where you stop).
+- **Two work modes, two offers.** `mode-classification` labels each track mechanical / exploration / unlabeled. Mechanical tracks (the issue→worktree→PR loop) get the automation offer (gate-and-drive); exploration tracks (creative/content/design steering) get the book-keeping offer (track the parallel threads + their states) — the involvement IS the point, so NO automation pitch for them; an unlabeled track gets generic book-keeping, never a guessed automation pitch.
 - **Fill every slot, never invent.** Every `{slot}` in the report and the comparison comes from the step-2 numbers; a literal `{slot}` shown to the user is a bug. If a section's signal is empty (no OPEN decisions, no interruptions, no edits), say the run found none — never dress an empty section up as "no decisions."
-- **Claude-only body, with a flagged Codex presence count.** The report body (workflow, workstreams, decisions, work-by-area, scaffold) is built from Claude history; Codex/Gemini decision/scaffold/work signals are a deferred follow-up. The lone Codex signal is the step-2 presence count, rendered as the step-4 hint line when `> 0` — a count and a name-only-match caveat, nothing more. A repo whose ONLY history is Codex still reports "no agent history" at the `scoping=0` stop (the Claude body has nothing); don't imply otherwise beyond what step 2 reports.
+- **Claude body + a Codex body section.** The Claude body (workflow, workstreams, decisions, work-by-area, scaffold) is built from Claude history. Codex is surfaced too, as its own section (step 4) from the `codex-scoped` set: the workdir-attributed count + the workstream clusters + the activity tally (Gemini and per-file Codex work-by-area remain deferred follow-ups). A repo whose ONLY history is Codex still reports "no agent history" at the `scoping=0` stop (the Claude body has nothing); the Codex section renders alongside a non-empty Claude body, not in place of it.

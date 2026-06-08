@@ -18,10 +18,12 @@
 --   - tool_calls.skill_name carries namespaced (`superpowers:*`), bare
 --     (`running-research-spikes`), and `spacedock:*` self rows — so the #319 family
 --     tally reports a `superpowers` family and EXCLUDES the dominant `spacedock` self
---     rows. A `superpowers` family with no files on disk is the `recovered` case.
---   - Edit/Write input_json.$.file_path rows under the repo root (an `internal` and a
---     `skills` bucket) and one OUTSIDE it — so the #317.2 WORK-BY-AREA query buckets by
---     package and flags the external-sibling path as `<external>`.
+--     rows. A `superpowers` family with no files on disk was invoked but not checked in.
+--   - Edit/Write input_json.$.file_path rows: worktree `src/` edits + a main-checkout
+--     `src/` edit (the #317.2 WORK-BY-AREA query strips `.worktrees/<wt>/` and buckets
+--     them all as `src`), `internal`/`docs` product areas, `.claude`/`.beads` config
+--     (demoted via the `kind` partition, still counted), and an external-sibling path
+--     OUTSIDE the prefix (flagged `<external>`, also config-demoted).
 --   - decision rows: an answered AskUserQuestion (done), a rejected one (OPEN), and an
 --     ExitPlanMode "User has approved your plan" approval — so the #320 query marks the
 --     approved plan `done` (the cheap done-prefix fix) and the rejection OPEN.
@@ -127,24 +129,95 @@ INSERT INTO sessions VALUES
    '/u/.claude/projects/-elsewhere-otherproj/eeeeeeee.jsonl',
    '2026-06-02', '2026-06-02', 'Unrelated project that shares the machine.', 4, 1);
 
--- Codex session F — THIS repo's Codex history. Production shape: cwd='' (agentsview does
--- not persist Codex cwd), project keyed by the git-root basename (`proj`). Matched by the
--- #69 codex-presence query (project = :repo_project); EXCLUDED from the Claude scope.
+-- ============================================================================
+-- CODEX SESSIONS — four attributed to THIS repo (F, F2, F3, F4) + one same-basename
+-- SIBLING (G). All carry cwd='' (agentsview persists no Codex session cwd). Attribution
+-- to this repo is by exec_command.$.workdir prefix (the codex-scoped query, #321),
+-- NOT by project name. The four F* sessions get an exec_command row whose $.workdir is
+-- under /repo/proj (codex-scoped counts them = 4); G's is under /sibling/proj (excluded).
+-- All five carry project='proj' so codex-presence (name-only, #69) counts 5 — proving the
+-- two signals differ (presence 5 ⊃ scoped 4). The four F* first_messages are real-shape so
+-- the codex-workstreams clustering rule (#322) has a dispatch-pattern, a task/entity-pattern,
+-- an unlabeled, and a SECOND distinct dispatch task to cluster. (AC-1's "1 vs 2" describes
+-- the MECHANISM minimally; the clustering AC needs 4 attributed sessions, so the fixture
+-- scales to scoped=4 / presence=5 — the binding asserts are sibling-excluded + the
+-- prefix-load-bearing flip, which hold at 4/5 exactly as at 1/2.)
+-- ============================================================================
+
+-- Codex F — DISPATCH pattern → workstream `journey-cost-ledger` (stage suffix stripped).
 INSERT INTO sessions VALUES
   ('codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'proj', 'codex',
    '', '',
    '/u/.codex/sessions/rollout-ffffffff.jsonl',
-   '2026-06-04', '2026-06-04', 'A codex session in this repo; cwd unrecorded.', 4, 1);
+   '2026-06-04', '2026-06-04',
+   'Read /tmp/spacedock-dispatch/spacedock-ensign-journey-cost-ledger-implementation.md and treat its content as your assignment.',
+   4, 1);
+
+-- Codex F2 — TASK/ENTITY backtick pattern → workstream `orient-workflow-discovery`. A
+-- leading reviewer-label backtick precedes the keyword so the rule must anchor on the
+-- `Spacedock entity` token, not the first backtick globally.
+INSERT INTO sessions VALUES
+  ('codex:f2f2f2f2-0000-1111-2222-333333333333', 'proj', 'codex',
+   '', '',
+   '/u/.codex/sessions/rollout-f2f2f2f2.jsonl',
+   '2026-06-04', '2026-06-04',
+   'You are `142-validation/Ensign`, a fresh validation worker for Spacedock entity 142 `orient-workflow-discovery`. Working directory: /repo/proj.',
+   4, 1);
+
+-- Codex F3 — UNLABELED. An encouragement/meta first_message carries no task → (unlabeled).
+INSERT INTO sessions VALUES
+  ('codex:f3f3f3f3-4444-5555-6666-777777777777', 'proj', 'codex',
+   '', '',
+   '/u/.codex/sessions/rollout-f3f3f3f3.jsonl',
+   '2026-06-04', '2026-06-04',
+   'You totally got this. Take your time. Captain asked me to tell subagents they are appreciated.',
+   3, 1);
+
+-- Codex F4 — a SECOND distinct DISPATCH task → workstream `codex-live-ci`. Proves the
+-- cluster key is the extracted {TASK}, not a constant: F4 must NOT merge with F.
+INSERT INTO sessions VALUES
+  ('codex:f4f4f4f4-8888-9999-aaaa-bbbbbbbbbbbb', 'proj', 'codex',
+   '', '',
+   '/u/.codex/sessions/rollout-f4f4f4f4.jsonl',
+   '2026-06-04', '2026-06-04',
+   'Read /tmp/spacedock-dispatch/spacedock-ensign-codex-live-ci-validation.md and treat its content as your assignment.',
+   4, 1);
 
 -- Codex session G — a SAME-BASENAME SIBLING repo's Codex history. Its git-root basename is
 -- also `proj`, so it keys to the identical `project` and codex-presence CANNOT distinguish
--- it from session F (the documented collision — the report states "match by project NAME
--- only"). Blank cwd, like all Codex sessions. Still EXCLUDED from the Claude scope.
+-- it from the F* sessions (the documented collision — the report states "match by project
+-- NAME only"). Blank cwd, like all Codex sessions. Its exec_command $.workdir is under
+-- /sibling/proj (OUTSIDE the repo prefix) so codex-scoped EXCLUDES it. Out of Claude scope.
 INSERT INTO sessions VALUES
   ('codex:11111111-2222-3333-4444-555555555555', 'proj', 'codex',
    '', '',
    '/u/.codex/sessions/rollout-11111111.jsonl',
-   '2026-06-04', '2026-06-04', 'A same-basename sibling repo codex session; cwd unrecorded.', 3, 1);
+   '2026-06-04', '2026-06-04',
+   'Read /tmp/spacedock-dispatch/spacedock-ensign-sibling-task-implementation.md and treat its content as your assignment.',
+   3, 1);
+
+-- ----------------------------------------------------------------------------
+-- CODEX exec_command rows carry $.workdir — the attribution signal (#321 codex-scoped) and
+-- the per-session activity signal (#323 codex-activity). The four F* sessions' workdirs are
+-- under /repo/proj (one is a worktree path, proving the prefix admits worktrees); G's is
+-- under /sibling/proj. update_plan + spawn_agent rows exercise the activity tally.
+-- ----------------------------------------------------------------------------
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (40, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'exec_command',
+   '{"command":"go test ./...","workdir":"/repo/proj/.worktrees/journey-cost-ledger"}', NULL),
+  (41, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'update_plan',
+   '{"plan":[{"step":"explore","status":"completed"}]}', NULL),
+  (42, 'codex:f2f2f2f2-0000-1111-2222-333333333333', 'exec_command',
+   '{"command":"rg orient","workdir":"/repo/proj"}', NULL),
+  (43, 'codex:f3f3f3f3-4444-5555-6666-777777777777', 'exec_command',
+   '{"command":"ls","workdir":"/repo/proj/internal"}', NULL),
+  (44, 'codex:f4f4f4f4-8888-9999-aaaa-bbbbbbbbbbbb', 'exec_command',
+   '{"command":"git status","workdir":"/repo/proj"}', NULL),
+  (45, 'codex:f4f4f4f4-8888-9999-aaaa-bbbbbbbbbbbb', 'spawn_agent',
+   '{"task":"sub"}', NULL),
+  -- G (sibling): exec_command workdir is OUTSIDE the repo prefix → codex-scoped excludes it.
+  (46, 'codex:11111111-2222-3333-4444-555555555555', 'exec_command',
+   '{"command":"go build","workdir":"/sibling/proj"}', NULL);
 
 -- ----------------------------------------------------------------------------
 -- DECISIONS (#320): answered (done), rejected (OPEN), ExitPlanMode approval (done).
@@ -173,7 +246,7 @@ INSERT INTO tool_calls (id, session_id, tool_name, skill_name, input_json, resul
 
 -- ----------------------------------------------------------------------------
 -- SCAFFOLD-USAGE (#319): Skill rows across families. spacedock:* dominates (self) and
--- MUST be excluded; superpowers (namespaced + bare) survives as `recovered`. (session C)
+-- MUST be excluded; superpowers (namespaced + bare) survives, invoked-but-not-on-disk. (session C)
 -- ----------------------------------------------------------------------------
 INSERT INTO tool_calls (id, session_id, tool_name, skill_name, input_json, result_content) VALUES
   (10, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'Skill', 'spacedock:ensign', NULL, NULL),
@@ -202,12 +275,135 @@ INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) V
   (33, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'Edit',
    '{"file_path":"/sibling/otherlib/src/util.go"}', NULL);
 
+-- ============================================================================
+-- WORK-BY-AREA WORKTREE-ATTRIBUTION (#317.2, F-corrected / AC-7a). A worktree-based
+-- project (torahmap's `work-on-issue.sh` shape) drives the agent IN a worktree per issue,
+-- so PRODUCT code lands under `.worktrees/<wt>/…`. The corrected query strips the physical
+-- `.worktrees/<wt>/` prefix and buckets by the LOGICAL area, so a worktree `src/` edit
+-- counts as `src` ALONGSIDE a main-checkout `src/` edit — NOT as `.worktrees`/`<external>`.
+-- A `kind` partition demotes genuine config (`.claude`/`.beads`/`.git`/`<external>`) to a
+-- footnote (still counted). Session WT's cwd IS a worktree (the torahmap shape).
+-- ============================================================================
+
+-- Claude session WT — a WORKTREE-cwd session (the torahmap work-on-issue shape). git_branch
+-- `issue-42` is its track key. Edits two worktree `src/` files; carries the MECHANICAL
+-- signature for mode-classification (gate-pass decision + worktree loop markers + code, no veto).
+INSERT INTO sessions VALUES
+  ('claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'proj', 'claude',
+   '/repo/proj/.worktrees/issue-42', 'issue-42',
+   '/u/.claude/projects/-repo-proj-.worktrees-issue-42/77777777.jsonl',
+   '2026-06-07', '2026-06-07', 'Run the work-on-issue loop for issue 42 in its worktree.', 6, 2);
+
+-- Worktree-attribution Edit/Write rows: two worktree `src/` edits (strip to `src`), a
+-- main-checkout `src/` edit (also `src` — all three bucket together), a `docs/` product
+-- edit, a `.claude` (config-demote), a `.beads` (config-demote). The existing #266 rows add
+-- an `internal` product bucket + an `<external>` sibling (config-demote). A `.claude/worktrees/`
+-- edit proves THAT prefix strips too (→ `internal`).
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (50, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Edit',
+   '{"file_path":"/repo/proj/.worktrees/issue-42/src/render.ts"}', NULL),
+  (51, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Edit',
+   '{"file_path":"/repo/proj/.worktrees/issue-42/src/palette.ts"}', NULL),
+  (52, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Write',
+   '{"file_path":"/repo/proj/src/main.ts"}', NULL),
+  (53, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Write',
+   '{"file_path":"/repo/proj/docs/spec.md"}', NULL),
+  (54, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Edit',
+   '{"file_path":"/repo/proj/.claude/memory.md"}', NULL),
+  (55, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Edit',
+   '{"file_path":"/repo/proj/.beads/tracker.db"}', NULL),
+  (56, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'Edit',
+   '{"file_path":"/repo/proj/.claude/worktrees/wt9/internal/codex.go"}', NULL);
+
+-- WT's mechanical-signature decision (gate-pass) + an exploration-mode contrast follows.
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (57, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'ExitPlanMode',
+   '{"plan":"Implement issue 42 in the worktree."}',
+   'User has approved your plan. You can now start coding.');
+
+-- ============================================================================
+-- MODE-CLASSIFICATION (#324, G / AC-8a). Two designed tracks plus an explicit
+-- neither-dominant track. The classifier groups by git_branch and scores the signatures.
+--   Track `issue-feed`   — MECHANICAL: gate-pass decision, worktree/work-on-issue loop
+--                          markers, code edits, ZERO veto.
+--   Track `landing-copy` — EXPLORATION: multiple [Request interrupted / doesn't-want vetoes,
+--                          a rejected/cancelled decision, `.md` content edits.
+--   Track `mixed-bag`    — NEITHER dominant: one veto + one passed decision + one `.md` edit,
+--                          so neither score wins by the margin → `unlabeled` (generic
+--                          book-keeping, never a guessed automation pitch).
+-- (WT's `issue-42` is ALSO mechanical — a second mechanical track — but the G assertion
+-- pins the three designed tracks explicitly.)
+-- ============================================================================
+
+-- MECHANICAL track `issue-feed` — two sessions.
+INSERT INTO sessions VALUES
+  ('claude:91111111-1111-1111-1111-111111111111', 'proj', 'claude',
+   '/repo/proj', 'issue-feed',
+   '/u/.claude/projects/-repo-proj/91111111.jsonl',
+   '2026-06-07', '2026-06-07', 'Drive the issue-feed renderer via the work-on-issue loop.', 5, 2),
+  ('claude:92222222-2222-2222-2222-222222222222', 'proj', 'claude',
+   '/repo/proj/.worktrees/issue-feed', 'issue-feed',
+   '/u/.claude/projects/-repo-proj-.worktrees-issue-feed/92222222.jsonl',
+   '2026-06-07', '2026-06-07', 'Continue the issue-feed worktree implementation.', 4, 2);
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (60, 'claude:91111111-1111-1111-1111-111111111111', 'AskUserQuestion',
+   '{"questions":[{"header":"Reindex strategy","question":"Incremental vs full reindex?"}]}',
+   'Your questions have been answered: "Incremental vs full reindex?"="incremental"'),
+  (61, 'claude:91111111-1111-1111-1111-111111111111', 'Edit',
+   '{"file_path":"/repo/proj/src/feed.ts"}', NULL),
+  (62, 'claude:92222222-2222-2222-2222-222222222222', 'Edit',
+   '{"file_path":"/repo/proj/internal/feed/index.go"}', NULL);
+
+-- EXPLORATION track `landing-copy` — two sessions, prose edits + vetoes + a rejected path.
+INSERT INTO sessions VALUES
+  ('claude:a3333333-3333-3333-3333-333333333333', 'proj', 'claude',
+   '/repo/proj', 'landing-copy',
+   '/u/.claude/projects/-repo-proj/a3333333.jsonl',
+   '2026-06-07', '2026-06-07', 'Draft the landing hero copy; try a few framings.', 7, 4),
+  ('claude:a4444444-4444-4444-4444-444444444444', 'proj', 'claude',
+   '/repo/proj', 'landing-copy',
+   '/u/.claude/projects/-repo-proj/a4444444.jsonl',
+   '2026-06-07', '2026-06-07', 'Rework the story section; the last direction was wrong.', 6, 3);
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (63, 'claude:a3333333-3333-3333-3333-333333333333', 'AskUserQuestion',
+   '{"questions":[{"header":"Hero framing","question":"Hero-vs-story framing?"}]}',
+   'The user doesn''t want to proceed with this tool use. The tool use was rejected.'),
+  (64, 'claude:a3333333-3333-3333-3333-333333333333', 'Write',
+   '{"file_path":"/repo/proj/content/hero.md"}', NULL),
+  (65, 'claude:a4444444-4444-4444-4444-444444444444', 'Write',
+   '{"file_path":"/repo/proj/content/story.md"}', NULL);
+
+-- NEITHER-DOMINANT track `mixed-bag` — one session, balanced signals → unlabeled.
+INSERT INTO sessions VALUES
+  ('claude:b5555555-5555-5555-5555-555555555555', 'proj', 'claude',
+   '/repo/proj', 'mixed-bag',
+   '/u/.claude/projects/-repo-proj/b5555555.jsonl',
+   '2026-06-07', '2026-06-07', 'Some odds and ends across the repo.', 4, 2);
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (66, 'claude:b5555555-5555-5555-5555-555555555555', 'AskUserQuestion',
+   '{"questions":[{"header":"Odds and ends","question":"Which loose end first?"}]}',
+   'Your questions have been answered: "Which loose end first?"="the docs"'),
+  (67, 'claude:b5555555-5555-5555-5555-555555555555', 'Write',
+   '{"file_path":"/repo/proj/docs/notes.md"}', NULL);
+
 -- ----------------------------------------------------------------------------
--- Veto marker in session B's message stream (interruption signal, prose-read).
+-- Veto + loop markers in the message stream (interruption + mechanical-loop signals,
+-- prose-read). Session B carries the original veto; the G tracks carry their signatures.
 -- ----------------------------------------------------------------------------
 INSERT INTO messages VALUES
   (1, 'claude:aaaaaaaa-1111-2222-3333-444444444444', 'user', 'Pick up the parser refactor and ship it.'),
   (2, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', 'Now wire up the regression suite.'),
   (3, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', '[Request interrupted by user]'),
   (4, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'user', 'Build the feature behind a worktree.'),
-  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'user', 'A codex session in this repo; cwd unrecorded.');
+  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'user', 'A codex session in this repo; cwd unrecorded.'),
+  -- WT (issue-42): worktree loop marker, no veto → reinforces mechanical.
+  (6, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'user', 'Run the work-on-issue loop for issue 42 in its worktree.'),
+  -- issue-feed (mechanical): worktree/work-on-issue loop markers, no veto.
+  (7, 'claude:91111111-1111-1111-1111-111111111111', 'user', 'Drive the work-on-issue loop in the worktree.'),
+  (8, 'claude:92222222-2222-2222-2222-222222222222', 'user', 'Continue the worktree implementation.'),
+  -- landing-copy (exploration): repeated vetoes / doesn't-want-to-proceed steering.
+  (9, 'claude:a3333333-3333-3333-3333-333333333333', 'user', '[Request interrupted by user]'),
+  (10, 'claude:a3333333-3333-3333-3333-333333333333', 'user', 'doesn''t want to proceed — try a warmer tone'),
+  (11, 'claude:a4444444-4444-4444-4444-444444444444', 'user', '[Request interrupted by user] rethink the framing'),
+  -- mixed-bag (neither dominant): a single veto, balancing its one passed decision + one .md edit.
+  (12, 'claude:b5555555-5555-5555-5555-555555555555', 'user', '[Request interrupted by user]');
