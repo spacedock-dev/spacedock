@@ -1,5 +1,5 @@
-// ABOUTME: End-to-end env-scrub smoke: through a safehouse that STRIPS SPACEDOCK_BIN,
-// ABOUTME: the argv re-assert lets the real spacedock_launcher resolve the launched binary.
+// ABOUTME: End-to-end env-pass smoke: through a safehouse that scrubs SPACEDOCK_BIN
+// ABOUTME: by default, --env-pass SPACEDOCK_BIN forwards it so the real launcher resolves the launched binary.
 package cli
 
 import (
@@ -13,18 +13,27 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
-// scrubbingSafehouse writes a fake `safehouse` that UNSETS SPACEDOCK_BIN before
-// exec'ing the inner argv past `--` — the env-scrubbing behavior the real
-// safehouse exhibits across its sandbox boundary. The env-only propagation
-// (launchEnv setting SPACEDOCK_BIN on the outer process) cannot survive this, so
-// the value must ride the inner argv to reach the host.
-func scrubbingSafehouse(t *testing.T, dir string) string {
+// envPassSafehouse writes a fake `safehouse` that SCRUBS SPACEDOCK_BIN by default
+// (the env-sanitization the real safehouse does across its boundary) BUT honors
+// `--env-pass NAMES` (comma-separated): each named var is forwarded from the host
+// env it inherited, on top of the sanitized defaults. This models the real
+// `--env-pass` flag the front door now passes. The inner program after `--` runs
+// with SPACEDOCK_BIN present only when `--env-pass SPACEDOCK_BIN` was given.
+func envPassSafehouse(t *testing.T, dir string) string {
 	t.Helper()
 	path := filepath.Join(dir, "safehouse")
 	body := `#!/bin/sh
+# Capture the inherited value before scrubbing (the host env safehouse sees).
+saved_bin="${SPACEDOCK_BIN:-}"
 unset SPACEDOCK_BIN
-while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do shift; done
+pass=""
+while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
+  if [ "$1" = "--env-pass" ]; then shift; pass="$1"; fi
+  shift
+done
 if [ "$1" = "--" ]; then shift; fi
+# Honor --env-pass SPACEDOCK_BIN: forward the named var from the saved host env.
+case ",$pass," in *,SPACEDOCK_BIN,*) export SPACEDOCK_BIN="$saved_bin" ;; esac
 exec "$@"
 `
 	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
@@ -57,16 +66,17 @@ func markerBinary(t *testing.T, path, marker string) {
 	}
 }
 
-// TestSafehouseScrubPreservedThroughArgvReassert is the AC-5 regression oracle.
-// Through a safehouse that STRIPS SPACEDOCK_BIN, the inner argv re-assert
-// (`env SPACEDOCK_BIN=<bin> …`, the prefix runClaude/runCodex prepend on the wrap
-// path) lets the real spacedock_launcher resolve the LAUNCHED binary. The control
-// case — the SAME wrap WITHOUT the argv prefix (env-only propagation) — falls back
-// to the PATH `spacedock`, proving the test fails for the right reason absent the
-// fix rather than passing trivially.
-func TestSafehouseScrubPreservedThroughArgvReassert(t *testing.T) {
+// TestSafehouseEnvPassForwardsSpacedockBin is the AC-5 regression oracle. Through
+// a safehouse that SCRUBS SPACEDOCK_BIN by default, the `--env-pass SPACEDOCK_BIN`
+// wrap flag the front door adds forwards the launching binary so the real
+// spacedock_launcher resolves it. The control case — the SAME wrap WITHOUT
+// `--env-pass` (env-only propagation) — falls back to the PATH `spacedock`,
+// proving the test fails for the right reason absent the flag rather than passing
+// trivially. The inner program after `--` is the host probe directly (no wrapper),
+// matching the production argv shape.
+func TestSafehouseEnvPassForwardsSpacedockBin(t *testing.T) {
 	dir := t.TempDir()
-	safehousePath := scrubbingSafehouse(t, dir)
+	safehousePath := envPassSafehouse(t, dir)
 	probe := launcherProbe(t, dir)
 
 	// The launched binary (what SPACEDOCK_BIN points at) and a DIFFERENT spacedock
@@ -80,41 +90,40 @@ func TestSafehouseScrubPreservedThroughArgvReassert(t *testing.T) {
 	markerBinary(t, filepath.Join(pathDir, "spacedock"), "PATH-FALLBACK")
 	// Build a clean env (no inherited PATH or SPACEDOCK_BIN to collide): pathDir
 	// holds the ONLY `spacedock` on PATH; the system dirs follow so `sh` and the
-	// coreutils the probe/wrapper need still resolve (the re-assert itself uses the
-	// absolute /usr/bin/env, so it needs no PATH entry).
+	// coreutils the probe/wrapper need still resolve. SPACEDOCK_BIN is set on the
+	// safehouse process, exactly as launchEnv sets it on the launched process.
 	base := withoutEnv(withoutEnv(os.Environ(), "PATH"), spacedockBinEnv)
-	scrubEnv := append(base,
+	env := append(base,
 		"PATH="+pathDir+":/usr/bin:/bin",
 		spacedockBinEnv+"="+launchedBin)
 
-	t.Run("argv re-assert survives the scrub", func(t *testing.T) {
-		// The inner argv as runClaude composes it on the wrap path: the production
-		// launcherBinArgvPrefix (driven by executablePath → launchedBin) ahead of the
-		// inner host (here the probe). Exercising the real prefix builder, not a copy.
+	t.Run("--env-pass forwards SPACEDOCK_BIN through the scrub", func(t *testing.T) {
+		// The wrap as runClaude composes it: the production launcherBinEnvPassFlags
+		// (driven by executablePath → launchedBin) in the safehouse extra slot. The
+		// inner program after `--` is the probe directly (no /usr/bin/env wrapper).
 		withExecutablePath(t, launchedBin, nil)
-		inner := append(launcherBinArgvPrefix(), probe)
-		argv := safehouse.Wrap(inner, nil)
-		out := runWrapped(t, safehousePath, argv[1:], scrubEnv)
+		argv := safehouse.Wrap([]string{probe}, launcherBinEnvPassFlags())
+		out := runWrapped(t, safehousePath, argv[1:], env)
 		if out != "LAUNCHED" {
-			t.Fatalf("probe resolved %q, want LAUNCHED (the launched binary survived the scrub via argv)", out)
+			t.Fatalf("probe resolved %q, want LAUNCHED (--env-pass must forward SPACEDOCK_BIN through the scrub)", out)
 		}
 	})
 
-	t.Run("without the re-assert it falls back to PATH (regression control)", func(t *testing.T) {
-		// The SAME wrap WITHOUT the argv prefix — env-only propagation. The scrub
-		// drops SPACEDOCK_BIN, so the probe falls back to the PATH spacedock. This is
-		// the bug the argv re-assert fixes; it proves the oracle is not trivial.
+	t.Run("without --env-pass it falls back to PATH (regression control)", func(t *testing.T) {
+		// The SAME wrap WITHOUT --env-pass — env-only propagation. The scrub drops
+		// SPACEDOCK_BIN, so the probe falls back to the PATH spacedock. This is the bug
+		// the --env-pass flag fixes; it proves the oracle is not trivial.
 		argv := safehouse.Wrap([]string{probe}, nil)
-		out := runWrapped(t, safehousePath, argv[1:], scrubEnv)
+		out := runWrapped(t, safehousePath, argv[1:], env)
 		if out != "PATH-FALLBACK" {
-			t.Fatalf("env-only probe resolved %q, want PATH-FALLBACK (the scrub must drop SPACEDOCK_BIN)", out)
+			t.Fatalf("env-only probe resolved %q, want PATH-FALLBACK (the scrub must drop SPACEDOCK_BIN absent --env-pass)", out)
 		}
 	})
 }
 
 // runWrapped execs the fake safehouse with the wrapped argv (everything after the
-// `safehouse` token) under the scrubbing env, returning the probe's single
-// trimmed output line.
+// `safehouse` token) under the env, returning the probe's single trimmed output
+// line.
 func runWrapped(t *testing.T, safehousePath string, args []string, env []string) string {
 	t.Helper()
 	cmd := exec.Command(safehousePath, args...)

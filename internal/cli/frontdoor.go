@@ -60,22 +60,18 @@ func launchEnv(parent []string) []string {
 	return env
 }
 
-// envBinary is the absolute path to env used in the inner-argv re-assert prefix.
-// A bare `env` would depend on env being on the sandbox PATH — if it is not, the
-// launch itself fails; the absolute path is PATH-independent (the ideation spike
-// confirmed /usr/bin/env is present and portable in the sandbox).
-const envBinary = "/usr/bin/env"
-
-// launcherBinArgvPrefix returns the `/usr/bin/env SPACEDOCK_BIN=<bin>` argv token
-// pair that re-asserts the launching binary inside the inner host argv, so the
-// value survives a wrapper that scrubs SPACEDOCK_BIN from the environment
-// (safehouse does). It reads the same resolvedLauncherBin() source as launchEnv,
-// and mirrors its omit-on-failure: when no binary resolves it returns nil — never
-// a blank value. Callers prepend it to the inner argv on the wrap path only; the
-// unwrapped launch inherits SPACEDOCK_BIN directly through launchEnv.
-func launcherBinArgvPrefix() []string {
-	if bin, ok := resolvedLauncherBin(); ok {
-		return []string{envBinary, spacedockBinEnv + "=" + bin}
+// launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
+// that tell safehouse to forward SPACEDOCK_BIN from its (the launching process's)
+// environment into the otherwise-sanitized sandbox, so the launcher binary the
+// helper calls resolve survives the boundary. launchEnv already sets SPACEDOCK_BIN
+// on the safehouse process; this flag carries it through. It is gated on the same
+// resolvedLauncherBin() source as launchEnv and mirrors its omit-on-failure: when
+// no binary resolves, no flag — never a stale pass-through. Returned as safehouse
+// wrap flags (before `--`) so the inner program safehouse sees stays the real host
+// (claude/codex), keeping its program-keyed profile auto-detection intact.
+func launcherBinEnvPassFlags() []string {
+	if _, ok := resolvedLauncherBin(); ok {
+		return []string{"--env-pass", spacedockBinEnv}
 	}
 	return nil
 }
@@ -233,11 +229,12 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Re-assert SPACEDOCK_BIN inside the inner argv: safehouse scrubs it from
-		// the environment, so the env-only propagation through launchEnv does not
-		// survive the boundary. The prefix rides argv, which safehouse hands to the
-		// inner host verbatim past `--`. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(append(launcherBinArgvPrefix(), inner...), extra)
+		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
+		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
+		// it into the sandbox. It rides the safehouse flags (before `--`), so the
+		// inner program stays `claude` and safehouse's program-keyed profile
+		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
@@ -383,11 +380,12 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Re-assert SPACEDOCK_BIN inside the inner argv: safehouse scrubs it from
-		// the environment, so the env-only propagation through launchEnv does not
-		// survive the boundary. The prefix rides argv, which safehouse hands to the
-		// inner host verbatim past `--`. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(append(launcherBinArgvPrefix(), inner...), extra)
+		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
+		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
+		// it into the sandbox. It rides the safehouse flags (before `--`), so the
+		// inner program stays `codex` and safehouse's program-keyed profile
+		// auto-detection still fires. Omitted when the bin cannot be resolved.
+		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
 	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
