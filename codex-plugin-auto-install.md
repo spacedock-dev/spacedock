@@ -1,7 +1,7 @@
 ---
 id: z9pqhvtj21smtxka8p88j23r
 title: Codex plugin auto-install on `spacedock codex` (mirror #311; codex 0.137.0 supports marketplace + plugin add)
-status: implementation
+status: validation
 source: "captain (2026-06-08) — codex-cli 0.137.0 adds `codex plugin marketplace add` + `codex plugin add` (0.132.0 lacked them). The front-door auto-install is currently Claude-only (frontdoor.go:315 'codex has nothing to auto-install'); now the Codex binary-first path can ensure the plugin exists too, like #311 did for Claude."
 score: "0.32"
 started: 2026-06-08T15:48:51Z
