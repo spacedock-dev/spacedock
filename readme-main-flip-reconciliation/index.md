@@ -1,13 +1,13 @@
 ---
 id: nbz0yjvmqm6gda6csw8yef7k
 title: README reconciliation for main flip and 0.20.0 install paths
-status: validation
+status: done
 source: "captain (2026-06-06) - before flipping main, reconcile README/install docs; consider existing README PRs #213 and #220."
 score: "0.39"
 started: 2026-06-06T06:06:33Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-readme-main-flip-reconciliation
+completed: 2026-06-08T05:16:09Z
+verdict: PASSED
+worktree:
 issue:
 pr: "#322"
 mod-block:
