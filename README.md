@@ -46,8 +46,8 @@ waiting on you.
   session at a time.
 - **Isolation when it matters.** Stages that touch shared state run in their own
   git worktree. Lighter stages run inline.
-- **Sandboxing built in.** Drop a profile in the project and Spacedock runs the
-  agent sandboxed.
+- **Native sandbox integration.** Drop a profile in the project and Spacedock
+  runs the agent sandboxed.
 - **Work survives the context limit.** When an agent runs out of context, a
   successor carries forward what's in flight.
 
