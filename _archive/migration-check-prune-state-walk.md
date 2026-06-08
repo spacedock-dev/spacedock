@@ -14,6 +14,7 @@ group: test-hygiene
 sprint-readiness: ready
 mod-block:
 pr: "#327"
+archived: 2026-06-08T18:01:12Z
 ---
 
 Two test-hygiene cleanups surfaced by the 019x post-sprint audit. Bounded (the suite is green); a consistency fix, not a correctness bug.
