@@ -36,20 +36,18 @@ Members (the query is the source of truth):
 ## Drive plan (ordering + per-member, from the preflight)
 
 **Binary-UX:**
-- `qa` (HEADLINE) — captain-gated ideation gate; drive once approved. Mechanism is sound;
-  DoD#4 is the captain's sprint-acceptance live drive.
+- `qa` (HEADLINE) — ideation gate **captain-APPROVED (2026-06-08)** → Commander drives
+  implementation (do NOT re-present the gate). Mechanism is sound; DoD#4 is the captain's
+  sprint-acceptance live drive.
 - `z9` (codex auto-install) — **drive AFTER qa** (both edit `frontdoor.go`+`host_exec.go`,
   disjoint functions, sequence to avoid textual overlap). High-stakes front-door →
   **validation gets a detached adversarial audit.** Build note: **fix** the now-false
   comments/error-strings it builds around (`host_exec.go:271-273`, `:32-34`;
   `frontdoor.go:314-316`), don't add around them. Inverts `frontdoor_test.go:414`.
 
-**Survey (BLOCKED on B2 — resolve first):** land `4t` (line 27, isolated) → resolve B2 →
-`69` (queries.sql + step-2/step-4 hint) → `1p` (step-3 + step-4 SCAFFOLD). `69`+`1p` both
-edit the step-4 report fence (~141-169): land sequentially or hand-merge. Build note for
-`69`: agentsview keys `project` by git-root basename — don't assume per-cwd keys. `1p` is
-proof-bar-light (live-drive only) and thinner than the kb bar — firm its exact SKILL.md edit
-first (drop the taxonomy, keep the "recovered from behavior" fact).
+**Survey: DEFERRED to post-flip (captain).** The survey correctness pass (`vh` =
+`survey-skill-correctness-pass`, consolidating 69/1p/4t + the B2 agentsview-model fix) is
+not pre-flip-critical — drive it after the flip. Out of 0198's drive.
 
 **Independent:**
 - `kb` (migration-check + orphaned-fixture delete) — drive-now, skip-ideation-ready. Build
