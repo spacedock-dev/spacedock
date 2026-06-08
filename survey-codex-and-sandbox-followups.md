@@ -12,7 +12,7 @@ issue:
 group: survey
 sprint-readiness: ready
 sprint: 0199-pre-flip-mechanics
-mod-block: merge:pr-merge
+mod-block:
 pr: "#335"
 ---
 
