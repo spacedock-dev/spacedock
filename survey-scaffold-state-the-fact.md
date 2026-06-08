@@ -1,12 +1,12 @@
 ---
 id: 1p27mtdt6vxt956f5gn00353
 title: survey SCAFFOLD section — state the observed fact, drop the recovered-vs-skill-installation classification
-status: backlog
+status: done
 source: "captain (2026-06-08) — follow-up to the survey signal-correction (xn). The scaffold reporting carries a recovered-vs-installed taxonomy; just state the observed scaffold fact (what was used + whether it's checked in)."
 score: "0.2"
 started:
 completed:
-verdict:
+verdict: superseded
 worktree:
 issue:
 sprint: 0198-pre-flip-hardening

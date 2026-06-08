@@ -1,12 +1,12 @@
 ---
 id: 69rk6t1vbehsd4fwxnsnjwma
 title: survey — work around agentsview not persisting Codex cwd (scoping fallback + hint), do NOT fix agentsview
-status: ideation
+status: done
 source: "captain (2026-06-08) — agentsview ingests Codex sessions and derives project but does NOT persist Codex cwd into sessions.cwd, so the survey's cwd-scoped repo-identity query misses all Codex sessions. Decision: work around it in OUR survey skill with a fallback/hint, not fix agentsview."
 score: "0.28"
 started: 2026-06-08T15:29:12Z
 completed:
-verdict:
+verdict: superseded
 worktree:
 issue:
 sprint: 0198-pre-flip-hardening
