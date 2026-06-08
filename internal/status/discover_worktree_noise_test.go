@@ -91,3 +91,44 @@ func TestDiscoverWorkflowsHonorsGitignoreDirPattern(t *testing.T) {
 		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (gitignore dir pattern must prune the copy)", got, want)
 	}
 }
+
+// TestDiscoverWorkflowsSkipsNestedCheckout isolates mechanism (b): a nested git
+// checkout's workflow copy is pruned by the `.git`-presence skip ALONE, with no
+// help from a basename or gitignore rule. The copy lives under `submods/checkout-z`
+// — a dir name that is NEITHER in discoverIgnoreDirs NOR any `.gitignore` — so the
+// ONLY thing that can drop it is hasGitEntry seeing the nested `.git` gitlink. This
+// is the unmasked check: neuter hasGitEntry → `return false` and this test reds
+// (the copy re-appears as a second workflow), which the existing `.worktrees`-sited
+// fixtures do NOT (the `.worktrees` basename in discoverIgnoreDirs masks them).
+func TestDiscoverWorkflowsSkipsNestedCheckout(t *testing.T) {
+	repo := t.TempDir()
+	commissioned := "---\ncommissioned-by: spacedock@1.0\nid-style: sequential\n---\n# WF\n"
+	write := func(rel string) {
+		p := filepath.Join(repo, rel, "README.md")
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(commissioned), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// The real workflow, part of the main checkout (no own .git).
+	write(filepath.Join("docs", "dev"))
+	// A nested checkout under a NON-pruned, NON-gitignored dir name, rooted by a
+	// `.git` gitlink — pruned only by hasGitEntry.
+	nested := filepath.Join(repo, "submods", "checkout-z")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, ".git"), []byte("gitdir: /elsewhere\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	write(filepath.Join("submods", "checkout-z", "docs", "dev"))
+
+	got := discoverWorkflows(repo)
+	want := realpathOf(filepath.Join(repo, "docs", "dev"))
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (nested-checkout .git skip must prune the copy)", got, want)
+	}
+}
