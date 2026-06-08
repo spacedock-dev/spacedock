@@ -59,8 +59,8 @@ the ideation ensigns (they would grade their own work).
 |---|--------|------------------------------------|-------|
 | 1 | [`019x-pre-flip-cleanups`](019x-pre-flip-cleanups/) | spacedock **0.19.7** cut on `next` with the pre-flip cleanups landed | ✅ delivered — 0.19.7 cut (#322–326) |
 | 2 | [`0198-pre-flip-hardening`](0198-pre-flip-hardening/) | spacedock **0.19.8** — binary/version/install UX (`qa`), Codex auto-install (`z9`), test-hygiene (`kb`), survey correctness (`vh`) | driving |
-| 3 | [`0199-pre-flip-mechanics`](0199-pre-flip-mechanics/) | spacedock **0.19.9** — Linux binaries (`v3`) + dev-tooling quality (`th`, `jm`) | shaped — ready for Commander |
-| 4 | [`0200-flip`](0200-flip/) (capstone) | **0.20.0** cut on `main` + marketplace flipped | carving — `nzb`+`k6d` pre-flip (Commander), `pj` the flip (here); ideation next |
+| 3 | [`0199-pre-flip-mechanics`](0199-pre-flip-mechanics/) | spacedock **0.19.9** — Linux binaries (`v3`) + dev-tooling quality (`th`, `jm`) | ✅ delivered — 0.19.9 cut + released (#332–336; darwin+linux) |
+| 4 | [`0200-flip`](0200-flip/) (capstone) | **0.20.0** cut on `main` + marketplace flipped | shaped — pre-flip pair (`nzb`+`k6d`) gated + [packaged](0200-flip/dispatch-sprint-execution.md) for the Commander; `pj` the flip held for here |
 
 Post-flip candidates (not yet sprints): a published docs site (`wv` + `e6`),
 distribution (`5w` notarize + `44` bundle), and the
