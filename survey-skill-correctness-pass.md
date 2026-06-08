@@ -136,3 +136,54 @@ Cycle-2 re-dispatch: verification pass, not a rewrite. Independently exercised e
 Implemented the consolidated survey-skill correctness pass on the corrected git-root-basename agentsview model across the four files. The gate-able halves are landed and proven: AC-1/AC-2 query-smoke (6 subtests, including codex-presence and the no-union assertion) and AC-3 probe-behavior test (2 subtests, FS-access-regression-proof via the extraction regex). The model fix was re-confirmed by EXERCISING against live agentsview v0.32.1 — synced this repo through the binary and ran the corrected queries: one Claude `project` key, 61 blank-cwd Codex matched by name, scoping excludes them. SKILL.md prose (D1-D4) rewritten with no stale-model leftovers. Two commits on `spacedock-ensign/survey-skill-correctness-pass` in the worktree.
 
 **For validation — the live drive (AC-4/AC-5) is your proof bar, not landed here.** AC-4: drive `/spacedock:survey` end-to-end on a repo whose synced DB carries project-matched blank-cwd Codex sessions — assert the rendered report shows (a) the Codex-presence hint (count + "by project name only"), (b) SCAFFOLD as the state-the-fact statement with NO active/installed/recovered taxonomy labels, (c) the PROJECT line with NO "coalesced from N keys" clause; a second drive against a Codex-free DB omits the hint. AC-5: drive under the sandbox, observe the survey proceeds past step 1 without the `brew install` consent prompt, with the pre-fix `command -v` confirmed to false-negative in the SAME sandbox as the negative control. agentsview v0.32.1 is present on this box; the sync recipe in SKILL.md §1 seeds the DB. Per ideation, the live drive may escalate to a captain-run drive. A grep over SKILL.md does NOT satisfy AC-4/AC-5 — only the rendered output / observed non-prompt does.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1/AC-2 at HEAD 159f19f2 — `TestSurveyQuerySmoke` green; corrected `scoping` returns the 3-field shape (NO `folded_keys`), cwd-prefix-union counts the in-repo sessions, `codex-presence` returns matched count + blank_cwd>0, `scoping.sessions` UNCHANGED by Codex rows.
+  `go test ./skills/integration/ -run TestSurveyQuerySmoke` → 6/6 subtests pass. Exact oracle from the materialized fixture DB: `scoping` → `3|0|2026-06-05 .. 2026-06-06` (3 fields, folded_keys gone); `codex-presence` → `2|2`; `codex-not-folded-into-scope` → sessions=3.
+- DONE: Confirm `fixture-sessions.sql` encodes the git-root-basename model — ONE in-repo Claude `project` key, NOT the disproven `_spacedock_state`/`feature_x`.
+  Queried the materialized DB on-disk (not a re-read): the 3 in-repo Claude checkouts (root, `.spacedock-state`, `.worktrees/feature-x`) all carry ONE `project='proj'`; the disproven divergent keys count = 0; the 2 Codex rows carry `project='proj'`, BLANK cwd.
+- DONE: Independently confirm AC-1/AC-2 non-vacuousness — a regression must red the relevant assertion.
+  AC-1: re-added `COUNT(DISTINCT project) AS folded_keys` to the `scoping` SELECT → `scoping` reds (`got "3|1|0|…"`, 4 fields; folded_keys=1 confirms the structural-always-1 finding). AC-2: unioned the `project=:repo_project` Codex rows into the Claude scope → `scoping.sessions` 3→5, both the count-3 and the dedicated `codex-not-folded-into-scope` assertions red. Both reverted via `git checkout`; re-verified green; worktree clean at 159f19f2.
+- DONE: Reproduce AC-3 — `TestSurveyInstallProbe` green; the probe-behavior test EXTRACTS the shipped §1 line from SKILL.md (executes the artifact) and its regex REJECTS FS-access forms; shipped §1 probe is `agentsview --version >/dev/null 2>&1`.
+  `go test -run TestSurveyInstallProbe` → 2/2 pass (present: silent/exit-0; absent: sole line `AGENTSVIEW MISSING`). SKILL.md:29 confirmed = `if ! agentsview --version >/dev/null 2>&1; then echo "AGENTSVIEW MISSING"; fi`.
+- DONE: Independently confirm AC-3 non-vacuousness — reverting the probe to an FS-access form reds via extraction failure.
+  Reverted SKILL.md:29 to `command -v` → test reds `expected exactly one runnable … probe line … found 0`. Standalone regex check: the extraction regex matches ONLY the execve form and rejects `command -v`/`which`/`test -x`/`stat`, the line-23 prose mention of `command -v`, and a near-miss missing `2>&1`. Reverted; re-verified green.
+- DONE: Full `go test ./skills/integration/` + `go build ./...` green at 159f19f2.
+  Full integration package `ok` (1.185s); `go build ./...` exit 0. Worktree clean at HEAD 159f19f2 after all non-vacuousness probes reverted.
+- DONE: Prep the CAPTAIN AC-4/AC-5 live-drive handoff (do NOT block PASSED on running it).
+  Ready-to-run handoff assembled below; prerequisites verified present (agentsview v0.32.1, `spacedock` at /opt/homebrew/bin, sqlite3); SKILL.md step-2 key derivation spot-checked against the real repo (`spacedock_v1`, resolves to the main checkout even from a worktree).
+- SKIPPED: Detached adversarial audit.
+  Per the assignment and the stage definition's high-stakes list, survey (skill prose + SQL) is NOT a high-stakes surface → normal validation, no detached audit.
+
+### Captain handoff — AC-4 / AC-5 live drive (sprint-acceptance, not gate-blocking)
+
+Verified SHA: **159f19f2**. Branch `spacedock-ensign/survey-skill-correctness-pass`, worktree `/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-survey-skill-correctness-pass`. Prereqs confirmed on this box: agentsview v0.32.1, `spacedock` launcher, sqlite3.
+
+**Seed recipe (per SKILL.md §1).** Drive the read through the binary into a readable data dir; seed a DB that carries project-matched blank-cwd Codex sessions:
+```
+export SPACEDOCK_SURVEY_DB_DIR="$(mktemp -d)/spacedock-survey"; mkdir -p "$SPACEDOCK_SURVEY_DB_DIR"
+# narrow CLAUDE_PROJECTS_DIR to THIS repo's session dirs (SKILL.md §1 symlink-farm block), then:
+AGENTSVIEW_DATA_DIR="$SPACEDOCK_SURVEY_DB_DIR" CLAUDE_PROJECTS_DIR="$NARROW" timeout 300 agentsview session sync
+# this repo's Codex history lands cwd='' / project=spacedock_v1 → the Codex-presence hint fires (61 live rows observed during implementation).
+```
+For the AC-4 negative (hint-absent) drive, seed a DB whose Codex rows do NOT match `spacedock_v1` (or omit Codex sync).
+
+**Invocation.** `spacedock claude --plugin-dir /Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-survey-skill-correctness-pass`, then run `/spacedock:survey`.
+
+**AC-4 — observe in the rendered report (SKILL.md §4 fence, lines 152-157):**
+- (a) Codex hint line under PROJECT: "N Codex sessions match this repo by project NAME only (agentsview does not record Codex cwd) — may include a same-named sibling repo …". Codex-free DB → line ABSENT.
+- (b) SCAFFOLD as the state-the-fact statement (family + invocation count + checked-in presence/absence; a family invoked-but-not-on-disk reads "recovered from behavior, not files") with NO recovered/installed/active taxonomy LABELS.
+- (c) PROJECT line with NO "coalesced from N keys" clause (folded_keys is gone; only the `{if blank_cwd>0}` clause may appear).
+
+**AC-5 — under sandbox:** the survey proceeds past step 1 to sync/scan WITHOUT emitting the `brew install --cask agentsview` consent prompt (agentsview present). Negative control in the SAME sandbox: confirm `command -v agentsview >/dev/null` false-negatives there, establishing the drive exercises the failing path rather than a vacuous pass.
+
+A grep over SKILL.md does NOT satisfy AC-4/AC-5 — only the rendered output / observed non-prompt does.
+
+### Recommendation
+
+**PASSED on the gate-able halves (AC-1, AC-2, AC-3).** All three reproduce green at 159f19f2, the fixture encodes the corrected git-root-basename model on-disk, and each is independently non-vacuous (folded_keys re-add reds AC-1; Codex union reds AC-2; `command -v` revert reds AC-3 via extraction failure). Full integration suite + `go build ./...` green. **AC-4/AC-5 are handed to the captain as sprint-acceptance** (the rendered-report and sandbox-non-prompt live drive) — not gate-blocking per the assignment; the ready-to-run handoff is above.
+
+### Summary
+
+Validated the consolidated survey-skill correctness pass at HEAD 159f19f2 by exercising behavior, not re-reading. The three gate-able ACs pass and are proven non-vacuous via the adversarial edits the assignment named (re-add folded_keys → AC-1 reds; union Codex into Claude scope → AC-2 reds; revert probe to `command -v` → AC-3 reds via extraction failure). The fixture's git-root-basename model is confirmed on-disk (one in-repo `project` key, zero disproven divergent keys), and SKILL.md's step-2 key derivation spot-checks correctly to `spacedock_v1` even from a worktree. Full integration suite and build are green; the worktree is clean at HEAD after every probe was reverted. AC-4/AC-5 (live-drive rendered report + sandbox non-prompt) are handed to the captain as sprint-acceptance with a verified ready-to-run recipe. Survey is not a high-stakes surface, so no detached audit. Recommend PASSED.
