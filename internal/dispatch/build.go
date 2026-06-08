@@ -21,6 +21,10 @@ const (
 	nameMaxLen      = 200
 	modelEnumList   = "must be one of: sonnet, opus, haiku"
 	dispatchFileDir = "/tmp/spacedock-dispatch"
+	// dispatchFileNameMaxLen caps the dispatch filename stem (team_name +
+	// derived name) so the on-disk file with its .md suffix stays under the
+	// common 255-byte filesystem name limit.
+	dispatchFileNameMaxLen = 251
 )
 
 // buildRequiredFields are the stdin keys that must be present and non-null.
@@ -28,6 +32,13 @@ var buildRequiredFields = []string{"schema_version", "entity_path", "workflow_di
 
 // namePattern is the dispatch-name regex derived worker names must match.
 var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
+
+// teamNamePattern is the path-safety regex for a team_name prepended to the
+// dispatch filename. It enforces namePattern's kebab character class and
+// no-leading/trailing-hyphen rule, but also admits a single character — a
+// degenerate yet path-safe name namePattern's two-anchor shape rejects. Derived
+// names are always multi-char, so namePattern never needed the single-char case.
+var teamNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 
 // modelEnum is the Agent-schema model enum declared values are validated against.
 var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true}
@@ -564,12 +575,29 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// and an ensign can Read a STALE prior dispatch's entity pointer. Each real FO
 	// TeamCreate yields a unique team name (`{project}-{dir}-{YYYYMMDD-HHMM}-
 	// {shortuuid}`), so keying the file on the team name disambiguates every team-
-	// mode dispatch. Bare-mode dispatches (no team name) block until the subagent
-	// completes — they cannot alias within a session — so they keep the plain name.
+	// mode dispatch. Dispatches with no team_name keep the plain derived name.
 	// derivedName stays the readable team-member name; only the on-disk path is keyed.
 	dispatchFileName := derivedName
 	if teamName != "" {
+		// team_name is prepended to a filesystem path, so it gets the same
+		// path-safety the derived name already gets (kebab-only char class,
+		// capped). Team names are harness-generated and kebab-safe today; this is
+		// defense-in-depth against an odd or path-bearing name building an
+		// unsanitized /tmp path.
+		if len(teamName) > nameMaxLen {
+			return buildError(stderr, 1, "team name '%s' exceeds %d characters", teamName, nameMaxLen)
+		}
+		if !teamNamePattern.MatchString(teamName) {
+			return buildError(stderr, 1,
+				"team name '%s' contains invalid characters: must match %s "+
+					"(kebab-case lowercase letters, digits, and hyphens only)",
+				teamName, teamNamePattern.String())
+		}
 		dispatchFileName = teamName + "-" + derivedName
+	}
+	if len(dispatchFileName) > dispatchFileNameMaxLen {
+		return buildError(stderr, 1,
+			"dispatch filename '%s' exceeds %d characters", dispatchFileName, dispatchFileNameMaxLen)
 	}
 	dispatchFilePath := filepath.Join(dispatchFileDir, dispatchFileName+".md")
 	if err := os.MkdirAll(dispatchFileDir, 0o755); err != nil {
