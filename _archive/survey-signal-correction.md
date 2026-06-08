@@ -14,6 +14,7 @@ group: survey
 sprint-readiness: ready
 mod-block:
 pr: "#324"
+archived: 2026-06-08T05:24:29Z
 ---
 
 `spacedock:survey` decides "what this project is and where it stands" from THIN
