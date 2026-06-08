@@ -192,3 +192,147 @@ to "the FO writes the label, then observes the label"** — a self-referential c
 proof-policy bans and the detached-audit policy exists to catch. It should change jm's gate or
 AC set (downscope to the real, code-gated AC-3; defer AC-1/AC-2 to the `spacedock:roadmap`
 skill that is their actual prerequisite) before the Commander drives the sprint.
+
+---
+
+# Final review (post-correction)
+
+Second pass after the sprint settled: `m1` DEFERRED (out); `jm` RE-IDEATED (cycle 2 reframe);
+`47rx` ADDED and grown into a survey-skill body-rendering pass (cycles 1–5). Re-reviewed the
+four ideated members against the actual code/config each claim rests on. (Out of this pass:
+`frontdoor-launch-ux` = unideated backlog; `migration-check-share-walk-helper` = a later
+fast-track refactor.) Read-only; I verified the claims by exercising the riskiest ones, not
+by trusting the bodies.
+
+## Verdict per member
+
+- **`jm` entity-label-localization** — `M1 CLOSED`. The cycle-2 reframe from "edit template
+  files" to "a generic operating-voice convention in the shared contract, proven by the FO's
+  *generated* prose tracking the README label" removes the tautology I flagged, and the
+  `ticket`-vs-`experiment` two-fixture differential makes a hardcoded/parroted label
+  un-passable. The convention's home is real. Closed.
+- **`47rx` survey body-rendering pass** — `sound`. All four deliverables (D1-depth-ii, C, E, F)
+  have real targets I confirmed in the live SKILL.md / queries.sql; the gate-able query halves
+  rest on the genuine sqlite3 query-smoke with non-tautological fixture-derived oracles (I
+  reproduced the clustering extraction in pure sqlite3 — it yields the exact AC-3 labels); the
+  rendered-body halves bottom out on a live drive per the survey discipline. No material hole.
+- **`v3` ship-linux-binaries** — `held` (sound, unchanged). Body byte-identical to first review
+  (no diff in the state repo); the soundness findings stand.
+- **`th` safehouse-preserves-spacedock-bin** — `held` (M2 resolution accepted, sound). Body
+  unchanged; the captain accepted both M2 conditions (verdict-hold + `/usr/bin/env` absolute +
+  3-assumption captain check) at the package/scope level. The resolution is sound and
+  sufficient — see the M2-resolution sanity-check below.
+
+## Material
+
+**Nothing material.** I tried to break all four and could not find a correctness, test-strength,
+or proof-policy hole that should change a gate or the package. The two earlier material findings
+are resolved: M1 (jm) is genuinely closed by the reframe; M2 (th) is accepted with a sound
+resolution. Detail on the two verifications, since they were the load-bearing ones:
+
+### M1 (jm) — verified CLOSED
+
+The cycle-2 body (Problem ¶3, AC-1/AC-2, Test-plan "anti-tautology design") now targets a
+generic convention, not a placeholder edit, and I confirmed every load-bearing claim:
+
+- **The home exists.** jm puts the convention in `first-officer-shared-core.md`'s
+  `## Working Principles` → `**FO posture:**` list. I confirmed that list exists (line ~304)
+  with exactly the sibling bullets jm names ("Name the end value before starting", "Lead with a
+  recommendation the captain can say yes to"). The present-gate reinforcement lands in the
+  assembly rules, which exist. Unlike cycle 1, the edit has a real target.
+- **The proof is non-tautological.** AC-1's expected noun ("ticket") lives ONLY in the fixture
+  README's `entity-label` field — an independent artifact the FO must READ (Startup step 4) and
+  RESOLVE, never handed to the FO by the test. The assertion is on the FO's *generated* prose
+  vs that field — two artifacts that can diverge, with a real observable failure (a
+  non-conforming FO emits "entity" and the drive reds). This is exactly the "expected value from
+  OUTSIDE the file under test" the README `## ideation` policy demands.
+- **The differential kills the residual loophole.** AC-2 runs the same drive over a SECOND
+  fixture (`entity-label: experiment`). A hardcoded or test-handed label could fool one fixture
+  but cannot match both READMEs — so two declarations yielding two different generated nouns
+  proves field-resolution, not parroting. This directly answers the "FO writes X, observes X"
+  objection from M1.
+- **AC-3 (the no-leak guardrail) is still a real code gate** — the existing `dispatch build`
+  golden (`go test ./internal/dispatch -run TestBuild`), whose frozen text is independent of the
+  skill edits. Baseline green; the golden suite exists and runs.
+
+The proof now rests on observing a behavior the FO can genuinely fail, with an independent
+oracle and an anti-parroting differential. M1 is closed — not papered over.
+
+### M2 (th) — resolution sanity-checked (accepted, not re-opened)
+
+Per the brief the captain accepted both M2 conditions at the package/scope level; I confirm the
+resolution is sound and sufficient:
+- **(a) verdict-hold** — th must not reach `done`/PASSED on the in-env argv-oracles + corrected
+  fake-smoke alone; survival is PENDING the captain's real-safehouse run. Correct: the in-env
+  tests prove argv *shape*, and the README `## done` rule requires a live drive observing the
+  *claimed* behavior (survival across real safehouse), which only the off-box run does.
+- **(b) `/usr/bin/env` absolute + 3-assumption captain check** — switching the inner token from
+  bare `env` to `/usr/bin/env` collapses the "is `env` on the sandbox PATH" assumption I raised
+  (the absolute path is what the spike narration actually validated), and the captain check
+  covering {verbatim-argv past `--`, the token resolves/execs under the real sandbox, the var
+  reaches the inner process} closes the gap. Sound and sufficient. Not re-flagged.
+
+## Polish
+
+- **(`jm`, AC-1 negative control) make it an explicit assertion, not just a note.** The test
+  plan mentions "the default-`entity`/dev workflow drive still says 'entity' (the convention is
+  a no-op when label == 'entity')" as a negative control. Recommend the implementer assert it,
+  not just observe it: a convention that accidentally hardcodes "ticket" or always-localizes
+  would pass AC-1/AC-2 yet wrongly rewrite the default-`entity` workflow. The negative control is
+  the cheap guard against an over-broad convention. Non-blocking — the `ticket`/`experiment`
+  differential already catches the worst case; this catches the "label == entity" edge.
+
+- **(`47rx`, AC-3) confirm the clustering is SQL in `queries.sql`, not model-applied prose.**
+  AC-3's whole gateability claim is that the query-smoke runs the clustering. I verified it CAN
+  be pure sqlite3: I reproduced the three-case extraction (`instr`/`substr`/`rtrim`, no regex)
+  over the exact AC-3 fixture messages and it returned `journey-cost-ledger`, `codex-live-ci`,
+  `orient-workflow-discovery`, `(unlabeled)` with the stage suffix stripped and the two dispatch
+  tasks not merged. The implementer MUST land the clustering as a labeled `-- name:` query block
+  in `queries.sql` (so the smoke extracts and runs the artifact), NOT as a prose rule only the
+  model applies — otherwise AC-3's "query-smoke" proof evaporates into a SKILL.md-grep-equivalent
+  the survey discipline bans. The cycle-4 note ("validated the clustering SQL … corrected a
+  backtick off-by-one") implies it is SQL; pin it. Non-blocking but load-bearing for AC-3's
+  proof tier.
+
+- **(`47rx`, AC-7 / F) the `<external>` mechanics tag spans two branches — tag both.** F's
+  mechanics set is `<external>` + `.worktrees` + `.claude*`. In the live `work-by-area` query,
+  `<external>` is the ELSE branch (paths not under repo root) while `.worktrees`/`.claude*` are
+  first-segment buckets UNDER the root. The `kind` partition must tag the `<external>` ELSE
+  branch AND the in-root mechanics segments as `mechanics`, leaving every other in-root segment
+  `product`. AC-7a's non-vacuousness flip (re-segment a `.worktrees` row to `internal` → it moves
+  into the product lead) correctly exercises the in-root case; add a parallel check that an
+  `<external>` row also sorts below product, so both mechanics branches are proven demoted. Minor
+  — the fixture already carries an `<external>` row, so it is one assertion, not new fixture data.
+
+- **(`47rx`, AC-4 live-drive flakiness) the rendered-body labels depend on a live synced DB.**
+  AC-4/5/6/7b are proven by ONE combined live drive over the real agentsview-synced DB. That is
+  the right proof bar (the survey discipline forbids a SKILL.md grep), but the rendered Codex
+  workstream labels (`journey-cost-ledger`, `orient-workflow-discovery`) come from THIS repo's
+  live Codex history — which drifts as new sessions land. The drive should assert the *shape*
+  (a Codex section with workdir-attributed count + ≥1 named workstream cluster + activity), not a
+  frozen label list, so a future session that shifts the top workstreams doesn't red the drive.
+  The body already says "labels come from the real synced DB" — just keep the assertion on
+  presence-of-clusters, not a pinned roster. Non-blocking; the body permits a captain-run drive
+  escalation (as vh's AC-4/AC-5 did), which is the right pressure valve.
+
+- **(`47rx`, scope) depth (ii) is honestly bounded; the deferrals are clean.** I confirmed the
+  body keeps depth (iii) (per-file work-by-area, which needs raw-rollout `apply_patch` parsing —
+  genuinely not in the agentsview DB) and D3 (source-health, no agentsview signal) as
+  upstream-gated follow-ups with a concrete recorded `kenn-io/agentsview` dependency. No
+  over-reach: D1(ii) reads only DB signals (`first_message`, `exec_command`/`update_plan`
+  tallies), no rollout parsing. The attribution spike (0 sibling cross-contamination across 160
+  sibling sessions, 93% recall on a 95%-present `$.workdir` field) is a real exercised mechanism,
+  not an assertion. m1's deferral remains correct. No quarrel with any scope call.
+
+## Summary (final review)
+
+Re-reviewed the four ideated 0199 members. **jm's M1 is genuinely CLOSED** — the reframe to a
+shared-contract operating-voice convention proven against the FO's generated prose, with a
+`ticket`-vs-`experiment` differential, removes the tautology and binds the expected noun to an
+independent source (the fixture README). **47rx is sound** — I confirmed C/E/F's targets exist
+verbatim in the live SKILL.md/queries.sql, the query-smoke is a real sqlite3 oracle, and I
+reproduced AC-3's clustering extraction in pure sqlite3 to confirm it is gateable and
+non-tautological. **v3 and th are held** — bodies unchanged; th's accepted M2 resolution is
+sound and sufficient. **No material findings this pass**; five polish notes, the load-bearing
+one being "land 47rx's clustering as a `queries.sql` query block, not model-applied prose, so
+AC-3's query-smoke proof is real."
