@@ -1,5 +1,5 @@
 ---
-session-date: 2026-06-08
+session-date: "2026-06-08"
 sequence: 1
 first-commit: 7a732b31
 last-commit: 41994596
