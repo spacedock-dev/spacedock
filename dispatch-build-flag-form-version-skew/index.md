@@ -8,7 +8,7 @@ worktree: ""
 issue:
 sprint: 0198-pre-flip-hardening
 group: binary-ux
-sprint-readiness: ready
+sprint-readiness: defer
 started: 2026-06-08T15:29:12Z
 ---
 
