@@ -1,0 +1,97 @@
+# Proves install.sh installs a runnable `spacedock` on BOTH Linux and macOS from
+# a checksum-verified release tarball, and that its checksum gate is fail-closed.
+#
+# Each matrix leg snapshots the release tarballs locally (goreleaser
+# --snapshot), then runs install.sh against the runner's NATIVE-OS tarball via
+# the SPACEDOCK_INSTALL_FROM local-dist override (real binary, no publish, no
+# mocks): the ubuntu leg installs+runs the linux binary, the macos leg the
+# darwin binary. A tamper case (corrupted tarball) asserts install.sh exits
+# non-zero and installs nothing, keeping the checksum gate load-bearing.
+name: install-e2e
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [next]
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      # Build the release tarballs + checksums.txt locally without publishing.
+      # The runner's native-OS tarball is what install.sh below consumes.
+      - name: Snapshot release tarballs
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean --skip=publish,homebrew
+
+      # Happy path: install the native-OS tarball via the local-dist override and
+      # assert the installed binary runs and reports a non-empty stamped version.
+      # The SAME extract/verify/install path runs here as in production; only the
+      # source (local dist vs. GitHub Release) differs.
+      - name: Install from local snapshot and run
+        run: |
+          set -euo pipefail
+          export SPACEDOCK_INSTALL_FROM="$PWD/dist"
+          export SPACEDOCK_INSTALL_DIR="$RUNNER_TEMP/sd-bin"
+          sh ./install.sh
+          "$SPACEDOCK_INSTALL_DIR/spacedock" --version
+          ver="$("$SPACEDOCK_INSTALL_DIR/spacedock" --version)"
+          case "$ver" in
+            spacedock\ ?*) echo "installed and ran: $ver" ;;
+            *) echo "::error::unexpected --version output: $ver"; exit 1 ;;
+          esac
+
+      # Tamper case: corrupt the native-OS tarball so its sha256 no longer matches
+      # checksums.txt, then assert install.sh exits NON-ZERO and installs nothing.
+      # This keeps the checksum gate load-bearing — without it a swapped tarball
+      # would install silently.
+      - name: Reject a tampered tarball (checksum gate)
+        run: |
+          set -euo pipefail
+          tdir="$RUNNER_TEMP/sd-tamper"
+          rm -rf "$tdir"
+          mkdir -p "$tdir/dist"
+          os="$(uname -s | tr 'A-Z' 'a-z')"
+          case "$(uname -m)" in
+            x86_64|amd64) arch=amd64 ;;
+            arm64|aarch64) arch=arm64 ;;
+            *) echo "::error::unexpected arch $(uname -m)"; exit 1 ;;
+          esac
+          cp dist/spacedock_*_"${os}"_"${arch}".tar.gz "$tdir/dist/"
+          cp dist/checksums.txt "$tdir/dist/"
+          # Append bytes to the (single) native-OS tarball: its sha256 changes, the
+          # checksums.txt expected hash does not — the gate must catch the mismatch.
+          tarball="$(ls "$tdir"/dist/spacedock_*_"${os}"_"${arch}".tar.gz)"
+          printf '\xde\xad\xbe\xef' >> "$tarball"
+          export SPACEDOCK_INSTALL_FROM="$tdir/dist"
+          export SPACEDOCK_INSTALL_DIR="$tdir/bin"
+          set +e
+          sh ./install.sh
+          rc=$?
+          set -e
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::install.sh accepted a tampered tarball (exit 0); checksum gate is NOT load-bearing"
+            exit 1
+          fi
+          if [ -e "$tdir/bin/spacedock" ]; then
+            echo "::error::install.sh installed a binary despite the checksum mismatch"
+            exit 1
+          fi
+          echo "tamper rejected as expected (exit $rc, nothing installed)"

@@ -47,6 +47,46 @@ A from-source build is available for development.
    To set up the plugin ahead of time, or to refresh it later, run
    `spacedock install --host claude`.
 
+## Install on Linux (or macOS without Homebrew)
+
+The Homebrew cask is macOS-only. On Linux — and on macOS if you'd rather not use
+Homebrew — install the launcher with the `curl | sh` script. It detects your
+OS and architecture, downloads the matching tarball from the latest GitHub
+Release, verifies it against the release `checksums.txt`, and installs the
+`spacedock` binary to `~/.local/bin`.
+
+1. **Install the launcher.**
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/next/install.sh | sh
+   ```
+
+   Installs `spacedock` to `~/.local/bin`. If that directory is not on your
+   `PATH`, the script prints a note; add it (`export PATH="$HOME/.local/bin:$PATH"`)
+   so the `spacedock` command resolves. Set `SPACEDOCK_INSTALL_DIR` to install
+   elsewhere (e.g. `SPACEDOCK_INSTALL_DIR=/usr/local/bin`, which may need `sudo`).
+
+2. **Confirm it.**
+
+   ```bash
+   spacedock --version
+   ```
+
+   Prints the installed version, e.g. `spacedock 0.20.0`.
+
+3. **Add the plugin and launch** exactly as in the Homebrew steps above
+   (`spacedock claude "/spacedock:survey"`).
+
+**Sandboxing on Linux.** Spacedock's safehouse integration behaves the same on
+Linux as on macOS: when a `.safehouse` profile is present in the working
+directory, Spacedock wraps the launch through the `safehouse` command. Spacedock
+does not ship a sandbox — it detects the profile and delegates. A run is
+sandboxed only when a Linux-capable `safehouse` binary is on your `PATH`. When
+the binary is absent, Spacedock prints an install hint and the launch proceeds
+**unsandboxed**. Install safehouse separately if you need the sandbox on Linux;
+the macOS-only Gatekeeper/quarantine handling does not apply on Linux and is not
+needed there.
+
 ## Use Codex or Pi instead
 
 Codex and Pi are supported but experimental. Claude Code is the primary surface.
