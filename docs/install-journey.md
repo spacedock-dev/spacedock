@@ -30,24 +30,19 @@ A from-source build is available for development.
 
    Prints the installed version, e.g. `spacedock 0.20.0`.
 
-3. **Add the plugin to Claude Code.**
-
-   ```bash
-   spacedock install --host claude
-   ```
-
-   Adds the Spacedock plugin to Claude Code and runs a compatibility check. It
-   reports `OK` when the launcher and plugin match.
-
-4. **Launch.** Point it at a project you already have and let it survey.
+3. **Launch.** Point it at a project you already have and let it survey.
 
    ```bash
    spacedock claude "/spacedock:survey"
    ```
 
-   Starts the first officer in Claude Code and runs the survey. When a
+   Starts the first officer in Claude Code and runs the survey. The first launch
+   sets up the plugin for you, so this single command is enough. When a
    `.safehouse` profile is present in the working directory, the launch runs
    sandboxed.
+
+   To set up the plugin ahead of time, or to refresh it later, run
+   `spacedock install --host claude`.
 
 ## Use Codex or Pi instead
 

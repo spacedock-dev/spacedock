@@ -1,8 +1,8 @@
 # Spacedock
 
 **Spacedock is a multi-agent orchestrator where nothing ships without a decision.**
-It lives inside your existing agent: Claude Code or Codex. It breaks work into
-stages and surfaces the decisions each stage needs, batched for you. Each
+It lives within your existing harness: Claude Code, Codex, or Pi. It breaks work
+into stages and surfaces the decisions each stage needs, batched for you. Each
 decision arrives with evidence measured against a predefined bar for what good
 looks like. You approve, send back, or escalate. Or you delegate the call to an
 agent. Either way, the decision is recorded with its evidence and reason.
@@ -37,16 +37,17 @@ waiting on you.
   call that caused it.
 - **The bar sharpens as you use it.** Each stage declares what good means, and
   the agent works to that line on its own. When a standard turns out fuzzy in
-  practice, the agent works it out and proposes an update to the stage. The more
-  you use it, the sharper the bar.
+  practice, the agent proposes an edit to the stage's written criteria for your
+  approval. `/spacedock:debrief` captures each session's learnings so the next
+  one starts from them.
 - **Batch the work; decide as it flows back.** Queue many items at once. Agents
   advance each through its stages. You handle gates as they surface, not one
   session at a time.
 - **Isolation when it matters.** Stages that touch shared state run in their own
   git worktree. Lighter stages run inline.
-- **Native sandbox, zero wrapping.** Drop a `.safehouse` profile in the project
-  and Spacedock runs the agent sandboxed automatically. The `--safehouse` flags
-  tune it per launch.
+- **Native sandbox integration.** Drop a `.safehouse` profile in the project and
+  Spacedock runs the agent sandboxed. safehouse is an optional dependency,
+  installed separately. The `--safehouse` flags tune it per launch.
 - **Work survives the context limit.** When an agent runs out of context, a
   successor carries forward what's in flight.
 
@@ -88,24 +89,24 @@ walkthrough, the Codex and Pi paths, and a from-source build for development.
 Commission a workflow by describing what you want:
 
 ```bash
-spacedock claude "/commission Email triage: fetch, categorize, and act on my
-Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (triage
+spacedock claude "/spacedock:commission Dev task workflow: design -> plan ->
+implement -> review, with the design and implementation plan inlined in each work
+item, implementation on isolated worktrees with strict TDD, design and review
+gated for approval."
+```
+
+The first officer commissions the workflow and opens a worktree for the
+implementation stage. It pauses at the design and review gates for your call.
+
+The same shape drives non-dev work. This example triages a Gmail inbox. It
+requires a Gmail integration set up before you run it:
+
+```bash
+spacedock claude "/spacedock:commission Email triage: fetch, categorize, and act
+on my Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (triage
 in:inbox, categorize, propose an action per email as a table) -> approval
 (Captain reviews the proposal) -> execute (carry out approved actions). Walk me
 through Gmail setup if needed."
-```
-
-The first officer commissions the workflow and dispatches an ensign to gather
-your inbox. It then pauses with a categorized proposal and waits for your
-approval before touching anything.
-
-For a development workflow:
-
-```bash
-spacedock claude "/commission Dev task workflow: design -> plan -> implement
--> review, with the design and implementation plan inlined in each work item,
-implementation on isolated worktrees with strict TDD, design and review gated
-for approval."
 ```
 
 ## How it works
