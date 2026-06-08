@@ -1,105 +1,84 @@
-# Fresh-install journey
+# Install Spacedock
 
-This walks a fresh install of Spacedock end to end on a clean Mac, naming the
-observable command at each step and the output you should see. There are two
-install lanes:
+This guide walks a fresh install end to end and names the output you should see
+at each step. Every command here is one you can run and check against the stated
+result.
 
-- **Released lane (brew)** — the published, tagged release. Available only after
-  the first tagged release is cut.
-- **Dev lane (`--plugin-dir`)** — a source build from `next`. The captain's
-  primary development workflow today.
+Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
+or Pi. Install one of those first.
 
-Each documented command is one you can run and observe the stated output.
+Spacedock itself is two pieces that install separately:
 
-## What gets installed
+1. **The `spacedock` launcher.** The command you run to start a session.
+2. **The host plugin.** The first-officer and ensign agents, loaded by your
+   harness (Claude Code, Codex, or Pi).
 
-Spacedock is two pieces that install separately:
+The recommended setup installs the launcher with Homebrew, then adds the plugin.
+A from-source build is available for development.
 
-1. **The `spacedock` binary** — the launcher and contract gate.
-2. **The host plugin** (`spacedock:first-officer` / `spacedock:ensign` skills and
-   named agents) — loaded by Claude Code / Codex. The released lane installs it
-   through the host's marketplace; the dev lane loads it from your checkout with
-   `--plugin-dir`.
+## Install with Homebrew (recommended)
 
-[safehouse](https://agent-safehouse.dev) is a separate runtime dependency used
-to sandbox launches. It is NOT installed by either lane — install it yourself
-when you want sandboxed runs.
-
-## Released lane (brew)
-
-> The brew lane is available only after the first tagged release. Until then the
-> formula ships a placeholder url + sha256 and `brew install` will not fetch a
-> real binary — use the dev lane below.
-
-1. **Install the binary.**
+1. **Install the launcher.**
 
    ```bash
    brew tap spacedock-dev/homebrew-tap
    brew install spacedock
    ```
 
-   The no-tap one-liner is equivalent (the bare formula name is safe — no
-   homebrew-core `spacedock` exists to disambiguate):
-
-   ```bash
-   brew install spacedock-dev/homebrew-tap/spacedock
-   ```
-
-2. **Confirm the binary.**
+2. **Confirm it.**
 
    ```bash
    spacedock --version
    ```
 
-   Prints `spacedock <version> (contract 1)`. The `(contract 1)` token is the
-   binary's compiled-in contract version; it is always correct regardless of how
-   the binary was built.
+   Prints the installed version, e.g. `spacedock 0.20.0`.
 
-3. **Install the host plugin.**
+3. **Launch.** Point it at a project you already have and let it survey.
 
    ```bash
-   spacedock install --host claude
+   spacedock claude "/spacedock:survey"
    ```
 
-   Adds the `spacedock-dev/spacedock` marketplace plugin for Claude Code, then
-   runs the contract doctor. The published plugin carries
-   `requires-contract: ">=1,<2"` so the doctor reports
-   `OK: binary contract 1 satisfies plugin range >=1,<2.`
+   Starts the first officer in Claude Code and runs the survey. The first launch
+   sets up the plugin for you, so this single command is enough. When a
+   `.safehouse` profile is present in the working directory, the launch runs
+   sandboxed.
 
-4. **Launch.**
+   To set up the plugin ahead of time, or to refresh it later, run
+   `spacedock install --host claude`.
+
+## Use Codex or Pi instead
+
+Codex and Pi are supported but experimental. Claude Code is the primary surface.
+
+1. **Install the launcher** (same Homebrew step as above).
+
+2. **Add the plugin** for your host.
 
    ```bash
-   spacedock claude -- "your task"
+   spacedock install --host codex      # or: --host pi
    ```
 
-   Version-gates against the installed plugin's `requires-contract` (GREEN, no
-   `--skip-contract-check` needed) and launches `claude --agent
-   spacedock:first-officer`. When a `.safehouse` profile is present in the
-   working directory the launch is wrapped through safehouse.
+   Codex installs plugins from your shell rather than programmatically, so this
+   prints the `codex plugin` commands to run. Run them, then use the
+   first-officer skill in your Codex session.
 
-## Dev lane (`--plugin-dir`)
+3. **Launch** with the matching subcommand.
 
-This lane builds from source and loads the repo's own vendored plugin straight
-from disk — no marketplace install, and `--plugin-dir` relaxes the contract gate
-because the local checkout supersedes any installed plugin.
+   ```bash
+   spacedock codex "your task"         # or: spacedock pi "your task"
+   ```
 
-`next` has no release artifact — the release pipeline triggers on `v*` tags
-only, so there is no `brew install …@next`. The `@next` lane is a source build.
-Three source routes, each with different version-stamp behavior:
+## Build from source (for development)
 
-| Route | Command | `spacedock --version` reports |
-|---|---|---|
-| Local checkout (recommended) | `git clone … && go build -o spacedock ./cmd/spacedock` | the default `Version` (unstamped), `(contract 1)` correct |
-| Toolchain fallback | `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next` | the default `Version` (unstamped — `go install` does not pass release ldflags), NOT a git-describe pre-release identifier |
-| Dev snapshot | `goreleaser release --snapshot --clean` | a snapshot-stamped tarball, not published |
-
-Only a `v*` tag produces a git-describe-stamped binary. Do not expect `@next` to
-yield a stamped version.
+Use this when you're working on Spacedock itself. It builds the launcher from
+the development branch and loads the plugin from your checkout, so local changes
+take effect immediately.
 
 1. **Clone and build.**
 
    ```bash
-   git clone https://github.com/spacedock-dev/spacedock
+   git clone --branch next https://github.com/spacedock-dev/spacedock
    cd spacedock
    go build -o spacedock ./cmd/spacedock
    ```
@@ -110,53 +89,40 @@ yield a stamped version.
    ./spacedock --version
    ```
 
-   Prints `spacedock <version> (contract 1)` — the unstamped default `Version`
-   on a local build, with the correct `(contract 1)` token.
+   Prints `spacedock <version>` for your local build.
 
-3. **Confirm the repo loads as a plugin** (optional, observe-don't-grep). In an
-   isolated config so no installed plugin masks the result:
+3. **Launch with the local plugin.**
 
    ```bash
-   CLAUDE_CONFIG_DIR=$(mktemp -d) claude --plugin-dir "$PWD" plugin details spacedock
+   ./spacedock claude "your task" -- --plugin-dir "$PWD"
    ```
 
-   Reports `Source: spacedock@inline` and an inventory naming `first-officer`
-   and `ensign` under Skills and Agents, exit 0.
+   `--plugin-dir` is a host flag, so it rides after `--`. It loads the
+   first-officer and ensign agents from your checkout instead of the installed
+   plugin. Edits to the repo are live.
 
-4. **Confirm the contract gate** (optional). The binary reads the vendored
-   manifest's `requires-contract` directly:
+The `next` branch is the development channel. It has no Homebrew release. Use the
+Homebrew path above for a stable install.
 
-   ```bash
-   ./spacedock doctor --plugin-manifest .claude-plugin/plugin.json
-   ```
+## Keep things in sync
 
-   Prints `OK: binary contract 1 satisfies plugin range >=1,<2.` followed by a
-   `Note: hosts emit a load-time warning for the 'requires-contract' field; this
-   is expected — the host ignores the field and spacedock reads it itself.` line,
-   exit 0.
+`spacedock doctor` is the compatibility check. If it reports your installed
+plugin is out of date, refresh it:
 
-5. **Launch.**
+```bash
+spacedock install --host claude
+```
 
-   ```bash
-   ./spacedock claude --plugin-dir "$PWD" -- "your task"
-   ```
-
-   Loads the repo's own vendored `spacedock:first-officer` / `spacedock:ensign`
-   skills, relaxes the contract gate (the `--plugin-dir` checkout supersedes the
-   installed plugin), and launches `claude --agent spacedock:first-officer` with
-   your task appended.
+If the `spacedock` command itself is missing, install the launcher with Homebrew
+first, then run `spacedock install --host claude`.
 
 ## Command grammar
 
-The front door is `spacedock claude [host-flags…] [--safehouse…] -- "task"`
-(and the same shape for `spacedock codex`):
+The front door is `spacedock claude "task" [--safehouse…] [-- host-flags…]`
+(and the same shape for `spacedock codex` and `spacedock pi`):
 
-- Flags before `--` are passed through to the host (`claude` / `codex`),
-  including `--plugin-dir`, `--resume`, `--model`, etc.
-- The bare text after the `--` fence is the launch task, appended to the
-  first-officer bootstrap prompt.
-- `--safehouse` (or any `--safehouse-<key>=…` knob) forces the launch through
-  safehouse; a `.safehouse` profile in the working directory does the same
-  automatically.
-- `--skip-contract-check` bypasses the contract gate (bootstrap only); a
-  `--plugin-dir` launch relaxes the gate without it.
+- The task comes first. It's handed to the first officer as the launch prompt.
+- Anything after `--` forwards verbatim to the host (`claude` / `codex` / `pi`),
+  including `--plugin-dir`, `--resume`, `--model`, and the like.
+- `--safehouse` forces the launch through the sandbox. A `.safehouse` profile in
+  the working directory does the same automatically.
