@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0199-pre-flip-mechanics
 group: dev-quality
-sprint-readiness: ready
+sprint-readiness: defer
 ---
 
 A SHA-pinned detached adversarial audit (or validation) must not be fooled by a git proxy that serves stale state. The defense the qa validator improvised — verify the resolved commit/blob SHA via an un-proxied git read before trusting a pin — should be a standard, checkable guard, not a one-off save.
