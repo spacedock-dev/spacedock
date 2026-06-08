@@ -9,8 +9,8 @@ verdict:
 score:
 worktree:
 issue:
-sprint:
-group:
+sprint: 0200-flip
+group: flip-mechanics
 sprint-readiness:
 ---
 

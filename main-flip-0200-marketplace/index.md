@@ -9,6 +9,9 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0200-flip
+group: flip-capstone
+sprint-readiness: defer
 ---
 
 The 0.19.6 capstone: once the line is tested/green, cut **0.20.0 on main** and **flip the marketplace** so users get the stable release off main instead of the `next` development branch. This is the "flip main readiness" milestone.
