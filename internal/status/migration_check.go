@@ -25,9 +25,8 @@ import (
 // The debriefs in both trees carry their own frontmatter shape (session-date,
 // sequence, first-commit), whose bare-YAML date scalars decode as time.Time
 // directly but as strings through the reader — expected for non-entity
-// frontmatter and outside this check's scope. Pruning these trees wholesale
-// matches the established sibling prunes in handlers.go (discoverIgnoreDirs) and
-// boundary_guard_test.go.
+// frontmatter and outside this check's scope. Both trees are pruned wholesale:
+// neither holds the entity frontmatter the migration check governs.
 func isMigrationCheckPrunedDir(path string) bool {
 	name := filepath.Base(path)
 	if name == ".spacedock-state" {
