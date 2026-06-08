@@ -8,7 +8,7 @@ worktree: ""
 issue:
 sprint: 019x-pre-flip-cleanups
 group: dispatch-hygiene
-sprint-readiness: ready
+sprint-readiness: defer
 ---
 
 The Codex first-officer runtime now instructs the FO to build dispatch prompts

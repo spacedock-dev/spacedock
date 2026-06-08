@@ -1,11 +1,11 @@
 ---
 id: e30vayp9ja885x7qfjkm6w2n
 title: "Validate/sanitize team_name in the dispatch-file path + fix the bare-mode comment (n1a audit polish)"
-status: backlog
+status: implementation
 source: "n1a detached audit (2026-06-04, audit-live-cycle-end-state-determinism @ 9c6b7ae7) — refuted nothing material; two polish items on internal/dispatch/build.go's new team_name-keyed dispatch path (#n1a 1b)."
 score: "0.18"
-worktree:
-started:
+worktree: .worktrees/spacedock-ensign-dispatch-path-teamname-sanitize
+started: 2026-06-08T05:11:44Z
 completed:
 verdict:
 issue:
