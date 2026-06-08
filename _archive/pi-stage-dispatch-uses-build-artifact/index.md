@@ -11,6 +11,7 @@ issue:
 id: z68h8vwxeetp011b1484c2jx
 mod-block:
 pr: "#300"
+archived: 2026-06-08T20:30:44Z
 ---
 
 Spacedock stage dispatches should be driven by the canonical `spacedock dispatch build` artifact. That artifact is responsible for carrying the entity slug, entity path, workflow directory, target stage, stage definition, worktree path, checklist, and host/runtime constraints. During recent Pi work, the FO manually composed `subagent(...)` task prompts for `launcher-binary-path-passthrough` and `pi-stage-dispatch-fresh-context`, adding slug/stage details by hand. That was sufficient for the moment but bypassed the dispatch-builder contract and makes omissions likely.
