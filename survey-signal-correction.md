@@ -13,6 +13,7 @@ sprint: 019x-pre-flip-cleanups
 group: survey
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#324"
 ---
 
 `spacedock:survey` decides "what this project is and where it stands" from THIN
