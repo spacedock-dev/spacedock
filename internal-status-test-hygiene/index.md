@@ -9,6 +9,9 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 019x-pre-flip-cleanups
+group: release-hygiene
+sprint-readiness: ready
 ---
 
 `go test ./internal/status/` (and thus `go test ./...`) FAILS when run from the project root, and two `internal/status` files are gofmt-dirty on `next`. Neither is caught by CI (the offline gate runs a fresh checkout with no `.spacedock-state`; worktree ensigns also lack it), so the failures only bite a developer or a non-worktree ensign running tests from the repo root — which is the common dev loop.

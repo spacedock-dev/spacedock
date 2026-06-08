@@ -9,6 +9,9 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-survey-signal-correction
 issue:
+sprint: 019x-pre-flip-cleanups
+group: survey
+sprint-readiness: ready
 ---
 
 `spacedock:survey` decides "what this project is and where it stands" from THIN

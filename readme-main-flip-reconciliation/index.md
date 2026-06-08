@@ -11,6 +11,9 @@ worktree: .worktrees/spacedock-ensign-readme-main-flip-reconciliation
 issue:
 pr: "#322"
 mod-block: merge:pr-merge
+sprint: 019x-pre-flip-cleanups
+group: readme
+sprint-readiness: ready
 ---
 
 The main-flip milestone needs README and install-facing docs that describe the

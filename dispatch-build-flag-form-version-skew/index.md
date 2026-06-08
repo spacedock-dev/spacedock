@@ -6,6 +6,9 @@ source: "FO dogfood (2026-06-06) - plugin 0.19.5 Codex runtime instructs `dispat
 score: "0.27"
 worktree: ""
 issue:
+sprint: 019x-pre-flip-cleanups
+group: dispatch-hygiene
+sprint-readiness: ready
 ---
 
 The Codex first-officer runtime now instructs the FO to build dispatch prompts
