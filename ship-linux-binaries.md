@@ -1,9 +1,9 @@
 ---
 id: v3yf6j3nkey6tvxvsa1y42sm
 title: Ship Linux binaries + a Linux install path (release is darwin-only)
-status: backlog
+status: ideation
 source: "captain (2026-06-08) - dispatch before 0.20.0. Mirrors GitHub spacedock-dev/spacedock#321 (public report). The release is darwin-only though the code already builds + tests on Linux in CI; the gap is release config + a Linux distribution channel."
-started:
+started: 2026-06-08T18:17:44Z
 completed:
 verdict:
 score:

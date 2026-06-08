@@ -1,9 +1,9 @@
 ---
 id: m1whe67x7nnh1gjwrnsksgak
 title: Detached audits / validation must catch rtk-stale-git via an un-proxied SHA verify
-status: backlog
+status: ideation
 source: "Commander (2026-06-08) qa validation: the validation ensign caught an rtk-stale-git discrepancy on its own — the worktree contract.go blob ≠ the expected e050996d blob — and only a raw, un-proxied blob-SHA compare exposed it, forcing a re-pin to 32ceb73e before the adversarial audit re-ran (verdict held PASSED). FO boot (this session) independently hit rtk mangling/blocking ls/find/ps. A SHA-pinned audit that trusts proxied git is a silent hole in exactly the discipline meant to catch silent holes."
-started:
+started: 2026-06-08T18:17:44Z
 completed:
 verdict:
 score:

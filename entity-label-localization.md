@@ -1,9 +1,9 @@
 ---
 id: jm0vqtx3j5vfw106kg0nz87b
 title: Localize the operating voice to the workflow's entity-label (keep the shared contract generic)
-status: backlog
+status: ideation
 source: "captain (2026-06-08, this session). Captain-facing + workflow-specific prose says generic \"entity\"; it should read as the workflow's declared label (this workflow: \"task\"). Principle: localize the OPERATING VOICE, keep the SHARED ABSTRACTION generic — do NOT rename entity→task in the shared contract (it serves any workflow: ticket/story/experiment)."
-started:
+started: 2026-06-08T18:17:44Z
 completed:
 verdict:
 score:
