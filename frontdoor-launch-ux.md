@@ -1,7 +1,7 @@
 ---
 id: yqf0amtyecjcft0vsw6nbqtk
 title: spacedock codex/claude front-door launch UX — auto-install messaging, pre-launch info banner, neutral bootstrap prompt
-status: validation
+status: implementation
 source: "captain live-test of 0.19.8 (2026-06-08). The first real `spacedock codex` run surfaced three front-door UX issues (A/B/D below). The pre-cut audit verified z9's auto-install SEAM via tests but nobody ran the front door end-to-end — so a real `spacedock codex` live drive is this task's load-bearing proof."
 started: 2026-06-08T21:00:22Z
 completed:
