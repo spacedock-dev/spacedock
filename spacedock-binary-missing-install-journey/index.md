@@ -140,17 +140,23 @@ BEFORE: `Spacedock contract mismatch: binary is contract 1, plugin requires
 >=2,<3.` + `too-old-binary: your spacedock binary (contract 1) predates this
 plugin (needs >=2,<3). Rebuild/upgrade spacedock: go install …@next …` + `Run
 \`spacedock doctor\` for details.`
-AFTER: `Spacedock version mismatch: your spacedock binary is 0.19.4, but the
-installed plugin (0.21.0) needs a newer binary.` + `  Upgrade the binary: brew
-upgrade spacedock (or \`go build -o spacedock ./cmd/spacedock\` from a clone).` +
-`Run \`spacedock doctor\` for details.`
+AFTER (comm-officer polish):
+```
+Spacedock version mismatch: binary 0.19.4, plugin 0.21.0. The plugin needs a newer binary.
+  Upgrade the binary: brew upgrade spacedock
+  Or build from source: go build -o spacedock ./cmd/spacedock
+Run spacedock doctor for details.
+```
 
 too-old-plugin case:
 BEFORE: `Spacedock contract mismatch: binary is contract 1, plugin requires
 >=0,<1.` + `too-old-plugin: … Update it: spacedock install --host claude …`
-AFTER: `Spacedock version mismatch: your spacedock binary is 0.21.0, but the
-installed plugin (0.18.0) is too old for it.` + `  Update the plugin: spacedock
-install --host claude.` + `Run \`spacedock doctor\` for details.`
+AFTER (comm-officer polish):
+```
+Spacedock version mismatch: binary 0.21.0, plugin 0.18.0. The binary needs a newer plugin.
+  Update the plugin: spacedock install --host claude
+Run spacedock doctor for details.
+```
 
 OK path (`contract.go:148`):
 BEFORE: `OK: binary contract 1 satisfies plugin range >=1,<2.`
@@ -168,9 +174,11 @@ verdict String() kebab tokens stay — they are the test oracle, not user copy.)
 keeps the source-build fallback, and names the distinction:
 BEFORE: `Rebuild/upgrade spacedock: go install
 github.com/spacedock-dev/spacedock/cmd/spacedock@next (or pull and 'go build').`
-AFTER: `Upgrade the binary: brew upgrade spacedock (or \`go build -o spacedock
-./cmd/spacedock\` from a clone). This upgrades the BINARY; to refresh the PLUGIN
-instead, run spacedock install.`
+AFTER (comm-officer polish):
+```
+To upgrade the binary: brew upgrade spacedock (Homebrew), or go build -o spacedock ./cmd/spacedock (from a clone).
+To refresh the plugin instead: spacedock install.
+```
 
 (The `@next`/`@latest` branch-pin suffix is dropped from the user-facing line:
 `brew upgrade spacedock` carries no branch, and the source-build line is
@@ -284,6 +292,9 @@ show plugin version + binary version (spiked feasible — manifest `version`
 readable, binary version threaded as a param since `contract` cannot import
 `cli`) and lead the stale-binary remedy with `brew upgrade spacedock`. ACs are
 code-gated fixture tests with oracles independent of the message file; AC-3 is the
-same legitimate-text exception PR #262 used. comm-officer polish was requested
-(non-blocking) and did not reply within budget; proceeded with the drafted copy.
+same legitimate-text exception PR #262 used. comm-officer polish arrived after the
+first commit and was incorporated into the (b)/(c) AFTER copy (tighter: cut
+filler, positive forms, scannable command lines); the polished copy still
+satisfies the AC oracles (both versions present, no `contract N` / `>=,<`, brew
+upgrade leads, `spacedock install` distinction kept), so the ACs were unchanged.
 
