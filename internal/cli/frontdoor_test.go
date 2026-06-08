@@ -295,35 +295,53 @@ func TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls(t *testing.T) {
 	})
 }
 
-// TestGateRemedyNamesLiveInstallCommand: every gateHost remedy must point at a
-// command the binary actually recognizes. After the init->install rename a user
-// who hits the gate and is told to "run spacedock init --host …" runs a command
-// that now exits 2 (unknown command). Drive each remedy branch (resolve error,
-// no plugin, missing manifest) and assert the printed remedy names `spacedock
-// install` and never `spacedock init`; then prove the named command resolves by
-// feeding it through cli.Run and asserting it is not the unknown-command exit 2.
+// TestGateRemedyNamesLiveInstallCommand: every remedy must point at a command
+// the binary actually recognizes. After the init->install rename a user who hits
+// the gate and is told to "run spacedock init --host …" runs a command that now
+// exits 2 (unknown command). gateHost owns only the always-fail-fast remedies
+// (resolve error → MalformedRange); the NoPluginFound message is the caller's
+// (it auto-installs by default, refuses under --no-install), so the no-plugin /
+// missing-manifest remedies are asserted on the launcher's --no-install output.
+// Each remedy must name `spacedock install` and never `spacedock init`.
 func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-such-dir", ".claude-plugin", "plugin.json")
-	cases := []struct {
-		name string
-		fake *fakeHost
+
+	// gateHost owns the resolve-error remedy (a host-CLI failure is a hard fail,
+	// not a missing plugin). It MUST print here.
+	t.Run("resolve error (gateHost-owned)", func(t *testing.T) {
+		var stderr bytes.Buffer
+		if v := gateHost(&fakeHost{resolveErr: errors.New("host CLI failed")}, "claude", &stderr); v == contract.Compatible {
+			t.Fatalf("gateHost = Compatible, want denied")
+		}
+		assertRemedyNamesInstall(t, stderr.String())
+	})
+
+	// The NoPluginFound remedies (no plugin, phantom manifest) are caller-owned:
+	// gateHost no longer prints for them, so assert the remedy on the launcher's
+	// --no-install refuse output.
+	noPluginCases := []struct {
+		name     string
+		manifest string
 	}{
-		{"resolve error", &fakeHost{resolveErr: errors.New("host CLI failed")}},
-		{"no plugin", &fakeHost{manifest: ""}},
-		{"missing manifest", &fakeHost{manifest: missing}},
+		{"no plugin", ""},
+		{"missing manifest", missing},
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := range noPluginCases {
+		t.Run(tc.name+" (caller-owned via --no-install)", func(t *testing.T) {
+			fake := &fakeHost{manifest: tc.manifest}
+			var stdout, stderr bytes.Buffer
+			if code := runClaude(context.Background(), []string{"--no-install"}, t.TempDir(), fake, lookFound, &stdout, &stderr); code == 0 {
+				t.Fatalf("exit = 0, want non-zero with --no-install and no plugin")
+			}
+			assertRemedyNamesInstall(t, stderr.String())
+		})
+		t.Run(tc.name+" (gateHost stays silent)", func(t *testing.T) {
 			var stderr bytes.Buffer
-			if v := gateHost(tc.fake, "claude", &stderr); v == contract.Compatible {
-				t.Fatalf("gateHost = Compatible, want denied for %s", tc.name)
+			if v := gateHost(&fakeHost{manifest: tc.manifest}, "claude", &stderr); v != contract.NoPluginFound {
+				t.Fatalf("gateHost verdict = %v, want NoPluginFound", v)
 			}
-			remedy := stderr.String()
-			if !strings.Contains(remedy, "spacedock install") {
-				t.Fatalf("remedy does not name the live install command: %q", remedy)
-			}
-			if strings.Contains(remedy, "spacedock init") {
-				t.Fatalf("remedy names the removed init command (exits 2): %q", remedy)
+			if stderr.Len() != 0 {
+				t.Fatalf("gateHost printed for NoPluginFound (caller owns the message): %q", stderr.String())
 			}
 		})
 	}
@@ -340,6 +358,118 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	}
 	if cmd, _, _ := root.Find([]string{"init"}); cmd != root {
 		t.Fatalf("`init` resolved to a command (%v) — the removed verb must fall back to the unknown-command path", cmd.Name())
+	}
+}
+
+// TestNoPluginAutoInstallAnnouncesHostCorrectly (AC-A, auto-install arm): with
+// no installed plugin the launcher announces `Installing the {host} plugin…` on
+// stderr before installing, and a codex run never names `claude` (the old
+// gateHost remedy hardcoded a `spacedock claude` hint that was wrong in a codex
+// run). Install + launch are observed via the recorded seams, not a string
+// match.
+func TestNoPluginAutoInstallAnnouncesHostCorrectly(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: ""} // no plugin found
+			var stderr bytes.Buffer
+
+			code := tc.run(nil, t.TempDir(), fake, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (auto-install + launch) (stderr=%q)", code, stderr.String())
+			}
+			want := "Installing the " + tc.host + " plugin"
+			if !strings.Contains(stderr.String(), want) {
+				t.Fatalf("stderr missing %q announcement: %q", want, stderr.String())
+			}
+			if tc.host == "codex" && strings.Contains(stderr.String(), "spacedock claude") {
+				t.Fatalf("codex auto-install stderr names claude: %q", stderr.String())
+			}
+			if len(fake.installCmds) == 0 {
+				t.Fatalf("install seam not invoked: auto-install did not run")
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked after auto-install")
+			}
+		})
+	}
+}
+
+// TestNoPluginNoInstallRemedyIsHostCorrect (AC-A, refuse arm): with --no-install
+// and no plugin the launcher prints the manual remedy naming the host-correct
+// install/bootstrap commands (`spacedock install --host {host}`, `spacedock
+// {host} --skip-contract-check`) and NEVER a `claude` hint in a codex run, then
+// exits non-zero without installing or launching. This is the message the caller
+// now owns (gateHost stopped printing for NoPluginFound).
+func TestNoPluginNoInstallRemedyIsHostCorrect(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: ""} // no plugin found
+			var stderr bytes.Buffer
+
+			code := tc.run([]string{"--no-install"}, t.TempDir(), fake, &stderr)
+
+			if code == 0 {
+				t.Fatalf("exit = 0, want non-zero with --no-install and no plugin")
+			}
+			out := stderr.String()
+			if !strings.Contains(out, "spacedock install --host "+tc.host) {
+				t.Fatalf("remedy missing host-correct install command for %s: %q", tc.host, out)
+			}
+			if !strings.Contains(out, "spacedock "+tc.host+" --skip-contract-check") {
+				t.Fatalf("remedy missing host-correct bootstrap command for %s: %q", tc.host, out)
+			}
+			if tc.host == "codex" && strings.Contains(out, "claude") {
+				t.Fatalf("codex --no-install remedy names claude: %q", out)
+			}
+			if len(fake.installCmds) != 0 {
+				t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
+			}
+			if fake.launchedArg != nil {
+				t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
+			}
+		})
+	}
+}
+
+// assertRemedyNamesInstall: every gate / refuse remedy must name the live
+// `spacedock install` command and never the removed `spacedock init` (which now
+// exits 2).
+func assertRemedyNamesInstall(t *testing.T, remedy string) {
+	t.Helper()
+	if !strings.Contains(remedy, "spacedock install") {
+		t.Fatalf("remedy does not name the live install command: %q", remedy)
+	}
+	if strings.Contains(remedy, "spacedock init") {
+		t.Fatalf("remedy names the removed init command (exits 2): %q", remedy)
 	}
 }
 

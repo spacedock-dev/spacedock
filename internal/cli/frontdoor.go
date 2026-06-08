@@ -15,13 +15,16 @@ import (
 
 	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
+	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
 // bootstrapPrompt is the fixed launch-and-go message appended as the last inner
 // argv token so a fresh `spacedock claude` session starts the first officer
 // rather than opening an idle agent. It is omitted when `--resume` is forwarded
-// (a resume already carries its own session intent).
-const bootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage."
+// (a resume already carries its own session intent). claude selects the first
+// officer through the `--agent spacedock:first-officer` flag already in the
+// argv, so the prompt only needs a neutral launch-and-go.
+const bootstrapPrompt = "Engage as the Spacedock first officer for this session."
 
 // hostOps is the injectable seam the front-door, init, and doctor paths depend
 // on. Production backs it with real `claude`/`codex` plugin commands and exec;
@@ -117,6 +120,40 @@ func executableFile(path string) bool {
 	return info.Mode().Perm()&0o111 != 0
 }
 
+// noPluginRemedy is the host-correct manual remedy printed when no plugin is
+// installed and the operator opted out of auto-install with --no-install. It
+// names the host's own install and bootstrap commands — a codex run never says
+// `claude`. The caller owns this message (not gateHost) because the response to
+// NoPluginFound is non-uniform: auto-install by default, refuse-and-instruct
+// under --no-install.
+func noPluginRemedy(host string) string {
+	return fmt.Sprintf(
+		"Spacedock: no installed %s plugin found. "+
+			"Run `spacedock install --host %s` (or `spacedock %s --skip-contract-check` to bootstrap).",
+		host, host, host)
+}
+
+// launchBanner writes a short pre-launch orientation banner to w before the host
+// is handed control: the spacedock version, the workflow detected from dir (its
+// path relative to dir, via status.DiscoverWorkflowDir — the same walk-up that
+// recognizes a commissioned workflow by its README's `commissioned-by: spacedock@`
+// field — or "none detected (launching anyway)" when launched outside one), and a
+// one-line orientation pointer. Callers suppress it on a resume (the operator is
+// continuing a session, not starting one).
+func launchBanner(host, dir string, w io.Writer) {
+	detected := "none detected (launching anyway)"
+	if workflowDir, ok := status.DiscoverWorkflowDir(dir); ok {
+		if rel, err := filepath.Rel(dir, workflowDir); err == nil {
+			detected = rel
+		} else {
+			detected = workflowDir
+		}
+	}
+	fmt.Fprintf(w, "spacedock %s · first officer launching %s\n", Version, host)
+	fmt.Fprintf(w, "Workflow: %s\n", detected)
+	fmt.Fprintf(w, "%s is starting as your first officer; run `spacedock status` inside the session for the queue.\n", host)
+}
+
 // gateHost resolves the installed manifest for host and compares it against
 // CONTRACT_VERSION, returning the verdict so the caller can distinguish a
 // missing plugin (NoPluginFound — recoverable by installing) from an
@@ -127,8 +164,9 @@ func executableFile(path string) bool {
 // inspects the VERDICT, not a doctor exit code: RunDoctor maps no-plugin-found to
 // exit 0 (a non-fatal report), so a non-empty installPath to a missing manifest
 // would otherwise slip through as "compatible". gateHost prints the actionable
-// remedy for every non-Compatible verdict; the caller decides whether to act on
-// it (auto-install) or fail fast.
+// remedy for every non-Compatible verdict EXCEPT NoPluginFound, whose message the
+// caller owns (it auto-installs by default and only refuses under --no-install,
+// so the right wording depends on the caller's choice).
 func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 	manifestPath, err := ops.ResolveManifest(host)
 	if err != nil {
@@ -138,17 +176,10 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 		return contract.MalformedRange
 	}
 	if manifestPath == "" {
-		fmt.Fprintf(stderr,
-			"Spacedock: no installed %s plugin found. "+
-				"Run `spacedock install --host %s` (or `spacedock claude --skip-contract-check` to bootstrap).\n", host, host)
 		return contract.NoPluginFound
 	}
 	res := contract.ManifestVerdict(manifestPath, host, devBranch, Version)
 	if res.Verdict == contract.NoPluginFound {
-		fmt.Fprintf(stderr,
-			"Spacedock: the installed %s plugin reported a manifest path that does not exist (%s). "+
-				"Run `spacedock install --host %s` (or `spacedock claude --skip-contract-check` to bootstrap).\n",
-			host, manifestPath, host)
 		return contract.NoPluginFound
 	}
 	if res.Verdict != contract.Compatible {
@@ -193,11 +224,14 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		case contract.NoPluginFound:
 			// No plugin on disk: the single command the user typed should yield a
 			// working session. Auto-install the plugin then launch, unless the
-			// operator opted out with --no-install (gateHost already printed the
-			// instruct remedy, so just fail fast).
+			// operator opted out with --no-install. The caller owns the NoPluginFound
+			// message (gateHost stays silent for it): announce the install on the
+			// default arm, print the host-correct manual remedy on the refuse arm.
 			if fd.noInstall {
+				fmt.Fprintln(stderr, noPluginRemedy("claude"))
 				return 1
 			}
+			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "claude")
 			if _, err := ops.Install("claude", marketplaceSource, devBranch); err != nil {
 				fmt.Fprintf(stderr, "spacedock claude: auto-install failed: %v\n", err)
 				return 1
@@ -213,6 +247,9 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
+	if !resume {
+		launchBanner("claude", dir, stderr)
+	}
 	inner := []string{"claude"}
 	if wrap {
 		inner = append(inner, "--dangerously-skip-permissions")
@@ -306,8 +343,9 @@ func containsResume(args []string) bool {
 // officer. Codex has no `--agent` analog (spike-confirmed: no agent/skill-select
 // flag on the top-level, `exec`, or `plugin` surfaces), so the only FO-selection
 // injection point is the positional prompt — this prompt names the
-// `spacedock:first-officer` skill explicitly.
-const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
+// `spacedock:first-officer` skill explicitly. That `Assume $spacedock:first-officer`
+// clause is load-bearing (codex has no flag to select the FO) and MUST stay.
+const codexBootstrapPrompt = "Engage as the Spacedock first officer for this session. Assume $spacedock:first-officer for the entire session."
 
 // runCodex is the `spacedock codex` front door: version-gate, then launch the
 // first officer. The gate fails fast on a contract mismatch, but a missing plugin
@@ -345,11 +383,14 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			// proceed to launch
 		case contract.NoPluginFound:
 			// No plugin on disk: auto-install then launch, unless the operator opted
-			// out with --no-install (gateHost already printed the instruct remedy, so
-			// just fail fast).
+			// out with --no-install. The caller owns the NoPluginFound message
+			// (gateHost stays silent for it): announce the install on the default arm,
+			// print the host-correct manual remedy on the refuse arm.
 			if fd.noInstall {
+				fmt.Fprintln(stderr, noPluginRemedy("codex"))
 				return 1
 			}
+			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "codex")
 			if _, err := ops.Install("codex", marketplaceSource, devBranch); err != nil {
 				fmt.Fprintf(stderr, "spacedock codex: auto-install failed: %v\n", err)
 				return 1
@@ -365,6 +406,9 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := codexResume(fd.passthrough)
+	if !resume {
+		launchBanner("codex", dir, stderr)
+	}
 	inner := []string{"codex"}
 	if wrap {
 		inner = append(inner, "--dangerously-bypass-approvals-and-sandbox")
