@@ -62,10 +62,10 @@ Banner = the `launchBanner` 3-line block on stderr. "—" = no banner emitted on
 
 | Mode | Host | BEFORE (today) | AFTER (proposed) |
 |------|------|----------------|------------------|
-| compatible, **single** workflow | claude | `spacedock 0.19.0 · first officer launching claude`<br>`Workflow: docs/dev`<br>`claude is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching claude as your first officer`<br>`Workflow: docs/dev`<br>`claude is your first officer — ask it for the queue and what to do next.` |
-| compatible, **single** workflow | codex | same 3 lines, `codex` | `spacedock {v} · launching codex as your first officer`<br>`Workflow: docs/dev`<br>`codex is your first officer — ask it for the queue and what to do next.` |
-| compatible, **multi** workflow | claude | `spacedock 0.19.0 · first officer launching claude`<br>`Workflow: 2 workflows detected (run \`spacedock status\` to pick)`<br>`claude is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching claude as your first officer`<br>`Workflows: 2 detected — your first officer will help you pick`<br>`claude is your first officer — ask it for the queue and what to do next.` |
-| compatible, **none** detected | codex | `spacedock 0.19.0 · first officer launching codex`<br>`Workflow: none detected (launching anyway)`<br>`codex is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching codex as your first officer`<br>`Workflow: none detected (launching anyway)`<br>`codex is your first officer — ask it for the queue and what to do next.` |
+| compatible, **single** workflow | claude | `spacedock 0.19.0 · first officer launching claude`<br>`Workflow: docs/dev`<br>`claude is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching claude as your first officer`<br>`Workflow: docs/dev`<br>`claude is your first officer — ask it for the queue and next steps.` |
+| compatible, **single** workflow | codex | same 3 lines, `codex` | `spacedock {v} · launching codex as your first officer`<br>`Workflow: docs/dev`<br>`codex is your first officer — ask it for the queue and next steps.` |
+| compatible, **multi** workflow | claude | `spacedock 0.19.0 · first officer launching claude`<br>`Workflow: 2 workflows detected (run \`spacedock status\` to pick)`<br>`claude is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching claude as your first officer`<br>`Workflows: 2 found — your first officer will help you pick`<br>`claude is your first officer — ask it for the queue and next steps.` |
+| compatible, **none** detected | codex | `spacedock 0.19.0 · first officer launching codex`<br>`Workflow: none detected (launching anyway)`<br>`codex is starting as your first officer; run \`spacedock status\` inside the session for the queue.` | `spacedock {v} · launching codex as your first officer`<br>`Workflow: none detected (launching anyway)`<br>`codex is your first officer — ask it for the queue and next steps.` |
 | compatible | pi | *(no banner)* | the 3-line banner, `pi` (closes the pi gap) |
 | fresh-install (no plugin) | claude/codex | `Installing the {host} plugin…` then the BEFORE banner | `Installing the {host} plugin…` then the AFTER banner (banner change only; install line unchanged) |
 | fresh-install (runtime not ready) | pi | `spacedock pi: Pi runtime is not ready…` + doctor report, exit 1 | unchanged (out of scope — not the banner) |
@@ -78,7 +78,7 @@ Banner = the `launchBanner` 3-line block on stderr. "—" = no banner emitted on
 ### The three problems, and how the AFTER column fixes each
 
 1. **First-officer metaphor flip.** BEFORE line 1 "first officer launching claude" reads as *spacedock-is-FO*; line 3 "claude is your first officer" reads as *claude-is-FO*. AFTER line 1 is `launching {host} as your first officer` — the launcher is never called a first officer; only the host is, consistently with line 3. One stable model: the host is your first officer; spacedock launched it.
-2. **`status` overloaded + self-serve contradiction.** BEFORE prints `spacedock status` twice and tells the user to run it themselves — contradicting "the host is your first officer (it runs status for you)." AFTER removes BOTH `spacedock status` instructions. Line 3 becomes `ask it for the queue and what to do next.` The pitch holds: you ask your first officer; it runs status.
+2. **`status` overloaded + self-serve contradiction.** BEFORE prints `spacedock status` twice and tells the user to run it themselves — contradicting "the host is your first officer (it runs status for you)." AFTER removes BOTH `spacedock status` instructions. Line 3 becomes `ask it for the queue and next steps.` The pitch holds: you ask your first officer; it runs status.
 3. **Multi-workflow "pick then launches anyway" limbo.** BEFORE announces "N workflows detected (run `spacedock status` to pick)" then launches with no pick. AFTER states no actionable command; it tells the truth about what happens next: `your first officer will help you pick` (the FO disambiguates in-session on its first turn, per the FO contract).
 
 Minors:
@@ -89,8 +89,8 @@ Minors:
 
 - Line 1 separator stays ` · ` (matches today). `{v}` is the `Version` value (a real release on a stamped build, `dev` on an unstamped one).
 - Line 2 single/none keep the existing `detectedWorkflow` text verbatim (`docs/dev`, `none detected (launching anyway)`) — those are not problems; only the multi case changes.
-- Line 2 multi: `Workflows: {N} detected — your first officer will help you pick`. No backticked command, so nothing to mis-run.
-- comm-officer polish was requested on the wording (best-effort); no reply within the 2-minute budget, so the wording above is the ensign's. It is terse, each line stands alone, and it satisfies the three constraints (consistent metaphor, no self-serve `status`, clean single-workflow path).
+- Line 2 multi: `Workflows: {N} found — your first officer will help you pick`. No backticked command, so nothing to mis-run.
+- comm-officer polish (Strunk) was applied. Accepted: line 2 multi `detected` → `found` (shorter, equally definite); line 3 `what to do next` → `next steps` (parallel nouns). Rejected: line 2 multi `will help you pick` → `will pick` — comm-officer itself flagged this for product-intent review, and "will pick" is wrong about the contract: the FO presents the list and the user picks (it helps you pick, it does not decide unilaterally), which is the exact substance of Problem 3, so `will help you pick` stays. Also rejected: rewording line 2 none `none detected (launching anyway)` → `none (launching anyway)` — that is the existing `detectedWorkflow` output and the single/none line-2 text is explicitly scoped as not-a-problem; rewording it would expand scope, so it stays verbatim. The result is terse, each line stands alone, and satisfies the three constraints (consistent metaphor, no self-serve `status`, clean single-workflow path).
 
 ## Acceptance criteria
 
@@ -98,12 +98,12 @@ Each AC is verified by an `internal/cli` test over the **rendered** banner outpu
 
 - **AC-1 — consistent metaphor, no launcher-as-FO.** The rendered banner never contains the phrase `first officer launching` (the flipped line-1 framing); line 1 reads `launching {host} as your first officer`.
   *Verified by:* a test asserting the banner output (claude and codex) contains `launching {host} as your first officer` and does NOT contain `first officer launching`.
-- **AC-2 — no self-serve `spacedock status` in the banner.** The rendered banner contains no `spacedock status` instruction on any of the single / multi / none paths; line 3 reads `{host} is your first officer — ask it for the queue and what to do next.`
+- **AC-2 — no self-serve `spacedock status` in the banner.** The rendered banner contains no `spacedock status` instruction on any of the single / multi / none paths; line 3 reads `{host} is your first officer — ask it for the queue and next steps.`
   *Verified by:* a test asserting the banner output for all three workflow cases does NOT contain `` `spacedock status` `` and DOES contain `ask it for the queue`.
-- **AC-3 — multi-workflow states no pick instruction.** On the multi-workflow path, the rendered banner reads `Workflows: {N} detected — your first officer will help you pick` and contains neither `run \`spacedock status\` to pick` nor any bare-command pick instruction.
-  *Verified by:* a test that builds a 2-workflow git-repo fixture, renders the banner, and asserts it contains `2 detected — your first officer will help you pick` and NOT `to pick)` / `spacedock status`.
+- **AC-3 — multi-workflow states no pick instruction.** On the multi-workflow path, the rendered banner reads `Workflows: {N} found — your first officer will help you pick` and contains neither `run \`spacedock status\` to pick` nor any bare-command pick instruction.
+  *Verified by:* a test that builds a 2-workflow git-repo fixture, renders the banner, and asserts it contains `2 found — your first officer will help you pick` and NOT `to pick)` / `spacedock status`.
 - **AC-4 — singular/plural label agreement.** The single-workflow and none paths render `Workflow:`; the multi path renders `Workflows:`.
-  *Verified by:* a test asserting `Workflow: docs/dev` for the single fixture, `Workflow: none detected` for the bare fixture, and `Workflows: 2 detected` for the 2-workflow fixture.
+  *Verified by:* a test asserting `Workflow: docs/dev` for the single fixture, `Workflow: none detected` for the bare fixture, and `Workflows: 2 found` for the 2-workflow fixture.
 - **AC-5 — single-workflow happy path stays clean and terse.** The single-workflow banner is exactly the three proposed lines, in order, with no extra lines.
   *Verified by:* a test asserting the full rendered single-workflow output equals the three expected lines joined by `\n` (a byte-exact golden assertion, the strongest form, so any drift fails).
 - **AC-6 — unstamped build does not impersonate a release.** An unstamped (`go build` / `go install`) binary's `Version` is not a release-shaped semver; it reads as a dev build.
@@ -129,7 +129,7 @@ No spike needed. The design only reorders/rewords text already produced by `laun
 - DONE: Map the CURRENT front-door output for each cell first (read the real code, don't guess).
   Read frontdoor.go (`launchBanner`:138, gate arms :259-283/:418-441, `noPluginRemedy`:127), init.go, host_exec.go, pi.go (`runPi`:65 — no banner), contract.go (`mismatchMessage`:155); BEFORE column captured by exercising real `launchBanner` (single/multi/none) + a live `pi --no-install` probe (both throwaway tests, removed).
 - DONE: Propose the REVISED output per cell fixing the three filed problems + minors; present as a BEFORE/AFTER table (mode × host); give ACs each verified by an `internal/cli` test over rendered output, never a source-grep.
-  Problem 1 (metaphor flip) → line 1 `launching {host} as your first officer`; Problem 2 (status overload/self-serve) → line 3 `ask it for the queue and what to do next.`, both `spacedock status` removed; Problem 3 (multi limbo) → `Workflows: N detected — your first officer will help you pick`; minors: `Workflow:`/`Workflows:` agreement + `Version` dev sentinel. AC-1..AC-7 each cite a rendered-output test (AC-5 byte-exact golden, AC-6 property+regex); discovered the pi no-banner gap (AC-7).
+  Problem 1 (metaphor flip) → line 1 `launching {host} as your first officer`; Problem 2 (status overload/self-serve) → line 3 `ask it for the queue and next steps.`, both `spacedock status` removed; Problem 3 (multi limbo) → `Workflows: N found — your first officer will help you pick`; minors: `Workflow:`/`Workflows:` agreement + `Version` dev sentinel. AC-1..AC-7 each cite a rendered-output test (AC-5 byte-exact golden, AC-6 property+regex); discovered the pi no-banner gap (AC-7).
 
 ### Summary
 
