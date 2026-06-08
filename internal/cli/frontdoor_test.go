@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -185,8 +186,24 @@ func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 	if fake.launchedArg != nil {
 		t.Fatalf("launch seam invoked on mismatch: %v", fake.launchedArg)
 	}
-	if !strings.Contains(stderr.String(), "too-old-binary") {
-		t.Fatalf("stderr missing pinned remedy: %q", stderr.String())
+	assertGateMismatchMessage(t, stderr.String())
+}
+
+// assertGateMismatchMessage is the gate-parity oracle: the live launch gate emits
+// the same version-bearing mismatch message the doctor does — it names both the
+// plugin display version (0.13.0, from the too-old-binary fixture) and the binary
+// display version (Version), and carries no `contract N` token in the user-facing
+// line.
+func assertGateMismatchMessage(t *testing.T, out string) {
+	t.Helper()
+	if !strings.Contains(out, "plugin 0.13.0") {
+		t.Fatalf("gate mismatch message missing plugin version 0.13.0: %q", out)
+	}
+	if !strings.Contains(out, "binary "+Version) {
+		t.Fatalf("gate mismatch message missing binary version %q: %q", Version, out)
+	}
+	if regexp.MustCompile(`contract \d`).MatchString(out) {
+		t.Fatalf("gate mismatch message must not carry a contract-N token: %q", out)
 	}
 }
 
@@ -406,9 +423,7 @@ func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
 	if fake.launchedArg != nil {
 		t.Fatalf("launch seam invoked on mismatch: %v", fake.launchedArg)
 	}
-	if !strings.Contains(stderr.String(), "too-old-binary") {
-		t.Fatalf("stderr missing pinned remedy: %q", stderr.String())
-	}
+	assertGateMismatchMessage(t, stderr.String())
 }
 
 func TestCodexFrontDoorNoPluginFailsFastWithoutInstalling(t *testing.T) {

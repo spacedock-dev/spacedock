@@ -112,7 +112,7 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
 		out := stdout.String()
-		if !strings.Contains(out, "OK: binary contract") {
+		if !strings.Contains(out, "OK: spacedock binary "+Version+" and plugin 0.12.1") {
 			t.Fatalf("codex init should report compatible installed plugin first; stdout = %q", out)
 		}
 		for _, banned := range []string{"codex plugin marketplace add", "codex plugin add spacedock@spacedock"} {
@@ -155,7 +155,7 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 			t.Fatalf("exit = 0, want non-zero for incompatible installed plugin")
 		}
 		errOut := stderr.String()
-		if !strings.Contains(errOut, "too-old-binary") {
+		if !strings.Contains(errOut, "Spacedock version mismatch: binary "+Version+", plugin 0.13.0") {
 			t.Fatalf("codex init should surface doctor mismatch; stderr = %q", errOut)
 		}
 		for _, banned := range []string{"codex plugin marketplace add", "codex plugin add spacedock@spacedock"} {

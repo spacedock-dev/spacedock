@@ -127,7 +127,7 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 				"Run `spacedock install --host %s` (or `spacedock claude --skip-contract-check` to bootstrap).\n", host, host)
 		return contract.NoPluginFound
 	}
-	res := contract.ManifestVerdict(manifestPath, host, devBranch)
+	res := contract.ManifestVerdict(manifestPath, host, devBranch, Version)
 	if res.Verdict == contract.NoPluginFound {
 		fmt.Fprintf(stderr,
 			"Spacedock: the installed %s plugin reported a manifest path that does not exist (%s). "+

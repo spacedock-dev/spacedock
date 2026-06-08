@@ -107,17 +107,18 @@ func ParseRange(raw string) (lo int, hi int, err error) {
 
 // Compare classifies a binary at contract version c against a plugin's raw
 // requires-contract range, for the named host and (pre-release) dev branch. It
-// returns the verdict and the operator-facing message. NoPluginFound is produced
-// by the caller (when the manifest is absent), not here — Compare always has a
-// raw range string to evaluate.
-func Compare(c int, raw, host, branch string) Result {
+// returns the verdict and the operator-facing message. pluginVersion and
+// binaryVersion are the display semvers woven into the user-facing mismatch/OK
+// lines. NoPluginFound is produced by the caller (when the manifest is absent),
+// not here — Compare always has a raw range string to evaluate.
+func Compare(c int, raw, host, branch, pluginVersion, binaryVersion string) Result {
 	manifestNote := ""
-	return compareWithManifest(c, raw, host, branch, manifestNote)
+	return compareWithManifest(c, raw, host, branch, manifestNote, pluginVersion, binaryVersion)
 }
 
 // compareWithManifest is Compare with an optional manifest path woven into the
 // malformed-range message so a packaging bug names the offending file.
-func compareWithManifest(c int, raw, host, branch, manifestPath string) Result {
+func compareWithManifest(c int, raw, host, branch, manifestPath, pluginVersion, binaryVersion string) Result {
 	if strings.TrimSpace(raw) == "" {
 		return Result{
 			Verdict: PluginPredatesContract,
@@ -138,50 +139,40 @@ func compareWithManifest(c int, raw, host, branch, manifestPath string) Result {
 				strings.TrimSpace(raw), loc),
 		}
 	}
-	rangeStr := fmt.Sprintf(">=%d,<%d", lo, hi)
 	switch {
 	case c < lo:
-		return Result{Verdict: TooOldBinary, Message: mismatchMessage(c, rangeStr, tooOldBinaryRemedy(c, rangeStr, branch))}
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
 	case c >= hi:
-		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(c, rangeStr, tooOldPluginRemedy(c, rangeStr, host))}
+		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
-		return Result{Verdict: Compatible, Message: fmt.Sprintf("OK: binary contract %d satisfies plugin range %s.", c, rangeStr)}
+		return Result{Verdict: Compatible, Message: fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)}
 	}
 }
 
 // mismatchMessage assembles the shared-shape mismatch message: a header naming
-// the binary's contract and the required range, the per-class remedy line, and
-// the doctor pointer.
-func mismatchMessage(c int, rangeStr, remedy string) string {
+// the binary and plugin display versions, a one-line direction sentence, the
+// per-class remedy block, and the doctor pointer.
+func mismatchMessage(binaryVersion, pluginVersion, direction, remedy string) string {
 	return fmt.Sprintf(
-		"Spacedock contract mismatch: binary is contract %d, plugin requires %s.\n"+
-			"  %s\n"+
-			"Run `spacedock doctor` for details.",
-		c, rangeStr, remedy)
+		"Spacedock version mismatch: binary %s, plugin %s. %s\n"+
+			"%s\n"+
+			"Run spacedock doctor for details.",
+		binaryVersion, pluginVersion, direction, remedy)
 }
 
-// tooOldBinaryRemedy is the pinned too-old-binary remedy line. The optional
-// pre-release branch suffixes the go-install path so a dev install pins the
-// branch; the default release path omits it.
-func tooOldBinaryRemedy(c int, rangeStr, branch string) string {
-	suffix := "@latest"
-	if branch != "" {
-		suffix = "@" + branch
-	}
-	return fmt.Sprintf(
-		"too-old-binary: your spacedock binary (contract %d) predates this plugin (needs %s). "+
-			"Rebuild/upgrade spacedock: go install github.com/spacedock-dev/spacedock/cmd/spacedock%s "+
-			"(or pull and 'go build').",
-		c, rangeStr, suffix)
+// tooOldBinaryRemedy is the pinned too-old-binary remedy block: it leads with the
+// Homebrew upgrade, keeps the source-build fallback, and names the binary-vs-plugin
+// distinction (refreshing the plugin instead is a different command).
+func tooOldBinaryRemedy() string {
+	return "  Upgrade via Homebrew: brew upgrade spacedock\n" +
+		"  Or build from source: go build -o spacedock ./cmd/spacedock\n" +
+		"  Or refresh the plugin instead: spacedock install"
 }
 
 // tooOldPluginRemedy is the pinned too-old-plugin remedy line, parameterized by
-// the detected host for the install/update hint.
-func tooOldPluginRemedy(c int, rangeStr, host string) string {
-	return fmt.Sprintf(
-		"too-old-plugin: your installed plugin (needs %s) predates this binary (contract %d). "+
-			"Update it: spacedock install --host %s (or '%s plugin update spacedock').",
-		rangeStr, c, host, host)
+// the detected host for the install hint.
+func tooOldPluginRemedy(host string) string {
+	return fmt.Sprintf("  Update the plugin: spacedock install --host %s", host)
 }
 
 // pluginPredatesContractRemedy is the pinned remedy for an installed plugin that
