@@ -12,6 +12,7 @@ issue:
 sprint: 0198-pre-flip-hardening
 group: survey
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 One coherent correctness pass over the survey skill (`skills/survey/SKILL.md` + `references/queries.sql`), on a single corrected agentsview model. Consolidates the three coupled survey members (69 codex-cwd, 1p scaffold-fact, 4t sandbox-probe) plus the preflight's B2 model fix — they all edit one file, share the agentsview model, and bottom out on one live drive, so they ship as one task.
