@@ -36,3 +36,22 @@ Two test-hygiene cleanups surfaced by the 019x post-sprint audit. Bounded (the s
 ## Notes
 
 Provenance: the 019x post-sprint two-persona audit (its one Material finding + a Polish cleanup). Same test-hygiene class as qy. Candidate for a 0.19.8 / pre-flip sprint.
+
+## Stage Report: implementation
+
+- DONE: migration-check walk PRUNES the `.spacedock-state` tree (tree-prune matching the three sibling prunes, NOT the `_debriefs` name-match) — proven by a POSITIVE assertion that the walk skips the state tree, and the `checked == 0` Fatal guard stays non-vacuous after the prune.
+  `isMigrationCheckPrunedDir` returns `.spacedock-state` (matching `handlers.go` discoverIgnoreDirs + `boundary_guard_test.go`); `_debriefs` lives only inside the state tree, so the tree-prune subsumes the old name-match. Commit `96f22f5f`.
+- DONE: POSITIVE assertion that the walk skips the state tree.
+  Two proofs — (1) live-corpus arm in `TestMigrationCheckFixturesParseConsistently` asserts no `visited` path crosses a `.spacedock-state` segment; (2) hermetic `TestMigrationCheckPrunesStateTree` drives the same predicate over a planted temp tree. Mutation control (predicate → no-op) with the real 159-file state tree copied in flagged every descended entity; both went red, proving non-vacuous.
+- DONE: `checked == 0` Fatal guard stays non-vacuous after the prune.
+  With `.spacedock-state` (159 `.md`) present, the walk verified 57 frontmatters (NOT 57+159) — the tree was skipped and real entities still validated. Hermetic test also asserts the real entity IS visited.
+- DONE: Orphaned `skills/integration/testdata/survey/scaffolds/` fixtures deleted — `grep -rln scaffolds --include=*.go` finds zero consumers AND the fixture tree is gone.
+  `git rm` removed 6 tracked files; `grep -rln 'survey/scaffolds'` over the repo (and `--include='*.go'`) returns zero matches; sibling `testdata/survey/fixture-sessions.sql` (the live consumer in `survey_queries_test.go`) preserved.
+- DONE: `go test ./...` from the repo root stays green with `.spacedock-state` present (DoD#2).
+  Ran full `go test ./...` from the worktree root after copying the live 159-file state tree into the (gitignored) worktree path — all packages `ok`, including `contractlint` (its own `.spacedock-state` prune) and `status`. Temp copy then removed; worktree tree clean.
+- SKIPPED: Optional `teamNamePattern` simplification in `internal/dispatch/build.go`.
+  Marked Polish / lowest-priority and "include only if cheap and clearly safe." Reusing `namePattern` would TIGHTEN a path-safety validator (reject single-char team names `teamNamePattern` currently admits) — a semantic narrowing of a defense-in-depth guard, not a safe no-op, and out of scope for this test-hygiene entity. Left untouched.
+
+### Summary
+
+Replaced the migration-check `_debriefs` name-match with a wholesale `.spacedock-state` tree-prune (`isMigrationCheckPrunedDir`), matching the three established sibling prunes. Proved the prune two ways: a live-corpus positive assertion (active on a dev machine) and a hermetic CI-stable test, both shown non-vacuous via a mutation control run against the real 159-file state tree. Deleted the 6 orphaned survey-scaffold fixtures (zero consumers). Full `go test ./...` is green both with and without `.spacedock-state` present. Skipped the optional `teamNamePattern` polish as a semantic change out of scope. Code committed to the worktree branch as `96f22f5f`.
