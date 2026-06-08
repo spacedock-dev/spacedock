@@ -33,3 +33,16 @@ Apply the existing `derivedName` validation (or a path-safe sanitize) to `teamNa
 ## Notes
 
 0.19.6 follow-up; does NOT block 0.19.5 (no live exploit; n1a shipped on the audit's clean-material verdict). Source: n1a (`live-cycle-end-state-determinism`) audit. Low score — pure hardening + comment.
+
+## Stage Report: implementation
+
+- DONE: AC-1: Validate/sanitize teamName to the same path-safety as derivedName (reuse the existing namePattern + nameMaxLen in internal/dispatch/build.go) with a combined-length cap, BEFORE the dispatch-file path is constructed — proven by a unit test that feeds a path-unsafe team_name (e.g. containing `../`) and asserts a safe path or a clean error, plus the combined-length cap.
+  internal/dispatch/build.go: teamName checked against `nameMaxLen` + new `teamNamePattern` (same char class as namePattern), combined filename capped at new `dispatchFileNameMaxLen=251`, all before path construction. Tests in build_teamname_path_test.go (9 subtests: 6 path-unsafe inputs incl. `../escape`/`a/b`/`/abs`, combined-length cap, valid-path regression) — all green. Also verified end-to-end via the built CLI: `../escape` and `a/b` error cleanly (exit 1, no traversed path), real-shaped name builds the correct keyed path.
+- DONE: AC-2: Fix the build.go bare-mode comment (~line 567) so it matches the actual condition (the code keys on team_name != "", not on bare_mode).
+  Comment now reads "Dispatches with no team_name keep the plain derived name." — keyed on team_name presence, not bare_mode.
+- DONE: Regression: go test ./... stays green.
+  `go test ./...` → 1150 passed in 16 packages; gofmt clean; go vet no issues.
+
+### Summary
+
+Validated team_name for path-safety before it is prepended to the /tmp dispatch filename, mirroring derivedName's existing checks, and added a combined-filename length cap (`dispatchFileNameMaxLen=251`, below the 255-byte fs name limit). Design decision (escalated to FO, proceeded on the path-safety-intent reading after no reply): introduced a dedicated `teamNamePattern` that reuses namePattern's kebab character class but admits a single safe char, because namePattern's two-anchor shape rejects single-char team names (`"t"`) that 19 existing fixtures use as placeholders — this keeps the whole suite green and avoids churning oracle-parity goldens, while rejecting every genuinely path-unsafe input. Corrected the misleading bare-mode comment to key on team_name presence.
