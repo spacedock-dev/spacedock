@@ -12,8 +12,9 @@
 -- (agentsview v0.32.1), identifiers stripped. The shapes the smoke pins:
 --   - sessions.cwd spans the repo root, a subdir, and a worktree-style path under ONE
 --     repo-root prefix, plus a session OUTSIDE the prefix — so the #318 scoping query
---     coalesces the in-repo cwds across divergent basename-derived `project` keys and
---     excludes the out-of-repo session.
+--     counts the in-repo cwds and excludes the out-of-repo session. agentsview keys
+--     `project` by the git-root basename, so all three in-repo Claude checkouts share ONE
+--     `project` key (`proj`); the cwd-prefix's job is to EXCLUDE a same-basename sibling.
 --   - tool_calls.skill_name carries namespaced (`superpowers:*`), bare
 --     (`running-research-spikes`), and `spacedock:*` self rows — so the #319 family
 --     tally reports a `superpowers` family and EXCLUDES the dominant `spacedock` self
@@ -32,9 +33,13 @@
 -- NULL-result OPEN row would be a shape production never emits — a tautology against a
 -- fiction. OPEN-detection keys on the ABSENCE of an answered/approved confirmation.
 --
--- A sibling NON-Claude (codex) session inside the repo prefix proves the Claude-only
--- scope: it must NOT leak into the Claude counts. (Surfacing non-Claude agents is a
--- deferred follow-up.)
+-- Codex sessions land cwd='' in production (agentsview does not persist Codex cwd), so
+-- they cannot be cwd-prefix-scoped and the #69 codex-presence query matches them by
+-- `project` (the git-root basename) ALONE. Two blank-cwd Codex rows carry `project='proj'`:
+-- one is THIS repo's Codex history, one is a SAME-BASENAME sibling repo whose Codex
+-- sessions key identically (the documented collision) — both are counted by codex-presence
+-- (which is why the report states the match is by project NAME only), and NEITHER leaks
+-- into the cwd-scoped Claude counts (Claude scope filters agent='claude').
 --
 -- Defaults match production: cwd TEXT NOT NULL DEFAULT '' (blank stored as '', not
 -- NULL); skill_name TEXT nullable, populated only on tool_name='Skill' rows; git_branch
@@ -72,13 +77,14 @@ CREATE TABLE messages (
 );
 
 -- ============================================================================
--- The repo-root prefix the smoke binds is /repo/proj/ . Three Claude sessions sit
--- under it with DIVERGENT basename-derived `project` keys (repo root, a subdir, a
--- worktree-style path); one Claude session sits OUTSIDE it; one Claude session has a
--- blank cwd; a codex session sits inside but is out of Claude scope.
+-- The repo-root prefix the smoke binds is /repo/proj/ . Three Claude sessions sit under
+-- it (repo root, a subdir, a worktree-style path), all sharing the ONE git-root-basename
+-- `project` key (`proj`); one Claude session sits OUTSIDE it; one Claude session has a
+-- blank cwd; two blank-cwd Codex sessions key to `proj` (one this repo, one a same-basename
+-- sibling) and are out of Claude scope.
 -- ============================================================================
 
--- Claude session A — repo root. project basename matches the repo basename (`proj`).
+-- Claude session A — repo root. project is the git-root basename (`proj`).
 -- Carries the answered decision and an Edit under internal/.
 INSERT INTO sessions VALUES
   ('claude:aaaaaaaa-1111-2222-3333-444444444444', 'proj', 'claude',
@@ -86,20 +92,21 @@ INSERT INTO sessions VALUES
    '/u/.claude/projects/-repo-proj/aaaaaaaa.jsonl',
    '2026-06-05', '2026-06-05', 'Pick up the parser refactor and ship it.', 8, 3);
 
--- Claude session B — a SUBDIR checkout. Its cwd basename (`.spacedock-state`) keys as
--- `_spacedock_state`, diverging from the repo basename — invisible to a basename-only
--- scope, recovered by the prefix union. Carries the rejected (OPEN) decision + a veto.
+-- Claude session B — a SUBDIR checkout (the split-root state dir). agentsview keys it by
+-- the git-root basename, so its `project` is `proj`, the SAME key as the root — the
+-- cwd-prefix is what places it in scope. Carries the rejected (OPEN) decision + a veto.
 INSERT INTO sessions VALUES
-  ('claude:bbbbbbbb-5555-6666-7777-888888888888', '_spacedock_state', 'claude',
+  ('claude:bbbbbbbb-5555-6666-7777-888888888888', 'proj', 'claude',
    '/repo/proj/docs/dev/.spacedock-state', 'main',
    '/u/.claude/projects/-repo-proj-docs-dev-_spacedock_state/bbbbbbbb.jsonl',
    '2026-06-06', '2026-06-06', 'Now wire up the regression suite.', 6, 2);
 
--- Claude session C — a WORKTREE-style checkout. cwd basename (`feature-x`) keys as
--- `feature_x`, again divergent. Carries the ExitPlanMode approval + a skills/ Write +
--- the superpowers / bare / spacedock Skill rows for the scaffold tally.
+-- Claude session C — a WORKTREE-style checkout. Same git-root basename, so `project` is
+-- again `proj` — placed in scope by the cwd-prefix, not a distinct key. Carries the
+-- ExitPlanMode approval + a skills/ Write + the superpowers / bare / spacedock Skill rows
+-- for the scaffold tally.
 INSERT INTO sessions VALUES
-  ('claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'feature_x', 'claude',
+  ('claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'proj', 'claude',
    '/repo/proj/.worktrees/feature-x', 'feature-x',
    '/u/.claude/projects/-repo-proj-.worktrees-feature-x/cccccccc.jsonl',
    '2026-06-06', '2026-06-06', 'Build the feature behind a worktree.', 5, 2);
@@ -120,13 +127,24 @@ INSERT INTO sessions VALUES
    '/u/.claude/projects/-elsewhere-otherproj/eeeeeeee.jsonl',
    '2026-06-02', '2026-06-02', 'Unrelated project that shares the machine.', 4, 1);
 
--- Out-of-scope sibling: a Codex session INSIDE the repo prefix. Claude scope excludes
--- it from every count.
+-- Codex session F — THIS repo's Codex history. Production shape: cwd='' (agentsview does
+-- not persist Codex cwd), project keyed by the git-root basename (`proj`). Matched by the
+-- #69 codex-presence query (project = :repo_project); EXCLUDED from the Claude scope.
 INSERT INTO sessions VALUES
   ('codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'proj', 'codex',
-   '/repo/proj', 'main',
+   '', '',
    '/u/.codex/sessions/rollout-ffffffff.jsonl',
-   '2026-06-04', '2026-06-04', 'Out-of-scope codex session under the repo root.', 4, 1);
+   '2026-06-04', '2026-06-04', 'A codex session in this repo; cwd unrecorded.', 4, 1);
+
+-- Codex session G — a SAME-BASENAME SIBLING repo's Codex history. Its git-root basename is
+-- also `proj`, so it keys to the identical `project` and codex-presence CANNOT distinguish
+-- it from session F (the documented collision — the report states "match by project NAME
+-- only"). Blank cwd, like all Codex sessions. Still EXCLUDED from the Claude scope.
+INSERT INTO sessions VALUES
+  ('codex:11111111-2222-3333-4444-555555555555', 'proj', 'codex',
+   '', '',
+   '/u/.codex/sessions/rollout-11111111.jsonl',
+   '2026-06-04', '2026-06-04', 'A same-basename sibling repo codex session; cwd unrecorded.', 3, 1);
 
 -- ----------------------------------------------------------------------------
 -- DECISIONS (#320): answered (done), rejected (OPEN), ExitPlanMode approval (done).
@@ -192,4 +210,4 @@ INSERT INTO messages VALUES
   (2, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', 'Now wire up the regression suite.'),
   (3, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', '[Request interrupted by user]'),
   (4, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'user', 'Build the feature behind a worktree.'),
-  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'user', 'Out-of-scope codex session under the repo root.');
+  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'user', 'A codex session in this repo; cwd unrecorded.');

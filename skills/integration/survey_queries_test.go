@@ -16,8 +16,15 @@ import (
 // The fixture seeds sessions whose cwd is AT this root, in a subdir under it, in a
 // worktree-style path under it, blank, and OUTSIDE it — so the scoping/bucketing queries
 // have something real to coalesce and exclude. No live git repo is needed for the smoke;
-// the live drive (AC-3) exercises the real `git rev-parse` resolution.
+// the live drive (AC-4/AC-5) exercises the real `git rev-parse` resolution.
 const fixtureRepoRoot = "/repo/proj"
+
+// fixtureRepoProject is the git-root-basename `project` key the smoke binds for the
+// codex-presence query. agentsview derives `project` from the repo's git-root basename
+// (non-alphanumerics → `_`), so every in-repo checkout — root, subdir, worktree, state
+// dir — shares this ONE key. The fixture's in-repo Claude sessions all carry it, and the
+// blank-cwd Codex rows (cwd unrecorded for Codex) are matched by it alone.
+const fixtureRepoProject = "proj"
 
 // buildFixtureDB shells out to the sqlite3 CLI to materialize the committed
 // fixture-sessions.sql into a temp sessions.db, returning its path. The skill's
@@ -87,14 +94,18 @@ func loadLabeledQueries(t *testing.T) map[string]string {
 }
 
 // runQuery runs one labeled query against the fixture DB with :repo_root bound to
-// fixtureRepoRoot, returning the rows as pipe-separated lines (sqlite3's list mode).
+// fixtureRepoRoot and :repo_project bound to fixtureRepoProject, returning the rows as
+// pipe-separated lines (sqlite3's list mode). Binding a param a query does not reference
+// is harmless, so both are always set — the cwd-prefix queries read :repo_root, the
+// codex-presence query reads :repo_project.
 func runQuery(t *testing.T, db, query string) []string {
 	t.Helper()
 	sqlite3, err := exec.LookPath("sqlite3")
 	if err != nil {
 		t.Skip("sqlite3 not on PATH")
 	}
-	script := ".param set :repo_root '" + fixtureRepoRoot + "'\n" + query + "\n"
+	script := ".param set :repo_root '" + fixtureRepoRoot + "'\n" +
+		".param set :repo_project '" + fixtureRepoProject + "'\n" + query + "\n"
 	cmd := exec.Command(sqlite3, db)
 	cmd.Stdin = strings.NewReader(script)
 	out, err := cmd.CombinedOutput()
@@ -121,33 +132,70 @@ func TestSurveyQuerySmoke(t *testing.T) {
 	db := buildFixtureDB(t)
 	queries := loadLabeledQueries(t)
 
-	for _, name := range []string{"scoping", "scaffold-usage", "work-by-area", "decision-open"} {
+	for _, name := range []string{"scoping", "codex-presence", "scaffold-usage", "work-by-area", "decision-open"} {
 		if _, ok := queries[name]; !ok {
 			t.Fatalf("recommended-SQL reference is missing the %q query (have: %v)", name, sortedQueryNames(queries))
 		}
 	}
 
-	// scoping (#318): the repo-root prefix coalesces the cwd-AT-root + subdir + worktree
-	// sessions into ONE identity across their DIVERGENT basename-derived project keys —
-	// 3 sessions, 3 folded keys. The basename-only scope yields just 1 (the root). The
-	// blank-cwd session, the out-of-repo session, and the codex sibling are excluded.
+	// scoping (#318): under the corrected git-root-basename model every in-repo checkout
+	// shares ONE `project` key, so COUNT(DISTINCT project) is structurally always 1 and
+	// `folded_keys` is gone. The cwd-prefix-union still does the load-bearing work — it
+	// counts the cwd-AT-root + subdir + worktree sessions (3) and EXCLUDES the same-basename
+	// sibling, the blank-cwd session, the out-of-repo session, and the codex rows. The row
+	// is the corrected 3-field shape: sessions|blank_cwd|span.
 	t.Run("scoping", func(t *testing.T) {
 		rows := runQuery(t, db, queries["scoping"])
 		if len(rows) != 1 {
 			t.Fatalf("scoping should return one summary row, got %d: %v", len(rows), rows)
 		}
 		fields := strings.Split(rows[0], "|")
-		if len(fields) != 4 {
-			t.Fatalf("scoping row should have 4 fields (sessions|folded_keys|blank_cwd|span), got: %q", rows[0])
+		if len(fields) != 3 {
+			t.Fatalf("scoping row should have 3 fields (sessions|blank_cwd|span) — folded_keys is dropped, got: %q", rows[0])
 		}
 		if fields[0] != "3" {
-			t.Errorf("scoping should coalesce 3 in-repo Claude sessions across divergent keys, got sessions=%q (basename-only would yield 1)", fields[0])
+			t.Errorf("the cwd-prefix should count 3 in-repo Claude sessions, got sessions=%q", fields[0])
 		}
-		if fields[1] != "3" {
-			t.Errorf("scoping should report 3 folded-in project keys, got folded_keys=%q", fields[1])
+		if fields[1] != "0" {
+			t.Errorf("the blank-cwd Claude session is outside the prefix and must not count, got blank_cwd=%q", fields[1])
 		}
-		if fields[2] != "0" {
-			t.Errorf("the blank-cwd session is outside the prefix and must not count, got blank_cwd=%q", fields[2])
+	})
+
+	// codex-presence (#69): Codex sessions land cwd='' (agentsview does not persist Codex
+	// cwd), so the cwd-prefix scope misses them. This separate flagged count matches by
+	// `project = :repo_project` ALONE — which means it also catches a same-basename SIBLING
+	// repo's Codex sessions (the documented collision). The fixture has two such rows (one
+	// in-repo, one same-basename sibling shape), both blank-cwd, so the count is 2 and
+	// blank_cwd > 0. This is a presence flag, NOT a union — the scoping count below is
+	// asserted UNCHANGED by these rows.
+	t.Run("codex-presence", func(t *testing.T) {
+		rows := runQuery(t, db, queries["codex-presence"])
+		if len(rows) != 1 {
+			t.Fatalf("codex-presence should return one summary row, got %d: %v", len(rows), rows)
+		}
+		fields := strings.Split(rows[0], "|")
+		if len(fields) != 2 {
+			t.Fatalf("codex-presence row should have 2 fields (codex_sessions|blank_cwd), got: %q", rows[0])
+		}
+		if fields[0] != "2" {
+			t.Errorf("codex-presence should count 2 Codex sessions matching the repo project name (in-repo + same-basename sibling), got %q", fields[0])
+		}
+		if fields[1] == "0" {
+			t.Errorf("Codex cwd is unrecorded so blank_cwd must be > 0, got blank_cwd=%q", fields[1])
+		}
+	})
+
+	// no-union (AC-2c): the added Codex rows must NOT inflate the Claude scope. The scoping
+	// query is asserted to 3 above (the same value the pre-Codex fixture yielded), proving
+	// Codex stays out of the Claude `sessions` count — a flagged presence, never a silent
+	// project union.
+	t.Run("codex-not-folded-into-scope", func(t *testing.T) {
+		rows := runQuery(t, db, queries["scoping"])
+		if len(rows) != 1 {
+			t.Fatalf("scoping should return one summary row, got %d: %v", len(rows), rows)
+		}
+		if sessions := strings.Split(rows[0], "|")[0]; sessions != "3" {
+			t.Errorf("the Codex rows must not be folded into the Claude scope; scoping.sessions should stay 3, got %q", sessions)
 		}
 	})
 
