@@ -139,9 +139,6 @@ spacedock doctor                                          # plugin compatibility
 spacedock --version                                       # print the installed version
 ```
 
-The task goes first. Anything after `--` forwards verbatim to the host, e.g.
-`spacedock claude "task" -- --model opus`.
-
 ## License
 
 Spacedock is released under the [Apache License 2.0](LICENSE).
