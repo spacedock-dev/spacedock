@@ -12,6 +12,7 @@ issue:
 sprint: 019x-pre-flip-cleanups
 group: release-hygiene
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 Clean up `homebrew_casks.caveats` in `.goreleaser.yaml` (the message `brew` prints on install). Verified this session: the cask's `hooks.post.install` already runs `xattr -dr com.apple.quarantine` on the staged binary, so the quarantine is auto-cleared — the manual fallback is redundant.
