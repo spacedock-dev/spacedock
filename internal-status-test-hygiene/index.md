@@ -58,3 +58,16 @@ Chose the exclude-`_debriefs/` direction (smaller, correct: debriefs are session
 ### Summary (cycle 2)
 
 Per team-lead's extension, fixed the sibling failure I had flagged — the contractlint boundary sweep now prunes `.claude` the same minimal, same-theme way it already prunes `.worktrees`. With both worktree commits (6fe40471 migration-check, 160780cc contractlint), `go test ./...` from the repo root is genuinely green (`1142 passed`) with `.spacedock-state` and live `.claude/worktrees` scratch present. No new AC was needed; this completes the same "go test green from root" criterion. Both changes are test-only and minimal.
+
+## Stage Report: validation
+
+- DONE: AC (inspect + confirm correctness): confirm migration_check_test.go excludes _debriefs subtree (filepath.SkipDir), and contractlint boundary sweep now skips .claude the same way as .worktrees. Both minimal and correct.
+  migration_check_test.go:75-77 prunes `_debriefs` via `filepath.SkipDir` (9-line add, commit 6fe40471). boundary_guard_test.go:88 adds `.claude` to the same `SkipDir` case as `.worktrees` (1-line change, commit 160780cc). Inspected both; minimal and on-theme.
+- DONE: Regression has teeth — TestBoundaryGuardSweepSkipsAgentWorktrees plants BOTH .worktrees and .claude scratch and asserts neither flagged; sanity-check it goes RED without the .claude skip.
+  Test plants both scratch trees + a real offender (boundary_guard_control_test.go:138-177): asserts offender IS flagged (sweep live) and no `.worktrees/`/`.claude/` path is. Revert-and-rerun: removing the `.claude` skip → RED with msg `sweep flagged an agent-worktree scratch read ".claude/.../skill_surface_test.go"`; restored → GREEN. Bonus probe: removing the `.worktrees` skip also REDs → teeth on both halves, not trivially passing. Tree restored clean (empty `git diff`).
+- DONE: Run go test ./... in the worktree — green; gofmt -l ./... empty.
+  `go test ./...` exit 0, all 17 packages `ok` (incl. internal/status 8.186s, internal/contractlint). `gofmt -l .` empty (0 dirty files). Worktree `git status` clean.
+
+### Summary
+
+PASSED. Both changes are minimal, correct, and on-theme — `_debriefs` pruned from the migration-check walk; `.claude` pruned from the boundary sweep alongside `.worktrees`. The cycle-2 regression test has genuine teeth: revert-and-rerun confirmed it REDs when either skip is removed (caught the exact scratch-read path) and GREENs when restored. Worktree `go test ./...` is green (17/17 packages) and `gofmt -l` is empty. The high-stakes contractlint boundary-guard surface was adversarially probed inline (revert-and-rerun on both skip halves) — no material test-strength hole found. The live-state DoD (`go test ./...` from the main repo root with `.spacedock-state` + `.claude` present) is the FO's post-merge integration test; the impl ensign cited 1142 green via the copy-to-main-revert dance.
