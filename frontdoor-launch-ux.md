@@ -12,6 +12,7 @@ issue:
 group: binary-ux
 sprint: 0199-pre-flip-mechanics
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 Make the `spacedock codex` (and `claude`) launch experience honest and useful: don't tell the user to install manually right before silently auto-installing, show a short pre-launch info banner, and ship a neutral bootstrap prompt.
