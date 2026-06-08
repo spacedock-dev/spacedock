@@ -28,9 +28,9 @@ waiting on you.
 
 ## What's different
 
-- **The agent doesn't get to judge its own work.** Review stages are adversarial
-  by default. They push back on thin evidence and work that looks busy without
-  proving its claim.
+- **The agent doesn't get to judge its own work.** Review runs as a separate
+  stage with fresh context, no access to the maker's reasoning. It pushes back on
+  thin evidence and work that looks busy without proving its claim.
 - **Every decision leaves a trail.** Each gate, the decision point at the end of
   a stage, carries a stage report: findings, verdicts, artifacts, anomalies. You
   decide on evidence, not the transcript.
@@ -54,9 +54,12 @@ waiting on you.
 
 ## Install
 
-Spacedock is two pieces: the `spacedock` launcher and a host plugin (the
-first-officer and ensign agents) loaded by Claude Code, Codex, or Pi. Install the
-launcher with Homebrew:
+Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
+or Pi. Install one of those first.
+
+Spacedock itself is two pieces: the `spacedock` launcher and a host plugin (the
+first-officer and ensign agents) that the harness loads. Install the launcher
+with Homebrew:
 
 ```bash
 brew tap spacedock-dev/homebrew-tap

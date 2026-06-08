@@ -4,11 +4,14 @@ This guide walks a fresh install end to end and names the output you should see
 at each step. Every command here is one you can run and check against the stated
 result.
 
-Spacedock is two pieces that install separately:
+Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
+or Pi. Install one of those first.
+
+Spacedock itself is two pieces that install separately:
 
 1. **The `spacedock` launcher.** The command you run to start a session.
 2. **The host plugin.** The first-officer and ensign agents, loaded by your
-   agent (Claude Code, Codex, or Pi).
+   harness (Claude Code, Codex, or Pi).
 
 The recommended setup installs the launcher with Homebrew, then adds the plugin.
 A from-source build is available for development.
