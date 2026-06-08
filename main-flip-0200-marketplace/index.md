@@ -71,3 +71,31 @@ Per the clarified scope. At minimum:
 - `v0.20.0` annotated tag/release, release action success, Homebrew tap update, and post-flip marketplace install resolving 0.20.0 from `main`.
 
 This is an outward-facing release — captain-gated at each outward step.
+
+## Flip checklist — carve completeness audit (2026-06-08)
+
+An adversarial completeness sweep of the nzb→k6d→pj carve surfaced these flip-touchpoints, each with no prior owner in the carve. Verified against the repo at HEAD. Work them as part of the flip (driven here) unless the pre-flip sprint (nzb + k6d, Commander) lands one first. README reconciliation is already merged; the items below are what remains.
+
+### Release-machinery guards (must hold before the cut)
+
+- [ ] **Archive-tag trigger guard.** `release.yml` triggers on `push: tags: ['v*']`, and `v0-archived` matches `v*` (and even `v[0-9]*`) — pushing the archive tag would fire goreleaser on the legacy main tip and cut a bogus release. Fix: name the archive ref outside the release glob (e.g. `archive/v0`), AND/OR add a `release.yml` guard refusing any tag not matching strict `v[0-9]+.[0-9]+.[0-9]+`, covered by an `internal/release` workflow-guard test (`v[0-9]*` is NOT enough). Ref: `release.yml:7-9`.
+- [ ] **Channel-aware version stamp.** The "Stamp plugin manifests to the release version" step is hardcoded `git switch next` → `git push origin next` (`release.yml:156,161,172`). A stable v0.20.0 cut on main must derive its stamp/push branch from the release channel (stable→`main`, edge→`next`); otherwise the displayed plugin version lands on the edge channel while the stable plugin on main stays un-stamped. Cover with the workflow-guard test. (Naturally k6d's two-channel mechanism — confirm k6d owns it, else land it here.)
+
+### Marketplace ref flip (not-green-by-construction without the paired test edit)
+
+- [ ] **Retarget the ref + flip the guard test in ONE commit.** Edit `.claude-plugin/marketplace.json` `source.ref` `next`→`main`, AND in the same commit update `skills/integration/marketplace_manifest_test.go:67` (currently asserts `ref=="next"` is the required value) to expect `main`. Without the paired edit, pj's own "line ALL GREEN" gate blocks the flip by construction. The marketplace ref and the stable binary's devBranch ldflag must agree (both `main`).
+
+### Doc reconciliation (README already merged — these still drift)
+
+- [ ] **`AGENTS.md:28`** says "Cut releases from `next`… Never release from `origin/main`." — directly forbids the post-flip cut. Change to release from `main`; invert the never-clause to name the legacy line. Load-bearing for any agent-run cut.
+- [ ] **`docs/releasing.md`** already describes the post-flip world ("cut from main", "stamp on main") while the machinery is still pre-flip. Reconcile it against the ACTUAL post-flip `release.yml`/goreleaser after the stamp fix lands — not the aspirational text there now.
+
+### Existing-user migration (confirm specifics at ideation)
+
+- [ ] **5th upgrade journey: the `next`-pinned 0.19.x user, post-flip.** frontdoor re-pins only on `NoPluginFound`, not `Compatible` (`frontdoor.go:177/325` vs `:185/332`), so a happy user with a working `next`-pinned plugin keeps pulling EDGE updates after the flip. Prove the migration (binary upgrade stamped `main` → install re-pins to `@main`) and DECIDE: accept silent edge-retention, or add a one-time doctor/remedy nudge when a stable binary sees a `next`-pinned ref. (Augments AC-5.)
+- [ ] **Calendar-bump on main.** The marketplace `version` calendar key — the only thing making `claude plugin update` re-pull a moving branch — is bumped only by `next-publish.yml` (push origin next). Add a stable calendar-bump-on-`main` path so post-flip `plugin update` re-pulls main against an EXISTING (not just fresh) HOME.
+
+### Runbook decisions (pin before the cut)
+
+- [ ] **e2e-gate headSha path.** nzb's gate binds to the tagged commit's SHA, and `runtime-live-e2e.yml` runs on PR-to-next. If the flip post-stamps a commit on main, its SHA differs from any green next-PR run. Pin ONE: stamp-before-the-e2e-run / tag-the-green-tip / recorded `SPACEDOCK_E2E_GATE_WAIVER` (with reason) — don't leave it a cut-day surprise.
+- [ ] **Dev stays on `next`.** Record explicitly that post-flip development/state continues on `next` (so the FO-runtime refs `git … origin next` in `skills/first-officer/references/claude-first-officer-runtime.md` stay correct) and `main` is the stable release lane only.
