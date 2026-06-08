@@ -48,10 +48,11 @@ func gitRepoFixture(t *testing.T) string {
 // independent expected value.
 func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	// repoWithRealWorkflowAndNoise builds a temp git repo with the single real
-	// workflow at <repo>/docs/dev plus noise copies under agent/linked worktree
-	// checkouts (<repo>/.claude/worktrees/agent-x and <repo>/.worktrees/wt-y), each
-	// rooted by its own `.git` gitlink as a real worktree is. Only docs/dev is a
-	// real top-level workflow; the nested checkouts must be pruned wholesale.
+	// workflow at <repo>/docs/dev plus noise copies that each exercise an exclusion
+	// MECHANISM (not a hardcoded skip): the `.claude/worktrees/agent-x/docs/dev`
+	// copy is dropped because the repo `.gitignore` lists `.claude/`, and the
+	// `.worktrees/wt-y/docs/dev` copy is dropped because its root is a nested git
+	// checkout (a `.git` gitlink). Only docs/dev is a real top-level workflow.
 	gitlinkAt := func(t *testing.T, dir string) {
 		t.Helper()
 		if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -64,10 +65,14 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	repoWithRealWorkflowAndNoise := func(t *testing.T) (repo, realWorkflow string) {
 		t.Helper()
 		repo = gitRepoFixture(t)
+		if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte(".claude/\n.safehouse\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
 		realWorkflow = filepath.Join(repo, "docs", "dev")
 		commissionWorkflowAt(t, realWorkflow)
-		gitlinkAt(t, filepath.Join(repo, ".claude", "worktrees", "agent-x"))
+		// (a) gitignored .claude subtree — no .git at the copy; the .gitignore prunes it.
 		commissionWorkflowAt(t, filepath.Join(repo, ".claude", "worktrees", "agent-x", "docs", "dev"))
+		// (b) a nested linked worktree — its .git gitlink stops the descent.
 		gitlinkAt(t, filepath.Join(repo, ".worktrees", "wt-y"))
 		commissionWorkflowAt(t, filepath.Join(repo, ".worktrees", "wt-y", "docs", "dev"))
 		return repo, realWorkflow

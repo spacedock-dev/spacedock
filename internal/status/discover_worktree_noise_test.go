@@ -1,5 +1,5 @@
-// ABOUTME: discoverWorkflows prunes linked/agent-worktree checkouts so a repo's
-// ABOUTME: real workflow is not multiplied by `.claude/worktrees` / `.worktrees` copies.
+// ABOUTME: discoverWorkflows prunes agent/linked-worktree noise via .gitignore
+// ABOUTME: dir patterns AND nested-checkout (.git) skip — not a hardcoded list.
 package status
 
 import (
@@ -9,13 +9,13 @@ import (
 )
 
 // TestDiscoverWorkflowsPrunesWorktreeNoise: agent and linked worktrees are full
-// repo checkouts (each rooted by a `.git` gitlink) that carry a copy of the
-// repo's commissioned workflow (e.g. `docs/dev`). They live under
-// `.claude/worktrees/<agent>/…` and `.worktrees/<name>/…`. Discovery must prune a
-// nested checkout wholesale so a repo with ONE real workflow resolves to exactly
-// that one — not dozens of duplicate copies. The prune is host-neutral: it skips
-// any descended dir carrying its own `.git`, so it catches the `.claude` agent
-// worktrees without naming a host-specific path.
+// repo checkouts that each carry a copy of the repo's commissioned workflow
+// (e.g. `docs/dev`). They live under `.claude/worktrees/<agent>/…` (an untracked
+// agent dir the repo `.gitignore` lists as `.claude/`) and `.worktrees/<name>/…`
+// (each a linked worktree rooted by its own `.git` gitlink). Discovery must
+// resolve the ONE real workflow by two composable mechanisms, NOT a hardcoded
+// path skip: (a) honoring the `.gitignore` directory patterns so the `.claude`
+// subtree drops out, and (b) not descending into a nested git checkout.
 func TestDiscoverWorkflowsPrunesWorktreeNoise(t *testing.T) {
 	repo := t.TempDir()
 	commissioned := "---\ncommissioned-by: spacedock@1.0\nid-style: sequential\n---\n# WF\n"
@@ -39,13 +39,19 @@ func TestDiscoverWorkflowsPrunesWorktreeNoise(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// The single real workflow (part of the main checkout, no own .git), plus noise
-	// copies under agent/linked worktree roots that each carry a .git gitlink.
+
+	// The repo .gitignore lists .claude/ as an ignored directory — the mechanism
+	// that drops the agent-worktree copies under it (no .git needed at that copy).
+	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte(".claude/\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// (real) the single workflow, part of the main checkout (no own .git).
 	write(filepath.Join("docs", "dev"))
-	gitlink(filepath.Join(".claude", "worktrees", "agent-a"))
+	// (a) gitignored .claude subtree — pruned by the .gitignore dir pattern.
 	write(filepath.Join(".claude", "worktrees", "agent-a", "docs", "dev"))
-	gitlink(filepath.Join(".claude", "worktrees", "agent-b"))
 	write(filepath.Join(".claude", "worktrees", "agent-b", "docs", "dev"))
+	// (b) a linked worktree rooted by a .git gitlink — pruned as a nested checkout.
 	gitlink(filepath.Join(".worktrees", "wt-x"))
 	write(filepath.Join(".worktrees", "wt-x", "docs", "dev"))
 
@@ -53,5 +59,35 @@ func TestDiscoverWorkflowsPrunesWorktreeNoise(t *testing.T) {
 	want := realpathOf(filepath.Join(repo, "docs", "dev"))
 	if len(got) != 1 || got[0] != want {
 		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (worktree noise must be pruned)", got, want)
+	}
+}
+
+// TestDiscoverWorkflowsHonorsGitignoreDirPattern isolates mechanism (a): a noise
+// workflow copy under a dir the .gitignore lists is excluded purely by the
+// gitignore pattern — no `.git` gitlink at the copy, no hardcoded basename.
+func TestDiscoverWorkflowsHonorsGitignoreDirPattern(t *testing.T) {
+	repo := t.TempDir()
+	commissioned := "---\ncommissioned-by: spacedock@1.0\nid-style: sequential\n---\n# WF\n"
+	write := func(rel string) {
+		p := filepath.Join(repo, rel, "README.md")
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(commissioned), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// An arbitrarily-named ignored dir (not in discoverIgnoreDirs) proves the
+	// gitignore pattern — not a hardcoded list — does the exclusion.
+	if err := os.WriteFile(filepath.Join(repo, ".gitignore"), []byte("agent-cache/\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	write(filepath.Join("docs", "dev"))
+	write(filepath.Join("agent-cache", "copy", "docs", "dev"))
+
+	got := discoverWorkflows(repo)
+	want := realpathOf(filepath.Join(repo, "docs", "dev"))
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("discoverWorkflows = %v, want exactly [%s] (gitignore dir pattern must prune the copy)", got, want)
 	}
 }
