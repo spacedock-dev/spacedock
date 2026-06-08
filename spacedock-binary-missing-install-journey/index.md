@@ -301,3 +301,16 @@ filler, positive forms, scannable command lines); the polished copy still
 satisfies the AC oracles (both versions present, no `contract N` / `>=,<`, brew
 upgrade leads, `spacedock install` distinction kept), so the ACs were unchanged.
 
+## Stage Report: implementation
+
+- DONE: `contract.go` mismatch + OK messages show plugin AND binary display VERSIONS (manifest `version` + binary `Version` threaded as a param, no import cycle) and drop `contract N` / `>=N,<M` from the user-facing lines; the live launch gate (`gateHost`) emits the same version-bearing message (AC-1, AC-2, gate parity)
+  `readManifest` (doctor.go) now reads `version`; `binaryVersion` threaded `RunDoctor`→`ManifestVerdict`→`compareWithManifest`→`mismatchMessage`/OK, cli callers pass `cli.Version` (frontdoor/init); commit e050996d. Verified end-to-end against the stamped binary: too-old-binary/plugin exit 1 with `binary 0.19.6, plugin 0.13.0/0.10.0` and no `contract N`/`>=,<`; gate-parity asserted by `assertGateMismatchMessage` in frontdoor_test.
+- DONE: too-old-binary remedy leads with `brew upgrade spacedock` and keeps the binary-vs-plugin-refresh distinction (`spacedock install`) (AC-2)
+  `tooOldBinaryRemedy()` block: `Upgrade the binary: brew upgrade spacedock` / source-build fallback / `To refresh the plugin instead: spacedock install.`; `@next` pin dropped (TestTooOldBinaryRemedyIsBranchAgnostic locks branch-agnostic). TestTooOldBinaryRemedyLeadsWithBrew + live run confirm.
+- DONE: FO-prose binary-absent abort (`first-officer-shared-core.md` Startup step 1) appends the `spacedock claude` launch payoff and still omits `spacedock doctor` from that class (AC-3)
+  Appended "Once spacedock is on PATH, launch with `spacedock claude` to start your first officer." to the binary-absent class; the "Do NOT run `spacedock doctor`" prohibition stays. NO tautology prose-grep test added — the contractlint quarantine bans prose-grep/code-bound checks and the entity itself frames AC-3 as the PR #262 legitimate-text exception, not a behavioral gate; the existing TestStartupGateGuidanceHasSingleSource dedup check still passes.
+
+### Summary
+
+Threaded the plugin manifest's display `version` (newly read in `readManifest`) and the binary `Version` (passed from the cli callers; `contract` cannot import `cli`) into the doctor/gate compatibility messages, dropping the internal `contract N` / `>=N,<M` jargon. The full suite is green (build, vet, all packages) and the change is verified end-to-end against a stamped 0.19.6 binary: mismatch paths exit 1 naming both versions with the brew-led remedy, the OK path exits 0 naming both versions, and `--version` keeps its load-bearing `(contract 1)` token for the FO/ensign gate parser. Existing tests that encoded the old copy (frontdoor/init mismatch + OK assertions, `Compare` message-shape and branch-substitution tests) were updated to track the redesigned contract — oracles retargeted to the version-bearing copy, not deleted. comm-officer polish was requested (non-blocking); no reply within the window, and the shipped copy already matches the entity's polished AFTER copy verbatim. AC-3 is the prose payoff append with no fabricated prose-grep test, per the quarantine policy and the entity's own legitimate-text framing.
+
