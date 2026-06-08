@@ -66,11 +66,8 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 		if walkErr != nil {
 			return walkErr
 		}
-		if info.IsDir() {
-			if isMigrationCheckPrunedDir(info.Name()) {
-				return filepath.SkipDir
-			}
-			return nil
+		if action, dir := migrationCheckWalkDir(info); dir {
+			return action
 		}
 		if !strings.HasSuffix(path, ".md") {
 			return nil
@@ -160,27 +157,12 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 	t.Logf("migration-check verified %d frontmatters across fixtures + live", checked)
 }
 
-// isMigrationCheckPrunedDir reports whether the migration-check walk skips a
-// directory whole. The .spacedock-state tree is the gitignored split-root state
-// checkout: on a dev machine it materializes under docs/dev/ and holds ~100
-// machine-local entity files (active entities plus _debriefs session records)
-// the migration check was never meant to govern; on CI the tree is absent and
-// the prune is moot. The debriefs in particular carry their own frontmatter
-// shape (session-date, sequence, first-commit), whose bare-YAML date scalars
-// decode as time.Time directly but as strings through the reader — expected for
-// non-entity frontmatter and outside this check's scope. Pruning the tree
-// wholesale matches the established sibling prunes in handlers.go
-// (discoverIgnoreDirs) and boundary_guard_test.go.
-func isMigrationCheckPrunedDir(name string) bool {
-	return name == ".spacedock-state"
-}
-
 // TestMigrationCheckPrunesStateTree is the hermetic, CI-stable positive proof
 // that the migration-check walk prunes the .spacedock-state tree wholesale
 // rather than name-matching individual subdirs. It plants a temp tree holding a
 // real entity alongside a .spacedock-state subtree, drives filepath.Walk
-// through the same isMigrationCheckPrunedDir predicate the migration check uses,
-// and asserts the state subtree is never visited while the real entity is —
+// through the same migrationCheckWalkDir step the production migration check
+// uses, and asserts the state subtree is never visited while the real entity is —
 // which keeps the checked>0 guard in TestMigrationCheckFixturesParseConsistently
 // non-vacuous (the prune does not also swallow legitimate entities).
 func TestMigrationCheckPrunesStateTree(t *testing.T) {
@@ -214,11 +196,8 @@ func TestMigrationCheckPrunesStateTree(t *testing.T) {
 		if walkErr != nil {
 			return walkErr
 		}
-		if info.IsDir() {
-			if isMigrationCheckPrunedDir(info.Name()) {
-				return filepath.SkipDir
-			}
-			return nil
+		if action, dir := migrationCheckWalkDir(info); dir {
+			return action
 		}
 		if strings.HasSuffix(path, ".md") {
 			visited = append(visited, path)
