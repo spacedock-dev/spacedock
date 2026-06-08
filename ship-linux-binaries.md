@@ -13,6 +13,7 @@ sprint: 0199-pre-flip-mechanics
 group: distribution
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#332"
 ---
 
 Ship Linux binaries and give Linux users an install path, before the 0.20.0 cut. The code is already portable — the gap is release packaging + distribution.
