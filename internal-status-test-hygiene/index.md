@@ -30,3 +30,16 @@ sprint-readiness: ready
 ## Notes
 
 Cleanup/hygiene task (the change is the fix plus the now-passing command). Surfaced by the `feedback-guarantee-binary-gate` (xa) ideation ensign's out-of-scope flag; verified by the FO. Provenance: session 2026-06-04 #8.
+
+## Stage Report: implementation
+
+- DONE: AC: go test ./... passes from the repo ROOT with docs/dev/.spacedock-state present — fix TestMigrationCheckFixturesParseConsistently (exclude _debriefs/ from the walk)
+  Pruned the `_debriefs` subtree via `filepath.SkipDir` in the walk callback (worktree commit 6fe40471). Verified: copied the fix into the main repo, `go test ./...` from root went from `1 failed` to green for the migration-check test, then reverted the main-repo copy to pristine. With the machine-local `.claude/worktrees` scratch set aside, full `go test ./...` from root = `1141 passed`.
+- DONE: gofmt: confirm gofmt -l ./... is empty
+  `gofmt -l .` in the worktree is empty; external_proof.go and no_yaml_silent_drop_test.go are already clean (no `gofmt -w` needed, matching staff-review B1).
+- DONE: Scope: migration-check fix only
+  Single-file, 9-line change to migration_check_test.go. Did not touch the gofmt half or the contractlint sweep.
+
+### Summary
+
+Chose the exclude-`_debriefs/` direction (smaller, correct: debriefs are session records with a distinct frontmatter shape, not entity fixtures the migration check governs) over normalizing date scalars, which would have altered the consistency oracle. The proof — `go test ./...` from the repo root with `.spacedock-state` present — passes. NOTE for validation: a SEPARATE, pre-existing failure surfaces when running `go test ./...` from root on THIS machine — `TestNoInstructionReadsOutsideQuarantine` (internal/contractlint) walks into untracked machine-local agent-team checkouts under `.claude/worktrees/agent-*/` (its sweep skips `.worktrees` but not `.claude/worktrees`). That is out of this task's scope and not a repo defect (the `.claude/` tree is untracked scratch); flagging it for visibility, not fixing it.
