@@ -523,24 +523,52 @@ func discoverWorkflows(root string) []string {
 			}
 		}
 		for _, ent := range entries {
+			child := filepath.Join(dir, ent.Name())
 			// os.Stat follows symlinks, matching os.walk(followlinks=True).
-			st, err := os.Stat(filepath.Join(dir, ent.Name()))
+			st, err := os.Stat(child)
 			if err != nil || !st.IsDir() {
 				continue
 			}
 			if ignore[ent.Name()] {
 				continue
 			}
-			if prunedStateDirs[realpathOf(filepath.Join(dir, ent.Name()))] {
+			if prunedStateDirs[realpathOf(child)] {
 				continue
 			}
-			walk(filepath.Join(dir, ent.Name()))
+			// Skip a nested git checkout (a linked or agent worktree): it is a full
+			// copy of the repo, so any commissioned workflow inside it is a duplicate
+			// of one the outer repo already carries, not a distinct workflow. This is
+			// the host-neutral generalization of the .worktrees prune — it catches
+			// agent worktrees under any directory (e.g. `.claude/worktrees/<agent>`)
+			// without naming a host-specific path. The start root's own `.git` is never
+			// inspected here: this check runs only on descended children.
+			if hasGitEntry(child) {
+				continue
+			}
+			walk(child)
 		}
 	}
 	walk(absRoot)
 
 	sort.Strings(results)
 	return results
+}
+
+// hasGitEntry reports whether dir holds a `.git` entry — a directory (a normal
+// repository checkout) or a regular file (a linked/agent worktree's gitlink). A
+// dir with one is a self-contained checkout, so the discovery walk does not
+// descend into it (its workflows are copies of the outer repo's).
+func hasGitEntry(dir string) bool {
+	st, err := os.Stat(filepath.Join(dir, ".git"))
+	return err == nil && (st.IsDir() || st.Mode().IsRegular())
+}
+
+// DiscoverWorkflows returns the commissioned workflow dirs under root (realpath'd,
+// sorted), with the same linked/agent-worktree + VCS noise pruned as the
+// `--discover` boot walk — so a caller outside this package (e.g. the front-door
+// launch banner) resolves the same single real workflow the first officer sees.
+func DiscoverWorkflows(root string) []string {
+	return discoverWorkflows(root)
 }
 
 // runGitCmd runs git in dir and returns stdout, or an error on failure.

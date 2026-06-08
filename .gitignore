@@ -10,3 +10,11 @@ dist/
 # committed to the code branch (zero code-branch churn). A fresh clone re-creates
 # the checkout with `spacedock state init`.
 **/.spacedock-state/
+
+# Agent and sandbox working dirs — never committed, and never treated as repo
+# content by workflow discovery (the discovery walk reads these `.gitignore`
+# directory patterns, so the agent-worktree `docs/dev` copies under .claude/ drop
+# out rather than being counted as workflows). .safehouse is the launch sandbox
+# profile; .claude holds Claude Code's agent worktrees (full repo checkouts).
+.safehouse
+.claude/
