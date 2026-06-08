@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: binary-ux
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#328"
 ---
 
 This task is the user-facing binary/version/upgrade UX, covering THREE cases the
