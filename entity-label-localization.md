@@ -9,6 +9,9 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0199-pre-flip-mechanics
+group: dev-quality
+sprint-readiness: ready
 ---
 
 Make captain-facing and workflow-specific prose speak the workflow's own noun. A workflow that declares `entity-label: task` should present gates, dispatch packages, sprint docs, and status reports in terms of "task", while the shared contract keeps the generic "entity" that serves any workflow (ticket / story / experiment).
