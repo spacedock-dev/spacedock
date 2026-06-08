@@ -288,8 +288,11 @@ func containsResume(args []string) bool {
 // `spacedock:first-officer` skill explicitly.
 const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
 
-// runCodex is the `spacedock codex` front door: version-gate (fail fast), then
-// launch the first officer. The launch is interposed through
+// runCodex is the `spacedock codex` front door: version-gate, then launch the
+// first officer. The gate fails fast on a contract mismatch, but a missing plugin
+// (NoPluginFound) auto-installs the plugin and proceeds to launch so the single
+// command the user typed yields a working session — `--no-install` opts out,
+// preserving the refuse-and-instruct behavior. The launch is interposed through
 // `safehouse --trust-workdir-config [extra] -- codex --dangerously-bypass-approvals-and-sandbox …`
 // when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
 // `--safehouse-*` knob} is given — safehouse is the sandbox, so codex's own
@@ -311,11 +314,29 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
-	// Codex keeps the all-or-nothing gate: any non-Compatible verdict fails fast.
-	// The no-plugin auto-install is Claude-only (Install rejects non-claude hosts),
-	// and codex has no --plugin-dir equivalent, so there is nothing to auto-install.
+	// The gate fails fast on a contract mismatch, but a missing plugin
+	// (NoPluginFound) auto-installs the codex plugin and proceeds to launch so the
+	// single command the user typed yields a working session — `--no-install` opts
+	// out, preserving the refuse-and-instruct behavior. This mirrors runClaude.
 	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
-		if gateHost(ops, "codex", stderr) != contract.Compatible {
+		switch gateHost(ops, "codex", stderr) {
+		case contract.Compatible:
+			// proceed to launch
+		case contract.NoPluginFound:
+			// No plugin on disk: auto-install then launch, unless the operator opted
+			// out with --no-install (gateHost already printed the instruct remedy, so
+			// just fail fast).
+			if fd.noInstall {
+				return 1
+			}
+			if _, err := ops.Install("codex", marketplaceSource, devBranch); err != nil {
+				fmt.Fprintf(stderr, "spacedock codex: auto-install failed: %v\n", err)
+				return 1
+			}
+		default:
+			// A mismatch / malformed range / host-CLI resolve error: auto-installing
+			// would not fix an incompatibility, so fail fast (gateHost already
+			// printed the message).
 			return 1
 		}
 	}
