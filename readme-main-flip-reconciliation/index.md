@@ -72,11 +72,16 @@ Verified by: docs distinguish stable `main` from dev-only `next`, including
 source-build or dev publish guidance where relevant. `next` must not be deleted
 from the story.
 
-**AC-3 - Release docs match the intended branch mechanics.**
-Verified by: `docs/releasing.md` or an equivalent release note no longer says
-`origin/main` is vestigial for the stable lane; it records archiving pre-v1 main,
-guarded replacement of `main` from `next`, and `0.20.0` tagging from `main` while
-retaining a dev-only `next` path.
+**AC-3 - Release docs are steady-state; the flip runbook lives in the flip task.**
+Verified by: `docs/releasing.md` describes only the steady-state release process
+(stable releases cut from `main`, `next` dev-only, the tag-push behavior, and
+cutting a stable release). It does NOT carry the one-time `0.20.0` main-flip
+runbook (archive pre-v1 `main` as `v0-archived`, guarded `--force-with-lease`
+replacement of `main` from `next`, the `v0.20.0` flip tag). That runbook is owned
+by the `main-flip-0200-marketplace` task entity, whose acceptance criteria record
+the `v0-archived` tag, the guarded replacement preserving `next`, and the
+`v0.20.0` tag. A greppable check over `docs/releasing.md` returns no flip tokens
+(`flip`, `v0-archived`, `force-with-lease`, `preflip`).
 
 **AC-4 - Existing README PRs were considered.**
 Verified by: the implementation report names what was reused, adapted, or
@@ -259,6 +264,19 @@ Cycle-2 validation PASSED, but the captain reopened the README in a direct inter
 ### Summary
 
 After cycle-2 validation passed, the captain reopened the README interactively and re-directed it from "reader-first about the workflow" to "decision-first about the product" (positioning v3: the decision is the unit). The README now leads on the decision, names the category honestly (harness, not agent; optional sandbox, not native), and grounds its differentiator claims in real mechanism rather than "it learns" hand-waving. A load-bearing fact bug was caught and fixed (launch grammar is task-before-`--`, verified against `frontdoor.go` and first-party PR #315). Every prose edit went through the comm-officer for house-voice consistency; a competitive 3-reviewer ICP bounty surfaced the issues, the captain triaged them, and the approved set was applied. PR #315 is superseded by this work. `go test ./...` green (1141/16); all content lints clean. Ready for re-validation against AC-1..AC-9.
+
+## Stage Report: implementation (cycle 3 addendum — verbosity trim + releasing.md de-flip)
+
+- DONE: Trim upfront verbosity for impatient readers (captain, interactive).
+  Collapsed the sandbox bullet (final wording `**Native sandbox integration.**` + a one-line body — "built in" dropped as an overclaim since safehouse is an external/optional dependency); replaced the two-pieces/launcher explanation with a one-line prerequisite (a coding-agent harness; tier-1 Claude Code/Codex/Pi, plus most other harnesses via skill systems including Hermes-class agents — Hermes confirmed grounded by the captain); dropped "launcher" from the install line; removed the README upgrade block and the safehouse footnote; cut the Usage `--` aside. Codex/Pi listed as peers without the experimental caveat (captain waved). README down to ~145 lines.
+- DONE: De-flip `docs/releasing.md` to steady-state (captain) — satisfies the rewritten AC-3.
+  Removed the one-time `0.20.0` main-flip runbook (archive pre-v1 `main`, `v0-archived`, `--force-with-lease` guarded replacement, the `v0.20.0` flip tag) and the flip-conditional intro/tag-push framing; renamed "Cutting a Stable Release After 0.20.0" to "Cutting a Stable Release". `docs/releasing.md` now describes only the steady-state process. Verified the flip runbook is owned by the `main-flip-0200-marketplace` entity (its ACs carry the `v0-archived` tag, the guarded replacement preserving `next`, and the archive step), so nothing is lost. Greppable check over `docs/releasing.md`: zero `flip`/`v0-archived`/`force-with-lease`/`preflip` tokens.
+- DONE: Verification at the final HEAD.
+  Deliverable is now `README.md` + `docs/install-journey.md` + `docs/releasing.md` on branch `spacedock-ensign/readme-main-flip-reconciliation` at `46092693`. Content lints clean (no em dashes across all three docs, no dev-internal jargon, no stale `-- "task"` grammar, no flip tokens in releasing.md); `gofmt -l` clean; `git diff --check` clean. `go test ./...` 1141/16 green on the last code-adjacent commit; the trim and de-flip are docs-only (no code touched).
+
+### Summary
+
+Post-signal, the captain did two more interactive passes: an impatient-reader verbosity trim of the README, and a de-flip of `docs/releasing.md` to steady-state-only. AC-3 was rewritten to match — release docs are steady-state and the one-time flip runbook is owned by the `main-flip-0200-marketplace` task (verified). The deliverable is now three docs (README, install-journey, releasing) at `46092693`. All other ACs (AC-1, AC-2, AC-4..AC-9) hold unchanged. No re-validation required per the first officer (docs-only, captain-driven, delta-checked clean).
 
 ## Stage Report: validation (cycle 3)
 
