@@ -39,11 +39,14 @@ Members (the query is the source of truth):
 - `qa` (HEADLINE) — ideation gate **captain-APPROVED (2026-06-08)** → Commander drives
   implementation (do NOT re-present the gate). Mechanism is sound; DoD#4 is the captain's
   sprint-acceptance live drive.
-- `z9` (codex auto-install) — **drive AFTER qa** (both edit `frontdoor.go`+`host_exec.go`,
-  disjoint functions, sequence to avoid textual overlap). High-stakes front-door →
-  **validation gets a detached adversarial audit.** Build note: **fix** the now-false
-  comments/error-strings it builds around (`host_exec.go:271-273`, `:32-34`;
-  `frontdoor.go:314-316`), don't add around them. Inverts `frontdoor_test.go:414`.
+- `z9` (codex auto-install) — **ideation captain-APPROVED. Drive AFTER qa** (both edit
+  `frontdoor.go`+`host_exec.go`, disjoint functions). High-stakes front-door →
+  **validation gets a detached adversarial audit.** Build notes: **(a)** the codex install
+  branch MUST be the shared `devBranch` (`ops.Install("codex", marketplaceSource, devBranch)`
+  + `--ref <devBranch>`), NOT a hardcoded `next` — so it tracks the channel (next now → main
+  after the flip's `devBranch` retarget; confirmed in the design); **(b)** **fix** the
+  now-false comments/error-strings it builds around (`host_exec.go:271-273`, `:32-34`;
+  `frontdoor.go:314-316`), don't add around them; **(c)** inverts `frontdoor_test.go:414`.
 
 **Survey: DEFERRED to post-flip (captain).** The survey correctness pass (`vh` =
 `survey-skill-correctness-pass`, consolidating 69/1p/4t + the B2 agentsview-model fix) is
@@ -54,9 +57,9 @@ not pre-flip-critical — drive it after the flip. Out of 0198's drive.
   note: add a POSITIVE assertion that `.spacedock-state` is pruned, and verify the
   `checked == 0` Fatal guard stays non-vacuous after the prune. Land before the survey
   live-drives (orphaned `scaffolds/` gone). **This is the precondition for DoD#2.**
-- `nzb` (e2e-gate) — drive-now, parallelizable; **merge before the captain-gated release.**
-  Build note: its true cut-block e2e is the flip's; require its `--dry-run` vs real
-  `gh run list` as the not-just-prose bar.
+- `nzb` (e2e-gate) — **DEFERRED to post-flip (captain):** useful but not critical (per-PR
+  e2e already verifies). When built post-flip, the gate must be on the branch BEFORE the tag
+  is cut. Out of 0198's drive.
 
 ## Captain-gated (do NOT decide)
 - `qa` ideation gate; the **B2 survey-model** resolution; the **0.19.8 release cut** (version

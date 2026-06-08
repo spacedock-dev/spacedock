@@ -1,11 +1,10 @@
-# Sprint 0198 — pre-flip hardening (qa-led)
+# Sprint 0198 — pre-flip hardening
 
-**Goal:** ship the binary/version/install UX (`qa`) plus pre-flip hardening and survey
-polish as **0.19.8**, before the 0.20.0 flip — so a user hitting a missing / incompatible /
-stale binary gets a helpful journey (versions, not "contract" jargon), the survey reads
-cleaner, and the release path is gated by e2e.
+**Goal:** ship the pre-flip essentials as **0.19.8** before the 0.20.0 flip — the
+binary/version/install UX (`qa`), the Codex plugin auto-install (`z9`), and the
+test-hygiene fix (`kb`). Survey polish and the e2e release-gate are deferred to post-flip.
 
-**Deliverable:** spacedock **0.19.8** cut on `next` with the members landed.
+**Deliverable:** spacedock **0.19.8** cut on `next`.
 
 ## Members
 
@@ -15,28 +14,42 @@ Membership is the query, not this table:
 spacedock status --workflow-dir docs/dev --where sprint=0198-pre-flip-hardening --where 'sprint-readiness != defer'
 ```
 
-| Entity | group | what it delivers |
-|--------|-------|------------------|
-| `qa` spacedock-binary-missing-install-journey | binary-ux | **headline** — install/upgrade journey + versions-not-"contract" messages (missing / incompatible / stale) |
-| `jh` dispatch-build-flag-form-version-skew | binary-ux | same-contract command-form skew detection (needs ideation + spike) |
-| `1p27` survey-scaffold-state-the-fact | survey | SCAFFOLD section states the observed fact, drops the recovered-vs-installed taxonomy |
-| `69rk` survey-codex-cwd-workaround | survey | survey-side fallback + hint for Codex sessions agentsview leaves cwd-less |
-| `kbr8` migration-check-prune-state-walk | test-hygiene | prune `.spacedock-state` in the migration-check walk (019x audit Material) + drop orphaned survey fixtures |
-| `nzb7` gate-release-on-e2e | release-gating | gate the release/flip on the live e2e suite |
+| Entity | group | gate | what it delivers |
+|--------|-------|------|------------------|
+| `qa` spacedock-binary-missing-install-journey | binary-ux | **ideation ✓ approved** | install/upgrade journey + versions-not-"contract" messages (missing / incompatible / stale) |
+| `z9` codex-plugin-auto-install | binary-ux | **ideation ✓ approved** | front-door Codex plugin auto-install (mirror #311), channel-tracked via the shared `devBranch` |
+| `kb` migration-check-prune-state-walk | test-hygiene | fast-track (no gate) | prune `.spacedock-state` in the migration-check walk + drop orphaned survey fixtures |
 
-> CL is filing more install-path members from manual testing — they tag into this sprint as they land.
+**Deferred (out of this sprint):**
+- `nzb` gate-release-on-e2e → **post-flip** (useful not critical; per-PR e2e already verifies; when built, the gate must be on-branch before tagging).
+- `vh` survey-skill-correctness-pass → **post-flip** (consolidates 69/1p/4t + the agentsview git-root-model fix; design banked).
+- `jh` version-skew (no contract bump pre-first-release — self-resolves at the first release); `5h0` (blocked on #315).
 
 ## Definition of Done
 
-1. Every `ready` member `done` / PASSED + merged to `next`.
-2. `go test ./...` from the repo root green with `.spacedock-state` + `.claude/worktrees` present.
-3. spacedock **0.19.8** stamped + cut on `next` (captain-gated release).
-4. `qa`'s behavior proven by a **captain-run live drive** at sprint acceptance — drive `spacedock doctor` / `spacedock claude` against a too-old-binary / too-old-plugin manifest and observe the version-bearing, jargon-free messages (mirroring the 019x AC-3 live drives the captain ran). qa's offline ACs prove the *mechanism*; this captain live drive proves the *messages*. (Resolves the preflight's DoD#4-unowned blocker — the live drive is a sprint-level captain step, not an offline member AC.)
+1. Every active member (`qa`, `z9`, `kb`) `done` / PASSED + merged to `next`.
+2. `go test ./...` from the repo root green with `.spacedock-state` + `.claude/worktrees` present (owned by `kb`).
+3. `qa`'s behavior proven by a **captain-run live drive** at sprint acceptance (the version-bearing, jargon-free messages observed).
+4. `z9`'s front-door auto-install proven by a **detached adversarial audit** (high-stakes surface) + its host-native install test.
+5. spacedock **0.19.8** stamped + cut on `next` (captain-gated release).
+
+## Channel-tracking note (the qa/z9 ↔ flip dependency)
+
+`z9` (and the existing `#311` Claude auto-install) install the plugin from the shared
+`devBranch` (`frontdoor.go:49`, today `"next"`). **The flip must retarget `devBranch`
+`next → main`** (the per-channel `devBranch` stamp / the 2-channel release-mechanics work)
+so the released stable binary auto-installs the `main` plugin. That retarget is a **flip
+requirement**, NOT a 0198 task — `z9` is correct as long as it uses `devBranch` (confirmed in
+its design).
 
 ## Out of scope
 
-The 0.20.0 flip (`pj`, next sprint). `5h0` (blocked on #315). Fixing agentsview upstream — the Codex-cwd gap is worked around survey-side, not fixed in agentsview.
+The 0.20.0 flip (`pj`). The 2-channel brew + `devBranch` retarget (flip-release-mechanics).
+Survey polish (`vh`, post-flip).
 
 ## Status
 
-Shaping. Ideation dispatched for the design-fork members (`nzb7`, `69rk`, `jh` — the last with a spike); `kbr8`/`1p27` are well-specified (straight-to-implementation candidates, per the `78` precedent); `qa` is at its ideation gate awaiting captain approval. The staff readiness review + the Commander dispatch package follow once ideation settles.
+**Fully shaped + approved — ready for the Commander handoff.** `qa` + `z9` ideation gates
+captain-approved; `kb` fast-track. The package
+([`dispatch-sprint-execution.md`](dispatch-sprint-execution.md)) is final; a separate
+Commander session drives the three implementations (`qa` → `z9`; `kb` independent).
