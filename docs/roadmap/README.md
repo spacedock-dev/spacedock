@@ -28,16 +28,41 @@ The handoff between them is the **conn-to-drive dispatch** — a self-contained 
 package (`NNN-<slug>/dispatch-sprint-execution.md`) the Commander runs from a cold boot,
 not a context transfer.
 
+## Sprint lifecycle checklist
+
+The per-sprint operating sequence, owner-tagged. Copy into a sprint's `index.md` to track
+progress. The two **independent reviews** (preflight + post-sprint) are the steps most
+easily skipped — they are **not optional** and **never self-reviews**: the value is
+refuting the FO's own assumptions, so a *fresh* reviewer runs them, never the FO and never
+the ideation ensigns (they would grade their own work).
+
+**Shape — Shaping FO**
+- [ ] **Scope-lock** with the captain — which entities are in, which defer *(captain decides)*
+- [ ] **Carve** — stamp `sprint` / `group` / `sprint-readiness` on members; write `index.md` (goal, members-as-query, DoD, out-of-scope)
+- [ ] **Ideate** each gated member — problem / approach / AC + test-plan, with the **riskiest mechanism exercised first** (a spike, or a recorded "no spike needed"); check existing ideation state first — never re-ideate a banked design
+- [ ] **⚠️ Preflight staff review** — dispatch an *independent* reviewer (not the FO, not the ideation ensigns) to refute: design soundness, proof-gaps, tautological / prose-grep ACs, over-engineering, blast-radius → `staff-review.md`; fold Material findings *before* the gates lock
+- [ ] **Present ideation gates** — checklist accounting + AC cross-check per member; never self-approve *(captain decides)*
+- [ ] **Package** — write `dispatch-sprint-execution.md` (boot recipe, per-member build notes, in-drive gates, release-cut recipe)
+
+**Drive — Commander (a separate, cold-booted session)**
+- [ ] **Implementation → validation → done** per member; **detached adversarial audit at validation** for every high-stakes surface (front-door, status guards, shipped scaffolding, CI / release machinery)
+- [ ] **Merge** each to `next` (PR-merge); keep state commits concurrency-safe
+- [ ] **Cut the release** — bump the 3 manifests + tag `vN.N.N`, push `next` + tag *(captain authorizes)*
+
+**Close — Shaping FO**
+- [ ] **⚠️ Post-sprint antipattern audit** — dispatch an *independent* reviewer (staff-eng persona) *after* the cut; it catches what shipped wrong, and its findings **seed the next sprint's backlog** (e.g. `kb` came straight out of the 019x post-sprint audit)
+
 ## Sprint sequence
 
 | # | Sprint | Deliverable (the value it unlocks) | State |
 |---|--------|------------------------------------|-------|
 | 1 | [`019x-pre-flip-cleanups`](019x-pre-flip-cleanups/) | spacedock **0.19.7** cut on `next` with the pre-flip cleanups landed | ✅ delivered — 0.19.7 cut (#322–326) |
-| 2 | [`0198-pre-flip-hardening`](0198-pre-flip-hardening/) | spacedock **0.19.8** — binary/version/install UX (`qa`) + survey polish + hardening | shaping |
-| 3 | `0200-flip` (capstone) | **0.20.0** cut on `main` + marketplace flipped | backlog |
+| 2 | [`0198-pre-flip-hardening`](0198-pre-flip-hardening/) | spacedock **0.19.8** — binary/version/install UX (`qa`), Codex auto-install (`z9`), test-hygiene (`kb`), survey correctness (`vh`) | driving |
+| 3 | [`0199-pre-flip-mechanics`](0199-pre-flip-mechanics/) | spacedock **0.19.9** — Linux binaries (`v3`) + dev-tooling quality (`th`, `jm`) | shaped — ready for Commander |
+| 4 | `0200-flip` (capstone) | **0.20.0** cut on `main` + marketplace flipped | backlog |
 
 Post-flip candidates (not yet sprints): a published docs site (`wv` + `e6`),
-distribution everywhere (`v3` linux + `5w` notarize + `44` bundle), and the
+distribution (`5w` notarize + `44` bundle), and the
 `spacedock:roadmap` skill graduation — only if this dry run proves the construct.
 
 ## How membership works
