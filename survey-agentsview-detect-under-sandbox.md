@@ -11,7 +11,8 @@ worktree:
 issue:
 sprint: 0198-pre-flip-hardening
 group: survey
-sprint-readiness: ready
+sprint-readiness: defer
+superseded-by: survey-skill-correctness-pass
 ---
 
 Under sandbox, the survey skill's agentsview-installed detection gives a false negative — it reports agentsview missing (and prompts to install) even though `agentsview --version` succeeds.

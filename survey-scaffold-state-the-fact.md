@@ -11,7 +11,8 @@ worktree:
 issue:
 sprint: 0198-pre-flip-hardening
 group: survey
-sprint-readiness: ready
+sprint-readiness: defer
+superseded-by: survey-skill-correctness-pass
 ---
 
 Follow-up to xn (survey-signal-correction): simplify the survey's SCAFFOLD reporting.

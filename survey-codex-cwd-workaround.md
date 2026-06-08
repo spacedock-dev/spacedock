@@ -11,7 +11,8 @@ worktree:
 issue:
 sprint: 0198-pre-flip-hardening
 group: survey
-sprint-readiness: ready
+sprint-readiness: defer
+superseded-by: survey-skill-correctness-pass
 ---
 
 The survey's repo-identity scoping (the `git rev-parse --git-common-dir` coalesce, xn) scopes by `sessions.cwd`. agentsview does not persist Codex `cwd`, so cwd-scoped queries miss all Codex sessions even if the Claude-only `agent` filter were broadened. Work around it survey-side with a presence count and a hint; do not fix agentsview.
