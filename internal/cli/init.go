@@ -45,7 +45,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 			return 1
 		}
 		if resolved != "" || check {
-			code := contract.RunDoctor(resolved, "codex", devBranch, stdout, stderr)
+			code := contract.RunDoctor(resolved, "codex", devBranch, Version, stdout, stderr)
 			if code != 0 || resolved != "" || check {
 				return code
 			}
@@ -88,7 +88,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 
 	if manifestPath != "" {
-		return contract.RunDoctor(manifestPath, host, devBranch, stdout, stderr)
+		return contract.RunDoctor(manifestPath, host, devBranch, Version, stdout, stderr)
 	}
 
 	resolved, err := ops.ResolveManifest(host)
@@ -98,7 +98,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 	// An empty resolved path is the no-plugin-found report; RunDoctor renders it
 	// from a non-existent path as a non-fatal report.
-	return contract.RunDoctor(resolved, host, devBranch, stdout, stderr)
+	return contract.RunDoctor(resolved, host, devBranch, Version, stdout, stderr)
 }
 
 // parseInitArgs reads `--host claude|codex` (default claude) and `--check`. A

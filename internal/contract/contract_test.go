@@ -3,7 +3,6 @@
 package contract
 
 import (
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -74,15 +73,15 @@ func TestCompare(t *testing.T) {
 		{"compatible-exact", 1, ">=1,<2", Compatible, ""},
 		{"compatible-forward-tolerant", 2, ">=1,<3", Compatible, ""},
 		{"compatible-lower-edge", 1, ">=1,<3", Compatible, ""},
-		{"too-old-binary", 1, ">=2,<3", TooOldBinary, "too-old-binary"},
-		{"too-old-plugin-at-hi", 2, ">=1,<2", TooOldPlugin, "too-old-plugin"},
-		{"too-old-plugin-above-hi", 5, ">=1,<2", TooOldPlugin, "too-old-plugin"},
+		{"too-old-binary", 1, ">=2,<3", TooOldBinary, "The plugin needs a newer binary."},
+		{"too-old-plugin-at-hi", 2, ">=1,<2", TooOldPlugin, "The binary needs a newer plugin."},
+		{"too-old-plugin-above-hi", 5, ">=1,<2", TooOldPlugin, "The binary needs a newer plugin."},
 		{"malformed", 1, ">=1", MalformedRange, "malformed contract range"},
 		{"predates-contract-empty", 1, "", PluginPredatesContract, "spacedock install --host claude"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			res := Compare(c.contract, c.raw, "claude", "")
+			res := Compare(c.contract, c.raw, "claude", "", "0.12.1", "0.19.4")
 			if res.Verdict != c.wantVerdict {
 				t.Fatalf("Compare(%d,%q) verdict = %v, want %v", c.contract, c.raw, res.Verdict, c.wantVerdict)
 			}
@@ -97,12 +96,13 @@ func TestCompare(t *testing.T) {
 	}
 }
 
-// TestCompareMessageShape locks the shared mismatch-message header shape: the
-// leading "Spacedock contract mismatch" line names contract C and the range, and
-// the message ends with the "Run `spacedock doctor`" pointer — for every
-// mismatch class except malformed-range (which is a packaging bug, not a
-// too-old install) and no-plugin-found.
+// TestCompareMessageShape locks the shared mismatch-message shape: the leading
+// "Spacedock version mismatch" line names both display versions, and the message
+// ends with the "Run spacedock doctor" pointer — for every mismatch class except
+// malformed-range (which is a packaging bug, not a too-old install) and
+// no-plugin-found.
 func TestCompareMessageShape(t *testing.T) {
+	const pluginVersion, binaryVersion = "0.18.0", "0.19.4"
 	for _, c := range []struct {
 		contract int
 		raw      string
@@ -110,12 +110,12 @@ func TestCompareMessageShape(t *testing.T) {
 		{1, ">=2,<3"}, // too-old-binary
 		{2, ">=1,<2"}, // too-old-plugin
 	} {
-		res := Compare(c.contract, c.raw, "claude", "")
-		header := "Spacedock contract mismatch: binary is contract " + strconv.Itoa(c.contract)
+		res := Compare(c.contract, c.raw, "claude", "", pluginVersion, binaryVersion)
+		header := "Spacedock version mismatch: binary " + binaryVersion + ", plugin " + pluginVersion
 		if !strings.Contains(res.Message, header) {
 			t.Errorf("Compare(%d,%q) message missing header %q: %q", c.contract, c.raw, header, res.Message)
 		}
-		if !strings.Contains(res.Message, "Run `spacedock doctor`") {
+		if !strings.Contains(res.Message, "Run spacedock doctor") {
 			t.Errorf("Compare(%d,%q) message missing doctor pointer: %q", c.contract, c.raw, res.Message)
 		}
 	}
@@ -129,7 +129,7 @@ func TestCompareMessageShape(t *testing.T) {
 // unparseable value still reads as a packaging bug.
 func TestPluginPredatesContractRemedy(t *testing.T) {
 	for _, raw := range []string{"", "   "} {
-		res := Compare(1, raw, "claude", "next")
+		res := Compare(1, raw, "claude", "next", "0.12.1", "0.19.4")
 		if res.Verdict != PluginPredatesContract {
 			t.Fatalf("Compare(1,%q) verdict = %v, want plugin-predates-contract", raw, res.Verdict)
 		}
@@ -145,7 +145,7 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 	}
 
 	// With no dev branch, the remedy is the clean release one-liner (no @suffix).
-	plain := Compare(1, "", "claude", "")
+	plain := Compare(1, "", "claude", "", "0.12.1", "0.19.4")
 	if strings.Contains(plain.Message, "@next") {
 		t.Errorf("predates-contract remedy with no branch should omit @next: %q", plain.Message)
 	}
@@ -154,7 +154,7 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 	}
 
 	// A non-empty unparseable value is still a packaging bug, not predates-contract.
-	bug := Compare(1, ">=1", "claude", "next")
+	bug := Compare(1, ">=1", "claude", "next", "0.12.1", "0.19.4")
 	if bug.Verdict != MalformedRange {
 		t.Fatalf("Compare(1,%q) verdict = %v, want malformed-range", ">=1", bug.Verdict)
 	}
@@ -169,7 +169,7 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 // (which now exits 2) — the remedy a user hits at the gate must run.
 func TestCompareHostSubstitution(t *testing.T) {
 	for _, host := range []string{"claude", "codex"} {
-		res := Compare(2, ">=1,<2", host, "")
+		res := Compare(2, ">=1,<2", host, "", "0.18.0", "0.19.4")
 		want := "spacedock install --host " + host
 		if !strings.Contains(res.Message, want) {
 			t.Errorf("too-old-plugin remedy for host %q missing %q: %q", host, want, res.Message)
@@ -180,16 +180,20 @@ func TestCompareHostSubstitution(t *testing.T) {
 	}
 }
 
-// TestCompareBranchSubstitution verifies the pre-release dev branch, when set,
-// is woven into the too-old-binary remedy's reinstall hint.
-func TestCompareBranchSubstitution(t *testing.T) {
-	res := Compare(1, ">=2,<3", "claude", "next")
-	if !strings.Contains(res.Message, "@next") {
-		t.Errorf("too-old-binary remedy with branch=next missing @next: %q", res.Message)
+// TestTooOldBinaryRemedyIsBranchAgnostic verifies the too-old-binary remedy
+// carries the brew/source-build upgrade path with NO branch pin: `brew upgrade
+// spacedock` carries no branch and the source build is branch-agnostic, so the
+// remedy is identical whether or not a pre-release dev branch is set.
+func TestTooOldBinaryRemedyIsBranchAgnostic(t *testing.T) {
+	withBranch := Compare(1, ">=2,<3", "claude", "next", "0.21.0", "0.19.4")
+	noBranch := Compare(1, ">=2,<3", "claude", "", "0.21.0", "0.19.4")
+	if !strings.Contains(withBranch.Message, "brew upgrade spacedock") {
+		t.Errorf("too-old-binary remedy must lead with brew upgrade: %q", withBranch.Message)
 	}
-	// Default release path omits the branch suffix.
-	plain := Compare(1, ">=2,<3", "claude", "")
-	if strings.Contains(plain.Message, "@next") {
-		t.Errorf("too-old-binary remedy with no branch should omit @next: %q", plain.Message)
+	if strings.Contains(withBranch.Message, "@next") {
+		t.Errorf("too-old-binary remedy must not pin a branch: %q", withBranch.Message)
+	}
+	if withBranch.Message != noBranch.Message {
+		t.Errorf("too-old-binary remedy must be branch-agnostic:\n  with branch=%q\n  no branch=%q", withBranch.Message, noBranch.Message)
 	}
 }

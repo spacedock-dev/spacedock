@@ -27,8 +27,8 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 		wantProceed   bool
 		wantPinned    string // abort-message substring (empty when proceeding)
 	}{
-		{"too-old-binary-aborts", "0", ">=1,<2", false, "too-old-binary"},
-		{"too-old-plugin-aborts", "5", ">=1,<2", false, "too-old-plugin"},
+		{"too-old-binary-aborts", "0", ">=1,<2", false, "The plugin needs a newer binary."},
+		{"too-old-plugin-aborts", "5", ">=1,<2", false, "The binary needs a newer plugin."},
 		{"compatible-proceeds", "1", ">=1,<2", true, ""},
 	}
 	for _, c := range cases {
@@ -100,7 +100,7 @@ func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host
 	if !ok {
 		return false, "could not parse contract token from `spacedock --version`: " + strings.TrimSpace(out)
 	}
-	res := Compare(c, embeddedRange, host, branch)
+	res := Compare(c, embeddedRange, host, branch, "0.18.0", "0.19.4")
 	if res.Verdict != Compatible {
 		return false, res.Message
 	}
