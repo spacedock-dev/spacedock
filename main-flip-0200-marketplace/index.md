@@ -43,37 +43,80 @@ The 0.19.6 capstone: once the line is tested/green, cut **0.20.0 on main** and *
 
 The release-gate machinery fix itself (bqqr). The packaging/notarization tasks (44, 5w) unless they're prerequisites the captain names.
 
+## Riskiest-mechanism determination — no spike needed
+
+The flip's risk is **sequencing/runbook discipline**, not an unproven mechanism. Every step it relies on is already proven; the determination is recorded here rather than left silent:
+
+- **Marketplace ref re-pin actually replaces the stale pin** — `s0cq` (install-marketplace-ref-refresh) PASSED 2026-06-03. A clean ref flip `next`→`main` re-pins; it does not no-op on the old pin.
+- **The e2e-gate distinguishes a fully-green live run from a parked/offline-only run, bound to the release commit** — `nzb`'s spike (2026-06-08) exercised `gh run list --workflow "Runtime Live E2E" --status success` + `--json headSha` against the live `spacedock-dev/spacedock` repo: a parked run is never `success`; the query is the same one the release runner already uses; `headSha` binds a green run to a commit. Banked, do not re-spike.
+- **Guarded non-fast-forward branch replacement** — standard git `--force-with-lease` (CAS on the expected old tip). The pre-flip `origin/main` (`8c069d95` at ideation) and `origin/next` (`d13f355e`) are divergent, so the flip is a real non-ff update, exactly the case `--force-with-lease` guards.
+
+**E2E-gate headSha path for the cut — DECIDED: tag-the-green-tip.** `runtime-live-e2e.yml` carries `workflow_dispatch` (confirmed at `runtime-live-e2e.yml` `on:`), so the live matrix can be dispatched against an arbitrary ref. The cut runs the live e2e via `workflow_dispatch` on the *exact prepared `main` tip*, waits for it green, then tags **that same commit** `v0.20.0`. `release.yml`'s `e2e-gate` (nzb) resolves the tagged commit SHA and finds the matching green run → goreleaser proceeds. The channel-aware stamp (`k6d`) commits its stamp AFTER the tag fires (it is a step inside the tag-triggered `release.yml`), so no new commit lands between green-run and tag — the tagged SHA and the green-run SHA are identical by construction. The `SPACEDOCK_E2E_GATE_WAIVER` (recorded reason) remains the captain's auditable escape hatch if the prepared tip cannot get a green live run in time, but it is the fallback, not the plan.
+
+**Boundary with the pre-flip pair (gates this milestone).** Two release-machinery fixes the flip *rides* are owned by the Commander-driven pre-flip pair, NOT by this entity — confirmed against HEAD so they are not double-owned:
+- The channel-aware `release.yml` version-stamp (today hardcoded `git switch next` / `git push origin next` at `release.yml:159-172`) and the per-channel `devBranch` ldflag (today hardcoded `-X …cli.devBranch=next` at `.goreleaser.yaml:36`) are **`k6d`**'s deliverable.
+- The `e2e-gate` job + SHA-match predicate + waiver are **`nzb`**'s deliverable.
+
+This milestone is gated on `nzb` + `k6d` landing on `next` first. If either slips, the flip's AC-3/AC-7 cannot be satisfied as written — surface to the captain rather than reimplementing the pre-flip mechanics here.
+
 ## Acceptance criteria
 
-(To firm up at ideation once the specifics are clarified.)
-**AC-1 — Current pre-v1 main is archived before replacement.**
-Verified by: tag `v0-archived` exists and points at the pre-flip `origin/main` tip recorded immediately before the force-push.
+Each AC binds to a numbered item of the "Flip checklist — carve completeness audit (2026-06-08)" below (the repo-verified task list for DoD 5–10) and is verified by something OUTSIDE this entity body — a tag/branch state, command output/exit code, a produced commit, or a Go test that fails on violation.
 
-**AC-2 — `main` is replaced by the prepared 0.20.0-ready line while `next` remains available.**
-Verified by: `origin/main` points at the prepared release line, `origin/next` still exists, and the branch update command used `--force-with-lease` or an equivalent guarded replacement.
+**AC-1 — Archive ref under a NON-`v*` name; the archive cannot fire goreleaser.** (Checklist: *Archive-tag trigger guard* + DoD 5.)
+The pre-flip `origin/main` tip is preserved under a ref OUTSIDE the `release.yml` `v*` trigger glob (decided: `archive/v0` — `v0-archived` is rejected because it matches `v*`/`v[0-9]*`). Defense-in-depth: `release.yml` refuses any pushed tag not matching strict `v[0-9]+.[0-9]+.[0-9]+` so a stray `v0-archived`-style tag can never reach goreleaser.
+Verified by: (a) `git rev-parse archive/v0` equals the recorded pre-flip `origin/main` SHA, and `git tag -l 'v*' | grep -x archive/v0` is empty (the ref is not in the `v*` namespace); (b) a Go workflow-guard test in `internal/release` (the existing `workflow_exec_guard_test.go` pattern) parses `release.yml` and asserts the strict-semver tag refusal is present, with a paired adversarial variant (a `v0-archived`-shaped tag) the guard REJECTS — expected value parsed from the real workflow YAML, not from this body. (The non-`v*` ref alone is sufficient to prevent firing; the guard is the auditable defense-in-depth the audit flagged `v[0-9]*` as too weak for.)
 
-**AC-3 — 0.20.0 is cut on main and the marketplace serves it.**
-Verified by: the 0.20.0 tag/release exists on main (the cut succeeded through the fixed release-gate), and the marketplace install path resolves 0.20.0 from main (an install/resolve exercise confirming the flipped ref, not prose) — exact mechanics per the clarified specifics.
+**AC-2 — `origin/main` carries the prepared 0.20.0 line; `origin/next` retained; replacement was guarded.** (Checklist: DoD 6.)
+Verified by: post-flip `git rev-parse origin/main` equals the prepared-line SHA recorded immediately pre-push; `git rev-parse origin/next` still resolves (branch retained); and the update was performed with `git push --force-with-lease=main:<recorded-old-main-sha> origin <prepared>:main` (CAS guard against a racing write to `main`).
 
-**AC-4 — README/install docs are reconciled for stable main plus dev next.**
-Verified by: docs review plus command examples that match observable install behavior: stable install resolves from `main`, dev-only publish/install path still names `next`, and there is no stale wording that presents `next` as the stable release lane.
+**AC-3 — 0.20.0 is cut on `main` through the enforced e2e-gate; the marketplace resolves it from `main`.** (Checklist: *Marketplace ref flip* + DoD 7+8.)
+Verified by: (a) the `v0.20.0` tag exists and the GitHub Release published (goreleaser succeeded → `release.yml`'s `e2e-gate` found a green Runtime-Live-E2E run whose `headSha` == the tagged commit, OR a recorded `SPACEDOCK_E2E_GATE_WAIVER`); (b) a real install/resolve exercise — a fresh-HOME `spacedock claude`/`init` auto-install — resolves `0.20.0` from the `main` plugin (observed in plugin state, not by grepping a constant); (c) the marketplace ref edit and its guard test landed in ONE commit (see AC-6).
 
-**AC-5 — Upgrade paths are confirmed for stale plugin / missing binary and outdated binary cases.**
-Verified by: isolated host-config exercises or behavior fixtures for (a) old `0.12.x` plugin with no usable binary after plugin refresh, and (b) `0.19.x` plugin/binary skew with an outdated binary. Each must end in an actionable early install/upgrade instruction or a successful launch, not a late dispatch failure.
+**AC-4 — `AGENTS.md` + `docs/releasing.md` describe the post-flip world, verified against the real machinery.** (Checklist: *Doc reconciliation* + DoD 9. README clause DROPPED — README reconciliation already merged.)
+Verified by: `AGENTS.md:28` no longer says "Cut releases from `next`… Never release from `origin/main`" — it directs cuts from `main` and names the legacy line in any retained never-clause; and `docs/releasing.md` (which already describes the post-flip world aspirationally) matches the ACTUAL post-flip `release.yml`/`.goreleaser.yaml` after `k6d`'s stamp/devBranch fixes land — checked by reading the reconciled docs against the real workflow files (a divergence between doc and machinery is the failure). No live test; the failable check is doc-vs-machinery agreement on the post-flip refs.
+
+**AC-5 — Three upgrade journeys end in an actionable early upgrade path or a successful launch, never a late dispatch failure.** (Checklist: *Existing-user migration* 5th journey + DoD 10.)
+Verified by: isolated host-config exercises or behavior fixtures for (a) old `0.12.x` plugin with no usable binary after plugin refresh — first useful instruction is the binary install + `spacedock claude` payoff; (b) `0.19.x` plugin/binary skew with an outdated binary — the gate/remedy fails EARLY with an actionable upgrade path, not later in dispatch; (c) **the 5th journey** — a `next`-pinned `0.19.x` user post-flip: a stable binary stamped `devBranch=main` is installed, and on the next launch the plugin re-pins to `@main`. Because `frontdoor.go:175` (`Compatible`) is a no-op "proceed to launch" and re-pin (`ops.Install`) fires only on `NoPluginFound` at `frontdoor.go:177/185`, a happy `next`-pinned user does NOT auto-re-pin — so this AC also carries the DECISION (AC-8 below) and, if a nudge is chosen, a fixture proving the `next`-pinned-ref-under-stable-binary nudge fires.
+
+**AC-6 — Marketplace ref flip + paired guard-test edit land in ONE commit (green-by-construction).** (Checklist: *Retarget the ref + flip the guard test in ONE commit*.)
+Verified by: a single commit edits `.claude-plugin/marketplace.json` `source.ref` `next`→`main` AND `skills/integration/marketplace_manifest_test.go:67-68` (today asserts `src.Ref != "next"` → wants `"next"`) to expect `"main"`; `go test ./skills/integration/` is green on that commit and would FAIL if either half were committed alone (the test pins the value the manifest must carry). The marketplace ref (`main`) and the stable binary's `devBranch` ldflag (`main`, via `k6d`) agree.
+
+**AC-7 — Calendar-bump-on-`main` makes post-flip `plugin update` re-pull `main` against an existing HOME.** (Checklist: *Calendar-bump on main*.)
+Verified by: a stable calendar-bump path (mirroring `next-publish.yml`'s `bump-calendar` → push, but targeting `main`) exists so the marketplace `version` calendar key advances on a stable publish; exercised by a release dry-run/`--snapshot` or a `bump-calendar` invocation producing a changed `marketplace.json` calendar key on `main`, and an against-EXISTING-HOME `claude plugin update` re-pulling `main` (not just a fresh-HOME install). Whether this lands here or rides `k6d`/`next-publish` reuse is an implementation call; the AC is the observable re-pull on an existing HOME.
+
+**AC-8 — Dev-stays-on-`next` recorded; the `next`-pinned-user post-flip behavior is a deliberate decision, not an accident.** (Checklist: *Dev stays on `next`* + the 5th-journey decision.)
+Verified by: the roadmap/this entity records that post-flip development and Spacedock-state continue on `next` (so the FO-runtime `git … origin next` refs in `claude-first-officer-runtime.md:178-179` stay correct and `main` is stable-release-only) — and the 5th-journey behavior is DECIDED: either (i) accept silent edge-retention for already-happy `next`-pinned users (recorded with rationale), or (ii) add a one-time doctor/remedy nudge when a stable binary sees a `next`-pinned ref, proven by a fixture. The failable artifact is the decision plus, for (ii), the fixture; for (i), the recorded acceptance is a roadmap entry a reviewer can check against the shipped behavior.
+
+## Flip runbook — ordered, captain-gated (implementation spine)
+
+Every outward-facing step is a captain gate (📡). The flip is driven HERE (Shaping FO + captain), not by a cold-boot Commander. **Precondition: `nzb` + `k6d` merged to `next` and green** (this milestone's hard gate).
+
+1. **Pre-cut antipattern audit** on the prepared `next` tip (the 0.20.0 line) before anything outward fires. (Internal.)
+2. **Record the pre-flip SHAs.** `OLD_MAIN=$(git rev-parse origin/main)`, `PREPARED=$(git rev-parse origin/next)`. These pin AC-1's archive target and AC-2's `--force-with-lease` CAS. (Internal.)
+3. 📡 **Archive current `origin/main` under a non-`v*` ref.** `git tag archive/v0 $OLD_MAIN && git push origin archive/v0` (refuse `v0-archived` — matches `v*`). (AC-1.) *Captain gate: confirm the archive target SHA before pushing.*
+4. 📡 **Guarded flip `next`→`main`.** `git push --force-with-lease=main:$OLD_MAIN origin $PREPARED:main`; verify `origin/next` still resolves. (AC-2.) *Captain gate: the non-ff replacement of `main`.*
+5. 📡 **Run the live e2e on the prepared `main` tip and wait green.** `workflow_dispatch` of `runtime-live-e2e.yml` against `main` at `$PREPARED`; approve each spending environment; confirm all 5 legs `success`. (Feeds AC-3's e2e-gate via tag-the-green-tip.) *Captain gate: authorize the live API spend.*
+6. 📡 **Marketplace ref flip + paired test edit in ONE commit** on `main`: `.claude-plugin/marketplace.json` ref `next`→`main` + `marketplace_manifest_test.go:67-68` `next`→`main`; `go test ./skills/integration/` green; push to `main`. (AC-6.) *Captain gate: the marketplace serving-channel change.*
+7. 📡 **Cut 0.20.0.** Tag `$PREPARED` (the green-tip from step 5) `v0.20.0`, annotated; push the tag. `release.yml`'s `e2e-gate` finds the matching green run → goreleaser publishes the Release + bumps the brew tap; the channel-aware stamp (`k6d`) commits the stable stamp on `main` post-tag. (AC-3.) *Captain gate: the actual release.*
+8. 📡 **Calendar-bump on `main`** so existing-HOME `plugin update` re-pulls. (AC-7.) *Captain gate if it pushes to `main`.*
+9. **Doc reconciliation** — `AGENTS.md:28` + `docs/releasing.md` against the real post-flip `release.yml`/`.goreleaser.yaml`. (AC-4.) *(Can land with the flip commits; internal.)*
+10. **Post-flip verification** — fresh-HOME install resolves `0.20.0` from `main` (AC-3b); the three upgrade journeys incl. the 5th (AC-5); record dev-stays-on-`next` (AC-8). *(Some release-machinery issues only manifest once the tag fires — verify after.)*
 
 ## Test plan
 
-Per the clarified scope. At minimum:
+What verifies each AC, its cost, and the fixture/CLI/live split:
 
-- Final Runtime Live E2E on the prepared tip, unless the captain explicitly waives it.
-- `v0-archived` tag check against the pre-flip `origin/main` SHA.
-- Guarded replacement of `origin/main` with the prepared line, while preserving `origin/next`.
-- Release-mechanics check that stable release stamping/marketplace refs target `main` and dev-only publish remains possible from `next`.
-- README/install-doc reconciliation review against real command output.
-- Isolated upgrade-path exercises for old-plugin/no-binary and outdated-binary skew.
-- `v0.20.0` annotated tag/release, release action success, Homebrew tap update, and post-flip marketplace install resolving 0.20.0 from `main`.
+- **AC-1** — `git rev-parse`/`git tag -l` checks (free) + a Go workflow-guard test in `internal/release` parsing real `release.yml` for the strict-semver tag refusal, with an adversarial reject variant. Low cost — reuses `workflow_exec_guard_test.go`. Offline.
+- **AC-2** — `git rev-parse origin/main`/`origin/next` post-flip (free); the `--force-with-lease=…:$OLD_MAIN` form is the guarded replacement. Done live at the flip (captain-gated).
+- **AC-3** — goreleaser success (the gate held) + a fresh-HOME `spacedock claude`/`init` install resolving `0.20.0` from `main`, observed in plugin state. Live, at the flip. The e2e-gate mechanism itself is `nzb`-proven; this exercises the end-to-end cut.
+- **AC-4** — read reconciled `AGENTS.md`/`docs/releasing.md` against the real post-flip workflow files; a doc-vs-machinery divergence fails. No new test framework; the failable check is agreement on post-flip refs.
+- **AC-5** — isolated host-config exercises / behavior fixtures for the three journeys (0.12.x-no-binary, 0.19.x-skew, 5th `next`-pinned post-flip). Reuses the existing front-door/doctor fixture patterns. Fixture-level; the 5th may need a live front-door smoke for the re-pin observation.
+- **AC-6** — `go test ./skills/integration/` green on the single paired commit; would fail on a half-commit. Low cost — the test already exists, only the expected value flips. Offline.
+- **AC-7** — `bump-calendar` invocation / release dry-run producing a changed `main` calendar key + an existing-HOME `plugin update` re-pull. Live-ish; reuses `next-publish.yml`'s `bump-calendar` tool.
+- **AC-8** — roadmap/entity record (decision) + (for the nudge option) a doctor/remedy fixture firing on a `next`-pinned ref under a stable binary. Fixture-level if nudge chosen; recorded-decision otherwise.
 
-This is an outward-facing release — captain-gated at each outward step.
+This is an outward-facing release — captain-gated at each outward step (📡 above). Final Runtime Live E2E on the prepared tip per step 5, unless the captain records a `SPACEDOCK_E2E_GATE_WAIVER`.
 
 ## Flip checklist — carve completeness audit (2026-06-08)
 
@@ -102,3 +145,16 @@ An adversarial completeness sweep of the nzb→k6d→pj carve surfaced these fli
 
 - [ ] **e2e-gate headSha path.** nzb's gate binds to the tagged commit's SHA, and `runtime-live-e2e.yml` runs on PR-to-next. If the flip post-stamps a commit on main, its SHA differs from any green next-PR run. Pin ONE: stamp-before-the-e2e-run / tag-the-green-tip / recorded `SPACEDOCK_E2E_GATE_WAIVER` (with reason) — don't leave it a cut-day surprise.
 - [ ] **Dev stays on `next`.** Record explicitly that post-flip development/state continues on `next` (so the FO-runtime refs `git … origin next` in `skills/first-officer/references/claude-first-officer-runtime.md` stay correct) and `main` is the stable release lane only.
+
+## Stage Report: ideation
+
+- DONE: Firm the flip ACs against the 9-item "Flip checklist — carve completeness audit (2026-06-08)" already in this entity's body; each surviving AC binds to a checklist item and is verified OUTSIDE this entity body. Drop the README half of AC-4; keep AGENTS.md + docs/releasing.md reconciliation; keep upgrade-path AC-5 and ADD the 5th journey.
+  8 ACs written, each bound to a named checklist item (AC-1→archive-tag guard/DoD5; AC-2→DoD6; AC-3→marketplace-flip/DoD7-8; AC-4→doc-reconciliation/DoD9, README clause DROPPED; AC-5→migration incl. 5th journey/DoD10; AC-6→paired ref+test commit; AC-7→calendar-bump-on-main; AC-8→dev-stays-on-next + 5th-journey decision). Each "Verified by" names a git ref/command, a Go test, a fixture, or doc-vs-machinery agreement — none rests on reading this body.
+- DONE: Produce the ordered, captain-gated flip RUNBOOK as the implementation spine.
+  10-step ordered runbook with 📡 captain gates on every outward step: antipattern audit → record SHAs → archive `archive/v0` → guarded `--force-with-lease=main:$OLD_MAIN` flip → live e2e on prepared tip (workflow_dispatch) → marketplace ref+test in ONE commit → tag-the-green-tip cut 0.20.0 → calendar-bump-on-main → doc reconciliation → post-flip verification.
+- DONE: Record the riskiest-mechanism determination explicitly (no spike needed, naming proven mechanisms) AND decide the e2e-gate headSha path.
+  "No spike needed" recorded citing s0cq (marketplace re-pin PASSED 2026-06-03), nzb (e2e-gate query proven against live repo, banked), git `--force-with-lease`. HeadSha path DECIDED: tag-the-green-tip — `runtime-live-e2e.yml` carries `workflow_dispatch` (verified at `on:`), so dispatch the live matrix on the prepared `main` tip, get green, tag THAT commit; k6d's stamp commits post-tag so no SHA drift between green-run and tag. `SPACEDOCK_E2E_GATE_WAIVER` is the recorded fallback.
+
+### Summary
+
+Firmed the flip from a placeholder spec into 8 checklist-bound ACs + a 10-step captain-gated runbook + an explicit no-spike determination. Three load-bearing claims were proven by exercise, not assertion: (1) flipping the marketplace ref `next`→`main` alone FAILS `marketplace_manifest_test.go:68` ("source.ref = main, want next"), proving AC-6's paired-commit "green-by-construction" requirement is real; (2) `archive/v0` does NOT match the `release.yml` `v*` glob while `v0-archived` DOES, confirming the audit's archive-name fix; (3) `internal/release` + `skills/integration` baselines green so implementers start clean. Decided the e2e-gate headSha path (tag-the-green-tip via workflow_dispatch) so the cut is not a cut-day surprise. Confirmed the `release.yml:159-172` channel-aware stamp and `.goreleaser.yaml:36` per-channel devBranch are `k6d`'s deliverable (not double-owned here), and the e2e-gate is `nzb`'s — this milestone is gated on both landing on `next` first. The 5th-journey finding is verified against `frontdoor.go:175/177/185` (re-pin fires only on NoPluginFound, not Compatible), so a happy `next`-pinned user does not auto-migrate — carried as AC-8's explicit decision (accept silent edge-retention vs. add a nudge).
