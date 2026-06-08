@@ -1,13 +1,13 @@
 ---
 id: xnh4gc2zqe67j8tbxh926r9j
 title: Survey signal-correction — read the ground-truth signals (sessions.db + repo), not thin proxies
-status: validation
+status: done
 source: "captain (2026-06-07) - combined fix for the survey-skill dogfood issue cluster spacedock-dev/spacedock#318/#319/#320 (+ #317 umbrella). One task, not 1-1: the reports close after this ships. #316 (detect-spacedock incumbent + audit/meta-loop flip) is OUT of scope (serves spacedock-incumbent users, a minority) - park as a separate roadmap proposal."
 started: 2026-06-07T18:57:58Z
-completed:
-verdict:
+completed: 2026-06-08T05:24:29Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-survey-signal-correction
+worktree:
 issue:
 sprint: 019x-pre-flip-cleanups
 group: survey
