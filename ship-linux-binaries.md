@@ -12,7 +12,7 @@ issue: "spacedock-dev/spacedock#321"
 sprint: 0199-pre-flip-mechanics
 group: distribution
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#332"
 ---
 
