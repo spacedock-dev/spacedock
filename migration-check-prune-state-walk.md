@@ -1,13 +1,13 @@
 ---
 id: kbr8yxzknmk8y5451rypz3h4
 title: migration-check test should prune the .spacedock-state tree, not name-match _debriefs (+ drop orphaned survey scaffolds fixtures)
-status: backlog
+status: implementation
 source: "post-sprint antipattern audit of 019x-pre-flip-cleanups (2026-06-08, staff-eng persona) — qy's migration-check fix (PR #326) silences _debriefs by name, but the walk still descends into the gitignored .spacedock-state checkout and validates ~107 machine-local entity files. The SAME sprint prunes that tree wholesale 3x elsewhere."
 score: "0.22"
-started:
+started: 2026-06-08T17:26:14Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-migration-check-prune-state-walk
 issue:
 sprint: 0198-pre-flip-hardening
 group: test-hygiene
