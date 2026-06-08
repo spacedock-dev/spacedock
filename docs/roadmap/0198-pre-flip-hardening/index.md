@@ -31,7 +31,7 @@ spacedock status --workflow-dir docs/dev --where sprint=0198-pre-flip-hardening 
 1. Every `ready` member `done` / PASSED + merged to `next`.
 2. `go test ./...` from the repo root green with `.spacedock-state` + `.claude/worktrees` present.
 3. spacedock **0.19.8** stamped + cut on `next` (captain-gated release).
-4. `qa`'s behavior proven by a **live drive** (the binary/version UX messages observed), not prose.
+4. `qa`'s behavior proven by a **captain-run live drive** at sprint acceptance — drive `spacedock doctor` / `spacedock claude` against a too-old-binary / too-old-plugin manifest and observe the version-bearing, jargon-free messages (mirroring the 019x AC-3 live drives the captain ran). qa's offline ACs prove the *mechanism*; this captain live drive proves the *messages*. (Resolves the preflight's DoD#4-unowned blocker — the live drive is a sprint-level captain step, not an offline member AC.)
 
 ## Out of scope
 
