@@ -1,7 +1,7 @@
 ---
 id: f1tqvtmr5xeqh6j3rg3qa6hk
 title: migration-check test shares the production walk composition (extract a walk-step helper)
-status: implementation
+status: validation
 source: "0198 pre-cut antipattern audit, finding R1 (2026-06-08). kb's TestMigrationCheckPrunesStateTree (migration_check_test.go:213-227) re-implements the filepath.Walk callback instead of sharing the production walk composition (the info.IsDir()→SkipDir step). It DOES exercise the real shared predicate (isMigrationCheckPrunedDir), so this is not a hole — but if the walk composition ever diverges from the production path, the hermetic test would not catch it. Filed for 0.19.9 per captain."
 started: 2026-06-08T20:43:10Z
 completed:
