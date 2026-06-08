@@ -12,7 +12,7 @@ issue:
 sprint: 0199-pre-flip-mechanics
 group: dev-quality
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#334"
 ---
 
