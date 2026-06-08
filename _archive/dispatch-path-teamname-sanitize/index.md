@@ -14,6 +14,7 @@ group: dispatch-hygiene
 sprint-readiness: ready
 mod-block:
 pr: "#325"
+archived: 2026-06-08T05:37:08Z
 ---
 
 n1a's 1b keys the dispatch-file path on `team_name` (`/tmp/spacedock-dispatch/{teamName}-{derivedName}.md`). The audit found two non-blocking polish items in `internal/dispatch/build.go`.
