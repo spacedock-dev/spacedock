@@ -12,7 +12,7 @@ issue:
 sprint: 0198-pre-flip-hardening
 group: survey
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#330"
 ---
 
