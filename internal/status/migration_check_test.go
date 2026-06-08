@@ -66,6 +66,15 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 			return walkErr
 		}
 		if info.IsDir() {
+			// Debriefs are session records with their own frontmatter shape
+			// (session-date, sequence, first-commit) — not entity fixtures the
+			// migration check governs. Their bare-YAML date scalars parse as
+			// time.Time in a direct yaml.v3 decode but as strings through the
+			// reader, which is expected for non-entity frontmatter and outside
+			// this check's scope.
+			if info.Name() == "_debriefs" {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if !strings.HasSuffix(path, ".md") {

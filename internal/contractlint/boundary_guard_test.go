@@ -85,7 +85,7 @@ func sweepInstructionReadsOutsideQuarantine(t *testing.T, repoRootDir string) []
 		}
 		if d.IsDir() {
 			switch rel {
-			case ".git", ".worktrees", "docs/dev/.spacedock-state", "vendor", quarantinePkg:
+			case ".git", ".worktrees", ".claude", "docs/dev/.spacedock-state", "vendor", quarantinePkg:
 				return filepath.SkipDir
 			}
 			return nil
