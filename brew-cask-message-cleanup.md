@@ -53,3 +53,14 @@ Verified by: `hooks.post.install` still runs `xattr -dr com.apple.quarantine`; `
 ### Summary
 
 Trimmed `homebrew_casks.caveats` in `.goreleaser.yaml` from a 12-line block to a 3-line "recommended companions" note that briefly names safehouse (sandboxes agent runs, with its link) and agentsview (powers /spacedock:survey). Dropped the redundant notarization/quarantine explanation and the manual `xattr` fallback, since the `hooks.post.install` hook already auto-clears `com.apple.quarantine` — that hook is left intact. No Go test asserts caveats content, so none needed updating. `goreleaser check` exits 0; `go test ./...` is green (1141 passed).
+
+## Stage Report: validation
+
+- DONE: AC-1: Read .goreleaser.yaml homebrew_casks.caveats directly (not the stage report) and confirm it contains NO manual xattr/quarantine fallback text, NO multi-line safehouse block, and DOES briefly name installing safehouse + agentsview.
+  Read worktree `.goreleaser.yaml:75-78` directly: caveats are a 3-line "Recommended companions" note naming safehouse (with https://agent-safehouse.dev) + agentsview — no xattr/quarantine text and no multi-line safehouse block (the only `xattr` is in `hooks.post.install` at :86, outside caveats).
+- DONE: AC-2: confirm hooks.post.install still runs `xattr -dr com.apple.quarantine`, run `goreleaser check` (expect exit 0), run `go test ./...` (expect green), then emit a PASSED/REJECTED recommendation.
+  `.goreleaser.yaml:84-87` `hooks.post.install` runs `system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]`; `goreleaser check` → "1 configuration file(s) validated", exit 0; `go test ./...` exit 0, 1141 passed, no FAIL lines; independent grep for caveats/quarantine/safehouse-asserting Go tests found none → nothing to update.
+
+### Summary
+
+PASSED. Independently confirmed against the actual config (not the report): the caveats are trimmed to a 3-line companions note for safehouse + agentsview with no xattr/quarantine fallback and no multi-line safehouse wall, while the `hooks.post.install` xattr auto-clear is preserved. `goreleaser check` exits 0 and `go test ./...` is green (1141 passed, exit 0). This is a cosmetic caveats-string edit, not a high-stakes surface, so no detached adversarial audit was warranted. Recommendation: PASSED.
