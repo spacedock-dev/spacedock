@@ -1,14 +1,15 @@
 ---
 id: jhazq8v9prphgs0bk5pn0xfw
 title: Dispatch-build flag/file runtime docs must not outpace accepted binaries
-status: backlog
+status: ideation
 source: "FO dogfood (2026-06-06) - plugin 0.19.5 Codex runtime instructs `dispatch build --checklist-file`, but installed spacedock 0.19.4 still accepts only stdin JSON while satisfying contract 1."
 score: "0.27"
 worktree: ""
 issue:
-sprint: 019x-pre-flip-cleanups
-group: dispatch-hygiene
-sprint-readiness: defer
+sprint: 0198-pre-flip-hardening
+group: binary-ux
+sprint-readiness: ready
+started: 2026-06-08T15:29:12Z
 ---
 
 The Codex first-officer runtime now instructs the FO to build dispatch prompts

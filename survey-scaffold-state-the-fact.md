@@ -9,6 +9,9 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0198-pre-flip-hardening
+group: survey
+sprint-readiness: ready
 ---
 
 Follow-up to xn (survey-signal-correction): simplify the survey's SCAFFOLD reporting.

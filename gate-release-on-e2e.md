@@ -1,14 +1,17 @@
 ---
 id: nzb7wbwgj93m25ayf9b226xn
 title: Gate the release/flip on the live e2e suite (today it's PR-only behind manual env approval)
-status: backlog
+status: ideation
 source: "FO investigation (2026-06-08, during the 0.19.7 cut) — release.yml triggers on tag push and runs goreleaser only; runtime-live-e2e.yml triggers on pull_request to next + manual workflow_dispatch, and its live lanes require per-environment approval (CI-E2E*). So the actual release/tag has NO e2e gate, and PR-time e2e sits 'waiting' for manual approval (it did not gate the 0.19.7 merges)."
 score: "0.3"
-started:
+started: 2026-06-08T15:29:12Z
 completed:
 verdict:
 worktree:
 issue:
+sprint: 0198-pre-flip-hardening
+group: release-gating
+sprint-readiness: ready
 ---
 
 The release/tag path runs no end-to-end check. For the 0.20.0 marketplace flip especially, the release should not publish without the live e2e suite having passed.

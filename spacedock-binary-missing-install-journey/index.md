@@ -9,6 +9,9 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0198-pre-flip-hardening
+group: binary-ux
+sprint-readiness: ready
 ---
 
 This task is the user-facing binary/version/upgrade UX, covering THREE cases the

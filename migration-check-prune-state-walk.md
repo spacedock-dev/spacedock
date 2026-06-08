@@ -9,6 +9,9 @@ completed:
 verdict:
 worktree:
 issue:
+sprint: 0198-pre-flip-hardening
+group: test-hygiene
+sprint-readiness: ready
 ---
 
 Two test-hygiene cleanups surfaced by the 019x post-sprint audit. Bounded (the suite is green); a consistency fix, not a correctness bug.
