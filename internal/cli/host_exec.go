@@ -63,11 +63,11 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 }
 
 // resolveCodexManifest confirms spacedock@spacedock is installed via the text
-// `codex plugin list` and resolves the manifest under the Codex plugin cache
-// (codex's `--json` carries no install path, so the text listing + cache layout
-// is the resolver). Codex installs land at
-// <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json;
-// the listing carries no install path, so the cache layout is the resolver.
+// `codex plugin list` and resolves the manifest under the Codex plugin cache.
+// Codex's listing carries no install path (its `--json` form has one only for
+// the marketplace root, not the cached plugin), so the deterministic cache
+// layout is the resolver. Codex installs land at
+// <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json.
 // Returns "" (no error) when the plugin is not installed or no cached manifest
 // exists for it yet.
 func (execHost) resolveCodexManifest() (string, error) {
