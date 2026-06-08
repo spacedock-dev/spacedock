@@ -336,3 +336,140 @@ non-tautological. **v3 and th are held** — bodies unchanged; th's accepted M2 
 sound and sufficient. **No material findings this pass**; five polish notes, the load-bearing
 one being "land 47rx's clustering as a `queries.sql` query block, not model-applied prose, so
 AC-3's query-smoke proof is real."
+
+---
+
+# yq review (frontdoor-launch-ux)
+
+Late-added 0199 member, reviewed after the comprehensive pass. The highest-stakes surface (the
+front door every user hits first) and the one whose defect A shipped in 0.19.8 *because nobody
+ran the front door end-to-end* — so I was hard on it and verified every line-anchored claim
+against the real `internal/cli/frontdoor.go` (and against `th`'s actual landed worktree, since
+`th` is now in validation).
+
+**Verdict — `sound`.** A is a correct message-ownership fix that preserves the fail-fast
+verdicts and derives the `--no-install` remedy from `host` (no new hardcoded `claude`); the
+ACs each pair an independent-source oracle with a genuinely load-bearing (not skippable) live
+drive and none degrade to a frontdoor.go grep; the `th` overlap is substantively disjoint
+(verified against th's real code, not the body's word); "no spike needed" is justified. Two
+polish notes, no material hole.
+
+## Material
+
+**Nothing material.** I tried to break A's verdict-preservation, the AC proof tiers, and the
+th-disjointness claim against the actual code, and found no correctness/test-strength/proof
+hole that should change yq's gate or the package. The verifications, since A is the load-bearing
+one:
+
+### A (message ownership) — verified correct, fail-fast preserved
+
+- **The defect is real and the diagnosis is right.** I confirmed `gateHost` (frontdoor.go
+  116-142) prints a remedy for *every* non-Compatible verdict, while the caller's NoPluginFound
+  response is non-uniform: `runCodex`'s arm is `if fd.noInstall { return 1 }` then
+  `ops.Install("codex", …)` — and its own comment says "gateHost already printed the instruct
+  remedy, so just fail fast." So today the `--no-install` refuse path has NO print of its own; it
+  rides gateHost's. That is exactly why the remedy fires on the auto-install path too, and why
+  the hardcoded `spacedock claude` hint (gateHost's NoPluginFound text) is wrong in a codex run.
+- **Deleting the two NoPluginFound prints does NOT regress the fail-fast verdicts.** A keeps
+  gateHost's resolve-error print (119-121 → `MalformedRange`) and the mismatch
+  `Fprintln(res.Message)` (139 → not-Compatible). Both are verdicts the caller ALWAYS fails fast
+  on, so their message must stay at gateHost — and A keeps them. The mismatch still prints its
+  `res.Message`. Correct.
+- **A MUST add the `--no-install` print, and the body specifies it.** Because the refuse arm is
+  silent today (it depended on gateHost), deleting gateHost's NoPluginFound print would leave
+  `spacedock codex --no-install` emitting nothing unless the caller prints. The body's §A (line
+  46) requires exactly this: a host-correct `noPluginRemedy(host)` before `return 1` in the
+  `--no-install` branch. If the implementer deletes the gateHost prints but forgets the caller
+  print, `TestGateRemedyNamesLiveInstallCommand`'s "no plugin"/"missing manifest" cases go RED
+  (they assert the remedy via gateHost today) — so the existing suite catches that miss, and
+  AC-A(2) correctly moves those two cases to assert on the launcher's `--no-install` output while
+  keeping the resolve-error case on gateHost. The test reconfiguration is sound.
+- **The remedy is genuinely host-derived.** `noPluginRemedy(host)` interpolates `host` into both
+  `spacedock install --host {host}` and `spacedock {host} --skip-contract-check` — no residual
+  hardcoded `claude`. AC-A asserts the codex path does NOT contain `spacedock claude`, which is
+  the real anti-regression for the original defect.
+- **Deleting the phantom-manifest message loses no needed signal.** Both NoPluginFound
+  sub-states (empty manifestPath, resolved-but-missing manifest) mean the same thing to the
+  operator: no usable plugin, installing now. Collapsing them to one caller-owned message is the
+  right call — the "manifest path missing vs no entry" distinction is internal, not actionable.
+
+### AC-A/B/D — non-grep, live-drive load-bearing
+
+Each AC pairs (i) an independent-source oracle and (ii) a real front-door live drive, and the
+live leg is explicitly framed as load-bearing, not decorative:
+- **Independent sources are real.** AC-D's `wantBootstrapPrompt`/`wantCodexBootstrapPrompt` are a
+  SECOND hand-written copy in `safehouse_frontdoor_test.go` (line 18/156) — production drift fails
+  the argv-equality oracle and a residual "I love you" fails the absence assertion; the expected
+  value is not in frontdoor.go. AC-B's discovered-workflow expectation comes from the fixture
+  README the test writes (`commissioned-by: spacedock@…`), an independent artifact. AC-A's
+  expected stderr strings live in the test file / live terminal.
+- **The live drive is not quietly skippable.** A shipped precisely from a coverage gap (tests
+  passed, nobody ran the front door), so the body makes the live drive the named proof and the
+  detached adversarial audit at validation re-runs it over the `--no-install`/resume/outside-
+  workflow edges. Host CLIs are present on the box (`codex`/`claude` resolve), so the leg is
+  runnable — not a deferred off-box hand-wave like th's real-safehouse. No AC rests on a
+  frontdoor.go grep; the body bans it explicitly and the bans are real (the oracles read
+  `fakeHost.launchedArg`/stderr buffers and test-file copies, never the source).
+
+### th overlap — verified disjoint against th's REAL code (not the body's word)
+
+`th` is in validation with its changes in `.worktrees/spacedock-ensign-safehouse-preserves-
+spacedock-bin`, NOT yet merged. I diffed th's actual `frontdoor.go` against the current one. th
+adds a new `envBinary` const + `launcherBinArgvPrefix()` helper (new top-level decls) and
+changes ONE statement in each launcher: `argv = safehouse.Wrap(inner, extra)` →
+`argv = safehouse.Wrap(append(launcherBinArgvPrefix(), inner...), extra)` at the `if wrap {`
+block (~216 / ~362). yq's edits — `gateHost` body (116-142), the `case contract.NoPluginFound:`
+caller arms, a banner print sited BEFORE `inner`/`argv` assembly (after `warnStrayPromptAfterDash`,
+~197/344), and the two consts (24/289) — touch no statement th touches. The banner sits *above*
+th's wrap-site edit in the same function; textual adjacency at worst, never a semantic collision.
+yq's disjointness conclusion is correct, and th's worktree `internal/cli` suite is green (I ran
+it), so the "th lands first, yq rebases cleanly" sequencing is realistic. (One body imprecision
+noted under Polish.) I also confirmed th's landed code uses `/usr/bin/env` (absolute) — the M2
+resolution is in the actual deliverable, not just the package note.
+
+### "No spike needed" — justified
+
+The banner's only non-trivial dependency is `status.DiscoverWorkflowDir(dir)`. I confirmed it is
+public (`internal/status/discover_walkup.go:16`) and is the same walk-up native `status` already
+uses (walk up from `dir`, match the nearest ancestor README with `commissioned-by: spacedock@`).
+B claims no new behavior — it reuses a proven walk-up — and AC-B tests both arms (a fixture dir
+with a commissioned-README ancestor → names the rel path; a bare temp dir → `none detected`)
+with independent fixture expectations. There is no unexercised mechanism: no parser round-trip,
+no on-disk format, no runtime handoff, no tool-flag assumption. The real risk was the coverage
+gap, and the live drive closes it. Justified. (Note: from inside a git worktree the walk-up
+finds a workflow only when an ancestor of `dir` carries the commissioned README — same as status
+today; the banner honestly renders `none detected` otherwise, which is correct, not a bug.)
+
+## Polish
+
+- **(yq, th-overlap body wording) one inaccuracy in how the body describes `th`.** The Overlap
+  section (line 111) says th "factors `resolvedLauncherBin()`". It does not — `resolvedLauncherBin()`
+  already existed (frontdoor.go:75, pre-th baseline). th only ADDS `launcherBinArgvPrefix()`,
+  which CALLS the pre-existing `resolvedLauncherBin()`. The disjointness conclusion is unaffected
+  (the new helper is a fresh top-level decl), so this is wording-only — but if a Commander reads
+  the body to predict the merge, the description should say "th adds `launcherBinArgvPrefix()`
+  calling the existing `resolvedLauncherBin()`", not "factors" it. Non-blocking.
+
+- **(yq, AC-B banner-vs-resume) pin the resume-suppression decision before implementation.** B
+  says the banner is "suppressed on `--resume`/`codexResume` … though if simpler to always print,
+  that is acceptable; the AC pins the no-resume case." AC-B only tests the no-resume case, so an
+  implementer could ship either behavior and pass. That is a real under-specification on a
+  user-facing surface: a banner printed on every `--resume` adds noise to the exact path
+  (continuing a session) where the user least wants orientation chrome. Recommend the AC pin the
+  resume case too (suppressed, matching the bootstrap-prompt's existing resume-suppression via
+  `containsResume`), so validation can't pass a noisier-than-intended banner. Minor, but it's the
+  front door — and the body already leaves the door open to drift. The detached audit at
+  validation should probe the resume edge regardless (the body lists it), which mitigates this.
+
+## Summary (yq review)
+
+yq is `sound`. A correctly relocates NoPluginFound message ownership from `gateHost` to the
+caller — I verified it preserves the always-fail-fast verdict prints (resolve-error, mismatch),
+adds the host-derived `--no-install` remedy the silent refuse arm needs today, and kills the
+hardcoded `spacedock claude` hint; the existing `TestGateRemedyNamesLiveInstallCommand` will
+catch a half-done edit, and AC-A correctly moves the NoPluginFound cases to the launcher. The
+ACs are non-grep with a load-bearing, runnable live drive (the front-door run the 0.19.8 gap
+missed). The `th` overlap is genuinely disjoint — verified against th's real landed worktree
+code, not the body's claim. "No spike needed" holds (`DiscoverWorkflowDir` is a proven walk-up).
+No material findings; two polish notes (a wording inaccuracy in the th-overlap description, and
+an under-pinned banner-on-resume case).
