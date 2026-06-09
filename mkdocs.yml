@@ -9,7 +9,6 @@ docs_dir: docs/site
 
 theme:
   name: material
-  custom_dir: docs/overrides
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -52,8 +51,6 @@ plugins:
           - reference/*.md
         Contributing:
           - contributing/*.md
-        For agents:
-          - agents/*.md
 
 nav:
   - Home: index.md
@@ -83,12 +80,12 @@ nav:
       - Multi-host support: reference/multi-host.md
   - Contributing:
       - The development workflow: contributing/development-workflow.md
+      - Agent development: contributing/agent-development.md
       - Proof policy: contributing/proof-policy.md
       - Adding a runtime: contributing/adding-a-runtime.md
       - Releasing: contributing/releasing.md
       - Voice & tone: contributing/voice-and-tone.md
       - Architecture notes: contributing/architecture-notes.md
-  - For agents: agents/index.md
 
 markdown_extensions:
   - admonition

@@ -4,6 +4,6 @@
 
 [TODO] — the Home page: the pitch, what's different, and where to go next (Get started, Concepts, Running workflows, Contributing).
 
-## For agents
+## For agents using Spacedock
 
-Spacedock's docs are read by agents too — a user's first officer parsing these docs is itself an agent. The build emits an agent-readable surface: an `llms.txt` index of the docs at the site root (discoverable from each page's `<head>` via `<link rel="alternate" type="text/markdown">`) and the repo's [agent instructions](agents/index.md).
+Spacedock's docs are read by agents too — a user's first officer parsing these docs is itself an agent. The build emits a curated `llms.txt` index of the docs at the site root for product-using agents. (Repo-development guidance for an agent working ON Spacedock lives under Contributing → [Agent development](contributing/agent-development.md).)
