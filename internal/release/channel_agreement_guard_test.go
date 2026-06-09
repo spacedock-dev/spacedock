@@ -14,16 +14,15 @@ import (
 //   (1) release.yml's "Stamp plugin manifests" step git switch/push target,
 //   (2) .goreleaser.yaml's stable-build cli.devBranch ldflag,
 //   (3) .claude-plugin/marketplace.json source.ref.
-// Surfaces (1) and (2) are the BINARY side (k6d); surface (3) is the
-// marketplace side (pj), flipped next→main at the 0.20.0 flip. k6d lands
-// pre-flip, so the k6d-green half is the binary-side PAIR (1)==(2)==main. The
-// full tri-surface ==main check (channelAgreementSurfaces including the
-// marketplace ref) goes green only when pj flips surface (3); it is RED by
-// construction between k6d's merge and pj's flip, exactly like pj's paired
-// marketplace_manifest_test.go edit. The surfaces are parsed out of three real
-// artifacts authored by three different changes, so a drift in any one fails the
-// check — an independent source of truth, not a re-read of the value the
-// implementer wrote.
+// Surfaces (1) and (2) are the BINARY side; surface (3) is the marketplace side.
+// Surface (3) is branch-local: marketplace.json points at the channel its branch
+// serves — `next` on the edge branch, `main` on the stable branch. So the
+// tri-surface ==main check is meaningful only on a tree whose marketplace ref is
+// already `main` (the stable branch); on the edge tree (ref `next`) it skips, and
+// the binary-side pair (1)==(2)==main is asserted unconditionally below. The
+// surfaces are parsed out of three real artifacts authored by different changes,
+// so a drift in any one fails the check — an independent source of truth, not a
+// re-read of the value the implementer wrote.
 const stableChannelBranch = "main"
 
 // releaseStampTarget extracts the branch the release.yml "Stamp plugin manifests
@@ -205,19 +204,17 @@ func TestEdgeChannelStampsNext(t *testing.T) {
 }
 
 // TestTriSurfaceChannelAgreement is the FULL agreement invariant: all three
-// independently-authored surfaces — release.yml stamp target (1, k6d),
-// .goreleaser.yaml stable devBranch (2, k6d), and .claude-plugin/marketplace.json
-// source.ref (3, pj) — must agree on `main`. It is RED by construction between
-// k6d's merge and pj's flip: surface (3) is still `next` until pj flips it in the
-// SAME commit it extends this guard. pj co-gates the flip on this test going
-// green. It is skipped (not failed) while surface (3) is still `next`, so k6d's
-// pre-flip merge is green; the binary-side pair is asserted unconditionally by
-// TestStableChannelBinaryPairAgreesOnMain above. pj removes this skip when it
-// flips the ref.
+// independently-authored surfaces — release.yml stamp target (1),
+// .goreleaser.yaml stable devBranch (2), and .claude-plugin/marketplace.json
+// source.ref (3) — must agree on `main`. Surface (3) is branch-local, so this
+// asserts only on a `main`-ref tree (the stable branch); on the edge tree (ref
+// `next`) it skips, since `next` correctly serves its own channel. The binary-side
+// pair (1)==(2) is asserted unconditionally by TestStableChannelBinaryPairAgreesOnMain
+// above.
 func TestTriSurfaceChannelAgreement(t *testing.T) {
 	marketplaceRef := marketplaceSourceRef(readMarketplaceManifest(t))
 	if marketplaceRef != stableChannelBranch {
-		t.Skipf("marketplace source.ref = %q, not yet flipped to %q (pj owns surface 3); binary-side pair is covered by TestStableChannelBinaryPairAgreesOnMain", marketplaceRef, stableChannelBranch)
+		t.Skipf("marketplace source.ref = %q (edge branch serves its own channel; the tri-surface ==%q agreement holds only on a main-ref tree); binary-side pair is covered by TestStableChannelBinaryPairAgreesOnMain", marketplaceRef, stableChannelBranch)
 	}
 
 	surfaces := map[string]string{

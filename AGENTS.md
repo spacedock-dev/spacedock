@@ -25,7 +25,7 @@ Use `go test ./...` as the baseline gate for every stage. Add focused tests for 
 
 ## Releasing
 
-Cut releases from `next` via an annotated `vX.Y.Z` tag — see `docs/releasing.md`. Never release from `origin/main`.
+Cut stable releases from `main` via an annotated `vX.Y.Z` tag — see `docs/releasing.md`. `next` is the dev/edge line (source builds, `--plugin-dir`, and `next-publish` calendar bumps), not a stable-release source — do not cut a stable `vX.Y.Z` tag from it.
 
 ## Project Shape
 

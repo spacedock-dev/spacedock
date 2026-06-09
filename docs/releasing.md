@@ -8,16 +8,20 @@ marketplace source.
 
 `release.yml` runs one goreleaser job on `macos-latest` that:
 
-- cross-builds the darwin arm64 and amd64 tarballs plus `checksums.txt`,
-  stamping `git describe --tags` into `internal/cli.Version`;
+- cross-builds darwin and linux (arm64 + amd64) tarballs plus `checksums.txt`,
+  stamping `git describe --tags` into `internal/cli.Version`, for BOTH channels —
+  a stable build (`cli.devBranch=main`) and an edge build (`cli.devBranch=next`);
 - publishes the GitHub Release with those assets;
-- bumps the `spacedock-dev/homebrew-tap` cask via `HOMEBREW_TAP_TOKEN`;
+- bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
+  `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
 - stamps the plugin manifests' `version` on `main`;
 - keeps the marketplace entry serving the stable plugin from `main`.
 
-The tag push is therefore enough to publish the stable release. A manual
-release-prep commit is still useful because it produces a reviewable
-annotated-tag changelog and manifest diff before the tag is pushed.
+The tag triggers the release, but goreleaser publishes only after the `e2e-gate`
+job confirms the tagged commit has a green Runtime Live E2E run (or a recorded
+`SPACEDOCK_E2E_GATE_WAIVER`) — so the commit you tag must be one that has been
+exercised green. A manual release-prep commit is still useful because it produces
+a reviewable annotated-tag changelog and manifest diff before the tag is pushed.
 
 ## Cutting a Stable Release
 

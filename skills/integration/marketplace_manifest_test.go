@@ -20,8 +20,9 @@ var calendarVersionRe = regexp.MustCompile(`^0\.0\.\d{10}$`)
 // TestRootMarketplaceSelfReferentialEntry locks AC-2a/2c: the root
 // .claude-plugin/marketplace.json names the marketplace `spacedock` with one
 // plugin entry also named `spacedock` (so the install id is `spacedock@spacedock`,
-// the id the binary hardcodes), sourced url+ref:next (the no-restructure path),
-// carrying a calendar version key.
+// the id the binary hardcodes), sourced url+ref (the no-restructure path; ref is
+// the channel branch this manifest serves — next on the edge branch, main on the
+// stable branch), carrying a calendar version key.
 func TestRootMarketplaceSelfReferentialEntry(t *testing.T) {
 	path := filepath.Join(repoRoot(t), ".claude-plugin", "marketplace.json")
 	data, err := os.ReadFile(path)
@@ -64,8 +65,8 @@ func TestRootMarketplaceSelfReferentialEntry(t *testing.T) {
 	if src.Source != "url" {
 		t.Errorf("entry source.source = %q, want url (source:\".\" is rejected by the host)", src.Source)
 	}
-	if src.Ref != "next" {
-		t.Errorf("entry source.ref = %q, want next (the moving branch the manifest lives on)", src.Ref)
+	if src.Ref != "next" && src.Ref != "main" {
+		t.Errorf("entry source.ref = %q, want a channel branch — next (edge) or main (stable); each branch's marketplace.json points at the channel it serves", src.Ref)
 	}
 	if src.URL == "" {
 		t.Errorf("entry source.url is empty")
