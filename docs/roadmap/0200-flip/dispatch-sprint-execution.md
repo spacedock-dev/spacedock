@@ -1,6 +1,6 @@
 # 0200-flip pre-flip mechanics — Commander dispatch (cold-boot)
 
-You are the **Commander** for the **pre-flip mechanics** of sprint **0200-flip**, driving **two tasks** to **merged-on-`next`** — `nzb` (release-time e2e-gate) and `k6d` (two-channel devBranch stamp). These are the release-machinery prerequisites the 0.20.0 main-flip rides. The shaping FO carved the sprint, drove ideation, ran the preflight staff review (5 material findings folded + verified), and ran the gates; your job is the **implementation → validation → done** drive.
+You are the **Commander** for the **pre-flip mechanics** of sprint **0200-flip**, driving **three tasks** to **merged-on-`next`** — `nzb` (release-time e2e-gate), `k6d` (two-channel devBranch stamp), and `cmx` (front-door launch-banner UX). The first two are the release-machinery prerequisites the 0.20.0 main-flip rides; `cmx` is a captain-approved front-door followup riding the same sprint. The shaping FO carved the sprint, drove ideation, ran the preflight staff review (5 material findings folded + verified), and ran the gates; your job is the **implementation → validation → done** drive.
 
 **You do NOT cut a release.** Unlike a normal sprint, this pair LANDS on `next` and stops there. The outward 0.20.0 flip+cut (`pj`) is driven separately by the **FO + captain** after this pair lands — do not tag, do not flip `main`, do not touch the marketplace `ref`.
 
@@ -26,22 +26,25 @@ Then `TeamCreate` (first team-mode call), standing-teammate discovery, reconcile
 ```bash
 spacedock status --workflow-dir docs/dev --where sprint=0200-flip --where 'sprint-readiness != defer'
 ```
-→ **`nzb` gate-release-on-e2e · `k6d` two-channel-release-devbranch-stamp.** Both are ideation-approved (gates passed) with all staff-review findings folded into their bodies; drive each from `implementation`. (`pj` main-flip-0200-marketplace is `sprint-readiness: defer` — it is the capstone driven by the FO + captain, NOT you; do not pick it up.)
+→ **`nzb` gate-release-on-e2e · `k6d` two-channel-release-devbranch-stamp · `cmx` frontdoor-launch-banner-ux.** All three are approved (nzb/k6d via the ideation gates with all staff-review findings folded; `cmx` is captain-wording-approved), design in their bodies; drive each from `implementation`. (`pj` main-flip-0200-marketplace is `sprint-readiness: defer` — it is the capstone driven by the FO + captain, NOT you; do not pick it up.)
 
 ## Deliverable & DoD
 
-**Deliverable:** `nzb` + `k6d` `done` / PASSED + **merged to `next`** — the release-machinery prerequisites in place for the flip. **No release cut.**
+**Deliverable:** `nzb` + `k6d` + `cmx` `done` / PASSED + **merged to `next`** — the release-machinery prerequisites + the front-door banner polish in place for the flip. **No release cut.**
 
-1. `nzb` + `k6d` `done` / PASSED + merged to `next`.
+1. `nzb` + `k6d` + `cmx` `done` / PASSED + merged to `next`.
 2. `go test ./...` from the repo root green — **the WHOLE `internal/release` package green** (nzb's AC-4 bar; see the co-edit note below).
 3. `nzb`: the `e2e-gate` job + the SHA-match predicate + the waiver all proven by `internal/release` workflow-guard + predicate unit tests; no live run needed at impl time (the gate is exercised for real at the flip).
 4. `k6d`: `goreleaser release --snapshot` produces BOTH channel artifacts (stable cask `spacedock` + edge `spacedock@next`) with the correct per-channel `devBranch` ldflag each; a live fresh-HOME front-door smoke confirms a `devBranch=main` binary auto-installs the `main` plugin and `devBranch=next` installs `next` (observed in install argv, both hosts — not a source-grep).
+5. `cmx`: the launch banner renders the captain-approved AFTER wording for single/multi/none × claude/codex/pi, proven by the 7 `internal/cli` tests over rendered output (AC-5 byte-exact golden); pi now emits the banner; the unstamped `Version` reads as a `dev` sentinel.
 
 ## Drive order — ⚠️ shared-file coordination
 
 The two are conceptually independent, but **both edit `.github/workflows/release.yml`**: `nzb` adds a new `e2e-gate` job + a `needs: e2e-gate` edge on goreleaser; `k6d` changes the "Stamp plugin manifests" step's branch (`next`→`main`). Different regions of the same file → **a parallel two-worktree drive will merge-conflict on `release.yml`.** Land one, rebase the other onto it, OR drive them sequentially. They also both add `internal/release` tests (different functions, same package) — fine once `release.yml` is coherent.
 
-**Both touch CI/release machinery** → **each earns a detached adversarial audit at validation** (README `## validation` → "Detached adversarial audit"), on a throwaway checkout of the merge result. Material findings route back through validation→implementation feedback.
+**`nzb` + `k6d` touch CI/release machinery; `cmx` touches the front door** — all three are high-stakes surfaces, so **each earns a detached adversarial audit at validation** (README `## validation` → "Detached adversarial audit"), on a throwaway checkout of the merge result. Material findings route back through validation→implementation feedback.
+
+**`cmx` is DISJOINT from the `nzb`×`k6d` `release.yml` coordination** — it edits `internal/cli/frontdoor.go` + `cli.go` + `launch_banner_test.go`, NOT `release.yml`/`.goreleaser.yaml` — so it runs cleanly parallel with no shared-file conflict.
 
 ## Per-task build notes
 
@@ -58,6 +61,12 @@ The two are conceptually independent, but **both edit `.github/workflows/release
 - **Scope boundary (do NOT cross):** k6d owns the binary side. `pj` owns the marketplace `ref` flip + the paired `marketplace_manifest_test.go` edit + the stable calendar-bump-on-`main`. Leave all three to `pj`.
 - **Detached audit:** the two-build goreleaser config + the `release.yml` stamp-branch change — `goreleaser --snapshot` must really emit both channels with the right ldflags.
 
+### `cmx` — frontdoor-launch-banner-ux (frontdoor)
+- **Scope:** reword/reorder the `launchBanner` 3-line output (`internal/cli/frontdoor.go:138-142`) to the captain-approved AFTER wording, add the banner to `runPi` (`pi.go` — pi emits none today), and default `cli.go`'s `Version` literal to a `dev` sentinel so an unstamped build does not impersonate a release. **Captain-wording-approved — implement to the body's AFTER matrix, do not redesign.**
+- **AFTER banner:** line 1 `spacedock {v} · launching {host} as your first officer`; line 2 single `Workflow: {path}` / multi `Workflows: {space-joined discovered paths}` / none `Workflow: none detected`; line 3 `{host} is your first officer — ask it for the queue and next steps.`
+- **Proof:** 7 `internal/cli` tests over RENDERED banner output (AC-5 byte-exact golden; AC-6 a regex non-match for the dev sentinel; AC-7 the new pi banner). No spike needed. **WATCH:** the existing `launch_banner_test.go` expected strings assert the BEFORE wording — updating them to AFTER is part of the impl, not extra scope.
+- **Detached audit:** front-door — the banner must render the AFTER wording for every mode×host, and a renamed/paraphrased branch must still fail the golden.
+
 ## Out of scope (and why)
 
 - **`pj` main-flip-0200-marketplace** — the flip+cut itself; driven by the **FO + captain** after this pair lands. Do NOT tag, flip `main`, archive, or touch the marketplace `ref`.
@@ -68,4 +77,4 @@ The two are conceptually independent, but **both edit `.github/workflows/release
 
 ## On completion
 
-Both `done`/PASSED + merged to `next`, `go test ./...` green (whole `internal/release` package). Report back to the shaping FO — the flip (`pj`) then runs here per `pj`'s 9-step captain-gated runbook. **Do not cut a release.**
+All three `done`/PASSED + merged to `next`, `go test ./...` green (whole `internal/release` package + the `internal/cli` banner tests). Report back to the shaping FO — the flip (`pj`) then runs here per `pj`'s 9-step captain-gated runbook. **Do not cut a release.**
