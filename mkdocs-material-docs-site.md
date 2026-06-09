@@ -76,11 +76,21 @@ Home                                         source: README.md (pitch/what's-dif
 │   ├─ Survey an existing project              source: survey skill                                OP
 │   ├─ Operating a workflow                    source: first-officer skill + README "How it works" OP
 │   │     (driving stages, dispatch, gates; spacedock status / --next / --where)
-│   ├─ Sprints & roadmap                       source: docs/roadmap/README                         OP
-│   │     (FO↔Commander, the sprint lifecycle, membership via --where)
 │   ├─ Debrief & refit                         source: debrief skill + refit skill                 OP
 │   └─ ▶ Example: a real workflow  [e6 SLOT]   source: e6 (readme-real-workflow-example-link)      OP/NU
 │         (the post-flip-stable link to one concrete in-repo workflow plugs in HERE)
+│
+├─ Advanced topics                                                                               audience: OP/CO
+│   ├─ Sprints & roadmap                       source: docs/roadmap/README                         OP/CO
+│   │     (FO↔Commander operating model; the sprint lifecycle checklist; roadmap-as-strategy-
+│   │      layer; the convention-only dry run — prose + frontmatter + native --where, NO binary)
+│   ├─ Mods & standing teammates              source: first-officer skill (Mod Hook Convention +  OP/CO
+│   │     Standing Teammates) + docs/dev/_mods/
+│   │     (startup/idle/merge lifecycle hooks via status --boot; the comm-officer prose-polisher)
+│   ├─ External-tracker bridge                source: docs/specs/state-behavior-extension.md      OP/CO
+│   │     (issue/source frontmatter to kata/Linear/GitHub Issues; one-way unless declared)
+│   └─ Multi-workflow & split-root state      source: docs/specs/ + docs/dev/README state model   OP/CO
+│         (the .spacedock-state checkout; definition_dir vs state_dir; concurrency-safe commits)
 │
 ├─ Reference                                                                                     audience: OP/CO
 │   ├─ Command reference                       source: internal/cli/help.go grouped help           OP/CO
@@ -103,7 +113,8 @@ Home                                         source: README.md (pitch/what's-dif
 
 Notes on the IA:
 
-- **Audience spine.** "Get started" is the new-user funnel; "Concepts" + "Running workflows" + "Reference" serve the operator/captain; "Contributing" serves the contributor. A reader self-selects from the top-level nav.
+- **Audience spine.** "Get started" is the new-user funnel (NU); "Concepts" + "Running workflows" + "Reference" serve the operator/captain (OP); "Advanced topics" is the power-user layer for constructs built ON TOP of the base primitives (OP/CO); "Contributing" serves the contributor (CO). A reader self-selects from the top-level nav.
+- **Running workflows vs. Advanced topics.** "Running workflows" stays about operating a SINGLE workflow (commission, survey, operate, debrief/refit). "Advanced topics" is the scale/extensibility layer: multi-sprint strategy (roadmap/Commander), lifecycle mods + standing teammates, the external-tracker bridge, and multi-workflow/split-root state — patterns built on the base primitives, not the primitives themselves. A construct too thin for its own page folds into a sibling rather than padding the nav.
 - **The e6 slot is explicit.** "Running workflows → Example: a real workflow" is the named slot where `e6` (readme-real-workflow-example-link) plugs in. e6's own AC already says its link is checked "or the docs-site build, once `mkdocs-material-docs-site` lands" — so once both land, `mkdocs build --strict` is the link-check e6 relies on, and the slot is the page that link lands on. Until e6 lands, the page is a placeholder stub (a one-line "example coming" page) so the nav entry exists and `--strict` is happy; e6 fills it.
 - **Excluded from the public site (by omission from nav).** The active workflow STATE (`docs/dev/.spacedock-state/`), the per-sprint dispatch packages, internal proposals/mods, and the FO-internal skills' *implementation detail* (`present-gate`/`feedback-rejection-flow`/`using-claude-team` are referenced conceptually under Gates but not published as standalone how-to pages). These are dev/process artifacts, not public docs.
 - **Content reuse, not duplication.** Pages whose source is a single existing doc (Install, Releasing, Multi-host, the dev workflow) are that doc, moved/linked under the site root. Pages synthesized from multiple sources (the operating model, first-launch, gates) are new short pages that link out — kept thin to avoid drift with the README/skills they summarize.
@@ -134,7 +145,7 @@ Each AC names a property of the finished entity (the built site) and how it is v
 **AC-1 — `mkdocs build --strict` succeeds against the committed `mkdocs.yml` + `docs/site/`, producing a `site/` with no broken nav entries, internal links, or unresolved references.**
 Verified by: running `mkdocs build --strict` (in CI and reproducibly locally after `pip install -r docs/requirements.txt`); exit code 0 and a populated `site/` directory. `--strict` turns any unresolved nav/link/reference into a non-zero exit, so this is a real failure surface, not a prose check.
 
-**AC-2 — The rendered site's navigation matches the approved outline: the top-level sections (Home, Get started, Concepts, Running workflows, Reference, Contributing) and their pages, exactly as gated.**
+**AC-2 — The rendered site's navigation matches the approved outline: the top-level sections (Home, Get started, Concepts, Running workflows, Advanced topics, Reference, Contributing) and their pages, exactly as gated.**
 Verified by: the `nav:` block in the committed `mkdocs.yml` is the build's nav source, and `mkdocs build --strict` fails if any `nav:` entry points at a missing file — so a nav that drifts from the approved tree (a renamed/missing page) fails the build. Approval of the IA at the gate fixes the expected `nav:` shape; the strict build enforces that every entry resolves. (The check's independent source is the set of files on disk vs. the `nav:` declaration — they can diverge, which is what makes it able to fail.)
 
 **AC-3 — The site renders Home and the Get-started pages from the reader-first docs (README + install-journey), and the published/CI-artifact build contains those rendered HTML pages.**
@@ -156,8 +167,6 @@ Verified by: the workflow file under `.github/workflows/` exists and its build s
 - **Pages deploy smoke (live, implementation/validation).** Once the workflow runs on the stable branch, confirm the Pages URL serves the built site. This is the only step that needs CI to run; no host/agent launch is involved.
 - **No live host run needed.** Building docs does not launch `spacedock claude/codex/pi`. The riskiest mechanism here is `mkdocs build --strict` resolving the `nav:` against `docs/site/` and Material rendering the section grouping — a standard, well-proven MkDocs path, so **no spike needed: the mechanism is MkDocs' documented `nav:` + `docs_dir` + `--strict` behavior plus the Material theme, all already-proven tooling.** The one declared dependency a fresh setup needs is `mkdocs` + `mkdocs-material` (pinned in `docs/requirements.txt`); they are not installed in this ideation environment, which is expected — implementation installs them and CI pins them. No hidden machine dependency: the requirements file is the declaration.
 - **Cost: low.** Config (`mkdocs.yml`, `docs/requirements.txt`) + content scaffolding under `docs/site/` (mostly moves/links of existing docs + a few thin synthesized pages) + one CI workflow. No binary/Go changes.
-</content>
-</invoke>
 
 ## Stage Report: ideation
 
@@ -177,3 +186,18 @@ Verified by: the workflow file under `.github/workflows/` exists and its build s
 ### Summary
 
 Delivered the headline IA: a six-section mkdocs-material nav tree grounded in a first-hand survey of the real surfaces (README, nine skills, command surface in internal/cli/help.go, docs/, plugin manifests), with every page tagged by source + audience across the three audiences (new user / operator-captain / contributor). Left an explicit, AC-backed e6 slot under "Running workflows" and confirmed e6's own link-check is this site's `--strict` build. Key decisions: a dedicated `docs/site/` content root (excludes dev/process docs by construction, not by globs), content reuse over duplication for thin synthesized pages, and `mkdocs build --strict` as the single load-bearing proof — no prose-grep ACs, no spike needed, no live host run. One open question recorded for the gate (move vs. symlink contributor docs into the site root); it does not block IA approval.
+
+### Captain IA fold
+
+- DONE: Add a new top-level nav section `Advanced topics` after "Running workflows", before "Reference" (audience OP/CO power-user).
+  New nav block; audience-spine note updated to name it the on-top/power-user layer.
+- DONE: Relocate "Running workflows → Sprints & roadmap" INTO Advanced topics and expand it.
+  Moved out of Running workflows; expanded to FO↔Commander operating model + sprint lifecycle + roadmap-as-strategy-layer + the convention-only dry run (prose + frontmatter + native `--where`, NO binary). Source: docs/roadmap/README.md.
+- DONE: Populate Advanced topics with the other real on-top constructs (survey, don't invent).
+  Added Mods & standing teammates (first-officer Mod Hook Convention §262 + Standing Teammates §283 + docs/dev/_mods/ — comm-officer.md, pr-merge.md; startup/idle/merge hooks via `status --boot`, the comm-officer prose-polisher); External-tracker bridge (state-behavior-extension.md — `issue`/`source` to kata/Linear/GitHub Issues); Multi-workflow & split-root state (docs/specs/ + docs/dev/README state model — `.spacedock-state`, definition_dir vs state_dir). Each tagged source + audience.
+- DONE: Update IA notes (audience spine) and AC-2 (top-level list includes Advanced topics).
+  Added a "Running workflows vs. Advanced topics" note clarifying single-workflow vs scale/extensibility; AC-2's section list now reads Home, Get started, Concepts, Running workflows, Advanced topics, Reference, Contributing.
+- DONE: Clean the stray `</content>` / `</invoke>` tool-fragment between Test plan and Stage Report.
+  Removed both lines.
+
+The tree is now seven top-level sections. Advanced topics groups the four on-top constructs that exist in the repo today; no construct was invented. The strict-build ACs are unchanged in kind — the new section's pages resolve under the same `mkdocs build --strict` gate.
