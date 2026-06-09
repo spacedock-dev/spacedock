@@ -332,3 +332,40 @@ The tree is now seven top-level sections with Voice & tone as a Contributing sub
 ### Summary
 
 Stood up the MkDocs Material docs site to the approved 7-section IA, green under `mkdocs build --strict` (the load-bearing gate; verified from a clean build, exit 0). `docs/site/` is the single content root: install-journey MOVED in via `git mv`, five functional files SYMLINKED (git mode-120000) so their canonical consumers keep reading them at fixed paths. Wired mkdocs-llmstxt (`site/llms.txt`), a reachable AGENTS.md page, the "For agents" banner, the Material palette toggle + code-copy, and a GitHub Pages workflow (strict PR check + deploy-on-main). Authored the net-new synthesized pages, the Voice & tone page (lifted verbatim from the ideation draft), the e6 stub, and the Reference → Frontmatter contract slot. Move-induced breakage fixed (README link, install.sh hint, install_doc_test.go path); `go test ./...` green (1247 passed). Deferred per captain: the no-duplication policy (no snippet machinery; light README↔site overlap accepted) and the standalone frontmatter-contract spec. AC-10 (a14y) and AC-6 deploy smoke are post-deploy live checks for validation. Code on branch `spacedock-ensign/mkdocs-material-docs-site`, commit 14cab445.
+
+## Stage Report: validation
+
+Fresh validator: reproduced the build from a clean state and inspected the built `site/` tree — did NOT trust the implementation report. Pinned deps installed clean in a fresh venv (mkdocs==1.6.1, mkdocs-material==9.6.21, mkdocs-llmstxt==0.3.0 from `docs/requirements.txt`). Validated at worktree commit 14cab445.
+
+- DONE: Reproduce the load-bearing proof — `pip install -r docs/requirements.txt` then `rm -rf site && mkdocs build --strict`; assert exit 0.
+  Clean strict build EXIT 0 (verbose strict build emitted zero WARNING/ERROR/broken-link lines; under `--strict` any unresolved nav/link/anchor is fatal, so 0 warnings = AC-1 + AC-2 proven).
+- DONE: AC-1 — `mkdocs build --strict` succeeds, populated `site/`, no broken nav/links/refs.
+  Exit 0 from clean build; `site/` populated with the 7 nav sections + standard MkDocs artifacts.
+- DONE: AC-2 — rendered nav matches the 7-section IA (Home, Get started, Concepts, Running workflows, Advanced topics, Reference, Contributing) + their pages.
+  `mkdocs.yml` `nav:` declares all 7 sections + the "For agents" link; `--strict` resolved every entry to a file (a drifted entry would fail the build — verbose run showed no `nav.not_found`).
+- DONE: AC-3 — Home + Get-started rendered HTML present in build output.
+  `site/index.html` (34808B), `site/get-started/{install,first-launch,first-workflow}/index.html` all exist and non-trivial.
+- DONE: AC-4 — process/state artifacts absent; only surfaced docs present.
+  `site/` top level = advanced/agents/concepts/contributing/get-started/reference/running-workflows + 404/assets/search/sitemap; NO `site/dev/`, `site/specs/`, `site/roadmap/`, `site/.spacedock-state/` source trees. (`spacedock-state` text appears only as page prose on the split-root page, not a published tree.)
+- DONE: AC-5 — e6 example slot resolves as a stub page.
+  `site/running-workflows/example/index.html` exists; source is an honest "example coming" stub with valid internal links (resolved under `--strict`).
+- DONE: AC-6 (wiring) — `.github/workflows/docs.yml` builds with `--strict`, gates PRs, deploys on main.
+  Build step `mkdocs build --strict` (line 39); build job on `pull_request` + `push: main`; deploy job `actions/deploy-pages@v4` gated `if: github.ref == 'refs/heads/main'` with `pages:write`/`id-token:write`. Deploy SMOKE (live Pages URL) deferred-to-deploy.
+- DONE: AC-7 — Contributing → Voice & tone page renders under `--strict`.
+  `site/contributing/voice-and-tone/index.html` exists; source lifted from the ideation draft, grounds itself in README + comm-officer mod.
+- DONE: AC-8 — strict build produces a populated `site/llms.txt`.
+  `site/llms.txt` exists, 3178B / 54 lines — a real curated index of all 7 sections + "For agents" (mkdocs-llmstxt output).
+- DONE: AC-9 — the "for agents" surface (llms.txt + AGENTS.md) is reachable.
+  `site/agents/index.html` (36064B, carries the repo agent/build instructions); rendered home page has the "For agents" banner with `href="llms.txt"` + `href="agents/"` (overrides/main.html uses the depth-correct `| url` filter); all resolve under `--strict`.
+- DONE: AC-11 — light/dark palette toggle + code-copy enabled in build output.
+  Rendered `index.html` has 2 `__palette` inputs with `scheme: default` + `scheme: slate`; `content.code.copy` is in the page `__config` features JSON, the install page has 41 code elements, and Material's bundled JS references `clipboard` + `content.code.copy` (the runtime injection mechanism). Copy buttons are JS-injected (not server-rendered) in Material 9.x — config-driven enablement confirmed.
+- DONE: Move/symlink integrity — 5 functional files still symlinks (git mode 120000) with canonical targets intact.
+  `external-tracker.md`→`../../specs/state-behavior-extension.md`, `agents/index.md`→`../../../AGENTS.md`, `development-workflow.md`→`../../dev/README.md`, `releasing.md`→`../../releasing.md`, `multi-host.md`→`../../runtime-support.md`; all resolve, all non-empty.
+- DONE: install-journey move ripples hold + `go test ./...` GREEN.
+  README.md:77, install.sh:44, install_doc_test.go:67 all point at `docs/site/get-started/install.md`; `docs/install-journey.md` gone. `go test -count=1 ./...` EXIT 0 (1247 passed, 16 packages, 0 fails); the move-sensitive `TestInstallJourneyDocumentsLinuxPath` + `TestInstallJourneyDoesNotOverclaimLinuxSandbox` PASS explicitly against the moved file.
+- SKIPPED: AC-10 — a14y agent-readability score against the deployed docs.
+  Post-deploy live check; needs the live Pages URL (exists only after `docs.yml` deploys on main). Deferred-to-deploy, NOT a failure — per the entity's own AC-10 (recorded metric, not a build gate) and the dispatch.
+
+### Summary
+
+PASSED. Reproduced the single load-bearing proof (`rm -rf site && mkdocs build --strict` → exit 0, zero warnings) from a clean fresh-venv install of the pinned deps, then verified every build/code-time AC against the built `site/` and the repo: the 7-section nav resolves with no broken links (AC-1/2), Home + Get-started render (AC-3), no process/state source trees leak into the output (AC-4), the e6 + frontmatter + Voice-&-tone slots resolve (AC-5/7), `site/llms.txt` is a real 54-line index and the AGENTS.md + "For agents" surface is reachable (AC-8/9), the palette toggle + code-copy are config-driven into the output (AC-11), and the Pages workflow is correctly wired (`--strict` build, PR gate, deploy-on-main) (AC-6 wiring). Move/symlink integrity holds (5 symlinks intact, install-journey ripples fixed) and `go test ./...` is green (1247 passed, 0 fails). AC-10 (a14y) and AC-6's deploy smoke are the only deferred items — post-deploy live checks needing the live Pages URL, correctly not treated as failures. No defects found; nothing routes back. Per the dispatch this is a normal validation (a docs site is not a high-stakes detached-audit surface), so no adversarial-refute pass was run.
