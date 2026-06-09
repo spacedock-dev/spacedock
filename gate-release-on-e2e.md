@@ -13,6 +13,7 @@ sprint: 0200-flip
 group: release-gating
 sprint-readiness:
 mod-block: merge:pr-merge
+pr: "#337"
 ---
 
 The release/tag path runs no end-to-end check. For the 0.20.0 marketplace flip especially, the release must not publish without the live e2e suite having passed for the exact commit being released.
