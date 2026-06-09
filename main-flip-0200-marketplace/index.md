@@ -179,3 +179,22 @@ Folded the preflight staff-review findings (2026-06-08):
 - **P3 (polish) — strict-semver guard demoted to optional.** AC-1's mandatory proof is now ONLY the non-`v*` archive ref (`archive/v0`), which alone prevents the archive firing (proven by exercise). The strict-semver `release.yml` guard step (unowned — out of pj/k6d scope) is an explicit OPTIONAL follow-up task, not a blocking AC.
 - **P4 (polish, optional) — AC-4 anchor.** Added an optional small `internal/release` assertion (post-flip stamp target + `.goreleaser.yaml` devBranch are `main`) so the doc-vs-machinery check has a failing-on-violation artifact, not a human read alone.
 - **P5 (polish) — citation normalized.** The hardcoded `git switch/push next` lines are now cited as `release.yml:161,172` throughout (was `:159-172`/`:156,161,172`).
+
+## Flip execution record (2026-06-09, FO + captain)
+
+Driven directly by the shaping FO + captain (no cold-boot Commander), per the runbook. Executed and verified end-to-end:
+
+- **Step 2 fold (`next`, ac476b51):** AC-4 doc reconciliation (`AGENTS.md` + `docs/releasing.md`) + relaxed `marketplace_manifest_test.go` to `source.ref ∈ {next, main}` + guard-comment fix. NO marketplace ref change on `next` (corrected branch-local model).
+- **Parser fix (6accd320):** the first live e2e (ac476b51) failed because the cmx launch banner (stderr, folded into the runner's stream) broke `ParseClaudeJSONL` — behavioral assertions had already passed. Fixed the parser to skip non-JSON lines (`internal/journeymetrics/claude.go`) + regression test. This became `$PREPARED = 6accd320`.
+- **Step 4 live e2e:** GREEN on 6accd320 (run #27186996022, all 5 legs); `headSha` re-verified == `$PREPARED`.
+- **Step 5 archive:** `archive/v0 → 8c069d95` (AC-1; non-`v*`, fired no goreleaser).
+- **Step 6 flip:** `git push --force-with-lease=main:8c069d95 origin 6accd320:main` (AC-2; `next` retained).
+- **Step 6b settle (main-only, f80709c1, BEFORE the tag):** `source.ref next→main` + calendar bump `0.0.2026060901`. Ordering corrected from the original step-8 (post-tag) to pre-tag, so a fresh stable install never resolves `@main → source.ref:next` (the window the captain flagged). The tag points at 6accd320; `main`'s tip carries the settle (like k6d's post-tag stamp).
+- **Step 7 cut:** `v0.20.0` tagged on 6accd320, pushed. `release.yml`: e2e-gate held (matched #27186996022), goreleaser published both channels + brew tap, k6d stamped 0.20.0 on `main` (tip 3a694742). AC-3 satisfied.
+- **Step 8 verification:** fresh-HOME **stable** install resolves `0.20.0` from `main` (`source.ref:main`) — AC-3b, observed in plugin state. **Edge** binary (`devBranch=next`) resolves `@next → source.ref:next → next` plugin — channel separation confirmed.
+
+**AC-8 decision (captain 2026-06-08):** post-flip development + Spacedock-state continue on `next`; `main` is stable-release-only. The `next`-pinned 0.19.x user post-flip — **accept silent edge-retention**: next-pinning is a deliberate edge opt-in and the edge channel stays live, so no forced migration and no nudge fixture (a one-time stable nudge may be a follow-up if desired).
+
+**Observation → deferred:** the edge install resolves the next plugin under `next`'s own version (`0.19.9`), not `0.20.0` — only `main` got the stamp. Edge is functionally correct (next content); the version label trails until `next` becomes its own release line (deferred task (b)).
+
+**Verdict: PASSED.** Shipped via the `v0.20.0` GitHub Release (not a code-branch PR); terminalized with `pr=release:v0.20.0` as the ship sentinel.
