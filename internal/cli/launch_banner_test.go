@@ -42,9 +42,9 @@ func gitRepoFixture(t *testing.T) string {
 // to the repo root (e.g. `docs/dev`). From the repo root, from inside the
 // workflow, and from a deep subdir it names the same workflow. A noise copy under
 // `.claude/worktrees/...` (a real concern: agent worktrees are full repo checkouts
-// each carrying a `docs/dev`) is NOT named and does NOT inflate the count. Outside
+// each carrying a `docs/dev`) is NOT named and does NOT inflate the list. Outside
 // any workflow it reads "none detected"; with more than one top-level workflow it
-// reads the count + a pointer to `spacedock status`. The fixture layout is the
+// lists the detected workflow paths space-separated. The fixture layout is the
 // independent expected value.
 func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	// repoWithRealWorkflowAndNoise builds a temp git repo with the single real
@@ -113,7 +113,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		}
 	})
 
-	t.Run("more than one real top-level workflow reports the count + status pointer", func(t *testing.T) {
+	t.Run("more than one real top-level workflow lists the detected paths", func(t *testing.T) {
 		repo := gitRepoFixture(t)
 		commissionWorkflowAt(t, filepath.Join(repo, "docs", "dev"))
 		commissionWorkflowAt(t, filepath.Join(repo, "ops", "release"))
@@ -121,8 +121,9 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		launchBanner("claude", repo, &buf)
 
 		out := buf.String()
-		if !strings.Contains(out, "2 workflows detected (run `spacedock status` to pick)") {
-			t.Fatalf("banner does not report the 2-workflow count + pointer: %q", out)
+		wantLine := "Workflows: " + filepath.Join("docs", "dev") + " " + filepath.Join("ops", "release") + "\n"
+		if !strings.Contains(out, wantLine) {
+			t.Fatalf("banner does not list the two workflow paths %q: %q", wantLine, out)
 		}
 		if strings.Contains(out, "none detected") {
 			t.Fatalf("banner reads none detected with two real workflows: %q", out)

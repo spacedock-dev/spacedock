@@ -77,6 +77,8 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		return 1
 	}
 
+	launchBanner("pi", dir, stderr)
+
 	argv := []string{
 		"pi",
 		"--extension", cfg.extensionPath,
