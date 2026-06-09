@@ -175,16 +175,16 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedger(t *testing.T) {
 		needsForm string
 	}{
 		{"scalar", "    needs: journey-ledger\n"},
-		{"flow sequence", "    needs: [journey-ledger]\n"},
-		{"block list", "    needs:\n      - journey-ledger\n"},
+		{"flow sequence", "    needs: [e2e-gate, journey-ledger]\n"},
+		{"block list", "    needs:\n      - e2e-gate\n      - journey-ledger\n"},
 		{"scalar with inline comment", "    needs: journey-ledger  # required for the upload\n"},
-		{"flow sequence with inline comment", "    needs: [journey-ledger]  # required for the upload\n"},
-		{"block list with inline comment", "    needs:\n      - journey-ledger  # required for the upload\n"},
-		{"block list split by a blank line", "    needs:\n      - some-other-gate\n\n      - journey-ledger\n"},
+		{"flow sequence with inline comment", "    needs: [e2e-gate, journey-ledger]  # required for the upload\n"},
+		{"block list with inline comment", "    needs:\n      - e2e-gate\n      - journey-ledger  # required for the upload\n"},
+		{"block list split by a blank line", "    needs:\n      - e2e-gate\n\n      - journey-ledger\n"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			adversarial := strings.Replace(release,
-				"  goreleaser:\n    runs-on: macos-latest",
+				"  goreleaser:\n    needs: e2e-gate\n    runs-on: macos-latest",
 				"  goreleaser:\n"+tc.needsForm+"    runs-on: macos-latest",
 				1)
 			if adversarial == release {
@@ -223,20 +223,20 @@ func TestReleaseWorkflowGuardRejectsGoreleaserNeedsJourneyLedgerViaJobIdentitySh
 			"anchor/alias needs", func(s string) string {
 				// Anchor a list containing journey-ledger on the reverse edge, then
 				// alias it onto goreleaser — GHA resolves *grx so goreleaser needs
-				// journey-ledger.
+				// journey-ledger (alongside the legitimate e2e-gate it still needs).
 				s = strings.Replace(s,
 					"  journey-ledger:\n    needs: goreleaser\n",
-					"  journey-ledger:\n    needs: &grx [goreleaser, journey-ledger]\n", 1)
+					"  journey-ledger:\n    needs: &grx [e2e-gate, journey-ledger]\n", 1)
 				return strings.Replace(s,
-					"  goreleaser:\n    runs-on: macos-latest",
+					"  goreleaser:\n    needs: e2e-gate\n    runs-on: macos-latest",
 					"  goreleaser:\n    needs: *grx\n    runs-on: macos-latest", 1)
 			},
 		},
 		{
 			"quoted job key", func(s string) string {
 				return strings.Replace(s,
-					"  goreleaser:\n    runs-on: macos-latest",
-					"  \"goreleaser\":\n    needs: journey-ledger\n    runs-on: macos-latest", 1)
+					"  goreleaser:\n    needs: e2e-gate\n    runs-on: macos-latest",
+					"  \"goreleaser\":\n    needs: [e2e-gate, journey-ledger]\n    runs-on: macos-latest", 1)
 			},
 		},
 	} {
@@ -271,7 +271,7 @@ const goreleaserCarrierJob = `  goreleaser-extra:
 // needs block) just before the real goreleaser job in the workflow text.
 func insertGoreleaserCarrier(t *testing.T, workflow, needsBlock string) string {
 	t.Helper()
-	const anchor = "  goreleaser:\n    runs-on: macos-latest"
+	const anchor = "  goreleaser:\n    needs: e2e-gate\n    runs-on: macos-latest"
 	if !strings.Contains(workflow, anchor) {
 		t.Fatal("fixture workflow missing the goreleaser job header to anchor a second carrier before")
 	}
@@ -405,11 +405,12 @@ func TestReleaseWorkflowGuardToleratesSafeReverseEdgeViaJobIdentityShapes(t *tes
 }
 
 // TestReleaseWorkflowJobGraphMatchesGitHubActions asserts the parsed job graph of
-// the real release.yml matches what GitHub Actions resolves: goreleaser has NO
-// `needs:` (it cuts regardless), and journey-ledger needs ONLY goreleaser (the
-// one-way upload-ordering edge). This pins the parser to GHA semantics so a
-// future parse regression that drops or invents an edge is caught directly, not
-// only through the guard.
+// the real release.yml matches what GitHub Actions resolves: goreleaser needs
+// ONLY the e2e-gate job (the live-e2e precondition the cut depends on, never the
+// journey-ledger job), and journey-ledger needs ONLY goreleaser (the one-way
+// upload-ordering edge). This pins the parser to GHA semantics so a future parse
+// regression that drops or invents an edge is caught directly, not only through
+// the guard.
 func TestReleaseWorkflowJobGraphMatchesGitHubActions(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
 	needs := map[string][]string{}
@@ -420,8 +421,8 @@ func TestReleaseWorkflowJobGraphMatchesGitHubActions(t *testing.T) {
 	if _, ok := needs["goreleaser"]; !ok {
 		t.Fatalf("parsed graph missing the goreleaser job; got jobs %v", keysOf(needs))
 	}
-	if len(needs["goreleaser"]) != 0 {
-		t.Errorf("goreleaser must have no needs (cuts regardless); got %v", needs["goreleaser"])
+	if got := needs["goreleaser"]; len(got) != 1 || got[0] != "e2e-gate" {
+		t.Errorf("goreleaser must need exactly e2e-gate (the live-e2e gate, never journey-ledger); got %v", got)
 	}
 	if got := needs["journey-ledger"]; len(got) != 1 || got[0] != "goreleaser" {
 		t.Errorf("journey-ledger must need only goreleaser; got %v", got)
