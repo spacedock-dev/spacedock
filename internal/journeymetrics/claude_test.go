@@ -63,6 +63,37 @@ func TestParseClaudeTranscriptFallsBackToAssistantUsageWhenTerminalResultMissing
 	}
 }
 
+func TestParseClaudeJSONLSkipsNonJSONStderrLines(t *testing.T) {
+	base := readTestdata(t, "claude_no_terminal.stream.jsonl")
+
+	// The front-door launch banner is written to stderr, which the live claude
+	// runner folds into the same pipe as the stdout stream-json (to capture
+	// launch errors like a 401). The parser must skip these non-JSON lines, not
+	// error on them — a banner prefix must yield the same parse as the bare stream.
+	banner := "spacedock dev · launching claude as your first officer\n" +
+		"Workflow: none detected\n" +
+		"claude is your first officer — ask it for the queue and next steps.\n"
+	withBanner := append([]byte(banner), base...)
+
+	want, err := ParseClaudeJSONL(base)
+	if err != nil {
+		t.Fatalf("baseline ParseClaudeJSONL: %v", err)
+	}
+	got, err := ParseClaudeJSONL(withBanner)
+	if err != nil {
+		t.Fatalf("ParseClaudeJSONL with stderr banner prefix: %v", err)
+	}
+	if got.Observation.Turns != want.Observation.Turns {
+		t.Errorf("turns with banner = %d, want %d (banner must not change the parse)", got.Observation.Turns, want.Observation.Turns)
+	}
+	if got.Observation.ToolCalls != want.Observation.ToolCalls {
+		t.Errorf("tool calls with banner = %d, want %d", got.Observation.ToolCalls, want.Observation.ToolCalls)
+	}
+	if got.Observation.Tokens != want.Observation.Tokens {
+		t.Errorf("tokens with banner = %+v, want %+v", got.Observation.Tokens, want.Observation.Tokens)
+	}
+}
+
 func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))

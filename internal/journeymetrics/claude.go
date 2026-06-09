@@ -33,6 +33,13 @@ func ParseClaudeJSONL(data []byte) (ClaudeParseResult, error) {
 		if line == "" {
 			continue
 		}
+		// The live claude runner folds stderr into the stream-json pipe, so
+		// non-JSON lines (the front-door launch banner, a 401 launch error, log
+		// noise) can appear before or among the JSONL events. Skip them; only
+		// JSON object lines are stream-json events.
+		if !strings.HasPrefix(line, "{") {
+			continue
+		}
 		var row map[string]json.RawMessage
 		if err := json.Unmarshal([]byte(line), &row); err != nil {
 			return ClaudeParseResult{}, fmt.Errorf("line %d: %w", lineNo, err)
