@@ -9,8 +9,8 @@ verdict:
 score:
 worktree:
 issue:
-sprint:
-group:
+sprint: 0200-flip
+group: frontdoor
 sprint-readiness:
 ---
 
