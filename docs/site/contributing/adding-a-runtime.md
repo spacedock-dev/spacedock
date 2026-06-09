@@ -1,6 +1,6 @@
 # Adding a runtime
 
-A host is supported when a live or fixture-backed run launches it as a first officer, dispatches an ensign through that host's native agent mechanism, and verifies durable workflow state — process exit, entity body, state-checkout git log, and clean status. A host is not supported because its instructions mention Spacedock, and a substring search over code or prose is not proof of behavior. Spacedock ships `spacedock claude` and `spacedock codex` as proven front doors; adding a host means earning the same level of proof.
+A host is supported when a live or fixture-backed run launches it as a first officer, dispatches an ensign through that host's native agent mechanism, and verifies durable workflow state: process exit, entity body, state-checkout git log, and clean status. A host is not supported because its instructions mention Spacedock, and a substring search over code or prose is not proof of behavior. Spacedock ships `spacedock claude` and `spacedock codex` as proven front doors; adding a host means earning the same level of proof.
 
 This page is the contributor's orientation. The full procedure, the exact checklists, and the worked Pi example live in [Multi-host support](../reference/multi-host.md). Read that before you write code.
 
@@ -23,7 +23,7 @@ Add support in small layers, each with its own proof at its own abstraction leve
 2. **Dispatch host mode.** Teach `spacedock dispatch build` to accept `host: "<host>"` when the assignment shape differs by host. Keep entity and worktree paths explicit, especially for split-root workflows (`state: .spacedock-state`). Test the positive shape and the banned-tool negative case.
 3. **Runtime contracts and registries.** For long-lived workers, define the minimum worker record (label, substrate, run/session handle, entity, stage, state, completion epoch) and reject stale completion evidence: a previous completion must never satisfy a later assignment. For a host team API, adapt Spacedock lifecycle intents to the host's native action schema.
 4. **Launch/install UX.** Add `spacedock <host>` only after a manual or live harness proves the runtime path. Add `spacedock install --host <host>` only when the install path is known and checkable without mutating unrelated global host state. Add `spacedock doctor --host <host>` when there is a manifest, package, or runtime health check to verify.
-5. **Live runner.** Prove the host with a live-gated test when the claim is runtime integration. Use a temp workflow fixture, isolated host config and session directories, and copied credentials rather than global host state. Assert process exit, entity content, git log, and clean status — never pass on transcript phrasing.
+5. **Live runner.** Prove the host with a live-gated test when the claim is runtime integration. Use a temp workflow fixture, isolated host config and session directories, and copied credentials rather than global host state. Assert process exit, entity content, git log, and clean status. Never pass on transcript phrasing.
 
 ## Match the proof to the claim
 
@@ -55,4 +55,4 @@ Assume <runtime> support is supposed to work. Do not treat missing polish, auth 
 
 The prompt earns its place by changing the default interpretation of a failure: harness work gets fixed in-loop, and only a proven product or design blocker stops the work.
 
-The worked Pi runtime — the live smoke mechanism, the exact parent prompt, the install and doctor surface, and the full acceptance checklist — is in [Multi-host support](../reference/multi-host.md).
+The worked Pi runtime is in [Multi-host support](../reference/multi-host.md): the live smoke mechanism, the exact parent prompt, the install and doctor surface, and the full acceptance checklist.

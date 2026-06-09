@@ -39,16 +39,16 @@ stages:
 Each `states` entry is one stage. The per-stage flags decide behavior:
 
 - **`initial: true`** marks where a new entity starts; **`terminal: true`** marks where it ends.
-- **`gate: true`** makes the stage end at a gate — the first officer pauses and presents a decision instead of advancing on its own.
+- **`gate: true`** makes the stage end at a gate: the first officer pauses and presents a decision instead of advancing on its own.
 - **`worktree: true`** runs the stage in its own git worktree, so stages that touch shared state stay isolated. Lighter stages run inline.
-- **`fresh: true`** dispatches the stage with no access to the prior worker's reasoning — used for review stages so the maker doesn't judge its own work.
+- **`fresh: true`** dispatches the stage with no access to the prior worker's reasoning. Use it for review stages so the maker doesn't judge its own work.
 - **`feedback-to: <stage>`** names where rejected work bounces back to for revision.
 
-The README body documents each stage with `Inputs`, `Outputs`, `Good`, and `Bad`. That prose is the living spec — it is what every dispatched ensign works to. Tighten it to your actual bar before the first dispatch; editing it after agents have run against vague prose costs more.
+The README body documents each stage with `Inputs`, `Outputs`, `Good`, and `Bad`. That prose is the living spec; it is what every dispatched ensign works to. Tighten it to your actual bar before the first dispatch; editing it after agents have run against vague prose costs more.
 
 ## The entity: one work item
 
-**An entity is a single work item, stored as a markdown file with YAML frontmatter.** Each entity lives as either a flat file `{slug}.md` or a folder `{slug}/index.md` — use the folder form when reports or artifacts accumulate beside the work item. Slugs are lowercase with hyphens, no spaces (`add-login.md` or `add-login/index.md`). `spacedock status` reads both forms.
+**An entity is a single work item, stored as a markdown file with YAML frontmatter.** Each entity lives as either a flat file `{slug}.md` or a folder `{slug}/index.md`. Use the folder form when reports or artifacts accumulate beside the work item. Slugs are lowercase with hyphens, no spaces (`add-login.md` or `add-login/index.md`). `spacedock status` reads both forms.
 
 The body holds the human-readable record: a description, a problem statement, the proposed approach, acceptance criteria, and the stage reports filed as the entity advances.
 
@@ -60,7 +60,7 @@ The frontmatter is the machine-readable state. The full schema lives in the work
 |-------|---------------|
 | `id` | The unique identifier; format set by `id-style` in the README. |
 | `title` | Human-readable name. The filename slug is derived from it. |
-| `status` | The current stage — one of the stage names declared in the README. |
+| `status` | The current stage, one of the stage names declared in the README. |
 | `source` | Where the entity came from (e.g. `commission seed`, `linear`). |
 | `started` / `completed` | ISO 8601 timestamps for when work began and when the entity reached terminal. |
 | `verdict` | `PASSED` or `REJECTED`, set at the final stage. |
@@ -74,7 +74,7 @@ The frontmatter is the machine-readable state. The full schema lives in the work
 spacedock status --workflow-dir docs/dev
 ```
 
-To list only the entities ready for dispatch — the query the first officer runs each loop:
+To list only the entities ready for dispatch, run the query the first officer runs each loop:
 
 ```bash
 spacedock status --workflow-dir docs/dev --next
@@ -90,6 +90,6 @@ state: .spacedock-state
 
 With this set, the README (the living spec) stays on your code branch, while the entity files, their reports, and the archive live under `.spacedock-state`. Routine stage transitions then never churn the code branch or collide with a feature PR. The path is resolved relative to the README's directory; `spacedock status` reads stages from the README and entities from the state checkout, and writes frontmatter updates and archive moves into the state checkout.
 
-The state checkout is a linked git worktree on an orphan branch in the same repo, so state commits land on that branch and the code branch never sees them. On a fresh clone the state worktree is absent — run `spacedock state init` to fetch the orphan branch and re-add the linked worktree before working the workflow.
+The state checkout is a linked git worktree on an orphan branch in the same repo, so state commits land on that branch and the code branch never sees them. On a fresh clone the state worktree is absent. Run `spacedock state init` to fetch the orphan branch and re-add the linked worktree before working the workflow.
 
-Omit `state:` (or set `state: $inline`) for a standalone workflow that isn't embedded in a code repo you ship from. Then the entities live beside the README in the same directory — no orphan branch, no extra checkout.
+Omit `state:` (or set `state: $inline`) for a standalone workflow that isn't embedded in a code repo you ship from. Then the entities live beside the README in the same directory, with no orphan branch and no extra checkout.

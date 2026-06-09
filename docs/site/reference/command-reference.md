@@ -1,10 +1,10 @@
 # Command reference
 
-The `spacedock` binary has ten subcommands in three groups — Launch, Setup, and
-Workflow — plus a top-level `--version`. Run `spacedock` with no arguments to
+The `spacedock` binary has ten subcommands in three groups (Launch, Setup, and
+Workflow), plus a top-level `--version`. Run `spacedock` with no arguments to
 print the grouped help; run `spacedock <command> --help` for a command's own
 flags. An unknown command or a stray leading flag exits 2 with a diagnostic on
-stderr; an unknown command resolution under cobra also exits 2. The verbs are
+stderr, and an unknown command resolution under cobra also exits 2. The verbs are
 registered in `internal/cli/cli.go`.
 
 ## --version
@@ -20,7 +20,7 @@ defaults to the `dev` sentinel and is overwritten by the release pipeline's
 linker stamp, so an unstamped `go build` reads as a dev build rather than
 impersonating a release.
 
-## Launch — claude, codex, pi
+## Launch: claude, codex, pi
 
 `spacedock claude`, `spacedock codex`, and `spacedock pi` each start the named
 host with the Spacedock first officer loaded. Claude Code is the primary surface;
@@ -35,28 +35,28 @@ spacedock claude [task] [spacedock-flags] [-- host-flags]
   the launch prompt handed to the first officer. With no task, a fixed bootstrap
   prompt starts the first officer rather than opening an idle agent.
 - **Everything after `--` forwards verbatim to the host** (`claude` / `codex` /
-  `pi`) — `--model`, `--resume`, `--plugin-dir`, and the like. A task placed
+  `pi`): `--model`, `--resume`, `--plugin-dir`, and the like. A task placed
   after `--` is host passthrough, not the launch prompt; the launcher warns on
   stderr when it detects this without altering the assembled argv.
 - **The launch is contract-gated.** When no plugin is installed, the launcher
   auto-installs it then launches, so the single command yields a working session.
   `--no-install` opts out and prints the manual install remedy. A contract
-  mismatch fails fast (exit 1) — auto-installing would not fix it.
+  mismatch fails fast (exit 1), since auto-installing would not fix it.
 
 Spacedock-owned launch flags, declared in `internal/cli/frontdoor.go`:
 
-- `--safehouse` — force the safehouse sandbox wrap even without a `.safehouse`
+- `--safehouse`: force the safehouse sandbox wrap even without a `.safehouse`
   profile in the working directory. A `.safehouse` profile triggers the wrap
   automatically.
 - `--safehouse-enable KEY[,KEY]`, `--safehouse-add-dirs DIR`,
-  `--safehouse-add-dirs-ro DIR` — repeatable sandbox knobs; their presence also
+  `--safehouse-add-dirs-ro DIR`: repeatable sandbox knobs whose presence also
   implies sandbox-on.
-- `--plugin-dir DIR` — load a local plugin checkout, relaxing the contract gate.
+- `--plugin-dir DIR`: load a local plugin checkout, relaxing the contract gate.
   Repeatable, and accepted both before `--` (parsed by spacedock) and after `--`
   (forwarded verbatim).
-- `--skip-contract-check` — bypass the contract gate and launch without resolving
+- `--skip-contract-check`: bypass the contract gate and launch without resolving
   the installed plugin.
-- `--no-install` — refuse to auto-install a missing plugin; print instructions
+- `--no-install`: refuse to auto-install a missing plugin and print instructions
   instead.
 
 The contract gate is bypassed by `--skip-contract-check` or by any `--plugin-dir`
@@ -64,7 +64,7 @@ The contract gate is bypassed by `--skip-contract-check` or by any `--plugin-dir
 native skills and extension rather than a plugin manifest; its only spacedock
 flag is `--plugin-dir`.
 
-## Setup — install, doctor
+## Setup: install, doctor
 
 `spacedock install` installs the per-host plugin, then runs the compatibility
 check. `spacedock doctor` runs the check alone.
@@ -84,7 +84,7 @@ When `doctor` reports the installed plugin is out of date, refresh it with
 `spacedock install --host claude`. See [Install Spacedock](../get-started/install.md)
 for the full setup path.
 
-## Workflow — status, new, state, completion, dispatch
+## Workflow: status, new, state, completion, dispatch
 
 These commands read and mutate workflow state. `status` and `dispatch` forward
 their argv verbatim to their runners; the launcher neither parses nor reorders
@@ -101,36 +101,37 @@ explicit `--workflow-dir DIR` (or the `PIPELINE_DIR` environment variable) is us
 verbatim; otherwise it walks up from the working directory to the enclosing
 commissioned workflow. With neither, it exits 1 with
 `no Spacedock workflow here — pass --workflow-dir or run inside a workflow`. The
-exit domain is `{0 success, 1 error}` — a usage error is exit 1, never 2.
+exit domain is `{0 success, 1 error}`, so a usage error is exit 1, never 2.
 
 The query forms, parsed in `internal/status/native_runner.go`:
 
-- **No flag** — print the active-entity status table. `--archived` includes
+- **No flag**: prints the active-entity status table. `--archived` includes
   archived entities; `--quiet` and `--json` change the rendering.
-- `--next` — print the items ready to dispatch (requires a stages block in the
+- `--next` prints the items ready to dispatch (requires a stages block in the
   README).
-- `--next-id` — compute the next entity id. Accepts `--id-seed` and `--id-actor`
+- `--next-id` computes the next entity id. It accepts `--id-seed` and `--id-actor`
   (valid only with `--next-id` or `--new`).
-- `--boot` — print the first-officer boot view (queue, stages, team state).
-  Incompatible with `--next`, `--next-id`, `--archived`, `--where`, and
+- `--boot` prints the first-officer boot view (queue, stages, team state). It is
+  incompatible with `--next`, `--next-id`, `--archived`, `--where`, and
   `--fields`/`--all-fields`.
-- `--validate` — validate the workflow; prints `VALID` and exits 0, or prints the
+- `--validate` validates the workflow. It prints `VALID` and exits 0, or prints the
   errors and exits 1.
-- `--resolve REF` — resolve a reference to one entity and print its resolve line.
+- `--resolve REF` resolves a reference to one entity and prints its resolve line.
   With `--root ROOT` it resolves across every workflow under `ROOT`, accepting a
   `workflow::ref` qualifier.
-- `--short-id REF` — print an entity's short display id.
-- `--set SLUG field=value...` — mutate an entity's frontmatter. Bare `completed`
+- `--short-id REF` prints an entity's short display id.
+- `--set SLUG field=value...` mutates an entity's frontmatter. Bare `completed`
   and `started` auto-fill a timestamp; every other field requires a value.
   Terminal transitions are gated (mod-block, merge-hook, verdict, and the
   require-external-proof guards); `--force` bypasses with a warning.
-- `--archive SLUG` — archive an entity.
-- `--discover [--root ROOT]` — print the commissioned workflows under `ROOT`
-  (default: the git toplevel of the working directory). Incompatible with every
-  other flag.
-- `--where 'field = value'` — filter the table. Supports `=`, `!=`, `field =`
-  (empty), and `field !=` (non-empty); repeatable.
-- `--fields a,b,c` / `--all-fields` — choose the columns. Mutually exclusive.
+- `--archive SLUG` archives an entity.
+- `--discover [--root ROOT]` prints the commissioned workflows under `ROOT`
+  (default: the git toplevel of the working directory). It is incompatible with
+  every other flag.
+- `--where 'field = value'` filters the table. It supports `=`, `!=`, `field =`
+  (empty), and `field !=` (non-empty), and is repeatable.
+- `--fields a,b,c` / `--all-fields` chooses the columns. The two are mutually
+  exclusive.
 
 Most flags refuse to combine; the runner names the conflict and exits 1 (e.g.
 `--set cannot be combined with --next`).

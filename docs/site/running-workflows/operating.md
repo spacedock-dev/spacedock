@@ -14,7 +14,7 @@ The loop ends a session when nothing is dispatchable, or when every dispatchable
 
 ## See what is ready
 
-`spacedock status` reads the workflow state and prints it. Run it against the workflow directory — the directory holding the commissioned `README.md`:
+`spacedock status` reads the workflow state and prints it. Run it against the workflow directory, the one holding the commissioned `README.md`:
 
 ```bash
 spacedock status --workflow-dir docs/dev
@@ -28,7 +28,7 @@ To list only the entities ready to dispatch, add `--next`:
 spacedock status --workflow-dir docs/dev --next
 ```
 
-Prints the dispatchable set — the entities whose next stage can run now, given concurrency limits and what is already in flight. This is the query the first officer runs each loop. When nothing is ready, the result is empty; there is nothing to dispatch.
+Prints the dispatchable set: the entities whose next stage can run now, given concurrency limits and what is already in flight. This is the query the first officer runs each loop. When nothing is ready, the result is empty; there is nothing to dispatch.
 
 To filter the table by a frontmatter field, use `--where "field=value"`. The filter takes `=` (equals) or `!=` (not equals):
 
@@ -37,14 +37,14 @@ spacedock status --workflow-dir docs/dev --where "status=ideation"
 spacedock status --workflow-dir docs/dev --where "verdict!="
 ```
 
-The first prints every entity in the `ideation` stage. The second prints entities whose `verdict` field is set (the `!=` against an empty value). Use `--where` to answer targeted questions — what is in a given stage, which entities carry an external `issue`, which already have a `verdict`.
+The first prints every entity in the `ideation` stage. The second prints entities whose `verdict` field is set (the `!=` against an empty value). Use `--where` to answer targeted questions: what is in a given stage, which entities carry an external `issue`, which already have a `verdict`.
 
 Two more queries are worth knowing:
 
 - **`--validate`** checks every entity against the workflow's contract and reports problems (a missing or malformed ID, a duplicate ID, a stage name that breaks the naming rule). Run it when the table looks wrong.
 - **`--resolve REF`** looks up one entity by slug, full ID, or ID prefix, so you can name it unambiguously before acting on it.
 
-All status queries are read-only — they print state, they do not change it. For the full flag list and the `--set` and `--archive` mutation forms, see the [Command reference](../reference/command-reference.md).
+All status queries are read-only. They print state, they do not change it. For the full flag list and the `--set` and `--archive` mutation forms, see the [Command reference](../reference/command-reference.md).
 
 ## Dispatch
 
@@ -54,18 +54,18 @@ Hand the first officer the workflow and let it run the dispatch cycle. Launch wi
 spacedock claude "/spacedock:first-officer operate the workflow in docs/dev"
 ```
 
-The first officer reads the workflow `README.md`, runs its own `status --next`, and for each dispatchable entity it dispatches an ensign to move the entity through its next stage. The ensign does the stage work — write the design, produce the deliverable, run the validation — commits, and files a stage report. The first officer reads the report, checks it against the stage's outputs and the entity's acceptance criteria, and advances the entity. A completed non-gated, non-terminal stage is not a stopping point: the first officer advances it and dispatches the next stage on its own, without waiting for you.
+The first officer reads the workflow `README.md`, runs its own `status --next`, and for each dispatchable entity it dispatches an ensign to move the entity through its next stage. The ensign does the stage work (write the design, produce the deliverable, run the validation), commits, and files a stage report. The first officer reads the report, checks it against the stage's outputs and the entity's acceptance criteria, and advances the entity. A completed non-gated, non-terminal stage is not a stopping point: the first officer advances it and dispatches the next stage on its own, without waiting for you.
 
 It stops and returns to you only at a gate, at a terminal entity's merge ceremony, on a blocker, or when nothing is left to dispatch.
 
 ## Handle gate decisions
 
-A gate is the decision point at the end of a stage marked `gate: true` in the workflow. When an entity reaches one, the first officer presents the stage report and the result of its review, then waits — it never self-approves. You decide:
+A gate is the decision point at the end of a stage marked `gate: true` in the workflow. When an entity reaches one, the first officer presents the stage report and the result of its review, then waits. It never self-approves. You decide:
 
 - **Approve.** The entity advances to its next stage. The first officer dispatches it (or, at a terminal stage, runs the merge-and-cleanup ceremony to close the entity with its verdict).
-- **Reject.** On a stage with a `feedback-to` target — `validation` routes back to `implementation` in the `docs/dev` workflow — the rejection routes the concrete findings back to that stage and re-runs the work, then re-validates. A repeated rejection escalates back to you rather than bouncing indefinitely.
+- **Reject.** On a stage with a `feedback-to` target (`validation` routes back to `implementation` in the `docs/dev` workflow), the rejection routes the concrete findings back to that stage and re-runs the work, then re-validates. A repeated rejection escalates back to you rather than bouncing indefinitely.
 - **Send it back with direction.** If the result is close but not right, give the first officer the specific change to make. It updates the entity body, acceptance criteria, and test plan together, then re-runs the stage.
 
-The gate review names the chosen direction, cites the stage report, and ends with a single recommendation — approve or reject. Read the report it cites before deciding; overriding a `REJECTED` recommendation without a reason is exactly the kind of unexamined approval the gate exists to catch.
+The gate review names the chosen direction, cites the stage report, and ends with a single recommendation, approve or reject. Read the report it cites before deciding; overriding a `REJECTED` recommendation without a reason is exactly the kind of unexamined approval the gate exists to catch.
 
-When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top — run `status --next` and see what moved into reach.
+When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top: run `status --next` and see what moved into reach.
