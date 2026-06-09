@@ -27,7 +27,7 @@ func TestInstallJourneyDocumentsLinuxPath(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Errorf("docs/install-journey.md has no runnable `curl … install.sh | sh` Linux install line")
+		t.Errorf("docs/site/get-started/install.md has no runnable `curl … install.sh | sh` Linux install line")
 	}
 }
 
@@ -64,7 +64,7 @@ func TestInstallJourneyDoesNotOverclaimLinuxSandbox(t *testing.T) {
 
 func readInstallJourney(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "install-journey.md"))
+	data, err := os.ReadFile(filepath.Join("..", "..", "docs", "site", "get-started", "install.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

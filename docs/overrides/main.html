@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+<!-- For-agents surface: a theme-level link (not a human nav page) pointing at the
+     llms.txt index and the AGENTS.md page, so an agent reading the docs site can
+     fetch the curated machine surface. -->
+{% block announce %}
+  For agents:
+  <a href="{{ (config.extra.agents_url or 'llms.txt') | url }}">llms.txt</a>
+  &middot;
+  <a href="{{ (config.extra.agents_md_url or 'agents/') | url }}">AGENTS.md</a>
+{% endblock %}

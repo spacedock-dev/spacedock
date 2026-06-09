@@ -74,7 +74,7 @@ spacedock claude "/spacedock:survey"
 Using Codex or Pi instead? Swap the subcommand: `spacedock codex "/spacedock:survey"`
 or `spacedock pi "/spacedock:survey"`.
 
-See [`docs/install-journey.md`](docs/install-journey.md) for the full first-run
+See [`docs/site/get-started/install.md`](docs/site/get-started/install.md) for the full first-run
 walkthrough, the Codex and Pi paths, and a from-source build for development.
 
 ## Quick start

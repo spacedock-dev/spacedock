@@ -41,7 +41,7 @@ detect_os() {
 	case "$(uname -s)" in
 		Darwin) echo darwin ;;
 		Linux) echo linux ;;
-		*) die "unsupported OS $(uname -s); see docs/install-journey.md for source build" ;;
+		*) die "unsupported OS $(uname -s); see docs/site/get-started/install.md for source build" ;;
 	esac
 }
 
