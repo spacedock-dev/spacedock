@@ -14,6 +14,7 @@ group: frontdoor
 sprint-readiness:
 mod-block:
 pr: "#338"
+archived: 2026-06-09T02:54:51Z
 ---
 
 A followup on yq (frontdoor-launch-ux): the pre-launch banner (`launchBanner`, `internal/cli/frontdoor.go:139-141`) is clean on the common single-workflow path but wobbles on the new-user / multi-workflow path. Three issues worth fixing, worst first.
