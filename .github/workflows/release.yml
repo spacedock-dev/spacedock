@@ -87,7 +87,45 @@ jobs:
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
           gh release upload "$GITHUB_REF_NAME" "$RUNNER_TEMP/journey-costs-v${RELEASE_VERSION}.json" --clobber
 
+  # Release-time precondition: the cut may not proceed unless the live e2e
+  # matrix ran green for the EXACT commit being released. The job resolves the
+  # tagged commit SHA and asks `spacedock-release e2e-gate` whether a
+  # `conclusion: success` Runtime Live E2E run exists for it — a green run means
+  # every live lane was approved and passed (the secret-free offline-only run is
+  # never `success`). goreleaser `needs:` this job, so a missing/parked live run
+  # blocks the cut. SPACEDOCK_E2E_GATE_WAIVER (set with a reason) is the
+  # auditable captain-waiver escape hatch for an emergency cut; the reason is
+  # recorded to the step summary.
+  e2e-gate:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history + tags so `git rev-list -1 "$GITHUB_REF_NAME"` resolves
+          # the tagged commit SHA the gate binds the green-run match to.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Gate the cut on a green live e2e for the release commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Set this to a non-empty reason to WAIVE the gate for an emergency cut.
+          # The reason is recorded to $GITHUB_STEP_SUMMARY so the bypass is auditable.
+          SPACEDOCK_E2E_GATE_WAIVER: ${{ vars.SPACEDOCK_E2E_GATE_WAIVER }}
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          echo "release commit for $GITHUB_REF_NAME: $RELEASE_COMMIT"
+          go run ./cmd/spacedock-release e2e-gate "$RELEASE_COMMIT"
+
   goreleaser:
+    needs: e2e-gate
     runs-on: macos-latest
     steps:
       - name: Checkout

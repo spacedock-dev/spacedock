@@ -21,13 +21,17 @@ import (
 //
 //	spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
 //	spacedock-release bump-calendar <marketplace.json>
+//	spacedock-release e2e-gate <release-commit-sha>
 //
 // stamp-version rewrites each manifest's top-level `version` to the release
 // version (AC-4). bump-calendar advances the marketplace plugin entry's calendar
-// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. notes
-// summarizes the commit log since the last tag into clean release notes and, on
-// confirmation, cuts the annotated tag whose body carries them (CI extracts that
-// body and feeds goreleaser via --release-notes).
+// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. e2e-gate is the
+// release-time precondition: it passes (exit 0) only when a conclusion:success
+// Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
+// is set, and blocks the cut (exit 1) otherwise. notes summarizes the commit log
+// since the last tag into clean release notes and, on confirmation, cuts the
+// annotated tag whose body carries them (CI extracts that body and feeds
+// goreleaser via --release-notes).
 func main() {
 	if len(os.Args) < 2 {
 		usage()
@@ -40,6 +44,8 @@ func main() {
 		os.Exit(bumpCalendar(os.Args[2:]))
 	case "journey-costs":
 		os.Exit(journeyCosts(os.Args[2:]))
+	case "e2e-gate":
+		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
 	default:
@@ -314,6 +320,7 @@ Usage:
   spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
   spacedock-release bump-calendar <marketplace.json>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
+  spacedock-release e2e-gate <release-commit-sha>
   spacedock-release notes <release-version>
 `)
 }
