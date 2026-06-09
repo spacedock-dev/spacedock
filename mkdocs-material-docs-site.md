@@ -10,6 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-mkdocs-material-docs-site
 issue:
 mod-block: merge:pr-merge
+pr: "#341"
 ---
 
 Stand up a public-facing documentation site for Spacedock using **MkDocs + Material**, published to GitHub Pages. The headline deliverable of this ideation is the **information architecture (the nav tree)** — concrete and complete enough for the captain to approve the IA before any site is built. The mkdocs-material setup sketch and the acceptance criteria support that outline. This is ideation: no site is built and no host is launched here.
