@@ -1,13 +1,13 @@
 ---
 id: cmxchb8y1y2m455xhx7ce87g
 title: Launch-banner UX — first-officer framing, status-command overload, multi-workflow limbo
-status: validation
+status: done
 source: "FO + captain launch-banner review (2026-06-08), following yq (frontdoor-launch-ux). The 3-line pre-launch banner (frontdoor.go:139-141) reads confusingly on the new-user / multi-workflow path."
 started: 2026-06-08T23:37:46Z
-completed:
-verdict:
+completed: 2026-06-09T02:54:51Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-frontdoor-launch-banner-ux
+worktree:
 issue:
 sprint: 0200-flip
 group: frontdoor
