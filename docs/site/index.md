@@ -29,7 +29,7 @@ Point Spacedock at a project you vibe-coded into spaghetti and run `/spacedock:s
 
 ## For agents
 
-Spacedock's docs are read by agents too — a user's first officer parsing these docs is itself an agent. The build emits an agent-readable surface: an `llms.txt` index of the docs (linked from the "For agents" banner at the top of every page) and the repo's [agent instructions](agents/index.md).
+Spacedock's docs are read by agents too — a user's first officer parsing these docs is itself an agent. The build emits an agent-readable surface: an `llms.txt` index of the docs at the site root (discoverable from each page's `<head>` via `<link rel="alternate" type="text/markdown">`) and the repo's [agent instructions](agents/index.md).
 
 ## License
 

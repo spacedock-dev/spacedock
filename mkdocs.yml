@@ -54,10 +54,6 @@ plugins:
         For agents:
           - agents/*.md
 
-extra:
-  agents_url: llms.txt
-  agents_md_url: agents/
-
 nav:
   - Home: index.md
   - Get started:
