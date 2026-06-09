@@ -9,16 +9,23 @@ before:
   hooks:
     - go mod tidy
 
+# One `goreleaser release` on a `v*` tag produces BOTH distribution channels from
+# the same source tree: a STABLE binary stamped devBranch=main (installs the
+# `main` plugin) and an EDGE binary stamped devBranch=next (installs the `next`
+# plugin). The two channels differ ONLY in the devBranch ldflag; everything else
+# (goos/goarch matrix, Version stamp, binary name) is identical. The shared fields
+# live in a YAML anchor so a future matrix/flag change cannot drift the channels
+# apart.
 builds:
-  - id: spacedock
+  - id: spacedock-stable
     main: ./cmd/spacedock
     binary: spacedock
     env:
       - CGO_ENABLED=0
-    goos:
+    goos: &channel-goos
       - darwin
       - linux
-    goarch:
+    goarch: &channel-goarch
       - arm64
       - amd64
     # The version stamp the formula's `test do` asserts. Target is the
@@ -27,11 +34,26 @@ builds:
     # const, for the linker to write it. {{.Version}} is goreleaser's
     # git-describe-derived version (the tag on a release, a snapshot string on
     # --snapshot).
-    # devBranch pins the marketplace @ref the released binary installs from. Until
-    # `next` is the repository's default branch, the root marketplace.json lives on
-    # `next`, so `spacedock init` must target `spacedock-dev/spacedock@next`. The
-    # source default is already `next`; the stamp makes the pin explicit at build
-    # time, mirroring the Version stamp (var, not const, for -X to write it).
+    # devBranch pins the marketplace @ref the released binary installs from. The
+    # STABLE channel binds to `main`: a stable release published on `main` must
+    # install the `main` plugin. The source default stays `next` (frontdoor.go) so
+    # a `go install …@next` / `--plugin-dir` dev build is unaffected; only this
+    # released stable artifact carries the `main` stamp (var, not const, for -X to
+    # write it).
+    ldflags:
+      - -s -w
+      - -X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}
+      - -X github.com/spacedock-dev/spacedock/internal/cli.devBranch=main
+  - id: spacedock-edge
+    main: ./cmd/spacedock
+    binary: spacedock
+    env:
+      - CGO_ENABLED=0
+    goos: *channel-goos
+    goarch: *channel-goarch
+    # The EDGE channel binds to `next`: the `spacedock@next` cask installs the
+    # `next` plugin. Same Version stamp as stable; only the devBranch ldflag
+    # differs (the sole per-channel knob).
     ldflags:
       - -s -w
       - -X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}
@@ -42,10 +64,21 @@ archives:
   # install.sh: spacedock_{version}_{darwin|linux}_{arm64|amd64}.tar.gz, with the
   # bare `spacedock` binary at the archive root (no wrapping directory) so
   # `bin.install "spacedock"` (cask) and install.sh's tar-extract both resolve.
-  - id: spacedock
+  # One archive per channel build; the edge archive carries an `-edge` suffix so
+  # the two channels' assets never collide in the release.
+  - id: spacedock-stable
+    ids:
+      - spacedock-stable
     formats:
       - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: false
+  - id: spacedock-edge
+    ids:
+      - spacedock-edge
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}_edge"
     wrap_in_directory: false
 
 checksum:
@@ -63,8 +96,14 @@ homebrew_casks:
   # release, pinning the per-arch url + sha256 from the release assets +
   # checksums.txt — the seam the homebrew-tap entity consumes. `brews:` is
   # hard-deprecated at goreleaser v2.16; casks auto-detect the bare `spacedock`
-  # binary from the archive root, so no install/test stanza is given.
+  # binary from the archive root, so no install/test stanza is given. Two casks
+  # ship per release: the STABLE `spacedock` cask (from the stable archive,
+  # installs the `main` plugin) and the EDGE `spacedock@next` cask (from the edge
+  # archive, installs the `next` plugin). Each pins ONLY its own channel's archive
+  # via `ids: [<archive-id>]` so the two casks never cross-pin.
   - name: spacedock
+    ids:
+      - spacedock-stable
     repository:
       owner: spacedock-dev
       name: homebrew-tap
@@ -83,6 +122,28 @@ homebrew_casks:
       # download carries com.apple.quarantine and Gatekeeper kills the first
       # launch. Strip the attribute from the staged binary so the user needs no
       # manual step. Interim until a Developer ID notarized build lands.
+      post:
+        install: |
+          system_command "/usr/bin/xattr",
+                         args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
+  # The EDGE cask: `brew install spacedock-dev/tap/spacedock@next` ships the
+  # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
+  # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
+  - name: spacedock@next
+    ids:
+      - spacedock-edge
+    repository:
+      owner: spacedock-dev
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/spacedock-dev/spacedock
+    description: Workflow launcher and first-officer dispatch for agentic dev (edge channel)
+    license: Apache-2.0
+    caveats: |
+      Recommended companions (not installed by brew):
+        safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
+        agentsview — powers /spacedock:survey
+    hooks:
       post:
         install: |
           system_command "/usr/bin/xattr",

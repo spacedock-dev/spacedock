@@ -186,17 +186,22 @@ jobs:
 
       # AC-4: stamp the plugin manifests' `version` to the release so the host
       # plugin panel (`claude plugin list --json`) displays a version that tracks
-      # the binary instead of the frozen placeholder. The displayed version is
-      # pulled from plugin.json on the `next` ref (the marketplace source), so the
-      # stamp must commit to `next` — not goreleaser's transient working tree. The
-      # marketplace-entry calendar key is a DIFFERENT file (marketplace.json) and
-      # is left untouched here; it is the moving-branch re-pull key (AC-2d).
+      # the binary instead of the frozen placeholder. release.yml triggers ONLY on
+      # a `push: tags: ['v*']` cut, which carries no channel signal and has no edge
+      # `v*`-tag scheme — so exactly ONE thing reaches this step: a STABLE release.
+      # The stable channel's plugin lives on `main` (the stable binary stamps
+      # devBranch=main), so the displayed version must be stamped+pushed to `main`,
+      # not the edge `next` branch. This is a single-target stamp, not a
+      # per-channel branch; the edge channel's version-display rides the unchanged
+      # next-publish.yml, with no involvement here. The marketplace-entry calendar
+      # key is a DIFFERENT file (marketplace.json) and is left untouched here; it is
+      # the moving-branch re-pull key (AC-2d), pj's surface.
       - name: Stamp plugin manifests to the release version
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
-          git fetch origin next
-          git switch next
+          git fetch origin main
+          git switch main
           go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
             .claude-plugin/plugin.json .codex-plugin/plugin.json
           if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
@@ -207,4 +212,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git commit -m "release: stamp plugin manifests to $RELEASE_VERSION" \
             -- .claude-plugin/plugin.json .codex-plugin/plugin.json
-          git push origin next
+          git push origin main
