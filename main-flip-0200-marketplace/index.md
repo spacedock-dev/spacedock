@@ -1,12 +1,12 @@
 ---
 id: pj6k0h83g6taszkmt92qvsc0
 title: Main-flip milestone — cut 0.20.0 on main + flip the marketplace once 0.19.6 is tested
-status: implementation
+status: done
 source: "captain (2026-06-05) — '0.19.6: flip main readiness — once tested i want to make 0.20.0 on main and flip the marketplace.' The capstone of the 0.19.6 line."
 score: "0.38"
 started: 2026-06-08T22:48:35Z
-completed:
-verdict:
+completed: 2026-06-09T06:51:51Z
+verdict: PASSED
 worktree:
 issue:
 sprint: 0200-flip
