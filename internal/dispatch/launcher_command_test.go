@@ -49,7 +49,7 @@ func TestLauncherCommandFallsBackToPathWhenSpacedockBinUnsetEmptyOrUnusable(t *t
 func runLauncherCommand(t *testing.T, env []string, pathDirs []string, arg string) string {
 	t.Helper()
 	cmd := exec.Command("sh", "-c", LauncherCommand()+" "+arg)
-	cmd.Env = append(os.Environ(), env...)
+	cmd.Env = append(environWithoutSpacedockBin(), env...)
 	if pathDirs != nil {
 		cmd.Env = append(cmd.Env, "PATH="+strings.Join(pathDirs, string(os.PathListSeparator)))
 	}
@@ -58,6 +58,22 @@ func runLauncherCommand(t *testing.T, env []string, pathDirs []string, arg strin
 		t.Fatalf("launcher command failed: %v\n%s", err, out)
 	}
 	return string(out)
+}
+
+// environWithoutSpacedockBin returns the process environment with any
+// SPACEDOCK_BIN entry stripped so each subcase fully controls the value it sets,
+// keeping the launcher tests hermetic to an ambient SPACEDOCK_BIN (as present
+// under a spacedock claude/codex session).
+func environWithoutSpacedockBin() []string {
+	environ := os.Environ()
+	filtered := make([]string, 0, len(environ))
+	for _, entry := range environ {
+		if strings.HasPrefix(entry, "SPACEDOCK_BIN=") {
+			continue
+		}
+		filtered = append(filtered, entry)
+	}
+	return filtered
 }
 
 func writeExecutable(t *testing.T, dir, name, body string) string {
