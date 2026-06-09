@@ -136,40 +136,47 @@ func noPluginRemedy(host string) string {
 // one-line orientation pointer. Callers suppress it on a resume (the operator is
 // continuing a session, not starting one).
 func launchBanner(host, dir string, w io.Writer) {
-	fmt.Fprintf(w, "spacedock %s · first officer launching %s\n", Version, host)
-	fmt.Fprintf(w, "Workflow: %s\n", detectedWorkflow(dir))
-	fmt.Fprintf(w, "%s is starting as your first officer; run `spacedock status` inside the session for the queue.\n", host)
+	label, value := detectedWorkflow(dir)
+	fmt.Fprintf(w, "spacedock %s · launching %s as your first officer\n", Version, host)
+	fmt.Fprintf(w, "%s: %s\n", label, value)
+	fmt.Fprintf(w, "%s is your first officer — ask it for the queue and next steps.\n", host)
 }
 
 // detectedWorkflow names the workflow the launch belongs to, found from ANY
-// launch dir. When dir is inside a git repo, the whole repo is scanned downward
-// (status.DiscoverWorkflows, which prunes the linked/agent-worktree + VCS noise),
-// so launching from the repo root resolves the repo's real workflow rather than
-// missing it. A single workflow is named by its path relative to the repo root
-// (e.g. `docs/dev`); two or more report the count plus a pointer to `spacedock
-// status`. With no enclosing git repo, a bounded walk-up names a workflow at or
-// above dir. The result is never the cwd-relative `.`/`..`; "none detected
-// (launching anyway)" is shown when no workflow is found.
-func detectedWorkflow(dir string) string {
-	const noneDetected = "none detected (launching anyway)"
+// launch dir, returning the banner's line-2 label ("Workflow"/"Workflows") and its
+// value so the label agrees with the content. When dir is inside a git repo, the
+// whole repo is scanned downward (status.DiscoverWorkflows, which prunes the
+// linked/agent-worktree + VCS noise), so launching from the repo root resolves the
+// repo's real workflow rather than missing it. A single workflow is named by its
+// path relative to the repo root (e.g. `docs/dev`); two or more list the detected
+// paths space-separated in discovery order (`Workflows: docs/dev docs/user-testing`),
+// the first officer disambiguating in-session. With no enclosing git repo, a
+// bounded walk-up names a workflow at or above dir. The value is never the
+// cwd-relative `.`/`..`; "none detected" is shown when no workflow is found.
+func detectedWorkflow(dir string) (label, value string) {
+	const noneDetected = "none detected"
 	repoRoot := status.FindGitRoot(dir)
 	gitEntry := filepath.Join(repoRoot, ".git")
 	if dirExists(gitEntry) || fileExists(gitEntry) { // .git is a dir (repo) or a file (worktree gitlink)
 		workflows := status.DiscoverWorkflows(repoRoot)
 		switch len(workflows) {
 		case 0:
-			return noneDetected
+			return "Workflow", noneDetected
 		case 1:
-			return workflowLabel(repoRoot, workflows[0])
+			return "Workflow", workflowLabel(repoRoot, workflows[0])
 		default:
-			return fmt.Sprintf("%d workflows detected (run `spacedock status` to pick)", len(workflows))
+			labels := make([]string, len(workflows))
+			for i, wf := range workflows {
+				labels[i] = workflowLabel(repoRoot, wf)
+			}
+			return "Workflows", strings.Join(labels, " ")
 		}
 	}
 	// No enclosing git repo: a bounded walk-up names a workflow at or above dir.
 	if workflowDir, ok := status.DiscoverWorkflowDir(dir); ok {
-		return workflowLabel(repoRoot, workflowDir)
+		return "Workflow", workflowLabel(repoRoot, workflowDir)
 	}
-	return noneDetected
+	return "Workflow", noneDetected
 }
 
 // workflowLabel renders a workflow dir as a recognizable path relative to base

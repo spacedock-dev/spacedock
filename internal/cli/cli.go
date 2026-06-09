@@ -23,9 +23,11 @@ import (
 // the release pipeline via -ldflags "-X
 // github.com/spacedock-dev/spacedock/internal/cli.Version=$(git describe --tags --always)".
 // It is a var (not a const) because the linker can only write package-level vars;
-// a const is silently ignored by -X. The default is the current release version,
-// overwritten by the git-describe tag on a stamped release build.
-var Version = "0.19.0"
+// a const is silently ignored by -X. The default is the `dev` sentinel so an
+// unstamped `go build`/`go install` binary reads honestly as a dev build rather
+// than impersonating a stale release; the git-describe tag overwrites it on a
+// stamped release build.
+var Version = "dev"
 
 // tagline is the one-line product description rendered as the first help line.
 const tagline = "spacedock — agentic workflow launcher"
