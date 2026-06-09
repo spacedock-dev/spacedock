@@ -1,13 +1,13 @@
 ---
 id: k6d5xtg9hrxjcajrqyxnfah4
 title: Two-channel release (stable→main / edge spacedock@next→next) + per-channel devBranch stamp + next-publish
-status: ideation
+status: implementation
 source: "FO OWED, carried from the 2026-06-08-01 + 2026-06-08-02 debriefs (captain-nodded to file 2026-06-08). z9 (codex-plugin-auto-install) + #311 (Claude auto-install) install the plugin from the shared devBranch; the 0.20.0 flip needs each released channel's binary to install ITS OWN channel's plugin. Flip release-mechanics — a prerequisite of pj (main-flip-0200-marketplace), not a 0198 task."
 started: 2026-06-08T22:48:35Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-two-channel-release-devbranch-stamp
 issue:
 sprint: 0200-flip
 group: flip-mechanics
