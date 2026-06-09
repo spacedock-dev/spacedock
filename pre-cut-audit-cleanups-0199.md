@@ -1,6 +1,6 @@
 ---
 id: 5ar2193yw8sv0rcyrt23wxg9
-title: Pre-cut audit cleanups (0.19.9) — checksum-gate test, darwin-only doc drift, gofmt, hasGitEntry comment
+title: Pre-cut audit cleanups (0.19.9) — checksum-gate test, darwin-only doc drift, gofmt, hasGitEntry comment, node-action bump
 status: backlog
 source: "0.19.9 pre-cut antipattern audit (Commander staff review, 2026-06-08) — four recorded non-blockers, none gated the 0.19.9 tag. Seeded per the roadmap Close step."
 started:
@@ -25,6 +25,8 @@ Four non-blocking findings the 0.19.9 pre-cut antipattern audit recorded (none b
 3. **gofmt drift** on `skills/integration/survey_sync_codex_test.go` (pre-existing, cosmetic). `gofmt -w` to clear.
 
 4. **`hasGitEntry`'s only unmasked guard** is the single `TestDiscoverWorkflowsSkipsNestedCheckout` — add a cross-reference comment so a future edit knows that test is what protects it.
+
+5. **Node-20 GitHub Actions deprecation — time-sensitive (≈2026-06-16).** The `v0.19.9` release run warned that `actions/checkout@v4`, `actions/setup-go@v5`, and `goreleaser/goreleaser-action@v6` are forced to Node-24 starting **2026-06-16** ("may not work as expected"). Bump these actions (and any sibling Node-20 actions across the workflows) to Node-24-compatible versions **before** the 0.20.0 flip cut runs `release.yml` — or before 2026-06-16, whichever comes first. Priority alongside #1, because the flip cut depends on a healthy `release.yml`.
 
 ## Out of scope
 
