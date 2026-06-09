@@ -14,6 +14,7 @@ group: flip-mechanics
 sprint-readiness:
 mod-block:
 pr: "#339"
+archived: 2026-06-09T03:02:35Z
 ---
 
 Make each released spacedock channel auto-install the plugin from its own channel: the stable binary installs the `main` plugin, the edge binary installs the `next` plugin. Today there is one channel and `devBranch` is hardcoded `next`, so after the flip a stable binary would still install the `next` plugin.
