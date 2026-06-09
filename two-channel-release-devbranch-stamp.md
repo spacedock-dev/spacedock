@@ -12,7 +12,7 @@ issue:
 sprint: 0200-flip
 group: flip-mechanics
 sprint-readiness:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#339"
 ---
 
