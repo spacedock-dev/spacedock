@@ -1,7 +1,7 @@
 ---
 id: wvyqyybd2vvknehb1a8ak9kr
 title: MkDocs Material docs site + GitHub Pages publish
-status: implementation
+status: validation
 source: "captain (2026-06-06) - install-journey should be part of a complete public-facing docs site; organize docs so they actually build the site. Fast-follow to nb (readme-main-flip-reconciliation), which ships the reader-first README + reworked install content."
 started: 2026-06-09T02:55:57Z
 completed:
