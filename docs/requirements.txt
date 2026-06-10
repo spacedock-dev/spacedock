@@ -1,0 +1,5 @@
+# Pinned build dependencies for the Spacedock docs site.
+# Installed by the Pages workflow and locally for `mkdocs build --strict`.
+mkdocs==1.6.1
+mkdocs-material==9.6.21
+mkdocs-llmstxt==0.3.0

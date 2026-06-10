@@ -1,0 +1,62 @@
+# Builds the MkDocs Material docs site with `--strict` and publishes it to GitHub
+# Pages. The strict build runs on every PR as a check so a broken nav entry or
+# internal link fails before merge; on push to the stable branch (main) the built
+# site deploys to Pages.
+name: docs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Allow only one concurrent deployment; do not cancel an in-progress run so a
+# deploy completes before the next starts.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Strict build. Runs on PRs and pushes alike, so the same gate that protects
+  # merges also produces the artifact the deploy job publishes.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install docs dependencies
+        run: pip install -r docs/requirements.txt
+
+      - name: Build the site (strict)
+        run: mkdocs build --strict
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  # Deploy only on push to the stable branch. PRs run the build gate above but
+  # never deploy.
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

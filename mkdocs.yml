@@ -1,0 +1,99 @@
+site_name: Spacedock
+site_description: A multi-agent orchestrator where nothing ships without a decision.
+site_url: https://spacedock-dev.github.io/spacedock/
+repo_url: https://github.com/spacedock-dev/spacedock
+repo_name: spacedock-dev/spacedock
+copyright: Spacedock is released under the Apache License 2.0.
+
+docs_dir: docs/site
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - content.code.copy
+    - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.instant
+
+plugins:
+  - search
+  - llmstxt:
+      markdown_description: >-
+        Documentation for Spacedock, a multi-agent orchestrator where nothing
+        ships without a decision. It lives within your existing coding harness
+        (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an
+        evidenced decision at each gate.
+      sections:
+        Get started:
+          - index.md
+          - get-started/*.md
+        Concepts:
+          - concepts/*.md
+        Running workflows:
+          - running-workflows/*.md
+        Advanced topics:
+          - advanced/*.md
+        Reference:
+          - reference/*.md
+        Contributing:
+          - contributing/*.md
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Install: get-started/install.md
+      - Your first launch: get-started/first-launch.md
+      - Your first workflow: get-started/first-workflow.md
+  - Concepts:
+      - The operating model: concepts/operating-model.md
+      - Workflows & entities: concepts/workflows-and-entities.md
+      - The stage lifecycle: concepts/stage-lifecycle.md
+      - Gates & decisions: concepts/gates-and-decisions.md
+      - A worked example: concepts/worked-example.md
+  - Running workflows:
+      - Commission a workflow: running-workflows/commission.md
+      - Survey an existing project: running-workflows/survey.md
+      - Operating a workflow: running-workflows/operating.md
+      - Debrief & refit: running-workflows/debrief-and-refit.md
+  - Advanced topics:
+      - Sprints & roadmap: advanced/sprints-and-roadmap.md
+      - Mods & standing teammates: advanced/mods-and-standing-teammates.md
+      - External-tracker bridge: advanced/external-tracker.md
+      - Multi-workflow & split-root state: advanced/split-root-state.md
+  - Reference:
+      - Command reference: reference/command-reference.md
+      - Frontmatter contract: reference/frontmatter-contract.md
+      - Multi-host support: reference/multi-host.md
+  - Contributing:
+      - The development workflow: contributing/development-workflow.md
+      - Agent development: contributing/agent-development.md
+      - Proof policy: contributing/proof-policy.md
+      - Adding a runtime: contributing/adding-a-runtime.md
+      - Releasing: contributing/releasing.md
+      - Voice & tone: contributing/voice-and-tone.md
+      - Architecture notes: contributing/architecture-notes.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
