@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-mkdocs-material-docs-site
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#341"
 ---
 
