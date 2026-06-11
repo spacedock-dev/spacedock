@@ -5,7 +5,7 @@ status: done
 source: "captain (2026-06-08) — follow-up to the survey signal-correction (xn). The scaffold reporting carries a recovered-vs-installed taxonomy; just state the observed scaffold fact (what was used + whether it's checked in)."
 score: "0.2"
 started:
-completed:
+completed: 2026-06-11T15:20:44Z
 verdict: superseded
 worktree:
 issue:
@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: survey
 sprint-readiness: defer
 superseded-by: survey-skill-correctness-pass
+archived: 2026-06-11T15:20:44Z
 ---
 
 Follow-up to xn (survey-signal-correction): simplify the survey's SCAFFOLD reporting.

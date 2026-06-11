@@ -5,7 +5,7 @@ status: done
 source: "captain (2026-06-08) — agentsview ingests Codex sessions and derives project but does NOT persist Codex cwd into sessions.cwd, so the survey's cwd-scoped repo-identity query misses all Codex sessions. Decision: work around it in OUR survey skill with a fallback/hint, not fix agentsview."
 score: "0.28"
 started: 2026-06-08T15:29:12Z
-completed:
+completed: 2026-06-11T15:20:44Z
 verdict: superseded
 worktree:
 issue:
@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: survey
 sprint-readiness: defer
 superseded-by: survey-skill-correctness-pass
+archived: 2026-06-11T15:20:44Z
 ---
 
 The survey's repo-identity scoping (the `git rev-parse --git-common-dir` coalesce, xn) scopes by `sessions.cwd`. agentsview does not persist Codex `cwd`, so cwd-scoped queries miss all Codex sessions even if the Claude-only `agent` filter were broadened. Work around it survey-side with a presence count and a hint; do not fix agentsview.

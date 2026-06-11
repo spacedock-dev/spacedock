@@ -5,7 +5,7 @@ status: done
 source: "captain manual install-path test (2026-06-08) — running /spacedock:survey under sandbox, the skill detected agentsview as NOT installed and asked to `brew install --cask agentsview`, but `agentsview --version` → v0.32.1 (installed). The detection is sandbox-flawed."
 score: "0.27"
 started: 2026-06-08T15:48:51Z
-completed:
+completed: 2026-06-11T15:20:44Z
 verdict: superseded
 worktree:
 issue:
@@ -13,6 +13,7 @@ sprint: 0198-pre-flip-hardening
 group: survey
 sprint-readiness: defer
 superseded-by: survey-skill-correctness-pass
+archived: 2026-06-11T15:20:44Z
 ---
 
 Under sandbox, the survey skill's agentsview-installed detection gives a false negative — it reports agentsview missing (and prompts to install) even though `agentsview --version` succeeds.
