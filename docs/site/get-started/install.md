@@ -86,7 +86,7 @@ sandboxed. To set up the plugin ahead of time, or to refresh it later, run
 With Codex or Pi, launch with the matching subcommand instead:
 `spacedock codex "your task"` or `spacedock pi "your task"`.
 
-Working on Spacedock itself? See [Build from source](../contributing/build-from-source.md).
+Working on Spacedock itself? See [Build from source](https://github.com/spacedock-dev/spacedock/blob/next/docs/site/contributing/build-from-source.md).
 It builds the launcher from the `next` branch and loads the plugin from your
 checkout so local edits are live.
 

@@ -8,7 +8,7 @@ decides at each one.
 
 The workflow is `docs/dev` (the Spacedock v1 dev workflow); its stages, gates,
 and entity schema are defined in
-[the development workflow reference](../contributing/development-workflow.md).
+[the development workflow README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md).
 Runtime entity state lives in a separate `.spacedock-state` checkout, so the
 finished entity itself is not in the main tree, but its full trajectory is on
 the record in the `0198-pre-flip-hardening` sprint directory: `index.md`,

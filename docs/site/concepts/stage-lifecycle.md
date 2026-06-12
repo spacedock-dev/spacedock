@@ -2,7 +2,7 @@
 
 An entity moves through an ordered chain of stages that the workflow defines, one at a time, and each stage declares the work it owns and the proof it must produce. The dev workflow's chain is `backlog → ideation → implementation → validation → done`; your own workflow names its own stages, but the mechanics are the same. The first officer advances an entity stage by stage, dispatching one ensign per stage and pausing at the gates you declared.
 
-The stage order, names, and per-stage properties live in the workflow README's frontmatter under `stages.states`. This page uses the dev workflow (`docs/site/contributing/development-workflow.md`) as the running example; read that page for the full per-stage Inputs/Outputs/Good/Bad detail.
+The stage order, names, and per-stage properties live in the workflow README's frontmatter under `stages.states`. This page uses the dev workflow ([`docs/dev/README.md`](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md)) as the running example; read that README for the full per-stage Inputs/Outputs/Good/Bad detail.
 
 ## What a stage declares
 

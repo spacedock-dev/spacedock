@@ -193,5 +193,5 @@ Builds the worker dispatch artifacts the first officer hands an ensign. `build`
 assembles the assignment (requires `--workflow-dir` unless `--print-schema` or
 validate-only); `show-stage-def` prints a stage's definition (`--workflow-dir`
 and `--stage`). A missing or unknown subcommand exits 2. See
-[Adding a runtime](../contributing/adding-a-runtime.md) for how `dispatch build`
-learns a new host mode.
+[Adding a runtime](https://github.com/spacedock-dev/spacedock/blob/next/docs/site/contributing/adding-a-runtime.md)
+for how `dispatch build` learns a new host mode.

@@ -7,9 +7,11 @@ copyright: Spacedock is released under the Apache License 2.0.
 
 docs_dir: docs/site
 
-# Internal authoring directive (CLAUDE.md), not a published page.
+# Internal authoring directive (AGENTS.md), not a published page.
+# Contributor docs are not hosted on the site; the repo is their source of truth.
 exclude_docs: |
-  CLAUDE.md
+  AGENTS.md
+  contributing/
 
 theme:
   name: material
@@ -88,15 +90,7 @@ nav:
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
-  - Contributing:
-      - The development workflow: contributing/development-workflow.md
-      - Build from source: contributing/build-from-source.md
-      - Agent development: contributing/agent-development.md
-      - Proof policy: contributing/proof-policy.md
-      - Adding a runtime: contributing/adding-a-runtime.md
-      - Releasing: contributing/releasing.md
-      - Voice & tone: contributing/voice-and-tone.md
-      - Architecture notes: contributing/architecture-notes.md
+  - Contributing: https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md
 
 extra_css:
   - stylesheets/tokens.css
