@@ -1,42 +1,19 @@
 # Survey your project
 
-Survey orients you in a project your agents have already been working in: what
-they have been doing, and the decisions still waiting on you.
-[Install](install.md) covers launching it.
-
-## What survey reads
-
-Survey reads your recorded agent sessions and nothing else on disk. It is
-read-only and scoped to this repo and every checkout of it. It reads the
-sessions through `agentsview`, a session-history tool; if the tool is missing,
-survey asks before installing it. If the repo has no agent history, survey
-says so and stops.
+When you use the `spacedock:survey` skill, it looks at your existing agent
+conversation logs on local disk (through [agentsview](https://agentsview.io/),
+an open source session-history tool). It is read-only; if `agentsview` is
+missing, it asks before installing it.
 
 ## What it reports
 
-A one-line headline (project, sessions, date range, decision and interruption
-counts), then:
-
-- **Needs you.** The open decisions: forks raised but never resolved. These
-  lead the report because they are the work blocked on you. Threads you are
-  deliberately holding are separated from questions awaiting an answer.
-- **Inferred workflow.** The loop you have been running without naming it, as
-  an arrow chain, with one honest line about it.
-- **Workstreams.** Your decisions and prompts clustered into tracks.
-- **Work by area.** Where edits actually landed (`src`, `docs`, …);
-  config-only paths drop to a footnote.
-- **Recent decisions** and **interruptions**: the answered forks, and how
-  often you had to step in.
-- **Scaffold.** Another agent scaffold in use (superpowers, gsd, another
-  `.claude` skill tree) is stated as a fact.
-- **Codex** (when present). Codex sessions get their own section.
-
-An empty section says so plainly.
-
-Open decisions are cross-checked against the repo before they reach you: forks
-that already shipped are dropped, decided-but-unshipped ones move to a backlog
-line, and only the never-decided stay on the frontier. With no repo signal to
-check against, open forks are flagged `unverified`.
+- **The repeated manual behavior**: the loop you have been driving by hand,
+  run after run, without naming it.
+- **The steering and interruptions observed**: how often your agents needed
+  you to step in, and for what.
+- **Your current workstreams**: what is in flight, clustered into tracks.
+- **What is still undecided**: forks raised but never resolved, cross-checked
+  against the repo first so work that already shipped is dropped.
 
 ## The commission offer
 
