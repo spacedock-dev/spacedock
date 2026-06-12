@@ -4,7 +4,7 @@ An entity moves through an ordered chain of stages that the workflow defines, on
 
 ## The dev workflow's stages
 
-This page uses the dev workflow as the running example. Its five stages below are this workflow's stages, not a canonical set; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
+The five stages below are the dev workflow's own, the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
 
 - **`backlog`, the seed.** An entity enters here when first proposed: a title, a source, a brief description, and the test gates future stages must satisfy. No design work yet. `initial: true`, so this is where every new entity starts. The dev workflow also marks it `gate: true`, so the first officer presents a new entity for your go-ahead before it advances.
 - **`ideation`, the design.** A worker clarifies the problem, explores approaches, and produces a fleshed-out body: problem statement, proposed approach, acceptance criteria, and a test plan. Each acceptance criterion names how it will be checked. This stage is `gate: true` in the dev workflow, so the first officer presents the design for your approval before any code is written.
@@ -49,17 +49,13 @@ The mechanics, run by the first officer:
 To see where each entity sits and which are ready to advance, read the workflow state:
 
 ```bash
-spacedock status --workflow-dir docs/dev
-```
-
-```bash
 spacedock status --workflow-dir docs/dev --next
 ```
 
-`--next` lists the entities ready for dispatch, the query the first officer runs each loop. The `worktree` column shows the isolated checkout path for any entity currently mid-stage in a worktree-backed stage.
+`--next` lists the entities ready for dispatch, the query the first officer runs each loop; drop it for the full queue. The `worktree` column shows the isolated checkout path for any entity currently mid-stage in a worktree-backed stage.
 
 ## Where to go next
 
-- The roles that drive this pipeline (captain, first officer, ensign) are in [the operating model](operating-model.md).
-- The decision points at stage boundaries are covered in [gates and decisions](gates-and-decisions.md).
-- The entity frontmatter these stages update is in the [frontmatter contract](../reference/frontmatter-contract.md).
+- [The operating model](operating-model.md) names the roles that drive this pipeline: captain, first officer, ensign.
+- [Gates and decisions](gates-and-decisions.md) covers the decision points at stage boundaries.
+- The [frontmatter contract](../reference/frontmatter-contract.md) lists the entity fields these stages update.

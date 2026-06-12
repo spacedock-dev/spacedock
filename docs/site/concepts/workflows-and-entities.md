@@ -34,13 +34,7 @@ stages:
 ---
 ```
 
-Each `states` entry is one stage. The per-stage flags decide behavior:
-
-- **`initial: true`** marks where a new entity starts; **`terminal: true`** marks where it ends.
-- **`gate: true`** makes the stage end at a gate: the first officer pauses and presents a decision instead of advancing on its own.
-- **`worktree: true`** runs the stage in its own git worktree, so stages that touch shared state stay isolated. Lighter stages run inline.
-- **`fresh: true`** dispatches the stage with no access to the prior worker's reasoning. Use it for review stages so the maker doesn't judge its own work.
-- **`feedback-to: <stage>`** names where rejected work bounces back to for revision.
+Each `states` entry is one stage. Its flags decide where an entity starts and ends (`initial`, `terminal`), which stages pause for your call (`gate`), which run in an isolated worktree (`worktree`), which get a reviewer with no access to the maker's reasoning (`fresh`), and where rejected work bounces back to (`feedback-to`). [What a stage declares](stage-lifecycle.md#what-a-stage-declares) defines every property.
 
 The README body documents each stage with `Inputs`, `Outputs`, `Good`, and `Bad`. That prose is the living spec; every dispatched ensign works from it. Tighten it to your actual bar before the first dispatch; editing it after agents have run against vague prose costs more.
 
@@ -74,11 +68,7 @@ The frontmatter parser is line-oriented: keep fields flat and top-level. If a wo
 spacedock status --workflow-dir docs/dev
 ```
 
-To list only the entities ready for dispatch, run the query the first officer runs each loop:
-
-```bash
-spacedock status --workflow-dir docs/dev --next
-```
+Add `--next` to list only the entities ready for dispatch.
 
 ## Where entities live: the state checkout
 
