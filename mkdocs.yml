@@ -67,8 +67,8 @@ plugins:
           - reference/*.md
 
 nav:
-  - Home: index.md
   - Get started:
+      - Welcome: index.md
       - Install: get-started/install.md
       - Your first launch: get-started/first-launch.md
       - Your first workflow: get-started/first-workflow.md
