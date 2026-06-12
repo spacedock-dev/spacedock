@@ -58,4 +58,4 @@ To run the workflow in any later session, launch the first officer again:
 spacedock claude
 ```
 
-It reads the workflow state, picks up where the last session left off, and dispatches agents for any entity ready for its next stage. Day-to-day operation (seeing what is ready, dispatching, and handling gate decisions) is covered in [Operating a workflow](operating.md).
+It reads the workflow state, picks up where the last session left off, and dispatches agents for any entity ready for its next stage. [Operating a workflow](operating.md) covers the day-to-day loop: seeing what is ready, dispatching, and handling gate decisions.
