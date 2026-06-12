@@ -1,11 +1,15 @@
 /* ABOUTME: C2 brand layer for Material docs. */
 /* ABOUTME: Maps C2 tokens to Material surfaces; loaded after tokens.css. No hardcoded values. */
 
-/* Header/footer chrome -- matches landing nav bg + border */
+/* Header/footer chrome -- matches landing nav bg + border. Text colour must
+   travel with the repainted background: Material defaults header/tabs text
+   to the primary-bg alias (ink-on-gold), which is dark-on-dark over the
+   slate bg-2; --fg flips with the scheme like the landing nav wordmark. */
 .md-header,
 .md-tabs {
   background-color: var(--bg-2);
   border-bottom: 1px solid var(--line-soft);
+  color: var(--fg);
 }
 
 .md-footer {

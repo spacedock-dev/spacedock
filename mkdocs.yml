@@ -10,7 +10,7 @@ docs_dir: docs/site
 theme:
   name: material
   custom_dir: overrides
-  logo: brand/logo-mono.svg
+  logo: brand/logo.svg
   favicon: brand/favicon.svg
   font:
     text: Hanken Grotesk
