@@ -1,6 +1,6 @@
 # Survey an existing project
 
-`/spacedock:survey` reads a brownfield project's agent history and reports what the agents have implicitly been doing (read-only), then offers to commission a workflow from what it found. Run it when you arrive at or return to a repo that already has agent sessions and want the lay of the land before doing anything else. It never edits your files; the only stop in the flow is the commission offer at the end.
+`/spacedock:survey` reads a brownfield project's agent history and reports what the agents have implicitly been doing, then offers to commission a workflow from what it found. Run it when you arrive at or return to a repo that already has agent sessions and want the lay of the land before doing anything else. It never edits your files; the only stop in the flow is the commission offer at the end.
 
 Survey is the recommended first launch. Point Spacedock at a project and hand it the survey skill:
 
@@ -31,7 +31,7 @@ Survey leads with a one-line headline (the project, the session count, the date 
 - **Needs you.** The open decisions, the forks raised but never resolved. **Survey leads the report with these**, because they are the work blocked on you. Exploration threads you are deliberately holding are separated from mechanical questions awaiting an answer.
 - **Recent decisions** and **interruptions**: the answered or shipped forks, and how often you had to step in.
 - **Scaffold.** If another agent scaffold is in use (superpowers, gsd / get-shit-done, or another `.claude` skill tree), survey states it as a fact: the family, its invocation count, and whether it is checked in on disk.
-- **Codex** (only when present). Codex sessions land with no recorded working directory, so survey attributes them to this repo through each command's working directory and reports them as their own section: a session count, the workstream clusters, and an activity tally. Gemini is a deferred follow-up.
+- **Codex** (only when present). Codex sessions land with no recorded working directory, so survey attributes them to this repo through each command's working directory and reports them as their own section: a session count, the workstream clusters, and an activity tally.
 
 If a section's signal is empty, survey says the run found none of it. It never dresses an empty section up as "no decisions".
 
