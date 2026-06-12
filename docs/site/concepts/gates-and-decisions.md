@@ -4,7 +4,7 @@ A gate is the decision point at the end of a stage where nothing advances withou
 
 ## What a gate carries
 
-The first officer presents a gate review only after it has read the worker's `## Stage Report`, checked every dispatched item, and counted the results. The review is the first officer's own prose with a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
+The first officer presents a gate review only after it has read the worker's `## Stage Report`, checked every dispatched item, and counted the results. The review is the first officer's prose with a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
 
 A gate review looks like this:
 
@@ -27,7 +27,7 @@ Assessment: {N} done, {N} skipped, {N} failed.
 Decision: {what approval/rejection does in concrete terms}.
 ```
 
-Read it as follows:
+Reading the fields:
 
 - **`Chosen direction` names what the worker picked**, so you do not have to open the entity file to learn it. Ideation picks an approach; validation picks PASS or REJECTED. Stages with no choice to make show `n/a`.
 - **`Recommend` is the first officer's verdict, stated exactly once.**
@@ -47,7 +47,7 @@ You answer a gate with one of three calls.
 
 A redo and a reject at a `feedback-to` stage run the same routing machinery. The difference is whether you are correcting a direction you accept or sending it back. Both name the concrete fix asks so the next worker has something to act on.
 
-**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the outcome must be on the record. The mechanics are in the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields).
+**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the outcome must be on the record. See the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields) for the mechanics.
 
 ## Feedback cycles and the loop cap
 
@@ -70,7 +70,7 @@ The audit triggers on four surfaces: the front-door launcher (`spacedock claude`
 
 It runs on a separate throwaway checkout, never the implementation worktree, and never mutates the deliverable. The auditor tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. Findings come in two tiers, `Material` and `Polish`; "refuted nothing material" is a valid recorded outcome.
 
-Results feed the same gate machinery you already know:
+Results feed the same gate machinery:
 
 - **Material findings route back through the normal validation-to-implementation feedback flow**, with a `### Feedback Cycles` entry naming the audit and its adversarial edit. The gate is not presented as clean until they are closed.
 - **A clean audit is noted in the gate's reviewer-findings block**, or as a one-line "detached audit: no material findings".
