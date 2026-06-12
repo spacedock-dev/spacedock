@@ -36,8 +36,7 @@ Replace `claude` with `codex` or `pi` for the respective coding agents.
 
 ## Skills
 
-Spacedock installs the relevant skills on launch, but you can also install
-them manually:
+Spacedock installs the relevant skills on launch. To install them manually:
 
 ```bash
 claude plugin marketplace add spacedock-dev/spacedock
