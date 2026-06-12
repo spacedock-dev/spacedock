@@ -1,21 +1,16 @@
-# Your first launch
+# Survey your project
 
-One command orients you in a project you already have:
-
-```bash
-spacedock claude "/spacedock:survey"
-```
-
-Claude Code opens with Spacedock loaded and surveys the project: what your
-agents have been doing, and the decisions still waiting on you.
+Survey orients you in a project your agents have already been working in: what
+they have been doing, and the decisions still waiting on you.
+[Install](install.md) covers launching it.
 
 ## What survey reads
 
-Survey reads your recorded agent sessions, read-only, scoped to this repo and
-every checkout of it, and nothing else on disk. It reads them through
-`agentsview`, a session-history tool; if the tool is missing, survey asks
-before installing it. If the repo has no agent history, survey says so and
-stops.
+Survey reads your recorded agent sessions and nothing else on disk. It is
+read-only and scoped to this repo and every checkout of it. It reads the
+sessions through `agentsview`, a session-history tool; if the tool is missing,
+survey asks before installing it. If the repo has no agent history, survey
+says so and stops.
 
 ## What it reports
 
@@ -61,27 +56,10 @@ The offer matches the work it saw, citing real numbers from the scan:
   gets a book-keeping offer: structure for the parallel threads and their
   state. There is no automate-the-human-out pitch; the involvement is the work.
 
-On a **yes**, survey hands what it found to commission: the inferred loop
+On a **yes**, the workflow is built from what survey found: the inferred loop
 becomes the proposed stages, the workstreams become the seed work items, and
 the open forks become the gates. On a **no**, it stops; the survey stands on
 its own as orientation.
 
 To define a workflow yourself instead, see
 [your first workflow](first-workflow.md).
-
-## The command grammar
-
-Every launch uses the same shape:
-
-```bash
-spacedock claude "task" [--safehouse…] [-- host-flags…]
-```
-
-- **The task comes first** and becomes the launch prompt. `/spacedock:survey`
-  is a skill; a plain sentence describing work works just as well.
-- **`--safehouse` forces the [sandbox](../reference/sandbox.md).** A
-  `.safehouse` profile in the working directory does it automatically.
-- **Anything after `--` goes to Claude Code itself**, including flags like
-  `--resume` and `--model`.
-
-`spacedock codex` and `spacedock pi` take the same shape.

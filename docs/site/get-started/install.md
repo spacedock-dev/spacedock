@@ -53,5 +53,5 @@ Run `spacedock doctor`.
 
 ## Next
 
-[Your first launch](first-launch.md) covers what survey reports and the offer
-it ends with.
+[Survey your project](survey.md) covers what survey reports and the offer it
+ends with.

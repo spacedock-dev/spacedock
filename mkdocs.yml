@@ -70,7 +70,7 @@ nav:
   - Get started:
       - Welcome: index.md
       - Install: get-started/install.md
-      - Your first launch: get-started/first-launch.md
+      - Survey your project: get-started/survey.md
       - Your first workflow: get-started/first-workflow.md
   - Concepts:
       - The operating model: concepts/operating-model.md

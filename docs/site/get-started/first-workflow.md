@@ -1,6 +1,6 @@
 # Your first workflow
 
-Your first workflow comes from one of two places: [survey](first-launch.md)
+Your first workflow comes from one of two places: [survey](survey.md)
 offers to build one from what it found in your project, or you describe one from
 scratch to the `/spacedock:commission` skill. Either way you land here. A
 workflow is a directory of plain-text work items plus a README that defines the
