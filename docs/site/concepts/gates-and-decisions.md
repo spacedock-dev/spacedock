@@ -1,6 +1,6 @@
 # Gates & decisions
 
-A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage is marked `gate: true` in the workflow README, the first officer stops after the worker completes, renders a gate review, and waits for you. It never self-approves. This page covers what a gate review carries, the three calls you make, how feedback cycles loop and where they cap, and the detached adversarial audit that backs high-stakes validation.
+A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage is marked `gate: true` in the workflow README, the first officer stops after the worker completes, renders a gate review, and waits for you. It never self-approves.
 
 ## What a gate carries
 
@@ -30,7 +30,7 @@ Decision: {what approval/rejection does in concrete terms}.
 Read it as follows:
 
 - **`Chosen direction` names what the worker picked**, so you do not have to open the entity file to learn it. Ideation picks an approach; validation picks PASS or REJECTED. Stages with no choice to make show `n/a`.
-- **`Recommend` is the first officer's verdict, stated exactly once.** It does not reappear restated elsewhere in the review.
+- **`Recommend` is the first officer's verdict, stated exactly once.**
 - **`Checklist` is a gist roll-up, not the report.** The full `## Stage Report` is cited by file path and line range; open it when you want the detail.
 - **Reviewer findings split into `Material` and `Polish`.** Material items (fact-corrections, contract violations, missing acceptance-criterion evidence, claims the codebase contradicts) are the ones that should move your vote. Polish is non-blocking. An empty tier is dropped.
 - **`Decision` names what your vote does in concrete terms.** For example, "approve to enter implementation in worktree `.worktrees/...`" or "reject to bounce back to {feedback-to target}".
@@ -47,7 +47,7 @@ You answer a gate with one of three calls.
 
 A redo and a reject at a `feedback-to` stage run the same routing machinery. The difference is whether you are correcting a direction you accept or sending it back. Both name the concrete fix asks so the next worker has something to act on.
 
-**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the verdict is the outcome on the record, and closing without one is the failure the guard exists to catch. The mechanics are in the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields).
+**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the outcome must be on the record. The mechanics are in the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields).
 
 ## Feedback cycles and the loop cap
 
@@ -56,11 +56,11 @@ When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` st
 The first officer tracks each round in a `### Feedback Cycles` section in the entity body, then:
 
 1. Reads the rejected stage's `feedback-to` target.
-2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix work and the stage assignment, so the worker has what it needs to rework.
+2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix asks and the stage assignment.
 3. Re-runs the reviewer after the fix.
 4. Re-enters the gate flow with the updated result, presenting you a fresh gate review.
 
-**The loop caps at three.** On cycle 3 the first officer escalates to you instead of bouncing a fourth time. The same fix has now failed twice, so the call returns to a human rather than looping. This cap is exercised by the `feedback-3-cycle-escalation` runtime scenario, which asserts the first officer escalates on the third rejected validation rather than auto-bouncing again.
+**The loop caps at three.** On cycle 3 the first officer escalates to you instead of bouncing a fourth time: the same fix has failed twice, so the call returns to a human.
 
 ## The detached adversarial audit
 
