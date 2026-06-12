@@ -23,7 +23,7 @@ If the repo has no Claude agent history, survey says so plainly and stops. There
 
 ## What it reports
 
-Survey leads with a one-line headline (the project, the session count, the date range, and the decision and interruption counts), then renders the body in the same turn. The body is the value, so it renders all sections in the same turn without pausing for confirmation:
+Survey leads with a one-line headline (the project, the session count, the date range, and the decision and interruption counts), then renders the body in the same turn. The body is the value, so the sections follow without a confirmation pause:
 
 - **Inferred workflow.** The implicit loop reconstructed from the decisions and prompts, as an arrow chain, with one honest line about it.
 - **Workstreams.** The decisions and prompts clustered into tracks, each tagged with its work mode (see below).
