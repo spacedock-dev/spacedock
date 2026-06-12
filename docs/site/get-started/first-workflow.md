@@ -1,80 +1,79 @@
 # Your first workflow
 
-Your first workflow comes from one of two places: [survey](survey.md)
-offers to build one from what it found in your project, or you describe one from
-scratch to the `/spacedock:commission` skill. Either way you land here. A
-workflow is a directory of plain-text work items plus a README that defines the
-stages they move through and the gates where you make a call.
-
-Spacedock addresses you as the **captain**: you decide at gates, and the agents
-do the rest. The [operating model](../concepts/operating-model.md#three-roles)
-covers the agent roles.
+Your first workflow comes from one of two places: [survey](survey.md) offers
+to build one from what it found in your project, or you describe one yourself
+to the `/spacedock:commission` skill. A workflow is your work moving through
+stages you define, pausing at the gates where you decide.
 
 ## Commission a workflow
 
-Run `/spacedock:commission` inside a Spacedock session and describe the work in
-the same line:
+Describe the work in the launch line:
 
 ```bash
-spacedock claude "/spacedock:commission Track design ideas through review stages"
+spacedock claude "/spacedock:commission ship features through design, implementation, and review"
 ```
 
-You can also start bare (`/spacedock:commission` with no description) and
-answer the questions from scratch.
+Commission asks a few questions, one at a time: what each work item is, the
+stages it moves through, which stages pause for your decision, and the quality
+bar for each. You confirm or adjust each proposal, and it presents the design:
 
-The skill greets you and walks three phases: **design** (a few questions),
-**generate** (it writes the files), and a **pilot run** (it starts the workflow
-on your seed items). In the design phase it asks, one question at a time: what
-the workflow is for and what each **entity** is, the work item the workflow
-processes as one markdown file (a "design idea" becomes an `idea`); the stages
-an entity moves through; which of those stages are gated and where a rejected
-entity bounces back to; and the quality bar for each stage. Last come the
-entity-ID style and two or three seed items to start on. You confirm or adjust
-each proposal. The
-[commission reference](../running-workflows/commission.md#the-four-things-you-name)
-covers every decision in full.
+> I'll call you Captain — let me know if you prefer something else.
+>
+> For each run, we process tasks going through the following stages:
+>
+> a. backlog — new tasks wait here for triage
+> b. design — the approach is worked out and written down
+> c. implementation — the change is built on an isolated branch
+> d. review — the result is checked against the design
+> e. done — accepted and closed
+>
+> If you reject at review, it goes back to implementation for revision.
+>
+> Our pilot run will be with:
+>
+> - Add rate limiting to the API
+> - Fix the flaky login test
+>
+> Entity identity will use `sequential`.
+>
+> All files will be created in `docs/ship-features/` for you to review.
+>
+> Accept this design, or tell me what to change.
 
-You do not have to get every answer right. After the questions, the skill
-presents the full design as a summary (stages, gates, seed items, where the
-files will live) and waits. **Nothing is generated until you accept.** Tell it
-what to change and it re-presents.
+**Nothing is generated until you accept.** Tell it what to change and it
+re-presents.
 
 ## What gets generated
 
-Once you accept, the skill writes the workflow into a new directory under `docs/`:
-a `README.md` that is the workflow's living spec (mission, schema, and a section
-per stage with its `Good:` / `Bad:` bar) and one file per seed entity. The
-per-stage prose is a best-guess starting point. Tighten it before any work runs,
-because an agent dispatched against a vague bar is expensive to correct. See
-[what gets generated](../running-workflows/commission.md#what-gets-generated) for
-the full file layout and the `review stages` walk.
+Everything is plain text in your repo: a README that holds the workflow's
+rules (what each stage expects) and one file per work item. The generated
+rules are a starting point; tighten them before any work runs, because an
+agent working to a vague bar is expensive to correct.
 
-## The design and review gates
+## The pilot run
 
-Spacedock draws a clear line: work flows through stages on its own,
-but a **gate** pauses it for your call, and **nothing crosses a gate without a
-recorded decision.** A development workflow
-gates the design stage and the review stage among others, so you sign off on
-the approach before code is written, and on the result before it ships.
+On accept, commission starts moving your seed items through the stages until
+everything is idle or waiting on you. Check where things stand at any time:
 
-At each gate Spacedock pauses and presents a stage report: the chosen
-direction, the evidence behind it, and a single recommendation. You make one of
-three calls:
+```bash
+spacedock status --workflow-dir docs/ship-features
+```
 
-- **Approve**, and the entity advances to the next stage.
-- **Redo with feedback**: it goes back for revision against your notes.
-- **Reject**, and it bounces to an earlier stage (the one the design named as the
-  rejection target) to be reworked.
+```
+ID     SLUG                           CURRENT              NEXT                 WORKTREE
+--     ----                           -------              ----                 --------
+001    add-rate-limiting-to-the-api   review               done                 yes
+002    fix-the-flaky-login-test       implementation       review               yes
+```
 
-You decide on the report and its evidence, not on the agent's transcript. The
-decision is recorded with its reason, so a result can later be traced back to the
-call that produced it.
+When a work item reaches a gate (here, `review`), Spacedock pauses and
+presents a stage report: the chosen direction, the evidence behind it, and a
+single recommendation. You approve, send it back with feedback, or reject.
+[Gates and decisions](../concepts/gates-and-decisions.md) covers the full
+machinery.
 
-## What happens after
-
-When you accept the design, commission launches a pilot run on your seed
-entities: it reads the README it just wrote and moves the ready entities
-through their stages until the workflow goes idle or reaches a gate. From there
-you are running the workflow: approving, sending back, and resuming in later
-sessions. [Operating a workflow](../running-workflows/operating.md) covers the
+From there you are running the workflow: approving, sending back, and resuming
+in later sessions. [Commission a workflow](../running-workflows/commission.md)
+covers every design decision in full;
+[Operating a workflow](../running-workflows/operating.md) covers the
 day-to-day loop.
