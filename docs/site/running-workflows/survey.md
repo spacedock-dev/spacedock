@@ -1,6 +1,6 @@
 # Survey an existing project
 
-`/spacedock:survey` reads a brownfield project's agent history and reports what the agents have implicitly been doing, then offers to commission a workflow from what it found. Run it when you arrive at or return to a repo that already has agent sessions and want the lay of the land before doing anything else. It never edits your files; the only stop in the flow is the commission offer at the end.
+`/spacedock:survey` reads a brownfield project's agent history and reports what the agents have implicitly been doing, then offers to commission a workflow from what it found. Run it when you arrive at or return to a repo that already has agent sessions and want the lay of the land before doing anything else. It never edits your files; the commission offer at the end is the only pause.
 
 Survey is the recommended first launch. Point Spacedock at a project and hand it the survey skill:
 
@@ -23,7 +23,7 @@ If the repo has no Claude agent history, survey says so plainly and stops. There
 
 ## What it reports
 
-Survey leads with a one-line headline (the project, the session count, the date range, and the decision and interruption counts), then renders the body in the same turn. The body is the value, so it does not pause for a confirmation before showing you the sections:
+Survey leads with a one-line headline (the project, the session count, the date range, and the decision and interruption counts), then renders the body in the same turn. The body is the value, so it renders all sections in the same turn without pausing for confirmation:
 
 - **Inferred workflow.** The implicit loop reconstructed from the decisions and prompts, as an arrow chain, with one honest line about it.
 - **Workstreams.** The decisions and prompts clustered into tracks, each tagged with its work mode (see below).
@@ -47,7 +47,7 @@ The match is conservative: a fork is dropped only on a confident repo match, bec
 
 ## The commission offer
 
-Survey closes by offering to commission a workflow from what it found, and the offer is keyed to each track's work mode, so it is not one undifferentiated pitch. Survey classifies each track as **mechanical**, **exploration**, or **unlabeled**:
+Survey closes by offering to commission a workflow from what it found, and the offer is keyed to each track's work mode, so each track gets a distinct pitch. Survey classifies each track as **mechanical**, **exploration**, or **unlabeled**:
 
 - **Mechanical tracks** (the routine issue → worktree → PR loop) get an **automation** offer: a workflow that gates the crucial decisions and lets the agent drive the loop between gates.
 - **Exploration tracks** (creative, content, or design work where your steering is the point) get a **book-keeping** offer: structure for the parallel threads, tracking each draft or path and its state (in-flight / paused-by-choice / abandoned). There is no automate-the-human-out pitch here. The involvement is the work.
