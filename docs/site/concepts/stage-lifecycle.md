@@ -39,12 +39,7 @@ When validation recommends `REJECTED`, `feedback-to: implementation` routes the 
 
 A stage runs in an isolated git worktree when it declares `worktree: true`, and inline at the repo root otherwise. This is the "isolation when it matters" tradeoff: stages that mutate shared state (implementation, validation) get their own checkout so concurrent entities don't collide; lighter stages that only edit the entity body (backlog, ideation) run inline.
 
-The mechanics, run by the first officer:
-
-- **On first dispatch to a worktree stage,** the first officer creates a worktree at `.worktrees/{worker_key}-{slug}` on branch `{worker_key}/{slug}` and records the path in the entity's `worktree` frontmatter field.
-- **Inside a worktree-backed stage,** the ensign keeps all reads, writes, and commits under that worktree. The deliverable is isolated there until the entity terminalizes.
-- **In a split-root workflow** (the README declares a `state:` checkout, e.g. `state: .spacedock-state`), the entity body and stage report live in the state checkout, not in the worktree; the worktree isolates only the deliverable. The first officer's dispatch hands the ensign the correct state-checkout path for the entity; the worker trusts that path rather than writing entity state into the worktree.
-- **At the terminal stage,** the first officer merges the worktree branch, clears the `worktree` field, removes the worktree, and deletes the local branch.
+The first officer manages the isolation for you: it creates the worktree under `.worktrees/` on first dispatch and records the path in the entity's `worktree` frontmatter field, the stage's work and commits stay inside that checkout, and at the terminal stage it merges the branch and cleans the worktree up. In a [split-root workflow](../advanced/split-root-state.md) the entity file itself lives in the state checkout; the worktree isolates only the deliverable.
 
 To see where each entity sits and which are ready to advance, read the workflow state:
 

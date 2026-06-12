@@ -78,8 +78,8 @@ Add `--next` to list only the entities ready for dispatch.
 state: .spacedock-state
 ```
 
-With this set, the README (the living spec) stays on your code branch, while the entity files, their reports, and the archive live under `.spacedock-state`. Routine stage transitions never churn the code branch or collide with a feature PR. The path is resolved relative to the README's directory; `spacedock status` reads stages from the README and entities from the state checkout, and writes frontmatter updates and archive moves into the state checkout.
+With this set, the README (the living spec) stays on your code branch, while the entity files, their reports, and the archive live under `.spacedock-state`. Routine stage transitions never churn the code branch or collide with a feature PR; `spacedock status` reads and writes across the split for you.
 
-The state checkout is a linked git worktree on an orphan branch in the same repo, so state commits land on that branch and the code branch never sees them. On a fresh clone the state worktree is absent. Run `spacedock state init` to fetch the orphan branch and re-add the linked worktree before working the workflow.
+State lives on a separate branch in the same repo, so the code branch never sees a state commit. On a fresh clone the state checkout is absent; run `spacedock state init` to restore it before working the workflow.
 
-Omit `state:` (or set `state: $inline`) for a standalone workflow that isn't embedded in a code repo you ship from. Then the entities live beside the README in the same directory, with no orphan branch and no extra checkout.
+Omit `state:` (or set `state: $inline`) for a standalone workflow that isn't embedded in a code repo you ship from. Then the entities live beside the README in the same directory, with no extra branch or checkout.

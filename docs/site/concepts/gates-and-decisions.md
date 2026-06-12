@@ -41,7 +41,7 @@ At every gate the first officer also runs an acceptance-criteria cross-check: it
 
 You answer a gate with one of three calls.
 
-- **Approve.** The entity advances to the next stage and the first officer dispatches it, reusing the live worker when it can and dispatching fresh otherwise. If the next stage opens or closes a worktree, the `Decision` line told you so. Approving the terminal stage runs the merge and cleanup ceremony.
+- **Approve.** The entity advances to the next stage and the first officer dispatches it. If the next stage opens or closes a worktree, the `Decision` line told you so. Approving the terminal stage runs the merge and cleanup ceremony.
 - **Redo with feedback.** You approve the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes". The first officer routes your asks back to the stage that owns the work, the worker re-does it, and the gate is re-presented.
 - **Reject.** At a stage with a `feedback-to` target, rejecting bounces the work back to that target stage to be fixed and re-validated; this is the feedback cycle below. At a stage without `feedback-to`, rejection is terminal for that path.
 
@@ -53,12 +53,7 @@ A redo and a reject at a `feedback-to` stage run the same routing machinery. The
 
 When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` stage, the work routes back to the stage named in `feedback-to`: the stage that owns the fix, not the reviewer that flagged it. In the dev workflow, `validation` has `feedback-to: implementation`, so a rejected validation sends the deliverable back to implementation, not back to the validator.
 
-The first officer tracks each round in a `### Feedback Cycles` section in the entity body, then:
-
-1. Reads the rejected stage's `feedback-to` target.
-2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix asks and the stage assignment.
-3. Re-runs the reviewer after the fix.
-4. Re-enters the gate flow with the updated result, presenting you a fresh gate review.
+The first officer tracks each round in a `### Feedback Cycles` section in the entity body. Your concrete findings route to the `feedback-to` target, the reviewer re-runs after the fix, and the gate comes back to you as a fresh review.
 
 **The loop caps at three.** On cycle 3 the first officer escalates to you instead of bouncing a fourth time: the same fix has failed twice, so the call returns to a human.
 
