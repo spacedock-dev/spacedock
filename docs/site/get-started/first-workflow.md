@@ -4,27 +4,12 @@ Your first workflow comes from one of two places: [survey](first-launch.md)
 offers to build one from what it found in your project, or you describe one from
 scratch to the `/spacedock:commission` skill. Either way you land here. A
 workflow is a directory of plain-text work items plus a README that defines the
-stages they move through, the schema each item carries, and the gates where you
-make a call. This page walks the commission end to end: the questions it asks,
-the design and review gates it sets up, and what happens once the workflow starts
-running.
+stages they move through and the gates where you make a call.
 
-A few terms used below, defined on first use:
-
-- An **entity** is one work item: a single markdown file (the README also calls
-  it a "work item"). A bug report, a design idea, a feature: whatever the
-  workflow processes, each one is an entity.
-- A **stage** is a bucket an entity sits in as it advances, for example
-  `ideation` or `implementation`. The first entity starts in the first stage and
-  moves toward a terminal one.
-- A **gate** is a decision point at the end of a stage where the workflow pauses
-  for your call instead of advancing on its own.
-
-You are addressed as the captain, the workflow operator who makes the calls at
-gates; the first officer is the orchestrator agent that runs the workflow, and
-the ensign is the worker that moves one entity through one stage. The
-[operating model](../concepts/operating-model.md#three-roles) covers the three
-roles in full.
+Spacedock addresses you as the **captain**: the workflow operator who decides at
+gates. The [operating model](../concepts/operating-model.md#three-roles) covers
+the other two roles, the first officer (the orchestrator agent that runs the
+workflow) and the ensign (the worker that moves one item through one stage).
 
 ## Commission a workflow
 
@@ -43,9 +28,10 @@ scratch.
 The skill greets you and walks three phases: **design** (a few questions),
 **generate** (it writes the files), and a **pilot run** (it starts the workflow
 on your seed items). In the design phase it asks, one question at a time: what
-the workflow is for and what each entity is (a "design idea" becomes an `idea`),
-the stages an entity moves through, which of those stages are gated and where a
-rejected entity bounces back to, and the quality bar for each stage. Last come the
+the workflow is for and what each **entity** is, the work item the workflow
+processes as one markdown file (a "design idea" becomes an `idea`); the stages
+an entity moves through; which of those stages are gated and where a rejected
+entity bounces back to; and the quality bar for each stage. Last come the
 entity-ID style and two or three seed items to start on. You confirm or adjust
 each proposal. The
 [commission reference](../running-workflows/commission.md#the-four-things-you-name)
@@ -68,8 +54,9 @@ the full file layout and the `review stages` walk.
 
 ## The design and review gates
 
-This is the line Spacedock draws: work flows through the stages, but
-**nothing crosses a gate without a recorded decision.** A development workflow
+This is the line Spacedock draws: work flows through the stages on its own,
+but a **gate** pauses it for your call, and **nothing crosses a gate without a
+recorded decision.** A development workflow
 gates the design stage and the review stage among others, so you sign off on
 the approach before code is written, and on the result before it ships.
 
