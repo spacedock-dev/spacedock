@@ -88,7 +88,7 @@ nav:
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
-      - Sandboxes: reference/sandbox.md
+      - Supported sandboxes: reference/sandbox.md
       - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
 
 extra_css:
