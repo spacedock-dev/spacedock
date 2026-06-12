@@ -8,7 +8,7 @@ A mod does one of two things, or both.
 
 A hook runs first-officer prose at a fixed point in the run: at `startup`, on an `idle` pass when nothing is ready to dispatch, or at the `merge` boundary when an entity terminalizes. The point is workflow-independent: any workflow can register the same hook to get the same behavior.
 
-The canonical example is the [`pr-merge` mod](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/_mods/pr-merge.md): it opens the code-branch PR at merge, records the PR on the entity, and holds the terminal transition until the PR merges. A merge hook can block that transition, and the binary enforces the block so a half-merged entity cannot slip past the gate.
+The canonical example is the [`pr-merge` mod](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/_mods/pr-merge.md): it opens the code-branch PR at merge, records the PR on the entity, and holds the terminal transition until the PR merges. A merge hook can block that transition, and the binary enforces the block so a half-merged entity cannot slip past the gate.
 
 ## Standing teammates
 
@@ -18,4 +18,4 @@ The canonical example is the **comm-officer**, a prose-polisher the first office
 
 ## The exact format
 
-The mod file format, the hook points, and the `spacedock dispatch` subcommands that read standing-teammate mods are defined in the skills and binary that own them. See [the mods reference](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md) for the authoritative contract.
+The mod file format, the hook points, and the `spacedock dispatch` subcommands that read standing-teammate mods are defined in the skills and binary that own them. See [the mods reference](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md) for the authoritative contract.

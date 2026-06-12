@@ -13,7 +13,7 @@ or Pi. Install one of those first.
 === "Binary (macOS / Linux)"
 
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/next/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh
     ```
 
     Installs a checksum-verified binary to `~/.local/bin`.
@@ -35,9 +35,9 @@ With Codex or Pi (experimental), add the agents with
 `spacedock install --host codex` (or `--host pi`), then launch with the
 matching subcommand: `spacedock codex "your task"` or `spacedock pi "your task"`.
 
-Working on Spacedock itself? See [Build from source](https://github.com/spacedock-dev/spacedock/blob/next/docs/site/contributing/build-from-source.md).
-It builds from the `next` branch and loads the agents from your checkout so
-local edits are live.
+Working on Spacedock itself? See [Build from source](https://github.com/spacedock-dev/spacedock/blob/main/docs/site/contributing/build-from-source.md).
+It builds the binary from your checkout and loads the agents from it, so local
+edits are live.
 
 ## Sandboxing
 

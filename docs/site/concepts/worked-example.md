@@ -8,7 +8,7 @@ decides at each one.
 
 The workflow is `docs/dev` (the Spacedock v1 dev workflow); its stages, gates,
 and entity schema are defined in
-[the development workflow README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md).
+[the development workflow README](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md).
 Runtime entity state lives in a separate `.spacedock-state` checkout, so the
 finished entity itself is not in the main tree. Its full trajectory is in
 the `0198-pre-flip-hardening` sprint directory: `index.md`,
@@ -121,7 +121,7 @@ captain verdict. Each one a decision, each one on the record.
 
 The full trajectory is reconstructable from the sprint directory:
 
-- [`index.md`](https://github.com/spacedock-dev/spacedock/blob/next/docs/roadmap/0198-pre-flip-hardening/index.md): goal, members, definition of done, the approved-gate note.
-- [`dispatch-sprint-execution.md`](https://github.com/spacedock-dev/spacedock/blob/next/docs/roadmap/0198-pre-flip-hardening/dispatch-sprint-execution.md): the per-member drive plan and `z9`'s build notes.
-- [`debrief.md`](https://github.com/spacedock-dev/spacedock/blob/next/docs/roadmap/0198-pre-flip-hardening/debrief.md): what shipped, the PR links, and the decisions made along the way.
-- [`post-sprint-audit.md`](https://github.com/spacedock-dev/spacedock/blob/next/docs/roadmap/0198-pre-flip-hardening/post-sprint-audit.md): the final-state confirmation and the detached-audit record.
+- [`index.md`](https://github.com/spacedock-dev/spacedock/blob/main/docs/roadmap/0198-pre-flip-hardening/index.md): goal, members, definition of done, the approved-gate note.
+- [`dispatch-sprint-execution.md`](https://github.com/spacedock-dev/spacedock/blob/main/docs/roadmap/0198-pre-flip-hardening/dispatch-sprint-execution.md): the per-member drive plan and `z9`'s build notes.
+- [`debrief.md`](https://github.com/spacedock-dev/spacedock/blob/main/docs/roadmap/0198-pre-flip-hardening/debrief.md): what shipped, the PR links, and the decisions made along the way.
+- [`post-sprint-audit.md`](https://github.com/spacedock-dev/spacedock/blob/main/docs/roadmap/0198-pre-flip-hardening/post-sprint-audit.md): the final-state confirmation and the detached-audit record.

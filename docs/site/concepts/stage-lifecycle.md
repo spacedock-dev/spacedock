@@ -4,7 +4,7 @@ An entity moves through an ordered chain of stages that the workflow defines, on
 
 ## The dev workflow's stages
 
-The five stages below are the dev workflow's stages, used as the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
+The five stages below are the dev workflow's stages, used as the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
 
 - **`backlog`, the seed.** An entity enters here when first proposed: a title, a source, a brief description, and the test gates future stages must satisfy. No design work yet. `initial: true`, so this is where every new entity starts. The dev workflow also marks it `gate: true`, so the first officer presents a new entity for your go-ahead before it advances.
 - **`ideation`, the design.** A worker clarifies the problem, explores approaches, and produces a fleshed-out body: problem statement, proposed approach, acceptance criteria, and a test plan. Each acceptance criterion names how it will be checked. This stage is `gate: true` in the dev workflow, so the first officer presents the design for your approval before any code is written.

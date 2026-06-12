@@ -88,7 +88,7 @@ nav:
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
-      - Contributing: https://github.com/spacedock-dev/spacedock/blob/next/CONTRIBUTING.md
+      - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
 
 extra_css:
   - stylesheets/tokens.css

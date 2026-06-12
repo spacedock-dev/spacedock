@@ -1,6 +1,6 @@
 # Frontmatter contract
 
-Every entity is a markdown file (or a folder with an `index.md`) whose YAML frontmatter carries the fields Spacedock reads to track and move it. This page is a quick lookup for the fields a development-workflow entity uses. The always-current schema is owned by the [development workflow README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md#field-reference); when this table and that README disagree, the README wins.
+Every entity is a markdown file (or a folder with an `index.md`) whose YAML frontmatter carries the fields Spacedock reads to track and move it. This page is a quick lookup for the fields a development-workflow entity uses. The always-current schema is owned by the [development workflow README](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md#field-reference); when this table and that README disagree, the README wins.
 
 Keep fields flat and top-level; add more flat custom fields rather than nested YAML. (The [entity frontmatter concept](../concepts/workflows-and-entities.md#entity-frontmatter) explains why the line-oriented parser requires this.)
 

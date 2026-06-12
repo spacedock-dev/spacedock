@@ -22,7 +22,7 @@ The shipped `docs/dev` workflow runs split-root; see its README for a live examp
 
 ## Concurrent writers
 
-The state checkout is a shared git index that multiple agents commit to, so the commit and sync discipline is a correctness requirement, not a style choice: writers commit path-scoped (never a bare `git add -A`), and conflicting edits to the same entity halt for the captain rather than auto-resolving. The exact protocol is owned by the launcher and the ensign skill; see [the split-root state contract](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md) for the authoritative rules.
+The state checkout is a shared git index that multiple agents commit to, so the commit and sync discipline is a correctness requirement, not a style choice: writers commit path-scoped (never a bare `git add -A`), and conflicting edits to the same entity halt for the captain rather than auto-resolving. The exact protocol is owned by the launcher and the ensign skill; see [the split-root state contract](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md) for the authoritative rules.
 
 ## Bridging an external tracker
 
