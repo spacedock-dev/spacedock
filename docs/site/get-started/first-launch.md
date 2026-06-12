@@ -12,7 +12,7 @@ Run it from inside a project that already has some agent history, such as a repo
 
 ## What survey reports
 
-In one read-only pass — it never edits your files — survey reconstructs what the agents in this project have implicitly been doing. It leads with **the decisions still open and waiting on you**, then names the [workflow](../concepts/workflows-and-entities.md) you have been running without naming it, the distinct workstreams, and how often you have had to step in, under a one-line headline (project, sessions, date range, decision and interruption counts). If the project has no agent history, it says so and stops.
+In one read-only pass (it never edits your files), survey reconstructs what the agents in this project have implicitly been doing. It leads with **the decisions still open and waiting on you**, then names the [workflow](../concepts/workflows-and-entities.md) you have been running without naming it, the distinct workstreams, and how often you have had to step in, under a one-line headline (project, sessions, date range, decision and interruption counts). If the project has no agent history, it says so and stops.
 
 For the full section-by-section breakdown and how survey reads your history, see [what survey reports](../running-workflows/survey.md#what-it-reports).
 

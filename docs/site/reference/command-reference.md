@@ -10,7 +10,7 @@ The `spacedock` binary has ten subcommands in three groups, plus a top-level
 | [`spacedock pi`](#launch-claude-codex-pi) | Launch | Start Pi (experimental) with the first officer |
 | [`spacedock install`](#setup-install-doctor) | Setup | Install the per-host plugin, then run the compatibility check |
 | [`spacedock doctor`](#setup-install-doctor) | Setup | Run the compatibility check alone |
-| [`spacedock status`](#status) | Workflow | Read or mutate workflow state — the table, `--next`, `--where`, `--set`, … |
+| [`spacedock status`](#status) | Workflow | Read or mutate workflow state: the table, `--next`, `--where`, `--set`, … |
 | [`spacedock new`](#new) | Workflow | Create an entity from stdin (alias for `status --new`) |
 | [`spacedock state`](#state) | Workflow | Manage a split-root workflow's state checkout |
 | [`spacedock completion`](#completion) | Workflow | Print a bash or zsh completion script |

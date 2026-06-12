@@ -56,7 +56,7 @@ When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` st
 The first officer tracks each round in a `### Feedback Cycles` section in the entity body, then:
 
 1. Reads the rejected stage's `feedback-to` target.
-2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix work and the stage assignment, not just an acknowledgment.
+2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix work and the stage assignment, so the worker has what it needs to rework.
 3. Re-runs the reviewer after the fix.
 4. Re-enters the gate flow with the updated result, presenting you a fresh gate review.
 

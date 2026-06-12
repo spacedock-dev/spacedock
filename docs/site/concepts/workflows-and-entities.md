@@ -2,8 +2,6 @@
 
 **A workflow is a directory plus a README, and an entity is one markdown file inside it.** The README defines the stages, the schema, and the gates; each entity is a work item that moves through those stages. Everything about a work item lives in the file itself: the problem, the design notes, the bar for done, the stage reports. State survives a session, so the next one picks up where you left off.
 
-This page covers what those two things are, the frontmatter on an entity, and where the entity files actually live at runtime.
-
 ## The workflow: a directory and its README
 
 The README is the single source of truth. Its frontmatter declares the stages, the entity type, and the ID style; its prose body defines what each stage means, what counts as good, and what a worker must produce. You commission a workflow with `/spacedock:commission`, which generates the directory, the README, and a few seed entities for you.
@@ -68,7 +66,7 @@ The frontmatter is the machine-readable state. The full schema lives in the work
 | `worktree` | The worktree path while a dispatched agent is active; empty otherwise. |
 | `issue` | Optional external ticket reference, e.g. `ENG-123`, `kata:task-abc123`, or `owner/repo#42`. |
 
-The frontmatter parser is line-oriented, so keep fields flat and top-level. If a workflow needs more metadata, add more flat custom fields rather than nested YAML — the v1 parser preserves lines, not arbitrary nested structure.
+The frontmatter parser is line-oriented, so keep fields flat and top-level. If a workflow needs more metadata, add more flat custom fields rather than nested YAML; the v1 parser preserves lines, not arbitrary nested structure.
 
 `status` is the field that drives everything: the first officer reads it to decide which entities are ready to advance. To see the queue, run the status viewer against the workflow directory:
 

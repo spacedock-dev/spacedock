@@ -45,7 +45,7 @@ The skill greets you and walks three phases: **design** (a few questions),
 on your seed items). In the design phase it asks, one question at a time: what
 the workflow is for and what each entity is (a "design idea" becomes an `idea`),
 the stages an entity moves through, which of those stages are gated and where a
-rejected entity bounces back to, and the quality bar for each stage — then the
+rejected entity bounces back to, and the quality bar for each stage. Last come the
 entity-ID style and two or three seed items to start on. You confirm or adjust
 each proposal. The
 [commission reference](../running-workflows/commission.md#the-four-things-you-name)
@@ -61,7 +61,7 @@ what to change and it re-presents.
 Once you accept, the skill writes the workflow into a new directory under `docs/`:
 a `README.md` that is the workflow's living spec (mission, schema, and a section
 per stage with its `Good:` / `Bad:` bar) and one file per seed entity. The
-per-stage prose is a best-guess starting point — tighten it before any work runs,
+per-stage prose is a best-guess starting point. Tighten it before any work runs,
 because an agent dispatched against a vague bar is expensive to correct. See
 [what gets generated](../running-workflows/commission.md#what-gets-generated) for
 the full file layout and the `review stages` walk.
@@ -91,6 +91,6 @@ call that produced it.
 When you accept the design, the commission skill launches a pilot run on your
 seed entities: it takes the first-officer role itself, reads the README, and
 dispatches ensigns to move ready entities through their stages until the workflow
-goes idle or reaches a gate. From there you are running the workflow — approving,
+goes idle or reaches a gate. From there you are running the workflow: approving,
 sending back, and resuming in later sessions. [Operating a workflow](../running-workflows/operating.md)
 covers the day-to-day loop and how to resume.

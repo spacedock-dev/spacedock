@@ -1,11 +1,8 @@
 # Install Spacedock
 
-This guide walks a fresh install end to end and names the output you should see
-at each step. Every command here is one you can run and check against the stated
-result.
-
 Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
-or Pi. Install one of those first.
+or Pi. Install one of those first. Every command below names the output you
+should see, so you can check each step against the stated result.
 
 Spacedock itself is two pieces that install separately:
 
@@ -14,7 +11,7 @@ Spacedock itself is two pieces that install separately:
    harness (Claude Code, Codex, or Pi).
 
 The recommended setup installs the launcher with Homebrew, then adds the plugin.
-Pick your platform, then confirm and launch — those last two steps are the same
+Pick your platform, then confirm and launch. Those last two steps are the same
 everywhere. A from-source build is available for development.
 
 ## Install the launcher
@@ -28,7 +25,7 @@ everywhere. A from-source build is available for development.
 
 === "Linux / no Homebrew"
 
-    The Homebrew cask is macOS-only. On Linux — or on macOS without Homebrew —
+    The Homebrew cask is macOS-only. On Linux (or on macOS without Homebrew),
     the `curl | sh` script detects your OS and architecture, downloads the
     matching tarball from the latest GitHub Release, verifies it against the
     release `checksums.txt`, and installs the `spacedock` binary to
@@ -45,7 +42,7 @@ everywhere. A from-source build is available for development.
 
     **Sandboxing.** Safehouse behaves the same as on macOS: when a `.safehouse`
     profile is present in the working directory, Spacedock wraps the launch
-    through the `safehouse` command. Spacedock ships no sandbox of its own — a
+    through the `safehouse` command. Spacedock ships no sandbox of its own. A
     run is sandboxed only when a Linux-capable `safehouse` binary is on your
     `PATH`; when the binary is absent, Spacedock prints an install hint and the
     launch proceeds **unsandboxed**. The macOS-only Gatekeeper/quarantine
@@ -89,9 +86,9 @@ sandboxed. To set up the plugin ahead of time, or to refresh it later, run
 With Codex or Pi, launch with the matching subcommand instead:
 `spacedock codex "your task"` or `spacedock pi "your task"`.
 
-Working on Spacedock itself? See [Build from source](../contributing/build-from-source.md)
-in Contributing — it builds the launcher from the `next` branch and loads the
-plugin from your checkout so local edits are live.
+Working on Spacedock itself? See [Build from source](../contributing/build-from-source.md).
+It builds the launcher from the `next` branch and loads the plugin from your
+checkout so local edits are live.
 
 ## Keep things in sync
 
@@ -107,6 +104,7 @@ first, then run `spacedock install --host claude`.
 
 ## Next
 
-Run your [first launch](first-launch.md). For the full launch grammar — the task
-argument, what rides after `--`, and the sandbox flags — see the
-[command reference](../reference/command-reference.md#launch-claude-codex-pi).
+Run your [first launch](first-launch.md). The
+[command reference](../reference/command-reference.md#launch-claude-codex-pi)
+covers the full launch grammar: the task argument, what rides after `--`, and
+the sandbox flags.

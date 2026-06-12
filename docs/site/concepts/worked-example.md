@@ -4,7 +4,7 @@ This page traces one real entity, `z9` `codex-plugin-auto-install`, from
 backlog through to `done` / PASSED, using artifacts from the project repo. It is
 a concrete read of the abstract stage machine: backlog → ideation →
 implementation → validation → done, the gates between them, and what the captain
-actually decides at each one.
+decides at each one.
 
 The workflow is `docs/dev` (the Spacedock v1 dev workflow); its stages, gates,
 and entity schema are defined in
