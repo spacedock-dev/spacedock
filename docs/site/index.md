@@ -22,4 +22,4 @@ You are the captain. You set the bar and make the calls; the agents do the rest.
 
 ## For agents using Spacedock
 
-Spacedock's docs are read by agents too. The build emits a curated `llms.txt` index at the site root for product-using agents.
+Agents read these docs too. Start from [`llms.txt`](/llms.txt), the curated index of these pages.
