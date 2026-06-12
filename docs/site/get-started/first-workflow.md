@@ -79,8 +79,26 @@ Decision: approve to close; reject to bounce back to implementation.
 You approve, send it back with feedback, or reject. Details:
 [gates and decisions](../concepts/gates-and-decisions.md).
 
-From there you are running the workflow: approving, sending back, and resuming
-in later sessions, all within your normal Claude (or Codex) sessions.
+## Session to session
+
+Every work item's state is stored and serialized in the workflow, so you do
+not need to worry about context limits, resuming, or clearing. A typical
+session, inside your normal Claude (or Codex) session:
+
+```bash
+spacedock claude
+```
+
+It picks up whatever is ready to dispatch. You do a bunch of work: shaping,
+asking the agents to dispatch, approving, rejecting, steering. Before you
+stop, run [`/spacedock:debrief`](../running-workflows/debrief-and-refit.md)
+to record what happened, update the learnings into the workflow, and file the
+follow-up items. The workflow self-improves.
+
+A project can hold
+[multiple workflows](../advanced/split-root-state.md) that coordinate with
+each other; Spacedock drives them together and works out the dependencies.
+
 [Commission a workflow](../running-workflows/commission.md) covers every
 design decision; [Operating a workflow](../running-workflows/operating.md)
 covers the day-to-day loop. Since this runs in your existing coding agent, you
