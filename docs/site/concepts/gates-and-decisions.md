@@ -74,3 +74,8 @@ Results feed the same gate machinery:
 
 - **Material findings route back through the normal validation-to-implementation feedback flow**, with a `### Feedback Cycles` entry naming the audit and its adversarial edit. The gate is not presented as clean until they are closed.
 - **A clean audit is noted in the gate's reviewer-findings block**, or as a one-line "detached audit: no material findings".
+
+## Where to go next
+
+- [A worked example](worked-example.md) traces one real entity through every gate to a recorded verdict.
+- [Operating a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.
