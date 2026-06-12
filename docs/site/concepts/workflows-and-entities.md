@@ -46,13 +46,13 @@ The README body documents each stage with `Inputs`, `Outputs`, `Good`, and `Bad`
 
 ## The entity: one work item
 
-**An entity is a single work item, stored as a markdown file with YAML frontmatter.** Each entity lives as either a flat file `{slug}.md` or a folder `{slug}/index.md`. Use the folder form when reports or artifacts accumulate beside the work item. Slugs are lowercase with hyphens, no spaces (`add-login.md` or `add-login/index.md`). `spacedock status` reads both forms.
+**An entity lives as a flat file `{slug}.md` or a folder `{slug}/index.md`.** Use the folder form when reports or artifacts accumulate beside the work item. Slugs are lowercase with hyphens, no spaces (`add-login.md` or `add-login/index.md`). `spacedock status` reads both forms.
 
 The body holds the human-readable record: a description, a problem statement, the proposed approach, acceptance criteria, and the stage reports filed as the entity advances.
 
 ## Entity frontmatter
 
-The frontmatter is the machine-readable state. The full schema lives in the workflow's own README; the [frontmatter contract](../reference/frontmatter-contract.md) is the field reference across workflows. The fields you set and read most often:
+The YAML frontmatter at the top of the file is the machine-readable state. The full schema lives in the workflow's own README; the [frontmatter contract](../reference/frontmatter-contract.md) is the field reference across workflows. The fields you set and read most often:
 
 | Field | What it holds |
 |-------|---------------|
@@ -66,7 +66,7 @@ The frontmatter is the machine-readable state. The full schema lives in the work
 | `worktree` | The worktree path while a dispatched agent is active; empty otherwise. |
 | `issue` | Optional external ticket reference, e.g. `ENG-123`, `kata:task-abc123`, or `owner/repo#42`. |
 
-The frontmatter parser is line-oriented, so keep fields flat and top-level. If a workflow needs more metadata, add more flat custom fields rather than nested YAML; the v1 parser preserves lines, not arbitrary nested structure.
+The frontmatter parser is line-oriented: keep fields flat and top-level. If a workflow needs more metadata, add flat custom fields rather than nested YAML.
 
 `status` is the field that drives everything: the first officer reads it to decide which entities are ready to advance. To see the queue, run the status viewer against the workflow directory:
 
