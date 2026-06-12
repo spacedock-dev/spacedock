@@ -48,7 +48,7 @@ Fill `title`, `status`, and `source` at creation. `started`, `completed`, `verdi
 
 ## External-tracker fields
 
-The `issue` and `source` fields are the v0 bridge to an external ledger such as kata, Linear, or GitHub Issues. They are flat top-level fields the current parser preserves; the bridge adds no tracker-specific stage rules. See [Tracking work in an external system](../advanced/external-tracker.md) for the full integration model.
+The `issue` and `source` fields are the v0 bridge to an external ledger such as kata, Linear, or GitHub Issues. They are flat top-level fields the current parser preserves; the bridge adds no tracker-specific stage rules. See [Multi-workflow & split-root state](../advanced/split-root-state.md#bridging-an-external-tracker) for the full integration model.
 
 ```yaml
 issue: ENG-123

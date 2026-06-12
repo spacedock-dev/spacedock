@@ -85,7 +85,6 @@ nav:
       - Debrief & refit: running-workflows/debrief-and-refit.md
   - Advanced topics:
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
-      - External-tracker bridge: advanced/external-tracker.md
       - Multi-workflow & split-root state: advanced/split-root-state.md
   - Reference:
       - Command reference: reference/command-reference.md
