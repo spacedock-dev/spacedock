@@ -1,8 +1,8 @@
 # Install Spacedock
 
 Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
-or Pi. Install one of those first. Every command below names the output you
-should see, so you can check each step against the stated result.
+or Pi. Install one of those first. Every command below names the output to
+expect, so you can check each step.
 
 Spacedock itself is two pieces that install separately:
 
@@ -11,8 +11,7 @@ Spacedock itself is two pieces that install separately:
    harness (Claude Code, Codex, or Pi).
 
 The recommended setup installs the launcher with Homebrew, then adds the plugin.
-Pick your platform, then confirm and launch. Those last two steps are the same
-everywhere. A from-source build is available for development.
+A from-source build is available for development.
 
 ## Install the launcher
 
@@ -44,9 +43,9 @@ everywhere. A from-source build is available for development.
     profile is present in the working directory, Spacedock wraps the launch
     through the `safehouse` command. Spacedock ships no sandbox of its own. A
     run is sandboxed only when a Linux-capable `safehouse` binary is on your
-    `PATH`; when the binary is absent, Spacedock prints an install hint and the
-    launch proceeds **unsandboxed**. The macOS-only Gatekeeper/quarantine
-    handling does not apply on Linux and is not needed there.
+    `PATH`; when it is absent, Spacedock prints an install hint and the launch
+    proceeds **unsandboxed**. Gatekeeper and quarantine handling are macOS-only
+    and do not apply here.
 
 === "Codex or Pi"
 
@@ -78,7 +77,7 @@ spacedock claude "/spacedock:survey"
 ```
 
 Starts the first officer in Claude Code and runs the survey. The first launch
-sets up the plugin for you, so this single command is enough. When a
+also sets up the plugin, so no separate install step is needed. When a
 `.safehouse` profile is present in the working directory, the launch runs
 sandboxed. To set up the plugin ahead of time, or to refresh it later, run
 `spacedock install --host claude`.
@@ -92,8 +91,8 @@ checkout so local edits are live.
 
 ## Keep things in sync
 
-`spacedock doctor` is the compatibility check. If it reports your installed
-plugin is out of date, refresh it:
+`spacedock doctor` checks compatibility. If it reports the installed
+plugin is out of date, refresh with:
 
 ```bash
 spacedock install --host claude
