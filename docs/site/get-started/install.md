@@ -4,17 +4,6 @@ Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
 or Pi. Install one of those first. Every command below names the output to
 expect, so you can check each step.
 
-Spacedock itself is two pieces that install separately:
-
-1. **The `spacedock` launcher.** The command you run to start a session.
-2. **The host plugin.** The first-officer and ensign agents, loaded by your
-   harness (Claude Code, Codex, or Pi).
-
-The recommended setup installs the launcher with Homebrew, then adds the plugin.
-A from-source build is available for development.
-
-## Install the launcher
-
 === "macOS (Homebrew)"
 
     ```bash
@@ -50,23 +39,15 @@ A from-source build is available for development.
 === "Codex or Pi"
 
     Claude Code is the primary surface; Codex and Pi are supported but
-    experimental. Install the launcher with Homebrew (the macOS tab), then add
-    the plugin for your host:
+    experimental. Install with Homebrew (the macOS tab) or the Linux script,
+    then add Spacedock's agents to your host:
 
     ```bash
     spacedock install --host codex      # or: --host pi
     ```
 
-    Codex installs plugins from your shell rather than programmatically, so this
+    Codex installs from your shell rather than programmatically, so this
     prints the `codex plugin` commands to run.
-
-## Confirm it
-
-```bash
-spacedock --version
-```
-
-Prints the installed version, e.g. `spacedock 0.20.0`.
 
 ## Launch
 
@@ -76,30 +57,30 @@ Point Spacedock at a project you already have and let it survey:
 spacedock claude "/spacedock:survey"
 ```
 
-Starts the first officer in Claude Code and runs the survey. The first launch
-also sets up the plugin, so no separate install step is needed. When a
-`.safehouse` profile is present in the working directory, the launch runs
-sandboxed. To set up the plugin ahead of time, or to refresh it later, run
-`spacedock install --host claude`.
+Starts the first officer in Claude Code and runs the survey. Spacedock manages
+the agents your harness loads: the first launch sets them up in Claude Code, so
+no separate setup step is needed. To set them up ahead of time, or to refresh
+them later, run `spacedock install --host claude`. When a `.safehouse` profile
+is present in the working directory, the launch runs sandboxed.
 
 With Codex or Pi, launch with the matching subcommand instead:
 `spacedock codex "your task"` or `spacedock pi "your task"`.
 
 Working on Spacedock itself? See [Build from source](https://github.com/spacedock-dev/spacedock/blob/next/docs/site/contributing/build-from-source.md).
-It builds the launcher from the `next` branch and loads the plugin from your
-checkout so local edits are live.
+It builds from the `next` branch and loads the agents from your checkout so
+local edits are live.
 
 ## Keep things in sync
 
-`spacedock doctor` checks compatibility. If it reports the installed
-plugin is out of date, refresh with:
+`spacedock doctor` checks compatibility. If it reports the agents your harness
+loads are out of date, refresh with:
 
 ```bash
 spacedock install --host claude
 ```
 
-If the `spacedock` command itself is missing, install the launcher with Homebrew
-first, then run `spacedock install --host claude`.
+If the `spacedock` command itself is missing, install it with Homebrew first,
+then run `spacedock install --host claude`.
 
 ## Next
 
