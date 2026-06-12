@@ -1,6 +1,6 @@
 # Operating a workflow
 
-Operating a workflow is a loop: see what is ready, dispatch the first officer to move it, and make a decision when work reaches a gate. The captain drives that loop; the first officer does the orchestration and the ensigns do the stage work. This page covers the loop, the `spacedock status` queries that show you the state, and how to handle a gate.
+Operating a workflow is a loop: see what is ready, dispatch the first officer to move it, and make a decision when work reaches a gate. The captain drives that loop; the first officer does the orchestration and the ensigns do the stage work.
 
 ## The day-to-day loop
 
@@ -60,6 +60,6 @@ It stops and returns to you only at a gate, at a terminal entity's merge ceremon
 
 ## Handle gate decisions
 
-A gate stops the loop and hands you the call: the first officer presents the stage report and its review, then waits. It never self-approves. You make one of three calls: **approve**, **send it back with direction**, or **reject**. What each one does, what the gate report carries, and the feedback-cycle cap are covered in full in [the three calls](../concepts/gates-and-decisions.md#the-three-calls).
+A gate stops the loop and hands you the call: the first officer presents the stage report and its review, then waits. It never self-approves. You make one of three calls: **approve**, **redo with feedback**, or **reject**. What each one does, what the gate report carries, and the feedback-cycle cap are covered in full in [the three calls](../concepts/gates-and-decisions.md#the-three-calls).
 
 When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top: run `status --next` and see what moved into reach.
