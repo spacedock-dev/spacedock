@@ -17,6 +17,17 @@
   border-top: 1px solid var(--line-soft);
 }
 
+/* Discreet machine-readers link in the footer meta row */
+.sd-footer-llms {
+  margin-left: 1em;
+  font-size: 0.64rem;
+  opacity: 0.7;
+  color: inherit;
+}
+.sd-footer-llms:hover {
+  opacity: 1;
+}
+
 /* Mono display headings -- Material has no display-font slot */
 .md-typeset h1,
 .md-typeset h2 {
