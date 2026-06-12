@@ -10,15 +10,15 @@ Spacedock runs on three roles and one division of labor: you shape the work and 
 | **First Officer** | The orchestrator agent. | Running the workflow: dispatch, gate presentation, advancing entity state. |
 | **Ensign** | The worker agent. | Moving one entity (one work item) forward through one stage. |
 
-There is one captain and one first officer per session. The number of ensigns tracks the dispatchable work: the first officer dispatches one per entity per stage.
+Each session has one captain and one first officer. The number of ensigns tracks the dispatchable work: the first officer dispatches one per entity per stage.
 
-The first officer reads the workflow README, runs `spacedock status --next` to find entities ready to advance, and dispatches an ensign for each. An ensign reads its assignment, does the stage's work, commits, writes a stage report, and signals done. The first officer reviews that report against the checklist it dispatched. If the stage is gated, it pauses and presents the report to you. If not, it advances the entity and dispatches the next stage itself. A completed non-gated, non-terminal stage is not a stopping point.
+The first officer reads the workflow README, runs `spacedock status --next` to find entities ready to advance, and dispatches an ensign for each. An ensign reads its assignment, does the stage's work, commits, writes a stage report, and signals done. The first officer reviews that report against the checklist it dispatched. If the stage is gated, it pauses and presents the report to you. If not, it advances the entity and dispatches the next stage itself. A completed non-gated, non-terminal stage flows forward without pause.
 
 ## Shaping versus driving
 
 The captain shapes; the agents drive. These are different jobs, and the split is what keeps you out of the per-step loop.
 
-**Shaping is defining what good looks like before the work runs.** You set the mission, the stages, and the bar each stage must clear, all declared in the workflow README rather than negotiated mid-task. You commission a workflow with [`/spacedock:commission`](../running-workflows/commission.md), and you make the calls at gates: approve, redo with feedback, or reject. Some gates you answer yourself; others resolve through a delegated agent review. That is the whole of the captain's standing job.
+**Shaping is defining what good looks like before the work runs.** You set the mission, the stages, and the bar each stage must clear, all declared in the workflow README rather than negotiated mid-task. You commission a workflow with [`/spacedock:commission`](../running-workflows/commission.md), and you make the calls at gates: approve, redo with feedback, or reject. Some gates you answer yourself; others resolve through a delegated agent review. That is the captain's whole standing job.
 
 **Driving is moving entities through the declared stages.** The first officer schedules and dispatches; the ensign does the stage work and proves it. The first officer is allowed to take obvious reversible steps without asking: a dispatch the workflow already permits, a status read, a routine state transition. It asks you only when requirements are materially ambiguous, a design choice would change the output meaningfully, or scope is too unclear to turn into concrete criteria. Everything else happens without a prompt to you.
 
@@ -26,7 +26,7 @@ The line holds because of one rule: the maker does not judge its own work. Revie
 
 ## Batched, evidenced decisions
 
-Decisions reach you batched and backed by evidence, not as a stream of interruptions. This is the point of the model: your attention is the bottleneck, so the agents queue work and surface only the calls that need a human.
+Decisions reach you batched and backed by evidence, not as a stream of interruptions. Your attention is the bottleneck; the agents queue work and surface only the calls that need a human.
 
 **Batch the work; decide as it flows back.** Queue many entities at once. Ensigns advance each through its stages in parallel. You handle gates as they surface, not one session at a time, and not on the agent's schedule. While one entity waits on a clarification, the first officer keeps dispatching the others.
 
