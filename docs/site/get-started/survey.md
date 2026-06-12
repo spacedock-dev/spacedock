@@ -12,31 +12,24 @@ missing, it asks before installing it.
 - **The steering and interruptions observed**: how often your agents needed
   you to step in, and for what.
 - **Your current workstreams**: what is in flight, clustered into tracks.
-- **What is still undecided**: forks raised but never resolved, cross-checked
-  against the repo first so work that already shipped is dropped.
+- **What is still undecided**: forks raised but never resolved.
 
-## The commission offer
+## Turn the report into a workflow
 
-Survey ends with an offer, not an action. It asks whether you want it to
-[commission](../running-workflows/commission.md) a real Spacedock
-[workflow](../concepts/workflows-and-entities.md) built from what it found,
-turning the open decisions into
-[approval gates](../concepts/gates-and-decisions.md) and the workstreams into
-work items. Nothing has changed in your project until you say yes.
+Survey ends with an offer, not an action. It can turn what it found into a
+Spacedock [workflow](../concepts/workflows-and-entities.md): the repeated loop
+becomes the stages, the workstreams become the work items, and the undecided
+forks become [approval gates](../concepts/gates-and-decisions.md). Nothing
+changes in your project until you say yes; on a no, the survey stands on its
+own as orientation.
 
-The offer matches the work it saw, citing real numbers from the scan:
+The offer matches your work:
 
-- **Routine loops** (issue → worktree → PR) get an automation offer: a
-  workflow that gates the crucial decisions and lets the agent drive between
-  gates.
+- **Routine loops** (issue → worktree → PR) get automation: a workflow that
+  gates the crucial decisions and lets the agent drive between gates.
 - **Exploration** (creative or design work where your steering is the point)
-  gets a book-keeping offer: structure for the parallel threads and their
-  state. There is no automate-the-human-out pitch; the involvement is the work.
-
-On a **yes**, the workflow is built from what survey found: the inferred loop
-becomes the proposed stages, the workstreams become the seed work items, and
-the open forks become the gates. On a **no**, it stops; the survey stands on
-its own as orientation.
+  gets book-keeping: structure for the parallel threads and their state. There
+  is no automate-the-human-out pitch; the involvement is the work.
 
 To define a workflow yourself instead, see
 [your first workflow](first-workflow.md).
