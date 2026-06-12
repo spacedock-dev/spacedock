@@ -18,7 +18,7 @@ You are the captain. You set the bar and make the calls; the agents do the rest.
 
 - **[Get started](get-started/install.md)**: [install](get-started/install.md) Spacedock, then pick an entry. [Survey an existing project](get-started/first-launch.md) to see where your agents burn your time and surface the workflow you are already running without naming it. Or [start a fresh workflow](get-started/first-workflow.md) from a common shape like development or research.
 - **[Concepts](concepts/operating-model.md)** covers the operating model, workflows and entities, the stage lifecycle, gates and decisions, and a worked example.
-- **[Running workflows](running-workflows/commission.md)** walks through commissioning a workflow, surveying an existing project, operating a running workflow, and debriefing and refitting between sessions.
+- **[Running workflows](running-workflows/commission.md)** walks through commissioning a workflow, operating a running workflow, and debriefing and refitting between sessions.
 
 ## For agents using Spacedock
 

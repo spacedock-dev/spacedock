@@ -80,7 +80,6 @@ nav:
       - A worked example: concepts/worked-example.md
   - Running workflows:
       - Commission a workflow: running-workflows/commission.md
-      - Survey an existing project: running-workflows/survey.md
       - Operating a workflow: running-workflows/operating.md
       - Debrief & refit: running-workflows/debrief-and-refit.md
   - Advanced topics:
