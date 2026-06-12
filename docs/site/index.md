@@ -22,4 +22,4 @@ You are the captain. You set the bar and make the calls; the agents do the rest.
 
 ## For agents using Spacedock
 
-Spacedock's docs are read by agents too. A workflow's first officer parsing these docs is itself an agent. The build emits a curated `llms.txt` index at the site root for product-using agents.
+Spacedock's docs are read by agents too. The build emits a curated `llms.txt` index at the site root for product-using agents.

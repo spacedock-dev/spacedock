@@ -26,7 +26,7 @@ Point Spacedock at a project you already have and let it survey:
 spacedock claude "/spacedock:survey"
 ```
 
-Starts the first officer in Claude Code and runs the survey. Spacedock manages
+Starts a Spacedock session in Claude Code and runs the survey. Spacedock manages
 the agents your harness loads: the first launch sets them up in Claude Code, so
 no separate setup step is needed. To set them up ahead of time, or to refresh
 them later, run `spacedock install --host claude`.
