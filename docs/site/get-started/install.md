@@ -46,14 +46,10 @@ runs sandboxed through the `safehouse` command; `--safehouse` forces it.
 Spacedock ships no sandbox of its own: when no `safehouse` binary is on your
 `PATH`, the launch prints an install hint and proceeds **unsandboxed**.
 
-## Keep things in sync
+## Troubleshooting
 
-`spacedock doctor` checks compatibility. If it reports the agents your harness
-loads are out of date, refresh with:
-
-```bash
-spacedock install --host claude
-```
+Run `spacedock doctor`. It checks the install and names anything missing or
+out of date.
 
 ## Next
 
