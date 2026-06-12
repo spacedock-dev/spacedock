@@ -68,6 +68,8 @@ The frontmatter is the machine-readable state. The full schema lives in the work
 | `worktree` | The worktree path while a dispatched agent is active; empty otherwise. |
 | `issue` | Optional external ticket reference, e.g. `ENG-123`, `kata:task-abc123`, or `owner/repo#42`. |
 
+The frontmatter parser is line-oriented, so keep fields flat and top-level. If a workflow needs more metadata, add more flat custom fields rather than nested YAML — the v1 parser preserves lines, not arbitrary nested structure.
+
 `status` is the field that drives everything: the first officer reads it to decide which entities are ready to advance. To see the queue, run the status viewer against the workflow directory:
 
 ```bash

@@ -1,11 +1,26 @@
 # Command reference
 
-The `spacedock` binary has ten subcommands in three groups (Launch, Setup, and
-Workflow), plus a top-level `--version`. Run `spacedock` with no arguments to
-print the grouped help; run `spacedock <command> --help` for a command's own
-flags. An unknown command or a stray leading flag exits 2 with a diagnostic on
-stderr, and an unknown command resolution under cobra also exits 2. The verbs are
-registered in `internal/cli/cli.go`.
+The `spacedock` binary has ten subcommands in three groups, plus a top-level
+`--version`:
+
+| Command | Group | What it does |
+|---------|-------|--------------|
+| [`spacedock claude`](#launch-claude-codex-pi) | Launch | Start Claude Code with the first officer loaded |
+| [`spacedock codex`](#launch-claude-codex-pi) | Launch | Start Codex (experimental) with the first officer |
+| [`spacedock pi`](#launch-claude-codex-pi) | Launch | Start Pi (experimental) with the first officer |
+| [`spacedock install`](#setup-install-doctor) | Setup | Install the per-host plugin, then run the compatibility check |
+| [`spacedock doctor`](#setup-install-doctor) | Setup | Run the compatibility check alone |
+| [`spacedock status`](#status) | Workflow | Read or mutate workflow state — the table, `--next`, `--where`, `--set`, … |
+| [`spacedock new`](#new) | Workflow | Create an entity from stdin (alias for `status --new`) |
+| [`spacedock state`](#state) | Workflow | Manage a split-root workflow's state checkout |
+| [`spacedock completion`](#completion) | Workflow | Print a bash or zsh completion script |
+| [`spacedock dispatch`](#dispatch) | Workflow | Build the worker dispatch artifacts the first officer hands an ensign |
+| [`spacedock --version`](#-version) | — | Print the binary version and the contract level |
+
+Run `spacedock` with no arguments to print the grouped help, and
+`spacedock <command> --help` for a command's own flags. An unknown command or a
+stray leading flag exits 2 with a diagnostic on stderr. The verbs are registered
+in `internal/cli/cli.go`.
 
 ## --version
 
@@ -178,5 +193,5 @@ Builds the worker dispatch artifacts the first officer hands an ensign. `build`
 assembles the assignment (requires `--workflow-dir` unless `--print-schema` or
 validate-only); `show-stage-def` prints a stage's definition (`--workflow-dir`
 and `--stage`). A missing or unknown subcommand exits 2. See
-[Adding runtime support](multi-host.md) for how `dispatch build` learns a new
-host mode.
+[Adding a runtime](../contributing/adding-a-runtime.md) for how `dispatch build`
+learns a new host mode.

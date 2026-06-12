@@ -5,6 +5,10 @@
 .md-header,
 .md-tabs {
   background-color: var(--bg-2);
+  /* Material colours header text with --md-primary-bg-color (a dark ink in both
+     schemes); since we force a dark header bg, set a light fg so the wordmark,
+     tabs, and icons stay legible under the slate (default) scheme. */
+  color: var(--fg);
   border-bottom: 1px solid var(--line-soft);
 }
 

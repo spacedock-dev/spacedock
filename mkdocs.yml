@@ -1,11 +1,15 @@
 site_name: Spacedock
 site_description: A multi-agent orchestrator where nothing ships without a decision.
-site_url: https://spacedock-dev.github.io/spacedock/
+site_url: https://spacedock.md/docs/
 repo_url: https://github.com/spacedock-dev/spacedock
 repo_name: spacedock-dev/spacedock
 copyright: Spacedock is released under the Apache License 2.0.
 
 docs_dir: docs/site
+
+# Internal authoring directive (CLAUDE.md), not a published page.
+exclude_docs: |
+  CLAUDE.md
 
 theme:
   name: material
@@ -78,16 +82,15 @@ nav:
       - Operating a workflow: running-workflows/operating.md
       - Debrief & refit: running-workflows/debrief-and-refit.md
   - Advanced topics:
-      - Sprints & roadmap: advanced/sprints-and-roadmap.md
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
       - External-tracker bridge: advanced/external-tracker.md
       - Multi-workflow & split-root state: advanced/split-root-state.md
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
-      - Multi-host support: reference/multi-host.md
   - Contributing:
       - The development workflow: contributing/development-workflow.md
+      - Build from source: contributing/build-from-source.md
       - Agent development: contributing/agent-development.md
       - Proof policy: contributing/proof-policy.md
       - Adding a runtime: contributing/adding-a-runtime.md

@@ -47,6 +47,8 @@ You answer a gate with one of three calls.
 
 A redo and a reject at a `feedback-to` stage run the same routing machinery. The difference is whether you are correcting a direction you accept or sending it back. Both name the concrete fix asks so the next worker has something to act on.
 
+**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the verdict is the outcome on the record, and closing without one is the failure the guard exists to catch. The mechanics are in the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields).
+
 ## Feedback cycles and the loop cap
 
 When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` stage, the work routes back to the stage named in `feedback-to`: the stage that owns the fix, not the reviewer that flagged it. In the dev workflow, `validation` has `feedback-to: implementation`, so a rejected validation sends the deliverable back to implementation, not back to the validator.

@@ -14,135 +14,84 @@ Spacedock itself is two pieces that install separately:
    harness (Claude Code, Codex, or Pi).
 
 The recommended setup installs the launcher with Homebrew, then adds the plugin.
-A from-source build is available for development.
+Pick your platform, then confirm and launch — those last two steps are the same
+everywhere. A from-source build is available for development.
 
-## Install with Homebrew (recommended)
+## Install the launcher
 
-1. **Install the launcher.**
+=== "macOS (Homebrew)"
 
-   ```bash
-   brew tap spacedock-dev/homebrew-tap
-   brew install spacedock
-   ```
+    ```bash
+    brew tap spacedock-dev/homebrew-tap
+    brew install spacedock
+    ```
 
-2. **Confirm it.**
+=== "Linux / no Homebrew"
 
-   ```bash
-   spacedock --version
-   ```
+    The Homebrew cask is macOS-only. On Linux — or on macOS without Homebrew —
+    the `curl | sh` script detects your OS and architecture, downloads the
+    matching tarball from the latest GitHub Release, verifies it against the
+    release `checksums.txt`, and installs the `spacedock` binary to
+    `~/.local/bin`.
 
-   Prints the installed version, e.g. `spacedock 0.20.0`.
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/next/install.sh | sh
+    ```
 
-3. **Launch.** Point it at a project you already have and let it survey.
+    If `~/.local/bin` is not on your `PATH`, the script prints a note; add it
+    (`export PATH="$HOME/.local/bin:$PATH"`) so the `spacedock` command resolves.
+    Set `SPACEDOCK_INSTALL_DIR` to install elsewhere (e.g.
+    `SPACEDOCK_INSTALL_DIR=/usr/local/bin`, which may need `sudo`).
 
-   ```bash
-   spacedock claude "/spacedock:survey"
-   ```
+    **Sandboxing.** Safehouse behaves the same as on macOS: when a `.safehouse`
+    profile is present in the working directory, Spacedock wraps the launch
+    through the `safehouse` command. Spacedock ships no sandbox of its own — a
+    run is sandboxed only when a Linux-capable `safehouse` binary is on your
+    `PATH`; when the binary is absent, Spacedock prints an install hint and the
+    launch proceeds **unsandboxed**. The macOS-only Gatekeeper/quarantine
+    handling does not apply on Linux and is not needed there.
 
-   Starts the first officer in Claude Code and runs the survey. The first launch
-   sets up the plugin for you, so this single command is enough. When a
-   `.safehouse` profile is present in the working directory, the launch runs
-   sandboxed.
+=== "Codex or Pi"
 
-   To set up the plugin ahead of time, or to refresh it later, run
-   `spacedock install --host claude`.
+    Claude Code is the primary surface; Codex and Pi are supported but
+    experimental. Install the launcher with Homebrew (the macOS tab), then add
+    the plugin for your host:
 
-## Install on Linux (or macOS without Homebrew)
+    ```bash
+    spacedock install --host codex      # or: --host pi
+    ```
 
-The Homebrew cask is macOS-only. On Linux — and on macOS if you'd rather not use
-Homebrew — install the launcher with the `curl | sh` script. It detects your
-OS and architecture, downloads the matching tarball from the latest GitHub
-Release, verifies it against the release `checksums.txt`, and installs the
-`spacedock` binary to `~/.local/bin`.
+    Codex installs plugins from your shell rather than programmatically, so this
+    prints the `codex plugin` commands to run.
 
-1. **Install the launcher.**
+## Confirm it
 
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/next/install.sh | sh
-   ```
+```bash
+spacedock --version
+```
 
-   Installs `spacedock` to `~/.local/bin`. If that directory is not on your
-   `PATH`, the script prints a note; add it (`export PATH="$HOME/.local/bin:$PATH"`)
-   so the `spacedock` command resolves. Set `SPACEDOCK_INSTALL_DIR` to install
-   elsewhere (e.g. `SPACEDOCK_INSTALL_DIR=/usr/local/bin`, which may need `sudo`).
+Prints the installed version, e.g. `spacedock 0.20.0`.
 
-2. **Confirm it.**
+## Launch
 
-   ```bash
-   spacedock --version
-   ```
+Point Spacedock at a project you already have and let it survey:
 
-   Prints the installed version, e.g. `spacedock 0.20.0`.
+```bash
+spacedock claude "/spacedock:survey"
+```
 
-3. **Add the plugin and launch** exactly as in the Homebrew steps above
-   (`spacedock claude "/spacedock:survey"`).
+Starts the first officer in Claude Code and runs the survey. The first launch
+sets up the plugin for you, so this single command is enough. When a
+`.safehouse` profile is present in the working directory, the launch runs
+sandboxed. To set up the plugin ahead of time, or to refresh it later, run
+`spacedock install --host claude`.
 
-**Sandboxing on Linux.** Spacedock's safehouse integration behaves the same on
-Linux as on macOS: when a `.safehouse` profile is present in the working
-directory, Spacedock wraps the launch through the `safehouse` command. Spacedock
-does not ship a sandbox — it detects the profile and delegates. A run is
-sandboxed only when a Linux-capable `safehouse` binary is on your `PATH`. When
-the binary is absent, Spacedock prints an install hint and the launch proceeds
-**unsandboxed**. Install safehouse separately if you need the sandbox on Linux;
-the macOS-only Gatekeeper/quarantine handling does not apply on Linux and is not
-needed there.
+With Codex or Pi, launch with the matching subcommand instead:
+`spacedock codex "your task"` or `spacedock pi "your task"`.
 
-## Use Codex or Pi instead
-
-Codex and Pi are supported but experimental. Claude Code is the primary surface.
-
-1. **Install the launcher** (same Homebrew step as above).
-
-2. **Add the plugin** for your host.
-
-   ```bash
-   spacedock install --host codex      # or: --host pi
-   ```
-
-   Codex installs plugins from your shell rather than programmatically, so this
-   prints the `codex plugin` commands to run. Run them, then use the
-   first-officer skill in your Codex session.
-
-3. **Launch** with the matching subcommand.
-
-   ```bash
-   spacedock codex "your task"         # or: spacedock pi "your task"
-   ```
-
-## Build from source (for development)
-
-Use this when you're working on Spacedock itself. It builds the launcher from
-the development branch and loads the plugin from your checkout, so local changes
-take effect immediately.
-
-1. **Clone and build.**
-
-   ```bash
-   git clone --branch next https://github.com/spacedock-dev/spacedock
-   cd spacedock
-   go build -o spacedock ./cmd/spacedock
-   ```
-
-2. **Confirm the binary.**
-
-   ```bash
-   ./spacedock --version
-   ```
-
-   Prints `spacedock <version>` for your local build.
-
-3. **Launch with the local plugin.**
-
-   ```bash
-   ./spacedock claude "your task" -- --plugin-dir "$PWD"
-   ```
-
-   `--plugin-dir` is a host flag, so it rides after `--`. It loads the
-   first-officer and ensign agents from your checkout instead of the installed
-   plugin. Edits to the repo are live.
-
-The `next` branch is the development channel. It has no Homebrew release. Use the
-Homebrew path above for a stable install.
+Working on Spacedock itself? See [Build from source](../contributing/build-from-source.md)
+in Contributing — it builds the launcher from the `next` branch and loads the
+plugin from your checkout so local edits are live.
 
 ## Keep things in sync
 
@@ -156,13 +105,8 @@ spacedock install --host claude
 If the `spacedock` command itself is missing, install the launcher with Homebrew
 first, then run `spacedock install --host claude`.
 
-## Command grammar
+## Next
 
-The front door is `spacedock claude "task" [--safehouse…] [-- host-flags…]`
-(and the same shape for `spacedock codex` and `spacedock pi`):
-
-- The task comes first. It's handed to the first officer as the launch prompt.
-- Anything after `--` forwards verbatim to the host (`claude` / `codex` / `pi`),
-  including `--plugin-dir`, `--resume`, `--model`, and the like.
-- `--safehouse` forces the launch through the sandbox. A `.safehouse` profile in
-  the working directory does the same automatically.
+Run your [first launch](first-launch.md). For the full launch grammar — the task
+argument, what rides after `--`, and the sandbox flags — see the
+[command reference](../reference/command-reference.md#launch-claude-codex-pi).

@@ -1,7 +1,7 @@
 # A worked example
 
 This page traces one real entity, `z9` `codex-plugin-auto-install`, from
-backlog through to `done` / PASSED, using artifacts that live in this repo. It is
+backlog through to `done` / PASSED, using artifacts from the project repo. It is
 a concrete read of the abstract stage machine: backlog → ideation →
 implementation → validation → done, the gates between them, and what the captain
 actually decides at each one.
@@ -64,16 +64,20 @@ Once the design is approved, `z9` moves to implementation. The dev workflow runs
 this stage in a `worktree` (`worktree: true`), so the dispatched ensign works in
 an isolated checkout, not the shared tree.
 
-The dispatch package gave the implementer three concrete build notes, all of
-which the work honored:
+The dispatch package handed the implementer three build notes, verbatim from the
+sprint's `dispatch-sprint-execution.md`:
 
-- **Install on the shared `devBranch`**, via `ops.Install("codex",
-  marketplaceSource, devBranch)` and `--ref <devBranch>`, not a hardcoded
-  `next`, so the channel tracks the flip's later `devBranch` retarget.
-- **Fix the now-false comments and error strings** it builds around
-  (`host_exec.go`, `frontdoor.go`), rather than adding new code around stale text.
-- **Invert the obsolete test** `TestCodexFrontDoorNoPluginFailsFastWithoutInstalling`,
-  whose old assertion contradicted the new auto-install behavior.
+> Build notes: **(a)** the codex install branch MUST be the shared `devBranch`
+> (`ops.Install("codex", marketplaceSource, devBranch)` + `--ref <devBranch>`),
+> NOT a hardcoded `next` — so it tracks the channel … **(b)** **fix** the
+> now-false comments/error-strings it builds around (`host_exec.go:271-273`,
+> `:32-34`; `frontdoor.go:314-316`), don't add around them; **(c)** inverts
+> `frontdoor_test.go:414`.
+
+The work honored all three: it installed on the shared `devBranch` so the
+install channel tracks the flip, fixed the stale comments and error strings in
+place, and inverted the obsolete test whose old assertion contradicted the new
+auto-install behavior.
 
 Implementation is complete when the deliverable is committed and the stage report
 is filed. It is not a parking spot: a completed implementation routes straight to
@@ -103,10 +107,11 @@ PASSED recommendation goes to the captain for the terminal decision.
 
 `z9` reaches `done` when the captain reads the validation report and approves.
 The terminal stage records the outcome in frontmatter: `status: done`,
-`verdict: PASSED`, and a `completed` timestamp. The sprint's `post-sprint-audit.md`
-confirms `z9` finished `status: done`, `verdict: PASSED`, archived, with PR
-reference #329, alongside its three sprint siblings (`kb` #327, `qa` #328,
-`vh` #330).
+`verdict: PASSED`, and a `completed` timestamp. The sprint's
+`post-sprint-audit.md` confirms it in one line, `z9` alongside its three siblings:
+
+> kb / qa / z9 / vh entities are all `status: done`, `verdict: PASSED`, archived,
+> with PR refs #327 / #328 / #329 / #330.
 
 That is the whole point of the machine: nothing reached `done` on assertion
 alone. `z9` advanced only on an approved design, an isolated implementation, a

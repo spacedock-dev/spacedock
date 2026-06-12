@@ -1,14 +1,10 @@
 # Spacedock
 
-**Spacedock is a multi-agent orchestrator where nothing ships without a decision.** It lives within your existing harness: Claude Code, Codex, or Pi.
+You're the human, and agents from a dozen sessions ping you all day — a design call, a one-line approval, "ship without full coverage?" — none of it on a schedule you can plan. Generation got cheap; your judgment is now the bottleneck, and every task still ends in a decision someone has to own.
 
-Spacedock breaks work into stages and surfaces the decisions each stage needs, batched for you. Each decision arrives with evidence measured against a predefined bar for what good looks like. You approve, send back, or escalate. You can also delegate the call to an agent. Either way, the decision is recorded with its evidence and reason.
+**Spacedock is a multi-agent orchestrator where nothing ships without a decision.** It lives within your existing harness — Claude Code, Codex, or Pi. It breaks work into stages and surfaces the decisions each stage needs, batched for you. Each decision arrives with evidence measured against a predefined bar for what good looks like. You approve, send back, or escalate — or delegate the call to an agent. Either way, the decision is recorded with its evidence and reason.
 
-A few terms you'll meet throughout these docs:
-
-- A **workflow** is a directory of plain-text work item files plus a README that defines the stages, the schema, and the gates.
-- An **entity** is one work item, a markdown file (or folder) that carries everything about the work: the problem, the design notes, the bar for done, and the stage reports.
-- A **stage** is one step in the lifecycle; a **gate** is the decision point at its end.
+You'll meet two terms right away: a **workflow** is the directory of work that defines the stages and the gates, and a **gate** is the point where the workflow pauses for your decision instead of advancing on its own. Entities (the individual work items) and stages are introduced in [Concepts](concepts/operating-model.md), where you first need them.
 
 Three roles run a workflow:
 

@@ -2,7 +2,7 @@
 
 Every entity is a markdown file (or a folder with an `index.md`) whose YAML frontmatter carries the fields Spacedock reads to track and move it. The always-current schema lives in the development workflow's [Schema / Field Reference](../contributing/development-workflow.md#field-reference); this page surfaces that table and the external-tracker bridge fields in one place for reference. A standalone `docs/specs/frontmatter-contract.md` is a planned follow-up; until it lands, the development workflow README is the source of truth.
 
-The frontmatter parser is line-oriented. Keep fields flat and top-level. If richer metadata becomes necessary, add more flat custom fields rather than nested YAML, because the v1 parser preserves lines, not arbitrary structure.
+Keep fields flat and top-level; add more flat custom fields rather than nested YAML. (The [entity frontmatter concept](../concepts/workflows-and-entities.md#entity-frontmatter) explains why the line-oriented parser requires this.)
 
 ## Entity fields
 
@@ -23,7 +23,7 @@ These are the fields the development workflow declares for a `task` entity. Othe
 
 The `status` field is the execution state. `spacedock status` reads stage declarations from the workflow README and reports each entity's `status` against them; `--set status=<stage>` is the mutation that advances an entity. The status read path does not invent stages. If the README declares no stages block, membership cannot be validated.
 
-The `verdict` field is guarded on the finalize action, not on reaching a terminal stage. The guard keys on the finalize shape (a `--set` that writes `completed`, or an `--archive` of a terminal entity) and refuses it (exit 1, entity unmutated) when the post-state `verdict` is empty (see `internal/status/verdict_guard_test.go`). A bare dispatch into a terminal stage that does not write `completed` passes without a verdict, because the verdict is the outcome of work that has not happened yet. A finalize on an entity that already carries a verdict also passes, even when that `--set` does not re-name it. `--force` bypasses the guard. The failure mode the guard catches is finalizing or archiving a terminal entity with no verdict on record.
+The `verdict` field is guarded on the finalize action, not on reaching a terminal stage: writing `completed` (via `--set`) or archiving a terminal entity is refused with exit 1 (entity unmutated) when `verdict` is empty, and `--force` bypasses. A bare dispatch into a terminal stage that does not write `completed` passes without a verdict. See [gates and decisions](../concepts/gates-and-decisions.md#the-three-calls) for why a terminal close requires a verdict.
 
 ## Copy-paste starter
 

@@ -1,11 +1,13 @@
 # Your first workflow
 
-A workflow is a directory of plain-text work items plus a README that defines
-the stages they move through, the schema each item carries, and the gates where
-you make a call. You create one by describing what you want, in plain language,
-to the `/spacedock:commission` skill. This page walks that first commission end
-to end: the questions it asks, the design and review gates it sets up, and what
-happens once the workflow starts running.
+Your first workflow comes from one of two places: [survey](first-launch.md)
+offers to build one from what it found in your project, or you describe one from
+scratch to the `/spacedock:commission` skill. Either way you land here. A
+workflow is a directory of plain-text work items plus a README that defines the
+stages they move through, the schema each item carries, and the gates where you
+make a call. This page walks the commission end to end: the questions it asks,
+the design and review gates it sets up, and what happens once the workflow starts
+running.
 
 A few terms used below, defined on first use:
 
@@ -19,8 +21,10 @@ A few terms used below, defined on first use:
   for your call instead of advancing on its own.
 
 You are addressed as the captain, the workflow operator who makes the calls at
-gates. The first officer is the orchestrator agent that runs the workflow; the
-ensign is the worker agent that moves one entity through one stage.
+gates; the first officer is the orchestrator agent that runs the workflow, and
+the ensign is the worker that moves one entity through one stage. The
+[operating model](../concepts/operating-model.md#three-roles) covers the three
+roles in full.
 
 ## Commission a workflow
 
@@ -38,23 +42,14 @@ scratch.
 
 The skill greets you and walks three phases: **design** (a few questions),
 **generate** (it writes the files), and a **pilot run** (it starts the workflow
-on your seed items). The design phase asks you three things, one question at a
-time:
-
-1. **The mission and the entity.** What the workflow is for, and what each work
-   item represents: "a design idea", "a bug report", "a candidate feature". The
-   skill derives a short label from your answer (a "design idea" becomes an
-   `idea`).
-2. **The stages.** It proposes an ordered list from your mission (for a design
-   workflow, something like `backlog → ideation → implementation → validation →
-   done`), and you confirm, add, remove, or rename them.
-3. **Seed entities.** Two or three starting items to run through, each with a
-   title and a short description (and an optional score). These become the
-   workflow's first work.
-
-From your answers the skill then derives the gates: which stages pause for your
-approval, and which earlier stage rejected work bounces back to. By default it
-gates the stage before the terminal one.
+on your seed items). In the design phase it asks, one question at a time: what
+the workflow is for and what each entity is (a "design idea" becomes an `idea`),
+the stages an entity moves through, which of those stages are gated and where a
+rejected entity bounces back to, and the quality bar for each stage — then the
+entity-ID style and two or three seed items to start on. You confirm or adjust
+each proposal. The
+[commission reference](../running-workflows/commission.md#the-four-things-you-name)
+covers every decision in full.
 
 You do not have to get every answer right. After the questions, the skill
 presents the full design as a summary (stages, gates, seed items, where the
@@ -63,25 +58,17 @@ what to change and it re-presents.
 
 ## What gets generated
 
-Once you accept, the skill writes the workflow into a new directory under
-`docs/` and confirms each file it created:
-
-- `README.md`, the workflow's living spec. It holds the mission, the schema each
-  entity carries, and a section per stage describing its inputs, outputs, and
-  quality bar (`Good:` / `Bad:`).
-- One file per seed entity, named from its title, with YAML frontmatter that
-  records its `status`, `score`, and other fields.
-
-The per-stage prose in the README is a best-guess starting point, not a
-commitment. The skill flags this directly and offers a `review stages` walk that
-steps through each stage's expectations so you can tighten the quality bar before
-any work runs. Tightening here is cheap; an agent dispatched against a vague bar
-is not.
+Once you accept, the skill writes the workflow into a new directory under `docs/`:
+a `README.md` that is the workflow's living spec (mission, schema, and a section
+per stage with its `Good:` / `Bad:` bar) and one file per seed entity. The
+per-stage prose is a best-guess starting point — tighten it before any work runs,
+because an agent dispatched against a vague bar is expensive to correct. See
+[what gets generated](../running-workflows/commission.md#what-gets-generated) for
+the full file layout and the `review stages` walk.
 
 ## The design and review gates
 
-A gate is where the workflow stops and hands you a decision instead of advancing
-on its own. This is the line Spacedock draws: work flows through the stages, but
+This is the line Spacedock draws: work flows through the stages, but
 **nothing crosses a gate without a recorded decision.** A development workflow
 gates the design stage and the review stage among others, so you sign off on
 the approach before code is written, and on the result before it ships.
@@ -102,21 +89,8 @@ call that produced it.
 ## What happens after
 
 When you accept the design, the commission skill launches a pilot run on your
-seed entities. It takes on the first-officer role itself for this first run:
-it reads the workflow README, checks which entities are ready to advance, and
-dispatches ensigns to move them through their stages. Stages that modify the
-repo run in their own git worktree; lighter stages run inline.
-
-The run proceeds until the workflow goes idle or reaches a gate. There the first
-officer stops and reports what happened: which entities moved, which stages they
-passed through, which gate is waiting on you. From that point you are running the
-workflow: approve, send back, or reject, and work continues.
-
-To resume the workflow in a later session, launch the first officer with no task:
-
-```bash
-spacedock claude
-```
-
-It reads the saved workflow state, picks up where you left off, and dispatches
-ensigns for any entity ready for its next stage.
+seed entities: it takes the first-officer role itself, reads the README, and
+dispatches ensigns to move ready entities through their stages until the workflow
+goes idle or reaches a gate. From there you are running the workflow — approving,
+sending back, and resuming in later sessions. [Operating a workflow](../running-workflows/operating.md)
+covers the day-to-day loop and how to resume.

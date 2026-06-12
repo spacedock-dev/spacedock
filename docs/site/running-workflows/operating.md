@@ -60,12 +60,6 @@ It stops and returns to you only at a gate, at a terminal entity's merge ceremon
 
 ## Handle gate decisions
 
-A gate is the decision point at the end of a stage marked `gate: true` in the workflow. When an entity reaches one, the first officer presents the stage report and the result of its review, then waits. It never self-approves. You decide:
-
-- **Approve.** The entity advances to its next stage. The first officer dispatches it (or, at a terminal stage, runs the merge-and-cleanup ceremony to close the entity with its verdict).
-- **Reject.** On a stage with a `feedback-to` target (`validation` routes back to `implementation` in the `docs/dev` workflow), the rejection routes the concrete findings back to that stage and re-runs the work, then re-validates. A repeated rejection escalates back to you rather than bouncing indefinitely.
-- **Send it back with direction.** If the result is close but not right, give the first officer the specific change to make. It updates the entity body, acceptance criteria, and test plan together, then re-runs the stage.
-
-The gate review names the chosen direction, cites the stage report, and ends with a single recommendation, approve or reject. Read the report it cites before deciding; overriding a `REJECTED` recommendation without a reason is exactly the kind of unexamined approval the gate exists to catch.
+A gate stops the loop and hands you the call: the first officer presents the stage report and its review, then waits — it never self-approves. You make one of three calls — **approve**, **send it back with direction**, or **reject**. What each one does, what the gate report carries, and the feedback-cycle cap are covered in full in [the three calls](../concepts/gates-and-decisions.md#the-three-calls).
 
 When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top: run `status --next` and see what moved into reach.
