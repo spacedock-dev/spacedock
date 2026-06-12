@@ -4,9 +4,9 @@ Spacedock runs on three roles and one division of labor: you shape the work and 
 
 ## Roles
 
-| Role | Who | What they own |
-|------|-----|---------------|
-| **Captain** | You | The mission, and the call at every approval gate unless you delegate it |
+| Role | Who | Ownership |
+|------|-----|-----------|
+| **Captain** | You | The mission, and the call at every approval gate unless delegated |
 | **First Officer** | The orchestrator agent | Runs the workflow for you and brings each decision to you with evidence |
 | **Ensign** | The worker agent | Moves one work item through one stage |
 
@@ -16,9 +16,11 @@ The first officer keeps the work moving so you do not have to: it finds what is 
 
 ## Shaping versus driving
 
-The captain shapes; the agents drive. These are different jobs, and the split is what keeps you out of the per-step loop.
+The captain shapes the product and owns the workflow; the agents drive. These are different jobs, and the split is what keeps you out of the per-step loop.
 
-**Shaping is defining what good looks like before the work runs.** You set the mission, the stages, and the bar each stage must clear, all declared in the workflow README rather than negotiated mid-task. You commission a workflow with [`/spacedock:commission`](../running-workflows/commission.md), and you make the calls at gates: approve, redo with feedback, or reject. Some gates you answer yourself; others resolve through a delegated agent review. That is the captain's whole standing job.
+**Shaping is the product judgment: the goal, the taste, the steering.** What to build, what good looks like, which direction survives a gate. You make the calls at gates (approve, redo with feedback, or reject); some you answer yourself, others resolve through a delegated agent review. This judgment is the part the agents cannot supply.
+
+**Owning the workflow is the structural half.** You set the stages and the bar each stage must clear, declared and serialized in the workflow README, starting from [`/spacedock:commission`](../running-workflows/commission.md). The declaration is shapable mid-task: you do not have to get it right the first time. When a bar turns out fuzzy in practice, tighten the README and the next dispatch works to the new line.
 
 **Driving is moving work items through the declared stages.** The first officer schedules and dispatches; the ensign does the stage work and proves it. The first officer acts on its own for routine, reversible steps and asks you only when something is genuinely ambiguous: unclear requirements, a design choice that would change the output, scope too vague to turn into criteria. Everything else happens without a prompt to you.
 
