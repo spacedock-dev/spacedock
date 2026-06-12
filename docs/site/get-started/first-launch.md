@@ -12,14 +12,7 @@ Run it from inside a project that already has some agent history, such as a repo
 
 ## What survey reads
 
-Survey reads recorded agent session history through `agentsview`, a session-history tool. It does not parse raw logs by hand. It drives the `agentsview` binary to sync this project's sessions into a process-readable copy, then runs a fixed set of labeled, read-only SQL queries against that copy. The queries live in `skills/survey/references/queries.sql`, one labeled query per concern, so nothing is a black box.
-
-Two behaviors matter when you run it:
-
-- **It scopes to this repo by identity, not by name.** Survey resolves the repo root and scopes every query to that absolute path prefix. Because `agentsview` keys each session's project by the git-root basename, a same-basename sibling repo elsewhere on disk would otherwise fold in; the path-prefix scope keeps it out, and admits every checkout of this repo: the root, a subdir, a worktree.
-- **If `agentsview` is missing, it asks before installing.** Survey needs `agentsview` to read the logs. When the binary is absent it tells you so and asks consent; on a yes it installs (`brew install --cask agentsview`, or the install-script fallback). It never installs without an explicit yes. If the sync fails for any reason (network, disk, permissions), it reports the exact failure and stops rather than guessing.
-
-If the repo has no Claude agent history, survey says so plainly and stops. There is nothing to discover.
+Survey reads your recorded agent sessions, read-only, scoped to this repo and every checkout of it (the root, a subdir, a worktree) and nothing else on disk. It reads them through `agentsview`, a session-history tool; if that tool is missing, survey asks before installing it, and never installs without an explicit yes. If the sync fails, it reports the exact failure and stops rather than guessing. If the repo has no agent history, survey says so plainly and stops.
 
 ## What it reports
 
@@ -31,19 +24,11 @@ Survey leads with a one-line headline (the project, the session count, the date 
 - **Needs you.** The open decisions, the forks raised but never resolved. **Survey leads the report with these**, because they are the work blocked on you. Exploration threads you are deliberately holding are separated from mechanical questions awaiting an answer.
 - **Recent decisions** and **interruptions**: the answered or shipped forks, and how often you had to step in.
 - **Scaffold.** If another agent scaffold is in use (superpowers, gsd / get-shit-done, or another `.claude` skill tree), survey states it as a fact: the family, its invocation count, and whether it is checked in on disk.
-- **Codex** (only when present). Codex sessions land with no recorded working directory, so survey attributes them to this repo through each command's working directory and reports them as their own section: a session count, the workstream clusters, and an activity tally.
+- **Codex** (only when present). Codex sessions get their own section: a session count, the workstream clusters, and an activity tally.
 
 If a section's signal is empty, survey says the run found none of it. It never dresses an empty section up as "no decisions".
 
-### The open frontier is cross-checked
-
-The open-decision scan reads transcripts only, which cannot tell a shipped fork from a still-open one. Before presenting the frontier, survey cross-references the repo (`git log`, merged PRs, the working tree) and splits each open fork three ways:
-
-- **shipped**: a confident match to a merged PR or commit. Dropped from the frontier.
-- **decided, not shipped**: moved to a backlog line.
-- **never decided**: stays on the `NEEDS YOU` frontier.
-
-The match is conservative: a fork is dropped only on a confident repo match, because a false "still open" is a cheap nudge while a false "shipped" silently hides real open work. When no repo signal is available, whether because this is not a git repo or because the lookups fail, the frontier degrades to transcript-only and every open fork is flagged `unverified` rather than presented as authoritative.
+Open decisions are cross-checked against the repo before they reach you: forks that already shipped are dropped, decided-but-unshipped ones move to a backlog line, and only the never-decided stay on the `NEEDS YOU` frontier. When there is no repo signal to check against, every open fork is flagged `unverified` instead of presented as authoritative.
 
 ## The commission offer
 
@@ -57,14 +42,7 @@ The offer is keyed to each track's work mode, so each track gets a distinct pitc
 
 A project with both modes gets both offers. Each offer cites a real number from the scan: the track names, the gate-pass count, the open forks, the cancelled-path count.
 
-On a **yes**, survey hands off to commission in batch mode, assembling the inputs from the scan:
-
-- **stages** ← the inferred workflow loop;
-- **seed entities** ← the workstreams;
-- **approval gates** ← the open forks that survived the repo cross-check;
-- **mission and entity** ← inferred from the workstreams and the project.
-
-Survey does not write the workflow files itself; file generation stays commission's job. On a **no**, it stops; the survey stands on its own as orientation.
+On a **yes**, survey hands what it found to commission: the inferred loop becomes the proposed stages, the workstreams become the seed work items, and the open forks become the gates. File generation stays commission's job. On a **no**, it stops; the survey stands on its own as orientation.
 
 To define a workflow yourself instead, see [your first workflow](first-workflow.md). If `spacedock` is not yet installed, start with [installing Spacedock](install.md).
 

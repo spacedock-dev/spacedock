@@ -10,6 +10,7 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
   - ✗ "Spacedock is a multi-agent orchestrator."
   - ✓ "You have work that needs doing in stages, with a human sign-off before anything ships. Spacedock runs that for you."
 - **Introduce the fewest terms possible, as late as possible.** Don't front-load a glossary. Define a term on first real use, gloss it once, then just use it. If a page introduces more than a handful of new terms, cut or defer some.
+- **Lead with what the user sees and must know; keep the how-it-works light.** Name the visible behavior and the required concepts first. Internal mechanics (scheduling and reuse conditions, file/branch naming templates, parser internals, query plumbing) get at most a sentence or a link to the source. If a paragraph reads as protocol documentation, compress it or cut it.
 - **Cut, don't pad.** If a sentence still carries its meaning with a clause removed, remove the clause. If a paragraph repeats the page above it, delete it and link instead.
 - **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long.
 - **Two levels of structure only:** section → page. No deeper nesting; no page that exists only to hold sub-pages.
