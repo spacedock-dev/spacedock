@@ -1,6 +1,6 @@
 # The operating model
 
-Spacedock runs on three roles and one division of labor: you shape the work and make the calls; the agents drive each item through its stages and bring decisions back to you with evidence. This page names the roles, the line between shaping and driving, and why decisions arrive batched.
+Spacedock runs on three roles and one division of labor: you shape the work and make the calls; the agents drive each item through its stages and bring decisions back to you with evidence.
 
 ## Three roles
 
@@ -37,5 +37,5 @@ Decisions reach you batched and backed by evidence, not as a stream of interrupt
 ## Where to go next
 
 - [Workflows and entities](workflows-and-entities.md) covers the directory and files the roles operate on.
-- [Stage lifecycle](stage-lifecycle.md): how an entity moves backlog → ideation → implementation → validation → done.
+- [Stage lifecycle](stage-lifecycle.md) walks an entity backlog → ideation → implementation → validation → done.
 - [Gates and decisions](gates-and-decisions.md) lays out what a gate review carries, the three calls you make, and the detached adversarial audit.
