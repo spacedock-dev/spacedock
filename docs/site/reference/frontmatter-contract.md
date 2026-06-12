@@ -1,29 +1,27 @@
 # Frontmatter contract
 
-Every entity is a markdown file (or a folder with an `index.md`) whose YAML frontmatter carries the fields Spacedock reads to track and move it. The always-current schema lives in the development workflow's [Schema / Field Reference](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md#field-reference); this page surfaces that table and the external-tracker bridge fields in one place for reference. A standalone `docs/specs/frontmatter-contract.md` is a planned follow-up; until it lands, the development workflow README is the source of truth.
+Every entity is a markdown file (or a folder with an `index.md`) whose YAML frontmatter carries the fields Spacedock reads to track and move it. This page is a quick lookup for the fields a development-workflow entity uses. The always-current schema is owned by the [development workflow README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md#field-reference); when this table and that README disagree, the README wins.
 
 Keep fields flat and top-level; add more flat custom fields rather than nested YAML. (The [entity frontmatter concept](../concepts/workflows-and-entities.md#entity-frontmatter) explains why the line-oriented parser requires this.)
 
 ## Entity fields
 
-These are the fields the development workflow declares for a `task` entity. Other workflows may rename the entity type and adjust fields, but these are the contract a dev-workflow entity must satisfy.
+These are the fields the development workflow declares for a `task` entity. Other workflows may rename the entity type and adjust fields.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Unique 24-character Spacedock Base32 ID, because this workflow uses `id-style: sd-b32`. |
+| `id` | string | Unique 24-character Spacedock Base32 ID (this workflow uses `id-style: sd-b32`). |
 | `title` | string | Human-readable entity name. |
-| `status` | enum | One of: `backlog`, `ideation`, `implementation`, `validation`, `done`. The current stage. |
-| `source` | string | Where the entity came from. Also used by the external-tracker bridge (see below). |
+| `status` | enum | The current stage: `backlog`, `ideation`, `implementation`, `validation`, or `done`. |
+| `source` | string | Where the entity came from. Also used by the external-tracker bridge. |
 | `started` | ISO 8601 | When active work began. |
 | `completed` | ISO 8601 | When the entity reached terminal status. |
-| `verdict` | enum | `PASSED` or `REJECTED`. Set at the final stage. |
-| `score` | number | Priority score, `0.0`–`1.0` (optional). A workflow can upgrade to a multi-dimension rubric in its README. |
+| `verdict` | enum | `PASSED` or `REJECTED`, set at the final stage. A terminal close requires it; see [gates and decisions](../concepts/gates-and-decisions.md#the-three-calls). |
+| `score` | number | Priority score, `0.0`–`1.0` (optional). |
 | `worktree` | string | Worktree path while a dispatched agent is active; empty otherwise. |
-| `issue` | string | Optional external ticket reference, such as `ENG-123`, `kata:task-abc123`, or `owner/repo#42`. |
+| `issue` | string | Optional external ticket reference, such as `ENG-123` or `owner/repo#42`. |
 
-The `status` field is the execution state. `spacedock status` reads stage declarations from the workflow README and reports each entity's `status` against them; `--set status=<stage>` is the mutation that advances an entity. The status read path does not invent stages. If the README declares no stages block, membership cannot be validated.
-
-The `verdict` field is guarded on the finalize action, not on reaching a terminal stage: writing `completed` (via `--set`) or archiving a terminal entity is refused with exit 1 (entity unmutated) when `verdict` is empty, and `--force` bypasses. A bare dispatch into a terminal stage that does not write `completed` passes without a verdict. See [gates and decisions](../concepts/gates-and-decisions.md#the-three-calls) for why a terminal close requires a verdict.
+`status` is the execution state: `spacedock status` reports each entity's `status` against the README's stage declarations, and `--set status=<stage>` advances it. The fields the runtime writes (`started`, `completed`, `verdict`, `worktree`) should not be hand-edited while a dispatched agent is active.
 
 ## Copy-paste starter
 
@@ -44,36 +42,18 @@ issue:
 ---
 ```
 
-Fill `title`, `status`, and `source` at creation. `started`, `completed`, `verdict`, and `worktree` are written by the runtime as the entity moves; do not edit them by hand while a dispatched agent is active.
+Fill `title`, `status`, and `source` at creation; the runtime writes the rest as the entity moves.
 
 ## External-tracker fields
 
-The `issue` and `source` fields are the v0 bridge to an external ledger such as kata, Linear, or GitHub Issues. They are flat top-level fields the current parser preserves; the bridge adds no tracker-specific stage rules. See [Multi-workflow & split-root state](../advanced/split-root-state.md#bridging-an-external-tracker) for the full integration model.
-
-```yaml
-issue: ENG-123
-source: linear
-```
-
-or:
-
-```yaml
-issue: kata:task-abc123
-source: kata
-```
-
-The contract for these two fields:
-
-- **`issue` is the human-facing external reference.** It points at the ticket the entity mirrors; Spacedock does not parse its internals.
-- **`source` records where the entity came from** when useful: the tracker name, or any origin marker.
-- **Spacedock `status` remains the execution status.** The external tracker does not redefine Spacedock stage semantics inside the entity, and ownership stays one-way unless a future bridge explicitly declares bidirectional sync.
+`issue` and `source` are the bridge to an external ledger (Linear, GitHub Issues, kata). `issue` is the human-facing ticket reference; `source` records the origin. Spacedock `status` stays the execution status, and the tracker does not redefine stage semantics inside the entity. See [Multi-workflow & split-root state](../advanced/split-root-state.md#bridging-an-external-tracker) for the full bridge model.
 
 ## Validating an entity
 
-Check an entity against the contract with the status command's `--validate` flag:
+Check the workflow and its entities against the contract:
 
 ```bash
 spacedock status --workflow-dir docs/dev --validate
 ```
 
-It exits 0 when the workflow is valid and 1 when it is not, printing the errors to stderr; with `--json` it also emits a `{"command":"validate","valid":"true"}` (or `"false"`) envelope. `--validate` cannot be combined with the other status flags: `--next`, `--next-id`, `--boot`, `--where`, `--fields`/`--all-fields`, `--archived`, `--archive`, or `--set`; the command rejects the combination. Validation reads stages from the workflow README and entities from the state checkout, so it enforces the contract against the same schema the workflow declares, not an assumed one.
+It exits 0 when valid, 1 with errors on stderr otherwise. Validation reads stages from the README and entities from the state checkout, so it enforces the schema the workflow declares.

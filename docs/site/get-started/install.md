@@ -105,6 +105,6 @@ first, then run `spacedock install --host claude`.
 ## Next
 
 Run your [first launch](first-launch.md). The
-[command reference](../reference/command-reference.md#launch-claude-codex-pi)
+[command reference](../reference/command-reference.md#launch)
 covers the full launch grammar: the task argument, what rides after `--`, and
 the sandbox flags.
