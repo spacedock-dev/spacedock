@@ -44,3 +44,12 @@ Remaining work is **interactive**: the captain steers the doc voice/content revi
 ## Notes
 
 Interactive intake — the captain steers revision in the ensign's pane directly. SSH push is currently down; the ensign commits locally on `docs-site-feedback`, and the FO pushes the updated PR branch (via the gh-HTTPS route or once the key is restored) when the captain is satisfied.
+
+## Progress (session 1, 2026-06-12)
+
+Phase 1 complete and committed on `docs-site-feedback` (19 commits ahead of main, working tree clean): structural restructure + tree-wide tone sweep + all of Karen's 2026-06-12 feedback. See the handoff in the next-session prompt for the full done-list and the Phase-2 plan.
+
+Key protocol notes for the next session:
+- `mkdocs build --strict` (AC-3) is **deliberately unenforced during iteration** per captain; build with plain `mkdocs build`, re-enable `--strict` at the end and fix the link punch-list (several inbound links now point at GitHub URLs / changed anchors after the Contributing/Advanced/Reference restructure).
+- comm-officer polish is **best-effort and non-blocking** (2-min timeout, then proceed un-polished). Never block on it. `SendMessage` takes ONLY `to`/`summary`/`message` — adding `type`/`recipient`/`content` is what corrupted earlier sends.
+- Phase 2 (per-page paragraph polish) NOT yet started on disk. comm-officer returned polish for `index.md` and `install.md` that is not yet applied — re-derive or re-request in the fresh session.
