@@ -4,11 +4,11 @@ An entity moves through an ordered chain of stages that the workflow defines, on
 
 ## The dev workflow's stages
 
-The five stages below are the dev workflow's own, the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
+The five stages below are the dev workflow's stages, used as the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
 
 - **`backlog`, the seed.** An entity enters here when first proposed: a title, a source, a brief description, and the test gates future stages must satisfy. No design work yet. `initial: true`, so this is where every new entity starts. The dev workflow also marks it `gate: true`, so the first officer presents a new entity for your go-ahead before it advances.
 - **`ideation`, the design.** A worker clarifies the problem, explores approaches, and produces a fleshed-out body: problem statement, proposed approach, acceptance criteria, and a test plan. Each acceptance criterion names how it will be checked. This stage is `gate: true` in the dev workflow, so the first officer presents the design for your approval before any code is written.
-- **`implementation`, the deliverable.** A worker produces the change the entity describes: code, fixtures, instruction text, on-disk state. This stage is `worktree: true`, so the work happens in an isolated checkout. Implementation completing is not a stopping point. A completed, non-gated stage routes straight on to validation.
+- **`implementation`, the deliverable.** A worker produces the change the entity describes: code, fixtures, instruction text, on-disk state. This stage is `worktree: true`, so the work happens in an isolated checkout. A completed, non-gated stage flows straight to validation.
 - **`validation`, the independent check.** A worker verifies the deliverable against the acceptance criteria. It checks what was produced; it does not produce the deliverable itself. It reproduces the evidence each `AC-N` cites and returns a `PASSED` or `REJECTED` recommendation. This stage is `worktree: true`, `fresh: true`, `feedback-to: implementation`, and `gate: true`.
 - **`done`, the verdict.** Validation is complete and you approve the result. The entity is closed with a `verdict` of `PASSED` or `REJECTED` and a `completed` timestamp. `terminal: true`.
 
@@ -27,7 +27,7 @@ The stage order, names, and the properties each stage carries live in the workfl
 | `concurrency: N` | How many entities may sit in this stage at once. |
 | `agent: {name}` | Which worker skill the first officer dispatches. Defaults to `ensign`. |
 
-Beyond these properties, the prose of each stage's `###` subsection in the README is the stage definition: its Inputs, Outputs, and the Good/Bad bar. The first officer copies that subsection verbatim into the ensign's assignment, so what a stage declares in prose is exactly what the worker is told to do.
+Beyond these properties, the prose of each stage's `###` subsection in the README is the stage definition: its Inputs, Outputs, and the Good/Bad bar. The first officer copies that subsection verbatim into the ensign's assignment, so what a stage declares in prose is exactly what the worker receives as its assignment.
 
 ## Fresh context at validation
 
