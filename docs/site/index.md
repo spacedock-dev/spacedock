@@ -11,7 +11,7 @@ You are the captain. You set the bar and make the calls; the agents do the rest.
 - **The agent doesn't get to judge its own work.** Review runs as a separate stage with fresh context, no access to the maker's reasoning. It pushes back on thin evidence and work that looks busy without proving its claim.
 - **Every decision leaves a trail.** Each gate carries a stage report: findings, verdicts, artifacts, anomalies. You decide on evidence, not the transcript, and the record outlives the reviewer.
 - **The bar sharpens as you use it.** Each stage declares what good means and the agent works to that line. When a standard turns out fuzzy in practice, the agent proposes an edit to the written criteria for your approval.
-- **Batch the work; decide as it flows back.** Queue many entities at once. Agents advance each through its stages, and you handle gates as they surface, not one session at a time.
+- **Batch the work; decide as it flows back.** Queue many work items at once. Agents advance each through its stages, and you handle gates as they surface, not one session at a time.
 - **Work survives the context limit.** When an agent runs out of context, a successor carries forward what's in flight.
 
 ## Where to go next
