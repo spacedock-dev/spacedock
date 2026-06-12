@@ -44,11 +44,13 @@ theme:
 plugins:
   - search
   - llmstxt:
+      full_output: llms-full.txt
       markdown_description: >-
         Documentation for Spacedock, a multi-agent orchestrator where nothing
         ships without a decision. It lives within your existing coding harness
         (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an
-        evidenced decision at each gate.
+        evidenced decision at each gate. This index links the product docs;
+        llms-full.txt is every page concatenated into one file for a single fetch.
       sections:
         Get started:
           - index.md
@@ -61,8 +63,6 @@ plugins:
           - advanced/*.md
         Reference:
           - reference/*.md
-        Contributing:
-          - contributing/*.md
 
 nav:
   - Home: index.md
