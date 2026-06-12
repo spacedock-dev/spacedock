@@ -49,8 +49,7 @@ See [supported sandboxes](../reference/sandbox.md).
 
 ## Troubleshooting
 
-Run `spacedock doctor`. It checks the install and names anything missing or
-out of date.
+Run `spacedock doctor`.
 
 ## Next
 
