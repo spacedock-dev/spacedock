@@ -53,5 +53,5 @@ Run `spacedock doctor`.
 
 ## Next
 
-[Survey your project](survey.md) covers what survey reports and the offer it
-ends with.
+Read about the [survey report](survey.md) to understand your usage pattern
+with coding agents, or start with [your first workflow](first-workflow.md).
