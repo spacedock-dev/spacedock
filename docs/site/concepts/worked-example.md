@@ -112,7 +112,8 @@ The terminal stage records the outcome in frontmatter: `status: done`,
 > kb / qa / z9 / vh entities are all `status: done`, `verdict: PASSED`, archived,
 > with PR refs #327 / #328 / #329 / #330.
 
-The machine's point: nothing reached `done` on assertion alone. `z9` advanced only on an approved design, an isolated implementation, a
+That is the whole point of the machine: nothing reached `done` on assertion
+alone. `z9` advanced only on an approved design, an isolated implementation, a
 fresh validation, a detached audit that failed to break it, and an explicit
 captain verdict. Each one a decision, each one on the record.
 
