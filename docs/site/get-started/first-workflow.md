@@ -17,15 +17,24 @@ Commission asks a few questions, one at a time: what each work item is, the
 stages it moves through, which stages pause for your decision, and the quality
 bar for each. You confirm or adjust each proposal, and it presents the design:
 
-> I'll call you Captain — let me know if you prefer something else.
+> I'll call you Captain; let me know if you prefer something else.
 >
 > For each run, we process tasks going through the following stages:
 >
-> a. backlog — new tasks wait here for triage
-> b. design — the approach is worked out and written down
-> c. implementation — the change is built on an isolated branch
-> d. review — the result is checked against the design
-> e. done — accepted and closed
+> a. backlog  
+> new tasks wait here for triage
+>
+> b. design  
+> the approach is worked out and written down
+>
+> c. implementation  
+> the change is built on an isolated branch
+>
+> d. review  
+> the result is checked against the design
+>
+> e. done  
+> accepted and closed
 >
 > If you reject at review, it goes back to implementation for revision.
 >
@@ -34,14 +43,11 @@ bar for each. You confirm or adjust each proposal, and it presents the design:
 > - Add rate limiting to the API
 > - Fix the flaky login test
 >
-> Entity identity will use `sequential`.
+> Entity identity will use `sd-b32`.
 >
 > All files will be created in `docs/ship-features/` for you to review.
 >
 > Accept this design, or tell me what to change.
-
-**Nothing is generated until you accept.** Tell it what to change and it
-re-presents.
 
 ## What gets generated
 
@@ -52,28 +58,30 @@ agent working to a vague bar is expensive to correct.
 
 ## The pilot run
 
-On accept, commission starts moving your seed items through the stages until
-everything is idle or waiting on you. Check where things stand at any time:
-
-```bash
-spacedock status --workflow-dir docs/ship-features
-```
+On accept, commission dispatches your seed items in parallel, each moving
+through the stages until everything is idle or waiting on you. When a work
+item reaches the `review` gate, you get a gate review:
 
 ```
-ID     SLUG                           CURRENT              NEXT                 WORKTREE
---     ----                           -------              ----                 --------
-001    add-rate-limiting-to-the-api   review               done                 yes
-002    fix-the-flaky-login-test       implementation       review               yes
+Gate review: Add rate limiting to the API — review
+Chosen direction: token-bucket limiter at the API middleware layer
+Recommend approve.
+
+Checklist (from ## Stage Report in docs/ship-features/add-rate-limiting-to-the-api.md):
+- DONE: limiter implemented with per-client buckets
+- DONE: tests cover burst and refill behavior
+
+Assessment: 2 done, 0 skipped, 0 failed.
+
+Decision: approve to close; reject to bounce back to implementation.
 ```
 
-When a work item reaches a gate (here, `review`), Spacedock pauses and
-presents a stage report: the chosen direction, the evidence behind it, and a
-single recommendation. You approve, send it back with feedback, or reject.
-[Gates and decisions](../concepts/gates-and-decisions.md) covers the full
-machinery.
+You approve, send it back with feedback, or reject. Details:
+[gates and decisions](../concepts/gates-and-decisions.md).
 
 From there you are running the workflow: approving, sending back, and resuming
-in later sessions. [Commission a workflow](../running-workflows/commission.md)
-covers every design decision in full;
-[Operating a workflow](../running-workflows/operating.md) covers the
-day-to-day loop.
+in later sessions, all within your normal Claude (or Codex) sessions.
+[Commission a workflow](../running-workflows/commission.md) covers every
+design decision; [Operating a workflow](../running-workflows/operating.md)
+covers the day-to-day loop. Since this runs in your existing coding agent, you
+can just ask the agent if anything is unclear.
