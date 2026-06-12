@@ -6,10 +6,9 @@ scratch to the `/spacedock:commission` skill. Either way you land here. A
 workflow is a directory of plain-text work items plus a README that defines the
 stages they move through and the gates where you make a call.
 
-Spacedock addresses you as the **captain**: the workflow operator who decides at
-gates. The [operating model](../concepts/operating-model.md#three-roles) covers
-the other two roles, the first officer (the orchestrator agent that runs the
-workflow) and the ensign (the worker that moves one item through one stage).
+Spacedock addresses you as the **captain**: you decide at gates, and the agents
+do the rest. The [operating model](../concepts/operating-model.md#three-roles)
+covers the agent roles.
 
 ## Commission a workflow
 
@@ -20,10 +19,8 @@ the same line:
 spacedock claude "/spacedock:commission Track design ideas through review stages"
 ```
 
-If you have not yet launched a session, see
-[Install Spacedock](install.md) first. You can also start bare
-(`/spacedock:commission` with no description) and answer the questions from
-scratch.
+You can also start bare (`/spacedock:commission` with no description) and
+answer the questions from scratch.
 
 The skill greets you and walks three phases: **design** (a few questions),
 **generate** (it writes the files), and a **pilot run** (it starts the workflow
@@ -60,7 +57,7 @@ recorded decision.** A development workflow
 gates the design stage and the review stage among others, so you sign off on
 the approach before code is written, and on the result before it ships.
 
-At each gate the first officer pauses and presents a stage report: the chosen
+At each gate Spacedock pauses and presents a stage report: the chosen
 direction, the evidence behind it, and a single recommendation. You make one of
 three calls:
 
@@ -75,9 +72,9 @@ call that produced it.
 
 ## What happens after
 
-When you accept the design, the commission skill launches a pilot run on your
-seed entities: it takes the first-officer role itself, reads the README, and
-dispatches ensigns to move ready entities through their stages until the workflow
-goes idle or reaches a gate. From there you are running the workflow: approving,
-sending back, and resuming in later sessions. [Operating a workflow](../running-workflows/operating.md)
-covers the day-to-day loop and how to resume.
+When you accept the design, commission launches a pilot run on your seed
+entities: it reads the README it just wrote and moves the ready entities
+through their stages until the workflow goes idle or reaches a gate. From there
+you are running the workflow: approving, sending back, and resuming in later
+sessions. [Operating a workflow](../running-workflows/operating.md) covers the
+day-to-day loop.
