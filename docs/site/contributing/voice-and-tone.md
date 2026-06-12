@@ -14,7 +14,7 @@ This is the writing-style guide for Spacedock's public documentation. It is grou
 
 ## Avoid the AI-writing tells
 
-Generated prose has a recognizable texture. It reads as padded and impersonal, and it is the fastest way to make simple software feel like a manual. Cut these on sight:
+Generated prose has a recognizable texture: padded, impersonal, and the fastest way to make simple software feel like a manual. Cut these on sight:
 
 - **Em-dashes.** Do not use `—`. Rewrite as a period, a comma, a colon, or parentheses. A sentence that needs an em-dash usually wants to be two sentences.
 - **The "not just X, but Y" frame** and its cousins ("it's not only…", "more than just…"). State what the thing is. Drop the contrast scaffolding.
@@ -23,7 +23,7 @@ Generated prose has a recognizable texture. It reads as padded and impersonal, a
 - **Empty intensifiers.** "very", "really", "quite", "actually", "simply", "just" (when it adds nothing), "leverage", "utilize". Prefer the plain verb.
 - **Throat-clearing openers.** A page or section that opens by restating its own title or announcing what it will cover ("This page covers…", "In this section, we will…"). Open with the content.
 
-The test is the same as the cut rule: read it back and remove every word that survives removal. If a sentence sounds like it is performing thoroughness rather than saying something, rewrite it.
+Read it back and remove every word that survives removal. If a sentence sounds like it is performing thoroughness rather than saying something, rewrite it.
 
 ## Tone and register per audience
 

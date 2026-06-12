@@ -4,7 +4,7 @@ Spacedock runs your work as a series of stages. **Nothing crosses a gate without
 
 A gate is a checkpoint where the workflow pauses and asks you the question the work has reached: ship this, or not? You approve it, send it back, or escalate. You can also delegate the call to an agent. Either way, the decision is recorded with its evidence and its reason. That is the whole idea. Everything else is detail.
 
-You are the captain. You set the bar and make the calls; the agents do the rest. See [the operating model](concepts/operating-model.md) for the three roles and how they divide the work.
+You are the captain. You set the bar and make the calls; the agents do the rest. The bar starts rough and sharpens every time you reject, so the calls that once needed you become ones you can hand off with confidence. See [the operating model](concepts/operating-model.md) for how the three roles divide the work.
 
 ## What's different
 
