@@ -1,8 +1,8 @@
 # A worked example
 
-This page traces one real entity, `z9` `codex-plugin-auto-install`, from
-backlog through to `done` / PASSED, using artifacts from the project repo. It is
-a concrete read of the abstract stage machine: backlog → ideation →
+One real entity, `z9` `codex-plugin-auto-install`, went from backlog through to
+`done` / PASSED in the project repo, and its artifacts are on the record. Its
+trail is the abstract stage machine made concrete: backlog → ideation →
 implementation → validation → done, the gates between them, and what the captain
 decides at each one.
 
@@ -10,8 +10,8 @@ The workflow is `docs/dev` (the Spacedock v1 dev workflow); its stages, gates,
 and entity schema are defined in
 [the development workflow README](https://github.com/spacedock-dev/spacedock/blob/next/docs/dev/README.md).
 Runtime entity state lives in a separate `.spacedock-state` checkout, so the
-finished entity itself is not in the main tree, but its full trajectory is on
-the record in the `0198-pre-flip-hardening` sprint directory: `index.md`,
+finished entity itself is not in the main tree. Its full trajectory is in
+the `0198-pre-flip-hardening` sprint directory: `index.md`,
 `dispatch-sprint-execution.md`, `debrief.md`, and `post-sprint-audit.md`.
 
 `z9` delivered front-door Codex plugin auto-install: `spacedock codex` now
@@ -27,7 +27,7 @@ run the same query:
 spacedock status --workflow-dir docs/dev --next
 ```
 
-Lists the entities ready to dispatch. To scope to one sprint, filter with
+This lists the entities ready to dispatch. To scope to one sprint, filter with
 `--where`:
 
 ```bash
@@ -42,8 +42,8 @@ At the start of `0198`, `z9` shows up here in the `binary-ux` group.
 
 `z9` enters backlog as a seed: a title, a source, and a brief description of the
 problem. It carries no design yet. Ideation is where a worker fleshes it out into
-a problem statement, a proposed approach, entity-level acceptance criteria, and a
-test plan, with each AC naming a check outside the entity body that can fail.
+a problem statement, a proposed approach, entity-level acceptance criteria (ACs),
+and a test plan, with each AC naming a check outside the entity body that can fail.
 
 For `z9` that meant a concrete approach: install through the shared `devBranch`
 rather than a hardcoded `"next"`, so the install channel tracks the release
@@ -55,8 +55,8 @@ Ideation ends at a **gate**. Because the dev workflow marks `ideation` with
 `gate: true`, the first officer does not advance on its own: it presents the
 design to the captain. The captain approved `z9`'s ideation on 2026-06-08. That
 approval is the entry condition for implementation, and it is captured in the
-sprint package so a later Commander session drives implementation directly
-without re-presenting the gate.
+sprint package so a later session drives implementation directly without
+re-presenting the gate.
 
 ## implementation: produce the deliverable
 
