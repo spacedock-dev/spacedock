@@ -45,7 +45,7 @@ Editing here costs minutes; un-editing after agents have been dispatched against
 
 ## What the first officer does next
 
-Commission generates the files and then assumes the first-officer role itself to run the pilot — no separate launch step needed.
+Commission generates the files, then assumes the first-officer role itself to run the pilot; no separate launch step is needed.
 
 1. It loads the [first officer's operating contract](../concepts/operating-model.md) and reads the workflow README you just generated.
 2. It runs `spacedock status --boot` to read the workflow's current state.
