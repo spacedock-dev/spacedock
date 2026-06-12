@@ -1,7 +1,7 @@
 # Install Spacedock
 
-Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
-or Pi. Install one of those first.
+Spacedock works with a coding agent you already have: Claude Code, Codex, or
+Pi. Install one of those first.
 
 === "macOS (Homebrew)"
 
@@ -26,8 +26,9 @@ Point Spacedock at a project you already have and let it survey:
 spacedock claude "/spacedock:survey"
 ```
 
-Starts a Spacedock session in Claude Code and runs the survey. The first launch
-sets up everything Claude Code needs; there is no separate setup step.
+Claude Code opens with Spacedock loaded and surveys the project: what your
+agents have been doing and the decisions waiting on you. The first launch sets
+up everything Claude Code needs; there is no separate setup step.
 
 With Codex or Pi (experimental), run `spacedock install --host codex` (or
 `--host pi`) once, then launch with the matching subcommand:
@@ -47,7 +48,5 @@ out of date.
 
 ## Next
 
-Run your [first launch](first-launch.md). The
-[command reference](../reference/command-reference.md#launch)
-covers the full launch grammar: the task argument, what rides after `--`, and
-the sandbox flags.
+[Your first launch](first-launch.md) covers what survey reports and the offer
+it ends with.
