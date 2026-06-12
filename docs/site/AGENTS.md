@@ -16,8 +16,12 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
   - ✗ "The build emits a curated `llms.txt` index at the site root."
   - ✓ "Start from `llms.txt`, the curated index of these pages."
 - **A well-named command needs no caption.** "Run `spacedock doctor`." is complete; explaining that it diagnoses problems repeats the name. Likewise, never pre-document what a tool prints interactively (the install script already prints its own `PATH` note).
-- **A heading is a promise; the section delivers exactly that.** Codex setup is not "Install Spacedock"; a tab the reader chose ("no Homebrew") must not explain the thing they opted out of.
+- **A heading is a promise; the section delivers exactly that.** Codex setup is not "Install Spacedock"; a tab the reader chose ("no Homebrew") must not explain the thing they opted out of. Headings also take the reader's angle: name what the reader does or gets ("Turn the report into a workflow"), not what the product emits ("The commission offer").
 - **Serve the typical reader; route edge audiences elsewhere.** A Get-started page carries only the path a typical user walks. Contributor and from-source material lives in the repo, not inline, not even as one sentence.
+- **Document the durable value, not the output inventory.** Do not enumerate an artifact's current sections or fields; they drift with releases. Name what the reader gets out of it (the survey report is "the four things you learn", not a list of its sections).
+- **A real example with sample output beats description.** One concrete command plus the output the reader will see teaches faster than paragraphs. Compose samples from the product's real templates, and never restate in prose what the sample already says ("Accept this design, or tell me what to change" makes a "nothing is generated until you accept" sentence dead weight).
+- **Keep agent-facing surfaces off user pages.** Commands meant for the agents (`spacedock status`, `spacedock dispatch`) are not taught in Get started, even though their output is real.
+- **The docs may defer to the agent.** Spacedock runs inside a coding agent; "ask the agent if anything is unclear" is a legitimate close. Pages cover what the reader needs before and between sessions, not every contingency within one.
 - **Cut, don't pad.** If a sentence still carries its meaning with a clause removed, remove the clause. If a paragraph repeats the page above it, delete it and link instead.
 - **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long. An audience split ("new-user view" vs "operator view" of the same feature) is not a reason for a second page; it is the same topic.
 - **Two levels of structure only:** section → page. No deeper nesting; no page that exists only to hold sub-pages.
@@ -53,6 +57,8 @@ Optimize for lookup in seconds. Use **tables** for flags, fields, and options (N
 - Cross-link liberally with **relative** internal links (so `mkdocs build --strict` resolves them). Concept → tutorial + reference; tutorial → concept + reference; reference → concept.
 - Link the first mention of a load-bearing term (`workflow`, `gate`, `ensign`, `commission`) to the page that owns it, rather than re-explaining it.
 - Descriptive link text, never "click here".
+- **Link by payoff, not by contents.** A cross-link or Next entry names what the reader gains there ("read about the survey report to understand your usage pattern"), not what the page contains ("covers what survey reports").
+- **External tools get a gloss and a link to their own site.** A dependency that is not Spacedock (`agentsview`, `safehouse`) is a real thing the reader may install: name it, gloss it in one clause, link it on first mention.
 
 ## Voice
 
@@ -67,7 +73,7 @@ This voice is grounded in two real signals, not invented: the root `README.md` (
 
 Generated prose has a recognizable texture: padded, impersonal, and the fastest way to make simple software feel like a manual. Cut these on sight:
 
-- **Em-dashes.** Do not use `—`. Rewrite as a period, a comma, a colon, or parentheses. A sentence that needs an em-dash usually wants to be two sentences. (Reproduced literal output, such as a rendered template or a verbatim error string, is exempt: it must match what the tool prints.)
+- **Em-dashes.** Do not use `—`. Rewrite as a period, a comma, a colon, or parentheses. A sentence that needs an em-dash usually wants to be two sentences. The exemption is narrow: output reproduced verbatim (a captured transcript, a rendered template, an error string) must match what the tool prints. A sample you compose is prose: format it cleanly (newlines, colons) within the tool's real shape.
 - **The "not just X, but Y" frame** and its cousins ("it's not only…", "more than just…"). State what the thing is. Drop the contrast scaffolding.
 - **Rule-of-three padding.** Three parallel adjectives or clauses where one carries the meaning ("clear, simple, and easy to follow"). Keep the load-bearing one.
 - **Hollow transitions and hedges.** "That said," "It's worth noting that," "In order to," "It's important to understand." Delete them; start with the content.
