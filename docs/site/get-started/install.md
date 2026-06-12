@@ -20,26 +20,33 @@ Pi. Install one of those first.
 
 ## Launch
 
-Point Spacedock at a project you already have and let it survey:
+In a project you already have:
 
 ```bash
 spacedock claude "/spacedock:survey"
 ```
 
-Claude Code opens with Spacedock loaded and surveys the project: what your
-agents have been doing and the decisions waiting on you. The first launch sets
-up everything Claude Code needs; there is no separate setup step.
+Or launch directly:
 
-With Codex or Pi (experimental), run `spacedock install --host codex` (or
-`--host pi`) once, then launch with the matching subcommand:
-`spacedock codex "your task"` or `spacedock pi "your task"`.
+```bash
+spacedock claude "what can spacedock do for me in this project"
+```
+
+Replace `claude` with `codex` or `pi` for the respective coding agents.
+
+## Skills
+
+Spacedock installs the relevant skills on launch, but you can also install
+them manually:
+
+```bash
+claude plugin marketplace add spacedock-dev/spacedock
+claude plugin install spacedock@spacedock
+```
 
 ## Sandboxing
 
-When a `.safehouse` profile is present in the working directory, the launch
-runs sandboxed through the `safehouse` command; `--safehouse` forces it.
-Spacedock ships no sandbox of its own: when no `safehouse` binary is on your
-`PATH`, the launch prints an install hint and proceeds **unsandboxed**.
+See [supported sandboxes](../reference/sandbox.md).
 
 ## Troubleshooting
 
