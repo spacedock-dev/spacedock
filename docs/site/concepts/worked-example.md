@@ -2,7 +2,7 @@
 
 One real entity, `z9` `codex-plugin-auto-install`, went from backlog through to
 `done` / PASSED in the project repo, and its artifacts are on the record. Its
-trail is the abstract stage machine made concrete: backlog → ideation →
+trail makes the abstract stage machine concrete: backlog → ideation →
 implementation → validation → done, the gates between them, and what the captain
 decides at each one.
 
@@ -35,7 +35,7 @@ spacedock status --workflow-dir docs/dev \
   --where sprint=0198-pre-flip-hardening --where 'sprint-readiness != defer'
 ```
 
-This is the sprint membership query, the source of truth, not a hand-kept list.
+This query is the sprint membership source of truth, not a hand-kept list.
 At the start of `0198`, `z9` shows up here in the `binary-ux` group.
 
 ## backlog → ideation: shape the work
@@ -80,8 +80,7 @@ place, and inverted the obsolete test whose old assertion contradicted the new
 auto-install behavior.
 
 Implementation is complete when the deliverable is committed and the stage report
-is filed. It is not a parking spot: a completed implementation routes straight to
-`validation` dispatch.
+is filed; it flows straight to `validation` dispatch.
 
 ## validation: verify against the criteria
 
@@ -97,7 +96,7 @@ launcher front door: a read-only pass on a throwaway checkout of the merge resul
 that tries to refute the validation. The `z9` audit ran at commit `0b714fac`
 and exercised five mandated probes, each reddening the test suite then reverting.
 It refuted nothing material. Channel-tracking was confirmed clean. That clean
-audit satisfied the sprint's DoD item for the high-stakes surface.
+audit satisfied the sprint's definition-of-done item for the high-stakes surface.
 
 Validation also has `gate: true` and `feedback-to: implementation`. A REJECTED
 recommendation routes the finding back to implementation for another cycle; a
@@ -113,8 +112,7 @@ The terminal stage records the outcome in frontmatter: `status: done`,
 > kb / qa / z9 / vh entities are all `status: done`, `verdict: PASSED`, archived,
 > with PR refs #327 / #328 / #329 / #330.
 
-That is the whole point of the machine: nothing reached `done` on assertion
-alone. `z9` advanced only on an approved design, an isolated implementation, a
+The machine's point: nothing reached `done` on assertion alone. `z9` advanced only on an approved design, an isolated implementation, a
 fresh validation, a detached audit that failed to break it, and an explicit
 captain verdict. Each one a decision, each one on the record.
 
