@@ -11,8 +11,15 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
   - ✓ "You have work that needs doing in stages, with a human sign-off before anything ships. Spacedock runs that for you."
 - **Introduce the fewest terms possible, as late as possible.** Don't front-load a glossary. Define a term on first real use, gloss it once, then just use it. If a page introduces more than a handful of new terms, cut or defer some.
 - **Lead with what the user sees and must know; keep the how-it-works light.** Name the visible behavior and the required concepts first. Internal mechanics (scheduling and reuse conditions, file/branch naming templates, parser internals, query plumbing) get at most a sentence or a link to the source. If a paragraph reads as protocol documentation, compress it or cut it.
+- **Product anatomy is not a reader concept.** Do not name internal components (launcher, plugin, host) unless the reader must type or choose between them. The reader installs Spacedock and launches Spacedock; how it decomposes is not their problem.
+- **Write from the reader's seat, never the maintainer's.** If a sentence's subject is the build, the script, or the parser, recast it around what the reader gets or does.
+  - ✗ "The build emits a curated `llms.txt` index at the site root."
+  - ✓ "Start from `llms.txt`, the curated index of these pages."
+- **A well-named command needs no caption.** "Run `spacedock doctor`." is complete; explaining that it diagnoses problems repeats the name. Likewise, never pre-document what a tool prints interactively (the install script already prints its own `PATH` note).
+- **A heading is a promise; the section delivers exactly that.** Codex setup is not "Install Spacedock"; a tab the reader chose ("no Homebrew") must not explain the thing they opted out of.
+- **Serve the typical reader; route edge audiences elsewhere.** A Get-started page carries only the path a typical user walks. Contributor and from-source material lives in the repo, not inline, not even as one sentence.
 - **Cut, don't pad.** If a sentence still carries its meaning with a clause removed, remove the clause. If a paragraph repeats the page above it, delete it and link instead.
-- **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long.
+- **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long. An audience split ("new-user view" vs "operator view" of the same feature) is not a reason for a second page; it is the same topic.
 - **Two levels of structure only:** section → page. No deeper nesting; no page that exists only to hold sub-pages.
 
 ## First impression: "simple," not "enterprise"
@@ -40,7 +47,7 @@ Opening (1–2 sentences: what + why) → how it works (2–4 short paragraphs, 
 State the goal in one sentence. List prerequisites up front (never bury them mid-page). Numbered steps, **one action per step**, each showing the expected result (name the command *and* the output, e.g. ``spacedock status --next`` then what it prints). End with verification and "next steps" links. Push command-grammar and theory to the bottom or to a linked concept; the reader wants the outcome first.
 
 ### Reference pages
-Optimize for lookup in seconds. Use **tables** for flags, fields, and options (Name · Type/required · Description · Default). Give copy-paste examples. Mark required vs optional; show defaults; note edge cases. If a "reference" page is really an explanation, it belongs in Concepts; if it's really a procedure, it belongs in a how-to.
+Optimize for lookup in seconds. Use **tables** for flags, fields, and options (Name · Type/required · Description · Default). Give copy-paste examples. Mark required vs optional; show defaults; note edge cases. When the title and a table carry everything, ship the title and the table: no framing intro, no closing caveat. If a "reference" page is really an explanation, it belongs in Concepts; if it's really a procedure, it belongs in a how-to.
 
 ## Link instead of repeat
 - Cross-link liberally with **relative** internal links (so `mkdocs build --strict` resolves them). Concept → tutorial + reference; tutorial → concept + reference; reference → concept.
@@ -98,14 +105,15 @@ Rule of thumb: capitalize a **role** when you name it as a role (the roles table
 ## Formatting conventions
 
 - **Commands and code.** Inline code font for commands, flags, filenames, and identifiers: `spacedock claude`, `--strict`, `mkdocs.yml`. Multi-line commands and config in fenced code blocks with a language tag (` ```bash `, ` ```yaml `).
-- **Show expected output.** For a command a reader runs, name the result, as `install.md` does ("Prints the installed version, e.g. `spacedock 0.20.0`").
+- **Show expected output when the reader must check it.** Name what a command prints when the reader acts on the result (e.g. `spacedock status --next` prints the dispatchable set). A well-named command needs neither caption nor sample output.
 - **Headings.** Sentence case ("Get started", "Your first workflow"), not Title Case. One `#` h1 per page (the page title); section headings start at `##`.
-- **Links.** Descriptive link text, never "click here" / "this link". Internal links are relative so `mkdocs build --strict` can resolve them.
+- **Links.** Descriptive link text, never "click here" / "this link". Internal links are relative so `mkdocs build --strict` can resolve them. GitHub links and install commands point at `main`, never a development branch.
 - **Lists and emphasis.** Bullets for parallel items; bold for the load-bearing claim of a bullet (the README pattern). Use emphasis sparingly; if everything is bold, nothing is.
 
 ## Before you commit a docs change
 - [ ] Page opens with the problem/payoff, not a definition.
 - [ ] Introduces only the terms this page actually needs; each defined on first use.
+- [ ] Re-read every touched page in reader-journey order: no term appears before the page that introduces it, including terms your own rewrite brought back.
 - [ ] Matches its type's shape (concept / how-to / reference): no steps in concepts, no essays in reference.
 - [ ] No content duplicated from another page; shared ideas are linked, not repeated.
 - [ ] Internal links are relative and descriptive; first mentions of key terms link out.
