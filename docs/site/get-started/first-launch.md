@@ -6,9 +6,9 @@ One command starts your first session and orients you in a project you already h
 spacedock claude "/spacedock:survey"
 ```
 
-This launches the [first officer](../concepts/operating-model.md#three-roles) (the orchestrator agent that runs a Spacedock workflow) inside Claude Code and hands it the survey task. The first launch sets up the plugin for you; there is no separate setup step.
+This launches the [first officer](../concepts/operating-model.md#three-roles) (the orchestrator agent that runs a Spacedock workflow) inside Claude Code and hands it the survey task. The first launch also sets up the plugin; no separate setup step is needed.
 
-Run it from inside a project that already has some agent history, such as a repo you have been coding in with Claude Code. Survey reads that history; an empty directory has nothing to report on.
+Run it from inside a project that already has some agent history, such as a repo you have been coding in with Claude Code. Survey reads that history; an empty directory has nothing to report.
 
 ## What survey reports
 
@@ -24,7 +24,7 @@ To go straight to defining a workflow yourself instead, see [your first workflow
 
 ## The command grammar
 
-The front door is one shape, and every launch uses it:
+Every launch uses the same shape:
 
 ```bash
 spacedock claude "task" [--safehouse…] [-- host-flags…]
