@@ -20,7 +20,7 @@ the same line:
 spacedock claude "/spacedock:commission Track design ideas through review stages"
 ```
 
-If you have not launched a session yet, see
+If you have not yet launched a session, see
 [Install Spacedock](install.md) first. You can also start bare
 (`/spacedock:commission` with no description) and answer the questions from
 scratch.
@@ -54,7 +54,7 @@ the full file layout and the `review stages` walk.
 
 ## The design and review gates
 
-This is the line Spacedock draws: work flows through the stages on its own,
+Spacedock draws a clear line: work flows through stages on its own,
 but a **gate** pauses it for your call, and **nothing crosses a gate without a
 recorded decision.** A development workflow
 gates the design stage and the review stage among others, so you sign off on
@@ -65,7 +65,7 @@ direction, the evidence behind it, and a single recommendation. You make one of
 three calls:
 
 - **Approve**, and the entity advances to the next stage.
-- **Redo with feedback**: it goes back for revision against the notes you give.
+- **Redo with feedback**: it goes back for revision against your notes.
 - **Reject**, and it bounces to an earlier stage (the one the design named as the
   rejection target) to be reworked.
 
