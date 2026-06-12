@@ -11,7 +11,7 @@ worktree:
 issue:
 ---
 
-When the launch is not sandboxed, `spacedock claude` should launch with Claude Code's auto-mode (auto-accept permission mode), and `spacedock codex` should use the equivalent Codex setting. Without a sandbox there is no isolation boundary making per-action permission prompts meaningful friction-for-safety, so the launcher should pick the permission posture that matches the actual isolation state.
+When the launch is not sandboxed, `spacedock claude` should launch with Claude Code's auto-mode, and `spacedock codex` should use the equivalent Codex setting. Captain ask, filed verbatim; ideation should confirm the intended rationale and the exact mode mapping with the captain.
 
 Couples to `startup-sandbox-status` (gja5htstcgjxydcz5h2051wc): both need the same sandbox-state detection; this task consumes it to choose the launch mode, that task surfaces it to the operator.
 
