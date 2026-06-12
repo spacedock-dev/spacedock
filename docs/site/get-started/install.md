@@ -26,18 +26,12 @@ Point Spacedock at a project you already have and let it survey:
 spacedock claude "/spacedock:survey"
 ```
 
-Starts a Spacedock session in Claude Code and runs the survey. Spacedock manages
-the agents your harness loads: the first launch sets them up in Claude Code, so
-no separate setup step is needed. To set them up ahead of time, or to refresh
-them later, run `spacedock install --host claude`.
+Starts a Spacedock session in Claude Code and runs the survey. The first launch
+sets up everything Claude Code needs; there is no separate setup step.
 
-With Codex or Pi (experimental), add the agents with
-`spacedock install --host codex` (or `--host pi`), then launch with the
-matching subcommand: `spacedock codex "your task"` or `spacedock pi "your task"`.
-
-Working on Spacedock itself? See [Build from source](https://github.com/spacedock-dev/spacedock/blob/main/docs/site/contributing/build-from-source.md).
-It builds the binary from your checkout and loads the agents from it, so local
-edits are live.
+With Codex or Pi (experimental), run `spacedock install --host codex` (or
+`--host pi`) once, then launch with the matching subcommand:
+`spacedock codex "your task"` or `spacedock pi "your task"`.
 
 ## Sandboxing
 
