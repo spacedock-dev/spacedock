@@ -13,13 +13,21 @@ issue:
 
 UX improvement: on startup, Spacedock should also show whether sandboxing is enabled — distinguishing enabled / available-but-not-enabled / unavailable — so the operator knows the execution-isolation posture before dispatching work.
 
+Captain amendment (2026-06-12): the same sandbox info should also appear in `--version`. In addition, `--version` should show each detected runtime (claude / codex / pi) with its install and spacedock-enablement status, e.g.:
+
+```
+codex: installed
+claude: installed, spacedock enabled
+pi: not installed
+```
+
 ## Problem
 
 {What is broken or missing, and why it matters. Ideation fills this in. Seed framing: the startup surface reports mods, ID style, orphans, PR state, and dispatchables, but says nothing about whether the session is sandboxed. The operator has no at-a-glance signal of the isolation posture.}
 
 ## Proposed approach
 
-{How the task intends to solve the problem. Ideation fills this in. Ideation should pin down which startup surface(s) this lands on (launcher banner, `status --boot`, or both) and how sandbox state is detected per host.}
+{How the task intends to solve the problem. Ideation fills this in. Ideation should pin down which startup surface(s) this lands on (launcher banner, `status --boot`, or both), how sandbox state is detected per host, and how `--version` detects each runtime (claude / codex / pi) plus whether spacedock is enabled in it.}
 
 ## Out of scope
 
