@@ -1,6 +1,6 @@
 # Commission a workflow
 
-`/spacedock:commission` turns a description of the work you want tracked into a runnable workflow: a directory of markdown entities, a README that is the workflow's living spec, and a first officer ready to dispatch an ensign for each seed entity. You answer a short interactive design pass, the skill generates the files, and it launches a pilot run as the first officer.
+`/spacedock:commission` turns a description of the work you want tracked into a runnable workflow: a directory of markdown entities, a README that is the workflow's living spec, and a first officer ready to dispatch an ensign for each seed entity. You answer a short interactive design pass; the skill generates the files and launches a pilot run as the first officer.
 
 Invoke it from a session started with `spacedock claude`. You can pass the mission inline:
 
@@ -12,7 +12,7 @@ Text after the command name is taken as the workflow mission and presented for c
 
 ## The four things you name
 
-The design pass collects four decisions. Everything else (the directory path, the entity identity scheme, the rejection routing) is derived from these and shown back to you for confirmation before any file is written.
+The design pass collects four decisions. The skill derives everything else (the directory path, the entity identity scheme, the rejection routing) from these and shows the full design for your confirmation before writing any file.
 
 1. **The mission and what each entity is.** The first question asks what the workflow is for and what each work item represents. From the entity description the skill derives the entity label used throughout the generated files: "a design idea" becomes label `idea`, plural `ideas`, type `design_idea`. An entity is one work item, a markdown file that moves through the stages.
 
@@ -45,7 +45,7 @@ Editing here costs minutes; un-editing after agents have been dispatched against
 
 ## What the first officer does next
 
-Commission does not stop at generating files. It assumes the first-officer role itself and runs the pilot. There is no separate launch step for the first run.
+Commission generates the files and then assumes the first-officer role itself to run the pilot — no separate launch step needed.
 
 1. It loads the [first officer's operating contract](../concepts/operating-model.md) and reads the workflow README you just generated.
 2. It runs `spacedock status --boot` to read the workflow's current state.
