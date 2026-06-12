@@ -54,12 +54,12 @@ Hand the first officer the workflow and let it run the dispatch cycle. Launch wi
 spacedock claude "/spacedock:first-officer operate the workflow in docs/dev"
 ```
 
-The first officer reads the workflow `README.md`, runs its own `status --next`, and for each dispatchable entity it dispatches an ensign to move the entity through its next stage. The ensign does the stage work (write the design, produce the deliverable, run the validation), commits, and files a stage report. The first officer reads the report, checks it against the stage's outputs and the entity's acceptance criteria, and advances the entity. A completed non-gated, non-terminal stage is not a stopping point: the first officer advances it and dispatches the next stage on its own, without waiting for you.
+The first officer reads the workflow `README.md`, runs its own `status --next`, and for each dispatchable entity it dispatches an ensign to move the entity through its next stage. The ensign does the stage work (write the design, produce the deliverable, run the validation), commits, and files a stage report. The first officer reads the report, checks it against the stage's outputs and the entity's acceptance criteria, and advances the entity. A completed non-gated, non-terminal stage flows forward: the first officer advances it and dispatches the next stage on its own, without waiting for you.
 
 It stops and returns to you only at a gate, at a terminal entity's merge ceremony, on a blocker, or when nothing is left to dispatch.
 
 ## Handle gate decisions
 
-A gate stops the loop and hands you the call: the first officer presents the stage report and its review, then waits. It never self-approves. You make one of three calls: **approve**, **redo with feedback**, or **reject**. What each one does, what the gate report carries, and the feedback-cycle cap are covered in full in [the three calls](../concepts/gates-and-decisions.md#the-three-calls).
+A gate stops the loop and hands you the call: the first officer presents the stage report and its review, then waits. It never self-approves. You make one of three calls: **approve**, **redo with feedback**, or **reject**. [The three calls](../concepts/gates-and-decisions.md#the-three-calls) covers what each one does, what the gate report carries, and the feedback-cycle cap.
 
 When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top: run `status --next` and see what moved into reach.
