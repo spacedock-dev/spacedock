@@ -183,3 +183,36 @@ Folded the one Material defect from preflight staff review: the "decisions with 
 
 ### Summary
 Folded all six feedback seeds into one value-&-numbers-first rewrite of the spacedock:survey output. Two new queries (dispatch-fact, decision-no-followup) + the mechanical→manual rename + the knowledge-work mode land in references/queries.sql; the fixture extends with message_id/ordinal and parent_session_id/relationship_type and seeds each band as a non-vacuous fixture-derived oracle (14/14 query smoke). The step-4 report template is rewritten to the captain-locked spine (lede + BY THE NUMBERS + de-jargoned HOW YOU WORK + ↓ pointer, then demoted detail with THREADS TO PULL / consolidated WHAT THIS CAN'T SEE), with the no-scratch-preamble instruction and the mode-aware offers. Render-level ACs proven by a live survey drive over this repo's real corpus, not a prose-grep; the validated inference and decision-frontier triage are preserved. Two worktree commits: 35b4085a (queries+fixture+test), d3142578 (SKILL.md).
+
+## Stage Report: validation
+
+- DONE: Query-level ACs — `go test ./skills/integration/ -run TestSurveyQuerySmoke` green (14/14), each value DERIVED FROM fixture rows
+  14/14 (1 parent + 13 subtests). Each oracle re-derived independently from `testdata/survey/fixture-sessions.sql`, not SKILL.md prose.
+- DONE: AC-1b decision-no-followup via the chronological `message_id → ordinal` join (non-vacuous, higher-ordinal Edit decrements 1→0)
+  Proved the ordinal join DIVERGES from a `tool_calls.id` insertion-order false oracle: built an adversarial fixture with an Edit at LOWER tool_calls.id (79) but HIGHER ordinal (3) than NF1's decision — ordinal join returns 0 (correct: edit is chronologically after), id-order returns 2 (wrong). Not insertion order, not a BACKLOG count. Live corpus: 2.
+- DONE: AC-3 dispatch-fact (2|3; out-of-repo-subagent re-point flips to 3|4)
+  Smoke 2|3, non-vacuous re-point 3|4. Live corpus 33 parents / 1725 subagents (matches the 31/1675 spike + newer sessions).
+- DONE: AC-5 knowledge-work (kloop-marker strip drops it to unlabeled)
+  notes-ops → knowledge-work; strip-markers mutation → unlabeled. Adversarial: raising the know-margin to 99 reds notes-ops to unlabeled.
+- DONE: R6#1 mode-classification 'mechanical'→'manual'
+  issue-feed/feature-x/issue-42 all `manual`; no track `mechanical`. Adversarial: reverting the rename in the query reds the smoke. Live: cli-cobra-redesign reads `manual`.
+- DONE: AC-4 all-unlabeled-Codex collapse (conditional on every row (unlabeled))
+  All-unlabeled fixture → ONE `(unlabeled)` row; base fixture keeps ≥2 named clusters. Adversarial: replacing `(unlabeled)` with a constant reds both codex-workstreams and the collapse smoke.
+- DONE: Render-level ACs via an INDEPENDENT live survey drive over the corpus/fixture (mirrored, not trusted)
+  Drove the full step-2 query battery over (a) the deterministic fixture and (b) this repo's freshly-synced agentsview corpus (v0.32.1, 68 in-repo Claude sessions, span 2026-05-30..06-13). AC-1: WHAT THIS GIVES YOU lede + BY THE NUMBERS with corpus-derived figures — interruptions 134 (115 decisions + 19 vetoes), hanging 10, no-follow-up 2, sessions 68 Claude · 58 Codex by workdir (name-match 61, gap 3 flagged), conditional dispatch line present; repetitive-substantive track renders `manual`. AC-2: window-carrying title (span) + ONE consolidated WHAT THIS CAN'T SEE (codex-presence 61 − codex-scoped 58 gap). AC-4: SKILL.md step-4 mandates the title as first line with no `I have everything I need`/`Let me…` preamble (line 159) — Codex has named clusters so the collapse correctly does NOT fire on this corpus. AC-6: SKILL.md mode-keyed offers are structurally differentiated (manual keeps gate-and-drive; exploration leads iterate/steer and bans the automate-the-human-out framing; knowledge-work names the batch loop) + branch-aware work-by-area caveat (lines 209, 244-252, 275). KEEP-SIGNAL: the Plan→worktree→implement inference and the THREADS TO PULL decision-frontier triage did NOT regress (still rendered + cross-checked).
+- DONE: Full `go test ./...` green from the worktree branch
+  exit 0, 1252 passed across 16 packages, no skips (sqlite3 present). contractlint boundary guard green; no test reads SKILL.md (the smoke EXECUTES queries.sql as a runnable artifact, never prose-greps it).
+- DONE: Detached adversarial audit (shipped contract/scaffolding = high-stakes surface)
+  Ran read-only refutation on a throwaway detached checkout (/tmp/survey-audit, never the impl worktree). Five claim-breaking edits ALL reded the suite: manual-rename revert, chronological-direction flip (`>`→`<`), dispatch parent-scope drop, knowledge-work margin break, all-unlabeled-collapse constant. Refuted nothing material — the tests catch each regression, not vacuous prose-greps.
+
+### Summary
+PASSED. All six consolidated ACs verified with evidence OUTSIDE the task prose. Query-level ACs (AC-1b, AC-3, AC-5, R6#1 rename, AC-4 query side) pinned by TestSurveyQuerySmoke (14/14) with every expected value re-derived from the fixture rows and each non-vacuous mutation confirmed to flip; the AC-1b ordinal join was proven to genuinely diverge from an insertion-order false oracle on an adversarial fixture. Render-level ACs (AC-1, AC-2, AC-4 scratch, AC-6 offers) verified by an independent live survey drive over this repo's freshly-synced corpus — numbers derive from session rows (interruptions 134, no-follow-up 2, dispatch 33/1725, codex gap 3), not SKILL.md prose. The KEEP-SIGNAL (inference accuracy + decision-frontier triage) did not regress. Full `go test ./...` green (1252/16, exit 0); contractlint boundary guard green; no test reads SKILL.md. A detached adversarial audit on the shipped-scaffolding surface refuted nothing material — five claim-breaking edits each reded the suite.
+
+### Verdict: PASSED
+- AC-1 (R1 value lede + BY THE NUMBERS + manual rename): PASSED — live drive, corpus-derived figures, `manual` rendered.
+- AC-1b (decision-no-followup chronological join): PASSED — smoke 14/14, ordinal join proven to diverge from insertion-order; live 2.
+- AC-2 (window framing + ONE consolidated WHAT THIS CAN'T SEE): PASSED — span title + codex gap caveat, single block.
+- AC-3 (dispatch fact in BY THE NUMBERS): PASSED — smoke 2|3, re-point 3|4; live 33/1725.
+- AC-4 (all-unlabeled Codex collapse + no scratch preamble): PASSED — conditional collapse pinned; no-preamble instruction at SKILL.md:159.
+- AC-5 (knowledge-work classified + named): PASSED — notes-ops→knowledge-work, strip→unlabeled.
+- AC-6 (mode-keyed offers differentiated + branch-aware work-by-area): PASSED — manual gate-and-drive vs exploration iterate/steer structurally distinct; branch-merge caveat present.
