@@ -1,61 +1,51 @@
 # Gates & decisions
 
-A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage is marked `gate: true` in the workflow README, the first officer stops after the worker completes, renders a gate review, and waits for you. It never self-approves.
+A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage declares a gate, the first officer stops after the worker completes, presents a review, and waits for you. It never self-approves.
 
-## What a gate carries
-
-A gate review has a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
-
-A gate review looks like this:
+Each call you make sharpens the bar, and the destination is delegation. When you are sufficiently confident in the workflow and the bar you set, hand over the conn and let the first officer drive multiple tasks with auto-approval:
 
 ```
-Gate review: {entity title} — {stage}
-Chosen direction: {one-line summary of the worker's approach, or n/a}
-Recommend {approve | reject: {one-line reason}}.
+you have the conn to drive toward your sprint goal, authorized to approve and
+merge PR on CI green. use your judgement.
+```
 
-Checklist (from ## Stage Report in {entity_file_path} lines {start}-{end}):
-- DONE: {≤10-word gist}
-- SKIPPED: {gist} — {reason}
-- FAILED: {gist} — {reason}
+Until then, the gates are yours.
+
+## What you see at a gate
+
+A gate review has a fixed spine: the first three lines and the last line carry the decision, everything between is supporting evidence. If you stop reading after line three, you can still vote.
+
+```
+Gate review: Fix the flaky login test — review
+Chosen direction: replace sleep-based waits with event polling
+Recommend reject: the AC-2 retry scenario has no covering test.
+
+Checklist (from ## Stage Report in docs/ship-features/fix-the-flaky-login-test.md):
+- DONE: login test stable across 50 consecutive runs
+- FAILED: retry scenario unproven — no test exercises it
 
 Reviewer findings
-  Material: {fact-corrections, contract violations, missing AC evidence}
-  Polish:   {wording, format drift, non-blocking suggestions}
+  Material: AC-2 cites a test file that does not exist
+  Polish:   stage report wording drifts from the template
 
-Assessment: {N} done, {N} skipped, {N} failed.
+Assessment: 1 done, 0 skipped, 1 failed.
 
-Decision: {what approval/rejection does in concrete terms}.
+Decision: approve to close; reject to bounce back to implementation.
 ```
 
-Reading the fields:
-
-- **`Chosen direction` names what the worker picked**, so you do not have to open the entity file to learn it. Ideation picks an approach; validation picks PASS or REJECTED. Stages with no choice to make show `n/a`.
-- **`Recommend` is the first officer's verdict, stated exactly once.**
-- **`Checklist` is a gist roll-up, not the report.** The full `## Stage Report` is cited by file path and line range; open it when you want the detail.
-- **Reviewer findings split into `Material` and `Polish`.** Material items (fact-corrections, contract violations, missing acceptance-criterion evidence, claims the codebase contradicts) are the ones that should move your vote. Polish is non-blocking. An empty tier is dropped.
-- **`Decision` names what your vote does in concrete terms.** For example, "approve to enter implementation" or "reject to bounce back to design".
-
-Every acceptance criterion is also cross-checked before the review reaches you; a criterion left without cited evidence is named in the review rather than passed over.
+Material findings are the ones that should move your vote; Polish never blocks. The Decision line tells you concretely what your vote does. Every acceptance criterion is cross-checked before the review reaches you; a criterion without cited evidence is named rather than passed over.
 
 ## The three calls
 
-You answer a gate with one of three calls.
+- **Approve.** The work advances to the next stage. Approving the terminal stage merges and closes it.
+- **Redo with feedback.** You accept the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes".
+- **Reject.** The work bounces back to the stage that owns the fix, carrying your findings.
 
-- **Approve.** The entity advances to the next stage and the first officer dispatches it. If the next stage opens or closes a worktree, the `Decision` line told you so. Approving the terminal stage runs the merge and cleanup ceremony.
-- **Redo with feedback.** You approve the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes". The first officer routes your asks back to the stage that owns the work, the worker re-does it, and the gate is re-presented.
-- **Reject.** At a stage with a `feedback-to` target, rejecting bounces the work back to that target stage to be fixed and re-validated; this is the feedback cycle below. At a stage without `feedback-to`, rejection is terminal for that path.
+Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
 
-A redo and a reject at a `feedback-to` stage run the same routing machinery. The difference is whether you are correcting a direction you accept or sending it back. Both name the concrete fix asks so the next worker has something to act on.
+## When you reject
 
-**A terminal close needs a recorded verdict.** Approving the terminal stage finalizes the entity, and Spacedock refuses to finalize or archive a terminal entity that carries no `verdict`: the outcome must be on the record. See the [frontmatter contract](../reference/frontmatter-contract.md#entity-fields) for the mechanics.
-
-## Feedback cycles and the loop cap
-
-When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` stage, the work routes back to the stage named in `feedback-to`: the stage that owns the fix, not the reviewer that flagged it. In the dev workflow, `validation` has `feedback-to: implementation`, so a rejected validation sends the deliverable back to implementation, not back to the validator.
-
-The first officer tracks each round in a `### Feedback Cycles` section in the entity body. Your concrete findings route to the `feedback-to` target, the reviewer re-runs after the fix, and the gate comes back to you as a fresh review.
-
-**The loop caps at three.** On cycle 3 the first officer escalates to you instead of bouncing a fourth time: the same fix has failed twice, so the call returns to a human.
+Your findings route back automatically, the work is redone, the reviewer re-runs, and the gate comes back to you as a fresh review. Every round is on the record in the item's file. **The loop caps at three:** on the third failure the call returns to a human instead of bouncing again.
 
 ## The detached adversarial audit
 
