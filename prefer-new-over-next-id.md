@@ -102,3 +102,16 @@ VERDICT: PASSED
 ### Summary
 
 PASSED. AC-1 is proven outside the prose: the built binary's `--next-id` puts only the id on stdout (hex-verified) with the use-`new` hint on stderr, and `--json` stays hint-free with empty stderr — offline suite 1253 green. AC-2's load-bearing live drives confirmed on BOTH hosts that the real FO files via `spacedock new` and never reaches for the `--next-id`+write manual pair (both with-my-own-eyes stream inspection, not just the green assertion). The detached adversarial audit refuted nothing material — all three intended guards (the stderr-hint test, the filing stream-assertion's manual-pair check, the parity strip) genuinely red under their adversarial edits, so none green-lights a future regression. No instruction-file prose-grep in the new tests: the `strings.Contains(errOut, "spacedock new")` checks observe the runtime binary's stderr, not a contract file.
+
+## Stage Report: implementation (cycle 1 — rebase onto main, resolve #350/#358)
+
+- DONE: rebase the branch onto current origin/main (moved +14 from concurrent Commanders) and resolve conflicts preserving my change re-applied onto main's new structure
+  `git rebase origin/main` replayed my single commit; two conflicts, both the same shape (a strip-helper inserted right after `stripStateBackend`). Resolved by keeping BOTH sides. New HEAD 8a2bfff9 atop origin/main 424ee31e; working tree clean.
+- DONE: `internal/status/harness_test.go` — merge my `stripNextIDHint` addition with #350's `stripSandbox`
+  Kept both helpers (each its own var + func) after `stripStateBackend`.
+- DONE: `internal/ensigncycle/*` — re-apply the `filing` shared scenario ON TOP of #358's parallelized claude runner so TestSharedScenarioRunnerCoverage + the seed-scenario doc-lock stay green
+  #358 only touched `claude_live_runner_test.go` (added `t.Parallel()` + `withClaudeConfigDir`); git auto-merged my `filing` runner-map entry + `runClaudeFilingScenario` cleanly alongside it. `internal/status/zz_independent_parity_test.go` conflict resolved by keeping both `stripSandbox(s)` and `stripNextIDHint(s)` calls in `indNormalize`.
+
+### Summary
+
+Pure merge-prep, no behavior change. Main's +14 produced exactly two conflicts (#350's sandbox strip-helper and parity-normalizer call collided with my next-id-hint strip-helper at the same anchors); both resolved additively — kept both sides. #358's claude-scenario parallelization auto-merged with my `filing` additions with no manual intervention. Verified: status package 461/461 (was 453; +8 from #350's sandbox tests), full module 1329/1329 deterministic across two consecutive runs, live build clean, and the five offline coverage/parity guards green (TestSharedScenarioRunnerCoverage, TestPiSharedScenarioCoverage, TestSeedScenariosDocLock, TestSharedRuntimeScenarioDefinitions, TestSharedScenarioDocsContract) — the `filing` scenario survives #358's parallelization intact. One transient flake in `TestSonnetTeamDeleteHangReplay` (a pre-existing test byte-identical to origin/main, untouched by this branch) cleared on re-run and is not a rebase regression. Per team-lead, the cycle-0 live filing drive already validated AC-2 and was not re-run.
