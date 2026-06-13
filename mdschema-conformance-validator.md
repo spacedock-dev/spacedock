@@ -4,10 +4,10 @@ title: Full mdschema conformance validator (status --validate enforces a subset)
 status: validation
 source: captain-approved, surfaced by pt0 docs-site port (PR #343, 2026-06-13)
 started: 2026-06-13T05:52:37Z
-completed:
-verdict:
+completed: 2026-06-13T21:25:36Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-mdschema-conformance-validator
+worktree:
 issue:
 sprint: 0202-survey-improvements
 group: cleanup
