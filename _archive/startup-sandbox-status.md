@@ -14,6 +14,7 @@ group: ux-cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#350"
+archived: 2026-06-13T15:05:34Z
 ---
 
 UX improvement: on startup, Spacedock should also show whether sandboxing is enabled — distinguishing enabled / available-but-not-enabled / unavailable — so the operator knows the execution-isolation posture before dispatching work.
