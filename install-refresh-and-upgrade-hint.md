@@ -105,3 +105,26 @@ First real-world 0.20.0 install feedback. Lands in the 0.20.x cleanup/UX band. R
 ### Summary
 
 Root-caused Facet 1: `spacedock install --host codex` never re-installs an already-present plugin because `runInit`'s codex arm short-circuits to doctor on `resolved != ""`, while the claude arm calls `Install` unconditionally — the `Install` seam itself is proven-good (spike confirmed codex present→newer refresh works on disk). Facet 2 is a silent-on-Compatible gap: the binary holds both display semvers locally, so an additive opt-in upgrade hint can fire in doctor and the front-door gate with no network fetch and no change to the contract verdict. Firmed four behavioral ACs (seam-recorded install call, live on-disk version advance, contract hint render with negative cases, front-door gate hint), a `docs/install-journey.md` doc diff, and the te-before-gp sequencing. Both fixes are small wiring changes, not seam rewrites.
+
+## Stage Report: implementation
+
+- DONE: Facet 1 — make `runInit`'s codex arm call `ops.Install("codex", marketplaceSource, devBranch)` before doctor when NOT `--check`, mirroring the claude arm, instead of short-circuiting to doctor on `resolved != ""`. The `--check` arm keeps its no-install report.
+  `internal/cli/init.go` codex arm: `--check` → doctor only; present plugin → Install-then-doctor; absent → unchanged prose. Commit fc77cd10.
+- DONE: REPLACE `TestInitCodexInstallReadiness/compatible-installed` (it codified the no-op bug). (AC-1)
+  Rewrote the subtest to assert `fake.installCmds == [codex spacedock-dev/spacedock next]` on a present-compatible plugin; added a `--check` subtest asserting zero installCmds. `internal/cli/init_test.go`. Fails before the init.go fix, passes after.
+- DONE: AC-2 = live codex smoke that the on-disk resolved manifest advances, skip when codex absent.
+  `TestCodexInitRefreshAdvancesBehindPlugin` in `install_behavior_codex_test.go` seeds 0.0.1 then refreshes to 0.0.2 via the production `execHost.Install` seam, asserts `resolveCodexManifest`'s on-disk version == 0.0.2. RAN (not skipped) — codex on PATH — PASS in 0.30s.
+- DONE: Facet 2 (UX hint) — additive opt-in upgrade hint when binary + plugin display semvers are BOTH valid semver AND binary strictly newer AND contract-compatible, in BOTH doctor (contract Compare) AND front-door `gateHost`. Verdict stays Compatible, exit 0, launch still happens. NEVER on equal versions or `cli.Version=="dev"`.
+  `internal/contract/contract.go`: `upgradeHint`/`semverCompare`/`parseDottedInts` (contract-local, NOT `cli.compareVersion`) append the hint to the Compatible `Message` and populate a new `Result.Hint`. `gateHost` prints `res.Hint` alone on Compatible (silent on the bare OK line), then launches. Commits b3cf4ec8 + 5d527f9b.
+- DONE: AC-3 contract unit + negative equal/dev cases.
+  `TestCompatibleUpgradeHint`: behind-plugin (0.19.8 vs 0.20.0) hints for both hosts + preserves the OK line; equal-version, `dev`-binary, and older-binary cases assert NO hint. `internal/contract/contract_test.go`.
+- DONE: AC-4 frontdoor seam — stderr hint + launch-still-happens, silent on equal.
+  `TestFrontDoorUpgradeHintOnBehindPlugin` (claude+codex): with `Version` stamped 0.20.0 over the 0.12.1 fixture, asserts launch invoked + stderr carries the hint + host install command; equal-version (0.12.1) asserts silent. New `withVersion` test helper. `internal/cli/frontdoor_test.go`.
+- DONE: `go test ./internal/cli/ ./internal/contract/` green WHOLE-package; ZERO `.md` edits; hint is ADDITIVE.
+  `322 passed in 2 packages` (whole-package); full repo `1261 passed in 16 packages`; `go vet` clean. `git diff --name-only origin/main...HEAD` → 7 Go files, ZERO `*.md`.
+- SKIPPED: the `docs/install-journey.md` doc diff in the spec's "Documentation changes" section.
+  Delegated to yw per the dispatch anti-collision rule (yw is deleting install-journey.md and moving the doctor-refresh line to `reference/command-reference.md ## Setup`); my branch makes ZERO `.md` edits.
+
+### Summary
+
+Both facets landed as small wiring changes on `origin/main` HEAD 41bd47ae, three commits (fc77cd10, b3cf4ec8, 5d527f9b). Facet 1 wires the codex arm to refresh-on-present like the claude arm and replaces the no-op-codifying test with a seam-recorded install assertion plus a live on-disk-advance smoke (ran against the real codex CLI). Facet 2 adds a contract-local semver-skew gate that appends an opt-in upgrade hint to the Compatible message in doctor and surfaces it (via a new `Result.Hint`) at the previously-silent front-door gate, additive and never firing on equal/dev. Whole-package and full-repo tests green; zero `.md` edits (doc-diff delegated to yw). Note per dispatch: a detached adversarial audit of the front-door changes is owed at validation before merge.
