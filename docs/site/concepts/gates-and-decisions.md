@@ -43,9 +43,11 @@ Material findings are the ones that should move your vote; Polish never blocks. 
 
 Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
 
-## When you reject
+## When work is rejected
 
-Your findings route back automatically: the work is redone, the reviewer re-runs, and the gate returns as a fresh review. Every round is on the record in the item's file. **The loop caps at three:** on the third failed round the call returns to a human instead of bouncing again.
+Rejections bounce automatically: the findings route back, the work is redone, and the reviewer re-runs, with no stop at your desk. The gate reaches you only when the work passes review, or after **three failed rounds**, when the call returns to a human instead of bouncing again. Every round is on the record in the item's file.
+
+A useful rejection to type at a gate: "send it back unless this now needs reframing".
 
 ## The detached adversarial audit
 
