@@ -292,3 +292,27 @@ PASSED (cycle 2). Both cycle-1 changes verified with evidence outside the task p
 
 ### Summary
 Folded the cycle-2 captain refinement: the report BODY now NAMES THE SPECIFIC TYPE of knowledge work (synthesized from the workstream names + areas) in both the `HOW YOU WORK` line and the WORKSTREAMS mode column, so the bare archetype label "knowledge-work" never stands alone — the `mode-classification` value stays `knowledge-work` (no sub-type classifier). Seeded a second distinct knowledge-work track (`client-1on1s`) so the render demonstrably names ≥2 distinct types, proven by a live drive (distinct per-track type qualifiers, knowledge-work never standing alone). Body + AC-5 + test plan updated together; R1–R6 + cycle-1 unchanged. 20/20 query+probe, 1255/16 full go test, go vet clean. Worktree commit 8d96b438 on spacedock-ensign/survey-output-redesign.
+
+## Stage Report: validation (cycle 3 — cycle-2 fold: specific knowledge-work type)
+
+- DONE: AC-5 type characterization (render-level, live drive over the two-KW-track fixture)
+  Fixture now carries TWO distinct knowledge-work tracks: `notes-ops` (areas `notes/`+`ledger/`; intake-memos/process-batch/log-run) and `client-1on1s` (areas `people/`+`assessments/`; intake-1-1-notes/process-team-assessment/file-follow-ups). Rendered HOW YOU WORK + WORKSTREAMS over them: HOW YOU WORK names ≥2 distinct types (People 1-1s & team assessment; notes/memo processing with run-logging) with "knowledge-work loop" as the TRAILING class only; the WORKSTREAMS mode column qualifies each track (`knowledge-work · 1-1s & team assessment`, `knowledge-work · notes & run-logging`) — the two qualifiers DIFFER and "knowledge-work" never stands alone. Render-DRIVEN: the type qualifiers derive from each track's distinct workstream name + edit areas (an independent fixture-row oracle: notes/ vs people/+assessments/), NOT a SKILL.md prose-grep.
+- DONE: Query-level — both KW tracks → `knowledge-work`; class value unchanged (no sub-type classifier); smoke count
+  Independent drive: scoping 15→17 (the two new client-1on1s sessions); mode-classification emits `knowledge-work` for BOTH `notes-ops` and `client-1on1s`. queries.sql byte-identical since cycle-1 (0 changes) — the CASE still emits exactly manual/exploration/knowledge-work/unlabeled, no knowledge-work sub-type branch. TestSurveyQuerySmoke 14/14; query+probe smoke 20/20 (14 query + install 3 + scaffold 3).
+- DONE: No regression — R1–R6 + cycle-1 (offer reframe + AC-7 scaffold probe) intact
+  Cycle-2 touched only survey_queries_test.go + fixture-sessions.sql + SKILL.md (HOW YOU WORK line, WORKSTREAMS mode column, one synthesis bullet). queries.sql + the scaffold probe test + testdata/scaffold/ are UNTOUCHED → AC-7 + R1–R6 query oracles unchanged. AC-7 scaffold probe 2/2 green; install probe 2/2 green; the report spine (BY THE NUMBERS / THREADS TO PULL / ↓ pointer) untouched. KEEP-SIGNAL (inference + decision-frontier triage) intact.
+- DONE: Full `go test ./...` green
+  exit 0. Focused re-check per the FO (render-prose + fixture-track refinement, no new high-stakes code surface) — no detached audit needed; the cycle-1 AC-7 probe + queries are unchanged and re-confirmed green.
+
+### Summary
+PASSED (cycle 3). The cycle-2 fold names the SPECIFIC TYPE of knowledge work in the report body rather than the bare archetype. AC-5 type characterization is proven by a live drive over the fixture's now-TWO distinct knowledge-work tracks: HOW YOU WORK names ≥2 distinct types and the WORKSTREAMS mode column qualifies each (`knowledge-work · {type}`), with the qualifiers DERIVED from each track's workstream name + edit areas (independent oracle), never standing as a bare label. The underlying CLASS is unchanged — queries.sql is byte-identical, mode-classification still emits the four class values, and no sub-type classifier was added (the type is render-synthesized from existing signal). Both KW tracks classify `knowledge-work` (scoping 15→17). R1–R6 + cycle-1 (offer reframe + AC-7 scaffold probe) did not regress; query+probe smoke 20/20; full `go test ./...` exit 0.
+
+### Verdict: PASSED (cycle 3)
+- AC-1 (value lede + BY THE NUMBERS + manual rename): PASSED — report spine + queries byte-unchanged; smoke 14/14.
+- AC-1b (decision-no-followup chronological join): PASSED — fixture decision-no-followup rows unchanged; smoke green.
+- AC-2 (window framing + ONE consolidated WHAT THIS CAN'T SEE): PASSED — unchanged.
+- AC-3 (dispatch fact in BY THE NUMBERS): PASSED — unchanged; smoke 2|3.
+- AC-4 (all-unlabeled Codex collapse + no scratch preamble): PASSED — unchanged; collapse smoke green.
+- AC-5 (knowledge-work classified + SPECIFIC TYPE named, not bare archetype): PASSED — two KW tracks; HOW YOU WORK names ≥2 distinct types; WORKSTREAMS qualifies each; types derived from workstream/area oracle; class unchanged (no sub-type classifier).
+- AC-6 (three mode offers differ; per-entity auto-processing KW offer; branch-aware work-by-area): PASSED — offer reframe + branch caveat unchanged from cycle-1.
+- AC-7 (SCAFFOLD names spacedock on-disk, not survey-self-only): PASSED — scaffold probe untouched, 2/2 green; DB-tally exclusion kept.
