@@ -1,16 +1,18 @@
 # The stage lifecycle
 
-An entity moves through an ordered chain of stages that the workflow defines, one at a time, and each stage declares the work it owns and the proof it must produce. The dev workflow's chain is `backlog → ideation → implementation → validation → done`; your own workflow names its own stages, but the mechanics are the same. The first officer advances an entity stage by stage, dispatching one ensign per stage and pausing at the gates you declared.
+An entity moves through an ordered chain of stages that the workflow defines, and each stage declares the work it owns and the proof it must produce. The first officer advances an entity stage by stage, pausing at the gates you declared.
 
-## The dev workflow's stages
+## A typical dev workflow
 
-The five stages below are the dev workflow's stages, used as the running example for this page; the full per-stage Inputs/Outputs/Good/Bad detail lives in its [README](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md). Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
+```mermaid
+flowchart LR
+  backlog --> ideation --> implementation --> validation --> done
+  validation -. rejected .-> implementation
+```
 
-- **`backlog`, the seed.** An entity enters here when first proposed: a title, a source, a brief description, and the test gates future stages must satisfy. No design work yet. `initial: true`, so this is where every new entity starts. The dev workflow also marks it `gate: true`, so the first officer presents a new entity for your go-ahead before it advances.
-- **`ideation`, the design.** A worker clarifies the problem, explores approaches, and produces a fleshed-out body: problem statement, proposed approach, acceptance criteria, and a test plan. Each acceptance criterion names how it will be checked. This stage is `gate: true` in the dev workflow, so the first officer presents the design for your approval before any code is written.
-- **`implementation`, the deliverable.** A worker produces the change the entity describes: code, fixtures, instruction text, on-disk state. This stage is `worktree: true`, so the work happens in an isolated checkout. A completed, non-gated stage flows straight to validation.
-- **`validation`, the independent check.** A worker verifies the deliverable against the acceptance criteria. It checks what was produced; it does not produce the deliverable itself. It reproduces the evidence each `AC-N` cites and returns a `PASSED` or `REJECTED` recommendation. This stage is `worktree: true`, `fresh: true`, `feedback-to: implementation`, and `gate: true`.
-- **`done`, the verdict.** Validation is complete and you approve the result. The entity is closed with a `verdict` of `PASSED` or `REJECTED` and a `completed` timestamp. `terminal: true`.
+Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?". Here ideation and validation end at gates: your call before code is written, and your call before the result ships.
+
+The property that matters most is `feedback-to`: rejected work bounces back to the stage that owns the fix (a rejected validation returns to implementation), not to the reviewer that flagged it.
 
 ## What a stage declares
 
