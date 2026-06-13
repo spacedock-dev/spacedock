@@ -9,6 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-docs-a14y-parity
 issue:
+mod-block: merge:pr-merge
 ---
 
 Bring the MkDocs `/docs/*` pages to agent-readability (a14y scorecard 0.2.0) parity with the landing page. Standalone doc-product improvement — not part of the 0.20.3 FO-efficiency sprint.
