@@ -30,7 +30,9 @@ const stableChannelBranch = "main"
 // It reads the step's run block, finds the `git switch <branch>` and `git push
 // origin <branch>` commands, and returns the branch only when BOTH name the same
 // branch (a switch/push split would itself be a drift). Returns "" when the step,
-// or either command, is absent.
+// or either command, is absent. The step also pushes the stable channel ref
+// (`git push origin main:refs/heads/stable`); that refspec push (target contains
+// `:`) is skipped here so it does not shadow the bare-branch stamp target.
 func releaseStampTarget(workflow string) string {
 	for _, step := range parseWorkflowSteps(workflow) {
 		if step.name != "Stamp plugin manifests to the release version" {
@@ -42,7 +44,7 @@ func releaseStampTarget(workflow string) string {
 			if len(fields) == 3 && fields[0] == "git" && fields[1] == "switch" {
 				switchTo = fields[2]
 			}
-			if len(fields) == 4 && fields[0] == "git" && fields[1] == "push" && fields[2] == "origin" {
+			if len(fields) == 4 && fields[0] == "git" && fields[1] == "push" && fields[2] == "origin" && !strings.Contains(fields[3], ":") {
 				pushTo = fields[3]
 			}
 		}
@@ -147,6 +149,37 @@ func TestStableChannelBinaryPairAgreesOnMain(t *testing.T) {
 	}
 	if stampTarget != stableDevBranch {
 		t.Errorf("binary-side pair disagrees: release.yml stamp target %q != .goreleaser.yaml stable devBranch %q", stampTarget, stableDevBranch)
+	}
+}
+
+// stampStepAdvancesStableRef reports whether the "Stamp plugin manifests" step
+// pushes the stamped commit to the stable channel ref. It looks for a
+// `git push origin <src>:refs/heads/stable` command in the step's run block.
+func stampStepAdvancesStableRef(workflow string) bool {
+	for _, step := range parseWorkflowSteps(workflow) {
+		if step.name != "Stamp plugin manifests to the release version" {
+			continue
+		}
+		for _, command := range executableShellCommands(step.run) {
+			fields := strings.Fields(command)
+			if len(fields) == 4 && fields[0] == "git" && fields[1] == "push" && fields[2] == "origin" && strings.HasSuffix(fields[3], ":refs/heads/stable") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// TestStampStepAdvancesStableRef locks the stable-channel publish mechanism: the
+// release stamp step MUST push the release commit to the `stable` ref, because the
+// spacedock-dev/marketplace stable entry pins source.ref=stable. Without this push
+// the stable channel would freeze at the prior release forever (a fresh
+// `spacedock@spacedock` install would resolve the old commit), since the marketplace
+// manifest is intentionally static and no longer hand-edited per release. The
+// command is parsed out of the real release.yml, so dropping the push reds this.
+func TestStampStepAdvancesStableRef(t *testing.T) {
+	if !stampStepAdvancesStableRef(readReleaseWorkflow(t)) {
+		t.Error("release.yml stamp step does not push to refs/heads/stable; the stable marketplace channel (source.ref=stable) would never advance past the prior release")
 	}
 }
 

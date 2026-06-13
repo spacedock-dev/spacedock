@@ -206,10 +206,19 @@ jobs:
             .claude-plugin/plugin.json .codex-plugin/plugin.json
           if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
             echo "plugin manifests already at $RELEASE_VERSION; nothing to commit"
-            exit 0
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit -m "release: stamp plugin manifests to $RELEASE_VERSION" \
+              -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+            git push origin main
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -m "release: stamp plugin manifests to $RELEASE_VERSION" \
-            -- .claude-plugin/plugin.json .codex-plugin/plugin.json
-          git push origin main
+          # Advance the stable channel ref to the stamped release commit. The
+          # spacedock-dev/marketplace stable entry pins source.ref=stable (a moving
+          # branch, not a per-release tag), so a fresh `spacedock@spacedock` install
+          # resolves whatever this branch points at — this push is what publishes the
+          # release to the stable channel, replacing a hand-edit of the marketplace
+          # repo. main HEAD is the stamped release commit and stable is a prior
+          # release commit, so this fast-forwards. Same-repo push, so the default
+          # GITHUB_TOKEN suffices (no cross-repo PAT, unlike the homebrew-tap push).
+          git push origin main:refs/heads/stable
