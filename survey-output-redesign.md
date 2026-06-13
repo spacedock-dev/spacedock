@@ -4,10 +4,10 @@ title: Survey output redesign — one coherent "value & numbers first" rewrite f
 status: validation
 source: "Coalesces the survey-improvement cluster (six user-sourced feedback seeds, 2026-06-08→06-12) into one redesign of the spacedock:survey output. Captain call 2026-06-13: six seeds all rewrite one skill = one coherent change, not six worktrees colliding on SKILL.md."
 started: 2026-06-13T04:53:59Z
-completed:
-verdict:
+completed: 2026-06-13T21:12:39Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-survey-output-redesign
+worktree:
 issue:
 sprint: 0202-survey-improvements
 group: survey
