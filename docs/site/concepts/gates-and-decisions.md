@@ -51,9 +51,9 @@ A useful rejection to type at a gate: "send it back unless this now needs refram
 
 ## Reviews beyond validation
 
-A typical validation stage already covers code review: the work is checked against your acceptance criteria, with the rejection loop above behind it. Adversarial review is built in as well; it can run inside the validation stage, or as a detached, out-of-workflow pass for high-stakes changes.
+A typical validation stage already covers code review: the work is checked against your acceptance criteria, with the rejection loop behind it. Adversarial review is built in as well; it can run inside the validation stage, or as a detached, out-of-workflow pass for high-stakes changes.
 
-Adversarial review differs from validation in what it distrusts: validation checks the work; the adversarial pass checks the validation. It is read-only, and it tries to refute the result: it constructs an adversarial edit the deliverable's own tests should catch, and confirms they do. A test that stays green under an edit that breaks the claim is a hole validation cannot see on its own. "Refuted nothing material" is a valid recorded outcome, and material findings route back through the rejection loop.
+Adversarial review differs from validation in what it distrusts: validation checks the work; the adversarial pass checks the validation. It is read-only and tries to refute the result by constructing an adversarial edit the deliverable's own tests should catch, then confirming they do. A test that stays green under an edit that breaks the claim is a hole validation cannot see on its own. "Refuted nothing material" is a valid recorded outcome, and material findings route back through the rejection loop.
 
 The workflow is flexible beyond that: you can add conditional, lens-specific reviews of your own, like checking that the documentation was updated when a change affects end users.
 
