@@ -1,7 +1,7 @@
 ---
 id: ev9h1phd37rb7r5cfrzpgenh
 title: Docs site agent-readability (a14y) parity with the landing page
-status: implementation
+status: validation
 source: vendor prompt (/tmp/docs-a14y-vendor-prompt.md), captain intake 2026-06-13 — standalone doc improvement (NOT a 0.20.3 sprint item)
 started: 2026-06-13T19:36:46Z
 completed:
