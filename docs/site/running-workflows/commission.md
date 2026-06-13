@@ -1,6 +1,6 @@
 # Commission a workflow
 
-A workflow is designed in conversation: you make four decisions, commission derives the rest, and nothing is written until you accept the presented design. [Your first workflow](../get-started/first-workflow.md) shows the whole flow, including the design summary and pilot run.
+A workflow is designed in conversation: you make four decisions and commission derives the rest. [Your first workflow](../get-started/first-workflow.md) shows the whole flow, including the design summary and pilot run.
 
 Invoke it from a session started with `spacedock claude`. You can pass the mission inline:
 
@@ -12,13 +12,13 @@ Text after the command name becomes the workflow mission; with no argument, comm
 
 ## The four things you decide
 
-1. **The mission and what each work item is.** What the workflow is for, and what one entity represents. The description you give becomes the label the workflow uses everywhere it talks about your work: "a design idea" makes it a workflow of ideas.
+1. **The mission and what each work item is.** The description you give becomes the label the workflow uses everywhere: "a design idea" makes it a workflow of ideas.
 
-2. **The stages.** Commission detects the workflow's shape from your mission (shipping code, testing a hypothesis, or iterating on an artifact) and proposes a stage list for you to confirm, modify, add to, or trim. It pushes back on redundant names: `awaiting_validation` reads as "the entity is in awaiting_validation," so it suggests `validation` instead.
+2. **The stages.** Commission matches your mission to a workflow archetype (development: ship code through review; experiment: test a hypothesis against evidence; refinement: iterate on an artifact until it is good enough) and proposes the stage list from it. Confirm, adjust, or trim; it pushes back on redundant names (`awaiting_validation` is just `validation`).
 
-3. **The gated stages.** Which stages pause for your decision. By default one gate sits before the terminal stage, and each gate gets a rejection target: the earlier stage work bounces back to when you reject. Both appear in the design summary in plain language ("If you reject at `review`, it goes back to `draft` for revision").
+3. **The gated stages.** Where the workflow pauses for your decision: by default one gate before the terminal stage, each with a rejection target stated in plain language ("If you reject at `review`, it goes back to `draft` for revision").
 
-4. **The per-stage quality bar.** Each stage in the generated README tells a dispatched ensign what "good" means there: what to produce, the quality bar to meet, the anti-patterns to avoid. Commission drafts these from the mission, but they are starting prose, not commitments.
+4. **The per-stage quality bar.** What "good" means for each stage in the generated README: what to produce, the bar to meet, the anti-patterns to avoid. Starting prose, not commitments.
 
 Everything else is derived or asked with a recommendation attached: the directory under `docs/` where everything lands as plain text, how entities are identified, how rejections route. Stages that write code give each entity an isolated worktree, so your main checkout stays clean; if you ship through PR review, commission offers the [pr-merge mod](../advanced/mods-and-standing-teammates.md), which manages the PR lifecycle so merging never needs to be a stage. The design summary shows it all; ask about the tradeoffs before you accept.
 
@@ -29,6 +29,6 @@ The generated per-stage rules are best-guesses; [tighten them before any work ru
 - open the README and edit the bullets under each stage heading directly, or
 - type `review stages` to have commission walk you through each stage, flag the rules that read as generic, and apply your amendments inline.
 
-## The pilot run
+## After you accept
 
-On accept, commission takes the first-officer role itself and runs the pilot: it dispatches your seed entities and reports back when the workflow goes idle or a gate needs your decision. From there, [Operate a workflow](operating.md) covers the day-to-day loop.
+You can now tell the first officer to dispatch your entities. From there, [Operate a workflow](operating.md) covers the day-to-day loop.
