@@ -62,7 +62,7 @@ func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
 		t.Fatalf("launch seam not reached on the --plugin-dir dev lane")
 	}
 	want := []string{
-		"claude", "--agent", "spacedock:first-officer",
+		"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto",
 		"--plugin-dir", repo,
 		wantBootstrapPrompt + " do the thing",
 	}

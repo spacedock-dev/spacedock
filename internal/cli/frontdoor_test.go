@@ -105,7 +105,7 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"claude", "--agent", "spacedock:first-officer", "-p", "do the thing", wantBootstrapPrompt}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "-p", "do the thing", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -485,7 +485,7 @@ func TestClaudeFrontDoorSkipContractCheckBootstrap(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 with --skip-contract-check (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"claude", "--agent", "spacedock:first-officer", wantBootstrapPrompt}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v (skip-check must not pass the flag through)", fake.launchedArg, want)
 	}

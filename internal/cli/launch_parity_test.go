@@ -164,7 +164,7 @@ func TestCodexPlainWhenNoTrigger(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", wantCodexBootstrapPrompt}
+	want := []string{"codex", "--ask-for-approval", "on-request", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -221,7 +221,7 @@ func TestFenceTaskPromptOverride(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		want := []string{"claude", "--agent", "spacedock:first-officer", "--model", "gpt-x", wantBootstrapPrompt + " do the thing"}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--model", "gpt-x", wantBootstrapPrompt + " do the thing"}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -283,7 +283,7 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (--plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
-		want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -303,7 +303,7 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
-		want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -315,7 +315,7 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
-		want := []string{"codex", "--plugin-dir", "/a", wantCodexBootstrapPrompt}
+		want := []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/a", wantCodexBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
@@ -327,7 +327,7 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (captain no-`--` form relaxes the gate); stderr=%q", code, stderr.String())
 		}
-		want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/a", wantBootstrapPrompt + " review the PRs"}
+		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/a", wantBootstrapPrompt + " review the PRs"}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
