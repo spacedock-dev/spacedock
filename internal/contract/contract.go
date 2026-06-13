@@ -145,8 +145,80 @@ func compareWithManifest(c int, raw, host, branch, manifestPath, pluginVersion, 
 	case c >= hi:
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
-		return Result{Verdict: Compatible, Message: fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)}
+		msg := fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)
+		if hint := upgradeHint(host, pluginVersion, binaryVersion); hint != "" {
+			msg += "\n" + hint
+		}
+		return Result{Verdict: Compatible, Message: msg}
 	}
+}
+
+// upgradeHint returns the opt-in upgrade hint appended to a Compatible message
+// when the binary's display semver is strictly newer than the plugin's — a
+// plugin that still works (the contract is compatible) but is behind. It returns
+// "" (no hint) unless BOTH versions are valid dotted-int semver and the binary
+// is strictly greater: an unstamped `dev` binary, a non-semver, or an
+// equal/older binary emits nothing, so the gate never fires a false "you must
+// upgrade". The hint names the host-specific refresh command.
+func upgradeHint(host, pluginVersion, binaryVersion string) string {
+	if semverCompare(binaryVersion, pluginVersion) <= 0 {
+		return ""
+	}
+	return fmt.Sprintf(
+		"A newer plugin is available — run spacedock install --host %s to refresh.",
+		host)
+}
+
+// semverCompare orders two dotted-int versions (e.g. `0.20.0`), returning -1, 0,
+// or 1. It returns 0 (treat as not-greater, so no hint) when EITHER side is not
+// a valid dotted-int version — the defensive gate that keeps a non-semver (`dev`)
+// or empty value from triggering the upgrade hint. Unlike the cli resolver's
+// lexical fallback, a non-integer component here is a parse failure, not a
+// lexical tiebreak: the hint must not fire on anything but a clean semver skew.
+func semverCompare(a, b string) int {
+	an, aok := parseDottedInts(a)
+	bn, bok := parseDottedInts(b)
+	if !aok || !bok {
+		return 0
+	}
+	for i := 0; i < len(an) || i < len(bn); i++ {
+		var av, bv int
+		if i < len(an) {
+			av = an[i]
+		}
+		if i < len(bn) {
+			bv = bn[i]
+		}
+		if av != bv {
+			if av < bv {
+				return -1
+			}
+			return 1
+		}
+	}
+	return 0
+}
+
+// parseDottedInts splits a dotted version into its integer components, reporting
+// ok=false when the string is empty or any component is not a non-negative
+// integer. A pre-release/build suffix (e.g. `-rc1`) makes its component
+// non-integer and so fails the parse — the conservative read for the upgrade
+// hint, which only fires on a clean numeric skew.
+func parseDottedInts(v string) ([]int, bool) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return nil, false
+	}
+	parts := strings.Split(v, ".")
+	out := make([]int, len(parts))
+	for i, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 0 {
+			return nil, false
+		}
+		out[i] = n
+	}
+	return out, true
 }
 
 // mismatchMessage assembles the shared-shape mismatch message: a header naming

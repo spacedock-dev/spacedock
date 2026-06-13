@@ -96,6 +96,68 @@ func TestCompare(t *testing.T) {
 	}
 }
 
+// TestCompatibleUpgradeHint locks AC-3: when the binary and plugin display
+// versions are both valid semver and the binary is strictly newer while the
+// contract is compatible, the Compatible message carries an opt-in upgrade hint
+// naming a newer plugin AND the host-specific `spacedock install --host {host}`
+// command — but the verdict stays Compatible and the OK line is preserved. The
+// hint NEVER fires on equal versions or a non-semver (`dev`) binary version. The
+// trigger (the semver skew) comes from the version inputs, not the message.
+func TestCompatibleUpgradeHint(t *testing.T) {
+	t.Run("behind-plugin-hints", func(t *testing.T) {
+		for _, host := range []string{"claude", "codex"} {
+			res := Compare(CONTRACT_VERSION, ">=1,<2", host, "", "0.19.8", "0.20.0")
+			if res.Verdict != Compatible {
+				t.Fatalf("host %s: verdict = %v, want Compatible (the hint must not change the verdict)", host, res.Verdict)
+			}
+			if !strings.Contains(res.Message, "OK: spacedock binary 0.20.0 and plugin 0.19.8 are compatible.") {
+				t.Fatalf("host %s: OK line not preserved alongside the hint: %q", host, res.Message)
+			}
+			if !strings.Contains(res.Message, "newer plugin") {
+				t.Fatalf("host %s: hint missing newer-plugin notice: %q", host, res.Message)
+			}
+			if !strings.Contains(res.Message, "spacedock install --host "+host) {
+				t.Fatalf("host %s: hint missing host install command: %q", host, res.Message)
+			}
+		}
+	})
+
+	// Negative: equal versions carry no hint — there is nothing to upgrade to.
+	t.Run("equal-version-no-hint", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.20.0", "0.20.0")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if strings.Contains(res.Message, "newer plugin") || strings.Contains(res.Message, "spacedock install") {
+			t.Fatalf("equal versions must not emit an upgrade hint: %q", res.Message)
+		}
+	})
+
+	// Negative: an unstamped `dev` binary version is not valid semver — the hint
+	// must not fire (no false "you must upgrade" against a dev build).
+	t.Run("dev-binary-no-hint", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.19.8", "dev")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if strings.Contains(res.Message, "newer plugin") || strings.Contains(res.Message, "spacedock install") {
+			t.Fatalf("dev binary version must not emit an upgrade hint: %q", res.Message)
+		}
+	})
+
+	// Negative: a binary OLDER than the plugin (but still contract-compatible)
+	// carries no hint — the hint is for a behind plugin, not a behind binary.
+	t.Run("older-binary-no-hint", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.21.0", "0.20.0")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if strings.Contains(res.Message, "newer plugin") {
+			t.Fatalf("a newer plugin than the binary must not emit the behind-plugin hint: %q", res.Message)
+		}
+	})
+}
+
 // TestCompareMessageShape locks the shared mismatch-message shape: the leading
 // "Spacedock version mismatch" line names both display versions, and the message
 // ends with the "Run spacedock doctor" pointer — for every mismatch class except
