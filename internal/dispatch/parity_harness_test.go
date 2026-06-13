@@ -86,6 +86,32 @@ func gitInit(t *testing.T, dir string) {
 	}
 }
 
+// gitInitBare initializes a git repo at dir with no seed commit — enough for a
+// remote query (`remote get-url origin`) to resolve there. Unlike gitInit it does
+// not add/commit, so it works on an empty directory.
+func gitInitBare(t *testing.T, dir string) {
+	t.Helper()
+	cmd := exec.Command("git", "-C", dir, "init", "-q")
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+}
+
+// gitAddOrigin adds a named `origin` remote to the repo at dir, pointing at a
+// throwaway bare upstream, so stateHasOrigin reports true. The probe is
+// `remote get-url origin` (network-free), so the upstream is never contacted and
+// needs no content — it exists only to give the remote a valid URL.
+func gitAddOrigin(t *testing.T, dir string) {
+	t.Helper()
+	upstream := filepath.Join(t.TempDir(), "upstream.git")
+	if out, err := exec.Command("git", "init", "-q", "--bare", upstream).CombinedOutput(); err != nil {
+		t.Fatalf("git init --bare: %v\n%s", err, out)
+	}
+	if out, err := exec.Command("git", "-C", dir, "remote", "add", "origin", upstream).CombinedOutput(); err != nil {
+		t.Fatalf("git remote add origin: %v\n%s", err, out)
+	}
+}
+
 // writeFile writes content to path, creating parent dirs.
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()

@@ -39,6 +39,8 @@ When the workflow is split-root (README declares `state:` checkout, e.g. `state:
 
 **Multi-writer sync.** After your path-scoped commit, `git -C {state_checkout} push origin {state_branch}` (e.g. `spacedock-state/dev`). On non-fast-forward rejection, `git -C {state_checkout} pull --rebase origin {state_branch}` replays your single-file commit atop the peer's (disjoint paths → no conflict), then re-push.
 
+**No-origin carve-out.** When the state checkout has no `origin` remote (boot reports `remote: none — state not remotely synced`), commit path-scoped locally as above and skip push/pull. State is local-only until an `origin` is configured.
+
 **Rebase-conflict halt.** If `pull --rebase` CONFLICTS (two writers editing the SAME entity's frontmatter), HALT, `git -C {state_checkout} rebase --abort`, surface the conflicting entity path(s) and peer commit to the first officer, and stop. Do NOT `--force` / `--force-with-lease` push; do NOT auto-resolve (`-X ours/theirs` or discarding either side silently loses a peer's edit). This is manual intervention — the escalate-rather-than-guess discipline below.
 
 ## Rules

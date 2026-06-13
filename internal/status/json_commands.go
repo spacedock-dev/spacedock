@@ -196,6 +196,12 @@ func bootJSON(d *bootData) *jsonObj {
 	out.set("definition_dir", d.definitionDir)
 	out.set("entity_dir", d.entityDir)
 	out.set("entity_dir_present", strconv.FormatBool(d.entityDirPresent))
+	// state_remote ("origin"/"none") is appended AFTER entity_dir_present, present
+	// only under split-root where remote sync applies. Single-root omits it so the
+	// envelope carries no remote concept where there is none.
+	if d.stateRemote != "" {
+		out.set("state_remote", d.stateRemote)
+	}
 
 	// sandbox: the three-way safehouse posture, appended AFTER the state-backend keys
 	// so every existing key's relative order is preserved for the FO's key-order parse.

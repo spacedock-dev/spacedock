@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -407,8 +408,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// underivable branch (should not happen for a split-root dir) falls back to a
 	// branch-neutral reminder inside stateCommitGuidance.
 	var stateBranch string
+	// stateRemotePresent gates the remote-sync tail of the state-commit guidance:
+	// a split-root checkout with no `origin` cannot push/pull, so the guidance
+	// degrades to local-only. Probed once here so both guidance callers below agree.
+	var stateRemotePresent bool
 	if splitRoot {
 		stateBranch, _ = status.StateBranch(workflowDir)
+		stateRemotePresent = stateHasOrigin(stateCheckout)
 	}
 
 	// Rule 5: Feedback context required for feedback reflow.
@@ -495,7 +501,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 					"code to main.\n"+
 					"%s",
 				worktreePath, worktreePath, branch,
-				stateCommitGuidance(stateCheckout, entityPath, stateBranch)))
+				stateCommitGuidance(stateCheckout, entityPath, stateBranch, stateRemotePresent)))
 		} else {
 			parts = append(parts, fmt.Sprintf(
 				"Your working directory is %s\n"+
@@ -505,7 +511,7 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 				worktreePath, worktreePath, branch))
 		}
 	} else if splitRoot {
-		parts = append(parts, stateCommitGuidance(stateCheckout, entityPath, stateBranch))
+		parts = append(parts, stateCommitGuidance(stateCheckout, entityPath, stateBranch, stateRemotePresent))
 	}
 
 	// 4. Entity-read instruction. Under split root the entity lives in the state
@@ -707,31 +713,53 @@ func dispatchPointerPrompt(host, dispatchFilePath string) string {
 		dispatchFilePath)
 }
 
+// stateHasOrigin reports whether the state checkout has a named `origin` remote,
+// the named-remote question the split-root sync contract pushes/pulls against —
+// true iff `git remote get-url origin` exits 0. Network-free (unlike ls-remote)
+// and discriminating (unlike a bare `git remote`, which exits 0 with no output).
+// A non-repo dir or any other git failure reports false, degrading the checkout
+// to local-only. This is the dispatch-package local exec the design pairs with
+// the status package's runGitCmd-backed probe; both ask the identical question.
+func stateHasOrigin(checkout string) bool {
+	cmd := exec.Command("git", "-C", checkout, "remote", "get-url", "origin")
+	return cmd.Run() == nil
+}
+
 // stateCommitGuidance is the split-root state-commit instruction, shared by the
 // worktree and non-worktree branches so the wording lives in one place. It
 // substitutes the resolved absolute state checkout and entity paths into the
 // path-scoped commit command — never literal {state_checkout}/{entity_path}
 // brace tokens — and carries the concurrency-safe "never a bare git add -A"
-// rule that governs every split-root stage. After the commit it reminds the
-// worker to push the orphan state branch peers share and `pull --rebase` on a
-// rejection; stateBranch is named verbatim when resolved, else a branch-neutral
-// reminder stands in.
-func stateCommitGuidance(stateCheckout, entityPath, stateBranch string) string {
-	pushReminder := "Then push the state branch so peers see your entity/report: " +
-		"`git -C " + stateCheckout + " push origin "
-	if stateBranch != "" {
-		pushReminder += stateBranch + "`"
+// rule that governs every split-root stage. After the commit the remote-sync
+// tail diverges on hasOrigin: with an origin it reminds the worker to push the
+// orphan state branch peers share and `pull --rebase` on a rejection
+// (stateBranch named verbatim when resolved, else a branch-neutral reminder);
+// without one it tells the worker the checkout is local-only and to skip
+// push/pull — the path-scoped commit instruction is unchanged either way.
+func stateCommitGuidance(stateCheckout, entityPath, stateBranch string, hasOrigin bool) string {
+	var pushReminder string
+	if hasOrigin {
+		pushReminder = "Then push the state branch so peers see your entity/report: " +
+			"`git -C " + stateCheckout + " push origin "
+		if stateBranch != "" {
+			pushReminder += stateBranch + "`"
+		} else {
+			pushReminder += "<state-branch>`"
+		}
+		pushReminder += "; on a non-fast-forward rejection, " +
+			"`git -C " + stateCheckout + " pull --rebase origin "
+		if stateBranch != "" {
+			pushReminder += stateBranch + "`"
+		} else {
+			pushReminder += "<state-branch>`"
+		}
+		pushReminder += " then re-push.\n"
 	} else {
-		pushReminder += "<state-branch>`"
+		pushReminder = "This state checkout has no `origin` remote — commit " +
+			"path-scoped locally as above; do NOT run `git push`/`git pull` " +
+			"(there is no remote to sync). State is local-only and will not " +
+			"survive on a shared remote until an `origin` is configured.\n"
 	}
-	pushReminder += "; on a non-fast-forward rejection, " +
-		"`git -C " + stateCheckout + " pull --rebase origin "
-	if stateBranch != "" {
-		pushReminder += stateBranch + "`"
-	} else {
-		pushReminder += "<state-branch>`"
-	}
-	pushReminder += " then re-push.\n"
 
 	return fmt.Sprintf(
 		"This workflow is split-root: the entity body and your stage report "+

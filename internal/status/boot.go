@@ -151,6 +151,11 @@ type bootData struct {
 	definitionDir    string
 	entityDir        string
 	entityDirPresent bool
+	// stateRemote is the state checkout's remote-sync availability, populated only
+	// under split-root: "origin" when the checkout has a named origin remote,
+	// "none" when it does not (local-only — state is not remotely synced). Empty
+	// for single-root, where remote sync does not apply.
+	stateRemote string
 	// Sandbox posture: the three-way safehouse state (enabled / available, not
 	// enabled / unavailable) computed from a .safehouse profile at the repo root and
 	// whether the safehouse binary resolves on PATH, so the operator sees the
@@ -200,6 +205,13 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 	d.entityDir = entityDir
 	if entityDir != definitionDir {
 		d.stateBackend = "split-root"
+		// Remote-sync availability is read only under split-root: the FO uses it to
+		// know whether the state checkout can push/pull origin or is local-only.
+		if stateHasOrigin(entityDir) {
+			d.stateRemote = "origin"
+		} else {
+			d.stateRemote = "none"
+		}
 	} else {
 		d.stateBackend = "single-root"
 	}
@@ -292,9 +304,18 @@ func printBoot(probe claudeteam.TeamStateProbe, w io.Writer, entities []*entity,
 	}
 	fmt.Fprintf(w, "hint: %s\n", d.teamHint)
 
-	// STATE_BACKEND
-	fmt.Fprintf(w, "STATE_BACKEND: %s (entity_dir: %s, present: %t)\n",
-		d.stateBackend, d.entityDir, d.entityDirPresent)
+	// STATE_BACKEND. The remote clause is appended only under split-root: origin
+	// when the state checkout can push/pull, else a local-only marker so the FO
+	// sees state is not remotely synced. Single-root omits the clause entirely.
+	remoteClause := ""
+	switch d.stateRemote {
+	case "origin":
+		remoteClause = ", remote: origin"
+	case "none":
+		remoteClause = ", remote: none — state not remotely synced"
+	}
+	fmt.Fprintf(w, "STATE_BACKEND: %s (entity_dir: %s, present: %t%s)\n",
+		d.stateBackend, d.entityDir, d.entityDirPresent, remoteClause)
 
 	// SANDBOX: appended last so every prior section's order is preserved.
 	fmt.Fprintf(w, "SANDBOX: %s\n", d.sandbox)
