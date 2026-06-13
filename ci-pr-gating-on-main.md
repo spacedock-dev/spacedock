@@ -12,7 +12,7 @@ issue:
 sprint: 0201-post-flip-release-model
 group: release-model
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#348"
 ---
 
