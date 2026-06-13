@@ -1,7 +1,7 @@
 ---
 id: pt0mz5stt4c1ve7ynz24r3yv
 title: docs site — address reviewer feedback (simplify, dedupe, fix rendering)
-status: implementation
+status: validation
 source: "PR #343 intake (captain 2026-06-12). Addresses reviewer (Karen) feedback on the docs site — headline asks: the docs are wordy / Spacedock feels complex, and apply the Recce doc-writing principle. Intaken directly at implementation for captain-steered interactive revision on the existing PR branch."
 started: 2026-06-12T17:34:58Z
 completed:
