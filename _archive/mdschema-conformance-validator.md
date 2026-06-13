@@ -14,6 +14,7 @@ group: cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#363"
+archived: 2026-06-13T21:25:36Z
 ---
 
 `docs/schema/entity.mdschema.yml` + `workflow-readme.mdschema.yml` are now the SSOT for the frontmatter contract (ported from the v0 branch into the v1 repo during the #343 docs pass). But `spacedock status --validate` (`internal/status/validate.go`) enforces only a SUBSET of that schema; nothing checks full conformance against the mdschema files.
