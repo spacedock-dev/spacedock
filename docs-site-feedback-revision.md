@@ -131,3 +131,20 @@ Interactive and terse; expects motion. Established pattern: when asked "what's w
 - commission skill template prints "Entity identity will use `sd-b32`." — reads internal in user-facing output; fix belongs in `skills/commission`, not the docs. Captain: "let's worry about sd-b32 later."
 - A new modality for examples (replacing the killed worked-example page) — captain decision pending.
 - Eyeball the stage-lifecycle mermaid diagram on the slate theme (first mermaid on the site; gold `#e3b04b` gate borders).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: The four remaining handoff pages (operating, commission, debrief-and-refit, command-reference) reworked with behavior claims verified against the owning skills.
+  operating/commission/debrief-and-refit were already reworked by predecessor c2 (re-verified clean this session: operating recast as touchpoints, commission deduped, debrief split from refit by cadence). command-reference was the genuinely-remaining page — fully reworked this session (below).
+- DONE: command-reference Workflow group framed as what the agents run, verified against the owning source.
+  Split into per-section tables (dropped the monolithic top table), Launch made prose-only (DRY), Workflow group framed as agent-driven (the first officer runs status/new/dispatch/state/completion). Every command verified against the cobra defs in `internal/cli/cli.go` — caught and fixed a real error: the `state` row only documented `state init`, corrected to cover both `state init` (resumes) and `state new` (births). `8017d918`, `e5cf2f9c`.
+- DONE: Frontmatter contract ported from the v0 branch into the repo; mdschemas are SSOT; the site links to it.
+  Captain-directed addition beyond the handoff. `docs/schema/{entity,workflow-readme}.mdschema.yml` ported from the unmerged v0 branch `spacedock-ensign/spacedock-frontmatter-contract-spec` (entity `known_corpus_failures` emptied — v0 files). The site `reference/frontmatter-contract.md` is a reader-seat stub: lede + two subsections (Workflow README, Entity) linking the schemas on `main`; field tables and the line-parser prose dropped (the Go parser uses `yaml.Unmarshal`, verified — the old "flat/nested-ignored" claim was false). `3fba5836`..`90db73df`, `1f17ed3f`.
+- DONE: After page changes — journey re-read in nav order (term-before-introduction), strict build green, AC-2 exclusions hold.
+  All 19 pages re-read in nav order: term introductions ordered, cross-page references consistent (operating's "no status commands to learn" now agrees with command-reference; frontmatter-contract inbound links match the stub). `.venv-docs/bin/mkdocs build --strict` exits 0, no warnings; `site/` has no AGENTS.md or contributing/, `llms.txt` + `llms-full.txt` present; `docs/schema/*.mdschema.yml` not leaked into `site/`.
+- DONE: Open follow-ups reported as backlog-seed candidates; all revisions committed locally on docs-site-feedback — no push, no new branch/PR.
+  New backlog seed filed to the FO (team-lead): full mdschema conformance validator — `spacedock status --validate` enforces only a subset of the schemas; either extend Go `--validate` or add a conformance checker (the v0 Python validator was NOT ported). Prior follow-ups above still stand. Branch `docs-site-feedback`, 117 commits ahead of main, working tree clean (only a pre-existing untracked `nohup.out`); no push attempted.
+
+### Summary
+
+This session (cycle 2) was captain-steered and interactive. The handoff's four pages were either already done by c2 (re-verified) or reworked here (command-reference). Beyond the handoff, the captain directed porting the v0 frontmatter/state-machine contract into the repo: the two mdschemas land in `docs/schema/` as the field SSOT, and the site reference page became a reader-seat stub linking them. Reworking command-reference surfaced and fixed a real doc error (missing `state new`) and confirmed the Go parser no longer enforces flat-only frontmatter. Full journey re-read clean, strict build green, AC-2 holds. State push will fail while SSH is down — reported, not forced.
