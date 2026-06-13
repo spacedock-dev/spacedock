@@ -5,8 +5,12 @@ sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
 id: dag3bk4p0xe6tydc66k29ev3
-status: validation
+status: done
 worktree: .worktrees/spacedock-ensign-version-show-runtime-plugin-version
+completed: 2026-06-13T18:58:58Z
+verdict: PASSED
+pr: "#354"
+archived: 2026-06-13T18:59:23Z
 ---
 
 `spacedock --version`'s per-runtime block reports install + enablement posture but (1) discards the installed plugin VERSION — which the runtime probe already returns (`claude plugin list --json` carries a `version` field; `codex plugin list` prints a VERSION column) — and (2) labels an unreadable probe with the invented noun "enablement" ("enablement unknown"). The captain expects the plugin version pulled from the runtime, in plain words. Follows from gj (#350, startup-sandbox-status); fixes the version-display + jargon gap surfaced post-merge.
