@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +53,138 @@ func TestContextBudgetEnvelopeWholePercent(t *testing.T) {
 	if !bytes.Contains(stdout.Bytes(), []byte(`"usage_pct": 20.0`)) {
 		t.Errorf("usage_pct did not render as 20.0 (Python float repr):\n%s", stdout.String())
 	}
+}
+
+// TestContextBudgetHealthySuffixDropNoDrift is AC-1: a healthy member whose team
+// config carries the captain-session [1m] suffix while the runtime jsonl reports
+// the canonical id emits no config_drift_warning and reads the 1M window — the
+// config's declared suffix names the window the session genuinely runs.
+func TestContextBudgetHealthySuffixDropNoDrift(t *testing.T) {
+	home := t.TempDir()
+	// config claude-fable-5[1m], runtime jsonl claude-fable-5, 40k resident.
+	writeBudgetFixtureModels(t, home, "ensign-sd", "claude-fable-5[1m]",
+		[]modelEntry{{"claude-fable-5", 40000}})
+
+	m := runBudgetJSON(t, home, "ensign-sd")
+	if _, ok := m["config_drift_warning"]; ok {
+		t.Errorf("AC-1: config_drift_warning present on healthy suffix-dropped member:\n%v", m)
+	}
+	if got := m["context_limit"]; got != float64(1000000) {
+		t.Errorf("AC-1: context_limit = %v, want 1000000", got)
+	}
+	if got := m["model"]; got != "claude-fable-5[1m]" {
+		t.Errorf("AC-1: model = %v, want claude-fable-5[1m]", got)
+	}
+	// 40k of 1M = 4% <= 60% threshold.
+	if got := m["reuse_ok"]; got != true {
+		t.Errorf("AC-1: reuse_ok = %v, want true", got)
+	}
+}
+
+// TestContextBudgetSyntheticExcludedNoMixed is AC-2: a healthy member whose jsonl
+// carries a harness-injected <synthetic> entry alongside the real model emits no
+// mixed_models_warning, picks the real model, and reads the real model's window —
+// the placeholder is excluded from the census.
+func TestContextBudgetSyntheticExcludedNoMixed(t *testing.T) {
+	home := t.TempDir()
+	// config claude-fable-5, runtime: one real entry + one <synthetic> entry.
+	writeBudgetFixtureModels(t, home, "ensign-sy", "claude-fable-5",
+		[]modelEntry{{"claude-fable-5", 40000}, {"<synthetic>", 1000}})
+
+	m := runBudgetJSON(t, home, "ensign-sy")
+	if _, ok := m["mixed_models_warning"]; ok {
+		t.Errorf("AC-2: mixed_models_warning present despite <synthetic> exclusion:\n%v", m)
+	}
+	if got := m["model"]; got != "claude-fable-5" {
+		t.Errorf("AC-2: model = %v, want claude-fable-5", got)
+	}
+	if got := m["context_limit"]; got != float64(200000) {
+		t.Errorf("AC-2: context_limit = %v, want 200000", got)
+	}
+}
+
+// TestContextBudgetGenuineDriftStillWarns is AC-3 (over-suppression guard): a
+// member whose config and runtime are genuinely different models (distinct bases)
+// still emits config_drift_warning — the suffix normalization must not silence it.
+func TestContextBudgetGenuineDriftStillWarns(t *testing.T) {
+	home := t.TempDir()
+	// config claude-opus-4-8, runtime jsonl claude-sonnet-4-6 (different bases).
+	writeBudgetFixtureModels(t, home, "ensign-gd", "claude-opus-4-8",
+		[]modelEntry{{"claude-sonnet-4-6", 40000}})
+
+	m := runBudgetJSON(t, home, "ensign-gd")
+	if _, ok := m["config_drift_warning"]; !ok {
+		t.Errorf("AC-3: config_drift_warning absent on genuine cross-family drift:\n%v", m)
+	}
+}
+
+// TestContextBudgetGenuineMixedStillWarns is AC-4 (over-suppression guard): a
+// member whose jsonl carries two genuinely different REAL models (no <synthetic>)
+// still emits mixed_models_warning and picks the smallest window.
+func TestContextBudgetGenuineMixedStillWarns(t *testing.T) {
+	home := t.TempDir()
+	// Two real models, no <synthetic>.
+	writeBudgetFixtureModels(t, home, "ensign-gm", "claude-opus-4-8",
+		[]modelEntry{{"claude-opus-4-8", 1000}, {"claude-sonnet-4-6", 2000}})
+
+	m := runBudgetJSON(t, home, "ensign-gm")
+	if _, ok := m["mixed_models_warning"]; !ok {
+		t.Errorf("AC-4: mixed_models_warning absent on two genuinely-mixed real models:\n%v", m)
+	}
+	if got := m["context_limit"]; got != float64(200000) {
+		t.Errorf("AC-4: context_limit = %v, want 200000 (smallest window)", got)
+	}
+}
+
+// modelEntry is one assistant jsonl entry: a runtime model and its resident token
+// sum (placed in input_tokens).
+type modelEntry struct {
+	model  string
+	tokens int
+}
+
+// writeBudgetFixtureModels writes a ~/.claude tree like writeBudgetFixture but
+// with a multi-line transcript: one assistant entry per modelEntry (the resident
+// extractor sums input + cache, and scans backward for the first non-zero usage).
+func writeBudgetFixtureModels(t *testing.T, home, name, configModel string, entries []modelEntry) {
+	t.Helper()
+	writeTeamConfigWithSession(t, home, "fixture-team", "sess", map[string]string{name: configModel})
+	var lines []string
+	for _, e := range entries {
+		entry := map[string]any{
+			"type": "assistant",
+			"message": map[string]any{
+				"model": e.model,
+				"usage": map[string]any{
+					"input_tokens":                e.tokens,
+					"cache_creation_input_tokens": 0,
+					"cache_read_input_tokens":     0,
+				},
+			},
+		}
+		line, _ := json.Marshal(entry)
+		lines = append(lines, string(line))
+	}
+	subagents := filepath.Join(home, ".claude", "projects", "p", "sess", "subagents")
+	writeTestFile(t, filepath.Join(subagents, "agent-"+name+".meta.json"),
+		`{"agentType": "`+name+`"}`)
+	writeTestFile(t, filepath.Join(subagents, "agent-"+name+".jsonl"),
+		strings.Join(lines, "\n")+"\n")
+}
+
+// runBudgetJSON drives real ContextBudget over home for name, asserts exit 0, and
+// returns the parsed stdout JSON for field/warning-key assertions.
+func runBudgetJSON(t *testing.T, home, name string) map[string]any {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	if code := ContextBudget(home, name, &stdout, &stderr); code != 0 {
+		t.Fatalf("ContextBudget exit=%d stderr=%q", code, stderr.String())
+	}
+	var m map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &m); err != nil {
+		t.Fatalf("ContextBudget stdout not JSON: %v\n%s", err, stdout.String())
+	}
+	return m
 }
 
 // TestMemberExistsTeamScoped asserts MemberExists is team-scoped: a member in one

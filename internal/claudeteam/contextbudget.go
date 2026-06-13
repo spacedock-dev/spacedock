@@ -52,6 +52,22 @@ func contextLimitForModel(model string) int {
 	return defaultContextLimit
 }
 
+// sameModelModuloExtended reports whether a and b name the same base model
+// differing only by an [1m] suffix (the captain-session model string carries
+// the suffix the spawned runtime drops). Distinguishes a healthy suffix-dropped
+// member from a genuinely different runtime model.
+func sameModelModuloExtended(a, b string) bool {
+	return a != b && stripExtended(a) == stripExtended(b)
+}
+
+// stripExtended drops a trailing [..] suffix (e.g. [1m]) from a model string.
+func stripExtended(m string) string {
+	if i := strings.Index(m, "["); i >= 0 {
+		return m[:i]
+	}
+	return m
+}
+
 // pyFloat renders a float the way Python's json.dumps does (via float repr): a
 // whole-valued float keeps a trailing .0 (20.0, not 20), so the usage_pct field
 // byte-matches the oracle. Non-whole values render shortest, like 8.5 or 66.7.
@@ -118,6 +134,9 @@ func ContextBudget(home, name string, stdout, stderr io.Writer) int {
 		fallbackWarning = "no model field in jsonl assistant entries — using config-declared model (provisional)"
 	case 1:
 		model = runtimeModels[0]
+		if sameModelModuloExtended(model, configModel) {
+			model = configModel
+		}
 	default:
 		// Multiple runtime models: use the smallest context window. min by
 		// context_limit, matching Python min(..., key=context_limit_for_model);
@@ -315,6 +334,9 @@ func extractRuntimeModels(jsonlPath string) []string {
 			continue
 		}
 		if entry.Type != "assistant" || entry.Message == nil || entry.Message.Model == "" {
+			continue
+		}
+		if entry.Message.Model == "<synthetic>" {
 			continue
 		}
 		seen[entry.Message.Model] = true
