@@ -12,4 +12,43 @@
   {{ super() }}
   <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
   <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=hanken-grotesk:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=jetbrains-mono:ital,wght@0,400;0,700;1,400;1,700&display=fallback">
+  {#-
+    Agent-readability (a14y scorecard 0.2.0): inject Open Graph, JSON-LD
+    (TechArticle + BreadcrumbList + dateModified), and a markdown alternate-link
+    into every content page's <head>, mirroring the landing page's Astro layout.
+    The {% if page %} guard is load-bearing: Material renders extrahead for the
+    404 page with page = None, and an unguarded page.* reference fails
+    `mkdocs build --strict` with "'None' has no attribute 'meta'".
+  -#}
+  {% if page %}
+  <meta property="og:title" content="{{ page.title | striptags }} - {{ config.site_name }}">
+  <meta property="og:description" content="{{ page.meta.description | default(config.site_description) }}">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{ page.canonical_url }}">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "headline": {{ (page.title | striptags) | tojson }},
+        "description": {{ (page.meta.description | default(config.site_description)) | tojson }},
+        "url": {{ page.canonical_url | tojson }},
+        "dateModified": {{ (page.meta.git_revision_date_localized_raw_iso_datetime | default('')) | tojson }},
+        "isPartOf": { "@type": "WebSite", "name": {{ config.site_name | tojson }}, "url": {{ config.site_url | tojson }} }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {% for anc in page.ancestors | reverse %}
+          { "@type": "ListItem", "position": {{ loop.index }}, "name": {{ anc.title | striptags | tojson }} },
+          {% endfor %}
+          { "@type": "ListItem", "position": {{ (page.ancestors | length) + 1 }}, "name": {{ page.title | striptags | tojson }}, "item": {{ page.canonical_url | tojson }} }
+        ]
+      }
+    ]
+  }
+  </script>
+  <link rel="alternate" type="text/markdown" href="{{ page.canonical_url }}index.md">
+  {% endif %}
 {% endblock %}

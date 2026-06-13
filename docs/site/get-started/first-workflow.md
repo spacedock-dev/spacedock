@@ -63,7 +63,7 @@ On accept, commission dispatches your seed items in parallel, each moving
 through the stages until everything is idle or waiting on you. When a work
 item reaches the `review` gate, you get a gate review:
 
-```
+```text
 Gate review: Add rate limiting to the API — review
 Chosen direction: token-bucket limiter at the API middleware layer
 Recommend approve.

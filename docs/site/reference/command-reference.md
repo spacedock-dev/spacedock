@@ -6,7 +6,7 @@ The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, 
 
 `spacedock --version` prints the version and contract level, the sandbox posture, then a per-runtime line reporting the installed spacedock plugin version:
 
-```
+```text
 spacedock 0.20.1 (contract 1)
 Sandbox: available, not enabled (no .safehouse profile)
 claude: spacedock 0.20.1

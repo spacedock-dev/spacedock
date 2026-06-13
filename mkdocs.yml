@@ -45,6 +45,16 @@ theme:
 
 plugins:
   - search
+  - git-revision-date-localized:
+      enable_creation_date: false
+      type: iso_datetime
+      # A page with no git history yet (a newly added file) uses the build date
+      # rather than aborting the strict build with a "no git logs" warning.
+      fallback_to_build_date: true
+      # Serial processing: the parallel default needs semaphore creation,
+      # which is blocked under the sandboxed build environment. Serial cost
+      # is negligible for this doc set.
+      enable_parallel_processing: false
   - llmstxt:
       full_output: llms-full.txt
       markdown_description: >-
@@ -90,8 +100,19 @@ nav:
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
+      - Glossary: reference/glossary.md
       - Supported sandboxes: reference/sandbox.md
       - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
+
+hooks:
+  # Enriches the per-page .md mirrors emitted by mkdocs-llmstxt with YAML
+  # frontmatter and a ## Sitemap section (agent-readability markdown.frontmatter
+  # and markdown.sitemap-section). Runs in on_post_build after llmstxt writes.
+  - hooks/enrich_md_mirrors.py
+
+extra:
+  # Stamped into the per-page .md-mirror frontmatter (doc_version). Bump on release.
+  doc_version: 0.20.2
 
 extra_css:
   - stylesheets/tokens.css
@@ -101,6 +122,11 @@ markdown_extensions:
   - admonition
   - pymdownx.highlight:
       anchor_linenums: true
+      # Emit language-* classes on <code> (agent-readability code.language-tags).
+      # Pygments highlights inline via <span> and drops the language-* class;
+      # disabling it renders <code class="language-*"> instead of server-side
+      # syntax coloring.
+      use_pygments: false
   - pymdownx.details
   - pymdownx.superfences:
       custom_fences:
