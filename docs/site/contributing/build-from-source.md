@@ -30,5 +30,7 @@ effect immediately. For a normal install, see [Install Spacedock](../get-started
     first-officer and ensign agents from your checkout instead of the installed
     plugin. Edits to the repo are live.
 
-The `next` branch is the development channel. It has no Homebrew release; use the
-[Homebrew install](../get-started/install.md) for a stable build.
+The `next` branch is the development channel. If you want the bleeding edge
+without building from source, install the **edge channel** (`spacedock-edge`)
+instead — it tracks `next` and ships through the same install path as stable.
+For a stable build, use the [Homebrew install](../get-started/install.md).

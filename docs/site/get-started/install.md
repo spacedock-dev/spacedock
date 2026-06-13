@@ -10,6 +10,10 @@ Pi. Install one of those first.
     brew install spacedock
     ```
 
+    `brew install` also pulls in `agentsview` (it powers `/spacedock:survey`).
+    The optional sandbox, safehouse, is installed separately — see
+    [Sandboxing](../reference/sandbox.md).
+
 === "Binary (macOS / Linux)"
 
     ```bash
