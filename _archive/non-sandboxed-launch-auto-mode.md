@@ -14,6 +14,7 @@ group: ux-cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#349"
+archived: 2026-06-13T15:05:33Z
 ---
 
 When the launch is not sandboxed, `spacedock claude` should launch with Claude Code's auto-mode, and `spacedock codex` should use the equivalent Codex setting. Captain ask, filed verbatim; ideation should confirm the intended rationale and the exact mode mapping with the captain.
