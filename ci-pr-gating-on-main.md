@@ -13,6 +13,7 @@ sprint: 0201-post-flip-release-model
 group: release-model
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#348"
 ---
 
 Post-flip, `main` is the release trunk and PRs target it, but `install-e2e.yml` and `runtime-live-e2e.yml` trigger `pull_request` on `[next]` only — so a PR to `main` runs neither the offline `go test ./...` gate nor install-e2e (only `docs.yml`, which already targets `main`, runs). Captain directive (2026-06-13): ensure CI gates fire on `main`-PRs before the sprint relies on the trunk model. This is the pre-cut antipattern-audit's known main-PR-gating item, pulled forward. Ideation pins the exact trigger change and the live-lanes design call.
