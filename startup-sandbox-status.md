@@ -1,13 +1,13 @@
 ---
 id: gja5htstcgjxydcz5h2051wc
 title: Show sandbox state on startup
-status: validation
+status: done
 source: captain (2026-06-12, UX improvement)
 started: 2026-06-13T04:08:48Z
-completed:
-verdict:
+completed: 2026-06-13T15:05:33Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-startup-sandbox-status
+worktree:
 issue:
 sprint: 0201-post-flip-release-model
 group: ux-cleanup
