@@ -13,12 +13,13 @@ import (
 // must settle on `main` across the two BINARY-side surfaces —
 //   (1) release.yml's "Stamp plugin manifests" step git switch/push target,
 //   (2) .goreleaser.yaml's stable-build cli.devBranch ldflag.
-// Under Model B the marketplace manifest moved OUT of the plugin branch into a
-// separate marketplace repo, so the former third surface — an in-branch
-// .claude-plugin/marketplace.json source.ref that had to be re-settled per release
-// — no longer exists. That removal is the AC-2 invariant guarded by
-// TestPluginBranchCarriesNoMarketplaceManifest below; the channel pin now lives in
-// the marketplace repo's manifest, not the plugin branch. The two binary surfaces
+// Under Model B the marketplace manifest will move OUT of the plugin branch into a
+// separate marketplace repo, retiring the former third surface — an in-branch
+// .claude-plugin/marketplace.json source.ref re-settled per release. That removal is
+// deferred until after the v0.20.1 cutover (the released v0.20.0 binary still resolves
+// its install from main's marketplace.json), so a transitional bridge manifest stays on
+// main meanwhile, guarded by TestMainCarriesMarketplaceBridgeManifest below; the channel
+// pin for the new binary lives in the marketplace repo's manifest. The two binary surfaces
 // are parsed out of two real artifacts authored by different changes, so a drift in
 // either fails the check — an independent source of truth, not a re-read of the
 // value the implementer wrote.
@@ -166,30 +167,24 @@ func TestEdgeChannelStampsNext(t *testing.T) {
 	}
 }
 
-// TestPluginBranchCarriesNoMarketplaceManifest is the AC-2 git-state guard: the
-// Model B decouple moves the marketplace manifest OUT of the plugin branch into a
-// separate marketplace repo, so the plugin branch carries NO
-// .claude-plugin/marketplace.json. With no in-branch manifest there is no
-// per-release source.ref surface to re-settle — the field that used to be `main`
-// on the stable branch and `next` on the edge branch, forcing a re-settle every
-// release, is simply absent. The check is git state — the file's presence on disk,
-// an independent fact, not a re-read of a value the implementer wrote. (The
-// plugin's own .claude-plugin/plugin.json stays; only the marketplace.json moved.)
-// This guards the main-bound branch; the next-branch manifest removal + full
-// main/next alignment is the separate trunk reconcile.
-func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
+// TestMainCarriesMarketplaceBridgeManifest guards the transitional bridge that keeps
+// the released v0.20.0 binary's install path working. That binary resolves its
+// install from main's .claude-plugin/marketplace.json (`claude plugin marketplace
+// add spacedock-dev/spacedock@main`). Model B's removal of this manifest — it moves
+// to the standalone marketplace repo, retiring the per-release source.ref re-settle —
+// is deferred until the v0.20.1 cutover ships the binary that points at that repo and
+// existing v0.20.0 installs have migrated. Until then the bridge MUST stay on main, or
+// v0.20.0 installs break, so this guards its PRESENCE (git state — the file on disk,
+// an independent fact). The plugin's own .claude-plugin/plugin.json stays alongside it.
+func TestMainCarriesMarketplaceBridgeManifest(t *testing.T) {
 	manifest := filepath.Join("..", "..", ".claude-plugin", "marketplace.json")
-	if _, err := os.Stat(manifest); err == nil {
-		t.Fatalf("%s is present on the plugin branch; Model B moves the marketplace manifest to the separate marketplace repo, so the plugin branch must carry no marketplace.json (and thus no per-release source.ref to re-settle)", manifest)
-	} else if !os.IsNotExist(err) {
-		t.Fatalf("stat %s: %v", manifest, err)
+	if _, err := os.Stat(manifest); err != nil {
+		t.Fatalf("bridge marketplace manifest %s missing: %v — the released v0.20.0 binary resolves its install from main's marketplace.json; removing it before the v0.20.1 cutover breaks v0.20.0 installs", manifest, err)
 	}
 
-	// The plugin manifest itself stays on the plugin branch — only the marketplace
-	// manifest moved out.
 	plugin := filepath.Join("..", "..", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(plugin); err != nil {
-		t.Fatalf("plugin manifest %s missing: %v (only marketplace.json should move out of the plugin branch)", plugin, err)
+		t.Fatalf("plugin manifest %s missing: %v", plugin, err)
 	}
 }
 
@@ -198,7 +193,8 @@ func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
 // served had THREE surfaces that had to agree (release.yml stamp target,
 // goreleaser stable devBranch, and an in-branch marketplace.json source.ref), and
 // a drift on the manifest ref was a real per-release re-settle hazard. The decouple
-// removes the in-branch ref surface entirely (guarded above), so the channel is now
+// will retire the in-branch ref surface (deferred post-cutover; a transitional bridge
+// manifest stays on main meanwhile, guarded above), so the new binary's channel is
 // determined SOLELY by the binary's devBranch stamp selecting a marketplace ENTRY
 // NAME (stable=main→spacedock, edge=next→spacedock-edge). The surviving invariant —
 // independent values that CAN disagree, so not a tautology — is that the two
