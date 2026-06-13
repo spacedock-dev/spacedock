@@ -133,6 +133,31 @@ Model B core landed on a worktree off origin/main (PR targets main), all three A
 - `TestPluginBranchCarriesNoMarketplaceManifest` keeps the absence half (git state); `TestStableChannelBinaryPairAgreesOnMain` + `TestEdgeChannelStampsNext` (binary-side surfaces) retained intact.
 - Final: 4 commits (cd45c1f9, c3009622, ff649f35, 9903ee61), whole-repo `go test ./...` green, ZERO .md (git diff origin/main..HEAD -- '*.md' = 0 files), worktree clean.
 
+## Stage Report: validation
+
+- DONE: Reproduce whole-repo `go test ./...` green.
+  Green in the worktree: 1316 passed across 16 packages, exit 0 (live AC-1 smoke included; `claude` 2.1.170 on PATH). `go build ./...` and `go vet` clean.
+- DONE: Verify AC-3 (channel_selection_test.go — devBranch selects entry NAME spacedock/spacedock-edge from "spacedock-dev/marketplace"; @branch/--ref gone; both hosts; install argv carries the right entry id).
+  All 6 AC-3 tests PASS. `init.go marketplaceSource = "spacedock-dev/marketplace"`; `channelEntry`/`channelPluginID` map main→`spacedock@spacedock`, next→`spacedock-edge@spacedock`. End-to-end seam tests drive real `runClaude`/`runCodex` no-plugin auto-install and reconstruct the install argv from observed seam values (not a constant grep). `marketplaceAddArg` and codex `--ref` absent from the codebase; no `--ref` in production code.
+- DONE: Verify AC-1 (decoupling_behavior_test.go — tag-pinned stable freezes while edge tracks HEAD, byte-level on-disk) LIVE.
+  Ran LIVE on `claude` 2.1.170 (`--- PASS ... (3.08s)`, 3s runtime confirms real install, not a skip). Byte-level proof from the host plugin cache: stable body `v0.0.1` / edge body `v0.0.3` after advancing HEAD to 0.0.3.
+- DONE: Verify AC-2 (TestPluginBranchCarriesNoMarketplaceManifest — no marketplace.json AND the source.ref divergence is gone) and confirm `.claude-plugin/marketplace.json` REMOVED on gp's branch.
+  Both AC-2 guards PASS (internal/release + skills/integration). `git ls-tree HEAD`: marketplace.json ABSENT, plugin.json present. Removal is real (origin/main still carries it). origin/next still carries it — the deferred reconcile, untouched, as scoped.
+- DONE: Confirm the 2 obsolete guard tests were correctly retired/reworked and NO real channel-agreement invariant was silently lost.
+  `TestTriSurfaceChannelAgreement` → split into `TestPluginBranchCarriesNoMarketplaceManifest` (absence, git state) + `TestChannelSurfacesDoNotDivergeAfterDecouple` (surviving non-tautological half: stable vs edge devBranch stamps must both exist AND differ, parsed from real .goreleaser.yaml). Binary-side pair guards (`TestStableChannelBinaryPairAgreesOnMain`/`TestEdgeChannelStampsNext`) kept intact. The deleted `codex_channel_smoke_test.go` coverage (no-plugin auto-install channel resolution) is folded forward into channel_selection_test.go's two front-door seam tests. Re-expressed for Model B, not dropped.
+- DONE: Sanity-check the AC-1 decoupling test genuinely discriminates.
+  Two adversarial mutations (scratch, reverted): (a) stable ref → `next` instead of the tag → RED at line 63 (no 0.0.1 cache dir, tag-pin resolution caught); (b) `advancePluginHead` also force-moves the v0.0.1 tag to HEAD → RED at line 85 (`stable cache version dirs = [0.0.1 0.0.3], want [0.0.1] only`, freeze-under-advance caught). The test is load-bearing on BOTH the initial tag-pin and the freeze-under-HEAD-advance — the centerpiece's core claim.
+- DONE: Confirm zero `.md` edits (15 files, all code/test).
+  Raw `git diff --name-only origin/main..HEAD` = 15 files, 0 `.md`. (An apparent 18/1 earlier was RTK compaction noise injected into a piped `wc -l`; the raw counts are 15/0.) Production code: frontdoor.go, host_exec.go, init.go. Rest are tests + the deleted manifest.
+
+### Summary
+
+PASSED. All three ACs verified outside the task body. AC-1 (the HIGH-STAKES centerpiece) ran LIVE on claude 2.1.170 with byte-level on-disk proof, and I refuted it via two scratch mutations to confirm both the tag-pin and the freeze-under-advance assertions are load-bearing (each goes RED under a broken edit). AC-2's manifest-absence is git-state verified on gp's branch (origin/next deferred reconcile untouched, as scoped); AC-3's entry-name selection is proven through the real front-door seam, not a constant grep. The two obsolete guard tests were re-expressed for Model B (absence invariant + the surviving non-tautological stable-vs-edge stamp divergence), not silently dropped. 15 files, 0 .md.
+
+One non-blocking finding (Polish, OUT of the 3 ACs, pre-existing — UNTOUCHED by this branch, identical on origin/main): `internal/contract/contract.go:262` `pluginPredatesContractRemedy` still hardcodes the OLD plugin-repo source `spacedock-dev/spacedock` and the dropped `@branch` shorthand in its user-facing "(reinstalls from %s)" prose. The remediation action it prints (`spacedock install --host %s`) is correct (routes through the fixed marketplaceSource); only the informational parenthetical is now stale under Model B. Not a deliverable AC and not a regression — flagging for the FO/follow-up.
+
+NOTE: gp = release machinery (HIGH-STAKES) → a DETACHED adversarial audit on a throwaway merge-result checkout is owed before merge; the FO runs it after this PASSED.
+
 ### Provisioning finding: edge re-pull keys on plugin.json `version`, NOT the marketplace entry `version` (live-validated, claude 2.1.170)
 
 The captain authorized provisioning `spacedock-dev/marketplace`. Before creating the public repo I re-validated the per-channel version mechanism against the real host and found a material gap (flagged to FO, holding on `gh repo create`):
