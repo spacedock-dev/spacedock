@@ -12,6 +12,7 @@ issue:
 sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 The Spacedock Homebrew cask should pull in its companions on install instead of
