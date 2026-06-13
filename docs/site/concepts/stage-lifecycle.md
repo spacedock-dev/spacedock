@@ -16,20 +16,9 @@ The property that matters most is `feedback-to`: rejected work bounces back to t
 
 ## What a stage declares
 
-The stage order, names, and the properties each stage carries live in the workflow README's frontmatter under `stages.states`. Each entry is a stage name plus a set of boolean or string properties the first officer reads to decide how to dispatch and when to stop. A `stages.defaults` block sets the baseline; a stage entry overrides it. The properties that change behavior:
+A stage can pause at a gate for your decision, run its work in an isolated worktree, demand a reviewer with no access to the maker's reasoning, route rejected work back to an earlier stage, cap how many items it holds at once, and hand its work to a specialist worker. All of it is declared in the workflow README; ask the first officer to set up or change any of it.
 
-| Property | Effect |
-|----------|--------|
-| `initial: true` | The stage an entity starts in. The dev workflow marks `backlog`. |
-| `terminal: true` | The stage an entity ends in. Reaching it runs the merge and cleanup ceremony, not another dispatch. The dev workflow marks `done`. |
-| `gate: true` | The first officer presents a stage report and waits for your decision instead of advancing on its own. |
-| `worktree: true` | The stage's work runs in an isolated git worktree. Absent or `false`, it runs inline. |
-| `fresh: true` | The stage always gets a freshly dispatched ensign, never a worker reused from the prior stage. |
-| `feedback-to: {stage}` | On rejection, work routes back to the named stage rather than failing outright. |
-| `concurrency: N` | How many entities may sit in this stage at once. |
-| `agent: {name}` | Which worker skill the first officer dispatches. Defaults to `ensign`. |
-
-Beyond these properties, the prose of each stage's `###` subsection in the README is the stage definition: its Inputs, Outputs, and the Good/Bad bar. What you write there is exactly what the worker receives as its assignment.
+Beyond the declarations, the prose of each stage's section in the README is the stage definition. What you write there is exactly what the worker receives as its assignment.
 
 ## Fresh context at validation
 
