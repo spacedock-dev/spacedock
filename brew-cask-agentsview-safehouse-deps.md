@@ -1,9 +1,9 @@
 ---
 id: 8pwjdj4ngx9dbnbynxgsagq0
 title: Brew cask depends on agentsview and safehouse
-status: backlog
+status: ideation
 source: captain (2026-06-12)
-started:
+started: 2026-06-13T04:31:09Z
 completed:
 verdict:
 score:

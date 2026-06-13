@@ -1,9 +1,9 @@
 ---
 id: zrcmxzx5c7arew7r8afmxfbw
 title: Non-sandboxed launch uses Claude auto-mode (and Codex equivalent)
-status: backlog
+status: ideation
 source: captain (2026-06-12)
-started:
+started: 2026-06-13T04:31:09Z
 completed:
 verdict:
 score:
