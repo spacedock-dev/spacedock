@@ -128,3 +128,24 @@ Root-caused Facet 1: `spacedock install --host codex` never re-installs an alrea
 ### Summary
 
 Both facets landed as small wiring changes on `origin/main` HEAD 41bd47ae, three commits (fc77cd10, b3cf4ec8, 5d527f9b). Facet 1 wires the codex arm to refresh-on-present like the claude arm and replaces the no-op-codifying test with a seam-recorded install assertion plus a live on-disk-advance smoke (ran against the real codex CLI). Facet 2 adds a contract-local semver-skew gate that appends an opt-in upgrade hint to the Compatible message in doctor and surfaces it (via a new `Result.Hint`) at the previously-silent front-door gate, additive and never firing on equal/dev. Whole-package and full-repo tests green; zero `.md` edits (doc-diff delegated to yw). Note per dispatch: a detached adversarial audit of the front-door changes is owed at validation before merge.
+
+## Stage Report: validation
+
+- DONE: Reproduce `go test ./internal/cli/ ./internal/contract/` green WHOLE-package (implementer: 322).
+  `322 passed in 2 packages`; full-repo `go test ./...` = `1261 passed in 16 packages`; `go vet` clean. Matches implementer.
+- DONE: AC-1 (init_test — codex arm records `Install [codex spacedock-dev/spacedock next]` on present-compatible; `--check` records zero installCmds; REPLACED `compatible-installed` no longer codifies the no-op).
+  `TestInitCodexInstallReadiness/{compatible-installed,compatible-installed-check}` PASS; rewritten subtest asserts the recorded install argv, the `--check` subtest asserts `len(installCmds)==0`.
+- DONE: AC-2 (live codex smoke `TestCodexInitRefreshAdvancesBehindPlugin` — on-disk resolved manifest advances 0.0.1→0.0.2).
+  codex on PATH (`/opt/homebrew/bin/codex`) — RAN (not skipped), PASS in 0.29s; seeds + refreshes via production `execHost.Install`, asserts `resolveCodexManifest` on-disk version, not the command's claim.
+- DONE: AC-3 (contract hint on behind 0.19.8-vs-0.20.0 for both hosts + OK line preserved; NO hint on equal/dev/older).
+  `TestCompatibleUpgradeHint` all four subtests PASS (behind-plugin-hints, equal/dev/older-binary no-hint); behind case asserts the OK line is preserved alongside the hint.
+- DONE: AC-4 (frontdoor — stderr hint + host install command + launch-still-happens on behind plugin; SILENT on equal).
+  `TestFrontDoorUpgradeHintOnBehindPlugin` 4 subtests PASS (claude+codex behind hints+launches, equal silent); asserts recorded launch + stderr, never a source grep.
+- DONE: ADVERSARIALLY confirm the guards discriminate (init.go revert; additive hint; equal/dev guard; contract-local compare).
+  Reverted init.go codex arm → AC-1 reds with `install seam = [], want [codex spacedock-dev/spacedock next]`. Forced `upgradeHint` always-on → equal/dev/older contract cases AND both front-door equal-version cases red (launch banner confirms launch still happens). Additive: 322 whole-package + 1261 full-repo green with the hint present, no `compatible`/exit-0 test broke. Layering: `internal/contract` does not import `internal/cli`; `cli.compareVersion` (in host_exec.go) is never referenced from contract — `semverCompare`/`parseDottedInts` are contract-local. All edits reverted; tree clean against HEAD.
+- DONE: Confirm zero `.md` edits (7 Go files); recommend PASSED/REJECTED.
+  `git diff --name-only 41bd47ae...HEAD` → exactly 7 Go files, 0 `.md` (0 non-`.go`). Recommendation: PASSED.
+
+### Summary
+
+PASSED. All four ACs verified by running the behavior and observing test results, exit codes, and on-disk manifest state — not prose-grep. The whole-package (322) and full-repo (1261) suites reproduce the implementer's counts; `go vet` clean. Four adversarial discrimination checks confirm the guards are non-vacuous: reverting the init.go fix reds AC-1's recorded-install assertion; forcing the hint always-on reds every equal/dev/older negative case in both contract and the front door; the hint is additive (verdict stays Compatible, exit 0, launch proceeds, no pre-existing test broke); and the semver compare is contract-local (no `internal/cli` import, `cli.compareVersion` unreferenced from contract). te is the front-door = high-stakes: a detached read-only adversarial audit on a throwaway checkout is owed before merge — that is the FO's step, dispatched after this PASSED.
