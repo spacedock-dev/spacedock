@@ -1,14 +1,17 @@
 ---
 id: ywjfm1fjmqbpqe7dwjcwt841
 title: README slim + docs-architecture cleanup — site is canonical, remove install-journey.md + its prose-grep test
-status: backlog
+status: ideation
 source: "captain (2026-06-13) — now that the mkdocs doc site shipped (#343), the repo's standalone install/usage docs duplicate it. README should be a thin front door; install-journey.md is redundant; its test is a banned prose-grep."
-started:
+started: 2026-06-13T05:03:08Z
 completed:
 verdict:
 score:
 worktree:
 issue:
+sprint: 0201-post-flip-release-model
+group: docs
+sprint-readiness: ready
 ---
 
 Now that the doc site (`docs/site/`, shipped via #343) is the canonical browsable documentation, the repo carries redundant docs. Establish the rule **site is canonical; the GitHub README is a thin front door**, and remove the duplication.
