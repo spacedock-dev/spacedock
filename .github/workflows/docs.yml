@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -40,6 +40,8 @@ jobs:
 
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main'
+        # Pinned: no node24 major published yet (upload-pages-artifact internally
+        # pins node20 upload-artifact). Not on the flip-cut path. Bump when released.
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
@@ -59,4 +61,5 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
+        # Pinned: no node24 major published yet. Not on the flip-cut path. Bump when released.
         uses: actions/deploy-pages@v4

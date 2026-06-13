@@ -558,6 +558,10 @@ func discoverWorkflows(root string) []string {
 // repository checkout) or a regular file (a linked/agent worktree's gitlink). A
 // dir with one is a self-contained checkout, so the discovery walk does not
 // descend into it (its workflows are copies of the outer repo's).
+//
+// Guarded by TestDiscoverWorkflowsSkipsNestedCheckout (discover_worktree_noise_test.go):
+// that test is the sole coverage proving this prune fires, so changing this
+// gitlink/checkout detection should be checked against it.
 func hasGitEntry(dir string) bool {
 	st, err := os.Stat(filepath.Join(dir, ".git"))
 	return err == nil && (st.IsDir() || st.Mode().IsRegular())

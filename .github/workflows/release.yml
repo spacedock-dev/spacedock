@@ -1,7 +1,7 @@
-# Cuts a GitHub Release on every v* tag: goreleaser cross-builds the darwin
-# arm64+amd64 tarballs, writes checksums.txt, publishes the release, and bumps
-# the homebrew-tap formula. Runs on macOS so the released darwin binaries are
-# built natively.
+# Cuts a GitHub Release on every v* tag: goreleaser cross-builds the darwin and
+# linux arm64+amd64 tarballs, writes checksums.txt, publishes the release, and
+# bumps the homebrew-tap formula. Runs on macOS so the darwin binaries are built
+# natively (CGO_ENABLED=0, so the linux tarballs cross-compile on the same host).
 name: release
 
 on:
@@ -26,12 +26,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.22"
 
@@ -100,7 +100,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Full history + tags so `git rev-list -1 "$GITHUB_REF_NAME"` resolves
           # the tagged commit SHA the gate binds the green-run match to.
@@ -108,7 +108,7 @@ jobs:
           fetch-tags: true
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.22"
 
@@ -129,19 +129,19 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Full history + tags so `git describe --tags` resolves the version
           # goreleaser stamps into internal/cli.Version. fetch-tags: true is
           # required so annotated-tag bodies (the release notes consumed by the
           # next step's `git tag -l --format='%(contents:body)'`) reach the
-          # runner — actions/checkout@v4's default is false, which leaves the
+          # runner — actions/checkout@v5's default is false, which leaves the
           # tag ref but drops the tag object.
           fetch-depth: 0
           fetch-tags: true
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.22"
 
@@ -155,7 +155,7 @@ jobs:
       - name: Extract release notes from the tag body
         run: |
           set -euo pipefail
-          # Re-fetch the tag annotation explicitly — actions/checkout@v4 sometimes
+          # Re-fetch the tag annotation explicitly — actions/checkout@v5 sometimes
           # drops the tag object even with fetch-tags: true, leaving %(contents:body)
           # empty. A bare git fetch of the ref forces the annotation through.
           git fetch origin "+refs/tags/${GITHUB_REF_NAME}:refs/tags/${GITHUB_REF_NAME}" --force
@@ -172,7 +172,7 @@ jobs:
           fi
 
       - name: Run goreleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean --release-notes ${{ runner.temp }}/release-notes.txt
