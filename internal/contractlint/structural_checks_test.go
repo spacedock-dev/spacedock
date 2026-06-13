@@ -254,6 +254,11 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		filepath.Join("mods", "pr-merge.md"):                                                      true,
 		filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"): true,
 		filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"):    true,
+		// The contract split relocated the merge module's Mod-Hook prose into the
+		// merge reference and the standing-teammate declaration's `## Hook: startup`
+		// example into the dispatch reference — both legitimately carry `## Hook:`.
+		filepath.Join("skills", "first-officer", "references", "claude-fo-merge.md"):    true,
+		filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
 		filepath.Join("mods", "pr-merge.md"): true,
@@ -347,12 +352,20 @@ var machineDependentPaths = []string{
 }
 
 // isClaudeAdapter reports whether a shipped file is a Claude-host coupling surface
-// (a claude-*-runtime.md adapter or the Claude-only using-claude-team skill), where
-// a `~/.claude/teams` read is the legitimate quarantined coupling. ONLY the
-// personal-config check excludes these; the interpreter / machine-path checks apply.
+// (a claude-*-runtime.md adapter, a claude-fo-*.md FO module reference, or the
+// Claude-only using-claude-team skill), where a `~/.claude/teams` read is the
+// legitimate quarantined coupling. ONLY the personal-config check excludes these;
+// the interpreter / machine-path checks apply.
 func isClaudeAdapter(path string) bool {
 	base := filepath.Base(path)
 	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
+		return true
+	}
+	// The contract split moved the Claude-host dispatch/merge coupling (the
+	// `~/.claude/teams` and subagent-jsonl reads) out of the runtime adapter into
+	// the claude-fo-dispatch / claude-fo-merge references; they are the same
+	// legitimate Claude coupling surface, exempt from the HOME-rooted check.
+	if strings.HasPrefix(base, "claude-fo-") && strings.HasSuffix(base, ".md") {
 		return true
 	}
 	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md")) ||

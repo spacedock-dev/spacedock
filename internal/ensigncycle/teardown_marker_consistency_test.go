@@ -22,14 +22,16 @@ import (
 // integration lint ties integration-const↔contract; together the three copies are
 // pinned to one prose source.
 //
-// The prose sources are the shared-core step-10 delegation and the
-// using-claude-team skill (the Claude realization that owns the terminal
-// teardown). They are read via the in-repo layout path (the ensigncycle package
-// sits at internal/ensigncycle, so the skill references are two dirs up). This is
-// a fixed repo-relative path, not a machine-specific dependency.
+// The prose sources are the Claude merge reference's Merge-and-Cleanup step-10
+// (which owns the bounded-teardown marker after the contract split moved it out of
+// first-officer-shared-core.md) and the using-claude-team skill (the Claude
+// realization that owns the terminal teardown). They are read via the in-repo
+// layout path (the ensigncycle package sits at internal/ensigncycle, so the skill
+// references are two dirs up). This is a fixed repo-relative path, not a
+// machine-specific dependency.
 func TestGradeMarkerMatchesContract(t *testing.T) {
 	contractFiles := []string{
-		filepath.Join("..", "..", "skills", "first-officer", "references", "first-officer-shared-core.md"),
+		filepath.Join("..", "..", "skills", "first-officer", "references", "claude-fo-merge.md"),
 		filepath.Join("..", "..", "skills", "using-claude-team", "SKILL.md"),
 	}
 	for _, f := range contractFiles {
