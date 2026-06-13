@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -58,8 +59,17 @@ type claudeLiveScenario struct {
 func TestLiveClaudeSharedScenarios(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 
+	// The scenarios fan out in parallel: each is an independent multi-minute live
+	// claude journey, so running them serially makes the lane wall-time the SUM of
+	// the four (~27m on opus). t.Parallel collapses it toward the slowest single
+	// scenario. The cheap canary (TestLiveEnsignCycle) runs as an earlier step, so a
+	// systemic failure (auth/install) still fails fast before this fan-out. Each
+	// scenario gets its own workflowRoot (t.TempDir) and its own CLAUDE_CONFIG_DIR
+	// (run(), keyed by scenario name) so the concurrent sessions never share claude
+	// config/session state.
 	for _, scenario := range claudeLiveScenarios(t) {
 		t.Run(scenario.name, func(t *testing.T) {
+			t.Parallel()
 			scenario.run(t, runner, scenario.sharedRuntimeScenario)
 		})
 	}
@@ -230,7 +240,16 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		"--model", r.model,
 	)
 	cmd.Dir = workflowRoot
+	// Per-scenario CLAUDE_CONFIG_DIR so parallel scenarios never share claude's
+	// session/config state. It nests under the runner's base config dir (the
+	// archivable CI path), so the artifact upload — which grabs the whole
+	// per-model config dir — still captures each scenario's projects/*.jsonl. A
+	// fresh slice (never a mutation of the shared r.env) keeps the parallel
+	// invocations race-free.
 	cmd.Env = r.env
+	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
+		cmd.Env = withClaudeConfigDir(r.env, filepath.Join(base, scenario.name))
+	}
 
 	// stdout carries the stream-json transcript the watcher drains for liveness;
 	// stderr is folded into the same pipe so a launch error (e.g. a stale-token 401
@@ -293,4 +312,18 @@ func claudeLiveArtifactDir(t *testing.T, name string) string {
 		t.Fatal(err)
 	}
 	return dir
+}
+
+// withClaudeConfigDir returns a COPY of env with CLAUDE_CONFIG_DIR replaced by
+// dir. It never mutates the input slice, so parallel scenarios sharing the
+// runner's base env each derive their own isolated config dir race-free.
+func withClaudeConfigDir(env []string, dir string) []string {
+	out := make([]string, 0, len(env)+1)
+	for _, e := range env {
+		if strings.HasPrefix(e, "CLAUDE_CONFIG_DIR=") {
+			continue
+		}
+		out = append(out, e)
+	}
+	return append(out, "CLAUDE_CONFIG_DIR="+dir)
 }
