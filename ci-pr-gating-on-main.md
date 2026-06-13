@@ -116,3 +116,28 @@ The proof is observable on a real `main`-base PR's checks, not a fixture:
 ### Summary
 
 Fleshed out the ideation body: pinned the two one-token YAML trigger edits ([next] -> [next, main] in install-e2e.yml and runtime-live-e2e.yml), with before/after blocks. Verified all FO findings against origin/main YAML and confirmed the main-PR trigger is already proven live (PR #347's docs build ran and passed, deploy skipped). Adopted the FO's design call: the offline `go test ./...` gate and install-e2e run on main-PRs while the three live lanes stay environment-gated (each `needs: offline` + an approval-gated `environment:`), so a main-PR never auto-burns API credits — same shape as docs.yml's build-runs/deploy-gated split. ACs are proven by observing checks on a real main-PR, never by grepping the workflow file.
+
+## Stage Report: implementation
+
+- DONE: Add `main` to the `pull_request: branches:` array in BOTH install-e2e.yml ([next] -> [next, main]) and runtime-live-e2e.yml ([next] -> [next, main]), and refresh the runtime-live-e2e SECURITY-MODEL header comment phrase from "pull_request on next" to "next and main" (the security reasoning is branch-agnostic, unchanged). `git diff origin/main` must list ONLY those two files — docs.yml, next-publish.yml, release.yml untouched (AC-4).
+  Commit 79465a41 on spacedock-ensign/ci-pr-gating-on-main: install-e2e.yml +1/-1, runtime-live-e2e.yml +2/-2 (trigger filter + header phrase "`next`" -> "`next` and `main`"); `git diff --name-only origin/main` lists exactly those two files — docs.yml / next-publish.yml / release.yml untouched (AC-4 satisfied for the diff portion).
+- DONE: Run `go test ./...` green — this is a YAML-only edit so Go behavior is unchanged, but confirm no workflow-structure/parse guard (e.g. internal/release workflow_exec_guard or any workflow-validating test) reds on the trigger change. Report the pass count.
+  `go test ./...` = 1249 passed in 16 packages; `internal/release` (incl. workflow_exec_guard, which asserts runtime-live-e2e.yml job steps/secrets/scenario commands — none touched by a trigger/comment edit) = 40 passed. No guard reds on the trigger change.
+- DONE: Record in the stage report the AC-1/AC-2/AC-3 proof plan to be observed on THIS task's own PR to main (offline `go test` gate + install matrix RUN; the 3 live lanes sit `waiting` on environment approval, NOT auto-started). Add NO tautological YAML-grep test, NO doc-diff (CI trigger config is not user-visible), NO Go/fixture test — per the ideation test plan the PR's own check run is the proof.
+  Proof plan recorded below; no YAML-grep test, no doc-diff, no Go/fixture test added (the PR's own check run is the end-to-end proof — a `pull_request: branches:` change takes effect from the PR head).
+
+### AC-1/AC-2/AC-3 proof plan (observed on THIS task's own PR to main)
+
+Open a PR with base `main` carrying commit 79465a41. Because a `pull_request: branches:` change takes effect from the PR head, this PR is itself gated by the post-change triggers — no throwaway PR needed. On that PR observe:
+- AC-1: `offline` check (runtime-live-e2e.yml) PRESENT and runs `go build ./...` + `go test ./...`, reporting a conclusion. Source: GitHub's run, via `gh pr checks <pr>` / `gh run view`.
+- AC-2: `install (ubuntu-latest)` + `install (macos-latest)` checks (install-e2e.yml) PRESENT with conclusions.
+- AC-3: `claude-live` (sonnet + claude-opus-4-8), `codex-live`, `pi-live` jobs sit in `waiting` on their environments (CI-E2E / CI-E2E-OPUS / CI-E2E-CODEX / CI-E2E-PI), NOT auto-started — no API credits spent until a maintainer approves. Observe job states in `gh run view`.
+- AC-4 (diff portion): already satisfied — `git diff --name-only origin/main` = only the two workflow files.
+
+### Branch-protection heads-up for the captain (operational, not part of this edit)
+
+On `main`'s branch protection, only `offline` / `install (ubuntu-latest)` / `install (macos-latest)` / docs `build` should be REQUIRED status checks. The three live lanes (`claude-live`, `codex-live`, `pi-live`) must NOT be required: they pause in `waiting` on per-environment approval by design, so requiring them would block every `main`-PR on manual environment approval (and burn API credits on every merge). This is a repo-settings action outside the worktree diff.
+
+### Summary
+
+Mechanical trigger edit landed in commit 79465a41 on spacedock-ensign/ci-pr-gating-on-main: added `main` to the `pull_request: branches:` filter of install-e2e.yml and runtime-live-e2e.yml ([next] -> [next, main]) and refreshed the runtime-live-e2e SECURITY-MODEL header phrase to "`next` and `main`" so the comment stays true (security reasoning unchanged, branch-agnostic). No job behavior changed. `git diff origin/main` touches only those two files (AC-4 diff). `go test ./...` is green at 1249/1249 and the internal/release workflow_exec_guard (40/40) does not red on the trigger change. AC-1/AC-2/AC-3 are proven on this task's own PR to main (offline `go test` + install matrix RUN; the three live lanes sit `waiting` on environment approval, not auto-started) — the PR's own check run is the end-to-end test, so no YAML-grep test, no doc-diff, and no Go/fixture test were added. Flagged for the captain: on main's branch protection only offline/install/docs build should be REQUIRED checks, never the live lanes.
