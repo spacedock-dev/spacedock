@@ -1,13 +1,13 @@
 ---
 id: 8pwjdj4ngx9dbnbynxgsagq0
 title: Brew cask depends on agentsview and safehouse
-status: ideation
+status: implementation
 source: captain (2026-06-12)
 started: 2026-06-13T04:31:09Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-brew-cask-agentsview-safehouse-deps
 issue:
 sprint: 0201-post-flip-release-model
 group: ux-cleanup
