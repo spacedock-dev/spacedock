@@ -10,6 +10,7 @@ score:
 worktree:
 issue:
 group: survey
+archived: 2026-06-13T21:13:57Z
 ---
 
 The `spacedock:survey` SCAFFOLD section does not name spacedock even when spacedock is the genuine incumbent scaffold driving the repo, because the `scaffold-usage` query deliberately excludes the spacedock family.
