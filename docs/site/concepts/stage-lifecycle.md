@@ -36,4 +36,4 @@ When a stage declares `worktree: true`, everything from that stage onward happen
 
 - [The operating model](operating-model.md) for who does what: you, the orchestrator, the workers.
 - [Gates and decisions](gates-and-decisions.md) to see exactly what you decide at a stage boundary and on what evidence.
-- The [frontmatter contract](../reference/frontmatter-contract.md) to look up the fields these stages write.
+- The [frontmatter contract](../reference/frontmatter-contract.md) for the state these stages write and how an entity moves through them.

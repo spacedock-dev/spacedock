@@ -36,7 +36,7 @@ stages:
 
 ## Each work item is one file
 
-An entity lives as a flat file `{slug}.md`, or a folder `{slug}/index.md` when reports and artifacts accumulate beside it. The body is the human-readable record: the problem, the approach, the acceptance criteria, and the stage reports. On top sits YAML frontmatter, the machine-readable state: the item's id, its current stage, its outcome. The [frontmatter contract](../reference/frontmatter-contract.md) lists every field.
+An entity lives as a flat file `{slug}.md`, or a folder `{slug}/index.md` when reports and artifacts accumulate beside it. The body is the human-readable record: the problem, the approach, the acceptance criteria, and the stage reports. On top sits YAML frontmatter, the machine-readable state: the item's id, its current stage, its outcome. The [frontmatter contract](../reference/frontmatter-contract.md) covers how that state is read and how an entity moves through it.
 
 ## Keep workflow state off your code branch
 
