@@ -12,6 +12,7 @@ issue:
 sprint: 0202-survey-improvements
 group: cleanup
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 Make `spacedock new` the contract-blessed atomic-create path for filing entities, and have `status --next-id` emit a hint pointing to it.
