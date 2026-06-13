@@ -10,19 +10,18 @@ import (
 )
 
 // The post-flip agreement invariant: the released stable channel's plugin source
-// must settle on `main` across three INDEPENDENTLY-authored surfaces —
+// must settle on `main` across the two BINARY-side surfaces —
 //   (1) release.yml's "Stamp plugin manifests" step git switch/push target,
-//   (2) .goreleaser.yaml's stable-build cli.devBranch ldflag,
-//   (3) .claude-plugin/marketplace.json source.ref.
-// Surfaces (1) and (2) are the BINARY side; surface (3) is the marketplace side.
-// Surface (3) is branch-local: marketplace.json points at the channel its branch
-// serves — `next` on the edge branch, `main` on the stable branch. So the
-// tri-surface ==main check is meaningful only on a tree whose marketplace ref is
-// already `main` (the stable branch); on the edge tree (ref `next`) it skips, and
-// the binary-side pair (1)==(2)==main is asserted unconditionally below. The
-// surfaces are parsed out of three real artifacts authored by different changes,
-// so a drift in any one fails the check — an independent source of truth, not a
-// re-read of the value the implementer wrote.
+//   (2) .goreleaser.yaml's stable-build cli.devBranch ldflag.
+// Under Model B the marketplace manifest moved OUT of the plugin branch into a
+// separate marketplace repo, so the former third surface — an in-branch
+// .claude-plugin/marketplace.json source.ref that had to be re-settled per release
+// — no longer exists. That removal is the AC-2 invariant guarded by
+// TestPluginBranchCarriesNoMarketplaceManifest below; the channel pin now lives in
+// the marketplace repo's manifest, not the plugin branch. The two binary surfaces
+// are parsed out of two real artifacts authored by different changes, so a drift in
+// either fails the check — an independent source of truth, not a re-read of the
+// value the implementer wrote.
 const stableChannelBranch = "main"
 
 // releaseStampTarget extracts the branch the release.yml "Stamp plugin manifests
@@ -114,45 +113,9 @@ func devBranchLdflag(ldflags []string) string {
 	return ""
 }
 
-// marketplaceSourceRef extracts .claude-plugin/marketplace.json's first plugin
-// entry's source.ref — surface (3), pj's. Parsed from the real file so a pj flip
-// (next→main) is observed here, not asserted from a value k6d wrote.
-func marketplaceSourceRef(manifest string) string {
-	var doc struct {
-		Plugins []struct {
-			Source struct {
-				Ref string `json:"ref"`
-			} `json:"source"`
-		} `json:"plugins"`
-	}
-	if err := yamlJSON([]byte(manifest), &doc); err != nil {
-		return ""
-	}
-	if len(doc.Plugins) == 0 {
-		return ""
-	}
-	return doc.Plugins[0].Source.Ref
-}
-
-// yamlJSON decodes JSON via the yaml.v3 codec (a JSON document is valid YAML), so
-// the agreement guard needs no extra import beyond the one the sibling goreleaser
-// guard already carries.
-func yamlJSON(blob []byte, out any) error {
-	return yaml.Unmarshal(blob, out)
-}
-
 func readReleaseWorkflow(t *testing.T) string {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "release.yml"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
-}
-
-func readMarketplaceManifest(t *testing.T) string {
-	t.Helper()
-	data, err := os.ReadFile(filepath.Join("..", "..", ".claude-plugin", "marketplace.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,28 +166,29 @@ func TestEdgeChannelStampsNext(t *testing.T) {
 	}
 }
 
-// TestTriSurfaceChannelAgreement is the FULL agreement invariant: all three
-// independently-authored surfaces — release.yml stamp target (1),
-// .goreleaser.yaml stable devBranch (2), and .claude-plugin/marketplace.json
-// source.ref (3) — must agree on `main`. Surface (3) is branch-local, so this
-// asserts only on a `main`-ref tree (the stable branch); on the edge tree (ref
-// `next`) it skips, since `next` correctly serves its own channel. The binary-side
-// pair (1)==(2) is asserted unconditionally by TestStableChannelBinaryPairAgreesOnMain
-// above.
-func TestTriSurfaceChannelAgreement(t *testing.T) {
-	marketplaceRef := marketplaceSourceRef(readMarketplaceManifest(t))
-	if marketplaceRef != stableChannelBranch {
-		t.Skipf("marketplace source.ref = %q (edge branch serves its own channel; the tri-surface ==%q agreement holds only on a main-ref tree); binary-side pair is covered by TestStableChannelBinaryPairAgreesOnMain", marketplaceRef, stableChannelBranch)
+// TestPluginBranchCarriesNoMarketplaceManifest is the AC-2 git-state guard: the
+// Model B decouple moves the marketplace manifest OUT of the plugin branch into a
+// separate marketplace repo, so the plugin branch carries NO
+// .claude-plugin/marketplace.json. With no in-branch manifest there is no
+// per-release source.ref surface to re-settle (the divergence that kept
+// `next → main` from being a clean fast-forward on that field is gone). The check
+// is git state — the file's presence on disk, an independent fact, not a re-read
+// of a value the implementer wrote. (The plugin's own .claude-plugin/plugin.json
+// stays; only the marketplace.json moved.) This guards the main-bound branch; the
+// next-branch manifest removal + full main/next alignment is the separate trunk
+// reconcile.
+func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
+	manifest := filepath.Join("..", "..", ".claude-plugin", "marketplace.json")
+	if _, err := os.Stat(manifest); err == nil {
+		t.Fatalf("%s is present on the plugin branch; Model B moves the marketplace manifest to the separate marketplace repo, so the plugin branch must carry no marketplace.json (and thus no per-release source.ref to re-settle)", manifest)
+	} else if !os.IsNotExist(err) {
+		t.Fatalf("stat %s: %v", manifest, err)
 	}
 
-	surfaces := map[string]string{
-		"release.yml stamp target":           releaseStampTarget(readReleaseWorkflow(t)),
-		".goreleaser.yaml stable devBranch":  goreleaserStableDevBranch(readGoreleaserConfig(t)),
-		".claude-plugin/marketplace.json ref": marketplaceRef,
-	}
-	for name, got := range surfaces {
-		if got != stableChannelBranch {
-			t.Errorf("channel surface %q = %q, want %q", name, got, stableChannelBranch)
-		}
+	// The plugin manifest itself stays on the plugin branch — only the marketplace
+	// manifest moved out.
+	plugin := filepath.Join("..", "..", ".claude-plugin", "plugin.json")
+	if _, err := os.Stat(plugin); err != nil {
+		t.Fatalf("plugin manifest %s missing: %v (only marketplace.json should move out of the plugin branch)", plugin, err)
 	}
 }
