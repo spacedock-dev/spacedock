@@ -1,13 +1,13 @@
 ---
 id: ywjfm1fjmqbpqe7dwjcwt841
 title: README slim + docs-architecture cleanup — site is canonical, remove install-journey.md + its prose-grep test
-status: ideation
+status: implementation
 source: "captain (2026-06-13) — now that the mkdocs doc site shipped (#343), the repo's standalone install/usage docs duplicate it. README should be a thin front door; install-journey.md is redundant; its test is a banned prose-grep."
 started: 2026-06-13T05:03:08Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-readme-and-docs-architecture-cleanup
 issue:
 sprint: 0201-post-flip-release-model
 group: docs
