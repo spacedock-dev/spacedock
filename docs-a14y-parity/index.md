@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-docs-a14y-parity
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#361"
 ---
 
