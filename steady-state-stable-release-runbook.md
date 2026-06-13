@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0201-post-flip-release-model
+sprint-readiness: defer
 ---
 
 The 0.20.0 flip was a one-time divergent replacement. The RECURRING stable release (0.20.1 / 0.21.0) needs a pinned runbook consistent with the post-flip model:

@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0201-post-flip-release-model
 group: release-model
-sprint-readiness:
+sprint-readiness: ready
 ---
 
 Move the marketplace manifest out of the plugin branches into its own repo, and serve two pinned channels: **stable** = a release tag, **edge** = `next` HEAD. This is the structural core of the post-flip release model (Model B). See `docs/roadmap/0201-post-flip-release-model/index.md`.

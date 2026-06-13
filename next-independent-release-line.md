@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0201-post-flip-release-model
+sprint-readiness: defer
 ---
 
 The edge channel currently rides the stable `v*` tag: one `goreleaser` run builds BOTH casks (`spacedock` + `spacedock@next`) at the same version, and `next`'s `plugin.json` is not stamped. So post-flip the edge install resolves the `next` plugin under `next`'s own version (observed: `0.19.9`), trailing the stable `0.20.0` — functionally correct (edge gets next content) but version-incoherent.

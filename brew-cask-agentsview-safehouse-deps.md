@@ -9,6 +9,9 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0201-post-flip-release-model
+group: ux-cleanup
+sprint-readiness: ready
 ---
 
 The Spacedock Homebrew cask should declare `agentsview` and `safehouse` as dependencies, so a brew install brings them in alongside the launcher.

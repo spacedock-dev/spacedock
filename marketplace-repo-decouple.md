@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0201-post-flip-release-model
+sprint-readiness: defer
 ---
 
 The marketplace is **self-referential**: `.claude-plugin/marketplace.json` lives in the plugin repo, on each branch, with `source.ref` pointing back into the same repo. This forces `main` and `next` to permanently differ on `source.ref` (`main` vs `next`), so every stable release must re-apply a `main`-only `source.ref: main` settle and `next → main` is never a clean fast-forward.

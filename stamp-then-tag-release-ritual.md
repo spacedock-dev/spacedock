@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0201-post-flip-release-model
 group: release-model
-sprint-readiness:
+sprint-readiness: defer
 ---
 
 Invert the release ordering to **stamp-then-tag** so the commit a release tag points at carries the matching `plugin.json` version, and pin `docs/releasing.md` to the post-flip reality. See `docs/roadmap/0201-post-flip-release-model/index.md`.
