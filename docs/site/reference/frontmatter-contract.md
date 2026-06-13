@@ -46,23 +46,9 @@ A worktree-backed stage edits an isolated copy while the workflow directory keep
 - Non-empty `worktree`: the active copy is the matching file under `<git-root>/<worktree>/` when it exists; if it's missing, reads fall back to the canonical copy.
 - When both exist, active-copy fields overlay the canonical copy. `pr` is the only field mirrored back to the canonical copy, so pull-request state stays visible from the workflow root.
 
-## How an entity moves
+## Terminal guards
 
-File location (active vs archived) is separate from stage progress (the `status` field). The default workflow is linear, with a gate before the terminal stage and a rejection path back from validation:
-
-```mermaid
-stateDiagram-v2
-    [*] --> backlog : commission
-    backlog --> ideation : approval gate
-    ideation --> implementation : approval gate
-    ideation --> ideation : rejected ideation
-    implementation --> validation : worker complete
-    validation --> done : approval gate
-    validation --> implementation : rejected validation
-    done --> [*] : archive
-```
-
-The first officer commissions at `backlog`, gates ask you to approve before leaving a stage, validation can bounce back to implementation on a rejection, and `done` archives. A few guards protect the terminal move: an entity with a non-empty `mod-block` (a lifecycle hook still in flight) won't terminalize without force, and clearing a block and terminalizing must be two separate writes so the audit trail stays honest. Archiving requires the entity to already be terminal.
+File location (active vs archived) is separate from stage progress (the `status` field); [the stage lifecycle](../concepts/stage-lifecycle.md) covers how an entity moves through stages and gates. The contract adds a few guards on the terminal move: an entity with a non-empty `mod-block` (a lifecycle hook still in flight) won't terminalize without force, and clearing a block and terminalizing must be two separate writes so the audit trail stays honest. Archiving requires the entity to already be terminal.
 
 ## External-tracker fields
 
