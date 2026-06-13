@@ -1,13 +1,13 @@
 ---
 id: ea9kke1e8q0wyhx0wjv4cyzr
 title: CI PR gating on main (post-flip trunk)
-status: ideation
+status: implementation
 source: captain (2026-06-13, during the 8p push turn) — pre-cut audit main-gating item pulled forward
 started: 2026-06-13T07:01:21Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-ci-pr-gating-on-main
 issue:
 sprint: 0201-post-flip-release-model
 group: release-model
