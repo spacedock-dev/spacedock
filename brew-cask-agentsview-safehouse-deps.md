@@ -12,7 +12,7 @@ issue:
 sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
-mod-block:
+mod-block: merge:pr-merge
 pr: "#347"
 ---
 
