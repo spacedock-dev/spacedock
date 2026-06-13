@@ -22,6 +22,12 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
 - **A real example with sample output beats description.** One concrete command plus the output the reader will see teaches faster than paragraphs. Compose samples from the product's real templates, and never restate in prose what the sample already says ("Accept this design, or tell me what to change" makes a "nothing is generated until you accept" sentence dead weight).
 - **Keep agent-facing surfaces off user pages.** Commands meant for the agents (`spacedock status`, `spacedock dispatch`) are not taught in Get started, even though their output is real.
 - **The docs may defer to the agent.** Spacedock runs inside a coding agent; "ask the agent if anything is unclear" is a legitimate close. Pages cover what the reader needs before and between sessions, not every contingency within one.
+- **The agent is the interface; docs say what is possible.** Files and settings are operated by asking the first officer, not by hand-editing walkthroughs. Describe capabilities ("a stage can pause at a gate, run isolated, demand a fresh reviewer… ask the first officer to set up or change any of it"), never a field-by-field table of how to key them in.
+- **A diagram beats an enumeration for structure.** A stage chain is a mermaid flowchart, not five field-by-field bullets. Carry the meaning in a plain-text caption sentence as well, so the styling is decoration and text readers (`llms.txt`) lose nothing.
+- **State behavior; don't narrate rationale.** "When a stage declares `worktree: true`, everything from that stage onward happens in an isolated worktree" — not the tradeoff that motivated the design. The reader wants what happens, not why we built it that way.
+- **Built-in capabilities must read as built in.** Never introduce a built-in mechanism inside a "you can add…" list; the reader hears setup required. Built-ins first, stated as facts; add-ons after, clearly labeled as the flexible layer.
+- **Verify behavior claims against the owning source.** Before documenting what the product does, read the skill or code that owns the behavior (rejection rounds auto-bounce; the gate reaches the captain on pass or at the cycle cap). A plausible paraphrase from memory is how docs go wrong.
+- **No archaeology pages.** An example lives as a sample at the point of need (a design summary on the commission page, a gate review on the gates page), not as a trace page that walks one real artifact through every mechanism at once.
 - **Cut, don't pad.** If a sentence still carries its meaning with a clause removed, remove the clause. If a paragraph repeats the page above it, delete it and link instead.
 - **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long. An audience split ("new-user view" vs "operator view" of the same feature) is not a reason for a second page; it is the same topic.
 - **Two levels of structure only:** section → page. No deeper nesting; no page that exists only to hold sub-pages.
@@ -115,6 +121,16 @@ Rule of thumb: capitalize a **role** when you name it as a role (the roles table
 - **Headings.** Sentence case ("Get started", "Your first workflow"), not Title Case. One `#` h1 per page (the page title); section headings start at `##`.
 - **Links.** Descriptive link text, never "click here" / "this link". Internal links are relative so `mkdocs build --strict` can resolve them. GitHub links and install commands point at `main`, never a development branch.
 - **Lists and emphasis.** Bullets for parallel items; bold for the load-bearing claim of a bullet (the README pattern). Use emphasis sparingly; if everything is bold, nothing is.
+
+## Revising a page: the per-paragraph loop
+
+Revision is paragraph by paragraph, not page-at-a-glance. For each paragraph ask three questions:
+
+1. **Why would the reader care?** If the paragraph has no answer, cut it.
+2. **Do they have the context, at this point in the journey?** Every term and claim must be introduced by this page or an earlier one in nav order.
+3. **Does it make them want to read on?** End on the payoff or the concrete thing they can type, not on a caveat.
+
+Propose the revision yourself, then send the proposal (with its three-question rationale) to the prose-polish teammate when one is standing. Triage the return; never auto-apply: accept real improvements, reject anything that violates this directive (em-dash insertions are the recurring offender) or alters captain-set wording, and re-check the file on disk before acting on replies that arrive late.
 
 ## Before you commit a docs change
 - [ ] Page opens with the problem/payoff, not a definition.
