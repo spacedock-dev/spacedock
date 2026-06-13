@@ -6,11 +6,13 @@ An entity moves through an ordered chain of stages that the workflow defines, an
 
 ```mermaid
 flowchart LR
-  backlog --> ideation["ideation (gate)"] --> implementation --> validation["validation (gate)"] --> done
+  backlog --> ideation --> implementation --> validation --> done
   validation -. rejected .-> implementation
+  classDef gate stroke:#e3b04b,stroke-width:2.5px
+  class ideation,validation gate
 ```
 
-Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?". The two gates are your calls: before code is written, and before the result ships.
+The gold-bordered stages are gates, your calls: before code is written, and before the result ships. Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?".
 
 The property that matters most is `feedback-to`: rejected work bounces back to the stage that owns the fix (a rejected validation returns to implementation), not to the reviewer that flagged it.
 
