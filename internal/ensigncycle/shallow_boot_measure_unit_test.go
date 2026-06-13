@@ -38,6 +38,19 @@ func TestAssertShallowBootMeasuredOffline(t *testing.T) {
 	}
 }
 
+// TestAssertNoTeamCreateBeforeGreetOffline validates the AC-2 behavioral oracle
+// against the committed streams: the shallow-boot positive (no TeamCreate at all)
+// passes; the eager-team negative (a TeamCreate before the greet) fails — the
+// negative control proving the assertion distinguishes the two.
+func TestAssertNoTeamCreateBeforeGreetOffline(t *testing.T) {
+	if err := assertNoTeamCreateBeforeGreet(readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")); err != nil {
+		t.Fatalf("shallow-boot positive fixture (no TeamCreate) must pass AC-2: %v", err)
+	}
+	if err := assertNoTeamCreateBeforeGreet(readMeasureFixture(t, "eager-team-boot.stream.jsonl")); err == nil {
+		t.Fatal("eager-team negative fixture (TeamCreate before greet) must FAIL AC-2")
+	}
+}
+
 // TestShallowBootMeasureSignalsAreIndependent isolates the two AC-6 signals so
 // neither can be silently dropped: a stream that fails ONLY the ceiling check (a
 // heavy greet, no spike) and a stream that fails ONLY the spike check (a pre-greet

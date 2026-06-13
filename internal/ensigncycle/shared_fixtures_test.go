@@ -340,3 +340,94 @@ func filingPrompt() string {
 		"Do not dispatch any workers and do not advance the entity past backlog. Your final response must confirm the seed task was filed.",
 	)
 }
+
+// shallowBootFixture is the shallow-boot scenario's on-disk state plus the stub-gh
+// dir the runner prepends to PATH. The fixture seeds TWO entities: a gate-check at
+// a human gate (which the FO must present, not dispatch) and a PR-bearing
+// non-terminal entity whose stubbed `gh` reports MERGED (which S7b advances and
+// archives before-greet). The canonical pr-merge mod is registered so the boot
+// JSON `mods` map shows it and S7b can read it; the merged entity carries `pr` so
+// its terminal advancement clears the merge-hook guard without `--force`. The
+// fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner file;
+// the pure string builders below are default-tagged so the offline negative cases
+// reuse them without a model.
+type shallowBootFixture struct {
+	gateEntityPath   string
+	mergedEntityPath string
+	mergedArchive    string
+	stubGhDir        string
+}
+
+func shallowBootReadme() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"entity-label: task\n" +
+		"entity-label-plural: tasks\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: draft\n" +
+		"      initial: true\n" +
+		"    - name: implementation\n" +
+		"    - name: review\n" +
+		"      gate: true\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Shallow Boot Fixture\n\n" +
+		"### draft\n\nCreate the draft.\n\n- **Outputs:** A draft stage report.\n\n" +
+		"### implementation\n\nDo the work.\n\n- **Outputs:** An implementation stage report.\n\n" +
+		"### review\n\nHuman approval gate.\n\n- **Outputs:** A gate review for the human operator.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func shallowBootGateEntity() string {
+	return "---\n" +
+		"id: gate-check\n" +
+		"title: Gate Check\n" +
+		"status: review\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Gate Check\n\n" +
+		"This entity sits at the human review gate. The FO must present the gate at boot and stop — not dispatch a worker, not approve.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: Work exists\n" +
+		"  The implementation is complete and ready for review.\n" +
+		"\n### Summary\n\n" +
+		"The implementation stage is complete; the first officer must present the review gate and wait.\n"
+}
+
+func shallowBootMergedEntity() string {
+	return "---\n" +
+		"id: merged-pr\n" +
+		"title: Merged PR Entity\n" +
+		"status: implementation\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"pr: \"#42\"\n" +
+		"mod-block:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Merged PR Entity\n\n" +
+		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The boot's S7b merged-PR sweep must advance it to terminal (`done`, `verdict: PASSED`) and archive it BEFORE the greet — proving a greet-and-stop boot still advances a merged PR.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: Work exists and a PR was opened\n" +
+		"  The PR (#42) has since merged; the boot must advance and archive this entity.\n" +
+		"\n### Summary\n\n" +
+		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
+}
+
+func shallowBootPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
+		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
+		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
+	)
+}

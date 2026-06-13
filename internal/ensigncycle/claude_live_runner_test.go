@@ -42,6 +42,34 @@ type claudeLiveRunner struct {
 	env          []string
 	model        string
 	artifactRoot string
+	// home is the isolated HOME the env sets (a per-run temp dir). The shallow-boot
+	// scenario checks ~/.claude/teams/{...}/config.json under it for the
+	// lazy-TeamCreate proof — scoped to THIS run, never a stale prior team.
+	home string
+}
+
+// withPATHPrefix returns env with dir prepended to its PATH entry, so a stub
+// binary in dir resolves before any real one. The shallow-boot runner uses it to
+// put the stub `gh` (reporting MERGED) on the FO subprocess PATH.
+func withPATHPrefix(env []string, dir string) []string {
+	out := make([]string, 0, len(env)+1)
+	found := false
+	for _, kv := range env {
+		if rest, ok := strings.CutPrefix(kv, "PATH="); ok {
+			found = true
+			if rest != "" {
+				out = append(out, "PATH="+dir+string(os.PathListSeparator)+rest)
+			} else {
+				out = append(out, "PATH="+dir)
+			}
+			continue
+		}
+		out = append(out, kv)
+	}
+	if !found {
+		out = append(out, "PATH="+dir)
+	}
+	return out
 }
 
 type claudeScenarioResult struct {
@@ -103,6 +131,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, share
 		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
 		"filing":                      runClaudeFilingScenario,
+		"shallow-boot":                runClaudeShallowBootScenario,
 	}
 }
 
@@ -120,12 +149,14 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	env := isolatedClaudeEnv(t, os.Getenv("HOME"))
 	env = withBinaryOnPath(env, binary)
 
+	home, _ := envValue(env, "HOME")
 	return claudeLiveRunner{
 		binary:       binary,
 		repoRoot:     repo,
 		env:          env,
 		model:        model,
 		artifactRoot: claudeLiveArtifactDir(t, "claude-shared-scenarios"),
+		home:         home,
 	}
 }
 
@@ -221,6 +252,46 @@ func runClaudeFilingScenario(t *testing.T, runner claudeLiveRunner, scenario sha
 	}
 	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+}
+
+// runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
+// (a gate-check entity at a human gate + a PR-bearing entity whose stubbed `gh`
+// reports MERGED) with a per-run isolated team root, and grades the durable
+// end-state: the FO greets and presents the gate, S7b advances+archives the merged
+// PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
+// then asserts the AC-2 behavioral signal (no TeamCreate before the greet) and the
+// AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
+// ~89k cache_creation spike) over the captured stream.
+func runClaudeShallowBootScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	fixture := writeShallowBootWorkflow(t, workflowRoot)
+	gateBefore := readFile(t, fixture.gateEntityPath)
+
+	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
+	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
+	scenarioRunner := runner
+	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
+
+	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt())
+
+	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
+	// startup hook membership-checks and TeamCreate writes a team config.json under.
+	teamRoot := filepath.Join(runner.home, ".claude", "teams")
+	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
+	if err := assertShallowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
+	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	// AC-6: the greet-turn context is below the ceiling and no pre-greet 89k
+	// cache_creation spike (measured, over the captured token stream).
+	if err := assertShallowBootMeasured(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }
