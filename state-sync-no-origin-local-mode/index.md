@@ -6,6 +6,9 @@ source: "FO dogfood (2026-06-06) - split-root state instructions require push/pu
 score: "0.25"
 worktree: ""
 issue:
+sprint: 0202-survey-improvements
+group: cleanup
+sprint-readiness: ready
 ---
 
 Split-root state sync currently assumes the state checkout has an `origin`
