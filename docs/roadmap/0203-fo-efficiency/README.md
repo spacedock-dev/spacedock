@@ -55,7 +55,7 @@ contract-gate → discovery → `status --boot --json` → **greet and stop for 
 - **Phase 2 — lazy-TeamCreate**: defer the `TeamCreate` call (the ~89k cache-creation) off the boot/greet path to first-dispatch-need. Needs no split.
 - **Phase 3 — shallow-boot-then-greet**: greet off `status --boot --json`; defer mod-reads, the human status-table render, and the (now-split) deferred contract modules. Folds C3 (mod-defer) + C4 (status-render discipline). *Proof: new live `shallow-boot` scenario.*
 
-**T3 — residual-prose audit + comm-officer polish** (file along, post-Phase-1; the cut-list does not exist until the split lands).
+**T3 — residual-prose audit + comm-officer polish** — filed as backlog seed `fo-contract-prose-audit`, BLOCKED on j9 Phase-1; ideation dispatches post-split (the cut-list does not exist until the split lands), and collapses to a roadmap decision if the split left nothing to cut.
 
 Boot-report habits (scope greps to headings; delegate bulk reconciliation reads to a subagent) tighten existing "Probe and Ideation Discipline" prose and ride along in Phase 1 / T3.
 
