@@ -1,26 +1,10 @@
 # Command reference
 
-The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `--version`. This page is the map: what each command does, and which are yours to run versus the ones the first officer runs against workflow state. For the exact flags of any command, run `spacedock <command> --help`, which is the always-current source of truth.
-
-| Command | Group | What it does |
-|---------|-------|--------------|
-| [`spacedock claude`](#launch) | Launch | Start Claude Code with the first officer loaded |
-| [`spacedock codex`](#launch) | Launch | Start Codex (experimental) with the first officer |
-| [`spacedock pi`](#launch) | Launch | Start Pi (experimental) with the first officer |
-| [`spacedock install`](#setup) | Setup | Install the per-host plugin, then run the compatibility check |
-| [`spacedock doctor`](#setup) | Setup | Run the compatibility check alone |
-| [`spacedock status`](#workflow) | Workflow | Read or mutate workflow state: the table, `--next`, `--where`, `--set` |
-| [`spacedock new`](#workflow) | Workflow | Create an entity (`new [--folder] SLUG`, body on stdin) |
-| [`spacedock state`](#workflow) | Workflow | Manage a split-root workflow's state checkout |
-| [`spacedock completion`](#workflow) | Workflow | Print a bash or zsh completion script |
-| [`spacedock dispatch`](#workflow) | Workflow | Build the dispatch artifacts the first officer hands an ensign |
-| `spacedock --version` | | Print the binary version and the contract level |
-
-Run `spacedock` with no arguments for the grouped help, and `spacedock <command> --help` for a command's own flags.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `spacedock --version` (the binary version and contract level). For the exact flags of any command, run `spacedock <command> --help`, the always-current source of truth; `spacedock` with no arguments prints the grouped help.
 
 ## Launch
 
-`spacedock claude`, `spacedock codex`, and `spacedock pi` start the named host with the first officer loaded. Claude Code is the primary surface; Codex and Pi are experimental. The grammar is the same for all three:
+`spacedock claude`, `spacedock codex`, and `spacedock pi` start a host with the first officer loaded. Claude Code is the primary surface; Codex and Pi are experimental. The grammar is the same for all three:
 
 ```bash
 spacedock claude [task] [spacedock-flags] [-- host-flags]
@@ -30,21 +14,23 @@ The task comes first and becomes the launch prompt. Anything after `--` forwards
 
 ## Setup
 
-`spacedock install` installs the per-host plugin, then runs the compatibility check; `spacedock doctor` runs the check alone. Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. See [Install Spacedock](../get-started/install.md) for the full setup path.
+| Command | What it does |
+|---------|--------------|
+| `spacedock install` | Install the per-host plugin, then run the compatibility check |
+| `spacedock doctor` | Run the compatibility check alone |
+
+Both take `--host claude|codex|pi` (default `claude`). When `doctor` reports the plugin is out of date, refresh it with `spacedock install`. See [Install Spacedock](../get-started/install.md) for the full setup path.
 
 ## Workflow
 
-These commands read and mutate workflow state. Two are yours; the rest the first officer runs as it moves entities.
+The first officer runs these against workflow state as it moves entities; you operate through it, not by hand. They are documented here for completeness and for the rare direct use (scripting, debugging, restoring a state checkout on a fresh clone).
 
-Yours to run:
+| Command | What it does |
+|---------|--------------|
+| `spacedock status` | Read or mutate the state: the entity table, `--next`, `--where`, `--set`, `--validate`, `--boot` |
+| `spacedock new` | Create an entity (`new [--folder] SLUG`) from a body on stdin |
+| `spacedock dispatch` | Build the worker dispatch artifacts (`dispatch build`, `dispatch show-stage-def`) |
+| `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |
+| `spacedock completion` | Print a bash or zsh completion script |
 
-- **`state`** initializes the state checkout for a [split-root workflow](../advanced/split-root-state.md) on a fresh clone.
-- **`completion`** prints a bash or zsh completion script to install.
-
-The first officer's, against workflow state:
-
-- **`status`** reads and mutates the state: with no flag it prints the entity table, `--next` lists what is ready to dispatch, `--where` filters, `--set` mutates frontmatter, `--validate` checks the workflow, and `--boot` prints the first-officer boot view. [Operate a workflow](../running-workflows/operating.md) covers how the first officer uses it on your behalf.
-- **`new`** creates an entity (`new [--folder] SLUG`) from a body on stdin.
-- **`dispatch`** (`dispatch build`, `dispatch show-stage-def`) builds the worker dispatch artifacts the first officer hands an ensign.
-
-Run `spacedock status --help` (and the same for each command) for the full flag list, the mutation guards, and the exit codes.
+[Operate a workflow](../running-workflows/operating.md) covers how the first officer uses `status` on your behalf. Run `spacedock status --help` (and the same for each command) for the full flag list, the mutation guards, and the exit codes.
