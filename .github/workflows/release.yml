@@ -1,7 +1,7 @@
-# Cuts a GitHub Release on every v* tag: goreleaser cross-builds the darwin
-# arm64+amd64 tarballs, writes checksums.txt, publishes the release, and bumps
-# the homebrew-tap formula. Runs on macOS so the released darwin binaries are
-# built natively.
+# Cuts a GitHub Release on every v* tag: goreleaser cross-builds the darwin and
+# linux arm64+amd64 tarballs, writes checksums.txt, publishes the release, and
+# bumps the homebrew-tap formula. Runs on macOS so the darwin binaries are built
+# natively (CGO_ENABLED=0, so the linux tarballs cross-compile on the same host).
 name: release
 
 on:
