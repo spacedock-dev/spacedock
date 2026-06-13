@@ -498,12 +498,13 @@ func cwd() string {
 }
 
 // printVersion emits the version line with the contract token, then the sandbox
-// posture and a per-runtime install/enablement block. The FIRST line is unchanged
+// posture and a per-runtime plugin-version block. The FIRST line is unchanged
 // — `spacedock <ver> (contract <N>)` — and load-bearing: the FO/ensign skills read
 // `(contract N)` from it, so everything new is appended BELOW line 1 (cobra's auto
 // version-flag, a bare version string, is deliberately NOT used). The Sandbox line
 // renders the shared three-way state for dir; the per-runtime block reports each
-// host's binary install and spacedock-plugin enablement from the injected probe.
+// host's installed spacedock plugin version (and a best-effort enabled marker)
+// from the injected probe.
 func printVersion(w io.Writer, dir string, probe runtimeProbe, lookPath func(string) (string, error)) {
 	fmt.Fprintf(w, "spacedock %s (contract %d)\n", Version, contract.CONTRACT_VERSION)
 	available, _ := safehouse.Available(lookPath)
