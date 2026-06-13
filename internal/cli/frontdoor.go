@@ -37,16 +37,17 @@ type hostOps interface {
 	// (production) or recording it (test). It returns only on failure to launch.
 	Launch(argv []string, env []string) error
 	// Install issues the host plugin commands to install/update the plugin from
-	// source (optionally pinned to branch), returning combined output.
-	Install(host, source, branch string) (string, error)
+	// source, returning combined output. devBranch selects the marketplace channel
+	// entry the install targets (see channelEntry).
+	Install(host, source, devBranch string) (string, error)
 }
 
-// devBranch is the pre-release branch woven into the install/remedy commands as
-// the marketplace `@ref` (and Codex `--ref`). The default is `next`: until `next`
-// is the repository's default branch, the released binary installs the plugin
-// from `spacedock-dev/spacedock@next`, where the root marketplace.json lives. It
-// is a var (not a const) so the linker can stamp it, mirroring Version, and so
-// `SPACEDOCK_DEV_BRANCH` can override it; tests save/restore it.
+// devBranch is the binary's channel stamp: it selects which marketplace entry the
+// install targets — `main` installs the stable `spacedock` entry, any other value
+// (default `next`) installs the `spacedock-edge` entry tracking next HEAD (see
+// channelEntry). It is a var (not a const) so the linker can stamp it per channel,
+// mirroring Version, and so `SPACEDOCK_DEV_BRANCH` can override it; tests
+// save/restore it.
 var devBranch = "next"
 
 var executablePath = os.Executable

@@ -10,10 +10,13 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// marketplaceSource is the marketplace add source for the Spacedock plugin. The
-// default release path resolves the published marketplace repo; a pre-release
-// dev branch is pinned via devBranch in the emitted/issued commands.
-const marketplaceSource = "spacedock-dev/spacedock"
+// marketplaceSource is the marketplace add source: the standalone marketplace
+// repo (NOT the plugin repo). It holds the one marketplace.json with two entries
+// of one source — `spacedock` (stable, pinned to a release tag) and
+// `spacedock-edge` (edge, tracking next HEAD). The binary's devBranch stamp
+// selects which entry installs (see channelEntry); the version pin lives in the
+// manifest, not an @ref on the install command.
+const marketplaceSource = "spacedock-dev/marketplace"
 
 // runInit installs/updates the per-host plugin (claude) or emits the documented
 // add command pair (codex), then runs doctor. `--check` runs the report without
@@ -73,18 +76,18 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 	}
 }
 
-// printCodexInstallProse emits the documented Codex install command pair. The
-// dev branch, when set, is pinned via --ref on the marketplace add.
+// printCodexInstallProse emits the documented Codex install command pair: add the
+// marketplace-repo source, then add the channel entry the binary's devBranch
+// selects (`spacedock@spacedock` stable / `spacedock-edge@spacedock` edge). No
+// `--ref` — the channel is the entry name and the version pin lives in the
+// manifest, not a branch ref.
 func printCodexInstallProse(stdout io.Writer) {
-	addCmd := "codex plugin marketplace add " + marketplaceSource
-	if devBranch != "" {
-		addCmd += " --ref " + devBranch
-	}
 	fmt.Fprintf(stdout,
 		"Codex has no programmatic plugin install from spacedock. Run these in your shell:\n"+
-			"  %s\n"+
-			"  codex plugin add spacedock@spacedock\n"+
-			"Then use the spacedock:first-officer skill in your Codex session.\n", addCmd)
+			"  codex plugin marketplace add %s\n"+
+			"  codex plugin add %s\n"+
+			"Then use the spacedock:first-officer skill in your Codex session.\n",
+		marketplaceSource, channelPluginID(devBranch))
 }
 
 // runDoctor is the `spacedock doctor` command path. With `--plugin-manifest PATH`

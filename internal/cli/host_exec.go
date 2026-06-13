@@ -209,14 +209,26 @@ func manifestSubpath(host string) string {
 	return filepath.Join(".claude-plugin", "plugin.json")
 }
 
-// marketplaceAddArg composes the `claude plugin marketplace add` target: the
-// bare source, or `source@branch` when a branch is pinned (the @ref shorthand the
-// host resolves against the repo-root marketplace.json on that ref).
-func marketplaceAddArg(source, branch string) string {
-	if branch != "" {
-		return source + "@" + branch
+// channelEntry maps the binary's devBranch stamp to the marketplace ENTRY name
+// it installs: a stable binary (devBranch=main) installs the `spacedock` entry; an
+// edge binary (any other devBranch, e.g. next) installs `spacedock-edge`. The two
+// entries live in the one marketplace repo and resolve distinct pinned versions
+// (stable pinned to a release tag, edge tracking next HEAD), so the channel is the
+// entry name — the version pin lives in the manifest, not an @ref on the install
+// command.
+func channelEntry(devBranch string) string {
+	if devBranch == "main" {
+		return "spacedock"
 	}
-	return source
+	return "spacedock-edge"
+}
+
+// channelPluginID is the `<entry>@spacedock` plugin id for the channel devBranch
+// selects: `spacedock@spacedock` (stable) or `spacedock-edge@spacedock` (edge).
+// The `@spacedock` suffix is the marketplace NAME (the marketplace.json `name`);
+// the prefix is the channel entry.
+func channelPluginID(devBranch string) string {
+	return channelEntry(devBranch) + "@spacedock"
 }
 
 // Launch replaces the current process with argv via execve, so the host CLI
@@ -242,67 +254,68 @@ type installStep struct {
 }
 
 // installArgvSequence is the 4-command upgrade shape `Install` issues:
-// uninstall any existing spacedock@spacedock first (cause-and-effect — claude
+// uninstall any existing channel plugin first (cause-and-effect — claude
 // tracks an installed plugin via its marketplace record, so the marketplace
 // remove later would orphan a live uninstall), drop the existing marketplace
-// declaration for spacedock (so the next add re-pins the @ref instead of
-// no-op'ing on "already on disk"), pin the marketplace source (@ref when a
-// branch is set), then install fresh. The tolerance asymmetry: BOTH cleanup
-// steps (plugin uninstall + marketplace remove) are tolerated as best-effort,
-// because claude exits 1 on the fresh-box cases ("Plugin not found in
-// installed plugins" for uninstall, "Marketplace 'spacedock' not found" for
-// remove) with no way to distinguish those from real failures via stable
-// stderr matching. BOTH pinning steps (marketplace add + plugin install) stay
-// fail-fast — they are the real-failure backstops that surface a broken
+// declaration for spacedock (so the next add re-pins the source instead of
+// no-op'ing on "already on disk"), add the marketplace-repo source, then install
+// the channel entry the devBranch selects (`spacedock` stable / `spacedock-edge`
+// edge). The marketplace add carries the BARE marketplace-repo source — the
+// channel and version pin live in the manifest, not an @ref shorthand. The
+// tolerance asymmetry: BOTH cleanup steps (plugin uninstall + marketplace remove)
+// are tolerated as best-effort, because claude exits 1 on the fresh-box cases
+// ("Plugin not found in installed plugins" for uninstall, "Marketplace 'spacedock'
+// not found" for remove) with no way to distinguish those from real failures via
+// stable stderr matching. BOTH pinning steps (marketplace add + plugin install)
+// stay fail-fast — they are the real-failure backstops that surface a broken
 // install (network, contract incompatibility, missing source).
-func installArgvSequence(source, branch string) []installStep {
+func installArgvSequence(source, devBranch string) []installStep {
+	id := channelPluginID(devBranch)
 	return []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "add", marketplaceAddArg(source, branch)}},
-		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "marketplace", "add", source}},
+		{argv: []string{"plugin", "install", id}},
 	}
 }
 
 // codexInstallArgvSequence is the codex analog of installArgvSequence: the same
 // 4-command cleanup-then-pin shape, but in codex's verb vocabulary (`plugin
-// remove` / `plugin add`, not claude's `uninstall` / `install`) and pinning the
-// branch via codex's own `--ref <branch>` flag (a separate argv token), NOT the
-// claude `source@branch` shorthand. `--ref` and its value are OMITTED when branch
-// is empty (the default-branch install). The tolerance asymmetry matches claude:
-// BOTH cleanup steps (plugin remove + marketplace remove) are tolerated — on a
-// fresh box `plugin remove` exits 0 (idempotent) but `marketplace remove` exits 1
-// ("marketplace `spacedock` is not configured or installed"), and neither is a
-// real failure. BOTH pinning steps (marketplace add + plugin add) stay fail-fast
-// — they are the real-failure backstops.
-func codexInstallArgvSequence(source, branch string) []installStep {
-	addArgv := []string{"plugin", "marketplace", "add", source}
-	if branch != "" {
-		addArgv = append(addArgv, "--ref", branch)
-	}
+// remove` / `plugin add`, not claude's `uninstall` / `install`). The marketplace
+// add carries the BARE marketplace-repo source with NO `--ref` — the channel is
+// the entry name (`spacedock` stable / `spacedock-edge` edge) the devBranch
+// selects, and the version pin lives in the manifest, not a branch ref. The
+// tolerance asymmetry matches claude: BOTH cleanup steps (plugin remove +
+// marketplace remove) are tolerated — on a fresh box `plugin remove` exits 0
+// (idempotent) but `marketplace remove` exits 1 ("marketplace `spacedock` is not
+// configured or installed"), and neither is a real failure. BOTH pinning steps
+// (marketplace add + plugin add) stay fail-fast — they are the real-failure
+// backstops.
+func codexInstallArgvSequence(source, devBranch string) []installStep {
+	id := channelPluginID(devBranch)
 	return []installStep{
-		{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
-		{argv: addArgv},
-		{argv: []string{"plugin", "add", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "marketplace", "add", source}},
+		{argv: []string{"plugin", "add", id}},
 	}
 }
 
 // Install shells the host plugin upgrade sequence (cleanup-then-pin) for claude
-// or codex, returning combined output. Each host uses its own verb vocabulary and
-// branch-pinning form (claude `source@branch` shorthand; codex `--ref <branch>`),
-// supplied by installArgvSequence / codexInstallArgvSequence. The two cleanup
-// steps are tolerated — their non-zero exits on a fresh-box ("not installed" /
-// "not found") are appended to combined output and the loop continues. The two
-// pinning steps (marketplace add, plugin install/add) are fail-fast and surface
-// real install failures.
-func (execHost) Install(host, source, branch string) (string, error) {
+// or codex, returning combined output. Each host uses its own verb vocabulary
+// (claude `uninstall`/`install`; codex `remove`/`add`), supplied by
+// installArgvSequence / codexInstallArgvSequence; devBranch selects the channel
+// entry both install. The two cleanup steps are tolerated — their non-zero exits
+// on a fresh-box ("not installed" / "not found") are appended to combined output
+// and the loop continues. The two pinning steps (marketplace add, plugin
+// install/add) are fail-fast and surface real install failures.
+func (execHost) Install(host, source, devBranch string) (string, error) {
 	var steps []installStep
 	switch host {
 	case "claude":
-		steps = installArgvSequence(source, branch)
+		steps = installArgvSequence(source, devBranch)
 	case "codex":
-		steps = codexInstallArgvSequence(source, branch)
+		steps = codexInstallArgvSequence(source, devBranch)
 	default:
 		return "", fmt.Errorf("programmatic install is supported for claude and codex, not %q", host)
 	}

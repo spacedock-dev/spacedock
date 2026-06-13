@@ -57,10 +57,11 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 
 	// Upgrade via the committed argv shape. Plain `plugin install` would no-op
 	// here (the plugin is already installed); the inserted uninstall is what
-	// moves it. Run the exact argv installArgvSequence emits. The remove step
+	// moves it. Run the exact argv installArgvSequence emits — devBranch=main
+	// targets the stable `spacedock` entry that was seeded above. The remove step
 	// is tolerated — runHostTolerant accepts a non-zero exit on it without
 	// failing the test, matching the production loop's behavior.
-	for _, step := range installArgvSequence(upgradedMarketplace, "") {
+	for _, step := range installArgvSequence(upgradedMarketplace, "main") {
 		if step.tolerateExit {
 			runHostTolerant(t, claudeBin, env, step.argv...)
 		} else {
@@ -102,7 +103,7 @@ func TestFreshBoxInstallSucceeds(t *testing.T) {
 	t.Setenv("CLAUDE_CONFIG_DIR", configDir)
 	t.Setenv("CLAUDE_CODE_PLUGIN_CACHE_DIR", cacheDir)
 
-	out, err := execHost{}.Install("claude", marketplace, "")
+	out, err := execHost{}.Install("claude", marketplace, "main")
 	if err != nil {
 		t.Fatalf("Install on fresh box returned error: %v\nout=%q", err, out)
 	}
