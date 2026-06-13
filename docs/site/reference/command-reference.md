@@ -1,6 +1,6 @@
 # Command reference
 
-The `spacedock` binary has ten subcommands in three groups, plus a top-level `--version`. This page is the map: what each command is for and when you reach for it. For the exact flags of any command, run `spacedock <command> --help`, which is the always-current source of truth.
+The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, plus a top-level `--version`. This page is the map: what each command does, and which are yours to run versus the ones the first officer runs against workflow state. For the exact flags of any command, run `spacedock <command> --help`, which is the always-current source of truth.
 
 | Command | Group | What it does |
 |---------|-------|--------------|
@@ -10,7 +10,7 @@ The `spacedock` binary has ten subcommands in three groups, plus a top-level `--
 | [`spacedock install`](#setup) | Setup | Install the per-host plugin, then run the compatibility check |
 | [`spacedock doctor`](#setup) | Setup | Run the compatibility check alone |
 | [`spacedock status`](#workflow) | Workflow | Read or mutate workflow state: the table, `--next`, `--where`, `--set` |
-| [`spacedock new`](#workflow) | Workflow | Create an entity from stdin |
+| [`spacedock new`](#workflow) | Workflow | Create an entity (`new [--folder] SLUG`, body on stdin) |
 | [`spacedock state`](#workflow) | Workflow | Manage a split-root workflow's state checkout |
 | [`spacedock completion`](#workflow) | Workflow | Print a bash or zsh completion script |
 | [`spacedock dispatch`](#workflow) | Workflow | Build the dispatch artifacts the first officer hands an ensign |
@@ -34,12 +34,17 @@ The task comes first and becomes the launch prompt. Anything after `--` forwards
 
 ## Workflow
 
-These commands read and mutate workflow state.
+These commands read and mutate workflow state. Two are yours; the rest the first officer runs as it moves entities.
 
-- **`status`** is the main one: with no flag it prints the entity table, `--next` lists what is ready to dispatch, `--where` filters, `--set` mutates frontmatter, `--validate` checks the workflow, and `--boot` prints the first-officer boot view. It resolves the workflow from `--workflow-dir`, then `PIPELINE_DIR`, then by walking up to the enclosing workflow. The day-to-day reads are covered in [Operate a workflow](../running-workflows/operating.md).
-- **`new`** creates an entity from stdin.
-- **`state`** initializes or creates the state checkout for a [split-root workflow](../advanced/split-root-state.md).
-- **`completion`** prints a bash or zsh completion script.
-- **`dispatch`** builds the worker dispatch artifacts the first officer hands an ensign.
+Yours to run:
+
+- **`state`** initializes the state checkout for a [split-root workflow](../advanced/split-root-state.md) on a fresh clone.
+- **`completion`** prints a bash or zsh completion script to install.
+
+The first officer's, against workflow state:
+
+- **`status`** reads and mutates the state: with no flag it prints the entity table, `--next` lists what is ready to dispatch, `--where` filters, `--set` mutates frontmatter, `--validate` checks the workflow, and `--boot` prints the first-officer boot view. [Operate a workflow](../running-workflows/operating.md) covers how the first officer uses it on your behalf.
+- **`new`** creates an entity (`new [--folder] SLUG`) from a body on stdin.
+- **`dispatch`** (`dispatch build`, `dispatch show-stage-def`) builds the worker dispatch artifacts the first officer hands an ensign.
 
 Run `spacedock status --help` (and the same for each command) for the full flag list, the mutation guards, and the exit codes.
