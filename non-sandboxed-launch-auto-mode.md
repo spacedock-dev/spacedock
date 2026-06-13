@@ -56,6 +56,22 @@ A small `passthroughHasFlag(passthrough, names…)` helper (mirroring the existi
 
 The mechanism is already proven (see spike): the launcher composes the inner argv as a `[]string` and the host accepts the flag. No new seam — the existing `fake.launchedArg` capture in the front-door tests is the AC oracle.
 
+If the codex mapping lands on option A, add `--ask-for-approval` (and its short form `-a`) to the codex entry of `valueTakingHostFlags` (`frontdoor.go:513-521`) so the stray-prompt classifier treats an operator-supplied value as the flag's value, not a stray positional — symmetric with claude's `--permission-mode` already being in that set.
+
+## Implementation co-edit — blast radius (REQUIRED, not optional)
+
+Changing the unsandboxed-arm inner argv changes the value asserted by every existing exact-argv (`equalArgv`) front-door oracle for an unwrapped launch. These tests pin the current unsandboxed argv (`claude --agent spacedock:first-officer …` / `codex …` with NO permission flag), so the implementer **must update each `want` slice in the same change** — an implementer who follows only the ACs above will change the production argv and ship a RED package believing it passed. The complete set of co-edit sites (verified during ideation to assert an unwrapped-launch argv):
+
+- `internal/cli/frontdoor_test.go:108` — claude `-p` headless launch `want`.
+- `internal/cli/safehouse_frontdoor_test.go:159` — `TestClaudeNoSafehouseLaunchesPlain` `want` (this is also AC-1's edited baseline).
+- `internal/cli/safehouse_frontdoor_test.go:317` — `TestCodexNoSafehouseLaunchesPlainNoBypass` `want` (AC-2's edited baseline under option A).
+- `internal/cli/frontdoor_stray_prompt_test.go:39` and `:70` — claude stray-prompt `want` argvs (`:70` also carries `--plugin-dir`).
+- `internal/cli/plugin_dir_frontdoor_test.go:64` — claude `--plugin-dir` dev-lane `want`.
+
+**`--plugin-dir` is still an unsandboxed (`!wrap`) launch.** A `--plugin-dir` launch relaxes the contract gate but does NOT enable safehouse, so it stays on the `!wrap` arm and DOES receive the injected `--permission-mode auto`. The two `--plugin-dir`-carrying oracles (`frontdoor_stray_prompt_test.go:70`, `plugin_dir_frontdoor_test.go:64`) must therefore gain the injected flag too, placed consistently with the chosen insertion point relative to `--agent` and the injected `--plugin-dir <dir>` prefix. Decide the token position once (recommendation: immediately after `--agent spacedock:first-officer`, before the passthrough) and apply it uniformly across all co-edit sites.
+
+Any other `equalArgv` oracle over an unwrapped claude/codex launch added before implementation joins this list — the success condition (below) is the package-wide green, which catches a missed site even if this enumeration drifts.
+
 ## Riskiest-mechanism spike (run first) — DONE
 
 The design's soundness rests on one unverified mechanism: that the launcher can set the target permission mode per host such that the host actually honors it end-to-end. Exercised live on the dev machine during ideation:
@@ -93,6 +109,8 @@ Verified by: a Go test driving `runClaude` with `--resume` (no `.safehouse`) and
 
 All AC proofs are Go unit tests in `internal/cli` driving the real `runClaude`/`runCodex` over the existing `fakeHost`/`lookPath` seam, asserting the issued `fake.launchedArg` per `(wrap, operator-flag, resume)` combination — the same harness `safehouse_frontdoor_test.go` already uses, no new seam, no live host CLI in the test path (the live host probes were the ideation spike). Estimated complexity: **low** — four small table-style tests reusing existing helpers (`safehouseFixtureDir`, `lookFound`, `lookMissing`, `equalArgv`, `executableFixture`).
 
+**Success condition: `go test ./internal/cli/` is green over the WHOLE package after the change — not merely that the new tests pass.** The new ACs add coverage, but the change also rewrites the `want` argv in the existing oracles enumerated under *Implementation co-edit — blast radius*; the package is RED until those are folded into the same change. Whole-package green is what proves both the new behavior AND that no existing unwrapped-launch oracle was left asserting the stale argv. A run that asserts only the new tests in isolation would pass while the package is broken — exactly the RED-package-believed-green failure this fold guards against.
+
 - New tests live alongside the existing front-door oracles in `internal/cli/safehouse_frontdoor_test.go` (or a sibling `frontdoor_permission_mode_test.go`).
 - A one-off manual `claude --permission-mode auto -p "say OK"` was the mechanism spike (already run, exit 0) — a sanity check, not an AC proof.
 - No live-workflow smoke test needed: the claim is the issued launch argv, fully observable through the `Launch` seam without a running host session.
@@ -127,3 +145,15 @@ Note: exact line numbers are deliberately not pinned here because the README lau
 
 ### Summary
 Defined the unsandboxed-launch auto-mode change as: on the unwrapped arm only, inject `claude --permission-mode auto` (and the captain-chosen codex equivalent, recommended `--ask-for-approval on-request`), suppressed when the operator already supplied the flag or when resuming. The riskiest mechanism — that the host accepts and honors the mode flag end-to-end — was exercised live (`claude --permission-mode auto` ran to exit 0); the codex side surfaced as a genuine captain decision because codex has no single auto-mode flag (no `--full-auto`/`--yolo`), recorded as a gate item with a recommendation. The design consumes the existing `wrap` boolean as gj's sandbox-enabled signal and does not re-derive detection. Four ACs are all proven by the issued launch argv through the existing `fakeHost` seam, never by prose. Open gate decision: confirm rationale, the codex mapping (option A vs B), and the operator-override precedence.
+
+## Stage Report: ideation (cycle 2 — M1 fold)
+
+- DONE: Add an "Implementation co-edit" / blast-radius line naming the five oracle sites as required updates when the unsandboxed argv changes.
+  Added the "Implementation co-edit — blast radius (REQUIRED, not optional)" section naming all five sites verbatim (frontdoor_test.go:108; safehouse_frontdoor_test.go:159 and :317; frontdoor_stray_prompt_test.go:39 and :70; plugin_dir_frontdoor_test.go:64), each verified during the fold to assert an unwrapped-launch `want` argv. Also pinned the `--plugin-dir`-is-still-unsandboxed nuance (its two oracles must gain the injected flag too) and a single-insertion-point rule.
+- DONE: Broaden the test-plan success condition from "mirror the equalArgv shape" to whole-package green.
+  Test plan now states the success condition is `go test ./internal/cli/` green over the WHOLE package, explicitly distinguishing it from new-tests-pass-in-isolation, and names this as the catch for the RED-package-believed-green failure class.
+- DONE: (Polish) add `--ask-for-approval` to valueTakingHostFlags under option A; check the gj-codex-enablement prose.
+  Added the `valueTakingHostFlags` (`frontdoor.go:513-521`) co-edit note for `--ask-for-approval`/`-a` under option A in Proposed approach. No gj-codex-enablement overstatement to trim: the body references gj only as "consumes the existing `wrap` boolean / no new sandbox detection," which is accurate and does not claim gj's per-runtime enablement probe.
+
+### Summary
+Folded staff-review M1: the ideation now carries an explicit, REQUIRED blast-radius section naming the five existing `equalArgv` oracle sites that the unsandboxed-arm argv change breaks, plus the nuance that a `--plugin-dir` launch is still `!wrap` (so its two oracles also gain the injected flag). The test-plan success condition is broadened to whole-package green (`go test ./internal/cli/`), not new-tests-in-isolation, which is the catch against shipping a RED package believed green. Added the `--ask-for-approval` `valueTakingHostFlags` polish under option A; confirmed no gj-enablement prose overstatement exists to trim. No code touched — this is an ideation-body amendment only.
