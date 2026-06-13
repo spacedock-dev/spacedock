@@ -68,10 +68,14 @@ func (v Verdict) String() string {
 
 // Result carries a comparison's verdict and the operator-facing message. For
 // Compatible the message is a one-line "OK" report; for every mismatch it is the
-// shared-shape actionable message with the per-class remedy.
+// shared-shape actionable message with the per-class remedy. Hint is the opt-in
+// upgrade hint for a compatible-but-behind plugin — empty unless the binary is a
+// strictly-newer semver than the plugin. Doctor folds it into Message; the front
+// door surfaces Hint alone (it stays silent on the bare OK line).
 type Result struct {
 	Verdict Verdict
 	Message string
+	Hint    string
 }
 
 // ParseRange parses a requires-contract value of the form ">=N,<M" into its
@@ -146,10 +150,11 @@ func compareWithManifest(c int, raw, host, branch, manifestPath, pluginVersion, 
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
 		msg := fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)
-		if hint := upgradeHint(host, pluginVersion, binaryVersion); hint != "" {
+		hint := upgradeHint(host, pluginVersion, binaryVersion)
+		if hint != "" {
 			msg += "\n" + hint
 		}
-		return Result{Verdict: Compatible, Message: msg}
+		return Result{Verdict: Compatible, Message: msg, Hint: hint}
 	}
 }
 

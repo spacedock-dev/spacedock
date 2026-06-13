@@ -70,6 +70,17 @@ func withExecutablePath(t *testing.T, path string, err error) {
 	t.Cleanup(func() { executablePath = orig })
 }
 
+// withVersion stamps the package Version (the binary display semver the gate
+// feeds to the upgrade-hint compare), restoring it after the test. The package
+// default is the `dev` sentinel, which suppresses the hint, so a test that
+// exercises the behind-plugin hint must stamp a real semver.
+func withVersion(t *testing.T, v string) {
+	t.Helper()
+	orig := Version
+	Version = v
+	t.Cleanup(func() { Version = orig })
+}
+
 func executableFixture(t *testing.T) string {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "spacedock")
@@ -108,6 +119,71 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "-p", "do the thing", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+	}
+}
+
+// TestFrontDoorUpgradeHintOnBehindPlugin is AC-4: the front-door gate prints the
+// opt-in upgrade hint to stderr when the resolved plugin is contract-compatible
+// but behind the binary, then proceeds to launch (the hint never blocks). The
+// compatible.json fixture is plugin 0.12.1; stamping the binary Version to a
+// strictly-newer semver makes it behind-but-compatible. A paired equal-version
+// case (binary == plugin) asserts the gate stays silent. Both arms observe the
+// recorded launch + stderr, never a source grep.
+func TestFrontDoorUpgradeHintOnBehindPlugin(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name+" behind-plugin hints + launches", func(t *testing.T) {
+			withVersion(t, "0.20.0") // strictly newer than the fixture plugin 0.12.1
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run(nil, t.TempDir(), fake, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (the hint must not block launch) (stderr=%q)", code, stderr.String())
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked — the hint must not change the launch path")
+			}
+			out := stderr.String()
+			if !strings.Contains(out, "newer plugin") {
+				t.Fatalf("stderr missing the behind-plugin upgrade hint: %q", out)
+			}
+			if !strings.Contains(out, "spacedock install --host "+tc.host) {
+				t.Fatalf("stderr hint missing host install command for %s: %q", tc.host, out)
+			}
+		})
+
+		t.Run(tc.name+" equal-version stays silent", func(t *testing.T) {
+			withVersion(t, "0.12.1") // exactly the fixture plugin version
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run(nil, t.TempDir(), fake, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked on an equal-version compatible plugin")
+			}
+			if strings.Contains(stderr.String(), "newer plugin") || strings.Contains(stderr.String(), "spacedock install") {
+				t.Fatalf("equal-version gate must stay silent (no upgrade hint): %q", stderr.String())
+			}
+		})
 	}
 }
 
