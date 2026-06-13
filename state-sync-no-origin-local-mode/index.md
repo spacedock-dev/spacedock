@@ -4,7 +4,7 @@ title: Split-root state sync should degrade when the state checkout has no origi
 status: validation
 source: "FO dogfood (2026-06-06) - split-root state instructions require push/pull against origin, but a local state checkout may have no origin remote; workers can commit locally but remote sync is impossible."
 score: "0.25"
-worktree: .worktrees/spacedock-ensign-state-sync-no-origin-local-mode
+worktree:
 issue:
 sprint: 0202-survey-improvements
 group: cleanup
@@ -12,6 +12,8 @@ sprint-readiness: ready
 started: 2026-06-13T05:52:37Z
 mod-block:
 pr: "#364"
+completed: 2026-06-13T21:26:46Z
+verdict: PASSED
 ---
 
 Split-root state sync currently assumes the state checkout has an `origin`
