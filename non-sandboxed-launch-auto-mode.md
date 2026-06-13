@@ -13,6 +13,7 @@ sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#349"
 ---
 
 When the launch is not sandboxed, `spacedock claude` should launch with Claude Code's auto-mode, and `spacedock codex` should use the equivalent Codex setting. Captain ask, filed verbatim; ideation should confirm the intended rationale and the exact mode mapping with the captain.
