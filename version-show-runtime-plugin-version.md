@@ -76,3 +76,16 @@ Reworked `internal/cli/host_runtime.go`: `runtimeStatus` now carries the resolve
 PASSED. All three ACs verified by exercising behavior (live binary `--version`, command grep, suite exit code) — not prose reads. The version-forward block renders the locked five states, the version is sourced robustly from `contract.ManifestVersion` independent of the best-effort enabled marker, the suite is green (1317/16), and zero `.md` ship. Adversarial audit refuted two of three regression edits.
 
 Polish (non-blocking, recorded): `contract.ManifestVersion` has NO direct unit test — adversarial edit #3 (return a hardcoded `99.99.99` instead of reading the manifest) left both `internal/contract` and `internal/cli` green. The cli suite injects a fake `runtimeProbe` and never drives the real `probeVersion`→`ManifestVersion` path, and no contract test calls the new helper. The shipped behavior IS proven (the live binary rendered the real manifest versions, and `ManifestVersion` is a 2-line delegation to the already-tested `readManifest`), so this is a test-strength gap, not an AC failure: a future refactor of the one-line helper would not be caught by the suite. A tiny `internal/contract` table test reading a fixture manifest's version would close it.
+
+## Stage Report: implementation (polish fold — ManifestVersion direct test)
+
+- DONE: Add an `internal/contract` direct unit test for `ManifestVersion` that closes the seam adversarial edit #3 exposed.
+  `internal/contract/manifest_version_test.go` (commit 55ea7c6f): reads `testdata/compatible.json` and asserts the EXACT declared version `0.12.1` (not merely non-empty), plus the missing-file (`errNoManifest`) and unparseable-JSON (parse error) cases.
+- DONE: Write it so it FAILS against a hardcoded-return edit, watch it catch the edit, then confirm green against the real helper.
+  Hardcoded `ManifestVersion` to return `"99.99.99"` → all three cases FAILED (`= "99.99.99", want "0.12.1"`; missing-file and unparseable both lost their error). Reverted (clean diff vs committed), suite green again.
+- DONE: Constraints — ZERO .md, whole-repo green, commit on the worktree branch.
+  `go test ./...` 1320 passed / 16 packages (the three new cases); `gofmt`/`vet` clean; diff is one new `.go` test file; no `.md`.
+
+### Summary
+
+Closed the prove-the-seam gap the validator's audit surfaced: `ManifestVersion` now has a direct table test asserting the real fixture version (refutation #3 — a hardcoded return — is now caught), plus the missing-file and unparseable cases. Committed `55ea7c6f` on `spacedock-ensign/version-show-runtime-plugin-version`; whole-repo `go test ./...` green (1320/16).
