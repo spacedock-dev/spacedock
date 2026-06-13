@@ -151,3 +151,24 @@ Reproduced both bugs empirically by driving the real `ContextBudget` over fixtur
 ### Summary
 
 Implemented the two gate-approved fixes exactly as specified — no re-design. (a) `extractRuntimeModels` now skips `<synthetic>` placeholders, removing them from the census so the mixed warning, chosen model, and window all read from real models only. (b) A `sameModelModuloExtended` promotion in the single-runtime-model branch makes the config's `[1m]`-suffixed model authoritative when the runtime is the same base sans suffix, clearing the spurious drift warning and the wrong 200k denominator (now correctly 1M). Five ACs land as Go tests over real probe JSON; both over-suppression guards confirmed; golden parity byte-unchanged including ensign-mm.
+
+## Stage Report: validation
+
+- DONE: AC-1 — healthy member config `claude-fable-5[1m]` + runtime `claude-fable-5` emits no `config_drift_warning`, reads 1M window, model `claude-fable-5[1m]`.
+  `TestContextBudgetHealthySuffixDropNoDrift` PASS (raw -v): asserts drift key absent, context_limit==1000000, model==claude-fable-5[1m], reuse_ok==true over real `ContextBudget` JSON.
+- DONE: AC-2 — `<synthetic>` excluded: no `mixed_models_warning`, model `claude-fable-5`, window 200000.
+  `TestContextBudgetSyntheticExcludedNoMixed` PASS: asserts mixed key absent, model==claude-fable-5, context_limit==200000 over parsed probe stdout.
+- DONE: AC-3 (over-suppression guard) — genuine cross-family drift (config `claude-opus-4-8` / runtime `claude-sonnet-4-6`) STILL warns.
+  `TestContextBudgetGenuineDriftStillWarns` PASS. Adversarially confirmed load-bearing: forcing unconditional promotion made AC-3 FAIL (drift key vanished) — the guard catches over-suppression, not vacuous.
+- DONE: AC-4 (over-suppression guard) — two genuinely-mixed REAL models STILL warn + read smallest (200000) window.
+  `TestContextBudgetGenuineMixedStillWarns` PASS; `TestContextBudgetWarningNonASCIIParity/mixed-models-warning` (ensign-mm two-real parity) green. Adversarially confirmed: over-broad census filter made BOTH AC-4 and the ensign-mm golden FAIL.
+- DONE: AC-5 — golden parity green and `-update` yields ZERO churn; ensign-mm byte-unchanged.
+  `go test ./internal/dispatch -run TestContextBudget` 9 PASS without -update; after `-update`, `git status --porcelain testdata/golden/` empty and all 8 golden md5s identical (ensign-mm d242080f… unchanged). No `<synthetic>`/`[1m]`-config in existing goldens, so byte-unchanged is the correct outcome.
+- DONE: Run `go test ./internal/claudeteam/ ./internal/dispatch/`.
+  213 passed (209 baseline + 4 new AC tests). `go build ./...` and `go vet` both packages clean.
+- DONE: Confirm each AC's evidence comes from OUTSIDE the task body.
+  AC-1..AC-4 read parsed JSON from real `ContextBudget` over `t.TempDir` fixtures (no instruction-file reads, no prose-grep); AC-5 is golden bytes + git status. No self-referential AC.
+
+### Summary
+
+PASSED. Verified deliverable commit 46224f5f without re-implementing: source matches the gate-approved design verbatim (synthetic skip in `extractRuntimeModels`, `sameModelModuloExtended`/`stripExtended` case-1 promotion). All 5 ACs reproduced from external evidence — AC-1/AC-2 healthy-member tests green, AC-3/AC-4 over-suppression guards green, AC-5 zero golden churn with ensign-mm byte-unchanged; full suite 213 passed. Detached adversarial audit on a throwaway copy refuted nothing material: an unconditional-promotion edit made AC-3 fail, and an over-broad census-filter edit made AC-4 plus the ensign-mm golden fail — both over-suppression guards are load-bearing, not green-under-broken-edit holes. The real worktree was never mutated by the audit.
