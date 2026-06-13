@@ -187,12 +187,16 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	// AC-4 reviewer-reuse: on Claude teams the FO must reuse the kept-alive
-	// validation reviewer via a SendMessage tool call for the cycle-2 re-review,
-	// not dispatch a fresh one (the #141 keepalive contract the Go port dropped).
-	// Host-specific producer signal, graded by the runner — not the shared
-	// host-neutral assertion.
-	if err := assertClaudeReviewerReuse(result.stream); err != nil {
+	// Single-entity (`-p`) reviewer producer-signal. The Claude runner launches
+	// `spacedock claude -- -p {prompt}` with a prompt naming one entity, so the run
+	// is single-entity → bare; the contract's bare-mode feedback flow is sequential
+	// fresh dispatch, so the cycle-2 re-review is a DISTINCT freshly-dispatched
+	// validation worker (not a reuse of the bare cycle-1 reviewer, not the impl
+	// worker serving as its own validator). assertClaudeReviewerReuse encoded a
+	// team-mode keepalive a `-p` run can never satisfy (the AC-3 finding); the
+	// contract-correct single-entity assertion is used here. The team-mode
+	// reviewer-reuse question is the spun-off option-(a) task.
+	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model)

@@ -125,6 +125,81 @@ func assertClaudeReviewerReuse(stream string) error {
 	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no reuse SendMessage (by name or agentId) for the cycle-2 re-review")
 }
 
+// assertClaudeSingleEntityRejectionFlow is the single-entity (`-p`) Claude
+// producer-signal assertion for the rejection-flow scenario. The Claude runner
+// launches `spacedock claude -- -p {prompt}` with a prompt naming one entity, so
+// the run is single-entity → bare (claude-fo-dispatch.md: "In single-entity mode,
+// skip team creation. Use bare-mode dispatch for all agent spawning"). In bare mode
+// the contract makes the feedback flow DETERMINISTIC and SEQUENTIAL
+// (claude-fo-dispatch.md `## Feedback Rejection Flow (bare mode)`: "dispatch fix
+// agent (wait for completion), then dispatch reviewer (wait for completion)"). So
+// the contract-correct end-state is: the cycle-2 re-review is a DISTINCT, FRESHLY
+// DISPATCHED validation worker — NOT a reuse of the bare cycle-1 reviewer (reuse-
+// condition-1 hard-fails in bare mode), and NOT the implementation worker serving as
+// its own validator (the fix agent and the reviewer are separate sequential
+// dispatches). It enforces BOTH halves, because either alone false-passes a wrong
+// run:
+//
+//  1. AT LEAST TWO distinct validation-stage Agent/Task spawns. The bare flow
+//     fresh-dispatches a validation reviewer for cycle-1 AND a fresh one for cycle-2
+//     (no reuse handle exists). A run with fewer than two validation spawns either
+//     never re-reviewed or collapsed the cycle-2 re-review onto a non-validation
+//     worker — both forbidden. This is the discriminator that catches the observed
+//     non-deterministic "reused the impl ensign through validation" run (which left
+//     only the cycle-1 validation spawn).
+//  2. The cycle-2 re-review is NOT routed to an implementation worker. A SendMessage
+//     to an `…-implementation` handle telling it to validate is the impl-as-validator
+//     violation; the re-review must be a validation-stage spawn, not a message to the
+//     fix worker.
+//
+// This is the CONTRACT-correct single-entity assertion. It replaces the team-mode
+// assertClaudeReviewerReuse for this scenario's `-p` run, which wrongly assumed a
+// kept-alive reviewer the bare contract cannot produce (the AC-3 finding). The real
+// reviewer-continuity question — whether single-entity SHOULD create a team so the
+// reviewer is reusable — is the spun-off option-(a) task, not this correction.
+func assertClaudeSingleEntityRejectionFlow(stream string) error {
+	validationSpawnCount := 0
+	for _, line := range strings.Split(stream, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var entry struct {
+			Message *struct {
+				Content []struct {
+					Type  string `json:"type"`
+					Name  string `json:"name"`
+					Input struct {
+						Description string `json:"description"`
+						To          string `json:"to"`
+					} `json:"input"`
+				} `json:"content"`
+			} `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(line), &entry); err != nil || entry.Message == nil {
+			continue
+		}
+		for _, block := range entry.Message.Content {
+			if block.Type != "tool_use" {
+				continue
+			}
+			desc := strings.ToLower(block.Input.Description)
+			if (block.Name == "Agent" || block.Name == "Task") && strings.Contains(desc, "validation") {
+				validationSpawnCount++
+			}
+			// The impl-as-validator violation: a SendMessage telling an
+			// implementation-named worker to validate / re-review.
+			if block.Name == "SendMessage" && strings.Contains(strings.ToLower(block.Input.To), "implementation") {
+				return fmt.Errorf("the cycle-2 re-review was routed to an implementation worker (%q) — the fix agent and the reviewer must be SEPARATE sequential dispatches in bare mode; the impl worker must never serve as its own validator", block.Input.To)
+			}
+		}
+	}
+	if validationSpawnCount < 2 {
+		return fmt.Errorf("single-entity bare rejection-flow produced %d validation-stage spawns, want >= 2 (a fresh cycle-1 reviewer AND a fresh cycle-2 reviewer — bare mode cannot reuse a kept-alive reviewer, so each cycle fresh-dispatches a distinct validation worker)", validationSpawnCount)
+	}
+	return nil
+}
+
 // codexCollabItem is one `codex exec --json` stream item. Codex surfaces its
 // multi-agent calls as `collab_tool_call` items (tool = spawn_agent / send_input /
 // wait / close_agent); the worker is addressed by opaque `receiver_thread_ids`,

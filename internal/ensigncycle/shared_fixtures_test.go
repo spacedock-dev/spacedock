@@ -136,7 +136,7 @@ func rejectionPrompt() string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: .",
 		"Process only the entity `rejection-task`, which starts at implementation, through a full two-cycle rejection feedback flow.",
-		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target, wait for the rework to apply the fix, then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, REUSE the kept-alive validation reviewer rather than dispatching a fresh one.",
+		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target, wait for the rework to apply the fix, then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, follow your contract's feedback flow for the current dispatch mode: the implementation rework and the validation re-review are SEPARATE workers — the worker that applied the fix must never review its own rework.",
 		"Do not advance the entity to done. Your final response must mention the first-cycle rejection and the second-cycle re-validation result.",
 	)
 }

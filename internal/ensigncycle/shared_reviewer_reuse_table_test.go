@@ -1,9 +1,6 @@
 package ensigncycle
 
-import (
-	"strings"
-	"testing"
-)
+import "testing"
 
 // Offline table tests for the host-specific reviewer-reuse assertions. They prove
 // each assertion requires a REAL reuse tool call targeting the validation reviewer
@@ -93,69 +90,73 @@ func TestAssertClaudeReviewerReuse(t *testing.T) {
 	}
 }
 
-// TestSingleEntityBareReviewerNonReuseRepro is the DETERMINISTIC, offline,
-// model-free repro of the AC-3 `rejection-flow` finding (backlog seed e3z,
-// bare-mode-coverage-baseline). It does NOT run the live scenario — it pins the
-// END-STATE shape the live single-entity (`-p`) Claude run produces, so the
-// causality can be reasoned about without spending a model or touching the
-// validator's live run.
+// TestClaudeSingleEntityRejectionFlow is the CONTRACT-correct single-entity (`-p`)
+// reviewer producer-signal table (the option-(b) correction of the AC-3 finding,
+// backlog seed e3z). It pins the deterministic bare-mode end-state — two distinct
+// fresh validation spawns, fix-agent and reviewer separate — over committed,
+// model-free transcripts, including the TWO observed non-deterministic live shapes
+// (2-fresh-spawns and impl-reused-through-validation), so the validator's live
+// re-run has an offline oracle.
 //
 // Root cause (verified in the contract, not assumed):
-//   - The `rejection-flow` scenario launches `spacedock claude -- -p {prompt}` and
-//     the prompt says "Process only the entity `rejection-task`". Both single-entity
-//     activation conditions hold (non-interactive `claude -p` AND the prompt names a
-//     specific entity — first-officer-shared-core.md `## Single-Entity Mode`).
-//   - In single-entity mode the contract mandates bare dispatch: "In single-entity
-//     mode, skip team creation. Use bare-mode dispatch for all agent spawning"
-//     (claude-fo-dispatch.md). This clause predates P2 (it has lived since the
-//     original vendoring `83c73494`), so single-entity Claude reviewers are bare
-//     both before and after lazy-TeamCreate.
-//   - A bare reviewer fails Claude reuse-condition-1, "Not in bare mode (teams
-//     available)" (claude-fo-dispatch.md). With no team, `dispatch build --bare-mode`
-//     emits an Agent call with `name`/`team_name` ABSENT (build.go: Name/TeamName are
-//     *string omitempty; the bare-mode parity case pins it), so there is no kept-alive
-//     handle to SendMessage at all. The cycle-2 re-review therefore fresh-dispatches a
-//     SECOND validation Agent → exactly the >1-validation-spawn the assertion reds on.
+//   - The Claude runner launches `spacedock claude -- -p {prompt}` and the prompt
+//     names one entity, so the run is single-entity → bare (first-officer-shared-
+//     core.md `## Single-Entity Mode`; claude-fo-dispatch.md "In single-entity mode,
+//     skip team creation. Use bare-mode dispatch for all agent spawning"). That
+//     clause predates P2 (since the original vendoring `83c73494`), so the single-
+//     entity reviewer is bare both before and after lazy-TeamCreate — the contradiction
+//     is pre-existing; the old assertClaudeReviewerReuse encoded a team-mode
+//     assumption the `-p` run can never satisfy.
+//   - In bare mode the contract makes the flow DETERMINISTIC and SEQUENTIAL
+//     (claude-fo-dispatch.md `## Feedback Rejection Flow (bare mode)`: "dispatch fix
+//     agent (wait for completion), then dispatch reviewer (wait for completion)").
+//     So the contract-correct end-state is two distinct fresh validation spawns with
+//     the fix agent and reviewer as SEPARATE dispatches — which is exactly what
+//     assertClaudeSingleEntityRejectionFlow asserts.
 //
-// The two bare validation spawns below carry NO `id`/agentId-returning tool_result
-// (a bare worker is not a team member, so it returns no `agentId:` resume handle).
-// assertClaudeReviewerReuse reds on the spawn COUNT (>1) — the #141 keepalive
-// violation — independent of any handle, which is exactly the live failure's shape.
-//
-// NOTE the contrast with Codex: the Codex `rejection-flow` reuses via `send_input`
-// to a persistent thread (codex-first-officer-runtime.md: "no team_name lifecycle …
-// use Codex task names and mailbox notifications as the worker handle"), which does
-// NOT depend on a Claude team, so single-entity Codex reuse is unaffected. The
-// finding is Claude-specific — it is the team-gated reuse-condition-1 meeting
-// single-entity bare mode.
-func TestSingleEntityBareReviewerNonReuseRepro(t *testing.T) {
-	// Two BARE validation Agent spawns (no team_name, no agentId resume handle),
-	// the deterministic end-state of a single-entity `-p` rejection-flow run: the FO
-	// fresh-dispatches the cycle-2 validator because the bare cycle-1 reviewer fails
-	// reuse-condition-1.
+// NOTE the Codex contrast: Codex has no team registry, so its reviewer reuse via
+// `send_input` to a persistent thread is contract-valid even in single-entity
+// (context-dependent reuse — codex-first-officer-runtime.md `## Reuse And Feedback
+// Routing`); assertCodexReviewerReuse stays correct for the Codex `-p` run. The
+// Claude/Codex single-entity behaviors legitimately differ.
+func TestClaudeSingleEntityRejectionFlow(t *testing.T) {
+	// CONTRACT-CORRECT (live Run 1): two distinct fresh validation spawns (cycle-1 +
+	// cycle-2), the bare-mode-sequential end-state — PASS.
 	bareCycle1Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV1","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign"}}]}}`
 	bareCycle2Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV2","input":{"description":"Rejection Task: validation (cycle 2 fresh)","subagent_type":"spacedock:ensign"}}]}}`
-	bareTwoSpawnStream := bareCycle1Validation + "\n" + bareCycle2Validation
+	twoFreshSpawns := bareCycle1Validation + "\n" + bareCycle2Validation
 
-	err := assertClaudeReviewerReuse(bareTwoSpawnStream)
-	if err == nil {
-		t.Fatal("single-entity bare two-validation-spawn end-state must RED assertClaudeReviewerReuse — this is the AC-3 finding's deterministic shape")
-	}
-	if !strings.Contains(err.Error(), "FRESH-dispatched the cycle-2 validator") {
-		t.Fatalf("the repro must red on the #141 keepalive violation (>1 validation spawn), got a different failure: %v", err)
-	}
+	// VIOLATION (live Run 2): only the cycle-1 validation spawn, then the cycle-2
+	// re-review collapsed onto the implementation worker via SendMessage — the
+	// impl-as-validator shape. Must FAIL.
+	implRework := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BI","input":{"description":"Rejection Task: implementation rework","subagent_type":"spacedock:ensign"}}]}}`
+	implAsValidator := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-implementation","message":"now validate your own rework"}}]}}`
+	implReusedThroughValidation := bareCycle1Validation + "\n" + implRework + "\n" + implAsValidator
 
-	// Falsifiability control: the SAME run in TEAM mode (a single kept-alive cycle-1
-	// reviewer reused by agentId) PASSES — proving the repro's red is caused by the
-	// extra bare spawn, not by the assertion being unsatisfiable. This is the
-	// before/after the fix would restore (option (a): give the -p feedback flow a
-	// team so the reviewer is reusable).
-	teamCycle1Spawn := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_TV","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign"}}]}}`
-	teamCycle1Result := `{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"toolu_TV","content":[{"type":"text","text":"agentId: a1111deadbeef0 (use SendMessage with to: 'a1111deadbeef0')"}]}]}}`
-	teamReuse := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"a1111deadbeef0","message":"re-review: fix marker present"}}]}}`
-	teamModeStream := teamCycle1Spawn + "\n" + teamCycle1Result + "\n" + teamReuse
-	if err := assertClaudeReviewerReuse(teamModeStream); err != nil {
-		t.Fatalf("the team-mode control (one reviewer reused by agentId) must PASS — else the repro's red is not attributable to the extra bare spawn: %v", err)
+	// VIOLATION: only one validation spawn, no second re-review at all. Must FAIL on
+	// the spawn-count check.
+	onlyCycle1 := bareCycle1Validation
+
+	cases := []struct {
+		name    string
+		stream  string
+		wantErr bool
+	}{
+		{"contract-correct two fresh validation spawns (bare-mode sequential)", twoFreshSpawns, false},
+		{"impl reused through validation (impl-as-validator) must RED", implReusedThroughValidation, true},
+		{"only the cycle-1 validation spawn (no re-review) must RED", onlyCycle1, true},
+		{"empty stream must RED", "", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := assertClaudeSingleEntityRejectionFlow(tc.stream)
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected error for %q, got nil", tc.name)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("expected pass for %q, got: %v", tc.name, err)
+			}
+		})
 	}
 }
 
