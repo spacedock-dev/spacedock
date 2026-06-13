@@ -4,7 +4,7 @@ A gate is the decision point at the end of a stage where nothing advances withou
 
 Each call you make sharpens the bar, and the destination is delegation. When you are sufficiently confident in the workflow and the bar you set, hand over the conn and let the first officer drive multiple tasks with auto-approval:
 
-```
+```text
 you have the conn to drive toward your sprint goal, authorized to approve and
 merge PR on CI green. use your judgement.
 ```
@@ -15,7 +15,7 @@ Until then, the gates are yours.
 
 A gate review has a fixed spine: the first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
 
-```
+```text
 Gate review: Fix the flaky login test — review
 Chosen direction: replace sleep-based waits with event polling
 Recommend reject: the AC-2 retry scenario has no covering test.

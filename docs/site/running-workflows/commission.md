@@ -4,7 +4,7 @@ A workflow is designed in conversation: you make four decisions and commission d
 
 Invoke it from a session started with `spacedock claude`. You can pass the mission inline:
 
-```
+```text
 /spacedock:commission product idea to simulated customer interview
 ```
 
