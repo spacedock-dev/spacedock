@@ -32,190 +32,265 @@ already has to handle the agentsview-missing case with a consent-gated install
 prompt (`skills/survey/SKILL.md:32`). Declaring the companions as cask
 dependencies would let Homebrew resolve and install them alongside the launcher.
 
-**Ground truth established during ideation (the two companions are NOT
-symmetric):**
+**Ground truth (revised 2026-06-13 by captain — supersedes the original
+"safehouse is not a brew package" finding, which was wrong):**
 
 - **The cask is goreleaser-generated.** No `.rb` lives in this repo. The
   `homebrew_casks:` block in `.goreleaser.yaml` emits two casks per release —
   `spacedock` (stable) and `spacedock@next` (edge) — and pushes them to
   `spacedock-dev/homebrew-tap`. Editing the cask means editing
   `.goreleaser.yaml`, not a checked-in `.rb`.
-- **agentsview IS a Homebrew cask and resolves today.** It lives in the
-  `Homebrew/homebrew-cask` core tap as the bare cask `agentsview`
-  (`brew info --cask agentsview` → `AgentsView 0.32.1`, source
-  `Homebrew/homebrew-cask/Casks/a/agentsview.rb`). No tap prefix is needed; a
-  cask-on-cask `depends_on cask: "agentsview"` resolves against the core tap a
-  Homebrew user already has.
-- **safehouse is NOT a Homebrew package.** `brew info --cask safehouse` →
-  `No Cask with this name exists`; it is in no tap, core or third-party, and is
-  not a formula. The launcher's own install hint points at
-  `https://github.com/anthropics/safehouse` (`internal/safehouse/safehouse.go:14`)
-  — a GitHub repo, not a brew package. **There is no `depends_on` form that can
-  install safehouse**, because Homebrew has nothing to resolve. (The existing
-  caveats text also mis-cites safehouse's home as `agent-safehouse.dev`, which
-  disagrees with the code's `github.com/anthropics/safehouse` — an unrelated
-  pre-existing inconsistency, noted but not in scope to fix here.)
+- **agentsview IS a core Homebrew cask and resolves today.** It lives in the
+  `Homebrew/homebrew-cask` core tap as the bare cask `agentsview`. No tap prefix
+  is needed; a cask-on-cask `depends_on cask: "agentsview"` resolves against the
+  core tap a Homebrew user already has. This shipped in the prior cycle and is
+  unchanged here.
+- **safehouse IS brew-installable, but only from a third-party tap.**
+  `brew install eugene1g/safehouse/agent-safehouse` — tap `eugene1g/safehouse`
+  (`github.com/eugene1g/homebrew-safehouse`), package `agent-safehouse` is a
+  FORMULA (`Formula/agent-safehouse.rb`, `class AgentSafehouse < Formula`,
+  macOS-only). Canonical site `https://agent-safehouse.dev`. The original cycle
+  ran only `brew info --cask safehouse` (core only) and missed this tap.
+- **A cask `depends_on formula:` on that tap-qualified name renders, but does
+  NOT resolve transparently on current Homebrew (6.0.x).** See the
+  Riskiest-mechanism check — Homebrew 6.0's tap-trust model refuses to load an
+  untrusted third-party tap reached as a transitive dependency, so a fresh user
+  would hit a "Refusing to load … from untrusted tap eugene1g/safehouse" failure
+  rather than a silent companion install. The mechanism the seed depends on is
+  blocked by the platform, not by goreleaser.
 
-So the seed's premise — depend on *both* — is only half-satisfiable. agentsview
-becomes a real `depends_on`; safehouse stays a caveat until it is published as a
-brew-installable artifact.
+So the seed's premise — depend on *both* — is still only half-satisfiable, but
+for a different reason than the original cycle recorded. agentsview is a real
+core-tap `depends_on cask:`. safehouse is now genuinely brew-installable, but
+NOT as a cask `depends_on formula:` that resolves for users on Homebrew 6.0.x;
+it stays a caveat, corrected to its real third-party-tap install command.
 
 ## Proposed approach
 
-1. **Add agentsview as a cask dependency to both casks.** In the
-   `homebrew_casks:` block of `.goreleaser.yaml`, add to each of the two cask
-   entries (`spacedock` and `spacedock@next`):
+This is TIER 1 (the cross-tap `depends_on formula:` mechanism the seed wanted is
+refuted by the spike). agentsview stays a real dependency (unchanged from the
+shipped prior cycle); safehouse stays a caveat but the caveat is corrected to its
+now-known real install path.
 
-   ```yaml
-       dependencies:
-         - cask: agentsview
+1. **Keep agentsview as a cask dependency in both casks.** Unchanged: the
+   `homebrew_casks:` block already declares `dependencies: - cask: agentsview`
+   on both `spacedock` and `spacedock@next`, rendering to
+   `depends_on cask: ["agentsview"]`. No edit here; the prior cycle shipped it
+   (commit `70a56dd7`). It remains an AC so the render test keeps guarding it.
+
+2. **Do NOT add safehouse as a `depends_on formula:`.** The spike proved
+   goreleaser renders `depends_on formula: ["eugene1g/safehouse/agent-safehouse"]`
+   correctly, but Homebrew 6.0.x's tap-trust model will not auto-tap/auto-load the
+   untrusted `eugene1g/safehouse` tap when it is reached as a transitive
+   dependency — the install would refuse to load it and direct the user to
+   `brew trust` it by hand, which is a worse experience than the caveat. Adding
+   the dep would degrade, not improve, the fresh-install path.
+
+3. **Correct the safehouse caveat in both casks.** It currently mislabels
+   safehouse as "not installed by brew". safehouse IS brew-installable from its
+   tap, so the caveat becomes an actionable one-liner. Both cask entries change:
+
+   ```diff
+   -    caveats: |
+   -      Recommended companion (not installed by brew):
+   -        safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
+   +    caveats: |
+   +      Recommended companion (install separately):
+   +        safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
+   +        brew install eugene1g/safehouse/agent-safehouse
    ```
 
-   goreleaser renders this to a `depends_on cask: ["agentsview"]` stanza in each
-   generated `.rb`. This was proven by snapshot render (see Riskiest-mechanism
-   check). agentsview is a macOS-only cask, which matches the cask channel being
-   macOS-only already (the cask carries `on_linux` URLs but the cask install path
-   is the documented macOS path; Linux installs via `install.sh`, which is
-   unaffected and gains nothing/loses nothing from the cask `depends_on`).
+   The canonical URL `https://agent-safehouse.dev` is correct and stays; the
+   added line is the real install command. (Why not a `depends_on`: see point 2.)
 
-2. **Drop agentsview from the `caveats` "not installed by brew" list** in both
-   cask entries, since brew now installs it. Keep safehouse in the caveats — it
-   is still not brew-installable. The caveats block changes from naming two
-   companions to naming one.
+4. **Correct the outdated code install-hint.** `internal/safehouse/safehouse.go:14-15`
+   tells users to install safehouse from `https://github.com/anthropics/safehouse`,
+   which is now known to be the wrong URL — the canonical site is
+   `https://agent-safehouse.dev` and the actual install command is
+   `brew install eugene1g/safehouse/agent-safehouse`. This is a one-line const
+   change to user-facing stderr (a `.go` file, not a `.md`), in 8p's lane.
+   Folding it in keeps the code hint and the cask caveat citing the same install
+   path; spinning it out would leave the two user-facing hints disagreeing.
+   Before/after:
 
-3. **Leave safehouse as a caveat.** Record that safehouse cannot be a
-   `depends_on` until it ships as a tap/cask/formula. No code change for
-   safehouse beyond keeping its caveat line.
+   ```diff
+   -const installHint = "Spacedock: this directory has a .safehouse profile but the `safehouse` binary was not found on PATH. " +
+   -	"Install safehouse (https://github.com/anthropics/safehouse) or remove .safehouse to launch without it."
+   +const installHint = "Spacedock: this directory has a .safehouse profile but the `safehouse` binary was not found on PATH. " +
+   +	"Install safehouse (brew install eugene1g/safehouse/agent-safehouse; https://agent-safehouse.dev) or remove .safehouse to launch without it."
+   ```
 
-4. **Update install docs.** `docs/install-journey.md` does not currently claim
-   the cask installs companions, so no doc text over-claims today. The doc diff
-   adds one sentence under the Homebrew install step stating that `brew install
-   spacedock` now also installs `agentsview` (and that safehouse is still
-   installed separately). See the doc diff below.
+5. **No `.md` edits.** Docs are yw's this sprint (anti-collision). The original
+   AC-3 install-doc note stays yw-delegated; 8p ships zero `.md`.
 
 ## Out of scope
 
-- Making safehouse brew-installable (publishing a safehouse cask/formula). That
-  is upstream-gated on `anthropics/safehouse` shipping a Homebrew artifact; it is
-  a separate task, recorded here as the blocker for a future "safehouse as a
-  cask dependency" follow-up.
-- Fixing the safehouse homepage inconsistency between the caveats
-  (`agent-safehouse.dev`) and the code (`github.com/anthropics/safehouse`).
+- Adding safehouse as a cask `depends_on formula:`. Refuted by the spike: it
+  renders but does not resolve transparently on Homebrew 6.0.x (tap-trust
+  refuses the untrusted dependency tap). Revisit only if (a) `eugene1g/safehouse`
+  becomes an officially-trusted/core tap, or (b) Homebrew changes transitive
+  dependency-tap trust. Recorded here as the blocker for a future "safehouse as a
+  real dependency" follow-up.
+- Publishing safehouse into a Spacedock-owned or core tap to sidestep tap-trust.
+  Upstream-gated; separate task.
 - Any change to `install.sh` / the Linux install path — the cask `depends_on`
   has no effect there.
-- Changing the `/spacedock:survey` agentsview consent-install flow. Survey's
-  consent prompt stays; brew-installing agentsview just means the prompt fires
-  less often for Homebrew users.
+- Changing the `/spacedock:survey` agentsview consent-install flow.
+- Any `.md` doc edit (yw-owned this sprint).
 
 ## Riskiest-mechanism check
 
-**Riskiest unknown: does goreleaser's `homebrew_casks` config support emitting a
-cask-on-cask `depends_on`, and does it render the correct stanza?** This is the
-mechanism the whole task rests on — if goreleaser can't emit it, the approach is
-dead. Exercised before committing to the plan:
+The original cycle recorded "no spike needed" for the safehouse-resolution
+question and asserted "safehouse is not a brew package." That determination is
+REPLACED by a real, exercised spike: **can a cask in spacedock-dev/homebrew-tap
+`depends_on formula: "eugene1g/safehouse/agent-safehouse"` — a formula in a
+THIRD-PARTY tap — and have brew auto-tap + resolve it for a fresh user?** This is
+the mechanism the seed's "depend on BOTH" rests on. Exercised end-to-end, not
+asserted:
 
-- goreleaser v2.16.0 `jsonschema` confirms `HomebrewCask` has a `dependencies`
-  property whose item type `HomebrewCaskDependency` carries both `cask` and
-  `formula` keys.
-- A throwaway snapshot render — `goreleaser release --snapshot --clean
-  --skip=publish` over a copy of `.goreleaser.yaml` with
-  `dependencies: - cask: agentsview` added to the stable cask — succeeded and
-  wrote `dist/homebrew/Casks/spacedock.rb` containing:
+**(a) goreleaser render — WORKS.** Threw a copy of `.goreleaser.yaml` with
+`dependencies: - formula: eugene1g/safehouse/agent-safehouse` added to the
+stable cask and ran `goreleaser release --config /tmp/spike-goreleaser.yaml
+--snapshot --skip=publish --clean` (goreleaser v2.16.0 on PATH). The rendered
+`dist/homebrew/Casks/spacedock.rb` carried, verbatim:
 
-  ```ruby
-    depends_on cask: [
-        "agentsview",
-      ]
-  ```
+```ruby
+  depends_on cask: [
+      "agentsview",
+    ],
+    formula: [
+      "eugene1g/safehouse/agent-safehouse",
+    ]
+```
 
-  That is the standard Homebrew Cask cask-on-cask dependency form. The spike
-  artifacts (`dist/`, the config copy) were removed; the mechanism is proven.
+The tap-qualified name is preserved exactly. goreleaser is not the blocker. The
+throwaway config + `dist/` were removed; the worktree is clean.
 
-- agentsview-resolvability proven independently: `brew info --cask agentsview`
-  returns `0.32.1` from the core cask tap, so the rendered `depends_on` has a
-  real target to resolve.
+**(b) brew auto-tap + resolution — DOES NOT WORK transparently on Homebrew
+6.0.x.** Local `brew audit`/`brew info` on the rendered cask could not run: this
+machine (Homebrew 6.0.1, confirmed) denies writes to
+`/opt/homebrew/Library/Homebrew/vendor/bundle` (audit gem bundle, EPERM) and to
+`/opt/homebrew/Library/Taps` (cannot stage a throwaway local tap), and bootsnap
+EPERMs on `~/Library/Caches/Homebrew` — the same gem/cache/tap block the original
+ideation hit, unchanged by `dangerouslyDisableSandbox` (it is a machine-level
+restriction, not the agent sandbox). So resolution is established from
+authoritative Homebrew sources + a verbatim-error precedent, with calibrated
+confidence:
 
-A full `brew audit --cask` on the rendered file could not run in this sandbox
-(it requires writable gem/cache dirs the sandbox denies) — that audit is folded
-into the test plan as a CI-runner check, not a local one.
+- **Homebrew 6.0.0 (released 2026-06-11; this machine runs 6.0.1) introduced
+  tap-trust**, which "stops auto-tapping untrusted taps" and "stops implicit tap
+  installation" (release-note PRs `Homebrew/brew#22599`, `#21905`).
+  PR #22599's stated goal: "tapping untrusted taps should be an explicit user
+  action rather than an implicit side effect"; it removes silent auto-tapping and
+  "warn[s] with manual `brew tap`/`brew trust` instructions instead of erroring
+  out."
+- **The implicit-trust-on-naming change (PR `#22621`, "trusts qualified tap items
+  before install") applies only to items the USER names directly on the command
+  line** ("Announce implicit trust when a fully-qualified tap item is named") —
+  NOT to a tap-qualified name reached transitively through another package's
+  `depends_on`.
+- **Verbatim precedent of the failure mode** (`Homebrew/brew#22631`, "brew bundle
+  failing for trusted taps"): when dependency resolution must load an untrusted
+  tap's item, brew refuses with
+  `Error: Refusing to load cask hashicorp/tap/hashicorp-boundary-desktop from
+  untrusted tap hashicorp/tap. Run `brew trust …` to trust it.` — "an untrusted
+  tap is not loaded when tap trust is required, unless you explicitly install a
+  fully-qualified formula or cask." A cask's `depends_on` is exactly the
+  transitive, not-explicitly-named case.
+- **Older known bug** (`Homebrew/brew#4711`) that fully-qualified tap names in
+  `depends_on` were silently stripped/mis-resolved is closed-as-outdated but
+  reinforces that tap-qualified `depends_on` has long been an unreliable path.
+
+**Verdict: cross-tap cask `depends_on formula:` from an untrusted third-party tap
+DOESN'T WORK transparently on Homebrew 6.0.x — confidence HIGH.** A fresh
+`brew install spacedock-dev/tap/spacedock` would not silently install safehouse;
+the untrusted `eugene1g/safehouse` dependency tap would be refused with a
+`brew trust` instruction. The single residual uncertainty (whether a cask author
+can pre-declare trust so users are spared the step) is itself a negative signal:
+the Tap-Trust docs describe trust as a deliberate end-user action and document no
+author-side pre-trust mechanism, and the homebrew-tap CI `brew audit` is the
+definitive non-sandboxed confirmation if the captain wants it run before merge.
+This is why the design is TIER 1, not TIER 2.
 
 ## Acceptance criteria
 
 Each AC names a property of the finished entity, not a stage action, and how it
 is verified.
 
-**AC-1 — A release-rendered `spacedock` cask declares agentsview as a cask
-dependency.** A cask generated from `.goreleaser.yaml` (via snapshot render)
-contains a `depends_on cask:` stanza naming `agentsview`, in both the `spacedock`
-and `spacedock@next` casks.
-Verified by: a test that runs `goreleaser release --snapshot --skip=publish`
-(or parses the committed `.goreleaser.yaml`'s `homebrew_casks` dependency list)
-and asserts each rendered/declared cask carries `agentsview` as a cask
-dependency. Expected value (`agentsview` is a cask dep) comes from the AC, not
-from the file under test; the rendered `.rb` is goreleaser output, not a
-model-read instruction file, so this is a behavioral check that fails if the
-dependency is dropped or mis-spelled.
+**AC-1 — A release-rendered cask declares agentsview as a cask dependency
+(unchanged from the prior cycle).** A cask generated from `.goreleaser.yaml` (via
+snapshot render) contains a `depends_on cask:` stanza naming `agentsview`, in
+both the `spacedock` and `spacedock@next` casks.
+Verified by: the existing render/parse test
+(`internal/release/cask_dependencies_test.go`) that runs `goreleaser release
+--snapshot --skip=publish` and asserts each rendered cask carries `agentsview` as
+a cask dependency. Expected value comes from the AC, not the file under test; the
+rendered `.rb` is goreleaser output, not a model-read instruction file, so it
+fails if the dependency is dropped or mis-spelled.
 
-**AC-2 — The rendered cask no longer lists agentsview as a "not installed by
-brew" companion, and still lists safehouse.** The `caveats` block of each
-rendered cask names safehouse but not agentsview.
-Verified by: the same render/parse test asserts the rendered caveats text
-contains `safehouse` and does NOT contain `agentsview` (agentsview moved from
-caveat to dependency). Fails if agentsview is left in the caveats or safehouse
-is dropped.
+**AC-2 — A release-rendered cask does NOT declare safehouse as a `depends_on`,
+and keeps safehouse in `caveats` with a corrected, actionable install line.** The
+rendered `.rb` of each cask has no `depends_on formula:` naming
+`eugene1g/safehouse/agent-safehouse` (the refuted mechanism is not shipped), and
+its `caveats` block names `safehouse`, the canonical `https://agent-safehouse.dev`
+URL, and the install command `brew install eugene1g/safehouse/agent-safehouse`,
+while still NOT naming `agentsview` (which is a dependency, not a caveat).
+Verified by: the render/parse test asserts (a) no rendered cask body contains
+`depends_on formula:` / the tap-qualified safehouse name, (b) each caveats block
+contains `safehouse`, `agent-safehouse.dev`, and
+`brew install eugene1g/safehouse/agent-safehouse`, and (c) caveats does not
+contain `agentsview`. The expected strings (the install command, the absence of
+the formula dep) come from the AC, not the file under test; the rendered `.rb` is
+goreleaser output. Fails if the caveat regresses to "not installed by brew", if
+the install command is dropped, or if someone adds the refuted formula `depends_on`.
 
-**AC-3 — The install doc states that brew installs agentsview alongside the
-launcher.** `docs/install-journey.md`'s Homebrew section says `brew install
-spacedock` also installs agentsview, and that safehouse is installed separately.
-Verified by: the doc diff below applied to `docs/install-journey.md` (the file
-the change produces). This AC's proof is the doc edit landing, paired with AC-1
-proving the behavior the doc describes is real — the doc text is not a stand-in
-for the cask behavior, AC-1 carries that.
+**AC-3 — The code install-hint cites safehouse's real brew install command and
+canonical URL.** `internal/safehouse/safehouse.go`'s `installHint` const names
+`brew install eugene1g/safehouse/agent-safehouse` and `https://agent-safehouse.dev`,
+and does NOT name the outdated `github.com/anthropics/safehouse`.
+Verified by: a Go test in `internal/safehouse/` that calls `Available` with a
+not-found `lookPath` stub and asserts the returned hint string contains
+`brew install eugene1g/safehouse/agent-safehouse` and `agent-safehouse.dev` and
+does not contain `github.com/anthropics/safehouse`. The hint is a behavioral
+output of `Available`, exercised through the real function, not a substring check
+over a model-read instruction file — it fails if the URL/command regress.
 
-## Doc diff
-
-`docs/install-journey.md`, under the Homebrew install step (after the
-`brew install spacedock` block, step 1):
-
-```diff
-    ```bash
-    brew tap spacedock-dev/homebrew-tap
-    brew install spacedock
-    ```
-
-+   This also installs **agentsview** (it powers `/spacedock:survey`). The
-+   **safehouse** sandbox is installed separately — see the sandboxing notes
-+   below — because it is not yet a Homebrew package.
-+
- 2. **Confirm it.**
-```
+**AC-3 (install-doc note) — yw-delegated, out of 8p's scope.** The original
+cycle's install-doc note is owned by yw under the docs anti-collision rule; 8p
+ships zero `.md`. The cask + code behavior (AC-1, AC-2, AC-3 above) carries the
+real behavior the doc describes; the doc text is not a stand-in for it.
 
 ## Test plan
 
-- **Primary (AC-1, AC-2): a cask-render test.** A Go test (or a fixture-driven
-  check) under `internal/release/` runs `goreleaser release --snapshot
-  --skip=publish --clean` against `.goreleaser.yaml`, then reads the generated
-  `dist/homebrew/Casks/spacedock.rb` and `spacedock@next.rb` and asserts (a) a
-  `depends_on cask:` stanza naming `agentsview`, (b) `caveats` names `safehouse`
-  but not `agentsview`. If invoking goreleaser in-test is too heavy, the cheaper
-  variant parses `.goreleaser.yaml`'s `homebrew_casks[].dependencies` directly
-  and asserts each entry lists `{cask: agentsview}` — but the render-based test
-  is stronger (it proves the emitted Ruby, not just the config). Cost: low-medium
-  — goreleaser is already a release dependency; a snapshot render is ~15s
-  (measured during the spike). Prefer the render test; fall back to the config
-  parse if CI cannot run goreleaser.
-- **Secondary (CI, not local): `brew audit --cask` on the rendered file.** The
-  homebrew-tap's own CI already audits pushed casks; this task does not add a new
-  audit lane, it relies on the existing one. A local audit could not run in the
-  ideation sandbox (gem/cache writes denied), so the audit proof lives on the CI
-  runner.
-- **Doc (AC-3): the doc diff above applied to `docs/install-journey.md`.** If a
-  doc-shape guard exists in `internal/release/install_doc_test.go`, confirm the
-  added sentence does not trip its Linux-sandbox over-claim assertions (it talks
-  about agentsview + brew, not a Linux sandbox, so it should be clear) — run that
-  test after editing the doc.
+- **Primary (AC-1, AC-2): extend the existing cask-render test.**
+  `internal/release/cask_dependencies_test.go` already renders both casks via
+  `goreleaser release --snapshot --skip=publish --clean` (config-parse fallback
+  when goreleaser/its caches are unavailable) and asserts agentsview is a
+  `depends_on cask:` and absent from caveats. Extend its caveats assertions to
+  also require (a) the corrected install line
+  `brew install eugene1g/safehouse/agent-safehouse` and the
+  `agent-safehouse.dev` URL are present, and the "not installed by brew" phrasing
+  is gone, and (b) NO cask body carries `depends_on formula:` /
+  `eugene1g/safehouse/agent-safehouse` (the refuted mechanism must not ship). Cost:
+  low — same render the test already does (~2s measured during the spike, ~15s
+  cold). The render path is primary; the config-parse fallback asserts the same
+  caveat-content properties at the YAML layer.
+- **AC-3: a safehouse install-hint test.** A Go test under `internal/safehouse/`
+  drives `Available(lookPath)` with a stub that returns an error (binary not
+  found) and asserts the returned hint contains the brew command and the
+  canonical URL and not the old GitHub URL. This exercises the real function's
+  output, so a regression in the const string reds it. Cost: trivial — a unit
+  test, no external tooling.
+- **Secondary (CI / on captain request, not local): `brew audit --cask` on the
+  rendered file.** Local `brew audit` is sandbox-blocked here (gem bundle + Taps
+  writes denied; see the spike). The homebrew-tap's own CI already audits pushed
+  casks; this task adds no new audit lane. If the captain wants the cross-tap
+  `depends_on` verdict double-checked before merge, a non-sandboxed
+  `brew audit --cask` (or a `brew install --dry-run` of the rendered cask) is the
+  definitive confirmation of the TIER-1 finding.
 - **No live workflow test needed.** The behavior is entirely in the
-  release-render path and the doc; there is no runtime launcher behavior change.
+  release-render path and the safehouse install-hint string; there is no runtime
+  launcher behavior change.
 
 ## Stage Report: ideation
 
@@ -255,3 +330,18 @@ Added `dependencies: - cask: agentsview` to both casks in `.goreleaser.yaml`'s `
 ### Summary
 
 PASSED. The deliverable is correct and its test is honest. I independently rendered both casks via goreleaser snapshot and confirmed each carries `depends_on cask: ["agentsview"]` (AC-1) with a caveats block naming safehouse but not agentsview (AC-2). The render test's strength is proven by reproduction: it REDS via the render path on the pre-edit config (6 assertions fire across both casks) and GREENS on the post-edit config, so it would catch a dropped or mis-spelled dependency. 8p ships zero `.md` (only `.goreleaser.yaml` + the new test); AC-3's install note is yw-delegated and intentionally absent here, with AC-1 carrying the actual behavior. Note for the FO: `.goreleaser.yaml` is release machinery — the heads-up flags a separate read-only detached adversarial audit before merge; this is the normal validation, recommending PASSED.
+
+## Stage Report: ideation (cycle 2)
+
+Captain REOPENED ideation (2026-06-13): the cycle-1 premise "safehouse is NOT a brew package, stays a caveat" was wrong — it only ran `brew info --cask safehouse` (core) and missed safehouse's third-party tap.
+
+- DONE: SPIKE the riskiest unknown FIRST — can a cask `depends_on formula: "eugene1g/safehouse/agent-safehouse"` (third-party-tap formula) and have brew auto-tap + resolve it? Exercise end-to-end, do not assert.
+  Spiked both halves. (a) goreleaser RENDER works: a throwaway `.goreleaser.yaml` with `dependencies: - formula: eugene1g/safehouse/agent-safehouse` rendered (`goreleaser release --config /tmp/spike-goreleaser.yaml --snapshot --skip=publish --clean`, v2.16.0) to `depends_on cask: [...], formula: ["eugene1g/safehouse/agent-safehouse"]` verbatim; spike artifacts removed, worktree clean. (b) brew RESOLUTION does NOT work transparently on Homebrew 6.0.x: local `brew audit`/`info`/tap-staging all sandbox-blocked (gem-bundle + `/opt/homebrew/Library/Taps` writes denied, bootsnap EPERM — machine-level, unchanged by `dangerouslyDisableSandbox`), so verdict is from authoritative sources: Homebrew 6.0.0 tap-trust (this machine = 6.0.1) "stops auto-tapping untrusted taps" (PR brew#22599) and only implicit-trusts items the USER names on the CLI (PR brew#22621), not transitive `depends_on` deps; verbatim precedent (brew#22631) shows dependency resolution against an untrusted tap fails with "Refusing to load … from untrusted tap …; run brew trust". VERDICT: cross-tap cask `depends_on formula:` DOESN'T resolve transparently (confidence HIGH).
+- DONE: Pick the design from the spike and rewrite approach + ACs + test + caveats. Spike refuted the mechanism → TIER 1.
+  Rewrote Problem/Approach/Out-of-scope/Riskiest-mechanism/ACs/Test plan. TIER 1: agentsview stays a real `depends_on cask:` (unchanged, prior cycle shipped it); safehouse does NOT become a `depends_on formula:` (would degrade fresh installs via tap-trust refusal); safehouse caveat CORRECTED from "not installed by brew" to an actionable `brew install eugene1g/safehouse/agent-safehouse` + canonical `agent-safehouse.dev`, in both casks. AC-2 now asserts no `depends_on formula:` ships AND the corrected caveat content; AC-3 reframed to the code install-hint fix; ACs proven by the render test + a new safehouse-hint unit test, never a YAML grep.
+- DONE: Reconcile the safehouse URL and decide where the code-hint fix lands.
+  Canonical = `https://agent-safehouse.dev` (captain). Flagged that `internal/safehouse/safehouse.go:14-15` still cites the outdated `github.com/anthropics/safehouse`. RECOMMENDATION: fold the one-line const fix into 8p (it is a `.go` change, in lane; keeps the code hint and cask caveat citing the same install path — splitting it out leaves the two user-facing hints disagreeing). Before/after wording recorded in the approach (point 4) and locked as AC-3. The cycle-1 "no spike needed" determination is REPLACED by the real spike above.
+
+### Summary
+
+Re-ran the safehouse question as a real spike after the captain corrected the ground truth (safehouse IS brew-installable via the third-party `eugene1g/safehouse` tap formula `agent-safehouse`). The seed's "depend on BOTH" is still only half-satisfiable, now for a platform reason: goreleaser renders a cask `depends_on formula: "eugene1g/safehouse/agent-safehouse"` correctly, but Homebrew 6.0.x's tap-trust model refuses to auto-load an untrusted third-party tap reached transitively, so the dependency would break the fresh-install path rather than improve it (TIER 1, confidence HIGH from release-note PRs + a verbatim-error precedent; local brew audit was sandbox-blocked, definitive proof is the homebrew-tap CI audit). The corrected design keeps agentsview as the only real `depends_on`, corrects safehouse's caveat to its real `brew install eugene1g/safehouse/agent-safehouse` command + `agent-safehouse.dev` URL in both casks, and folds in the matching one-line fix to the outdated `github.com/anthropics/safehouse` code install-hint. Zero `.md` edits (yw-owned).
