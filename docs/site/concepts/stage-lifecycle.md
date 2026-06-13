@@ -26,11 +26,9 @@ Validation declares `fresh: true` because the reviewer must not be the maker. Th
 
 When validation recommends `REJECTED`, `feedback-to: implementation` routes the concrete finding back to the implementation stage for rework rather than closing the entity. The entity re-enters implementation, the finding is addressed, and a fresh validator checks it again. A hard cap on feedback cycles prevents an endless bounce; on the third cycle the first officer escalates to you.
 
-## Worktree vs. inline
+## Isolated worktrees
 
-A stage runs in an isolated git worktree when it declares `worktree: true`, and inline at the repo root otherwise. This is the "isolation when it matters" tradeoff: stages that mutate shared state (implementation, validation) get their own checkout so concurrent entities don't collide; lighter stages that only edit the entity body (backlog, ideation) run inline.
-
-The first officer manages the isolation for you: it creates the worktree on first dispatch, the stage's work and commits stay inside that checkout, and at the terminal stage it merges the branch and cleans the worktree up. In a [split-root workflow](../advanced/split-root-state.md) the entity file itself lives in the state checkout; the worktree isolates only the deliverable.
+When a stage declares `worktree: true`, everything from that stage onward happens in an isolated worktree: the work and its commits stay there, concurrent items never collide with each other or with you, and at the terminal stage the branch is merged back and the worktree cleaned up.
 
 ## Where to go next
 
