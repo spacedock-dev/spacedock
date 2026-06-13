@@ -20,7 +20,7 @@ import (
 // writeCodexSession writes a minimal agentsview-ingestible Codex rollout jsonl under
 // codexDir for a session whose source cwd is repoCwd. agentsview derives `project` from
 // the git-root basename of that cwd and blanks the stored cwd, so the session lands with
-// project = basename(repoCwd-normalized) and cwd = ''.
+// project = basename(repoCwd-normalized) and a blanked cwd.
 func writeCodexSession(t *testing.T, codexDir, id, repoCwd string) {
 	t.Helper()
 	day := filepath.Join(codexDir, "2026", "06", "02")
@@ -62,10 +62,10 @@ func TestSurveyCodexPresenceThroughSync(t *testing.T) {
 	}
 
 	root := t.TempDir()
-	home := filepath.Join(root, "home")           // empty HOME isolates ALL default sources
-	dataDir := filepath.Join(root, "data")         // AGENTSVIEW_DATA_DIR
-	codexDir := filepath.Join(root, "codex")       // CODEX_SESSIONS_DIR
-	claudeDir := filepath.Join(root, "claude")     // CLAUDE_PROJECTS_DIR (empty — Codex-only test)
+	home := filepath.Join(root, "home")        // empty HOME isolates ALL default sources
+	dataDir := filepath.Join(root, "data")     // AGENTSVIEW_DATA_DIR
+	codexDir := filepath.Join(root, "codex")   // CODEX_SESSIONS_DIR
+	claudeDir := filepath.Join(root, "claude") // CLAUDE_PROJECTS_DIR (empty — Codex-only test)
 	for _, d := range []string{home, dataDir, codexDir, claudeDir} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
 			t.Fatalf("mkdir %s: %v", d, err)
