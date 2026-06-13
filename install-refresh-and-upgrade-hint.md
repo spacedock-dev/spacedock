@@ -1,7 +1,7 @@
 ---
 id: tes9th8ncq1p01am9qk7eex4
 title: install refresh leaves a stale plugin + no upgrade path is surfaced (the 0.19.8 thing)
-status: validation
+status: implementation
 source: "Captain field report 2026-06-09 — first real 0.20.0 install. `spacedock install --host codex` on a tag-fresh 0.20.0 binary returned `OK: spacedock binary 0.20.0 and plugin 0.19.8 are compatible.` The plugin stayed at 0.19.8 (older than BOTH main HEAD 0.20.0 and next HEAD 0.19.9), and nothing told the user a newer plugin exists, how to get it, or whether the front door upgrades for them."
 started: 2026-06-13T04:08:47Z
 completed:
@@ -149,3 +149,9 @@ Both facets landed as small wiring changes on `origin/main` HEAD 41bd47ae, three
 ### Summary
 
 PASSED. All four ACs verified by running the behavior and observing test results, exit codes, and on-disk manifest state — not prose-grep. The whole-package (322) and full-repo (1261) suites reproduce the implementer's counts; `go vet` clean. Four adversarial discrimination checks confirm the guards are non-vacuous: reverting the init.go fix reds AC-1's recorded-install assertion; forcing the hint always-on reds every equal/dev/older negative case in both contract and the front door; the hint is additive (verdict stays Compatible, exit 0, launch proceeds, no pre-existing test broke); and the semver compare is contract-local (no `internal/cli` import, `cli.compareVersion` unreferenced from contract). te is the front-door = high-stakes: a detached read-only adversarial audit on a throwaway checkout is owed before merge — that is the FO's step, dispatched after this PASSED.
+
+## Feedback Cycles
+
+### Cycle 1 — detached front-door audit (2026-06-13): 1 Material test-strength hole, routed to implementation
+The detached adversarial audit (post-PASSED, front-door high-stakes) found AC-3 has a test-strength hole. Adversarial edit: replace `semverCompare`'s (internal/contract/contract.go) per-component integer loop with a lexical string compare. Result: GREEN across the whole suite — because every hint test input (0.20.0 vs 0.19.8/0.12.1/0.19.4) agrees lexically AND numerically; none crosses the single-vs-double-digit boundary, so a lexical bug is invisible (it IS wrong on 0.10.0 vs 0.9.0). Production code is correct; the gap is purely missing coverage — a future "simplify semverCompare" refactor could regress with no signal. Polish: no test pins the pre-release-suffix conservative behavior (0.20.0-rc1 -> no hint).
+ROUTED TO IMPLEMENTATION (test-only, no production change): add to TestCompatibleUpgradeHint a behind-plugin positive (binary 0.10.0 vs plugin 0.9.0 -> MUST hint) + a negative (binary 0.9.0 vs plugin 0.10.0 -> MUST NOT hint) that red the lexical edit; and a pre-release case (binary 0.20.0-rc1 -> NO hint) pinning the suffix behavior. Re-validation must confirm the new cases discriminate (red the lexical + suffix edits, green on production) before the gate is re-presented.
