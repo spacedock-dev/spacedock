@@ -59,8 +59,16 @@ func TestFieldConformanceWarnsSurface(t *testing.T) {
 			if nCode != 0 {
 				t.Fatalf("warn-only fixture must exit 0, got %d (stderr=%q)", nCode, nErr)
 			}
-			if !strings.Contains(nErr, tc.wantField) {
-				t.Fatalf("stderr missing field name %q, got %q", tc.wantField, nErr)
+			// The diagnostic must carry the Warning: prefix bound to the field —
+			// a field-conformance finding is advisory, not a gating Error:. This
+			// pins the warn-vs-error signal the FO reads; flipping the line to
+			// Error: must red this assertion.
+			wantLine := "Warning: field '" + tc.wantField
+			if !strings.Contains(nErr, wantLine) {
+				t.Fatalf("stderr missing warn line %q, got %q", wantLine, nErr)
+			}
+			if strings.Contains(nErr, "Error: field '"+tc.wantField) {
+				t.Fatalf("field-conformance finding misreported as Error: (must be Warning:), got %q", nErr)
 			}
 		})
 	}
