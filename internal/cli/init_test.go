@@ -102,6 +102,12 @@ func TestInitCheckRunsDoctorWithoutInstalling(t *testing.T) {
 }
 
 func TestInitCodexInstallReadiness(t *testing.T) {
+	// compatible-installed: `spacedock install --host codex` re-installs an
+	// already-present compatible plugin instead of short-circuiting to a
+	// doctor-only no-op. The codex arm must drive the install seam exactly like
+	// the claude arm — the recorded {host, source, branch} call is the
+	// independent source of truth that the refresh actually fired, not the
+	// no-op the prior assertion codified.
 	t.Run("compatible-installed", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
@@ -111,14 +117,33 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
+		wantInstall := []string{"codex", marketplaceSource, devBranch}
+		if !equalArgv(fake.installCmds, wantInstall) {
+			t.Fatalf("install seam = %v, want %v — codex init on a present plugin must refresh, not no-op", fake.installCmds, wantInstall)
+		}
+		// After install, init runs doctor — a compatible report on stdout.
 		out := stdout.String()
 		if !strings.Contains(out, "OK: spacedock binary "+Version+" and plugin 0.12.1") {
-			t.Fatalf("codex init should report compatible installed plugin first; stdout = %q", out)
+			t.Fatalf("codex init should run doctor after install and report compatible; stdout = %q", out)
 		}
-		for _, banned := range []string{"codex plugin marketplace add", "codex plugin add spacedock@spacedock"} {
-			if strings.Contains(out, banned) {
-				t.Errorf("compatible codex init must not print manual add command %q:\n%s", banned, out)
-			}
+	})
+
+	// compatible-installed-check: `--check` keeps the no-install report — it runs
+	// doctor without driving the install seam.
+	t.Run("compatible-installed-check", func(t *testing.T) {
+		fake := &fakeHost{manifest: compatibleManifest(t)}
+		var stdout, stderr bytes.Buffer
+
+		code := runInit(context.Background(), []string{"--host", "codex", "--check"}, fake, &stdout, &stderr)
+
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+		}
+		if len(fake.installCmds) != 0 {
+			t.Fatalf("--check must not install: %v", fake.installCmds)
+		}
+		if !strings.Contains(stdout.String(), "OK") {
+			t.Fatalf("--check should print the doctor report; stdout = %q", stdout.String())
 		}
 	})
 

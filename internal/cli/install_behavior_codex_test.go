@@ -77,12 +77,84 @@ func TestCodexPluginInstallIsHostNative(t *testing.T) {
 	}
 }
 
+// TestCodexInitRefreshAdvancesBehindPlugin is the AC-2 live proof for the wired
+// codex arm: seed an older plugin (0.0.1) via the production Install seam, then
+// run that same seam against a newer (0.0.2) local marketplace — the path
+// runInit's codex arm now drives on a present plugin. The resolved cache
+// manifest must advance to 0.0.2, read from the on-disk manifest (not the
+// install command's claim). This pins the spike's finding as a regression test
+// on the production refresh path. Skips when `codex` is not on PATH; hermetic
+// via CODEX_HOME isolation + local-path marketplaces (empty branch → no --ref →
+// offline).
+func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
+	if _, err := exec.LookPath("codex"); err != nil {
+		t.Skip("codex not on PATH; refresh-advances smoke requires the host CLI")
+	}
+
+	tmp := t.TempDir()
+	behind := buildCodexMarketplaceAtVersion(t, filepath.Join(tmp, "behind"), "0.0.1")
+	newer := buildCodexMarketplaceAtVersion(t, filepath.Join(tmp, "newer"), "0.0.2")
+	codexHomeDir := filepath.Join(tmp, "codexhome")
+	mustMkdir(t, codexHomeDir)
+	t.Setenv("CODEX_HOME", codexHomeDir)
+
+	// Seed the behind install (0.0.1) through the production seam.
+	if out, err := (execHost{}).Install("codex", behind, ""); err != nil {
+		t.Fatalf("seed Install(codex, 0.0.1) failed: %v\nout=%q", err, out)
+	}
+	if got := resolvedCodexManifestVersion(t); got != "0.0.1" {
+		t.Fatalf("after seed, resolved manifest version = %q, want 0.0.1", got)
+	}
+
+	// Refresh-on-present (0.0.2) — the wired runInit codex arm calls exactly this
+	// Install seam when a plugin is already resolved.
+	if out, err := (execHost{}).Install("codex", newer, ""); err != nil {
+		t.Fatalf("refresh Install(codex, 0.0.2) failed: %v\nout=%q", err, out)
+	}
+	if got := resolvedCodexManifestVersion(t); got != "0.0.2" {
+		t.Fatalf("after refresh, resolved manifest version = %q, want 0.0.2 (refresh did not advance the behind plugin)", got)
+	}
+}
+
+// resolvedCodexManifestVersion resolves the cached spacedock@spacedock manifest
+// via the production resolver and returns its on-disk version field — the
+// independent source of truth that an install advanced the plugin, not the
+// command's stdout.
+func resolvedCodexManifestVersion(t *testing.T) string {
+	t.Helper()
+	manifest, err := execHost{}.resolveCodexManifest()
+	if err != nil {
+		t.Fatalf("resolveCodexManifest: %v", err)
+	}
+	if manifest == "" {
+		t.Fatalf("resolveCodexManifest returned empty after an install")
+	}
+	data, err := os.ReadFile(manifest)
+	if err != nil {
+		t.Fatalf("read resolved manifest %s: %v", manifest, err)
+	}
+	var m struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		t.Fatalf("parse resolved manifest %s: %v", manifest, err)
+	}
+	return m.Version
+}
+
 // buildLocalCodexMarketplace writes a minimal valid local-path marketplace under
 // root and returns the marketplace directory. Codex reads the marketplace
 // manifest from .claude-plugin/marketplace.json (it reuses the claude manifest
 // layout) and the plugin manifest from the plugin's .codex-plugin/plugin.json.
 // The plugin manifest carries a requires-contract bracketing CONTRACT_VERSION.
 func buildLocalCodexMarketplace(t *testing.T, root string) string {
+	return buildCodexMarketplaceAtVersion(t, root, "0.0.0")
+}
+
+// buildCodexMarketplaceAtVersion is buildLocalCodexMarketplace parameterized by
+// the plugin's display version, so a test can seed a behind plugin then refresh
+// it from a newer marketplace and observe the resolved version advance.
+func buildCodexMarketplaceAtVersion(t *testing.T, root, version string) string {
 	t.Helper()
 	marketplace := filepath.Join(root, "marketplace")
 	plugin := filepath.Join(marketplace, "spacedock")
@@ -98,7 +170,8 @@ func buildLocalCodexMarketplace(t *testing.T, root string) string {
   ]
 }
 `)
-	mustWrite(t, filepath.Join(plugin, ".codex-plugin", "plugin.json"), `{ "name": "spacedock", "version": "0.0.0", "requires-contract": ">=1,<2", "skills": "./skills/" }
+	mustWrite(t, filepath.Join(plugin, ".codex-plugin", "plugin.json"),
+		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=1,<2", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
