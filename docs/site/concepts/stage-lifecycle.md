@@ -26,6 +26,8 @@ Beyond the declarations, the prose of each stage's section in the README is the 
 
 Validation declares `fresh: true` because the reviewer must not be the maker. The validator arrives without the implementer's reasoning in its context, sees only the entity body and the deliverable, and pushes back on thin evidence. This is the mechanism behind the README's claim that "the agent doesn't get to judge its own work."
 
+Adversarial review is built in as well, inside the validation stage or as a detached pass for high-stakes changes. [Reviews beyond validation](gates-and-decisions.md#reviews-beyond-validation) covers how it differs.
+
 When validation recommends `REJECTED`, `feedback-to: implementation` routes the concrete finding back to the implementation stage for rework rather than closing the entity. The entity re-enters implementation, the finding is addressed, and a fresh validator checks it again. A hard cap on feedback cycles prevents an endless bounce; on the third cycle the first officer escalates to you.
 
 ## Isolated worktrees
