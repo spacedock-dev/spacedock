@@ -1,6 +1,6 @@
 # Mods & standing teammates
 
-As a workflow matures, you start wanting behavior that is not any stage's job: a step that must happen at a fixed point in every run (open a PR when work merges), or a specialist whose judgment should persist across the whole session (a prose polisher). A mod is the hook mechanism for exactly this: standardized behavior that hooks into the workflow's run without changing your workflow definition. The stages and gates in your README stay as they are; a mod is one markdown file in the workflow's `_mods/` directory, and the first officer reads it and acts on it.
+As a workflow matures, you start wanting behavior every workflow wants: create a PR and act on it when it merges or CI fails, or keep a specialist whose judgment persists across the whole session (a prose polisher). You could model such steps as stages of your own; they are common enough across workflows that they are factored out as mods instead. A mod is the hook mechanism: standardized behavior that hooks into the workflow's run without changing your workflow definition. The stages and gates in your README stay as they are; a mod is one markdown file in the workflow's `_mods/` directory, and the first officer reads it and acts on it.
 
 ## Lifecycle hooks
 
