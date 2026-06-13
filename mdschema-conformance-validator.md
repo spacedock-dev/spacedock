@@ -20,23 +20,90 @@ sprint-readiness: ready
 
 `status --validate` currently checks: entity-form (flat/folder) conflicts, stage-name regex, per-id-style id presence/uniqueness, and the opt-in external-proof policy. It does NOT check per-field types/patterns (e.g. `verdict` in {PASSED, REJECTED}, `mod-block` pattern, `score` numeric coercion) or the schema invariants end to end. So the mdschema files can drift from what the binary actually enforces, and malformed frontmatter the schema would reject can pass `--validate`.
 
-## Proposed approach
+## Decision: (a) extend Go `status --validate`
 
-Ideation to weigh:
-- (a) extend Go `--validate` to full mdschema coverage (per-field types/patterns + invariants), or
-- (b) a standalone conformance checker against `docs/dev`. The v0 branch had `scripts/validate_frontmatter_contract.py` + a test, NOT ported — Python does not belong in the Go repo without a CI hook.
+**Chosen: (a) — extend the Go `--validate` path to cover the per-field types/patterns the entity mdschema declares.** Reject (b), the standalone Python/script checker.
+
+Rationale:
+- **The binary already owns this surface.** `--validate` (`internal/status/validate.go`, dispatched from `handlers.go:370`) already enforces the *structural* subset: flat/folder conflicts, stage-name regex, id presence/uniqueness per id-style, and the opt-in external-proof policy. Per-field type/pattern checks are the same kind of check on the same parsed entities — a new sibling sub-check, not a new tool.
+- **Single source of enforcement.** A second checker (Python or otherwise) would re-implement frontmatter parsing (`ParseFrontmatter`, fence finder, last-key-wins) that already lives in Go, and would drift from it. The v0 `scripts/validate_frontmatter_contract.py` was deliberately NOT ported for exactly this reason: Python in the Go repo needs a CI hook to stay honest, and we have no such hook. One enforcement path, in the binary that ships, run by the FO's existing `--validate` invocation.
+- **No new dependency.** The spike (below) proved `gopkg.in/yaml.v3` — already in `go.sum` — parses the mdschema files directly. JSON is a YAML subset, so the `.yml`-that-is-JSON schema files load into typed Go structs with no extra library.
+
+**Schema-driven, not hand-transcribed.** The implementation reads `docs/schema/entity.mdschema.yml` and drives field checks from the parsed `fields` map (pattern, conventional-enum, type, severity), rather than re-spelling each pattern in Go. This is what closes the documented drift gap: the binary enforces *what the schema says*, so the schema cannot silently diverge from the binary. The schema file ships in-repo and is read at validate time (embedded via `go:embed` so there is no runtime filesystem dependency on `docs/`).
+
+### Severity is load-bearing — warns must not gate reads
+
+The riskiest *design* finding (not a mechanism risk): **every per-field check in the entity schema is `invalid_severity: warn`** — `verdict`, `mod-block`, `score`, `status`-unknown, and legacy-numeric ids all carry `warn`, not error. The current `--validate` is binary (any error → exit 1, else `VALID` exit 0); there is no warn tier today.
+
+Two consequences the implementation MUST honor:
+- **Field-conformance findings are warnings, not errors.** They print to stderr but do NOT flip the exit code, mirroring the schema's own declared severity. Exit 1 stays reserved for the existing structural-error classes plus any future schema field whose severity is explicitly `error`.
+- **The read-path pre-check (`failOnValidationErrors`, cwd-gated `status`/`--next`/`--boot`) must NOT fire on warn-tier field findings.** `validate.go:140-145` already documents the lockout hazard: a read path that fails on a flagged AC locks the FO out of the listing that shows the broken entity. Warn-tier field conformance has the same hazard and must stay out of the read-path gate — surfaced only by the explicit `--validate` command.
+
+This makes "full conformance" mean: the binary *checks and surfaces* every field the schema declares, at the severity the schema declares — not "every malformed field becomes a hard exit-1 error." A schema field marked `error` (none today) would gate; `warn` fields advise.
+
+### Riskiest mechanism — exercised (spike PASSED)
+
+The design's soundness rested on one unverified mechanism: **can Go parse the mdschema `.yml` (which is actually JSON) and check a known-bad fixture's frontmatter against the schema-derived pattern/enum end-to-end?** Exercised before committing to the plan:
+
+- Parsed the real `docs/schema/entity.mdschema.yml` with `yaml.v3` into a typed struct (`fields[].pattern`, `.conventional`, `.invalid_severity`).
+- Extracted `mod-block` pattern `^[^:]+:[^:]+$` (severity `warn`) and `verdict` conventional enum `[PASSED REJECTED]` (severity `warn`).
+- Fed known-bad values: `mod-block: "noColonHere"` correctly FAILS the pattern; `verdict: MAYBE` correctly out of the enum.
+- All assertions passed; the schema's own bytes are the source of truth for the expected pattern/enum, not a transcription.
+
+Proven mechanisms the rest of the plan composes: `yaml.v3` JSON-subset parse of the schema file (spike), the existing `ParseFrontmatter` reader and `activeAndArchivedEntities` enumeration (shipped, covered by `frontmatter_test.go` / parity tests), and the existing `validateWorkflow` → exit-code wiring (shipped, `native_validate_test.go`). No further spike needed for those.
 
 ## Out of scope
 
-The #343 doc pass deliberately did schemas + light prose only (captain decision = option (a) territory, deferred). This task is the cleanup that closes the enforce-what-you-document gap.
+- The #343 doc pass deliberately did schemas + light prose only (captain decision = option (a) territory, deferred). This task is the cleanup that closes the enforce-what-you-document gap.
+- **Body-structure invariants** (`required_opening` problem-statement paragraph, `recognized_sections`, stage-report shape) — frontmatter field conformance is the closeable gap; body parsing is a larger separate task and not in this scope.
+- **The workflow-README schema** (`workflow-readme.mdschema.yml`) — README stage-name regex is already enforced; full README field/invariant conformance is a follow-up, not this task.
+- **Promoting any `warn` field to `error`.** This task enforces the schema's declared severities as-is. Changing a severity is a separate, captain-visible decision.
 
 ## Acceptance criteria
 
-Each AC names a property of the finished entity, not a stage action, and how it is verified.
+Each AC names a property of the finished entity, not a stage action, and how it is verified. The independent source of truth in every behavioral AC is a **fixture entity file** (real frontmatter bytes) and the **schema file itself** — never a grep over instruction prose.
 
-**AC-1 - {End-state property.}**
-Verified by: {test name / command output or exit code / file the change produces / resulting on-disk state — something outside this task body that a future reader can reproduce and that can fail.}
+**AC-1 — `--validate` surfaces every per-field schema violation the entity schema declares.**
+For each field carrying a `pattern` or `conventional` enum in `entity.mdschema.yml` (`mod-block`, `verdict`, `id` per id-style, `score`, ISO-8601 dates), a fixture entity whose frontmatter violates that field produces a matching diagnostic on stderr naming the field and the violated rule.
+Verified by: a Go test in `internal/status` that builds fixture workflows with one known-bad field each and asserts the run's stderr contains the field-named diagnostic. The expected pattern/enum is read from the schema, and the bad value is in the fixture — both outside the test's own assertions.
+
+**AC-2 — Field-conformance findings are warn-tier: they print but do not change the exit code.**
+A workflow whose only defects are warn-tier field violations (e.g. `verdict: MAYBE`, `mod-block: noColon`) exits 0 from `spacedock status --validate` while still printing the warnings to stderr. A structural error (dup id, flat/folder conflict) still exits 1.
+Verified by: a Go test asserting exit code 0 with non-empty warning stderr for a warn-only fixture, and exit 1 for a structural-error fixture — exit codes are observable command output, the fixtures are the independent source.
+
+**AC-3 — Warn-tier field findings do not gate the read path.**
+A workflow with a warn-tier field violation (and no structural error) still serves the default `status` table / `--next` / `--boot` without exit 1; the FO is never locked out by a field warning.
+Verified by: a Go test running an enumerate op (default table) over a warn-violation fixture and asserting exit 0 with the table on stdout — mirrors the existing `TestNativeValidationGatesReads` shape inverted (warn must NOT gate).
+
+**AC-4 — Enforcement is schema-driven: editing the schema changes what the binary checks, with no Go-source edit.**
+The field checks read their patterns/enums from the embedded `entity.mdschema.yml`; the schema file is the source of the expected rules.
+Verified by: a Go test that loads the embedded schema bytes, parses out a field's pattern (e.g. `mod-block`), and asserts the same pattern the validator uses to flag a fixture — proving the validator's rule and the schema file agree (two independently-readable values that can diverge), not a hardcoded Go regex literal.
 
 ## Test plan
 
-{What verifies the implementation, estimated cost/complexity, and whether fixture, CLI, or live workflow tests are needed. A conformance validator is naturally testable: feed known-bad frontmatter fixtures and assert non-zero exit + the right diagnostic.}
+**What verifies the implementation:** Go unit/behavior tests in `internal/status`, following the established `validationFixture` + `runNative` + golden-envelope pattern already used by `native_validate_test.go`. No Python, no new dependency (`yaml.v3` already vendored; schema embedded via `go:embed` so tests have no `docs/` filesystem dependency).
+
+**Fixtures (independent source of truth):** small in-test workflow fixtures, one known-bad frontmatter field per case:
+- `mod-block: noColonHere` (violates `^[^:]+:[^:]+$`)
+- `verdict: MAYBE` (out of `[PASSED, REJECTED]`)
+- `score: notanumber` (non-numeric where schema says numeric_string)
+- a malformed-ISO `started`/`completed`
+- a structural-error control (dup id) to confirm exit 1 still fires
+Each fixture is the independent source — the test asserts the binary's diagnostic against the fixture's planted defect, never against a grep of any prose file.
+
+**Cost / complexity:** Moderate. The schema-parse + field-loop is small (the spike is ~40 lines and already runs green). The bulk is wiring the warn tier into `validateWorkflow`'s return so warns are separable from errors at the exit-code boundary, plus the `go:embed` of the schema. Estimate: one implementation stage, ~4-6 focused tests. No live-workflow drive needed — all claims are command-level (exit code + stderr) and fixture-driven, provable by `go test ./internal/status/...`.
+
+**Test tiers:** fixture + CLI-level (drive the native binary via `runNative`, assert exit + stderr). Golden envelopes for the diagnostic wording where stable. No live workflow smoke test required; runtime behavior is not the claim — frontmatter conformance is.
+
+## Stage Report: ideation
+
+- DONE: Decide and record the approach: (a) extend Go `status --validate` to full mdschema coverage, or (b) a standalone conformance checker — with rationale.
+  Chose (a) — recorded under "## Decision: (a) extend Go `status --validate`": binary already owns the surface, single enforcement path, no new dependency; (b)/Python rejected (no CI hook, would re-implement frontmatter parsing).
+- DONE: Riskiest mechanism FIRST: parse the mdschema YAML and check a known-bad fixture's frontmatter against it end-to-end — exercise it.
+  Spike PASSED: `yaml.v3` (already in go.sum) parsed the real `entity.mdschema.yml` (JSON-in-.yml), extracted `mod-block` pattern + `verdict` enum + `invalid_severity`, and correctly failed `mod-block: noColonHere` and `verdict: MAYBE`. Result recorded under "### Riskiest mechanism — exercised". Surfaced the load-bearing finding that all per-field checks are `warn` severity.
+- DONE: ACs: feed known-bad frontmatter fixtures, assert non-zero exit + the right diagnostic (the fixture is the independent source, never a prose-grep); one test plan.
+  AC-1..AC-4 written, each grounded in a fixture entity + the schema file as independent sources; AC-2 corrects the naive "non-zero exit" assumption — warn-tier fields exit 0, only structural errors exit 1. Test plan names fixtures, tiers (fixture+CLI via `runNative`), no Python/new-dep, `go:embed` for the schema.
+
+### Summary
+
+Decided option (a): extend Go `--validate` to drive per-field type/pattern/enum checks from the embedded `entity.mdschema.yml`, closing the documented enforce-what-you-document drift gap with one enforcement path and no new dependency. The spike proved the schema (JSON-in-.yml) parses with the already-vendored `yaml.v3` and that a known-bad fixture is correctly rejected end-to-end. The key design finding: every per-field check is `invalid_severity: warn`, so "full conformance" means *surface at the declared severity* — field findings are warnings that print but must NOT flip the exit code or gate the read path (the documented FO-lockout hazard), with exit 1 reserved for existing structural errors. ACs and test plan are fixture-driven and command-level, no live drive needed.
