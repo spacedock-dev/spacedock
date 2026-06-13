@@ -155,3 +155,20 @@ PASSED. All four ACs verified by running the behavior and observing test results
 ### Cycle 1 — detached front-door audit (2026-06-13): 1 Material test-strength hole, routed to implementation
 The detached adversarial audit (post-PASSED, front-door high-stakes) found AC-3 has a test-strength hole. Adversarial edit: replace `semverCompare`'s (internal/contract/contract.go) per-component integer loop with a lexical string compare. Result: GREEN across the whole suite — because every hint test input (0.20.0 vs 0.19.8/0.12.1/0.19.4) agrees lexically AND numerically; none crosses the single-vs-double-digit boundary, so a lexical bug is invisible (it IS wrong on 0.10.0 vs 0.9.0). Production code is correct; the gap is purely missing coverage — a future "simplify semverCompare" refactor could regress with no signal. Polish: no test pins the pre-release-suffix conservative behavior (0.20.0-rc1 -> no hint).
 ROUTED TO IMPLEMENTATION (test-only, no production change): add to TestCompatibleUpgradeHint a behind-plugin positive (binary 0.10.0 vs plugin 0.9.0 -> MUST hint) + a negative (binary 0.9.0 vs plugin 0.10.0 -> MUST NOT hint) that red the lexical edit; and a pre-release case (binary 0.20.0-rc1 -> NO hint) pinning the suffix behavior. Re-validation must confirm the new cases discriminate (red the lexical + suffix edits, green on production) before the gate is re-presented.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add behind-plugin POSITIVE boundary case — binary 0.10.0 vs plugin 0.9.0 → MUST hint.
+  `TestCompatibleUpgradeHint/behind-plugin-double-digit-minor-hints` in `internal/contract/contract_test.go`. Crosses the 1-vs-2-digit boundary where lexical disagrees with numeric. Commit 53030b1e.
+- DONE: Add boundary NEGATIVE case — binary 0.9.0 vs plugin 0.10.0 → MUST NOT hint.
+  `TestCompatibleUpgradeHint/older-binary-double-digit-minor-no-hint`. Together with the positive, reds any lexical-compare regression.
+- DONE: Add pre-release case — binary 0.20.0-rc1 → NO hint (Polish, pins the conservative suffix behavior).
+  `TestCompatibleUpgradeHint/prerelease-binary-no-hint` — asserts `parseDottedInts` rejects a `-rc1` suffix rather than stripping it.
+- DONE: PROVE the new cases discriminate before signaling (lexical swap reds the boundary cases; suffix-strip reds the pre-release case; revert both).
+  (a) Swapped `semverCompare` body to `strings.Compare(a,b)` → both boundary cases RED (0.10.0-vs-0.9.0 lost its hint, 0.9.0-vs-0.10.0 gained a wrong hint), pre-release + others stayed green; reverted. (b) Made `parseDottedInts` strip a `-` suffix → ONLY `prerelease-binary-no-hint` RED; reverted. Production diff against HEAD is EMPTY after revert (`git diff` on contract.go/frontdoor.go/init.go shows nothing).
+- DONE: `go test ./internal/cli/ ./internal/contract/` green whole-package; ZERO production change; ZERO `.md`.
+  `325 passed in 2 packages` (322 + 3 new subtests); `go vet` clean. Only `internal/contract/contract_test.go` changed this cycle (`git diff --cached --name-only`); production source byte-identical to HEAD.
+
+### Summary
+
+Cycle-1 audit hole closed test-only, zero production change. The integer comparison in `semverCompare` was correct but unpinned — every prior hint input agreed lexically and numerically. Added two boundary cases crossing the single-vs-double-digit threshold (0.10.0 vs 0.9.0 both directions) that together red any lexical regression, plus a pre-release case pinning that `parseDottedInts` rejects rather than strips a suffix. Proved all three discriminate by temporarily applying the exact adversarial edits (lexical swap reds the boundary pair; suffix-strip reds the pre-release case) and confirming they revert clean — production source is byte-identical to HEAD. Whole-package green at 325; commit 53030b1e on `spacedock-ensign/install-refresh-and-upgrade-hint`.
