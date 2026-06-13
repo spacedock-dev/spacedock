@@ -158,3 +158,20 @@ REJECTED. AC-1..AC-4 all reproduce with external evidence on the BUILT binary, t
 ### Summary
 
 Closed the test-only gap from the detached audit's refutation (d): the warn-only tests asserted only the field name, so flipping field-conformance warns to a gating `Error:` prefix left the package green. `TestFieldConformanceWarnsSurface` now pins the `Warning:` prefix bound to each field and rejects an `Error:` line for that field — verified to red under edit (d) and green when restored. No production change (the `Warning:`/`Error:` split was already correct); commit 66d67387.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: PRIMARY — re-run detached refutation (d) and confirm `TestFieldConformanceWarnsSurface` now REDS (the gate to closing the REJECTED).
+  Throwaway `git worktree add --detach /tmp/sd-audit-c2 <cycle-1 HEAD 66d67387>` (removed after). Baseline green; applied edit (d) (`entityEvidenceLine("Warning", …)` → `("Error", …)` at field_conformance.go:104) → all four subtests RED (`stderr missing warn line "Warning: field 'mod-block"`, …; and the new line-71 guard rejects an `Error: field '…` line). The previously-unrefuted edit now bites. Restored → green.
+- DONE: Re-confirm AC-1..AC-4 still reproduce + STAFF P3 golden holds; spot-check refutations (a)(b)(c) still red.
+  Cycle-1 fix is TEST-ONLY: `git diff 76a924a7 66d67387 -- ':!*_test.go'` is EMPTY (production byte-identical to what cycle 1 validated; only field_conformance_test.go +10/-2). Built `/tmp/sd-c2`: AC-1+AC-2 warn-only → exit 0, stdout VALID, 4 `Warning: field` lines; AC-2 structural dup+warn → exit 1 with 2 `Error: duplicate id`; AC-3 default table over warn fixture → exit 0, table on stdout, EMPTY stderr. AC-4 `TestFieldConformanceSchemaDriven` green (live schema-edit→rebuild behavior change proven in cycle 1; production unchanged). P3: `TestNativeValidationParity` green, `native-validate-valid` golden = exit 0 / stdout VALID / empty stderr (warns stderr-only, unperturbed). Spot-checks: (a) warn flips exit → AC-2 RED; (b) warns gate read path → AC-3 RED; (c) hardcoded Go regex → AC-4 RED. All four breaking edits now bite.
+- DONE: `go test ./internal/status/` green over the whole package; `go test ./...` green.
+  Whole `internal/status` package green; `go test ./...` green (16 pkgs ok, 2 no-test). Audit checkout removed; implementation worktree pristine (`git diff --quiet` exit 0).
+
+### Material/Polish audit findings (cycle 2)
+
+- Cycle-1 Material finding CLOSED: the `Warning:`/`Error:` prefix split is now pinned — `TestFieldConformanceWarnsSurface` asserts each line carries `Warning: field '<name>` AND rejects `Error: field '<name>`, so a non-gating advisory misreported as a structural `Error:` reds (verified: edit (d) now reds all four subtests). No new material findings; refuted nothing further material.
+
+### Summary
+
+PASSED. The cycle-1 fix closes the sole Material finding: edit (d) — the previously-unrefuted "drop the Warning:/Error: prefix split" — now reds all four subtests of `TestFieldConformanceWarnsSurface` on a detached checkout. The fix is test-only (`git diff … -- ':!*_test.go'` empty), so AC-1..AC-4 and the STAFF P3 golden carry forward and were re-confirmed on the freshly-built cycle-2 binary; all four adversarial edits (a)(b)(c)(d) now bite. Whole package and whole module green. Gate is clean.
