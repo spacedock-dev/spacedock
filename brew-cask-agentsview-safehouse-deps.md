@@ -227,3 +227,16 @@ for the cask behavior, AC-1 carries that.
 ### Summary
 
 The seed asked for agentsview AND safehouse as cask dependencies; ideation found they are not symmetric. agentsview is a real core Homebrew cask and a `depends_on cask: agentsview` was proven to render correctly via a goreleaser snapshot; safehouse is not a Homebrew package at all (it lives at `github.com/anthropics/safehouse`), so it cannot be a `depends_on` and stays a caveat until published. The task therefore ships agentsview as a dependency (both stable + edge casks), moves agentsview out of the "not installed by brew" caveat, records safehouse as upstream-gated out of scope, and adds a one-sentence install-doc note. The riskiest mechanism (goreleaser cask `dependencies` field) was exercised end-to-end before committing to the plan.
+
+## Stage Report: implementation
+
+- DONE: .goreleaser.yaml homebrew_casks: BOTH casks (spacedock stable + spacedock@next edge) declare `dependencies: - cask: agentsview`; agentsview removed from each caveats "not installed by brew" list, safehouse kept (AC-1, AC-2).
+  Commit 70a56dd7 on branch spacedock-ensign/brew-cask-agentsview-safehouse-deps; snapshot render emits `depends_on cask: ["agentsview"]` and a caveats block naming only safehouse in both spacedock.rb and spacedock@next.rb.
+- DONE: A cask render/parse test under internal/release/ proves each rendered cask carries `depends_on cask: agentsview` and caveats names safehouse but NOT agentsview; `go test ./internal/release/` green (prefer goreleaser `release --snapshot --skip=publish --clean` render; config-parse fallback only if CI cannot run goreleaser).
+  internal/release/cask_dependencies_test.go renders via goreleaser snapshot (primary) with a `.goreleaser.yaml` config-parse fallback; reds on the pre-edit config (no depends_on, agentsview in caveats), greens after. `go test ./internal/release/` → 77/77 passed; both render and fallback paths exercised on the edited config.
+- SKIPPED: ZERO .md edits — docs are yw's (anti-collision); AC-3's install note is delegated to yw at docs/site/get-started/install.md; do NOT touch docs/install-journey.md. `git show --stat` shows no *.md.
+  Anti-collision: docs owned solely by yw this sprint. AC-3's install note delegated to yw at docs/site/get-started/install.md (docs/install-journey.md is being deleted by yw); `git show --stat HEAD` confirms zero *.md in commit 70a56dd7.
+
+### Summary
+
+Added `dependencies: - cask: agentsview` to both casks in `.goreleaser.yaml`'s `homebrew_casks:` block and dropped agentsview from each caveats list (safehouse kept). goreleaser renders this to `depends_on cask: ["agentsview"]` in both spacedock.rb and spacedock@next.rb, verified by a new render/parse test under `internal/release/` that reds on the unedited config and greens after. The install-doc note (original AC-3) is delegated to yw per the sprint anti-collision rule, so this deliverable ships zero `.md` edits — only the `.goreleaser.yaml` generator change plus the test.
