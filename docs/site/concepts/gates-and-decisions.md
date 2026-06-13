@@ -4,7 +4,7 @@ A gate is the decision point at the end of a stage where nothing advances withou
 
 ## What a gate carries
 
-The first officer presents a gate review only after it has read the worker's `## Stage Report`, checked every dispatched item, and counted the results. The review is the first officer's prose with a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
+A gate review has a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
 
 A gate review looks like this:
 
@@ -33,9 +33,9 @@ Reading the fields:
 - **`Recommend` is the first officer's verdict, stated exactly once.**
 - **`Checklist` is a gist roll-up, not the report.** The full `## Stage Report` is cited by file path and line range; open it when you want the detail.
 - **Reviewer findings split into `Material` and `Polish`.** Material items (fact-corrections, contract violations, missing acceptance-criterion evidence, claims the codebase contradicts) are the ones that should move your vote. Polish is non-blocking. An empty tier is dropped.
-- **`Decision` names what your vote does in concrete terms.** For example, "approve to enter implementation in worktree `.worktrees/...`" or "reject to bounce back to {feedback-to target}".
+- **`Decision` names what your vote does in concrete terms.** For example, "approve to enter implementation" or "reject to bounce back to design".
 
-At every gate the first officer also runs an acceptance-criteria cross-check: it scans `## Acceptance criteria`, confirms each `**AC-N**` has evidence cited from this or a prior stage report, and names any criterion left without evidence.
+Every acceptance criterion is also cross-checked before the review reaches you; a criterion left without cited evidence is named in the review rather than passed over.
 
 ## The three calls
 
@@ -61,14 +61,11 @@ The first officer tracks each round in a `### Feedback Cycles` section in the en
 
 For high-stakes surfaces, a passing validation is necessary but not sufficient. Before merging, the first officer also runs a read-only adversarial audit. The audit catches the hole that validation cannot see itself: a test that passes today but would also pass on a broken future edit.
 
-The audit triggers on four surfaces: the front-door launcher (`spacedock claude` / `codex` / `doctor`), the `status` mutation and guard paths, the shipped contract and scaffolding, and the CI and release machinery. Routine, low-blast-radius changes do not need it; a normal validation suffices.
+A workflow names its own high-stakes surfaces; routine, low-blast-radius changes do not need an audit, a normal validation suffices.
 
-It runs on a separate throwaway checkout, never the implementation worktree, and never mutates the deliverable. The auditor tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. Findings come in two tiers, `Material` and `Polish`; "refuted nothing material" is a valid recorded outcome.
+The audit is read-only and cannot touch the deliverable. It tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. "Refuted nothing material" is a valid recorded outcome.
 
-Results feed the same gate machinery:
-
-- **Material findings route back through the normal validation-to-implementation feedback flow**, with a `### Feedback Cycles` entry naming the audit and its adversarial edit. The gate is not presented as clean until they are closed.
-- **A clean audit is noted in the gate's reviewer-findings block**, or as a one-line "detached audit: no material findings".
+Material findings route back through the normal feedback flow, and the gate is not presented as clean until they are closed. A clean audit is noted in the review.
 
 ## Where to go next
 

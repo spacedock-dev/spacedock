@@ -27,11 +27,11 @@ The stage order, names, and the properties each stage carries live in the workfl
 | `concurrency: N` | How many entities may sit in this stage at once. |
 | `agent: {name}` | Which worker skill the first officer dispatches. Defaults to `ensign`. |
 
-Beyond these properties, the prose of each stage's `###` subsection in the README is the stage definition: its Inputs, Outputs, and the Good/Bad bar. The first officer copies that subsection verbatim into the ensign's assignment, so what a stage declares in prose is exactly what the worker receives as its assignment.
+Beyond these properties, the prose of each stage's `###` subsection in the README is the stage definition: its Inputs, Outputs, and the Good/Bad bar. What you write there is exactly what the worker receives as its assignment.
 
 ## Fresh context at validation
 
-Validation declares `fresh: true` because the reviewer must not be the maker. The first officer normally reuses a live worker across consecutive stages to save context, but a `fresh: true` stage forces a new dispatch every time. The validator arrives without the implementer's reasoning in its context, sees only the entity body and the deliverable, and pushes back on thin evidence. This is the mechanism behind the README's claim that "the agent doesn't get to judge its own work."
+Validation declares `fresh: true` because the reviewer must not be the maker. The validator arrives without the implementer's reasoning in its context, sees only the entity body and the deliverable, and pushes back on thin evidence. This is the mechanism behind the README's claim that "the agent doesn't get to judge its own work."
 
 When validation recommends `REJECTED`, `feedback-to: implementation` routes the concrete finding back to the implementation stage for rework rather than closing the entity. The entity re-enters implementation, the finding is addressed, and a fresh validator checks it again. A hard cap on feedback cycles prevents an endless bounce; on the third cycle the first officer escalates to you.
 
@@ -39,18 +39,10 @@ When validation recommends `REJECTED`, `feedback-to: implementation` routes the 
 
 A stage runs in an isolated git worktree when it declares `worktree: true`, and inline at the repo root otherwise. This is the "isolation when it matters" tradeoff: stages that mutate shared state (implementation, validation) get their own checkout so concurrent entities don't collide; lighter stages that only edit the entity body (backlog, ideation) run inline.
 
-The first officer manages the isolation for you: it creates the worktree under `.worktrees/` on first dispatch and records the path in the entity's `worktree` frontmatter field, the stage's work and commits stay inside that checkout, and at the terminal stage it merges the branch and cleans the worktree up. In a [split-root workflow](../advanced/split-root-state.md) the entity file itself lives in the state checkout; the worktree isolates only the deliverable.
-
-To see where each entity sits and which are ready to advance, read the workflow state:
-
-```bash
-spacedock status --workflow-dir docs/dev --next
-```
-
-`--next` lists the entities ready for dispatch, the query the first officer runs each loop; drop it for the full queue. The `worktree` column shows the isolated checkout path for any entity currently mid-stage in a worktree-backed stage.
+The first officer manages the isolation for you: it creates the worktree on first dispatch, the stage's work and commits stay inside that checkout, and at the terminal stage it merges the branch and cleans the worktree up. In a [split-root workflow](../advanced/split-root-state.md) the entity file itself lives in the state checkout; the worktree isolates only the deliverable.
 
 ## Where to go next
 
-- [The operating model](operating-model.md) names the roles that drive this pipeline: captain, first officer, ensign.
-- [Gates and decisions](gates-and-decisions.md) covers the decision points at stage boundaries.
-- The [frontmatter contract](../reference/frontmatter-contract.md) lists the entity fields these stages update.
+- [The operating model](operating-model.md) for who does what: you, the orchestrator, the workers.
+- [Gates and decisions](gates-and-decisions.md) to see exactly what you decide at a stage boundary and on what evidence.
+- The [frontmatter contract](../reference/frontmatter-contract.md) to look up the fields these stages write.

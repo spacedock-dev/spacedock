@@ -14,9 +14,7 @@ state: .spacedock-state
 
 Spacedock then reads stage declarations from the README and entities from the state path, and writes entity changes only into the state path. The split is transparent to the command surface: read the workflow exactly as you would a single-root one.
 
-```bash
-spacedock status --workflow-dir docs/dev
-```
+On a fresh clone the state checkout is absent; run `spacedock state init` to restore it before working the workflow.
 
 The shipped `docs/dev` workflow runs split-root; see its README for a live example.
 

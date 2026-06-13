@@ -10,33 +10,14 @@ The workflow is `docs/dev` (the Spacedock v1 dev workflow); its stages, gates,
 and entity schema are defined in
 [the development workflow README](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md).
 Runtime entity state lives in a separate `.spacedock-state` checkout, so the
-finished entity itself is not in the main tree. Its full trajectory is in
-the `0198-pre-flip-hardening` sprint directory: `index.md`,
-`dispatch-sprint-execution.md`, `debrief.md`, and `post-sprint-audit.md`.
+finished entity itself is not in the main tree. Its full trajectory is in the
+`0198-pre-flip-hardening` sprint directory (a sprint groups work items driven
+together to one deliverable): `index.md`, `dispatch-sprint-execution.md`,
+`debrief.md`, and `post-sprint-audit.md`.
 
 `z9` delivered front-door Codex plugin auto-install: `spacedock codex` now
 installs a missing plugin then launches, the Codex analog of the Claude path. It
 shipped as [PR #329](https://github.com/spacedock-dev/spacedock/pull/329).
-
-## See where it sits
-
-Each first-officer loop starts by asking the workflow what is ready to move. You
-run the same query:
-
-```bash
-spacedock status --workflow-dir docs/dev --next
-```
-
-This lists the entities ready to dispatch. To scope to one sprint, filter with
-`--where`:
-
-```bash
-spacedock status --workflow-dir docs/dev \
-  --where sprint=0198-pre-flip-hardening --where 'sprint-readiness != defer'
-```
-
-This query is the sprint membership source of truth, not a hand-kept list.
-At the start of `0198`, `z9` shows up here in the `binary-ux` group.
 
 ## backlog → ideation: shape the work
 
@@ -54,9 +35,8 @@ a literal) and recorded it before committing to the rest of the plan.
 Ideation ends at a **gate**. Because the dev workflow marks `ideation` with
 `gate: true`, the first officer does not advance on its own: it presents the
 design to the captain. The captain approved `z9`'s ideation on 2026-06-08. That
-approval is the entry condition for implementation, and it is captured in the
-sprint package so a later session drives implementation directly without
-re-presenting the gate.
+approval is the entry condition for implementation, and it is on the record, so
+a later session proceeds without re-asking.
 
 ## implementation: produce the deliverable
 
@@ -64,8 +44,8 @@ Once the design is approved, `z9` moves to implementation. The dev workflow runs
 this stage in a `worktree` (`worktree: true`), so the dispatched ensign works in
 an isolated checkout, not the shared tree.
 
-The dispatch package handed the implementer three build notes, verbatim from the
-sprint's `dispatch-sprint-execution.md`:
+The implementer was handed three build notes, verbatim from the sprint's
+`dispatch-sprint-execution.md`:
 
 > Build notes: **(a)** the codex install branch MUST be the shared `devBranch`
 > (`ops.Install("codex", marketplaceSource, devBranch)` + `--ref <devBranch>`),
@@ -92,11 +72,10 @@ cites, and produces a PASSED or REJECTED recommendation.
 
 `z9` is a front-door change, a high-stakes surface, so validation alone was not
 sufficient. The dev workflow requires a **detached adversarial audit** for the
-launcher front door: a read-only pass on a throwaway checkout of the merge result
-that tries to refute the validation. The `z9` audit ran at commit `0b714fac`
-and exercised five mandated probes, each reddening the test suite then reverting.
-It refuted nothing material. Channel-tracking was confirmed clean. That clean
-audit satisfied the sprint's definition-of-done item for the high-stakes surface.
+launcher front door: a read-only pass that tries to refute the validation. The
+`z9` audit ran at commit `0b714fac`, exercised five probes (each proving the
+tests would catch a break), and refuted nothing material. That clean audit
+satisfied the sprint's definition-of-done for the high-stakes surface.
 
 Validation also has `gate: true` and `feedback-to: implementation`. A REJECTED
 recommendation routes the finding back to implementation for another cycle; a
