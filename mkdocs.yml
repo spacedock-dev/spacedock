@@ -18,9 +18,9 @@ theme:
   custom_dir: overrides
   logo: brand/logo.svg
   favicon: brand/favicon.svg
-  font:
-    text: Hanken Grotesk
-    code: JetBrains Mono
+  # Webfonts load from Bunny Fonts (GDPR-clean, no IP logging) via overrides/main.html,
+  # not Material's built-in Google Fonts. brand.css restores --md-text-font/--md-code-font.
+  font: false
   palette:
     - scheme: slate
       primary: custom

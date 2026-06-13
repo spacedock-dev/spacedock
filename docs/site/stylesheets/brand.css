@@ -1,6 +1,14 @@
 /* ABOUTME: C2 brand layer for Material docs. */
 /* ABOUTME: Maps C2 tokens to Material surfaces; loaded after tokens.css. No hardcoded values. */
 
+/* Font-family slots. theme.font is false (webfonts load from Bunny, not Google),
+   so Material no longer defines these; restore them to the same families so the
+   body text and code resolve to Hanken Grotesk / JetBrains Mono. */
+:root {
+  --md-text-font: "Hanken Grotesk";
+  --md-code-font: "JetBrains Mono";
+}
+
 /* Header/footer chrome -- matches landing nav bg + border. Text colour must
    travel with the repainted background: Material defaults header/tabs text
    to the primary-bg alias (ink-on-gold), which is dark-on-dark over the
