@@ -81,7 +81,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	t.Run("from the repo root names the real workflow, not the .claude/.worktrees noise", func(t *testing.T) {
 		repo, _ := repoWithRealWorkflowAndNoise(t)
 		var buf bytes.Buffer
-		launchBanner("claude", repo, &buf)
+		launchBanner("claude", repo, false, lookMissing, &buf)
 
 		out := buf.String()
 		if !strings.Contains(out, "spacedock "+Version) {
@@ -105,7 +105,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 			t.Fatal(err)
 		}
 		var buf bytes.Buffer
-		launchBanner("codex", sub, &buf)
+		launchBanner("codex", sub, false, lookMissing, &buf)
 
 		out := buf.String()
 		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")+"\n") {
@@ -118,7 +118,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		commissionWorkflowAt(t, filepath.Join(repo, "docs", "dev"))
 		commissionWorkflowAt(t, filepath.Join(repo, "ops", "release"))
 		var buf bytes.Buffer
-		launchBanner("claude", repo, &buf)
+		launchBanner("claude", repo, false, lookMissing, &buf)
 
 		out := buf.String()
 		wantLine := "Workflows: " + filepath.Join("docs", "dev") + " " + filepath.Join("ops", "release") + "\n"
@@ -136,7 +136,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		workflow := t.TempDir()
 		commissionWorkflowAt(t, workflow)
 		var buf bytes.Buffer
-		launchBanner("codex", workflow, &buf)
+		launchBanner("codex", workflow, false, lookMissing, &buf)
 
 		out := buf.String()
 		if !strings.Contains(out, "Workflow: "+filepath.Base(workflow)+"\n") {
@@ -153,7 +153,7 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 	t.Run("outside any workflow", func(t *testing.T) {
 		bare := t.TempDir() // no commissioned README in or above this temp dir
 		var buf bytes.Buffer
-		launchBanner("codex", bare, &buf)
+		launchBanner("codex", bare, false, lookMissing, &buf)
 
 		out := buf.String()
 		if !strings.Contains(out, "spacedock "+Version) {

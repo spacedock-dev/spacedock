@@ -99,6 +99,6 @@ func TestNativeBootMatchesOracle(t *testing.T) {
 	if nativeCode != 0 {
 		t.Fatalf("native --boot exit=%d stderr=%q", nativeCode, nativeErr)
 	}
-	normNative := maskBootNextID(stripStateBackend(normalize(nativeOut, root)))
+	normNative := maskBootNextID(stripSandbox(stripStateBackend(normalize(nativeOut, root))))
 	assertTextGolden(t, "native-boot-sdb32", normNative)
 }

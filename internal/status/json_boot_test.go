@@ -18,6 +18,7 @@ var bootJSONKeys = []string{
 	"command", "mods", "id_style", "next_id", "min_prefix",
 	"orphans", "pr_state", "dispatchable", "team_state",
 	"state_backend", "definition_dir", "entity_dir", "entity_dir_present",
+	"sandbox",
 }
 
 // TestBootJSONStructure (AC-1 oracle e) mirrors nextid_boot_test.go for the JSON

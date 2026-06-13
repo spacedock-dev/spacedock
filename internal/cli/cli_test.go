@@ -88,9 +88,11 @@ func TestVersion(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("Run returned %d, want 0", code)
 	}
+	// The FIRST line is the load-bearing, FO-parsed version+contract line; the
+	// sandbox + per-runtime block follows it (asserted in version_runtime_test.go).
 	want := "spacedock " + Version + " (contract " + strconv.Itoa(contract.CONTRACT_VERSION) + ")"
-	if got := strings.TrimSpace(stdout.String()); got != want {
-		t.Fatalf("version output = %q, want %q", got, want)
+	if got := strings.SplitN(stdout.String(), "\n", 2)[0]; got != want {
+		t.Fatalf("version first line = %q, want %q", got, want)
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())

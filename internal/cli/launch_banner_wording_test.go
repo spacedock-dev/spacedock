@@ -13,10 +13,13 @@ import (
 
 // renderBanner exercises the real launchBanner for host from dir and returns the
 // rendered stderr bytes — the proof surface for AC-1/2/3/4/5 (the bytes the
-// operator actually sees), never a source-grep of the constant.
+// operator actually sees), never a source-grep of the constant. The sandbox
+// inputs are pinned (not selected, binary not found) so the Sandbox: line is a
+// stable `unavailable` for these workflow-line oracles; the sandbox three-way
+// states are proven independently by TestLaunchBannerSandboxLine.
 func renderBanner(host, dir string) string {
 	var buf bytes.Buffer
-	launchBanner(host, dir, &buf)
+	launchBanner(host, dir, false, lookMissing, &buf)
 	return buf.String()
 }
 
@@ -125,6 +128,7 @@ func TestLaunchBannerSingleWorkflowGolden(t *testing.T) {
 
 	want := "spacedock " + Version + " · launching claude as your first officer\n" +
 		"Workflow: " + filepath.Join("docs", "dev") + "\n" +
+		"Sandbox: unavailable (safehouse not on PATH)\n" +
 		"claude is your first officer — ask it for the queue and next steps.\n"
 	if got := renderBanner("claude", repo); got != want {
 		t.Fatalf("single-workflow banner golden mismatch:\n got=%q\nwant=%q", got, want)
