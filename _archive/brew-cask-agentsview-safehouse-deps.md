@@ -14,6 +14,7 @@ group: ux-cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#347"
+archived: 2026-06-13T15:05:33Z
 ---
 
 The Spacedock Homebrew cask should pull in its companions on install instead of
