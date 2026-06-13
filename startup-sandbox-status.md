@@ -13,6 +13,7 @@ sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#350"
 ---
 
 UX improvement: on startup, Spacedock should also show whether sandboxing is enabled — distinguishing enabled / available-but-not-enabled / unavailable — so the operator knows the execution-isolation posture before dispatching work.
