@@ -1,13 +1,13 @@
 ---
 id: ev9h1phd37rb7r5cfrzpgenh
 title: Docs site agent-readability (a14y) parity with the landing page
-status: validation
+status: done
 source: vendor prompt (/tmp/docs-a14y-vendor-prompt.md), captain intake 2026-06-13 — standalone doc improvement (NOT a 0.20.3 sprint item)
 started: 2026-06-13T19:36:46Z
-completed:
-verdict:
+completed: 2026-06-13T21:17:34Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-docs-a14y-parity
+worktree:
 issue:
 mod-block:
 pr: "#361"
