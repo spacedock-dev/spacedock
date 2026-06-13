@@ -53,3 +53,157 @@ configured.
 - Implementation should use real-git fixtures with and without an `origin`
   remote, not string-only instruction checks.
 - Validation should run the focused state/dispatch tests plus `go test ./...`.
+
+## Design (ideation)
+
+### Scope decision: `status --boot` + `dispatch build`, no new helper
+
+The degrade lands in the two places that already speak about state remote sync,
+and nowhere else:
+
+- **`status --boot`** already emits a `STATE_BACKEND:` line for split-root
+  workflows (`internal/status/boot.go` text renderer + `internal/status/json_commands.go`
+  `bootJSON`). It is the FO's startup probe, so remote availability belongs here
+  (AC-1, AC-4).
+- **`dispatch build`** already emits the push/pull reminder inside
+  `stateCommitGuidance` (`internal/dispatch/build.go:719`). It is the only place
+  the impossible commands are minted, so the drop belongs here (AC-2, AC-4).
+
+No new `state sync` helper. YAGNI: the missing-remote condition is read at boot
+and at dispatch; there is nothing a standalone helper would do that those two
+paths do not already cover. `spacedock state new` already warns on a failed push
+(`internal/cli/state.go:178`), so the create path is already remote-tolerant.
+
+### Detection mechanism (riskiest unknown — spiked, see Spike result)
+
+A shared `stateHasOrigin(checkout string) bool` probe runs
+`git -C <checkout> remote get-url origin` and reports true iff exit 0. The
+contract pushes/pulls `origin` specifically, so the probe must check the
+**named `origin` remote**, not "any remote" — a checkout with only an `upstream`
+remote still cannot run the contract's `git push origin`. `git remote get-url
+origin` is the exact named-remote question and needs no network (unlike
+`ls-remote`, which the existing `orphanOnRemote` uses for a different question:
+"does the branch exist upstream").
+
+Reuse the existing per-package git runners — `runGitCmd` in
+`internal/status/handlers.go` for the boot probe, and a local `git remote get-url
+origin` exec in `internal/dispatch/build.go` (the dispatch package has no shared
+runner; one small exec, or lift `runGit` into a shared spot if a second caller
+appears — not now).
+
+### AC-1 — boot exposes remote availability
+
+`gatherBoot` (`internal/status/boot.go`) gains a `stateRemote` field on
+`bootData`, populated only when `stateBackend == "split-root"`:
+`origin` / `none`. Both renderers print it:
+
+- text: extend the `STATE_BACKEND:` line, e.g.
+  `STATE_BACKEND: split-root (entity_dir: …, present: true, remote: none — state not remotely synced)`
+  and `remote: origin` when present. Single-root omits the remote clause entirely.
+- JSON: add `state_remote` (`"origin"` / `"none"`) **after** the existing
+  `entity_dir_present` key, preserving the FO's key-order parse (the existing
+  comment at `json_commands.go:192` documents append-after-team_state for the
+  same reason).
+
+### AC-2 — dispatch drops the impossible commands
+
+`stateCommitGuidance(stateCheckout, entityPath, stateBranch string)` gains a
+`hasOrigin bool` parameter. The two callers (`build.go:498`, `:508`) pass the
+`stateHasOrigin(stateCheckout)` result. When `hasOrigin`:
+
+- **true** → unchanged: the push/`pull --rebase origin` reminder as today.
+- **false** → the push/pull reminder is replaced by a local-only line:
+  "This state checkout has no `origin` remote — commit path-scoped locally as
+  above; do NOT run `git push`/`git pull` (there is no remote to sync). State is
+  local-only and will not survive on a shared remote until an `origin` is
+  configured."
+
+The path-scoped commit instruction is unchanged in both cases — only the
+remote-sync tail diverges.
+
+### AC-3 — origin path unchanged
+
+The `hasOrigin == true` branch is the existing wording verbatim, so the shared
+`docs/dev/.spacedock-state` checkout (which has `origin`) keeps emitting push +
+pull-rebase. A focused fixture with an `origin` remote asserts the push line is
+still present; the existing `build_statecommit_test.go` suite (all green at
+baseline, see Spike result) guards the path-scoped commit wording.
+
+### AC-4 — visibility
+
+Covered by the same two surfaces: the boot `remote: none — state not remotely
+synced` clause and the dispatch local-only line both name the mode. Neither is a
+silent fallthrough — absence of a remote produces explicit text in both the
+operator's startup probe and the worker's dispatch prompt.
+
+## Spike result (riskiest mechanism — detection)
+
+Exercised `git remote get-url origin` against two real checkouts on
+`2026-06-12` (throwaway `/tmp/sd-spike`):
+
+- **no-origin checkout** (`git init`, no remote): `git remote get-url origin` →
+  exit 2, stderr `error: No such remote 'origin'`. (Bare `git remote` prints
+  nothing **and exits 0** — too weak to discriminate; `ls-remote origin` →
+  exit 128 with a network-shaped fatal, wrong tool.)
+- **origin checkout** (`git remote add origin ../upstream.git`):
+  `git remote get-url origin` → exit 0, prints the URL.
+
+Conclusion: exit-0-of-`git remote get-url origin` is a clean, network-free,
+named-remote discriminator. This seeds the implementation's first test: a
+real-git fixture pair (one `git init` with no remote, one with `origin` added)
+asserting the probe returns false/true respectively.
+
+Baseline `go test ./internal/dispatch/ ./internal/status/` → 646 passed, so the
+new fixtures extend a green suite.
+
+## Test plan
+
+All real-git fixtures (`gitInit`-style temp checkouts already used in
+`internal/dispatch/build_statecommit_test.go` and `internal/status` boot tests);
+no string-only instruction checks. Estimated cost: low — three focused Go unit
+tests plus the existing suites, no live workflow run needed.
+
+1. **Detection unit (seeds AC-1/AC-2).** `stateHasOrigin` against a temp
+   checkout with no remote (false) and one with `origin` added (true). Fast,
+   hermetic.
+2. **Boot fixture (AC-1, AC-4).** Build a split-root workflow fixture whose
+   state checkout has no `origin`; assert the `--boot` text line carries
+   `remote: none` and the not-remotely-synced phrase, and the JSON envelope
+   carries `state_remote: "none"` after `entity_dir_present`. A second fixture
+   with `origin` asserts `remote: origin` / `state_remote: "origin"`.
+3. **Dispatch fixture (AC-2, AC-3, AC-4).** Drive `dispatch build` over a
+   no-origin split-root state checkout (reusing the `runNative` /
+   `readDispatchBody` harness); assert the emitted body contains the path-scoped
+   `git -C … add …` commit **and the local-only line**, and does NOT contain
+   `git push origin` / `git pull --rebase origin`. A paired origin fixture
+   asserts the push/pull lines ARE present (AC-3).
+4. **Regression.** `go test ./internal/dispatch/ ./internal/status/` then
+   `go test ./...`.
+
+## Contract implication
+
+The FO/ensign split-root contract currently tells every writer to push and
+`pull --rebase origin` after a path-scoped commit
+(`skills/ensign/references/ensign-shared-core.md` "Multi-writer sync"; the FO
+shared core's mirror). That instruction is unconditional today. Implementation
+should add a one-clause carve-out: **when the state checkout has no `origin`
+remote, commit path-scoped locally and skip push/pull — state is local-only
+until a remote is configured.** This is a contract-prose delta, not an AC: per
+the ideation gate, prose-presence is authoring work, not a behavioral
+acceptance criterion. The behavioral ACs are carried entirely by the boot and
+dispatch fixtures above — the dispatch fixture (test 3) is the real proof the
+worker is *told* the right thing, because it asserts the generated prompt bytes,
+not the static contract file.
+
+## Stage Report: ideation
+
+- DONE: Firm the local-only mode: keep path-scoped commits, skip push/pull, surface a clear "state not remotely synced" status; pin AC-1 (boot/status distinguishes origin-present vs no-remote, fixture-backed) and AC-2 (dispatch-build keeps local commits but drops the impossible remote-sync command when no origin).
+  Design section added: boot extends STATE_BACKEND with remote: origin/none; stateCommitGuidance gains hasOrigin and emits a local-only line when false. ACs already pinned in body; test plan binds each to a real-git fixture.
+- DONE: Riskiest mechanism FIRST: how the runtime detects no-origin and where the degrade surfaces — exercise it on a fixture state checkout with no remote, or record "no spike needed".
+  Spike result recorded: `git remote get-url origin` exit 2 (no-origin) vs exit 0 (origin) on real /tmp checkouts; bare `git remote` and `ls-remote` rejected as discriminators. Network-free named-origin probe proven.
+- DONE: Note the contract implication (the FO/ensign contract currently tells writers to push/pull) and propose the doc/contract delta; test plan over a no-origin fixture state checkout.
+  Contract-implication section names the unconditional "Multi-writer sync" clause in ensign-shared-core.md + FO mirror and proposes a no-origin carve-out; flagged as prose delta, not an AC. Test plan (4 items, all real-git fixtures) appended.
+
+### Summary
+
+Scoped the degrade to `status --boot` + `dispatch build` only (no new `state sync` helper — YAGNI; create path already remote-tolerant at state.go:178). Detection is a shared `stateHasOrigin` probe on `git remote get-url origin`, spiked on real checkouts before committing to the plan. Each AC binds to a real-git fixture (detection unit, boot fixture pair, dispatch fixture pair); the contract push/pull clause is a prose delta proven indirectly by the dispatch fixture asserting generated prompt bytes, not the static file.
