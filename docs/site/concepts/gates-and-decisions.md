@@ -49,15 +49,13 @@ Rejections bounce automatically: the findings route back, the work is redone, an
 
 A useful rejection to type at a gate: "send it back unless this now needs reframing".
 
-## The detached adversarial audit
+## Reviews beyond validation
 
-For high-stakes surfaces, a passing validation is necessary but not sufficient. Before merging, the first officer also runs a read-only adversarial audit. The audit catches the hole validation cannot see on its own: a test that passes today but would also pass on a broken future edit.
+A typical validation stage already covers code review: the work is checked against your acceptance criteria, with the rejection loop above behind it. For most changes, that is enough.
 
-A workflow names its own high-stakes surfaces. Routine, low-blast-radius changes do not need an audit; a normal validation suffices.
+The workflow is flexible, so you can add conditional, lens-specific reviews on top. If a change affects end users, check that the documentation was updated; if it touches a high-stakes surface, run an adversarial audit before merging.
 
-The audit is read-only and cannot touch the deliverable. It tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. "Refuted nothing material" is a valid recorded outcome.
-
-Material findings route back through the normal feedback flow, and the gate is not presented as clean until they are closed. A clean audit is noted in the review.
+The audit differs from validation in what it distrusts: validation checks the work; the audit checks the validation. It is read-only, and it tries to refute the result: it constructs an adversarial edit the deliverable's own tests should catch, and confirms they do. A test that stays green under an edit that breaks the claim is a hole validation cannot see on its own. "Refuted nothing material" is a valid recorded outcome, and material findings route back through the rejection loop.
 
 ## Where to go next
 
