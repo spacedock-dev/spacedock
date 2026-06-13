@@ -14,6 +14,7 @@ group: cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#362"
+archived: 2026-06-13T21:24:41Z
 ---
 
 Make `spacedock new` the contract-blessed atomic-create path for filing entities, and have `status --next-id` emit a hint pointing to it.
