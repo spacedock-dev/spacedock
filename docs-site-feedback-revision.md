@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/docs-site-feedback
 pr: "#343"
 issue:
-mod-block: merge:pr-merge
+mod-block:
 ---
 
 Intake of **PR #343** (`docs-site-feedback` → `main`) for continued, captain-steered revision. The PR already does two things; this entity tracks refining it to done.
