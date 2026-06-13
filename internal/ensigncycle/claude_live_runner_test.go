@@ -102,6 +102,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, share
 		"rejection-flow":              runClaudeRejectionFlowScenario,
 		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
+		"filing":                      runClaudeFilingScenario,
 	}
 }
 
@@ -199,6 +200,27 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+}
+
+// runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
+// to file one seed entity. It grades the FO's recorded tool-call stream — the FO
+// filed via `spacedock … new <slug>`, not the `--next-id` + `Write` pair — because
+// the durable end-state file is indistinguishable between the two paths. The file
+// must also actually land (the run produced a real seed), so the stream grade is
+// proof of HOW, not just THAT, the entity was filed.
+func runClaudeFilingScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeFilingWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, filingPrompt())
+	if _, err := os.Stat(entityPath); err != nil {
+		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
 }

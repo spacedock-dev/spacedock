@@ -222,3 +222,7 @@ For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Comple
 ## Entity-Body Inspection
 
 See `## Probe and Ideation Discipline` in the shared core for the Grep-over-Read rule. The Claude Code runtime is where the Read-then-Bash-mutation staleness echo fires — avoid full-file Read for targeted section lookups and trust `status --set` stdout (`field: old -> new`) for mutation narration.
+
+## Filing New Entities
+
+To file a seed task, do NOT use the Write tool to hand-assemble frontmatter after a `status --next-id` preview — that two-step flow can land a stale id when a `--next-id` candidate drifts between the preview and the Write. Use `spacedock new <slug> [--folder] [--id-seed S --id-actor A]` via Bash, piping a complete entity stub on stdin (frontmatter with `id` omitted or blank, followed by the brief description body): it mints the id, stamps it into the frontmatter, and atomically writes the stamped entity as flat `<slug>.md` in one call (see `## FO Write Scope` in the shared core for the full contract). `--next-id` stays a candidate-preview surface only. `new` writes but does not commit; for split-root state checkouts the FO still does the path-scoped commit + push after `new` (per the shared core's State Management rule).

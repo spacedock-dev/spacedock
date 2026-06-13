@@ -221,6 +221,11 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 			emitJSON(stdout, singletonJSON("next-id", "id", id))
 			return 0
 		}
+		// A --next-id candidate is a preview, not a reservation; point the operator
+		// at `spacedock new`, which mints the id and atomically writes the stamped
+		// entity in one call. The hint goes to stderr so it never pollutes the id
+		// that callers parse from stdout.
+		fmt.Fprintln(stderr, "hint: `spacedock new <slug>` files an entity atomically (mints the id and writes the stamped file in one step)")
 		fmt.Fprintln(stdout, id)
 		return 0
 	}

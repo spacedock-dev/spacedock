@@ -75,6 +75,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"rejection-flow":              runCodexRejectionFlowScenario,
 		"feedback-3-cycle-escalation": runCodexFeedback3CycleEscalationScenario,
 		"merge-hook-guardrail":        runCodexMergeHookGuardrailScenario,
+		"filing":                      runCodexFilingScenario,
 	}
 }
 
@@ -210,6 +211,27 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
+// to file one seed entity. Like the Claude runner it grades the FO's recorded
+// command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
+// preview-then-write — because the durable end-state file is indistinguishable
+// between the two paths. The file must also actually land, so the stream grade is
+// proof of HOW, not just THAT, the entity was filed.
+func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeFilingWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, filingPrompt())
+	if _, err := os.Stat(entityPath); err != nil {
+		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
