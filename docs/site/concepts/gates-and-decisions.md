@@ -59,4 +59,4 @@ The workflow is flexible beyond that: you can add conditional, lens-specific rev
 
 ## Where to go next
 
-- [Operating a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.
+- [Operate a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.

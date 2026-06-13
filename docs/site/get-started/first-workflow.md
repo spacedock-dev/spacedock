@@ -100,6 +100,6 @@ A project can hold
 each other; Spacedock drives them together and works out the dependencies.
 
 [Commission a workflow](../running-workflows/commission.md) covers every
-design decision; [Operating a workflow](../running-workflows/operating.md)
+design decision; [Operate a workflow](../running-workflows/operating.md)
 covers the day-to-day loop. Since this runs in your existing coding agent, you
 can just ask the agent if anything is unclear.

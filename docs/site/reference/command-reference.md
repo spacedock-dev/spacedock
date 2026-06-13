@@ -36,7 +36,7 @@ The task comes first and becomes the launch prompt. Anything after `--` forwards
 
 These commands read and mutate workflow state.
 
-- **`status`** is the main one: with no flag it prints the entity table, `--next` lists what is ready to dispatch, `--where` filters, `--set` mutates frontmatter, `--validate` checks the workflow, and `--boot` prints the first-officer boot view. It resolves the workflow from `--workflow-dir`, then `PIPELINE_DIR`, then by walking up to the enclosing workflow. The day-to-day reads are covered in [Operating a workflow](../running-workflows/operating.md).
+- **`status`** is the main one: with no flag it prints the entity table, `--next` lists what is ready to dispatch, `--where` filters, `--set` mutates frontmatter, `--validate` checks the workflow, and `--boot` prints the first-officer boot view. It resolves the workflow from `--workflow-dir`, then `PIPELINE_DIR`, then by walking up to the enclosing workflow. The day-to-day reads are covered in [Operate a workflow](../running-workflows/operating.md).
 - **`new`** creates an entity from stdin.
 - **`state`** initializes or creates the state checkout for a [split-root workflow](../advanced/split-root-state.md).
 - **`completion`** prints a bash or zsh completion script.

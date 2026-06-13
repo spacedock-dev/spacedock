@@ -64,4 +64,4 @@ Git is the safety net throughout: `git diff` and `git checkout` recover anything
 
 ## Where these fit
 
-Debrief and refit bracket the working loop described in [Operating a workflow](operating.md): you commission once, operate session by session, debrief at the end of a session, and refit when you upgrade Spacedock. For the commands these skills call, see the [Command reference](../reference/command-reference.md).
+Debrief and refit bracket the working loop described in [Operate a workflow](operating.md): you commission once, operate session by session, debrief at the end of a session, and refit when you upgrade Spacedock. For the commands these skills call, see the [Command reference](../reference/command-reference.md).

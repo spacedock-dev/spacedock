@@ -1,4 +1,4 @@
-# Operating a workflow
+# Operate a workflow
 
 You operate a workflow by talking to the first officer: launch a session, let it move everything that is ready, and decide when work reaches a gate.
 

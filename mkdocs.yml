@@ -79,7 +79,7 @@ nav:
       - Gates & decisions: concepts/gates-and-decisions.md
   - Running workflows:
       - Commission a workflow: running-workflows/commission.md
-      - Operating a workflow: running-workflows/operating.md
+      - Operate a workflow: running-workflows/operating.md
       - Debrief & refit: running-workflows/debrief-and-refit.md
   - Advanced topics:
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
