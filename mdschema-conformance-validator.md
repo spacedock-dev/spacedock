@@ -175,3 +175,14 @@ Closed the test-only gap from the detached audit's refutation (d): the warn-only
 ### Summary
 
 PASSED. The cycle-1 fix closes the sole Material finding: edit (d) — the previously-unrefuted "drop the Warning:/Error: prefix split" — now reds all four subtests of `TestFieldConformanceWarnsSurface` on a detached checkout. The fix is test-only (`git diff … -- ':!*_test.go'` empty), so AC-1..AC-4 and the STAFF P3 golden carry forward and were re-confirmed on the freshly-built cycle-2 binary; all four adversarial edits (a)(b)(c)(d) now bite. Whole package and whole module green. Gate is clean.
+
+## Stage Report: implementation (cycle 1 — rebase onto main)
+
+- DONE: Rebase `spacedock-ensign/mdschema-conformance-validator` onto current `origin/main` (main moved +16; #350 added sandbox-posture tests).
+  `git fetch origin main` + `git rebase origin/main` was CLEAN — both my commits replayed (now 3887419e, 1ae74cf5). Main's #350 touched `internal/status/harness_test.go` and added `boot_sandbox_test.go`, neither of which I touched, so no conflict; working tree clean, no new commit needed (a clean rebase replays existing commits).
+- DONE: Re-test against the integrated package — AC-1..AC-4 + STAFF P3 `stdout==VALID` golden hold alongside main's new tests; whole module green.
+  `go test ./internal/status/` green over the WHOLE package (incl. `boot_sandbox_test.go`); `TestFieldConformanceWarnsSurface/...DoNotGateExit/...DoNotGateReads/...SchemaDriven` and `TestNativeValidationParity` (the VALID golden) all PASS; `go test ./...` green; `go vet` + `gofmt` clean.
+
+### Summary
+
+Merge-prep rebase onto current `origin/main` (+16, including #350's sandbox-posture test additions) was clean — no overlap with my files, both commits replayed without conflict. Re-tested against the integrated `internal/status` package: AC-1..AC-4, the STAFF P3 `stdout=="VALID"` golden, and main's new `boot_sandbox_test.go` all pass together; whole module green; vet + gofmt clean. Branch is ready for the PR to `main` (not pushed — no force-push needed).
