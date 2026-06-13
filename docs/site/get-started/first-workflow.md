@@ -92,7 +92,7 @@ spacedock claude
 
 It picks up whatever is ready to dispatch. Keep dispatching, approving,
 rejecting, steering. Before you stop, run
-[`/spacedock:debrief`](../running-workflows/debrief-and-refit.md)
+[`/spacedock:debrief`](../running-workflows/debrief.md)
 to record what happened, update the learnings into the workflow, and file the
 follow-up items. The workflow self-improves.
 [Operate a workflow](../running-workflows/operating.md) covers the details.

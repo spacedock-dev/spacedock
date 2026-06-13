@@ -34,7 +34,7 @@ Decisions reach you batched and backed by evidence, not as a stream of interrupt
 
 **Every gate carries evidence.** The first officer does not hand you the transcript. It presents a short review: what was chosen, the evidence for it, and one recommendation you can approve with a single yes. [Gates and decisions](gates-and-decisions.md) shows the format.
 
-**The decision leaves a trail.** Each gate records the verdict and its reason alongside the stage report in the work item's file. The record outlives the reviewer, so a bad result traces back to the call that caused it. When you end a session, [`/spacedock:debrief`](../running-workflows/debrief-and-refit.md) captures what happened, and the next session picks up from it.
+**The decision leaves a trail.** Each gate records the verdict and its reason alongside the stage report in the work item's file. The record outlives the reviewer, so a bad result traces back to the call that caused it. When you end a session, [`/spacedock:debrief`](../running-workflows/debrief.md) captures what happened, and the next session picks up from it.
 
 ## Where to go next
 

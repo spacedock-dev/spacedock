@@ -26,4 +26,4 @@ The loop needs you less as the workflow matures. Rejections already run without 
 
 ## Ending a session
 
-Stop whenever you want; every entity's state is in the workflow files, so the next session resumes where this one ended. Before you stop, run [`/spacedock:debrief`](debrief-and-refit.md) to record the session for the next one.
+Stop whenever you want; every entity's state is in the workflow files, so the next session resumes where this one ended. Before you stop, run [`/spacedock:debrief`](debrief.md) to record the session for the next one.
