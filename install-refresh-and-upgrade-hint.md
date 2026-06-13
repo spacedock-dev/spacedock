@@ -12,6 +12,7 @@ issue:
 sprint: 0201-post-flip-release-model
 group: release-model
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 A user with a tag-fresh **0.20.0 binary** ran `spacedock install --host codex` to upgrade, and ended up still on plugin **0.19.8** with a `compatible` message and no path forward. Two separable facets, both real, surfaced by the first 0.20.0 install. **Ideation firmed the root cause and the desired end-state per host; both fixes are small wiring changes, not seam rewrites.**
