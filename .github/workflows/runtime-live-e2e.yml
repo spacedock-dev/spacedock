@@ -1,7 +1,7 @@
 # SECURITY MODEL — read before editing.
 #
 # Triggers: workflow_dispatch (a maintainer triggers it manually) and
-# pull_request on `next`. It uses pull_request, NOT pull_request_target, so it
+# pull_request on `next` and `main`. It uses pull_request, NOT pull_request_target, so it
 # runs the PR-head version of the workflow and GitHub withholds repo secrets from
 # FORK PRs — untrusted fork code cannot exfiltrate live API keys because the
 # secrets are simply absent for forks. Workflow-level permissions are read-only.
@@ -43,7 +43,7 @@ on:
   # cannot exfiltrate live API keys because the secrets are simply absent.
   # Same-repo PRs get the secret; the live job stays per-variant environment-gated.
   pull_request:
-    branches: [next]
+    branches: [next, main]
 
 permissions:
   contents: read
