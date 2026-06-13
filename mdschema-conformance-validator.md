@@ -1,9 +1,9 @@
 ---
 id: tdpnhct3kqk99e5fj447c1xm
 title: Full mdschema conformance validator (status --validate enforces a subset)
-status: backlog
+status: ideation
 source: captain-approved, surfaced by pt0 docs-site port (PR #343, 2026-06-13)
-started:
+started: 2026-06-13T05:52:37Z
 completed:
 verdict:
 score:

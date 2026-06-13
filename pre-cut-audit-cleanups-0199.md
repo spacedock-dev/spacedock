@@ -1,9 +1,9 @@
 ---
 id: 5ar2193yw8sv0rcyrt23wxg9
 title: Pre-cut audit cleanups (0.19.9) — checksum-gate test, darwin-only doc drift, gofmt, hasGitEntry comment, node-action bump
-status: backlog
+status: ideation
 source: "0.19.9 pre-cut antipattern audit (Commander staff review, 2026-06-08) — four recorded non-blockers, none gated the 0.19.9 tag. Seeded per the roadmap Close step."
-started:
+started: 2026-06-13T05:52:37Z
 completed:
 verdict:
 score:

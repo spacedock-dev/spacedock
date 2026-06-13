@@ -1,7 +1,7 @@
 ---
 id: gf038f54jj76dw8fkgke9ek9
 title: Split-root state sync should degrade when the state checkout has no origin remote
-status: backlog
+status: ideation
 source: "FO dogfood (2026-06-06) - split-root state instructions require push/pull against origin, but a local state checkout may have no origin remote; workers can commit locally but remote sync is impossible."
 score: "0.25"
 worktree: ""
@@ -9,6 +9,7 @@ issue:
 sprint: 0202-survey-improvements
 group: cleanup
 sprint-readiness: ready
+started: 2026-06-13T05:52:37Z
 ---
 
 Split-root state sync currently assumes the state checkout has an `origin`
