@@ -156,6 +156,47 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 			t.Fatalf("a newer plugin than the binary must not emit the behind-plugin hint: %q", res.Message)
 		}
 	})
+
+	// Positive across the single-vs-double-digit boundary: binary 0.10.0 is
+	// numerically NEWER than plugin 0.9.0 and MUST hint — but lexically "0.10.0"
+	// sorts BEFORE "0.9.0" ("1" < "9"), so a lexical-compare regression of
+	// semverCompare would wrongly suppress the hint here. Pins the integer compare.
+	t.Run("behind-plugin-double-digit-minor-hints", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.9.0", "0.10.0")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if !strings.Contains(res.Message, "newer plugin") {
+			t.Fatalf("binary 0.10.0 is numerically newer than plugin 0.9.0 — the hint MUST fire: %q", res.Message)
+		}
+	})
+
+	// Negative mirror across the boundary: binary 0.9.0 is numerically OLDER than
+	// plugin 0.10.0 and MUST NOT hint — but lexically "0.9.0" sorts AFTER "0.10.0",
+	// so a lexical-compare regression would wrongly FIRE the hint on this older
+	// binary. The two boundary cases together RED any lexical compare.
+	t.Run("older-binary-double-digit-minor-no-hint", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.10.0", "0.9.0")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if strings.Contains(res.Message, "newer plugin") {
+			t.Fatalf("binary 0.9.0 is numerically older than plugin 0.10.0 — the hint MUST NOT fire: %q", res.Message)
+		}
+	})
+
+	// Negative: a pre-release binary version (e.g. 0.20.0-rc1) is not clean
+	// dotted-int semver — the conservative gate emits no hint. Pins that
+	// parseDottedInts rejects a `-rc1` suffix rather than stripping it.
+	t.Run("prerelease-binary-no-hint", func(t *testing.T) {
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.19.8", "0.20.0-rc1")
+		if res.Verdict != Compatible {
+			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
+		}
+		if strings.Contains(res.Message, "newer plugin") || strings.Contains(res.Message, "spacedock install") {
+			t.Fatalf("a pre-release binary version must not emit an upgrade hint: %q", res.Message)
+		}
+	})
 }
 
 // TestCompareMessageShape locks the shared mismatch-message shape: the leading
