@@ -172,3 +172,16 @@ ROUTED TO IMPLEMENTATION (test-only, no production change): add to TestCompatibl
 ### Summary
 
 Cycle-1 audit hole closed test-only, zero production change. The integer comparison in `semverCompare` was correct but unpinned — every prior hint input agreed lexically and numerically. Added two boundary cases crossing the single-vs-double-digit threshold (0.10.0 vs 0.9.0 both directions) that together red any lexical regression, plus a pre-release case pinning that `parseDottedInts` rejects rather than strips a suffix. Proved all three discriminate by temporarily applying the exact adversarial edits (lexical swap reds the boundary pair; suffix-strip reds the pre-release case) and confirming they revert clean — production source is byte-identical to HEAD. Whole-package green at 325; commit 53030b1e on `spacedock-ensign/install-refresh-and-upgrade-hint`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Confirm cycle-2 commit 53030b1e is TEST-ONLY and closes the audit's Material hole; production byte-identical to cycle-1 HEAD 5d527f9b.
+  `git show --stat 53030b1e` → only `internal/contract/contract_test.go` (+41), zero `.md`. `git diff 5d527f9b..53030b1e -- internal/contract/contract.go internal/cli/init.go internal/cli/frontdoor.go internal/cli/host_exec.go` is EMPTY — no production change rode in on the test-only fix.
+- DONE: Reproduce that the 3 new `TestCompatibleUpgradeHint` cases DISCRIMINATE the audit's exact regressions (lexical swap + suffix-strip go RED, green on revert).
+  (a) Swapped `semverCompare`'s int loop to `strings.Compare(a,b)` (kept the parseDottedInts gate) → BOTH boundary cases RED: `behind-plugin-double-digit-minor-hints` (0.9.0 plugin/0.10.0 binary lost its hint) and `older-binary-double-digit-minor-no-hint` (0.10.0/0.9.0 gained a wrong hint); pre-release + originals green. (b) Stripped a `-`/`+` suffix in `parseDottedInts` → ONLY `prerelease-binary-no-hint` RED. Both reverted → `git diff` on production EMPTY, 8/8 hint subtests green. The audit's Material lexical-compare edit now REDs — hole closed.
+- DONE: Whole-package green; original 4 ACs still hold (production unchanged); recommend PASSED/REJECTED.
+  `go test ./internal/cli/ ./internal/contract/` → `325 passed` (matches implementer 325); `go vet` clean; tree clean after all reverts. Named AC tests green: AC-1/AC-2 (`TestInitCodexInstallReadiness`, `TestCodexInitRefreshAdvancesBehindPlugin`, `TestInitClaudeIssuesHostPluginCommands`), AC-3 (`TestCompatibleUpgradeHint`), AC-4 (`TestFrontDoorUpgradeHintOnBehindPlugin`). Recommendation: PASSED.
+
+### Summary
+
+PASSED. Focused re-validation of the test-only cycle-2 close. Confirmed 53030b1e touches only `contract_test.go` (+41 lines) and that production (`contract.go`/`init.go`/`frontdoor.go`/`host_exec.go`) is byte-identical to cycle-1 HEAD 5d527f9b — no sneaky production change. Reproduced that the three new cases genuinely discriminate the audit's regressions: applying the audit's exact lexical-compare swap reds both boundary cases (the cycle-1 hole is now closed — that edit no longer ships green), and the suffix-strip reds only the pre-release case; both revert clean. Whole-package green at 325, go vet clean, original 4 ACs hold. No new detached audit needed (production unchanged; this was a test-only coverage close).
