@@ -9,9 +9,9 @@ verdict:
 score:
 worktree:
 issue:
-sprint:
-group:
-sprint-readiness:
+sprint: 0202-survey-improvements
+group: survey
+sprint-readiness: ready
 ---
 
 Second real-world feedback round on `spacedock:survey`, this time from a **code** repo (branch-and-merge: file/triage issue → worktree branch → implement → test → PR → merge, on a superpowers scaffold). The awareness improvements are landing; two sharp critiques remain. Corpus content is private and intentionally not captured here — only the survey-skill behavior to improve. Companion to `zbysa` (survey-knowledge-work-archetype).

@@ -9,9 +9,9 @@ verdict:
 score:
 worktree:
 issue:
-sprint:
-group:
-sprint-readiness:
+sprint: 0202-survey-improvements
+group: survey
+sprint-readiness: ready
 ---
 
 Real-world feedback on `spacedock:survey` from a run on a **knowledge-work** repo (a notes/memo/writing/ops shop, not an issue→PR code repo). The workflow-inference was genuinely good; two gaps surfaced because the repo is knowledge work, not code. The surveyed corpus is private and intentionally not captured here — only the survey-skill behavior to improve. Builds on `69` (survey-codex-cwd-workaround, done — workdir attribution exists) and `47rx`/`survey-codex-and-sandbox-followups` (done — the G anti-tautology "unlabeled" floor).

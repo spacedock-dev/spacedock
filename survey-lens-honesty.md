@@ -9,9 +9,9 @@ verdict:
 score:
 worktree:
 issue:
-sprint:
+sprint: 0202-survey-improvements
 group: survey
-sprint-readiness:
+sprint-readiness: ready
 ---
 
 An author reviewing their own survey output confirmed it reflected recent workflows **well** and surfaced nothing surprising or untrue — strong validation of the core inference (keep, do not regress). They named two honest limits of the lens, neither fully owned today.

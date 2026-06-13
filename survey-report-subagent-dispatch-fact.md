@@ -11,6 +11,7 @@ worktree:
 issue:
 group: survey
 sprint-readiness: ready
+sprint: 0202-survey-improvements
 ---
 
 When a session dispatched subagents, the survey should say so — surface the fact of orchestration so a spacedock/agent-orchestrated repo isn't reported as having done little.

@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0202-survey-improvements
 group: survey
-sprint-readiness:
+sprint-readiness: ready
 ---
 
 A live user ran the survey on his own machine and reacted in real time. The inference accuracy landed hard ("this is very accurate, this stuff is hanging" — it caught his plan→worktree→implement pattern, his manual recurring work-streams, and done-vs-hanging work). His strongest critique was that the OUTPUT does not explain its own value to a newcomer.
