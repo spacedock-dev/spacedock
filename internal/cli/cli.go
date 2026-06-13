@@ -16,6 +16,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
+	"github.com/spacedock-dev/spacedock/internal/safehouse"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -105,7 +106,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		CompletionOptions:  cobra.CompletionOptions{DisableDefaultCmd: true},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if versionFlag {
-				printVersion(stdout)
+				printVersion(stdout, dir, execRuntimeProbe{}, exec.LookPath)
 				return nil
 			}
 			// No subcommand and no recognized flag: an unknown command token
@@ -496,12 +497,20 @@ func cwd() string {
 	return dir
 }
 
-// printVersion emits the version line with the contract token. The token is
-// load-bearing: the FO/ensign skills read `(contract N)` from `spacedock
-// --version`, so cobra's auto version-flag (a bare version string, plus a command
-// row in help) is deliberately NOT used.
-func printVersion(w io.Writer) {
+// printVersion emits the version line with the contract token, then the sandbox
+// posture and a per-runtime install/enablement block. The FIRST line is unchanged
+// — `spacedock <ver> (contract <N>)` — and load-bearing: the FO/ensign skills read
+// `(contract N)` from it, so everything new is appended BELOW line 1 (cobra's auto
+// version-flag, a bare version string, is deliberately NOT used). The Sandbox line
+// renders the shared three-way state for dir; the per-runtime block reports each
+// host's binary install and spacedock-plugin enablement from the injected probe.
+func printVersion(w io.Writer, dir string, probe runtimeProbe, lookPath func(string) (string, error)) {
 	fmt.Fprintf(w, "spacedock %s (contract %d)\n", Version, contract.CONTRACT_VERSION)
+	available, _ := safehouse.Available(lookPath)
+	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(safehouse.Present(dir), available))
+	for _, host := range []string{"claude", "codex", "pi"} {
+		fmt.Fprintln(w, runtimeLine(host, probe.ProbeRuntime(host)))
+	}
 }
 
 // runCompletion emits a static shell-completion script for bash or zsh to

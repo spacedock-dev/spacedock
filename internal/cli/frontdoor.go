@@ -132,13 +132,18 @@ func noPluginRemedy(host string) string {
 }
 
 // launchBanner writes a short pre-launch orientation banner to w before the host
-// is handed control: the spacedock version, the workflow detected from dir, and a
-// one-line orientation pointer. Callers suppress it on a resume (the operator is
-// continuing a session, not starting one).
-func launchBanner(host, dir string, w io.Writer) {
+// is handed control: the spacedock version, the workflow detected from dir, the
+// sandbox posture, and a one-line orientation pointer. The Sandbox: line renders
+// the shared three-way state from `selected` (whether this launch would be wrapped
+// — a .safehouse profile or a --safehouse* flag) and whether the safehouse binary
+// resolves via lookPath (injected so tests pin it). Callers suppress the banner on
+// a resume (the operator is continuing a session, not starting one).
+func launchBanner(host, dir string, selected bool, lookPath func(string) (string, error), w io.Writer) {
 	label, value := detectedWorkflow(dir)
+	available, _ := safehouse.Available(lookPath)
 	fmt.Fprintf(w, "spacedock %s · launching %s as your first officer\n", Version, host)
 	fmt.Fprintf(w, "%s: %s\n", label, value)
+	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(selected, available))
 	fmt.Fprintf(w, "%s is your first officer — ask it for the queue and next steps.\n", host)
 }
 
@@ -294,7 +299,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
 	if !resume {
-		launchBanner("claude", dir, stderr)
+		launchBanner("claude", dir, wrap, lookPath, stderr)
 	}
 	inner := []string{"claude"}
 	if wrap {
@@ -452,7 +457,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := codexResume(fd.passthrough)
 	if !resume {
-		launchBanner("codex", dir, stderr)
+		launchBanner("codex", dir, wrap, lookPath, stderr)
 	}
 	inner := []string{"codex"}
 	if wrap {

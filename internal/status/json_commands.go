@@ -197,6 +197,10 @@ func bootJSON(d *bootData) *jsonObj {
 	out.set("entity_dir", d.entityDir)
 	out.set("entity_dir_present", strconv.FormatBool(d.entityDirPresent))
 
+	// sandbox: the three-way safehouse posture, appended AFTER the state-backend keys
+	// so every existing key's relative order is preserved for the FO's key-order parse.
+	out.set("sandbox", d.sandbox)
+
 	return out
 }
 

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
 // teamStateNeutralHint is the boot TEAM_STATE present:false hint on a host with
@@ -150,6 +151,11 @@ type bootData struct {
 	definitionDir    string
 	entityDir        string
 	entityDirPresent bool
+	// Sandbox posture: the three-way safehouse state (enabled / available, not
+	// enabled / unavailable) computed from a .safehouse profile at the repo root and
+	// whether the safehouse binary resolves on PATH, so the operator sees the
+	// execution-isolation posture before dispatching work.
+	sandbox string
 }
 
 // gatherBoot runs every boot probe once and returns the result. NEXT_ID is
@@ -200,6 +206,13 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 	if info, err := os.Stat(entityDir); err == nil && info.IsDir() {
 		d.entityDirPresent = true
 	}
+
+	// SANDBOX: the .safehouse profile lives at the repo root (the launch convention),
+	// and the safehouse binary is resolved against the request PATH via the existing
+	// executable scan — no exec, no live host CLI. boot is a read, so nothing here
+	// selects the sandbox beyond a present profile.
+	available := lookupExecutable("safehouse", e.get("PATH")) != ""
+	d.sandbox = safehouse.State(safehouse.Present(gitRoot), available)
 	return d, nil
 }
 
@@ -282,5 +295,8 @@ func printBoot(probe claudeteam.TeamStateProbe, w io.Writer, entities []*entity,
 	// STATE_BACKEND
 	fmt.Fprintf(w, "STATE_BACKEND: %s (entity_dir: %s, present: %t)\n",
 		d.stateBackend, d.entityDir, d.entityDirPresent)
+
+	// SANDBOX: appended last so every prior section's order is preserved.
+	fmt.Fprintf(w, "SANDBOX: %s\n", d.sandbox)
 	return nil
 }

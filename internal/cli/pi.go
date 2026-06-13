@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+
+	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
 const piBootstrapPrompt = "Use $spacedock:first-officer for this whole Pi session."
@@ -77,7 +79,7 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		return 1
 	}
 
-	launchBanner("pi", dir, stderr)
+	launchBanner("pi", dir, safehouse.Present(dir), ops.LookPath, stderr)
 
 	argv := []string{
 		"pi",

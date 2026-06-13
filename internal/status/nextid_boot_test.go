@@ -87,8 +87,9 @@ func TestSDB32CandidateDerivationVector(t *testing.T) {
 
 // bootSections are the --boot section headers in their required order. The FO
 // parses --boot by section at startup, so order and presence are load-bearing.
+// SANDBOX is appended last (after STATE_BACKEND), so the order check pins it there.
 var bootSections = []string{
-	"MODS:", "ID_STYLE:", "NEXT_ID:", "ORPHANS:", "PR_STATE:", "DISPATCHABLE", "TEAM_STATE",
+	"MODS:", "ID_STYLE:", "NEXT_ID:", "ORPHANS:", "PR_STATE:", "DISPATCHABLE", "TEAM_STATE", "STATE_BACKEND:", "SANDBOX:",
 }
 
 // AC-1: --boot is verified structurally (headers present and in order) and the
@@ -130,6 +131,6 @@ func TestBootStructuralParity(t *testing.T) {
 	// Structural --boot frozen against the certified native output: the minted
 	// NEXT_ID line is masked (path-dependent), every other token — including the
 	// fixed fixture id in the DISPATCHABLE table — freezes literally.
-	normNative := maskBootNextID(normalize(nativeOut, root))
+	normNative := maskBootNextID(stripSandbox(normalize(nativeOut, root)))
 	assertTextGolden(t, "boot-structural", normNative)
 }

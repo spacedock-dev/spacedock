@@ -19,11 +19,14 @@ type execHost struct{}
 var _ hostOps = execHost{}
 
 // pluginListEntry is the subset of `<host> plugin list --json` this binary
-// reads: the `plugin@marketplace` id and the resolved install path. (Observed
-// schema: the entry carries `id`, not separate name/marketplace fields.)
+// reads: the `plugin@marketplace` id, the resolved install path, and whether the
+// plugin is enabled in the host. (Observed schema: the entry carries `id`, not
+// separate name/marketplace fields; `enabled` is distinct from `installPath` —
+// an installed plugin can be present-but-disabled.)
 type pluginListEntry struct {
 	ID          string `json:"id"`
 	InstallPath string `json:"installPath"`
+	Enabled     bool   `json:"enabled"`
 }
 
 // ResolveManifest returns the installed spacedock@spacedock plugin manifest path

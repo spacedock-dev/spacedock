@@ -66,6 +66,9 @@ func indNormalize(s, root string) string {
 	// line) — the same documented native/oracle divergence the in-tree harness
 	// strips; the backend keys are byte-pinned in json_boot_test.go instead.
 	s = stripStateBackend(s)
+	// SANDBOX is likewise native-only and PATH-dependent — strip it from the
+	// parity body; the state-from-inputs behavior is pinned by boot_sandbox_test.go.
+	s = stripSandbox(s)
 	if root != "" {
 		if real, err := filepath.EvalSymlinks(root); err == nil && real != root {
 			s = strings.ReplaceAll(s, real, "<ROOT>")

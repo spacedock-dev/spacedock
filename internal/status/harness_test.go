@@ -52,6 +52,19 @@ func stripStateBackend(s string) string {
 	return stateBackendLineRe.ReplaceAllString(s, "")
 }
 
+// sandboxLineRe matches the native-only SANDBOX boot banner. Its rendered state
+// depends on whether the safehouse binary resolves on the runner's PATH, so it is
+// machine-dependent (red-by-construction on a machine with safehouse installed);
+// the boot-text goldens strip it the same way they strip STATE_BACKEND. The
+// state-from-inputs behavior is pinned deterministically by boot_sandbox_test.go.
+var sandboxLineRe = regexp.MustCompile(`SANDBOX: [^\n]*\n`)
+
+// stripSandbox removes the native-only SANDBOX boot banner so the PATH-dependent
+// line never enters a byte-compared golden.
+func stripSandbox(s string) string {
+	return sandboxLineRe.ReplaceAllString(s, "")
+}
+
 // bootNextIDLineRe matches ONLY the boot `NEXT_ID:` line's sd-b32 value — the
 // minted candidate, which hashes the realpath'd workflow dir and so varies per
 // checkout path. Anchored to the line prefix so it does NOT touch a stored
