@@ -113,10 +113,15 @@ homebrew_casks:
     homepage: https://github.com/spacedock-dev/spacedock
     description: Workflow launcher and first-officer dispatch for agentic dev
     license: Apache-2.0
+    # agentsview is a core Homebrew cask (Homebrew/homebrew-cask), so brew
+    # resolves and installs it alongside the launcher — it powers
+    # /spacedock:survey. safehouse stays a caveat (below): it is not a brew
+    # package, so there is no depends_on target to resolve.
+    dependencies:
+      - cask: agentsview
     caveats: |
-      Recommended companions (not installed by brew):
+      Recommended companion (not installed by brew):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
-        agentsview — powers /spacedock:survey
     hooks:
       # The binary is adhoc/linker-signed only (not notarized), so the cask
       # download carries com.apple.quarantine and Gatekeeper kills the first
@@ -139,10 +144,13 @@ homebrew_casks:
     homepage: https://github.com/spacedock-dev/spacedock
     description: Workflow launcher and first-officer dispatch for agentic dev (edge channel)
     license: Apache-2.0
+    # Same companion split as the stable cask: agentsview is a brew-installable
+    # cask dependency; safehouse is not a brew package and stays a caveat.
+    dependencies:
+      - cask: agentsview
     caveats: |
-      Recommended companions (not installed by brew):
+      Recommended companion (not installed by brew):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
-        agentsview — powers /spacedock:survey
     hooks:
       post:
         install: |
