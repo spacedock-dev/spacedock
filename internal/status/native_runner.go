@@ -360,7 +360,10 @@ func failOnValidationErrors(roots roots, idStyle string, stderr io.Writer) int {
 	// / `--next` / `--boot` / `--next-id` — those are the surfaces they need to
 	// SEE the broken entity. The terminal-set guard in runSet still classifies
 	// directly, and the explicit `--validate` command opts the check in.
-	errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, false, stderr)
+	// Read-path gate passes false: it opts OUT of the warn-tier field-conformance
+	// (and external-proof) sub-check, so a warn-tier field finding never locks the
+	// FO out of the listing they need to SEE the broken entity (warns is dropped).
+	errs, _ := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, false, stderr)
 	if len(errs) > 0 {
 		for _, err := range errs {
 			fmt.Fprintln(stderr, err)

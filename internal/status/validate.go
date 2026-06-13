@@ -15,12 +15,20 @@ import (
 // entityEvidence formats the Error: ... workflow= scope= slug= id= [display=]
 // path= evidence line. Matches entity_evidence.
 func entityEvidence(e *entity, workflowDir, problem, displayID string) string {
+	return entityEvidenceLine("Error", e, workflowDir, problem, displayID)
+}
+
+// entityEvidenceLine formats an evidence line at the given severity prefix
+// ("Error" for gating structural defects, "Warning" for warn-tier field
+// conformance). The field shape (workflow=/scope=/slug=/id=/[display=]/path=) is
+// identical so the FO locates the entity the same way for either severity.
+func entityEvidenceLine(severity string, e *entity, workflowDir, problem, displayID string) string {
 	display := displayID
 	if display == "" {
 		display = e.displayID
 	}
 	parts := []string{
-		fmt.Sprintf("Error: %s:", problem),
+		fmt.Sprintf("%s: %s:", severity, problem),
 		"workflow=" + workflowDir,
 		"scope=" + scopeOf(e),
 		"slug=" + e.slug,
@@ -143,8 +151,7 @@ func validateWorkflowStageNames(definitionDir string) []string {
 // status/--next/--boot/--next-id) never fires the AC classifier. A read path
 // failing on a flagged AC would lock the FO out of the very listing they need
 // to see the broken entity.
-func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalProof bool, stderr io.Writer) []string {
-	var errs []string
+func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalProof bool, stderr io.Writer) (errs []string, warns []string) {
 	errs = append(errs, findEntityFormConflicts(entityDir, entityDir, "active")...)
 	errs = append(errs, findEntityFormConflicts(filepath.Join(entityDir, "_archive"), PyJoin(entityDir, "_archive"), "archived")...)
 	errs = append(errs, validateWorkflowStageNames(definitionDir)...)
@@ -165,8 +172,16 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalP
 	}
 
 	if !includeExternalProof {
-		return errs
+		return errs, nil
 	}
+
+	// Warn-tier per-field schema conformance shares the same opt-in as the
+	// external-proof sub-check: only the explicit --validate command computes it,
+	// reusing the entities already enumerated above (with effective ids applied so
+	// the evidence line carries the display id). Warns are returned separately so
+	// the caller keeps them out of the exit-code decision.
+	applyEffectiveIDs(entities, idStyle, entities)
+	warns = fieldConformanceWarnings(entities, entityDir)
 
 	// require-external-proof sub-check: when the workflow opts in, every
 	// active entity is classified and each flagged AC is emitted as a standard
@@ -175,7 +190,7 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalP
 	policy, perr := resolveExternalProofPolicy(definitionDir)
 	if perr != nil {
 		errs = append(errs, "Error: "+perr.Error())
-		return errs
+		return errs, warns
 	}
 	if policy == externalProofOn {
 		for _, e := range entities {
@@ -193,7 +208,7 @@ func validateWorkflow(definitionDir, entityDir, idStyle string, includeExternalP
 		}
 	}
 
-	return errs
+	return errs, warns
 }
 
 func validateSequential(entities []*entity, workflowDir string) []string {

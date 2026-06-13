@@ -365,9 +365,15 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--validate cannot be combined with "+strings.Join(incompatible, ", "))
 		}
-		// Explicit --validate command opts INTO the external-proof sub-check.
-		// The read-path pre-check (failOnValidationErrors) passes false.
-		errs := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, true, stderr)
+		// Explicit --validate command opts INTO the external-proof sub-check and
+		// the warn-tier per-field schema-conformance sub-check. The read-path
+		// pre-check (failOnValidationErrors) passes false, opting out of both.
+		errs, warns := validateWorkflow(roots.definitionDir, roots.entityDir, idStyle, true, stderr)
+		// Warn-tier per-field schema conformance prints to stderr but does NOT
+		// flip the exit code — exit 1 stays reserved for structural errors.
+		for _, w := range warns {
+			fmt.Fprintln(stderr, w)
+		}
 		if len(errs) > 0 {
 			for _, er := range errs {
 				fmt.Fprintln(stderr, er)
