@@ -1,5 +1,5 @@
-// ABOUTME: AC-2 manifest tests — the plugin branch carries no marketplace.json
-// ABOUTME: (Model B), and .codex-plugin/plugin.json requires-contract brackets binary.
+// ABOUTME: Manifest tests — main carries a transitional bridge marketplace.json
+// ABOUTME: (Model B removal deferred), and .codex-plugin/plugin.json brackets binary.
 package integration
 
 import (
@@ -11,24 +11,23 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// TestPluginBranchCarriesNoMarketplaceManifest locks AC-2: under Model B the
-// marketplace manifest moved OUT of the plugin branch into a separate marketplace
-// repo (the two channels — stable pinned to a release tag, edge tracking next HEAD
-// — are entries of one source in THAT repo's manifest). So the plugin branch
-// carries NO .claude-plugin/marketplace.json; with it gone, there is no in-branch
-// source.ref for a release to re-settle. The plugin's own
-// .claude-plugin/plugin.json stays — only the marketplace manifest moved.
-func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
+// TestMainCarriesMarketplaceBridgeManifest guards the transitional bridge: the
+// released v0.20.0 binary resolves its install from main's
+// .claude-plugin/marketplace.json (`claude plugin marketplace add
+// spacedock-dev/spacedock@main`). Model B's removal of this manifest — it moves to the
+// standalone marketplace repo, retiring the in-branch source.ref re-settle — is
+// deferred until the v0.20.1 cutover ships the binary that points at that repo and
+// existing v0.20.0 installs have migrated; until then the bridge MUST stay on main, or
+// v0.20.0 installs break. The plugin's own .claude-plugin/plugin.json stays alongside it.
+func TestMainCarriesMarketplaceBridgeManifest(t *testing.T) {
 	marketplace := filepath.Join(repoRoot(t), ".claude-plugin", "marketplace.json")
-	if _, err := os.Stat(marketplace); err == nil {
-		t.Fatalf("%s is present; Model B moves the marketplace manifest to the separate marketplace repo, so the plugin branch must carry no marketplace.json", marketplace)
-	} else if !os.IsNotExist(err) {
-		t.Fatalf("stat %s: %v", marketplace, err)
+	if _, err := os.Stat(marketplace); err != nil {
+		t.Fatalf("bridge marketplace manifest %s missing: %v — the released v0.20.0 binary resolves its install from main's marketplace.json; removing it before the v0.20.1 cutover breaks v0.20.0 installs", marketplace, err)
 	}
 
 	plugin := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(plugin); err != nil {
-		t.Fatalf("plugin manifest %s missing: %v (only marketplace.json should move out)", plugin, err)
+		t.Fatalf("plugin manifest %s missing: %v", plugin, err)
 	}
 }
 
