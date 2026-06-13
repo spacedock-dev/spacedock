@@ -1,9 +1,9 @@
 ---
 id: 7d72hqzg9tpnr6tdjfa34nxt
 title: dispatch context-budget — suppress spurious model warnings on healthy team members
-status: backlog
+status: ideation
 source: github#344 (captain intake 2026-06-13)
-started:
+started: 2026-06-13T17:31:54Z
 completed:
 verdict:
 score:
