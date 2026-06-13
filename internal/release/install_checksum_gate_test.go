@@ -23,6 +23,7 @@ type installFixture struct {
 	tarballPath string // absolute path to the single os/arch tarball
 	asset       string // the tarball's basename
 	marker      string // the string the installed binary prints when run
+	checksum    string // the sha256 recorded in checksums.txt for the original tarball
 }
 
 // buildInstallFixture writes a dist/ fixture under a fresh temp dir. The bare
@@ -53,7 +54,7 @@ func buildInstallFixture(t *testing.T) installFixture {
 		t.Fatal(err)
 	}
 
-	return installFixture{dir: dist, tarballPath: tarballPath, asset: asset, marker: marker}
+	return installFixture{dir: dist, tarballPath: tarballPath, asset: asset, marker: marker, checksum: sum}
 }
 
 // runInstall runs the given install.sh script against a dist fixture via the
@@ -103,12 +104,16 @@ func TestChecksumGateInstallsAndRejectsTamper(t *testing.T) {
 		}
 	})
 
-	// Tamper case: append bytes to the tarball so its sha256 no longer matches the
-	// (unchanged) checksums.txt line. The gate MUST abort non-zero, installing
-	// nothing. This is the assertion that reds if install.sh:164-169 are deleted.
+	// Tamper case: swap the tarball for a structurally-valid one whose `spacedock`
+	// payload differs, so its sha256 no longer matches the (unchanged) checksums.txt
+	// line. The gate MUST abort non-zero, installing nothing. The swap keeps the
+	// archive extractable on every platform (a byte-appended tarball is rejected by
+	// Linux `tar` itself, which would mask the gate), so ONLY the sha256 mismatch
+	// triggers rejection — this is the assertion that reds if install.sh:164-169
+	// are deleted.
 	t.Run("tampered tarball aborts installing nothing", func(t *testing.T) {
 		fx := buildInstallFixture(t)
-		appendBytes(t, fx.tarballPath, []byte{0xde, 0xad, 0xbe, 0xef})
+		tamperFixtureTarball(t, fx)
 
 		installDir, code := runInstall(t, script, fx.dir)
 		if code == 0 {
@@ -125,7 +130,10 @@ func TestChecksumGateInstallsAndRejectsTamper(t *testing.T) {
 // temp copy of the script, runs the SAME tamper case against THAT copy, and
 // asserts the gateless installer now WRONGLY exits 0 and installs the tampered
 // binary. If stripping the gate did NOT change behavior, the live tamper test
-// wasn't binding the gate — that is the hole this load-bearing check closes.
+// wasn't binding the gate — that is the hole this load-bearing check closes. The
+// tamper is a structurally-valid wrong-hash tarball (not a byte-corrupted one),
+// so the gateless extract succeeds on every platform and the ONLY thing the
+// stripped gate stops rejecting is the hash mismatch.
 func TestChecksumGateGuardIsLoadBearing(t *testing.T) {
 	original := readInstallScript(t)
 	gateless, removed := stripChecksumGate(original)
@@ -139,7 +147,7 @@ func TestChecksumGateGuardIsLoadBearing(t *testing.T) {
 	}
 
 	fx := buildInstallFixture(t)
-	appendBytes(t, fx.tarballPath, []byte{0xde, 0xad, 0xbe, 0xef})
+	tamperFixtureTarball(t, fx)
 
 	installDir, code := runInstall(t, gatelessScript, fx.dir)
 	if code != 0 {
@@ -147,6 +155,21 @@ func TestChecksumGateGuardIsLoadBearing(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(installDir, "spacedock")); err != nil {
 		t.Errorf("gateless install.sh did not install the tampered binary (%v); the strip removed more than the gate", err)
+	}
+}
+
+// tamperFixtureTarball overwrites the fixture's tarball with a fresh, fully-valid
+// tar.gz whose `spacedock` payload differs from the original, WITHOUT touching the
+// fixture's checksums.txt. The result extracts cleanly on every platform (so a
+// platform's `tar` corruption-rejection never masks the gate), yet its sha256 no
+// longer matches the recorded line — isolating the checksum gate as the sole
+// reason install.sh rejects it.
+func tamperFixtureTarball(t *testing.T, fx installFixture) {
+	t.Helper()
+	tamperedBinary := "#!/bin/sh\necho " + fx.marker + "-tampered\n"
+	writeTarGz(t, fx.tarballPath, "spacedock", []byte(tamperedBinary))
+	if sha256OfFile(t, fx.tarballPath) == fx.checksum {
+		t.Fatalf("tampered tarball hash unexpectedly equals the recorded checksum; the swap did not change the bytes")
 	}
 }
 
@@ -219,18 +242,6 @@ func sha256OfFile(t *testing.T, path string) string {
 	}
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
-}
-
-func appendBytes(t *testing.T, path string, extra []byte) {
-	t.Helper()
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	if _, err := f.Write(extra); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func osWriteFile(path, content string) error {
