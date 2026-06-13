@@ -4,17 +4,17 @@ The `spacedock` binary groups its subcommands into Launch, Setup, and Workflow, 
 
 ## --version
 
-`spacedock --version` prints the version and contract level, the sandbox posture, then a per-runtime install/enablement line:
+`spacedock --version` prints the version and contract level, the sandbox posture, then a per-runtime line reporting the installed spacedock plugin version:
 
 ```
-spacedock 0.20.0 (contract 1)
+spacedock 0.20.1 (contract 1)
 Sandbox: available, not enabled (no .safehouse profile)
-claude: installed, spacedock enabled
-codex: installed
-pi: not installed
+claude: spacedock 0.20.1
+codex: spacedock 0.20.0 (disabled)
+pi: spacedock ready
 ```
 
-The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no .safehouse profile)`, or `unavailable (safehouse not on PATH)`. Each runtime line reports whether the host binary resolves and, when it does, whether the spacedock plugin is enabled (`spacedock enabled`, bare `installed`, or `enablement unknown` when the enablement read is denied).
+The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no .safehouse profile)`, or `unavailable (safehouse not on PATH)`. Each runtime line reads the plugin installed for that host: `spacedock <version>` when a plugin is installed (with ` (disabled)` appended only when the host reports it disabled), `spacedock ready` for pi (which launches from skills, not a versioned plugin), `spacedock not installed` when the host is present but carries no plugin, and `not installed` when the host binary itself is absent.
 
 ## Launch
 
