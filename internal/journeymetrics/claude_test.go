@@ -94,6 +94,39 @@ func TestParseClaudeJSONLSkipsNonJSONStderrLines(t *testing.T) {
 	}
 }
 
+func TestParseClaudeTurnsPreservesPerTurnContextAndDedupes(t *testing.T) {
+	data := readTestdata(t, "claude_terminal_split.stream.jsonl")
+
+	turns, err := ParseClaudeTurns(data)
+	if err != nil {
+		t.Fatalf("ParseClaudeTurns: %v", err)
+	}
+	// Two distinct assistant messages (msg_1 appears twice — deduped, msg_2 once);
+	// the terminal result row is not a turn.
+	if len(turns) != 2 {
+		t.Fatalf("turns = %d, want 2 (deduped msg_1 + msg_2, no result row)", len(turns))
+	}
+	// msg_1 carried a Bash tool_use with its own per-turn usage (NOT the run sum).
+	if turns[0].ID != "msg_1" {
+		t.Errorf("turn[0].ID = %q, want msg_1", turns[0].ID)
+	}
+	if turns[0].Usage != (TokenTotals{Input: 100, Output: 10, CacheCreation: 5, CacheRead: 20, Total: 135}) {
+		t.Errorf("turn[0].Usage = %+v, want the single turn's usage (not the run sum)", turns[0].Usage)
+	}
+	if turns[0].Context() != 125 { // input 100 + cache_read 20 + cache_creation 5
+		t.Errorf("turn[0].Context() = %d, want 125 (input+cache_read+cache_creation)", turns[0].Context())
+	}
+	if len(turns[0].ToolNames) != 1 || turns[0].ToolNames[0] != "Bash" {
+		t.Errorf("turn[0].ToolNames = %v, want [Bash]", turns[0].ToolNames)
+	}
+	if turns[1].ID != "msg_2" {
+		t.Errorf("turn[1].ID = %q, want msg_2", turns[1].ID)
+	}
+	if len(turns[1].ToolNames) != 0 {
+		t.Errorf("turn[1].ToolNames = %v, want none (text-only turn)", turns[1].ToolNames)
+	}
+}
+
 func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))
