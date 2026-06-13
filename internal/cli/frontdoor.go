@@ -217,7 +217,10 @@ func realpath(path string) string {
 // would otherwise slip through as "compatible". gateHost prints the actionable
 // remedy for every non-Compatible verdict EXCEPT NoPluginFound, whose message the
 // caller owns (it auto-installs by default and only refuses under --no-install,
-// so the right wording depends on the caller's choice).
+// so the right wording depends on the caller's choice). On Compatible it stays
+// silent on the bare OK line but surfaces the opt-in upgrade hint when the plugin
+// is contract-compatible yet behind a strictly-newer binary; the hint never
+// blocks — the caller still proceeds to launch.
 func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 	manifestPath, err := ops.ResolveManifest(host)
 	if err != nil {
@@ -235,6 +238,13 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 	}
 	if res.Verdict != contract.Compatible {
 		fmt.Fprintln(stderr, res.Message)
+		return res.Verdict
+	}
+	// Compatible but behind: surface the opt-in upgrade hint (the front door
+	// stays silent on the bare OK line). The hint never blocks — the caller still
+	// proceeds to launch on Compatible.
+	if res.Hint != "" {
+		fmt.Fprintln(stderr, res.Hint)
 	}
 	return res.Verdict
 }

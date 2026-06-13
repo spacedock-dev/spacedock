@@ -44,11 +44,22 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 			fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
 			return 1
 		}
-		if resolved != "" || check {
-			code := contract.RunDoctor(resolved, "codex", devBranch, Version, stdout, stderr)
-			if code != 0 || resolved != "" || check {
-				return code
+		if check {
+			return contract.RunDoctor(resolved, "codex", devBranch, Version, stdout, stderr)
+		}
+		if resolved != "" {
+			// An already-present plugin is refreshed on `install` like the claude
+			// arm — drive the install seam, then run doctor. Without this the codex
+			// arm was a doctor-only no-op that left a behind plugin in place.
+			out, err := ops.Install("codex", marketplaceSource, devBranch)
+			if err != nil {
+				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
+				return 1
 			}
+			if out != "" {
+				fmt.Fprintln(stdout, out)
+			}
+			return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
 		}
 
 		// Codex install is documented prose when no installed plugin resolves: the
