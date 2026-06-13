@@ -59,6 +59,20 @@ contract-gate → discovery → `status --boot --json` → **greet and stop for 
 
 Boot-report habits (scope greps to headings; delegate bulk reconciliation reads to a subagent) tighten existing "Probe and Ideation Discipline" prose and ride along in Phase 1 / T3.
 
+## Contract content fixes (captain audit, 2026-06-13)
+
+Two fixes fold into Phase 1's contract cleanup, beyond the structural split:
+
+1. **Drop the unnecessary `agents/first-officer.md` cross-reference** from `first-officer-shared-core.md` (line 3, "Keep aligned with…") — not load-bearing.
+2. **Add a top Operating-principles (ethos) section** the shipped skill lacks today — its absence lets Codex drift from the `agents/first-officer.md` ethos. Combine the existing `## Working Principles` under it. Verbatim:
+
+   > You are dispatcher and responsible for making sure the work is done by the crew. What awesome looks like for the crew:
+   > - Begin with the end, be clear about the value.
+   > - Do the hardest things first, de-risk when it is cheap.
+   > - Communicate and act concisely, choose the simplest approach, JFDI.
+
+This is boot-resident **guidance content** (behavior-shaping, not a testable AC): proof is the existing live scenarios still passing + review — not a "drift reduced" metric. The principles also govern *how* the contract is simplified (lead with value, hardest-first, simplest/concise).
+
 ## Out of scope (parked, not 0.20.3)
 
 - **p2 / vc** — `spacedock pr complete` + `reconcile --act`: the binary-simplification line (higher ROI, heavier lift) → 0.20.4.
