@@ -14,6 +14,7 @@ group: cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#359"
+archived: 2026-06-13T21:17:10Z
 ---
 
 Four non-blocking findings the 0.19.9 pre-cut antipattern audit recorded (none blocked the cut; grouped here as the next-sprint seed). Small, independent.
