@@ -342,6 +342,11 @@ func TestStateCommitGuidanceResolvesPaths(t *testing.T) {
 			writeFile(t, entityPath, entityFM("Thing", tc.stage, worktreeRel))
 
 			gitInit(t, root)
+			// This case asserts the push / pull-rebase reminder IS emitted, which is
+			// the origin-backed contract — so the state checkout must have an origin.
+			// The no-origin degrade is covered separately in
+			// build_state_no_origin_test.go.
+			gitAddOrigin(t, root)
 
 			stdin := mergeStdin(map[string]any{
 				"schema_version": 2,

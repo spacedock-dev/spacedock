@@ -56,6 +56,18 @@ func ClassifyState(stateValue string) (StateMode, string, error) {
 	return StateSplitRoot, cleaned, nil
 }
 
+// stateHasOrigin reports whether the state checkout has a named `origin` remote.
+// The split-root sync contract pushes/pulls `origin` specifically, so the probe
+// asks the exact named-remote question via `git remote get-url origin` — true iff
+// exit 0. This is network-free (unlike `ls-remote`) and discriminating (unlike a
+// bare `git remote`, which exits 0 with no output for a checkout with no remotes).
+// A non-repo dir or any other git failure reports false, so a checkout that
+// cannot push/pull `origin` for any reason degrades to local-only.
+func stateHasOrigin(checkout string) bool {
+	_, err := runGitCmd(checkout, "remote", "get-url", "origin")
+	return err == nil
+}
+
 // StateBranch returns the orphan state branch for a split-root workflow. By
 // default it derives from the workflow dir's basename
 // (spacedock-state/<basename>), reproducing the shipped spacedock-state/dev for

@@ -235,6 +235,8 @@ When the workflow is split-root (README declares `state:` checkout, e.g. `state:
 - **On push rejection (non-fast-forward) → `pull --rebase` then re-push.** `git -C {state_checkout} pull --rebase origin {state_branch}` replays the local single-file commit atop the peer's; disjoint paths → no conflict. Then re-push.
 - **At FO boot (before first dispatch) → `pull --rebase`.** Integrate peers' state once at boot (the Startup pull-on-boot step), not per-read.
 
+**No-origin carve-out.** When the state checkout has no `origin` remote, none of the three sync points apply: boot reports `STATE_BACKEND: … remote: none — state not remotely synced` (and `state_remote: none` in `--boot --json`), the dispatch omits the push/pull reminder, and writers commit path-scoped locally only. State is local-only until an `origin` is configured — surface that to the captain rather than treating the missing remote as a sync failure.
+
 **Rebase-conflict halt (B6).** If `pull --rebase` CONFLICTS (two writers editing the SAME entity's frontmatter concurrently), the FO MUST:
 
 1. **HALT** the dispatch. Do not proceed against an unmerged state tree.

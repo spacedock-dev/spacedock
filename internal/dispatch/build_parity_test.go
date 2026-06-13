@@ -119,6 +119,20 @@ func TestBuildParityCrossProduct(t *testing.T) {
 			writeFile(t, entityPath, entityFM("Thing", tc.stage, worktreeRel))
 
 			gitInit(t, root)
+			// The split-root goldens encode the origin-backed contract (push /
+			// pull-rebase reminder present), at parity with the oracle's unconditional
+			// remote-sync wording. The resolved state checkout (workflowDir/<state>)
+			// must exist and carry an origin for stateHasOrigin to report true, so the
+			// contract holds; the no-origin local-only degrade is a native-only
+			// divergence covered by build_state_no_origin_test.go.
+			if tc.splitRoot {
+				stateCheckout := filepath.Join(workflowDir, "state-checkout")
+				if err := os.MkdirAll(stateCheckout, 0o755); err != nil {
+					t.Fatal(err)
+				}
+				gitInitBare(t, stateCheckout)
+				gitAddOrigin(t, stateCheckout)
+			}
 
 			stdin := mergeStdin(map[string]any{
 				"schema_version": 2,
