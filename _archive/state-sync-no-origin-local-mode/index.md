@@ -14,6 +14,7 @@ mod-block:
 pr: "#364"
 completed: 2026-06-13T21:26:46Z
 verdict: PASSED
+archived: 2026-06-13T21:26:46Z
 ---
 
 Split-root state sync currently assumes the state checkout has an `origin`
