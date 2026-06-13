@@ -1,168 +1,57 @@
 # Install Spacedock
 
-This guide walks a fresh install end to end and names the output you should see
-at each step. Every command here is one you can run and check against the stated
-result.
+Spacedock works with a coding agent you already have: Claude Code, Codex, or
+Pi. Install one of those first.
 
-Spacedock plugs into a coding agent harness you already run: Claude Code, Codex,
-or Pi. Install one of those first.
+=== "macOS (Homebrew)"
 
-Spacedock itself is two pieces that install separately:
+    ```bash
+    brew tap spacedock-dev/homebrew-tap
+    brew install spacedock
+    ```
 
-1. **The `spacedock` launcher.** The command you run to start a session.
-2. **The host plugin.** The first-officer and ensign agents, loaded by your
-   harness (Claude Code, Codex, or Pi).
+=== "Binary (macOS / Linux)"
 
-The recommended setup installs the launcher with Homebrew, then adds the plugin.
-A from-source build is available for development.
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh | sh
+    ```
 
-## Install with Homebrew (recommended)
+    Installs a checksum-verified binary to `~/.local/bin`.
 
-1. **Install the launcher.**
+## Launch
 
-   ```bash
-   brew tap spacedock-dev/homebrew-tap
-   brew install spacedock
-   ```
-
-2. **Confirm it.**
-
-   ```bash
-   spacedock --version
-   ```
-
-   Prints the installed version, e.g. `spacedock 0.20.0`.
-
-3. **Launch.** Point it at a project you already have and let it survey.
-
-   ```bash
-   spacedock claude "/spacedock:survey"
-   ```
-
-   Starts the first officer in Claude Code and runs the survey. The first launch
-   sets up the plugin for you, so this single command is enough. When a
-   `.safehouse` profile is present in the working directory, the launch runs
-   sandboxed.
-
-   To set up the plugin ahead of time, or to refresh it later, run
-   `spacedock install --host claude`.
-
-## Install on Linux (or macOS without Homebrew)
-
-The Homebrew cask is macOS-only. On Linux — and on macOS if you'd rather not use
-Homebrew — install the launcher with the `curl | sh` script. It detects your
-OS and architecture, downloads the matching tarball from the latest GitHub
-Release, verifies it against the release `checksums.txt`, and installs the
-`spacedock` binary to `~/.local/bin`.
-
-1. **Install the launcher.**
-
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/spacedock-dev/spacedock/next/install.sh | sh
-   ```
-
-   Installs `spacedock` to `~/.local/bin`. If that directory is not on your
-   `PATH`, the script prints a note; add it (`export PATH="$HOME/.local/bin:$PATH"`)
-   so the `spacedock` command resolves. Set `SPACEDOCK_INSTALL_DIR` to install
-   elsewhere (e.g. `SPACEDOCK_INSTALL_DIR=/usr/local/bin`, which may need `sudo`).
-
-2. **Confirm it.**
-
-   ```bash
-   spacedock --version
-   ```
-
-   Prints the installed version, e.g. `spacedock 0.20.0`.
-
-3. **Add the plugin and launch** exactly as in the Homebrew steps above
-   (`spacedock claude "/spacedock:survey"`).
-
-**Sandboxing on Linux.** Spacedock's safehouse integration behaves the same on
-Linux as on macOS: when a `.safehouse` profile is present in the working
-directory, Spacedock wraps the launch through the `safehouse` command. Spacedock
-does not ship a sandbox — it detects the profile and delegates. A run is
-sandboxed only when a Linux-capable `safehouse` binary is on your `PATH`. When
-the binary is absent, Spacedock prints an install hint and the launch proceeds
-**unsandboxed**. Install safehouse separately if you need the sandbox on Linux;
-the macOS-only Gatekeeper/quarantine handling does not apply on Linux and is not
-needed there.
-
-## Use Codex or Pi instead
-
-Codex and Pi are supported but experimental. Claude Code is the primary surface.
-
-1. **Install the launcher** (same Homebrew step as above).
-
-2. **Add the plugin** for your host.
-
-   ```bash
-   spacedock install --host codex      # or: --host pi
-   ```
-
-   Codex installs plugins from your shell rather than programmatically, so this
-   prints the `codex plugin` commands to run. Run them, then use the
-   first-officer skill in your Codex session.
-
-3. **Launch** with the matching subcommand.
-
-   ```bash
-   spacedock codex "your task"         # or: spacedock pi "your task"
-   ```
-
-## Build from source (for development)
-
-Use this when you're working on Spacedock itself. It builds the launcher from
-the development branch and loads the plugin from your checkout, so local changes
-take effect immediately.
-
-1. **Clone and build.**
-
-   ```bash
-   git clone --branch next https://github.com/spacedock-dev/spacedock
-   cd spacedock
-   go build -o spacedock ./cmd/spacedock
-   ```
-
-2. **Confirm the binary.**
-
-   ```bash
-   ./spacedock --version
-   ```
-
-   Prints `spacedock <version>` for your local build.
-
-3. **Launch with the local plugin.**
-
-   ```bash
-   ./spacedock claude "your task" -- --plugin-dir "$PWD"
-   ```
-
-   `--plugin-dir` is a host flag, so it rides after `--`. It loads the
-   first-officer and ensign agents from your checkout instead of the installed
-   plugin. Edits to the repo are live.
-
-The `next` branch is the development channel. It has no Homebrew release. Use the
-Homebrew path above for a stable install.
-
-## Keep things in sync
-
-`spacedock doctor` is the compatibility check. If it reports your installed
-plugin is out of date, refresh it:
+In a project you already have:
 
 ```bash
-spacedock install --host claude
+spacedock claude "/spacedock:survey"
 ```
 
-If the `spacedock` command itself is missing, install the launcher with Homebrew
-first, then run `spacedock install --host claude`.
+Or launch directly:
 
-## Command grammar
+```bash
+spacedock claude "what can spacedock do for me in this project"
+```
 
-The front door is `spacedock claude "task" [--safehouse…] [-- host-flags…]`
-(and the same shape for `spacedock codex` and `spacedock pi`):
+Replace `claude` with `codex` or `pi` for the respective coding agents.
 
-- The task comes first. It's handed to the first officer as the launch prompt.
-- Anything after `--` forwards verbatim to the host (`claude` / `codex` / `pi`),
-  including `--plugin-dir`, `--resume`, `--model`, and the like.
-- `--safehouse` forces the launch through the sandbox. A `.safehouse` profile in
-  the working directory does the same automatically.
+## Skills
+
+Spacedock installs the relevant skills on launch. To install them manually:
+
+```bash
+claude plugin marketplace add spacedock-dev/spacedock
+claude plugin install spacedock@spacedock
+```
+
+## Sandboxing
+
+See [supported sandboxes](../reference/sandbox.md).
+
+## Troubleshooting
+
+Run `spacedock doctor`.
+
+## Next
+
+Read about the [survey report](survey.md) to understand your usage pattern
+with coding agents, or start with [your first workflow](first-workflow.md).

@@ -1,71 +1,29 @@
-# Operating a workflow
+# Operate a workflow
 
-Operating a workflow is a loop: see what is ready, dispatch the first officer to move it, and make a decision when work reaches a gate. The captain drives that loop; the first officer does the orchestration and the ensigns do the stage work. This page covers the loop, the `spacedock status` queries that show you the state, and how to handle a gate.
+You operate a workflow by talking to the first officer: launch a session, let it move everything that is ready, and decide when work reaches a gate.
 
-## The day-to-day loop
+## The session loop
 
-You run the same three steps each session:
-
-1. **See what is ready.** Query workflow state to find the entities that can move (the dispatchable set) and where everything sits.
-2. **Dispatch the first officer.** Launch a session and let it pull a dispatchable entity through its next stage.
-3. **Handle gates.** When a stage is gated, the first officer stops and presents the result. You approve, reject, or send it back.
-
-The loop ends a session when nothing is dispatchable, or when every dispatchable entity is waiting on a gate decision from you.
-
-## See what is ready
-
-`spacedock status` reads the workflow state and prints it. Run it against the workflow directory, the one holding the commissioned `README.md`:
+Start a session. Name a task if you have one in mind, or say nothing and it picks up where the last session left off:
 
 ```bash
-spacedock status --workflow-dir docs/dev
+spacedock claude
 ```
 
-Prints the status table: one row per active entity, with its ID, title, and current stage. This is the full picture.
+The first officer reads the workflow state and dispatches an ensign for every entity ready for its next stage. Completed stages flow forward on their own: when the next stage has no gate, the first officer advances the entity and dispatches again without waiting for you. It returns to you for four things only: a gate needs your decision, a finished entity is ready to close, something is blocked, or nothing is left to dispatch.
 
-To list only the entities ready to dispatch, add `--next`:
+In between, ask it whatever you want to know: "what's ready?", "where is the rate-limiting task?", "what's still in review?". The first officer queries the workflow state and shows you; there are no status commands to learn.
 
-```bash
-spacedock status --workflow-dir docs/dev --next
-```
+## When a gate arrives
 
-Prints the dispatchable set: the entities whose next stage can run now, given concurrency limits and what is already in flight. This is the query the first officer runs each loop. When nothing is ready, the result is empty; there is nothing to dispatch.
+A gate stops the loop and hands you the call: the first officer presents the review and waits. You make one of [the three calls](../concepts/gates-and-decisions.md#the-three-calls): approve, redo with feedback, or reject.
 
-To filter the table by a frontmatter field, use `--where "field=value"`. The filter takes `=` (equals) or `!=` (not equals):
+Approving the last stage closes the entity: the first officer records the merge and the verdict, archives the entity file, removes the worktree, and stands the workers down. The loop then continues with whatever is ready next.
 
-```bash
-spacedock status --workflow-dir docs/dev --where "status=ideation"
-spacedock status --workflow-dir docs/dev --where "verdict!="
-```
+## Delegating the loop
 
-The first prints every entity in the `ideation` stage. The second prints entities whose `verdict` field is set (the `!=` against an empty value). Use `--where` to answer targeted questions: what is in a given stage, which entities carry an external `issue`, which already have a `verdict`.
+The loop needs you less as the workflow matures. Rejections already run without you: findings bounce back to the stage that owns the fix and the reviewer re-runs; [a rejection reaches your desk](../concepts/gates-and-decisions.md#rejections) only after three failed rounds. When the bar you set is sharp enough to trust, [hand over the conn](../concepts/gates-and-decisions.md) and let the first officer drive whole tasks to done with auto-approval.
 
-Two more queries are worth knowing:
+## Ending a session
 
-- **`--validate`** checks every entity against the workflow's contract and reports problems (a missing or malformed ID, a duplicate ID, a stage name that breaks the naming rule). Run it when the table looks wrong.
-- **`--resolve REF`** looks up one entity by slug, full ID, or ID prefix, so you can name it unambiguously before acting on it.
-
-All status queries are read-only. They print state, they do not change it. For the full flag list and the `--set` and `--archive` mutation forms, see the [Command reference](../reference/command-reference.md).
-
-## Dispatch
-
-Hand the first officer the workflow and let it run the dispatch cycle. Launch with your harness subcommand and a task that names the work; the first officer takes the workflow directory from the path you give it in the task, or runs `spacedock status --discover` to find it:
-
-```bash
-spacedock claude "/spacedock:first-officer operate the workflow in docs/dev"
-```
-
-The first officer reads the workflow `README.md`, runs its own `status --next`, and for each dispatchable entity it dispatches an ensign to move the entity through its next stage. The ensign does the stage work (write the design, produce the deliverable, run the validation), commits, and files a stage report. The first officer reads the report, checks it against the stage's outputs and the entity's acceptance criteria, and advances the entity. A completed non-gated, non-terminal stage is not a stopping point: the first officer advances it and dispatches the next stage on its own, without waiting for you.
-
-It stops and returns to you only at a gate, at a terminal entity's merge ceremony, on a blocker, or when nothing is left to dispatch.
-
-## Handle gate decisions
-
-A gate is the decision point at the end of a stage marked `gate: true` in the workflow. When an entity reaches one, the first officer presents the stage report and the result of its review, then waits. It never self-approves. You decide:
-
-- **Approve.** The entity advances to its next stage. The first officer dispatches it (or, at a terminal stage, runs the merge-and-cleanup ceremony to close the entity with its verdict).
-- **Reject.** On a stage with a `feedback-to` target (`validation` routes back to `implementation` in the `docs/dev` workflow), the rejection routes the concrete findings back to that stage and re-runs the work, then re-validates. A repeated rejection escalates back to you rather than bouncing indefinitely.
-- **Send it back with direction.** If the result is close but not right, give the first officer the specific change to make. It updates the entity body, acceptance criteria, and test plan together, then re-runs the stage.
-
-The gate review names the chosen direction, cites the stage report, and ends with a single recommendation, approve or reject. Read the report it cites before deciding; overriding a `REJECTED` recommendation without a reason is exactly the kind of unexamined approval the gate exists to catch.
-
-When you approve a terminal stage, the entity is closed: the first officer records the merge, sets the `completed` timestamp and `verdict`, clears the worktree, and tears the worker down. At that point the loop returns to the top: run `status --next` and see what moved into reach.
+Stop whenever you want; every entity's state is in the workflow files, so the next session resumes where this one ended. Before you stop, run [`/spacedock:debrief`](debrief.md) to record the session for the next one.

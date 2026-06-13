@@ -1,74 +1,62 @@
 # Gates & decisions
 
-A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage is marked `gate: true` in the workflow README, the first officer stops after the worker completes, renders a gate review, and waits for you. It never self-approves. This page covers what a gate review carries, the three calls you make, how feedback cycles loop and where they cap, and the detached adversarial audit that backs high-stakes validation.
+A gate is the decision point at the end of a stage where nothing advances without your vote. When a stage declares a gate, the first officer stops after the worker completes, presents a review, and waits for you. It never self-approves.
 
-## What a gate carries
-
-The first officer presents a gate review only after it has read the worker's `## Stage Report`, checked every dispatched item, and counted the results. The review is the first officer's own prose with a fixed spine. The first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
-
-A gate review looks like this:
+Each call you make sharpens the bar, and the destination is delegation. When you are sufficiently confident in the workflow and the bar you set, hand over the conn and let the first officer drive multiple tasks with auto-approval:
 
 ```
-Gate review: {entity title} — {stage}
-Chosen direction: {one-line summary of the worker's approach, or n/a}
-Recommend {approve | reject: {one-line reason}}.
+you have the conn to drive toward your sprint goal, authorized to approve and
+merge PR on CI green. use your judgement.
+```
 
-Checklist (from ## Stage Report in {entity_file_path} lines {start}-{end}):
-- DONE: {≤10-word gist}
-- SKIPPED: {gist} — {reason}
-- FAILED: {gist} — {reason}
+Until then, the gates are yours.
+
+## What you see at a gate
+
+A gate review has a fixed spine: the first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
+
+```
+Gate review: Fix the flaky login test — review
+Chosen direction: replace sleep-based waits with event polling
+Recommend reject: the AC-2 retry scenario has no covering test.
+
+Checklist (from ## Stage Report in docs/ship-features/fix-the-flaky-login-test.md):
+- DONE: login test stable across 50 consecutive runs
+- FAILED: retry scenario unproven — no test exercises it
 
 Reviewer findings
-  Material: {fact-corrections, contract violations, missing AC evidence}
-  Polish:   {wording, format drift, non-blocking suggestions}
+  Material: AC-2 cites a test file that does not exist
+  Polish:   stage report wording drifts from the template
 
-Assessment: {N} done, {N} skipped, {N} failed.
+Assessment: 1 done, 0 skipped, 1 failed.
 
-Decision: {what approval/rejection does in concrete terms}.
+Decision: approve to close; reject to bounce back to implementation.
 ```
 
-Read it as follows:
-
-- **`Chosen direction` names what the worker picked**, so you do not have to open the entity file to learn it. Ideation picks an approach; validation picks PASS or REJECTED. Stages with no choice to make show `n/a`.
-- **`Recommend` is the first officer's verdict, stated exactly once.** It does not reappear restated elsewhere in the review.
-- **`Checklist` is a gist roll-up, not the report.** The full `## Stage Report` is cited by file path and line range; open it when you want the detail.
-- **Reviewer findings split into `Material` and `Polish`.** Material items (fact-corrections, contract violations, missing acceptance-criterion evidence, claims the codebase contradicts) are the ones that should move your vote. Polish is non-blocking. An empty tier is dropped.
-- **`Decision` names what your vote does in concrete terms.** For example, "approve to enter implementation in worktree `.worktrees/...`" or "reject to bounce back to {feedback-to target}".
-
-At every gate the first officer also runs an acceptance-criteria cross-check: it scans `## Acceptance criteria`, confirms each `**AC-N**` has evidence cited from this or a prior stage report, and names any criterion left without evidence.
+Material findings are the ones that should move your vote; Polish never blocks. The Decision line tells you concretely what your vote does. Every acceptance criterion is cross-checked before the review reaches you; a criterion without cited evidence is named rather than passed over.
 
 ## The three calls
 
-You answer a gate with one of three calls.
+- **Approve.** The work advances to the next stage. Approving the terminal stage merges and closes it.
+- **Redo with feedback.** You accept the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes".
+- **Reject.** The work bounces back to the stage that owns the fix, carrying your findings.
 
-- **Approve.** The entity advances to the next stage and the first officer dispatches it, reusing the live worker when it can and dispatching fresh otherwise. If the next stage opens or closes a worktree, the `Decision` line told you so. Approving the terminal stage runs the merge and cleanup ceremony.
-- **Redo with feedback.** You approve the direction but send concrete fixes back. Name the specific asks ("tighten the AC-2 substring assertion, correct the file path claim"), not "address the reviewer's notes". The first officer routes your asks back to the stage that owns the work, the worker re-does it, and the gate is re-presented.
-- **Reject.** At a stage with a `feedback-to` target, rejecting bounces the work back to that target stage to be fixed and re-validated; this is the feedback cycle below. At a stage without `feedback-to`, rejection is terminal for that path.
+Redo and reject differ only in whether you accept the direction; both carry your concrete asks so the next worker has something to act on. Nothing closes without its verdict on the record.
 
-A redo and a reject at a `feedback-to` stage run the same routing machinery. The difference is whether you are correcting a direction you accept or sending it back. Both name the concrete fix asks so the next worker has something to act on.
+## Rejections
 
-## Feedback cycles and the loop cap
+Rejections bounce automatically: the findings route back, the work is redone, and the reviewer re-runs; no stop at your desk. The gate reaches you only when the work passes review, or after **three failed rounds**, when the call returns to you instead of bouncing again. Every round is on the record in the item's file.
 
-When a feedback stage recommends `REJECTED`, or you reject at a `feedback-to` stage, the work routes back to the stage named in `feedback-to`: the stage that owns the fix, not the reviewer that flagged it. In the dev workflow, `validation` has `feedback-to: implementation`, so a rejected validation sends the deliverable back to implementation, not back to the validator.
+A useful rejection to type at a gate: "send it back unless this now needs reframing".
 
-The first officer tracks each round in a `### Feedback Cycles` section in the entity body, then:
+## Reviews beyond validation
 
-1. Reads the rejected stage's `feedback-to` target.
-2. Routes your concrete findings to that target, reusing the live worker in the same worktree when it is still addressable and reuse conditions pass, dispatching fresh otherwise. The routed message carries the fix work and the stage assignment, not just an acknowledgment.
-3. Re-runs the reviewer after the fix.
-4. Re-enters the gate flow with the updated result, presenting you a fresh gate review.
+A typical validation stage already covers code review: the work is checked against your acceptance criteria, with the rejection loop behind it. Adversarial review is built in as well: a `fresh: true` validation stage is exactly that, and high-stakes changes can also get a detached, out-of-workflow pass.
 
-**The loop caps at three.** On cycle 3 the first officer escalates to you instead of bouncing a fourth time. The same fix has now failed twice, so the call returns to a human rather than looping. This cap is exercised by the `feedback-3-cycle-escalation` runtime scenario, which asserts the first officer escalates on the third rejected validation rather than auto-bouncing again.
+Adversarial review differs from validation in what it distrusts: validation checks the work; the adversarial pass checks the validation. It is read-only and tries to refute the result by constructing an adversarial edit the deliverable's own tests should catch, then confirming they do. A test that stays green under an edit that breaks the claim is a hole validation cannot see on its own. "Refuted nothing material" is a valid recorded outcome, and material findings route back through the rejection loop.
 
-## The detached adversarial audit
+The workflow is flexible beyond that: you can add conditional, lens-specific reviews of your own, like checking that the documentation was updated when a change affects end users.
 
-For high-stakes surfaces, a passing validation is necessary but not sufficient. Before merging, the first officer also runs a read-only adversarial audit. The audit catches the hole that validation cannot see itself: a test that passes today but would also pass on a broken future edit.
+## Where to go next
 
-The audit triggers on four surfaces: the front-door launcher (`spacedock claude` / `codex` / `doctor`), the `status` mutation and guard paths, the shipped contract and scaffolding, and the CI and release machinery. Routine, low-blast-radius changes do not need it; a normal validation suffices.
-
-It runs on a separate throwaway checkout, never the implementation worktree, and never mutates the deliverable. The auditor tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. Findings come in two tiers, `Material` and `Polish`; "refuted nothing material" is a valid recorded outcome.
-
-Results feed the same gate machinery you already know:
-
-- **Material findings route back through the normal validation-to-implementation feedback flow**, with a `### Feedback Cycles` entry naming the audit and its adversarial edit. The gate is not presented as clean until they are closed.
-- **A clean audit is noted in the gate's reviewer-findings block**, or as a one-line "detached audit: no material findings".
+- [Operate a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.

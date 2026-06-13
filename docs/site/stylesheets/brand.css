@@ -8,6 +8,10 @@
 .md-header,
 .md-tabs {
   background-color: var(--bg-2);
+  /* Material colours header text with --md-primary-bg-color (a dark ink in both
+     schemes); since we force a dark header bg, set a light fg so the wordmark,
+     tabs, and icons stay legible under the slate (default) scheme. */
+  color: var(--fg);
   border-bottom: 1px solid var(--line-soft);
   color: var(--fg);
 }
@@ -15,6 +19,17 @@
 .md-footer {
   background-color: var(--bg-2);
   border-top: 1px solid var(--line-soft);
+}
+
+/* Discreet machine-readers link in the footer meta row */
+.sd-footer-llms {
+  margin-left: 1em;
+  font-size: 0.64rem;
+  opacity: 0.7;
+  color: inherit;
+}
+.sd-footer-llms:hover {
+  opacity: 1;
 }
 
 /* Mono display headings -- Material has no display-font slot */

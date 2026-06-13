@@ -1,0 +1,190 @@
+{
+  "version": "1.0",
+  "target": "workflow_readme",
+  "applies_to": {
+    "filename": "README.md",
+    "required_at": "workflow_root"
+  },
+  "frontmatter": {
+    "strict_canonical": true,
+    "required": [
+      "commissioned-by",
+      "entity-type",
+      "entity-label",
+      "entity-label-plural",
+      "id-style",
+      "stages"
+    ],
+    "optional": [
+      "mission"
+    ],
+    "fields": {
+      "commissioned-by": {
+        "type": "string",
+        "pattern": "^spacedock@([0-9]+\\.[0-9]+\\.[0-9]+)?$",
+        "description": "The empty version alternative intentionally accepts bare spacedock@ stamps from early generated workflows."
+      },
+      "entity-type": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "entity-label": {
+        "type": "string"
+      },
+      "entity-label-plural": {
+        "type": "string"
+      },
+      "id-style": {
+        "type": "string",
+        "enum": [
+          "sequential",
+          "sd-b32",
+          "slug"
+        ]
+      },
+      "mission": {
+        "type": "string"
+      },
+      "stages": {
+        "type": "mapping",
+        "required": [
+          "states"
+        ],
+        "optional": [
+          "defaults",
+          "transitions"
+        ],
+        "shape": {
+          "defaults": {
+            "type": "mapping",
+            "fields": {
+              "worktree": {
+                "type": "boolean",
+                "default": false
+              },
+              "concurrency": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 2
+              },
+              "model": {
+                "type": "string",
+                "enum": [
+                  "sonnet",
+                  "opus",
+                  "haiku"
+                ]
+              }
+            }
+          },
+          "states": {
+            "type": "sequence",
+            "min_items": 2,
+            "item": {
+              "type": "mapping",
+              "required": [
+                "name"
+              ],
+              "fields": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+                },
+                "initial": {
+                  "type": "boolean"
+                },
+                "terminal": {
+                  "type": "boolean"
+                },
+                "worktree": {
+                  "type": "boolean"
+                },
+                "concurrency": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "gate": {
+                  "type": "boolean"
+                },
+                "fresh": {
+                  "type": "boolean"
+                },
+                "feedback-to": {
+                  "type": "string"
+                },
+                "agent": {
+                  "type": "string"
+                },
+                "model": {
+                  "type": "string",
+                  "enum": [
+                    "sonnet",
+                    "opus",
+                    "haiku"
+                  ]
+                }
+              }
+            }
+          },
+          "transitions": {
+            "type": "sequence",
+            "item": {
+              "type": "mapping",
+              "required": [
+                "from",
+                "to"
+              ],
+              "fields": {
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "body": {
+    "required_sections_per_stage": {
+      "heading": "### `{stage_name}`",
+      "accept_bare": true,
+      "accept_annotated": true,
+      "required_bullets": [
+        "Outputs:"
+      ],
+      "conventional_bullets": {
+        "severity": "warn",
+        "list": [
+          "Inputs:",
+          "Good:",
+          "Bad:"
+        ]
+      }
+    }
+  },
+  "invariants": [
+    {
+      "id": "initial_cardinality",
+      "rule": "exactly one stage with initial:true AND it is the first list entry"
+    },
+    {
+      "id": "terminal_cardinality",
+      "rule": "exactly one stage with terminal:true AND it is the last list entry"
+    },
+    {
+      "id": "stage_subsection_present",
+      "rule": "every stages.states[].name has a matching ### heading in body"
+    },
+    {
+      "id": "feedback_target_valid",
+      "rule": "feedback-to value (when present) names another stage in states[]"
+    }
+  ]
+}

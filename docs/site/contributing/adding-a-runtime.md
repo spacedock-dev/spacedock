@@ -2,7 +2,7 @@
 
 A host is supported when a live or fixture-backed run launches it as a first officer, dispatches an ensign through that host's native agent mechanism, and verifies durable workflow state: process exit, entity body, state-checkout git log, and clean status. A host is not supported because its instructions mention Spacedock, and a substring search over code or prose is not proof of behavior. Spacedock ships `spacedock claude` and `spacedock codex` as proven front doors; adding a host means earning the same level of proof.
 
-This page is the contributor's orientation. The full procedure, the exact checklists, and the worked Pi example live in [Multi-host support](../reference/multi-host.md). Read that before you write code.
+This page is the full procedure: what "supported" means, the layers to add support in, the acceptance checklist, and a worked Pi example. Use it when adding a new host such as Pi, or when turning a spike into a supported runtime lane.
 
 ## What "supported" means
 
@@ -25,6 +25,10 @@ Add support in small layers, each with its own proof at its own abstraction leve
 4. **Launch/install UX.** Add `spacedock <host>` only after a manual or live harness proves the runtime path. Add `spacedock install --host <host>` only when the install path is known and checkable without mutating unrelated global host state. Add `spacedock doctor --host <host>` when there is a manifest, package, or runtime health check to verify.
 5. **Live runner.** Prove the host with a live-gated test when the claim is runtime integration. Use a temp workflow fixture, isolated host config and session directories, and copied credentials rather than global host state. Assert process exit, entity content, git log, and clean status. Never pass on transcript phrasing.
 
+## Launcher binary propagation through wrappers
+
+`spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the process they exec, including the outer `safehouse -- ...` process when safehouse wrapping is active. Spacedock does not modify safehouse internals or assume a private passthrough mechanism; if a wrapper or runtime strips `SPACEDOCK_BIN` before the agent session observes it, the skill contract's `${SPACEDOCK_BIN:-spacedock}` convention degrades to the existing `$PATH` lookup.
+
 ## Match the proof to the claim
 
 Use the smallest proof at the same abstraction level as the claim:
@@ -36,6 +40,18 @@ Use the smallest proof at the same abstraction level as the claim:
 - **Runtime claim:** a live-gated host run that mutates a temp workflow and verifies durable state.
 
 The failure mode to guard against: declaring a host supported because its prose looks right. Substring presence is acceptable proof only when the claim itself is about text being present or absent.
+
+## Acceptance checklist
+
+A new runtime support slice is not done until the entity or PR records evidence for each applicable item:
+
+- Dispatch output uses the host-native contract and excludes incompatible host tool names.
+- The first-officer and ensign skills load host runtime adapters.
+- Split-root entity paths remain in the state checkout and are not rewritten into a code worktree.
+- Follow-up/reuse cannot accept stale completion evidence, if reuse exists.
+- Optional team substrates are represented as adapters over their real action schema.
+- A live smoke proves the default dispatch path when runtime behavior is the claim.
+- Install/launch commands exist only after the underlying mechanism is proven.
 
 ## Manifesting from void
 
@@ -55,4 +71,113 @@ Assume <runtime> support is supposed to work. Do not treat missing polish, auth 
 
 The prompt earns its place by changing the default interpretation of a failure: harness work gets fixed in-loop, and only a proven product or design blocker stops the work.
 
-The worked Pi runtime is in [Multi-host support](../reference/multi-host.md): the live smoke mechanism, the exact parent prompt, the install and doctor surface, and the full acceptance checklist.
+## The worked Pi runtime
+
+Pi is the worked example of a host taken from spike to supported runtime: the live-smoke mechanism, the exact parent prompt, the install and doctor surface, and the skill load paths.
+
+### Pi live-smoke mechanism
+
+The Pi proof used a live-gated test named:
+
+```bash
+go test -tags live -run TestLivePiSubagentEnsignSmoke ./internal/ensigncycle -v -count=1
+```
+
+The harness did this:
+
+1. Resolve `pi` from `PATH` and the local Spacedock repo root.
+2. Resolve the installed `pi-subagents` package root, defaulting to:
+
+    ```text
+    ~/.pi/agent/npm/node_modules/pi-subagents
+    ```
+
+3. Create temp runtime state:
+
+    ```text
+    PI_CODING_AGENT_DIR=<temp>
+    PI_CODING_AGENT_SESSION_DIR=<temp>
+    --session-dir <temp>
+    HOME=<clean temp>
+    ```
+
+4. Copy only the operator's existing OAuth file into the isolated Pi home:
+
+    ```text
+    ~/.pi/agent/auth.json -> $PI_CODING_AGENT_DIR/auth.json
+    ```
+
+5. Launch `pi --print` with explicit local resources:
+
+    ```text
+    --extension ~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+    --skill ~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+    --skill <spacedock checkout>/skills/first-officer
+    --skill <spacedock checkout>/skills/ensign
+    ```
+
+6. Create a temp split-root workflow:
+    - `README.md` declares `state: .spacedock-state`.
+    - The entity is folder-form in `.spacedock-state/pi-live-smoke/index.md`.
+    - Both workflow root and state checkout are git repositories.
+
+7. Ask the Pi parent to call `subagent(...)` exactly once.
+8. Require the worker to append a stage report and commit only the state-checkout entity path.
+9. Assert durable outcomes:
+    - Pi process exits successfully.
+    - Entity body contains the exact smoke marker and stage report shape.
+    - State checkout git log contains the worker commit.
+    - The entity path has no uncommitted changes.
+
+For Pi, the concrete "assume it works" prompt was:
+
+```text
+Assume Pi support is supposed to work. Do not treat missing polish, auth setup friction, or tool-shape mismatch as proof the runtime is impossible. In FO capacity, iron out the frictions:
+
+- if Pi auth is missing in an isolated harness, copy/reuse the existing Pi OAuth auth file correctly;
+- if the dispatch substrate needs a local package/extension path, wire it explicitly;
+- if the Pi tool shape differs from Claude/Codex, adapt to the Pi-native contract rather than emulating Claude tools;
+- if a live test fails due to harness setup, fix the harness and rerun;
+- only stop for a real product/design blocker, not for first-contact setup friction.
+```
+
+### Exact Pi parent prompt
+
+The live test formats this prompt with repository and temp paths. Keep the structure when debugging Pi runtime support; only substitute the paths and marker.
+
+```text
+You are the Spacedock first officer for a live Pi smoke test.
+
+Use the pi-subagents subagent(...) tool exactly once to dispatch one Pi ensign worker. Do not use or mention Claude Agent, SendMessage, TeamCreate, or TeamDelete tools.
+
+Dispatch a worker with agent "delegate" and this task:
+
+Load and follow the local Spacedock ensign skill at <repo>/skills/ensign/SKILL.md and the Pi ensign adapter at <repo>/skills/ensign/references/pi-ensign-runtime.md. This is a split-root Spacedock workflow.
+
+Workflow directory: <workflowRoot>
+State checkout: <stateRoot>
+Entity file: <entityPath>
+Target stage: implementation
+
+Required worker actions:
+1. Read the workflow README and entity file.
+2. Do not edit YAML frontmatter.
+3. Append an implementation stage report to the entity body containing the exact marker PI-LIVE-SUBAGENT-ENSIGN-SMOKE, at least one '- DONE:' item, and a '### Summary' subsection.
+4. Commit only the entity path in the state checkout with message 'ensign: pi live smoke'. Use a path-scoped git add/commit for pi-live-smoke/index.md.
+5. Return a concise completion result naming the entity file and commit evidence.
+
+After subagent(...) returns, you as first officer must verify the entity file contains PI-LIVE-SUBAGENT-ENSIGN-SMOKE and verify the state checkout git log contains 'ensign: pi live smoke'. Exit successfully only after those durable checks pass.
+```
+
+### Skill install and load paths
+
+For Pi, `spacedock pi` launches the proven front door by loading local resources explicitly:
+
+```text
+<spacedock checkout>/skills/first-officer
+<spacedock checkout>/skills/ensign
+~/.pi/agent/npm/node_modules/pi-subagents/skills/pi-subagents
+~/.pi/agent/npm/node_modules/pi-subagents/src/extension/index.ts
+```
+
+`spacedock install --host pi` is an idempotent readiness check and setup guide for that substrate; it does not install a Claude/Codex-style marketplace plugin and does not accept `--plugin-dir`. Resolve the local skill checkout by running it from the checkout or setting `SPACEDOCK_REPO_ROOT`. `spacedock doctor --host pi` reports the Pi CLI, auth file, `pi-subagents` extension/skill, local Spacedock skill health, and supervisor-talkback setup prerequisites: the `pi-subagents` intercom bridge source, the resolved `PI_INTERCOM_PACKAGE_ROOT` package root, and the `pi-intercom` skill resource. Current `pi-subagents`/`pi-intercom` packages do not expose stable `pi-intercom` or `subagents-doctor` PATH commands, so readiness is based on package/resource paths instead of command shims. These doctor/install checks are necessary setup checks but insufficient to prove live supervisor talkback. Live proof still requires the cq-style `pi-intercom-supervisor-talkback` probe: progress update -> decision request -> supervisor reply -> child resume -> durable marker evidence. Live tests should not mutate global `~/.pi/agent`; they should keep using isolated Pi homes with copied auth.

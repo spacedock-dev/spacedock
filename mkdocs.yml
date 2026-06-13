@@ -1,11 +1,17 @@
 site_name: Spacedock
 site_description: A multi-agent orchestrator where nothing ships without a decision.
-site_url: https://spacedock-dev.github.io/spacedock/
+site_url: https://spacedock.md/docs/
 repo_url: https://github.com/spacedock-dev/spacedock
 repo_name: spacedock-dev/spacedock
 copyright: Spacedock is released under the Apache License 2.0.
 
 docs_dir: docs/site
+
+# Internal authoring directive (AGENTS.md), not a published page.
+# Contributor docs are not hosted on the site; the repo is their source of truth.
+exclude_docs: |
+  AGENTS.md
+  contributing/
 
 theme:
   name: material
@@ -40,11 +46,13 @@ theme:
 plugins:
   - search
   - llmstxt:
+      full_output: llms-full.txt
       markdown_description: >-
         Documentation for Spacedock, a multi-agent orchestrator where nothing
         ships without a decision. It lives within your existing coding harness
         (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an
-        evidenced decision at each gate.
+        evidenced decision at each gate. This index links the product docs;
+        llms-full.txt is every page concatenated into one file for a single fetch.
       sections:
         Get started:
           - index.md
@@ -57,43 +65,33 @@ plugins:
           - advanced/*.md
         Reference:
           - reference/*.md
-        Contributing:
-          - contributing/*.md
 
 nav:
-  - Home: index.md
   - Get started:
+      - Welcome: index.md
       - Install: get-started/install.md
-      - Your first launch: get-started/first-launch.md
+      - Survey your project: get-started/survey.md
       - Your first workflow: get-started/first-workflow.md
   - Concepts:
       - The operating model: concepts/operating-model.md
       - Workflows & entities: concepts/workflows-and-entities.md
       - The stage lifecycle: concepts/stage-lifecycle.md
       - Gates & decisions: concepts/gates-and-decisions.md
-      - A worked example: concepts/worked-example.md
   - Running workflows:
       - Commission a workflow: running-workflows/commission.md
-      - Survey an existing project: running-workflows/survey.md
-      - Operating a workflow: running-workflows/operating.md
-      - Debrief & refit: running-workflows/debrief-and-refit.md
+      - Operate a workflow: running-workflows/operating.md
+      - Debrief a session: running-workflows/debrief.md
   - Advanced topics:
-      - Sprints & roadmap: advanced/sprints-and-roadmap.md
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
-      - External-tracker bridge: advanced/external-tracker.md
-      - Multi-workflow & split-root state: advanced/split-root-state.md
+      - Multiple workflows: advanced/multi-workflow.md
+      - Split-root state: advanced/split-root-state.md
+      - Bridge an external tracker: advanced/external-tracker.md
+      - Refit a workflow: advanced/refit.md
   - Reference:
       - Command reference: reference/command-reference.md
       - Frontmatter contract: reference/frontmatter-contract.md
-      - Multi-host support: reference/multi-host.md
-  - Contributing:
-      - The development workflow: contributing/development-workflow.md
-      - Agent development: contributing/agent-development.md
-      - Proof policy: contributing/proof-policy.md
-      - Adding a runtime: contributing/adding-a-runtime.md
-      - Releasing: contributing/releasing.md
-      - Voice & tone: contributing/voice-and-tone.md
-      - Architecture notes: contributing/architecture-notes.md
+      - Supported sandboxes: reference/sandbox.md
+      - Contributing: https://github.com/spacedock-dev/spacedock/blob/main/CONTRIBUTING.md
 
 extra_css:
   - stylesheets/tokens.css
@@ -104,7 +102,11 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.details
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
   - toc:
