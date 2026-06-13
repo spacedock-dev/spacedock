@@ -85,6 +85,7 @@ nav:
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
       - Multiple workflows: advanced/multi-workflow.md
       - Split-root state: advanced/split-root-state.md
+      - Bridge an external tracker: advanced/external-tracker.md
       - Refit a workflow: advanced/refit.md
   - Reference:
       - Command reference: reference/command-reference.md

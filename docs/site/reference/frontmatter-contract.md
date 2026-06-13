@@ -46,7 +46,7 @@ Fill `title`, `status`, and `source` at creation; the runtime writes the rest as
 
 ## External-tracker fields
 
-`issue` and `source` are the bridge to an external ledger (Linear, GitHub Issues). `issue` is the human-facing ticket reference; `source` records the origin. Spacedock `status` stays the execution status, and the tracker does not redefine stage semantics inside the entity. See [Split-root state](../advanced/split-root-state.md#bridging-an-external-tracker) for the full bridge model.
+`issue` and `source` are the bridge to an external ledger (Linear, GitHub Issues). `issue` is the human-facing ticket reference; `source` records the origin. Spacedock `status` stays the execution status, and the tracker does not redefine stage semantics inside the entity. See [Bridge an external tracker](../advanced/external-tracker.md) for the full bridge model.
 
 ## Validating an entity
 
