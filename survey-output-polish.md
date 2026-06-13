@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0202-survey-improvements
 group: survey
-sprint-readiness: ready
+sprint-readiness: defer
 ---
 
 Two concrete output defects observed across the second round of real `spacedock:survey` runs, plus cross-references where those runs refine the sibling survey-polish seeds. Corpus specifics stay out of this shared repo — only behavior.

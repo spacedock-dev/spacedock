@@ -1,7 +1,7 @@
 ---
 id: 9hbm8yqsd1c4dwjrdv8kka2y
 title: Survey value-prop legibility — lead with plain "helps you do X" + concrete numbers, not abstract jargon
-status: ideation
+status: backlog
 source: "Live partner-meeting user run, 2026-06-12 (~200 sessions / ~2200 logs). Records only spacedock:survey behavioral feedback; the user's corpus (projects, tools, counts) stays in the uncommitted meeting notes, per the survey anonymization discipline."
 started: 2026-06-13T04:49:28Z
 completed:
@@ -11,7 +11,7 @@ worktree:
 issue:
 sprint: 0202-survey-improvements
 group: survey
-sprint-readiness: ready
+sprint-readiness: defer
 ---
 
 A live user ran the survey on his own machine and reacted in real time. The inference accuracy landed hard ("this is very accurate, this stuff is hanging" — it caught his plan→worktree→implement pattern, his manual recurring work-streams, and done-vs-hanging work). His strongest critique was that the OUTPUT does not explain its own value to a newcomer.
