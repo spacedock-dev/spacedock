@@ -303,28 +303,38 @@ LIMIT 20;
 
 -- name: mode-classification
 -- #324 (G) — classify each TRACK into a work MODE, so the report can make the RIGHT
--- commission offer per track (automation for mechanical, book-keeping for exploration)
--- instead of one undifferentiated pitch. The track key is the session's `git_branch`:
--- worktree-based projects (a `work-on-issue.sh` that branches per issue) carry one branch
--- per track, and content/design exploration runs on its own branch(es) too — so branch is
--- the per-track key the survey already has. Sessions with a blank branch are not a track
--- and drop out (they fold into the generic report, never a guessed mode).
+-- commission offer per track (automation for manual, book-keeping for exploration,
+-- batch book-keeping for knowledge-work) instead of one undifferentiated pitch. The track
+-- key is the session's `git_branch`: worktree-based projects (a `work-on-issue.sh` that
+-- branches per issue) carry one branch per track, and content/design exploration runs on its
+-- own branch(es) too — so branch is the per-track key the survey already has. Sessions with a
+-- blank branch are not a track and drop out (they fold into the generic report, never a
+-- guessed mode).
 --
 -- Per track, tally the signatures the survey already reads (all repo-scoped, subagent-free):
 --   veto     — `[Request interrupted` / `doesn't want to proceed` markers in the messages
---   loop     — `worktree` / `work-on-issue` markers (the mechanical issue→worktree→PR loop)
+--   loop     — `worktree` / `work-on-issue` markers (the manual issue→worktree→PR loop)
+--   kloop    — `intake` / `process` / `file` / `log` / `close` markers (the knowledge-work
+--              intake→process→file→log→close loop)
 --   passed   — answered/approved AskUserQuestion/ExitPlanMode decisions (gate-pass)
 --   rejected — the user-doesn't-want-to-proceed decisions (gate-fail / cancelled path)
 --   code     — Edit/Write to a code file (`.go`/`.ts`/`.py`/`.rs`/`.js`/`.tsx`/`.go`…)
 --   prose    — Edit/Write to a `.md` content/doc file
--- Score the two signatures and label by the DOMINANT one with a MARGIN guard:
---   mechanical signature = loop present + gate-pass-dominant + zero veto + code-heavy
+--   data     — Edit/Write to a content/ops data file (`.json`/`.csv`/`.yaml`/`.yml`/`.db`)
+-- Score the three signatures and label by the DOMINANT one with a MARGIN guard:
+--   manual signature      = loop present + gate-pass-dominant + zero veto + code-heavy
 --   exploration signature = veto present + a rejected/cancelled path + prose-heavy
--- A label is assigned ONLY when one score beats the other by >= 2 (a clear dominance); a
--- track with neither clearly dominant stays `unlabeled` and the report gives it the generic
+--   knowledge-work signature = kloop present + zero veto + no issue→PR loop +
+--                              content/ops edits (prose+data) dominate code (intake→process→
+--                              file→log→close: a notes/ops shop, not a code repo)
+-- A label is assigned ONLY when one score beats the others by >= 2 (a clear dominance); a
+-- track with none clearly dominant stays `unlabeled` and the report gives it the generic
 -- book-keeping offer — NEVER a guessed automation pitch (the asymmetry favors not
 -- mis-offering: a missed automation offer is a cheap omission; a wrong automation pitch at
--- creative work is the misread to avoid). The report reads `mode` per track to pick the offer.
+-- creative work is the misread to avoid). The `manual` label is the repetitive-but-substantive
+-- track (effortful, not trivial); `mechanical` is reserved for genuinely trivial edits, which
+-- the classifier does not separately detect today, so every drive-loop track reads `manual`.
+-- The report reads `mode` per track to pick the offer.
 WITH track_sessions AS (
   SELECT s.id, s.git_branch AS track
   FROM sessions s
@@ -344,6 +354,14 @@ loops AS (
   SELECT ts.track, COUNT(*) AS n
   FROM track_sessions ts JOIN messages m ON m.session_id = ts.id
   WHERE m.content LIKE '%worktree%' OR m.content LIKE '%work-on-issue%'
+  GROUP BY ts.track
+),
+kloops AS (
+  SELECT ts.track, COUNT(*) AS n
+  FROM track_sessions ts JOIN messages m ON m.session_id = ts.id
+  WHERE m.content LIKE '%intake%' OR m.content LIKE '%process the%'
+     OR m.content LIKE '%file the%' OR m.content LIKE '%log the%'
+     OR m.content LIKE '%close out%'
   GROUP BY ts.track
 ),
 passed AS (
@@ -367,6 +385,8 @@ rejected AS (
 edits AS (
   SELECT ts.track,
     SUM(CASE WHEN fp LIKE '%.md' THEN 1 ELSE 0 END) AS prose,
+    SUM(CASE WHEN fp LIKE '%.json' OR fp LIKE '%.csv' OR fp LIKE '%.yaml'
+              OR fp LIKE '%.yml' OR fp LIKE '%.db' THEN 1 ELSE 0 END) AS data,
     SUM(CASE WHEN fp LIKE '%.go' OR fp LIKE '%.ts' OR fp LIKE '%.tsx'
               OR fp LIKE '%.py' OR fp LIKE '%.rs' OR fp LIKE '%.js' THEN 1 ELSE 0 END) AS code
   FROM track_sessions ts
@@ -378,27 +398,97 @@ edits AS (
 ),
 sig AS (
   SELECT t.track,
-    COALESCE(v.n, 0) AS veto, COALESCE(l.n, 0) AS loop,
+    COALESCE(v.n, 0) AS veto, COALESCE(l.n, 0) AS loop, COALESCE(k.n, 0) AS kloop,
     COALESCE(p.n, 0) AS passed, COALESCE(r.n, 0) AS rejected,
-    COALESCE(e.code, 0) AS code, COALESCE(e.prose, 0) AS prose
+    COALESCE(e.code, 0) AS code, COALESCE(e.prose, 0) AS prose, COALESCE(e.data, 0) AS data
   FROM (SELECT DISTINCT track FROM track_sessions) t
   LEFT JOIN vetoes v ON v.track = t.track
   LEFT JOIN loops l ON l.track = t.track
+  LEFT JOIN kloops k ON k.track = t.track
   LEFT JOIN passed p ON p.track = t.track
   LEFT JOIN rejected r ON r.track = t.track
   LEFT JOIN edits e ON e.track = t.track
 ),
 scored AS (
   SELECT *,
-    ((loop > 0) + (passed > rejected) + (veto = 0) + (code > prose)) AS mech,
-    ((veto > 0) + (rejected > 0) + (prose > code)) AS expl
+    ((loop > 0) + (passed > rejected) + (veto = 0) + (code > prose + data)) AS mech,
+    ((veto > 0) + (rejected > 0) + (prose > code)) AS expl,
+    -- knowledge-work scores ONLY when its defining intake→process→file→log→close marker is
+    -- present (kloop > 0); without it the score is 0, so a veto-free prose track without the
+    -- knowledge loop reads exploration/unlabeled, not knowledge-work. With the marker present,
+    -- it scores on the loop marker + the gate-pass batch confirms + the content/ops edit profile.
+    (CASE WHEN kloop > 0
+          THEN (1 + (passed > rejected) + (loop = 0) + (prose + data > code))
+          ELSE 0 END) AS know
   FROM sig
 )
 SELECT track,
   CASE
-    WHEN mech - expl >= 2 THEN 'mechanical'
-    WHEN expl - mech >= 2 THEN 'exploration'
+    WHEN know - mech >= 2 AND know - expl >= 2 THEN 'knowledge-work'
+    WHEN mech - expl >= 2 AND mech - know >= 2 THEN 'manual'
+    WHEN expl - mech >= 2 AND expl - know >= 2 THEN 'exploration'
     ELSE 'unlabeled'
   END AS mode
 FROM scored
 ORDER BY track;
+
+-- name: dispatch-fact
+-- za — the FACT of subagent dispatch, so an orchestrated repo isn't read as idle. The
+-- body EXCLUDES subagent sessions everywhere (`file_path NOT LIKE '%/subagents/%'`), so a
+-- repo whose real work lands in dispatched subagents shows an almost-empty body. This
+-- surfaces only the FACT (a count), never subagent CONTENT. Marker: a subagent row is
+-- `relationship_type = 'subagent'` and links to its parent via `parent_session_id`
+-- (agentsview v0.32.1; the Task-tool `subagent_session_id` is unpopulated). Scope is the
+-- body's exact parent scope — count a subagent ONLY when its PARENT is an in-repo,
+-- non-subagent Claude session — so a subagent of an out-of-repo parent stays out.
+-- `sessions_that_orchestrated` is the DISTINCT in-repo parent count (the orchestration
+-- fact); `subagents_dispatched` is the total. The report renders one BY THE NUMBERS line
+-- from these and drops it when sessions_that_orchestrated = 0.
+SELECT
+  COUNT(DISTINCT p.id) AS sessions_that_orchestrated,
+  COUNT(*)             AS subagents_dispatched
+FROM sessions sub
+JOIN sessions p ON p.id = sub.parent_session_id
+WHERE sub.relationship_type = 'subagent'
+  AND p.agent = 'claude'
+  AND p.file_path NOT LIKE '%/subagents/%'
+  AND (p.cwd = :repo_root OR p.cwd LIKE :repo_root || '/%');
+
+-- name: decision-no-followup
+-- 9h — count the `done` decisions (answered AskUserQuestion / approved ExitPlanMode) in
+-- repo-scoped Claude sessions that have NO Edit/Write LATER in the same session. This is the
+-- "decisions you made with no follow-up action" BY THE NUMBERS figure — a decision settled
+-- and then nothing built on it. It is DISTINCT from BACKLOG (decided-not-shipped): BACKLOG
+-- is a transcript fork with no repo artifact, this is a same-session chronological gap.
+-- "Later" is the REAL chronological order, not insertion order: each tool call links to its
+-- message via `tool_calls.message_id`, and `messages.ordinal` (NOT NULL in agentsview) is the
+-- message's chronological position — so "an Edit after this decision" is an ordinal compare,
+-- never a `tool_calls.id` insertion-order compare (which would be a false oracle when calls
+-- land out of insertion order). A `done` decision counts when no Edit/Write in the SAME
+-- session sits at a strictly higher message ordinal.
+WITH decisions AS (
+  SELECT t.session_id AS sid, m.ordinal AS dord
+  FROM tool_calls t
+  JOIN messages m ON m.session_id = t.session_id AND CAST(m.id AS TEXT) = t.message_id
+  JOIN sessions s ON s.id = t.session_id
+  WHERE s.agent = 'claude'
+    AND s.file_path NOT LIKE '%/subagents/%'
+    AND (s.cwd = :repo_root OR s.cwd LIKE :repo_root || '/%')
+    AND t.tool_name IN ('AskUserQuestion', 'ExitPlanMode')
+    AND (t.result_content LIKE 'User has answered%'
+         OR t.result_content LIKE 'Your questions have been answered%'
+         OR t.result_content LIKE 'Your question has been answered%'
+         OR t.result_content LIKE 'User has approved your plan%'
+         OR t.result_content LIKE 'User approved%')
+),
+followups AS (
+  SELECT t.session_id AS sid, m.ordinal AS eord
+  FROM tool_calls t
+  JOIN messages m ON m.session_id = t.session_id AND CAST(m.id AS TEXT) = t.message_id
+  WHERE t.tool_name IN ('Edit', 'Write')
+)
+SELECT COUNT(*) AS no_followup
+FROM decisions d
+WHERE NOT EXISTS (
+  SELECT 1 FROM followups f WHERE f.sid = d.sid AND f.eord > d.dord
+);

@@ -58,12 +58,21 @@ CREATE TABLE sessions (
   ended_at TEXT,
   first_message TEXT,
   message_count INTEGER,
-  user_message_count INTEGER
+  user_message_count INTEGER,
+  -- parent_session_id + relationship_type are production-shaped (agentsview v0.32.1): a
+  -- dispatched subagent carries relationship_type='subagent' and links back to its dispatcher
+  -- via parent_session_id. The dispatch-fact query (#za) joins these to count orchestration.
+  parent_session_id TEXT,
+  relationship_type TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE tool_calls (
   id INTEGER PRIMARY KEY,
   session_id TEXT,
+  -- message_id links a tool call to the message it was emitted from (agentsview v0.32.1).
+  -- The decision-no-followup query (#9h) joins message_id → messages.id → messages.ordinal
+  -- to compare decisions and Edits by REAL chronological order, not tool_calls.id insertion order.
+  message_id TEXT,
   tool_name TEXT,
   category TEXT NOT NULL DEFAULT '',
   skill_name TEXT,
@@ -74,6 +83,9 @@ CREATE TABLE tool_calls (
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY,
   session_id TEXT,
+  -- ordinal is the message's chronological position within its session (NOT NULL in
+  -- agentsview v0.32.1). The decision-no-followup query orders decisions and Edits by it.
+  ordinal INTEGER,
   role TEXT,
   content TEXT
 );
@@ -92,7 +104,8 @@ INSERT INTO sessions VALUES
   ('claude:aaaaaaaa-1111-2222-3333-444444444444', 'proj', 'claude',
    '/repo/proj', 'main',
    '/u/.claude/projects/-repo-proj/aaaaaaaa.jsonl',
-   '2026-06-05', '2026-06-05', 'Pick up the parser refactor and ship it.', 8, 3);
+   '2026-06-05', '2026-06-05', 'Pick up the parser refactor and ship it.', 8, 3,
+   NULL, '');
 
 -- Claude session B — a SUBDIR checkout (the split-root state dir). agentsview keys it by
 -- the git-root basename, so its `project` is `proj`, the SAME key as the root — the
@@ -101,7 +114,8 @@ INSERT INTO sessions VALUES
   ('claude:bbbbbbbb-5555-6666-7777-888888888888', 'proj', 'claude',
    '/repo/proj/docs/dev/.spacedock-state', 'main',
    '/u/.claude/projects/-repo-proj-docs-dev-_spacedock_state/bbbbbbbb.jsonl',
-   '2026-06-06', '2026-06-06', 'Now wire up the regression suite.', 6, 2);
+   '2026-06-06', '2026-06-06', 'Now wire up the regression suite.', 6, 2,
+   NULL, '');
 
 -- Claude session C — a WORKTREE-style checkout. Same git-root basename, so `project` is
 -- again `proj` — placed in scope by the cwd-prefix, not a distinct key. Carries the
@@ -111,7 +125,8 @@ INSERT INTO sessions VALUES
   ('claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'proj', 'claude',
    '/repo/proj/.worktrees/feature-x', 'feature-x',
    '/u/.claude/projects/-repo-proj-.worktrees-feature-x/cccccccc.jsonl',
-   '2026-06-06', '2026-06-06', 'Build the feature behind a worktree.', 5, 2);
+   '2026-06-06', '2026-06-06', 'Build the feature behind a worktree.', 5, 2,
+   NULL, '');
 
 -- Claude session D — a BLANK cwd (production stores blank as ''). Under no prefix; it
 -- must NOT count toward the repo scope, and the blank-cwd tally surfaces it.
@@ -119,7 +134,8 @@ INSERT INTO sessions VALUES
   ('claude:dddddddd-0000-1111-2222-333333333333', '', 'claude',
    '', '',
    '/u/.claude/projects/unknown/dddddddd.jsonl',
-   '2026-06-03', '2026-06-03', 'A session whose cwd agentsview never captured.', 3, 1);
+   '2026-06-03', '2026-06-03', 'A session whose cwd agentsview never captured.', 3, 1,
+   NULL, '');
 
 -- Claude session E — OUTSIDE the repo prefix entirely (a different project on the same
 -- machine). The scoping query MUST exclude it; its Skill row MUST NOT inflate the tally.
@@ -127,7 +143,8 @@ INSERT INTO sessions VALUES
   ('claude:eeeeeeee-4444-5555-6666-777777777777', 'otherproj', 'claude',
    '/elsewhere/otherproj', 'main',
    '/u/.claude/projects/-elsewhere-otherproj/eeeeeeee.jsonl',
-   '2026-06-02', '2026-06-02', 'Unrelated project that shares the machine.', 4, 1);
+   '2026-06-02', '2026-06-02', 'Unrelated project that shares the machine.', 4, 1,
+   NULL, '');
 
 -- ============================================================================
 -- CODEX SESSIONS — four attributed to THIS repo (F, F2, F3, F4) + one same-basename
@@ -151,7 +168,7 @@ INSERT INTO sessions VALUES
    '/u/.codex/sessions/rollout-ffffffff.jsonl',
    '2026-06-04', '2026-06-04',
    'Read /tmp/spacedock-dispatch/spacedock-ensign-journey-cost-ledger-implementation.md and treat its content as your assignment.',
-   4, 1);
+   4, 1, NULL, '');
 
 -- Codex F2 — TASK/ENTITY backtick pattern → workstream `orient-workflow-discovery`. A
 -- leading reviewer-label backtick precedes the keyword so the rule must anchor on the
@@ -162,7 +179,7 @@ INSERT INTO sessions VALUES
    '/u/.codex/sessions/rollout-f2f2f2f2.jsonl',
    '2026-06-04', '2026-06-04',
    'You are `142-validation/Ensign`, a fresh validation worker for Spacedock entity 142 `orient-workflow-discovery`. Working directory: /repo/proj.',
-   4, 1);
+   4, 1, NULL, '');
 
 -- Codex F3 — UNLABELED. An encouragement/meta first_message carries no task → (unlabeled).
 INSERT INTO sessions VALUES
@@ -171,7 +188,7 @@ INSERT INTO sessions VALUES
    '/u/.codex/sessions/rollout-f3f3f3f3.jsonl',
    '2026-06-04', '2026-06-04',
    'You totally got this. Take your time. Captain asked me to tell subagents they are appreciated.',
-   3, 1);
+   3, 1, NULL, '');
 
 -- Codex F4 — a SECOND distinct DISPATCH task → workstream `codex-live-ci`. Proves the
 -- cluster key is the extracted {TASK}, not a constant: F4 must NOT merge with F.
@@ -181,7 +198,7 @@ INSERT INTO sessions VALUES
    '/u/.codex/sessions/rollout-f4f4f4f4.jsonl',
    '2026-06-04', '2026-06-04',
    'Read /tmp/spacedock-dispatch/spacedock-ensign-codex-live-ci-validation.md and treat its content as your assignment.',
-   4, 1);
+   4, 1, NULL, '');
 
 -- Codex session G — a SAME-BASENAME SIBLING repo's Codex history. Its git-root basename is
 -- also `proj`, so it keys to the identical `project` and codex-presence CANNOT distinguish
@@ -194,7 +211,7 @@ INSERT INTO sessions VALUES
    '/u/.codex/sessions/rollout-11111111.jsonl',
    '2026-06-04', '2026-06-04',
    'Read /tmp/spacedock-dispatch/spacedock-ensign-sibling-task-implementation.md and treat its content as your assignment.',
-   3, 1);
+   3, 1, NULL, '');
 
 -- ----------------------------------------------------------------------------
 -- CODEX exec_command rows carry $.workdir — the attribution signal (#321 codex-scoped) and
@@ -292,7 +309,8 @@ INSERT INTO sessions VALUES
   ('claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'proj', 'claude',
    '/repo/proj/.worktrees/issue-42', 'issue-42',
    '/u/.claude/projects/-repo-proj-.worktrees-issue-42/77777777.jsonl',
-   '2026-06-07', '2026-06-07', 'Run the work-on-issue loop for issue 42 in its worktree.', 6, 2);
+   '2026-06-07', '2026-06-07', 'Run the work-on-issue loop for issue 42 in its worktree.', 6, 2,
+   NULL, '');
 
 -- Worktree-attribution Edit/Write rows: two worktree `src/` edits (strip to `src`), a
 -- main-checkout `src/` edit (also `src` — all three bucket together), a `docs/` product
@@ -340,11 +358,13 @@ INSERT INTO sessions VALUES
   ('claude:91111111-1111-1111-1111-111111111111', 'proj', 'claude',
    '/repo/proj', 'issue-feed',
    '/u/.claude/projects/-repo-proj/91111111.jsonl',
-   '2026-06-07', '2026-06-07', 'Drive the issue-feed renderer via the work-on-issue loop.', 5, 2),
+   '2026-06-07', '2026-06-07', 'Drive the issue-feed renderer via the work-on-issue loop.', 5, 2,
+   NULL, ''),
   ('claude:92222222-2222-2222-2222-222222222222', 'proj', 'claude',
    '/repo/proj/.worktrees/issue-feed', 'issue-feed',
    '/u/.claude/projects/-repo-proj-.worktrees-issue-feed/92222222.jsonl',
-   '2026-06-07', '2026-06-07', 'Continue the issue-feed worktree implementation.', 4, 2);
+   '2026-06-07', '2026-06-07', 'Continue the issue-feed worktree implementation.', 4, 2,
+   NULL, '');
 INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
   (60, 'claude:91111111-1111-1111-1111-111111111111', 'AskUserQuestion',
    '{"questions":[{"header":"Reindex strategy","question":"Incremental vs full reindex?"}]}',
@@ -359,11 +379,13 @@ INSERT INTO sessions VALUES
   ('claude:a3333333-3333-3333-3333-333333333333', 'proj', 'claude',
    '/repo/proj', 'landing-copy',
    '/u/.claude/projects/-repo-proj/a3333333.jsonl',
-   '2026-06-07', '2026-06-07', 'Draft the landing hero copy; try a few framings.', 7, 4),
+   '2026-06-07', '2026-06-07', 'Draft the landing hero copy; try a few framings.', 7, 4,
+   NULL, ''),
   ('claude:a4444444-4444-4444-4444-444444444444', 'proj', 'claude',
    '/repo/proj', 'landing-copy',
    '/u/.claude/projects/-repo-proj/a4444444.jsonl',
-   '2026-06-07', '2026-06-07', 'Rework the story section; the last direction was wrong.', 6, 3);
+   '2026-06-07', '2026-06-07', 'Rework the story section; the last direction was wrong.', 6, 3,
+   NULL, '');
 INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
   (63, 'claude:a3333333-3333-3333-3333-333333333333', 'AskUserQuestion',
    '{"questions":[{"header":"Hero framing","question":"Hero-vs-story framing?"}]}',
@@ -378,7 +400,8 @@ INSERT INTO sessions VALUES
   ('claude:b5555555-5555-5555-5555-555555555555', 'proj', 'claude',
    '/repo/proj', 'mixed-bag',
    '/u/.claude/projects/-repo-proj/b5555555.jsonl',
-   '2026-06-07', '2026-06-07', 'Some odds and ends across the repo.', 4, 2);
+   '2026-06-07', '2026-06-07', 'Some odds and ends across the repo.', 4, 2,
+   NULL, '');
 INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
   (66, 'claude:b5555555-5555-5555-5555-555555555555', 'AskUserQuestion',
    '{"questions":[{"header":"Odds and ends","question":"Which loose end first?"}]}',
@@ -390,20 +413,203 @@ INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) V
 -- Veto + loop markers in the message stream (interruption + mechanical-loop signals,
 -- prose-read). Session B carries the original veto; the G tracks carry their signatures.
 -- ----------------------------------------------------------------------------
-INSERT INTO messages VALUES
-  (1, 'claude:aaaaaaaa-1111-2222-3333-444444444444', 'user', 'Pick up the parser refactor and ship it.'),
-  (2, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', 'Now wire up the regression suite.'),
-  (3, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 'user', '[Request interrupted by user]'),
-  (4, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 'user', 'Build the feature behind a worktree.'),
-  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 'user', 'A codex session in this repo; cwd unrecorded.'),
+-- The ordinal column carries each message's chronological position within its session
+-- (production: NOT NULL). These mode-classification/veto messages read only `content`; the
+-- ordinal-load-bearing rows live in the DECISION-NO-FOLLOWUP block below.
+INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
+  (1, 'claude:aaaaaaaa-1111-2222-3333-444444444444', 1, 'user', 'Pick up the parser refactor and ship it.'),
+  (2, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 1, 'user', 'Now wire up the regression suite.'),
+  (3, 'claude:bbbbbbbb-5555-6666-7777-888888888888', 2, 'user', '[Request interrupted by user]'),
+  (4, 'claude:cccccccc-9999-aaaa-bbbb-cccccccccccc', 1, 'user', 'Build the feature behind a worktree.'),
+  (5, 'codex:ffffffff-8888-9999-aaaa-bbbbbbbbbbbb', 1, 'user', 'A codex session in this repo; cwd unrecorded.'),
   -- WT (issue-42): worktree loop marker, no veto → reinforces mechanical.
-  (6, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 'user', 'Run the work-on-issue loop for issue 42 in its worktree.'),
+  (6, 'claude:77777777-aaaa-bbbb-cccc-dddddddddddd', 1, 'user', 'Run the work-on-issue loop for issue 42 in its worktree.'),
   -- issue-feed (mechanical): worktree/work-on-issue loop markers, no veto.
-  (7, 'claude:91111111-1111-1111-1111-111111111111', 'user', 'Drive the work-on-issue loop in the worktree.'),
-  (8, 'claude:92222222-2222-2222-2222-222222222222', 'user', 'Continue the worktree implementation.'),
+  (7, 'claude:91111111-1111-1111-1111-111111111111', 1, 'user', 'Drive the work-on-issue loop in the worktree.'),
+  (8, 'claude:92222222-2222-2222-2222-222222222222', 1, 'user', 'Continue the worktree implementation.'),
   -- landing-copy (exploration): repeated vetoes / doesn't-want-to-proceed steering.
-  (9, 'claude:a3333333-3333-3333-3333-333333333333', 'user', '[Request interrupted by user]'),
-  (10, 'claude:a3333333-3333-3333-3333-333333333333', 'user', 'doesn''t want to proceed — try a warmer tone'),
-  (11, 'claude:a4444444-4444-4444-4444-444444444444', 'user', '[Request interrupted by user] rethink the framing'),
+  (9, 'claude:a3333333-3333-3333-3333-333333333333', 1, 'user', '[Request interrupted by user]'),
+  (10, 'claude:a3333333-3333-3333-3333-333333333333', 2, 'user', 'doesn''t want to proceed — try a warmer tone'),
+  (11, 'claude:a4444444-4444-4444-4444-444444444444', 1, 'user', '[Request interrupted by user] rethink the framing'),
   -- mixed-bag (neither dominant): a single veto, balancing its one passed decision + one .md edit.
-  (12, 'claude:b5555555-5555-5555-5555-555555555555', 'user', '[Request interrupted by user]');
+  (12, 'claude:b5555555-5555-5555-5555-555555555555', 1, 'user', '[Request interrupted by user]');
+
+-- ============================================================================
+-- DISPATCH-FACT (#za). Orchestration: two in-repo Claude parents dispatch subagents (P1→2,
+-- P2→1 ⇒ distinct-parents=2, subagents=3), and the OUT-of-repo session E dispatches one
+-- subagent that must NOT count (its parent is outside the repo prefix). A subagent row carries
+-- relationship_type='subagent' + parent_session_id; its file_path is under `%/subagents/%`
+-- (production shape) so the body's parent scope excludes it from every Claude count while
+-- dispatch-fact counts it via the parent join. The expected dispatch-fact result is 2|3,
+-- derived from these seeded rows. Non-vacuous: re-pointing the out-of-repo subagent's parent
+-- to an in-repo parent flips the counts (proving the parent-scope filter is load-bearing).
+-- ============================================================================
+
+-- Two in-repo orchestrating parents (blank git_branch → not mode-classification tracks).
+INSERT INTO sessions VALUES
+  ('claude:d1111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', '',
+   '/u/.claude/projects/-repo-proj/d1111111.jsonl',
+   '2026-06-08', '2026-06-08', 'Orchestrate the parser sweep across subagents.', 5, 2,
+   NULL, ''),
+  ('claude:d2222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj/internal', '',
+   '/u/.claude/projects/-repo-proj-internal/d2222222.jsonl',
+   '2026-06-08', '2026-06-08', 'Dispatch one subagent for the index migration.', 4, 1,
+   NULL, '');
+
+-- Three in-repo subagents (P1 dispatches 2, P2 dispatches 1). Each carries
+-- relationship_type='subagent', a parent_session_id, and a `%/subagents/%` file_path so the
+-- body's parent-scope filter (file_path NOT LIKE '%/subagents/%') keeps them OUT of the
+-- scoping/work-by-area/etc. counts while dispatch-fact counts them through the parent join.
+INSERT INTO sessions VALUES
+  ('claude:e1111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', '',
+   '/u/.claude/projects/-repo-proj/subagents/e1111111.jsonl',
+   '2026-06-08', '2026-06-08', 'subagent: refactor the tokenizer.', 3, 0,
+   'claude:d1111111-0000-0000-0000-000000000001', 'subagent'),
+  ('claude:e2222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj', '',
+   '/u/.claude/projects/-repo-proj/subagents/e2222222.jsonl',
+   '2026-06-08', '2026-06-08', 'subagent: refactor the entrypoint.', 3, 0,
+   'claude:d1111111-0000-0000-0000-000000000001', 'subagent'),
+  ('claude:e3333333-0000-0000-0000-000000000003', 'proj', 'claude',
+   '/repo/proj/internal', '',
+   '/u/.claude/projects/-repo-proj-internal/subagents/e3333333.jsonl',
+   '2026-06-08', '2026-06-08', 'subagent: migrate the index.', 3, 0,
+   'claude:d2222222-0000-0000-0000-000000000002', 'subagent');
+
+-- A subagent of the OUT-of-repo session E (id=70 below repoints it in the non-vacuous test).
+-- Its PARENT (claude:eeeeeeee…) is outside the repo prefix, so dispatch-fact must NOT count it.
+INSERT INTO sessions VALUES
+  ('claude:e4444444-0000-0000-0000-000000000004', 'otherproj', 'claude',
+   '/elsewhere/otherproj', '',
+   '/u/.claude/projects/-elsewhere-otherproj/subagents/e4444444.jsonl',
+   '2026-06-08', '2026-06-08', 'subagent: unrelated repo work.', 3, 0,
+   'claude:eeeeeeee-4444-5555-6666-777777777777', 'subagent');
+
+-- ============================================================================
+-- DECISION-NO-FOLLOWUP (#9h). A `done` decision (answered AskUserQuestion / approved
+-- ExitPlanMode) counts when NO Edit/Write in the SAME session sits at a strictly HIGHER
+-- message ordinal. "Later" is the REAL chronological order via tool_calls.message_id →
+-- messages.id → messages.ordinal, NOT tool_calls.id insertion order. Two sessions (blank
+-- git_branch → not mode-classification tracks):
+--   NF1 — a done AskUserQuestion at ordinal 2, with an Edit at ordinal 1 (BEFORE it) →
+--         COUNTS (no later edit). The earlier-ordinal edit proves the join is chronological:
+--         a naive "any edit in the session" test would wrongly disqualify it.
+--   NF2 — a done ExitPlanMode at ordinal 2, with a Write at ordinal 3 (AFTER it) →
+--         does NOT count (it has a follow-up).
+-- Expected decision-no-followup = 1, derived from these seeded rows (the existing decision
+-- tool_calls carry NULL message_id, so they do not join — the oracle is exactly NF1/NF2).
+-- Non-vacuous (test): insert an Edit at ordinal 3 in NF1 → the count drops 1→0, proving the
+-- ordinal compare (not insertion order) is load-bearing.
+-- ============================================================================
+INSERT INTO sessions VALUES
+  ('claude:f0111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', '',
+   '/u/.claude/projects/-repo-proj/f0111111.jsonl',
+   '2026-06-09', '2026-06-09', 'Decide the cache strategy, then move on.', 4, 2,
+   NULL, ''),
+  ('claude:f0222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj', '',
+   '/u/.claude/projects/-repo-proj/f0222222.jsonl',
+   '2026-06-09', '2026-06-09', 'Approve the plan, then implement it.', 4, 2,
+   NULL, '');
+
+-- NF messages — carry the ordinals the chronological join reads.
+INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
+  -- NF1: edit-message ordinal 1, decision-message ordinal 2 (edit is BEFORE the decision).
+  (101, 'claude:f0111111-0000-0000-0000-000000000001', 1, 'assistant', 'made an early edit'),
+  (102, 'claude:f0111111-0000-0000-0000-000000000001', 2, 'assistant', 'asked the cache question'),
+  -- NF2: decision-message ordinal 2, follow-up-edit-message ordinal 3 (edit is AFTER it).
+  (103, 'claude:f0222222-0000-0000-0000-000000000002', 1, 'user', 'approve the plan'),
+  (104, 'claude:f0222222-0000-0000-0000-000000000002', 2, 'assistant', 'approved plan'),
+  (105, 'claude:f0222222-0000-0000-0000-000000000002', 3, 'assistant', 'wrote the implementation');
+
+-- NF tool_calls — message_id links each call to its message (so the join can read its ordinal).
+INSERT INTO tool_calls (id, session_id, message_id, tool_name, input_json, result_content) VALUES
+  -- NF1: an Edit at ordinal 1 (message 101), then the done decision at ordinal 2 (message 102).
+  (80, 'claude:f0111111-0000-0000-0000-000000000001', '101', 'Edit',
+   '{"file_path":"/repo/proj/internal/cache/warm.go"}', NULL),
+  (81, 'claude:f0111111-0000-0000-0000-000000000001', '102', 'AskUserQuestion',
+   '{"questions":[{"header":"Cache strategy","question":"LRU vs LFU?"}]}',
+   'Your questions have been answered: "LRU vs LFU?"="LRU"'),
+  -- NF2: the done decision at ordinal 2 (message 104), then a Write at ordinal 3 (message 105).
+  (82, 'claude:f0222222-0000-0000-0000-000000000002', '104', 'ExitPlanMode',
+   '{"plan":"Implement the cache then test it."}',
+   'User has approved your plan. You can now start coding.'),
+  (83, 'claude:f0222222-0000-0000-0000-000000000002', '105', 'Write',
+   '{"file_path":"/repo/proj/internal/cache/impl.go"}', NULL);
+
+-- ============================================================================
+-- KNOWLEDGE-WORK track `notes-ops` (#zb #2 / AC-5). A notes/ops shop, not a code repo: the
+-- intake→process→file→log→close loop markers + content/ops edits (`.md` + `.json` data) +
+-- a gate-pass batch confirm + ZERO veto + NO issue→worktree→PR loop. mode-classification
+-- emits `knowledge-work` for it. Non-vacuous (test): stripping the kloop markers drops the
+-- track to `unlabeled` (the knowledge-work score gates on the marker's presence).
+-- ============================================================================
+INSERT INTO sessions VALUES
+  ('claude:c6111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', 'notes-ops',
+   '/u/.claude/projects/-repo-proj/c6111111.jsonl',
+   '2026-06-10', '2026-06-10', 'Intake the new memos and file them.', 5, 2,
+   NULL, ''),
+  ('claude:c6222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj', 'notes-ops',
+   '/u/.claude/projects/-repo-proj/c6222222.jsonl',
+   '2026-06-10', '2026-06-10', 'Process the batch and log the run.', 4, 2,
+   NULL, '');
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  -- gate-pass batch confirm (knowledge-work gates: "confirm this batch / approve this write").
+  (90, 'claude:c6111111-0000-0000-0000-000000000001', 'AskUserQuestion',
+   '{"questions":[{"header":"Batch scope","question":"File this batch of memos now?"}]}',
+   'Your questions have been answered: "File this batch of memos now?"="yes"'),
+  -- content/ops edits: `.md` notes + `.json` ledger data (prose + data dominate code).
+  (91, 'claude:c6111111-0000-0000-0000-000000000001', 'Write',
+   '{"file_path":"/repo/proj/notes/2026-06-10.md"}', NULL),
+  (92, 'claude:c6222222-0000-0000-0000-000000000002', 'Write',
+   '{"file_path":"/repo/proj/notes/index.md"}', NULL),
+  (93, 'claude:c6222222-0000-0000-0000-000000000002', 'Edit',
+   '{"file_path":"/repo/proj/ledger/runs.json"}', NULL);
+INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
+  -- knowledge-work loop markers: intake → process → file → log → close.
+  (110, 'claude:c6111111-0000-0000-0000-000000000001', 1, 'user', 'intake the new memos for today'),
+  (111, 'claude:c6111111-0000-0000-0000-000000000001', 2, 'user', 'then file the ones that are ready'),
+  (112, 'claude:c6222222-0000-0000-0000-000000000002', 1, 'user', 'process the batch we queued'),
+  (113, 'claude:c6222222-0000-0000-0000-000000000002', 2, 'user', 'log the run and close out the day');
+
+-- ============================================================================
+-- KNOWLEDGE-WORK track `client-1on1s` (cycle 2 / AC-5 specific-type). A SECOND, distinct
+-- knowledge-work track so the render can demonstrably NAME multiple specific types — here
+-- people 1-1s & assessment, alongside `notes-ops`. Same knowledge-work signature (intake→
+-- process→file→log→close loop markers + content/ops `.md`+`.json` edits + gate-pass batch
+-- confirm + zero veto + no issue→PR loop), so mode-classification emits `knowledge-work`;
+-- its distinct workstream NAME (`client-1on1s`) + areas (`people/`, `assessments/`) are the
+-- specific-type signal the HOW YOU WORK / WORKSTREAMS render synthesizes from.
+-- ============================================================================
+INSERT INTO sessions VALUES
+  ('claude:c7111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', 'client-1on1s',
+   '/u/.claude/projects/-repo-proj/c7111111.jsonl',
+   '2026-06-11', '2026-06-11', 'Intake the 1-1 notes and process the team assessment.', 5, 2,
+   NULL, ''),
+  ('claude:c7222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj', 'client-1on1s',
+   '/u/.claude/projects/-repo-proj/c7222222.jsonl',
+   '2026-06-11', '2026-06-11', 'File the assessment and log the follow-ups.', 4, 2,
+   NULL, '');
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (94, 'claude:c7111111-0000-0000-0000-000000000001', 'AskUserQuestion',
+   '{"questions":[{"header":"Assessment scope","question":"Process this batch of 1-1 notes now?"}]}',
+   'Your questions have been answered: "Process this batch of 1-1 notes now?"="yes"'),
+  (95, 'claude:c7111111-0000-0000-0000-000000000001', 'Write',
+   '{"file_path":"/repo/proj/people/2026-06-11-1on1.md"}', NULL),
+  (96, 'claude:c7222222-0000-0000-0000-000000000002', 'Write',
+   '{"file_path":"/repo/proj/assessments/team.md"}', NULL),
+  (97, 'claude:c7222222-0000-0000-0000-000000000002', 'Edit',
+   '{"file_path":"/repo/proj/people/roster.json"}', NULL);
+INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
+  (114, 'claude:c7111111-0000-0000-0000-000000000001', 1, 'user', 'intake the 1-1 notes from today'),
+  (115, 'claude:c7111111-0000-0000-0000-000000000001', 2, 'user', 'then process the team assessment'),
+  (116, 'claude:c7222222-0000-0000-0000-000000000002', 1, 'user', 'file the assessment write-up'),
+  (117, 'claude:c7222222-0000-0000-0000-000000000002', 2, 'user', 'log the follow-ups and close out');
