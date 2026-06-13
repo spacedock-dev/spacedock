@@ -11,6 +11,7 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
   - ✓ "You have work that needs doing in stages, with a human sign-off before anything ships. Spacedock runs that for you."
 - **Introduce the fewest terms possible, as late as possible.** Don't front-load a glossary. Define a term on first real use, gloss it once, then just use it. If a page introduces more than a handful of new terms, cut or defer some.
 - **Lead with what the user sees and must know; keep the how-it-works light.** Name the visible behavior and the required concepts first. Internal mechanics (scheduling and reuse conditions, file/branch naming templates, parser internals, query plumbing) get at most a sentence or a link to the source. If a paragraph reads as protocol documentation, compress it or cut it.
+- **A paragraph that cannot be restated as one verifiable claim is flowchart.** Behavior checked against the owning skill compresses to a single stated fact; phase-by-phase narration of a skill's internals cuts entirely and the page loses nothing.
 - **Product anatomy is not a reader concept.** Do not name internal components (launcher, plugin, host) unless the reader must type or choose between them. The reader installs Spacedock and launches Spacedock; how it decomposes is not their problem.
 - **Write from the reader's seat, never the maintainer's.** If a sentence's subject is the build, the script, or the parser, recast it around what the reader gets or does.
   - ✗ "The build emits a curated `llms.txt` index at the site root."
@@ -22,6 +23,7 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
 - **A real example with sample output beats description.** One concrete command plus the output the reader will see teaches faster than paragraphs. Compose samples from the product's real templates, and never restate in prose what the sample already says ("Accept this design, or tell me what to change" makes a "nothing is generated until you accept" sentence dead weight).
 - **Keep agent-facing surfaces off user pages.** Commands meant for the agents (`spacedock status`, `spacedock dispatch`) are not taught in Get started, even though their output is real.
 - **The docs may defer to the agent.** Spacedock runs inside a coding agent; "ask the agent if anything is unclear" is a legitimate close. Pages cover what the reader needs before and between sessions, not every contingency within one.
+- **For an agent-operated feature, the page's job is trust, then deferral.** State the guarantees that make handing over safe (nothing is auto-replaced; it waits for your approval), then defer the mechanism to the agent. Detail beyond the guarantee is reassurance theater.
 - **The agent is the interface; docs say what is possible.** Files and settings are operated by asking the first officer, not by hand-editing walkthroughs. Describe capabilities ("a stage can pause at a gate, run isolated, demand a fresh reviewer… ask the first officer to set up or change any of it"), never a field-by-field table of how to key them in.
 - **A diagram beats an enumeration for structure.** A stage chain is a mermaid flowchart, not five field-by-field bullets. Carry the meaning in a plain-text caption sentence as well, so the styling is decoration and text readers (`llms.txt`) lose nothing.
 - **State behavior; don't narrate rationale.** "When a stage declares `worktree: true`, everything from that stage onward happens in an isolated worktree" — not the tradeoff that motivated the design. The reader wants what happens, not why we built it that way.
@@ -30,6 +32,9 @@ Spacedock is not complicated; wordy docs make it *feel* complicated. Every edit 
 - **No archaeology pages.** An example lives as a sample at the point of need (a design summary on the commission page, a gate review on the gates page), not as a trace page that walks one real artifact through every mechanism at once.
 - **Cut, don't pad.** If a sentence still carries its meaning with a clause removed, remove the clause. If a paragraph repeats the page above it, delete it and link instead.
 - **Don't repeat content across pages.** One page owns each idea; others link to it. Duplicated explanation is the main thing that makes the docs feel long. An audience split ("new-user view" vs "operator view" of the same feature) is not a reason for a second page; it is the same topic.
+- **The same heading on two pages is a dedupe alarm.** When two pages grow a section with the same title, they are explaining the same idea twice. Pick the owner; the other page keeps only its delta. This is invisible page by page; it shows up only when reading the pages as a set.
+- **Shared ideas resolve to the earliest page in the journey that needs them.** Later pages keep only their delta. Killing a duplicated section rarely loses content; its unique facts usually fit in a tail clause of an adjacent paragraph.
+- **Split pages by cadence, not topic.** Two features used at different rhythms (every session vs every upgrade) are two pages, even when both read as the same kind of work. A shared reader moment, not a shared noun, is what makes one page.
 - **Two levels of structure only:** section → page. No deeper nesting; no page that exists only to hold sub-pages.
 
 ## First impression: "simple," not "enterprise"
@@ -130,12 +135,13 @@ Revision is paragraph by paragraph, not page-at-a-glance. For each paragraph ask
 2. **Do they have the context, at this point in the journey?** Every term and claim must be introduced by this page or an earlier one in nav order.
 3. **Does it make them want to read on?** End on the payoff or the concrete thing they can type, not on a caveat.
 
-Propose the revision yourself, then send the proposal (with its three-question rationale) to the prose-polish teammate when one is standing. Triage the return; never auto-apply: accept real improvements, reject anything that violates this directive (em-dash insertions are the recurring offender) or alters captain-set wording, and re-check the file on disk before acting on replies that arrive late.
+Propose the revision yourself, then send the proposal (with its three-question rationale) to the prose-polish teammate when one is standing. Triage the return; never auto-apply: accept real improvements, reject anything that violates this directive (em-dash insertions are the recurring offender) or alters captain-set wording, re-verify any suggestion that touches a behavior claim against the owning source (polish can phrase a plausible falsehood), and re-check the file on disk before acting on replies that arrive late.
 
 ## Before you commit a docs change
 - [ ] Page opens with the problem/payoff, not a definition.
 - [ ] Introduces only the terms this page actually needs; each defined on first use.
 - [ ] Re-read every touched page in reader-journey order: no term appears before the page that introduces it, including terms your own rewrite brought back.
+- [ ] No inbound link targets a heading this change removed or renamed; anchors break silently (`--strict` reports them as INFO, not failures), so grep for the old anchor.
 - [ ] Matches its type's shape (concept / how-to / reference): no steps in concepts, no essays in reference.
 - [ ] No content duplicated from another page; shared ideas are linked, not repeated.
 - [ ] Internal links are relative and descriptive; first mentions of key terms link out.
