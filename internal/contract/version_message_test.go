@@ -46,7 +46,7 @@ func TestMismatchShowsVersionsNotContract(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
 			manifestPath := filepath.Join("testdata", c.manifest)
-			code := RunDoctor(manifestPath, "claude", "", binaryVersionForTest, &stdout, &stderr)
+			code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
 			if code != 1 {
 				t.Fatalf("exit = %d, want 1 (stderr=%q)", code, stderr.String())
 			}
@@ -73,7 +73,7 @@ func TestMismatchShowsVersionsNotContract(t *testing.T) {
 func TestCompatibleShowsVersions(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	manifestPath := filepath.Join("testdata", "compatible.json")
-	code := RunDoctor(manifestPath, "claude", "", binaryVersionForTest, &stdout, &stderr)
+	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
@@ -95,7 +95,7 @@ func TestCompatibleShowsVersions(t *testing.T) {
 func TestTooOldBinaryRemedyLeadsWithBrew(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	manifestPath := filepath.Join("testdata", "too-old-binary.json")
-	code := RunDoctor(manifestPath, "claude", "", binaryVersionForTest, &stdout, &stderr)
+	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}
@@ -105,5 +105,8 @@ func TestTooOldBinaryRemedyLeadsWithBrew(t *testing.T) {
 	}
 	if !strings.Contains(out, "spacedock install") {
 		t.Fatalf("too-old-binary remedy must name the plugin-refresh distinction `spacedock install`: %q", out)
+	}
+	if strings.Contains(out, "@next") {
+		t.Fatalf("too-old-binary remedy must not pin a channel branch (the removed @branch shorthand): %q", out)
 	}
 }

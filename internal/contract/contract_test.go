@@ -81,7 +81,7 @@ func TestCompare(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			res := Compare(c.contract, c.raw, "claude", "", "0.12.1", "0.19.4")
+			res := Compare(c.contract, c.raw, "claude", "0.12.1", "0.19.4")
 			if res.Verdict != c.wantVerdict {
 				t.Fatalf("Compare(%d,%q) verdict = %v, want %v", c.contract, c.raw, res.Verdict, c.wantVerdict)
 			}
@@ -106,7 +106,7 @@ func TestCompare(t *testing.T) {
 func TestCompatibleUpgradeHint(t *testing.T) {
 	t.Run("behind-plugin-hints", func(t *testing.T) {
 		for _, host := range []string{"claude", "codex"} {
-			res := Compare(CONTRACT_VERSION, ">=1,<2", host, "", "0.19.8", "0.20.0")
+			res := Compare(CONTRACT_VERSION, ">=1,<2", host, "0.19.8", "0.20.0")
 			if res.Verdict != Compatible {
 				t.Fatalf("host %s: verdict = %v, want Compatible (the hint must not change the verdict)", host, res.Verdict)
 			}
@@ -124,7 +124,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 
 	// Negative: equal versions carry no hint — there is nothing to upgrade to.
 	t.Run("equal-version-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.20.0", "0.20.0")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.20.0", "0.20.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -136,7 +136,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// Negative: an unstamped `dev` binary version is not valid semver — the hint
 	// must not fire (no false "you must upgrade" against a dev build).
 	t.Run("dev-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.19.8", "dev")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.19.8", "dev")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -148,7 +148,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// Negative: a binary OLDER than the plugin (but still contract-compatible)
 	// carries no hint — the hint is for a behind plugin, not a behind binary.
 	t.Run("older-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.21.0", "0.20.0")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.21.0", "0.20.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -162,7 +162,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// sorts BEFORE "0.9.0" ("1" < "9"), so a lexical-compare regression of
 	// semverCompare would wrongly suppress the hint here. Pins the integer compare.
 	t.Run("behind-plugin-double-digit-minor-hints", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.9.0", "0.10.0")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.9.0", "0.10.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -176,7 +176,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// so a lexical-compare regression would wrongly FIRE the hint on this older
 	// binary. The two boundary cases together RED any lexical compare.
 	t.Run("older-binary-double-digit-minor-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.10.0", "0.9.0")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.10.0", "0.9.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -189,7 +189,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// dotted-int semver — the conservative gate emits no hint. Pins that
 	// parseDottedInts rejects a `-rc1` suffix rather than stripping it.
 	t.Run("prerelease-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "", "0.19.8", "0.20.0-rc1")
+		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.19.8", "0.20.0-rc1")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -213,7 +213,7 @@ func TestCompareMessageShape(t *testing.T) {
 		{1, ">=2,<3"}, // too-old-binary
 		{2, ">=1,<2"}, // too-old-plugin
 	} {
-		res := Compare(c.contract, c.raw, "claude", "", pluginVersion, binaryVersion)
+		res := Compare(c.contract, c.raw, "claude", pluginVersion, binaryVersion)
 		header := "Spacedock version mismatch: binary " + binaryVersion + ", plugin " + pluginVersion
 		if !strings.Contains(res.Message, header) {
 			t.Errorf("Compare(%d,%q) message missing header %q: %q", c.contract, c.raw, header, res.Message)
@@ -224,40 +224,36 @@ func TestCompareMessageShape(t *testing.T) {
 	}
 }
 
-// TestPluginPredatesContractRemedy locks the new verdict for an absent/empty
-// requires-contract: it names the `spacedock install --host <host>` one-liner,
-// reflects the dev branch (@next) when set, and OMITS the `plugin update`
-// fallback that reusing too-old-plugin would drag in (that fallback no-ops on a
-// stale install). A whitespace-only value routes here too; a non-empty
-// unparseable value still reads as a packaging bug.
+// TestPluginPredatesContractRemedy locks the verdict for an absent/empty
+// requires-contract: it names the `spacedock install --host <host>` one-liner and
+// OMITS the `plugin update` fallback that reusing too-old-plugin would drag in
+// (that fallback no-ops on a stale install). Post-decouple the remedy carries NO
+// reinstall-source parenthetical: `spacedock install` auto-selects the channel from
+// the binary's own devBranch stamp (entry name), so there is no plugin-repo name
+// and no `@branch` shorthand to name. A whitespace-only value routes here too; a
+// non-empty unparseable value still reads as a packaging bug.
 func TestPluginPredatesContractRemedy(t *testing.T) {
 	for _, raw := range []string{"", "   "} {
-		res := Compare(1, raw, "claude", "next", "0.12.1", "0.19.4")
+		res := Compare(1, raw, "claude", "0.12.1", "0.19.4")
 		if res.Verdict != PluginPredatesContract {
 			t.Fatalf("Compare(1,%q) verdict = %v, want plugin-predates-contract", raw, res.Verdict)
 		}
 		if !strings.Contains(res.Message, "spacedock install --host claude") {
 			t.Errorf("predates-contract remedy missing install one-liner: %q", res.Message)
 		}
-		if !strings.Contains(res.Message, "@next") {
-			t.Errorf("predates-contract remedy missing @next branch: %q", res.Message)
+		if strings.Contains(res.Message, "spacedock-dev/spacedock") {
+			t.Errorf("predates-contract remedy names the plugin repo; post-decouple the reinstall source is not named in the remedy: %q", res.Message)
+		}
+		if strings.Contains(res.Message, "@next") {
+			t.Errorf("predates-contract remedy carries the removed @branch shorthand: %q", res.Message)
 		}
 		if strings.Contains(res.Message, "plugin update") {
 			t.Errorf("predates-contract remedy must omit the no-op `plugin update` fallback: %q", res.Message)
 		}
 	}
 
-	// With no dev branch, the remedy is the clean release one-liner (no @suffix).
-	plain := Compare(1, "", "claude", "", "0.12.1", "0.19.4")
-	if strings.Contains(plain.Message, "@next") {
-		t.Errorf("predates-contract remedy with no branch should omit @next: %q", plain.Message)
-	}
-	if !strings.Contains(plain.Message, "spacedock install --host claude") {
-		t.Errorf("predates-contract remedy with no branch missing install one-liner: %q", plain.Message)
-	}
-
 	// A non-empty unparseable value is still a packaging bug, not predates-contract.
-	bug := Compare(1, ">=1", "claude", "next", "0.12.1", "0.19.4")
+	bug := Compare(1, ">=1", "claude", "0.12.1", "0.19.4")
 	if bug.Verdict != MalformedRange {
 		t.Fatalf("Compare(1,%q) verdict = %v, want malformed-range", ">=1", bug.Verdict)
 	}
@@ -272,7 +268,7 @@ func TestPluginPredatesContractRemedy(t *testing.T) {
 // (which now exits 2) — the remedy a user hits at the gate must run.
 func TestCompareHostSubstitution(t *testing.T) {
 	for _, host := range []string{"claude", "codex"} {
-		res := Compare(2, ">=1,<2", host, "", "0.18.0", "0.19.4")
+		res := Compare(2, ">=1,<2", host, "0.18.0", "0.19.4")
 		want := "spacedock install --host " + host
 		if !strings.Contains(res.Message, want) {
 			t.Errorf("too-old-plugin remedy for host %q missing %q: %q", host, want, res.Message)
@@ -283,20 +279,3 @@ func TestCompareHostSubstitution(t *testing.T) {
 	}
 }
 
-// TestTooOldBinaryRemedyIsBranchAgnostic verifies the too-old-binary remedy
-// carries the brew/source-build upgrade path with NO branch pin: `brew upgrade
-// spacedock` carries no branch and the source build is branch-agnostic, so the
-// remedy is identical whether or not a pre-release dev branch is set.
-func TestTooOldBinaryRemedyIsBranchAgnostic(t *testing.T) {
-	withBranch := Compare(1, ">=2,<3", "claude", "next", "0.21.0", "0.19.4")
-	noBranch := Compare(1, ">=2,<3", "claude", "", "0.21.0", "0.19.4")
-	if !strings.Contains(withBranch.Message, "brew upgrade spacedock") {
-		t.Errorf("too-old-binary remedy must lead with brew upgrade: %q", withBranch.Message)
-	}
-	if strings.Contains(withBranch.Message, "@next") {
-		t.Errorf("too-old-binary remedy must not pin a branch: %q", withBranch.Message)
-	}
-	if withBranch.Message != noBranch.Message {
-		t.Errorf("too-old-binary remedy must be branch-agnostic:\n  with branch=%q\n  no branch=%q", withBranch.Message, noBranch.Message)
-	}
-}

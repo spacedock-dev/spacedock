@@ -34,10 +34,12 @@ builds:
     # const, for the linker to write it. {{.Version}} is goreleaser's
     # git-describe-derived version (the tag on a release, a snapshot string on
     # --snapshot).
-    # devBranch pins the marketplace @ref the released binary installs from. The
-    # STABLE channel binds to `main`: a stable release published on `main` must
-    # install the `main` plugin. The source default stays `next` (frontdoor.go) so
-    # a `go install …@next` / `--plugin-dir` dev build is unaffected; only this
+    # devBranch selects which marketplace ENTRY the released binary installs (the
+    # channel is the entry name, not an @ref into the plugin repo). The STABLE
+    # channel stamps `main`, which the binary maps to the `spacedock` entry
+    # (tag-pinned in the marketplace repo). The source default stays `next`
+    # (frontdoor.go), which maps to the `spacedock-edge` entry, so a `go install
+    # …@next` / `--plugin-dir` dev build resolves the edge channel; only this
     # released stable artifact carries the `main` stamp (var, not const, for -X to
     # write it).
     ldflags:
@@ -51,9 +53,9 @@ builds:
       - CGO_ENABLED=0
     goos: *channel-goos
     goarch: *channel-goarch
-    # The EDGE channel binds to `next`: the `spacedock@next` cask installs the
-    # `next` plugin. Same Version stamp as stable; only the devBranch ldflag
-    # differs (the sole per-channel knob).
+    # The EDGE channel stamps `next`, which the binary maps to the `spacedock-edge`
+    # marketplace entry (tracking next HEAD). Same Version stamp as stable; only the
+    # devBranch ldflag differs (the sole per-channel knob).
     ldflags:
       - -s -w
       - -X github.com/spacedock-dev/spacedock/internal/cli.Version={{ .Version }}

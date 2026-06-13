@@ -48,7 +48,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 			return 1
 		}
 		if check {
-			return contract.RunDoctor(resolved, "codex", devBranch, Version, stdout, stderr)
+			return contract.RunDoctor(resolved, "codex", Version, stdout, stderr)
 		}
 		if resolved != "" {
 			// An already-present plugin is refreshed on `install` like the claude
@@ -66,8 +66,8 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		}
 
 		// Codex install is documented prose when no installed plugin resolves: the
-		// host install verb is `add` (NOT `install`), and the marketplace add
-		// accepts the branch via --ref.
+		// host install verb is `add` (NOT `install`), and the channel entry the
+		// binary's devBranch selects is named in the documented `plugin add`.
 		printCodexInstallProse(stdout)
 		return 0
 	default:
@@ -102,7 +102,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 
 	if manifestPath != "" {
-		return contract.RunDoctor(manifestPath, host, devBranch, Version, stdout, stderr)
+		return contract.RunDoctor(manifestPath, host, Version, stdout, stderr)
 	}
 
 	resolved, err := ops.ResolveManifest(host)
@@ -112,7 +112,7 @@ func runDoctor(ctx context.Context, args []string, ops hostOps, stdout, stderr i
 	}
 	// An empty resolved path is the no-plugin-found report; RunDoctor renders it
 	// from a non-existent path as a non-fatal report.
-	return contract.RunDoctor(resolved, host, devBranch, Version, stdout, stderr)
+	return contract.RunDoctor(resolved, host, Version, stdout, stderr)
 }
 
 // parseInitArgs reads `--host claude|codex` (default claude) and `--check`. A

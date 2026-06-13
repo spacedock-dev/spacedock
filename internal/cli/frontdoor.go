@@ -233,7 +233,7 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 	if manifestPath == "" {
 		return contract.NoPluginFound
 	}
-	res := contract.ManifestVerdict(manifestPath, host, devBranch, Version)
+	res := contract.ManifestVerdict(manifestPath, host, Version)
 	if res.Verdict == contract.NoPluginFound {
 		return contract.NoPluginFound
 	}

@@ -110,23 +110,23 @@ func ParseRange(raw string) (lo int, hi int, err error) {
 }
 
 // Compare classifies a binary at contract version c against a plugin's raw
-// requires-contract range, for the named host and (pre-release) dev branch. It
-// returns the verdict and the operator-facing message. pluginVersion and
-// binaryVersion are the display semvers woven into the user-facing mismatch/OK
-// lines. NoPluginFound is produced by the caller (when the manifest is absent),
-// not here — Compare always has a raw range string to evaluate.
-func Compare(c int, raw, host, branch, pluginVersion, binaryVersion string) Result {
+// requires-contract range, for the named host. It returns the verdict and the
+// operator-facing message. pluginVersion and binaryVersion are the display semvers
+// woven into the user-facing mismatch/OK lines. NoPluginFound is produced by the
+// caller (when the manifest is absent), not here — Compare always has a raw range
+// string to evaluate.
+func Compare(c int, raw, host, pluginVersion, binaryVersion string) Result {
 	manifestNote := ""
-	return compareWithManifest(c, raw, host, branch, manifestNote, pluginVersion, binaryVersion)
+	return compareWithManifest(c, raw, host, manifestNote, pluginVersion, binaryVersion)
 }
 
 // compareWithManifest is Compare with an optional manifest path woven into the
 // malformed-range message so a packaging bug names the offending file.
-func compareWithManifest(c int, raw, host, branch, manifestPath, pluginVersion, binaryVersion string) Result {
+func compareWithManifest(c int, raw, host, manifestPath, pluginVersion, binaryVersion string) Result {
 	if strings.TrimSpace(raw) == "" {
 		return Result{
 			Verdict: PluginPredatesContract,
-			Message: pluginPredatesContractRemedy(host, branch),
+			Message: pluginPredatesContractRemedy(host),
 		}
 	}
 	lo, hi, err := ParseRange(raw)
@@ -256,18 +256,14 @@ func tooOldPluginRemedy(host string) string {
 // predates the contract mechanism (no requires-contract field). It names the
 // `spacedock install` one-liner — never raw `<host> plugin` commands — and omits the
 // `plugin update` fallback, which no-ops on a stale already-installed plugin. The
-// host is parameterized; the optional pre-release branch suffixes the reinstall
-// source so a dev install reflects the branch (the default release path omits it).
-func pluginPredatesContractRemedy(host, branch string) string {
-	source := "spacedock-dev/spacedock"
-	if branch != "" {
-		source += "@" + branch
-	}
+// host is parameterized. No reinstall-source parenthetical: `spacedock install`
+// auto-selects the channel from the binary's own devBranch stamp (the marketplace
+// entry name), so the remedy names neither a source repo nor an @branch suffix.
+func pluginPredatesContractRemedy(host string) string {
 	return fmt.Sprintf(
 		"plugin-predates-contract: your installed Spacedock plugin is out of date "+
-			"(predates this binary's contract). Upgrade it: spacedock install --host %s "+
-			"(reinstalls from %s).",
-		host, source)
+			"(predates this binary's contract). Upgrade it: spacedock install --host %s.",
+		host)
 }
 
 // noPluginMessage is the pinned no-plugin-found report for a host. Not a
