@@ -1,0 +1,166 @@
+{
+  "version": "1.0",
+  "target": "entity",
+  "applies_to": {
+    "filename_pattern": "<slug>.md or <slug>/index.md",
+    "required_at": "workflow_root_or_archive"
+  },
+  "frontmatter": {
+    "strict_canonical": true,
+    "permissive_additions": true,
+    "always_present": [
+      "id",
+      "title",
+      "status",
+      "score",
+      "source",
+      "worktree"
+    ],
+    "optional_canonical": [
+      "pr",
+      "started",
+      "completed",
+      "verdict",
+      "mod-block",
+      "archived",
+      "issue"
+    ],
+    "fields": {
+      "id": {
+        "type": "string",
+        "conditional": [
+          {
+            "when": {
+              "workflow.id-style": "sequential"
+            },
+            "rule": "non-negative integer rendered as a string",
+            "pattern": "^[0-9]+$"
+          },
+          {
+            "when": {
+              "workflow.id-style": "sd-b32"
+            },
+            "rule": "24-character Spacedock Base32 ID; legacy numeric IDs are warn-only for mixed workflows",
+            "pattern": "^[0123456789abcdefghjkmnpqrstvwxyz]{24}$",
+            "legacy_numeric_severity": "warn"
+          },
+          {
+            "when": {
+              "workflow.id-style": "slug"
+            },
+            "rule": "empty string; slug is the effective identity"
+          }
+        ]
+      },
+      "title": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "sentinel_on_unknown": 99,
+        "should_match": "workflow.stages.states[].name",
+        "unknown_severity": "warn"
+      },
+      "score": {
+        "type": "numeric_string",
+        "coerce_empty": "last",
+        "coerce_invalid": 0,
+        "invalid_severity": "warn"
+      },
+      "source": {
+        "type": "string"
+      },
+      "worktree": {
+        "type": "string",
+        "semantics": "path relative to git root when non-empty; empty means no active worktree"
+      },
+      "pr": {
+        "type": "string"
+      },
+      "started": {
+        "type": "iso8601"
+      },
+      "completed": {
+        "type": "iso8601"
+      },
+      "verdict": {
+        "type": "string",
+        "conventional": [
+          "PASSED",
+          "REJECTED"
+        ],
+        "invalid_severity": "warn"
+      },
+      "mod-block": {
+        "type": "string",
+        "pattern": "^[^:]+:[^:]+$",
+        "invalid_severity": "warn",
+        "semantics": "when non-empty, terminal advancement is refused unless forced"
+      },
+      "archived": {
+        "type": "iso8601"
+      },
+      "issue": {
+        "type": "string"
+      }
+    },
+    "custom_fields": {
+      "policy": "preserve_unknown",
+      "no_reserved_prefix": true,
+      "observed": {
+        "blocked-on": {
+          "type": "string",
+          "required": false,
+          "semantics": "upstream dependency reference that blocks entity progress"
+        },
+        "blocked-reason": {
+          "type": "string",
+          "required": false,
+          "semantics": "human-readable reason for the blocked-on dependency"
+        },
+        "depends": {
+          "type": "string",
+          "required": false,
+          "semantics": "legacy dependency reference preserved from archived entities"
+        }
+      }
+    }
+  },
+  "body": {
+    "required_opening": "problem-statement paragraph before any heading",
+    "recognized_sections": [
+      "## Acceptance criteria",
+      "## Test plan",
+      "## Stage Report: <stage_name>",
+      "### Feedback Cycles"
+    ],
+    "stage_report_validation": "none"
+  },
+  "invariants": [
+    {
+      "id": "id_uniqueness",
+      "rule": "per id-style, ids unique across active + archived"
+    },
+    {
+      "id": "slug_uniqueness",
+      "rule": "slugs unique across active + archived"
+    },
+    {
+      "id": "mod_block_guard",
+      "rule": "mod-block non-empty AND status terminal -> refuse without --force"
+    },
+    {
+      "id": "merge_hook_invariant",
+      "rule": "workflow has any _mods/*.md with ## Hook: merge AND pr empty AND mod-block empty -> refuse terminal without --force"
+    },
+    {
+      "id": "two_step_audit",
+      "rule": "single --set cannot both clear mod-block and advance to terminal"
+    },
+    {
+      "id": "pr_mirror",
+      "rule": "writing pr on worktree-backed entity also writes pr to canonical copy; no other field mirrors"
+    }
+  ],
+  "known_corpus_failures": {}
+}
