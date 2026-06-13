@@ -14,6 +14,7 @@ group: survey
 sprint-readiness: ready
 mod-block:
 pr: "#360"
+archived: 2026-06-13T21:12:39Z
 ---
 
 One coherent rewrite of the `spacedock:survey` output into the captain-locked **"value & numbers first"** structure (canonical mock in `docs/roadmap/0202-survey-improvements/index.md`). The six feedback seeds below are the requirement record; this task is their single execution. All proof is the survey's rendered output over constructed fixtures — never a prose-grep of SKILL.md (the survey discipline). Do NOT regress the validated inference accuracy or the decision-frontier triage (three+ users confirmed these — the keep-signal).
