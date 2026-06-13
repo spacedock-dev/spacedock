@@ -4,10 +4,10 @@ title: Prefer `spacedock new` over manual --next-id for filing entities
 status: validation
 source: captain (2026-06-13) — noticed FO still calls --next-id when filing seeds
 started: 2026-06-13T05:52:37Z
-completed:
-verdict:
+completed: 2026-06-13T21:24:41Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-prefer-new-over-next-id
+worktree:
 issue:
 sprint: 0202-survey-improvements
 group: cleanup
