@@ -147,3 +147,14 @@ REJECTED. AC-1..AC-4 all reproduce with external evidence on the BUILT binary, t
 ### Feedback Cycles
 
 - **Cycle 1 — validation REJECTED → implementation (2026-06-13).** Material (detached adversarial audit, refutation (d)): the `Warning:`/`Error:` prefix split on field-conformance lines is untested — flipping warns to `Error:` (`internal/status/field_conformance.go:104`) leaves the whole `internal/status` package green, so a non-gating advisory misreported as a structural `Error:` would ship unseen. Fix is TEST-ONLY (production behavior is correct): in `TestFieldConformanceWarnsSurface` assert each field-conformance line starts with `Warning: field '<name>` (e.g. `strings.Contains(nErr, "Warning: field '"+tc.wantField)`), or add a warn-only golden envelope pinning the `Warning:` prefix; then confirm the prefix-drop edit (d) now reds. Routed to the live implementation worker (reuse_ok, 11.3% ctx); re-validate after.
+
+## Stage Report: implementation (cycle 1 — Warning: prefix test)
+
+- DONE: Assert each field-conformance warn line carries the `Warning:` prefix bound to the field, and prove edit (d) reds it.
+  `TestFieldConformanceWarnsSurface` now asserts `strings.Contains(nErr, "Warning: field '"+tc.wantField)` AND rejects `"Error: field '"+tc.wantField`. Proven to bite: applied edit (d) (`entityEvidenceLine("Warning", …)` → `("Error", …)` at field_conformance.go:104) — all four subtests RED with `stderr missing warn line "Warning: field '…"` (got the `Error:` line); restored production code → green. Test-only change; production code byte-identical to cycle-0 commit 76a924a7.
+- DONE: `go test ./internal/status/` green over the whole package; `go vet` + `gofmt` clean; committed on worktree branch.
+  Whole `internal/status` package green after restore; `go vet` clean; `gofmt` clean. Test-only commit 66d67387 on `spacedock-ensign/mdschema-conformance-validator`.
+
+### Summary
+
+Closed the test-only gap from the detached audit's refutation (d): the warn-only tests asserted only the field name, so flipping field-conformance warns to a gating `Error:` prefix left the package green. `TestFieldConformanceWarnsSurface` now pins the `Warning:` prefix bound to each field and rejects an `Error:` line for that field — verified to red under edit (d) and green when restored. No production change (the `Warning:`/`Error:` split was already correct); commit 66d67387.
