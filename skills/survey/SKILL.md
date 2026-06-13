@@ -165,9 +165,9 @@ SpaceDock survey — your last {N} days                          ← {N} from sc
 (recent-window snapshot · agent logs only{if blank_cwd>0: · {blank_cwd} sessions had no working dir, not placed})
 
 WHAT THIS GIVES YOU
-  {plain language, no jargon: "You steer your agents by hand ~{interruptions} times over this
-   window. About {the manual/repeated share} are the same few moves. A SpaceDock workflow can
-   run the repetitive parts for you and stop only where you'd want a say."}
+  {plain language, no jargon: "You steer your agents by hand roughly {interruptions} times in
+   this window. About {the manual/repeated share} are the same few moves repeated. A SpaceDock
+   workflow can run those repetitive parts for you, stopping only where you'd want a say."}
 
 BY THE NUMBERS
   {interruptions}  hand-steering interruptions                  ← decisions + veto markers (the {V} total)
@@ -239,13 +239,13 @@ After the report, offer spacedock — leading with plain value, then keyed to th
 **For the MANUAL tracks (mode=manual) — offer GATE-AND-DRIVE.** These are disciplined routine execution (the issue→worktree→PR loop, routine implementation): gate the crucial decisions and let the agent drive the loop between gates. Keep the gate-and-autonomy pitch — it is CORRECT for these. State it tied to the scan (the manual tracks' names + their gate-pass count or the interruption count). The per-scaffold flavor sharpens the offer:
   - **superpowers** maps its disciplines (brainstorming → writing-plans → executing-plans → subagent-driven-development) to stages with the interruption points made EXPLICIT gates.
   - **gsd / get-shit-done** maps its fixed phases to stages + durable entity state so several work items move concurrently, pausing only at gates.
-  > For your MANUAL tracks (**{the manual track names}**): a spacedock workflow that runs the repetitive loop for you and stops only at the calls you'd want to make — these passed **{the gate-pass count}**, so the agent can carry them between your gates.
+  > For your MANUAL tracks (**{the manual track names}**): a spacedock workflow that runs the repetitive loop for you and stops only at the calls you'd want to make. These passed **{the gate-pass count}** times, so the agent can carry them between your gates.
 
 **For the EXPLORATION tracks (mode=exploration) — lead with ITERATE/STEER, then BOOK-KEEPING; never automation.** These are human-driven creative/exploratory work (writing/content, design exploration, steering an agent that drifts): the involvement IS the point. The offer must speak to the iterate/explore loop FIRST — the agent iterates and you steer; an approval gate is ONE shape that loop can take, not the headline — do NOT lead with "explicit approval gates" for these. Then offer spacedock as structure for the parallel threads: track each draft/path and its state (in-flight / paused-by-choice / abandoned) so several run in parallel without losing which is which. An open thread is tracked-prioritized work, NOT a bottleneck; a cancelled path is a valid tracked outcome, NOT a failure. The exploration offer MUST NOT contain "advances on its own", "without you re-driving each", "minimize involvement", or any automate-the-human-out framing.
-  > For your EXPLORATION tracks (**{the exploration track names}**): the agent iterates and you steer — spacedock as book-keeping for the parallel threads, tracking each draft/design path and its state (in-flight / paused-by-choice / abandoned) so you run several at once without losing which is which. The **{the cancelled-path count}** cancelled paths are tracked outcomes, not failures; the involvement is the point, so there's no automation here — just structure for the threads.
+  > For your EXPLORATION tracks (**{the exploration track names}**): you steer while the agent iterates. Spacedock acts as book-keeping for the parallel threads, tracking each draft/design path and its state (in-flight / paused-by-choice / abandoned) so you run several at once without losing which is which. The **{the cancelled-path count}** cancelled paths are tracked outcomes, not failures. The involvement is the point; there is no automation here, only structure for the threads.
 
 **For the KNOWLEDGE-WORK tracks (mode=knowledge-work) — offer BATCH BOOK-KEEPING.** These are an intake→process→file→log→close loop (a notes/ops shop, not a code repo): the gates are "confirm this batch / approve this write / scope this draft." Name the loop and offer honest book-keeping for it — track each item from intake to close — NOT an automation pitch and NOT the generic fallback.
-  > For your KNOWLEDGE-WORK tracks (**{the knowledge-work track names}**): spacedock as book-keeping for the intake → process → file → log → close loop — track each item from intake to close and confirm the batches at the points you already pause, so nothing falls through between runs.
+  > For your KNOWLEDGE-WORK tracks (**{the knowledge-work track names}**): spacedock acts as book-keeping for the intake → process → file → log → close loop. Track each item from intake to close and confirm the batches at the points where you already pause, so nothing falls through between runs.
 
 **For UNLABELED tracks (mode=unlabeled) — generic book-keeping**, never a guessed automation pitch (the asymmetry favors not mis-offering: a missed automation offer is cheap; a wrong automation pitch at creative work is the misread to avoid).
 
