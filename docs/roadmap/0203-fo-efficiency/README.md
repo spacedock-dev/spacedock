@@ -73,6 +73,10 @@ Two fixes fold into Phase 1's contract cleanup, beyond the structural split:
 
 This is boot-resident **guidance content** (behavior-shaping, not a testable AC): proof is the existing live scenarios still passing + review — not a "drift reduced" metric. The principles also govern *how* the contract is simplified (lead with value, hardest-first, simplest/concise).
 
+## Intake (added to the sprint)
+
+- **`context-budget-spurious-warnings` — github#344** (captain intake 2026-06-13). `spacedock dispatch context-budget` emits spurious `config_drift_warning` (the `[1m]`-suffixed captain-session model string never matches the canonical jsonl id) and `mixed_models_warning` (harness-injected `<synthetic>` jsonl entries pollute the model census) on *healthy* reused team members — eroding trust in the reuse-condition-0 budget signal. FO dispatch-path quality. Filed as a backlog seed in `docs/dev`; ideation fills approach + ACs (proven by Go tests over the probe's output, not prose).
+
 ## Out of scope (parked, not 0.20.3)
 
 - **p2 / vc** — `spacedock pr complete` + `reconcile --act`: the binary-simplification line (higher ROI, heavier lift) → 0.20.4.
