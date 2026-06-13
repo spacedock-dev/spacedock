@@ -13,7 +13,7 @@ Until then, the gates are yours.
 
 ## What you see at a gate
 
-A gate review has a fixed spine: the first three lines and the last line carry the decision, everything between is supporting evidence. If you stop reading after line three, you can still vote.
+A gate review has a fixed spine: the first three lines and the last line carry the decision; everything between is supporting evidence. If you stop reading after line three, you can still vote.
 
 ```
 Gate review: Fix the flaky login test — review
@@ -45,13 +45,13 @@ Redo and reject differ only in whether you accept the direction; both carry your
 
 ## When you reject
 
-Your findings route back automatically, the work is redone, the reviewer re-runs, and the gate comes back to you as a fresh review. Every round is on the record in the item's file. **The loop caps at three:** on the third failure the call returns to a human instead of bouncing again.
+Your findings route back automatically: the work is redone, the reviewer re-runs, and the gate returns as a fresh review. Every round is on the record in the item's file. **The loop caps at three:** on the third failed round the call returns to a human instead of bouncing again.
 
 ## The detached adversarial audit
 
-For high-stakes surfaces, a passing validation is necessary but not sufficient. Before merging, the first officer also runs a read-only adversarial audit. The audit catches the hole that validation cannot see itself: a test that passes today but would also pass on a broken future edit.
+For high-stakes surfaces, a passing validation is necessary but not sufficient. Before merging, the first officer also runs a read-only adversarial audit. The audit catches the hole validation cannot see on its own: a test that passes today but would also pass on a broken future edit.
 
-A workflow names its own high-stakes surfaces; routine, low-blast-radius changes do not need an audit, a normal validation suffices.
+A workflow names its own high-stakes surfaces. Routine, low-blast-radius changes do not need an audit; a normal validation suffices.
 
 The audit is read-only and cannot touch the deliverable. It tries to refute the validation: it constructs an adversarial edit that the deliverable's own tests should catch and confirms they do. A test that stays green under an edit that breaks the claim is a hole. "Refuted nothing material" is a valid recorded outcome.
 
