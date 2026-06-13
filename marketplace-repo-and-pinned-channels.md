@@ -1,13 +1,13 @@
 ---
 id: gpvg343kshg02e34kq7hrk9f
 title: Separate marketplace repo + tag-pinned stable / edge channels (Model B core)
-status: ideation
+status: implementation
 source: "Post-flip release-model decision (roadmap 0201, captain 2026-06-09): adopt Model B — stable channel serves a pinned release tag, edge serves next HEAD — grounded by the plugin-distribution research (wcdgsgd88). This is the structural core."
 started: 2026-06-13T04:08:48Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-marketplace-repo-and-pinned-channels
 issue:
 sprint: 0201-post-flip-release-model
 group: release-model
