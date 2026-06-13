@@ -113,10 +113,18 @@ homebrew_casks:
     homepage: https://github.com/spacedock-dev/spacedock
     description: Workflow launcher and first-officer dispatch for agentic dev
     license: Apache-2.0
+    # agentsview is a core Homebrew cask (Homebrew/homebrew-cask), so brew
+    # resolves and installs it alongside the launcher — it powers
+    # /spacedock:survey. safehouse stays a caveat (below): it lives in a
+    # third-party tap (eugene1g/safehouse), which Homebrew 6.0 tap-trust refuses
+    # to auto-load as a transitive depends_on, so we name the install command
+    # rather than declare a dependency that would break the fresh-install path.
+    dependencies:
+      - cask: agentsview
     caveats: |
-      Recommended companions (not installed by brew):
+      Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
-        agentsview — powers /spacedock:survey
+        brew install eugene1g/safehouse/agent-safehouse
     hooks:
       # The binary is adhoc/linker-signed only (not notarized), so the cask
       # download carries com.apple.quarantine and Gatekeeper kills the first
@@ -139,10 +147,16 @@ homebrew_casks:
     homepage: https://github.com/spacedock-dev/spacedock
     description: Workflow launcher and first-officer dispatch for agentic dev (edge channel)
     license: Apache-2.0
+    # Same companion split as the stable cask: agentsview is a brew-installable
+    # cask dependency; safehouse lives in a third-party tap that 6.0 tap-trust
+    # won't auto-load as a transitive dep, so it stays a caveat naming its
+    # install command.
+    dependencies:
+      - cask: agentsview
     caveats: |
-      Recommended companions (not installed by brew):
+      Recommended companion (install separately):
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
-        agentsview — powers /spacedock:survey
+        brew install eugene1g/safehouse/agent-safehouse
     hooks:
       post:
         install: |

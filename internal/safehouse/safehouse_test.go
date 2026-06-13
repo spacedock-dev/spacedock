@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -53,15 +54,22 @@ func TestAvailableResolvable(t *testing.T) {
 }
 
 // TestAvailableNotFound: a lookPath that fails → not ok, with a pinned install
-// hint naming the safehouse binary for stderr.
+// hint that cites safehouse's real third-party-tap brew install command and its
+// canonical site, and never the outdated github.com/anthropics/safehouse URL.
 func TestAvailableNotFound(t *testing.T) {
 	look := func(string) (string, error) { return "", errors.New("not found") }
 	ok, hint := Available(look)
 	if ok {
 		t.Fatalf("Available ok=true, want false when lookPath fails")
 	}
-	if hint == "" {
-		t.Fatalf("Available hint empty, want a pinned install hint")
+	if !strings.Contains(hint, "brew install eugene1g/safehouse/agent-safehouse") {
+		t.Errorf("Available hint %q does not name the brew install command", hint)
+	}
+	if !strings.Contains(hint, "https://agent-safehouse.dev") {
+		t.Errorf("Available hint %q does not name the canonical safehouse site", hint)
+	}
+	if strings.Contains(hint, "github.com/anthropics/safehouse") {
+		t.Errorf("Available hint %q still cites the outdated github.com/anthropics/safehouse URL", hint)
 	}
 }
 
