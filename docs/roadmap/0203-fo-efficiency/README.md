@@ -1,7 +1,7 @@
 # 0203 — FO Efficiency: shallow boot + lazy contract
 
 **Milestone:** 0.20.3
-**Status:** shaping (design approved 2026-06-13; T1 ideation in flight)
+**Status:** ideation complete, at the ideation gate (2026-06-13). The full spec lives in the j9 entity (`docs/dev/.spacedock-state/lazy-teamcreate-shallow-boot/`); this doc is the sprint index.
 **Theme:** make the first officer cheap to boot and run.
 
 ## Why
@@ -51,7 +51,7 @@ contract-gate → discovery → `status --boot --json` → **greet and stop for 
 **`j9` is the backbone — one task, three phases.** Reshape the existing backlog entity; do not fragment it. The contract split runs first because it is the behavior-preserving enabler (and the contract-audit ask); the 89k lazy-TeamCreate is the headline lever.
 
 **j9 — Lazy-TeamCreate + shallow-boot-then-greet:**
-- **Phase 1 — contract structural split** (enabler + the "audit and cleanup the fo contract" ask): extract boot-resident vs deferred into a lazy dispatch ref + a lazy merge ref; slim the boot-resident core + the skill loader. Behavior-preserving. *Proof: existing `gate-guardrail`/`rejection-flow`/`merge-hook-guardrail` live scenarios still pass + a `internal/contractlint` reference-closure guard.* Shaped in `T1-ideation.md` (labeled T1 there — it is j9 Phase 1; spike verdict VIABLE, ~70% boot-read cut).
+- **Phase 1 — contract structural split** (enabler + the "audit and cleanup the fo contract" ask): extract boot-resident vs deferred into a lazy dispatch ref + a lazy merge ref; slim the boot-resident core + the skill loader. Behavior-preserving. *Proof: existing `gate-guardrail`/`rejection-flow`/`merge-hook-guardrail` live scenarios still pass + a `internal/contractlint` reference-closure guard.* Spike verdict VIABLE, ~70% boot-read cut (full spec in the j9 entity).
 - **Phase 2 — lazy-TeamCreate**: defer the `TeamCreate` call (the ~89k cache-creation) off the boot/greet path to first-dispatch-need. Needs no split.
 - **Phase 3 — shallow-boot-then-greet**: greet off `status --boot --json`; defer mod-reads, the human status-table render, and the (now-split) deferred contract modules. Folds C3 (mod-defer) + C4 (status-render discipline). *Proof: new live `shallow-boot` scenario.*
 
