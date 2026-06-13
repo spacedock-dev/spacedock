@@ -10,10 +10,11 @@ import (
 )
 
 // TestCodexInstallIssuesSequenceInOrder locks AC-1a: a stub codex that exits 0 on
-// every step → Install("codex", "spacedock-dev/spacedock", "next") returns nil and
-// the combined output carries all four step markers, including the codex-specific
-// `plugin marketplace add spacedock-dev/spacedock --ref next` and `plugin add
-// spacedock@spacedock`. The stub's echoed argv is the independent source of truth.
+// every step → Install("codex", "spacedock-dev/marketplace", "next") returns nil
+// and the combined output carries all four step markers, including the bare
+// marketplace-repo `plugin marketplace add spacedock-dev/marketplace` (no --ref)
+// and the edge channel's `plugin add spacedock-edge@spacedock`. The stub's echoed
+// argv is the independent source of truth.
 func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -21,15 +22,15 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	dir := writeHostStub(t, "codex", "")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "next")
 	if err != nil {
 		t.Fatalf("Install returned error on all-zero codex stub: %v\nout=%q", err, out)
 	}
 	wantOrder := []string{
-		"stub:plugin remove spacedock@spacedock:exit=0",
+		"stub:plugin remove spacedock-edge@spacedock:exit=0",
 		"stub:plugin marketplace remove spacedock:exit=0",
-		"stub:plugin marketplace add spacedock-dev/spacedock --ref next:exit=0",
-		"stub:plugin add spacedock@spacedock:exit=0",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin add spacedock-edge@spacedock:exit=0",
 	}
 	last := -1
 	for _, want := range wantOrder {
@@ -57,15 +58,15 @@ func TestCodexInstallToleratesMarketplaceRemoveFailure(t *testing.T) {
 	dir := writeHostStub(t, "codex", "plugin marketplace remove")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "next")
 	if err != nil {
 		t.Fatalf("Install returned error on tolerated marketplace-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin remove spacedock@spacedock:exit=0",
+		"stub:plugin remove spacedock-edge@spacedock:exit=0",
 		"stub:plugin marketplace remove spacedock:exit=1",
-		"stub:plugin marketplace add spacedock-dev/spacedock --ref next:exit=0",
-		"stub:plugin add spacedock@spacedock:exit=0",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin add spacedock-edge@spacedock:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -85,14 +86,14 @@ func TestCodexInstallToleratesPluginRemoveFailure(t *testing.T) {
 	dir := writeHostStub(t, "codex", "plugin remove")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "next")
 	if err != nil {
 		t.Fatalf("Install returned error on tolerated plugin-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin remove spacedock@spacedock:exit=1",
-		"stub:plugin marketplace add spacedock-dev/spacedock --ref next:exit=0",
-		"stub:plugin add spacedock@spacedock:exit=0",
+		"stub:plugin remove spacedock-edge@spacedock:exit=1",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin add spacedock-edge@spacedock:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -110,14 +111,14 @@ func TestCodexInstallFailsFastOnMarketplaceAdd(t *testing.T) {
 	dir := writeHostStub(t, "codex", "plugin marketplace add")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "next")
 	if err == nil {
 		t.Fatalf("Install returned nil error; want marketplace-add fail-fast\nout=%q", out)
 	}
-	if !strings.Contains(err.Error(), "plugin marketplace add spacedock-dev/spacedock --ref next") {
+	if !strings.Contains(err.Error(), "plugin marketplace add spacedock-dev/marketplace") {
 		t.Errorf("error %q does not wrap the codex add subcommand argv", err)
 	}
-	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/spacedock --ref next:exit=1") {
+	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/marketplace:exit=1") {
 		t.Errorf("combined output missing add-step stub marker; out=%q", out)
 	}
 }
@@ -132,37 +133,42 @@ func TestCodexInstallFailsFastOnPluginAdd(t *testing.T) {
 	dir := writeHostStub(t, "codex", "plugin add")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "next")
 	if err == nil {
 		t.Fatalf("Install returned nil error; want plugin-add fail-fast\nout=%q", out)
 	}
-	if !strings.Contains(err.Error(), "plugin add spacedock@spacedock") {
+	if !strings.Contains(err.Error(), "plugin add spacedock-edge@spacedock") {
 		t.Errorf("error %q does not wrap the codex plugin add subcommand argv", err)
 	}
-	if !strings.Contains(out, "stub:plugin add spacedock@spacedock:exit=1") {
+	if !strings.Contains(out, "stub:plugin add spacedock-edge@spacedock:exit=1") {
 		t.Errorf("combined output missing plugin-add stub marker; out=%q", out)
 	}
 }
 
-// TestCodexInstallOmitsRefWhenBranchEmpty locks the empty-branch arm of AC-1: with
-// branch=="" the marketplace add carries the bare source and NO `--ref` token. A
-// stub recording the exact argv is the source of truth — a leaked `--ref` would
-// pin against a non-existent ref on the default-branch install path.
-func TestCodexInstallOmitsRefWhenBranchEmpty(t *testing.T) {
+// TestCodexInstallStableEntryOmitsRef locks the stable-channel arm of AC-1 (and
+// the no-`--ref` invariant): the marketplace add carries the bare marketplace-repo
+// source and NO `--ref` token (the channel is the entry name, not a branch ref),
+// and the stable binary (devBranch=main) installs the `spacedock` entry. A stub
+// recording the exact argv is the source of truth — a leaked `--ref` would wrongly
+// pin a non-existent ref, and a wrong entry id would cross channels.
+func TestCodexInstallStableEntryOmitsRef(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
 	}
 	dir := writeHostStub(t, "codex", "")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("codex", "spacedock-dev/spacedock", "")
+	out, err := execHost{}.Install("codex", "spacedock-dev/marketplace", "main")
 	if err != nil {
-		t.Fatalf("Install returned error on empty-branch codex stub: %v\nout=%q", err, out)
+		t.Fatalf("Install returned error on stable-channel codex stub: %v\nout=%q", err, out)
 	}
-	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/spacedock:exit=0") {
+	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/marketplace:exit=0") {
 		t.Errorf("combined output missing bare-source add marker; out=%q", out)
 	}
+	if !strings.Contains(out, "stub:plugin add spacedock@spacedock:exit=0") {
+		t.Errorf("combined output missing stable-channel plugin add marker; out=%q", out)
+	}
 	if strings.Contains(out, "--ref") {
-		t.Errorf("combined output carries a --ref token with empty branch; out=%q", out)
+		t.Errorf("combined output carries a --ref token; the channel is the entry name, not a branch ref; out=%q", out)
 	}
 }

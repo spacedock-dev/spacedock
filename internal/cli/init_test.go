@@ -37,13 +37,15 @@ func TestInitClaudeIssuesHostPluginCommands(t *testing.T) {
 	}
 }
 
-// TestInitMarketplaceSourceIsMigratedRepo guards the migration cleanup: the
-// marketplace-add target is `spacedock-dev/spacedock`, not the pre-migration
-// `clkao/spacedock`. Without this, a silent revert of the marketplaceSource
-// constant would not fail `go test` — both the claude install seam and the codex
-// add-prose carry the source, so both paths are asserted.
-func TestInitMarketplaceSourceIsMigratedRepo(t *testing.T) {
-	const wantSource = "spacedock-dev/spacedock"
+// TestInitMarketplaceSourceIsMarketplaceRepo guards the Model B decouple: the
+// marketplace-add target is the standalone marketplace repo
+// `spacedock-dev/marketplace`, NOT the plugin repo `spacedock-dev/spacedock` (the
+// manifest moved out of the plugin branch). Without this, a silent revert of the
+// marketplaceSource constant back to the plugin repo would not fail `go test` —
+// both the claude install seam and the codex add-prose carry the source, so both
+// paths are asserted.
+func TestInitMarketplaceSourceIsMarketplaceRepo(t *testing.T) {
+	const wantSource = "spacedock-dev/marketplace"
 
 	t.Run("claude-install-seam", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -76,8 +78,8 @@ func TestInitMarketplaceSourceIsMigratedRepo(t *testing.T) {
 		if !strings.Contains(out, "codex plugin marketplace add "+wantSource) {
 			t.Fatalf("codex add-prose marketplace source not %q:\n%s", wantSource, out)
 		}
-		if strings.Contains(out, "clkao/spacedock") {
-			t.Fatalf("codex add-prose still names the pre-migration clkao/spacedock:\n%s", out)
+		if strings.Contains(out, "spacedock-dev/spacedock") {
+			t.Fatalf("codex add-prose still names the plugin repo spacedock-dev/spacedock; the manifest moved to the marketplace repo:\n%s", out)
 		}
 	})
 }
@@ -148,6 +150,12 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 	})
 
 	t.Run("not-installed", func(t *testing.T) {
+		// The codex add-prose adds the channel entry the binary's devBranch selects;
+		// pin a stable binary (devBranch=main) so the prose names spacedock@spacedock.
+		saved := devBranch
+		devBranch = "main"
+		defer func() { devBranch = saved }()
+
 		fake := &fakeHost{}
 		var stdout, stderr bytes.Buffer
 
@@ -167,6 +175,27 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		}
 		if strings.Contains(out, "codex plugin install") {
 			t.Errorf("codex init prose must not use 'codex plugin install' (verb is add):\n%s", out)
+		}
+	})
+
+	// not-installed-edge: an edge binary (devBranch=next) names the edge channel
+	// entry spacedock-edge@spacedock in the add-prose — the channel selection
+	// reaches the documented codex install.
+	t.Run("not-installed-edge", func(t *testing.T) {
+		saved := devBranch
+		devBranch = "next"
+		defer func() { devBranch = saved }()
+
+		fake := &fakeHost{}
+		var stdout, stderr bytes.Buffer
+
+		code := runInit(context.Background(), []string{"--host", "codex"}, fake, &stdout, &stderr)
+
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+		}
+		if got := stdout.String(); !strings.Contains(got, "codex plugin add spacedock-edge@spacedock") {
+			t.Errorf("edge codex init prose missing 'codex plugin add spacedock-edge@spacedock':\n%s", got)
 		}
 	})
 

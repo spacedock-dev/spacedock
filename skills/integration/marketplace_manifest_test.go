@@ -1,75 +1,34 @@
-// ABOUTME: AC-2 manifest tests — root marketplace.json self-referential url+ref
-// ABOUTME: entry, and .codex-plugin/plugin.json requires-contract brackets binary.
+// ABOUTME: AC-2 manifest tests — the plugin branch carries no marketplace.json
+// ABOUTME: (Model B), and .codex-plugin/plugin.json requires-contract brackets binary.
 package integration
 
 import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// calendarVersionRe matches the marketplace entry's calendar key, `0.0.YYYYMMDDNN`
-// — the `claude plugin update` re-pull key (AC-2d). It is DISTINCT from the
-// plugin.json semver-ish `version` (the release-stamped display version, AC-4).
-var calendarVersionRe = regexp.MustCompile(`^0\.0\.\d{10}$`)
-
-// TestRootMarketplaceSelfReferentialEntry locks AC-2a/2c: the root
-// .claude-plugin/marketplace.json names the marketplace `spacedock` with one
-// plugin entry also named `spacedock` (so the install id is `spacedock@spacedock`,
-// the id the binary hardcodes), sourced url+ref (the no-restructure path; ref is
-// the channel branch this manifest serves — next on the edge branch, main on the
-// stable branch), carrying a calendar version key.
-func TestRootMarketplaceSelfReferentialEntry(t *testing.T) {
-	path := filepath.Join(repoRoot(t), ".claude-plugin", "marketplace.json")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read root marketplace %s: %v", path, err)
-	}
-	var mp struct {
-		Name    string `json:"name"`
-		Plugins []struct {
-			Name    string          `json:"name"`
-			Source  json.RawMessage `json:"source"`
-			Version string          `json:"version"`
-		} `json:"plugins"`
-	}
-	if err := json.Unmarshal(data, &mp); err != nil {
-		t.Fatalf("parse marketplace: %v", err)
-	}
-	if mp.Name != "spacedock" {
-		t.Errorf("marketplace name = %q, want spacedock (install id is {entry}@{marketplace})", mp.Name)
-	}
-	if len(mp.Plugins) != 1 {
-		t.Fatalf("marketplace has %d plugin entries, want exactly 1", len(mp.Plugins))
-	}
-	entry := mp.Plugins[0]
-	if entry.Name != "spacedock" {
-		t.Errorf("plugin entry name = %q, want spacedock (the binary hardcodes spacedock@spacedock)", entry.Name)
-	}
-	if !calendarVersionRe.MatchString(entry.Version) {
-		t.Errorf("entry version = %q, want a 0.0.YYYYMMDDNN calendar key", entry.Version)
+// TestPluginBranchCarriesNoMarketplaceManifest locks AC-2: under Model B the
+// marketplace manifest moved OUT of the plugin branch into a separate marketplace
+// repo (the two channels — stable pinned to a release tag, edge tracking next HEAD
+// — are entries of one source in THAT repo's manifest). So the plugin branch
+// carries NO .claude-plugin/marketplace.json; with it gone, there is no in-branch
+// source.ref for a release to re-settle. The plugin's own
+// .claude-plugin/plugin.json stays — only the marketplace manifest moved.
+func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
+	marketplace := filepath.Join(repoRoot(t), ".claude-plugin", "marketplace.json")
+	if _, err := os.Stat(marketplace); err == nil {
+		t.Fatalf("%s is present; Model B moves the marketplace manifest to the separate marketplace repo, so the plugin branch must carry no marketplace.json", marketplace)
+	} else if !os.IsNotExist(err) {
+		t.Fatalf("stat %s: %v", marketplace, err)
 	}
 
-	var src struct {
-		Source string `json:"source"`
-		URL    string `json:"url"`
-		Ref    string `json:"ref"`
-	}
-	if err := json.Unmarshal(entry.Source, &src); err != nil {
-		t.Fatalf("entry source is not the {source,url,ref} object url+ref form: %v", err)
-	}
-	if src.Source != "url" {
-		t.Errorf("entry source.source = %q, want url (source:\".\" is rejected by the host)", src.Source)
-	}
-	if src.Ref != "next" && src.Ref != "main" {
-		t.Errorf("entry source.ref = %q, want a channel branch — next (edge) or main (stable); each branch's marketplace.json points at the channel it serves", src.Ref)
-	}
-	if src.URL == "" {
-		t.Errorf("entry source.url is empty")
+	plugin := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
+	if _, err := os.Stat(plugin); err != nil {
+		t.Fatalf("plugin manifest %s missing: %v (only marketplace.json should move out)", plugin, err)
 	}
 }
 

@@ -54,7 +54,7 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 				return cmd.Run()
 			}
 
-			proceed, msg := gateAndMaybeDiscover(runVersion, c.embeddedRange, "claude", "", runDiscover)
+			proceed, msg := gateAndMaybeDiscover(runVersion, c.embeddedRange, "claude", runDiscover)
 
 			if proceed != c.wantProceed {
 				t.Fatalf("proceed = %v, want %v (msg=%q)", proceed, c.wantProceed, msg)
@@ -91,7 +91,7 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 // against the embedded range, and only call discover when compatible. This is
 // the Go realization of the prose the FO follows — driven here by a real stub
 // process, not a mock.
-func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host, branch string, runDiscover func() error) (proceed bool, message string) {
+func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host string, runDiscover func() error) (proceed bool, message string) {
 	out, err := runVersion()
 	if err != nil {
 		return false, "spacedock --version unavailable: " + err.Error()
@@ -100,7 +100,7 @@ func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host
 	if !ok {
 		return false, "could not parse contract token from `spacedock --version`: " + strings.TrimSpace(out)
 	}
-	res := Compare(c, embeddedRange, host, branch, "0.18.0", "0.19.4")
+	res := Compare(c, embeddedRange, host, "0.18.0", "0.19.4")
 	if res.Verdict != Compatible {
 		return false, res.Message
 	}

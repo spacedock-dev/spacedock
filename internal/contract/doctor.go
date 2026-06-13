@@ -47,15 +47,15 @@ func readRequiresContract(manifestPath string) (string, error) {
 }
 
 // ManifestVerdict resolves the compatibility verdict for the manifest at
-// manifestPath against this binary's CONTRACT_VERSION, for the named host and
-// (pre-release) dev branch. A missing manifest file yields NoPluginFound; an
-// unparseable manifest JSON yields a MalformedRange-shaped Result naming the
-// parse error. The plugin's display version (from the manifest) and the binary's
-// display version (threaded in by the cli caller, which owns cli.Version) are
-// woven into the user-facing message. The front door inspects the verdict
-// directly (a non-empty path to a missing file is NoPluginFound, NOT compatible);
-// RunDoctor maps the same verdict to an exit code and stream.
-func ManifestVerdict(manifestPath, host, branch, binaryVersion string) Result {
+// manifestPath against this binary's CONTRACT_VERSION, for the named host. A
+// missing manifest file yields NoPluginFound; an unparseable manifest JSON yields
+// a MalformedRange-shaped Result naming the parse error. The plugin's display
+// version (from the manifest) and the binary's display version (threaded in by the
+// cli caller, which owns cli.Version) are woven into the user-facing message. The
+// front door inspects the verdict directly (a non-empty path to a missing file is
+// NoPluginFound, NOT compatible); RunDoctor maps the same verdict to an exit code
+// and stream.
+func ManifestVerdict(manifestPath, host, binaryVersion string) Result {
 	pluginVersion, raw, err := readManifest(manifestPath)
 	if errors.Is(err, errNoManifest) {
 		return Result{Verdict: NoPluginFound, Message: noPluginMessage(host)}
@@ -63,17 +63,17 @@ func ManifestVerdict(manifestPath, host, branch, binaryVersion string) Result {
 	if err != nil {
 		return Result{Verdict: MalformedRange, Message: fmt.Sprintf("error: %s", err)}
 	}
-	return compareWithManifest(CONTRACT_VERSION, raw, host, branch, manifestPath, pluginVersion, binaryVersion)
+	return compareWithManifest(CONTRACT_VERSION, raw, host, manifestPath, pluginVersion, binaryVersion)
 }
 
 // RunDoctor reports the compatibility verdict for the manifest at manifestPath
-// against this binary's CONTRACT_VERSION, for the named host and (pre-release)
-// dev branch. binaryVersion is the binary's display version threaded in for the
-// user-facing message. A compatible verdict and a no-plugin-found report exit 0
-// (the report is non-fatal-by-default); every mismatch (too-old-binary,
-// too-old-plugin, malformed-range) exits 1 with the pinned remedy on stderr.
-func RunDoctor(manifestPath, host, branch, binaryVersion string, stdout, stderr io.Writer) int {
-	res := ManifestVerdict(manifestPath, host, branch, binaryVersion)
+// against this binary's CONTRACT_VERSION, for the named host. binaryVersion is the
+// binary's display version threaded in for the user-facing message. A compatible
+// verdict and a no-plugin-found report exit 0 (the report is non-fatal-by-default);
+// every mismatch (too-old-binary, too-old-plugin, malformed-range) exits 1 with the
+// pinned remedy on stderr.
+func RunDoctor(manifestPath, host, binaryVersion string, stdout, stderr io.Writer) int {
+	res := ManifestVerdict(manifestPath, host, binaryVersion)
 	switch res.Verdict {
 	case Compatible:
 		fmt.Fprintln(stdout, res.Message)

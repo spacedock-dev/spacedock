@@ -22,15 +22,15 @@ func TestInstallToleratesRemoveStepFailure(t *testing.T) {
 	dir := writeClaudeStub(t, "plugin marketplace remove")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("claude", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
 	if err != nil {
 		t.Fatalf("Install returned error on tolerated remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
 		"stub:plugin marketplace remove spacedock:exit=1",
-		"stub:plugin marketplace add spacedock-dev/spacedock@next:exit=0",
-		"stub:plugin uninstall spacedock@spacedock:exit=0",
-		"stub:plugin install spacedock@spacedock:exit=0",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
+		"stub:plugin install spacedock-edge@spacedock:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -52,15 +52,15 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	dir := writeClaudeStub(t, "plugin uninstall")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("claude", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
 	if err != nil {
 		t.Fatalf("Install returned error on tolerated uninstall failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin uninstall spacedock@spacedock:exit=1",
+		"stub:plugin uninstall spacedock-edge@spacedock:exit=1",
 		"stub:plugin marketplace remove spacedock:exit=0",
-		"stub:plugin marketplace add spacedock-dev/spacedock@next:exit=0",
-		"stub:plugin install spacedock@spacedock:exit=0",
+		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
+		"stub:plugin install spacedock-edge@spacedock:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -79,14 +79,14 @@ func TestInstallFailsFastOnAddStep(t *testing.T) {
 	dir := writeClaudeStub(t, "plugin marketplace add")
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
-	out, err := execHost{}.Install("claude", "spacedock-dev/spacedock", "next")
+	out, err := execHost{}.Install("claude", "spacedock-dev/marketplace", "next")
 	if err == nil {
 		t.Fatalf("Install returned nil error; want add-step failure\nout=%q", out)
 	}
-	if !strings.Contains(err.Error(), "plugin marketplace add spacedock-dev/spacedock@next") {
+	if !strings.Contains(err.Error(), "plugin marketplace add spacedock-dev/marketplace") {
 		t.Errorf("error %q does not wrap the add subcommand argv", err)
 	}
-	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/spacedock@next:exit=1") {
+	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/marketplace:exit=1") {
 		t.Errorf("combined output missing add-step stub stderr; out=%q", out)
 	}
 }

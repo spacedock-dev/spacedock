@@ -33,8 +33,9 @@ func TestCodexPluginInstallIsHostNative(t *testing.T) {
 
 	// The real Install runs in-process through the production seam: the codex arm
 	// shells the 4-step sequence against the isolated CODEX_HOME (CODEX_HOME is read
-	// from the env by the codex CLI). Empty branch → no --ref → fully offline.
-	out, err := execHost{}.Install("codex", marketplace, "")
+	// from the env by the codex CLI). devBranch=main selects the stable `spacedock`
+	// entry the fixture marketplace defines; the local-path source keeps it offline.
+	out, err := execHost{}.Install("codex", marketplace, "main")
 	if err != nil {
 		t.Fatalf("execHost.Install(codex) failed: %v\nout=%q", err, out)
 	}
@@ -98,8 +99,9 @@ func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 	mustMkdir(t, codexHomeDir)
 	t.Setenv("CODEX_HOME", codexHomeDir)
 
-	// Seed the behind install (0.0.1) through the production seam.
-	if out, err := (execHost{}).Install("codex", behind, ""); err != nil {
+	// Seed the behind install (0.0.1) through the production seam. devBranch=main
+	// selects the stable `spacedock` entry the fixture defines.
+	if out, err := (execHost{}).Install("codex", behind, "main"); err != nil {
 		t.Fatalf("seed Install(codex, 0.0.1) failed: %v\nout=%q", err, out)
 	}
 	if got := resolvedCodexManifestVersion(t); got != "0.0.1" {
@@ -108,7 +110,7 @@ func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 
 	// Refresh-on-present (0.0.2) — the wired runInit codex arm calls exactly this
 	// Install seam when a plugin is already resolved.
-	if out, err := (execHost{}).Install("codex", newer, ""); err != nil {
+	if out, err := (execHost{}).Install("codex", newer, "main"); err != nil {
 		t.Fatalf("refresh Install(codex, 0.0.2) failed: %v\nout=%q", err, out)
 	}
 	if got := resolvedCodexManifestVersion(t); got != "0.0.2" {

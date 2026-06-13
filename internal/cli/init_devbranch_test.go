@@ -1,5 +1,5 @@
-// ABOUTME: AC-3a — `spacedock install --host claude` targets @next when devBranch is
-// ABOUTME: pinned to next, and the composed marketplace-add argv carries @next.
+// ABOUTME: AC-3a — `spacedock install --host claude` drives the install seam with the
+// ABOUTME: binary's devBranch, which selects the marketplace channel entry to install.
 package cli
 
 import (
@@ -10,10 +10,11 @@ import (
 )
 
 // TestInitTargetsNextWhenDevBranchPinned locks AC-3a: with devBranch pinned to
-// `next` (the released binary's default, until `next` is the default branch),
-// `spacedock install --host claude` drives the install seam with branch=next, so the
-// issued `marketplace add` resolves `spacedock-dev/spacedock@next`. The package
-// var is saved/restored so the assertion does not leak into sibling tests.
+// `next` (the released edge binary's default, until `next` is the default
+// branch), `spacedock install --host claude` drives the install seam with
+// devBranch=next, so the issued sequence installs the `spacedock-edge` channel
+// entry. The package var is saved/restored so the assertion does not leak into
+// sibling tests.
 func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 	saved := devBranch
 	devBranch = "next"
@@ -26,67 +27,55 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	// Install records {host, source, branch}; branch carries the @ref pin.
+	// Install records {host, source, devBranch}; devBranch selects the channel entry.
 	if len(fake.installCmds) < 3 {
-		t.Fatalf("install seam recorded %v, want {host, source, branch}", fake.installCmds)
+		t.Fatalf("install seam recorded %v, want {host, source, devBranch}", fake.installCmds)
 	}
 	if got := fake.installCmds[2]; got != "next" {
-		t.Fatalf("install branch = %q, want next (init must target @next)", got)
-	}
-}
-
-// TestMarketplaceAddArgvCarriesRef locks the argv composition AC-3a asserts: the
-// `claude plugin marketplace add` argv pins `source@branch` when a branch is set,
-// and is the bare source when it is not. This is the exact 2-command argv shape
-// owned today; task 38 changes Install to a 3-command shape (add/uninstall/
-// install) and this assertion is updated in lockstep then.
-func TestMarketplaceAddArgvCarriesRef(t *testing.T) {
-	if got := marketplaceAddArg("spacedock-dev/spacedock", "next"); got != "spacedock-dev/spacedock@next" {
-		t.Errorf("marketplaceAddArg with branch = %q, want spacedock-dev/spacedock@next", got)
-	}
-	if got := marketplaceAddArg("spacedock-dev/spacedock", ""); got != "spacedock-dev/spacedock" {
-		t.Errorf("marketplaceAddArg without branch = %q, want bare source", got)
+		t.Fatalf("install devBranch = %q, want next (edge binary installs the edge channel)", got)
 	}
 }
 
 // TestInstallArgvSequence locks AC-1 and AC-3's tolerance asymmetry:
-// execHost.Install issues the 4-command upgrade shape — `plugin uninstall
-// spacedock@spacedock` first (claude tracks an installed plugin via its
-// marketplace record, so the marketplace remove later would orphan a live
-// uninstall; tolerated, fresh-box exit 1 with "Plugin not found in installed
-// plugins"), then `plugin marketplace remove spacedock` (tolerated, fresh-box
-// exit 1 with "not found"), then `plugin marketplace add` (with the @ref pin),
-// then `plugin install spacedock@spacedock`. The marketplace-remove step is
-// what defeats the "already on disk" no-op in marketplace add when a stale pin
-// is declared. The asymmetry: BOTH cleanup steps (uninstall + remove) are
-// tolerated; BOTH pinning steps (add + install) are fail-fast. With an empty
-// branch the marketplace add arg is the bare source.
+// execHost.Install issues the 4-command upgrade shape — `plugin uninstall <id>`
+// first (claude tracks an installed plugin via its marketplace record, so the
+// marketplace remove later would orphan a live uninstall; tolerated, fresh-box
+// exit 1 with "Plugin not found in installed plugins"), then `plugin marketplace
+// remove spacedock` (tolerated, fresh-box exit 1 with "not found"), then `plugin
+// marketplace add` with the BARE marketplace-repo source (no @ref — the channel
+// is the entry name and the version pin lives in the manifest), then `plugin
+// install <id>`. The id is the channel entry the devBranch selects:
+// `spacedock-edge@spacedock` for the edge binary, `spacedock@spacedock` for
+// stable. The marketplace-remove step is what defeats the "already on disk" no-op
+// in marketplace add when a stale source is declared. The asymmetry: BOTH cleanup
+// steps (uninstall + remove) are tolerated; BOTH pinning steps (add + install)
+// are fail-fast.
 func TestInstallArgvSequence(t *testing.T) {
-	wantWithBranch := []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
+	wantEdge := []installStep{
+		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/spacedock@next"}},
-		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
+		{argv: []string{"plugin", "install", "spacedock-edge@spacedock"}},
 	}
-	if got := installArgvSequence("spacedock-dev/spacedock", "next"); !reflect.DeepEqual(got, wantWithBranch) {
-		t.Errorf("installArgvSequence(branch=next) = %v, want %v", got, wantWithBranch)
+	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !reflect.DeepEqual(got, wantEdge) {
+		t.Errorf("installArgvSequence(devBranch=next) = %v, want %v", got, wantEdge)
 	}
 
-	wantBareSource := []installStep{
+	wantStable := []installStep{
 		{argv: []string{"plugin", "uninstall", "spacedock@spacedock"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/spacedock"}},
+		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 		{argv: []string{"plugin", "install", "spacedock@spacedock"}},
 	}
-	if got := installArgvSequence("spacedock-dev/spacedock", ""); !reflect.DeepEqual(got, wantBareSource) {
-		t.Errorf("installArgvSequence(no branch) = %v, want %v", got, wantBareSource)
+	if got := installArgvSequence("spacedock-dev/marketplace", "main"); !reflect.DeepEqual(got, wantStable) {
+		t.Errorf("installArgvSequence(devBranch=main) = %v, want %v", got, wantStable)
 	}
 
 	// Lock the tolerance asymmetry explicitly: the two cleanup steps (uninstall,
 	// marketplace remove) are tolerated; the two pinning steps (marketplace add,
 	// plugin install) are fail-fast. Any future drift toward tolerate-every-step
 	// (or shifting tolerance onto a pinning step) fails here.
-	seq := installArgvSequence("spacedock-dev/spacedock", "next")
+	seq := installArgvSequence("spacedock-dev/marketplace", "next")
 	for i, step := range seq {
 		isCleanup := isUninstallStep(step.argv) || isMarketplaceRemoveStep(step.argv)
 		if isCleanup && !step.tolerateExit {
