@@ -1,7 +1,7 @@
 ---
 id: j903f6f1vgckk3kj6j6zbmt3
 title: Lazy-TeamCreate + shallow-boot-then-greet — reach interactive readiness fast
-status: validation
+status: implementation
 source: "captain (2026-06-04) — boot analysis (this session) measured boot at ~7:36, ~80% model-compose; TeamCreate is the single largest write (89k cache_creation — the whole prompt prefix re-cached to the 1h cache when team-mode activates) and sits on the critical path BEFORE the gate that decides whether dispatch even happens."
 score: "0.34"
 started: 2026-06-13T17:02:55Z
@@ -340,3 +340,12 @@ Recon for the validator's MATERIAL AC-3 finding: the live `rejection-flow` regre
 ### Summary
 
 REJECTED. AC-1/AC-2/AC-4/AC-5/AC-6 all reproduce GREEN with independent verification — the headline saving is realized (36.5k greet context, no 89k spike, no boot team). The detached adversarial audit found no material test-strength hole in the offline guards. But AC-3 is NOT met: the live `rejection-flow` regression fails deterministically because P2 lazy-TeamCreate changed the reviewer-reuse dispatch topology in single-entity mode, refuting the milestone's behavior-preservation claim for that path. AC-3 explicitly lists rejection-flow as must-pass; it was never re-run post-split until now. Routes back to implementation: either restore reviewer-reuse for the rejection-flow path under lazy-TeamCreate, or (if the new behavior is acceptable) update the #141 keepalive assertion/scenario to the lazy-TeamCreate reality and re-run AC-3 to green — a deliverable change, not a validation waiver.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED (AC-3 `rejection-flow`) → land-and-spin-off** (2026-06-13)
+- REJECTED by validation. AC-1/2/4/5/6 PASS (greet **36,481** < 60k, no 89k spike; detached audit clean; offline gate 1329). AC-3 live `rejection-flow` fails deterministically — 2 bare validation spawns, not the #141 reviewer reuse.
+- Root cause (implementation recon, deterministic repro `da8e5912`): **PRE-EXISTING contradiction, not a j9 regression.** `single-entity → skip team → bare dispatch` predates P2 (vendoring `83c73494`); the cycle-1 reviewer was bare both before and after P2. P2 removed the salient "create a team at startup" instruction that was *accidentally masking* the contradiction (single-entity says bare; #141 keepalive needs reuse). The `e3z` bare-mode-coverage gap. Codex unaffected (persistent-thread reuse, no team lifecycle).
+- **Captain decision: option (b) — correct the test to match the long-standing contract.** Update the `rejection-flow` assertion/scenario so single-entity `-p` expects bare = a fresh reviewer per cycle, re-run AC-3 to green, land j9 as pure restructuring + the 36.5k win. This is NOT accepting a j9 regression — the assertion encoded an accident, not a guarantee j9 broke.
+- **Spun off:** the real reviewer-continuity-in-`-p` fix (option a — let the single-entity feedback flow create a team at first dispatch) → a separate `e3z`-family task.
+- Routed to implementation (reused ensign, genuinely ~43% per FR-9): correct the assertion, green AC-3 offline; the validator re-runs the live scenario on re-review.
