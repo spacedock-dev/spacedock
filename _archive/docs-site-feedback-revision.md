@@ -11,6 +11,7 @@ worktree:
 pr: "#343"
 issue:
 mod-block:
+archived: 2026-06-13T03:35:05Z
 ---
 
 Intake of **PR #343** (`docs-site-feedback` → `main`) for continued, captain-steered revision. The PR already does two things; this entity tracks refining it to done.
