@@ -59,5 +59,4 @@ The workflow is flexible beyond that: you can add conditional, lens-specific rev
 
 ## Where to go next
 
-- [A worked example](worked-example.md) traces one real entity through every gate to a recorded verdict.
 - [Operating a workflow](../running-workflows/operating.md) covers answering gates in the day-to-day loop.

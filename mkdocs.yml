@@ -77,7 +77,6 @@ nav:
       - Workflows & entities: concepts/workflows-and-entities.md
       - The stage lifecycle: concepts/stage-lifecycle.md
       - Gates & decisions: concepts/gates-and-decisions.md
-      - A worked example: concepts/worked-example.md
   - Running workflows:
       - Commission a workflow: running-workflows/commission.md
       - Operating a workflow: running-workflows/operating.md
