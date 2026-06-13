@@ -156,7 +156,7 @@ func TestClaudeNoSafehouseLaunchesPlain(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"claude", "--agent", "spacedock:first-officer", "--foo", wantBootstrapPrompt}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--foo", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -314,7 +314,7 @@ func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--foo", wantCodexBootstrapPrompt}
+	want := []string{"codex", "--ask-for-approval", "on-request", "--foo", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}

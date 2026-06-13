@@ -36,7 +36,7 @@ func TestClaudeStrayPromptAfterDashWarns(t *testing.T) {
 	if !strings.Contains(warn, "BEFORE") {
 		t.Fatalf("warning does not name the corrected form (prompt BEFORE `--`): %q", warn)
 	}
-	want := []string{"claude", "--agent", "spacedock:first-officer", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v (warn must not change the argv)", fake.launchedArg, want)
 	}
@@ -67,7 +67,7 @@ func TestClaudeStrayPromptSession12Shape(t *testing.T) {
 	if strings.Contains(warn, "/co") {
 		t.Fatalf("warning names the spacedock-injected --plugin-dir value (shadows the real prompt): %q", warn)
 	}
-	want := []string{"claude", "--agent", "spacedock:first-officer", "--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
+	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v (warn must not change the argv)", fake.launchedArg, want)
 	}
@@ -120,7 +120,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--", "-p", "do the thing"},
-			want: []string{"claude", "--agent", "spacedock:first-officer", "-p", "do the thing", wantBootstrapPrompt},
+			want: []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "-p", "do the thing", wantBootstrapPrompt},
 		},
 		{
 			name: "codex exec subcommand-arg",
@@ -129,7 +129,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--", "exec", "do the thing"},
-			want: []string{"codex", "exec", "do the thing", wantCodexBootstrapPrompt},
+			want: []string{"codex", "--ask-for-approval", "on-request", "exec", "do the thing", wantCodexBootstrapPrompt},
 		},
 		{
 			name: "claude hasTask short-circuit",
@@ -138,7 +138,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"task before", "--", "@/tmp/handoff.md"},
-			want: []string{"claude", "--agent", "spacedock:first-officer", "@/tmp/handoff.md", wantBootstrapPrompt + " task before"},
+			want: []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "@/tmp/handoff.md", wantBootstrapPrompt + " task before"},
 		},
 		{
 			// An unrecognized `-`-prefixed flag's value must NOT get the prescriptive
@@ -150,7 +150,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--", "--some-new-flag", "the-value"},
-			want: []string{"claude", "--agent", "spacedock:first-officer", "--some-new-flag", "the-value", wantBootstrapPrompt},
+			want: []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--some-new-flag", "the-value", wantBootstrapPrompt},
 		},
 		{
 			// The spacedock-injected `--plugin-dir <dir>` prefix lands the `exec`
@@ -164,7 +164,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "exec", "do the thing"},
-			want: []string{"codex", "--plugin-dir", "/co", "exec", "do the thing", wantCodexBootstrapPrompt},
+			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "exec", "do the thing", wantCodexBootstrapPrompt},
 		},
 		{
 			// Same structural skip for the codex `resume` subcommand behind the
@@ -175,7 +175,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "resume", "abc123"},
-			want: []string{"codex", "--plugin-dir", "/co", "resume", "abc123", wantCodexBootstrapPrompt},
+			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "resume", "abc123", wantCodexBootstrapPrompt},
 		},
 	}
 	for _, tc := range cases {

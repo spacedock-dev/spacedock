@@ -301,6 +301,15 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		inner = append(inner, "--dangerously-skip-permissions")
 	}
 	inner = append(inner, "--agent", "spacedock:first-officer")
+	// An unsandboxed launch has no safehouse isolation, so per-action permission
+	// prompting is friction without a matching safety gain: start the first officer
+	// in auto permission-mode. Suppressed when the operator already chose a mode and
+	// on a resume (which rides its own session intent, like the bootstrap prompt).
+	// The sandboxed arm's --dangerously-skip-permissions above already covers its
+	// posture, so this is the !wrap counterpart, not a replacement.
+	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--permission-mode") {
+		inner = append(inner, "--permission-mode", "auto")
+	}
 	inner = append(inner, fd.passthrough...)
 	if !resume {
 		inner = append(inner, launchPrompt(bootstrapPrompt, fd))
@@ -363,6 +372,22 @@ func hasPluginDir(passthrough []string) bool {
 	for _, a := range passthrough {
 		if a == "--plugin-dir" || strings.HasPrefix(a, "--plugin-dir=") {
 			return true
+		}
+	}
+	return false
+}
+
+// passthroughHasFlag reports whether the operator already supplied any of the
+// named host flags in the passthrough, in either `--flag value` or `--flag=value`
+// form. The unsandboxed launchers consult it before injecting their default
+// permission/approval flag so an operator-supplied one is never duplicated
+// (operator wins). Mirrors hasPluginDir, generalized over a flag set.
+func passthroughHasFlag(passthrough []string, names ...string) bool {
+	for _, a := range passthrough {
+		for _, name := range names {
+			if a == name || strings.HasPrefix(a, name+"=") {
+				return true
+			}
 		}
 	}
 	return false
@@ -458,6 +483,15 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	if wrap {
 		inner = append(inner, "--dangerously-bypass-approvals-and-sandbox")
 	}
+	// An unsandboxed launch has no safehouse isolation; codex has no single
+	// auto-mode flag, so its nearest analog to claude's auto permission-mode is
+	// `--ask-for-approval on-request` (the model decides when to escalate).
+	// Suppressed when the operator already chose an approval policy and on a resume
+	// (which rides its own session intent). The sandboxed arm's bypass flag above
+	// already covers its posture, so this is the !wrap counterpart.
+	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--ask-for-approval", "-a") {
+		inner = append(inner, "--ask-for-approval", "on-request")
+	}
 	inner = append(inner, fd.passthrough...)
 	if !resume {
 		inner = append(inner, launchPrompt(codexBootstrapPrompt, fd))
@@ -512,12 +546,14 @@ var valueTakingHostFlags = map[string]map[string]bool{
 	},
 	"codex": {
 		"-m": true, "--model": true,
-		"--config":  true,
-		"-c":        true,
-		"--cd":      true,
-		"--image":   true,
-		"--sandbox": true,
-		"--profile": true,
+		"--config":           true,
+		"-c":                 true,
+		"--cd":               true,
+		"--image":            true,
+		"--sandbox":          true,
+		"--profile":          true,
+		"--ask-for-approval": true,
+		"-a":                 true,
 	},
 }
 
