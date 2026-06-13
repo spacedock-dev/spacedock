@@ -12,7 +12,7 @@ issue:
 sprint: 0202-survey-improvements
 group: survey
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#360"
 ---
 
