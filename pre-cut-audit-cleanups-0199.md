@@ -123,3 +123,28 @@ Fleshed all five items into entity-level ACs each with an external, fail-able pr
 ### Summary
 
 All five ACs implemented and committed on spacedock-ensign/pre-cut-audit-cleanups-0199. Verification: internal/release 84 passed (was 76; +8 new), internal/status 451 passed, skills/integration TestSurveyCodexPresenceThroughSync passed, go build ./... succeeds, all changed Go files gofmt-clean. Every guard's external-failure property was exercised by actually breaking the guarded thing (revert a pin, delete install.sh's gate, revert the header) and confirming the test reds, then restoring to green. AC-2's open implementation call resolved in favor of the header-vs-config guard test (preferred path), since token-presence against the parsed goos set bound without brittle prose parsing.
+
+## Stage Report: validation
+
+- DONE: AC-1 — `go test ./internal/release/ -run Checksum` (tamper exits non-zero; load-bearing strip-the-gate sub-test)
+  4/4 pass (TestChecksumGateInstallsAndRejectsTamper happy+tamper, TestChecksumGateGuardIsLoadBearing). External oracle = fixture tarball hash vs checksums.txt, built by the test.
+- DONE: AC-5 — `go test ./internal/release/ -run Node24` (adversarial @v4 re-pin reds)
+  2/2 pass (TestNode24ActionsPinnedAtMinimum, TestNode24GuardRejectsRevertedPin). Oracle = in-test node24-minimum map, independent of the workflow files checked.
+- DONE: AC-2 — header-vs-parsed-.goreleaser.yaml guard (strip-linux reds)
+  TestReleaseHeaderNamesEveryBuildOS + TestGoreleaserBuildsLinuxAndDarwin (+ load-bearing sub-tests) pass. Oracle = parsed `.goreleaser.yaml` goos set. release.yml header now names darwin+linux.
+- DONE: AC-3 — `gofmt -l skills/integration/survey_sync_codex_test.go` empty + zero U+201D bytes
+  gofmt -l exit 0 / empty output; python byte-scan reports 0 U+201D bytes — the formatter injected no curly quote.
+- DONE: AC-4 — the hasGitEntry cross-ref comment present + `go test ./internal/status/` green
+  Comment at handlers.go:562 names TestDiscoverWorkflowsSkipsNestedCheckout; that test exists at discover_worktree_noise_test.go:103; internal/status green.
+- DONE: full suite `go test ./...` green
+  1257 passed across 16 packages; zero failures.
+- DONE: Detached adversarial audit (HIGH-STAKES CI/release surface) on a separate throwaway checkout of the merge result
+  Throwaway worktree at branch HEAD 6ffd3362 (merge base == main HEAD 0ddc9ad6 → clean ff). Five breaking edits, each restored after; deliverable worktree never mutated. Throwaway removed at end.
+- DONE: PASSED/REJECTED recommendation with per-AC citations + Material/Polish findings recorded
+  Recommendation: PASSED. No Material findings; refuted nothing material. No Polish findings.
+
+### Summary
+
+Validation PASSED. All five ACs reproduce their cited EXTERNAL evidence (test exit/output, gofmt exit, on-disk byte-scan, present comment), and the full suite is green (1257 passed / 16 pkgs). No AC's proof is self-referential — every guard's expected value comes from an independent oracle (fixture hash, in-test node24-min map, parsed `.goreleaser.yaml` goos) that can diverge from the thing under test.
+
+Detached adversarial audit (read-only refutation on a throwaway checkout, deliverable never touched) ran five breaking edits, each confirmed to RED the matching guard, then restored: (1) re-pin `actions/checkout@v5`→`@v4` in release.yml → TestNode24ActionsPinnedAtMinimum reds with `release.yml:29 ... below the node24 minimum @v5`; (2) delete install.sh's checksum gate (lines 164-169) → TestChecksumGateInstallsAndRejectsTamper reds (tampered tarball installed, exit 0); (2b) subtler weakening — turn the mismatch `die` into a silent warning, keeping the block shape → same test still reds (the "removed OR weakened" claim holds for both); (3) strip `linux` from the release.yml header → TestReleaseHeaderNamesEveryBuildOS reds (`header omits build OS linux while .goreleaser.yaml builds darwin, linux`); (4) drop `- linux` from `.goreleaser.yaml` builds.goos (handling the YAML anchor) → TestGoreleaserBuildsLinuxAndDarwin reds (`missing linux/amd64, linux/arm64`); (5) remove all `setup-go` uses entirely → the "every tracked action must appear" sub-check reds (closes the vacuous-pass-on-absence hole). **Material: none. Polish: none.** No guard stayed green under a breaking edit.
