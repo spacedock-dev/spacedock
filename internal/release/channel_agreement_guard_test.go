@@ -170,13 +170,13 @@ func TestEdgeChannelStampsNext(t *testing.T) {
 // Model B decouple moves the marketplace manifest OUT of the plugin branch into a
 // separate marketplace repo, so the plugin branch carries NO
 // .claude-plugin/marketplace.json. With no in-branch manifest there is no
-// per-release source.ref surface to re-settle (the divergence that kept
-// `next → main` from being a clean fast-forward on that field is gone). The check
-// is git state — the file's presence on disk, an independent fact, not a re-read
-// of a value the implementer wrote. (The plugin's own .claude-plugin/plugin.json
-// stays; only the marketplace.json moved.) This guards the main-bound branch; the
-// next-branch manifest removal + full main/next alignment is the separate trunk
-// reconcile.
+// per-release source.ref surface to re-settle — the field that used to be `main`
+// on the stable branch and `next` on the edge branch, forcing a re-settle every
+// release, is simply absent. The check is git state — the file's presence on disk,
+// an independent fact, not a re-read of a value the implementer wrote. (The
+// plugin's own .claude-plugin/plugin.json stays; only the marketplace.json moved.)
+// This guards the main-bound branch; the next-branch manifest removal + full
+// main/next alignment is the separate trunk reconcile.
 func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
 	manifest := filepath.Join("..", "..", ".claude-plugin", "marketplace.json")
 	if _, err := os.Stat(manifest); err == nil {
@@ -190,5 +190,34 @@ func TestPluginBranchCarriesNoMarketplaceManifest(t *testing.T) {
 	plugin := filepath.Join("..", "..", ".claude-plugin", "plugin.json")
 	if _, err := os.Stat(plugin); err != nil {
 		t.Fatalf("plugin manifest %s missing: %v (only marketplace.json should move out of the plugin branch)", plugin, err)
+	}
+}
+
+// TestChannelSurfacesDoNotDivergeAfterDecouple re-expresses the old tri-surface
+// agreement invariant for Model B. Before the decouple, the channel a release
+// served had THREE surfaces that had to agree (release.yml stamp target,
+// goreleaser stable devBranch, and an in-branch marketplace.json source.ref), and
+// a drift on the manifest ref was a real per-release re-settle hazard. The decouple
+// removes the in-branch ref surface entirely (guarded above), so the channel is now
+// determined SOLELY by the binary's devBranch stamp selecting a marketplace ENTRY
+// NAME (stable=main→spacedock, edge=next→spacedock-edge). The surviving invariant —
+// independent values that CAN disagree, so not a tautology — is that the two
+// channel devBranch stamps are both present and DISTINCT: if the stable and edge
+// builds collapsed to one devBranch, both channels would select the same entry and
+// the stable/edge split would vanish. The two values are parsed out of the real
+// .goreleaser.yaml builds, so a config that drops the edge build, or sets both to
+// the same branch, reds here.
+func TestChannelSurfacesDoNotDivergeAfterDecouple(t *testing.T) {
+	config := readGoreleaserConfig(t)
+	stable := goreleaserStableDevBranch(config)
+	edge := goreleaserEdgeDevBranch(config)
+	if stable == "" {
+		t.Fatal(".goreleaser.yaml has no spacedock-stable build with a cli.devBranch ldflag")
+	}
+	if edge == "" {
+		t.Fatal(".goreleaser.yaml has no spacedock-edge build with a cli.devBranch ldflag")
+	}
+	if stable == edge {
+		t.Fatalf("stable and edge builds both stamp devBranch=%q; post-decouple the channel IS the devBranch-selected entry name, so identical stamps collapse the two channels onto one marketplace entry", stable)
 	}
 }
