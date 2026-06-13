@@ -14,8 +14,13 @@ marketplace source.
 - publishes the GitHub Release with those assets;
 - bumps BOTH `spacedock-dev/homebrew-tap` casks (`spacedock` stable +
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
-- stamps the plugin manifests' `version` on `main`;
-- keeps the marketplace entry serving the stable plugin from `main`.
+- stamps the plugin manifests' `version` on `main`.
+
+The marketplace manifest no longer lives in the plugin branch. It is the
+standalone `spacedock-dev/marketplace` repo, whose entries pin each channel by
+ref — `spacedock` (stable, repointed to the released tag) and `spacedock-edge`
+(edge, tracking `next`). Repointing the stable entry is a commit in that repo,
+not a manifest stamp on `main`.
 
 The tag triggers the release, but goreleaser publishes only after the `e2e-gate`
 job confirms the tagged commit has a green Runtime Live E2E run (or a recorded
@@ -34,14 +39,15 @@ a reviewable annotated-tag changelog and manifest diff before the tag is pushed.
    ```
 
 3. Bump the version stamps with the release tool, then commit. `stamp-version`
-   writes the release `X.Y.Z` into the plugin manifests; `bump-calendar` advances
-   the marketplace entry's separate `0.0.YYYYMMDDNN` calendar key:
+   writes the release `X.Y.Z` into the plugin manifests:
 
    ```bash
    go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
-   go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
-   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json .claude-plugin/marketplace.json
+   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json
    ```
+
+   The marketplace entry is no longer stamped here — repoint the `spacedock`
+   stable entry's ref in the standalone `spacedock-dev/marketplace` repo.
 
 4. Write a changelog. Summarize the commits since the last tag into plain text:
 

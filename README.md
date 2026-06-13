@@ -74,71 +74,16 @@ spacedock claude "/spacedock:survey"
 Using Codex or Pi instead? Swap the subcommand: `spacedock codex "/spacedock:survey"`
 or `spacedock pi "/spacedock:survey"`.
 
-See [`docs/site/get-started/install.md`](docs/site/get-started/install.md) for the full first-run
-walkthrough, the Codex and Pi paths, and a from-source build for development.
-
-## Quick start
-
-Commission a workflow by describing what you want:
-
-```bash
-spacedock claude "/spacedock:commission Dev task workflow: design -> plan ->
-implement -> review, with the design and implementation plan inlined in each work
-item, implementation on isolated worktrees with strict TDD, design and review
-gated for approval."
-```
-
-The first officer commissions the workflow and opens a worktree for the
-implementation stage. It pauses at the design and review gates for your call.
-
-The same shape drives non-dev work. This example triages a Gmail inbox. It
-requires a Gmail integration set up before you run it:
-
-```bash
-spacedock claude "/spacedock:commission Email triage: fetch, categorize, and act
-on my Gmail inbox. Entity: a batch of up to 50 emails. Stages: intake (triage
-in:inbox, categorize, propose an action per email as a table) -> approval
-(Captain reviews the proposal) -> execute (carry out approved actions). Walk me
-through Gmail setup if needed."
-```
-
-## How it works
-
-A workflow is a directory of plain-text work item files plus a README that
-defines the stages, the schema, and the gates. Everything about a work item lives
-in the file itself: the problem, the design notes, the bar for done, the stage
-reports. State survives a session; the next one picks up where you left off.
-Three roles:
-
-| Role | Who |
-|------|-----|
-| **Captain** | You. You define the mission and make the calls at approval gates unless delegated. |
-| **First Officer** | The orchestrator agent that runs the workflow and reports to you at gates. |
-| **Ensign** | The worker agent that moves one item forward through one stage. |
-
-The first officer reads the workflow README, checks which items are ready to
-advance, and dispatches ensigns. Stages that need isolation run in their own git
-worktree; lightweight stages run inline. At a gate, the first officer pauses and
-presents the stage report for a decision: approve, redo with feedback, or
-reject. Some gates wait on you; others resolve through a delegated agent review.
-Rejected work bounces back to an earlier stage for revision. A hard cap prevents
-loops.
-
-When you end a session, `/spacedock:debrief` captures what happened: commits,
-state changes, decisions, open issues, all in a record the next session picks up.
-When a new Spacedock release is out, `/spacedock:refit` upgrades your workflow
-scaffolding while keeping local modifications.
-
-## Usage
-
-```bash
-spacedock claude "task" [--safehouse…] [-- host-flags…]   # launch the first officer in Claude Code
-spacedock codex  "task" [--safehouse…] [-- host-flags…]   # launch the first officer in Codex
-spacedock pi     "task" [--safehouse…] [-- host-flags…]   # launch the first officer in Pi
-spacedock doctor                                          # plugin compatibility check
-spacedock --version                                       # print the installed version
-```
+Full docs — the install walkthrough, the Codex and Pi paths, concepts, and the
+command reference — live at **[spacedock.md/docs](https://spacedock.md/docs/)**.
+Browsing the repo on GitHub? The same install guide is at
+[`docs/site/get-started/install.md`](docs/site/get-started/install.md).
 
 ## License
 
 Spacedock is released under the [Apache License 2.0](LICENSE).
+
+## Contributing
+
+Spacedock is early; we welcome proposals as [GitHub issues](https://github.com/spacedock-dev/spacedock/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md).
