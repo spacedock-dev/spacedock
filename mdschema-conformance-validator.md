@@ -1,13 +1,13 @@
 ---
 id: tdpnhct3kqk99e5fj447c1xm
 title: Full mdschema conformance validator (status --validate enforces a subset)
-status: ideation
+status: implementation
 source: captain-approved, surfaced by pt0 docs-site port (PR #343, 2026-06-13)
 started: 2026-06-13T05:52:37Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-mdschema-conformance-validator
 issue:
 sprint: 0202-survey-improvements
 group: cleanup
