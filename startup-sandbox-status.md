@@ -1,9 +1,9 @@
 ---
 id: gja5htstcgjxydcz5h2051wc
 title: Show sandbox state on startup
-status: backlog
+status: ideation
 source: captain (2026-06-12, UX improvement)
-started:
+started: 2026-06-13T04:08:48Z
 completed:
 verdict:
 score:
