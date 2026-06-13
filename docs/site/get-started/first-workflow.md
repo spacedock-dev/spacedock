@@ -81,9 +81,9 @@ You approve, send it back with feedback, or reject. Details:
 
 ## Session to session
 
-Every work item's state is stored and serialized in the workflow, so you do
-not need to worry about context limits, resuming, or clearing. A typical
-session, inside your normal Claude (or Codex) session:
+Every work item's state is stored and serialized in the
+[workflow](../concepts/workflows-and-entities.md), so you do not need to worry
+about context limits, resuming, or clearing. A typical session:
 
 ```bash
 spacedock claude
