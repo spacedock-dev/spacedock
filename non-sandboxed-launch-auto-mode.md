@@ -1,13 +1,13 @@
 ---
 id: zrcmxzx5c7arew7r8afmxfbw
 title: Non-sandboxed launch uses Claude auto-mode (and Codex equivalent)
-status: ideation
+status: implementation
 source: captain (2026-06-12)
 started: 2026-06-13T04:31:09Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-non-sandboxed-launch-auto-mode
 issue:
 sprint: 0201-post-flip-release-model
 group: ux-cleanup
