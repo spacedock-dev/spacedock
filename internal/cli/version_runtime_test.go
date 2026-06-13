@@ -1,5 +1,5 @@
-// ABOUTME: AC-3/AC-5 oracles for --version — the load-bearing first line, the
-// ABOUTME: Sandbox line, and the per-runtime install/enablement block from stubs.
+// ABOUTME: AC oracles for --version — the load-bearing first line, the Sandbox
+// ABOUTME: line, and the version-forward per-runtime block rendered from stubs.
 package cli
 
 import (
@@ -12,8 +12,8 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// fakeRuntimeProbe pins each host's install/enablement outcome so the per-runtime
-// block renders from injected state, never a live host CLI.
+// fakeRuntimeProbe pins each host's install/version/marker outcome so the
+// per-runtime block renders from injected state, never a live host CLI.
 type fakeRuntimeProbe struct {
 	status map[string]runtimeStatus
 }
@@ -36,14 +36,13 @@ func renderVersion(probe runtimeProbe) string {
 // helper allocation-free; the path need not exist for safehouse.Present.
 const t1TempDir = "/nonexistent-version-dir"
 
-// TestVersionFirstLineUnchanged (AC-3 part 1) pins the load-bearing invariant: the
-// FIRST line still matches `^spacedock .* \(contract \d+\)$`, the token the FO and
-// ensign skills parse. Appending the sandbox + per-runtime block must not disturb
-// line 1.
+// TestVersionFirstLineUnchanged pins the load-bearing invariant: the FIRST line
+// still matches `^spacedock .* \(contract \d+\)$`, the token the FO and ensign
+// skills parse. Appending the sandbox + per-runtime block must not disturb line 1.
 func TestVersionFirstLineUnchanged(t *testing.T) {
 	probe := fakeRuntimeProbe{status: map[string]runtimeStatus{
-		"claude": {installed: true, enablement: enablementEnabled},
-		"codex":  {installed: true, enablement: enablementNotEnabled},
+		"claude": {installed: true, version: "0.20.0", marker: markerEnabled},
+		"codex":  {installed: true, version: "0.20.0", marker: markerDisabled},
 		"pi":     {installed: false},
 	}}
 	out := renderVersion(probe)
@@ -58,22 +57,22 @@ func TestVersionFirstLineUnchanged(t *testing.T) {
 	}
 }
 
-// TestVersionPerRuntimeBlock (AC-3 part 2) drives each install/enablement outcome
-// through the injected probe and asserts the exact per-runtime line, plus a Sandbox
-// line. The expected strings are independent test-supplied values.
+// TestVersionPerRuntimeBlock drives each install/version outcome through the
+// injected probe and asserts the exact version-forward per-runtime line, plus a
+// Sandbox line. The expected strings are independent test-supplied values.
 func TestVersionPerRuntimeBlock(t *testing.T) {
 	probe := fakeRuntimeProbe{status: map[string]runtimeStatus{
-		"claude": {installed: true, enablement: enablementEnabled},
-		"codex":  {installed: true, enablement: enablementNotEnabled},
-		"pi":     {installed: false},
+		"claude": {installed: true, version: "0.20.0", marker: markerEnabled},
+		"codex":  {installed: true, version: "0.20.0", marker: markerDisabled},
+		"pi":     {installed: true, ready: true},
 	}}
 	out := renderVersion(probe)
 
 	for _, want := range []string{
 		"Sandbox: unavailable (safehouse not on PATH)",
-		"claude: installed, spacedock enabled",
-		"codex: installed",
-		"pi: not installed",
+		"claude: spacedock 0.20.0",
+		"codex: spacedock 0.20.0 (disabled)",
+		"pi: spacedock ready",
 	} {
 		if !lineEquals(out, want) {
 			t.Fatalf("version output missing whole line %q:\n%s", want, out)
@@ -81,30 +80,67 @@ func TestVersionPerRuntimeBlock(t *testing.T) {
 	}
 }
 
-// TestVersionEnablementUnknown (AC-5) injects a probe whose enablement read errored
-// (binary resolves, but the probe could not determine enablement — the sandboxed
-// `codex plugin list` "Operation not permitted" mode). The line must read
-// `installed, enablement unknown`, never silently `not installed`. A separate
-// binary-absent case asserts `not installed`.
-func TestVersionEnablementUnknown(t *testing.T) {
+// TestVersionHostAbsentAndNoPlugin asserts the two not-installed shapes: a host
+// whose binary is absent reads `<host>: not installed`, while a host that resolves
+// but carries no plugin reads `<host>: spacedock not installed`.
+func TestVersionHostAbsentAndNoPlugin(t *testing.T) {
 	probe := fakeRuntimeProbe{status: map[string]runtimeStatus{
-		"claude": {installed: true, enablement: enablementUnknown},
-		"codex":  {installed: false}, // binary absent → not installed
-		"pi":     {installed: true, enablement: enablementUnknown},
+		"claude": {installed: false},              // binary absent
+		"codex":  {installed: true, version: ""},  // host present, no plugin
+		"pi":     {installed: true, ready: false}, // host present, not launch-ready
 	}}
 	out := renderVersion(probe)
 
 	for _, want := range []string{
-		"claude: installed, enablement unknown",
-		"codex: not installed",
-		"pi: installed, enablement unknown",
+		"claude: not installed",
+		"codex: spacedock not installed",
+		"pi: spacedock not installed",
 	} {
 		if !lineEquals(out, want) {
 			t.Fatalf("version output missing whole line %q:\n%s", want, out)
 		}
 	}
-	// AC-5 guard: an enablement-unknown host must NOT be rendered as not installed.
-	if lineEquals(out, "claude: not installed") {
-		t.Fatalf("enablement-unknown claude silently rendered as not installed:\n%s", out)
+}
+
+// TestVersionMarkerUnknownRendersBareVersion is the AC-2 oracle: when the
+// enabled/disabled probe could not read state (markerUnknown) but the manifest
+// resolved a version, the line shows the bare `spacedock <version>` with NO marker
+// — the version still renders from the manifest even though the probe failed. It
+// must never invent an "unknown" word or silently read as not installed.
+func TestVersionMarkerUnknownRendersBareVersion(t *testing.T) {
+	probe := fakeRuntimeProbe{status: map[string]runtimeStatus{
+		"claude": {installed: true, version: "0.20.0", marker: markerUnknown},
+		"codex":  {installed: false},
+		"pi":     {installed: false},
+	}}
+	out := renderVersion(probe)
+
+	if !lineEquals(out, "claude: spacedock 0.20.0") {
+		t.Fatalf("marker-unknown claude did not render the bare version line:\n%s", out)
+	}
+	// Guard: a probe-failed-but-version-resolved host must NOT read as not installed.
+	if lineEquals(out, "claude: not installed") || lineEquals(out, "claude: spacedock not installed") {
+		t.Fatalf("marker-unknown claude with a resolved version rendered as not installed:\n%s", out)
+	}
+}
+
+// TestVersionVocabularyHasNoEnablementJargon is the AC-1 oracle on the rendered
+// output: the noun "enablement" and the retired phrasings must appear nowhere in
+// the per-runtime block across the install/version/marker outcomes.
+func TestVersionVocabularyHasNoEnablementJargon(t *testing.T) {
+	probe := fakeRuntimeProbe{status: map[string]runtimeStatus{
+		"claude": {installed: true, version: "0.20.0", marker: markerUnknown},
+		"codex":  {installed: true, version: "0.20.0", marker: markerDisabled},
+		"pi":     {installed: true, ready: true},
+	}}
+	out := renderVersion(probe)
+	for _, banned := range []string{
+		"enablement",
+		"spacedock enabled",
+		"enablement unknown",
+	} {
+		if strings.Contains(out, banned) {
+			t.Fatalf("version output contains retired jargon %q:\n%s", banned, out)
+		}
 	}
 }

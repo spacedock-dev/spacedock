@@ -46,6 +46,16 @@ func readRequiresContract(manifestPath string) (string, error) {
 	return raw, err
 }
 
+// ManifestVersion reads a plugin manifest JSON and returns its display version,
+// the same source the doctor verdict reads. A missing manifest file yields
+// errNoManifest; an unparseable manifest yields the parse error. Callers that only
+// need the version to show it (e.g. --version's per-runtime block) use this rather
+// than the full verdict.
+func ManifestVersion(manifestPath string) (string, error) {
+	version, _, err := readManifest(manifestPath)
+	return version, err
+}
+
 // ManifestVerdict resolves the compatibility verdict for the manifest at
 // manifestPath against this binary's CONTRACT_VERSION, for the named host. A
 // missing manifest file yields NoPluginFound; an unparseable manifest JSON yields
