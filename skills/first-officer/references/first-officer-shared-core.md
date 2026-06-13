@@ -38,7 +38,7 @@ ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--ne
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
 - `--validate` — run before trusting manually edited workflow state.
 - `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
-- `--next-id` — immediately before filing a new task for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate.
+- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see FO Write Scope), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
 - `--next` / `--where "pr !="` — targeted event-loop queries.
 
 The `--set` flag updates entity frontmatter fields:
@@ -69,11 +69,11 @@ Distinct from event-loop `status` calls (the `--next` / `--where` the FO runs af
 
 README frontmatter `id-style` defines how new entities are addressed:
 
-- `sequential` — `id` is the numeric ID returned by `status --next-id`; counts active plus archived.
-- `sd-b32` — `id` is the 24-char SD-B32 (Spacedock Base32, alphabet `0123456789abcdefghjkmnpqrstvwxyz`, SHA-derived) returned by `status --next-id --id-seed "{slug-or-title}"`. Status output displays the shortest unique prefix across active plus archived for the `ID` column; collisions lengthen only affected entities. Duplicate full stored ID is a validation failure.
-- `slug` — identity derives from the entity slug. Omit or blank `id` on creation; do not call `status --next-id`.
+- `sequential` — `id` is a numeric ID counting active plus archived. `spacedock new <slug>` mints it; `status --next-id` previews the same candidate.
+- `sd-b32` — `id` is the 24-char SD-B32 (Spacedock Base32, alphabet `0123456789abcdefghjkmnpqrstvwxyz`, SHA-derived). `spacedock new <slug> --id-seed "{slug-or-title}"` mints it; `status --next-id --id-seed "{slug-or-title}"` previews the candidate. Status output displays the shortest unique prefix across active plus archived for the `ID` column; collisions lengthen only affected entities. Duplicate full stored ID is a validation failure.
+- `slug` — identity derives from the entity slug. `spacedock new <slug>` files it with a blank `id`; `--next-id` is n/a.
 
-SD-B32 `NEXT_ID` from `--boot` / `--next-id` is a candidate, not a reservation — call `--next-id --id-seed "{slug-or-title}"` immediately before writing the entity. Short sd-b32 references shown to operators are shortest unique prefixes with `MIN_PREFIX: 2`; use `status --resolve` before mutating if the reference came from a human or older transcript.
+A `--next-id` candidate (SD-B32 `NEXT_ID` from `--boot` / `--next-id` included) is a preview, not a reservation — between the preview and the write, a peer's filing can shift it, so a hand-assembled file can land a stale id. `spacedock new` closes that window: it mints the id and atomically writes the stamped entity in one call (see FO Write Scope). Short sd-b32 references shown to operators are shortest unique prefixes with `MIN_PREFIX: 2`; use `status --resolve` before mutating if the reference came from a human or older transcript.
 
 ## Single-Entity Mode
 
@@ -249,7 +249,7 @@ This matches the escalate-rather-than-guess discipline. A full lock model is out
 The FO may write these on main — nothing else:
 
 - **Entity frontmatter** — via `spacedock status --set` for all field updates
-- **New entity files** — seed task creation (frontmatter + brief description body)
+- **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path. Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into that frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts the FO still does the path-scoped commit + push after `new` (per State Management's concurrency-safe state-commit rule).
 - **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
 - **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
 - **State-transition commits** — dispatch, advance, merge boundary commits

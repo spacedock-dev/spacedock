@@ -69,6 +69,10 @@ func indNormalize(s, root string) string {
 	// SANDBOX is likewise native-only and PATH-dependent — strip it from the
 	// parity body; the state-from-inputs behavior is pinned by boot_sandbox_test.go.
 	s = stripSandbox(s)
+	// Strip the native-only --next-id use-`new` hint (another documented
+	// native/oracle divergence — the oracle emits no hint); its presence is
+	// pinned by TestNextIDPlainTextEmitsNewHintOnStderr instead.
+	s = stripNextIDHint(s)
 	if root != "" {
 		if real, err := filepath.EvalSymlinks(root); err == nil && real != root {
 			s = strings.ReplaceAll(s, real, "<ROOT>")

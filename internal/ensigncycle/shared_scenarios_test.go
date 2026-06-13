@@ -39,5 +39,10 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "tests/test_merge_hook_guardrail.py",
 			intent:        "FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.",
 		},
+		{
+			name:          "filing",
+			oldPythonTest: "n/a (new behavior — `spacedock new` adopted post-Python port)",
+			intent:        "FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.",
+		},
 	}
 }

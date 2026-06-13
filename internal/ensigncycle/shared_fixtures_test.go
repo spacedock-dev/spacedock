@@ -293,3 +293,50 @@ func mergeHookGuardPrompt() string {
 		"Do not edit, archive, approve, force, set mod-block, or retry terminalization. Your final response must include the guard error mentioning merge hooks.",
 	)
 }
+
+// filingSlug is the slug the FO is asked to file. It is what the positive
+// assertion looks for in the `spacedock … new <slug>` command and what the entity
+// file lands as on disk.
+const filingSlug = "wire-the-thing"
+
+func writeFilingWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), filingReadme())
+	gitInit(t, root)
+	// The entity does NOT exist yet — the FO files the first seed during the run.
+	// `spacedock new <slug>` writes the flat `<slug>.md` form (the minted id is
+	// stamped INTO the frontmatter, not into the filename). The runner stats this
+	// path AFTER the run to confirm the seed landed.
+	return filepath.Join(root, filingSlug+".md")
+}
+
+func filingReadme() string {
+	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
+		"entity-type: task\n" +
+		"id-style: sequential\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: backlog\n" +
+		"      initial: true\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Filing Fixture\n\n" +
+		"This fixture starts EMPTY: there are no entities yet. The first officer is asked to file one seed task. The id-style is `sequential`, so the manual flow (`status --next-id` then hand-writing the file) is available — the scenario proves the FO instead uses the atomic-create path.\n\n" +
+		"### backlog\n\nSeed tasks land here.\n\n- **Outputs:** A filed seed entity.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func filingPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"This workflow is empty. File one new seed task with the slug `"+filingSlug+"` and the title `Wire The Thing`, landing it in the initial backlog stage with a one-line description body.",
+		"File it using the blessed atomic-create path your contract teaches, not by hand-assembling frontmatter after a candidate-id preview.",
+		"Do not dispatch any workers and do not advance the entity past backlog. Your final response must confirm the seed task was filed.",
+	)
+}

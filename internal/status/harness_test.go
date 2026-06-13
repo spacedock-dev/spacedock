@@ -65,6 +65,19 @@ func stripSandbox(s string) string {
 	return sandboxLineRe.ReplaceAllString(s, "")
 }
 
+// nextIDHintLineRe matches the native-only `--next-id` use-`new` hint line. Like
+// the STATE_BACKEND banner, this is an intentional native/oracle divergence (the
+// retired Python oracle emits no hint) that the parity normalizers strip from
+// both sides so the certified id-on-stdout parity still byte-matches. The hint's
+// presence itself is pinned by TestNextIDPlainTextEmitsNewHintOnStderr.
+var nextIDHintLineRe = regexp.MustCompile(`hint: ` + "`spacedock new" + `[^\n]*\n`)
+
+// stripNextIDHint removes the native-only --next-id use-`new` hint so a native
+// run that carries it normalizes to the same stderr bytes as the oracle.
+func stripNextIDHint(s string) string {
+	return nextIDHintLineRe.ReplaceAllString(s, "")
+}
+
 // bootNextIDLineRe matches ONLY the boot `NEXT_ID:` line's sd-b32 value — the
 // minted candidate, which hashes the realpath'd workflow dir and so varies per
 // checkout path. Anchored to the line prefix so it does NOT touch a stored
