@@ -4,10 +4,10 @@ title: Pre-cut audit cleanups (0.19.9) — checksum-gate test, darwin-only doc d
 status: validation
 source: "0.19.9 pre-cut antipattern audit (Commander staff review, 2026-06-08) — four recorded non-blockers, none gated the 0.19.9 tag. Seeded per the roadmap Close step."
 started: 2026-06-13T05:52:37Z
-completed:
-verdict:
+completed: 2026-06-13T21:17:10Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-pre-cut-audit-cleanups-0199
+worktree:
 issue:
 sprint: 0202-survey-improvements
 group: cleanup
