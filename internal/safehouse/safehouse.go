@@ -12,7 +12,7 @@ import (
 // installHint is the pinned, actionable stderr message emitted when a workdir
 // carries a .safehouse profile but the safehouse binary is not resolvable.
 const installHint = "Spacedock: this directory has a .safehouse profile but the `safehouse` binary was not found on PATH. " +
-	"Install safehouse (https://github.com/anthropics/safehouse) or remove .safehouse to launch without it."
+	"Install safehouse (brew install eugene1g/safehouse/agent-safehouse; https://agent-safehouse.dev) or remove .safehouse to launch without it."
 
 // Present reports whether a .safehouse profile exists in workdir. A regular file
 // or a directory both count (os.Stat truthiness) — the profile may be either.

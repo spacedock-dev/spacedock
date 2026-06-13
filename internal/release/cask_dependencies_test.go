@@ -1,5 +1,6 @@
 // ABOUTME: Proves the release-rendered Homebrew casks declare agentsview as a
-// ABOUTME: cask dependency and keep safehouse (only) in the caveats companions list.
+// ABOUTME: cask dependency, declare no safehouse formula dependency, and keep
+// ABOUTME: safehouse in the caveats with its brew install command.
 package release
 
 import (
@@ -23,18 +24,20 @@ var renderedCasks = []struct {
 }
 
 // TestRenderedCaskDependsOnAgentsview locks AC-1 + AC-2: a release-rendered cask
-// must carry a `depends_on cask:` stanza naming agentsview (AC-1), and its
-// caveats must name safehouse but NOT agentsview — agentsview moved from a
-// caveat to a real dependency (AC-2). Both rendered casks (stable + edge) are
-// checked. The expected values (agentsview is a cask dep; caveats keeps
-// safehouse, drops agentsview) come from the AC, not from the file under test —
-// the rendered .rb is goreleaser OUTPUT, so this reds if the dependency is
-// dropped or mis-spelled or the caveat regresses.
+// must carry a `depends_on cask:` stanza naming agentsview (AC-1); must carry NO
+// `depends_on formula:` for the tap-qualified safehouse formula (the cross-tap
+// dep the spike refuted); and its caveats must name safehouse with its
+// `brew install eugene1g/safehouse/agent-safehouse` command and canonical site,
+// but NOT agentsview, which is a dependency (AC-2). Both rendered casks (stable +
+// edge) are checked. The expected values come from the AC, not from the file
+// under test — the rendered .rb is goreleaser OUTPUT, so this reds if the
+// dependency is dropped or mis-spelled, if the refuted formula dep is added, or
+// if the caveat regresses.
 //
 // Primary proof renders the real Ruby via goreleaser snapshot. When goreleaser
 // cannot run in the environment (not on PATH, sandbox denies its caches), the
 // test falls back to parsing .goreleaser.yaml's homebrew_casks declarations,
-// which assert the same two properties at the config layer.
+// which assert the same properties at the config layer.
 func TestRenderedCaskDependsOnAgentsview(t *testing.T) {
 	casks, rendered := renderCasks(t)
 	if !rendered {
@@ -62,16 +65,61 @@ func assertRenderedCask(t *testing.T, name, body string) {
 		t.Errorf("rendered cask %q does not name agentsview as a dependency:\n%s", name, body)
 	}
 
+	// safehouse must NOT be a formula dependency: a cask depends_on formula on
+	// the tap-qualified eugene1g/safehouse/agent-safehouse renders, but Homebrew
+	// 6.0 tap-trust refuses to auto-load that untrusted third-party tap as a
+	// transitive dep — the spike refuted it, so it must not ship. goreleaser
+	// emits a formula dep as a `formula: [...]` key inside the depends_on stanza;
+	// the tap-qualified name legitimately appears in the caveats install command,
+	// so the depends_on-stanza form is the precise signal.
+	if depBlock := dependsOnBlock(body); strings.Contains(depBlock, "formula:") {
+		t.Errorf("rendered cask %q carries a formula dependency in its depends_on stanza; the cross-tap safehouse dep was refuted and must not ship:\n%s", name, depBlock)
+	}
+
 	caveats := caveatsBlock(body)
 	if caveats == "" {
 		t.Fatalf("rendered cask %q has no caveats block to inspect:\n%s", name, body)
 	}
-	if !strings.Contains(caveats, "safehouse") {
-		t.Errorf("rendered cask %q caveats dropped safehouse (still not brew-installable):\n%s", name, caveats)
-	}
+	assertSafehouseCaveat(t, name, caveats)
 	if strings.Contains(caveats, "agentsview") {
 		t.Errorf("rendered cask %q still lists agentsview in caveats; it moved to depends_on:\n%s", name, caveats)
 	}
+}
+
+// assertSafehouseCaveat pins AC-2's corrected caveat content: safehouse stays a
+// caveat, but with its real third-party-tap install command and canonical site,
+// and the stale "not installed by brew" phrasing gone (safehouse IS brew-
+// installable, just not as a transitive depends_on).
+func assertSafehouseCaveat(t *testing.T, name, caveats string) {
+	t.Helper()
+	if !strings.Contains(caveats, "safehouse") {
+		t.Errorf("cask %q caveats dropped safehouse:\n%s", name, caveats)
+	}
+	if !strings.Contains(caveats, "https://agent-safehouse.dev") {
+		t.Errorf("cask %q caveats does not name the canonical safehouse site:\n%s", name, caveats)
+	}
+	if !strings.Contains(caveats, "brew install eugene1g/safehouse/agent-safehouse") {
+		t.Errorf("cask %q caveats does not name safehouse's brew install command:\n%s", name, caveats)
+	}
+	if strings.Contains(caveats, "not installed by brew") {
+		t.Errorf("cask %q caveats still says safehouse is \"not installed by brew\"; it is brew-installable from its tap:\n%s", name, caveats)
+	}
+}
+
+// dependsOnBlock extracts the `depends_on …` stanza of a rendered cask up to the
+// blank line that separates it from the next stanza, so a `formula:` check sees
+// only the dependency declaration and not the tap-qualified name that also
+// appears in the caveats install command.
+func dependsOnBlock(body string) string {
+	start := strings.Index(body, "depends_on")
+	if start < 0 {
+		return ""
+	}
+	rest := body[start:]
+	if end := strings.Index(rest, "\n\n"); end >= 0 {
+		return rest[:end]
+	}
+	return rest
 }
 
 // caveatsBlock extracts the heredoc body of a `caveats <<~EOS … EOS` stanza so
@@ -140,8 +188,9 @@ type goreleaserCaskConfig struct {
 // assertCaskConfig is the fallback proof: it parses .goreleaser.yaml's
 // homebrew_casks declarations and asserts the same AC-1/AC-2 properties the
 // render check proves on the emitted Ruby — each cask declares a `cask:
-// agentsview` dependency and a caveats block that keeps safehouse but drops
-// agentsview.
+// agentsview` dependency, declares NO formula dependency (the refuted cross-tap
+// safehouse dep), and a caveats block that keeps the corrected safehouse install
+// line but drops agentsview.
 func assertCaskConfig(t *testing.T) {
 	t.Helper()
 	var cfg goreleaserCaskConfig
@@ -157,13 +206,14 @@ func assertCaskConfig(t *testing.T) {
 			if dep.Cask == "agentsview" {
 				hasAgentsview = true
 			}
+			if dep.Formula != "" {
+				t.Errorf("cask %q declares a formula dependency %q; the cross-tap safehouse dep was refuted and must not ship", cask.Name, dep.Formula)
+			}
 		}
 		if !hasAgentsview {
 			t.Errorf("cask %q does not declare `cask: agentsview` as a dependency", cask.Name)
 		}
-		if !strings.Contains(cask.Caveats, "safehouse") {
-			t.Errorf("cask %q caveats dropped safehouse:\n%s", cask.Name, cask.Caveats)
-		}
+		assertSafehouseCaveat(t, cask.Name, cask.Caveats)
 		if strings.Contains(cask.Caveats, "agentsview") {
 			t.Errorf("cask %q still lists agentsview in caveats; it moved to a dependency:\n%s", cask.Name, cask.Caveats)
 		}
