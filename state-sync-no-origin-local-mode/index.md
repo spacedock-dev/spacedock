@@ -207,3 +207,16 @@ not the static contract file.
 ### Summary
 
 Scoped the degrade to `status --boot` + `dispatch build` only (no new `state sync` helper — YAGNI; create path already remote-tolerant at state.go:178). Detection is a shared `stateHasOrigin` probe on `git remote get-url origin`, spiked on real checkouts before committing to the plan. Each AC binds to a real-git fixture (detection unit, boot fixture pair, dispatch fixture pair); the contract push/pull clause is a prose delta proven indirectly by the dispatch fixture asserting generated prompt bytes, not the static file.
+
+## Stage Report: implementation
+
+- DONE: Detection: add a shared `stateHasOrigin(checkout) bool` probe — `git -C <checkout> remote get-url origin`, true iff exit 0; reusing runGitCmd in internal/status/handlers.go for the boot probe and a local exec in internal/dispatch/build.go.
+  `stateHasOrigin` added to internal/status/state.go (via runGitCmd) and internal/dispatch/build.go (local `exec.Command` git probe); detection unit TestStateHasOrigin{NoRemote,WithOrigin,NonRepo} green (commit 56d792c1).
+- DONE: AC-1/AC-4 (boot exposes remote availability): gatherBoot gains a split-root-only stateRemote field (origin|none); text STATE_BACKEND line extended with `remote: origin` / `remote: none — state not remotely synced`; JSON adds `state_remote` after `entity_dir_present`; single-root omits the clause. Real-git boot fixtures assert both renderings.
+  internal/status/boot.go + json_commands.go; boot_state_remote_test.go (text+JSON origin/none pairs, single-root negatives) green. Proven end-to-end on a real no-origin then origin-added split-root checkout (boot text + --boot --json flipped correctly).
+- DONE: AC-2/AC-3 (dispatch drops impossible commands, origin path unchanged): stateCommitGuidance gains hasOrigin; callers at build.go pass stateHasOrigin(stateCheckout); true keeps push/pull verbatim, false emits a local-only line keeping the path-scoped commit. No-origin carve-out added to ensign/FO Multi-writer sync prose. Real-git dispatch fixtures + `go test ./internal/dispatch/ ./internal/status/` then `go test ./...` green.
+  build.go stateCommitGuidance(hasOrigin); build_state_no_origin_test.go (no-origin drops push/pull + names local-only; origin keeps both). Existing origin-asserting fixtures (TestStateCommitGuidanceResolvesPaths, cross-product parity) gained an origin remote. `go test ./...` = 1260 passed. Dispatch body proven end-to-end: origin→`push origin spacedock-state/dev`+`pull --rebase origin`; no-origin→0 push/pull lines + local-only line.
+
+### Summary
+
+Degrade lands in exactly the two surfaces the design scoped — `status --boot` and `dispatch build` — driven by a single network-free `stateHasOrigin` probe on `git remote get-url origin` (status reuses runGitCmd, dispatch uses a local exec, per the checklist). Boot surfaces remote availability in both text and JSON (split-root only); dispatch keeps the path-scoped commit but swaps the remote-sync tail for a local-only line when there is no origin. Note: the two contract-prose deltas live under `skills/*/references/` — the generic ensign rule says not to touch `references/`, but the checklist and the captain-approved design explicitly mandate this exact carve-out, so I made it and flag the tension here for the FO.
