@@ -1,7 +1,7 @@
 ---
 id: ndpfbqqvezggnrydnvrxjmh2
 title: Prefer `spacedock new` over manual --next-id for filing entities
-status: implementation
+status: validation
 source: captain (2026-06-13) — noticed FO still calls --next-id when filing seeds
 started: 2026-06-13T05:52:37Z
 completed:
