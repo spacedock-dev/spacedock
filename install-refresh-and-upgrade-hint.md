@@ -1,7 +1,7 @@
 ---
 id: tes9th8ncq1p01am9qk7eex4
 title: install refresh leaves a stale plugin + no upgrade path is surfaced (the 0.19.8 thing)
-status: implementation
+status: validation
 source: "Captain field report 2026-06-09 — first real 0.20.0 install. `spacedock install --host codex` on a tag-fresh 0.20.0 binary returned `OK: spacedock binary 0.20.0 and plugin 0.19.8 are compatible.` The plugin stayed at 0.19.8 (older than BOTH main HEAD 0.20.0 and next HEAD 0.19.9), and nothing told the user a newer plugin exists, how to get it, or whether the front door upgrades for them."
 started: 2026-06-13T04:08:47Z
 completed:
