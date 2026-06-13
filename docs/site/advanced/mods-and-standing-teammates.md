@@ -12,6 +12,6 @@ The canonical example is the [`pr-merge` mod](https://github.com/spacedock-dev/s
 
 A standing teammate is a long-lived specialist agent declared by a mod. It stays available for the session and is addressed by name. Reach for one when the same specialist judgment recurs across entities and is worth a persistent agent rather than a fresh dispatch each time.
 
-The canonical example is the **comm-officer**, a prose-polisher the first officer routes deliberate drafts through (PR bodies, gate summaries, debriefs) before they reach you. Routing is best-effort: if the teammate is absent or slow, the work proceeds without it.
+The canonical example is the [**comm-officer**](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/_mods/comm-officer.md), a prose-polisher the first officer routes deliberate drafts through (PR bodies, gate summaries, debriefs) before they reach you. Routing is best-effort: if the teammate is absent or slow, the work proceeds without it.
 
 Ask the first officer to install a shipped mod or write a new one; the file format is its job.
