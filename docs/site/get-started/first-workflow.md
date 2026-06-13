@@ -54,7 +54,8 @@ bar for each. You confirm or adjust each proposal, and it presents the design:
 Everything is plain text in your repo: a README that holds the workflow's
 rules (what each stage expects) and one file per work item. The generated
 rules are a starting point; tighten them before any work runs, because an
-agent working to a vague bar is expensive to correct.
+agent working to a vague bar is expensive to correct. Learn more about every
+design decision in [Commission a workflow](../running-workflows/commission.md).
 
 ## The pilot run
 
@@ -79,7 +80,7 @@ Decision: approve to close; reject to bounce back to implementation.
 You approve, send it back with feedback, or reject. Details:
 [gates and decisions](../concepts/gates-and-decisions.md).
 
-## Session to session
+## Operate the workflow
 
 Every work item's state is stored and serialized in the
 [workflow](../concepts/workflows-and-entities.md), so you do not need to worry
@@ -89,17 +90,18 @@ about context limits, resuming, or clearing. A typical session:
 spacedock claude
 ```
 
-It picks up whatever is ready to dispatch. You do a bunch of work: shaping,
-asking the agents to dispatch, approving, rejecting, steering. Before you
-stop, run [`/spacedock:debrief`](../running-workflows/debrief-and-refit.md)
+It picks up whatever is ready to dispatch. Keep dispatching, approving,
+rejecting, steering. Before you stop, run
+[`/spacedock:debrief`](../running-workflows/debrief-and-refit.md)
 to record what happened, update the learnings into the workflow, and file the
 follow-up items. The workflow self-improves.
+[Operate a workflow](../running-workflows/operating.md) covers the details.
 
 A project can hold
 [multiple workflows](../advanced/split-root-state.md) that coordinate with
 each other; Spacedock drives them together and works out the dependencies.
+Since this runs in your existing coding agent, you can just ask the agent if
+anything is unclear.
 
-[Commission a workflow](../running-workflows/commission.md) covers every
-design decision; [Operate a workflow](../running-workflows/operating.md)
-covers the day-to-day loop. Since this runs in your existing coding agent, you
-can just ask the agent if anything is unclear.
+Now you have the first Spacedock-powered workflow: dispatch and let the agents
+work and hum when you stay calm!
