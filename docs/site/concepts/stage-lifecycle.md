@@ -6,17 +6,17 @@ An entity moves through an ordered chain of stages that the workflow defines, an
 
 ```mermaid
 flowchart LR
-  backlog --> ideation --> implementation --> validation --> done
+  backlog --> ideation["ideation (gate)"] --> implementation --> validation["validation (gate)"] --> done
   validation -. rejected .-> implementation
 ```
 
-Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?". Here ideation and validation end at gates: your call before code is written, and your call before the result ships.
+Read the chain as a pipeline: each stage takes the prior stage's output as its input, and the bar rises from "is this clear?" to "is this proven?". The two gates are your calls: before code is written, and before the result ships.
 
 The property that matters most is `feedback-to`: rejected work bounces back to the stage that owns the fix (a rejected validation returns to implementation), not to the reviewer that flagged it.
 
 ## What a stage declares
 
-A stage can pause at a gate for your decision, run its work in an isolated worktree, demand a reviewer with no access to the maker's reasoning, route rejected work back to an earlier stage, cap how many items it holds at once, and hand its work to a specialist worker. All of it is declared in the workflow README; ask the first officer to set up or change any of it.
+A stage can pause at a [gate](gates-and-decisions.md) for your decision, run its work in an isolated worktree, demand a reviewer with no access to the maker's reasoning, route rejected work back to an earlier stage, cap how many items it holds at once, and hand its work to a specialist worker. All of it is declared in the workflow README; ask the first officer to set up or change any of it.
 
 Beyond the declarations, the prose of each stage's section in the README is the stage definition. What you write there is exactly what the worker receives as its assignment.
 
