@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+<!--
+  Webfonts load from Bunny Fonts (fonts.bunny.net) instead of Material's
+  built-in Google Fonts. theme.font is false in mkdocs.yml, which suppresses
+  Material's Google Fonts <link> and its --md-text-font/--md-code-font
+  definitions; brand.css restores those two variables. Same families and
+  weights as before (Hanken Grotesk text, JetBrains Mono code) — only the CDN
+  changes, so no IP transfer to Google.
+-->
+{% block extrahead %}
+  {{ super() }}
+  <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+  <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=hanken-grotesk:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=jetbrains-mono:ital,wght@0,400;0,700;1,400;1,700&display=fallback">
+{% endblock %}
