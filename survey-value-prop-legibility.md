@@ -1,9 +1,9 @@
 ---
 id: 9hbm8yqsd1c4dwjrdv8kka2y
 title: Survey value-prop legibility — lead with plain "helps you do X" + concrete numbers, not abstract jargon
-status: backlog
+status: ideation
 source: "Live partner-meeting user run, 2026-06-12 (~200 sessions / ~2200 logs). Records only spacedock:survey behavioral feedback; the user's corpus (projects, tools, counts) stays in the uncommitted meeting notes, per the survey anonymization discipline."
-started:
+started: 2026-06-13T04:49:28Z
 completed:
 verdict:
 score:

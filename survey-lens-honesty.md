@@ -1,9 +1,9 @@
 ---
 id: 5xwch4ddhrzpyfbmsjgdsjy9
 title: Survey owns its lens — recent-window snapshot + partial agent-log corpus
-status: backlog
+status: ideation
 source: "Captain relayed author feedback, 2026-06-10, after asking an author whether their survey told them anything surprising or untrue. Author: nothing surprising/untrue, it reflected recent workflows well — BUT their relationship with the projects had changed a lot over time, and their agent conversations don't capture all their working context. Anonymized; corpus omitted."
-started:
+started: 2026-06-13T04:49:28Z
 completed:
 verdict:
 score:

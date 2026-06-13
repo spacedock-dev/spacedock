@@ -1,9 +1,9 @@
 ---
 id: zajryfzgmnbzb5vjw5hven0z
 title: Survey reports the FACT of subagent dispatch (so orchestrated repos don't look idle)
-status: backlog
+status: ideation
 source: "captain (2026-06-08) — follow-up surfaced during 47rx's F spike. The survey scopes to the Claude session set and EXCLUDES dispatched-subagent sessions, so in a spacedock/agent-orchestrated repo most work is invisible (e.g. 7468/7680 internal edits here landed in excluded subagent sessions) → the survey under-reports and the repo looks idle. Captain scoping: we do NOT need subagent CONTENT for now — just the FACT that the session dispatched subagents."
-started:
+started: 2026-06-13T04:49:28Z
 completed:
 verdict:
 score:
