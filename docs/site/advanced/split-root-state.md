@@ -1,30 +1,16 @@
-# Multi-workflow & split-root state
+# Split-root state
 
-A split-root workflow separates the workflow's definition from its runtime state. The README and stage declarations stay on your main branch; the mutable entities (frontmatter updates, stage reports, archive moves) live in a separate state checkout. State transitions stop polluting your code branch's history, and several agents or operators can drive the same workflow at once.
+A busy workflow generates constant small state commits. Split-root keeps them off your code branch: the README and stage declarations stay on your main branch, while the mutable entity state (frontmatter updates, stage reports, archive moves) lives in a separate state checkout. Your code history stays clean, and several agents or operators can drive the same workflow at once.
 
-Reach for it when status changes would otherwise land as noisy commits on `main`, or when more than one writer needs to advance the same workflow concurrently. Without it, Spacedock keeps the default: entities sit beside the README on the same branch.
-
-## Opt in with one field
-
-Add a `state:` field to the README frontmatter, a path relative to the README directory:
-
-```yaml
-state: .spacedock-state
-```
-
-Spacedock then reads stage declarations from the README and entities from the state path, and writes entity changes only into the state path. The split is transparent to the command surface: read the workflow exactly as you would a single-root one.
-
-On a fresh clone the state checkout is absent; run `spacedock state init` to restore it before working the workflow.
-
-The shipped `docs/dev` workflow runs split-root; see its README for a live example.
+The README [opts in with one `state:` field](../concepts/workflows-and-entities.md#keep-workflow-state-off-your-code-branch); the split is transparent, and you read the workflow exactly as you would a single-root one. On a fresh clone the state checkout is absent; run `spacedock state init` to restore it. The shipped [`docs/dev` workflow](https://github.com/spacedock-dev/spacedock/tree/main/docs/dev) runs split-root, a live example.
 
 ## Concurrent writers
 
-The state checkout is a shared git index that multiple agents commit to, so the commit and sync discipline is a correctness requirement, not a style choice: writers commit path-scoped (never a bare `git add -A`), and conflicting edits to the same entity halt for the captain rather than auto-resolving. The exact protocol is owned by the launcher and the ensign skill; see [the split-root state contract](https://github.com/spacedock-dev/spacedock/blob/main/docs/dev/README.md) for the authoritative rules.
+The agents follow the commit and sync discipline that keeps concurrent writers from clobbering each other; it is theirs to follow, not yours. The one case that reaches you: conflicting edits to the same entity halt for your call rather than auto-resolving.
 
 ## Bridging an external tracker
 
-Split-root state is the integration point for an external tracker (Linear, GitHub Issues, kata, or another ticket ledger). The external system can own backlog intake, discussion, and assignment while Spacedock stays the execution workflow. The bridge uses flat top-level frontmatter fields so the parser preserves them:
+Split-root state is the integration point for an external tracker (Linear, GitHub Issues, or another ticket ledger). The external system can own backlog intake, discussion, and assignment while Spacedock stays the execution workflow. The bridge is two flat frontmatter fields (the [frontmatter contract](../reference/frontmatter-contract.md) explains why they stay flat):
 
 ```yaml
 issue: ENG-123

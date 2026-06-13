@@ -98,8 +98,8 @@ follow-up items. The workflow self-improves.
 [Operate a workflow](../running-workflows/operating.md) covers the details.
 
 A project can hold
-[multiple workflows](../advanced/split-root-state.md) that coordinate with
-each other; Spacedock drives them together and works out the dependencies.
+[multiple workflows](../advanced/multi-workflow.md); Spacedock finds them
+and drives them together.
 Since this runs in your existing coding agent, you can just ask the agent if
 anything is unclear.
 

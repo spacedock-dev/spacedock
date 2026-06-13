@@ -83,7 +83,8 @@ nav:
       - Debrief a session: running-workflows/debrief.md
   - Advanced topics:
       - Mods & standing teammates: advanced/mods-and-standing-teammates.md
-      - Multi-workflow & split-root state: advanced/split-root-state.md
+      - Multiple workflows: advanced/multi-workflow.md
+      - Split-root state: advanced/split-root-state.md
       - Refit a workflow: advanced/refit.md
   - Reference:
       - Command reference: reference/command-reference.md

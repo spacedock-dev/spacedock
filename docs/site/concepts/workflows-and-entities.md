@@ -46,4 +46,4 @@ A workflow can keep its mutable state in a separate state checkout, so routine s
 state: .spacedock-state
 ```
 
-[Multi-workflow & split-root state](../advanced/split-root-state.md) covers the mechanics and the fresh-clone setup.
+[Split-root state](../advanced/split-root-state.md) covers the mechanics and the fresh-clone setup.
