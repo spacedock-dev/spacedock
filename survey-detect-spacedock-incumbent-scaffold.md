@@ -4,8 +4,8 @@ title: Survey detects spacedock as the incumbent scaffold when genuinely in use 
 status: backlog
 source: "Captain observation 2026-06-13, reviewing the 0202 5wv survey-output redesign: the survey ran on the spacedock repo itself, yet the SCAFFOLD section named only `superpowers: 7` and never spacedock — the dominant scaffold here. Root cause: the `scaffold-usage` query deliberately excludes `WHERE family <> 'spacedock'` to stop the survey's own invocation making every repo read as a spacedock user. Pre-existing (#319/#317.1); surfaced by, not caused by, 5wv."
 started:
-completed:
-verdict:
+completed: 2026-06-13T21:13:39Z
+verdict: PASSED
 score:
 worktree:
 issue:
