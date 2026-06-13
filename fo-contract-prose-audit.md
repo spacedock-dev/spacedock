@@ -9,6 +9,8 @@ verdict:
 score:
 worktree:
 issue:
+sprint: 0203-fo-efficiency
+sprint-readiness: ready
 ---
 
 The T3 of the 0.20.3 (0203-fo-efficiency) sprint: after j9 Phase-1 splits the FO contract references into boot-resident vs deferred modules, sweep the slimmed refs for residual dead/redundant prose and run a comm-officer light-touch polish pass.
