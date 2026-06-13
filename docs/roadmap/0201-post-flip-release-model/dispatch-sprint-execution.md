@@ -33,6 +33,7 @@ security find-generic-password -s "Claude Code-credentials" -w | python3 -c "imp
 - **`gj` ∥ `zrc`** share a concept, not code — parallelize fine (per staff review).
 - **`yw` two-wave:** wave-1 structural cleanup (remove install-journey, slim README, kill the test) can lead; wave-2 behavior-docs follow the five members landing.
 - **`gp` is the centerpiece** — land it solidly; it gates the topology cleanup.
+- **Stray spike worktrees:** `gj`/`zrc`/`8p` ideation spikes left worktrees (`.worktrees/spacedock-ensign-{slug}`, off an earlier `main`) and a stray `worktree:` field on those entities (ideation is non-worktree). Before creating fresh implementation worktrees, `--force`-clear each `worktree:` field (`spacedock status --set {slug} worktree= --force`) and `git worktree remove --force` the stray dirs — then dispatch implementation clean off `main`.
 
 ## Per-member build notes
 ### `gp` — marketplace-repo-and-pinned-channels (release-model) · HIGH-STAKES
