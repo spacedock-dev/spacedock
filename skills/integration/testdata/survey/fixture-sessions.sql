@@ -577,3 +577,39 @@ INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
   (111, 'claude:c6111111-0000-0000-0000-000000000001', 2, 'user', 'then file the ones that are ready'),
   (112, 'claude:c6222222-0000-0000-0000-000000000002', 1, 'user', 'process the batch we queued'),
   (113, 'claude:c6222222-0000-0000-0000-000000000002', 2, 'user', 'log the run and close out the day');
+
+-- ============================================================================
+-- KNOWLEDGE-WORK track `client-1on1s` (cycle 2 / AC-5 specific-type). A SECOND, distinct
+-- knowledge-work track so the render can demonstrably NAME multiple specific types — here
+-- people 1-1s & assessment, alongside `notes-ops`. Same knowledge-work signature (intake→
+-- process→file→log→close loop markers + content/ops `.md`+`.json` edits + gate-pass batch
+-- confirm + zero veto + no issue→PR loop), so mode-classification emits `knowledge-work`;
+-- its distinct workstream NAME (`client-1on1s`) + areas (`people/`, `assessments/`) are the
+-- specific-type signal the HOW YOU WORK / WORKSTREAMS render synthesizes from.
+-- ============================================================================
+INSERT INTO sessions VALUES
+  ('claude:c7111111-0000-0000-0000-000000000001', 'proj', 'claude',
+   '/repo/proj', 'client-1on1s',
+   '/u/.claude/projects/-repo-proj/c7111111.jsonl',
+   '2026-06-11', '2026-06-11', 'Intake the 1-1 notes and process the team assessment.', 5, 2,
+   NULL, ''),
+  ('claude:c7222222-0000-0000-0000-000000000002', 'proj', 'claude',
+   '/repo/proj', 'client-1on1s',
+   '/u/.claude/projects/-repo-proj/c7222222.jsonl',
+   '2026-06-11', '2026-06-11', 'File the assessment and log the follow-ups.', 4, 2,
+   NULL, '');
+INSERT INTO tool_calls (id, session_id, tool_name, input_json, result_content) VALUES
+  (94, 'claude:c7111111-0000-0000-0000-000000000001', 'AskUserQuestion',
+   '{"questions":[{"header":"Assessment scope","question":"Process this batch of 1-1 notes now?"}]}',
+   'Your questions have been answered: "Process this batch of 1-1 notes now?"="yes"'),
+  (95, 'claude:c7111111-0000-0000-0000-000000000001', 'Write',
+   '{"file_path":"/repo/proj/people/2026-06-11-1on1.md"}', NULL),
+  (96, 'claude:c7222222-0000-0000-0000-000000000002', 'Write',
+   '{"file_path":"/repo/proj/assessments/team.md"}', NULL),
+  (97, 'claude:c7222222-0000-0000-0000-000000000002', 'Edit',
+   '{"file_path":"/repo/proj/people/roster.json"}', NULL);
+INSERT INTO messages (id, session_id, ordinal, role, content) VALUES
+  (114, 'claude:c7111111-0000-0000-0000-000000000001', 1, 'user', 'intake the 1-1 notes from today'),
+  (115, 'claude:c7111111-0000-0000-0000-000000000001', 2, 'user', 'then process the team assessment'),
+  (116, 'claude:c7222222-0000-0000-0000-000000000002', 1, 'user', 'file the assessment write-up'),
+  (117, 'claude:c7222222-0000-0000-0000-000000000002', 2, 'user', 'log the follow-ups and close out');

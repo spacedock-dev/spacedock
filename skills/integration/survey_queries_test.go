@@ -163,9 +163,10 @@ func TestSurveyQuerySmoke(t *testing.T) {
 	// the in-repo Claude sessions (cwd AT root, subdir, worktree, plus the F/G worktree-shape
 	// + the mode-classification track sessions, all under the prefix) and EXCLUDES the
 	// blank-cwd session, the out-of-repo session, the dispatched SUBAGENT sessions (file_path
-	// under %/subagents/%), and ALL the codex rows. The fixture has 15 in-repo non-subagent
+	// under %/subagents/%), and ALL the codex rows. The fixture has 17 in-repo non-subagent
 	// Claude sessions: A,B,C + WT + issue-feed×2 + landing-copy×2 + mixed-bag (9) + the two
-	// dispatch parents + two decision-no-followup + two knowledge-work `notes-ops` (6).
+	// dispatch parents + two decision-no-followup + two knowledge-work `notes-ops` (6) + two
+	// knowledge-work `client-1on1s` (2, the cycle-2 second knowledge-work track).
 	t.Run("scoping", func(t *testing.T) {
 		rows := runQuery(t, db, queries["scoping"])
 		if len(rows) != 1 {
@@ -175,8 +176,8 @@ func TestSurveyQuerySmoke(t *testing.T) {
 		if len(fields) != 3 {
 			t.Fatalf("scoping row should have 3 fields (sessions|blank_cwd|span) — folded_keys is dropped, got: %q", rows[0])
 		}
-		if fields[0] != "15" {
-			t.Errorf("the cwd-prefix should count 15 in-repo non-subagent Claude sessions, got sessions=%q", fields[0])
+		if fields[0] != "17" {
+			t.Errorf("the cwd-prefix should count 17 in-repo non-subagent Claude sessions, got sessions=%q", fields[0])
 		}
 		if fields[1] != "0" {
 			t.Errorf("the blank-cwd Claude session is outside the prefix and must not count, got blank_cwd=%q", fields[1])
@@ -302,15 +303,15 @@ func TestSurveyQuerySmoke(t *testing.T) {
 	})
 
 	// no-union (AC-2c): the added Codex rows must NOT inflate the Claude scope. The scoping
-	// query is asserted to 15 above (the Claude-only in-repo count), proving Codex stays out
+	// query is asserted to 17 above (the Claude-only in-repo count), proving Codex stays out
 	// of the Claude `sessions` count — a flagged presence, never a silent project union.
 	t.Run("codex-not-folded-into-scope", func(t *testing.T) {
 		rows := runQuery(t, db, queries["scoping"])
 		if len(rows) != 1 {
 			t.Fatalf("scoping should return one summary row, got %d: %v", len(rows), rows)
 		}
-		if sessions := strings.Split(rows[0], "|")[0]; sessions != "15" {
-			t.Errorf("the Codex rows must not be folded into the Claude scope; scoping.sessions should stay 15, got %q", sessions)
+		if sessions := strings.Split(rows[0], "|")[0]; sessions != "17" {
+			t.Errorf("the Codex rows must not be folded into the Claude scope; scoping.sessions should stay 17, got %q", sessions)
 		}
 	})
 
@@ -435,6 +436,12 @@ func TestSurveyQuerySmoke(t *testing.T) {
 		}
 		if mode["notes-ops"] != "knowledge-work" {
 			t.Errorf("the intake→process→file→log→close + content/ops-edits track should classify knowledge-work, got %q in %v", mode["notes-ops"], mode)
+		}
+		// cycle 2: a SECOND distinct knowledge-work track (client-1on1s) so the render names ≥2
+		// specific types. Both classify knowledge-work (the CLASS stays); the render qualifies
+		// each with its own workstream-derived type (notes-ops vs 1-1s & assessment).
+		if mode["client-1on1s"] != "knowledge-work" {
+			t.Errorf("the second knowledge-work track (people 1-1s & assessment) should classify knowledge-work, got %q in %v", mode["client-1on1s"], mode)
 		}
 		if mode["mixed-bag"] != "unlabeled" {
 			t.Errorf("a neither-dominant track must stay unlabeled (generic book-keeping, never a guessed automation pitch), got %q in %v", mode["mixed-bag"], mode)
