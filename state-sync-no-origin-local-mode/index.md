@@ -10,7 +10,7 @@ sprint: 0202-survey-improvements
 group: cleanup
 sprint-readiness: ready
 started: 2026-06-13T05:52:37Z
-mod-block: merge:pr-merge
+mod-block:
 pr: "#364"
 ---
 
