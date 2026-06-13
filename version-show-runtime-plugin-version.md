@@ -5,7 +5,7 @@ sprint: 0201-post-flip-release-model
 group: ux-cleanup
 sprint-readiness: ready
 id: dag3bk4p0xe6tydc66k29ev3
-status: implementation
+status: validation
 worktree: .worktrees/spacedock-ensign-version-show-runtime-plugin-version
 ---
 
