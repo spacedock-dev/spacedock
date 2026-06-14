@@ -373,6 +373,20 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
 	}
+
+	// A wrong-root boot is the most specific diagnosis on any failure path: a CI env
+	// leak lures the FO off workflowRoot, it boots the real repo, finds nothing
+	// dispatchable, and greets-and-stops — surfacing otherwise only as an opaque
+	// no-progress stall (when it idles) or as every scenario assertion silently
+	// running against the wrong state (when it completes cleanly). Name it FIRST so
+	// the leak fails legibly with expected-fixture vs wandered-to, ahead of the
+	// generic stall message or the downstream assertions.
+	if wrongRoot := detectWrongRootBoot(stream, workflowRoot); wrongRoot != nil {
+		if stallErr != nil {
+			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", wrongRoot, stallErr, artifactDir)
+		}
+		t.Fatalf("%v\nArtifacts: %s", wrongRoot, artifactDir)
+	}
 	if stallErr != nil {
 		t.Fatalf("%v\nArtifacts: %s", stallErr, artifactDir)
 	}

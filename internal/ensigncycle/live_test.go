@@ -174,6 +174,15 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// than a silent one (which the quiet budget does catch). Documenting it here
 	// keeps the trade-off explicit instead of silently absent.
 	if _, err := watcher.expect(isTeamCreate, quietBudgetDefault, "TeamCreate"); err != nil {
+		// A pre-TeamCreate failure is opaque on its own (the FO "exited before
+		// TeamCreate matched"). The most common cause is a wrong-root boot: a CI env
+		// leak lures the FO off `root` into the real repo, it boots that workflow,
+		// finds nothing dispatchable, and greets-and-stops. Surface that explicitly
+		// — naming the expected fixture root vs the wandered-to path — so the leak
+		// fails legibly instead of as a confusing timeout.
+		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
+			t.Fatalf("live cycle failed at TeamCreate due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
+		}
 		t.Fatalf("live cycle failed at TeamCreate: %v", err)
 	}
 	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
