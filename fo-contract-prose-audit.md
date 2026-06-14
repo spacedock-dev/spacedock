@@ -1,7 +1,7 @@
 ---
 id: 95bcs48mr3jemtsb2zq7zbtb
 title: FO contract residual-prose audit + comm-officer polish (post-split)
-status: validation
+status: implementation
 source: 0.20.3 / 0203-fo-efficiency sprint (T3); captain 2026-06-13
 started: 2026-06-13T18:09:33Z
 completed:
@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-fo-contract-prose-audit
 issue:
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#367"
 ---
 
@@ -176,3 +176,10 @@ The first officer raised the audit bar to "no remaining meaning change from the 
 ### Recommendation (supersedes cycle-1 PASSED)
 
 REJECTED. Smallest behavior-preserving fix: restore the dropped qualifier on the Sequencing rule — `must NEVER appear in the same tool-call message as TeamCreate/TeamDelete`. Everything else from cycle-1 stands clean: the offline proof reproduces, the 4 cuts orphan nothing, the `TERMINAL_TEARDOWN_BOUNDED` marker is byte-intact, every other polish edit is meaning-preserving, the FLAGGED mod-block collapse is correctly out of scope, AC-1/AC-2 are soundly deferred. The lowercased-emphasis edits elsewhere (`LIVE`→`live`, `ONLY`→`only`, `NOT at boot`→`not at boot`, the "do NOT shut down"→"keep alive" rephrase, and the `-X ours/theirs` "or"→em-dash recast of an explanatory parenthetical) are the same risk-class as the confirmed over-reaches but are meaning-preserving — recorded as Polish, non-blocking. Route the one Material finding back to implementation.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED (cycle-2 raised-bar re-audit) → implementation** (2026-06-14)
+- REJECTED on ONE material finding the impl-ensign's amend + comm-officer both missed — the silent class (comm-officer never flagged it): `claude-fo-dispatch.md` Sequencing rule silently dropped the scope qualifier `as TeamCreate/TeamDelete` from a NEVER-constraint, broadening it to forbid concurrent same-message Agent dispatch (the very mechanism team mode provides). The single-entity live scenarios (AC-1/AC-2) would NOT catch it — the exact class the detached audit targets.
+- **Merge ceremony UNWOUND** (the cycle-1 PASSED had prematurely started it): cleared `mod-block`, cancelled the moot CI run (run 27489960168 — it tested the flawed `9bb21d85` and would false-green, since the scenarios don't exercise the broadened NEVER), held PR #367 open for the fix.
+- Routed to implementation (reused impl ensign, reuse_ok 18%): restore the qualifier → `must NEVER appear in the same tool-call message as TeamCreate/TeamDelete`. Validator kept alive to re-review. Re-merge (re-push #367 → one live CI on the fixed version) after re-validation.
