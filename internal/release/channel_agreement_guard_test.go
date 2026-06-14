@@ -11,8 +11,10 @@ import (
 
 // The post-flip agreement invariant: the released stable channel's plugin source
 // must settle on `main` across the two BINARY-side surfaces —
-//   (1) release.yml's "Stamp plugin manifests" step git switch/push target,
-//   (2) .goreleaser.yaml's stable-build cli.devBranch ldflag.
+//
+//	(1) release.yml's "Stamp plugin manifests" step git switch/push target,
+//	(2) .goreleaser.yaml's stable-build cli.devBranch ldflag.
+//
 // Under Model B the marketplace manifest will move OUT of the plugin branch into a
 // separate marketplace repo, retiring the former third surface — an in-branch
 // .claude-plugin/marketplace.json source.ref re-settled per release. That removal is

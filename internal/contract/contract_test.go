@@ -278,4 +278,3 @@ func TestCompareHostSubstitution(t *testing.T) {
 		}
 	}
 }
-

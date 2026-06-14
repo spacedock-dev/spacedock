@@ -6,11 +6,12 @@ package ensigncycle
 // launch, auth, plugin, artifact, transcript, OR timeout field: those host-specific
 // concerns live behind the per-host runner adapters (the Codex runner in
 // codex_live_runner_test.go, the Claude runner in claude_live_runner_test.go), each
-// of which implements the same scenario IDs. Liveness is guarded uniformly by the
-// per-stage no-progress quiet budget in those runners (the shared streamWatcher's
-// quietBudgetDefault, 60s) — a per-scenario basket timeout is banned, so the shared
-// table carries no timeout. The shared coverage meta-tests fail if either host
-// lacks a runner for a shared scenario, so a scenario cannot drift to one host only.
+// of which implements the same scenario IDs. Liveness belongs in those host
+// adapters: the shared stream-silence quiet budget is common, Codex may add
+// host-specific stall classification, and a per-scenario basket timeout is banned.
+// The shared table carries no timeout. The shared coverage meta-tests fail if
+// either host lacks a runner for a shared scenario, so a scenario cannot drift to
+// one host only.
 type sharedRuntimeScenario struct {
 	name          string
 	oldPythonTest string
