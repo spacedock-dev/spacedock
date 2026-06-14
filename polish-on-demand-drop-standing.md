@@ -18,28 +18,130 @@ Replace the standing-teammate lifecycle with on-demand one-shot polish, and move
 
 Supporting the standing prose-polisher (`comm-officer`) costs ~4 contract subsections — the shared-core `## Standing Teammates` concepts plus the runtime's discovery-pass / lazy-spawn / declaration-and-routing-mechanics (all relocated into `claude-fo-dispatch.md` by j9's P1 split) — plus the `using-claude-team` lifecycle notes. All of that machinery exists to buy ONE thing: amortization (keep the polisher resident so its skill loads once across many polishes). For an infrequently-used feature that trade does not pay — we maintain a long-lived, team-scoped, first-boot-wins, lazy-spawn, teardown lifecycle to save a skill-load that rarely happens.
 
-## Proposed approach (seed — ideation designs it)
+## Mechanism spike (riskiest unknown — exercised FIRST)
+
+The whole design rests on one claim: the one-shot polish dispatch can reuse `spawn-standing`'s prompt-extraction. I exercised it before designing the rest.
+
+Run (against the live binary, with a team name that matches no on-disk config so the already-alive short-circuit does not fire):
+
+    ./spacedock dispatch spawn-standing --mod "$PWD/docs/dev/_mods/comm-officer.md" --team "spike-fresh-team-no-such-config-9931"
+
+Result: exit 0, and a complete Agent() spec JSON with `subagent_type: general-purpose`, `name: comm-officer`, `team_name`, `model: sonnet`, and `prompt` = the mod's `## Agent Prompt` body verbatim (the parser at `internal/dispatch/standing.go` reads frontmatter, the `## Hook: startup` spawn config, and the trailing `## Agent Prompt` section). The extraction this task repurposes is PROVEN: a one-shot `dispatch polish-spec` is this exact code path minus the `claudeteam.MemberExists` already-alive short-circuit (standing.go:144-154) and minus a real `--team` requirement (a one-shot is bare — no team needed).
+
+**What the spike also surfaced (a real design decision, not a footnote):** the current `## Agent Prompt` is written for a RESIDENT teammate — "Then idle. Do NOT start polishing anything until you receive a polish request", "Stay live. Go idle between tasks." A one-shot polisher receives the draft IN its dispatch, polishes once, replies, and dies. So the one-shot path cannot reuse the resident Agent Prompt verbatim; it needs a one-shot framing. Decision below.
+
+## Proposed approach
 
 **Approach A — on-demand one-shot.** When the FO (or an ensign) has a deliberate draft to polish, it dispatches a one-shot polish agent only then; there is no resident teammate, no team-scope lifecycle. You pay one spawn per polish, which is rare.
 
-**Mod-owned usage prose (the captain's key point).** The feature-specific prose moves OUT of the contract and INTO the `comm-officer` mod that declares it. The mod already carries the agent prompt (`## Agent Prompt`) and a routing block (`## Routing Usage` surfaced by `dispatch show-standing`/`dispatch build`); extend it to own the on-demand *usage* prose too (when/how to invoke polish, the four polish modes, the boundary rules). The FO/ensign contract keeps only a minimal generic hook: "registered polish mods declare on-demand polishers; the dispatch helper surfaces their usage; route deliberate drafts to them per the mod's declaration."
+### Binary: `dispatch polish-spec`
 
-**What the contract sheds:** the discovery pass, the lazy-spawn pass, the standing-declaration layout, team-scope teardown of standing members, first-boot-wins — gone. **What stays / changes:** a binary path that emits a one-shot polish dispatch from the mod's prompt (repurpose `spawn-standing`'s prompt-extraction into a one-shot `dispatch polish`/spec-emit); the mod becomes self-describing.
+Add a subcommand `spacedock dispatch polish-spec --mod {abs_mod_path}` that emits a one-shot Agent() spec from a polish mod, repurposing the proven `spawn-standing` extraction:
+
+- Parse the mod the same way `runSpawnStanding` does (frontmatter, `## Hook: startup` for `subagent_type`/`model`, prompt body). Reuse `ParseModMetadata` + `ParseHookStartupSpawnConfig`.
+- DROP the `--team` requirement and the `MemberExists`/already-alive branch entirely — a one-shot is bare-mode, so the emitted spec OMITS `team_name` (matching how `dispatch build` omits `name`/`team_name` in bare mode). It carries `subagent_type`, `name`, `model`, `prompt`.
+- The emitted `prompt` is the mod's **one-shot prompt body**, not the resident one. The mod gains a `## One-Shot Prompt` section (the resident framing minus "stay idle / stay live / wait for a request"; instead: "You receive a draft to polish below. Polish it, reply once with polished text + notes block, then stop."). `polish-spec` extracts that section; if the mod lacks `## One-Shot Prompt`, `polish-spec` exits non-zero with a diagnostic naming the missing section (loud failure, same discipline as the existing spawn-standing missing-section errors).
+- Caller appends the draft to the emitted prompt (text-passthrough) or passes the absolute path (file modes) before forwarding to `Agent()`. The four polish modes survive unchanged in framing — the difference is only "spawned per-polish, dies after" vs "resident, idle between."
+
+This is the smallest binary change that drops residency: a new subcommand wired in `dispatch.go`, a `runPolishSpec` beside `runSpawnStanding` in `standing.go`, sharing the mod-parse helpers. `spawn-standing`/`list-standing`/`show-standing` stay (other workflows may still declare a resident teammate); this task does NOT delete them — it adds the one-shot path and retargets `comm-officer` + the contract onto it.
+
+### Mod becomes self-describing (the captain's key point)
+
+The feature-specific usage prose moves OUT of the contract and INTO `comm-officer.md`:
+
+- ADD `## One-Shot Prompt` (the per-polish Agent body, above).
+- Frontmatter `standing: true` → DROP it. The mod is no longer a standing teammate; it is an on-demand polish mod. `list-standing` no longer returns it; `comm-officer` no longer appears in any boot discovery.
+- DELETE `## Hook: startup` and `## Hook: shutdown` (residency lifecycle) — there is no startup spawn and no teardown.
+- The mod KEEPS, and becomes the single home for, the usage prose the contract sheds: when to polish vs not (the Scope bullets), the four polish modes, the boundary rules, the hard rules. This already lives in the mod's `## Routing guidance` / `## Routing Usage`; the contract's duplicate goes.
+
+### Contract keeps only a minimal generic hook
+
+The FO/ensign contract keeps a few sentences: "Registered polish mods declare on-demand polishers. When you have a deliberate draft for captain review (PR body, gate summary, debrief, long entity-body narrative), you MAY route it through a one-shot polisher: `dispatch polish-spec --mod {path}` emits the Agent spec; append the draft and dispatch; it polishes once and dies. Best-effort, non-blocking — proceed un-polished if it does not return. Read the polisher's usage from the mod, not from here." The when/how detail lives in the mod.
+
+## Concrete before/after wording
+
+### `claude-fo-dispatch.md` — SHEDS
+
+- **`### Standing teammate discovery pass`** (current lines 17-24) — DELETE entirely. No boot-time `list-standing` discovery for polish.
+- **`### Standing teammate lazy-spawn`** (current lines 26-38) — DELETE entirely. No deferred spawn-at-first-dispatch.
+- **`### Standing teammate declaration and routing mechanics`** (current lines 40-47) — DELETE the declaration-layout / teardown-trigger / lazy-spawn-injection bullets. The dispatch-time-injection bullet (the `show-standing` build-append) is retargeted: `dispatch build` no longer auto-appends a standing-teammates routing block.
+- **`## Standing Teammates`** (current lines 49-56) — DELETE the four standing concepts (first-boot-wins, team-scope lifecycle, routing contract, declaration). The 3-sentence on-demand hook lives in `## Dispatch` instead.
+- **`## Dispatch` → "Routing through a standing prose-polisher"** (current line 80) — REPLACE the residency framing. BEFORE: "the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Check team membership first." AFTER: the on-demand hook — "the FO MAY dispatch a one-shot polisher via `dispatch polish-spec --mod {path}`; it polishes once and dies. Best-effort, non-blocking; proceed un-polished if it does not return. Read usage from the mod." The Out-of-scope sentence (live replies, short statuses, commit messages) MOVES to the mod (it is usage prose).
+
+### `first-officer-shared-core.md` — SHEDS
+
+- **Line 27** (MODS-REPORT) — the parenthetical "a comm-officer spawn" as a reportable startup hook: REMOVE. The pr-merge startup-hook example stays.
+- **Line 39** (greet deferrals) — REMOVE "the comm-officer spawn" from the list of expensive deferrals carried past the greet.
+- **Line 108** — REMOVE "standing-teammate discovery/spawn" from the list of dispatch-reference machinery.
+- **Line 201** — DELETE the sentence "The standing-teammate concepts (first-boot-wins lifecycle, team-scope teardown, the by-name routing contract, the declaration layout) travel with the deferred dispatch module…". The concepts no longer exist.
+
+### `comm-officer.md` mod — CHANGES (concrete)
+
+- Frontmatter: `standing: true` → DELETE the line.
+- `## Hook: startup` and `## Hook: shutdown` — DELETE both sections.
+- ADD `## One-Shot Prompt` — the resident `## Agent Prompt` body with residency framing removed: cut "Then idle. Do NOT start polishing anything until you receive a polish request." and the entire "You are a **standing teammate**: Stay live / Go idle between tasks / …" block; replace the opening with "You are a one-shot communications officer. A draft to polish follows. Polish it, reply once with the polished text + notes block, then stop." The first-action online-message handshake (the elements-of-style availability check + the two online messages) is DROPPED — a one-shot does not announce itself and idle; it polishes the draft it was handed. KEEP: the four modes, boundary rules, reply formats, light-touch defaults, qualifier-preservation rules.
+- `## Agent Prompt` — DELETE. The mod is now purely an on-demand polish mod. (Residency back is Approach B, out of scope.)
+
+### `using-claude-team` skill — no change
+
+Grep confirms no standing-teammate prose lives in `skills/using-claude-team/` (the seed's worry was stale — the lifecycle notes live in `claude-fo-dispatch.md`, already covered above). Record: "no edit needed."
+
+### `dispatch.go` / `standing.go` — CHANGES
+
+- `dispatch.go`: add a `case "polish-spec"` routing to `runPolishSpec(modPath, stdout, stderr)` (requires `--mod` only). Mirror the existing `spawn-standing` flag-parse.
+- `standing.go`: add `runPolishSpec` — parse the mod, require a `## One-Shot Prompt` section (loud non-zero if absent), emit a spec with `team_name` omitted. Share `ParseModMetadata`/`ParseHookStartupSpawnConfig`.
 
 ## Out of scope
 
 - The behavioral polish QUALITY (the elements-of-style skill usage) — unchanged.
 - T3's FO-contract prose audit (sibling; this is a specific contract-surface reduction, T3 is the general audit).
-- Approach B (spawn-on-first-route, keep residency) — recorded as the fallback if a live-polish-latency concern surfaces at ideation, but A is the chosen direction.
+- Approach B (spawn-on-first-route, keep residency) — recorded as the fallback if a live-polish-latency concern surfaces, but A is the chosen direction.
+- DELETING `spawn-standing`/`list-standing`/`show-standing` — they stay for any other resident-teammate workflow; this task adds the one-shot path and retargets `comm-officer` onto it.
 
-## Sequencing (gated, like T3)
+## Sequencing
 
-This edits `claude-fo-dispatch.md` — the file j9's P1 split created and moved the standing-teammate prose into — plus the shared core, the `comm-officer` mod, the dispatch binary, and the `using-claude-team` skill. So it **sequences AFTER j9 P1 merges** (same ordering hazard as T3 / sr's prose retarget): dispatching prose work against today's `main` line-anchors would edit lines that no longer live there.
+j9's P1 split has already merged (`claude-fo-dispatch.md` exists on `main`), so the ordering hazard the seed flagged is resolved; the before/after line anchors above were read from the merged file. No further gating.
 
 ## Scaffolding guardrail
 
-Touches shipped scaffolding (`skills/first-officer/references/`, the `_mods/comm-officer.md` mod, the dispatch binary, `skills/using-claude-team/`) — a dispatched worker under test, never an FO-direct edit.
+Touches shipped scaffolding (`skills/first-officer/references/`, the `_mods/comm-officer.md` mod, the dispatch binary) — a dispatched worker under test, never an FO-direct edit.
 
-## Acceptance criteria (seed — ideation defines external proofs; NO contract prose-grep)
+## Acceptance criteria
 
-The proof that the lifecycle is gone is behavioral, not a grep over the contract: a live drive where the FO composes a deliberate draft and polishes it via a one-shot on-demand dispatch, with durable on-disk state showing NO standing teammate in the team `config.json` across the session until a polish is actually needed (and the one-shot polisher present only transiently when polishing). The existing live scenarios stay green and the offline gate exits 0. The mod-owned usage is exercised by actually invoking polish per the mod's declaration (the FO/ensign reads the usage from the mod, not the contract). Ideation defines the concrete scenario + the before/after wording.
+Each AC names a proof OUTSIDE the contract prose (the file under change cannot be its own expectation — a contract grep is banned as proof). The text edits (the prose sheds, the mod rewrites) are real authoring work but are NOT acceptance criteria on their own; the behavioral half below is what each rests on.
+
+1. **`dispatch polish-spec` emits a one-shot spec from the mod, with NO team_name and NO residency check.**
+   Verified by: a Go test in `internal/dispatch` (sibling to `standing_parity_test.go`) that runs `polish-spec --mod {comm-officer fixture}` and asserts the emitted JSON has `subagent_type`/`name`/`model`/`prompt` present, `team_name` ABSENT, and the prompt equals the mod's `## One-Shot Prompt` body; plus a negative test that a mod lacking `## One-Shot Prompt` exits non-zero with the section-name diagnostic. The expected prompt comes from the fixture (an independent source), not from the binary. The offline gate (`go test ./...`) exits 0.
+
+2. **No standing teammate enters team `config.json` for polish across a live session until a polish is needed; the one-shot polisher is present only transiently.**
+   Verified by: a live drive (one Spacedock session) where the FO boots, dispatches at least one ensign stage, and at NO point spawns `comm-officer` at boot or first-dispatch. Durable proof: capture `~/.claude/teams/{team}/config.json` members BEFORE any polish — `comm-officer` ABSENT. Then the FO composes a deliberate draft (a gate summary), dispatches the one-shot polisher via `polish-spec`, and the polisher appears in the roster only while polishing and is gone (or never resident) after. The boot/first-dispatch member list having no `comm-officer` is the falsifiable signal — under the old lifecycle it WOULD be there at first dispatch.
+
+3. **The one-shot polish is driven by reading usage from the MOD, not the contract, and returns a polished draft.**
+   Verified by: in the same live drive, the FO/ensign reads the polish modes + boundary rules from `comm-officer.md` (the contract no longer carries them), dispatches a one-shot polisher with a real draft, and receives polished text + a notes block back. Proof is the returned polished artifact (an observable message/file the polisher produced), not a grep that the mod contains the modes.
+
+4. **`list-standing` no longer returns `comm-officer`; existing scenarios stay green.**
+   Verified by: `dispatch list-standing --workflow-dir docs/dev` produces empty stdout (the mod dropped `standing: true`) — an observable command output, not a prose check; and the existing live/fixture scenarios that exercised the dispatch path remain green.
+
+### Hard comm-officer guard (folded in)
+
+A one-shot polisher MUST NOT touch MUST / MUST-NOT clauses or semantic qualifiers in contract prose — the same boundary the resident mod already carries ("Do not change semantic qualifiers silently"). When `comm-officer.md` is rewritten for one-shot, this guard is PRESERVED verbatim in the `## One-Shot Prompt` body (it is a polish-quality boundary, independent of residency). Carrying it is part of AC-3's mod rewrite; the proof is that a polish drive over a draft containing a MUST clause returns it unchanged.
+
+## Test plan
+
+- **AC-1 (mechanism):** Go unit test, fixture-driven, ~30 min. The fixture is a minimal `_mods` polish mod with a `## One-Shot Prompt`. Cheapest gate; runs in CI via `go test ./...`. The spike above already proved the extraction half live; this test pins the one-shot-specific behavior (no team_name, section requirement).
+- **AC-2 + AC-3 + guard (behavioral):** one live Spacedock smoke drive, ~1 session. The load-bearing proof that residency is gone and the mod is self-describing. Capture `config.json` members at boot/first-dispatch (proof of absence) and the returned polished draft (proof of the on-demand round-trip). Cannot be a fixture — roster membership over a real session is the claim.
+- **AC-4:** `list-standing` command-output assertion (trivial) + re-run the existing scenario suite, green. ~10 min.
+- Cost/complexity: medium. The binary change is small (one subcommand sharing proven helpers). The prose sheds are mechanical but span three files. The live drive is the only multi-minute item.
+
+## Stage Report: ideation
+
+- DONE: Concrete before/after wording: what the FO contract SHEDS vs the minimal generic hook it keeps, AND the mod-owned usage prose moved into _mods/comm-officer.md.
+  `## Concrete before/after wording` section names each shed (discovery pass, lazy-spawn, declaration layout, team-scope teardown, first-boot-wins) with current line anchors across `claude-fo-dispatch.md` + `first-officer-shared-core.md`, the kept 3-sentence hook, and the `comm-officer.md` rewrites (drop `standing:`/hooks, add `## One-Shot Prompt`).
+- DONE: Exercise the riskiest mechanism FIRST: one-shot spec-emit repurposing spawn-standing's prompt-extraction.
+  Ran `./spacedock dispatch spawn-standing` against the comm-officer mod with a non-matching team name → exit 0, full Agent spec with the mod's prompt verbatim (`## Mechanism spike`). One-shot `polish-spec` = that path minus `MemberExists` short-circuit + `--team`; the spike also surfaced that the resident Agent Prompt needs a one-shot variant.
+- DONE: Behavioral AC + concrete live-drive scenario proving NO standing teammate in config.json until polish is needed; NO contract prose-grep; fold the hard comm-officer guard (never touch MUST/MUST-NOT/qualifiers).
+  AC-2 captures `config.json` members at boot/first-dispatch (comm-officer ABSENT is the falsifiable signal); every AC binds proof to an independent source (fixture, command output, returned artifact) with the contract-grep ban stated; `### Hard comm-officer guard` folded into the ACs.
+
+### Summary
+
+Fleshed the seed into a full ideation spec for replacing the standing-polisher lifecycle with an on-demand one-shot `dispatch polish-spec`. Proved the riskiest mechanism live (spawn-standing's prompt-extraction is reusable; one-shot is that path minus residency), which surfaced a real design decision: the resident Agent Prompt needs a one-shot `## One-Shot Prompt` variant. Wrote concrete before/after wording across three files plus the binary, and four behavioral ACs each bound to an out-of-contract proof (Go fixture test, live config.json roster capture, returned polished artifact, list-standing output) with the contract-grep ban honored and the MUST/qualifier guard folded in. j9 P1 has already merged, so the seed's sequencing gate is resolved.
