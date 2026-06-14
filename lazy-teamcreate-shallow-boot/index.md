@@ -12,6 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#365"
 ---
 
 Make the first officer cheap to boot and reach interactive readiness fast. Boot forensics on a live FO session (`docs/roadmap/0203-fo-efficiency/boot-analysis.md`) measured **~160k peak context and ~13.6 min wall-clock to reach an interactive greet — with no team created and no worker dispatched.** A 100% pre-dispatch session paid full deep-boot cost. The FO front-loads its entire contract (both reference files ~16.2k), the full workflow README (~8.1k), both mod files (~6.5k), and renders the human status table (twice, ~8.7k) — then thinks at 100k+ context, where the two slowest turns (128.6s, 100.1s) fired. None of that was needed to greet the captain.
