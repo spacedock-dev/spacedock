@@ -30,6 +30,7 @@ func TestReconcileEDetectsAndResetAdvancesMain(t *testing.T) {
 	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
 entity-type: task
 state: .spacedock-state
+trunk: next
 stages:
   states:
     - name: backlog

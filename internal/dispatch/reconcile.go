@@ -146,6 +146,7 @@ type driftItem struct {
 	PR       string `json:"pr,omitempty"`
 	Behind   int    `json:"behind,omitempty"`
 	Ahead    int    `json:"ahead,omitempty"`
+	Trunk    string `json:"trunk,omitempty"`
 	Reason   string `json:"reason"`
 }
 
@@ -203,6 +204,12 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 
 	stageNames := readStageNames(opts.workflowDir)
 
+	// The integration trunk is resolved ONCE from the workflow's declared
+	// top-level trunk: key (defaulting to main) and passed into the git-hygiene
+	// detectors. The detectors carry no trunk literal — trunk knowledge lives in
+	// the one resolveTrunk source, not scattered inside roster-helper detectors.
+	trunk := resolveTrunk(opts.workflowDir)
+
 	var drift []driftItem
 
 	ensigns := filterEnsigns(team.Members)
@@ -216,10 +223,10 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 		drift = append(drift, classC(active, opts.gh)...)
 	}
 	if opts.include["D"] {
-		drift = append(drift, classD(active, repoRoot, opts.git)...)
+		drift = append(drift, classD(active, repoRoot, trunk, opts.git)...)
 	}
 	if opts.include["E"] {
-		drift = append(drift, classE(repoRoot, opts.git)...)
+		drift = append(drift, classE(repoRoot, trunk, opts.git)...)
 	}
 
 	sortDrift(drift)
@@ -561,10 +568,11 @@ func classC(active map[string]entityRecord, gh ghRunner) []driftItem {
 	return out
 }
 
-// classD flags worktrees whose branch HEAD is behind origin/next (need a
-// rebase). The behind count is `git rev-list --count HEAD..origin/next` run
-// inside the worktree dir.
-func classD(active map[string]entityRecord, repoRoot string, git gitRunner) []driftItem {
+// classD flags worktrees whose branch HEAD is behind origin/{trunk} (need a
+// rebase). The behind count is `git rev-list --count HEAD..origin/{trunk}` run
+// inside the worktree dir. The trunk is resolved once in Reconcile and passed in —
+// classD carries no trunk literal.
+func classD(active map[string]entityRecord, repoRoot, trunk string, git gitRunner) []driftItem {
 	var out []driftItem
 	slugs := sortedKeys(active)
 	for _, slug := range slugs {
@@ -579,7 +587,7 @@ func classD(active map[string]entityRecord, repoRoot string, git gitRunner) []dr
 		if info, err := os.Stat(wt); err != nil || !info.IsDir() {
 			continue
 		}
-		out2, err := git(wt, "rev-list", "--count", "HEAD..origin/next")
+		out2, err := git(wt, "rev-list", "--count", "HEAD..origin/"+trunk)
 		if err != nil {
 			continue
 		}
@@ -592,17 +600,20 @@ func classD(active map[string]entityRecord, repoRoot string, git gitRunner) []dr
 			Slug:     slug,
 			Worktree: rec.worktree,
 			Behind:   n,
-			Reason:   fmt.Sprintf("branch behind origin/next by %d", n),
+			Trunk:    trunk,
+			Reason:   fmt.Sprintf("branch behind origin/%s by %d", trunk, n),
 		})
 	}
 	return out
 }
 
-// classE flags a local main that carries commits not on origin/next. The FO's
-// action is `git fetch && git reset --hard origin/next` plus a rebuild of the
-// binary. The helper only detects.
-func classE(repoRoot string, git gitRunner) []driftItem {
-	out, err := git(repoRoot, "rev-list", "--count", "origin/next..main")
+// classE flags a local main that carries commits not on origin/{trunk}. The FO's
+// action is `git fetch && git reset --hard origin/{trunk}` plus a rebuild of the
+// binary. The helper only detects. The trunk is resolved once in Reconcile and
+// passed in; the drift item carries it so the FO remedy reads {drift.trunk} from
+// JSON rather than a hardcoded reset target.
+func classE(repoRoot, trunk string, git gitRunner) []driftItem {
+	out, err := git(repoRoot, "rev-list", "--count", "origin/"+trunk+"..main")
 	if err != nil {
 		return nil
 	}
@@ -613,7 +624,8 @@ func classE(repoRoot string, git gitRunner) []driftItem {
 	return []driftItem{{
 		Class:  "E",
 		Ahead:  n,
-		Reason: fmt.Sprintf("local main carries %d commits not on origin/next; reset main->origin/next", n),
+		Trunk:  trunk,
+		Reason: fmt.Sprintf("local main carries %d commits not on origin/%s; reset main->origin/%s", n, trunk, trunk),
 	}}
 }
 

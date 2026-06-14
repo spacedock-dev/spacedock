@@ -48,6 +48,12 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			return code
 		}
 		return runShowStageDef(workflowDir, stage, stdout, stderr)
+	case "trunk":
+		workflowDir, code := requireSubcommandFlag(args[1:], "trunk", "--workflow-dir", stderr)
+		if code != 0 {
+			return code
+		}
+		return runDispatchTrunk(workflowDir, stdout, stderr)
 	case "context-budget":
 		name, code := requireSubcommandFlag(args[1:], "context-budget", "--name", stderr)
 		if code != 0 {
@@ -255,6 +261,7 @@ Usage:
   spacedock dispatch build --print-schema
   spacedock dispatch build --validate-only FILE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
+  spacedock dispatch trunk --workflow-dir DIR
   spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include A,B,C,D,E]
 `)
 }
