@@ -167,3 +167,26 @@ Captain scope correction: the real deliverable is the SHIPPED template `mods/pr-
 ### Summary
 
 Both mods now resolve the PR base by running `spacedock dispatch trunk` instead of a hardcoded literal: the shipped repo-root template (`mods/pr-merge.md`, the real deliverable — flip-proof for every future commissioned workflow, default `main`, non-split-root flow preserved) and the dev-instance companion (`docs/dev/_mods/pr-merge.md`, split-root, default `main`, formerly `next`). Both bumped to 0.12.2. Base reads the configured `trunk:` key via sr's resolver, never `cli.devBranch`. Proof is sr's merged AC-5 oracle plus `go test ./...` green; no prose-grep AC by design.
+
+## Stage Report: implementation (cycle 3 — local mod frontmatter annotations)
+
+Captain expanded scope: annotate the LOCAL mod's frontmatter so its relationship to the shipped template is legible. Same branch, folded in.
+
+- DONE: Shipped template config-drive (cycle 2).
+  `mods/pr-merge.md` commit e6c7913d — base resolved via `dispatch trunk`, `main` literal removed at push/rebase/draft/`gh pr create`; version 0.12.2.
+- DONE: Local mod config-drive (cycle 1).
+  `docs/dev/_mods/pr-merge.md` commit 0b8b7dcc — 8 split-root `next` literals -> `"$BASE"`.
+- DONE: Reconciliation tracking — `reconciled-from-shipped: 0.12.2` records the shipped template version this local mod tracks (drift detector).
+  Points at the shipped mod's new (config-drive) version 0.12.2. Commit 97fe1e30.
+- DONE: FO-realm governance note — `fo-realm:` scalar: FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product under test).
+  Commit 97fe1e30.
+- DONE: Local-customization note — `local-customization:` scalar names the split-root divergence (state in .spacedock-state; pr:/mod-block: via status --set path-scoped; hook never touches .spacedock-state from the code worktree; PR carries only the code-branch range).
+  Commit 97fe1e30.
+- DONE: Parser-tolerance verification — added keys do NOT break parsing.
+  `status.ParseFrontmatter` is yaml.v3 over the frontmatter mapping; unknown scalar keys are stored and ignored (mod logic reads only name/standing/description). Throwaway test (added, run green, removed) confirmed name/description/version preserved AND the 3 new keys surfaced — a malformed body would have emptied the map. Live path: `dispatch list-standing --workflow-dir docs/dev` reads pr-merge.md without error (exit 0, correctly omitted as non-standing). `go test ./...` green (16 pkgs).
+- DONE: Local mod version bumped again for the frontmatter additions.
+  0.12.2 -> 0.12.3.
+
+### Summary
+
+Folded the captain's expansion into the same branch: the local split-root mod's frontmatter now carries three top-level scalars — `reconciled-from-shipped: 0.12.2` (tracks the shipped template's config-drive version for drift detection), `fo-realm` (FO maintains directly, not via the dev workflow), and `local-customization` (names the split-root divergence). Chose real scalar keys over YAML comments: the parser is yaml.v3, so both are tolerated, but scalars are greppable and legible while staying inert to mod logic (only name/standing/description are read). Verified the parser keeps the body valid YAML and the live `list-standing` mod-reading path reads it without error; `go test ./...` green. Local version 0.12.2 -> 0.12.3.
