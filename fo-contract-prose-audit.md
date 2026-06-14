@@ -121,3 +121,30 @@ Verified by: on the collapse fork (Step 0's inventory empty/trivial), a committe
 ### Summary
 
 Designed the residual-prose-audit METHOD against j9's PLANNED Phase-1 module set (slimmed boot-resident core + deferred dispatch ref + deferred merge ref): a reproducible per-module four-step sweep — Step 0 survey (dead-cross-reference / duplicated-obligation / orphaned-transition scans whose union IS the cut-list and decides the collapse fork), Step 1 mechanical cut, Step 2 comm-officer light-touch file-in-place polish (the workflow's existing standing polish teammate, voice-preserving and non-blocking). ACs are all external: AC-1/AC-2 = the existing live FO scenarios staying green on Claude + Codex (behavior-preservation oracle), AC-3 = a `wc` byte/line delta vs a recorded post-Phase-1 baseline (the boundary guard's legal size-floor category), AC-4 = a committed roadmap-doc decision on the collapse fork; none is a prose-grep over the contract, and the comm-officer polish carries no standalone AC by design. Implementation is BLOCKED on j9 Phase-1 (verified: the deferred refs do not exist yet); the collapse-to-roadmap-decision case is the explicit Step-0 fork. No spike needed — the method composes only already-proven mechanisms (the live scenario harness, comm-officer's file-in-place mode, plain `wc`).
+
+## Stage Report: implementation
+
+- DONE: Step-0 survey produces a residual-prose inventory across j9's four merged FO-ref modules (the three scans: dead-cross-reference / duplicated-obligation / orphaned-transition) — the inventory's union IS the cut-list and decides the cut-vs-collapse fork.
+  Inventory NON-EMPTY (4 cuts, all in `first-officer-shared-core.md`) ⇒ CUT fork. Dead-cross-reference/orphaned-transition: 3x "S7b" pointers (the merged-PR sweep is step 8 in the flat 1-9 Startup list — no "S7b" label exists; residue of a pre-split S*/sub-step numbering scheme) + 1x orphaned "(B6)" label on "Rebase-conflict halt" (referenced nowhere in the repo, verified by repo-wide grep: 1 hit = the label itself). Duplicated-obligation: KEEP — concurrency-safe commit rule (canonical in shared-core §State Management, pointer-only from dispatch/merge) and worktree-ownership (canonical in dispatch, pointer in shared-core:147) are already canonical+pointer. FLAG (separate task, NOT cut here): merge module's two mod-block sections (`## Mod-Block Enforcement` + `## ... at Terminal Transitions`) restate the same mechanism-level invariant + session-resume rule; j9 added the first adjacent to the pre-existing second — collapsing two `##` sections is a judgment-call restructure that risks the live `merge-hook-guardrail` scenario, out of scope for a behavior-preserving mechanical cut.
+- DONE: On the CUT fork: each non-KEEP entry applied as the smallest behavior-preserving edit + a comm-officer light-touch file-in-place polish pass, with a `wc -c`/`wc -l` size delta recorded per file vs a baseline captured on the merged refs BEFORE any edit (AC-3).
+  4 cuts applied (Step 1, the smallest edit each: 3 S7b pointers retargeted to the live step title "the Merged-PR sweep below" / "sweep-advanced"; "(B6)" dropped from the heading — obligations untouched). All four modules then run through comm-officer file-in-place light-touch polish (Step 2); polish preserved every MUST/NOT and the verbatim `TERMINAL_TEARDOWN_BOUNDED:` marker. Code committed on worktree branch `spacedock-ensign/fo-contract-prose-audit` @ `2cc66322`. AC-3 delta below.
+- DONE: The offline gate stays green — `go test ./...` exits 0 (the cut must not break `internal/contractlint` reference-closure or the marker/hook-consistency tests); the live behavior-preservation proof (AC-1/AC-2) is left to validation — do not burn live runs.
+  `go test ./...` = 1385 passed / 0 fail (exit 0). Targeted: `internal/contractlint` 23 passed (reference-closure + boundary guard); marker/hook-consistency 18 passed across 13 packages; zero-spend parity guards `TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions` passed (scenario set still covers both hosts). AC-1/AC-2 (live Claude+Codex shared scenarios) intentionally deferred to validation — no live runs burned.
+
+### AC-3 size delta (post-Phase-1 baseline → after cut+polish)
+
+Baseline captured on the merged refs (HEAD `fe4261be`) BEFORE any edit; final after cut + comm-officer polish. `wc -c`/`wc -l`:
+
+| module | baseline (lines / bytes) | final (lines / bytes) | Δ bytes |
+|---|---|---|---|
+| first-officer-shared-core.md | 231 / 27377 | 231 / 27253 | -124 |
+| claude-first-officer-runtime.md | 43 / 5304 | 43 / 5225 | -79 |
+| claude-fo-dispatch.md | 241 / 31930 | 241 / 31791 | -139 |
+| claude-fo-merge.md | 85 / 10877 | 85 / 10839 | -38 |
+| **total** | **600 / 75488** | **600 / 75108** | **-380** |
+
+All four files strictly smaller (AC-3 satisfied). Lines unchanged — the polish was within-line concision, the cut a label/pointer repair, neither removed lines.
+
+### Summary
+
+CUT fork (Step-0 inventory non-empty). The survey found 4 dead cross-references in `first-officer-shared-core.md`, all residue of a pre-split S*/B* step-numbering scheme the flat 1-9 Startup list left dangling (3x "S7b" → step 8 Merged-PR sweep; 1x orphaned "(B6)" label). Each repaired as the smallest behavior-preserving edit, then all four modules polished by comm-officer file-in-place (light-touch, every obligation + the verbatim teardown marker preserved). AC-3 delta -380 bytes total, all four files strictly smaller. Offline gate green (1385 pass / 0 fail; contractlint + marker/parity guards pass). AC-1/AC-2 live behavior-preservation left to validation. Flagged for a SEPARATE task (out of scope here): the merge module's two adjacent mod-block-enforcement sections restate one obligation — a section-collapse is a judgment-call restructure, not a behavior-preserving mechanical cut.
