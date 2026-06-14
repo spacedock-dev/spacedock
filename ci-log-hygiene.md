@@ -1,13 +1,13 @@
 ---
 id: ecn07f3hwp5wgs8xf14h59sj
 title: CI log hygiene — live-runner stream jsonl belongs in the artifact, not stdout
-status: ideation
+status: implementation
 source: "captain (2026-06-14) — observed while debugging #368's opus `gate-guardrail` no-progress failure: the live-runner jsonl-to-stdout dump (`internal/ensigncycle/claude_live_runner_test.go:365`) bloated the CI log (~143KB for ~80 lines on one failed step) and buried the actual failure line."
 started: 2026-06-14T19:16:23Z
 completed:
 verdict:
 score: "0.30"
-worktree:
+worktree: .worktrees/spacedock-ensign-ci-log-hygiene
 issue:
 sprint: 0203-fo-efficiency
 ---
