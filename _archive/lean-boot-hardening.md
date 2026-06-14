@@ -12,6 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 mod-block:
 pr: "#374"
+archived: 2026-06-14T21:18:10Z
 ---
 
 Keep FO boot lean: when `spacedock status --discover` returns zero workflows, the Startup discovery step must report no workflow found and STOP — never fall back to a broad `find`/`grep` filesystem sweep to hunt one down. The prevention is to fix the binary's own no-workflow OUTPUT (which invited the hunt — the captain had to manually stop a live sweep) to a self-evidently terminal report-and-stop directive; a model-agnostic stream-scanner detector + a registered live scenario guard the FO behavior against regression.
