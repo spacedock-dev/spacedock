@@ -1,7 +1,7 @@
 # SECURITY MODEL — read before editing.
 #
 # Triggers: workflow_dispatch (a maintainer triggers it manually) and
-# pull_request on `next` and `main`. It uses pull_request, NOT pull_request_target, so it
+# pull_request on `main`. It uses pull_request, NOT pull_request_target, so it
 # runs the PR-head version of the workflow and GitHub withholds repo secrets from
 # FORK PRs — untrusted fork code cannot exfiltrate live API keys because the
 # secrets are simply absent for forks. Workflow-level permissions are read-only.
@@ -38,12 +38,12 @@ on:
         required: false
         type: string
         default: "low"
-  # pull_request (NOT pull_request_target): runs the PR-head/next version of this
+  # pull_request (NOT pull_request_target): runs the PR-head version of this
   # workflow, and withholds repo secrets from FORK PRs — a fork's malicious code
   # cannot exfiltrate live API keys because the secrets are simply absent.
   # Same-repo PRs get the secret; the live job stays per-variant environment-gated.
   pull_request:
-    branches: [next, main]
+    branches: [main]
 
 permissions:
   contents: read
@@ -74,7 +74,7 @@ jobs:
   # fail-fast is off so one model's red does not cancel the other's run.
   claude-live:
     needs: offline
-    # Live, secret-bearing job. Every PR to `next` (and every manual
+    # Live, secret-bearing job. Every PR to `main` (and every manual
     # workflow_dispatch) queues the live matrix; the offline gate above runs
     # unconditionally per-PR (no secrets). Each variant then pauses in `waiting`
     # on its CI-E2E* / CI-E2E-OPUS environment until a maintainer approves THAT
