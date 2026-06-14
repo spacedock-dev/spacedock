@@ -14,50 +14,11 @@ In single-entity mode, skip team creation. Use bare-mode dispatch for all agent 
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32`. The startup boot read is an FO-internal read; consume it as JSON: `status --boot --json` returns one object with the keys `command`, `mods`, `id_style`, `next_id`, `min_prefix` (present only for `sd-b32`), `orphans`, `pr_state`, `dispatchable`, `team_state` — every value a string. For `sd-b32`, call `status --next-id --id-seed "{slug-or-title}"` and optionally pass `--id-actor` so the SHA-derived candidate includes creation context. SD-B32 candidates are full stored IDs, not a reservation; call again immediately before writing the entity. For `slug`, derive the slug from the title and leave `id` blank.
 
-### Standing teammate discovery pass
-
-After team creation succeeds (the ladder has resolved and the returned `team_name` is known) and BEFORE entering the normal dispatch event loop, run the standing-teammate discovery pass:
-
-1. Run `spacedock dispatch list-standing --workflow-dir {wd}` and consume its newline-delimited output (one absolute mod path per line, sorted alphabetically, empty stdout on zero matches). Do NOT grep mod frontmatter yourself — authoritative parsing is deferred to the helper.
-2. Record the returned mod paths in session memory. **No spawn calls at boot.** Spawn is deferred to the first team-mode dispatch (see lazy-spawn below).
-
-In single-entity (bare) mode and in Degraded Mode, discovery still runs (it is cheap — just `list-standing`), but lazy-spawn is skipped (no team to spawn into). Standing teammates are a team-scope concept; without a live team they have no lifecycle anchor.
-
-### Standing teammate lazy-spawn
-
-Before the first `Agent()` call that uses a `team_name` (i.e., the first non-bare dispatch), spawn all declared standing teammates:
-
-1. For each declared standing-teammate mod path recorded during the discovery pass:
-   a. Run `spacedock dispatch spawn-standing --mod {abs_path_to_mod} --team {team_name}`.
-   b. If the helper emits JSON with top-level `status: "already-alive"`, log the reported `name` and skip to the next mod. Standing teammates are first-boot-wins across the captain session; subsequent workflows sharing the team pick up the live member. (The helper resolves already-alive via the team-membership predicate — a member named in the team `config.json` members list — the same predicate the prose-polish routing check uses.)
-   c. Otherwise the helper emits an Agent() call spec JSON with keys `subagent_type`, `name`, `team_name`, `model`, `prompt`. **Forward that spec verbatim** to the Agent tool — copy each field into the corresponding Agent() argument without paraphrasing the prompt, rewriting the name, or substituting the team. Same "forward verbatim" discipline as `spacedock dispatch build` output.
-   d. The spawn is fire-and-forget. Do NOT block on the teammate's first idle notification before continuing to dispatch.
-   e. If the helper exits non-zero on any mod (missing Agent Prompt section, invalid model enum, convention-violating trailing heading), surface the error to the captain and continue with the remaining mods. A broken mod does not block the workflow.
-2. After all standing teammates are spawned (or skipped), proceed with the ensign `Agent()` dispatch.
-
-This is a one-time cost at first dispatch. Subsequent dispatches skip the spawn pass — the FO tracks "standing teammates spawned for this team" in session memory. In single-entity (bare) mode and in Degraded Mode, skip lazy-spawn (same as the discovery-pass skip above). Prose-polish round-trips can reach several minutes on long drafts — ensigns and the FO MUST treat polish routing as non-blocking regardless of round-trip duration.
-
-### Standing teammate declaration and routing mechanics
-
-These are the Claude realization of the shared core's `## Standing Teammates` concepts — the concrete declaration layout, routing call, and teardown trigger the cross-runtime concept defers to the adapter:
-
-- **Declaration layout.** One mod file per standing teammate under `{workflow_dir}/_mods/{name}.md`. Frontmatter carries `standing: true` and an optional `description`. The `## Hook: startup` section declares spawn config as `- key: value` bullets (`subagent_type`, `name`, `model` from the `sonnet|opus|haiku` enum). The `## Agent Prompt` section MUST be the LAST top-level section; its body — from the line after the heading to EOF — is the verbatim prompt passed to Agent(). Any `## ` heading after `## Agent Prompt` is rejected loudly by `spacedock dispatch spawn-standing`.
-- **Routing call.** Address a standing teammate by its declared `name` via `SendMessage`. Best-effort, non-blocking, 2-minute timeout (the shared-core routing-contract concept).
-- **Teardown trigger.** The teammate dies when Claude Code tears down the team — session end, `TeamDelete`, or captain-initiated shutdown. Mid-session death is detected on the next routing attempt; respawn via `spawn-standing` or proceed without the teammate.
-- **Dispatch-time injection.** When assembling an ensign dispatch, `spacedock dispatch build` appends a `spacedock dispatch show-standing --workflow-dir {wd}` fetch line whenever the workflow declares at least one standing teammate. `show-standing` renders the `### Standing teammates available in your team` routing block (a mod's `## Routing Usage` body when present, else a one-line fallback) so each ensign discovers the teammates without the FO adding per-dispatch opt-ins.
-
-## Standing Teammates
-
-A **standing teammate** is a long-lived specialist agent (prose polisher, science officer, code reviewer, language translator) declared by a workflow mod with `standing: true`. The FO discovers each at boot via the runtime adapter, defers spawn to the first team-mode dispatch, routes by name, and lets it die with the team at teardown. The four concepts below are load-bearing for every runtime; each adapter realizes — or omits — the mechanics (discovery, layout, routing call, teardown trigger) in its own way.
-
-- **first-boot-wins** — lifecycle is team-scoped, not workflow-scoped. Spawn deferred to first dispatch; when multiple workflows share a team, the first FO to find the member absent spawns it, later workflows skip. How team scope maps onto session lifetime is the runtime's concern.
-- **team-scope lifecycle** — the teammate lives in one team and dies at team teardown (session end, explicit delete, captain shutdown). No cross-team handoff, no cross-session persistence. Mid-session death is detected on the next routing attempt; auto-recovery is deferred.
-- **routing contract** — address by declared `name`, best-effort and non-blocking: if no reply within the 2-minute timeout, the sender proceeds un-polished/un-reviewed/un-translated. Round-trip latencies of several minutes are normal on long drafts. Routing call is the adapter's (`send_input` on Codex, `SendMessage` on Claude teams).
-- **declaration** — one mod file per teammate, frontmatter `standing: true`, with spawn config and verbatim agent-prompt body. On-disk layout and parse rules are the adapter's.
-
 ## Dispatch
 
 The FO MUST use the runtime adapter's dispatch mechanism. Manual prompt assembly is prohibited except in documented break-glass scenarios.
+
+**Standing-teammate injection.** Before the first team-mode `Agent()` dispatch, inject the workflow's declared standing teammates: run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each Agent spec in the returned JSON array to `Agent()` (verbatim, same discipline as `spacedock dispatch build` output). The call is idempotent — already-alive members are omitted, so re-running is safe — and emits `[]` in bare mode or when no standing teammate is declared. Standing teammates are team-scoped: they die with the team at teardown. Read each teammate's routing usage from its mod, not from here.
 
 For each entity reported by `status --next`:
 
@@ -77,7 +38,7 @@ For each entity reported by `status --next`:
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
-**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Check team membership first. Best-effort, non-blocking, 2-minute timeout; if absent, proceed un-polished. **Out of scope:** live captain replies, short operational statuses (`pushed`, `tests green`, `PR opened`), tool-call outputs, commit messages, transient logs — polish is a deliberate-draft discipline, not a live-turn reflex. Dispatched workers discover the same teammates through their build-time prompt; the FO does not add per-dispatch routing opt-ins manually.
+**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Best-effort, non-blocking, 2-minute timeout; if absent, proceed un-polished. Polish round-trips can reach several minutes on long drafts — treat routing as non-blocking regardless of duration. Read the polisher's usage (when to polish vs not, the polish modes) from its mod.
 
 ## Reuse and Fresh Dispatch
 
@@ -126,7 +87,7 @@ Use `worker_key` in worktree paths (`.worktrees/{worker_key}-{slug}`) and branch
 
 Use the Agent tool to spawn each worker. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage in the completion path. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker.
 
-**Sequencing rule:** Team lifecycle calls (TeamCreate, TeamDelete), `spawn-standing` invocations (which emit Agent specs forwarded into Agent dispatch), and Agent dispatch must NEVER appear in the same tool-call message as TeamCreate/TeamDelete — parallel execution causes races (see the recovery procedure in `Skill(skill="spacedock:using-claude-team")`). Resolve team state in one message, then dispatch (including spawn-standing-driven Agent calls) in a subsequent message. `spawn-standing` requires a real `team_name` from a prior successful `TeamCreate` and MUST NOT precede it.
+**Sequencing rule:** Team lifecycle calls (TeamCreate, TeamDelete), `spawn-standing-all` invocations (which emit Agent specs forwarded into Agent dispatch), and Agent dispatch must NEVER appear in the same tool-call message as TeamCreate/TeamDelete — parallel execution causes races (see the recovery procedure in `Skill(skill="spacedock:using-claude-team")`). Resolve team state in one message, then dispatch (including spawn-standing-all-driven Agent calls) in a subsequent message. `spawn-standing-all` requires a real `team_name` from a prior successful `TeamCreate` and MUST NOT precede it.
 
 **No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/{team_name}/` before `Agent()` in the normal dispatch path. The on-disk check is a guaranteed false positive under registry-desync (anthropics/claude-code#36806 leaves on-disk state intact even when the in-memory team slot is invalidated). Trust the in-memory handle returned by `TeamCreate` and let `Agent()` surface any registry-desync error. On such an error, follow the TeamCreate failure recovery ladder and Degraded Mode semantics in `Skill(skill="spacedock:using-claude-team")` — do NOT reintroduce a pre-dispatch probe.
 

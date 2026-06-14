@@ -4,7 +4,7 @@ This file defines how the shared first-officer core executes on Claude Code. It 
 
 ## Dispatch reference (load at first dispatch)
 
-The dispatch machinery for this host — Team Creation, the ID/next-id read, standing-teammate discovery/lazy-spawn/declaration, Worker Resolution, the Dispatch Adapter (`spacedock dispatch build` + break-glass), Degraded Mode seams, the Context-Budget probe, and the Event Loop (incl. the reconcile sweep) — lives in `references/claude-fo-dispatch.md`. Read it at the FIRST team-mode dispatch, alongside the `Skill(skill="spacedock:using-claude-team")` invocation it opens with — not at boot. A boot that greets and stops for input never dispatches, so it never reads this reference and never creates a team.
+The dispatch machinery for this host — Team Creation, the ID/next-id read, standing-teammate injection (`spawn-standing-all`), Worker Resolution, the Dispatch Adapter (`spacedock dispatch build` + break-glass), Degraded Mode seams, the Context-Budget probe, and the Event Loop (incl. the reconcile sweep) — lives in `references/claude-fo-dispatch.md`. Read it at the FIRST team-mode dispatch, alongside the `Skill(skill="spacedock:using-claude-team")` invocation it opens with — not at boot. A boot that greets and stops for input never dispatches, so it never reads this reference and never creates a team.
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see the dispatch reference for the full read shape). A boot that only greets does not file a task.
 

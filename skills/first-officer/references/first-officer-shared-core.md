@@ -96,7 +96,7 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 ## Dispatch (deferred module)
 
-The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, team creation, standing-teammate discovery/spawn, reuse conditions, the event loop, and the context-budget probe — lives in the runtime's dispatch reference, lazily loaded at the first team-mode dispatch. The runtime adapter names the load point (read alongside `Skill(skill="spacedock:using-claude-team")` at the first `Agent()` that uses a `team_name`). A greet-and-stop boot never reads it.
+The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, team creation, standing-teammate injection (`spawn-standing-all`), reuse conditions, the event loop, and the context-budget probe — lives in the runtime's dispatch reference, lazily loaded at the first team-mode dispatch. The runtime adapter names the load point (read alongside `Skill(skill="spacedock:using-claude-team")` at the first `Agent()` that uses a `team_name`). A greet-and-stop boot never reads it.
 
 ## Completion and Gates
 
@@ -189,7 +189,7 @@ Supported lifecycle points:
 
 Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT reads the `mods` map without opening a mod file (Startup step 5). The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
 
-The standing-teammate concepts (first-boot-wins lifecycle, team-scope teardown, the by-name routing contract, the declaration layout) travel with the deferred dispatch module — they apply only once a team exists at first dispatch.
+Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all` at first dispatch; the concept is team-scoped (members die with the team at teardown).
 
 ## Clarification and Communication
 

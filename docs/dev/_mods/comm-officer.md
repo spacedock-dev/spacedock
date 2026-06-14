@@ -11,20 +11,9 @@ A standing teammate for prose polish. Kept alive for the captain session once sp
 
 ## Hook: startup
 
-Before entering the normal event loop, check whether the current team (`~/.claude/teams/{team_name}/config.json` members list) contains a member named `comm-officer`.
-
-- **If present:** log `comm-officer already alive, skipping spawn` and proceed. First-boot-wins.
-- **If absent:** spawn using the configuration below, then proceed.
-
-Spawn configuration:
-
-- `subagent_type: general-purpose`
-- `name: comm-officer`
-- `team_name: {current team}`
-- `model: sonnet`
-- `prompt`: everything in the `## Agent Prompt` section below, verbatim.
-
-The spawn is fire-and-forget. Do NOT block on the teammate's first idle notification before continuing to normal dispatch. Ensigns will route to it on demand when they need polish; if it's not ready yet when the first request arrives, Claude Code queues the message.
+- subagent_type: general-purpose
+- name: comm-officer
+- model: sonnet
 
 ## Hook: shutdown
 

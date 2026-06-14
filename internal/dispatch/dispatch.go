@@ -81,6 +81,15 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			return 2
 		}
 		return runSpawnStanding(os.Getenv("HOME"), mod, team, stdout, stderr)
+	case "spawn-standing-all":
+		flags := parseFlags(args[1:], map[string]bool{"--workflow-dir": true, "--team": true})
+		wd, okWD := flags["--workflow-dir"]
+		team, okTeam := flags["--team"]
+		if !okWD || !okTeam {
+			fmt.Fprintln(stderr, "error: dispatch spawn-standing-all requires --workflow-dir and --team")
+			return 2
+		}
+		return runSpawnStandingAll(os.Getenv("HOME"), wd, team, stdout, stderr)
 	case "reconcile":
 		return runReconcile(args[1:], stdout, stderr)
 	default:
