@@ -10,6 +10,7 @@ score: "0.40"
 worktree: .worktrees/spacedock-ensign-dispatch-build-name-cap
 issue: "#366"
 mod-block: merge:pr-merge
+pr: "#368"
 ---
 
 `spacedock dispatch build` constructs the worker `name` as `{worker_key}-{slug}-{stage}` with no length cap, but Claude Code's `Agent` tool enforces `name` matching `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$` (max 64 chars). For a long slug the emitted `name` exceeds 64 chars, so forwarding the helper output verbatim to `Agent()` — the contract's MANDATORY dispatch path — fails with `InputValidationError` on `name`, and the dispatch cannot proceed.
