@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-codex-collab-wait-subagent-hang
 issue:
 sprint:
-mod-block: merge:pr-merge
+mod-block:
 pr: local-merge:ce2c4970
 ---
 
