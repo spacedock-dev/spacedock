@@ -196,3 +196,18 @@ Validation REJECTED cycle 1 with ONE material finding (validator's raised-bar re
 ### Summary (cycle 2)
 
 One material validation finding fixed with the smallest possible edit: restored the four-word scope qualifier "as TeamCreate/TeamDelete" that comm-officer's polish silently dropped from the Sequencing-rule NEVER-constraint, which had over-broadened the prohibition past the actual race (co-occurrence with a lifecycle call). Offline gate re-confirmed green (1385/0); AC-3 still holds (-363 total, all four files smaller). New deliverable SHA `61b7200a` re-triggers PR #367 CI; validator re-reviews this single line.
+
+## Stage Report: validation (cycle 3 — qualifier-restore re-review)
+
+Targeted offline re-review of fix commit `61b7200a` (on top of the audited `9bb21d85`) closing the cycle-2 Material finding. No live runs.
+
+- DONE: Confirm the Sequencing-rule qualifier is restored (baseline meaning).
+  `claude-fo-dispatch.md` now reads "…and Agent dispatch must NEVER appear in the same tool-call message **as TeamCreate/TeamDelete** — parallel execution causes races." Exactly the cycle-2 smallest fix; the NEVER-constraint is re-scoped to co-occurrence with a lifecycle call.
+- DONE: Confirm the diff 9bb21d85→61b7200a is ONLY the four-word qualifier restore.
+  `git diff 9bb21d85 61b7200a` = 1 file, +1/-1, one line — the qualifier restore alone. No new edit, no collateral. (The consciously-kept "in particular" removal stays removed — correct.) Because the only delta from the audited `9bb21d85` is this single line, every other polish edit I cleared in cycle 1 is byte-identical at `61b7200a`.
+- DONE: Re-confirm "everything else clean" holds at 61b7200a.
+  Offline gate `go test ./...` = 1385 passed, exit 0. contractlint 23 passed (reference-closure + boundary guard); marker/grade-consistency 7 + `TestGradeMarkerMatchesContract` + both parity guards green. `TERMINAL_TEARDOWN_BOUNDED:` marker byte-identical to baseline. 4 cuts still orphan nothing (no `S7b`/`(B6)` in any contract ref). AC-3: all four refs strictly smaller than `fe4261be` — shared-core -124, runtime -88, dispatch -114 (was -139; +25 for the restore), merge -37; total **-363**.
+
+### Recommendation (supersedes cycle-2 REJECTED)
+
+PASSED. The single Material finding is closed by the smallest possible edit; the 1-line diff proves no collateral drift, and the full offline proof reproduces at `61b7200a` (gate green, marker intact, orphans none, AC-3 all four smaller at -363). The only remaining proof is the live AC-1/AC-2 (gate-guardrail / rejection-flow / feedback-3-cycle-escalation / merge-hook-guardrail on Claude+Codex) on the FIXED SHA — re-push #367 (`61b7200a`) and watch that CI run before the terminal merge. The cancelled run on `9bb21d85` was correctly moot.
