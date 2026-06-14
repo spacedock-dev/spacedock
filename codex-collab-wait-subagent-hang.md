@@ -173,3 +173,7 @@ Implemented the Codex-specific foreground-wait watchdog beside the shared stream
 ### Summary
 
 Recommendation: REJECTED. AC-1 requires durable entity progress before the budget to be a positive control that clears the foreground-wait watchdog, but the implementation's own test and `silenceStall()` path encode the opposite behavior. Expected correction: make durable progress clear the active wait/no typed stall for the silence-after-wait path, and replace the contradictory test with a no-stall positive control for durable progress before the budget.
+
+### Feedback Cycles
+
+- Cycle 1 (2026-06-14T04:13:02Z): validation rejected AC-1. Route back to implementation to make durable progress before the silence budget clear the active foreground wait instead of returning a typed stall, and replace the contradictory durable-progress test with a no-stall positive control.
