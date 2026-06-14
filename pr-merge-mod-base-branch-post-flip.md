@@ -135,3 +135,16 @@ Refit designed and converged with `sr` to ONE source: the split-root `pr-merge` 
 ### Summary
 
 Refit the split-root pr-merge mod so its PR base is resolved by running `spacedock dispatch trunk` (sr's shared command reading the canonical top-level `trunk:` README key, default `main`) instead of the hardcoded pre-flip `next`. All 8 trunk-relative literals now use `"$BASE"` / `origin/$BASE`. Base reads the top-level `trunk:` key only, never `cli.devBranch` (anti-conflation guard honored). Proof is the shared AC-5 oracle (green) plus a live byte-exact `main\n` check; no separate mod prose-grep AC by design.
+
+## Stage Report: validation
+
+- DONE: Reproduce refit correctness from the worktree — no trunk-relative `next` remains; all trunk sites use `$BASE`/`origin/$BASE`/`"$BASE"` from `BASE=$(spacedock dispatch trunk --workflow-dir docs/dev)`; version bumped; base reads top-level `trunk:` only, never `cli.devBranch`.
+  `grep -nE '\bnext\b' docs/dev/_mods/pr-merge.md` → exit 1 (no match). version 0.12.1→0.12.2. All 8 trunk-relative sites use `"$BASE"`/`origin/$BASE`. `resolveTrunk` (internal/dispatch/trunk.go) reads `status.ParseFrontmatter(README)["trunk"]`, defaults `main`, never reads `cli.devBranch`.
+- DONE: Reproduce sr's AC-5 shared oracle green from the worktree — `go test ./internal/dispatch -run TestDispatchTrunkCommand`, and `dispatch trunk` emits byte-exact `main\n` (poison-safe: bare stdout, single trailing newline).
+  `go test ./internal/dispatch -run TestDispatchTrunkCommand` → `ok`. Worktree-built binary (`go build -o /tmp/spacedock-wt ./cmd/spacedock`; PATH `spacedock` is stale, lacks the subcommand): `dispatch trunk --workflow-dir docs/dev | xxd` → `6d61 696e 0a` (`main\n`), exit 0, `BASE=[main]` len 4. Test asserts byte-exact stdout (`out.String() != wantStdout`) and empty stderr; absent-key→`main\n` reds a `next`-default resolver; sentinel `ftrunk` proves config-sourcing.
+- DONE: Detached 5-surface trunk-config inventory — confirm no helper/mod/ref/doc resolves the integration trunk to `next` post-flip, distinguishing legitimate channel-stamp uses.
+  Refuted nothing material. Production trunk resolution single-sourced via `resolveTrunk`; `reconcile.go` carries zero `origin/next` literals. Remaining `next`: (a) marketplace channel stamp (`cli.devBranch="next"`, host_exec/init/release edge-bump, next-publish.yml, channel_agreement_guard_test) — correct on the edge-channel axis the anti-conflation guard preserves; (b) test fixtures (`trunk: next` fixture config; sentinel `ftrunk`) — legitimate independent oracles. `format.go:303 d.next` is the status table's next-stage column, not a branch.
+
+### Summary
+
+PASSED. Refit correctness, sr's AC-5 shared oracle (byte-exact `main\n`, test-strength confirmed: reds on a `next`-default), and the detached 5-surface audit all reproduced green from the worktree. Note: the `spacedock` binary on PATH is stale (pre-dates sr's `dispatch trunk` landing) — an environment artifact, not a defect; the worktree-built binary produces the byte-exact `main\n` the checklist requires. Anti-conflation guard holds: base reads top-level `trunk:` only, never `cli.devBranch`. The audit refuted nothing material.
