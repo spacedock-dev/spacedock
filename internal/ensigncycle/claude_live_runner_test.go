@@ -362,7 +362,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	}
 	poller := newCmdPoller(cmd, pw)
 	defer poller.kill()
-	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
+	watcher := newStreamWatcher(newPipeLineSource(pr), poller, discardStreamLine)
 
 	// drainToExit runs the process to exit accumulating the full transcript, OR
 	// kills it on a 60s no-progress stall (the per-step quiet budget). The deferred
