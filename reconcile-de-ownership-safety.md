@@ -4,10 +4,10 @@ title: Reconcile Class D/E must never destroy committed or unpushed work — ret
 status: validation
 source: captain + FO (2026-06-14, this session) — the reconcile sweep flagged local main (ahead by 1, the unpushed README cut) as Class E "stale local main" and prescribed `git reset --hard origin/main`, which would have deleted the commit. Sibling to #369 (separated reconcile team-management A/B/C from repo-hygiene D/E, fixed trunk detection) and #370 (pr-merge trunk refit off pre-flip `next`); this addresses the D/E remedy-safety gap those left.
 started: 2026-06-14T21:10:17Z
-completed:
-verdict:
+completed: 2026-06-14T21:55:09Z
+verdict: PASSED
 score: 0.42
-worktree: .worktrees/spacedock-ensign-reconcile-de-ownership-safety
+worktree:
 issue:
 sprint: 0203-fo-efficiency
 mod-block:
