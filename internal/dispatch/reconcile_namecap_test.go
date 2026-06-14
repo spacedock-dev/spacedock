@@ -218,3 +218,78 @@ func TestReconcileCappedNameNoFalseClassA(t *testing.T) {
 		}
 	}
 }
+
+// Adversarial id sets pinning resolveSlugToken's two safety properties. The
+// AC3/AC4 end-to-end fixture seeds ids that diverge at char 0, so it cannot
+// exercise either property; these prefix-sharing ids do. All are 24-char ids
+// from the sd-b32 alphabet (0123456789abcdefghjkmnpqrstvwxyz).
+const (
+	// idShareShort + idShareShortSibling share only a 6-char prefix (aaaaaa) and
+	// diverge by char 10, so the full 10-char token discriminates them but a
+	// 2-char comparison would not.
+	idShareShort        = "aaaaaa0000bbbbccccddddee"
+	idShareShortSibling = "aaaaaa1111bbbbccccddddee"
+	// idShareLong + idShareLongSibling share a 10-char prefix (cccccccccc), so a
+	// 10-char id-prefix token matches BOTH — the ambiguity case.
+	idShareLong        = "cccccccccc0000000011112e"
+	idShareLongSibling = "cccccccccc1111111122223e"
+)
+
+// TestResolveSlugTokenSafetyProperties pins the two safety properties of the
+// id-prefix resolver directly against real code (no mocks). The AC3/AC4 fixture's
+// ids diverge at char 0 and so leave both properties untested; an adversarial
+// reviewer could weaken the ambiguity guard (count != 1 → count < 1) or the
+// over-match comparison (full token → token[:2]) and stay green against that
+// fixture. These cases turn RED under each weakening.
+func TestResolveSlugTokenSafetyProperties(t *testing.T) {
+	// Full-token discrimination (refutes the token[:SDB32MinPrefix] over-match
+	// edit): two ids sharing only a 6-char prefix, both ACTIVE. The 10-char token
+	// of one is a prefix of exactly one id, so it must resolve to that entity. A
+	// 2-char-only comparison would match both ids → ambiguous → unclassified,
+	// failing this assertion.
+	t.Run("full-token discriminates a short-shared-prefix sibling", func(t *testing.T) {
+		active := map[string]entityRecord{
+			"alpha-slug": {slug: "alpha-slug", id: idShareShort},
+			"beta-slug":  {slug: "beta-slug", id: idShareShortSibling},
+		}
+		archived := map[string]entityRecord{}
+		token := idShareShort[:sdB32NameIDPrefixLen] // 10 chars: "aaaaaa0000"
+		got, ok := resolveSlugToken(token, active, archived)
+		if !ok {
+			t.Fatalf("token %q should resolve uniquely; got ok=false (over-match would see both ids)", token)
+		}
+		if got != "alpha-slug" {
+			t.Errorf("token %q resolved to %q, want alpha-slug (the only id with this 10-char prefix)", token, got)
+		}
+	})
+
+	// Ambiguity guard (refutes the count < 1 edit): two ACTIVE ids share a ≥10-char
+	// prefix, so the 10-char token is a prefix of BOTH. The resolver must leave the
+	// token UNCLASSIFIED (ok=false) — resolving to either would be a false Class-A
+	// against the live sibling, the exact #366 hazard. A count < 1 guard would
+	// pass an arbitrary one through.
+	t.Run("ambiguous 10-char prefix stays unclassified", func(t *testing.T) {
+		active := map[string]entityRecord{
+			"gamma-slug": {slug: "gamma-slug", id: idShareLong},
+			"delta-slug": {slug: "delta-slug", id: idShareLongSibling},
+		}
+		archived := map[string]entityRecord{}
+		token := idShareLong[:sdB32NameIDPrefixLen] // 10 chars: "cccccccccc" (prefix of both)
+		got, ok := resolveSlugToken(token, active, archived)
+		if ok {
+			t.Errorf("ambiguous token %q resolved to %q, want unclassified (count==2 must not classify)", token, got)
+		}
+	})
+
+	// Exact-slug-first still wins (the uncapped common case is untouched): a token
+	// equal to a real slug resolves to that slug even when an unrelated id exists.
+	t.Run("exact slug match wins over id-prefix", func(t *testing.T) {
+		active := map[string]entityRecord{
+			"alpha-slug": {slug: "alpha-slug", id: idShareShort},
+		}
+		got, ok := resolveSlugToken("alpha-slug", active, map[string]entityRecord{})
+		if !ok || got != "alpha-slug" {
+			t.Errorf("exact slug token resolved to (%q,%v), want (alpha-slug,true)", got, ok)
+		}
+	})
+}
