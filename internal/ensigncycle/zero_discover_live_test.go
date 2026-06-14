@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -38,11 +39,15 @@ func TestLiveZeroDiscoverReportsAndStops(t *testing.T) {
 	childEnv := isolatedClaudeEnv(t, os.Getenv("HOME"))
 	childEnv = withBinaryOnPath(childEnv, binary)
 
-	// The zero-discover fixture: a bare git-init'd root with NO commissioned README.
+	// The zero-discover fixture: a git-init'd root with NO commissioned README.
 	// status --discover gates on `commissioned-by: spacedock@` frontmatter
 	// (livefixture_discover_test.go), so this root yields zero workflows (empty
 	// stdout, exit 0) — the exact condition whose terminal zero branch this guards.
+	// The inert .gitkeep gives gitInit's `add -A` something to stage (an empty dir
+	// stages nothing, so the init commit would fail "nothing to commit") while
+	// keeping the root workflow-less — it carries no commissioned-by frontmatter.
 	root := t.TempDir()
+	writeFile(t, filepath.Join(root, ".gitkeep"), "")
 	gitInit(t, root)
 
 	task := "Use $spacedock:first-officer for this whole run."
