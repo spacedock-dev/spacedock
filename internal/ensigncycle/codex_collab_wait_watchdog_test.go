@@ -102,7 +102,7 @@ func TestCodexCollabWaitWatchdogSilentAfterWaitStall(t *testing.T) {
 	}
 }
 
-func TestCodexCollabWaitWatchdogSilentAfterWaitWithDurableProgressStillTyped(t *testing.T) {
+func TestCodexCollabWaitWatchdogDurableProgressBeforeBudgetClearsSilentWait(t *testing.T) {
 	src := &fakeLineSource{}
 	proc := &fakeProc{}
 	w := newTestWatcher(src, proc)
@@ -111,24 +111,18 @@ func TestCodexCollabWaitWatchdogSilentAfterWaitWithDurableProgressStillTyped(t *
 
 	src.push(codexCollabToolLine("item.started", "wait", "thread-validation-6", ""))
 	go func() {
-		time.Sleep(2 * w.pollInterval)
+		time.Sleep(w.quietBudget / 3)
 		probe.markChanged()
+		time.Sleep((2 * w.quietBudget / 3) + (6 * w.pollInterval))
+		proc.setExited(0)
 	}()
 
 	_, err := drainCodexToExitWithWaitWatchdog(w, w.quietBudget, "codex shared scenario rejection-flow", watchdog)
-
-	stall := requireCodexWaitStall(t, err)
-	if stall.arm != codexWaitStallSilentAfterWait {
-		t.Fatalf("stall.arm = %q, want %q", stall.arm, codexWaitStallSilentAfterWait)
+	if err != nil {
+		t.Fatalf("durable progress before the silence budget should clear the wait, got %v", err)
 	}
-	if !stall.durableProgress {
-		t.Fatal("stall should record that durable progress was observed during the silent wait")
-	}
-	if !strings.Contains(stall.Error(), "durable_progress=true") {
-		t.Fatalf("stall diagnostic should distinguish durable progress during the wait: %q", stall.Error())
-	}
-	if !proc.wasKilled() {
-		t.Fatal("silent wait with no parent progress must still kill the fake Codex proc")
+	if proc.wasKilled() {
+		t.Fatal("durable progress before the silence budget must not kill the fake Codex proc")
 	}
 }
 

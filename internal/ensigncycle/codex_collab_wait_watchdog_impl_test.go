@@ -69,9 +69,7 @@ func newCodexCollabWaitWatchdog(scenario, artifactDir string, probe codexDurable
 }
 
 func (w *codexCollabWaitWatchdog) observeLine(line string, now time.Time, waitBudget time.Duration) error {
-	if w.probeChanged() {
-		w.clearWait()
-	}
+	w.observeDurableProgress()
 
 	if clears, ok := lineIsCodexWorkerCompletion(line); ok && clears {
 		w.clearWait()
@@ -112,8 +110,7 @@ func (w *codexCollabWaitWatchdog) silenceStall() error {
 	if !w.active && w.lastMeaningfulEvent != codexWaitStallSilentAfterWait {
 		return nil
 	}
-	durableProgress := w.probeChanged()
-	return w.stall(codexWaitStallSilentAfterWait, durableProgress)
+	return w.stall(codexWaitStallSilentAfterWait, false)
 }
 
 func (w *codexCollabWaitWatchdog) clearWait() {
@@ -125,6 +122,14 @@ func (w *codexCollabWaitWatchdog) clearWait() {
 
 func (w *codexCollabWaitWatchdog) probeChanged() bool {
 	return w.probe != nil && w.probe.changed()
+}
+
+func (w *codexCollabWaitWatchdog) observeDurableProgress() bool {
+	if !w.probeChanged() {
+		return false
+	}
+	w.clearWait()
+	return true
 }
 
 func (w *codexCollabWaitWatchdog) stall(arm codexWaitStallArm, durableProgress bool) error {
@@ -150,6 +155,10 @@ func drainCodexToExitWithWaitWatchdog(watcher *streamWatcher, budget time.Durati
 					return watcher.fullTranscript(), err
 				}
 			}
+		}
+		if watchdog.observeDurableProgress() {
+			deadline = time.Now().Add(budget)
+			continue
 		}
 		if _, exited := watcher.proc.poll(); exited {
 			watcher.drainEntries()
