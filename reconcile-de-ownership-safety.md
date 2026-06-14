@@ -131,3 +131,16 @@ Verified by: a Go unit test seeding two behind worktrees — one whose slug an i
 ### Summary
 
 Designed both safety rethinks grounded in the real `reconcile.go`. The classE bug was confirmed by an exercised spike (ahead-main → destructive `reset` emitted on current code), not by reading; the fix is a two-count direction table where `reset` never appears for ahead>0 and the only automated remedy (`ff-merge`) is git-enforced non-destructive. Class-D ownership reuses the existing trusted-roster decompose signal — no lease primitive needed, satisfying the captain's "simple" steer. ACs bind to Go unit tests over seeded real-git/roster fixtures (independent oracle), with fixtures pinned and the existing `reconcile_e_test.go` ahead-fixture flagged for update to the report-only contract.
+
+## Stage Report: implementation
+
+- DONE: Implement the Class-E two-count direction table in internal/dispatch/reconcile.go (behind→ff-merge; ahead/diverged→report-only, reason never contains `reset`); AC-1 unit tests over three seeded real-git fixtures
+  `classE` now counts both `origin/{trunk}..main` and `main..origin/{trunk}`; reasons reworded to avoid the `reset` substring (spec's "no auto-reset" wording would itself fail AC-1 — used "no auto-rewrite"). Tests in reconcile_de_safety_test.go: ahead-only, behind-only (ff-merge), diverged. Commit 3c0408fa.
+- DONE: Implement Class-D ownership safety (rebase only an in-trusted-roster worktree; un-owned/untrusted → report-only Owned:false, no pull/rebase verb); AC-2 unit tests
+  New `ownedSlugs` builds the owned set from the trusted roster via the A/B/C decompose+resolveSlugToken path; classD gains an `owned` param. Tests assert in-roster owned→rebase, absent→report-only, and untrusted-roster→both report-only. No lease primitive. Commit 3c0408fa.
+- DONE: Apply the contract doc-diff to claude-fo-dispatch.md; UPDATE TestReconcileEDetectsAndResetAdvancesMain to the report-only contract; keep behind-only rebuild; `go test ./...` green
+  FO step-0 D/E action table updated verbatim. Both ahead-fixture tests (reconcile_e_test.go + reconcile_test.go's TestReconcileFiveClasses) now assert no `reset` substring. TestReconcileEGoBuildIsRunnable kept as-is. `go build ./...` + `go test ./...` all green.
+
+### Summary
+
+Class E was rebuilt as a two-count direction table that never prescribes a destructive reset: behind-only carries a git-enforced-safe `ff-merge`+rebuild, ahead/unpushed and diverged are report-only. Class D now gates its `pull --rebase` on the worktree entity's slug being in the current trusted roster (reusing the existing decompose signal, no new lease primitive), reporting un-owned/untrusted worktrees with `Owned:false` and no mutation verb. One deviation from the ideation's literal reason strings: the spec's "no auto-reset" wording contains the `reset` substring AC-1 forbids, so the report-only reasons say "no auto-rewrite" instead — the binding safety property (no `reset` in reason) won over the example prose. Full `go test ./...` is green.
