@@ -4,10 +4,10 @@ title: dispatch build emits Agent name >64 chars for long slugs — Agent() disp
 status: validation
 source: github#366 (captain intake 2026-06-14)
 started: 2026-06-14T05:20:44Z
-completed:
-verdict:
+completed: 2026-06-14T18:55:53Z
+verdict: PASSED
 score: "0.40"
-worktree: .worktrees/spacedock-ensign-dispatch-build-name-cap
+worktree:
 issue: "#366"
 mod-block:
 pr: "#368"
