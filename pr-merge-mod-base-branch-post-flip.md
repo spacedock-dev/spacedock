@@ -1,7 +1,7 @@
 ---
 id: 87j19afq4tj5te1hjvgd6rs4
 title: pr-merge mod hardcodes base branch `next` (pre-flip); refit to `main`/config-driven
-status: implementation
+status: validation
 source: "0202 Commander drive (2026-06-13). The pr-merge mod (v0.12.1) opens PRs against `next`; the Commander overrode the base to `main` per the dispatch doc on every merge. Same post-flip stale-trunk class as dispatch reconcile."
 group: cleanup
 sprint: 0203-fo-efficiency
