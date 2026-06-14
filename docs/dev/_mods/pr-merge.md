@@ -1,7 +1,10 @@
 ---
 name: pr-merge
 description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
-version: 0.12.2
+version: 0.12.3
+reconciled-from-shipped: 0.12.2
+fo-realm: "FO realm — the FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product built under test)."
+local-customization: "Split-root variant of the shipped template: entity state lives in .spacedock-state (pr:/mod-block: via status --set, path-scoped); the hook never touches .spacedock-state from the code worktree; the PR carries only the code-branch range."
 ---
 
 # PR Merge
