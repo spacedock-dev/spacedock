@@ -277,8 +277,9 @@ func (w *streamWatcher) expectExit(budget time.Duration) (int, error) {
 // shared-scenario runners, whose host-neutral + host-specific assertions consume
 // the full transcript). On a quiet-budget stall it kills the subprocess and trips
 // stepTimeout(label); on clean exit it returns the full transcript joined by
-// newlines. This is the ONE per-stage liveness guard for the shared runners — the
-// same streamWatcher the live cycle uses, no second mechanism.
+// newlines. This is the shared stream-silence guard for runners; host adapters may
+// classify particular stalled states beside it while still using this same drain
+// and kill discipline.
 func (w *streamWatcher) drainToExit(budget time.Duration, label string) (string, error) {
 	deadline := time.Now().Add(budget)
 	for {
