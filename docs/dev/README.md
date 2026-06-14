@@ -39,7 +39,7 @@ This workflow registers lifecycle mods under `_mods/`: a `pr-merge` hook (opens 
 This workflow tracks individual tasks. A **sprint** groups several tasks into one value-increment — a convention *stacked on top* of the per-task flow, not a builtin Spacedock construct. See `_proposals/sprint-roadmap-construct.md` for the decision record (ship as a skill + commission template; defer builtin).
 
 - **Membership is a query, never a hard-coded list.** Entities carry `sprint: <slug>` (plus an optional `sprint-readiness:` filter). List members: `spacedock status --workflow-dir docs/dev --where sprint=<slug>`.
-- **Definition** lives in `docs/roadmap/NNN-<slug>/index.md` (goal, DoD, deliverable).
+- **The index is durable strategy, not a tracker.** `docs/roadmap/NNN-<slug>/index.md` holds goal, scope, DoD, and deliverable only. It does NOT enumerate members or track their state — that is the query above, which never goes stale. A Commander's execution bookkeeping (what shipped, what's in flight, per-member status) belongs in the Commander's own chain of handoffs, never in the shared index.
 - **Ownership is cross-session.** A sprint may be *driven* by one **Commander** session: a single FO boots `spacedock:first-officer`, takes the packaged sprint, and drives its members to the DoD. While a sprint is actively driven, **other FO sessions sharing this state checkout stay out of its members** — they report status and work unrelated entities rather than dispatching into a member and colliding on its worktree/state. Until a sprint carries a machine-readable owner, ownership is coordinated out-of-band (the captain / a handoff); a durable owner signal is the graduation trigger tracked by `xp`.
 
 ## File Naming
