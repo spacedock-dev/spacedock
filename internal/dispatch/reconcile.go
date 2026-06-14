@@ -1,5 +1,5 @@
 // ABOUTME: dispatch reconcile — computes a five-class drift report (lingering /
-// ABOUTME: superseded / un-advanced PR / stale branch / stale local main) from disk.
+// ABOUTME: superseded / un-advanced PR / stale branch / local main drift) from disk.
 package dispatch
 
 import (
@@ -147,6 +147,7 @@ type driftItem struct {
 	Behind   int    `json:"behind,omitempty"`
 	Ahead    int    `json:"ahead,omitempty"`
 	Trunk    string `json:"trunk,omitempty"`
+	Owned    bool   `json:"owned,omitempty"`
 	Reason   string `json:"reason"`
 }
 
@@ -223,7 +224,8 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 		drift = append(drift, classC(active, opts.gh)...)
 	}
 	if opts.include["D"] {
-		drift = append(drift, classD(active, repoRoot, trunk, opts.git)...)
+		owned := ownedSlugs(rosterTrusted, ensigns, stageNames, active, archived)
+		drift = append(drift, classD(active, repoRoot, trunk, owned, opts.git)...)
 	}
 	if opts.include["E"] {
 		drift = append(drift, classE(repoRoot, trunk, opts.git)...)
@@ -614,11 +616,17 @@ func classC(active map[string]entityRecord, gh ghRunner) []driftItem {
 	return out
 }
 
-// classD flags worktrees whose branch HEAD is behind origin/{trunk} (need a
-// rebase). The behind count is `git rev-list --count HEAD..origin/{trunk}` run
-// inside the worktree dir. The trunk is resolved once in Reconcile and passed in —
-// classD carries no trunk literal.
-func classD(active map[string]entityRecord, repoRoot, trunk string, git gitRunner) []driftItem {
+// classD flags worktrees whose branch HEAD is behind origin/{trunk}. The remedy
+// is ownership-gated: a `pull --rebase` is prescribed ONLY when the worktree's
+// entity slug is in `owned` — the set of slugs the CURRENT trusted roster's
+// ensigns resolve to (the same decompose signal classes A/B/C use). A worktree
+// whose entity is not owned (a peer session's branch, or any worktree when the
+// roster is untrusted) is still reported, but report-only with Owned:false and
+// no rebase/pull verb — reconcile never mutates a branch the running session
+// does not own. The behind count is `git rev-list --count HEAD..origin/{trunk}`
+// run inside the worktree dir; the trunk is resolved once in Reconcile and
+// passed in — classD carries no trunk literal.
+func classD(active map[string]entityRecord, repoRoot, trunk string, owned map[string]bool, git gitRunner) []driftItem {
 	var out []driftItem
 	slugs := sortedKeys(active)
 	for _, slug := range slugs {
@@ -641,38 +649,93 @@ func classD(active map[string]entityRecord, repoRoot, trunk string, git gitRunne
 		if err != nil || n <= 0 {
 			continue
 		}
-		out = append(out, driftItem{
+		item := driftItem{
 			Class:    "D",
 			Slug:     slug,
 			Worktree: rec.worktree,
 			Behind:   n,
 			Trunk:    trunk,
-			Reason:   fmt.Sprintf("branch behind origin/%s by %d", trunk, n),
-		})
+		}
+		if owned[slug] {
+			item.Owned = true
+			item.Reason = fmt.Sprintf("branch behind origin/%s by %d; pull --rebase (owned)", trunk, n)
+		} else {
+			item.Reason = fmt.Sprintf("branch behind origin/%s by %d; peer-owned or un-owned — reporting only, not rebasing", trunk, n)
+		}
+		out = append(out, item)
 	}
 	return out
 }
 
-// classE flags a local main that carries commits not on origin/{trunk}. The FO's
-// action is `git fetch && git reset --hard origin/{trunk}` plus a rebuild of the
-// binary. The helper only detects. The trunk is resolved once in Reconcile and
-// passed in; the drift item carries it so the FO remedy reads {drift.trunk} from
-// JSON rather than a hardcoded reset target.
+// ownedSlugs is the set of entity slugs the CURRENT trusted roster's ensigns
+// resolve to — built from the trusted roster's ensign member names by the same
+// decompose + resolveSlugToken path classes A/B/C use. When the roster is
+// untrusted the set is empty, so every class-D worktree is report-only: without
+// a trusted roster we cannot prove we own anything.
+func ownedSlugs(rosterTrusted bool, ensigns []claudeteam.ReconcileMember, stages []string, active, archived map[string]entityRecord) map[string]bool {
+	owned := map[string]bool{}
+	if !rosterTrusted {
+		return owned
+	}
+	for _, m := range ensigns {
+		d := decompose(m.Name, stages)
+		if !d.ok {
+			continue
+		}
+		slug, ok := resolveSlugToken(d.slug, active, archived)
+		if !ok {
+			continue
+		}
+		owned[slug] = true
+	}
+	return owned
+}
+
+// classE classifies local main against origin/{trunk} by counting BOTH
+// directions — ahead (`origin/{trunk}..main`, commits main has that origin
+// lacks, i.e. unpushed) and behind (`main..origin/{trunk}`, commits origin has
+// that main lacks). The remedy is direction-aware and never destructive:
+//
+//   - behind only (ahead 0, behind >0): an `ff-merge` of origin/{trunk} into
+//     main, which git refuses (non-zero exit, no mutation) if main has diverged —
+//     so even a race between detection and action cannot lose a commit.
+//   - ahead/unpushed (ahead >0, behind 0): report only; the FO pushes on the
+//     captain's word. The reason NEVER prescribes a reset.
+//   - diverged (ahead >0, behind >0): report only; manual reconcile. No reset.
+//
+// The helper only detects and prescribes. The trunk is resolved once in
+// Reconcile and passed in; the drift item carries it so the FO remedy reads
+// {drift.trunk} from JSON.
 func classE(repoRoot, trunk string, git gitRunner) []driftItem {
-	out, err := git(repoRoot, "rev-list", "--count", "origin/"+trunk+"..main")
+	aheadOut, err := git(repoRoot, "rev-list", "--count", "origin/"+trunk+"..main")
 	if err != nil {
 		return nil
 	}
-	n, err := strconv.Atoi(strings.TrimSpace(out))
-	if err != nil || n <= 0 {
+	ahead, err := strconv.Atoi(strings.TrimSpace(aheadOut))
+	if err != nil {
 		return nil
 	}
-	return []driftItem{{
-		Class:  "E",
-		Ahead:  n,
-		Trunk:  trunk,
-		Reason: fmt.Sprintf("local main carries %d commits not on origin/%s; reset main->origin/%s", n, trunk, trunk),
-	}}
+	behindOut, err := git(repoRoot, "rev-list", "--count", "main..origin/"+trunk)
+	if err != nil {
+		return nil
+	}
+	behind, err := strconv.Atoi(strings.TrimSpace(behindOut))
+	if err != nil {
+		return nil
+	}
+	if ahead == 0 && behind == 0 {
+		return nil
+	}
+	item := driftItem{Class: "E", Ahead: ahead, Behind: behind, Trunk: trunk}
+	switch {
+	case ahead == 0: // behind only
+		item.Reason = fmt.Sprintf("local main behind origin/%s by %d; ff-merge main<-origin/%s", trunk, behind, trunk)
+	case behind == 0: // ahead / unpushed
+		item.Reason = fmt.Sprintf("local main ahead of origin/%s by %d (unpushed); push when ready — no auto-rewrite", trunk, ahead)
+	default: // diverged
+		item.Reason = fmt.Sprintf("local main diverged from origin/%s (ahead %d, behind %d); manual reconcile — no auto-rewrite", trunk, ahead, behind)
+	}
+	return []driftItem{item}
 }
 
 // sortedKeys returns the entity-record map's keys in sorted order so the drift

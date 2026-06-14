@@ -14,12 +14,12 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
 
-// TestReconcileEDetectsAndResetAdvancesMain wires AC-3: build a real git
-// fixture where main carries a commit not on origin/next, prove the helper
-// emits Class E, then run the FO's prescribed sequence
-// (`git fetch && git reset --hard origin/next`) and assert main now equals
-// origin/next. The reset is the deterministic shell sequence whose exit code
-// is the proof, not prose.
+// TestReconcileEDetectsAndResetAdvancesMain builds a real git fixture where
+// main carries a commit not on origin/next (ahead-only / unpushed) and asserts
+// the report-only contract: the helper emits exactly one Class-E item with
+// Ahead==1, Behind==0, and a reason that NEVER prescribes a destructive reset.
+// The seeded git state (main ahead, origin/next behind) is the independent
+// oracle — main carries unpushed committed work the contract must never discard.
 func TestReconcileEDetectsAndResetAdvancesMain(t *testing.T) {
 	if !hasGit(t) {
 		t.Skip("git not available")
@@ -81,29 +81,26 @@ stages:
 	if len(result.Drift) != 1 || result.Drift[0].Class != "E" {
 		t.Fatalf("want exactly one E drift; got %s", formatDrift(result.Drift))
 	}
-	if result.Drift[0].Ahead != 1 {
-		t.Errorf("E.ahead=%d, want 1", result.Drift[0].Ahead)
+	d := result.Drift[0]
+	if d.Ahead != 1 {
+		t.Errorf("E.ahead=%d, want 1", d.Ahead)
+	}
+	if d.Behind != 0 {
+		t.Errorf("E.behind=%d, want 0 (ahead-only)", d.Behind)
 	}
 
-	// 2. Pre-reset: rev-parse main MUST differ from rev-parse origin/next.
+	// 2. The seeded state confirms main carries committed work origin/next lacks:
+	// rev-parse main differs from origin/next. A reset --hard would discard it.
 	mainSHA := mustGit(t, repoRoot, "rev-parse", "main")
 	nextSHA := mustGit(t, repoRoot, "rev-parse", "origin/next")
 	if mainSHA == nextSHA {
-		t.Fatalf("pre-reset: main and origin/next are already equal (%s)", mainSHA)
+		t.Fatalf("fixture invalid: main and origin/next are already equal (%s)", mainSHA)
 	}
 
-	// 3. Run the FO's prescribed deterministic shell sequence — note we skip the
-	// `git fetch origin next` step because origin/next is already at its target
-	// (the fixture has no remote; the ref was set via update-ref). The reset is
-	// the load-bearing operation.
-	mustGit(t, repoRoot, "reset", "--hard", "origin/next")
-
-	// 4. Post-reset: main now points at origin/next. This is the exit-code
-	// equivalent — rev-parse returns 0 and both refs match.
-	mainAfter := mustGit(t, repoRoot, "rev-parse", "main")
-	nextAfter := mustGit(t, repoRoot, "rev-parse", "origin/next")
-	if mainAfter != nextAfter {
-		t.Errorf("post-reset: main=%s != origin/next=%s", mainAfter, nextAfter)
+	// 3. Report-only contract: the reason must NEVER prescribe a reset that would
+	// discard the unpushed commit.
+	if strings.Contains(strings.ToLower(d.Reason), "reset") {
+		t.Errorf("E.reason=%q must NOT contain 'reset' (report-only for unpushed main)", d.Reason)
 	}
 }
 
