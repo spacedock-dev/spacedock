@@ -150,3 +150,20 @@ Refit the split-root pr-merge mod so its PR base is resolved by running `spacedo
 ### Summary
 
 PASSED. Refit correctness, sr's AC-5 shared oracle (byte-exact `main\n`, test-strength confirmed: reds on a `next`-default), and the detached 5-surface audit all reproduced green from the worktree. Note: the `spacedock` binary on PATH is stale (pre-dates sr's `dispatch trunk` landing) — an environment artifact, not a defect; the worktree-built binary produces the byte-exact `main\n` the checklist requires. Anti-conflation guard holds: base reads top-level `trunk:` only, never `cli.devBranch`. The audit refuted nothing material.
+
+## Stage Report: implementation (cycle 2 — shipped template added)
+
+Captain scope correction: the real deliverable is the SHIPPED template `mods/pr-merge.md` (repo-root, non-split-root — copied into every commissioned workflow by `skills/commission/SKILL.md:523`). The dev-instance fix (`docs/dev/_mods/pr-merge.md`) stays as a companion.
+
+- DONE: Refit shipped template `mods/pr-merge.md` config-driven so every commissioned workflow inherits a flip-proof trunk.
+  Commit e6c7913d. Added opening resolve step `BASE=$(spacedock dispatch trunk --workflow-dir {dir})` (default `main` when no `trunk:` key); replaced hardcoded `main` at all three trunk-base sites — `git push origin "$BASE"` + `git rebase "$BASE"`, the draft `Branch: ... -> $BASE`, and `gh pr create --base "$BASE"`. Non-split-root flow (pushes/rebases the trunk directly) preserved. Version 0.12.1 -> 0.12.2. Remaining `main` mentions are the default-value doc and the detached-HEAD audit-SHA placeholder (a different axis, not a trunk base) — correctly left.
+- DONE: Dev-instance companion `docs/dev/_mods/pr-merge.md` (cycle-1 work) retained on the same branch.
+  Commit 0b8b7dcc. All 8 split-root trunk-relative `next` literals -> `"$BASE"` / `origin/$BASE`.
+- DONE: Behavioral backing rides sr's AC-5 `dispatch trunk` oracle (merged, green); `go test ./...` green.
+  Full suite green (16 packages ok); `internal/dispatch` 14.1s incl. `TestDispatchTrunkCommand`. Live command emits byte-exact `main\n`, so both mods' `BASE=$(...)` capture is clean.
+- SKIPPED: A separate commission/template-level check that a freshly-copied mod resolves via the command.
+  Any test asserting the shipped `mods/pr-merge.md` contains `--base "$BASE"` would be a prose-grep over mod text — the exact banned pattern (`boundary_guard_test.go`). The binding proof stays sr's AC-5 oracle, same as the dev instance; surfaced honestly rather than manufacturing a grep.
+
+### Summary
+
+Both mods now resolve the PR base by running `spacedock dispatch trunk` instead of a hardcoded literal: the shipped repo-root template (`mods/pr-merge.md`, the real deliverable — flip-proof for every future commissioned workflow, default `main`, non-split-root flow preserved) and the dev-instance companion (`docs/dev/_mods/pr-merge.md`, split-root, default `main`, formerly `next`). Both bumped to 0.12.2. Base reads the configured `trunk:` key via sr's resolver, never `cli.devBranch`. Proof is sr's merged AC-5 oracle plus `go test ./...` green; no prose-grep AC by design.
