@@ -7,7 +7,7 @@ group: cleanup
 sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
 worktree: .worktrees/spacedock-ensign-pr-merge-mod-base-branch-post-flip
-mod-block:
+mod-block: merge:pr-merge
 pr: "#370"
 ---
 
