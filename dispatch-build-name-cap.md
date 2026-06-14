@@ -9,7 +9,7 @@ verdict:
 score: "0.40"
 worktree: .worktrees/spacedock-ensign-dispatch-build-name-cap
 issue: "#366"
-mod-block: merge:pr-merge
+mod-block:
 pr: "#368"
 ---
 
