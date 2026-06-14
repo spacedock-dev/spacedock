@@ -317,7 +317,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	}
 	poller := newCmdPoller(cmd, pw)
 	defer poller.kill()
-	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
+	watcher := newStreamWatcher(newPipeLineSource(pr), poller, discardStreamLine)
 	probe, err := newWorkflowStateProbe(workflowRoot)
 	if err != nil {
 		return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("snapshot workflow state for %s: %w", scenario.name, err)
