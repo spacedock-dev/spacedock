@@ -1,7 +1,7 @@
 ---
 id: ecn07f3hwp5wgs8xf14h59sj
 title: CI log hygiene — live-runner stream jsonl belongs in the artifact, not stdout
-status: validation
+status: implementation
 source: "captain (2026-06-14) — observed while debugging #368's opus `gate-guardrail` no-progress failure: the live-runner jsonl-to-stdout dump (`internal/ensigncycle/claude_live_runner_test.go:365`) bloated the CI log (~143KB for ~80 lines on one failed step) and buried the actual failure line."
 started: 2026-06-14T19:16:23Z
 completed:
@@ -118,3 +118,7 @@ Replaced the per-line `t.Log` stream tee in the Claude and Codex shared-scenario
 ### Summary
 
 AC-3 is clean and the suite/vet are green, but AC-1's central guard is hollow. `TestStreamSinkDiscardsLines` never puts a counter behind `discardStreamLine` — its discard run asserts only `transcript == 341`, a count the watcher records independent of the tee, so ANY tee (including `t.Log`) satisfies it; the `emitCounter` lives only in the control run, bound to a separate forwarding tee, not to `discardStreamLine`. I confirmed by adversarial edit: making `discardStreamLine` forward/emit per line (the precise CI-bloat regression this task exists to prevent) keeps the test green on `go test -count=1`. This is the validation-stage "Bad" pattern — a test that stays green under an edit that breaks the claim. Required fix: the discard run must wire a recorder BEHIND `discardStreamLine` (or assert the runner-level wiring) and assert sink-emitted == 0, so that reverting `discardStreamLine` to a forwarding sink reds it. Routing back to implementation.
+
+### Feedback Cycles
+
+- **Cycle 1 (validation REJECTED, 2026-06-14):** AC-1's `TestStreamSinkDiscardsLines` guard is hollow — the discard run asserts only `transcript==341` (tee-independent), so reverting `discardStreamLine` to forward/emit per line (the exact CI-bloat regression) stays GREEN. The `emitCounter` lives only in a separate control run, not behind the real `discardStreamLine` symbol. Fix: wire a recorder behind the actual `discardStreamLine` callback and assert sink-emitted==0, so a forwarding revert reds the test. Routed back to implementation.
