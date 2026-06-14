@@ -1,17 +1,17 @@
 ---
 id: j903f6f1vgckk3kj6j6zbmt3
 title: Lazy-TeamCreate + shallow-boot-then-greet — reach interactive readiness fast
-status: validation
+status: done
 source: "captain (2026-06-04) — boot analysis (this session) measured boot at ~7:36, ~80% model-compose; TeamCreate is the single largest write (89k cache_creation — the whole prompt prefix re-cached to the 1h cache when team-mode activates) and sits on the critical path BEFORE the gate that decides whether dispatch even happens."
 score: "0.34"
 started: 2026-06-13T17:02:55Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-lazy-teamcreate-shallow-boot
+completed: 2026-06-14T05:11:26Z
+verdict: PASSED
+worktree:
 issue:
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#365"
 ---
 
