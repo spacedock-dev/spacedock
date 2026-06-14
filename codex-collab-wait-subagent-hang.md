@@ -158,3 +158,18 @@ Review repairs applied to the ideation body only. The design now covers both obs
 ### Summary
 
 Implemented the Codex-specific foreground-wait watchdog beside the shared stream-silence guard, plus a one-retry wrapper for the `rejection-flow` live scenario only. The fix keeps runtime success tied to durable entity/git state and the real Codex `send_input` reuse signal; the live retry artifacts show attempt 1 bounded at an active foreground wait and attempt 2 completing the two-cycle rejection flow.
+
+## Stage Report: validation
+
+- FAILED: Reproduce AC-1 and AC-2 with deterministic tests: both foreground-wait stall arms, positive controls, one retry only for typed stall, and no retry for non-watchdog/assertion failures.
+  Focused suite passed (`go test ./internal/ensigncycle -run 'TestCodexCollabWaitWatchdog|TestRunCodexRejectionFlowRetry|TestAssertCodexReviewerReuse|TestFeedbackReflow' -count=1 -v`: 23 passed), but AC-1 is not satisfied: `internal/ensigncycle/codex_collab_wait_watchdog_test.go:105` expects a typed stall after durable progress before the budget, and `internal/ensigncycle/codex_collab_wait_watchdog_impl_test.go:111` returns a typed stall when `probeChanged()` is true instead of clearing the wait.
+- DONE: Verify AC-3 remains durable-state based: rejection-flow success still requires durable two-cycle state plus the real Codex `send_input` reuse signal, including the negative fixture.
+  Focused suite passed (`23 passed`), including reviewer-reuse tests and `TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle`.
+- DONE: Verify AC-4 and baseline gates: docs-contract wording guard, live-tag no-spend parity guard, `gofmt`, `go test ./...`, `go test ./... -race`.
+  Docs/definition guard passed (`3 passed`), live-tag no-spend parity guard passed (`3 passed`), `gofmt -w ./cmd ./internal` left the code worktree clean, `go test ./...` passed (`1260 passed in 16 packages`), and `go test ./... -race` passed (`1260 passed in 16 packages`).
+- SKIPPED: targeted live Codex rejection-flow when auth is available.
+  Not rerun during validation because the deterministic AC-1 contradiction is already material and should be repaired before spending on another live Codex run.
+
+### Summary
+
+Recommendation: REJECTED. AC-1 requires durable entity progress before the budget to be a positive control that clears the foreground-wait watchdog, but the implementation's own test and `silenceStall()` path encode the opposite behavior. Expected correction: make durable progress clear the active wait/no typed stall for the silence-after-wait path, and replace the contradictory test with a no-stall positive control for durable progress before the budget.
