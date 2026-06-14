@@ -39,15 +39,34 @@ func TestAssertShallowBootMeasuredOffline(t *testing.T) {
 }
 
 // TestAssertNoTeamCreateBeforeGreetOffline validates the AC-2 behavioral oracle
-// against the committed streams: the shallow-boot positive (no TeamCreate at all)
-// passes; the eager-team negative (a TeamCreate before the greet) fails — the
-// negative control proving the assertion distinguishes the two.
+// against the committed MULTI-DELTA streams: the shallow-boot positive (no
+// TeamCreate at all) passes; the eager-team negative (a TeamCreate before the greet)
+// fails. Both fixtures are multi-delta — each message carries a `thinking` delta then
+// a tool_use/text delta, the real runner shape — so the negative control genuinely
+// exercises the path where the TeamCreate lands on a LATER delta. A first-delta-only
+// parse would have FALSE-PASSED this negative (the hollow-AC-2 defect the forensics
+// caught), so this is the positive control that the lazy-TeamCreate proof is real.
 func TestAssertNoTeamCreateBeforeGreetOffline(t *testing.T) {
 	if err := assertNoTeamCreateBeforeGreet(readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")); err != nil {
 		t.Fatalf("shallow-boot positive fixture (no TeamCreate) must pass AC-2: %v", err)
 	}
 	if err := assertNoTeamCreateBeforeGreet(readMeasureFixture(t, "eager-team-boot.stream.jsonl")); err == nil {
-		t.Fatal("eager-team negative fixture (TeamCreate before greet) must FAIL AC-2")
+		t.Fatal("eager-team negative fixture (multi-delta TeamCreate before greet) must FAIL AC-2 — the TeamCreate lands on a later delta, so a first-delta-only parse would false-pass")
+	}
+}
+
+// TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate is the AC-2
+// positive control over the parser fix: a stream whose TeamCreate is on a LATER
+// delta of its message (the real runner shape, NOT the synthetic single-delta one)
+// must make assertNoTeamCreateBeforeGreet RED. Before the multi-delta merge this
+// false-passed — the proof of no-team-at-boot was hollow.
+func TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate(t *testing.T) {
+	// msg_team: thinking on delta[0], TeamCreate on delta[1]; then a text greet.
+	stream := `{"type":"assistant","message":{"id":"msg_team","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":16000,"cache_creation_input_tokens":89000},"content":[{"type":"thinking","thinking":"create the team"}]}}
+{"type":"assistant","message":{"id":"msg_team","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":16000,"cache_creation_input_tokens":89000},"content":[{"type":"tool_use","id":"toolu_tc","name":"TeamCreate","input":{"team_name":"eager"}}]}}
+{"type":"assistant","message":{"id":"msg_greet","model":"claude-opus-4-8","usage":{"input_tokens":100,"cache_read_input_tokens":5000,"cache_creation_input_tokens":0},"content":[{"type":"text","text":"Gate review: ... Decision: approve or reject?"}]}}`
+	if err := assertNoTeamCreateBeforeGreet(stream); err == nil {
+		t.Fatal("a pre-greet TeamCreate on a LATER delta must make assertNoTeamCreateBeforeGreet RED — the parser must merge later-delta tool_use, not read only the first delta")
 	}
 }
 
