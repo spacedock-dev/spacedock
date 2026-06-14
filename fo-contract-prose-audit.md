@@ -1,7 +1,7 @@
 ---
 id: 95bcs48mr3jemtsb2zq7zbtb
 title: FO contract residual-prose audit + comm-officer polish (post-split)
-status: implementation
+status: validation
 source: 0.20.3 / 0203-fo-efficiency sprint (T3); captain 2026-06-13
 started: 2026-06-13T18:09:33Z
 completed:
@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-fo-contract-prose-audit
 issue:
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
-mod-block:
+mod-block: merge:pr-merge
 pr: "#367"
 ---
 
