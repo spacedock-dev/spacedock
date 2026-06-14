@@ -46,8 +46,8 @@ the ideation ensigns (they would grade their own work).
 
 **Drive — Commander (a separate, cold-booted session)**
 - [ ] **Implementation → validation → done** per member; **detached adversarial audit at validation** for every high-stakes surface (front-door, status guards, shipped scaffolding, CI / release machinery)
-- [ ] **Merge** each to `next` (PR-merge); keep state commits concurrency-safe
-- [ ] **⚠️ Pre-cut antipattern audit** — with all members merged to `next` and the tag **not yet fired**, dispatch an *independent* reviewer (staff-eng persona; not the Commander, not the implementers) over the assembled sprint to catch cross-cutting antipatterns + integration holes **before they ship**. Ship-blockers are fixed before the cut; non-blockers are recorded for the next sprint. The whole value is being *before* the tag — run it after, and the antipattern has already shipped.
+- [ ] **Merge** each to `main` (PR-merge); keep state commits concurrency-safe
+- [ ] **⚠️ Pre-cut antipattern audit** — with all members merged to `main` and the tag **not yet fired**, dispatch an *independent* reviewer (staff-eng persona; not the Commander, not the implementers) over the assembled sprint to catch cross-cutting antipatterns + integration holes **before they ship**. Ship-blockers are fixed before the cut; non-blockers are recorded for the next sprint. The whole value is being *before* the tag — run it after, and the antipattern has already shipped.
 - [ ] **Cut the release** — `go test ./...` green from the root, then follow [`docs/releasing.md`](../releasing.md) (the authoritative cut procedure: manifest bumps, the `vN.N.N` tag, what the tag push fires, `next` publishing) *(captain authorizes)*
 
 **Close — Shaping FO**

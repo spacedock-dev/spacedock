@@ -6,7 +6,7 @@ Sprint = the entities matching `sprint: 0203-fo-efficiency` (query, not a list):
 
 ## Deliverable & DoD
 
-**0.20.3** = the FO-efficiency restructure + the context-budget probe fix. Done when, merged to `next` (then `main` at the cut) — see `index.md` Definition of Done. Headline: a live drive **measures** boot reaching < ~60k with the ~89k team-mode re-cache absent before the greet.
+**0.20.3** = the FO-efficiency restructure + the context-budget probe fix. Done when merged to `main` — see `index.md` Definition of Done. Headline: a live drive **measures** boot reaching < ~60k with the ~89k team-mode re-cache absent before the greet.
 
 ## Drive order — ⚠️ coordination
 

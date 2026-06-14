@@ -28,10 +28,10 @@ When an entity reaches its terminal stage:
 When the merge boundary has no PR host (README declares `merge: local`, or pr-merge fallback applies — no `gh`, push failed, captain chose local), the FO runs one fixed ceremony per entity. The README's top-level `merge:` key (default `pr`) selects this ceremony or the PR path. The happy path uses no `--force`:
 
 1. Set the merge mod-block: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}` (commit path-scoped).
-2. Invoke the merge hook (local `--no-ff` merge of `{branch}` onto `next`).
+2. Resolve the integration trunk `BASE=$(spacedock dispatch trunk --workflow-dir {workflow_dir})` (configured trunk, default `main`), then invoke the merge hook (local `--no-ff` merge of `{branch}` onto `{BASE}`).
 3. Record the merge so the terminal guard is satisfied without `--force`:
    - If `merge: local`, the policy exempts the pr-requirement — skip to step 4.
-   - Otherwise set the post-merge sentinel `spacedock status --workflow-dir {workflow_dir} --set {slug} pr=local-merge:{short-sha}` (the merge commit on `next`; set only after merge has landed; commit path-scoped). The status table renders as `{short-sha} (local)`.
+   - Otherwise set the post-merge sentinel `spacedock status --workflow-dir {workflow_dir} --set {slug} pr=local-merge:{short-sha}` (the merge commit on `{BASE}`; set only after merge has landed; commit path-scoped). The status table renders as `{short-sha} (local)`.
 4. Clear the mod-block in a standalone `--set`: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=` (commit path-scoped). MUST be separate from terminalization — the guard refuses combining `mod-block=` with terminal fields.
 5. Terminalize: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
 6. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
