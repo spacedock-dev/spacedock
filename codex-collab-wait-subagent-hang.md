@@ -1,7 +1,7 @@
 ---
 id: czza18qnjzj75fznszxm3z0s
 title: Codex rejection-flow collab:wait spawned-subagent stall (live-infra flakiness)
-status: validation
+status: implementation
 source: "j9 validation (2026-06-14) — the live Codex rejection-flow hung at collab:wait on 3/5 runs across j9's validation cycles (a spawned-subagent stall in the Codex runner). Orthogonal to j9 (the validator retried past it to a clean run); flagged by the validator for its own triage."
 started: 2026-06-14T02:02:43Z
 completed:
