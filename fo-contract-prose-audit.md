@@ -141,11 +141,11 @@ Baseline captured on the merged refs (HEAD `fe4261be`) BEFORE any edit; final af
 |---|---|---|---|
 | first-officer-shared-core.md | 231 / 27377 | 231 / 27253 | -124 |
 | claude-first-officer-runtime.md | 43 / 5304 | 43 / 5216 | -88 |
-| claude-fo-dispatch.md | 241 / 31930 | 241 / 31791 | -139 |
+| claude-fo-dispatch.md | 241 / 31930 | 241 / 31816 | -114 |
 | claude-fo-merge.md | 85 / 10877 | 85 / 10840 | -37 |
-| **total** | **600 / 75488** | **600 / 75100** | **-388** |
+| **total** | **600 / 75488** | **600 / 75125** | **-363** |
 
-(Final figures taken from committed worktree HEAD `9bb21d85` — the authoritative "after" state, post both comm-officer correction edits.)
+(Final figures taken from committed worktree HEAD `61b7200a` — the authoritative "after" state, post both comm-officer correction edits AND the validation-feedback qualifier restore. The dispatch delta narrowed -139 → -114 because the feedback fix restored the 25-byte scope qualifier "as TeamCreate/TeamDelete"; all four files remain strictly smaller, AC-3 still satisfied.)
 
 All four files strictly smaller (AC-3 satisfied). Lines unchanged — the polish was within-line concision, the cut a label/pointer repair, neither removed lines.
 
@@ -183,3 +183,16 @@ REJECTED. Smallest behavior-preserving fix: restore the dropped qualifier on the
 - REJECTED on ONE material finding the impl-ensign's amend + comm-officer both missed — the silent class (comm-officer never flagged it): `claude-fo-dispatch.md` Sequencing rule silently dropped the scope qualifier `as TeamCreate/TeamDelete` from a NEVER-constraint, broadening it to forbid concurrent same-message Agent dispatch (the very mechanism team mode provides). The single-entity live scenarios (AC-1/AC-2) would NOT catch it — the exact class the detached audit targets.
 - **Merge ceremony UNWOUND** (the cycle-1 PASSED had prematurely started it): cleared `mod-block`, cancelled the moot CI run (run 27489960168 — it tested the flawed `9bb21d85` and would false-green, since the scenarios don't exercise the broadened NEVER), held PR #367 open for the fix.
 - Routed to implementation (reused impl ensign, reuse_ok 18%): restore the qualifier → `must NEVER appear in the same tool-call message as TeamCreate/TeamDelete`. Validator kept alive to re-review. Re-merge (re-push #367 → one live CI on the fixed version) after re-validation.
+
+## Stage Report: implementation (cycle 2)
+
+Validation REJECTED cycle 1 with ONE material finding (validator's raised-bar re-audit; not in the live ACs — single-entity scenarios don't exercise it). Surgical fix applied.
+
+- DONE: Restore the silently-dropped NEVER-scope qualifier in `claude-fo-dispatch.md`'s `**Sequencing rule:**`.
+  comm-officer's polish had dropped "as TeamCreate/TeamDelete" from "...and Agent dispatch must NEVER appear in the same tool-call message **as TeamCreate/TeamDelete** — parallel execution causes races" — a meaning-change comm-officer never flagged, so it slipped past my three-flag review. Without the qualifier the NEVER over-broadens to forbid ANY two of {lifecycle, spawn-standing, Agent dispatch} in one message, prohibiting concurrent same-message Agent-with-Agent dispatch (the team-mode mechanism); the race is co-occurrence with a lifecycle call specifically (`using-claude-team` SKILL.md:26). Smallest edit (4 words restored). Fix committed @ `61b7200a` on branch `spacedock-ensign/fo-contract-prose-audit`.
+- DONE: Offline gate stays green after the fix.
+  `go test ./...` = 1385 passed / 0 fail (exit 0); `internal/contractlint` 23 passed. AC-3 still satisfied — dispatch delta narrows -139 → -114 (the 25-byte qualifier restored), total -388 → -363, all four files still strictly smaller. AC-1/AC-2 left to the validator's re-run on PR #367 (no live runs burned here).
+
+### Summary (cycle 2)
+
+One material validation finding fixed with the smallest possible edit: restored the four-word scope qualifier "as TeamCreate/TeamDelete" that comm-officer's polish silently dropped from the Sequencing-rule NEVER-constraint, which had over-broadened the prohibition past the actual race (co-occurrence with a lifecycle call). Offline gate re-confirmed green (1385/0); AC-3 still holds (-363 total, all four files smaller). New deliverable SHA `61b7200a` re-triggers PR #367 CI; validator re-reviews this single line.
