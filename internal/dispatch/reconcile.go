@@ -255,9 +255,12 @@ func filterEnsigns(members []claudeteam.ReconcileMember) []claudeteam.ReconcileM
 }
 
 // entityRecord is the minimal frontmatter the sweep reads — every field is a
-// frontmatter top-level key (no body parsing).
+// frontmatter top-level key (no body parsing). id carries the entity's stored id
+// so a capped worker name (whose slug component was replaced by an id-prefix at
+// dispatch build) resolves back to its entity by id-prefix, not string-split.
 type entityRecord struct {
 	slug     string
+	id       string
 	status   string
 	worktree string
 	pr       string
@@ -296,6 +299,7 @@ func loadEntityFrontmatter(dir string) map[string]entityRecord {
 		fm := status.ParseFrontmatter(entityPath)
 		out[slug] = entityRecord{
 			slug:     slug,
+			id:       fm["id"],
 			status:   fm["status"],
 			worktree: fm["worktree"],
 			pr:       fm["pr"],
@@ -421,6 +425,42 @@ func isAllDigits(s string) bool {
 	return true
 }
 
+// resolveSlugToken maps a decomposed name token to its entity slug. For an
+// uncapped name the token IS the slug, so an exact match against the active or
+// archived maps wins immediately (the common case). For a capped sd-b32 name the
+// token is a fixed-length id-prefix; when no slug matches exactly, the token is
+// resolved by HasPrefix against the active+archived id set — the same resolution
+// `status --resolve prefix:` performs. A unique id-prefix match yields the real
+// slug; an ambiguous (≥2) or absent match leaves the token unresolved (ok=false),
+// the conservative outcome that avoids a false Class-A against a live sibling.
+func resolveSlugToken(token string, active, archived map[string]entityRecord) (string, bool) {
+	if _, ok := active[token]; ok {
+		return token, true
+	}
+	if _, ok := archived[token]; ok {
+		return token, true
+	}
+	// id-prefix resolution: the token must be a non-trivial prefix of exactly one
+	// stored id. sdB32MinPrefix guards against a too-short token matching many ids.
+	if len(token) < status.SDB32MinPrefix {
+		return "", false
+	}
+	matched := ""
+	count := 0
+	for _, m := range []map[string]entityRecord{active, archived} {
+		for slug, rec := range m {
+			if rec.id != "" && strings.HasPrefix(rec.id, token) {
+				matched = slug
+				count++
+			}
+		}
+	}
+	if count != 1 {
+		return "", false
+	}
+	return matched, true
+}
+
 // classA flags ensigns whose entity is archived OR whose entity status is
 // terminal ("done" or empty next-stage equivalent). Lingering = the entity is
 // past terminal but the agent is still in the team roster.
@@ -431,22 +471,28 @@ func classA(ensigns []claudeteam.ReconcileMember, stages []string, active, archi
 		if !d.ok {
 			continue
 		}
+		// Resolve the decomposed token to a real slug (exact-slug-first, then
+		// sd-b32 id-prefix). An unresolved token leaves the member unclassified.
+		slug, ok := resolveSlugToken(d.slug, active, archived)
+		if !ok {
+			continue
+		}
 		// Archived: definitive terminal.
-		if _, ok := archived[d.slug]; ok {
+		if _, ok := archived[slug]; ok {
 			out = append(out, driftItem{
 				Class:  "A",
 				Name:   m.Name,
-				Slug:   d.slug,
+				Slug:   slug,
 				Reason: "entity archived",
 			})
 			continue
 		}
-		if rec, ok := active[d.slug]; ok {
+		if rec, ok := active[slug]; ok {
 			if rec.status == "done" {
 				out = append(out, driftItem{
 					Class:  "A",
 					Name:   m.Name,
-					Slug:   d.slug,
+					Slug:   slug,
 					Reason: "entity status=done",
 				})
 			}

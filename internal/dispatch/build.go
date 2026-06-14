@@ -26,6 +26,20 @@ const (
 	// derived name) so the on-disk file with its .md suffix stays under the
 	// common 255-byte filesystem name limit.
 	dispatchFileNameMaxLen = 251
+	// nameAgentMaxLen is the Agent-tool name ceiling (^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$
+	// — 64 chars). A derived name longer than this is rejected by Agent() with
+	// InputValidationError, so the worker name is capped to fit.
+	nameAgentMaxLen = 64
+	// nameCapTarget is the budget the cap fits the worker name into. It reserves
+	// nameAgentMaxLen − len("-cycle9") so any single-digit FO cycle suffix the
+	// roster appends downstream of dispatch build keeps the name ≤ nameAgentMaxLen.
+	nameCapTarget = nameAgentMaxLen - len("-cycle9")
+	// sdB32NameIDPrefixLen is the fixed-length id-prefix substituted for the slug
+	// component when an id-style: sd-b32 name overflows. A fixed length keeps the
+	// embedded token stable across the workflow's lifetime (unlike the shortest-
+	// unique display prefix, which lengthens as entities are added). 10 chars
+	// leaves ample collision headroom while the resulting name stays ≤ nameCapTarget.
+	sdB32NameIDPrefixLen = 10
 )
 
 // buildRequiredFields are the stdin keys that must be present and non-null.
@@ -435,10 +449,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		subagentType = agent
 	}
 
-	// Derive worker_key, slug, and name (slug-not-stem via EntitySlug).
+	// Derive worker_key, slug, and name (slug-not-stem via EntitySlug). When the
+	// readable {workerKey}-{slug}-{stage} form overflows the Agent-tool 64-char
+	// ceiling, capWorkerName substitutes the entity id (id-first) or truncates the
+	// slug head, preserving the workerKey prefix and -{stage} suffix so the name
+	// still decomposes; short names pass through byte-identical.
 	workerKey := strings.ReplaceAll(subagentType, ":", "-")
 	slug := status.EntitySlug(entityPath)
-	derivedName := fmt.Sprintf("%s-%s-%s", workerKey, slug, stage)
+	idStyle := status.ParseFrontmatter(readmePath)["id-style"]
+	derivedName := capWorkerName(workerKey, slug, stage, entityFields["id"], idStyle)
 
 	// Rule 7: Name length and safety.
 	if len(derivedName) > nameMaxLen {
@@ -634,6 +653,57 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	}
 
 	return emitBuildJSON(stdout, out)
+}
+
+// capWorkerName builds the worker name {workerKey}-{slug}-{stage}, capping it to
+// the Agent-tool 64-char ceiling when the readable form overflows. The cap is
+// id-first: an id-style: sd-b32 entity substitutes a fixed-length prefix of its
+// stored id for the slug component (a stable, decomposition-safe token); a
+// sequential id substitutes the whole numeric id (short, never overflows); an
+// id-less slug workflow truncates the slug head to fit. The workerKey prefix and
+// -{stage} suffix are preserved verbatim in every form so reconcile's decompose()
+// still peels the stage and strips the worker prefix. Short names (≤64) return
+// unchanged — no id substitution, no truncation — so existing readable names and
+// golden fixtures are byte-identical.
+func capWorkerName(workerKey, slug, stage, id, idStyle string) string {
+	full := fmt.Sprintf("%s-%s-%s", workerKey, slug, stage)
+	if len(full) <= nameAgentMaxLen {
+		return full
+	}
+
+	// id-first: replace the slug component with a stable id-derived token. sd-b32
+	// ids are 24-char tokens from the namePattern-safe alphabet, so a fixed-length
+	// prefix is hyphen-free and decomposition-safe; sequential ids are short
+	// integers used whole. Either keeps the prefix + suffix intact.
+	idToken := ""
+	switch idStyle {
+	case "sd-b32":
+		if status.IsValidSDB32ID(id) {
+			idToken = id[:sdB32NameIDPrefixLen]
+		}
+	case "sequential":
+		if status.IsDigits(id) {
+			idToken = id
+		}
+	}
+	if idToken != "" {
+		return fmt.Sprintf("%s-%s-%s", workerKey, idToken, stage)
+	}
+
+	// id-less (id-style: slug) fallback: truncate the slug head so the whole name
+	// fits nameCapTarget (reserving cycle headroom), trimming any trailing hyphen
+	// so the result matches namePattern and carries no `--`.
+	fixed := len(workerKey) + 2 + len(stage) // "-{slug}-" framing minus the slug
+	budget := nameCapTarget - fixed
+	if budget < 1 {
+		budget = 1
+	}
+	truncated := slug
+	if len(truncated) > budget {
+		truncated = truncated[:budget]
+	}
+	truncated = strings.TrimRight(truncated, "-")
+	return fmt.Sprintf("%s-%s-%s", workerKey, truncated, stage)
 }
 
 func firstActionBlock(host string) string {

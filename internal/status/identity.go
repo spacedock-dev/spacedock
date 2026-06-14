@@ -20,6 +20,10 @@ const (
 	sdB32MinPrefix = 2
 )
 
+// SDB32MinPrefix is the minimum sd-b32 address-prefix length consumers resolve
+// against (a shorter prefix is treated as too ambiguous to resolve).
+const SDB32MinPrefix = sdB32MinPrefix
+
 var (
 	idStyles    = map[string]bool{"sequential": true, "slug": true, "sd-b32": true}
 	sdB32IDRe   = regexp.MustCompile(`^[` + sdB32Chars + `]{24}$`)
@@ -48,10 +52,20 @@ func isValidSDB32ID(value string) bool {
 	return sdB32IDRe.MatchString(value)
 }
 
+// IsValidSDB32ID reports whether value is a well-formed 24-char sd-b32 stored id.
+func IsValidSDB32ID(value string) bool {
+	return isValidSDB32ID(value)
+}
+
 // isDigits reports whether s is a non-empty run of ASCII digits (Python's
 // str.isdigit for the simple cases the oracle relies on).
 func isDigits(s string) bool {
 	return allDigitsRe.MatchString(s)
+}
+
+// IsDigits reports whether s is a non-empty run of ASCII digits.
+func IsDigits(s string) bool {
+	return isDigits(s)
 }
 
 // workflowIDStyle reads the README id-style. Returns ("", err) on an

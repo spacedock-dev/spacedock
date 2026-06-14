@@ -1,0 +1,220 @@
+// ABOUTME: name-cap reconcile round-trip — a capped (id-prefix) worker name
+// ABOUTME: resolves to the correct entity by id, no false Class-A against a sibling.
+package dispatch
+
+import (
+	"bytes"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/claudeteam"
+)
+
+// nameCapReconcileFixture seeds an active dir + _archive dir with two sd-b32
+// entities whose slugs share a long common prefix but whose ids differ, emits the
+// capped name for each via real dispatch build, and runs real Reconcile over a
+// stub roster carrying those capped names. The expectation (which slug each
+// capped name resolves to, and which is Class-A) is bound to the seeded on-disk
+// id set — an independent source from the resolution under test.
+type nameCapReconcileFixture struct {
+	t            *testing.T
+	home         string
+	repoRoot     string
+	workflowDir  string
+	stateRoot    string
+	teamName     string
+	archivedName string // capped name of the archived long-slug entity
+	activeName   string // capped name of the active long-slug sibling
+}
+
+// sdb32NameReadme is a split-root README declaring id-style: sd-b32 (so the build
+// cap takes the id-first path) and a state checkout reconcile reads entities from.
+const sdb32NameReadme = `---
+entity-type: task
+id-style: sd-b32
+state: .spacedock-state
+stages:
+  defaults:
+    worktree: false
+    concurrency: 1
+  states:
+    - name: backlog
+      initial: true
+    - name: implementation
+      worktree: true
+    - name: validation
+      worktree: true
+      feedback-to: implementation
+    - name: done
+      terminal: true
+---
+# Fixture Workflow
+
+### backlog
+
+seed.
+
+- **Outputs:** x.
+
+### implementation
+
+work.
+
+- **Outputs:** y.
+
+### validation
+
+verify.
+
+- **Outputs:** z.
+
+### done
+
+term.
+`
+
+// buildCappedName drives real dispatch build over a sd-b32 entity at the state
+// checkout carrying the given slug + id, returning the capped name it emits.
+func buildCappedName(t *testing.T, stateRoot, workflowDir, slug, id string) string {
+	t.Helper()
+	ep := filepath.Join(stateRoot, slug+".md")
+	writeFile(t, ep, entityFMID(id, "Thing", "backlog"))
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    ep,
+		"workflow_dir":   workflowDir,
+		"stage":          "backlog",
+		"checklist":      []string{"- a"},
+		"team_name":      "fixture-team",
+		"bare_mode":      false,
+	}, nil)
+	native := runNative(stdin, "build", "--workflow-dir", workflowDir)
+	if native.exit != 0 {
+		t.Fatalf("build %s exit=%d\nstderr:\n%s", slug, native.exit, native.stderr)
+	}
+	return nameFromStdout(t, native.stdout)
+}
+
+func newNameCapReconcileFixture(t *testing.T) *nameCapReconcileFixture {
+	t.Helper()
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	repoRoot := t.TempDir()
+	teamName := "team-namecap-001"
+
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), sdb32NameReadme)
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	gitInit(t, repoRoot)
+
+	// Emit the capped name for the archived long-slug entity (idAlpha) and the
+	// active long-slug sibling (idBravo). The build writes both entity files into
+	// the active state root first; we then move the archived one under _archive.
+	archivedName := buildCappedName(t, stateRoot, workflowDir, longSlug, idAlpha)
+	activeName := buildCappedName(t, stateRoot, workflowDir, longSlugShare, idBravo)
+
+	// Move the archived entity's file into the _archive convention dir; rewrite it
+	// with status=done so the archived-branch of classA fires. The active sibling
+	// stays in the active dir with a non-terminal status.
+	archiveDir := filepath.Join(stateRoot, "_archive")
+	writeFile(t, filepath.Join(archiveDir, longSlug+".md"), entityFMID(idAlpha, "Thing", "done"))
+	if err := os.Remove(filepath.Join(stateRoot, longSlug+".md")); err != nil {
+		t.Fatalf("remove archived source: %v", err)
+	}
+	// Active sibling: non-terminal status so it must NOT classify as Class-A.
+	writeFile(t, filepath.Join(stateRoot, longSlugShare+".md"), entityFMID(idBravo, "Thing", "implementation"))
+
+	// Team config: team-lead (exempt) plus both capped-name ensigns.
+	cfgPath := filepath.Join(home, ".claude", "teams", teamName, "config.json")
+	writeFile(t, cfgPath, teamConfigJSON(teamName, []claudeteam.ReconcileMember{
+		{Name: "team-lead", AgentType: "team-lead", Model: "claude-opus-4-7"},
+		{Name: archivedName, AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
+		{Name: activeName, AgentType: "spacedock:ensign", Model: "claude-opus-4-7"},
+	}))
+
+	return &nameCapReconcileFixture{
+		t:            t,
+		home:         home,
+		repoRoot:     repoRoot,
+		workflowDir:  workflowDir,
+		stateRoot:    stateRoot,
+		teamName:     teamName,
+		archivedName: archivedName,
+		activeName:   activeName,
+	}
+}
+
+func (f *nameCapReconcileFixture) run() reconcileResult {
+	f.t.Helper()
+	var stdout, stderr bytes.Buffer
+	opts := reconcileOpts{
+		workflowDir: f.workflowDir,
+		teamName:    f.teamName,
+		repoRoot:    f.repoRoot,
+		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		home:        f.home,
+		roster:      claudeteam.LoadReconcileTeam,
+		gh:          func(string) (string, error) { return "", nil },
+		git:         gitRunnerExec,
+	}
+	code := Reconcile(opts, &stdout, &stderr)
+	if code != 0 {
+		f.t.Fatalf("Reconcile exit=%d stderr=%s", code, stderr.String())
+	}
+	var result reconcileResult
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		f.t.Fatalf("decode result: %v\nstdout=%s", err, stdout.String())
+	}
+	return result
+}
+
+// TestReconcileCappedNameResolvesArchived — AC3: the capped name of an archived
+// long-slug sd-b32 entity classifies Class-A against the CORRECT slug (resolved
+// by id-prefix), and does NOT mis-resolve to the active sibling sharing the slug
+// prefix. The expectation is bound to the seeded on-disk id set.
+func TestReconcileCappedNameResolvesArchived(t *testing.T) {
+	if !hasGit(t) {
+		t.Skip("git not available")
+	}
+	f := newNameCapReconcileFixture(t)
+	result := f.run()
+
+	byClass := groupDriftByClass(result.Drift)
+	as := byClass["A"]
+	if len(as) != 1 {
+		t.Fatalf("expected exactly 1 Class-A entry (archived only); got %d: %s",
+			len(as), formatDrift(result.Drift))
+	}
+	a := as[0]
+	if a.Name != f.archivedName {
+		t.Errorf("Class-A name=%q, want archived capped name %q", a.Name, f.archivedName)
+	}
+	// Resolution must recover the archived entity's REAL slug from the id-prefix,
+	// not the active sibling's slug.
+	if a.Slug != longSlug {
+		t.Errorf("Class-A slug=%q, want %q (id-prefix mis-resolved?)", a.Slug, longSlug)
+	}
+	if a.Slug == longSlugShare {
+		t.Errorf("Class-A mis-resolved to the active sibling slug %q", longSlugShare)
+	}
+}
+
+// TestReconcileCappedNameNoFalseClassA — AC4: the capped name of a STILL-ACTIVE
+// long-slug sd-b32 entity produces NO Class-A entry (guards the false-shutdown
+// hazard — a capped name must not be flagged as lingering against a live worker).
+func TestReconcileCappedNameNoFalseClassA(t *testing.T) {
+	if !hasGit(t) {
+		t.Skip("git not available")
+	}
+	f := newNameCapReconcileFixture(t)
+	result := f.run()
+
+	for _, d := range result.Drift {
+		if d.Class == "A" && d.Name == f.activeName {
+			t.Errorf("active sibling's capped name %q falsely classified Class-A: %+v",
+				f.activeName, d)
+		}
+	}
+}
