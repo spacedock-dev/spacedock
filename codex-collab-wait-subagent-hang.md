@@ -190,3 +190,16 @@ Recommendation: REJECTED. AC-1 requires durable entity progress before the budge
 ### Summary
 
 Repaired the feedback-cycle AC-1 issue by treating durable state changes during a silent Codex foreground wait as liveness evidence that clears the wait and extends the quiet budget. The deterministic durable-progress test is now a no-stall positive control, while the typed stall path remains for repeated waits and silent waits with no durable progress.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce AC-1 and AC-2 with deterministic tests: both foreground-wait stall arms, positive controls, one retry only for typed stall, and no retry for non-watchdog/assertion failures.
+  Focused suite passed (`go test ./internal/ensigncycle -run 'TestCodexCollabWaitWatchdog|TestRunCodexRejectionFlowRetry|TestAssertCodexReviewerReuse|TestFeedbackReflow|TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle' -count=1 -v`: 24 passed).
+- DONE: Verify AC-3 remains durable-state based: rejection-flow success still requires durable two-cycle state plus the real Codex `send_input` reuse signal, including the negative fixture.
+  The focused suite included the negative durable-state fixture, and live Codex `TestLiveCodexSharedScenarios/rejection-flow` passed with `send_input` reuse plus durable `Cycle 1: REJECTED` and `Cycle 2: PASSED`.
+- DONE: Verify AC-4 and baseline gates: docs-contract wording guard, live-tag no-spend parity guard, `gofmt`, `go test ./...`, `go test ./... -race`, and targeted live Codex rejection-flow when auth is available.
+  Docs guard passed (`3 passed`), live-tag parity passed (`3 passed`), `gofmt -w ./cmd ./internal` left the code worktree clean, `go test ./...` and `go test ./... -race` each passed (`1260 passed in 16 packages`), and the targeted live Codex run passed (`454.284s`) with artifacts under `/tmp/spacedock-codex-live-validation-cycle2/codex-shared-scenarios/rejection-flow/attempt-1`.
+
+### Summary
+
+Recommendation: PASSED. Cycle 2 fixes the AC-1 durable-progress contradiction: durable progress now clears a silent foreground wait instead of producing a typed stall. AC-2, AC-3, and AC-4 passed deterministic, baseline, and live validation gates.
