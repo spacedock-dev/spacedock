@@ -10,7 +10,7 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 ## Merge reference (load at terminalization)
 
-The terminal merge-and-cleanup machinery for this host — the Merge-and-Cleanup ceremony, the Ship-Local ceremony, worktree-removal safety, Mod-Block Enforcement, and Mod-Block Enforcement at Terminal Transitions (the `TERMINAL_TEARDOWN_BOUNDED` bounded-teardown marker) — lives in `references/claude-fo-merge.md`. Read it at the terminal boundary, when an entity reaches its terminal stage — the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads it.
+The terminal merge-and-cleanup machinery for this host — the Merge-and-Cleanup ceremony, the Ship-Local ceremony, worktree-removal safety, Mod-Block Enforcement, and the bounded terminal teardown (the `TERMINAL_TEARDOWN_BOUNDED` marker) — lives in `references/claude-fo-merge.md`. Read it at the terminal boundary, when an entity reaches its terminal stage — the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads it.
 
 ## Captain Interaction
 
