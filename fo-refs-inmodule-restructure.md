@@ -1,7 +1,7 @@
 ---
 id: 5ew2jxagk11mr0fzd0rtpdp0
 title: In-module restructure of the FO contract refs (consolidate duplicated obligations + collapse redundant sections)
-status: validation
+status: implementation
 source: "T3 (fo-contract-prose-audit) deferred this (2026-06-14): T3 shipped the mechanical-safe subset (4 dead-ref cuts + comm-officer concision); the substantive restructure was scoped out (duplicated obligations marked KEEP; the merge mod-block section-collapse FLAGGED out-of-scope). Captain: the audit \"would imagine a bigger cleanup and in-module restructure.\""
 started: 2026-06-14T18:42:01Z
 completed:
@@ -268,3 +268,7 @@ Executed the cycle-4 plan exactly: hoisted the FO operating ethos into the alway
 ### Summary
 
 REJECTED. The five in-scope change classes are clean — every collapsed/compressed/relocated obligation survives with no MUST/MUST-NOT/qualifier dropped or inverted, the `TERMINAL_TEARDOWN_BOUNDED` marker is byte-intact, the three ethos bullets land verbatim in SKILL.md with a single canonical home, prefer-code-gate and speak-label are byte-identical, and the offline gate (incl. contractlint reference-closure) is green. But the detached adversarial audit refuted clean-pass: the mod-block section collapse orphaned a cross-file inventory reference at `claude-first-officer-runtime.md:13`, which still names the removed `Mod-Block Enforcement at Terminal Transitions` section as living in the merge ref. This is a Material seam orphan — contractlint and the live scenarios both stay green over it, so only the audit catches it. Fix: update the runtime adapter's merge-ref load-point inventory to name only the surviving `## Mod-Block Enforcement` section while keeping the `TERMINAL_TEARDOWN_BOUNDED` marker attribution accurate to its real `## Merge and Cleanup` home, then re-validate. AC3 (live Claude+Codex shared scenarios) gates at PR CI and is NOT fabricated here.
+
+### Feedback Cycles
+
+- **Cycle 1 (validation REJECTED, 2026-06-14):** the detached adversarial audit caught a Material dangling reference the impl self-audit missed — the mod-block section collapse removed `## Mod-Block Enforcement at Terminal Transitions` from claude-fo-merge.md, but `claude-first-officer-runtime.md:13`'s merge-ref load-point inventory still names that now-removed section. contractlint + live scenarios stay green over it (only the word-level audit catches it). Fix: update the runtime adapter's merge-ref inventory to name only the surviving `## Mod-Block Enforcement`, keeping TERMINAL_TEARDOWN_BOUNDED attributed to its real `## Merge and Cleanup` home. Routed back to implementation.
