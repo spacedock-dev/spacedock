@@ -61,24 +61,7 @@ Merge hooks can block (captain approval before pushing, waiting for PR merge). T
 - **Enforced at the mechanism level** — `status --set` and `status --archive` also refuse terminal transitions and archival when merge hooks (`_mods/*.md` with `## Hook: merge`) are registered AND `pr` is empty AND `mod-block` is empty. `--force` bypasses. `merge: local` exempts only the pr-requirement; `verdict=rejected` likewise exempts only the pr-requirement on both surfaces (a rejected entity never ran the merge ceremony, so the requirement is vacuous); the mod-block-pending and combined-clear refusals remain. See the Ship-Local Ceremony.
 - **Survives session resume** — the FO reads `mod-block` from frontmatter on boot and resumes the pending action.
 
-## Mod-Block Enforcement at Terminal Transitions
-
-Before advancing an entity into Merge and Cleanup, the FO MUST:
-
-1. Check whether merge hooks are registered (from boot-time MODS data).
-2. If merge hooks exist, set `mod-block` before invoking the first hook.
-3. Invoke merge hooks in order. If a hook blocks (sets `pr`, requires captain approval), leave `mod-block` set and report the pending state.
-4. Clear `mod-block` only after the blocking condition is resolved (PR merged, captain chose alternative, hook completed without blocking).
-5. Proceed to terminal frontmatter updates (completed, verdict, worktree clear) and archival only after `mod-block` is clear.
-
-**The mechanism enforces this even if you forget.** `status --set` and `status --archive` refuse terminal transitions (status to a terminal stage, completed, verdict, worktree clear) and archival when all of the following hold true:
-
-- the workflow registers at least one merge hook (`_mods/*.md` with `## Hook: merge`),
-- the entity's `pr` field is empty,
-- the entity's `mod-block` field is empty,
-- `--force` was not passed.
-
-In that state the merge hook has provably not run. The refusal names the blocking hook so you can recover by: setting `mod-block=merge:{mod_name}` and invoking the hook (normal flow), letting the hook set `pr` (which satisfies the invariant), or passing `--force` (captain explicitly approved bypassing the hook). Do NOT pass `--force` merely to clear the guard — it exists to catch exactly the mistake of skipping the hook.
+In the empty-pr/empty-mod-block state the merge hook has provably not run. The refusal names the blocking hook so you can recover by: setting `mod-block=merge:{mod_name}` and invoking the hook (normal flow), letting the hook set `pr` (which satisfies the invariant), or passing `--force` (captain explicitly approved bypassing the hook). Do NOT pass `--force` merely to clear the guard — it exists to catch exactly the mistake of skipping the hook.
 
 On session resume, scan entities with non-empty `mod-block` and resume the pending action. Do not re-run the hook from scratch — check what it left (PR created? branch pushed?) and continue from there.
 
