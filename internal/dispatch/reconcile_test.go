@@ -374,8 +374,10 @@ func TestReconcileFiveClasses(t *testing.T) {
 		if e.Ahead <= 0 {
 			t.Errorf("E.ahead=%d, want > 0", e.Ahead)
 		}
-		if !strings.Contains(e.Reason, "reset main") {
-			t.Errorf("E.reason=%q, want reset main", e.Reason)
+		// main is ahead/unpushed (and origin/next bumped → diverged): report-only,
+		// the reason must NEVER prescribe a destructive reset.
+		if strings.Contains(strings.ToLower(e.Reason), "reset") {
+			t.Errorf("E.reason=%q must NOT contain 'reset' (report-only contract)", e.Reason)
 		}
 	}
 }
