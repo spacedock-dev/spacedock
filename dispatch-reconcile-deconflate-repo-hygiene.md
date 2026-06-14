@@ -7,7 +7,7 @@ group: cleanup
 sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
 worktree: .worktrees/spacedock-ensign-dispatch-reconcile-deconflate-repo-hygiene
-mod-block: merge:pr-merge
+mod-block:
 pr: "#369"
 ---
 
