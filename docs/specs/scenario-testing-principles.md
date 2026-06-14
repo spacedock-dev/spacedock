@@ -60,6 +60,7 @@ The first foundation is the host-neutral runtime scenarios already shipped and h
 - `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.
 - `filing` — the FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.
+- `shallow-boot` — a freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with no team created and no worker dispatched, then stops for input.
 <!-- /seed-scenarios -->
 
 These IDs are the code-backed source of truth. They mirror the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; the seed IDs declared above must equal that table. This block is machine-readable so a lock test can bind the doc to the code and red on drift in either direction — adding, dropping, or renaming a scenario on one side without the other. This is what makes the doc the human-readable face of a code-backed truth rather than prose bound to nothing.

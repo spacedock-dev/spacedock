@@ -34,6 +34,7 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 		"feedback-3-cycle-escalation",
 		"merge-hook-guardrail",
 		"filing",
+		"shallow-boot",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("shared runtime scenarios = %v, want %v", got, want)

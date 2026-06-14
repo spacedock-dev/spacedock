@@ -533,6 +533,12 @@ type streamToolInput struct {
 	SubagentType string          `json:"subagent_type"`
 	Description  string          `json:"description"`
 	Message      json.RawMessage `json:"message"`
+	// Command is the shell command of a Bash tool_use, read by the wrong-root boot
+	// detector to spot a `cd` off the fixture root or a boot --workflow-dir outside it.
+	Command string `json:"command"`
+	// FilePath is the target of a Read/Write tool_use, used the same way (a workflow
+	// README read from outside the fixture root is a wander signature).
+	FilePath string `json:"file_path"`
 }
 
 // toolUseBlock returns the first tool_use block of an assistant entry, or nil —

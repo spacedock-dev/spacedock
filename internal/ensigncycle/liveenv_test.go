@@ -65,9 +65,16 @@ func decideClaudeEnv(realHome, apiKey string) claudeEnvDecision {
 	return claudeEnvDecision{mode: authNone}
 }
 
-// cleanEnviron returns os.Environ() filtered to drop the keys in drop. It is the
-// port of the Python _clean_env (strip CLAUDECODE so the child can launch
-// claude); the live path also drops/overrides HOME and the credential keys.
+// cleanEnviron returns os.Environ() filtered to drop the keys in drop AND the CI
+// repo-naming families (isCIRepoNamingVar). It is the port of the Python _clean_env
+// (strip CLAUDECODE so the child can launch claude); the live path also
+// drops/overrides HOME and the credential keys. The CI scrub keeps the child FO
+// subprocess in a production-clean environment: a GitHub Actions runner injects
+// GITHUB_WORKSPACE (= the real spacedock checkout) and the rest of the
+// GITHUB_*/RUNNER_* family, and GITHUB_WORKSPACE lured the FO to `cd` into the real
+// repo and boot its docs/dev workflow instead of the test's tmpdir fixture. Real
+// `spacedock claude` use has no such CI var (cwd IS the project), so the child env
+// must not carry it either.
 func cleanEnviron(drop ...string) []string {
 	dropped := make(map[string]bool, len(drop))
 	for _, k := range drop {
@@ -79,12 +86,23 @@ func cleanEnviron(drop ...string) []string {
 		if i := strings.IndexByte(kv, '='); i >= 0 {
 			key = kv[:i]
 		}
-		if dropped[key] {
+		if dropped[key] || isCIRepoNamingVar(key) {
 			continue
 		}
 		env = append(env, kv)
 	}
 	return env
+}
+
+// isCIRepoNamingVar reports whether key is a CI-runner-injected GITHUB_*/RUNNER_*
+// var. The whole family names or points at the real repo / the runner workspace
+// (GITHUB_WORKSPACE is the proven FO lure) and has no place in a production
+// `spacedock claude` environment, so the live-test child env scrubs all of it. The
+// credential (ANTHROPIC_API_KEY), the archive path (CLAUDE_CONFIG_DIR — already
+// resolved into a literal string before the child env is built), and PATH are NOT
+// in this family, so the scrub leaves the launcher's needs intact.
+func isCIRepoNamingVar(key string) bool {
+	return strings.HasPrefix(key, "GITHUB_") || strings.HasPrefix(key, "RUNNER_")
 }
 
 // resolveClaudeConfigDir picks the child claude's CLAUDE_CONFIG_DIR. When the

@@ -44,5 +44,13 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "n/a (new behavior — `spacedock new` adopted post-Python port)",
 			intent:        "FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.",
 		},
+		{
+			// Net-new in the 0.20.3 FO-efficiency milestone (the lazy-TeamCreate +
+			// shallow-boot-then-greet task); no Python ancestor — the field records
+			// the real provenance, not a fictitious port source.
+			name:          "shallow-boot",
+			oldPythonTest: "0203-fo-efficiency (net-new; no Python ancestor)",
+			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
+		},
 	}
 }

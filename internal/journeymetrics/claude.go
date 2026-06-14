@@ -114,6 +114,96 @@ func ParseClaudeJSONL(data []byte) (ClaudeParseResult, error) {
 	}, nil
 }
 
+// ClaudeTurn is one deduped assistant turn from a stream-json transcript: its
+// per-message token usage and the names of the tool_use blocks it emitted. Unlike
+// ParseClaudeJSONL (which SUMS usage across the whole run and prefers the terminal
+// result usage), this preserves each turn's usage so a caller can measure a single
+// turn's context window — e.g. the greet turn's boot-window context.
+type ClaudeTurn struct {
+	ID    string
+	Usage TokenTotals
+	// ToolNames is the names of the tool_use blocks in this turn, in order. A
+	// turn that dispatches a worker carries an "Agent" (or "TeamCreate") name, so a
+	// caller can split the transcript at the first dispatch turn.
+	ToolNames []string
+}
+
+// Context returns this turn's context-window size as the boot analysis defines it:
+// input + cache_read + cache_creation (output is generation, not context).
+func (t ClaudeTurn) Context() int {
+	return t.Usage.Input + t.Usage.CacheRead + t.Usage.CacheCreation
+}
+
+// ParseClaudeTurns walks the stream-json transcript per assistant turn and returns
+// one ClaudeTurn per distinct assistant message in stream order. Real runner streams
+// are MULTI-DELTA: the same message id appears on several `assistant` rows, the first
+// delta carries a `thinking`/`text` block, and the tool_use block(s) land on LATER
+// deltas; the per-delta `usage` is identical across the deltas of a message. So this
+// MERGES every delta's tool_use names into the turn (a first-delta-only parse drops
+// the tool_use entirely — which would make a TeamCreate invisible) while keeping the
+// first delta's usage. It reuses the rawTokenUsage field extraction; it does NOT sum
+// or prefer the terminal result usage, so each turn's context window is recoverable.
+// Non-JSON lines (folded stderr) are skipped, matching ParseClaudeJSONL.
+func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+
+	index := map[string]int{} // message id -> position in turns
+	// seenTool dedups tool_use blocks by their unique block id within a message, so a
+	// repeated delta (the same tool_use carried again) does not double-count, while a
+	// genuinely later, additive tool_use (a different block id) is merged in.
+	seenTool := map[string]bool{}
+	var turns []ClaudeTurn
+	lineNo := 0
+	for scanner.Scan() {
+		lineNo++
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || !strings.HasPrefix(line, "{") {
+			continue
+		}
+		var row map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(line), &row); err != nil {
+			return nil, fmt.Errorf("line %d: %w", lineNo, err)
+		}
+		if rawString(row["type"]) != "assistant" {
+			continue
+		}
+		msg, err := parseClaudeAssistant(row["message"])
+		if err != nil {
+			return nil, fmt.Errorf("line %d assistant: %w", lineNo, err)
+		}
+		id := msg.ID
+		if id == "" {
+			id = fmt.Sprintf("line-%d", lineNo)
+		}
+		var names []string
+		for _, block := range msg.Content {
+			if block.Type != "tool_use" {
+				continue
+			}
+			toolKey := id + ":" + block.ID
+			if block.ID != "" && seenTool[toolKey] {
+				continue
+			}
+			seenTool[toolKey] = true
+			names = append(names, block.Name)
+		}
+		if pos, ok := index[id]; ok {
+			// A later delta of a message already seen: merge its NEW tool_use names
+			// (the per-block dedup above keeps a repeated delta from double-counting).
+			// Usage is identical across deltas, so the first-delta usage is kept.
+			turns[pos].ToolNames = append(turns[pos].ToolNames, names...)
+			continue
+		}
+		index[id] = len(turns)
+		turns = append(turns, ClaudeTurn{ID: id, Usage: msg.Usage, ToolNames: names})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return turns, nil
+}
+
 type claudeAssistant struct {
 	ID      string
 	Model   string

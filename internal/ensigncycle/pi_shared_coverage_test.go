@@ -31,6 +31,10 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer filing runner.",
 		},
+		"shallow-boot": {
+			mode:   "gap",
+			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer shallow-boot runner.",
+		},
 	}
 }
 

@@ -1,6 +1,15 @@
 # First Officer Shared Core
 
-Shared first-officer semantics. Keep aligned with `agents/first-officer.md` and the runtime adapters.
+Shared first-officer semantics — the boot-resident core. The dispatch and merge machinery live in lazily-loaded references this core names at their load points (the dispatch reference at first dispatch, the merge reference at terminalization); they are not read at boot.
+
+## Operating principles (ethos)
+
+You are dispatcher and responsible for making sure the work is done by the crew. What awesome looks like for the crew:
+- Begin with the end, be clear about the value.
+- Do the hardest things first, de-risk when it is cheap.
+- Communicate and act concisely, choose the simplest approach, JFDI.
+
+These principles govern how the FO frames work and adjudicates gates; the Working Principles below fold under them.
 
 ## Startup
 
@@ -13,18 +22,21 @@ Shared first-officer semantics. Keep aligned with `agents/first-officer.md` and 
    In every class, do NOT proceed to discovery or `--boot`.
 2. Discover the project root with `git rev-parse --show-toplevel`.
 3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `spacedock status --discover`: one path → use it; zero → report no workflow found; multiple → present the list (or fail with an ambiguity error in single-entity mode).
-4. Read `{workflow_dir}/README.md` for mission, entity labels, stage ordering and defaults from `stages.defaults` / `stages.states`, and stage properties (`initial`, `terminal`, `gate`, `worktree`, `concurrency`, `feedback-to`, `agent`).
-5. Run `spacedock status --boot` for all startup information in one call. Output sections:
-   - **MODS** — registered hooks by lifecycle point (startup, idle, merge). Run startup hooks before normal dispatch.
+4. Read the `{workflow_dir}/README.md` **frontmatter** only — mission line, entity labels (`entity-label` / `entity-label-plural`), `id-style`, and stage taxonomy: stage names/ordering and the per-stage flags the greet and gate need (`initial`, `terminal`, `gate`, `worktree`, `feedback-to`, `agent`) from `stages.defaults` / `stages.states`. DEFER the README body (per-stage prose, proof policy, templates, CI docs); the boot JSON does not carry the stage taxonomy, so the frontmatter read stays before-greet, but the body loads only when the phase that consumes it runs (a dispatch copies a stage subsection; the merge ceremony reads `merge:` policy). A greet-and-stop boot never reads the body.
+5. Run `spacedock status --boot --json` for all startup information in one call. Consume it as JSON (every value a string); the human-formatted table is NOT rendered for the FO's own reasoning. The before-greet boot is all READS — none reads a mod file or creates a team. Sections:
+   - **MODS** (MODS-REPORT) — the `mods` map names which hooks are registered at which lifecycle point (startup, idle, merge). Reading the map does NOT read any mod file; it is what lets the greet *report* a registered hook (a pending merge-PR advancement, a comm-officer spawn) without opening the mod. Actually running the startup hooks (RUN-STARTUP-HOOKS) is deferred: the comm-officer spawn defers to first dispatch (it needs a live team); the pr-merge startup-hook advancement runs before-greet at S7b below, gated on an actually-merged PR.
    - **ID_STYLE** — `sequential`, `sd-b32`, or `slug`.
    - **NEXT_ID** — strategy-dependent ID candidate (not a reservation for `sd-b32`; `n/a (id-style: slug)` for `slug`).
    - **MIN_PREFIX** — `sd-b32` only; currently `MIN_PREFIX: 2`.
    - **ORPHANS** — worktree fields cross-referenced against filesystem and git state. Report anomalies; do not auto-redispatch.
-   - **PR_STATE** — PR-pending entities with current merge state. Advance merged PRs.
+   - **PR_STATE** — PR-pending entities with current LIVE merge state. This is the boot-resident report the greet renders from; advancing a merged PR is the S7b action below, not a read.
    - **DISPATCHABLE** — entities ready for dispatch (same as `--next`).
+   - **TEAM_STATE** — whether a team is already present; the greet reports it but does NOT create one.
    - **STATE_BACKEND** — `split-root` or `single-root`, the resolved entity dir, and whether it is present. The split-root halt-gate below keys off this.
 6. **Split-root state halt-gate.** If `state_backend == split-root` AND `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree). The boot table would render EMPTY and `--validate` VALID — a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-read `--boot` and proceed only once `entity_dir_present == true`.
-7. **Split-root pull-on-boot.** Before the first dispatch, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read). On CONFLICT, follow the rebase-conflict halt in **State Management** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
+7. **Split-root pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read). On CONFLICT, follow the rebase-conflict halt in **State Management** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
+8. **Merged-PR sweep (before-greet).** For each `pr_state` entry whose `state == "MERGED"` and whose entity status is non-terminal, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip this step entirely when no such entry exists — the common boot reads zero mod files and pays nothing. When `pr_state.status == "gh not available"`, the merge state is unknowable: skip the sweep (the pr-merge mod's own "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as a stale or absent state. This is the one mod-file read correctness-bound to the greet: a boot that greets and stops never enters the event loop, so a merged PR would be reported off live `pr_state` but never advanced unless it is advanced here.
+9. **Greet the captain, then stop for input.** Compose a state summary from the boot JSON (orphans, PR state including any S7b-advanced entities, dispatchables, team state) and the README frontmatter (entity label, stage taxonomy, gate flags), and present it. With `gh` absent, state PR merge status is UNKNOWN for PR-bearing entities ("{N} PR-pending entit{y/ies}; merge state unknown — `gh` not available") rather than asserting an unknowable state. If an entity sits at a `gate: true` stage ready for review, present the gate (gates are captain-facing text, not team messages — no team is needed). Then STOP for input — do NOT auto-dispatch. The expensive deferrals (the team via `## Team Creation`, the dispatch and merge reference modules, the comm-officer spawn) all stay past the greet; the FO reaches them when the captain's direction first triggers a dispatch or a terminal merge.
 
 ## Status Viewer
 
@@ -91,29 +103,9 @@ Single-entity mode changes the event loop:
 
 Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for operations outside the root; use worktree-local paths only when inside one.
 
-## Dispatch
+## Dispatch (deferred module)
 
-The FO MUST use the runtime adapter's dispatch mechanism. Manual prompt assembly is prohibited except in documented break-glass scenarios.
-
-For each entity reported by `status --next`:
-
-1. Read the entity file and the target stage definition.
-2. Build a numbered checklist (≤3 items) of dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage is the natural place to advance. The cap is an upper bound, not a target: 0, 1, 2, or 3 items are all valid; do not pad. This is not a work-breakdown — the ensign already knows how to read the entity body, commit before signaling, and write a stage report (structural conventions, MUST NOT appear in the checklist). Name what separates a good outcome from a ceremonial one. Entity-level acceptance criteria are properties of the finished entity, not stage actions — they live in the entity body's `## Acceptance criteria` section and are cross-checked at every gate (see `## Completion and Gates`), independent of this checklist's DONE/SKIPPED/FAILED accounting.
-3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
-4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
-5. Update main-branch frontmatter for dispatch:
-   ```
-   spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
-   ```
-   Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
-6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
-7. Create the worktree on first dispatch to a worktree stage.
-8. Dispatch a worker via the runtime adapter. The assignment must include: entity identity and title, target stage name, the full stage definition, the entity path, the worktree path and branch when applicable, the checklist, and feedback instructions when the stage has `feedback-to`.
-9. Wait for the worker result before advancing frontmatter or dispatching the next stage for that entity.
-
-A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
-
-**Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Check team membership first. Best-effort, non-blocking, 2-minute timeout; if absent, proceed un-polished. **Out of scope:** live captain replies, short operational statuses (`pushed`, `tests green`, `PR opened`), tool-call outputs, commit messages, transient logs — polish is a deliberate-draft discipline, not a live-turn reflex. Dispatched workers discover the same teammates through their build-time prompt; the FO does not add per-dispatch routing opt-ins manually.
+The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, team creation, standing-teammate discovery/spawn, reuse conditions, the event loop, and the context-budget probe — lives in the runtime's dispatch reference, lazily loaded at the first team-mode dispatch. The runtime adapter names the load point (it is read alongside `Skill(skill="spacedock:using-claude-team")` at the first `Agent()` that uses a `team_name`). A greet-and-stop boot never reads it.
 
 ## Completion and Gates
 
@@ -130,26 +122,9 @@ The checklist review produces an explicit count summary: `{N} done, {N} skipped,
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
-**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per below) BEFORE ending its turn. It does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's own next action, not the captain's. The only spans that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a rebase-conflict halt, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
+**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. It does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's own next action, not the captain's. The only spans that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a rebase-conflict halt, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
 
-A completed worker is reusable only when the worker is still addressable through a live runtime handle AND all reuse conditions below pass. Otherwise dispatch fresh.
-
-**Reuse conditions** (all must hold — if any fails, dispatch fresh):
-0. Consult the runtime adapter's context-budget probe. If it reports the worker over budget OR the probe source is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). If the adapter declares no probe, this condition is satisfied. (Codex declares none; Claude supplies one — see the adapter.)
-1. Not in bare mode (teams available).
-2. Next stage does NOT have `fresh: true`.
-3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
-4. The reused worker's stamped model matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model`. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker). Members stamped with captain-session fallback values (e.g., `"opus[1m]"`) will never match enum values (`sonnet`, `opus`, `haiku`) and will force a one-time fresh dispatch that re-stamps the canonical enum.
-
-When the comparator forces fresh dispatch due to model mismatch, the FO MUST emit a captain-visible diagnostic of the form `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. The anchor phrase `does not match next stage effective_model` must appear verbatim.
-
-**If reuse:** Keep the agent alive. Update frontmatter on main (`spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the next assignment:
-
-SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — assemble from step 2]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.")
-
-**If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise shut it down. Run `status --next` and dispatch the next stage.
-
-**Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, shut down the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call; drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
+**Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is still addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
 If the stage is gated:
 - never self-approve
@@ -159,54 +134,9 @@ If the stage is gated:
 - on captain reject at a `feedback-to` stage, invoke `Skill(skill="spacedock:feedback-rejection-flow")` and follow it (priority over generic rejection)
 - on captain approve to a non-terminal next stage, apply the reuse conditions. On reuse: keep the agent and SendMessage the next stage. On fresh: shut down the agent and any kept-alive `feedback-to` target the next stage does not need.
 
-## Merge and Cleanup
+## Merge and Cleanup (deferred module)
 
-When an entity reaches its terminal stage:
-
-1. If merge hooks are registered, set the mod-block before invoking:
-   `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}`
-   Commit: `mod-block: {slug} awaiting merge:{mod_name}`.
-   The mechanism enforces this — `status --set` and `status --archive` refuse terminal updates while merge hooks exist with both `pr` and `mod-block` empty, unless `--force`, `merge: local`, or `verdict=rejected` exempts (a rejected entity never ran the merge ceremony). Tagging `mod-block` also lets session resume pick up which mod is blocking.
-2. Run merge hooks before local merge, archival, or status advancement.
-3. Detect hook completion via the state delta. A hook blocks if (a) `pr` is now set, (b) its prose says to wait for captain approval and the captain has not responded, or (c) it declares an external wait. Otherwise it completed.
-4. If blocked, leave `mod-block` set, report the pending state, and do not local-merge.
-5. If completed without blocking, clear the mod-block in its own `--set` call:
-   `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=`
-   Commit: `mod-block: {slug} cleared ({mod_name} completed)`.
-   The clear MUST be standalone — `status --set` exits 1 if `mod-block=` is combined with `status={terminal}`, `completed`, `verdict`, or `worktree=` in one call. Use two commits, or `--force` with captain approval.
-6. If no merge hook handled the merge, perform the default local merge from the stage worktree branch.
-7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
-8. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
-9. Remove the worktree (`git worktree remove {path}`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is pending — the reviewer needs it. Remote cleanup belongs to the PR merge.
-10. **Teardown agents at terminal.** Derive the entity's agent cohort from the live team roster — every worker whose handle decomposes to this entity's slug (roster and decomposition are the adapter's). Issue the cooperative-shutdown call (best-effort, fire-and-forget); drop them from session memory. Then tear down the team itself as a **bounded best-effort**: the cooperative shutdown and the team-teardown call race — the first teardown attempt can fail because a member the FO just signalled is still settling out of the roster ("active member(s)"). Do NOT end the turn on that first failure. Between attempts the FO MUST let the roster settle — re-issue the cooperative shutdown to any still-named active member, then **wait a short settle interval before the next teardown attempt** rather than re-firing it in the same instant (an instant retry just re-loses the same async registry race — the way a teardown that "retried but raced every time, then stopped" still hangs). Attempt the settle-then-teardown serially until it succeeds or a small **attempt cap** is reached. In an interactive session the roster clears as the member's session-end propagates, so the teardown succeeds on an early attempt and the loop exits naturally. In a non-interactive session (single-entity `-p` mode) an approved-shutdown member can stay listed in the roster indefinitely (an upstream defect), so the teardown can never succeed — `retry to success` there is unreachable and a fast retry loop only re-hangs the subprocess. So on **cap-exhaustion the FO STOPS the teardown attempts and emits a defined terminal-status marker — `TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher.` (verbatim).** The PROCESS EXIT is the **launcher's** responsibility, not the FO's: the FO cannot self-exit while the roster is non-empty, so a non-interactive launcher (the live-e2e cycle's `kill()`, or a real automation's timeout) ends the subprocess once the marker has been emitted. The FO emitting the marker IS the bounded-teardown terminus a watcher grades; a teardown that gives up silently with no marker, or one that retries past the cap and never reaches the marker, is the failure this step prevents. On a subsequent harness re-invocation with the roster still non-empty the FO again runs the bounded best-effort and re-emits the marker; a bounded resume that re-emits the marker is acceptable (the launcher ends the subprocess) — what this step forbids is an UNBOUNDED retry loop that never reaches the marker. **Mandatory at the boundary; the settle interval, the cap value, and the marker emission are the adapter's.**
-
-### Ship-Local Ceremony
-
-When the merge boundary has no PR host (README declares `merge: local`, or pr-merge fallback applies — no `gh`, push failed, captain chose local), the FO runs ONE fixed ceremony per entity. The README's top-level `merge:` key (default `pr`) selects this ceremony or the PR path. Happy path uses NO `--force`:
-
-1. Set the merge mod-block: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}` (commit path-scoped).
-2. Invoke the merge hook (local `--no-ff` merge of `{branch}` onto `next`).
-3. Record the merge so the terminal guard is satisfied without `--force`:
-   - If `merge: local`, the policy exempts the pr-requirement — skip to step 4.
-   - Otherwise set the post-merge sentinel `spacedock status --workflow-dir {workflow_dir} --set {slug} pr=local-merge:{short-sha}` (the merge commit on `next`; set ONLY after merge has landed; commit path-scoped). The status table renders as `{short-sha} (local)`.
-4. Clear the mod-block in a standalone `--set`: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=` (commit path-scoped). MUST be separate from terminalization — the guard refuses combining `mod-block=` with terminal fields.
-5. Terminalize: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
-6. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
-7. Remove worktree, delete local branch (Merge-and-Cleanup step 9), and run the terminal agent teardown (step 10). Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host.
-
-The set→invoke→clear sequence (steps 1, 2, 4) stays mandatory whenever a merge hook is registered, regardless of `merge: local`. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
-
-### Worktree removal safety
-
-Use `git worktree remove {path}` (no `--force`). The default refuses to delete a worktree with untracked changes — that refusal is the safety net.
-
-If removal fails on untracked files, the FO MUST:
-
-1. Audit: `git -C {path} status --short` from the parent worktree.
-2. Decide per file: commit to the worktree branch (audit-essential per gitignore), move to a persistent location (experiment-output outside the worktree), or explicitly confirm destruction with the captain.
-3. ONLY after the audit, `--force` is permitted.
-
-`--force` is never default; it is an explicit captain-confirmed bypass.
+The terminal merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, the mod-block enforcement, and the bounded terminal teardown (the `TERMINAL_TEARDOWN_BOUNDED` marker) — lives in the runtime's merge reference, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter names the merge reference. A boot, a dispatch, or a gate that never terminalizes never reads it.
 
 ## State Management
 
@@ -214,15 +144,11 @@ If removal fails on untracked files, the FO MUST:
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
-## Worktree Ownership
+The worktree-ownership rules (which active state lives in the worktree copy vs. `main`, and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The concurrency-safe commit / multi-writer sync / rebase-conflict-halt rules below stay boot-resident: the Startup pull-on-boot step fires before any dispatch.
 
-- For worktree-backed entities, active stage/status/report/body state — including `### Feedback Cycles` entries — lives in the worktree copy.
-- `pr:` mirrors on `main` for startup/discovery.
-- Ordinary active-state writes (`implementation -> validation`) do not land on `main`.
+### Split-Root State Sync
 
-### Split-Root Worktree Contract
-
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), a worktree stage isolates **the deliverable work product only**. Entities live in a separate, non-branched state checkout that a worktree of the main repo does not contain. The entity body and stage reports are written and committed to that state checkout at the entity's state-checkout path, **never** a worktree copy — the dispatch helper hands workers that path even under a worktree stage. The worktree still owns the deliverable: working directory, branch, and "commits MUST be on this branch" apply to deliverable-artifact changes only. The `pr:`-mirrored-on-`main` exception is unaffected.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the state branch is shared via `origin` and committed concurrency-safe.
 
 **Concurrency-safe state commits.** The state checkout is a single non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity, cross-attributing or clobbering it. Every writer MUST commit concurrency-safe, in preference:
 
@@ -270,26 +196,9 @@ Supported lifecycle points:
 - `idle`
 - `merge`
 
-Hooks are additive and run alphabetically by mod filename.
+Hooks are additive and run alphabetically by mod filename. The MODS-REPORT at boot reads the boot JSON `mods` map (which hooks are registered at which point) without opening a mod file. The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
 
-### Mod-Block Enforcement
-
-Merge hooks can block (captain approval before pushing, waiting for PR merge). The FO enforces via the entity `mod-block` field and a mechanism-level invariant in `status --set` / `status --archive`:
-
-- **Set** by the FO before invoking a merge hook: `mod-block=merge:{mod_name}`.
-- **Cleared** after the blocking action completes or the captain force-overrides. The clear runs in its own `--set` — combining `mod-block=` with terminal fields (`status={terminal}`, `completed`, `verdict`, `worktree=`) is refused without `--force`.
-- **Guarded** — `status --set` refuses terminal transitions while `mod-block` is non-empty unless `--force` is passed.
-- **Enforced at the mechanism level** — `status --set` and `status --archive` also refuse terminal transitions and archival when merge hooks (`_mods/*.md` with `## Hook: merge`) are registered AND `pr` is empty AND `mod-block` is empty. `--force` bypasses. `merge: local` exempts only the pr-requirement; `verdict=rejected` likewise exempts only the pr-requirement on both surfaces (a rejected entity never ran the merge ceremony, so the requirement is vacuous); the mod-block-pending and combined-clear refusals stay. See the Ship-Local Ceremony.
-- **Survives session resume** — the FO reads `mod-block` from frontmatter on boot and resumes the pending action.
-
-## Standing Teammates
-
-A **standing teammate** is a long-lived specialist agent (prose polisher, science officer, code reviewer, language translator) declared by a workflow mod with `standing: true`. The FO discovers each at boot via the runtime adapter, defers spawn to the first team-mode dispatch, routes by name, and lets it die with the team at teardown. The four concepts below are load-bearing for every runtime; each adapter realizes (or omits) the mechanics — discovery, layout, routing call, teardown trigger — its own way.
-
-- **first-boot-wins** — lifecycle is team-scoped, not workflow-scoped. Spawn deferred to first dispatch; when multiple workflows share a team, the first FO to find the member absent spawns it, later workflows skip. How team scope maps onto session lifetime is the runtime's concern.
-- **team-scope lifecycle** — the teammate lives in one team and dies at team teardown (session end, explicit delete, captain shutdown). No cross-team handoff, no cross-session persistence. Mid-session death is detected on the next routing attempt; auto-recovery is deferred.
-- **routing contract** — address by declared `name`, best-effort and non-blocking: if no reply within the 2-minute timeout, the sender proceeds un-polished/un-reviewed/un-translated. Round-trip latencies of several minutes are normal on long drafts. Routing call is the adapter's (`send_input` on Codex, `SendMessage` on Claude teams).
-- **declaration** — one mod file per teammate, frontmatter `standing: true`, with spawn config and verbatim agent-prompt body. On-disk layout and parse rules are the adapter's.
+The standing-teammate concepts (first-boot-wins lifecycle, team-scope teardown, the by-name routing contract, the declaration layout) travel with the deferred dispatch module — they apply only once a team exists at first dispatch.
 
 ## Clarification and Communication
 

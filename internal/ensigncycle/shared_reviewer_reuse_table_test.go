@@ -90,6 +90,76 @@ func TestAssertClaudeReviewerReuse(t *testing.T) {
 	}
 }
 
+// TestClaudeSingleEntityRejectionFlow is the CONTRACT-correct single-entity (`-p`)
+// reviewer producer-signal table (the option-(b) correction of the AC-3 finding,
+// backlog seed e3z). It pins the deterministic bare-mode end-state — two distinct
+// fresh validation spawns, fix-agent and reviewer separate — over committed,
+// model-free transcripts, including the TWO observed non-deterministic live shapes
+// (2-fresh-spawns and impl-reused-through-validation), so the validator's live
+// re-run has an offline oracle.
+//
+// Root cause (verified in the contract, not assumed):
+//   - The Claude runner launches `spacedock claude -- -p {prompt}` and the prompt
+//     names one entity, so the run is single-entity → bare (first-officer-shared-
+//     core.md `## Single-Entity Mode`; claude-fo-dispatch.md "In single-entity mode,
+//     skip team creation. Use bare-mode dispatch for all agent spawning"). That
+//     clause predates P2 (since the original vendoring `83c73494`), so the single-
+//     entity reviewer is bare both before and after lazy-TeamCreate — the contradiction
+//     is pre-existing; the old assertClaudeReviewerReuse encoded a team-mode
+//     assumption the `-p` run can never satisfy.
+//   - In bare mode the contract makes the flow DETERMINISTIC and SEQUENTIAL
+//     (claude-fo-dispatch.md `## Feedback Rejection Flow (bare mode)`: "dispatch fix
+//     agent (wait for completion), then dispatch reviewer (wait for completion)").
+//     So the contract-correct end-state is two distinct fresh validation spawns with
+//     the fix agent and reviewer as SEPARATE dispatches — which is exactly what
+//     assertClaudeSingleEntityRejectionFlow asserts.
+//
+// NOTE the Codex contrast: Codex has no team registry, so its reviewer reuse via
+// `send_input` to a persistent thread is contract-valid even in single-entity
+// (context-dependent reuse — codex-first-officer-runtime.md `## Reuse And Feedback
+// Routing`); assertCodexReviewerReuse stays correct for the Codex `-p` run. The
+// Claude/Codex single-entity behaviors legitimately differ.
+func TestClaudeSingleEntityRejectionFlow(t *testing.T) {
+	// CONTRACT-CORRECT (live Run 1): two distinct fresh validation spawns (cycle-1 +
+	// cycle-2), the bare-mode-sequential end-state — PASS.
+	bareCycle1Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV1","input":{"description":"Rejection Task: validation","subagent_type":"spacedock:ensign"}}]}}`
+	bareCycle2Validation := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BV2","input":{"description":"Rejection Task: validation (cycle 2 fresh)","subagent_type":"spacedock:ensign"}}]}}`
+	twoFreshSpawns := bareCycle1Validation + "\n" + bareCycle2Validation
+
+	// VIOLATION (live Run 2): only the cycle-1 validation spawn, then the cycle-2
+	// re-review collapsed onto the implementation worker via SendMessage — the
+	// impl-as-validator shape. Must FAIL.
+	implRework := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Agent","id":"toolu_BI","input":{"description":"Rejection Task: implementation rework","subagent_type":"spacedock:ensign"}}]}}`
+	implAsValidator := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"SendMessage","input":{"to":"spacedock-ensign-rejection-task-implementation","message":"now validate your own rework"}}]}}`
+	implReusedThroughValidation := bareCycle1Validation + "\n" + implRework + "\n" + implAsValidator
+
+	// VIOLATION: only one validation spawn, no second re-review at all. Must FAIL on
+	// the spawn-count check.
+	onlyCycle1 := bareCycle1Validation
+
+	cases := []struct {
+		name    string
+		stream  string
+		wantErr bool
+	}{
+		{"contract-correct two fresh validation spawns (bare-mode sequential)", twoFreshSpawns, false},
+		{"impl reused through validation (impl-as-validator) must RED", implReusedThroughValidation, true},
+		{"only the cycle-1 validation spawn (no re-review) must RED", onlyCycle1, true},
+		{"empty stream must RED", "", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := assertClaudeSingleEntityRejectionFlow(tc.stream)
+			if tc.wantErr && err == nil {
+				t.Fatalf("expected error for %q, got nil", tc.name)
+			}
+			if !tc.wantErr && err != nil {
+				t.Fatalf("expected pass for %q, got: %v", tc.name, err)
+			}
+		})
+	}
+}
+
 func TestAssertCodexReviewerReuse(t *testing.T) {
 	// The real Codex collab_tool_call shape. A spawn_agent dispatching the validation
 	// stage binds the reviewer's thread id (vThread); a later send_input to vThread is
