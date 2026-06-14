@@ -177,6 +177,7 @@ Recommendation: REJECTED. AC-1 requires durable entity progress before the budge
 ### Feedback Cycles
 
 - Cycle 1 (2026-06-14T04:13:02Z): validation rejected AC-1. Route back to implementation to make durable progress before the silence budget clear the active foreground wait instead of returning a typed stall, and replace the contradictory durable-progress test with a no-stall positive control.
+- Cycle 2 (2026-06-14T04:42:34Z): detached adversarial audit found two material test-strength holes after cycle-2 validation passed. Route back to implementation to add a test that fails if durable progress leaves the foreground wait armed, and add a retry-narrowness negative control proving `assertCodexReviewerReuse` failures are not retried.
 
 ## Stage Report: implementation (cycle 2)
 
