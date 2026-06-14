@@ -53,9 +53,9 @@ jobs:
           # the no-run skip branch below fires (found=false, exit 0) instead of
           # aborting under set -e. The journey ledger is best-effort; a query
           # failure must never RED the cut.
-          run_id="$(gh run list --workflow "Runtime Live E2E" --branch next --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
+          run_id="$(gh run list --workflow "Runtime Live E2E" --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
           if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "::warning::no successful Runtime Live E2E run found on next; skipping journey ledger" >&2
+            echo "::warning::no successful Runtime Live E2E run found on main; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
