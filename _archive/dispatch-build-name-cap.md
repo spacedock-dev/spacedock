@@ -11,6 +11,7 @@ worktree:
 issue: "#366"
 mod-block:
 pr: "#368"
+archived: 2026-06-14T18:55:53Z
 ---
 
 `spacedock dispatch build` constructs the worker `name` as `{worker_key}-{slug}-{stage}` with no length cap, but Claude Code's `Agent` tool enforces `name` matching `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$` (max 64 chars). For a long slug the emitted `name` exceeds 64 chars, so forwarding the helper output verbatim to `Agent()` — the contract's MANDATORY dispatch path — fails with `InputValidationError` on `name`, and the dispatch cannot proceed.
