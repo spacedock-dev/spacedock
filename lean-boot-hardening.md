@@ -169,3 +169,16 @@ Cycle-3 closes the captain's scope expansion: the deliverable is now the BINARY 
 ### Summary
 
 Validation PASSES on the cycle-3 deliverable: the BINARY FIX is the real prevention, the detector + live scenario the guard. Reproduced the binary's reframed no-workflow output by building and exercising it in a bare tmpdir — `status`/`status --boot` emit the terminal "report this and stop; do NOT search the filesystem" directive (names root, keeps `--workflow-dir`), `status --discover` stays silent (empty stdout, exit 0). AC-3 is a genuine command-OUTPUT assertion proven to bite: reverting the message reds all four checks plus the sibling test. AC-1's detector reproduced green (table 8/8 + second-block); AC-2's live scenario is wired into the CI gate's `-run` alternation (yaml:179) and `go test -list` confirms the pattern selects it. Full offline suite (15 packages, 0 fail) + live vet green; the `state init`/`state new` sibling phrasing is correctly scoped OUT and untouched. Recommendation: PASSED.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Fix the empty-dir fixture bug in TestLiveZeroDiscoverReportsAndStops (CI red on #374, both models, deterministic).
+  Root cause: the fixture called `gitInit` on an EMPTY tmpdir; gitInit's `add -A` stages nothing → init commit failed "nothing to commit" before the FO booted. Fix: `writeFile(root/.gitkeep, "")` before `gitInit` — gives `add -A` something to commit while keeping the root workflow-less (no `commissioned-by:` frontmatter), preserving the zero-discover premise. Commit 7f9bf938.
+- DONE: RUN it locally, not just compile — confirm it gets past the fixture commit.
+  Ran `go test -tags live -run TestLiveZeroDiscoverReportsAndStops ./internal/ensigncycle/ -v` with live auth present (OAuth benchmark-token). It ran END TO END and PASSED (sonnet, 35.8s) — well past the line-46 commit. Captured transcript: real FO booted (`--version` → `git rev-parse` → `status --discover` returned empty), then reported "No workflow was found... Nothing to drive" and STOPPED — NO TeamCreate, NO broad sweep; `detectBroadSearchAtBoot(transcript, root)==nil` and the no-TeamCreate assertion both passed.
+- DONE: `go test ./...` (offline) green.
+  Full offline suite: 0 failures; `go vet -tags live` clean.
+
+### Summary
+
+Cycle-4 fixes the live-test fixture bug that reached CI as the scenario's first real execution: the zero-discover fixture git-init'd an empty dir, so gitInit's `add -A`/commit failed "nothing to commit" before the FO ever booted. Staged an inert `.gitkeep` before gitInit — the commit succeeds and the root stays workflow-less (no commissioned frontmatter), so the zero-discover condition holds. Critically, I RAN it (live auth was available): it passed end-to-end in 35.8s, with the real sonnet FO reading the empty discover result and report-and-stopping — no TeamCreate, no filesystem sweep — exactly the behavior AC-2 guards and the behavioral confirmation that the binary message fix lands in practice. Offline suite green.
