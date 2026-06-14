@@ -1,12 +1,12 @@
 ---
 name: pr-merge
-description: Open a code-branch PR to next at the merge boundary and track it to merge, state-root-aware
-version: 0.12.1
+description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
+version: 0.12.2
 ---
 
 # PR Merge
 
-Manages the PR lifecycle for workflow entities processed in worktree stages of this **split-root** workflow. The CODE for an entity lives on its worktree branch in the main repo (`origin`, base branch `next`); the entity STATE (frontmatter, `pr:`, `mod-block:`, stage reports) lives in the separate `.spacedock-state` checkout (`origin`, branch `spacedock-state/dev`). This hook opens a PR for the code branch at the terminal merge boundary — **before** cleanup deletes the branch — records `pr:` on the entity state, blocks until the PR merges, then lets the FO terminalize and archive.
+Manages the PR lifecycle for workflow entities processed in worktree stages of this **split-root** workflow. The CODE for an entity lives on its worktree branch in the main repo (`origin`, base branch resolved from the workflow's `trunk:` config, default `main`); the entity STATE (frontmatter, `pr:`, `mod-block:`, stage reports) lives in the separate `.spacedock-state` checkout (`origin`, branch `spacedock-state/dev`). This hook opens a PR for the code branch at the terminal merge boundary — **before** cleanup deletes the branch — records `pr:` on the entity state, blocks until the PR merges, then lets the FO terminalize and archive.
 
 The two origins stay clean by construction: the code PR carries only the code-branch range (the worktree clone has no `.spacedock-state` paths), and the `pr:`/`mod-block:` writes are `spacedock status --set` against the state checkout, committed path-scoped there. **This hook MUST NOT touch `.spacedock-state` from the code worktree** — all state writes go through `spacedock status --set --workflow-dir docs/dev`, which targets the resolved state checkout.
 
@@ -33,6 +33,8 @@ Check PR-pending entities using the same logic as the startup hook: scan entity 
 
 Runs at the terminal merge boundary, before any local merge or cleanup, for the entity's CODE worktree branch `{branch}` (the branch named in the entity's `worktree:` field, located at `{worktree}`).
 
+Resolve the PR base once: `BASE=$(spacedock dispatch trunk --workflow-dir docs/dev)` — the workflow's configured integration trunk (default `main`). `dispatch trunk` emits exactly a **bare branch name** (e.g. `main`), so `$( )` yields `$BASE` clean (command substitution strips the single trailing newline). Always quote `"$BASE"` at use sites. Use `"$BASE"` for the draft, the diff stat, the `gh pr create --base`, and the fallback merge target below.
+
 **PR APPROVAL GUARDRAIL — Do NOT push or create a PR without explicit captain approval.** Opening a PR and pushing the branch are outward-facing. Before presenting the draft, construct the full PR body so the captain reviews the actual prose that will land on GitHub.
 
 Compute the audit-link inputs first: state SHA via `git -C docs/dev/.spacedock-state rev-parse HEAD` (the full SHA of the **state** checkout's HEAD — the entity's `mod-block=merge:pr-merge` commit, which the FO committed before invoking this hook, so HEAD already contains the active entity file); owner/repo via `gh repo view --json nameWithOwner --jq '.nameWithOwner'`; short entity-id slot via `spacedock status --workflow-dir docs/dev --short-id {slug}` (shortest-unique-prefix for sd-b32 workflows, matching the status table's ID column).
@@ -42,8 +44,8 @@ Build the full PR body using the template below — motivation lead, `## What ch
 Then present the draft to the captain:
 
 - **Title:** {entity title}
-- **Branch:** {branch} -> next
-- **Changes:** {N} file(s) changed across {N} commit(s) (`git -C {worktree} diff --stat origin/next...{branch}`)
+- **Branch:** {branch} -> $BASE
+- **Changes:** {N} file(s) changed across {N} commit(s) (`git -C {worktree} diff --stat origin/$BASE...{branch}`)
 - **Files:** {list of changed files}
 - **Body:**
 
@@ -53,13 +55,13 @@ Then present the draft to the captain:
 
 Wait for the captain's explicit approval before pushing. Do NOT infer approval from silence, acknowledgment of the summary, or the gate approval that preceded this step — only an explicit "push it", "go ahead", "yes", or equivalent counts.
 
-**On approval:** This is a split-root workflow — the FO rebases the code branch onto `origin/next` BEFORE invoking this hook, and the entity state lives in the separate `.spacedock-state` checkout, so this hook does NOT rebase or push any state branch. Push only the code branch:
+**On approval:** This is a split-root workflow — the FO rebases the code branch onto `origin/$BASE` BEFORE invoking this hook, and the entity state lives in the separate `.spacedock-state` checkout, so this hook does NOT rebase or push any state branch. Push only the code branch:
 
-1. `git -C {worktree} push -u origin {branch}` — push the entity's code branch to the code remote (`origin` = the main repo, base branch `next`). Do NOT push `next` or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
+1. `git -C {worktree} push -u origin {branch}` — push the entity's code branch to the code remote (`origin` = the main repo, base branch `$BASE`). Do NOT push the trunk or any `.spacedock-state` branch from here; the FO coordinates state-remote pushes separately.
 
 If the push fails (no remote, auth error), report to the captain and fall back to the local `--no-ff` merge (see fallback below).
 
-2. Create the PR: `gh pr create --base next --head {branch} --title "{entity title}" --body "{constructed body}"` against the body already constructed above — do not rebuild it. Capture the PR number `{N}`.
+2. Create the PR: `gh pr create --base "$BASE" --head {branch} --title "{entity title}" --body "{constructed body}"` against the body already constructed above — do not rebuild it. Capture the PR number `{N}`.
 
 3. Record it on the entity STATE: `spacedock status --workflow-dir docs/dev --set {slug} pr=#{N}`. This writes `pr:` into the state-checkout entity frontmatter; the FO commits it path-scoped to `.spacedock-state` (`git -C docs/dev/.spacedock-state add -- {slug}/index.md && git -C docs/dev/.spacedock-state commit -m "pr: {slug} #{N} pending" -- {slug}/index.md`) and pushes `spacedock-state/dev` so the PR-pending state survives session resume and is visible on a 2nd host.
 
@@ -97,9 +99,9 @@ Target total length: **60-120 words**.
 
 ### Fallback: no PR host available
 
-If `gh` is not on PATH, or `gh pr create` fails, or the branch push fails, no remote PR is opened. Report to the captain that no PR could be opened and fall back to the FO's default local merge (Merge-and-Cleanup step 6): a local `--no-ff` merge of the code branch `{branch}` from the worktree onto `next`. The merge-hook guard refuses terminalizing while `pr` and `mod-block` are both empty and a merge hook is registered (it checks the *post-update* state, not the order in which `mod-block` was cleared), so the no-PR path must leave the guard a truthful signal that a merge ran. Two paths satisfy it without `--force`:
+If `gh` is not on PATH, or `gh pr create` fails, or the branch push fails, no remote PR is opened. Report to the captain that no PR could be opened and fall back to the FO's default local merge (Merge-and-Cleanup step 6): a local `--no-ff` merge of the code branch `{branch}` from the worktree onto `$BASE`. The merge-hook guard refuses terminalizing while `pr` and `mod-block` are both empty and a merge hook is registered (it checks the *post-update* state, not the order in which `mod-block` was cleared), so the no-PR path must leave the guard a truthful signal that a merge ran. Two paths satisfy it without `--force`:
 
 - **Workflow declares `merge: local`:** the policy exempts the pr-requirement of the merge-hook guard. The FO clears the `mod-block` it set before invoking (its own standalone `spacedock status --workflow-dir docs/dev --set {slug} mod-block=`, committed path-scoped), then terminalizes and archives — no sentinel needed, no `--force`.
-- **Workflow has NOT declared `merge: local`:** record the landed merge with the `local-merge` sentinel. After the local `--no-ff` merge lands, compute the merge-commit SHA on `next` and set it as the `pr`: `spacedock status --workflow-dir docs/dev --set {slug} pr=local-merge:{short-sha}` (committed path-scoped). The guard then sees a non-empty `pr` and is satisfied honestly — `pr` truthfully records that a merge shipped, just not a remote PR, and the status table renders it as `{short-sha} (local)`. Set the sentinel **only after the merge has truly landed** (the SHA must already exist on `next`); a sentinel set before the merge would satisfy the guard with a signal that does not yet correspond to a commit. The corrected order is: invoke the hook → local merge lands → set the sentinel → clear `mod-block` → terminalize.
+- **Workflow has NOT declared `merge: local`:** record the landed merge with the `local-merge` sentinel. After the local `--no-ff` merge lands, compute the merge-commit SHA on `$BASE` and set it as the `pr`: `spacedock status --workflow-dir docs/dev --set {slug} pr=local-merge:{short-sha}` (committed path-scoped). The guard then sees a non-empty `pr` and is satisfied honestly — `pr` truthfully records that a merge shipped, just not a remote PR, and the status table renders it as `{short-sha} (local)`. Set the sentinel **only after the merge has truly landed** (the SHA must already exist on `$BASE`); a sentinel set before the merge would satisfy the guard with a signal that does not yet correspond to a commit. The corrected order is: invoke the hook → local merge lands → set the sentinel → clear `mod-block` → terminalize.
 
 **On captain decline (PR host present, captain says no):** Do NOT automatically fall back to local merge. Ask the captain how to proceed — options include the local `--no-ff` merge or leaving the branch unmerged. Only act on the captain's explicit choice.
