@@ -8,6 +8,7 @@ sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
 worktree: .worktrees/spacedock-ensign-pr-merge-mod-base-branch-post-flip
 mod-block: merge:pr-merge
+pr: "#370"
 ---
 
 The `pr-merge` merge-hook mod (`docs/dev/_mods/pr-merge.md`, v0.12.1) opens code-branch PRs against base `next`, the pre-flip trunk. Post-flip the trunk is `main`, so every merge this drive required a manual base override.
