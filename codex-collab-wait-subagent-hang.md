@@ -217,3 +217,16 @@ Recommendation: PASSED. Cycle 2 fixes the AC-1 durable-progress contradiction: d
 ### Summary
 
 Closed the detached audit holes with mutation-sensitive deterministic tests only; the implementation logic stayed unchanged. Durable progress is now pinned to disarm the wait epoch, and reviewer-reuse assertion failures are pinned as non-retryable.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce AC-1 and AC-2 with deterministic tests: both foreground-wait stall arms, positive controls, one retry only for typed stall, and no retry for non-watchdog/assertion failures.
+  Focused suite passed (`26 passed`); adversarial mutations were caught: removing `w.clearWait()` failed `TestCodexCollabWaitWatchdogDurableProgressDisarmsRepeatedWaitEpoch`, and retrying reviewer-reuse assertion failures failed with `attempts = 2, want 1`.
+- DONE: Verify AC-3 remains durable-state based: rejection-flow success still requires durable two-cycle state plus the real Codex `send_input` reuse signal, including the negative fixture.
+  Focused suite included `TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle`, and live Codex `TestLiveCodexSharedScenarios/rejection-flow` passed with `send_input` to the original validation reviewer plus durable `Cycle 1: REJECTED` and `Cycle 2: PASSED`.
+- DONE: Verify AC-4 and baseline gates: docs-contract wording guard, live-tag no-spend parity guard, `gofmt`, `go test ./...`, `go test ./... -race`, and targeted live Codex rejection-flow when auth is available.
+  Docs guard passed (`3 passed`), live-tag parity passed (`3 passed`), `gofmt -w ./cmd ./internal` left the code worktree clean, `go test ./...` and `go test ./... -race` each passed (`1262 passed in 16 packages`), and targeted live Codex passed in `439.339s` with artifacts under `/tmp/spacedock-codex-live-validation-cycle3/codex-shared-scenarios/rejection-flow/attempt-1`.
+
+### Summary
+
+Recommendation: PASSED. Cycle 3 closes the detached audit holes with load-bearing tests that fail under the relevant regressions, while AC-1 through AC-4 all passed deterministic, baseline, and live validation evidence.
