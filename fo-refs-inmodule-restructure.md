@@ -272,3 +272,16 @@ REJECTED. The five in-scope change classes are clean — every collapsed/compres
 ### Feedback Cycles
 
 - **Cycle 1 (validation REJECTED, 2026-06-14):** the detached adversarial audit caught a Material dangling reference the impl self-audit missed — the mod-block section collapse removed `## Mod-Block Enforcement at Terminal Transitions` from claude-fo-merge.md, but `claude-first-officer-runtime.md:13`'s merge-ref load-point inventory still names that now-removed section. contractlint + live scenarios stay green over it (only the word-level audit catches it). Fix: update the runtime adapter's merge-ref inventory to name only the surviving `## Mod-Block Enforcement`, keeping TERMINAL_TEARDOWN_BOUNDED attributed to its real `## Merge and Cleanup` home. Routed back to implementation.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Fix the dangling runtime-adapter merge-ref inventory (validation REJECTED cycle 1).
+  `claude-first-officer-runtime.md:13` named the removed `## Mod-Block Enforcement at Terminal Transitions` section; rewrote the inventory to name only the surviving `## Mod-Block Enforcement` and re-homed the marker to the bounded terminal teardown, matching `first-officer-shared-core.md:130`'s phrasing.
+- DONE: Re-run detached audit — cross-file grep for the removed section name, clean.
+  `grep -rn 'Mod-Block Enforcement at Terminal Transitions' skills/first-officer/` → zero hits tree-wide. `TERMINAL_TEARDOWN_BOUNDED` marker byte-intact (grep==1) at its real home `claude-fo-merge.md:24` (Merge-and-Cleanup step 10).
+- DONE: `go test ./...` incl. contractlint green.
+  Re-run after the fix; exit 0.
+
+### Summary
+
+Cycle-1 fix: the detached validation audit caught a Material dangling reference the implementation self-audit missed — the `claude-first-officer-runtime.md` merge-ref inventory still named the `## Mod-Block Enforcement at Terminal Transitions` section my collapse removed. De-dangled the inventory to name only the surviving `## Mod-Block Enforcement`, re-homed the `TERMINAL_TEARDOWN_BOUNDED` marker to the bounded-teardown step (its real home), and confirmed by tree-wide grep that no other cross-file reference names the removed section. Offline gate green.
