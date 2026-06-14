@@ -1,11 +1,12 @@
 ---
 id: sryzghzqazj9s9km6ebqkf5s
 title: dispatch reconcile conflates team-management with repo-hygiene (and hardcodes pre-flip trunk `next`)
-status: ideation
+status: implementation
 source: "0202 Commander drive (2026-06-13). Boot reconcile flagged Class-D/E drift against origin/next; Class-E remedy 'reset main->origin/next' would have reverted the entire post-flip trunk. Investigation (captain-prompted) found the deeper cause: reconcile bundles git-hygiene into a team-management helper, so it carries repo/trunk knowledge it shouldn't."
 group: cleanup
 sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
+worktree: .worktrees/spacedock-ensign-dispatch-reconcile-deconflate-repo-hygiene
 ---
 
 `dispatch reconcile` is two helpers in one coat: roster/team reconciliation AND repo git-hygiene. The repo half hardcodes the pre-flip trunk `next`, which the 2026-06-08 flip silently invalidated.
