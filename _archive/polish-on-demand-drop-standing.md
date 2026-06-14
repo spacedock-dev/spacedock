@@ -12,6 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 mod-block:
 pr: "#375"
+archived: 2026-06-14T21:36:17Z
 ---
 
 Replace the standing-teammate lifecycle with on-demand one-shot polish, and move the feature's usage prose out of the FO contract into the mod that declares it.
