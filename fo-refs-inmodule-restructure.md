@@ -230,3 +230,22 @@ Built the principle-cascade map the captain asked for and reported the honest he
 ### Summary
 
 Deepened the cascade map per the lead's steer. The headline honest finding stands and is now quantified: the compressible surface is ~40–45 words / ~8–12 lines, low-single-digit-percent of shared-core, because the deep prose is overwhelmingly load-bearing mechanism the principles cannot replace. The cycle-3 "kept — ambiguous" verdict on the FO-posture bullets is RESOLVED by surveying `present-gate`: lead-with-recommendation compresses because its gate-time teeth already live there; name-end-value and reversible-work compress only restatement/padding while keeping their distinct teeth; speak-label and prefer-code-gate stay verbatim as mechanism. Recommended ONE audited implementation pass. The real cascade payoff is making the entry-point ethos the cited source future prose leans on, not the modest line saving.
+
+## Stage Report: implementation
+
+- DONE: (a) ethos HOIST to SKILL.md — self-explanatory, label + meta-framing dropped; deleted from shared-core; :211 lede rewritten to point UP.
+  SKILL.md `## How the first officer operates` inserted after single-entity block; `grep -l 'Begin with the end'` → SKILL.md only. Commit cf562ad5.
+- DONE: (b) the two collapses — merge-ref two mod-block sections → ONE; C1 MODS-REPORT restatement → pointer.
+  `grep -c '^## Mod-Block' claude-fo-merge.md` == 1; shared-core:199 now "(Startup step 5)" pointer. Recovery/resume/missing-mod prose preserved.
+- DONE: (c) cascade compressions — C-a (Clarification → reversible-work pointer) + three Working-Principles posture bullets; speak-label + prefer-code-gate kept verbatim.
+  prefer-code-gate and speak-label byte-identical to f87107b1 baseline (diff empty).
+- DONE: Re-confirmed all line anchors against origin/main first.
+  Worktree HEAD == origin/main (3779370f); ethos 5–12, mod-block 54/64, MODS 199, lede 211, C-a 207, C-b 217–220 all matched.
+- DONE: MANDATORY high-stakes detached audit (self-run before signaling).
+  Word-level diff vs #367 baseline (`git show f87107b1:…`) on a detached /tmp checkout, never mutating the worktree. No MUST/MUST-NOT/qualifier dropped or inverted across all five change classes; every removed mod-block obligation (4 mechanism conditions, recovery options, session-resume, missing-mod recovery) survives in the canonical section; `TERMINAL_TEARDOWN_BOUNDED: …` marker byte-intact (grep==1); three ethos bullets verbatim in SKILL.md; lead-with-recommendation's lede-first teeth confirmed live in present-gate SKILL.md rule 1.
+- DONE: Gates green.
+  `grep -c '^## Mod-Block'` == 1; ethos single-home grep → SKILL.md only; `go test ./...` exit 0 incl. internal/contractlint reference-closure + internal/ensigncycle offline. (Live Claude+Codex shared-scenarios are the validation-stage AC — noted, not run here.)
+
+### Summary
+
+Executed the cycle-4 plan exactly: hoisted the FO operating ethos into the always-loaded SKILL.md entry point (label + meta-framing dropped, plain posture), deleted it from shared-core, and rewrote the Working-Principles lede to point up. Collapsed claude-fo-merge.md's two mod-block sections into one canonical `## Mod-Block Enforcement` and the shared-core MODS-REPORT restatement into a pointer. Compressed C-a and three posture bullets while keeping speak-label and prefer-code-gate byte-verbatim. The detached word-level audit against the #367 baseline confirms no obligation lost or inverted and the teardown marker byte-intact; the offline gate (contractlint reference-closure + ensigncycle) is green. Net: 14 insertions / 33 deletions across three files. Live shared-scenarios remain the validation-stage bar.
