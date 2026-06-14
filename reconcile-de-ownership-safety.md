@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-reconcile-de-ownership-safety
 issue:
 sprint: 0203-fo-efficiency
 mod-block: merge:pr-merge
+pr: "#376"
 ---
 
 The reconcile sweep's repo-hygiene classes (D: stale worktree branch; E: stale local main) can destroy work. Rethink them so reconcile never destroys committed or unpushed work and never mutates a worktree the running session does not own. Keep it simple; if needed, model ownership as a lease.
