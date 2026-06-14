@@ -173,3 +173,130 @@ Added `dispatch polish-spec` (one-shot Agent spec, no team_name) repurposing the
 ### Summary
 
 Reproduced every structural shed independently from the worktree (not the report) and adversarially confirmed no surviving boot path spawns a standing comm-officer: discovery/lazy-spawn/declaration symbols are gone repo-wide, boot JSON carries no standing spawn directive, and the only remaining route (`polish-spec`) emits a bare team_name-less Agent. Offline + binary proofs all green on a worktree-built binary (go test ./... exit 0 incl. both polish_spec tests; list-standing empty; polish-spec emits the bare One-Shot spec with the MUST guard). AC-1 and AC-4 are fully proven. AC-2/AC-3 rest on a fresh-boot live roster capture that is infeasible from inside this active team; the chain is structurally closed (current team's resident comm-officer is the pre-change baseline, not a deliverable regression), but the end-to-end fresh-boot capture is the one residual owed before merge. Recommendation: PASSED on the binary/structural half; the live fresh-boot roster smoke is flagged to the FO/captain as the remaining integration gate (matching the implementation's own flag).
+
+---
+
+# CYCLE 3 — DIRECTION REVERSED (supersedes cycles 1-2)
+
+> **Captain reversal (2026-06-14):** cycles 1-2 above (drop residency → on-demand one-shot `polish-spec`) are REJECTED. A one-shot polisher is pointless — a slash-command skill already covers ad-hoc polish. **KEEP the comm-officer RESIDENT.** The win is the SAME contract-bloat reduction, achieved by RELOCATING the standing-teammate injection mechanism out of the FO contract prose into the binary + the mod's self-declaration, NOT by dropping the feature. Everything below replaces the cycle-1/2 Proposed approach, before/after wording, ACs, and test plan. The cycle-1/2 text is retained above for the record, not as the plan.
+
+## Corrected goal
+
+Move the standing-teammate INJECTION MECHANISM out of the FO contract prose. Today the FO contract spells out HOW standing teammates are discovered, lazy-spawned, deduped, and torn down — ~4 subsections of machinery (`claude-fo-dispatch.md` lines 17-24 discovery-pass, 26-38 lazy-spawn, 40-47 declaration/routing mechanics, 49-56 `## Standing Teammates` concepts). The captain wants that HOW relocated into the binary (which already has the spawn helpers) plus the mod's self-declaration, so the contract carries at most a minimal generic trigger line. **Residency is preserved** — comm-officer keeps `standing: true` + spawn config + agent prompt and stays a long-lived team member.
+
+This is "prefer a code gate over prose" applied to a lifecycle: the loop the FO currently executes by reading prose (enumerate declared standing mods → per-mod dedup against the live team config → emit the absent ones' Agent specs) becomes ONE binary call. The mechanism lives in the binary, not in contract sentences.
+
+## Mechanism spike (cycle 3, riskiest unknown — exercised FIRST)
+
+**The claim:** the binary can drive the FULL standing lifecycle generically (enumerate → first-boot-wins dedup → emit spawn specs) behind one helper call, so the contract's discovery-pass + lazy-spawn + declaration-mechanics + first-boot-wins prose can be DELETED.
+
+**What I verified against `main` (HEAD 3779370f) + the live binary:**
+
+1. **Enumeration already generic.** `EnumerateDeclaredStandingTeammates(workflowDir, teamName)` (`internal/dispatch/mods.go:95`) already scans `{wd}/_mods/*.md`, filters `standing: true`, resolves name from `## Hook: startup` (falling back to frontmatter), sorted. This IS the discovery pass — already in the binary. `./spacedock dispatch list-standing --workflow-dir docs/dev` → emits the comm-officer mod path, exit 0 (ran live).
+2. **Dedup already generic.** `MemberExists(home, team, name)` (`internal/claudeteam/standing.go:71`) reads `~/.claude/teams/{team}/config.json` members — this IS the first-boot-wins predicate. `runSpawnStanding` already calls it and short-circuits to `{"status":"already-alive","name":...}` (`standing.go:144-154`).
+3. **Spec emit already proven.** `./spacedock dispatch spawn-standing --mod {comm-officer} --team {fresh-team-with-no-config}` → exit 0, full Agent spec with `subagent_type`, `name`, `team_name`, `model: sonnet`, and `prompt` = the `## Agent Prompt` body verbatim (ran live this cycle; output captured). So per-mod spec emit works end-to-end today.
+
+**Conclusion — the binary already has all three pieces; only the DRIVER that composes them is missing.** Today the FO composes them in prose (loop over `list-standing` output, call `spawn-standing` per path, branch on `already-alive`). The MINIMAL new capability is a thin subcommand — `dispatch spawn-standing-all --workflow-dir {wd} --team {team}` — that runs the loop in Go and emits a JSON ARRAY of the Agent specs for the not-already-alive declared standing mods (already-alive ones omitted). No new lifecycle logic; it calls `EnumerateDeclaredStandingTeammates`, then for each runs the existing `runSpawnStanding` body, collecting the non-`already-alive` specs. **Precedent already in tree:** `dispatch build` (`build.go:570`) ALREADY auto-injects the `show-standing` fetch line gated on `EnumerateDeclaredStandingTeammates(...) > 0` — the binary already drives one half of the standing machinery generically without FO prose. `spawn-standing-all` extends the same pattern to the spawn half.
+
+This is throwaway-spike-confirmed: the riskiest claim ("the binary can carry the full lifecycle") is true with one small additive subcommand, not a rewrite. No on-disk format change, no parser round-trip risk — it reuses proven parse + member-probe code.
+
+## Proposed approach (cycle 3)
+
+**Approach C — relocate the mechanism, keep residency.**
+
+### Binary: add `dispatch spawn-standing-all`
+
+A new subcommand `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team}` that drives the full inject loop in one call:
+
+- Run `EnumerateDeclaredStandingTeammates(wd, team)`. For empty (bare mode / no `_mods` / no standing mods) → emit `[]` (empty JSON array), exit 0.
+- For each declared standing mod, in sorted order, run the existing `runSpawnStanding` logic (parse, validate, `MemberExists` dedup). Collect the emitted Agent spec for each member that is NOT already-alive; SKIP already-alive members (they are the first-boot-wins case — no spec needed).
+- Emit a JSON ARRAY of the collected specs (`[]spawnSpec`) to stdout, two-space-indented, matching the existing `emitSpawnJSON` byte conventions. Exit 0.
+- Loud failure (exit 1, stderr naming the offending mod) on the same conditions `runSpawnStanding` already fails on (missing `## Agent Prompt`, missing/invalid `subagent_type`/`name`/`model`) — the validation is shared, not re-implemented.
+
+The FO calls this ONCE before the first team-mode `Agent()` dispatch, forwards each spec in the returned array to `Agent()`, and is done. The enumerate/dedup/per-mod-loop that the contract currently spells out is now entirely inside the binary. `spawn-standing` / `list-standing` / `show-standing` STAY (other callers and the per-dispatch `show-standing` injection still use them); this is purely additive.
+
+### Mod stays self-describing AND keeps residency (the captain's key point)
+
+`comm-officer.md` KEEPS `standing: true`, its `## Hook: startup` spawn config (`subagent_type`/`name`/`model`), and its `## Agent Prompt` — residency fully preserved; the binary reads all of these. What MOVES into the mod is the *mechanism narrative* the contract sheds: the mod's `## Hook: startup` currently re-states "check the team config / first-boot-wins / spawn if absent" in PROSE (lines 12-27) — that narrative is now redundant because the binary's `spawn-standing-all` performs the check. The mod's `## Hook: startup` is trimmed to the spawn-config bullets the binary parses (the `- subagent_type:` / `- name:` / `- model:` block), dropping the human-readable check-the-config narrative. The mod's `## Routing guidance` / `## Routing Usage` (the when-to-polish scope, the four modes, boundary rules) STAY — they were always mod-owned and become the single home for usage prose the contract also sheds.
+
+### Contract keeps only a minimal generic trigger line
+
+`claude-fo-dispatch.md` sheds all four subsections (below) and keeps ONE line in `## Dispatch`: *"Before the first team-mode `Agent()` dispatch, inject declared standing teammates: run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each Agent spec in the returned JSON array to `Agent()`. Idempotent (already-alive members are omitted), so re-running is safe. Read each teammate's routing usage from its mod."* The HOW (enumerate, dedup, first-boot-wins, declaration layout) is gone from prose — it lives in `spawn-standing-all` + the mod.
+
+## Concrete before/after wording (cycle 3)
+
+### `claude-fo-dispatch.md` — SHEDS (re-confirmed against `main` HEAD 3779370f)
+
+- **`### Standing teammate discovery pass`** (lines 17-24) — DELETE entirely. `spawn-standing-all` enumerates internally.
+- **`### Standing teammate lazy-spawn`** (lines 26-38) — DELETE entirely. The per-mod loop + already-alive branch move into the binary. KEEP the one operational caveat that is NOT mechanism — the "polish round-trips can reach several minutes; treat routing as non-blocking" sentence — relocated to the routing hook at line 80 (it is a routing-discipline rule, not lifecycle machinery).
+- **`### Standing teammate declaration and routing mechanics`** (lines 40-47) — DELETE the declaration-layout / routing-call / teardown-trigger / lazy-spawn-injection bullets. The declaration layout is now an implementation detail of `spawn-standing-all` (it parses the mod); the teardown trigger ("dies with the team at Claude Code teardown") is the only survivor and folds into the `## Standing Teammates` replacement as a single clause. The dispatch-time `show-standing` injection bullet STAYS true but is already enforced by `build.go` — no contract prose needed; DELETE the bullet (it described binary behavior the binary already guarantees).
+- **`## Standing Teammates`** (lines 49-56) — REPLACE the four concept bullets (first-boot-wins, team-scope lifecycle, routing contract, declaration) with the single generic trigger line above (placed in `## Dispatch`). The section heading is removed; its one surviving fact — "standing teammates are team-scoped and die with the team at teardown" — becomes a clause in the trigger line.
+- **`## Dispatch` → "Routing through a standing prose-polisher"** (line 80) — KEEP the residency framing (comm-officer IS live), but DROP the "Check team membership first" mechanism hint (membership is the binary's concern now) and the "Dispatched workers discover the same teammates through their build-time prompt" sentence (that is the `show-standing` build injection, now undocumented-because-automatic). Fold in the non-blocking-several-minutes caveat moved from line 38.
+- **Line 129 sequencing rule** — KEEP. The "spawn-standing emits Agent specs; never in the same message as TeamCreate/TeamDelete" race rule still applies to `spawn-standing-all` (it also emits Agent specs forwarded to Agent dispatch). Update the wording to name `spawn-standing-all` as the spec-emitter the FO actually calls.
+
+### `first-officer-shared-core.md` — SHEDS (re-confirmed)
+
+- **Line 27** (MODS-REPORT) — KEEP the "comm-officer spawn" parenthetical as a reportable deferred startup hook (residency is preserved, so the greet still reports it as a pending deferral). No change — this was a cycle-1/2 shed that no longer applies.
+- **Line 39** (greet deferrals) — KEEP "the comm-officer spawn" in the deferral list (still a real deferred spawn). No change.
+- **Line 108** — KEEP "standing-teammate discovery/spawn" in the dispatch-machinery list, but the machinery now means "the `spawn-standing-all` call," not a prose procedure. Reword: "standing-teammate injection (`spawn-standing-all`)."
+- **Line 201** — REPLACE "The standing-teammate concepts (first-boot-wins lifecycle, team-scope teardown, the by-name routing contract, the declaration layout) travel with the deferred dispatch module…" with a single sentence: "Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all` at first dispatch; the concept is team-scoped (members die with the team)." The lifecycle CONCEPTS no longer need a prose home — the binary carries them.
+
+### `claude-first-officer-runtime.md` — line 7
+
+- REPLACE "standing-teammate discovery/lazy-spawn/declaration" in the dispatch-machinery list with "standing-teammate injection (`spawn-standing-all`)." One phrase, not a procedure.
+
+### `comm-officer.md` mod — CHANGES (residency PRESERVED)
+
+- Frontmatter `standing: true` — KEEP.
+- `## Hook: startup` — TRIM to the spawn-config bullets the binary parses (`- subagent_type: general-purpose` / `- name: comm-officer` / `- model: sonnet`). DELETE the human-readable "check the team config members list / first-boot-wins / if present skip / if absent spawn" narrative (lines 14-27) — that mechanism now lives in `spawn-standing-all`. The mod declares WHAT to spawn; the binary decides WHEN/IF.
+- `## Hook: shutdown` — KEEP (teardown is still real; the binary does not own teardown, Claude Code does).
+- `## Agent Prompt` — KEEP verbatim (residency). The resident framing ("Then idle… You are a standing teammate… Stay live") is correct and stays.
+- `## Routing guidance` / `## Routing Usage` — KEEP (mod-owned usage prose, now the single home).
+
+### `using-claude-team` skill — no change
+
+Grep confirms no standing-teammate mechanism prose lives in `skills/using-claude-team/` (re-verified against `main`). Record: "no edit needed."
+
+## Acceptance criteria (cycle 3)
+
+Each AC names a proof OUTSIDE the contract prose (a contract grep is BANNED as proof — the file under change cannot be its own oracle). The prose sheds are real authoring work but rest on the behavioral half below.
+
+1. **`dispatch spawn-standing-all` drives the full inject loop: it emits the Agent specs for declared standing mods absent from the team config, omits already-alive members, and emits `[]` when none are declared.**
+   Verified by: a Go test in `internal/dispatch` (sibling to `standing_parity_test.go`) that, against a fixture `_mods` dir with a `standing: true` polish mod and a fixture team config, asserts: (a) with the member ABSENT from config, `spawn-standing-all` emits a one-element JSON array whose spec has `subagent_type`/`name`/`team_name`/`model`/`prompt` and prompt == the fixture mod's `## Agent Prompt` body (expected value sourced from the fixture, NOT the binary); (b) with the member PRESENT in the fixture config, the array OMITS it (already-alive dedup); (c) with no `standing: true` mod, output is `[]`. The offline gate `go test ./...` exits 0.
+
+2. **A live first-dispatch injects comm-officer into the team `config.json` roster as a standing teammate — driven by the mod's self-declaration + the binary — WITHOUT the FO contract carrying the discovery/lazy-spawn/first-boot-wins mechanism prose.**
+   Verified by a REGISTERED live scenario (per the 58/lean-boot lesson — an ad-hoc live test proves nothing). The scenario boots an FO, reaches the first team-mode dispatch, and the FO calls `spawn-standing-all` (the ONLY standing-injection step it has). Durable proof: capture `~/.claude/teams/{team}/config.json` members AFTER first dispatch — `comm-officer` is PRESENT (residency works). The independent oracle is the roster file, not a contract grep. This AC REDS if residency breaks (comm-officer absent after first dispatch) — the inverse of the cycle-1/2 AC, because residency is now the desired state.
+
+3. **The mechanism is shed from the FO contract — discovery-pass / lazy-spawn / declaration-mechanics / first-boot-wins prose is removed on-disk — while injection still works.**
+   Verified by the SAME registered live scenario as AC-2: the contract files (`claude-fo-dispatch.md` + shared-core + runtime) no longer contain the four mechanism subsections (the shed is an on-disk fact the scenario's setup confirms by structural absence of the named sections), AND the live roster from AC-2 still shows comm-officer resident. The oracle is the live roster (independent), guarded against the contract regressing the mechanism back in: a structural check that the named section headings are ABSENT is the shed-half, but the LOAD-BEARING pass condition is AC-2's roster (injection works through the binary, not prose). Note: per the proof policy, the structural-absence half alone is not sufficient — it is bound to AC-2's live roster so the AC cannot pass on wording alone.
+
+4. **`list-standing` STILL returns comm-officer (residency preserved); existing scenarios stay green.**
+   Verified by: `dispatch list-standing --workflow-dir docs/dev` STILL emits the comm-officer mod path (the mod KEEPS `standing: true`) — an observable command output proving residency survived the refactor; and the existing live/fixture standing scenarios remain green. This is the falsifiable guard that the cycle-3 refactor did NOT accidentally drop residency (the cycle-1/2 mistake).
+
+### Hard comm-officer guard (carried forward)
+
+The resident polisher MUST NOT touch MUST / MUST-NOT clauses or semantic qualifiers in contract prose — the boundary the mod already carries ("Do not change semantic qualifiers silently"). Residency is preserved, so the `## Agent Prompt` keeps this guard verbatim with NO change. Proof: a polish drive over a draft containing a MUST clause returns it unchanged (part of AC-2's live scenario where the resident polisher is exercised).
+
+## Test plan (cycle 3)
+
+- **AC-1 (mechanism):** Go unit test, fixture-driven, ~40 min. Fixtures: a minimal `_mods` standing polish mod + two team-config fixtures (member-absent, member-present). Cheapest gate; runs in CI via `go test ./...`. The spike proved the three component functions live; this test pins the new driver's array-emit + dedup + empty-`[]` behavior.
+- **AC-2 + AC-3 + guard (behavioral):** ONE registered live Spacedock scenario, ~1 session. Load-bearing proof that residency works through the binary and the mechanism is shed. Capture `config.json` members after first dispatch (comm-officer PRESENT = residency proof) and the structural absence of the four contract subsections. MUST be a registered scenario, not ad-hoc (lean-boot lesson). Cannot be a fixture — roster membership over a real boot→dispatch is the claim.
+- **AC-4:** `list-standing` command-output assertion (trivial, comm-officer path present) + re-run the existing standing scenario suite, green. ~10 min.
+- Cost/complexity: medium. The binary change is small and ADDITIVE (one subcommand composing three proven functions — no rewrite of `spawn-standing`/`list`/`show`). The prose sheds are mechanical across four files. The registered live scenario is the only multi-minute item and is the load-bearing proof.
+
+## Doc-diff note
+
+No user-facing CLI output, banner, or docs-site surface changes for the human captain: `spawn-standing-all` is an FO-internal dispatch subcommand (like `build`/`reconcile`), not a captain-typed command. The shed prose is internal contract/reference text. No `docs/` site diff needed; recorded here per the ideation doc-diff rule.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Design HOW the comm-officer mod SELF-INJECTS as a standing teammate via the binary's spawn helpers — KEEP residency, drop the on-demand polish-spec direction. Exercise the riskiest mechanism FIRST (can the binary drive the full lifecycle behind ONE call); record what the binary already supports vs the minimal new capability.
+  `## Mechanism spike (cycle 3)`: verified live against `main` HEAD 3779370f that `EnumerateDeclaredStandingTeammates` (discovery), `MemberExists` (first-boot-wins dedup), and `runSpawnStanding` (spec emit) ALL exist; only a thin composing driver is missing. Designed `dispatch spawn-standing-all` (one call → JSON array of absent-member specs); precedent is `build.go:570` already auto-injecting the show-standing line generically. Residency preserved (mod keeps `standing: true` + spawn config + `## Agent Prompt`).
+- DONE: Concrete before/after wording — which mechanism sections move OUT of claude-fo-dispatch.md into the binary + mod self-declaration, and the minimal surviving contract footprint (~one line).
+  `## Concrete before/after wording (cycle 3)`: claude-fo-dispatch.md sheds all four subsections (discovery-pass 17-24, lazy-spawn 26-38, declaration-mechanics 40-47, `## Standing Teammates` 49-56), keeping ONE trigger line in `## Dispatch`; shared-core line 201 + runtime line 7 reduced to a single `spawn-standing-all` phrase; mod's `## Hook: startup` trimmed to spawn-config bullets (mechanism narrative dropped) while `standing: true`/`## Agent Prompt`/`## Routing guidance` stay. Line anchors re-confirmed against origin/main.
+- DONE: Behavioral AC, NO contract prose-grep — a REGISTERED live scenario or binary-level test proving comm-officer IS injected into config.json as a standing teammate via mod self-declaration + binary, WHILE the FO contract no longer carries the mechanism prose. Bind to an independent oracle that reds if residency breaks OR the mechanism leaks back.
+  Four ACs: AC-1 binary-level Go fixture test (array-emit + dedup + empty `[]`, expected prompt from fixture); AC-2 registered live scenario (config.json roster shows comm-officer PRESENT after first dispatch — reds if residency breaks); AC-3 shed-half bound to AC-2's live roster (structural-absence alone insufficient per proof policy); AC-4 `list-standing` STILL returns comm-officer (residency-preservation guard against the cycle-1/2 mistake). Hard MUST/qualifier guard carried forward verbatim.
+
+### Summary
+
+Re-ideated cycle 3 from the captain's reversed goal: KEEP comm-officer resident, RELOCATE the standing-teammate injection mechanism out of the FO contract prose into the binary + the mod's self-declaration. The riskiest claim — the binary can drive the full lifecycle behind one call — was spike-confirmed live: enumeration, first-boot-wins dedup, and spec-emit all already exist in the binary (`EnumerateDeclaredStandingTeammates` + `MemberExists` + `runSpawnStanding`); only a thin composing driver `dispatch spawn-standing-all` is missing, extending the same generic-injection pattern `build.go` already uses for the show-standing line. The FO contract sheds all four mechanism subsections down to one trigger line; the mod keeps `standing: true` + spawn config + agent prompt (residency intact), shedding only its redundant first-boot-wins narrative. Four ACs bind to independent oracles (Go fixture array-emit test, registered live config.json roster capture showing comm-officer PRESENT, shed-bound-to-roster, `list-standing` residency guard) with the contract-grep ban honored and residency-breakage as the red condition. Line anchors re-confirmed against origin/main HEAD 3779370f; cycles 1-2 retained above for the record.
