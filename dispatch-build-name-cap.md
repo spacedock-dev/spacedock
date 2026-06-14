@@ -170,3 +170,16 @@ REJECTED. All six ACs + the slug-fallback verify with real `dispatch build`/`Rec
 ### Summary
 
 Feedback Cycle 1 was a test-strength finding only — the production cap/resolve logic was confirmed correct and is unchanged. The AC3/AC4 end-to-end fixture seeds ids that diverge at char 0, so `resolveSlugToken`'s ambiguity guard and full-token discrimination were never exercised; two adversarial weakenings stayed green against it. Added a focused `TestResolveSlugTokenSafetyProperties` over real code with prefix-sharing sd-b32 ids that pins both properties. Re-applied each adversarial edit (A: weaken `count != 1` → `count < 1`; B: over-match on 2 chars) on a throwaway and confirmed each turns the new test RED while correct code stays GREEN; reverted both, leaving reconcile.go byte-identical. `go test ./internal/dispatch/` = 209 passed.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: CLOSE-THE-HOLE — independently re-apply the two cycle-1 adversarial edits on a throwaway and confirm the suite now goes RED under EACH (hole closed) and GREEN against correct code.
+  On a throwaway `45545b97` checkout: Edit A (`count != 1` → `count < 1`) turns `TestResolveSlugTokenSafetyProperties/ambiguous_10-char_prefix_stays_unclassified` RED (token `cccccccccc` resolves instead of staying unclassified). Edit B (`HasPrefix(rec.id, token)` → `token[:status.SDB32MinPrefix]`) turns `.../full-token_discriminates_a_short-shared-prefix_sibling` RED (token `aaaaaa0000` over-matches both ids → ok=false). Each fails ONLY its intended subtest; both PASS against correct code; restored byte-identical. Verified by running, not reading.
+- DONE: Production unchanged — `git diff edbec3a3 45545b97 -- internal/dispatch/reconcile.go` empty.
+  Empty diff confirmed. `45545b97` touches a single file, `internal/dispatch/reconcile_namecap_test.go` (+75, test-only); no non-test `.go` changed. The cap/resolve logic validated correct in cycle 1 is byte-unchanged.
+- DONE: No regression — `go test ./internal/dispatch/` green (expect 209), six ACs + slug-fallback still verify.
+  Full dispatch suite = 209 RUN / 209 PASS / 0 FAIL (205 + 4: the new parent test + 3 subtests). AC1–AC6, slug-fallback, and the AC3/AC4 reconcile round-trip (`TestReconcileCappedNameResolves*`) all green by name.
+
+### Summary
+
+PASSED. The cycle-1 Material finding is closed. The fix is test-only: `TestResolveSlugTokenSafetyProperties` pins both `resolveSlugToken` safety properties with prefix-sharing sd-b32 ids, and production `reconcile.go` is byte-unchanged (empty `edbec3a3..45545b97` diff). I independently re-applied both of my own adversarial edits on a throwaway checkout and confirmed each now turns the suite RED on exactly its target subtest while correct code stays GREEN — the refutation that was missing in cycle 1. Full dispatch suite 209/209 green; all six ACs + slug-fallback + the reconcile round-trip still verify. Detached-audit outcome: clean, no material findings remaining. Recommend merge.
