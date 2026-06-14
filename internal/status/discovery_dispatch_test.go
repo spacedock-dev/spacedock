@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	noWorkflowErr        = "Error: no Spacedock workflow here — pass --workflow-dir or run inside a workflow\n"
 	stateCheckoutErrHead = "Error: this is a state checkout; point --workflow-dir at the definition dir (the one whose README declares state:): "
 )
 
@@ -39,8 +38,15 @@ func TestDiscoveryRendersEnclosingWorkflow(t *testing.T) {
 	}
 }
 
-// TestNoWorkflowHereError (AC-1/AC-2) runs with no --workflow-dir from an
-// empty, non-enclosed tempdir and asserts the exact no-workflow stderr, exit 1.
+// TestNoWorkflowHereError runs with no --workflow-dir from an empty, non-enclosed
+// tempdir and asserts the no-workflow OUTPUT is a self-evidently TERMINAL
+// report-and-stop directive that does NOT invite a filesystem hunt — the binary's
+// own stderr IS the behavior the booting FO reads at the zero-discover decision
+// point. The captured zaphod boot proved the old phrasing ("pass --workflow-dir or
+// run inside a workflow") read as "go find/specify a workflow" and nudged the FO
+// into a broad filesystem sweep; this asserts the reframed message instead. The
+// detector (internal/ensigncycle) guards the FO BEHAVIOR; this guards the OUTPUT
+// the FO acts on.
 func TestNoWorkflowHereError(t *testing.T) {
 	empty := t.TempDir()
 	env := pinnedEnv(t)
@@ -49,8 +55,26 @@ func TestNoWorkflowHereError(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("no-workflow exit=%d, want 1 (stdout=%q stderr=%q)", code, out, stderr)
 	}
-	if stderr != noWorkflowErr {
-		t.Fatalf("stderr = %q, want %q", stderr, noWorkflowErr)
+	// The output must name the searched root, so the report is concrete.
+	if !strings.Contains(stderr, empty) {
+		t.Errorf("no-workflow stderr must name the searched root %q: %q", empty, stderr)
+	}
+	// The TERMINAL directive: report-and-stop, and an explicit do-not-search.
+	for _, want := range []string{"report this and stop", "do NOT search the filesystem"} {
+		if !strings.Contains(stderr, want) {
+			t.Errorf("no-workflow stderr must carry the terminal directive %q: %q", want, stderr)
+		}
+	}
+	// The hunt-invitation the zaphod boot followed must be GONE. The old phrasing
+	// "run inside a workflow" reads as "go find a workflow to run inside" — the
+	// implicit "go hunt" nudge this fix removes.
+	if strings.Contains(stderr, "run inside a workflow") {
+		t.Errorf("no-workflow stderr still carries the hunt-inviting phrasing %q: %q", "run inside a workflow", stderr)
+	}
+	// --workflow-dir stays mentioned: still useful for a human who ran status in the
+	// wrong dir (the captain can point the FO at a real workflow).
+	if !strings.Contains(stderr, "--workflow-dir") {
+		t.Errorf("no-workflow stderr should still mention --workflow-dir for the wrong-dir human case: %q", stderr)
 	}
 }
 
