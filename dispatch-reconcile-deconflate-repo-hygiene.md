@@ -6,9 +6,11 @@ source: "0202 Commander drive (2026-06-13). Boot reconcile flagged Class-D/E dri
 group: cleanup
 sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
-worktree: .worktrees/spacedock-ensign-dispatch-reconcile-deconflate-repo-hygiene
+worktree:
 mod-block:
 pr: "#369"
+completed: 2026-06-14T18:50:26Z
+verdict: PASSED
 ---
 
 `dispatch reconcile` is two helpers in one coat: roster/team reconciliation AND repo git-hygiene. The repo half hardcodes the pre-flip trunk `next`, which the 2026-06-08 flip silently invalidated.
