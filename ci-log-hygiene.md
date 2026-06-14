@@ -135,3 +135,18 @@ AC-3 is clean and the suite/vet are green, but AC-1's central guard is hollow. `
 ### Summary
 
 Fixed the cycle-1 rejection: the prior discard assertion was tee-independent (`transcript==341` held regardless of whether the tee emitted), so a forwarding revert of `discardStreamLine` stayed green. Introduced a package-level `streamLineSink` the tee routes through; `discardStreamLine` does not forward to it, and the test now installs a counter as that sink and asserts the discard run leaves it at zero while the watcher still records all 341 lines. Confirmed the guard reds when `discardStreamLine` is reverted to forward (got 341), then restored. AC-3 unchanged from cycle 1 (the runner tee edits and streamPath writes are untouched by this commit).
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 guard now BITES — `discardStreamLine` routes through package-level `streamLineSink` (production no-op); the test installs a counter AS `streamLineSink` and asserts the discard run leaves it at 0 while the watcher records all 341 lines.
+  Reproduced the bite from the worktree: flipping `discardStreamLine` body to `streamLineSink(line)` (the re-flood regression) reds with `streamsink_test.go:113: ... got 341 — the per-line tee re-flood is back`; reverting restores green. This is the load-bearing hole my cycle-1 reject named — now closed. (commit 89652537)
+- DONE: AC-3 still clean — streamPath WriteFile + transcriptTail/tail wiring untouched; both runners wire the sink; Pi + live_test.go untouched.
+  `git diff origin/main` on both runner files shows ONLY the tee arg (`t.Log`→`discardStreamLine`); grep for WriteFile/streamPath/transcriptTail/tail( finds no changes; Pi + live_test.go absent from the diff.
+- DONE: `go test ./internal/ensigncycle/` + `go vet` (incl `-tags live`) green.
+  Full package ok (5.4s); `go vet` and `go vet -tags live` both clean.
+
+### Recommendation: PASSED
+
+### Summary
+
+Cycle-1 reject was honored exactly: the impl added a package-level `streamLineSink` indirection that `discardStreamLine` deliberately does NOT forward to, and `TestStreamSinkDiscardsLines` now installs a recorder AS that sink and asserts zero forwarded lines in the discard run (plus a control proving the recorder fires at 341 when a tee forwards). I reproduced the named load-bearing check from the worktree: the forwarding-revert of `discardStreamLine` now REDS with "got 341", and reverting restores green — the hole that let cycle-1's forwarding edit stay green is closed. AC-3 untouched, full suite + vet (incl live) green, worktree clean. Note: reverting the runner's tee ARGUMENT itself back to an inline `t.Log` still stays green, but that is outside AC-1's named contract (which binds to the `discardStreamLine` callback the runners pass); not a blocker.
