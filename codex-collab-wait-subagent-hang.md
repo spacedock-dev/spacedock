@@ -204,3 +204,16 @@ Repaired the feedback-cycle AC-1 issue by treating durable state changes during 
 ### Summary
 
 Recommendation: PASSED. Cycle 2 fixes the AC-1 durable-progress contradiction: durable progress now clears a silent foreground wait instead of producing a typed stall. AC-2, AC-3, and AC-4 passed deterministic, baseline, and live validation gates.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add a load-bearing watchdog test that fails if durable progress clears the timeout but leaves the foreground wait armed.
+  Code commit `68daa91a` adds `TestCodexCollabWaitWatchdogDurableProgressDisarmsRepeatedWaitEpoch`; a temporary mutation removing `w.clearWait()` from durable-progress observation failed this test.
+- DONE: Add a retry-narrowness negative control for `assertCodexReviewerReuse` failure inside `runCodexRejectionFlowWithRetry()`.
+  Added the reviewer-reuse assertion subtest under `TestRunCodexRejectionFlowRetryIsNarrow`; a temporary mutation retrying `assertCodexReviewerReuse` failures failed with `attempts = 2, want 1`.
+- DONE: Re-run the focused watchdog/retry/reuse suite and affected baseline checks, then append a new implementation stage report with DONE/SKIPPED/FAILED for these items.
+  `gofmt -w ./cmd ./internal`, focused watchdog/retry/reuse suite (`26 passed`), `go test ./...` (`1262 passed in 16 packages`), and `go test ./... -race` (`1262 passed in 16 packages`) all passed.
+
+### Summary
+
+Closed the detached audit holes with mutation-sensitive deterministic tests only; the implementation logic stayed unchanged. Durable progress is now pinned to disarm the wait epoch, and reviewer-reuse assertion failures are pinned as non-retryable.
