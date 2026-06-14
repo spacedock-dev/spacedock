@@ -10,7 +10,7 @@ score: "0.30"
 worktree: .worktrees/spacedock-ensign-lean-boot-hardening
 issue:
 sprint: 0203-fo-efficiency
-mod-block:
+mod-block: merge:pr-merge
 pr:
 ---
 
