@@ -1,14 +1,15 @@
 ---
 id: gwttp4rhr07bqtejzebn7hha
 title: Reconcile Class D/E must never destroy committed or unpushed work — rethink repo-hygiene, consider an ownership lease
-status: backlog
+status: ideation
 source: captain + FO (2026-06-14, this session) — the reconcile sweep flagged local main (ahead by 1, the unpushed README cut) as Class E "stale local main" and prescribed `git reset --hard origin/main`, which would have deleted the commit. Sibling to #369 (separated reconcile team-management A/B/C from repo-hygiene D/E, fixed trunk detection) and #370 (pr-merge trunk refit off pre-flip `next`); this addresses the D/E remedy-safety gap those left.
-started:
+started: 2026-06-14T21:10:17Z
 completed:
 verdict:
 score: 0.42
 worktree:
 issue:
+sprint: 0203-fo-efficiency
 ---
 
 The reconcile sweep's repo-hygiene classes (D: stale worktree branch; E: stale local main) can destroy work. Rethink them so reconcile never destroys committed or unpushed work and never mutates a worktree the running session does not own. Keep it simple; if needed, model ownership as a lease.
