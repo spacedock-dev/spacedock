@@ -285,3 +285,20 @@ REJECTED. The five in-scope change classes are clean — every collapsed/compres
 ### Summary
 
 Cycle-1 fix: the detached validation audit caught a Material dangling reference the implementation self-audit missed — the `claude-first-officer-runtime.md` merge-ref inventory still named the `## Mod-Block Enforcement at Terminal Transitions` section my collapse removed. De-dangled the inventory to name only the surviving `## Mod-Block Enforcement`, re-homed the `TERMINAL_TEARDOWN_BOUNDED` marker to the bounded-teardown step (its real home), and confirmed by tree-wide grep that no other cross-file reference names the removed section. Offline gate green.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-verify the cycle-1 fix from the worktree (not the report) — dangling reference gone tree-wide.
+  `grep -rn 'Mod-Block Enforcement at Terminal Transitions' skills/first-officer/` → ZERO hits. `claude-first-officer-runtime.md:13` now names "Mod-Block Enforcement, and the bounded terminal teardown (the `TERMINAL_TEARDOWN_BOUNDED` marker)" — removed section name gone, marker re-homed. Fix diff (449b8502 vs cf562ad5) touches ONLY the runtime adapter, 1 line, no scope creep.
+- DONE: Re-run the full detached adversarial audit on a SEPARATE checkout — five original change classes still clean vs #367 baseline.
+  Fresh `git worktree add --detach 449b8502` in /tmp (removed after). This task's complete diff vs the #367 tree parent (3779370f) = 4 files, 15 ins / 34 del. No MUST/MUST-NOT/qualifier dropped or inverted across the five classes (re-confirmed: mod-block collapse, MODS pointer, ethos hoist, C-a, C-b all unchanged from cycle-1). prefer-code-gate + speak-label STILL byte-identical to f87107b1 (empty diff).
+- DONE: `TERMINAL_TEARDOWN_BOUNDED: …` marker byte-intact at its real home (grep==1); ethos single-home (SKILL.md only); NO new dangling reference introduced.
+  Marker grep==1 under `## Merge and Cleanup` (its real home, not the removed section). `grep -l 'Begin with the end'` → SKILL.md only. `grep -rn 'at Terminal Transitions' skills/` → ZERO hits; fix introduced no new dangling ref.
+- DONE: `grep -c '^## Mod-Block' claude-fo-merge.md` == 1; `go test ./...` incl. contractlint reference-closure green.
+  Header count == 1. `go test ./...` exit 0; contractlint forced `-count=1` ok 0.221s on the actual fixed tree (the cached pass was the prose edit not touching a Go input — forced run confirms reference-closure green). merge-hook-guardrail scenario present (structural consistency intact).
+- DONE: AC3 live Claude+Codex shared scenarios — gate at PR CI, not fabricated.
+  Noted: AC3 runs in the PR live-e2e gate. NOT run here, NOT fabricated. The collapse keeps the merge-hook-guardrail-graded invariant byte-equivalent.
+
+### Summary
+
+PASSED. The cycle-1 fix (449b8502) closed exactly the Material finding from cycle 1: the stale `claude-first-officer-runtime.md:13` merge-ref inventory now names only the surviving `## Mod-Block Enforcement` section and re-homes `TERMINAL_TEARDOWN_BOUNDED` to "the bounded terminal teardown". The fix is a surgical one-line prose edit touching only the runtime adapter — no scope creep, no regression in the five original change classes. Re-ran the full detached audit on a fresh checkout: no MUST/MUST-NOT/qualifier dropped or inverted vs the #367 baseline, marker byte-intact at its real `## Merge and Cleanup` home, ethos single-home in SKILL.md, prefer-code-gate + speak-label byte-identical, no new dangling reference. Structural gates green (mod-block header count == 1, `go test ./...` exit 0 incl. contractlint reference-closure forced). AC3 (live Claude+Codex shared scenarios) gates at PR CI and was deliberately not fabricated.
