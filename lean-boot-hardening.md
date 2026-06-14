@@ -4,10 +4,10 @@ title: Lean boot hardening — FO must report-and-stop on zero `--discover`, not
 status: validation
 source: "captain (2026-06-14) — an FO instance overstepped Startup step 3: after `spacedock status --discover` returned zero (exit 0, no output), it ran a broad find/grep filesystem sweep to hunt a workflow instead of reporting no-workflow-found and stopping. Contract + lean-boot violation."
 started: 2026-06-14T19:16:23Z
-completed:
-verdict:
+completed: 2026-06-14T21:18:09Z
+verdict: PASSED
 score: "0.30"
-worktree: .worktrees/spacedock-ensign-lean-boot-hardening
+worktree:
 issue:
 sprint: 0203-fo-efficiency
 mod-block:
