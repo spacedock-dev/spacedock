@@ -10,7 +10,7 @@ score: 0.42
 worktree: .worktrees/spacedock-ensign-reconcile-de-ownership-safety
 issue:
 sprint: 0203-fo-efficiency
-mod-block: merge:pr-merge
+mod-block:
 pr: "#376"
 ---
 
