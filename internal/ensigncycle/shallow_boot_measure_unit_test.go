@@ -70,6 +70,37 @@ func TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate(t *testing.T) 
 	}
 }
 
+// TestParserExtractsTeamCallsFromRealHangCapture is the validator-named ready
+// oracle: the committed real-runner stream `sonnet_teamdelete_hang.stream.jsonl`
+// (20/27 message ids multi-delta; its lone TeamCreate and TeamDelete each land on a
+// non-first delta) must surface BOTH team calls through the fixed ParseClaudeTurns.
+// Against the pre-fix first-delta-only parse this reported TeamCreate=false across
+// all 27 turns (the proven false-pass); the merge reports TeamCreate=true. Driving
+// the FULL committed fixture (not a trimmed copy) pins the fix to the exact stream
+// the forensics verified the defect on.
+func TestParserExtractsTeamCallsFromRealHangCapture(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("testdata", "sonnet_teamdelete_hang.stream.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	turns, err := journeymetrics.ParseClaudeTurns(data)
+	if err != nil {
+		t.Fatalf("ParseClaudeTurns: %v", err)
+	}
+	saw := map[string]bool{}
+	for _, turn := range turns {
+		for _, name := range turn.ToolNames {
+			saw[name] = true
+		}
+	}
+	if !saw["TeamCreate"] {
+		t.Error("the real hang capture's TeamCreate (on a non-first delta) was not surfaced — the parser is still first-delta-only (the AC-2 false-pass)")
+	}
+	if !saw["TeamDelete"] {
+		t.Error("the real hang capture's TeamDelete (on a non-first delta) was not surfaced")
+	}
+}
+
 // TestShallowBootMeasureSignalsAreIndependent isolates the two AC-6 signals so
 // neither can be silently dropped: a stream that fails ONLY the ceiling check (a
 // heavy greet, no spike) and a stream that fails ONLY the spike check (a pre-greet

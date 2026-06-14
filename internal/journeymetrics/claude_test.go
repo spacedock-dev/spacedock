@@ -156,28 +156,6 @@ func TestParseClaudeTurnsMergesToolUseAcrossDeltas(t *testing.T) {
 	}
 }
 
-func TestParseClaudeTurnsRealMultiDeltaCaptureSurfacesTeamCalls(t *testing.T) {
-	// Drive the REAL captured multi-delta stream: it contains TeamCreate and
-	// TeamDelete tool_use blocks, each on a later delta of its message. The buggy
-	// first-delta-only parse would surface NEITHER; the merge must surface BOTH.
-	turns, err := ParseClaudeTurns(readTestdata(t, "claude_multidelta_team.stream.jsonl"))
-	if err != nil {
-		t.Fatalf("ParseClaudeTurns: %v", err)
-	}
-	saw := map[string]bool{}
-	for _, turn := range turns {
-		for _, name := range turn.ToolNames {
-			saw[name] = true
-		}
-	}
-	if !saw["TeamCreate"] {
-		t.Error("the real multi-delta capture's TeamCreate (on a later delta) was not surfaced — the parser still drops later-delta tool_use")
-	}
-	if !saw["TeamDelete"] {
-		t.Error("the real multi-delta capture's TeamDelete (on a later delta) was not surfaced")
-	}
-}
-
 func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))
