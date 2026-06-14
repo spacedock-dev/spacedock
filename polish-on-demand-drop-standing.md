@@ -1,7 +1,7 @@
 ---
 id: xf7fft1hnj51eq7kagsc9833
 title: Move the standing-teammate mechanism out of the FO contract — the comm-officer mod self-injects as a standing teammate
-status: validation
+status: implementation
 source: "captain (2026-06-13, this session) — the standing-teammate lifecycle (discovery pass / lazy-spawn / declaration / team-scope teardown / first-boot-wins) is ~4 contract subsections of maintenance surface for an infrequently-used polisher; amortization doesn't pay for infrequent use. Captain chose approach A: on-demand one-shot polish dispatch, and 'the mod can add the prose for the standing team member' — feature-specific usage prose lives in the mod, the contract keeps only a generic hook. Taken into 0203."
 started: 2026-06-14T18:42:01Z
 completed:
@@ -340,3 +340,7 @@ Cycle-3 (residency-preserving) implementation: added `dispatch spawn-standing-al
 ### Summary
 
 REJECTED. The binary half is solid and independently reproduced from a worktree-built binary: `spawn-standing-all` correctly composes the enumeration + `MemberExists` first-boot-wins dedup + the shared `buildSpawnSpec` (extracted from `runSpawnStanding`, so no behavior drift), emitting a one-element residency-preserving array (team_name PRESENT) for an absent member and `[]` on live dedup. AC-1 (4 genuine fixture tests, prompt oracle from the fixture not the binary) and AC-4 (list-standing still returns comm-officer) PASS. The structural shed is clean and the word-level audit found NO dropped non-standing obligation — the out-of-scope usage prose was relocated into the mod, not lost; the mod keeps `standing: true` + `## Agent Prompt` + the MUST/qualifier guard verbatim. The blocking defect is AC-2: it is the explicitly load-bearing residency proof, the checklist requires it REGISTERED in the CI live gate, and it is NOT — no scenario in `runtime-live-e2e.yml` boots→dispatches→asserts comm-officer present in `config.json`. The implementation report's "gates at PR CI" claim is false. Close by registering that live scenario into a `runtime-live-e2e.yml` `-run` selector; then re-validate.
+
+### Feedback Cycles
+
+- **Cycle 1 (validation REJECTED, 2026-06-14):** the binary half is solid (spawn-standing-all composition, AC-1 fixtures, AC-4 list-standing residency, structural shed, word-level audit all reproduced clean). Blocking defect: AC-2 — the load-bearing residency live scenario (FO boots → dispatches an ensign → comm-officer PRESENT in team config.json roster) is authored-as-intent but NOT registered/runnable in the CI live gate. runtime-live-e2e.yml has nothing that boots→dispatches→asserts the roster; the impl's "gates at PR CI" claim is false (same gap class as lean-boot cycle-1). Fix: author the actual live scenario test AND register it into runtime-live-e2e.yml's -run selector so CI invokes it; prove `go test -tags live -list` selects it. Routed back to implementation.
