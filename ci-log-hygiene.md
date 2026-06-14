@@ -122,3 +122,16 @@ AC-3 is clean and the suite/vet are green, but AC-1's central guard is hollow. `
 ### Feedback Cycles
 
 - **Cycle 1 (validation REJECTED, 2026-06-14):** AC-1's `TestStreamSinkDiscardsLines` guard is hollow — the discard run asserts only `transcript==341` (tee-independent), so reverting `discardStreamLine` to forward/emit per line (the exact CI-bloat regression) stays GREEN. The `emitCounter` lives only in a separate control run, not behind the real `discardStreamLine` symbol. Fix: wire a recorder behind the actual `discardStreamLine` callback and assert sink-emitted==0, so a forwarding revert reds the test. Routed back to implementation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Make AC-1's TestStreamSinkDiscardsLines guard bite — wire a counter behind the real discardStreamLine and assert sink-emitted==0, so a forwarding revert reds the test.
+  Routed the tee through a package-level `streamLineSink` var (production no-op); `discardStreamLine` deliberately does not forward to it. The test installs a counter as `streamLineSink`, drives the watcher with the real `discardStreamLine` over the 341-line fixture, and asserts sink-count==0 AND transcript==341; a forwarding control run drives the same counter to 341 (commit 89652537).
+- DONE: Prove the guard bites (red-on-revert), then revert.
+  Temporarily flipped `discardStreamLine` to `func(line){ streamLineSink(line) }`: test went RED with "discardStreamLine must forward 0 lines to streamLineSink, got 341"; restored to the no-op and re-ran green.
+- DONE: go vet + go test green.
+  `go vet ./internal/ensigncycle/` and `go vet -tags live ./internal/ensigncycle/` clean; `go test ./internal/ensigncycle/ -count=1` ok (5.4s).
+
+### Summary
+
+Fixed the cycle-1 rejection: the prior discard assertion was tee-independent (`transcript==341` held regardless of whether the tee emitted), so a forwarding revert of `discardStreamLine` stayed green. Introduced a package-level `streamLineSink` the tee routes through; `discardStreamLine` does not forward to it, and the test now installs a counter as that sink and asserts the discard run leaves it at zero while the watcher still records all 341 lines. Confirmed the guard reds when `discardStreamLine` is reverted to forward (got 341), then restored. AC-3 unchanged from cycle 1 (the runner tee edits and streamPath writes are untouched by this commit).
