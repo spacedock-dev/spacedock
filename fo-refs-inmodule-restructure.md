@@ -62,6 +62,43 @@ The dispatch checklist asked: enumerate exactly which collapses/consolidations g
 
 So the in-module collapse scope is exactly TWO (item 1 + item 2), not the open-ended "re-examine each duplication" the seed implied; item 3 is the captain-added entry-point ethos relocation. The seed's original "module-level coherence re-org" is dropped: the re-scope found no incoherent accretion beyond these, and an open-ended re-org without a concrete target invites the meaning-drift that sank T3's polish.
 
+## Principle-cascade map (item 4 — the deep goal, planned not executed)
+
+The captain's deeper goal: once the operating principles are stated authoritatively and self-explanatory at the entry point, deep contract prose that merely RESTATES what a principle already implies can be COMPRESSED ("inferred from the principles"), fighting contract bloat. This is the highest-risk edit in the contract, so ideation produces a **map**, not blind cuts. **Decision rule: default to KEEP. When derivability is uncertain, keep and mark "kept — ambiguous derivability." The audit's bias is against silent loss.**
+
+**Honest headline finding:** the compressible surface is SMALL. The FO contract is already overwhelmingly load-bearing mechanism (guards, markers, sequencing, MUST/MUST-NOT the live scenarios grade), not posture restatement. The posture that *is* prose lives almost entirely in the `## Working Principles` block — which this task does NOT hoist (it stays in shared-core, item 3's seam). So "radical simplification" resolves to a few surgical compressions, not a sweep. Reporting that plainly is the point: the bloat-fighting win here is real but bounded.
+
+### principle-derivable → COMPRESS
+
+- **C-a: `## Clarification and Communication` (shared-core:205–207), the "don't ask to take an allowed step" prose.**
+  Derives from: **"Do obvious reversible work without ceremony"** (the hoisted posture's reversible-work principle) + **"Communicate and act concisely, JFDI"** (entry-point ethos bullet 3).
+  Before (:207, first clause): *"Do not ask whether to take a step this contract already allows — proceed. If one entity is blocked on clarification, keep dispatching other ready entities. Report workflow state once on idle or at a gate; do not repeat status updates while waiting."*
+  After: *"Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. Report state once on idle or at a gate, not repeatedly while waiting."*
+  Compression: folds the "don't ask to take an allowed step" sentence into a one-clause pointer to the principle. The keep-dispatching-other-entities rule and the report-once rule are operational specifics (NOT derivable) and stay. NET small — one sentence of restatement compressed, the two operational rules retained.
+
+- **C-b: `## Working Principles` lede + the `**FO posture:**` bullets that the entry-point ethos now states at a higher level (shared-core:211, 215–219).**
+  This is the seam from item 3, extended. The lede (:211) is already being rewritten (item 3) to point UP. The three POSTURE bullets — name-end-value (:217), lead-with-recommendation (:218), reversible-work (:219) — are the *detailed* expansion of the three *entry-point ethos bullets* (value-first / hardest-first / concise-JFDI). They could compress to terse expansions that lean on the entry-point statement rather than re-explaining the posture from scratch.
+  **Marked: kept — ambiguous derivability.** The entry-point ethos is deliberately terse (3 short bullets); these posture bullets carry operational specifics the ethos does NOT (e.g. "approvable in a single yes," "do not bury under a menu of equally-weighted options," the judgeable-vs-reverse-engineered contrast). Compressing risks dropping the operational teeth that make the posture actionable at gate-presentation time (the `present-gate` skill leans on "lead with a recommendation"). Per the decision rule, KEEP verbatim; revisit only if a later dedicated pass proves the `present-gate` assembly rules already carry the teeth.
+
+### load-bearing mechanism → KEEP VERBATIM (cannot be inferred from any principle)
+
+These stay regardless of how "obvious" they look — each is graded by a live scenario or a test, or is a byte-exact marker / guard / sequence:
+
+- **Never self-approve a gate** (shared-core:130; runtime:19, with the single-entity-mode auto-resolve exception). Graded by `gate-guardrail`. A principle ("the captain decides") does NOT encode the absolute "infer-approval-from-silence is forbidden" guard.
+- **`TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher.`** (merge:24) — byte-exact marker a watcher greps. Not derivable; KEEP byte-intact (already AC2).
+- **Mod-block set→invoke→clear sequence + the combine-with-terminal-fields refusal** (merge:9–19, 54–85). Graded by `merge-hook-guardrail`. The set/clear ordering and the standalone-clear rule are mechanism, not posture.
+- **Split-root rebase-conflict HALT** (shared-core:166–169) — HALT + `rebase --abort` + escalate, never `--force`. A specific recovery sequence; not derivable.
+- **ID-style / `--next-id` / `spacedock new` atomic-create rules** (shared-core:175–188; runtime:43). Drift-avoidance mechanism.
+- **Dispatch numbered procedure** (dispatch:62–76) — the `status --set ... status={next} worktree=... started` shape, commit-then-create-worktree ordering, ≤3-item checklist cap. Mechanism + exact CLI.
+- **AC coverage cross-check at every gate** (shared-core:121). A specific gate obligation; the prefer-code-gate principle motivates it but does not encode "scan `## Acceptance criteria`, name any AC without evidence, REJECT if this stage was the natural place."
+- **"Completed non-gated non-terminal stage is not a stopping point"** (shared-core:125) — the MUST-advance rule + the enumerated legitimate halts. Graded behaviorally; the enumerated halt conditions are not principle-derivable.
+- **Context-budget probe / dead-ensign handling** (dispatch:190–211), **Reuse conditions** (dispatch:82–104), **Standing-teammate lifecycle** (dispatch:17–57). Mechanism + sequencing.
+- **Contract-version gate** (shared-core:18–22), **Status Viewer / Captain-Facing State Display** (shared-core:41–79), **Mod Hook Convention** (shared-core:190–201). Mechanism.
+
+### Staging recommendation
+
+The COMPRESS set is exactly ONE surgical compression (C-a) plus the already-planned seam (C-b is kept). **One implementation pass suffices** — the compression set is not large enough to warrant staged passes. The pass still pays the full audit price: live-green (AC3) + detached word-level diff (AC2) proving no MUST/MUST-NOT/qualifier dropped or inverted, now covering the `## Clarification and Communication` compression too. Were a future pass to attempt C-b or a wider sweep, THAT would stage per-section with its own audit; this task does not open that door.
+
 ## Why this is risky (and how to prove it)
 
 A section-collapse or obligation-consolidation can DROP or INVERT an obligation that the live scenarios don't exercise — exactly the class the detached adversarial audit exists for (it caught T3's dropped NEVER-qualifier).
@@ -75,8 +112,8 @@ The ethos relocation (item 3) carries the same drop/invert risk one level milder
 - **AC1 (structural — the collapse landed).** `claude-fo-merge.md` carries exactly ONE mod-block section (`## Mod-Block Enforcement at Terminal Transitions` removed; its non-redundant content folded into `## Mod-Block Enforcement`), and `first-officer-shared-core.md:199`'s MODS-REPORT restatement is a pointer.
   *Verified by:* a header-count assertion in the validation diff (the collapsed file has one `## Mod-Block` header, down from two) — an on-disk fact outside the task body, checkable by `grep -c '^## Mod-Block' skills/first-officer/references/claude-fo-merge.md` returning `1`.
 
-- **AC2 (high-stakes detached audit — no obligation lost).** A word-level diff of every collapsed/consolidated/relocated obligation against the pre-restructure baseline (the files at #367's merged tree) confirms no MUST / MUST-NOT / qualifier (NEVER, only, unless, except) dropped or inverted across all three changes, the `TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher.` marker is byte-intact, AND every operating-principle bullet (the three ethos lines) survives verbatim in its new SKILL.md home with no principle dropped or weakened in the move.
-  *Verified by:* the detached audit's diff output (an independent reviewer / `git diff {#367-tree} -- claude-fo-merge.md SKILL.md first-officer-shared-core.md` whose every removed MUST-bearing clause and every removed ethos bullet is shown to survive verbatim in its destination). The baseline is an independent source (the prior committed tree), not the task's own prose.
+- **AC2 (high-stakes detached audit — no obligation lost).** A word-level diff of every collapsed/consolidated/relocated/compressed obligation against the pre-restructure baseline (the files at #367's merged tree) confirms no MUST / MUST-NOT / qualifier (NEVER, only, unless, except) dropped or inverted across all FOUR change classes (mod-block collapse, MODS-REPORT pointer, ethos hoist, the C-a `## Clarification and Communication` compression), the `TERMINAL_TEARDOWN_BOUNDED: best-effort teardown exhausted; member(s) stuck in registry; holding for launcher.` marker is byte-intact, AND every operating-principle bullet (the three ethos lines) survives verbatim in its new SKILL.md home with no principle dropped or weakened in the move. The audit specifically confirms the C-a compression dropped only restatement, not the keep-dispatching-other-entities rule or the report-once rule.
+  *Verified by:* the detached audit's diff output (an independent reviewer / `git diff {#367-tree} -- claude-fo-merge.md SKILL.md first-officer-shared-core.md` whose every removed MUST-bearing clause and every removed ethos bullet is shown to survive verbatim in its destination or to be a pure restatement of a hoisted principle). The baseline is an independent source (the prior committed tree), not the task's own prose.
 
 - **AC5 (structural — ethos has exactly one canonical home).** The three operating-principle bullets ("Begin with the end…", "Do the hardest things first…", "Communicate and act concisely… JFDI") are present in `SKILL.md` and ABSENT from `first-officer-shared-core.md` — relocated, not duplicated. The `(ethos)` label and the self-referential meta-framing ("These principles govern…", "fold under them") are gone from shared-core.
   *Verified by:* a non-duplication on-disk fact — the bullet text appears in exactly one of the two files. Checkable e.g. by `grep -l 'Begin with the end' skills/first-officer/SKILL.md skills/first-officer/references/first-officer-shared-core.md` returning only the SKILL.md path. (This is a structural count, not a prose-quality check.)
@@ -92,7 +129,7 @@ The ethos relocation (item 3) carries the same drop/invert risk one level milder
 | AC | What verifies it | Kind | Cost |
 |----|------------------|------|------|
 | AC1 | `grep -c '^## Mod-Block' claude-fo-merge.md == 1`; pointer present at shared-core MODS-report restatement site | on-disk grep | seconds |
-| AC2 | Detached word-level diff vs #367 merged tree (`git show f87107b1:…` baseline) across all three files; MUST/MUST-NOT/qualifier survival + marker byte-check + every ethos bullet survives in SKILL.md. Run FIRST (riskiest path). | detached adversarial review | minutes |
+| AC2 | Detached word-level diff vs #367 merged tree (`git show f87107b1:…` baseline) across all changed files; MUST/MUST-NOT/qualifier survival across all four change classes + marker byte-check + every ethos bullet survives in SKILL.md + C-a dropped only restatement. Run FIRST (riskiest path). | detached adversarial review | minutes |
 | AC3 | `go test ./internal/ensigncycle/...` — live Claude + Codex shared scenarios (the FO still behaves under the relocated framing) | live workflow test | many minutes |
 | AC4 | `go test ./...` (offline gate incl. contractlint reference-closure) | Go unit/structural | minutes |
 | AC5 | `grep -l 'Begin with the end' SKILL.md first-officer-shared-core.md` → SKILL.md only (ethos has one canonical home) | on-disk grep | seconds |
@@ -147,3 +184,22 @@ Re-scoped the seed's open-ended "re-examine each duplication" down to exactly tw
 ### Summary
 
 Folded the captain's additive scope: relocate the FO operating-principles ethos from `first-officer-shared-core.md` up into the always-first-loaded `SKILL.md`, dropping the "(ethos)" label and self-referential meta-framing so it reads as plain operating posture. Made the open design call — move only the high-level three-bullet ethos; the detailed `## Working Principles` posture stays in the core adjacent to the mechanism it references — and gave concrete before/after wording plus the shared-core:211 seam-rewrite so no dangling reference is left. Proofs stay behavioral: AC3 (live scenarios green under the relocated framing) + AC5 (non-duplication grep, SKILL.md is the single home) + the extended detached audit (AC2); the "self-explanatory" requirement is a gate-review property, deliberately not a tautological prose-grep AC.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Produce a concrete principle-cascade map (not an open-ended "simplify everything") classifying deep sections COMPRESS vs KEEP VERBATIM.
+  Added `## Principle-cascade map (item 4)` surveying all FO refs (shared-core + dispatch/merge/runtime); each candidate classified with the principle it derives from or the scenario/marker that makes it load-bearing.
+- DONE: For COMPRESS items, concrete before/after + which principle it derives from.
+  C-a (the `## Clarification and Communication` "don't ask to take an allowed step" prose) given before/after, deriving from the reversible-work principle + the concise/JFDI ethos bullet. C-b (the FO-posture bullets) marked "kept — ambiguous derivability" per the decision rule.
+- DONE: For KEEP items, name the guard/marker/test that grades them.
+  Enumerated never-self-approve (gate-guardrail), TERMINAL_TEARDOWN_BOUNDED byte-marker, mod-block set→invoke→clear (merge-hook-guardrail), rebase-conflict HALT, ID-style/next-id rules, dispatch numbered procedure, AC cross-check, not-a-stopping-point, context-budget, contract-version gate.
+- DONE: Apply the default-to-keep decision rule; mark ambiguous derivability as KEEP.
+  C-b explicitly kept-ambiguous (the entry-point ethos lacks the operational teeth — "single yes", "not a menu" — that present-gate leans on).
+- DONE: Recommend one pass vs staged audited passes.
+  ONE pass — the genuine COMPRESS set is a single surgical compression (C-a); not large enough to stage. The pass still pays full audit price (AC2 detached diff + AC3 live-green), now covering C-a.
+- DONE: Extend ACs to the compression; keep the detached-audit AC covering no MUST/MUST-NOT/qualifier dropped/inverted.
+  AC2 widened to four change classes incl. C-a, asserting C-a dropped only restatement (not the keep-dispatching / report-once rules).
+
+### Summary
+
+Built the principle-cascade map the captain asked for and reported the honest headline: the compressible surface is SMALL because the FO contract is already overwhelmingly load-bearing mechanism, not posture restatement. Exactly one surgical COMPRESS lands (C-a, the "don't ask to take an allowed step" clause → a one-clause pointer to the reversible-work principle); the FO-posture bullets are kept-ambiguous under the default-to-keep rule because the terse entry-point ethos lacks their operational teeth. Ten-plus load-bearing mechanisms are enumerated KEEP-VERBATIM, each named with the scenario/marker/guard that grades it. Recommended ONE implementation pass (the COMPRESS set is too small to stage), still paying the full detached-audit + live-green price. The deliverable is the PLAN at the gate, not the cuts executed blind.
