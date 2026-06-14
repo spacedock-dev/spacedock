@@ -10,6 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-fo-refs-inmodule-restructure
 issue:
 sprint: 0203-fo-efficiency
+mod-block: merge:pr-merge
 ---
 
 The substantive in-module cleanup of the post-j9 FO contract refs that T3 deferred. T3 did the safe mechanical subset (dead-ref repairs) and a low-value within-line concision polish (~75 of 79 changed lines, which over-reached on meaning 3× and cost two amend cycles + a rejection). The real value — consolidating genuinely-duplicated obligations and collapsing redundant sections within the modules — was explicitly punted as "judgment-call restructure, not a behavior-preserving mechanical cut."
