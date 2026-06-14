@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-ci-log-hygiene
 issue:
 sprint: 0203-fo-efficiency
 mod-block: merge:pr-merge
+pr: "#372"
 ---
 
 The live shared-scenario runner dumps the full host jsonl stream to CI stdout — `internal/ensigncycle/claude_live_runner_test.go:365` `t.Logf`s every parsed stream line — so the whole conversation lands in the test log. That bloats CI output and buries the actual test failure. The jsonl is ALREADY uploaded as a per-scenario artifact (`claude-stream.jsonl`), so the stdout dump is pure redundancy. Keep the stream in the artifact; keep stdout to clean test-framework output (FAIL lines, assertions) — or only dump the stream to stdout on failure.
