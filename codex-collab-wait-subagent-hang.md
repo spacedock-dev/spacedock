@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-codex-collab-wait-subagent-hang
 issue:
 sprint:
 mod-block: merge:pr-merge
+pr: local-merge:ce2c4970
 ---
 
 The Codex live `rejection-flow` shared-runtime scenario intermittently hangs at `collab:wait` — a spawned-subagent stall in the Codex runner, observed on 3 of 5 runs across j9's validation cycles. When it hangs the assertion is never reached (so it is NOT a scenario regression), but it makes the Codex live lane flaky and forces retries.
