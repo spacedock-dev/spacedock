@@ -76,3 +76,16 @@ A *correct* zero-discover boot touches none of these: it runs `--version`, `git 
 ### Summary
 
 Ground truth: the FO contract (step 3, first-officer-shared-core.md:24) is already correct — the gap is proof, not wording. Designed a model-agnostic stream-scanner detector (`detectBroadSearchAtBoot`) that reds when a zero-`--discover` boot broad-searches the filesystem, proven offline by a table test and behaviorally by a live zero-discover boot transcript — exactly the proven `detectWrongRootBoot` pattern. Confirmed by exercise that a bare git tmpdir yields zero discover results (empty stdout, exit 0), so the zero-discover fixture needs no new mechanism. Flagged two concrete implementation constraints (scan all tool_use blocks, not just the first; add `pattern`/`path` JSON fields for Glob/Grep) — no spike needed since the design only composes already-proven in-tree mechanisms.
+
+## Stage Report: implementation
+
+- DONE: Implement pure `detectBroadSearchAtBoot(stream, fixtureRoot) error` in internal/ensigncycle mirroring detectWrongRootBoot; iterate ALL tool_use blocks; extend streamToolInput with `pattern`/`path`; add AC-1 table test TestDetectBroadSearchAtBoot (~6 cases).
+  `broad_search_detect_impl_test.go` (detector) + `broad_search_detect_test.go` (8-case table + second-block case); `toolUseBlocks()` + `pattern`/`path` fields added to streamwatch_test.go. Commit 8a583bfa.
+- DONE: Add AC-2 live scenario TestLiveZeroDiscoverReportsAndStops (//go:build live) over a bare git-init'd zero-discover fixture, asserting greet/no-workflow report WITHOUT TeamCreate and detectBroadSearchAtBoot(transcript, fixtureRoot)==nil.
+  `zero_discover_live_test.go` — reuses the live front-door harness; `go vet -tags live` compiles clean. (Live run is gated; not executed here — requires SPACEDOCK_LIVE auth.)
+- DONE: Offline gate green: `go test ./internal/ensigncycle/` + `go vet ./internal/ensigncycle/`. No contract prose edit.
+  `go test ./internal/ensigncycle/` → ok (4.6s); `go vet ./internal/ensigncycle/` → clean. No `agents/`/`references/` or contract prose touched.
+
+### Summary
+
+Shipped the proof, not prose: a pure model-agnostic stream-scanner `detectBroadSearchAtBoot` that reds when a zero-`--discover` FO boot runs a broad find/grep -r/rg/ls -R Bash, a recursive Glob, or a repo-wide Grep to hunt a workflow instead of obeying Startup step 3's terminal zero branch — mirroring `detectWrongRootBoot`. It keys on the search TARGET (project root / recursive `**` pattern), not the tool name, so a scoped search under a resolved workflow dir passes (the design's hard false-red edge). Iterates all tool_use blocks (new `toolUseBlocks` accessor) so a sweep can't evade via block ordering; added `pattern`/`path` JSON fields for Glob/Grep visibility. AC-1's 8-case offline table test drives the detector with crafted streams (independent source of truth) — green; AC-2's `//go:build live` scenario drives a real FO against a bare git zero-discover fixture, asserting no TeamCreate and detector==nil — compiles under `-tags live`, gated for live auth.
