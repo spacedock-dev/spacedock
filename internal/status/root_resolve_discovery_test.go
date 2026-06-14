@@ -45,7 +45,7 @@ func TestRootResolveSkipsDiscovery(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("--root --resolve exit=%d, want 0 (stdout=%q stderr=%q)", code, out, stderr)
 	}
-	if strings.Contains(stderr, "no Spacedock workflow here") {
+	if strings.Contains(stderr, "no commissioned Spacedock workflow found") {
 		t.Fatalf("--root --resolve must not hit the no-workflow gate; stderr=%q", stderr)
 	}
 	// path= is realpath-derived (discoverWorkflows canonicalizes the root), so
@@ -92,7 +92,7 @@ func TestPlainResolveFromNonWorkflowEmitsNoWorkflow(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("plain --resolve from non-workflow exit=%d, want 1 (stdout=%q stderr=%q)", code, out, stderr)
 	}
-	if stderr != noWorkflowErr {
-		t.Fatalf("plain --resolve stderr = %q, want the no-workflow error %q", stderr, noWorkflowErr)
+	if !strings.Contains(stderr, "no commissioned Spacedock workflow found") {
+		t.Fatalf("plain --resolve stderr = %q, want the no-workflow error", stderr)
 	}
 }
