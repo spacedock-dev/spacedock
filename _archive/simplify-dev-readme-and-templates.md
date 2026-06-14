@@ -10,6 +10,7 @@ score:
 worktree:
 issue:
 sprint:
+archived: 2026-06-14T19:24:56Z
 ---
 
 Align the dev-workflow process doc AND the commission templates to the crew "what awesome looks like" principles — the same ethos j9's P1 just added to the FO contract:
