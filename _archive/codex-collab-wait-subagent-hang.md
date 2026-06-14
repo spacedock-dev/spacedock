@@ -12,6 +12,7 @@ issue:
 sprint:
 mod-block:
 pr: local-merge:ce2c4970
+archived: 2026-06-14T05:22:47Z
 ---
 
 The Codex live `rejection-flow` shared-runtime scenario intermittently hangs at `collab:wait` — a spawned-subagent stall in the Codex runner, observed on 3 of 5 runs across j9's validation cycles. When it hangs the assertion is never reached (so it is NOT a scenario regression), but it makes the Codex live lane flaky and forces retries.
