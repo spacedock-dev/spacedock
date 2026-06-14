@@ -352,6 +352,14 @@ REJECTED. AC-1/AC-2/AC-4/AC-5/AC-6 all reproduce GREEN with independent verifica
 
 **Cycle 1 — fix applied (implementation feedback-rework)** (2026-06-13)
 - ac3-rejection-flow-fix: applied. Corrected the `rejection-flow` to the contract-correct single-entity behavior (commit de60449b), test-only, ZERO contract files touched.
+- (also, between cycles: rebased onto origin/main with #362 `spacedock new` teaching + #364 folded in — auto-merged into the boot-resident sections; `go test ./...` 1372.)
+
+**Cycle 2 — re-validation REJECTED (Codex AC-3 cross-host regression) + AC-2 oracle defect** (2026-06-14)
+- Re-validated on the rebased base. AC-1/AC-3-Claude/AC-4/AC-5/AC-6 PASS (Claude greet **48,500** < 60k, ~11.5k margin — up from 36.5k as #362/#364 thickened the boot core; delta-audit CLEAN — #362 auto-merge integrity + the new Claude assertion has no test-strength hole). AC-3 **Codex** rejection-flow FAILS (3/3): Codex fresh-dispatched cycle-2 instead of `send_input` thread-reuse.
+- Root cause: the cycle-1 fix's SHARED-prompt change dropped "REUSE the kept-alive reviewer" — correct for Claude (bare, can't reuse) but BROKE Codex (persistent-thread reuse is real + was green in PR #302). The Claude assertion was updated; `assertCodexReviewerReuse` still demands reuse → reds. The cycle-1 "Codex unaffected" claim was wrong; the shared prompt is NOT host-neutral.
+- ALSO (forensics finding, NOT addressed by the validator): **AC-2's oracle is a false-pass** — `ParseClaudeTurns` dedups by message id taking the FIRST delta, but real runner streams are multi-delta with `tool_use` on the FINAL delta → `assertNoTeamCreateBeforeGreet` cannot detect a TeamCreate (the no-TeamCreate proof is hollow). AC-6's 36.5k/48.5k ceiling is separately confirmed trustworthy.
+- **Captain decision: option (a) — host-neutral prompt.** Make the shared prompt host-conditional (reuse the kept-alive reviewer if the host supports cross-cycle reuse → Codex reuses; else dispatch fresh → Claude bare). Both hosts contract-correct, both assertions pass, nothing conceded.
+- Routed to implementation (reused ensign, 59.2% per FR-9 — checkpoint-and-flag guard): (1) host-neutral the shared prompt + green Codex `rejection-flow`; (2) fix `ParseClaudeTurns` multi-delta + regenerate AC-2 fixtures from a real capture. Codex `collab:wait` hang on 2/3 runs = separate live-infra flakiness, triage out-of-band.
 
 ## Stage Report: implementation (feedback cycle 1 — AC-3 rejection-flow correction)
 
