@@ -66,6 +66,14 @@ Every task file has YAML frontmatter. Fields are documented below; see **Task Te
 | `worktree` | string | Worktree path while a dispatched agent is active, empty otherwise |
 | `issue` | string | Optional external ticket reference, such as `ENG-123`, `kata:task-abc123`, or `owner/repo#42` |
 
+## Proof policy
+
+The FO contract's Operating Principles and Working Principles already govern generic proof discipline: prefer a code gate over a prose-only rule, satisfy "the contract says X" only with "the binary or a test enforces X, and here is the run," spike the riskiest mechanism first, and let the gate AC cross-check reject any criterion proven only by review of its own prose. Tasks in this workflow inherit that. The rules below add the dev-workflow specifics.
+
+- **No prose-grep over instruction files.** A string, substring, or regex match over an instruction file the model reads (the FO/ensign contract, this README, a skill) never proves a behavioral claim. The matched text was written by the same implementer the check polices, so it asserts only that the file contains what we put in it. A valid paraphrase fails it and an inverted clause passes it. To settle a case, ask whether the expected value comes from outside the file under test; if it does not, the check is a tautology and is banned. A check that binds two independent values that can diverge, such as the plugin manifest's contract range bracketing the binary's contract version, is legitimate and is not prose-grep.
+- **Detached adversarial audit (high-stakes surfaces).** Before merging a change to one of four high-stakes surfaces (the front-door launcher, the `status` mutation and guard paths, the shipped contract and scaffolding, and the CI and release machinery), run a read-only audit on a throwaway checkout. It tries to refute the validation by constructing an adversarial edit the deliverable's own tests should catch, then confirms they do. A test that stays green under a claim-breaking edit is a hole. Material findings route back through validation to implementation, and "refuted nothing material" is a valid recorded outcome.
+- **Instruction-file read quarantine.** Tests do not read prompt or instruction files except in `internal/contractlint`, and there only for structural checks: reference closure, frontmatter validity, structural absence, and dedup. Prose-grep and prose-to-code consistency checks never substitute for running the behavior.
+
 ## Stages
 
 ### `backlog`
@@ -86,12 +94,11 @@ A task moves to ideation when a pilot starts fleshing out the idea: clarify the 
   - Acceptance criteria must include how each criterion will be tested.
   - Acceptance criteria are **entity-level** - they describe properties of the finished task, not stage actions. Items that describe stage work belong in the stage report's checklist.
   - If an AC item reads as an imperative verb phrase, rewrite it as the end-state property it produces.
-  - Every task must produce a real, checkable change — code, a fixture, on-disk state, or instruction text whose effect a separate check can confirm — not just a document about itself. Each AC's "Verified by" must name something outside the task body that can fail: a test, a command's output or exit code, a file the change produces, or the resulting on-disk state. An AC whose only proof is reviewing the task's own prose ("verified by reviewing this task's decision section") can never fail, so it is not an acceptance criterion. If the task's only output is a decision with nothing shipped, it does not belong in this queue — record the decision in the roadmap instead. Cleanup and overhaul do qualify: the change is the new code plus passing tests.
-  - When the design's soundness rests on an unverified mechanism — a parser round-trip, a runtime handoff, an on-disk format, a tool actually supporting a flag — try the riskiest unknown first: run the smallest end-to-end exercise of that path before committing to the rest of the plan, and record the result in the task body. Ask "what would invalidate the rest of this work if it broke?" — that goes first; pay the small bill first. The exercise is throwaway, but what it teaches seeds the implementation's first test. If nothing is unverified — the design only composes already-proven behavior — record "no spike needed: {the proven mechanisms it relies on}" so the determination is on the record rather than silent.
+  - Every task must produce a real, checkable change (code, a fixture, on-disk state, or instruction text whose effect a separate check can confirm). If the task's only output is a decision with nothing shipped, it does not belong in this queue; record the decision in the roadmap instead. Cleanup and overhaul qualify: the change is the new code plus passing tests.
+  - When the design rests on an unverified mechanism (a parser round-trip, a runtime handoff, an on-disk format, a tool actually supporting a flag), spike the riskiest path first (see Proof policy above) and record the result in the task body. The throwaway exercise seeds the implementation's first test. If nothing is unverified, record "no spike needed: {the proven mechanisms it relies on}" so the determination is on the record.
   - Test plans should state what verifies the implementation, estimated cost/complexity, and whether fixture, CLI, or live workflow tests are needed.
   - Plans should describe intended behavior at the level a future worker or validator needs to reason about it. Prefer observable behavior over implementation internals unless the task is specifically about that internal representation.
-  - Prove behavior by exercising it and observing the outcome — output bytes, exit code, resulting on-disk state, or a test feeding many inputs and asserting uniform handling: Go unit tests for parser and command behavior, golden fixtures for status output, behavior fixtures that drive the binary for command-level claims, and live workflow smoke tests only when runtime behavior is the claim. **A string, substring, or regex match over any instruction file the model reads — the FO or ensign contract, this workflow README, a skill — NEVER satisfies a behavioral acceptance criterion.** The matched string was written by the same implementer the check is supposed to police, so a passing check only asserts "the file contains the text we put in the file." It has no independent source of truth and does not track behavior: a valid paraphrase fails it, and an inverted clause passes it. ("It is a myth that the FO MUST advance…" keeps every matched substring while saying the opposite.) Searching code is the same trap one level down — it asserts spelling, false-passing on a renamed-but-equivalent branch. So "the contract says to run the command" never proves the agent runs it, and "the skill renders the gate" is proven only by invoking the skill and observing the rendered gate, never by finding the clause that asks for it. **The one test that settles it: does the expected value come from somewhere OTHER than the file under test?** If no — the clause is its own expectation — the check is a tautology and proves nothing; it is banned as proof of any acceptance criterion. If yes — the file is bound to an independent source that can diverge from it — it may be a legitimate invariant. The legitimate case is a check that parses real artifacts in CODE and tests a relationship between independent values: for example, that the plugin manifest's contract range brackets the binary's contract version. That manifest is parsed by the binary, not ingested by the model as behavior, so it is already outside "files the model reads" — and the manifest and the binary version can disagree, which is exactly what makes the check able to fail. When a task has both a text half and a behavioral half — extracting contract prose into a skill, or adding a contract clause — the text half (the prose moved, the clause is present) is real authoring work, but it is NOT an acceptance criterion on its own and the text check never stands in for the behavioral one. The behavior — that invoking the skill actually renders the gate, that the FO actually obeys the clause — is proven only by a live drive that runs it and observes the durable result.
-  - Prefer acceptance criteria a code gate can enforce — a guard in the binary, a test that fails on violation — over criteria the agent is merely instructed to follow. Where a behavior can be guarded by the binary or a failing test, the proof is that gate, not a sentence in a skill file. An AC whose only proof is "the instruction text says to do X" has a ceiling of wording-is-present and cannot stand on its own.
+  - Prove behavior by exercising it and observing the outcome (output bytes, exit code, resulting on-disk state, or a test feeding many inputs and asserting uniform handling): Go unit tests for parser and command behavior, golden fixtures for status output, behavior fixtures that drive the binary for command-level claims, and live workflow smoke tests only when runtime behavior is the claim. See the Proof policy above for what counts as proof and what does not.
   - When captain feedback changes the target behavior, update the task body, acceptance criteria, and test plan together before re-validating.
   - For template or skill text changes: specific before/after wording, not just "change X".
   - When a task changes user-visible behavior — CLI output, command surfaces, startup banners, host integration, anything the docs site describes — ideation proposes the documentation changes: a concrete doc diff (before/after wording or a unified diff against the affected doc files) recorded in the task body. The ideation gate review includes this doc diff. Implementation applies it. Ideation runs without a worktree; the diff lives in the task body, not on a branch.
@@ -118,19 +125,14 @@ A task moves to validation after implementation is complete. The work here is to
   - Run applicable tests from the Testing Resources section and report results.
   - Verify each acceptance criterion with evidence.
   - Pull every `**AC-N**` item from the entity body's `## Acceptance criteria` section; reproduce the evidence cited in each "Verified by" clause; flag any AC without evidence.
-  - The evidence each AC cites must come from a check OUTSIDE the task body — a test, a command's output or exit code, a file the change produces, or the resulting on-disk state. An AC whose only cited proof is review of the task's own prose ("verified by reviewing this task's decision section") proves only that the prose exists; it can never fail, so it does not satisfy the AC. Reject any AC whose evidence is self-referential. If the task's only deliverable is a decision with nothing shipped, do not recommend PASSED — the decision belongs in the roadmap, not a terminal dev task. (This is dev-workflow policy: an AC's proof here is code/command/state. A non-development workflow's AC proof may legitimately be a published artifact, a metric, or a human review.)
+  - Reproduce each AC's cited evidence; reject any AC whose evidence is self-referential, or whose only deliverable is a decision with nothing shipped (that belongs in the roadmap, not a terminal dev task). Dev-workflow policy: an AC's proof is code, command, or state. A non-development workflow's AC proof may legitimately be a published artifact, a metric, or a human review.
   - Check that the task body, acceptance criteria, implementation, and tests reflect the latest captain feedback.
   - Reject when tests pass but prove an obsolete, over-specified, or wrong target behavior.
   - A PASSED/REJECTED recommendation.
 - **Good:** Thorough testing against acceptance criteria, clear evidence of pass/fail, honest assessment, and validation that tests prove the current intended behavior
 - **Bad:** Rubber-stamping without testing, ignoring failing edge cases, validating against wrong criteria, accepting passing tests that encode stale prose or obsolete assumptions, or accepting a string/substring/regex match over an instruction file (the contract, this README, a skill) as proof of a behavioral claim. A check whose expected value is just the text the implementer wrote into the file under test proves nothing — it cannot fail. Proof of behavior must run the behavior and observe output, exit code, or on-disk state; a static check counts only when it tests a real value against an independent source that can diverge from it, not as a spelling check over a file the model reads.
 - **Spot-check principle:** Before committing to an expensive live workflow or compatibility run, do a cheap fixture or single-command spot-check to verify the infrastructure works end-to-end.
-- **Detached adversarial audit:** For high-stakes surfaces — the front-door launcher (`spacedock claude`/`codex`/`doctor`), the `status` mutation/guard paths, the shipped contract/scaffolding, and the CI/release machinery — a passing validation is necessary but not sufficient on its own. Before merging such a change, run (or dispatch) a read-only adversarial audit on a detached checkout of the merge result:
-  - **When it triggers:** the four high-stakes surfaces above. Routine, low-blast-radius changes do not need it; a normal validation suffices.
-  - **What it produces:** the auditor works on a separate throwaway checkout (never the implementation worktree) and never mutates the deliverable. It tries to REFUTE the validation — construct an adversarial edit that the deliverable's own tests should catch, and confirm they do. A test that stays green under an edit that breaks the claim is a hole. Findings come in two tiers — `Material:` (a real correctness or test-strength hole, e.g. an assertion that green-lights a regression) and `Polish:` (non-blocking). "Refuted nothing material" is itself a valid, recorded outcome.
-  - **How it is recorded:** material findings route back through the normal validation→implementation feedback flow (a `### Feedback Cycles` entry naming the audit and its adversarial edit); the gate is not presented as clean until they are closed. A clean audit is noted in the gate's reviewer-findings block (or a one-line "detached audit: no material findings").
-  - **Why:** the audit catches the class of hole where the test passes but would also pass on a broken future edit — which validation, trusting its own green suite, cannot see. Real catches on the record: #262 (`binary-absent-fo-bootstrap`) — validation passed correct prose, the audit then found two test-strength holes in `contract_gate_test.go` (a `strings.Count(...) > 0` check that skipped on zero mentions, and a bare `strings.Contains` satisfied by a negated disclaimer); `1x` (`code-cleanups-0193`) AC-6 and `external-tracker-checkpoint` AC-6 (a self-referential "verified by review of this entity's own section" that can never fail); `7h` (`release-notes-local-summary`) AC-3 (validation passed, the audit found the tag-cut folded the notes block into the tag subject instead of the body). This is read-only refutation, not a second implementation pass.
-  - **Instruction-file read quarantine:** tests do not read prompt or instruction files except in `internal/contractlint`, and that package is limited to structural checks: reference closure, frontmatter validity, structural absence, dedup, and similar machine-checkable properties. Prose-grep is banned: a test that asserts a skill, contract, agent file, or this workflow README contains its own wording proves only that the wording is present. Code-bound prose checks are banned too: a prose-to-code consistency lint is not a behavior test, and it must never substitute for running the behavior. If a deleted prose/code-bound read exposed an untested behavior that still matters, record the owed behavior test instead of keeping the read. The boundary guard fails on instruction-file reads outside the quarantine; high-stakes validation still uses detached adversarial audit to refute whether the remaining behavior tests would catch a broken edit.
+- **Detached adversarial audit:** for the high-stakes surfaces named in the Proof policy above, run (or dispatch) the audit on a throwaway checkout, never the implementation worktree, before merging. Routine, low-blast-radius changes do not need it. Record material findings as a `### Feedback Cycles` entry naming the audit and its adversarial edit; do not present the gate as clean until they close. Note a clean audit in the gate's reviewer-findings block. Real catches on the record: #262 (two test-strength holes in `contract_gate_test.go`), `1x` and `external-tracker-checkpoint` AC-6 (self-referential ACs that can never fail), and `7h` AC-3 (a tag-cut that folded the release notes into the tag subject).
 
 ### `done`
 
@@ -139,7 +141,7 @@ A task reaches done when validation is complete and the captain approves the res
 - **Inputs:** The validation report with PASSED/REJECTED recommendation
 - **Outputs:** Final verdict set in frontmatter, completed timestamp recorded
 - **Good:** Clear resolution and lessons learned captured if relevant
-- **Bad:** Closing without reading the validation report, overriding a REJECTED recommendation without reason, or reaching done with PASSED on a task whose only proof is a check over the deliverable's own text — prose, a contract clause, or a skill the model reads, where a passing check just confirms the text the implementer wrote is present and nothing outside it can fail. (A design that concludes "do not build X" ships as a roadmap decision, not a PASSED dev-queue task; a contract or skill change is PASSED only when a live drive observed the behavior it claims.)
+- **Bad:** Closing without reading the validation report, overriding a REJECTED recommendation without reason, or marking PASSED a task that shipped nothing checkable (see Proof policy above). A design that concludes "do not build X" ships as a roadmap decision, not a PASSED dev-queue task. A contract or skill change is PASSED only when a live drive observed the behavior it claims.
 
 ## Workflow State
 
@@ -157,107 +159,7 @@ spacedock status --workflow-dir docs/dev --next
 
 ## Runtime Live CI
 
-The live lanes prove runtime behavior, not text shape. Static grep checks over workflow YAML or skill prose are not a substitute for launching the real host front door, observing its output, and checking the resulting workflow state.
-
-A runtime regression should be caught once per user journey and then exercised by EACH supported host. The shared runtime scenarios make that real: one host-neutral scenario table, per-host runner adapters (Claude and Codex today, with Pi tracked through an explicit live/codified/gap coverage map until its shared runners are live-safe) implementing or accounting for the same scenario IDs, and a parity guard that fails if a scenario exists for one host only.
-
-### Shared runtime scenarios
-
-The scenario surface lives in `internal/ensigncycle` and splits into four host-neutral layers plus one host-specific layer:
-
-| Layer | File | Host-neutral? |
-|-------|------|---------------|
-| Scenario table | `shared_scenarios_test.go` (`sharedRuntimeScenarios()`) | Yes |
-| Fixtures + prompts | `shared_fixtures_test.go` | Yes |
-| Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
-| Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_coverage_test.go` | No — one per host; Pi currently records explicit live/codified/gap status for each shared scenario |
-
-The shared table (`sharedRuntimeScenario`) carries ONLY runtime-neutral facts: scenario `name` (ID), `oldPythonTest` provenance, behavior `intent`, and a live `timeout`. It encodes NO launch, auth, plugin, artifact, or transcript field — `TestSharedRuntimeScenarioDefinitions` reflects over the type and fails if any field names a single host.
-
-Each runner adapter turns a shared scenario into a real launch and returns `(before, after, observed)` for the shared assertions:
-
-| Concern | Codex runner | Claude runner |
-|---------|--------------|---------------|
-| Auth / HOME isolation | isolated `CODEX_HOME` + copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
-| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-contract-check` |
-| Launch | `codex exec --json --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
-| `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
-| Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
-
-The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
-
-- `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
-- `rejection-flow`: drives a two-cycle rejection trajectory — route the concrete finding back through implementation, re-implement, and re-validate a second cycle reusing the kept-alive reviewer — restoring the second cycle the Go port dropped.
-- `feedback-3-cycle-escalation`: starts from two prior rejection cycles at a third REJECTED validation and asserts the first officer escalates to the human on the third cycle instead of auto-bouncing a fourth time.
-- `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
-
-Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
-
-**To add a shared runtime scenario:**
-
-1. Add a `sharedRuntimeScenario` entry to `sharedRuntimeScenarios()` with a unique `name`, its old Python provenance, the behavior `intent`, and a live `timeout`. Keep it host-neutral — no launch/auth/plugin field.
-2. Add a fixture writer (README + entity + any `_mods/`) and a prompt to `shared_fixtures_test.go`. The prompt must say `Use $spacedock:first-officer`; both hosts honor it. Reuse the existing fixtures verbatim where the journey is the same.
-3. Add a host-neutral assertion over `(before, after, observed)` strings (or reuse an existing one) and at least one offline negative case in `shared_scenarios_negative_test.go` that builds the broken end-state and proves the assertion goes red.
-4. Add a runner entry for the new `name` to BOTH `codexScenarioRunners()` and `claudeScenarioRunners()`. `TestSharedScenarioRunnerCoverage` fails until both hosts cover it.
-
-The shared coverage meta-test enforces parity in both directions: every shared scenario must have a Claude and Codex runner plus a Pi live/codified/gap coverage entry, and every runner or Pi coverage entry must map to a defined scenario.
-
-### Local live execution
-
-Build the binary and export the resolution hooks once:
-
-```bash
-go build -o ./spacedock ./cmd/spacedock
-export SPACEDOCK_BIN="$PWD/spacedock"
-export SPACEDOCK_REPO_ROOT="$PWD"
-```
-
-Run the Claude shared suite locally (skips when no Claude auth is available — set `~/.claude/benchmark-token` for the OAuth path or `ANTHROPIC_API_KEY` for the API-key path; runs against a fresh isolated `HOME`). The `-timeout 40m` is a LOOSE BACKSTOP only — sized above the full 4-scenario serial-suite wall-time (~27m opus). The REAL liveness guard is the per-stage no-progress quiet budget (the shared `streamWatcher`, 60s) in the runners: it resets on every stream line and kills a hang at 60s of stream silence. The 40m ceiling never fires in a healthy run, it only bounds a pathological progressing-but-runaway loop and keeps the suite off Go's too-short default 10m binary timeout:
-
-```bash
-go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle -v
-```
-
-Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
-
-Codex shared runs use two liveness guards: the shared 60s stream-silence guard, and a Codex foreground-wait watchdog for repeated `collab:wait` / `wait_agent` activity with no durable workflow-state progress or for no-progress silence after a foreground wait. The watchdog can fail or retry a typed stall, but scenario success still comes from process exit plus durable entity/git-state assertions.
-
-```bash
-go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
-```
-
-Run the Pi front-door smoke locally (`npm install -g pi-coding-agent`, `pi install npm:pi-subagents`, and either `pi login` or `OPENAI_API_KEY`). The smoke loads the current checkout's Spacedock first-officer and ensign skills plus the local pi-subagents extension/skill explicitly; it verifies durable state in the split-root state checkout rather than transcript wording alone.
-
-```bash
-go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
-```
-
-The parity and definition guards run with no model spend — useful before paying for a live run:
-
-```bash
-go test -tags live -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions|TestPiSharedScenarioCoverage' ./internal/ensigncycle -v
-```
-
-Without auth, the respective live suite skips locally (Claude/Codex/Pi), except in CI where the lane requires it.
-
-### GitHub setup
-
-Workflow: `.github/workflows/runtime-live-e2e.yml`. The offline gate job (`go test ./...`, no secrets) must pass before either live lane burns its environment approval.
-
-- `claude-live` (matrix: `sonnet` on `CI-E2E`, `claude-opus-4-8` on `CI-E2E-OPUS`): secret `ANTHROPIC_API_KEY`. Runs `TestLiveEnsignCycle` (the full-cycle smoke) AND `TestLiveClaudeSharedScenarios` (the shared suite). Artifacts under `live-artifacts/claude/<model>/` plus the session jsonl under `$CLAUDE_CONFIG_DIR`.
-- `codex-live` (environment `CI-E2E-CODEX`): secret `OPENAI_API_KEY`, `SPACEDOCK_CODEX_LIVE_REQUIRED=1` so a missing key fails clearly after approval. Runs `TestLiveCodexSharedScenarios`. Artifacts under `live-artifacts/codex/`.
-- `pi-live` (environment `CI-E2E-PI`): secret `OPENAI_API_KEY`, `SPACEDOCK_PI_LIVE_REQUIRED=1` so missing Pi/OpenAI prerequisites fail clearly after approval. Installs `pi-coding-agent`, `pi-subagents`, and `pi-intercom`, runs the Pi shared coverage guard plus `TestLivePiFrontDoorSmoke`, and uploads artifacts under `live-artifacts/pi/`.
-
-All live lanes must test the current checkout, not a remote `--ref next` install. The Codex lane generates a local marketplace under `$RUNNER_TEMP`:
-
-```text
-.agents/plugins/marketplace.json
-plugins/spacedock -> $GITHUB_WORKSPACE
-```
-
-The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` then confirms Spacedock resolves the installed Codex manifest. The Codex live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the current-checkout stack instead of a remote `next` install. The Claude lane loads the current checkout directly via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
-
-A one-off host-only smoke is not enough for either lane: it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. The shared scenarios run real headless hosts, observe output, and check resulting workflow state; jsonl, stderr, and final-message artifacts upload for debugging.
+The live runtime lanes prove host behavior, not text shape: a static grep over workflow YAML or skill prose never substitutes for launching the real host front door, observing its output, and checking the resulting workflow state. The full reference (shared scenarios, fixtures, assertions, per-host runners, local live execution, and the GitHub setup) lives in [`docs/runtime-live-ci.md`](../runtime-live-ci.md). Add or change a runtime scenario there.
 
 ## Task Template
 
