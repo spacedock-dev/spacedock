@@ -1,7 +1,7 @@
 ---
 id: 58q4bynqqxd3dzjpyntz8m8w
 title: Lean boot hardening — FO must report-and-stop on zero `--discover`, not broad-search the filesystem
-status: validation
+status: implementation
 source: "captain (2026-06-14) — an FO instance overstepped Startup step 3: after `spacedock status --discover` returned zero (exit 0, no output), it ran a broad find/grep filesystem sweep to hunt a workflow instead of reporting no-workflow-found and stopping. Contract + lean-boot violation."
 started: 2026-06-14T19:16:23Z
 completed:
@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-lean-boot-hardening
 issue:
 sprint: 0203-fo-efficiency
 mod-block:
-pr: "#371"
+pr:
 ---
 
 Keep FO boot lean: when `spacedock status --discover` returns zero workflows, the Startup discovery step must report no workflow found and STOP — never fall back to a broad `find`/`grep` filesystem sweep to hunt one down. Harden the discipline so the zero-`--discover` path is provably report-and-stop, not an expensive search.
