@@ -145,3 +145,16 @@ Fleshed out the ideation body for the Codex `collab:wait` live-runner flake. The
 ### Summary
 
 Review repairs applied to the ideation body only. The design now covers both observed stall shapes, uses executable guard commands that match build tags, and requires a focused docs-contract test for the new watchdog wording.
+
+## Stage Report: implementation
+
+- DONE: Implement a typed Codex foreground-wait stall path covering both repeated wait events and silent/no-progress after a wait, with deterministic fixtures and positive controls.
+  Code commit `5431f64c` adds the Codex foreground-wait watchdog, repeated-wait and silent-after-wait fixtures, durable-progress/completion/non-wait positive controls, and typed diagnostics with scenario, handle, arm, durable-progress flag, and artifact directory.
+- DONE: Keep retry behavior narrow: at most one retry only for the typed stall, with attempt-specific artifacts and negative controls for non-watchdog/assertion failures.
+  `TestRunCodexRejectionFlowRetry*` passed in the focused suite (`23 passed`), and the targeted live run wrote attempt-specific artifacts under `/tmp/spacedock-codex-live-rejection-flow-after-durable/codex-shared-scenarios/rejection-flow/{attempt-1,attempt-2}`.
+- DONE: Preserve durable-state proof and docs coverage: rejection-flow success still depends on durable entity state plus real Codex reuse signal, and docs-contract tests guard the new watchdog wording.
+  `assertRejectionFlow` plus `assertCodexReviewerReuse` still gate success; docs guard passed (`3 passed`), live parity passed (`3 passed`), `go test ./...` and `go test ./... -race` each passed (`1260 passed in 16 packages`), and targeted live `TestLiveCodexSharedScenarios/rejection-flow` passed on attempt 2 with `- Cycle 2: PASSED`.
+
+### Summary
+
+Implemented the Codex-specific foreground-wait watchdog beside the shared stream-silence guard, plus a one-retry wrapper for the `rejection-flow` live scenario only. The fix keeps runtime success tied to durable entity/git state and the real Codex `send_input` reuse signal; the live retry artifacts show attempt 1 bounded at an active foreground wait and attempt 2 completing the two-cycle rejection flow.
