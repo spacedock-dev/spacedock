@@ -1,7 +1,7 @@
 ---
 id: 8e2053706c2c77xdm696dfr6
 title: dispatch build emits Agent name >64 chars for long slugs — Agent() dispatch fails
-status: validation
+status: implementation
 source: github#366 (captain intake 2026-06-14)
 started: 2026-06-14T05:20:44Z
 completed:
