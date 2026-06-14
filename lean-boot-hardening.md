@@ -102,3 +102,18 @@ Shipped the proof, not prose: a pure model-agnostic stream-scanner `detectBroadS
 ### Summary
 
 Validation PASSES on the shipped proof. AC-1's offline detector is solid: I reproduced the table test (8/8 + second-block) and ran an independent 16-case adversarial harness against `detectBroadSearchAtBoot` directly — every required RED redded (incl. second-block evasion and `**/*.md`) and every required PASS passed (the scoped-under-resolved-dir false-red edge holds). The detector keys on search target, not tool name, exactly as designed. AC-2's live scenario is correctly wired and compiles under `-tags live` (bare git zero-discover fixture, no-TeamCreate + detector==nil asserts), but two honest caveats: it was not executed here (live-gated, no auth), and it is NOT registered in the CI live gate — `runtime-live-e2e.yml` runs only `TestLiveEnsignCycle` and `TestLiveClaudeSharedScenarios`, neither of which matches this standalone test, so CI will never invoke it. No contract/agents/references prose was touched.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Register the zero-discover live scenario so CI actually executes it.
+  Folded `TestLiveZeroDiscoverReportsAndStops` into the existing "Run live ensign cycle" step's `-run` alternation in `.github/workflows/runtime-live-e2e.yml` (`-run 'TestLiveEnsignCycle|TestLiveZeroDiscoverReportsAndStops'`). Both are cheap boot/front-door drives, so they share the step — no new CI job. Commit 7c02565a.
+- SKIPPED: PREFERRED path — integrate as a shared scenario in the `TestLiveClaudeSharedScenarios` registry.
+  The shared-scenario harness asserts a workflow LIFECYCLE (before/after entity reads, archival checks) and enforces a Codex+Claude+Pi parity guard (`TestSharedScenarioRunnerCoverage`: every shared ID needs a Codex runner, a Claude runner, AND a Pi coverage entry). A zero-discover boot has NO entity and no durable end-state — only a boot transcript — so it doesn't fit those assertions, and forcing it in would add three host runners + a Pi entry, MORE surface than the fallback. The team-lead authorized the `-run` fallback for exactly this shape mismatch.
+- DONE: VERIFY the registration actually wires it in.
+  `go test -tags live -list 'TestLiveEnsignCycle|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/` lists BOTH test names — the exact CI `-run` pattern selects the new test. `grep TestLiveZeroDiscoverReportsAndStops .github/workflows/runtime-live-e2e.yml` → the gate's invocation now names it. Not just authored — proven invoked.
+- DONE: `go test ./internal/ensigncycle/` + `go vet -tags live` green.
+  `go test ./internal/ensigncycle/` → ok; `go vet -tags live ./internal/ensigncycle/` → clean. AC-1 detector + table test untouched (load-bearing, preserved).
+
+### Summary
+
+Closed the validation-flagged registration gap: `TestLiveZeroDiscoverReportsAndStops` is now invoked by the live-e2e gate, folded into the existing live-cycle canary step's `-run` alternation (no new job). Verified by `go test -list` with the CI `-run` pattern selecting the test and by grepping the yaml — proven invoked, not just authored. Took the team-lead's authorized fallback over the preferred shared-scenario path because that registry asserts a workflow lifecycle and enforces a 3-host parity guard, which a no-entity zero-discover boot doesn't fit (it would add more surface than the fallback). Offline gate + live vet green; the load-bearing AC-1 detector and table test are untouched.
