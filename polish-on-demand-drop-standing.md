@@ -1,13 +1,13 @@
 ---
 id: xf7fft1hnj51eq7kagsc9833
 title: On-demand polish — drop the standing-teammate lifecycle, move usage prose into the mod
-status: ideation
+status: implementation
 source: "captain (2026-06-13, this session) — the standing-teammate lifecycle (discovery pass / lazy-spawn / declaration / team-scope teardown / first-boot-wins) is ~4 contract subsections of maintenance surface for an infrequently-used polisher; amortization doesn't pay for infrequent use. Captain chose approach A: on-demand one-shot polish dispatch, and 'the mod can add the prose for the standing team member' — feature-specific usage prose lives in the mod, the contract keeps only a generic hook. Taken into 0203."
 started: 2026-06-14T18:42:01Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-polish-on-demand-drop-standing
 issue:
 sprint: 0203-fo-efficiency
 ---
