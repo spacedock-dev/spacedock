@@ -1,9 +1,9 @@
 ---
 id: 5ew2jxagk11mr0fzd0rtpdp0
 title: In-module restructure of the FO contract refs (consolidate duplicated obligations + collapse redundant sections)
-status: backlog
+status: ideation
 source: "T3 (fo-contract-prose-audit) deferred this (2026-06-14): T3 shipped the mechanical-safe subset (4 dead-ref cuts + comm-officer concision); the substantive restructure was scoped out (duplicated obligations marked KEEP; the merge mod-block section-collapse FLAGGED out-of-scope). Captain: the audit \"would imagine a bigger cleanup and in-module restructure.\""
-started:
+started: 2026-06-14T18:42:01Z
 completed:
 verdict:
 score:
