@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-lean-boot-hardening
 issue:
 sprint: 0203-fo-efficiency
 mod-block: merge:pr-merge
+pr: "#371"
 ---
 
 Keep FO boot lean: when `spacedock status --discover` returns zero workflows, the Startup discovery step must report no workflow found and STOP — never fall back to a broad `find`/`grep` filesystem sweep to hunt one down. Harden the discipline so the zero-`--discover` path is provably report-and-stop, not an expensive search.
