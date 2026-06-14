@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-polish-on-demand-drop-standing
 issue:
 sprint: 0203-fo-efficiency
 mod-block: merge:pr-merge
+pr: "#375"
 ---
 
 Replace the standing-teammate lifecycle with on-demand one-shot polish, and move the feature's usage prose out of the FO contract into the mod that declares it.
