@@ -177,3 +177,16 @@ Recommendation: REJECTED. AC-1 requires durable entity progress before the budge
 ### Feedback Cycles
 
 - Cycle 1 (2026-06-14T04:13:02Z): validation rejected AC-1. Route back to implementation to make durable progress before the silence budget clear the active foreground wait instead of returning a typed stall, and replace the contradictory durable-progress test with a no-stall positive control.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Fix AC-1 durable-progress semantics for the silence-after-wait path: durable progress before budget must clear the active wait and avoid a typed stall.
+  Code commit `dfdbf353` makes durable workflow-state progress clear the Codex active wait and reset the shared quiet deadline instead of returning a typed silence-after-wait stall.
+- DONE: Replace or rewrite the contradictory deterministic test so durable progress before the budget is a positive no-stall control.
+  `TestCodexCollabWaitWatchdogDurableProgressBeforeBudgetClearsSilentWait` now fails red on the old behavior and passes after the fix with no fake proc kill.
+- DONE: Re-run the focused watchdog/retry/reuse suite and any affected baseline checks, then write a new implementation stage report with DONE/SKIPPED/FAILED for these items.
+  `gofmt -w ./cmd ./internal`, focused watchdog/retry/reuse suite (`23 passed`), `go test ./...` (`1260 passed in 16 packages`), and `go test ./... -race` (`1260 passed in 16 packages`) all passed.
+
+### Summary
+
+Repaired the feedback-cycle AC-1 issue by treating durable state changes during a silent Codex foreground wait as liveness evidence that clears the wait and extends the quiet budget. The deterministic durable-progress test is now a no-stall positive control, while the typed stall path remains for repeated waits and silent waits with no durable progress.
