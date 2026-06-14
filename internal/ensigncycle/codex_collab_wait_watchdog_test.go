@@ -126,6 +126,32 @@ func TestCodexCollabWaitWatchdogDurableProgressBeforeBudgetClearsSilentWait(t *t
 	}
 }
 
+func TestCodexCollabWaitWatchdogDurableProgressDisarmsRepeatedWaitEpoch(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+	probe := &toggledProgressProbe{}
+	watchdog := newCodexCollabWaitWatchdog("rejection-flow", "/tmp/rejection-flow/attempt-1", probe)
+
+	src.push(codexCollabToolLine("item.started", "wait", "thread-validation-7", ""))
+	go func() {
+		time.Sleep(w.quietBudget / 3)
+		probe.markChanged()
+		time.Sleep((2 * w.quietBudget / 3) + (6 * w.pollInterval))
+		src.push(codexCollabToolLine("item.started", "wait", "thread-validation-7", ""))
+		time.Sleep(2 * w.pollInterval)
+		proc.setExited(0)
+	}()
+
+	_, err := drainCodexToExitWithWaitWatchdog(w, w.quietBudget, "codex shared scenario rejection-flow", watchdog)
+	if err != nil {
+		t.Fatalf("durable progress must disarm the previous foreground wait epoch before a later wait, got %v", err)
+	}
+	if proc.wasKilled() {
+		t.Fatal("a later wait after durable progress must not kill the fake Codex proc")
+	}
+}
+
 func TestCodexCollabWaitWatchdogPositiveControls(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -257,6 +283,31 @@ func TestRunCodexRejectionFlowRetryIsNarrow(t *testing.T) {
 		})
 		if err == nil {
 			t.Fatal("expected durable-state assertion failure")
+		}
+		if attempts != 1 {
+			t.Fatalf("attempts = %d, want 1", attempts)
+		}
+	})
+
+	t.Run("reviewer reuse assertion failures stop after one attempt", func(t *testing.T) {
+		attempts := 0
+		_, err := runCodexRejectionFlowWithRetry(func(attempt int) (codexRejectionFlowAttempt, error) {
+			attempts++
+			return codexRejectionFlowAttempt{
+				entityAfter: passingRejectionEntity(),
+				result: codexScenarioResult{
+					finalMessage: "first validation rejected; implementation rework applied; second validation passed",
+					jsonl: strings.Join([]string{
+						codexCollabToolLine("item.completed", "spawn_agent", "thread-validation-1", "Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-validation.md and treat its content as your assignment."),
+						codexCollabToolLine("item.completed", "spawn_agent", "thread-implementation-1", "Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-implementation.md and treat its content as your assignment."),
+						codexCollabToolLine("item.started", "send_input", "thread-implementation-1", "Feedback routed from validation to implementation for rejection-task."),
+					}, "\n"),
+					artifactDir: codexAttemptArtifactDir(t.TempDir(), "rejection-flow", attempt),
+				},
+			}, nil
+		})
+		if err == nil {
+			t.Fatal("expected reviewer-reuse assertion failure")
 		}
 		if attempts != 1 {
 			t.Fatalf("attempts = %d, want 1", attempts)
