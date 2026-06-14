@@ -6,9 +6,11 @@ source: "0202 Commander drive (2026-06-13). The pr-merge mod (v0.12.1) opens PRs
 group: cleanup
 sprint: 0203-fo-efficiency
 started: 2026-06-14T05:04:07Z
-worktree: .worktrees/spacedock-ensign-pr-merge-mod-base-branch-post-flip
+worktree:
 mod-block:
 pr: "#370"
+completed: 2026-06-14T19:59:40Z
+verdict: PASSED
 ---
 
 The `pr-merge` merge-hook mod (`docs/dev/_mods/pr-merge.md`, v0.12.1) opens code-branch PRs against base `next`, the pre-flip trunk. Post-flip the trunk is `main`, so every merge this drive required a manual base override.
