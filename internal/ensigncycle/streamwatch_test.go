@@ -540,6 +540,12 @@ type streamToolInput struct {
 	// FilePath is the target of a Read/Write tool_use, used the same way (a workflow
 	// README read from outside the fixture root is a wander signature).
 	FilePath string `json:"file_path"`
+	// Pattern is the glob/search pattern of a Glob/Grep tool_use, read by the
+	// broad-search-at-boot detector to spot a recursive workflow-hunting sweep.
+	Pattern string `json:"pattern"`
+	// Path is the search root of a Grep tool_use (unset or the project root means a
+	// repo-wide sweep), read by the broad-search-at-boot detector.
+	Path string `json:"path"`
 }
 
 // toolUseBlock returns the first tool_use block of an assistant entry, or nil —
@@ -554,6 +560,22 @@ func (e streamEntry) toolUseBlock() *streamBlock {
 		}
 	}
 	return nil
+}
+
+// toolUseBlocks returns ALL tool_use blocks of an assistant entry (not just the
+// first, unlike toolUseBlock) — a broad-search Bash can ride as a second block in
+// a multi-tool assistant turn, which a first-block-only scan would miss.
+func (e streamEntry) toolUseBlocks() []*streamBlock {
+	if e.Type != "assistant" || e.Message == nil {
+		return nil
+	}
+	var out []*streamBlock
+	for i := range e.Message.Content {
+		if e.Message.Content[i].Type == "tool_use" {
+			out = append(out, &e.Message.Content[i])
+		}
+	}
+	return out
 }
 
 // resultBlocks returns the tool_result blocks of a user entry.
