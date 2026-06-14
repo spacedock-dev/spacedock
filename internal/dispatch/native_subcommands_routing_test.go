@@ -20,7 +20,7 @@ import (
 // naming the subcommand), NOT the old "deferred to the claude-runtime-segregation
 // surface" diagnostic. Re-adding a deferral would change this exit/message shape.
 func TestRuntimeCoupledSubcommandsRouteNative(t *testing.T) {
-	for _, sc := range []string{"context-budget", "list-standing", "show-standing", "spawn-standing"} {
+	for _, sc := range []string{"context-budget", "list-standing", "show-standing", "spawn-standing", "spawn-standing-all"} {
 		var out, errBuf bytes.Buffer
 		code := Run(claudeteam.Probe, []string{sc}, strings.NewReader(""), &out, &errBuf)
 		if code != 2 {
