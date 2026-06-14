@@ -260,3 +260,31 @@ Accepted-design completeness pass: kept the cycle-1 single-source design intact 
 
 ### Summary
 Shipped the single canonical trunk-config source: a top-level `trunk:` README key, one `resolveTrunk(workflowDir)` resolver (default `main`), surfaced as `spacedock dispatch trunk` (byte-exact stdout, AC-5). reconcile's classD/classE consume the resolver via a parameter — the `next` literal is deleted, the de-conflation is the trunk leaving the roster-helper detectors — and classE's driftItem carries the resolved trunk so the FO remedy is data-driven (AC-3). All 7 ACs proven by independent oracles (sentinel `ftrunk` fixture, byte-exact command test, the un-conflation invariant, the two-position CI lint flagging exactly 3 offenders). NOTE for validation: the entity's doc-diffs named pre-split FO files; #367 (in my base) relocated the D/E remedy to claude-fo-dispatch.md and the ship-local ceremony to claude-fo-merge.md — I applied the identical diff content at the new locations (flagged to team-lead). pr-merge.md (task 87, frozen) untouched.
+
+## Stage Report: validation
+
+- DONE: AC-1 — Class-D/E resolve trunk from configured `trunk:` key (sentinel `ftrunk`).
+  PASSED. `TestReconcileTrunkFromConfig` green from worktree; audit edit re-hardcoding `next` in classD/E reds it ("expected 1 D entry against origin/ftrunk; got 0").
+- DONE: AC-2 — trunk literal absent from classD/E; sourced via one `resolveTrunk`.
+  PASSED. `TestResolveTrunk` 3/3 subtests green (declared-sentinel, declared-main, absent→main fallback); reconcile.go classD/E take `trunk` param, ref strings are `origin/`+trunk.
+- DONE: AC-3 — Class-E driftItem carries resolved `trunk`.
+  PASSED. `TestReconcileTrunkFromConfig` asserts E item `trunk=="ftrunk"`; driftItem.Trunk at reconcile.go:149/627.
+- DONE: AC-4 — channel stamp un-conflated with trunk.
+  PASSED. `TestTrunkNotConflatedWithChannel` green (internal/cli/trunk_channel_unconflated_test.go).
+- DONE: AC-5 — `dispatch trunk` prints byte-exact stdout.
+  PASSED. `TestDispatchTrunkCommand` green (`"ftrunk\n"`/`"main\n"`); audit edit emitting a stray second stdout line reds it ("ftrunk\nextra\n").
+- DONE: AC-6 — no workflow resolves trunk to `next` post-flip.
+  PASSED. `TestNoWorkflowResolvesTrunkToNext` green; flags exactly 3 offenders (audit re-adding `next` to install-e2e pull_request.branches reds it); zero false-positives (next-publish.yml present, lint stays green).
+- DONE: AC-7 — ship-local merge target resolves to configured trunk.
+  PASSED via AC-5 oracle. claude-fo-merge.md step 2 captures `BASE=$(spacedock dispatch trunk ...)`; behavioral backing is AC-5's byte-exact stdout.
+- DONE: Detached adversarial audit (MANDATORY).
+  Refuted nothing material. Separate throwaway checkout; all 3 claim-breaking edits red the intended tests (re-hardcode next→AC-1 red; next in PR branches→AC-6 red; stray stdout line→AC-5 byte-exact red). AC-6 false-positive guard confirmed (next-publish.yml present, lint green).
+- DONE: #367 relocation sound.
+  Gap #4 (`{drift.trunk}` D/E remedy) landed in claude-fo-dispatch.md; gap #6 (`BASE=$(dispatch trunk)` ship-local) in claude-fo-merge.md — diff content matches spec. Pre-split files (claude-first-officer-runtime.md, first-officer-shared-core.md) no longer carry the remedy/merge content (grep empty). AC-3/AC-5 are code-behavioral, unaffected by the doc move.
+- DONE: 87's pr-merge.md untouched.
+  `git diff f87107b1 -- docs/dev/_mods/pr-merge.md` empty.
+- DONE: full `go test ./...` green from worktree root.
+  Exit 0, no failures.
+
+### Summary
+PASSED. All 7 ACs verified by reproducing their independent oracles from the worktree (not trusting the report): named tests green, full `go test ./...` exit 0. The mandatory detached adversarial audit on a separate throwaway checkout confirmed all three claim-breaking edits red the tests that should catch them, and the AC-6 lint does not false-positive on legitimate `next` uses — refuted nothing material. The #367 doc relocation is sound (gap #4/#6 content at the post-split paths, pre-split files cleared, behavioral ACs unaffected) and 87's frozen pr-merge.md is untouched.
