@@ -9,12 +9,22 @@ import (
 	"time"
 )
 
+// streamLineSink is the destination a stream tee forwards each parsed line to. The
+// shared-scenario runners' discardStreamLine deliberately does NOT forward here —
+// the full stream is persisted to the per-scenario artifact (claude-stream.jsonl /
+// the Codex equivalent) and every failure message already carries the bounded
+// transcriptTail()/tail(stream,…), so teeing every parsed line is redundant and
+// bloats CI output (a single failed step dumped ~143KB of jsonl, burying the
+// actual failure line). Reverting discardStreamLine to forward each line here is
+// exactly the re-flood regression TestStreamSinkDiscardsLines guards against:
+// tests install a counter as the sink, and the discard run must leave it at zero.
+var streamLineSink = func(string) {}
+
 // discardStreamLine is the stream sink the shared-scenario live runners hand
-// newStreamWatcher. It drops the line: the full stream is persisted to the
-// per-scenario artifact (claude-stream.jsonl / the Codex equivalent) and every
-// failure message already carries the bounded transcriptTail()/tail(stream,…),
-// so teeing every parsed line to t.Log is redundant and bloats CI output (a
-// single failed step dumped ~143KB of jsonl, burying the actual failure line).
+// newStreamWatcher. It drops the line — it does NOT forward to streamLineSink — so
+// the watcher still drains and records the full transcript while nothing is teed
+// out. (See streamLineSink for why the artifact + failure-tail make the tee
+// redundant.)
 func discardStreamLine(string) {}
 
 // emitCounter counts every line a sink forwards to it — a stand-in for stdout.
@@ -77,32 +87,43 @@ func drainFixture(t *testing.T, tee func(string)) (recorded int) {
 
 // TestStreamSinkDiscardsLines drives newStreamWatcher with the SAME callback the
 // shared-scenario runners pass (discardStreamLine) over the real 341-line captured
-// fixture, draining the whole stream, and asserts nothing reaches stdout while the
-// watcher's transcript still holds all 341 lines (drain/parse/record path intact).
+// fixture and asserts that the sink wired BEHIND discardStreamLine (streamLineSink)
+// receives ZERO lines, while the watcher's transcript still holds all 341 lines
+// (drain/parse/record path intact).
 //
-// The discard run wires discardStreamLine — the exact symbol both runners hand
-// newStreamWatcher — as the watcher's tee with a counter behind it; discard never
-// calls onward, so the counter stays 0. A control run wires the counter directly
-// as the tee, where it reaches 341 — proving the counter fires when the tee
-// forwards, so the zero in the discard run is the discard, not a dead counter.
-// Reverting the runners' tee to that forwarding (t.Log) shape is exactly what
-// drives the count non-zero and reds the discard assertion. (AC-1)
+// The recorder is installed AS streamLineSink — the destination a forwarding tee
+// would route to. The production discardStreamLine does not forward there, so the
+// recorder stays 0. Reverting discardStreamLine's body to forward each line to
+// streamLineSink (the re-flood regression) makes the recorder non-zero and reds
+// the first assertion — the control run below proves that path drives it to 341,
+// so the zero is the discard, not a dead counter. (AC-1)
 func TestStreamSinkDiscardsLines(t *testing.T) {
+	// Install a recorder behind the tee. Restore the production no-op sink after, so
+	// the swap does not leak into sibling tests.
+	rec := &emitCounter{}
+	saved := streamLineSink
+	streamLineSink = rec.tee
+	defer func() { streamLineSink = saved }()
+
 	// Discard run: the watcher's tee is discardStreamLine, the exact symbol both
-	// shared-scenario runners hand newStreamWatcher. The drain/parse/record path is
-	// driven by the real callback; the watcher must still record all 341 lines.
+	// shared-scenario runners hand newStreamWatcher. It does not forward to
+	// streamLineSink, so the recorder behind the sink must stay at zero.
 	recorded := drainFixture(t, discardStreamLine)
+	if got := rec.seen(); got != 0 {
+		t.Errorf("discardStreamLine must forward 0 lines to streamLineSink, got %d — the per-line tee re-flood is back", got)
+	}
 	if recorded != 341 {
-		t.Errorf("with discardStreamLine as the tee, the watcher transcript must record all 341 fixture lines, got %d", recorded)
+		t.Errorf("with discardStreamLine as the tee, the watcher transcript must still record all 341 fixture lines, got %d", recorded)
 	}
 
-	// Control: a forwarding tee — the old per-line t.Log wiring the runners are
-	// moving OFF of. It reaches every fixture line, so reverting either runner's
-	// newStreamWatcher(...) tee from discardStreamLine back to a forwarding sink
-	// re-floods stdout with the whole 341-line stream: the bloat this task removes.
-	teeCounter := &emitCounter{}
-	drainFixture(t, teeCounter.tee)
-	if teeCounter.seen() != 341 {
-		t.Errorf("control: a forwarding tee must reach all 341 lines (the re-flood discardStreamLine prevents), got %d", teeCounter.seen())
+	// Control: a forwarding tee that DOES route each line to streamLineSink — the
+	// old per-line t.Log shape the runners moved off of. The same recorder reaches
+	// every fixture line, proving the recorder fires when the tee forwards. This is
+	// the wiring the discard assertion guards against regressing back to.
+	rec2 := &emitCounter{}
+	streamLineSink = rec2.tee
+	drainFixture(t, func(line string) { streamLineSink(line) })
+	if rec2.seen() != 341 {
+		t.Errorf("control: a forwarding tee must route all 341 lines to streamLineSink, got %d", rec2.seen())
 	}
 }
