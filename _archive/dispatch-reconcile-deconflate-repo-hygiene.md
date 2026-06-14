@@ -11,6 +11,7 @@ mod-block:
 pr: "#369"
 completed: 2026-06-14T18:50:26Z
 verdict: PASSED
+archived: 2026-06-14T18:50:26Z
 ---
 
 `dispatch reconcile` is two helpers in one coat: roster/team reconciliation AND repo git-hygiene. The repo half hardcodes the pre-flip trunk `next`, which the 2026-06-08 flip silently invalidated.
