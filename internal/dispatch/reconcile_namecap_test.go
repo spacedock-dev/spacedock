@@ -153,7 +153,7 @@ func (f *nameCapReconcileFixture) run() reconcileResult {
 		workflowDir: f.workflowDir,
 		teamName:    f.teamName,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "", nil },
@@ -182,22 +182,22 @@ func TestReconcileCappedNameResolvesArchived(t *testing.T) {
 	result := f.run()
 
 	byClass := groupDriftByClass(result.Drift)
-	as := byClass["A"]
+	as := byClass[classLingering]
 	if len(as) != 1 {
-		t.Fatalf("expected exactly 1 Class-A entry (archived only); got %d: %s",
+		t.Fatalf("expected exactly 1 lingering entry (archived only); got %d: %s",
 			len(as), formatDrift(result.Drift))
 	}
 	a := as[0]
 	if a.Name != f.archivedName {
-		t.Errorf("Class-A name=%q, want archived capped name %q", a.Name, f.archivedName)
+		t.Errorf("lingering name=%q, want archived capped name %q", a.Name, f.archivedName)
 	}
 	// Resolution must recover the archived entity's REAL slug from the id-prefix,
 	// not the active sibling's slug.
 	if a.Slug != longSlug {
-		t.Errorf("Class-A slug=%q, want %q (id-prefix mis-resolved?)", a.Slug, longSlug)
+		t.Errorf("lingering slug=%q, want %q (id-prefix mis-resolved?)", a.Slug, longSlug)
 	}
 	if a.Slug == longSlugShare {
-		t.Errorf("Class-A mis-resolved to the active sibling slug %q", longSlugShare)
+		t.Errorf("lingering mis-resolved to the active sibling slug %q", longSlugShare)
 	}
 }
 
@@ -212,8 +212,8 @@ func TestReconcileCappedNameNoFalseClassA(t *testing.T) {
 	result := f.run()
 
 	for _, d := range result.Drift {
-		if d.Class == "A" && d.Name == f.activeName {
-			t.Errorf("active sibling's capped name %q falsely classified Class-A: %+v",
+		if d.Class == classLingering && d.Name == f.activeName {
+			t.Errorf("active sibling's capped name %q falsely classified lingering: %+v",
 				f.activeName, d)
 		}
 	}

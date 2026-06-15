@@ -212,7 +212,7 @@ func (f *reconcileFixture) run() reconcileResult {
 		workflowDir: f.workflowDir,
 		teamName:    f.teamName,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh: func(pr string) (string, error) {
@@ -252,132 +252,140 @@ func TestReconcileFiveClasses(t *testing.T) {
 	}
 
 	byClassAll := groupDriftByClass(result.Drift)
-	for _, class := range []string{"A", "B", "C", "D", "E"} {
+	for _, class := range driftClasses {
 		if len(byClassAll[class]) == 0 {
 			t.Errorf("expected at least one class %s drift entry; got: %s",
 				class, formatDrift(result.Drift))
 		}
 	}
 
-	// AC-1 wants one entry per class; L1-M1 splits A into two disjoint cases
-	// (archived vs active-status=done), so A has TWO entries by design here.
+	// AC-1: no emitted class is a bare single A-E letter — the rename dropped the
+	// letters for the descriptive names asserted throughout this test.
+	for _, d := range result.Drift {
+		if isBareLetterClass(d.Class) {
+			t.Errorf("emitted class %q is a bare A-E letter; expected a descriptive name: %+v", d.Class, d)
+		}
+	}
+
+	// AC-1 wants one entry per class; L1-M1 splits lingering into two disjoint
+	// cases (archived vs active-status=done), so it has TWO entries by design here.
 	asByName := map[string]driftItem{}
-	for _, a := range byClassAll["A"] {
+	for _, a := range byClassAll[classLingering] {
 		asByName[a.Name] = a
 	}
 	if len(asByName) != 2 {
-		t.Errorf("expected 2 A entries (archived + active-status=done); got %d: %s",
-			len(asByName), formatDrift(byClassAll["A"]))
+		t.Errorf("expected 2 lingering entries (archived + active-status=done); got %d: %s",
+			len(asByName), formatDrift(byClassAll[classLingering]))
 	}
-	// Archived-branch A entry — Reason must mention "archived".
+	// Archived-branch lingering entry — Reason must mention "archived".
 	aArchived, ok := asByName["spacedock-ensign-release-notes-local-summary-implementation"]
 	if !ok {
 		t.Errorf("missing A entry for archived release-notes-local-summary; got names: %v",
 			keysOfDriftMap(asByName))
 	} else {
 		if aArchived.Slug != "release-notes-local-summary" {
-			t.Errorf("archived A.slug=%q", aArchived.Slug)
+			t.Errorf("archived lingering.slug=%q", aArchived.Slug)
 		}
 		if !strings.Contains(aArchived.Reason, "archived") {
-			t.Errorf("archived A.reason=%q, want substring 'archived'", aArchived.Reason)
+			t.Errorf("archived lingering.reason=%q, want substring 'archived'", aArchived.Reason)
 		}
 	}
-	// Active-status=done branch A entry (L1-M1) — Reason must mention
+	// Active-status=done branch lingering entry (L1-M1) — Reason must mention
 	// "status=done" (distinct token from "archived" so an injected regression
 	// that disables the active-status=done emit block is caught here).
 	aActiveDone, ok := asByName["spacedock-ensign-terminal-not-yet-archived-implementation"]
 	if !ok {
-		t.Errorf("missing A entry for active terminal-not-yet-archived; got names: %v",
+		t.Errorf("missing lingering entry for active terminal-not-yet-archived; got names: %v",
 			keysOfDriftMap(asByName))
 	} else {
 		if aActiveDone.Slug != "terminal-not-yet-archived" {
-			t.Errorf("active-done A.slug=%q", aActiveDone.Slug)
+			t.Errorf("active-done lingering.slug=%q", aActiveDone.Slug)
 		}
 		if !strings.Contains(aActiveDone.Reason, "status=done") {
-			t.Errorf("active-done A.reason=%q, want substring 'status=done'", aActiveDone.Reason)
+			t.Errorf("active-done lingering.reason=%q, want substring 'status=done'", aActiveDone.Reason)
 		}
 		if strings.Contains(aActiveDone.Reason, "archived") {
-			t.Errorf("active-done A.reason=%q, must NOT mention 'archived' (the two branches must remain distinguishable in output)",
+			t.Errorf("active-done lingering.reason=%q, must NOT mention 'archived' (the two branches must remain distinguishable in output)",
 				aActiveDone.Reason)
 		}
 	}
 
-	bs := byClassAll["B"]
+	bs := byClassAll[classSuperseded]
 	if len(bs) != 1 {
-		t.Errorf("expected 1 B entry; got %d: %s", len(bs), formatDrift(bs))
+		t.Errorf("expected 1 superseded entry; got %d: %s", len(bs), formatDrift(bs))
 	}
 	if len(bs) > 0 {
 		b := bs[0]
 		if b.Slug != "cohort" || b.Stage != "ideation" {
-			t.Errorf("B {slug=%q stage=%q}, want {cohort ideation}", b.Slug, b.Stage)
+			t.Errorf("superseded {slug=%q stage=%q}, want {cohort ideation}", b.Slug, b.Stage)
 		}
 		// The loser is the unsuffixed (=cycle 1) name; the winner is cycle2.
 		if b.Name != "spacedock-ensign-cohort-ideation" {
-			t.Errorf("B.name=%q, want spacedock-ensign-cohort-ideation (loser)", b.Name)
+			t.Errorf("superseded.name=%q, want spacedock-ensign-cohort-ideation (loser)", b.Name)
 		}
 		if !strings.Contains(b.Reason, "spacedock-ensign-cohort-ideation-cycle2") {
-			t.Errorf("B.reason=%q, want winner cycle2 named", b.Reason)
+			t.Errorf("superseded.reason=%q, want winner cycle2 named", b.Reason)
 		}
 	}
 
-	// L1-M2: exactly ONE C entry — pr-merged only. pr-open (gh=OPEN) must NOT
-	// emit C (MERGED conjunct check); pr-merged-done (status=done) must NOT
-	// emit C (status!=done conjunct check). The exact-Reason check tightens
+	// L1-M2: exactly ONE un-advanced-pr entry — pr-merged only. pr-open (gh=OPEN)
+	// must NOT emit it (MERGED conjunct check); pr-merged-done (status=done) must
+	// NOT emit it (status!=done conjunct check). The exact-Reason check tightens
 	// the assertion beyond the prior "contains 'merged'" substring.
-	cs := byClassAll["C"]
+	cs := byClassAll[classUnadvancedPR]
 	if len(cs) != 1 {
-		t.Errorf("expected exactly 1 C entry (pr-merged only); got %d: %s",
+		t.Errorf("expected exactly 1 un-advanced-pr entry (pr-merged only); got %d: %s",
 			len(cs), formatDrift(cs))
 	}
 	if len(cs) > 0 {
 		c := cs[0]
 		if c.Slug != "pr-merged" || c.PR != "42" {
-			t.Errorf("C {slug=%q pr=%q}, want {pr-merged 42}", c.Slug, c.PR)
+			t.Errorf("un-advanced-pr {slug=%q pr=%q}, want {pr-merged 42}", c.Slug, c.PR)
 		}
 		const wantCReason = "PR merged but status=implementation"
 		if c.Reason != wantCReason {
-			t.Errorf("C.reason=%q, want exact %q", c.Reason, wantCReason)
+			t.Errorf("un-advanced-pr.reason=%q, want exact %q", c.Reason, wantCReason)
 		}
 	}
 	for _, c := range cs {
 		if c.Slug == "pr-open" {
-			t.Errorf("pr-open (gh=OPEN) must NOT emit C drift; got %+v", c)
+			t.Errorf("pr-open (gh=OPEN) must NOT emit un-advanced-pr drift; got %+v", c)
 		}
 		if c.Slug == "pr-merged-done" {
-			t.Errorf("pr-merged-done (status=done) must NOT emit C drift; got %+v", c)
+			t.Errorf("pr-merged-done (status=done) must NOT emit un-advanced-pr drift; got %+v", c)
 		}
 	}
 
-	ds := byClassAll["D"]
+	ds := byClassAll[classStaleBranch]
 	if len(ds) != 1 {
-		t.Errorf("expected 1 D entry; got %d", len(ds))
+		t.Errorf("expected 1 stale-branch entry; got %d", len(ds))
 	}
 	if len(ds) > 0 {
 		d := ds[0]
 		if d.Slug != "yaml-parser-migration" {
-			t.Errorf("D.slug=%q", d.Slug)
+			t.Errorf("stale-branch.slug=%q", d.Slug)
 		}
 		if d.Behind <= 0 {
-			t.Errorf("D.behind=%d, want > 0", d.Behind)
+			t.Errorf("stale-branch.behind=%d, want > 0", d.Behind)
 		}
 		if !strings.Contains(d.Worktree, "yaml-parser-migration") {
-			t.Errorf("D.worktree=%q", d.Worktree)
+			t.Errorf("stale-branch.worktree=%q", d.Worktree)
 		}
 	}
 
-	es := byClassAll["E"]
+	es := byClassAll[classLocalMainDrift]
 	if len(es) != 1 {
-		t.Errorf("expected 1 E entry; got %d", len(es))
+		t.Errorf("expected 1 local-main-drift entry; got %d", len(es))
 	}
 	if len(es) > 0 {
 		e := es[0]
 		if e.Ahead <= 0 {
-			t.Errorf("E.ahead=%d, want > 0", e.Ahead)
+			t.Errorf("local-main-drift.ahead=%d, want > 0", e.Ahead)
 		}
 		// main is ahead/unpushed (and origin/next bumped → diverged): report-only,
 		// the reason must NEVER prescribe a destructive reset.
 		if strings.Contains(strings.ToLower(e.Reason), "reset") {
-			t.Errorf("E.reason=%q must NOT contain 'reset' (report-only contract)", e.Reason)
+			t.Errorf("local-main-drift.reason=%q must NOT contain 'reset' (report-only contract)", e.Reason)
 		}
 	}
 }
@@ -410,28 +418,30 @@ func TestReconcileFlipReclassifies(t *testing.T) {
 	after := f.run()
 	foundA := 0
 	for _, d := range after.Drift {
-		if d.Class == "A" && d.Name == "spacedock-ensign-alive-implementation" {
+		if d.Class == classLingering && d.Name == "spacedock-ensign-alive-implementation" {
 			foundA++
 		}
 	}
 	if foundA != 1 {
-		t.Errorf("after flip: expected 1 A entry for alive, got %d. drift=%s",
+		t.Errorf("after flip: expected 1 lingering entry for alive, got %d. drift=%s",
 			foundA, formatDrift(after.Drift))
 	}
-	// The original archived entity's A entry still fires too.
+	// The original archived entity's lingering entry still fires too.
 	origA := 0
 	for _, d := range after.Drift {
-		if d.Class == "A" && d.Slug == "release-notes-local-summary" {
+		if d.Class == classLingering && d.Slug == "release-notes-local-summary" {
 			origA++
 		}
 	}
 	if origA != 1 {
-		t.Errorf("original A entry missing after flip; drift=%s", formatDrift(after.Drift))
+		t.Errorf("original lingering entry missing after flip; drift=%s", formatDrift(after.Drift))
 	}
 }
 
 // TestReconcileIncludeScope confirms --include scopes the sweep — passing only
-// "A,B" emits only class-A/B entries.
+// the lingering/superseded names emits only those classes' entries. It drives
+// runReconcile so the descriptive-name --include vocabulary (parseInclude) is on
+// the exercised path, not just the resolved map.
 func TestReconcileIncludeScope(t *testing.T) {
 	if !hasGit(t) {
 		t.Skip("git not available")
@@ -442,7 +452,7 @@ func TestReconcileIncludeScope(t *testing.T) {
 		workflowDir: f.workflowDir,
 		teamName:    f.teamName,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh: func(pr string) (string, error) {
@@ -458,8 +468,30 @@ func TestReconcileIncludeScope(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	for _, d := range result.Drift {
-		if d.Class != "A" && d.Class != "B" {
-			t.Errorf("--include=A,B emitted %s drift: %+v", d.Class, d)
+		if d.Class != classLingering && d.Class != classSuperseded {
+			t.Errorf("--include=%s,%s emitted %s drift: %+v", classLingering, classSuperseded, d.Class, d)
+		}
+	}
+}
+
+// TestReconcileIncludeVocabulary (AC-3) pins parseInclude's accepted vocabulary
+// to the descriptive names: each descriptive name is accepted (resolves to its
+// own class only), and a bare A-E letter is rejected as an unknown token.
+func TestReconcileIncludeVocabulary(t *testing.T) {
+	for _, name := range driftClasses {
+		got, err := parseInclude(name)
+		if err != nil {
+			t.Errorf("parseInclude(%q) returned error %v; descriptive names must be accepted", name, err)
+			continue
+		}
+		if !got[name] || len(got) != 1 {
+			t.Errorf("parseInclude(%q) = %v; want exactly that one class", name, got)
+		}
+	}
+	// A bare A-E letter is no longer a valid token.
+	for _, letter := range []string{"A", "B", "C", "D", "E"} {
+		if _, err := parseInclude(letter); err == nil {
+			t.Errorf("parseInclude(%q) accepted a bare A-E letter; the vocabulary is the descriptive set", letter)
 		}
 	}
 }
@@ -485,7 +517,9 @@ func TestReconcileMissingWorkflowDir(t *testing.T) {
 	}
 }
 
-// TestReconcileUsageError covers exit 2 paths (missing --workflow-dir, bad --include).
+// TestReconcileUsageError covers exit 2 paths (missing --workflow-dir, bad
+// --include). The bad-token case (AC-3) drives a bare `A` — which is no longer a
+// valid class — and asserts the error names the descriptive set, not A-E.
 func TestReconcileUsageError(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := runReconcile([]string{}, &stdout, &stderr)
@@ -494,9 +528,18 @@ func TestReconcileUsageError(t *testing.T) {
 	}
 	stdout.Reset()
 	stderr.Reset()
-	code = runReconcile([]string{"--workflow-dir", "/tmp", "--include", "X"}, &stdout, &stderr)
+	code = runReconcile([]string{"--workflow-dir", "/tmp", "--include", "A"}, &stdout, &stderr)
 	if code != 2 {
 		t.Errorf("bad --include exit=%d, want 2", code)
+	}
+	msg := stderr.String()
+	for _, name := range driftClasses {
+		if !strings.Contains(msg, name) {
+			t.Errorf("bad --include error %q must name descriptive class %q", msg, name)
+		}
+	}
+	if strings.Contains(msg, "A,B,C,D,E") {
+		t.Errorf("bad --include error %q still advertises the A-E letter set", msg)
 	}
 }
 
@@ -621,8 +664,14 @@ func hasGit(t *testing.T) bool {
 	return err == nil
 }
 
+// isBareLetterClass reports whether s is a bare single uppercase A-E letter —
+// the opaque class form the rename retired. AC-1 asserts no emitted class is one.
+func isBareLetterClass(s string) bool {
+	return len(s) == 1 && s[0] >= 'A' && s[0] <= 'E'
+}
+
 // groupDriftByClass groups drift items by their Class field, allowing
-// multi-entry classes (used by the L1-M1 fixture which now has two A entries).
+// multi-entry classes (used by the L1-M1 fixture which now has two lingering entries).
 func groupDriftByClass(drift []driftItem) map[string][]driftItem {
 	out := map[string][]driftItem{}
 	for _, d := range drift {

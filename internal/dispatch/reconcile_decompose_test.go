@@ -119,17 +119,17 @@ func TestParseIncludeRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("empty include: %v", err)
 	}
-	for _, c := range []string{"A", "B", "C", "D", "E"} {
+	for _, c := range driftClasses {
 		if !got[c] {
 			t.Errorf("empty include should enable %s", c)
 		}
 	}
-	subset, err := parseInclude("A,B")
+	subset, err := parseInclude(classLingering + "," + classSuperseded)
 	if err != nil {
-		t.Fatalf("A,B include: %v", err)
+		t.Fatalf("%s,%s include: %v", classLingering, classSuperseded, err)
 	}
-	if !subset["A"] || !subset["B"] || subset["C"] || subset["D"] || subset["E"] {
-		t.Errorf("A,B include wrong: %#v", subset)
+	if !subset[classLingering] || !subset[classSuperseded] || subset[classUnadvancedPR] || subset[classStaleBranch] || subset[classLocalMainDrift] {
+		t.Errorf("%s,%s include wrong: %#v", classLingering, classSuperseded, subset)
 	}
 	if _, err := parseInclude("Z"); err == nil {
 		t.Errorf("Z include should error")

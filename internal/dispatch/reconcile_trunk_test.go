@@ -33,31 +33,31 @@ func TestReconcileTrunkFromConfig(t *testing.T) {
 
 	byClass := groupDriftByClass(result.Drift)
 
-	// Class-D: the stale worktree is behind origin/ftrunk.
-	ds := byClass["D"]
+	// stale-branch: the stale worktree is behind origin/ftrunk.
+	ds := byClass[classStaleBranch]
 	if len(ds) != 1 {
-		t.Fatalf("expected 1 D entry against origin/%s; got %d: %s",
-			trunk, len(ds), formatDrift(byClass["D"]))
+		t.Fatalf("expected 1 stale-branch entry against origin/%s; got %d: %s",
+			trunk, len(ds), formatDrift(byClass[classStaleBranch]))
 	}
 	if ds[0].Slug != "yaml-parser-migration" {
-		t.Errorf("D.slug=%q, want yaml-parser-migration", ds[0].Slug)
+		t.Errorf("stale-branch.slug=%q, want yaml-parser-migration", ds[0].Slug)
 	}
 	if ds[0].Behind <= 0 {
-		t.Errorf("D.behind=%d, want > 0 (behind origin/%s)", ds[0].Behind, trunk)
+		t.Errorf("stale-branch.behind=%d, want > 0 (behind origin/%s)", ds[0].Behind, trunk)
 	}
 
-	// Class-E: local main carries a commit not on origin/ftrunk, and the drift
-	// item carries the resolved trunk (AC-3) so the FO remedy is data-driven.
-	es := byClass["E"]
+	// local-main-drift: local main carries a commit not on origin/ftrunk, and the
+	// drift item carries the resolved trunk (AC-3) so the FO remedy is data-driven.
+	es := byClass[classLocalMainDrift]
 	if len(es) != 1 {
-		t.Fatalf("expected 1 E entry against origin/%s; got %d: %s",
-			trunk, len(es), formatDrift(byClass["E"]))
+		t.Fatalf("expected 1 local-main-drift entry against origin/%s; got %d: %s",
+			trunk, len(es), formatDrift(byClass[classLocalMainDrift]))
 	}
 	if es[0].Ahead <= 0 {
-		t.Errorf("E.ahead=%d, want > 0", es[0].Ahead)
+		t.Errorf("local-main-drift.ahead=%d, want > 0", es[0].Ahead)
 	}
 	if es[0].Trunk != trunk {
-		t.Errorf("E.trunk=%q, want %q (the resolved trunk from the fixture README — AC-3)",
+		t.Errorf("local-main-drift.trunk=%q, want %q (the resolved trunk from the fixture README — AC-3)",
 			es[0].Trunk, trunk)
 	}
 }
@@ -137,7 +137,7 @@ func (f *trunkFixture) run() reconcileResult {
 		workflowDir: f.workflowDir,
 		teamName:    f.teamName,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "", nil },

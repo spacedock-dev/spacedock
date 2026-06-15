@@ -41,7 +41,7 @@ func (f *reconcileFixture) runBare(sessionID string) (reconcileResult, string, i
 		teamName:    "", // bare: no --team-name
 		sessionID:   sessionID,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh: func(pr string) (string, error) {
@@ -92,7 +92,7 @@ func TestReconcileForeignTeamNeverPoisonsRoster(t *testing.T) {
 		t.Fatalf("bare reconcile exit=%d, want 0 (degrade is not an error)", code)
 	}
 	for _, d := range result.Drift {
-		if d.Class == "A" || d.Class == "B" || d.Class == "C" {
+		if d.Class == classLingering || d.Class == classSuperseded || d.Class == classUnadvancedPR {
 			t.Errorf("foreign team poisoned roster class %s: %+v", d.Class, d)
 		}
 	}
@@ -135,12 +135,12 @@ func TestReconcileSessionMatchedDiscovery(t *testing.T) {
 	}
 	aFor := 0
 	for _, d := range result.Drift {
-		if d.Class == "A" && d.Slug == "release-notes-local-summary" {
+		if d.Class == classLingering && d.Slug == "release-notes-local-summary" {
 			aFor++
 		}
 	}
 	if aFor != 1 {
-		t.Errorf("session-matched roster: want exactly 1 Class A for the archived ensign; got %d\n%s",
+		t.Errorf("session-matched roster: want exactly 1 lingering entry for the archived ensign; got %d\n%s",
 			aFor, formatDrift(result.Drift))
 	}
 }
@@ -162,7 +162,7 @@ func TestReconcileExplicitTeamNameIgnoresSession(t *testing.T) {
 		teamName:    f.teamName, // explicit
 		sessionID:   "totally-unrelated-session",
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh: func(pr string) (string, error) {
@@ -184,7 +184,7 @@ func TestReconcileExplicitTeamNameIgnoresSession(t *testing.T) {
 		t.Errorf("explicit team_name=%q, want %q", result.TeamName, f.teamName)
 	}
 	byClass := groupDriftByClass(result.Drift)
-	for _, class := range []string{"A", "B", "C"} {
+	for _, class := range []string{classLingering, classSuperseded, classUnadvancedPR} {
 		if len(byClass[class]) == 0 {
 			t.Errorf("explicit path with non-matching session id must still emit class %s; got none", class)
 		}
@@ -205,13 +205,13 @@ func TestReconcileDegradeEmitsGitClasses(t *testing.T) {
 		t.Fatalf("bare reconcile exit=%d, want 0", code)
 	}
 	byClass := groupDriftByClass(result.Drift)
-	if len(byClass["D"]) == 0 {
-		t.Errorf("degrade must still emit Class D (stale branch); got none\n%s", formatDrift(result.Drift))
+	if len(byClass[classStaleBranch]) == 0 {
+		t.Errorf("degrade must still emit stale-branch (git class); got none\n%s", formatDrift(result.Drift))
 	}
-	if len(byClass["E"]) == 0 {
-		t.Errorf("degrade must still emit Class E (stale local main); got none\n%s", formatDrift(result.Drift))
+	if len(byClass[classLocalMainDrift]) == 0 {
+		t.Errorf("degrade must still emit local-main-drift (git class); got none\n%s", formatDrift(result.Drift))
 	}
-	for _, class := range []string{"A", "B", "C"} {
+	for _, class := range []string{classLingering, classSuperseded, classUnadvancedPR} {
 		if len(byClass[class]) != 0 {
 			t.Errorf("degrade must suppress class %s; got %s", class, formatDrift(byClass[class]))
 		}
@@ -244,7 +244,7 @@ func TestReconcileDegradeExitAndNote(t *testing.T) {
 		teamName:    "team-does-not-exist",
 		sessionID:   currentSessionID,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "OPEN", nil },
@@ -274,7 +274,7 @@ func TestReconcileGateSuppressesEvenWithPopulatedRoster(t *testing.T) {
 		teamName:    "",
 		sessionID:   currentSessionID,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true},
+		include:     map[string]bool{classLingering: true, classSuperseded: true, classUnadvancedPR: true, classStaleBranch: true, classLocalMainDrift: true},
 		// Degrade sentinel (empty TeamName) that nonetheless carries a roster.
 		roster: func(home, teamName, sessionID string) (claudeteam.ReconcileTeamState, error) {
 			return claudeteam.ReconcileTeamState{
@@ -297,14 +297,14 @@ func TestReconcileGateSuppressesEvenWithPopulatedRoster(t *testing.T) {
 		t.Fatalf("decode: %v", err)
 	}
 	for _, d := range result.Drift {
-		if d.Class == "A" || d.Class == "B" || d.Class == "C" {
+		if d.Class == classLingering || d.Class == classSuperseded || d.Class == classUnadvancedPR {
 			t.Errorf("rosterTrusted gate leaked class %s despite empty TeamName sentinel: %+v", d.Class, d)
 		}
 	}
 	// The git/filesystem classes must still emit — the gate suppresses roster
 	// classes only, not the whole sweep.
 	byClass := groupDriftByClass(result.Drift)
-	if len(byClass["D"]) == 0 && len(byClass["E"]) == 0 {
-		t.Errorf("gate must still emit git classes D/E on degrade; got none\n%s", formatDrift(result.Drift))
+	if len(byClass[classStaleBranch]) == 0 && len(byClass[classLocalMainDrift]) == 0 {
+		t.Errorf("gate must still emit git classes stale-branch/local-main-drift on degrade; got none\n%s", formatDrift(result.Drift))
 	}
 }

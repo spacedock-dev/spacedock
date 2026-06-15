@@ -23,7 +23,7 @@ func runClassE(t *testing.T, home, repoRoot, workflowDir, teamName string) drift
 		workflowDir: workflowDir,
 		teamName:    teamName,
 		repoRoot:    repoRoot,
-		include:     map[string]bool{"E": true},
+		include:     map[string]bool{classLocalMainDrift: true},
 		home:        home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "", nil },
@@ -36,8 +36,8 @@ func runClassE(t *testing.T, home, repoRoot, workflowDir, teamName string) drift
 	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
 		t.Fatalf("decode: %v\nstdout=%s", err, stdout.String())
 	}
-	if len(result.Drift) != 1 || result.Drift[0].Class != "E" {
-		t.Fatalf("want exactly one E drift; got %s", formatDrift(result.Drift))
+	if len(result.Drift) != 1 || result.Drift[0].Class != classLocalMainDrift {
+		t.Fatalf("want exactly one local-main-drift entry; got %s", formatDrift(result.Drift))
 	}
 	return result.Drift[0]
 }
@@ -234,7 +234,7 @@ func (f *deOwnershipFixture) runD(t *testing.T, teamName string) map[string]drif
 		workflowDir: f.workflowDir,
 		teamName:    teamName,
 		repoRoot:    f.repoRoot,
-		include:     map[string]bool{"D": true},
+		include:     map[string]bool{classStaleBranch: true},
 		home:        f.home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "", nil },
@@ -249,7 +249,7 @@ func (f *deOwnershipFixture) runD(t *testing.T, teamName string) map[string]drif
 	}
 	bySlug := map[string]driftItem{}
 	for _, d := range result.Drift {
-		if d.Class == "D" {
+		if d.Class == classStaleBranch {
 			bySlug[d.Slug] = d
 		}
 	}
