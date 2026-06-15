@@ -12,7 +12,7 @@ This loads the generic team lifecycle — deferred team-tool ToolSearch hop, Tea
 
 In single-entity mode, skip team creation. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
 
-When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32`. The startup boot read is an FO-internal read; consume it as JSON: `status --boot --json` returns one object with the keys `command`, `mods`, `id_style`, `next_id`, `min_prefix` (present only for `sd-b32`), `orphans`, `pr_state`, `dispatchable`, `team_state` — every value a string. For `sd-b32`, call `status --next-id --id-seed "{slug-or-title}"` and optionally pass `--id-actor` so the SHA-derived candidate includes creation context. SD-B32 candidates are full stored IDs, not a reservation; call again immediately before writing the entity. For `slug`, derive the slug from the title and leave `id` blank.
+Task filing (the `id_style` read, the `status --boot --json` shape, `--next-id` for `sequential`/`sd-b32`, the candidate-drift caveat, slug-blank ids) is in the boot-resident core's `## ID Styles`, Startup step 5, and `## FO Write Scope`.
 
 ## Spawn Call (Agent)
 
