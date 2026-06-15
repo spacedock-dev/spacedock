@@ -102,31 +102,28 @@ func TestLiveEnsignCycle(t *testing.T) {
 		t.Fatalf("live cycle failed waiting for the ensign dispatch to open: %v", err)
 	}
 
-	// Wait, TEAM-AGNOSTICALLY, for the entity to reach its FULL on-disk terminal
+	// Wait, TEAM-AGNOSTICALLY, for the entity to reach its on-disk terminal
 	// end-state. This is the team-independent barrier that replaces the team-only
-	// teardown-marker grade: the FO terminalizes (implementation→done), records a
-	// verdict, and path-scoped-commits the entity in BOTH modes. The barrier requires
-	// EVERY durable fact the end-state assertions below check — entity locatable,
-	// `status: done`, a SET `verdict:`, AND a path-scoped commit — so it does NOT
-	// return mid-terminalize. This matters because the FO's terminalize is spread
-	// across turns, and in TEAM mode it tends to land `status: done` + the commit
-	// FIRST and the `verdict:` a turn or two LATER (the merge/finalize ceremony runs
-	// over several turns); a barrier keyed only on status+commit would return in that
-	// window, the test would read the entity before the verdict landed, and the
-	// deferred poller.kill() would reap the FO mid-finalize — a team-only flake on
-	// the verdict check (observed: count=3 sonnet, the lone team run failed
-	// "missing verdict" while both bare runs passed). Requiring the verdict in the
-	// barrier closes that window: the FO is allowed to finish writing it before the
-	// test snapshots and kills. expectCondition drains the stream each poll
-	// (liveness; the budget resets on activity) while checking the filesystem,
-	// bounded by the same roomy silence budget — a live terminalize+finalize turn can
-	// be quiet between stream lines. On the deferred poller.kill() path the
-	// subprocess is reaped; the end-state on disk is final.
+	// teardown-marker grade: the FO terminalizes (implementation→done) and
+	// path-scoped-commits the entity in BOTH modes. The barrier requires the
+	// MODE-INVARIANT durable facts only — entity locatable, `status: done`, AND a
+	// path-scoped commit. It deliberately does NOT require a set `verdict:`: a live
+	// `verdict:` is NOT mode-invariant — bare runs reliably write it, but team-mode
+	// finalize non-deterministically OMITS it (the FO reaches the bounded-teardown
+	// terminus without ever writing it; observed 1/3 team runs across two count=3
+	// sonnet sets), so gating on it re-introduces a team-vs-bare verdict split — the
+	// very thing this entity dissolves. The verdict gate is dropped here (captain's
+	// Option A, 2026-06-15) → the team-mode verdict-omission is tracked as the
+	// follow-up task `team-mode-verdict-omission` (reeppr990pyzzaejmbnyrvt7), not
+	// silently relaxed. expectCondition drains the stream each poll (liveness; the
+	// budget resets on activity) while checking the filesystem, bounded by the same
+	// roomy silence budget — a live terminalize turn can be quiet between stream
+	// lines. On the deferred poller.kill() path the subprocess is reaped; the
+	// end-state on disk is final.
 	terminalized := func() bool {
 		body, _, found := locateEntity(root, "make-it-work")
 		return found &&
 			frontmatterField.MatchString(body) &&
-			verdictSet.MatchString(body) &&
 			someCommitNamesOnly(t, root, "make-it-work")
 	}
 	if err := watcher.expectCondition(terminalized, quietBudgetDispatchClose, "entity terminalized"); err != nil {
@@ -169,15 +166,14 @@ func TestLiveEnsignCycle(t *testing.T) {
 	}
 
 	// (b) the FO finalized the cycle: the entity carries the terminal frontmatter
-	// `status: done` and a SET (non-empty) `verdict:`. The exact verdict word is FO
-	// judgment that varies by model (sonnet wrote `verdict: done`, opus wrote
-	// `verdict: passed`) — both completed the full cycle — so the live test gates
-	// on the verdict being decided, not on a specific word.
+	// `status: done`. This is MODE-INVARIANT — both team and bare drives land it.
+	// The `verdict:` field is NOT asserted here: team-mode finalize omits it
+	// non-deterministically (captain's Option A, 2026-06-15 — verdict-presence
+	// coverage moved to the follow-up task `team-mode-verdict-omission`,
+	// reeppr990pyzzaejmbnyrvt7). Gating on it re-splits the smoke by mode, which is
+	// exactly the team-vs-bare coin this entity dissolves.
 	if !frontmatterField.MatchString(entity) {
 		t.Errorf("entity missing terminal `status: done`\n%s", entity)
-	}
-	if !verdictSet.MatchString(entity) {
-		t.Errorf("entity missing a finalized (non-empty) `verdict:`\n%s", entity)
 	}
 
 	// (c) SOME commit in the history is path-scoped to the entity (names only the

@@ -73,10 +73,15 @@ func TestLiveEnsignCycleTeamTeardown(t *testing.T) {
 	// The terminal end-state must still be PRESENT and CORRECT on disk — the marker
 	// alone is not proof the cycle completed, only that the FO reached the teardown
 	// terminus. A team FO archives BEFORE the teardown hold, so by the time the
-	// marker is emitted the entity is terminalized + archived. These are the same
-	// team-INDEPENDENT end-state checks the default cycle runs; asserting them here
-	// too keeps the team path honest (a team that emits the marker but left the
-	// entity un-terminalized is a real regression).
+	// marker is emitted the entity is terminalized + archived. These are the
+	// MODE-INVARIANT end-state checks the default cycle runs. The `verdict:` field is
+	// NOT asserted: team-mode finalize omits it non-deterministically — THIS scenario
+	// is the team-FORCED one, so it is exactly where a verdict assertion would flake
+	// (the earlier forced-team pass that happened to carry a verdict was luck, not
+	// reliability). Verdict-presence coverage moved to the follow-up task
+	// `team-mode-verdict-omission` (reeppr990pyzzaejmbnyrvt7) per the captain's
+	// Option A (2026-06-15); the team-only coverage THIS test guards is the
+	// TERMINAL_TEARDOWN_BOUNDED marker graded above.
 	entity, where, found := locateEntity(root, "make-it-work")
 	if !found {
 		t.Fatalf("entity make-it-work not found in place or under _archive/ after the team-teardown cycle")
@@ -87,9 +92,6 @@ func TestLiveEnsignCycleTeamTeardown(t *testing.T) {
 	}
 	if !frontmatterField.MatchString(entity) {
 		t.Errorf("entity missing terminal `status: done`\n%s", entity)
-	}
-	if !verdictSet.MatchString(entity) {
-		t.Errorf("entity missing a finalized (non-empty) `verdict:`\n%s", entity)
 	}
 	if !someCommitNamesOnly(t, root, "make-it-work") {
 		t.Errorf("no path-scoped commit named only the entity in the team-teardown cycle history")
