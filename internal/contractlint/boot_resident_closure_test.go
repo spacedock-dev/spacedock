@@ -10,16 +10,39 @@ import (
 	"testing"
 )
 
-// bootResidentBodies are the two contract bodies the FO loader inlines/reads at
-// boot: the slimmed shared core and the Claude runtime adapter. AC-4 walks these
-// (NOT a SKILL.md, which the existing TestUserSkillReferenceClosureResolves reads)
-// because the loader reads the bodies directly, and only the bodies name the
-// deferred load-points the boot core defers to (a sibling reference path, a bare
-// skill invocation, a canonical mod file).
+// bootResidentBodies are the contract bodies the FO loader inlines/reads at boot:
+// the slimmed shared core and each host's runtime adapter. AC-4 walks these (NOT a
+// SKILL.md, which the existing TestUserSkillReferenceClosureResolves reads) because
+// the loader reads the bodies directly, and only the bodies name the deferred
+// load-points the boot core defers to (a sibling reference path, a bare skill
+// invocation, a canonical mod file). The codex and pi adapters join the Claude one
+// so the closure walk catches a dead-end merge/dispatch-seam reference on every
+// host, not only Claude.
 var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
 	filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 }
+
+// hostRuntimeAdapters are the three per-host runtime adapters. Each one must, at its
+// terminal-merge and first-dispatch seams, name a merge reference and a dispatch
+// reference that resolve to a real file — so a codex or pi FO reaching its terminal
+// stage follows a seam pointer to an existing ceremony, not a dead-end the Claude
+// adapter alone avoids today.
+var hostRuntimeAdapters = []string{
+	filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
+}
+
+// mergeCoreRefRe / dispatchCoreRefRe match a host adapter naming its host-neutral
+// merge / dispatch core reference. The seam may name the shared core directly
+// (fo-merge-core.md / fo-dispatch-core.md) or its own claude-fo-merge.md /
+// claude-fo-dispatch.md residue that in turn names the core; either is a resolving
+// merge/dispatch entry from the adapter's seam.
+var mergeCoreRefRe = regexp.MustCompile(`references/(?:fo-merge-core|claude-fo-merge)\.md`)
+var dispatchCoreRefRe = regexp.MustCompile(`references/(?:fo-dispatch-core|claude-fo-dispatch)\.md`)
 
 // bodyReferenceRe matches a sibling reference read-path named in a contract body
 // (the dispatch/merge references the split defers to), the same path shape the
@@ -153,5 +176,46 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 	if !sawReal {
 		t.Fatal("control: the real load-point (using-claude-team) was not resolved — the discriminator has nothing to contrast the dangling case against")
+	}
+}
+
+// TestEachHostNamesResolvingMergeAndDispatchReference is the AC-1 reference-closure
+// guard: from EACH host's runtime adapter (Claude, codex, pi), the named merge
+// reference and dispatch reference resolve to a real file on disk. The independent
+// source is the reference graph + the filesystem, exactly as
+// TestBootResidentDeferredLoadPointsResolve binds — this is the structural-existence
+// half: not only "is a named reference dangling" but "does each host NAME a merge
+// and a dispatch entry at all." Before the host-neutral cores exist, codex and pi
+// name neither, so this test dead-ends RED for them; after extraction every host's
+// seam names a resolving fo-merge-core / fo-dispatch-core (directly, or via its own
+// claude-fo-* residue). It owns "does the host's named merge/dispatch reference
+// os.Stat clean"; the four-ceremony-anchor content check is AC-2's
+// block-in-core-XOR-adapter, kept off the file/graph side of the quarantine line.
+func TestEachHostNamesResolvingMergeAndDispatchReference(t *testing.T) {
+	root := repoRoot(t)
+	foSkillDir := filepath.Join("skills", "first-officer")
+	for _, adapter := range hostRuntimeAdapters {
+		data, err := os.ReadFile(filepath.Join(root, adapter))
+		if err != nil {
+			t.Fatalf("read host runtime adapter %s: %v", adapter, err)
+		}
+		body := string(data)
+		for _, kind := range []struct {
+			label string
+			re    *regexp.Regexp
+		}{
+			{"merge", mergeCoreRefRe},
+			{"dispatch", dispatchCoreRefRe},
+		} {
+			named := kind.re.FindString(body)
+			if named == "" {
+				t.Errorf("%s names no %s reference — a FO on this host reaching its %s boundary follows the boot core's deferred-module pointer to a host seam that dead-ends", adapter, kind.label, kind.label)
+				continue
+			}
+			resolved := filepath.Join(foSkillDir, named)
+			if _, err := os.Stat(filepath.Join(root, resolved)); err != nil {
+				t.Errorf("%s names %s reference %q which resolves to %s — but no such file exists on disk: %v", adapter, kind.label, named, resolved, err)
+			}
+		}
 	}
 }

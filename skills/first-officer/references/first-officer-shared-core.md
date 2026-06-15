@@ -91,7 +91,7 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 ## Dispatch (deferred module)
 
-The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, team creation, standing-teammate injection (`spawn-standing-all`), reuse conditions, the event loop, and the context-budget probe — lives in the runtime's dispatch reference, lazily loaded at the first team-mode dispatch. The runtime adapter names the load point (read alongside `Skill(skill="spacedock:using-claude-team")` at the first `Agent()` that uses a `team_name`). A greet-and-stop boot never reads it.
+The host-neutral dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, standing-teammate injection (`spawn-standing-all`), reuse conditions, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`, lazily loaded at the first team-mode dispatch. The runtime adapter names its dispatch seam (team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep) and is read alongside the core at the first dispatch. A greet-and-stop boot never reads either.
 
 ## Completion and Gates
 
@@ -122,7 +122,7 @@ If the stage is gated:
 
 ## Merge and Cleanup (deferred module)
 
-The terminal merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, the mod-block enforcement, and the bounded terminal teardown (the `TERMINAL_TEARDOWN_BOUNDED` marker) — lives in the runtime's merge reference, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter names the merge reference. A boot, dispatch, or gate that never terminalizes never reads it.
+The host-neutral terminal merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, and the mod-block enforcement — lives in `references/fo-merge-core.md`, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter names its merge seam, which supplies the host's concrete terminal teardown (step 10 — on Claude the bounded `TERMINAL_TEARDOWN_BOUNDED` teardown), read alongside the core. A boot, dispatch, or gate that never terminalizes never reads either.
 
 ## State Management
 
