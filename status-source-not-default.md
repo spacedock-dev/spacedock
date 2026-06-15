@@ -10,6 +10,7 @@ score: 0.35
 worktree:
 issue:
 sprint: 0204-structured-reads
+sprint-readiness: ready
 ---
 
 The `spacedock status` listing table always renders the SOURCE column, the heaviest per-row field. Drop it from the default render so the common overview is cheap; surface it only when a caller explicitly asks. Reduces the recurring boot/overview read-cost the FO pays every session.

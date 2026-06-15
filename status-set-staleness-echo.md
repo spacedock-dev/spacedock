@@ -10,6 +10,7 @@ score: 0.33
 worktree:
 issue:
 sprint: 0204-structured-reads
+sprint-readiness: ready
 ---
 
 A `Read` of an entity file followed by a `status --set` on the same file re-emits the whole file as cache-write tokens (the Claude Code file-staleness safety net). The FO contract works around it today (Grep-over-Read; trust `--set` stdout), but the echo still fires whenever a Read before a set is unavoidable. Kill the echo, or prove it is harness-inherent and document the avoidance.

@@ -10,6 +10,7 @@ score: 0.30
 worktree:
 issue:
 sprint: 0204-structured-reads
+sprint-readiness: ready
 ---
 
 CI logs are read whole into context for triage when the agent needs only pass/fail, the exit code, and the failing tests/lines. Give the FO/ensign a triage summary they can read instead of the 143KB log, while keeping the full artifact reachable when the summary is not enough.

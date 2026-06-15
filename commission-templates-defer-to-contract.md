@@ -10,6 +10,7 @@ score: 0.33
 worktree:
 issue:
 sprint: 0204-structured-reads
+sprint-readiness: ready
 ---
 
 The three shipped commission templates duplicate universal rules that already live in the FO/ensign operating contract. Restructure them the way the dev README is being slimmed: lead with the workflow's outcome, defer universal rules to the contract, and keep only each shape's workflow-specific rules in a dedicated slot. Every new commissioned workflow then inherits leaner, non-stale scaffolding.
