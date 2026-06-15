@@ -1,14 +1,15 @@
 ---
 id: 7ea4knxzvf3s4vve2zvr4ka0
 title: Determine + document the intended team-vs-bare dispatch mode for headless `-p` runs
-status: backlog
+status: ideation
 source: "0203-T3 surfaced (2026-06-14): TestLiveEnsignCycle flaked on a sonnet team-vs-bare coin-flip; captain steer: \"the important thing is determining the expected and intended behavior and document\""
-started:
+started: 2026-06-15T03:31:26Z
 completed:
 verdict:
 score:
 worktree:
 issue:
+sprint: 0203-fo-efficiency
 ---
 
 The FO's team-vs-bare dispatch-mode choice for a **headless `-p` (non-interactive)** run is under-specified in the contract, so models coin-flip — which makes `TestLiveEnsignCycle` (the legacy full-cycle live smoke) intermittently fail. The deliverable is NOT to paper over it by accepting either mode; it is to **determine the intended behavior and document it** so the FO is deterministic and the test asserts the intended mode.
