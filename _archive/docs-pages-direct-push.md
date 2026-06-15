@@ -11,6 +11,7 @@ mod-block:
 pr: "#379"
 completed: 2026-06-15T03:34:08Z
 verdict: PASSED
+archived: 2026-06-15T03:34:08Z
 ---
 
 The `docs` workflow's `deploy` job uses `actions/deploy-pages@v4`, which fails `HttpError: Not Found (404)` on every push to main because the repo's Pages source is not set to GitHub Actions. The strict `build` step passes; only the Pages-API publish fails. Replace the deploy-API path with a direct push of the built site to `gh-pages`.
