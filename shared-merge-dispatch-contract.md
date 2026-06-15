@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-shared-merge-dispatch-contract
 issue:
 id: 2yfsf01jf15fmts7xt7w71m2
 sprint: 0203-fo-efficiency
-mod-block:
+mod-block: merge:pr-merge
 pr:
 ---
 
