@@ -58,3 +58,19 @@ The other live scenarios' bare/team handling beyond what this determination touc
 ## Notes
 
 Fast-follow surfaced by T3 (`fo-contract-prose-audit`); not a v0.20.3 blocker (T3's own behavior-preservation ACs passed on opus+codex). Captain may pull into a sprint or keep as fast-follow.
+
+## Design determination (captain, 2026-06-14)
+
+The intended behavior is settled — it is a **driving-mode** question, not just team-vs-bare. Collapse to two modes keyed off the single `-p`/interactive signal; gate-resolution is an explicit opt-in, NOT a property of the mode.
+
+- **Interactive (no `-p`):** boot → greet → **STOP for input** (a human steers). Unchanged.
+- **Headless `-p` (default):** boot → **drive all dispatchable work** → stop at the **first gate OR terminal** → **exit, reporting gate status.** No greet-stop. The FO does **not** decide gates (a gate is a human-owned decision; with no decision-maker present it is the natural stop boundary). This dissolves the auto-resolve-vs-blocked contradiction: default `-p` never resolves gates.
+- **Headless `-p --auto-approve` (opt-in):** the FO is **given the conn** — resolves gates from the report verdict (PASS→advance; REJECT-with-`feedback-to`→bounce within the 3-cycle cap; REJECT-without-`feedback-to`/ambiguity/escalation→still stop+report) and drives to **end state (terminal).** This is the path the live-e2e harness sets to exercise a full feedback cycle, and a deliberate "drive it to done" operator choice.
+
+**What this removes:** the greet-vs-drive coin-flip (in `-p` the FO always drives — deterministic), the `antiShutdownOverride` band-aid (it exists only to fight the greet-and-stop default under `-p`), and the fuzzy single-entity-mode special case (it is just `-p` scoped to a named entity; `--auto-approve` for the full-cycle test path). The contract boot step shrinks to one rule: interactive greets-and-stops; headless drives-to-gate-and-exits; `--auto-approve` drives-to-terminal.
+
+**Killing the flake:** `TestLiveEnsignCycle`'s "FO subprocess exited (code=0) before TeamCreate matched" dies because `-p` now requires driving to first dispatch (no coin-flip). Separately, raise the **1-minute no-progress quiet budget** on the dispatch-close step (`live_test.go`) — a legit live ensign turn exceeds 1m (the second, independent flake signature: "dispatch close did not close within 1m0s").
+
+**Team-vs-bare under this model:** orthogonal to the driving mode. `-p` drives regardless of team/bare; the team-survival fragility under `-p` (the upstream premature-teardown bug) is handled by the dispatch mechanism, not by greet-stopping. If team mode stays too fragile under `-p`, headless can dispatch bare — but that is a robustness choice, not the mode determination.
+
+**ACs (ideation pins; behavioral, not prose-grep):** a live drive proving (a) `-p` with no `--auto-approve` drives to a gate and exits with gate status (no greet-stop, no gate decision); (b) `-p --auto-approve` drives a full PASS/REJECT cycle to terminal; (c) interactive greets-and-stops; plus the contract simplification (band-aid + special-case removed) and the quiet-budget bump. The live harness sets `--auto-approve` and asserts the dispatch→terminal cycle, not the `isTeamCreate` coin.
