@@ -1,7 +1,7 @@
 ---
 id: 7ea4knxzvf3s4vve2zvr4ka0
 title: Determine + document the intended team-vs-bare dispatch mode for headless `-p` runs
-status: validation
+status: implementation
 source: "0203-T3 surfaced (2026-06-14): TestLiveEnsignCycle flaked on a sonnet team-vs-bare coin-flip; captain steer: \"the important thing is determining the expected and intended behavior and document\""
 started: 2026-06-15T03:31:26Z
 completed:
@@ -266,6 +266,7 @@ Credential now VALID (cleared the prior 401 — direct API ping HTTP 200; the de
 ### Feedback Cycles
 
 - Cycle 1 (validation, REJECTED): AC-1's coin-flip is RELOCATED, not removed. The harness retarget (8291e6fc) swapped the FIRST watched step `isTeamCreate`→`expectDispatchClose` but left the TERMINAL step `expectTerminalTeardownGrade` (`live_test.go:207`), which greens ONLY on the `TERMINAL_TEARDOWN_BOUNDED` marker — emitted ONLY in TEAM teardown. A bare-mode headless drive (which the captain's determination at entity-line 75 explicitly sanctions) emits no marker → "exited before emitting the terminal-status marker" → red. So the smoke is still gated on a team-mode-only signal. Fix direction: make the smoke team-AGNOSTIC — gate on dispatch-close + the team-independent end-state checks (archived entity, `verdict=PASSED`, path-scoped commit — all of which the bare run already satisfied) — and move the team-teardown grade into a TEAM-FORCED scenario. Adversarial edit that the guards SHOULD have caught and did NOT: a legitimate bare-mode drive — the suite reds on correct behavior, which is the hole. Same latent defect in AC-2's `TestLiveStandingResidency` (`isTeamCreate` assertion at line 94 with an unforced `drivePrompt`).
+- Cycle 1 routing (FO, captain-approved 2026-06-14): REJECT upheld at the validation gate; bounced to implementation in the existing worktree. This cycle is HARNESS-ONLY — the contract prose (d3f0196d) is validated-clean (detached adversarial audit passed) and stays untouched. Captain-agreed fix scope: (1) make `TestLiveEnsignCycle` team-AGNOSTIC — gate the default path on dispatch-close + the team-independent end-state (archived, `verdict=PASSED`, path-scoped commit), drop the team-only `expectTerminalTeardownGrade`/`TERMINAL_TEARDOWN_BOUNDED` from the default assertion; (2) move the team-teardown grade into a TEAM-FORCED scenario so AC-2 team-teardown coverage survives; (3) fix AC-2's `TestLiveStandingResidency` unforced-team coin; (4) FOLD IN AC-a — add a gated-fixture live scenario (default `-p` no-conn drives to a gate and exits with gate status), register it in `runtime-live-e2e.yml` `-run`, run green once; (5) re-run `-count=3 × {sonnet,opus}` green before re-validation.
 
 ### Summary
 
