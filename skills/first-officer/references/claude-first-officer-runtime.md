@@ -36,7 +36,7 @@ For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Comple
 
 ## Entity-Body Inspection
 
-See `## Probe and Ideation Discipline` in the shared core for the Grep-over-Read rule. The Claude Code runtime is where the Read-then-Bash-mutation staleness echo fires — avoid a full-file Read for targeted section lookups and trust `status --set` stdout (`field: old -> new`) for mutation narration.
+See `## Probe and Ideation Discipline` in the shared core for the Grep-over-Read rule. The Claude Code runtime is where the Read-then-Bash-mutation staleness echo fires — avoid a full-file Read for targeted section lookups (use the shared core's `status --read` section-read upgrade) and trust `status --set` stdout (`field: old -> new`) for mutation narration.
 
 ## Filing New Entities
 
