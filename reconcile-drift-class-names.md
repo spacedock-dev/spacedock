@@ -173,3 +173,12 @@ Note — what the audit did NOT find (these are clean): residual bare A-E class 
 ### Summary
 
 The rename behavior is correct and well-tested: AC-1 and AC-3 are genuine behavioral tests over real `Reconcile()` output and pass, no bare A-E letter survives in any user-visible surface, and the helper's emitted enum, the `driftClasses` var, and all contract step-0 sites agree at rest. The AC-2 binding works for the JSON-shape token (proven RED on drift in both directions). REJECTED on one material gap surfaced by the detached adversarial audit: AC-2 claims to bind all of step-0 ("neither side can rename a class"), and the entity explicitly names the action bullets and one-line summary as bound surfaces, but the lint only reads the first `"class":"…"` JSON token — a class rename in an action bullet or the summary line passes AC-2 and all behavioral tests (two demonstrated dodges). The fix is bounded: extend the contract-side extractor to enumerate from the bullets and summary too, so every step-0 site the AC claims is actually bound. Helper-side extractor and all behavioral tests need no change.
+
+### Feedback Cycles
+
+#### Cycle 1 (validation REJECTED, 2026-06-15)
+
+- **Stage:** validation → routed back to implementation (same worktree, reused implementation ensign).
+- **Finding (detached adversarial audit, material):** the AC-2 contractlint binding under-delivers its own stated scope. The entity claims AC-2 binds the full contract step-0 class set ("neither side can rename a class"), and names the per-class action bullets and the one-line summary as bound surfaces, but the lint's contract-side extractor reads only the first `"class":"…"` JSON-shape token. Two demonstrated dodges pass AC-2 AND every behavioral test: a class rename in an action bullet, and a class rename in the summary line.
+- **Not in scope of the gap:** the rename behavior itself is correct (AC-1/AC-3 are genuine behavioral tests over real `Reconcile()` output and pass; no bare A-E letter survives any user-visible surface; `go test ./...` green; the JSON-token binding reds on drift in both directions, reproduced by mutation).
+- **Fix routed:** extend the AC-2 contract-side extractor to enumerate class names from all three step-0 surfaces (the JSON-shape token, the per-class action bullets, and the one-line summary), so every surface the AC claims is actually bound. Helper-side extractor and behavioral tests unchanged. Re-verify by reproducing both dodges and confirming each now REDs the lint.
