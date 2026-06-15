@@ -36,3 +36,14 @@ Ideation/implementation fills in. Sketch: no test asserts README content by subs
 ## Test plan
 
 The replacement test goes RED on broken Codex install/launch behavior (not on a paraphrase of the README).
+
+## FO note — concrete trigger (2026-06-14)
+
+The dev-README slim (commit `a9e669ae`, FO-direct, unpushed local `main`) relocated the Runtime-Live-CI / Codex-watchdog content out of `docs/dev/README.md` into `docs/runtime-live-ci.md`, which EXPOSED two prose-grep doc-contract guards this task targets:
+
+- `internal/ensigncycle/shared_scenarios_docs_test.go` — `TestSharedScenarioDocsContract`
+- `internal/ensigncycle/codex_collab_wait_watchdog_test.go` — `TestCodexForegroundWaitWatchdogDocsContract`
+
+Both assert literal clause strings are present in `docs/dev/README.md` (e.g. `### Shared runtime scenarios`, `Codex foreground-wait watchdog`, `codexScenarioRunners()`); they now fail (clause count 0) because the prose moved. Same README-substring anti-pattern this task removes — surfaced by the 0.20.4 `e6a` implementation, which found them red at its branch base.
+
+Blocking relationship: this breakage blocks BOTH the README-slim push AND any 0.20.4 `e6a` merge (e6a's base includes `a9e669ae`). Resolution (this task's call): retarget the guards to `docs/runtime-live-ci.md`, or convert them to bind an independent source per the proof policy — not a relocated prose-grep.
