@@ -1,7 +1,7 @@
 ---
 id: 48wktz0b51941chr9c8kfask
 title: Restructure the shipped commission templates — lead-with-the-end + defer universal rules to the FO/ensign contract + a workflow-specific-rules slot
-status: ideation
+status: implementation
 source: captain (2026-06-14) — apply the dev-README slim ethos (lead-with-the-end + defer-to-contract; the README "move-3" work) to the SHIPPED commission templates. A templates assessment this session found development.md / experiment.md / refinement.md restate universal rules inline (proof discipline in development.md's "Recommended practices" ~L111-137; the Inputs/Outputs/Good/Bad stage-semantics block repeated per stage across all three). This is the template half descoped from rzp. Adjacent to but distinct from ey (which ports the proof-policy RULE into the contract + templates); this task makes the templates DEFER universal rules to the contract and keep only workflow-specific rules. 0.20.4 read-cost theme (every commissioned workflow inherits the scaffolding).
 started: 2026-06-15T05:35:19Z
 completed:
