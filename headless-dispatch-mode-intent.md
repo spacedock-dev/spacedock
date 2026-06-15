@@ -300,3 +300,18 @@ The OPEN verdict-gate decision from the FAILED item above is RESOLVED by the cap
 Offline `go test ./...` + `go vet -tags live` GREEN after the change. `verdictSet` regex retained (still exercised by liveassert_unit_test.go).
 
 CONFIRMING count=3 sonnet under the Option-A gate: PENDING a benchmark-token re-refresh. The first attempt fast-failed all 3 in ~2.5s with `authentication_failed`/401 — the live session re-rotated the OAuth token server-side mid-run (the file is the same 22:40 copy; the server revoked it), NOT a behavioral failure of the Option-A change. Pinged team-lead for an on-demand re-refresh (their standing offer). On a fresh token: re-run count=3 sonnet (expect all-green), optional small opus smoke, then signal Done. opus matrix deferred to re-validation per cost guidance.
+
+### Confirming run under the Option-A gate (2026-06-15)
+
+count=3 sonnet on the default cycle under the Option-A gate (verdict dropped): **3/3 GREEN** (246.95s, 141.06s, 156.95s; package `ok`; EXIT=0; zero auth failures). TeamCreate=1 across the three — one run drove TEAM, two BARE, and ALL THREE PASSED, including the team run that previously flaked ONLY on the now-ungated `verdict:`. This is the count=3 stability confirmation the dispatch's PASS criterion asked for: the team-vs-bare coin no longer splits the verdict on the dispatch invariant OR the mode-invariant end-state.
+
+(A first attempt fast-failed all 3 in ~2.5s on a re-rotated OAuth token — `authentication_failed`/401 before any FO work, NOT a behavioral failure; team-lead re-refreshed the benchmark-token on demand and the re-run is the all-green above.)
+
+FINAL GREEN TALLY (all sonnet, live, this cycle):
+- TestLiveEnsignCycle (team-agnostic default): bare-PASS x4 (incl. cycle-1's failing-bare case now PASSING) + the Option-A count=3 = 3/3 incl. a team run. The relocated coin (expectTerminalTeardownGrade) is removed.
+- TestLiveEnsignCycleTeamTeardown (team-FORCED): PASS (TeamCreate, archived, TERMINAL_TEARDOWN_BOUNDED emitted) — AC-2 team-teardown coverage preserved.
+- TestLiveStandingResidencyInjectsCommOfficer: PASS (comm-officer in the live roster) — AC-2 residency, unforced coin fixed.
+- TestLiveDefaultHeadlessStopsAtGate (AC-a): PASS (drove to the review gate, reported gate status, stopped) — registered in runtime-live-e2e.yml -run.
+- Offline `go test ./...` + `go vet -tags live`: GREEN throughout.
+
+opus: a count=1 smoke under the Option-A gate PASSED (266.05s, TeamCreate=1 — a TEAM drive, zero auth failures, package `ok`/EXIT=0). So the new gate greens on BOTH models, including a team-mode opus drive. The full both-model matrix is left to the independent re-validator per cost guidance.
