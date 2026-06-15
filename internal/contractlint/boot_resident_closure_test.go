@@ -16,8 +16,7 @@ import (
 // the loader reads the bodies directly, and only the bodies name the deferred
 // load-points the boot core defers to (a sibling reference path, a bare skill
 // invocation, a canonical mod file). The codex and pi adapters join the Claude one
-// so the closure walk catches a dead-end merge/dispatch-seam reference on every
-// host, not only Claude.
+// so the closure walk catches a dead-end reference on every host, not only Claude.
 var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
 	filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"),
@@ -25,24 +24,20 @@ var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 }
 
-// hostRuntimeAdapters are the three per-host runtime adapters. Each one must, at its
-// terminal-merge and first-dispatch seams, name a merge reference and a dispatch
-// reference that resolve to a real file — so a codex or pi FO reaching its terminal
-// stage follows a seam pointer to an existing ceremony, not a dead-end the Claude
-// adapter alone avoids today.
-var hostRuntimeAdapters = []string{
-	filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"),
-	filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
-	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
+// foReferenceCores are the two host-neutral cores the boot-resident shared core names
+// at its dispatch and merge load points. Because every host loads the shared core at
+// boot, naming the cores there is what makes the ceremony REACHABLE on codex and pi —
+// no per-host re-naming is required. Each core must exist on disk (the closure walk
+// over bootResidentBodies resolves them once shared-core names them) and carry its
+// ceremony anchors.
+var foReferenceCores = map[string][]string{
+	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
+		"## Merge and Cleanup", "### Ship-Local Ceremony", "### Worktree removal safety", "## Mod-Block Enforcement",
+	},
+	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
+		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
+	},
 }
-
-// mergeCoreRefRe / dispatchCoreRefRe match a host adapter naming its host-neutral
-// merge / dispatch core reference. The seam may name the shared core directly
-// (fo-merge-core.md / fo-dispatch-core.md) or its own claude-fo-merge.md /
-// claude-fo-dispatch.md residue that in turn names the core; either is a resolving
-// merge/dispatch entry from the adapter's seam.
-var mergeCoreRefRe = regexp.MustCompile(`references/(?:fo-merge-core|claude-fo-merge)\.md`)
-var dispatchCoreRefRe = regexp.MustCompile(`references/(?:fo-dispatch-core|claude-fo-dispatch)\.md`)
 
 // bodyReferenceRe matches a sibling reference read-path named in a contract body
 // (the dispatch/merge references the split defers to), the same path shape the
@@ -179,42 +174,45 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 }
 
-// TestEachHostNamesResolvingMergeAndDispatchReference is the AC-1 reference-closure
-// guard: from EACH host's runtime adapter (Claude, codex, pi), the named merge
-// reference and dispatch reference resolve to a real file on disk. The independent
-// source is the reference graph + the filesystem, exactly as
-// TestBootResidentDeferredLoadPointsResolve binds — this is the structural-existence
-// half: not only "is a named reference dangling" but "does each host NAME a merge
-// and a dispatch entry at all." Before the host-neutral cores exist, codex and pi
-// name neither, so this test dead-ends RED for them; after extraction every host's
-// seam names a resolving fo-merge-core / fo-dispatch-core (directly, or via its own
-// claude-fo-* residue). It owns "does the host's named merge/dispatch reference
-// os.Stat clean"; the four-ceremony-anchor content check is AC-2's
-// block-in-core-XOR-adapter, kept off the file/graph side of the quarantine line.
-func TestEachHostNamesResolvingMergeAndDispatchReference(t *testing.T) {
+// TestHostNeutralCoresResolveAndCarryCeremony is the AC-1 reachability guard: the two
+// host-neutral cores the boot-resident shared core names at its dispatch and merge
+// load points exist on disk AND carry their ceremony anchors. Reachability for codex
+// and pi rides on the SINGLE core-naming in first-officer-shared-core.md — every host
+// loads the shared core at boot, so a core it names there is reachable on every host;
+// no per-adapter re-naming is required (the per-adapter restatement only added
+// redundancy). The closure half — that the shared core's named references resolve to
+// real files — is TestBootResidentDeferredLoadPointsResolve walking bootResidentBodies
+// (which includes the shared core). This test adds the content half: each core carries
+// its four ceremony anchors, so "reachable" means "reaches a real ceremony," not an
+// empty file. The independent source is the filesystem + the anchor set; a core
+// renamed/emptied/dropped fails.
+func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	root := repoRoot(t)
-	foSkillDir := filepath.Join("skills", "first-officer")
-	for _, adapter := range hostRuntimeAdapters {
-		data, err := os.ReadFile(filepath.Join(root, adapter))
+	if len(foReferenceCores) == 0 {
+		t.Fatal("no host-neutral cores declared — the reachability check would pass vacuously")
+	}
+	// The shared core must NAME each core at a load point — that single naming is what
+	// makes the ceremony reachable on every host.
+	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
+	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
+	if err != nil {
+		t.Fatalf("read shared core %s: %v", sharedCore, err)
+	}
+	sharedBody := string(sharedData)
+	for corePath, anchors := range foReferenceCores {
+		base := filepath.Base(corePath)
+		if !strings.Contains(sharedBody, base) {
+			t.Errorf("%s does not name %s — the boot-resident core is the sole core-namer, so an unnamed core is unreachable on every host", sharedCore, base)
+		}
+		data, err := os.ReadFile(filepath.Join(root, corePath))
 		if err != nil {
-			t.Fatalf("read host runtime adapter %s: %v", adapter, err)
+			t.Errorf("host-neutral core %s does not resolve on disk: %v", corePath, err)
+			continue
 		}
 		body := string(data)
-		for _, kind := range []struct {
-			label string
-			re    *regexp.Regexp
-		}{
-			{"merge", mergeCoreRefRe},
-			{"dispatch", dispatchCoreRefRe},
-		} {
-			named := kind.re.FindString(body)
-			if named == "" {
-				t.Errorf("%s names no %s reference — a FO on this host reaching its %s boundary follows the boot core's deferred-module pointer to a host seam that dead-ends", adapter, kind.label, kind.label)
-				continue
-			}
-			resolved := filepath.Join(foSkillDir, named)
-			if _, err := os.Stat(filepath.Join(root, resolved)); err != nil {
-				t.Errorf("%s names %s reference %q which resolves to %s — but no such file exists on disk: %v", adapter, kind.label, named, resolved, err)
+		for _, anchor := range anchors {
+			if !strings.Contains(body, anchor) {
+				t.Errorf("%s is missing ceremony anchor %q — the named core resolves but does not carry the ceremony, so reachability reaches an empty file", corePath, anchor)
 			}
 		}
 	}
