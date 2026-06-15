@@ -1,6 +1,6 @@
 ---
 title: Reconcile drift output carries descriptive class names instead of A-E letters
-status: implementation
+status: validation
 source: captain (2026-06-14, this session) — `spacedock dispatch reconcile` emits opaque single-letter drift classes (A-E) when the descriptive names already exist in the FO dispatch contract event-loop step-0 mapping (A=lingering, B=superseded, C=un-advanced-pr, D=stale-branch, E=local-main-drift). The letter is indirection over a name the `reason` field already states in English. Decided this session — emit the descriptive names and drop the letters; a string enum is as stable to branch on, with no machine-stability cost.
 started: 2026-06-15T05:28:02Z
 completed:
