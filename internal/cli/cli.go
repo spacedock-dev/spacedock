@@ -313,7 +313,7 @@ func newStatusCommand(ctx context.Context, env []string, dir string, stdin io.Re
 // the discovery walk-up, `new` run inside a workflow needs no --workflow-dir.
 // DisableFlagParsing keeps --folder reaching the runner intact (AC-3).
 func newNewCommand(ctx context.Context, env []string, dir string, stdin io.Reader, stdout, stderr io.Writer, runner status.Runner) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:                "new [--folder] SLUG",
 		Short:              "Create an entity from a stdin body (auto-discovers the workflow)",
 		GroupID:            "workflow",
@@ -329,6 +329,8 @@ func newNewCommand(ctx context.Context, env []string, dir string, stdin io.Reade
 			return nil
 		},
 	}
+	setNewHelp(cmd, stdout)
+	return cmd
 }
 
 // newStateCommand wires `spacedock state init|new` for split-root state-checkout

@@ -75,10 +75,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	if pipelineDir == "" && rootPath == "" {
 		if discovered, ok := DiscoverWorkflowDir(dir); ok {
 			pipelineDir = discovered
+		} else if resolved, rc := discoverWorkflowDownward(dir, stderr); rc != 0 {
+			return rc
 		} else {
-			return errExit(stderr, "no commissioned Spacedock workflow found in "+dir+
-				" — report this and stop; do NOT search the filesystem for one. "+
-				"If a workflow exists elsewhere, point at it with --workflow-dir <dir>.")
+			pipelineDir = resolved
 		}
 	}
 
@@ -487,6 +487,37 @@ func resolveMutationEntity(roots roots, ref string, stderr io.Writer) (*entity, 
 		fmt.Fprintln(stderr, e)
 	}
 	return nil, 1
+}
+
+// discoverWorkflowDownward is the no-flag fallback when the upward walk misses:
+// it scans DOWNWARD from the repo toplevel (the same scan --discover uses) for
+// commissioned workflows. Exactly one match resolves it; zero keeps the terminal
+// no-workflow message (report and stop, do NOT search); two-or-more refuses with
+// the candidate dirs and a --workflow-dir instruction, never guessing. Returns
+// (pipelineDir, 0) on the single-match success, ("", rc!=0) otherwise after
+// printing the matching diagnostic. The repo root is git rev-parse
+// --show-toplevel from dir, matching runDiscover's default root.
+func discoverWorkflowDownward(dir string, stderr io.Writer) (string, int) {
+	root := dir
+	if out, err := runGitCmd(dir, "rev-parse", "--show-toplevel"); err == nil {
+		root = strings.TrimSpace(out)
+	}
+	workflows := discoverWorkflows(root)
+	switch len(workflows) {
+	case 1:
+		return workflows[0], 0
+	case 0:
+		return "", errExit(stderr, "no commissioned Spacedock workflow found in "+dir+
+			" — report this and stop; do NOT search the filesystem for one. "+
+			"If a workflow exists elsewhere, point at it with --workflow-dir <dir>.")
+	default:
+		msg := "multiple commissioned Spacedock workflows found under " + root +
+			"; pass --workflow-dir <dir> to pick one:"
+		for _, w := range workflows {
+			msg += "\n  " + w
+		}
+		return "", errExit(stderr, msg)
+	}
 }
 
 // runDiscover handles --discover. Matches the --discover branch of main().
