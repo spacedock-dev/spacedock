@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-headless-dispatch-mode-intent
 issue:
 sprint: 0203-fo-efficiency
-mod-block: merge:pr-merge
+mod-block:
 pr: "#381"
 ---
 
