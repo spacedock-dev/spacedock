@@ -7,7 +7,7 @@ sprint: 0203-fo-efficiency
 id: j1ys5wh6wprhy8t8jd98z7g6
 worktree: .worktrees/spacedock-ensign-docs-pages-direct-push
 started: 2026-06-15T03:17:20Z
-mod-block: merge:pr-merge
+mod-block:
 pr: "#379"
 ---
 
