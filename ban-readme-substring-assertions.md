@@ -1,17 +1,17 @@
 ---
 id: 5h0chdcad99dq0z50qzwf1za
 title: Replace README-substring (prose-grep) test assertions — prove the seam, not the prose
-status: backlog
+status: ideation
 source: "captain + nb (readme-main-flip-reconciliation) reconciliation 2026-06-07 — PR #315 edits tests/test_codex_plugin_packaging.py to assert README content by substring (assert \"spacedock codex\" in readme). Not on next today; when #315's content lands on main it must be replaced. Same proof-policy class as #309/4q and the survey signal-correction work."
-started:
+started: 2026-06-15T01:55:42Z
 completed:
 verdict:
 score:
 worktree:
 issue:
-sprint: 019x-pre-flip-cleanups
+sprint: 0203-fo-efficiency
 group: proof-policy
-sprint-readiness: defer
+sprint-readiness:
 ---
 
 A test that asserts README content by substring (`assert "spacedock codex" in readme`) proves only that the text is present — the banned prose-grep tautology. When PR #315's content lands on `main`, replace that assertion with a behavioral one.
