@@ -95,3 +95,24 @@ Exact final wording is pinned at implementation against the resolved file lines;
 ### Summary
 
 Reframed the captain's lean: option (a) is viable but NOT via the upward walk-up the dispatch implied — `new` already walks up and can't reach a nested workflow; the real fix reuses `status --discover`'s downward `discoverWorkflows` scan as a fallback (Fix A), gated to a single match with an ambiguity error otherwise. Also root-caused the `new --help` menu bug to cobra's inherited `SetHelpFunc` (Fix C). Both small, independent, behavior-tested; contract examples stay correct as written plus one multi-workflow clause. Riskiest mechanism (downward-scan fallback) exercised first against a freshly built binary; AC-1 reds against current source.
+
+## Stage Report: implementation
+
+- DONE: Fix A (behavioral) — no-flag miss branch falls back to discoverWorkflows(git-toplevel); 1 match resolves, 0 keeps terminal no-workflow msg, ≥2 refuses naming candidates + --workflow-dir; scoped to no-flag path only.
+  `discoverWorkflowDownward` in native_runner.go, wired at the `DiscoverWorkflowDir(dir)` !ok branch (commit 3bbf3698). Explicit --workflow-dir/PIPELINE_DIR/--root still short-circuit unchanged.
+- DONE: AC-1 from-root single-workflow `new` SUCCEEDS (exit 0 + `created:` + file under nested entity dir; red against current source first).
+  TestNewFromRootSingleWorkflowSucceeds in native_new_from_root_test.go; confirmed red (no-workflow error) before fix, green after.
+- DONE: AC-2 multi-workflow refusal naming candidates, then --workflow-dir succeeds.
+  TestNewFromRootMultiWorkflowRefuses; asserts both realpath'd candidate dirs + --workflow-dir in stderr, non-zero exit, then exit 0 + created on disambiguation.
+- DONE: Fix C (help) — newNewCommand emits a per-command usage block instead of the inherited root help func.
+  setNewHelp in help.go (SetHelpFunc on the command, mirroring setSetupHelp); wired in newNewCommand (cli.go).
+- DONE: AC-3 `new --help` carries the per-command synopsis + each flag AND not the general-menu marker.
+  TestNewHelpRendersCommandUsage in new_help_test.go; asserts synopsis + 4 flags present, "Launch" header absent.
+- DONE: Doc diff — one-clause multi-workflow note appended to first-officer-shared-core.md + claude-first-officer-runtime.md.
+  Examples stay no---workflow-dir for the common single-workflow case; AC-4 anchored to AC-1/AC-2 behavior.
+- DONE: `go test ./...` green.
+  Full suite green; one transient flake (ensigncycle streamwatch replay, unrelated to this diff) passed 3/3 standalone and on re-run.
+
+### Summary
+
+Implemented Fix A (downward-scan fallback in the no-flag `new`/status path, reusing `discoverWorkflows` + `git rev-parse --show-toplevel`) and Fix C (per-command `new --help`), plus the two contract doc clauses. AC-1 reddened against current source before the fix as required; AC-1/AC-2/AC-3 are Go fixture/CLI tests via the existing dispatch/Run harnesses. The single full-suite failure was a pre-existing timing flake in `internal/ensigncycle`, not touched by this diff.
