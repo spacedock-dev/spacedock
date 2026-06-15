@@ -14,6 +14,7 @@ group: proof-policy
 sprint-readiness:
 mod-block:
 pr: "#378"
+archived: 2026-06-15T02:32:32Z
 ---
 
 A test that asserts README content by substring (`assert "spacedock codex" in readme`) proves only that the text is present — the banned prose-grep tautology. When PR #315's content lands on `main`, replace that assertion with a behavioral one.
