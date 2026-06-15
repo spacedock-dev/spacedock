@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -491,6 +492,148 @@ func TestDrainToExitKillsStalledStream(t *testing.T) {
 	}
 	if elapsed > 3*w.quietBudget {
 		t.Errorf("stall trip took %s, far beyond ~1x the %s budget — not localized", elapsed, w.quietBudget)
+	}
+}
+
+// TestExpectConditionReturnsWhenConditionBecomesTrue: expectCondition returns nil
+// once the caller's out-of-band predicate flips true, polled while the stream keeps
+// the no-progress deadline alive. The condition models the live cycle's on-disk
+// terminal end-state appearing after the dispatch closes — the watcher is oblivious
+// to WHAT the predicate checks (filesystem here, anything off-stream in general).
+func TestExpectConditionReturnsWhenConditionBecomesTrue(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+
+	var ready int32
+	go func() {
+		// Keep the stream alive (so the budget never trips) until the off-stream
+		// condition is satisfied, then flip it true.
+		time.Sleep(2 * w.pollInterval)
+		src.push(toolUseLine("Bash", `"command":"terminalizing"`))
+		time.Sleep(2 * w.pollInterval)
+		atomic.StoreInt32(&ready, 1)
+	}()
+
+	check := func() bool { return atomic.LoadInt32(&ready) == 1 }
+	if err := w.expectCondition(check, w.quietBudget, "entity terminalized"); err != nil {
+		t.Fatalf("expectCondition must return nil once the condition is satisfied; got %v", err)
+	}
+}
+
+// TestExpectConditionResetsDeadlineOnActivity: a condition that stays false well
+// past the quiet budget does NOT trip as long as the stream keeps progressing — the
+// deadline resets on every drained line, the same no-progress discipline expect and
+// drainToExit use. Once the condition flips, expectCondition returns cleanly.
+func TestExpectConditionResetsDeadlineOnActivity(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+
+	var ready int32
+	done := make(chan error, 1)
+	go func() {
+		done <- w.expectCondition(func() bool { return atomic.LoadInt32(&ready) == 1 }, w.quietBudget, "entity terminalized")
+	}()
+
+	// Drive unrelated lines past the quiet budget several times over with the
+	// condition still false; a total-stage cap would trip, the no-progress bound
+	// must not.
+	noiseEnd := time.Now().Add(4 * w.quietBudget)
+	for time.Now().Before(noiseEnd) {
+		src.push(toolUseLine("Bash", `"command":"heartbeat"`))
+		time.Sleep(w.pollInterval)
+	}
+	atomic.StoreInt32(&ready, 1)
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("a progressing stream must not trip the quiet budget before the condition; got %v", err)
+		}
+	case <-time.After(2 * w.quietBudget):
+		t.Fatal("expectCondition did not return after the condition flipped true")
+	}
+}
+
+// TestExpectConditionQuietTimeout: the stream goes silent with the condition still
+// false → expectCondition trips a stepTimeout carrying the step label (the localized
+// no-progress trip, not a total-stage cap).
+func TestExpectConditionQuietTimeout(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+
+	src.push(toolUseLine("Bash", `"command":"one line then silence"`))
+
+	start := time.Now()
+	err := w.expectCondition(func() bool { return false }, w.quietBudget, "entity terminalized")
+	elapsed := time.Since(start)
+
+	var st *stepTimeout
+	if !errors.As(err, &st) {
+		t.Fatalf("want *stepTimeout on a silent-before-condition stream, got %T: %v", err, err)
+	}
+	if st.label != "entity terminalized" {
+		t.Errorf("stepTimeout.label = %q, want %q", st.label, "entity terminalized")
+	}
+	if elapsed > 3*w.quietBudget {
+		t.Errorf("quiet trip took %s, far beyond ~1x the %s budget — not localized", elapsed, w.quietBudget)
+	}
+}
+
+// TestExpectConditionStepFailureOnEarlyExit: the subprocess exits with the condition
+// still false → stepFailure carrying the exit code + label. This is the live cycle's
+// "FO finished but the entity never terminalized" failure — a broken cycle, surfaced
+// distinctly from a silent stall.
+func TestExpectConditionStepFailureOnEarlyExit(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+
+	go func() {
+		time.Sleep(2 * w.pollInterval)
+		proc.setExited(0)
+	}()
+
+	err := w.expectCondition(func() bool { return false }, 5*time.Second, "entity terminalized")
+	var sf *stepFailure
+	if !errors.As(err, &sf) {
+		t.Fatalf("want *stepFailure when the proc exits with the condition false, got %T: %v", err, err)
+	}
+	if sf.label != "entity terminalized" {
+		t.Errorf("stepFailure.label = %q, want %q", sf.label, "entity terminalized")
+	}
+}
+
+// TestExpectConditionFinalDrainCheckWinsOverExit: when the condition becomes true at
+// the same moment the proc exits, expectCondition must do its final drain + check
+// and return nil — the match wins over the exit, the same ordering expect guarantees.
+// Models the bare-mode FO terminalizing+committing and then exiting in one beat.
+func TestExpectConditionFinalDrainCheckWinsOverExit(t *testing.T) {
+	src := &fakeLineSource{}
+	proc := &fakeProc{}
+	w := newTestWatcher(src, proc)
+
+	// Condition is already true and the proc has already exited: the loop's
+	// top-of-iteration check returns nil before it ever observes the exit.
+	if err := w.expectCondition(func() bool { return true }, w.quietBudget, "entity terminalized"); err != nil {
+		t.Fatalf("a condition already true must return nil even with the proc exited; got %v", err)
+	}
+
+	// And when the condition flips true only as the proc exits, the post-exit
+	// final check must still win.
+	src2 := &fakeLineSource{}
+	proc2 := &fakeProc{}
+	w2 := newTestWatcher(src2, proc2)
+	var ready int32
+	go func() {
+		time.Sleep(2 * w2.pollInterval)
+		atomic.StoreInt32(&ready, 1)
+		proc2.setExited(0)
+	}()
+	if err := w2.expectCondition(func() bool { return atomic.LoadInt32(&ready) == 1 }, w2.quietBudget, "entity terminalized"); err != nil {
+		t.Fatalf("a condition true at exit must win the final drain-check; got %v", err)
 	}
 }
 

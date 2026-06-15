@@ -165,18 +165,24 @@ jobs:
       - name: Set archivable CLAUDE_CONFIG_DIR
         run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/spacedock-claude-config/${{ matrix.model }}" >> "$GITHUB_ENV"
 
-      # TestLiveEnsignCycle is the full lifecycle canary; TestLiveZeroDiscoverReportsAndStops
-      # is the cheap boot-only lean-boot guard (a zero-`status --discover` fixture: the FO
-      # must report no workflow found and STOP, taking no broad filesystem sweep). Both are
-      # boot/front-door drives, so they share this step and `-run` alternation rather than a
-      # second job.
+      # TestLiveEnsignCycle is the full lifecycle canary, TEAM-AGNOSTIC: it gates on
+      # dispatch-close + the on-disk terminal end-state, so it greens whether the
+      # headless `-p` FO drove team or bare (no team-vs-bare coin). TestLiveEnsignCycleTeamTeardown
+      # FORCES team mode and keeps the TERMINAL_TEARDOWN_BOUNDED teardown-marker
+      # coverage (the team-only signal removed from the canary's default path).
+      # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
+      # a gate:true stage and EXITS reporting gate status, without resolving the gate.
+      # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
+      # zero-`status --discover` fixture: the FO reports no workflow found and STOPS,
+      # taking no broad filesystem sweep). All are boot/front-door drives, so they
+      # share this step and `-run` alternation rather than a second job.
       - name: Run live ensign cycle
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          go test -tags live -count=1 -run 'TestLiveEnsignCycle|TestLiveZeroDiscoverReportsAndStops|TestLiveStandingResidencyInjectsCommOfficer' ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+          go test -tags live -count=1 -run 'TestLiveEnsignCycle|TestLiveEnsignCycleTeamTeardown|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops|TestLiveStandingResidencyInjectsCommOfficer' ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
 
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the

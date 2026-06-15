@@ -251,6 +251,57 @@ func (w *streamWatcher) expectDispatchClose(budget time.Duration, label string) 
 	}
 }
 
+// expectCondition blocks until check() reports true, bounding the wait by the
+// same no-progress quiet budget as expect: the deadline resets on every drained
+// line, so a stage that legitimately runs for minutes never trips as long as the
+// stream keeps moving. check is a caller-supplied predicate over OUT-OF-BAND
+// state (e.g. the on-disk entity reaching its terminal frontmatter) — not over
+// stream entries — so the watcher stays oblivious to filesystem semantics while
+// the live cycle waits for a TEAM-AGNOSTIC end-state that holds whether the FO
+// drove team or bare. It still drains the stream each poll (liveness: the budget
+// resets on activity, and a partial transcript survives a hang). On a clean
+// subprocess exit it does one final drain + check so a condition that becomes
+// true exactly at exit still wins; an exit with check() still false is a
+// stepFailure (the FO finished without reaching the awaited state).
+func (w *streamWatcher) expectCondition(check func() bool, budget time.Duration, label string) error {
+	deadline := time.Now().Add(budget)
+	for {
+		if check() {
+			return nil
+		}
+		_, drained := w.drainEntries()
+		if drained > 0 {
+			deadline = time.Now().Add(budget)
+		}
+		if check() {
+			return nil
+		}
+
+		if _, exited := w.proc.poll(); exited {
+			w.drainEntries()
+			if check() {
+				return nil
+			}
+			code, _ := w.proc.poll()
+			return &stepFailure{
+				label:    label,
+				exitCode: code,
+				msg: fmt.Sprintf("FO subprocess exited (code=%d) before step %q reached its condition.\nTranscript tail:\n%s",
+					code, label, w.transcriptTail()),
+			}
+		}
+
+		if time.Now().After(deadline) {
+			return &stepTimeout{
+				label: label,
+				msg: fmt.Sprintf("step %q did not reach its condition within %s (no-progress quiet budget).\nTranscript tail:\n%s",
+					label, budget, w.transcriptTail()),
+			}
+		}
+		time.Sleep(w.pollInterval)
+	}
+}
+
 // expectExit waits up to budget for the FO subprocess to exit AFTER the last
 // watched step matched, draining any final lines. On timeout it kills the
 // subprocess and trips stepTimeout("expect_exit") so a hung claude does not

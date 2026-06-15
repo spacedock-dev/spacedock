@@ -47,6 +47,146 @@ import (
 // fatals). The chosen credential runs against a fresh empty HOME so parallel
 // `spacedock claude` invocations never collide in ~/.claude.
 func TestLiveEnsignCycle(t *testing.T) {
+	// The conn-cue drive prompt: the FO is given the conn to resolve gates from
+	// each stage report's verdict (auto-approve) so the gateless realistic-lifecycle
+	// fixture drives all the way to terminal `done`. The team-vs-bare mode is left
+	// to the FO — the assertion below is TEAM-AGNOSTIC, so either choice passes.
+	drivePrompt := "Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve). " + antiShutdownOverride
+	watcher, root := startRealisticLifecycleDrive(t, drivePrompt)
+
+	// The watch sequence asserts the dispatch→done INVARIANT, TEAM-AGNOSTICALLY —
+	// it must green whether the headless `-p` FO drove TEAM or BARE (the captain's
+	// determination sanctions a bare drive under `-p`; the team/bare choice is a
+	// robustness detail of the dispatch mechanism, orthogonal to the cycle
+	// completing). Two team-INDEPENDENT steps gate the smoke:
+	//   1. the single ensign dispatch CLOSES (backlog→done is ONE dispatch that
+	//      writes `## Stage Report: done`) — the cycle progressed past dispatch;
+	//   2. the entity reaches its on-disk TERMINAL end-state (`status: done`) —
+	//      the FO terminalized and archived it.
+	// Both hold in team AND bare mode: a bare FO exits cleanly after archiving; a
+	// team FO archives, then emits the terminal-teardown marker and HOLDS. The
+	// terminal-teardown MARKER itself is a TEAM-ONLY signal (it only fires in team
+	// teardown), so it is NOT gated here — that coverage lives in the team-FORCED
+	// TestLiveEnsignCycleTeamTeardown (live_teardown_test.go). Gating the default
+	// path on the marker is exactly the relocated coin this cycle removes: a
+	// legitimate bare drive emits no marker and would red an otherwise-correct
+	// cycle. Each step is bounded by its own no-progress quiet budget; a stalled
+	// step fails FAST and LOCALIZED.
+	//
+	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
+	// resets on ANY drained line, so it catches a SILENT hang (no new stream
+	// activity → tripped in ≤60s, localized) but NOT a "stuck-but-emitting"
+	// (chatty) hang — an FO that keeps emitting unrelated stream lines without
+	// ever reaching the next watched step. That case is deliberately left to
+	// Go's BUILT-IN default test timeout rather than an explicit long `-timeout`:
+	// the captain banned long individual timeouts, and a chatty hang is far rarer
+	// than a silent one (which the quiet budget does catch). Documenting it here
+	// keeps the trade-off explicit instead of silently absent.
+	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
+		// A dispatch that never closes is opaque on its own. The most common cause is
+		// a wrong-root boot: a CI env leak lures the FO off `root` into the real repo,
+		// it boots that workflow, finds nothing dispatchable, and greets-and-stops —
+		// so it never dispatches and dispatch-close is exactly where it now fails.
+		// Surface that explicitly — naming the expected fixture root vs the
+		// wandered-to path — so the leak fails legibly instead of as a confusing
+		// timeout.
+		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
+			t.Fatalf("live cycle failed at the ensign dispatch close due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
+		}
+		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
+	}
+
+	// Wait, TEAM-AGNOSTICALLY, for the entity to reach its FULL on-disk terminal
+	// end-state. This is the team-independent barrier that replaces the team-only
+	// teardown-marker grade: the FO terminalizes (implementation→done), archives,
+	// and path-scoped-commits the entity in BOTH modes BEFORE it either exits (bare)
+	// or holds at teardown (team). The barrier requires ALL THREE of those durable
+	// facts — entity locatable with `status: done` AND a path-scoped commit — so it
+	// does NOT return on a half-written `status: done` that races the archive/commit
+	// (the old teardown-marker barrier waited until after archive+commit because the
+	// marker fires last; this barrier reproduces that ordering team-agnostically
+	// from the durable state itself). expectCondition drains the stream each poll
+	// (liveness; the budget resets on activity) while checking the filesystem,
+	// bounded by the same roomy dispatch-close silence budget — a live
+	// terminalize+archive turn can be quiet between stream lines. On the deferred
+	// poller.kill() path the subprocess is reaped; the end-state on disk is final.
+	terminalized := func() bool {
+		body, _, found := locateEntity(root, "make-it-work")
+		return found && frontmatterField.MatchString(body) && someCommitNamesOnly(t, root, "make-it-work")
+	}
+	if err := watcher.expectCondition(terminalized, quietBudgetDispatchClose, "entity terminalized"); err != nil {
+		t.Fatalf("live cycle failed waiting for the entity to terminalize+commit (status: done + path-scoped commit): %v", err)
+	}
+
+	// Locate the entity at the REAL completed-cycle end-state. A full FO-to-done
+	// cycle ARCHIVES the terminal entity: the flat `make-it-work.md` moves to
+	// `_archive/make-it-work.md`. locateEntity searches the original path AND both
+	// archive spellings; a missing entity everywhere is a hard FAIL (the cycle
+	// neither completed nor left the entity in place).
+	entity, where, found := locateEntity(root, "make-it-work")
+	if !found {
+		t.Fatalf("entity make-it-work not found in place or under _archive/ after the cycle")
+	}
+	t.Logf("located entity at %s", where)
+
+	// The full-lifecycle END-STATE checks below (stage-report shape, terminal
+	// frontmatter, path-scoped commit) are HARD assertions. They verify the REAL
+	// completed-and-archived end-state the multi-agent FO+ensign cycle produces.
+	// They sit AFTER the team-agnostic terminalized barrier, so a run only reaches
+	// them once the entity reached `status: done` on disk — team or bare. Each
+	// gates on a PRESENT-and-CORRECT end state: a present-but-wrong end state (e.g.
+	// a malformed stage report, a wrong commit scope) is a real Spacedock
+	// regression and fails immediately — it is NEVER retried or masked.
+
+	// (a) the appended stage-report section has the protocol shape: heading, a
+	// DONE accounting marker, a Summary, and NO checkbox-bullet form.
+	if !liveStageReportHeading.MatchString(entity) {
+		t.Errorf("entity missing anchored stage-report heading\n%s", entity)
+	}
+	if !doneMarker.MatchString(entity) {
+		t.Errorf("entity missing anchored - DONE: marker\n%s", entity)
+	}
+	if !strings.Contains(entity, "### Summary") {
+		t.Errorf("entity missing ### Summary\n%s", entity)
+	}
+	if checkboxBullet.MatchString(entity) {
+		t.Errorf("entity contains forbidden checkbox-bullet stage-report markers\n%s", entity)
+	}
+
+	// (b) the FO finalized the cycle: the entity carries the terminal frontmatter
+	// `status: done` and a SET (non-empty) `verdict:`. The exact verdict word is FO
+	// judgment that varies by model (sonnet wrote `verdict: done`, opus wrote
+	// `verdict: passed`) — both completed the full cycle — so the live test gates
+	// on the verdict being decided, not on a specific word.
+	if !frontmatterField.MatchString(entity) {
+		t.Errorf("entity missing terminal `status: done`\n%s", entity)
+	}
+	if !verdictSet.MatchString(entity) {
+		t.Errorf("entity missing a finalized (non-empty) `verdict:`\n%s", entity)
+	}
+
+	// (c) SOME commit in the history is path-scoped to the entity (names only the
+	// entity), the concurrency-safe state-commit invariant at the cycle level.
+	// HEAD itself is the FO's archive/finalize commit on a full cycle, so this
+	// scans the whole log rather than pinning HEAD (the strict single-file HEAD
+	// invariant is pinned deterministically by the skeleton's
+	// TestEnsignCycleMechanicalOutputs).
+	if !someCommitNamesOnly(t, root, "make-it-work") {
+		t.Errorf("no path-scoped commit named only the entity in the cycle history")
+	}
+}
+
+// startRealisticLifecycleDrive stages the realistic ≥3-stage lifecycle fixture
+// (backlog → implementation → done, a flat entity at backlog) in a fresh git root,
+// launches the real `spacedock claude` front door headless with the given
+// drivePrompt, and returns a streamWatcher over its stream-json plus the fixture
+// root. The launch shape is identical across the team-agnostic default cycle and
+// the team-FORCED teardown cycle — only the drivePrompt differs (the conn-cue vs.
+// the team-mode cue) — so the env/fixture/launch/watcher wiring lives here once.
+// The subprocess kill is registered via t.Cleanup so the caller never orphans a
+// token-spending claude on any exit path.
+func startRealisticLifecycleDrive(t *testing.T, drivePrompt string) (*streamWatcher, string) {
+	t.Helper()
 	binary := spacedockBinary(t)
 	repoRoot := repoRoot(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
@@ -110,16 +250,16 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// leaves a partial transcript — AC-2) rather than CombinedOutput()'s zero-byte
 	// block-until-exit.
 	//
-	// drivePrompt is the host `-p` input. The anti-early-shutdown clause counters
-	// upstream claude-code bug #55297 (a regression in 2.1.126; CI runs 2.1.161):
-	// in `claude -p` with an active team the harness injects "you cannot return a
-	// response until your team is shut down … shut down before your final response"
-	// EVERY turn, and the model panic-shuts-down the team before finishing the
-	// work — the premature teardown that left the entity un-terminalized. No
-	// FO-contract prose can out-argue a per-turn harness reminder, so the override
-	// lives in the `-p` input instead. It is GENERIC — it governs shutdown TIMING
-	// only, naming no stage or task — so it does not coach workflow mechanics.
-	drivePrompt := "Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve). " + antiShutdownOverride
+	// drivePrompt is the host `-p` input. The anti-early-shutdown clause (carried by
+	// every caller via antiShutdownOverride) counters upstream claude-code bug
+	// #55297 (a regression in 2.1.126; CI runs 2.1.161): in `claude -p` with an
+	// active team the harness injects "you cannot return a response until your team
+	// is shut down … shut down before your final response" EVERY turn, and the model
+	// panic-shuts-down the team before finishing the work — the premature teardown
+	// that left the entity un-terminalized. No FO-contract prose can out-argue a
+	// per-turn harness reminder, so the override lives in the `-p` input instead. It
+	// is GENERIC — it governs shutdown TIMING only, naming no stage or task — so it
+	// does not coach workflow mechanics.
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
@@ -150,120 +290,12 @@ func TestLiveEnsignCycle(t *testing.T) {
 	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
 
 	// Kill the subprocess on ANY exit path. Only expectExit kills on its own
-	// timeout; an EARLY t.Fatalf (a TeamCreate-stall or dispatch-close-stall
-	// below) would otherwise orphan a token-spending `claude`. kill() is a no-op
-	// once the process has exited, so this is harmless on the clean path.
-	defer poller.kill()
+	// timeout; an EARLY t.Fatalf (a dispatch-close-stall below) would otherwise
+	// orphan a token-spending `claude`. kill() is a no-op once the process has
+	// exited, so this is harmless on the clean path.
+	t.Cleanup(poller.kill)
 
-	// The watch sequence asserts the dispatch→done INVARIANT, not the team-vs-bare
-	// coin: the single ensign dispatch closes (backlog→done is ONE dispatch that
-	// writes `## Stage Report: done`) → the FO runs its BOUNDED best-effort
-	// terminal teardown and emits the terminal-status MARKER then HOLDS, at which
-	// point the deferred poller.kill() reaps the subprocess. A headless `-p` FO
-	// drives to that dispatch deterministically (Startup step 9), team OR bare —
-	// so the smoke gates on the dispatch closing (the cycle progressed), not on
-	// whether a team was created. terminalize + archive are NOT watched as stream
-	// events — they are the post-exit filesystem state the end-state assertions
-	// below verify. Each step is bounded by its own no-progress quiet budget; a
-	// stalled step fails FAST and LOCALIZED.
-	//
-	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
-	// resets on ANY drained line, so it catches a SILENT hang (no new stream
-	// activity → tripped in ≤60s, localized) but NOT a "stuck-but-emitting"
-	// (chatty) hang — an FO that keeps emitting unrelated stream lines without
-	// ever reaching the next watched step. That case is deliberately left to
-	// Go's BUILT-IN default test timeout rather than an explicit long `-timeout`:
-	// the captain banned long individual timeouts, and a chatty hang is far rarer
-	// than a silent one (which the quiet budget does catch). Documenting it here
-	// keeps the trade-off explicit instead of silently absent.
-	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
-		// A dispatch that never closes is opaque on its own. The most common cause is
-		// a wrong-root boot: a CI env leak lures the FO off `root` into the real repo,
-		// it boots that workflow, finds nothing dispatchable, and greets-and-stops —
-		// so it never dispatches and dispatch-close is exactly where it now fails.
-		// Surface that explicitly — naming the expected fixture root vs the
-		// wandered-to path — so the leak fails legibly instead of as a confusing
-		// timeout.
-		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
-			t.Fatalf("live cycle failed at the ensign dispatch close due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
-		}
-		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
-	}
-	// Grade the BOUNDED best-effort terminal teardown instead of a clean exit. The
-	// live AC-1 confirmation proved a clean self-exit is impossible (the harness
-	// will not let claude -p exit while the team's members[] is populated, and the
-	// dead-but-listed member is never cleared — upstream #38116/#57681), so
-	// `exitCode==0` is unreachable and demanding it re-hangs the cycle. The PR #285
-	// live run further proved a clean post-marker HOLD is unachievable: the real
-	// sonnet FO emits the marker but RESUMES teardown on each harness re-invoke. So
-	// we grade the FIX's unique signal: the FO EMITS the contract-mandated
-	// terminal-status MARKER (a text/thinking block it authors, not a contract-Read
-	// it merely saw). The grade keys on that marker emission — NOT on the
-	// shutdown_request/TeamDelete beats both bug shapes ALSO emit, and NOT on a
-	// no-further-teardown hold the real FO cannot deliver — so it greens ONLY on
-	// the fix while redding both bug recordings. On marker emission the deferred
-	// poller.kill() reaps the still-running subprocess and the cycle PASSES. The
-	// budget stays ≤60s (the AC-1 timeout guard is unaffected).
-	if err := watcher.expectTerminalTeardownGrade(quietBudgetDefault); err != nil {
-		t.Fatalf("live cycle failed grading the terminal teardown: %v", err)
-	}
-
-	// Locate the entity at the REAL completed-cycle end-state. A full FO-to-done
-	// cycle ARCHIVES the terminal entity: the flat `make-it-work.md` moves to
-	// `_archive/make-it-work.md`. locateEntity searches the original path AND both
-	// archive spellings; a missing entity everywhere is a hard FAIL (the cycle
-	// neither completed nor left the entity in place).
-	entity, where, found := locateEntity(root, "make-it-work")
-	if !found {
-		t.Fatalf("entity make-it-work not found in place or under _archive/ after the cycle")
-	}
-	t.Logf("located entity at %s", where)
-
-	// The full-lifecycle END-STATE checks below (stage-report shape, terminal
-	// frontmatter, path-scoped commit) are HARD assertions. They verify the REAL
-	// completed-and-archived end-state the multi-agent FO+ensign cycle produces.
-	// They sit AFTER the teardown MARKER grade (the hard AC from `at`/#285), so a
-	// run only reaches them once the FO emitted the terminal-status marker. Each
-	// gates on a PRESENT-and-CORRECT end state: a present-but-wrong end state (e.g.
-	// a malformed stage report, a wrong commit scope) is a real Spacedock
-	// regression and fails immediately — it is NEVER retried or masked.
-
-	// (a) the appended stage-report section has the protocol shape: heading, a
-	// DONE accounting marker, a Summary, and NO checkbox-bullet form.
-	if !liveStageReportHeading.MatchString(entity) {
-		t.Errorf("entity missing anchored stage-report heading\n%s", entity)
-	}
-	if !doneMarker.MatchString(entity) {
-		t.Errorf("entity missing anchored - DONE: marker\n%s", entity)
-	}
-	if !strings.Contains(entity, "### Summary") {
-		t.Errorf("entity missing ### Summary\n%s", entity)
-	}
-	if checkboxBullet.MatchString(entity) {
-		t.Errorf("entity contains forbidden checkbox-bullet stage-report markers\n%s", entity)
-	}
-
-	// (b) the FO finalized the cycle: the entity carries the terminal frontmatter
-	// `status: done` and a SET (non-empty) `verdict:`. The exact verdict word is FO
-	// judgment that varies by model (sonnet wrote `verdict: done`, opus wrote
-	// `verdict: passed`) — both completed the full cycle — so the live test gates
-	// on the verdict being decided, not on a specific word.
-	if !frontmatterField.MatchString(entity) {
-		t.Errorf("entity missing terminal `status: done`\n%s", entity)
-	}
-	if !verdictSet.MatchString(entity) {
-		t.Errorf("entity missing a finalized (non-empty) `verdict:`\n%s", entity)
-	}
-
-	// (c) SOME commit in the history is path-scoped to the entity (names only the
-	// entity), the concurrency-safe state-commit invariant at the cycle level.
-	// HEAD itself is the FO's archive/finalize commit on a full cycle, so this
-	// scans the whole log rather than pinning HEAD (the strict single-file HEAD
-	// invariant is pinned deterministically by the skeleton's
-	// TestEnsignCycleMechanicalOutputs).
-	if !someCommitNamesOnly(t, root, "make-it-work") {
-		t.Errorf("no path-scoped commit named only the entity in the cycle history")
-	}
+	return watcher, root
 }
 
 // spacedockBinary resolves the built v1 binary the test shells. SPACEDOCK_BIN
