@@ -61,7 +61,18 @@ func TestLiveStandingResidencyInjectsCommOfficer(t *testing.T) {
 	gitInit(t, root)
 
 	task := "Use $spacedock:first-officer for this whole run."
-	drivePrompt := "Drive the workflow. " + antiShutdownOverride
+	// FORCE team mode. This test's load-bearing oracle is the team config.json
+	// roster — comm-officer must land in the members[] of a live team — so it
+	// REQUIRES team mode to exist at all. The prior `"Drive the workflow."` prompt
+	// was UNFORCED: it asserted isTeamCreate while leaving the team-vs-bare choice
+	// to the FO, so a legitimate headless bare drive (no team, no roster) would red
+	// the residency assertion on correct behavior — the same relocated coin the
+	// default cycle removes. Forcing team mode dissolves it: a team is guaranteed,
+	// the standing-teammate injection has a roster to land in, and isTeamCreate is a
+	// real invariant rather than a coin-flip. The cue is the same generic team-mode
+	// instruction TestLiveEnsignCycleTeamTeardown uses — it names the dispatch mode,
+	// no stage or task.
+	drivePrompt := "Run in team mode (create a team for concurrent dispatch). Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
@@ -87,18 +98,29 @@ func TestLiveStandingResidencyInjectsCommOfficer(t *testing.T) {
 	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
 	defer poller.kill()
 
-	// Watch the same proven progress beats as TestLiveEnsignCycle: TeamCreate
-	// engages teams mode, then the ensign dispatch closes. spawn-standing-all runs
-	// BEFORE the first team-mode Agent() dispatch, so by the time the dispatch has
-	// closed, the standing teammate has been injected into the team config.
+	// Watch the residency-relevant beats: TeamCreate engages teams mode, then the
+	// first ensign dispatch OPENS. The contract runs `spacedock dispatch
+	// spawn-standing-all` immediately BEFORE the first team-mode Agent() dispatch,
+	// so once that dispatch OPENS the standing teammate has already been injected
+	// into the team config — which is exactly what the roster check below verifies.
+	//
+	// The barrier is the dispatch OPEN, not its close: in this Claude Code version
+	// the team-mode ensign completion arrives as a `direct` message, not the
+	// `task_notification status=completed` anchor expectDispatchClose keys on, so a
+	// healthy run can leave the dispatch "open" by that anchor's reckoning even
+	// after the ensign finished — waiting for the close would flake at the quiet
+	// budget. The injection (the thing under test) is done at OPEN, so the open is
+	// the correct, reliable barrier here. (The full dispatch→done close is exercised
+	// team-agnostically by TestLiveEnsignCycle and in team mode by
+	// TestLiveEnsignCycleTeamTeardown; this test only needs injection to have run.)
 	if _, err := watcher.expect(isTeamCreate, quietBudgetDefault, "TeamCreate"); err != nil {
 		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
 			t.Fatalf("live residency cycle failed at TeamCreate due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
 		}
 		t.Fatalf("live residency cycle failed at TeamCreate: %v", err)
 	}
-	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
-		t.Fatalf("live residency cycle failed at the ensign dispatch close: %v", err)
+	if _, err := watcher.expect(isEnsignDispatch, quietBudgetDispatchClose, "ensign dispatch open"); err != nil {
+		t.Fatalf("live residency cycle failed waiting for the first ensign dispatch to open (spawn-standing-all runs just before it): %v", err)
 	}
 
 	// The load-bearing assertion: comm-officer is a member of the live team's

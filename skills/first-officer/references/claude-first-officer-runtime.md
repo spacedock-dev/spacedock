@@ -24,9 +24,9 @@ In team mode (TeamCreate succeeded), surface this one-line UX hint to the captai
 
 `Tip: while an ensign is running you can press Shift+Down to switch to its pane and chat with it directly, then Shift+Up to come back. Useful for steering interactive work without bouncing through me.`
 
-Track "hint emitted" in session memory so it does not repeat. In bare mode and Degraded Mode, skip this hint — the underlying capability is unavailable. In single-entity mode, skip it — there is no interactive captain to read it.
+Track "hint emitted" in session memory so it does not repeat. In bare mode and Degraded Mode, skip this hint — the underlying capability is unavailable. In any headless (`-p` / `exec`) run, skip it — no interactive captain reads it.
 
-**Single-entity mode exception:** In single-entity mode (no interactive captain), gates auto-resolve from the stage report recommendation. PASSED (all checklist items done, no failures) → approve. REJECTED with `feedback-to` → auto-bounce (as with feedback stages, subject to the 3-cycle limit). REJECTED without `feedback-to` → report failure and exit. This exception applies only in single-entity mode — in interactive sessions the guardrail is absolute.
+**Headless given-the-conn exception:** The self-approval guardrail is absolute in interactive sessions and in any headless run NOT given the conn — there, the FO stops at the gate and reports (Startup step 9). Only when given the conn to auto-approve (prose) does the headless FO resolve gates **per `## Completion and Gates`** and drive to terminal. It never infers approval from silence or from an agent message.
 
 ## Agent Back-off
 
