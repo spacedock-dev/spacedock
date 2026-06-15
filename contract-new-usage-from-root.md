@@ -10,7 +10,7 @@ score: 0.30
 worktree: .worktrees/spacedock-ensign-contract-new-usage-from-root
 issue:
 sprint: 0203-fo-efficiency
-mod-block: merge:pr-merge
+mod-block:
 pr: "#380"
 ---
 
