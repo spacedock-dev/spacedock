@@ -104,21 +104,30 @@ func TestLiveEnsignCycle(t *testing.T) {
 
 	// Wait, TEAM-AGNOSTICALLY, for the entity to reach its FULL on-disk terminal
 	// end-state. This is the team-independent barrier that replaces the team-only
-	// teardown-marker grade: the FO terminalizes (implementation→done), archives,
-	// and path-scoped-commits the entity in BOTH modes BEFORE it either exits (bare)
-	// or holds at teardown (team). The barrier requires ALL THREE of those durable
-	// facts — entity locatable with `status: done` AND a path-scoped commit — so it
-	// does NOT return on a half-written `status: done` that races the archive/commit
-	// (the old teardown-marker barrier waited until after archive+commit because the
-	// marker fires last; this barrier reproduces that ordering team-agnostically
-	// from the durable state itself). expectCondition drains the stream each poll
+	// teardown-marker grade: the FO terminalizes (implementation→done), records a
+	// verdict, and path-scoped-commits the entity in BOTH modes. The barrier requires
+	// EVERY durable fact the end-state assertions below check — entity locatable,
+	// `status: done`, a SET `verdict:`, AND a path-scoped commit — so it does NOT
+	// return mid-terminalize. This matters because the FO's terminalize is spread
+	// across turns, and in TEAM mode it tends to land `status: done` + the commit
+	// FIRST and the `verdict:` a turn or two LATER (the merge/finalize ceremony runs
+	// over several turns); a barrier keyed only on status+commit would return in that
+	// window, the test would read the entity before the verdict landed, and the
+	// deferred poller.kill() would reap the FO mid-finalize — a team-only flake on
+	// the verdict check (observed: count=3 sonnet, the lone team run failed
+	// "missing verdict" while both bare runs passed). Requiring the verdict in the
+	// barrier closes that window: the FO is allowed to finish writing it before the
+	// test snapshots and kills. expectCondition drains the stream each poll
 	// (liveness; the budget resets on activity) while checking the filesystem,
-	// bounded by the same roomy dispatch-close silence budget — a live
-	// terminalize+archive turn can be quiet between stream lines. On the deferred
-	// poller.kill() path the subprocess is reaped; the end-state on disk is final.
+	// bounded by the same roomy silence budget — a live terminalize+finalize turn can
+	// be quiet between stream lines. On the deferred poller.kill() path the
+	// subprocess is reaped; the end-state on disk is final.
 	terminalized := func() bool {
 		body, _, found := locateEntity(root, "make-it-work")
-		return found && frontmatterField.MatchString(body) && someCommitNamesOnly(t, root, "make-it-work")
+		return found &&
+			frontmatterField.MatchString(body) &&
+			verdictSet.MatchString(body) &&
+			someCommitNamesOnly(t, root, "make-it-work")
 	}
 	if err := watcher.expectCondition(terminalized, quietBudgetDispatchClose, "entity terminalized"); err != nil {
 		t.Fatalf("live cycle failed waiting for the entity to terminalize+commit (status: done + path-scoped commit): %v", err)
