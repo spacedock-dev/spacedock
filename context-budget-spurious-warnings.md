@@ -12,6 +12,7 @@ issue: "#344"
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#377"
 ---
 
 `spacedock dispatch context-budget` emits two warnings that read as faults but are environmental noise on a healthy reused team member, eroding trust in the reuse-condition-0 budget signal. Intook to the 0.20.3 (0203-fo-efficiency) sprint as FO dispatch-path quality.
