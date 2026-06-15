@@ -25,3 +25,20 @@ The `docs` workflow's `deploy` job uses `actions/deploy-pages@v4`, which fails `
 Replaced the failing GitHub Pages deploy-API path in `.github/workflows/docs.yml` with a direct push of the built `site/` to the `gh-pages` branch using `peaceiris/actions-gh-pages@v4`. The strict-build PR gate is untouched and still passes. Added `contents: write` to the build job so the action can push the branch via `GITHUB_TOKEN`.
 
 OPERATOR FOLLOW-UP (captain-owned, one-time): the repo Pages source must be set to "Deploy from a branch: gh-pages / (root)" in Settings > Pages for the pushed branch to be served. The workflow push itself succeeds regardless; only serving depends on this setting.
+
+## Stage Report: validation
+
+- DONE: `mkdocs build --strict` (pinned docs/requirements.txt) exits 0 — the PR gate is intact
+  Clean venv from docs/requirements.txt, `mkdocs build --strict` → exit 0; site/index.html produced.
+- DONE: Pages deploy-API path is GONE — grep deploy-pages|upload-pages-artifact|github-pages → no matches; standalone `deploy` job removed
+  `grep -nE 'deploy-pages|upload-pages-artifact|github-pages' .github/workflows/docs.yml` → exit 1 (no matches); single `build` job only.
+- DONE: New publish path correct — single "Publish to gh-pages" step using peaceiris/actions-gh-pages@v4, github_token GITHUB_TOKEN, publish_dir ./site, publish_branch gh-pages, gated if main; permissions contents: write on build job; concurrency group: pages retained; PRs never publish
+  docs.yml:46-52 step matches spec; build job has `permissions: contents: write` (l27-28); `concurrency: group: pages` (l18-20); publish gated `if: github.ref == 'refs/heads/main'`.
+- DONE: Structural validity — yaml parses; no dangling needs: build / steps.deployment refs survive
+  `yq '.'` → OK; grep for `needs: build|steps.deployment|id-token|pages: write|environment:` → exit 1 (none). actionlint not installed locally (sandbox-denied).
+- DONE: Operator follow-up recorded — repo Pages source must be set to "Deploy from a branch: gh-pages"
+  Captured in implementation report (entity body, OPERATOR FOLLOW-UP note).
+
+### Summary
+
+Validation PASSED. The failing Pages deploy-API path is fully removed and replaced by a single peaceiris/actions-gh-pages@v4 publish step gated to main; the strict-build PR gate still exits 0 and PRs never publish. actionlint was unavailable in this sandbox, but yq parse plus grep for dangling deploy-job references confirm structural validity. The one-time operator action (set repo Pages source to "Deploy from a branch: gh-pages") is recorded for the captain.
