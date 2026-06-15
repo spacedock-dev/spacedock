@@ -8,6 +8,7 @@ id: j1ys5wh6wprhy8t8jd98z7g6
 worktree: .worktrees/spacedock-ensign-docs-pages-direct-push
 started: 2026-06-15T03:17:20Z
 mod-block: merge:pr-merge
+pr: "#379"
 ---
 
 The `docs` workflow's `deploy` job uses `actions/deploy-pages@v4`, which fails `HttpError: Not Found (404)` on every push to main because the repo's Pages source is not set to GitHub Actions. The strict `build` step passes; only the Pages-API publish fails. Replace the deploy-API path with a direct push of the built site to `gh-pages`.
