@@ -4,10 +4,10 @@ title: dispatch context-budget — suppress spurious model warnings on healthy t
 status: validation
 source: github#344 (captain intake 2026-06-13)
 started: 2026-06-13T17:31:54Z
-completed:
-verdict:
+completed: 2026-06-15T01:00:21Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-context-budget-spurious-warnings
+worktree:
 issue: "#344"
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
