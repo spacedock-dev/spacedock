@@ -1,6 +1,6 @@
 ---
 title: Extract host-neutral merge + dispatch contract — codex/pi name no merge reference and break at terminalization
-status: implementation
+status: validation
 source: 'captain (2026-06-15, this session) — the shared first-officer merge/dispatch ceremony is siloed in claude-named refs, so codex/pi FOs are MISSING required terminal contract and will likely break at terminalization. Verified — first-officer-shared-core.md:128-130 ONLY defers (the ceremony lives in the runtime merge reference named by the runtime adapter) with no host-neutral fallback, while codex-first-officer-runtime.md and pi-first-officer-runtime.md name NO merge reference and carry no mod-block / ship-local / archive / worktree-removal contract (grep clean). Correction to an earlier FO analysis — codex (send_input + mailbox) and pi (message_dm via pi-agent-teams) DO message, so the reuse/feedback/await machinery is shared too, not Claude-only. This is a correctness gap, not a token cleanup. Captain routed it to 0.20.3 (0203-fo-efficiency; v0.20.2 is latest), otherwise codex breaks without the contract.'
 started: 2026-06-15T15:06:22Z
 completed:
@@ -109,7 +109,7 @@ Verified by: (a) three existing gates stay GREEN —
 
 ## Test plan
 
-**Cost/complexity:** moderate-high — this is a boot-resident contract touching all three runtime adapters plus two new deferred cores. The risk is behavior drift in the moved Claude text (caught by AC-3a's existing live-e2e) and an incomplete extraction leaving a restated copy (caught by AC-2). The gap-proof spike (AC-1 before-half) is already done structurally this session.
+**Cost/complexity:** moderate-high — this is a boot-resident contract touching all three runtime adapters plus two new deferred cores. The risk is behavior drift in the moved Claude text (caught by AC-3a's existing live-e2e). A restated copy left in an adapter is no longer structurally tested — AC-2 was dropped as transient migration-theater (captain decision); a restatement is a redundancy, not a behavior break, so it is left to the AC-3b word-audit + review rather than a dedicated guard. The gap-proof spike (AC-1 before-half) is already done structurally this session.
 
 1. **AC-1 reachability (`internal/contractlint/boot_resident_closure_test.go`, fixture-level — no live drive).** `TestHostNeutralCoresResolveAndCarryCeremony` asserts the shared core names each core + each core resolves on disk + carries its four ceremony anchors; `TestBootResidentDeferredLoadPointsResolve` walks `bootResidentBodies` (shared core + all three adapters) and `os.Stat`s every named reference, with the dangling-target control. Reachability for codex/pi rides on the shared core's single core-naming, not a per-adapter restatement.
 2. **AC-2 — REMOVED.** The transient single-source fingerprint test was dropped in the lean rework (captain decision); single-source is upheld by the sole-core-namer design, verified once at rework time via the AC-3b fragment audit.
