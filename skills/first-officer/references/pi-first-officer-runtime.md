@@ -2,6 +2,14 @@
 
 This file defines how the shared first-officer core executes on Pi.
 
+## Dispatch seam
+
+The host-neutral dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly (`spacedock dispatch build` → spawn call), the reuse contract, worktree ownership, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`. Read it at the first dispatch. This file supplies the Pi specifics the core defers to: the spawn call is `subagent(...)` (default `pi-subagents`) or the `pi-agent-teams` adapter mapping, the completion signal is the subagent result (or the adapter's member notification), reuse defaults to fresh redispatch with the epoch-based stale-reuse guard, and Pi declares no context-budget probe.
+
+## Merge seam
+
+The host-neutral merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, and Mod-Block Enforcement — lives in `references/fo-merge-core.md`. Read it at the terminal boundary. Merge-and-Cleanup step 10 (the host's terminal teardown) is the entry point for this file's existing `## Shutdown` section: for `pi-subagents` a completed child needs no shutdown (mark closed in FO memory); for `pi-agent-teams` use the adapter's `member_shutdown` / `team_done` mapping. Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host.
+
 ## Runtime Shape
 
 Pi is a first-class runtime target, but it does not expose Claude Code team-tool signatures. Do not call or ask workers to call Claude team tools. Pi dispatch uses a Pi-native substrate selected by the launch/test harness:

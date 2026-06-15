@@ -4,13 +4,13 @@ This file defines how the shared first-officer core executes on Claude Code. It 
 
 ## Dispatch reference (load at first dispatch)
 
-The dispatch machinery for this host — Team Creation, the ID/next-id read, standing-teammate injection (`spawn-standing-all`), Worker Resolution, the Dispatch Adapter (`spacedock dispatch build` + break-glass), Degraded Mode seams, the Context-Budget probe, and the Event Loop (incl. the reconcile sweep) — lives in `references/claude-fo-dispatch.md`. Read it at the FIRST team-mode dispatch, alongside the `Skill(skill="spacedock:using-claude-team")` invocation it opens with — not at boot. A boot that greets and stops for input never dispatches, so it never reads this reference and never creates a team.
+The host-neutral dispatch machinery — the per-entity dispatch procedure, Worker Resolution, the Dispatch Adapter (`spacedock dispatch build` + break-glass), standing-teammate injection (`spawn-standing-all`), the reuse contract, and the Event Loop skeleton — lives in `references/fo-dispatch-core.md`. The Claude seam — Team Creation, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the registry-desync rule (#36806), Degraded Mode seams, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — lives in `references/claude-fo-dispatch.md`. Read both at the FIRST team-mode dispatch, alongside the `Skill(skill="spacedock:using-claude-team")` invocation the seam opens with — not at boot. A boot that greets and stops for input never dispatches, so it never reads either reference and never creates a team.
 
-When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see the dispatch reference for the full read shape). A boot that only greets does not file a task.
+When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see the dispatch seam for the full read shape). A boot that only greets does not file a task.
 
 ## Merge reference (load at terminalization)
 
-The terminal merge-and-cleanup machinery for this host — the Merge-and-Cleanup ceremony, the Ship-Local ceremony, worktree-removal safety, Mod-Block Enforcement, and the bounded terminal teardown (the `TERMINAL_TEARDOWN_BOUNDED` marker) — lives in `references/claude-fo-merge.md`. Read it at the terminal boundary, when an entity reaches its terminal stage — the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads it.
+The host-neutral terminal merge-and-cleanup machinery — the Merge-and-Cleanup ceremony (steps 1-9), the Ship-Local ceremony, worktree-removal safety, and Mod-Block Enforcement — lives in `references/fo-merge-core.md`. The Claude seam — the concrete step-10 terminal teardown and the bounded `TERMINAL_TEARDOWN_BOUNDED` marker — lives in `references/claude-fo-merge.md`. Read both at the terminal boundary, when an entity reaches its terminal stage — the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads either.
 
 ## Captain Interaction
 
