@@ -1,7 +1,8 @@
 # Builds the MkDocs Material docs site with `--strict` and publishes it to GitHub
 # Pages. The strict build runs on every PR as a check so a broken nav entry or
 # internal link fails before merge; on push to the stable branch (main) the built
-# site deploys to Pages.
+# site is pushed directly to the gh-pages branch, which GitHub Pages serves as a
+# classic branch-served site (no GitHub Pages deploy-API / Actions source needed).
 name: docs
 
 on:
@@ -20,9 +21,11 @@ concurrency:
 
 jobs:
   # Strict build. Runs on PRs and pushes alike, so the same gate that protects
-  # merges also produces the artifact the deploy job publishes.
+  # merges also produces the site pushed to gh-pages on main.
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -38,28 +41,12 @@ jobs:
       - name: Build the site (strict)
         run: mkdocs build --strict
 
-      - name: Upload Pages artifact
+      # Publish only on push to the stable branch. PRs run the build gate above
+      # but never publish.
+      - name: Publish to gh-pages
         if: github.ref == 'refs/heads/main'
-        # Pinned: no node24 major published yet (upload-pages-artifact internally
-        # pins node20 upload-artifact). Not on the flip-cut path. Bump when released.
-        uses: actions/upload-pages-artifact@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: site
-
-  # Deploy only on push to the stable branch. PRs run the build gate above but
-  # never deploy.
-  deploy:
-    if: github.ref == 'refs/heads/main'
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        # Pinned: no node24 major published yet. Not on the flip-cut path. Bump when released.
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
