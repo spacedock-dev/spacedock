@@ -12,6 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 mod-block:
 pr: "#380"
+archived: 2026-06-15T03:53:44Z
 ---
 
 The documented `spacedock new` invocation is incomplete for the FO's standing position. An FO at the project root (per the Working Directory rule) must pass `--workflow-dir`, but the contract's `new` examples omit it, so the first filing attempt fails. Close the gap so a fresh FO files correctly on the first try.
