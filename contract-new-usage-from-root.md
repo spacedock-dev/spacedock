@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-contract-new-usage-from-root
 issue:
 sprint: 0203-fo-efficiency
 mod-block: merge:pr-merge
+pr: "#380"
 ---
 
 The documented `spacedock new` invocation is incomplete for the FO's standing position. An FO at the project root (per the Working Directory rule) must pass `--workflow-dir`, but the contract's `new` examples omit it, so the first filing attempt fails. Close the gap so a fresh FO files correctly on the first try.
