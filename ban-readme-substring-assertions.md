@@ -12,7 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 group: proof-policy
 sprint-readiness:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#378"
 ---
 
