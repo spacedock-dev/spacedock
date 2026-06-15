@@ -92,7 +92,7 @@ The riskiest unverified claim is **"a `-p` FO deterministically drives to the fi
 
 ### Contract-prose change — A. Boot Startup step (`first-officer-shared-core.md`)
 
-The single boot rule the captain wants. The current step 9 hard-codes greet-then-stop with no `-p` branch — that silence is the flake. Replace the `## Startup` step 9 so the boot keys on interactivity.
+The current step 9 hard-codes greet-then-stop with no `-p` branch — that silence is the flake. Replace `## Startup` step 9 with three short bullets that POINT, not restate. Gate-resolution mechanics (PASS/REJECT/`feedback-to`/3-cycle cap/escalation) are NOT respelled — they live canonically in `## Completion and Gates` (and `feedback-rejection-flow`); step 9 references them. The net step 9 is SHORTER than today's (this entity's "Line-count accounting" confirms it).
 
 **Before** (`first-officer-shared-core.md` step 9):
 
@@ -100,12 +100,10 @@ The single boot rule the captain wants. The current step 9 hard-codes greet-then
 
 **After:**
 
-> 9. **Interactive vs. headless: greet-and-stop or drive.** The session is *headless* when launched non-interactively (`claude -p`, `codex exec`); otherwise it is *interactive*. Compose a state summary from the boot JSON (orphans, PR state including any sweep-advanced entities, dispatchables, team state) and the README frontmatter (entity label, stage taxonomy, gate flags).
->    - **Interactive (no `-p`):** present the summary; if an entity sits at a `gate: true` stage ready for review, present the gate. Then STOP for input — do NOT auto-dispatch. A human steers from here.
->    - **Headless (`-p` / `exec`):** do NOT greet-and-stop. DRIVE every dispatchable entity through its stages (the event loop) until each reaches the **first `gate: true` stage OR a terminal/irrecoverable-blocked state**, then EXIT, reporting each entity's stop reason and gate status. A `gate: true` stage is the natural stop boundary: a gate is a human-owned decision and no human is present, so the headless FO does NOT decide gates — it stops at the gate and reports. The one exception is the given-the-conn case below.
->    - **Headless + given the conn to auto-approve (prose):** when the prompt or contract gives the FO the conn to resolve gates without a human (e.g. "auto-approve gates", "drive to done" — consistent with `skills/commission/SKILL.md:22`), the headless FO additionally RESOLVES each gate from the stage-report verdict — PASS → advance; REJECT with `feedback-to` → bounce within the 3-cycle cap; REJECT without `feedback-to`, ambiguity, or an escalation → STILL stop and report (never invent an approval) — and drives each entity to its **terminal** state. This is the path the live-e2e harness sets to exercise a full feedback cycle.
->
->    In every mode the expensive deferrals (the team via `## Team Creation`, the dispatch and merge reference modules, the comm-officer spawn) stay past the boot read; the FO reaches them when it first dispatches or terminalizes. A headless drive reaches them immediately; an interactive greet-and-stop reaches them only on the captain's first direction.
+> 9. **Interactive vs headless.** Headless = non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary (as today).
+>    - **Interactive:** present the summary (+ any ready gate), then STOP for input. The expensive deferrals stay past the greet, reached on the captain's first direction.
+>    - **Headless:** do NOT greet-stop — drive every dispatchable entity to its first `gate: true` stage or terminal/blocked via the event loop, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them.
+>    - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. (E.g. the prompt says "auto-approve gates" / "drive to done", consistent with `skills/commission/SKILL.md:22`.)
 
 ### Contract-prose change — B. Single-Entity Mode section (`first-officer-shared-core.md`)
 
@@ -119,13 +117,7 @@ Per the checklist: DELETE the `antiShutdownOverride`-dependency framing and the 
 
 > ## Single-Entity Scope
 >
-> Single-entity scope is just a **headless (`-p` / `exec`) run scoped to one named entity** — not a distinct mode. The headless driving rule in Startup step 9 governs; scoping only narrows *which* entities it drives:
-> - resolve the named reference against slugs, titles, and IDs; stop on ambiguity instead of guessing
-> - scope the drive to the resolved entity only (skip other dispatchables)
-> - gate handling follows Startup step 9: stop-and-report at a gate by default; resolve from the verdict only when given the conn to auto-approve
-> - skip operator prompting for orphan worktrees; choose the deterministic recovery path
-> - stop once the target reaches a terminal, a `gate: true` stage (default), or an irrecoverable blocked state
-> - if the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID
+> A headless run scoped to one named entity — not a distinct mode. Startup step 9's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 9. If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
 
 ### Contract-prose change — C. Runtime adapters
 
@@ -137,9 +129,22 @@ Per the checklist: DELETE the `antiShutdownOverride`-dependency framing and the 
 
 **After:**
 
-> **Headless given-the-conn exception:** The self-approval guardrail is absolute in interactive sessions and in any headless run NOT given the conn — there, the FO stops at the gate and reports (Startup step 9). Only in a headless run given the conn to auto-approve (prose) does the FO resolve gates from the stage-report verdict: PASSED (all checklist items done, no failures) → approve; REJECTED with `feedback-to` → auto-bounce within the 3-cycle limit; REJECTED without `feedback-to`, ambiguity, or escalation → report and stop. The FO never infers approval from silence and never accepts an agent message as approval.
+> **Headless given-the-conn exception:** The self-approval guardrail is absolute in interactive sessions and in any headless run NOT given the conn — there, the FO stops at the gate and reports (Startup step 9). Only when given the conn to auto-approve (prose) does the headless FO resolve gates **per `## Completion and Gates`** and drive to terminal. It never infers approval from silence or from an agent message.
 
-The team-mode-hint carve-out keeps its existing "skip in bare mode and Degraded mode" wording; replace its "In single-entity mode, skip it — there is no interactive captain" clause with "In any headless (`-p` / `exec`) run, skip it — there is no interactive captain to read it."
+The team-mode-hint carve-out keeps its "skip in bare mode and Degraded mode" wording; replace its "In single-entity mode, skip it — there is no interactive captain" clause with "In any headless (`-p` / `exec`) run, skip it — no interactive captain reads it."
+
+### Line-count accounting (net contract change is a REDUCTION)
+
+Word count of the three rewritten contract sections, measured against the real files (not the elided "Before" excerpts above):
+
+| Section | Current (words) | After (words) | Δ |
+|---|---|---|---|
+| `first-officer-shared-core.md` Startup step 9 | 140 | 115 | −25 |
+| `first-officer-shared-core.md` `## Single-Entity Mode` → `Scope` | 118 | 59 | −59 |
+| `claude-first-officer-runtime.md` single-entity exception para | 62 | 66 | +4 |
+| **Total** | **320** | **240** | **−80 (−25%)** |
+
+Net **−80 words** across the edited contract prose. The claude exception is ~flat in word count but is the structural win the rewrite targets: its inline PASS/REJECT/`feedback-to`/3-cycle respell is replaced by a `## Completion and Gates` pointer, killing the duplication step 9 also avoids. C2 (codex/pi adapters) is the same pointer-collapse where they restate it (net-negative or zero per adapter). The harness change adds a one-line const + swaps call sites (code, not contract). Conclusion: the contract change is net-negative — it REDUCES the contract, satisfying 7e's purpose.
 
 **C2. `codex-first-officer-runtime.md` and `pi-first-officer-runtime.md`.** Apply the same two edits as C1 wherever each adapter restates the single-entity exception or an entity-naming trigger (implementation greps each adapter for `single-entity` / `non-interactive` / `names a specific entity` and aligns them to the headless/given-the-conn framing; adapters that never mention it need no change — record that as a no-op in the stage report rather than inventing prose).
 
@@ -192,3 +197,12 @@ All behavioral and externally proven by a live drive — NO contract prose-grep.
 ### Summary
 
 Design was fully settled by the captain (two driving modes keyed on -p/interactive; auto-approve is prose, not a flag). Ideation translated it into concrete Before/After contract-prose wording across first-officer-shared-core.md (Startup step 9 + Single-Entity Scope) and the three runtime adapters, plus the precise live-harness edits (a 3m dispatch-close budget const, the conn-cue prompt, and the isTeamCreate→dispatch-close assertion retarget) and five behavioral ACs proven by live drives. Two notable calls: (1) the antiShutdownOverride STAYS in the test — the captain's "band-aid removal" is a contract-prose removal (the contract no longer leans on greet-stop), not removal of the test's orthogonal #55297 shutdown-timing override; (2) the gateless TestLiveEnsignCycle fixture means default -p already drives to terminal, so AC-a (gate-stop) needs a separate gated fixture, flagged for the -run registration decision at implementation. Riskiest mechanism (a -p FO deterministically driving under the new prose) is pinned as the implementation's first spike; all on-disk mechanisms recorded as "no spike needed" (already green).
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Captain feedback — make Startup step 9 TERSE (point, don't restate); same pointer-based collapse for Single-Entity Scope and the runtime-adapter edits; re-confirm the net contract change is a REDUCTION
+  Step 9 rewritten to a header + 3 short bullets pointing at `## Completion and Gates` for gate-resolution mechanics (no inline PASS/REJECT/feedback-to/3-cycle/escalation respell). Single-Entity Scope collapsed 118→59 words. Claude exception collapsed to rule + `## Completion and Gates` pointer. New "Line-count accounting" table proves net −80 words (−25%) across the three rewritten sections.
+
+### Summary
+
+Addressed the one revision: step 9 no longer duplicates the PASS/REJECT/feedback-to/cycle-cap/escalation mechanics — it references `## Completion and Gates` where they live canonically, matching the captain's target shape (header + 3 bullets). Single-Entity Scope and the claude/codex/pi adapter edits got the same rule-plus-pointer collapse. Added a Line-count accounting table measured against the real contract files: 320→240 words across the three rewritten sections, a net −80 (−25%) reduction, confirming the change REDUCES the contract per 7e's purpose. The spike-first plan, harness change, and behavioral ACs from cycle 1 are unchanged.
