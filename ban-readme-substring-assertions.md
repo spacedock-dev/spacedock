@@ -126,3 +126,20 @@ The riskiest assumption is "the behavioral tests that make the README guards red
 ### Summary
 
 Investigated the named triggers and swept the test tree. The two named README doc-contract guards are pure prose-grep over `docs/dev/README.md` whose real seams are ALREADY proven by existing behavioral tests in the same packages (the scenario-runner parity guard and the five watchdog-stall fixtures, confirmed by read) — so the call is DROP, not retarget (retargeting just relocates the tautology). Two sibling `requireSectionContains` presence asserts drop in favor of the existing `foregroundWaitLifecycleClaimError` semantic oracle. The doc-substring guards slipped past the existing boundary guard because its detector does not classify `docs/dev/README.md` as an instruction surface; AC-3 closes that gap and makes "no doc-substring behavioral proof" a re-runnable code fact. `TestGradeMarkerMatchesContract` is a code↔doc binding, not pure prose-grep, and is ruled out of scope. No doc changes; offline Go-only test plan; riskiest assumption (the redundant-coverage tests exist and red on real breakage) exercised during ideation.
+
+## Stage Report: implementation
+
+- DONE: DROP the prose-grep assertions — remove `TestSharedScenarioDocsContract` and `TestCodexForegroundWaitWatchdogDocsContract`; confirm seams stay proven.
+  Both removed (commit ea4a6294); `grep` for both names in `internal/` returns no hits. Surviving behavioral proofs untouched: `TestSharedScenarioRunnerCoverage` + `TestSeedScenariosDocLock` and the five `TestCodexCollabWaitWatchdog*` fixtures all present and green.
+- DONE: DROP the two bare `requireSectionContains` presence asserts in `codex_foreground_wait_shape_test.go`, KEEPING `foregroundWaitLifecycleClaimError` + controls.
+  Bare presence asserts gone; `TestCodexIdleProbeForegroundWaitInterruptionIsNonTerminal` (all bare asserts) removed and the now-unused `requireSectionContains` helper removed. `foregroundWaitLifecycleClaimError` + `TestForegroundWaitLifecycleClaimRejectsTerminalMutations`/`…AcceptsNegatedClaims` retained and green.
+- DONE: Leave `TestGradeMarkerMatchesContract` UNTOUCHED.
+  Not in the diff (`teardown_marker_consistency_test.go` unchanged).
+- DONE: AC-3 — extend the boundary-guard detector so `docs/dev/README.md` and `docs/runtime-live-ci.md` are instruction surfaces; prove with a planted-fixture mutation control.
+  Added `carriesDocSiteInstructionReadme` (handles both the single-literal and `filepath.Join`-split path forms) to `exprCarriesInstructionPath`. Extended `TestBoundaryGuardDetectsAPlantedInstructionRead` with two planted doc-site README prose-grep fixtures (detector REDS) plus a non-instruction fixture-README read (stays GREEN). Mutation-verified: reverting the extension reds the control; the AST oracle is a code fact, not a doc grep.
+- DONE: `go test ./...` green; confirm via boundary guard + sweep that NO test asserts README/doc content by substring as behavioral proof. Offline Go-only; no doc changes.
+  `go test ./...` all green. `TestNoInstructionReadsOutsideQuarantine` passes (zero offenders). Backstop grep's hits are all non-prose-grep (transcript/CLI-output `strings.Contains`, `git add` args, or the detector's own fixture literals) — confirmed by inspection. No doc changes.
+
+### Summary
+
+Dropped the two named README doc-contract prose-grep guards and the two bare `requireSectionContains` presence asserts; the seams they pretended to prove remain proven by the surviving behavioral tests (confirmed present + green), so no coverage was lost. Closed the detector scope gap by classifying the two doc-site instruction READMEs as instruction surfaces, handling the `filepath.Join`-split path idiom, and proving it with a mutation-controlled planted fixture (reds without the extension, green with it). `TestGradeMarkerMatchesContract` left untouched per the out-of-scope ruling. Full suite green; offline Go-only; no doc changes.
