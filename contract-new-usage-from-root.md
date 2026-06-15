@@ -116,3 +116,22 @@ Reframed the captain's lean: option (a) is viable but NOT via the upward walk-up
 ### Summary
 
 Implemented Fix A (downward-scan fallback in the no-flag `new`/status path, reusing `discoverWorkflows` + `git rev-parse --show-toplevel`) and Fix C (per-command `new --help`), plus the two contract doc clauses. AC-1 reddened against current source before the fix as required; AC-1/AC-2/AC-3 are Go fixture/CLI tests via the existing dispatch/Run harnesses. The single full-suite failure was a pre-existing timing flake in `internal/ensigncycle`, not touched by this diff.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 (worktree binary) — `TestNewFromRootSingleWorkflowSucceeds` green; downward fallback adversarially confirmed LOAD-BEARING (reverting the `!ok`-branch wiring reds it). Live: from-root single-workflow `new` → exit 0 + `created:` + file under nested dir.
+  Test green (2/2 with AC-2). Reverted wiring to the pre-fix terminal error → AC-1 redded with the exact `no commissioned Spacedock workflow found` message; restored, `git diff` clean. Live `/tmp/spacedock-wt new live-task` from toplevel → `created: …/docs/dev/live-task.md id=live-task` exit 0, file on disk.
+- DONE: Reproduce AC-2 — multi-workflow refusal naming BOTH candidates + `--workflow-dir` instruction (non-zero), then `--workflow-dir <one>` → exit 0 + created.
+  `TestNewFromRootMultiWorkflowRefuses` green; live two-workflow fixture: refusal listed docs/dev + docs/ops + `--workflow-dir` (exit 1), `--workflow-dir docs/dev` → `created:` exit 0.
+- DONE: Reproduce AC-3 — `new --help` stdout carries `new [--folder] SLUG` synopsis + all four flags AND no general-menu `Launch` marker.
+  `TestNewHelpRendersCommandUsage` green; live `new --help`: synopsis count 1, all of --workflow-dir/--folder/--id-seed/--id-actor present, `Launch` count 0.
+- DONE: No regression to existing path — explicit `--workflow-dir`/`PIPELINE_DIR`/`--root` short-circuits; zero-flag fallback scoped to the no-flag case only.
+  Fallback gated by `pipelineDir == "" && rootPath == ""` (native_runner.go:75). Live: explicit `--workflow-dir` from an unrelated cwd (no enclosing workflow) → exit 0 + created, proving the fallback is bypassed.
+- DONE: Doc clauses — first-officer-shared-core.md:171 + claude-first-officer-runtime.md:43 carry the one-clause multi-workflow note; examples stay no-`--workflow-dir` (AC-4 anchored to AC-1/AC-2, not prose-grep).
+  Both clauses verified in commit 3bbf3698; accurate against the live binary exercised above.
+- DONE: `go test ./...` green.
+  exit 0, 15 packages ok, no FAIL/panic. Implementation-flagged `ensigncycle` streamwatch flake did not recur.
+
+### Summary
+
+PASSED. All four ACs reproduce: AC-1/AC-2/AC-3 are green Go tests AND live binary exercises against fresh fixture repos; AC-4 doc clauses are accurate against the exercised binary. The downward-scan fallback is adversarially confirmed load-bearing — reverting the no-flag `!ok`-branch wiring reds AC-1 with the pre-fix no-workflow error. No regression: explicit `--workflow-dir`/`--root` still short-circuit (verified live from an unrelated cwd). Full suite clean.
