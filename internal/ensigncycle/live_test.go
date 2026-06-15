@@ -59,19 +59,25 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// determination sanctions a bare drive under `-p`; the team/bare choice is a
 	// robustness detail of the dispatch mechanism, orthogonal to the cycle
 	// completing). Two team-INDEPENDENT steps gate the smoke:
-	//   1. the single ensign dispatch CLOSES (backlog→done is ONE dispatch that
-	//      writes `## Stage Report: done`) — the cycle progressed past dispatch;
-	//   2. the entity reaches its on-disk TERMINAL end-state (`status: done`) —
-	//      the FO terminalized and archived it.
-	// Both hold in team AND bare mode: a bare FO exits cleanly after archiving; a
-	// team FO archives, then emits the terminal-teardown marker and HOLDS. The
-	// terminal-teardown MARKER itself is a TEAM-ONLY signal (it only fires in team
-	// teardown), so it is NOT gated here — that coverage lives in the team-FORCED
-	// TestLiveEnsignCycleTeamTeardown (live_teardown_test.go). Gating the default
-	// path on the marker is exactly the relocated coin this cycle removes: a
-	// legitimate bare drive emits no marker and would red an otherwise-correct
-	// cycle. Each step is bounded by its own no-progress quiet budget; a stalled
-	// step fails FAST and LOCALIZED.
+	//   1. the first ensign dispatch OPENS — the FO drove past boot into dispatch
+	//      (an early fail-fast: a greet-stop or wrong-root never dispatches);
+	//   2. the entity reaches its FULL on-disk TERMINAL end-state (`status: done`
+	//      + a path-scoped commit) — the FO terminalized, archived, and committed.
+	// Both hold in team AND bare mode. The barrier is the dispatch OPEN, NOT its
+	// close: in current Claude Code the team-mode ensign completion arrives as a
+	// `direct` message, not the `task_notification status=completed` anchor
+	// expectDispatchClose keys on, so waiting for the close would FLAKE in team mode
+	// (a healthy run leaves the dispatch "open" by that anchor's reckoning even after
+	// the ensign finished). Step 2's terminalized end-state is the real completion
+	// proof anyway — it STRICTLY implies the cycle ran past dispatch — so the open is
+	// a sufficient early beat and the on-disk end-state is the load-bearing one.
+	//
+	// The team-only terminal-teardown MARKER (it fires only in team teardown) is NOT
+	// gated here — that coverage lives in the team-FORCED TestLiveEnsignCycleTeamTeardown
+	// (live_teardown_test.go). Gating the default path on the marker is exactly the
+	// relocated coin this cycle removes: a legitimate bare drive emits no marker and
+	// would red an otherwise-correct cycle. Each step is bounded by its own
+	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
 	// resets on ANY drained line, so it catches a SILENT hang (no new stream
@@ -82,18 +88,18 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// the captain banned long individual timeouts, and a chatty hang is far rarer
 	// than a silent one (which the quiet budget does catch). Documenting it here
 	// keeps the trade-off explicit instead of silently absent.
-	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
-		// A dispatch that never closes is opaque on its own. The most common cause is
+	if _, err := watcher.expect(isEnsignDispatch, quietBudgetDispatchClose, "ensign dispatch open"); err != nil {
+		// A dispatch that never opens is opaque on its own. The most common cause is
 		// a wrong-root boot: a CI env leak lures the FO off `root` into the real repo,
 		// it boots that workflow, finds nothing dispatchable, and greets-and-stops —
-		// so it never dispatches and dispatch-close is exactly where it now fails.
+		// so it never dispatches and dispatch-open is exactly where it now fails.
 		// Surface that explicitly — naming the expected fixture root vs the
 		// wandered-to path — so the leak fails legibly instead of as a confusing
 		// timeout.
 		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
-			t.Fatalf("live cycle failed at the ensign dispatch close due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
+			t.Fatalf("live cycle failed waiting for the ensign dispatch to open due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
 		}
-		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
+		t.Fatalf("live cycle failed waiting for the ensign dispatch to open: %v", err)
 	}
 
 	// Wait, TEAM-AGNOSTICALLY, for the entity to reach its FULL on-disk terminal
@@ -384,6 +390,22 @@ func readmeRealisticLifecycle() string {
 func isTeamCreate(e streamEntry) bool {
 	b := e.toolUseBlock()
 	return b != nil && b.Name == "TeamCreate"
+}
+
+// isEnsignDispatch matches the FO's first ensign dispatch — an
+// Agent(subagent_type="spacedock:ensign") assistant tool_use. The contract runs
+// `spacedock dispatch spawn-standing-all` immediately before this dispatch, so its
+// OPEN is the reliable barrier for "standing teammates have been injected" (used by
+// the residency test, which only needs injection to have run, not the dispatch to
+// close). It scans ALL tool_use blocks so an Agent dispatch riding as a second
+// block in a multi-tool turn is not missed.
+func isEnsignDispatch(e streamEntry) bool {
+	for _, b := range e.toolUseBlocks() {
+		if b.Name == "Agent" && b.Input.SubagentType == "spacedock:ensign" {
+			return true
+		}
+	}
+	return false
 }
 
 // cmdPoller is the live procPoller: it Waits the exec.Cmd in the background,

@@ -150,8 +150,17 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 	// A wrong-root boot is the most specific diagnosis: a CI env leak lures the FO
 	// off `root` into the real repo, where it finds nothing dispatchable and
 	// greets-and-stops — which would otherwise look like a (wrong) AC-a pass
-	// (nothing driven). Name it FIRST.
-	if wrongRoot := detectWrongRootBoot(stream, root); wrongRoot != nil {
+	// (nothing driven). Name it FIRST. Pass the symlink-RESOLVED fixture root: on
+	// macOS t.TempDir() returns a `/var/folders/...` path while the FO's boot
+	// command targets the EvalSymlinks-resolved `/private/var/folders/...` (the same
+	// directory), so comparing the unresolved root would false-flag every local
+	// macOS run as a wander. The CI Linux runner has no such symlink, so this is a
+	// no-op there; resolving here keeps the detector accurate on BOTH.
+	rootResolved := root
+	if r, err := filepath.EvalSymlinks(root); err == nil {
+		rootResolved = r
+	}
+	if wrongRoot := detectWrongRootBoot(stream, rootResolved); wrongRoot != nil {
 		t.Fatalf("AC-a gate drive failed due to a wrong-root boot: %v", wrongRoot)
 	}
 	if stallErr != nil {

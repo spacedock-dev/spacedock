@@ -37,16 +37,20 @@ func TestLiveEnsignCycleTeamTeardown(t *testing.T) {
 		antiShutdownOverride
 	watcher, root := startRealisticLifecycleDrive(t, drivePrompt)
 
-	// Step 1: the ensign dispatch closes — the cycle progressed past dispatch. With
-	// team mode forced, the dispatch rides the team; the close anchor is mode-aware
-	// (updateDispatches handles the teams-mode task_notification close as well as
-	// the bare/headless ones), so this is the same dispatch→progressed invariant the
-	// default cycle asserts.
-	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
+	// Step 1: the first ensign dispatch OPENS — the cycle progressed past boot into
+	// dispatch. The barrier is the dispatch OPEN, not its close: in this Claude Code
+	// version the team-mode ensign completion arrives as a `direct` message, not the
+	// `task_notification status=completed` anchor expectDispatchClose keys on, so a
+	// healthy team run can leave the dispatch "open" by that anchor's reckoning even
+	// after the ensign finished. The real proof that the FULL cycle ran is Step 2's
+	// terminal-teardown MARKER (emitted only after terminalize+archive+teardown), so
+	// the dispatch OPEN is a sufficient and reliable early progress beat here; the
+	// marker is the load-bearing one.
+	if _, err := watcher.expect(isEnsignDispatch, quietBudgetDispatchClose, "ensign dispatch open"); err != nil {
 		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
-			t.Fatalf("live team-teardown cycle failed at the ensign dispatch close due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
+			t.Fatalf("live team-teardown cycle failed waiting for the ensign dispatch to open due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
 		}
-		t.Fatalf("live team-teardown cycle failed at the ensign dispatch close: %v", err)
+		t.Fatalf("live team-teardown cycle failed waiting for the ensign dispatch to open: %v", err)
 	}
 
 	// Step 2 (the team-only coverage this test exists for): grade the BOUNDED
