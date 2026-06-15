@@ -271,7 +271,7 @@ Usage:
   spacedock dispatch build --validate-only FILE
   spacedock dispatch show-stage-def --workflow-dir DIR --stage STAGE
   spacedock dispatch trunk --workflow-dir DIR
-  spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include A,B,C,D,E]
+  spacedock dispatch reconcile --workflow-dir DIR [--team-name NAME] [--repo-root DIR] [--include lingering,superseded,un-advanced-pr,stale-branch,local-main-drift]
 `)
 }
 

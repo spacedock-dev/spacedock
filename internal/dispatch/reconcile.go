@@ -17,6 +17,30 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
+// The five drift-class names. These are the canonical class vocabulary: the
+// emitted drift[].class value, the --include accepted tokens, and the FO dispatch
+// contract event-loop step-0 action mapping all name this identical set. The
+// contractlint dual-extraction lint binds this var to the contract step-0 token
+// so neither side can rename, add, or drop a class without the other.
+const (
+	classLingering      = "lingering"
+	classSuperseded     = "superseded"
+	classUnadvancedPR   = "un-advanced-pr"
+	classStaleBranch    = "stale-branch"
+	classLocalMainDrift = "local-main-drift"
+)
+
+// driftClasses is the canonical ordered class set. parseInclude validates against
+// it, Reconcile gates each detector by it, and the AC-2 lint reads it as the
+// single helper-side source of the emitted class vocabulary.
+var driftClasses = []string{
+	classLingering,
+	classSuperseded,
+	classUnadvancedPR,
+	classStaleBranch,
+	classLocalMainDrift,
+}
+
 // canonicalStages are the workflow stage names the decomposer falls back to when
 // a workflow's own stage names cannot be derived from its README. The entity's
 // design names these as the "five-canonical ensign stages" so a workflow with
@@ -116,11 +140,14 @@ func runReconcile(args []string, stdout, stderr io.Writer) int {
 }
 
 // parseInclude resolves the --include flag value. An empty string means all five
-// classes; otherwise the value is a comma-separated subset of {A,B,C,D,E}. An
-// unknown class is a usage error (exit 2). Returned map sets true for included
-// classes only.
+// classes; otherwise the value is a comma-separated subset of the descriptive
+// class names (driftClasses). An unknown class is a usage error (exit 2). Returned
+// map sets true for included classes only.
 func parseInclude(raw string) (map[string]bool, error) {
-	all := map[string]bool{"A": true, "B": true, "C": true, "D": true, "E": true}
+	all := map[string]bool{}
+	for _, c := range driftClasses {
+		all[c] = true
+	}
 	if raw == "" {
 		return all, nil
 	}
@@ -128,7 +155,7 @@ func parseInclude(raw string) (map[string]bool, error) {
 	for _, c := range strings.Split(raw, ",") {
 		c = strings.TrimSpace(c)
 		if !all[c] {
-			return nil, fmt.Errorf("unknown --include class: %q (expected A,B,C,D,E)", c)
+			return nil, fmt.Errorf("unknown --include class: %q (expected %s)", c, strings.Join(driftClasses, ","))
 		}
 		out[c] = true
 	}
@@ -214,20 +241,20 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 	var drift []driftItem
 
 	ensigns := filterEnsigns(team.Members)
-	if rosterTrusted && opts.include["A"] {
+	if rosterTrusted && opts.include[classLingering] {
 		drift = append(drift, classA(ensigns, stageNames, active, archived)...)
 	}
-	if rosterTrusted && opts.include["B"] {
+	if rosterTrusted && opts.include[classSuperseded] {
 		drift = append(drift, classB(ensigns, stageNames)...)
 	}
-	if rosterTrusted && opts.include["C"] {
+	if rosterTrusted && opts.include[classUnadvancedPR] {
 		drift = append(drift, classC(active, opts.gh)...)
 	}
-	if opts.include["D"] {
+	if opts.include[classStaleBranch] {
 		owned := ownedSlugs(rosterTrusted, ensigns, stageNames, active, archived)
 		drift = append(drift, classD(active, repoRoot, trunk, owned, opts.git)...)
 	}
-	if opts.include["E"] {
+	if opts.include[classLocalMainDrift] {
 		drift = append(drift, classE(repoRoot, trunk, opts.git)...)
 	}
 
@@ -489,7 +516,7 @@ func classA(ensigns []claudeteam.ReconcileMember, stages []string, active, archi
 		// Archived: definitive terminal.
 		if _, ok := archived[slug]; ok {
 			out = append(out, driftItem{
-				Class:  "A",
+				Class:  classLingering,
 				Name:   m.Name,
 				Slug:   slug,
 				Reason: "entity archived",
@@ -499,7 +526,7 @@ func classA(ensigns []claudeteam.ReconcileMember, stages []string, active, archi
 		if rec, ok := active[slug]; ok {
 			if rec.status == "done" {
 				out = append(out, driftItem{
-					Class:  "A",
+					Class:  classLingering,
 					Name:   m.Name,
 					Slug:   slug,
 					Reason: "entity status=done",
@@ -544,7 +571,7 @@ func classB(ensigns []claudeteam.ReconcileMember, stages []string) []driftItem {
 			}
 			loserName := namesByDecomp[k+"\x00"+c.cycle]
 			out = append(out, driftItem{
-				Class:  "B",
+				Class:  classSuperseded,
 				Name:   loserName,
 				Slug:   c.slug,
 				Stage:  c.stage,
@@ -606,7 +633,7 @@ func classC(active map[string]entityRecord, gh ghRunner) []driftItem {
 		}
 		if state == "MERGED" && rec.status != "done" {
 			out = append(out, driftItem{
-				Class:  "C",
+				Class:  classUnadvancedPR,
 				Slug:   slug,
 				PR:     rec.pr,
 				Reason: fmt.Sprintf("PR merged but status=%s", rec.status),
@@ -650,7 +677,7 @@ func classD(active map[string]entityRecord, repoRoot, trunk string, owned map[st
 			continue
 		}
 		item := driftItem{
-			Class:    "D",
+			Class:    classStaleBranch,
 			Slug:     slug,
 			Worktree: rec.worktree,
 			Behind:   n,
@@ -726,7 +753,7 @@ func classE(repoRoot, trunk string, git gitRunner) []driftItem {
 	if ahead == 0 && behind == 0 {
 		return nil
 	}
-	item := driftItem{Class: "E", Ahead: ahead, Behind: behind, Trunk: trunk}
+	item := driftItem{Class: classLocalMainDrift, Ahead: ahead, Behind: behind, Trunk: trunk}
 	switch {
 	case ahead == 0: // behind only
 		item.Reason = fmt.Sprintf("local main behind origin/%s by %d; ff-merge main<-origin/%s", trunk, behind, trunk)

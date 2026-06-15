@@ -65,7 +65,7 @@ stages:
 		workflowDir: workflowDir,
 		teamName:    teamName,
 		repoRoot:    repoRoot,
-		include:     map[string]bool{"E": true},
+		include:     map[string]bool{classLocalMainDrift: true},
 		home:        home,
 		roster:      claudeteam.LoadReconcileTeam,
 		gh:          func(string) (string, error) { return "", nil },
@@ -78,8 +78,8 @@ stages:
 	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
 		t.Fatalf("decode: %v\nstdout=%s", err, stdout.String())
 	}
-	if len(result.Drift) != 1 || result.Drift[0].Class != "E" {
-		t.Fatalf("want exactly one E drift; got %s", formatDrift(result.Drift))
+	if len(result.Drift) != 1 || result.Drift[0].Class != classLocalMainDrift {
+		t.Fatalf("want exactly one local-main-drift entry; got %s", formatDrift(result.Drift))
 	}
 	d := result.Drift[0]
 	if d.Ahead != 1 {
