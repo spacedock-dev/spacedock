@@ -27,7 +27,10 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
 6. **Split-root state halt-gate.** If `state_backend == split-root` AND `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree). The boot table would render EMPTY and `--validate` VALID — a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-read `--boot` and proceed only after `entity_dir_present == true`.
 7. **Split-root pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read). On CONFLICT, follow the rebase-conflict halt in **State Management** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
 8. **Merged-PR sweep (before-greet).** For each `pr_state` entry whose `state == "MERGED"` and whose entity status is non-terminal, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip this step when no such entry exists — the common boot reads zero mod files. When `pr_state.status == "gh not available"`, the merge state is unknowable: skip the sweep (per the pr-merge mod's "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as stale or absent. This is the one mod-file read correctness-bound to the greet: a boot that greets and stops never enters the event loop, so a merged PR would be reported off live `pr_state` but never advanced unless advanced here.
-9. **Greet the captain, then stop for input.** Compose a state summary from the boot JSON (orphans, PR state including any sweep-advanced entities, dispatchables, team state) and the README frontmatter (entity label, stage taxonomy, gate flags), and present it. With `gh` absent, report PR merge status as UNKNOWN for PR-bearing entities ("{N} PR-pending entit{y/ies}; merge state unknown — `gh` not available") rather than asserting an unknowable state. If an entity sits at a `gate: true` stage ready for review, present the gate (gates are captain-facing text, not team messages — no team is needed). Then STOP for input — do NOT auto-dispatch. The expensive deferrals (the team via `## Team Creation`, the dispatch and merge reference modules, the comm-officer spawn) stay past the greet; the FO reaches them when the captain's direction first triggers a dispatch or a terminal merge.
+9. **Interactive vs headless.** Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary (boot JSON + README frontmatter) as today, including `gh`-absent UNKNOWN PR status.
+   - **Interactive:** present the summary (and any ready `gate: true` gate as captain-facing text), then STOP for input; do NOT auto-dispatch. The expensive deferrals stay past the greet, reached on the captain's first direction.
+   - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them.
+   - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. (E.g. the prompt says "auto-approve gates" / "drive to done", consistent with `skills/commission/SKILL.md`'s skip-confirmation cue.)
 
 ## Status Viewer
 
@@ -78,17 +81,9 @@ README frontmatter `id-style` defines how new entities are addressed:
 
 A `--next-id` candidate (SD-B32 `NEXT_ID` from `--boot` / `--next-id`) is a preview, not a reservation — a peer's filing between the preview and the write can shift it, so a hand-assembled file can land a stale id. `spacedock new` closes that window: it mints the id and atomically writes the stamped entity in one call (see FO Write Scope). Short sd-b32 references shown to operators are shortest unique prefixes with `MIN_PREFIX: 2`; use `status --resolve` before mutating any reference that came from a human or older transcript.
 
-## Single-Entity Mode
+## Single-Entity Scope
 
-Activates when the session is non-interactive (`claude -p`, `codex exec`) and the prompt names a specific entity. Do not enter in interactive sessions — naming an entity in conversation is normal dispatch.
-
-Single-entity mode changes the event loop:
-- scope dispatch to the named entity only
-- resolve the reference against slugs, titles, and IDs; stop on ambiguity instead of guessing
-- auto-resolve gates from the report verdict when no interactive operator is present
-- skip operator prompting for orphan worktrees; choose the deterministic recovery path
-- stop once the target reaches a terminal or irrecoverable blocked state
-- if the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID
+A headless run scoped to one named entity — not a distinct mode. Startup step 9's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 9 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
 
 ## Working Directory
 
