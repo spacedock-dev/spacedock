@@ -2,7 +2,7 @@
 title: "Commission a workflow"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-15 03:34:07"
+last_updated: "2026-06-15 03:53:43"
 ---
 
 # Commission a workflow
