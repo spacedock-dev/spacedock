@@ -14,13 +14,6 @@ func TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape(t *testing.T
 	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	section := markdownSubsection(t, path, "### Foreground wait")
 
-	requireSectionContains(t, path, section, "`wait_agent(handle)`")
-	requireSectionContains(t, path, section, "Before calling `wait_agent`")
-	requireSectionContains(t, path, section, "Esc")
-	requireSectionContains(t, path, section, "operator interruption")
-	requireSectionContains(t, path, section, "returns control")
-	requireSectionContains(t, path, section, "same handle")
-
 	requireForegroundWaitLifecycleClaim(t, path, section)
 }
 
@@ -80,18 +73,6 @@ func TestForegroundWaitLifecycleClaimAcceptsNegatedClaims(t *testing.T) {
 	}
 }
 
-func TestCodexIdleProbeForegroundWaitInterruptionIsNonTerminal(t *testing.T) {
-	path := filepath.Join(repoRoot(t), "docs", "dev", "codex-idle-notification-probe.md")
-	section := markdownSubsection(t, path, "## Foreground wait comparison")
-
-	requireSectionContains(t, path, section, "`wait_agent(handle)`")
-	requireSectionContains(t, path, section, "operator interruption")
-	requireSectionContains(t, path, section, "returns control")
-	requireSectionContains(t, path, section, "non-terminal")
-	requireSectionContains(t, path, section, "same handle")
-	requireSectionContains(t, path, section, "final status")
-}
-
 func markdownSubsection(t *testing.T, path, heading string) string {
 	t.Helper()
 	data, err := os.ReadFile(path)
@@ -114,13 +95,6 @@ func markdownSubsection(t *testing.T, path, heading string) string {
 		section = section[:end]
 	}
 	return section
-}
-
-func requireSectionContains(t *testing.T, path, section, want string) {
-	t.Helper()
-	if !strings.Contains(section, want) {
-		t.Errorf("%s section is missing %q", path, want)
-	}
 }
 
 func requireForegroundWaitLifecycleClaim(t *testing.T, path, section string) {

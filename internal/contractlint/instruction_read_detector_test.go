@@ -77,18 +77,68 @@ func directlyReadsInstructionFile(fn *ast.FuncDecl) bool {
 // path anywhere in its subtree: an instruction-path literal/segment — so the +/
 // strings.Join/filepath.Join/fmt.Sprintf/string(...) path-build idioms (whose
 // instruction operand is a subtree node) are covered when their operands are
-// literals.
+// literals. The doc-site instruction READMEs (docs/dev/README.md and
+// docs/runtime-live-ci.md) carry the model's contract prose just like a skill body,
+// so a test that reads them is a prose-grep surface too; they are recognized across
+// the subtree's literals even when filepath.Join splits the path into segments.
 func exprCarriesInstructionPath(expr ast.Expr) bool {
 	hit := false
+	var lits []string
 	ast.Inspect(expr, func(n ast.Node) bool {
-		if x, ok := n.(*ast.BasicLit); ok {
-			if x.Kind == token.STRING && isInstructionPathLiteral(strings.Trim(x.Value, "`\"")) {
+		if x, ok := n.(*ast.BasicLit); ok && x.Kind == token.STRING {
+			s := strings.Trim(x.Value, "`\"")
+			lits = append(lits, s)
+			if isInstructionPathLiteral(s) {
 				hit = true
 			}
 		}
 		return true
 	})
+	if carriesDocSiteInstructionReadme(lits) {
+		hit = true
+	}
 	return hit
+}
+
+// docSiteInstructionReadmes are the doc-site README surfaces that carry the model's
+// contract prose. Each entry is the ordered path-segment sequence the read's path
+// literals must contain (in order) to match — covering both the single-literal
+// "docs/dev/README.md" form and the filepath.Join("docs","dev","README.md") split.
+var docSiteInstructionReadmes = [][]string{
+	{"docs", "dev", "README.md"},
+	{"docs", "runtime-live-ci.md"},
+}
+
+// carriesDocSiteInstructionReadme reports whether the ordered path literals of a read
+// spell out one of the doc-site instruction READMEs, whether the path is one joined
+// literal or filepath.Join-split segments.
+func carriesDocSiteInstructionReadme(lits []string) bool {
+	joined := strings.Join(lits, "/")
+	for _, surface := range docSiteInstructionReadmes {
+		if strings.Contains(joined, strings.Join(surface, "/")) {
+			return true
+		}
+		if containsSegmentsInOrder(lits, surface) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsSegmentsInOrder reports whether want appears as an ordered (not necessarily
+// contiguous) subsequence of lits — the shape filepath.Join("..","..","docs","dev","README.md")
+// produces, where intervening "."/".." segments separate the meaningful ones.
+func containsSegmentsInOrder(lits, want []string) bool {
+	i := 0
+	for _, lit := range lits {
+		if lit == want[i] {
+			i++
+			if i == len(want) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // fnFiltersInstructionMarkdown reports whether fn's body filters paths by a `.md`
