@@ -11,6 +11,7 @@ issue:
 id: pd7fqh4f8yzf9dacbbbamfg7
 mod-block:
 pr: "#382"
+archived: 2026-06-15T15:45:51Z
 ---
 
 The `spacedock dispatch reconcile` output tags each drift entry with a bare letter (`"class": "A"` .. `"E"`). The descriptive names already exist — the FO dispatch contract event-loop step-0 spells every class out parenthetically — but the helper discards them and emits the letter, so a reader (FO or human) must carry the A-E mapping to read the output. Decided this session: emit the descriptive name and drop the letter.
