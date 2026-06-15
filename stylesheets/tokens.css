@@ -1,0 +1,79 @@
+/* synced from spacedock-dev/landing @ 39bbef6 — do not edit here */
+/* spacedock canonical design tokens — single source of truth (C2 · terminal / spec-artifact) */
+
+:root {
+  /* type — mono-forward (C2): one family carries display, body, and evidence */
+  --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-sans:    "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  /* readable-body escape hatch: swap --font-sans to var(--font-read) to soften long copy */
+  --font-read:    "Hanken Grotesk", system-ui, -apple-system, sans-serif;
+
+  /* brand accent (dark default; per-theme overrides below) */
+  --accent: oklch(0.83 0.14 82);
+  --accent-strong: oklch(0.87 0.12 84);
+  --accent-ink: oklch(0.18 0.04 70);
+
+  /* multi-domain decision chip hues */
+  --gold:   oklch(0.84 0.13 78);
+  --green:  oklch(0.82 0.13 158);
+  --red:    oklch(0.74 0.16 25);
+  --blue:   oklch(0.80 0.11 235);
+  --violet: oklch(0.80 0.12 305);
+  --cyan:   oklch(0.82 0.11 200);
+  --gold-ink:   oklch(0.20 0.03 70);
+  --green-ink:  oklch(0.20 0.03 158);
+  --red-ink:    oklch(0.20 0.03 25);
+  --violet-ink: oklch(0.20 0.03 305);
+  --cyan-ink:   oklch(0.18 0.03 200);
+
+  /* spacing */
+  --space-1:4px; --space-2:8px; --space-3:11px; --space-4:16px; --space-5:18px;
+  --space-6:24px; --space-7:28px; --space-8:40px; --space-9:56px;
+
+  /* radii — sharper for the terminal/spec feel */
+  --radius-xs:4px; --radius-sm:5px; --radius-md:6px; --radius-lg:8px;
+  --radius-xl:10px; --radius-2xl:12px; --radius-pill:999px;
+
+  /* motion */
+  --t-fast:.15s ease; --t-card:.18s ease;
+  --ease-rise: cubic-bezier(.2,.7,.2,1);
+}
+
+/* Dark (default) — near-black, high-contrast terminal palette; one block paints both the landing and Material slate */
+[data-theme="dark"], [data-md-color-scheme="slate"] {
+  --bg: oklch(0.135 0.004 250); --bg-2: oklch(0.175 0.005 250);
+  --bg-raise: oklch(0.205 0.006 250); --bg-inset: oklch(0.105 0.004 250);
+  --line: oklch(0.265 0.008 250); --line-soft: oklch(0.225 0.007 250);
+  --fg: oklch(0.93 0.005 250); --fg-dim: oklch(0.71 0.006 250); --fg-mute: oklch(0.54 0.006 250);
+  --pass: oklch(0.80 0.13 158); --reject: oklch(0.74 0.16 25);
+  --shadow: 0 1px 2px rgba(0,0,0,.5), 0 18px 50px -18px rgba(0,0,0,.8);
+  --accent: oklch(0.83 0.14 82); --accent-strong: oklch(0.87 0.12 84); --accent-ink: oklch(0.18 0.04 70);
+  color-scheme: dark;
+
+  /* Material aliases (resolve against the dark tokens above) */
+  --md-default-bg-color: var(--bg); --md-default-fg-color: var(--fg);
+  --md-default-fg-color--light: var(--fg-dim); --md-default-fg-color--lighter: var(--fg-mute);
+  --md-primary-fg-color: var(--accent-strong); --md-primary-bg-color: var(--accent-ink);
+  --md-accent-fg-color: var(--accent); --md-typeset-a-color: var(--accent-strong);
+  --md-code-bg-color: var(--bg-inset); --md-code-fg-color: var(--fg-dim);
+}
+
+/* Light — paper variant (kept for the light toggle); mono type, warm paper */
+[data-theme="light"], [data-md-color-scheme="default"] {
+  --bg: oklch(0.985 0.0035 95); --bg-2: oklch(1 0 0);
+  --bg-raise: oklch(1 0 0); --bg-inset: oklch(0.955 0.004 95);
+  --line: oklch(0.875 0.005 95); --line-soft: oklch(0.92 0.004 95);
+  --fg: oklch(0.22 0.012 268); --fg-dim: oklch(0.42 0.012 268); --fg-mute: oklch(0.58 0.010 268);
+  --pass: oklch(0.52 0.13 158); --reject: oklch(0.53 0.18 27);
+  --shadow: 0 1px 2px rgba(20,18,15,.06), 0 22px 48px -24px rgba(20,18,15,.22);
+  --accent: oklch(0.70 0.14 78); --accent-strong: oklch(0.52 0.13 70); --accent-ink: oklch(0.20 0.03 70);
+  color-scheme: light;
+
+  /* Material aliases (resolve against the light tokens above) */
+  --md-default-bg-color: var(--bg); --md-default-fg-color: var(--fg);
+  --md-default-fg-color--light: var(--fg-dim); --md-default-fg-color--lighter: var(--fg-mute);
+  --md-primary-fg-color: var(--accent-strong); --md-primary-bg-color: var(--accent-ink);
+  --md-accent-fg-color: var(--accent); --md-typeset-a-color: var(--accent-strong);
+  --md-code-bg-color: var(--bg-inset); --md-code-fg-color: var(--fg-dim);
+}

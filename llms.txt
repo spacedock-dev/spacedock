@@ -1,0 +1,41 @@
+# Spacedock
+
+> A multi-agent orchestrator where nothing ships without a decision.
+
+Documentation for Spacedock, a multi-agent orchestrator where nothing ships without a decision. It lives within your existing coding harness (Claude Code, Codex, or Pi), breaks work into stages, and surfaces an evidenced decision at each gate. This index links the product docs; llms-full.txt is every page concatenated into one file for a single fetch.
+
+## Get started
+
+- [Welcome](https://spacedock.md/docs/index.md)
+- [Your first workflow](https://spacedock.md/docs/get-started/first-workflow/index.md)
+- [Install](https://spacedock.md/docs/get-started/install/index.md)
+- [Survey your project](https://spacedock.md/docs/get-started/survey/index.md)
+
+## Concepts
+
+- [Gates & decisions](https://spacedock.md/docs/concepts/gates-and-decisions/index.md)
+- [The operating model](https://spacedock.md/docs/concepts/operating-model/index.md)
+- [The stage lifecycle](https://spacedock.md/docs/concepts/stage-lifecycle/index.md)
+- [Workflows & entities](https://spacedock.md/docs/concepts/workflows-and-entities/index.md)
+
+## Running workflows
+
+- [Commission a workflow](https://spacedock.md/docs/running-workflows/commission/index.md)
+- [Debrief a session](https://spacedock.md/docs/running-workflows/debrief/index.md)
+- [Operate a workflow](https://spacedock.md/docs/running-workflows/operating/index.md)
+
+## Advanced topics
+
+- [Bridge an external tracker](https://spacedock.md/docs/advanced/external-tracker/index.md)
+- [Mods & standing teammates](https://spacedock.md/docs/advanced/mods-and-standing-teammates/index.md)
+- [Multiple workflows](https://spacedock.md/docs/advanced/multi-workflow/index.md)
+- [Refit a workflow](https://spacedock.md/docs/advanced/refit/index.md)
+- [Split-root state](https://spacedock.md/docs/advanced/split-root-state/index.md)
+
+## Reference
+
+- [Command reference](https://spacedock.md/docs/reference/command-reference/index.md)
+- [Frontmatter contract](https://spacedock.md/docs/reference/frontmatter-contract/index.md)
+- [Glossary](https://spacedock.md/docs/reference/glossary/index.md)
+- [Supported sandboxes](https://spacedock.md/docs/reference/sandbox/index.md)
+
