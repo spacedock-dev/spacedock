@@ -1,7 +1,7 @@
 ---
 id: 5h0chdcad99dq0z50qzwf1za
 title: Replace README-substring (prose-grep) test assertions — prove the seam, not the prose
-status: implementation
+status: validation
 source: "captain + nb (readme-main-flip-reconciliation) reconciliation 2026-06-07 — PR #315 edits tests/test_codex_plugin_packaging.py to assert README content by substring (assert \"spacedock codex\" in readme). Not on next today; when #315's content lands on main it must be replaced. Same proof-policy class as #309/4q and the survey signal-correction work."
 started: 2026-06-15T01:55:42Z
 completed:
