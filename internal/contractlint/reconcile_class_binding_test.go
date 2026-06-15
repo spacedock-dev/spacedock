@@ -101,53 +101,131 @@ func helperDriftClasses(t *testing.T) []string {
 	return classes
 }
 
-// contractClassToken matches the step-0 JSON-shape `"class":"a|b|c"` token in the
-// FO dispatch contract. The char class tolerates the hyphenated descriptive names
-// (un-advanced-pr, stale-branch, local-main-drift) and the `|`-alternation.
+// The step-0 block bounds. The contract event-loop step-0 opens with the
+// `0. **Reconcile sweep.**` heading and runs until the next numbered step
+// (`1. **`). All three class-bearing surfaces (JSON-shape token, action bullets,
+// one-line summary) live inside this slice; bounding to it keeps the extractors
+// from picking up an identically-shaped token elsewhere in the contract.
+var (
+	step0HeadingRe = regexp.MustCompile(`(?m)^0\. \*\*Reconcile sweep\.\*\*`)
+	nextStepRe     = regexp.MustCompile(`(?m)^1\. \*\*`)
+)
+
+// contractClassToken matches the step-0 JSON-shape `"class":"a|b|c"` token. The
+// char class tolerates the hyphenated descriptive names (un-advanced-pr,
+// stale-branch, local-main-drift) and the `|`-alternation.
 var contractClassToken = regexp.MustCompile(`"class":"([A-Za-z|\-]+)"`)
 
-// contractDriftClasses extracts the drift-class vocabulary from the FO dispatch
-// contract's step-0 JSON-shape token, splitting its `|`-alternation into members.
-// This is the contract-side source — independent of the helper AST scan.
-func contractDriftClasses(t *testing.T) []string {
+// actionBulletRe matches one step-0 per-class action bullet head: a three-space
+// indented `- ` marker, then the bolded class name(s) up to the `→` action arrow.
+// The combined `- **lingering** / **superseded** →` bullet carries two names
+// before the arrow; the captured prefix is re-scanned for every `**name**` span.
+var actionBulletRe = regexp.MustCompile(`(?m)^   - (.*?)→`)
+
+// boldNameRe extracts a `**name**` span's inner token (a descriptive class name).
+var boldNameRe = regexp.MustCompile(`\*\*([a-z][a-z-]*)\*\*`)
+
+// summaryClassRe matches a `name={N}` pair in the step-0 one-line drift summary
+// (`reconcile: {N} entries: lingering={N} superseded={N} … — acting`). The `={N}`
+// suffix anchors it to the summary template, not arbitrary prose.
+var summaryClassRe = regexp.MustCompile(`([a-z][a-z-]*)=\{N\}`)
+
+// step0Block returns the contract's event-loop step-0 slice, bounded by its
+// heading and the next numbered step. Fails if either anchor is missing.
+func step0Block(t *testing.T) string {
 	t.Helper()
 	data, err := os.ReadFile(dispatchContractPath(t))
 	if err != nil {
 		t.Fatalf("read contract: %v", err)
 	}
-	m := contractClassToken.FindSubmatch(data)
-	if m == nil {
-		t.Fatalf("contract step-0 JSON-shape `\"class\":\"…\"` token not found in %s", dispatchContractPath(t))
+	loc := step0HeadingRe.FindIndex(data)
+	if loc == nil {
+		t.Fatalf("step-0 heading `0. **Reconcile sweep.**` not found in %s", dispatchContractPath(t))
 	}
-	return strings.Split(string(m[1]), "|")
+	rest := data[loc[0]:]
+	if end := nextStepRe.FindIndex(rest); end != nil {
+		rest = rest[:end[0]]
+	}
+	return string(rest)
+}
+
+// contractClassesFromToken extracts the class set from step-0's JSON-shape token.
+func contractClassesFromToken(t *testing.T, block string) []string {
+	t.Helper()
+	m := contractClassToken.FindStringSubmatch(block)
+	if m == nil {
+		t.Fatalf("step-0 JSON-shape `\"class\":\"…\"` token not found")
+	}
+	return strings.Split(m[1], "|")
+}
+
+// contractClassesFromBullets extracts the class set from step-0's five per-class
+// action bullets (the bolded name(s) before each `→`).
+func contractClassesFromBullets(t *testing.T, block string) []string {
+	t.Helper()
+	var out []string
+	for _, bullet := range actionBulletRe.FindAllStringSubmatch(block, -1) {
+		for _, name := range boldNameRe.FindAllStringSubmatch(bullet[1], -1) {
+			out = append(out, name[1])
+		}
+	}
+	if len(out) == 0 {
+		t.Fatalf("step-0 per-class action bullets yielded no class names")
+	}
+	return out
+}
+
+// contractClassesFromSummary extracts the class set from step-0's one-line drift
+// summary (`name={N}` pairs).
+func contractClassesFromSummary(t *testing.T, block string) []string {
+	t.Helper()
+	var out []string
+	for _, m := range summaryClassRe.FindAllStringSubmatch(block, -1) {
+		out = append(out, m[1])
+	}
+	if len(out) == 0 {
+		t.Fatalf("step-0 one-line drift summary yielded no `name={N}` class tokens")
+	}
+	return out
 }
 
 // TestReconcileClassBinding (AC-2) asserts the helper's emitted drift-class set
-// (driftClasses var, AST) and the FO dispatch contract step-0 class set (JSON-shape
-// token, regex) are the SAME set — two independent sources that red on drift in
-// either direction. It is a structural dual-extraction check (an AST literal scan
-// and a delimited-token parse), NOT a prose-grep: it never asserts the doc contains
-// a given word; it compares two extracted enumerations. The behavior that the
-// helper emits these strings is proven by the AC-1 behavioral test that runs the
-// helper, not here.
+// (driftClasses var, AST) and EACH of the FO dispatch contract's three step-0
+// class-bearing surfaces — the JSON-shape token, the five per-class action
+// bullets, and the one-line drift summary — are the SAME set. They are independent
+// sources that red on drift in any direction: a class renamed, added, or dropped in
+// the helper OR in any single step-0 surface reds the binding. It is a structural
+// dual-extraction check (an AST literal scan and three delimited-token parses), NOT
+// a prose-grep: it never asserts the doc contains a given word; it compares
+// extracted enumerations. The behavior that the helper emits these strings is
+// proven by the AC-1 behavioral test that runs the helper, not here.
 func TestReconcileClassBinding(t *testing.T) {
 	helper := helperDriftClasses(t)
-	contract := contractDriftClasses(t)
-
-	// Empty-set guard on BOTH sides so the equality cannot pass vacuously (a broken
-	// extractor yielding [] on both sides would otherwise "match").
+	// Empty-set guard so the equality cannot pass vacuously (a broken extractor
+	// yielding [] on both sides would otherwise "match").
 	if len(helper) == 0 {
 		t.Fatal("helper-side driftClasses extraction yielded zero classes — extractor bug; the binding would pass vacuously")
 	}
-	if len(contract) == 0 {
-		t.Fatal("contract-side class-token extraction yielded zero classes — extractor bug; the binding would pass vacuously")
-	}
-
 	helperSet := toSet(helper)
-	contractSet := toSet(contract)
-	if !setEqual(helperSet, contractSet) {
-		t.Errorf("drift-class set mismatch between the helper and the FO dispatch contract step-0:\n  helper (reconcile.go driftClasses): %v\n  contract (claude-fo-dispatch.md step-0): %v\nneither side may rename, add, or drop a class without the other",
-			sortedSet(helperSet), sortedSet(contractSet))
+
+	block := step0Block(t)
+	surfaces := []struct {
+		name    string
+		classes []string
+	}{
+		{`JSON-shape token ("class":"…")`, contractClassesFromToken(t, block)},
+		{"per-class action bullets", contractClassesFromBullets(t, block)},
+		{"one-line drift summary", contractClassesFromSummary(t, block)},
+	}
+	for _, s := range surfaces {
+		if len(s.classes) == 0 {
+			t.Fatalf("contract step-0 %s extraction yielded zero classes — extractor bug; the binding would pass vacuously", s.name)
+		}
+		surfaceSet := toSet(s.classes)
+		if !setEqual(helperSet, surfaceSet) {
+			t.Errorf("drift-class set mismatch between the helper and the FO dispatch contract step-0 %s:\n  helper (reconcile.go driftClasses): %v\n  contract (claude-fo-dispatch.md step-0 %s): %v\nneither side may rename, add, or drop a class without the other",
+				s.name, sortedSet(helperSet), s.name, sortedSet(surfaceSet))
+		}
 	}
 }
 
