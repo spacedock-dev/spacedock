@@ -1,7 +1,7 @@
 ---
 title: Extract host-neutral merge + dispatch contract — codex/pi name no merge reference and break at terminalization
 status: backlog
-source: captain (2026-06-15, this session) — the shared first-officer merge/dispatch ceremony is siloed in `claude-`named refs, so codex/pi FOs are MISSING required terminal contract and will likely break at terminalization. Verified: `first-officer-shared-core.md:128-130` ONLY defers ("the ceremony lives in the runtime's merge reference; the runtime adapter names the merge reference") with no host-neutral fallback, while `codex-first-officer-runtime.md` and `pi-first-officer-runtime.md` name NO merge reference and carry no mod-block / ship-local / archive / worktree-removal contract (grep clean). Correction to an earlier FO analysis: codex (`send_input` + mailbox) and pi (`message_dm` via pi-agent-teams) DO message, so the reuse/feedback/await machinery is shared too, not Claude-only. This is a correctness gap, not a token cleanup. Captain: lands in 0.20.3 (0203-fo-efficiency; v0.20.2 is latest), otherwise codex breaks without the contract.
+source: 'captain (2026-06-15, this session) — the shared first-officer merge/dispatch ceremony is siloed in claude-named refs, so codex/pi FOs are MISSING required terminal contract and will likely break at terminalization. Verified — first-officer-shared-core.md:128-130 ONLY defers (the ceremony lives in the runtime merge reference named by the runtime adapter) with no host-neutral fallback, while codex-first-officer-runtime.md and pi-first-officer-runtime.md name NO merge reference and carry no mod-block / ship-local / archive / worktree-removal contract (grep clean). Correction to an earlier FO analysis — codex (send_input + mailbox) and pi (message_dm via pi-agent-teams) DO message, so the reuse/feedback/await machinery is shared too, not Claude-only. This is a correctness gap, not a token cleanup. Captain routed it to 0.20.3 (0203-fo-efficiency; v0.20.2 is latest), otherwise codex breaks without the contract.'
 started:
 completed:
 verdict:
@@ -9,6 +9,7 @@ score: 0.55
 worktree:
 issue:
 id: 2yfsf01jf15fmts7xt7w71m2
+sprint: 0203-fo-efficiency
 ---
 
 The shared first-officer terminal-merge and dispatch ceremony is generic (pure `spacedock status` + `git`) but lives only in `claude-fo-merge.md` / `claude-fo-dispatch.md`. The boot-resident core defers to "the runtime's merge reference," but only Claude provides one. A codex or pi FO that reaches a terminal stage has no mod-block set->invoke->clear, no Ship-Local ceremony, no worktree-removal safety, and no archive sequence to follow. It improvises or breaks. Extract the host-neutral ceremony so every runtime has it; leave only the genuine host seam per file.
