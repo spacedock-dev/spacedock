@@ -119,7 +119,7 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// FO-contract prose can out-argue a per-turn harness reminder, so the override
 	// lives in the `-p` input instead. It is GENERIC — it governs shutdown TIMING
 	// only, naming no stage or task — so it does not coach workflow mechanics.
-	drivePrompt := "Drive the workflow. " + antiShutdownOverride
+	drivePrompt := "Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve). " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", repoRoot,
 		"--skip-contract-check",
@@ -155,14 +155,17 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// once the process has exited, so this is harmless on the clean path.
 	defer poller.kill()
 
-	// The proven upstream watch sequence: TeamCreate (teams mode engaged) → the
-	// single ensign dispatch closes (backlog→done is ONE dispatch that writes
-	// `## Stage Report: done`) → the FO runs its BOUNDED best-effort terminal
-	// teardown and emits the terminal-status MARKER then HOLDS, at which point the
-	// deferred poller.kill() reaps the subprocess. terminalize + archive are NOT
-	// watched as stream events — they are the post-exit filesystem state the
-	// end-state assertions below verify. Each step is bounded by its own
-	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	// The watch sequence asserts the dispatch→done INVARIANT, not the team-vs-bare
+	// coin: the single ensign dispatch closes (backlog→done is ONE dispatch that
+	// writes `## Stage Report: done`) → the FO runs its BOUNDED best-effort
+	// terminal teardown and emits the terminal-status MARKER then HOLDS, at which
+	// point the deferred poller.kill() reaps the subprocess. A headless `-p` FO
+	// drives to that dispatch deterministically (Startup step 9), team OR bare —
+	// so the smoke gates on the dispatch closing (the cycle progressed), not on
+	// whether a team was created. terminalize + archive are NOT watched as stream
+	// events — they are the post-exit filesystem state the end-state assertions
+	// below verify. Each step is bounded by its own no-progress quiet budget; a
+	// stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
 	// resets on ANY drained line, so it catches a SILENT hang (no new stream
@@ -173,19 +176,17 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// the captain banned long individual timeouts, and a chatty hang is far rarer
 	// than a silent one (which the quiet budget does catch). Documenting it here
 	// keeps the trade-off explicit instead of silently absent.
-	if _, err := watcher.expect(isTeamCreate, quietBudgetDefault, "TeamCreate"); err != nil {
-		// A pre-TeamCreate failure is opaque on its own (the FO "exited before
-		// TeamCreate matched"). The most common cause is a wrong-root boot: a CI env
-		// leak lures the FO off `root` into the real repo, it boots that workflow,
-		// finds nothing dispatchable, and greets-and-stops. Surface that explicitly
-		// — naming the expected fixture root vs the wandered-to path — so the leak
-		// fails legibly instead of as a confusing timeout.
+	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
+		// A dispatch that never closes is opaque on its own. The most common cause is
+		// a wrong-root boot: a CI env leak lures the FO off `root` into the real repo,
+		// it boots that workflow, finds nothing dispatchable, and greets-and-stops —
+		// so it never dispatches and dispatch-close is exactly where it now fails.
+		// Surface that explicitly — naming the expected fixture root vs the
+		// wandered-to path — so the leak fails legibly instead of as a confusing
+		// timeout.
 		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
-			t.Fatalf("live cycle failed at TeamCreate due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
+			t.Fatalf("live cycle failed at the ensign dispatch close due to a wrong-root boot: %v\nUnderlying watcher error: %v", wrongRoot, err)
 		}
-		t.Fatalf("live cycle failed at TeamCreate: %v", err)
-	}
-	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
 		t.Fatalf("live cycle failed at the ensign dispatch close: %v", err)
 	}
 	// Grade the BOUNDED best-effort terminal teardown instead of a clean exit. The

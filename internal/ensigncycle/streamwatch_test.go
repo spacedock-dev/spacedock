@@ -35,6 +35,13 @@ const (
 	// expectDispatchClose — the deadline resets on any drained line, so this
 	// caps stream SILENCE, not total stage wallclock.
 	quietBudgetDefault = 60 * time.Second
+	// quietBudgetDispatchClose is the no-progress bound for the dispatch-close
+	// step. A single live ensign stage — boot, team-create, the work itself,
+	// report — can stay quiet between drained stream lines for longer than the
+	// 60s default, so the dispatch-close wait gets a roomier silence budget than
+	// the other watched steps (the "dispatch close did not close within 1m0s"
+	// flake signature).
+	quietBudgetDispatchClose = 3 * time.Minute
 	// exitBudgetDefault is how long expectExit waits for the FO to exit after
 	// the last watched step matched, before killing it.
 	exitBudgetDefault = 60 * time.Second

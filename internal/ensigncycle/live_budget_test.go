@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// AC-1 bans any individual timeout > 60s AND the monolithic deadline ctx. This
+// AC-1 bans any individual MONOLITHIC timeout > 60s AND the deadline ctx. This
 // guard PARSES the source AST and evaluates the real duration each `N *
 // time.Unit` literal denotes — a relationship over real values, NOT a substring
 // grep for the spelling "60". A literal written `120 * time.Second` would be
@@ -21,6 +21,17 @@ import (
 // removes. The guard runs under DEFAULT build tags and reads live_test.go as
 // source (the parser reads it regardless of its //go:build live tag), so it
 // covers the live path from the offline suite with no model spend.
+//
+// EXEMPTION — no-progress quiet budgets. A `quietBudget*` const is NOT a
+// monolithic timeout: it caps stream SILENCE, resetting on every drained line,
+// so a stage that legitimately runs for minutes never trips as long as the
+// stream keeps moving (the streamWatcher docstring's reconciliation of the
+// "no individual timeout > 60s" directive with stages that take minutes). A
+// dispatch-close step is one such stage — a single live ensign turn (boot,
+// team-create, work, report) can stay quiet > 60s between lines — so
+// quietBudgetDispatchClose is sanctioned to exceed the cap. The guard skips the
+// initializer of any `quietBudget*` const; the >60s ban stays absolute on every
+// other timeout literal.
 
 // liveBudgetSources are the source files on the live path whose timeout literals
 // must all be ≤60s: the streamWatcher (the per-step budget discipline), the live
@@ -35,6 +46,45 @@ var liveBudgetSources = []string{
 	"codex_live_runner_test.go",
 }
 
+// posSpan is the [start, end) source range of a quiet-budget const initializer
+// the AST guard exempts from the >60s ban.
+type posSpan struct {
+	start token.Pos
+	end   token.Pos
+}
+
+// quietBudgetAllowlist names the EXACT no-progress quiet-budget constants exempt
+// from the >60s ban. An explicit allowlist (not a `quietBudget*` prefix) means a
+// new constant must be deliberately added here to be exempted — naming something
+// `quietBudgetSneakyTimeout` does NOT auto-exempt it. The guard bans a monolithic
+// overall timeout because it MASKS a hang (the process sits dead under one big
+// deadline); a no-progress quiet budget trips on stream SILENCE and resets on
+// every drained line, so it CANNOT mask a hang — it catches one. The streamWatcher
+// docstring already draws this line; this encodes it.
+var quietBudgetAllowlist = map[string]bool{
+	"quietBudgetDefault":       true,
+	"quietBudgetDispatchClose": true,
+}
+
+// quietBudgetInitializerSpans collects the initializer-expression spans of every
+// allowlisted quiet-budget const so the AST guard can skip them.
+func quietBudgetInitializerSpans(f *ast.File) []posSpan {
+	var spans []posSpan
+	ast.Inspect(f, func(n ast.Node) bool {
+		spec, ok := n.(*ast.ValueSpec)
+		if !ok {
+			return true
+		}
+		for i, name := range spec.Names {
+			if i < len(spec.Values) && quietBudgetAllowlist[name.Name] {
+				spans = append(spans, posSpan{spec.Values[i].Pos(), spec.Values[i].End()})
+			}
+		}
+		return true
+	})
+	return spans
+}
+
 func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 	for _, file := range liveBudgetSources {
 		fset := token.NewFileSet()
@@ -42,10 +92,18 @@ func TestNoTimeoutLiteralExceeds60s(t *testing.T) {
 		if err != nil {
 			t.Fatalf("parse %s: %v", file, err)
 		}
+		exempt := quietBudgetInitializerSpans(f)
 		ast.Inspect(f, func(n ast.Node) bool {
 			be, ok := n.(*ast.BinaryExpr)
 			if !ok {
 				return true
+			}
+			// Skip the initializer of a no-progress quiet-budget const — it is
+			// sanctioned to exceed the 60s cap (see the EXEMPTION note above).
+			for _, span := range exempt {
+				if be.Pos() >= span.start && be.End() <= span.end {
+					return false
+				}
 			}
 			// Evaluate the WHOLE binary expression as a duration — folding ADD/SUB
 			// composites, not just a bare MUL. `time.Minute + 30*time.Second`
@@ -126,6 +184,72 @@ func TestDurationOfFoldsScalarSpellings(t *testing.T) {
 	}
 	if _, ok := durationOf(floatExpr); ok {
 		t.Error("durationOf unexpectedly folded a float conversion; that form is left to the const value-guard")
+	}
+}
+
+// TestQuietBudgetExemptionIsNameGated pins that the AST guard's >60s exemption
+// applies ONLY to constants in the EXPLICIT quietBudgetAllowlist — not to any
+// const, and not to a `quietBudget`-prefixed name that was never allowlisted. A
+// non-allowlisted >60s literal (a plain monolithic timeout, OR a sneaky
+// `quietBudget`-prefixed one) is still collected as a non-exempt span, so the
+// guard would flag it. This stops the carve-out from rotting into a blanket
+// bypass: the no-progress-budget exemption must never shelter a monolithic
+// timeout, and a new exemption must be a deliberate allowlist addition.
+func TestQuietBudgetExemptionIsNameGated(t *testing.T) {
+	const src = `package p
+import "time"
+const (
+	quietBudgetDispatchClose = 3 * time.Minute
+	someMonolithicTimeout    = 2 * time.Minute
+	quietBudgetSneaky        = 4 * time.Minute
+)
+`
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, "fake.go", src, 0)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	spans := quietBudgetInitializerSpans(f)
+	if len(spans) != 1 {
+		t.Fatalf("expected exactly 1 exempt span (only the allowlisted quietBudgetDispatchClose), got %d", len(spans))
+	}
+	// Walk the BinaryExprs and confirm ONLY the allowlisted 3m quiet budget is
+	// inside an exempt span; the 2m plain monolithic literal AND the 4m
+	// non-allowlisted `quietBudget`-prefixed literal are NOT (they would be flagged).
+	var monolithicExempt, sneakyExempt, quietExempt bool
+	ast.Inspect(f, func(n ast.Node) bool {
+		be, ok := n.(*ast.BinaryExpr)
+		if !ok {
+			return true
+		}
+		d, isDur := durationOf(be)
+		if !isDur {
+			return true
+		}
+		within := false
+		for _, span := range spans {
+			if be.Pos() >= span.start && be.End() <= span.end {
+				within = true
+			}
+		}
+		switch d {
+		case 3 * time.Minute:
+			quietExempt = within
+		case 2 * time.Minute:
+			monolithicExempt = within
+		case 4 * time.Minute:
+			sneakyExempt = within
+		}
+		return false
+	})
+	if !quietExempt {
+		t.Error("allowlisted quietBudgetDispatchClose literal was NOT exempt; the carve-out failed to cover it")
+	}
+	if monolithicExempt {
+		t.Error("a plain monolithic literal was exempt; the carve-out leaked into a blanket bypass")
+	}
+	if sneakyExempt {
+		t.Error("a non-allowlisted quietBudget-prefixed literal was exempt; the allowlist degraded to a prefix match")
 	}
 }
 

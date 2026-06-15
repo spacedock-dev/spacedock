@@ -97,7 +97,7 @@ func TestLiveStandingResidencyInjectsCommOfficer(t *testing.T) {
 		}
 		t.Fatalf("live residency cycle failed at TeamCreate: %v", err)
 	}
-	if err := watcher.expectDispatchClose(quietBudgetDefault, "dispatch close"); err != nil {
+	if err := watcher.expectDispatchClose(quietBudgetDispatchClose, "dispatch close"); err != nil {
 		t.Fatalf("live residency cycle failed at the ensign dispatch close: %v", err)
 	}
 
