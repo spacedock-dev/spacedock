@@ -9,7 +9,7 @@ score: 0.3
 worktree: .worktrees/spacedock-ensign-reconcile-drift-class-names
 issue:
 id: pd7fqh4f8yzf9dacbbbamfg7
-mod-block: merge:pr-merge
+mod-block:
 pr: "#382"
 ---
 
