@@ -3,7 +3,6 @@ package ensigncycle
 import (
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -328,31 +327,6 @@ func TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle(t *tes
 	}
 	if err := assertRejectionFlow(entity, "validation rejected; implementation follow-up\n"+jsonl); err == nil {
 		t.Fatal("durable rejection-flow assertion must fail when the entity lacks the second feedback cycle")
-	}
-}
-
-func TestCodexForegroundWaitWatchdogDocsContract(t *testing.T) {
-	wd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	readmePath := filepath.Join(wd, "..", "..", "docs", "dev", "README.md")
-	b, err := os.ReadFile(readmePath)
-	if err != nil {
-		t.Fatalf("read docs/dev/README.md: %v", err)
-	}
-	doc := string(b)
-
-	mustContain := []string{
-		"Codex foreground-wait watchdog",
-		"`collab:wait` / `wait_agent`",
-		"durable workflow-state progress",
-		"typed stall",
-	}
-	for _, clause := range mustContain {
-		if !strings.Contains(doc, clause) {
-			t.Errorf("docs/dev/README.md is missing the required Codex foreground-wait watchdog clause: %q", clause)
-		}
 	}
 }
 

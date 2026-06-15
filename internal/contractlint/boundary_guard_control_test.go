@@ -50,6 +50,32 @@ func TestWalksFixtureMarkdown(t *T) {
 	})
 }
 `
+	// A planted doc-site README prose-grep: reads docs/dev/README.md (a contract
+	// surface) and greps its prose. This is the exact shape the dropped README
+	// guards used; the detector must classify the doc-site README as an instruction
+	// surface so a re-introduction reds.
+	docReadmeProseGrep := `package fixture
+func TestReadsDocReadme(t *T) {
+	b, _ := os.ReadFile(filepath.Join(wd, "..", "..", "docs", "dev", "README.md"))
+	if strings.Contains(string(b), "### Shared runtime scenarios") { _ = b }
+}
+`
+	docRuntimeLiveCIProseGrep := `package fixture
+func TestReadsRuntimeLiveCI(t *T) {
+	b, _ := os.ReadFile("../../docs/runtime-live-ci.md")
+	if strings.Contains(string(b), "Codex foreground-wait watchdog") { _ = b }
+}
+`
+	// A non-instruction README read: copies an ARBITRARY README (a fixture under
+	// testdata, not the doc-site contract surface) as test input. A README is not an
+	// instruction surface merely by filename — only the two doc-site contract READMEs
+	// are — so the guard must not flag this.
+	nonInstructionReadmeRead := `package fixture
+func TestCopiesFixtureReadme(t *T) {
+	b, _ := os.ReadFile(filepath.Join("testdata", "fixture-pkg", "README.md"))
+	_ = b
+}
+`
 	writeFixture(t, filepath.Join(dir, "instruction_read_test.go"), instructionRead)
 	if got := instructionReadingTestFiles(t, dir); !contains(got, "instruction_read_test.go") {
 		t.Fatalf("guard failed to flag a planted instruction-file read; flagged=%v", got)
@@ -57,12 +83,24 @@ func TestWalksFixtureMarkdown(t *T) {
 
 	writeFixture(t, filepath.Join(dir, "manifest_read_test.go"), nonInstructionRead)
 	writeFixture(t, filepath.Join(dir, "fixture_walk_test.go"), nonInstructionWalk)
+	writeFixture(t, filepath.Join(dir, "doc_readme_grep_test.go"), docReadmeProseGrep)
+	writeFixture(t, filepath.Join(dir, "doc_runtime_live_ci_grep_test.go"), docRuntimeLiveCIProseGrep)
+	writeFixture(t, filepath.Join(dir, "fixture_readme_read_test.go"), nonInstructionReadmeRead)
 	got := instructionReadingTestFiles(t, dir)
 	if contains(got, "manifest_read_test.go") {
 		t.Fatalf("guard wrongly flagged a non-instruction read (json manifest / generated state entity); flagged=%v", got)
 	}
 	if contains(got, "fixture_walk_test.go") {
 		t.Fatalf("guard wrongly flagged a non-instruction markdown fixture walk; flagged=%v", got)
+	}
+	if !contains(got, "doc_readme_grep_test.go") {
+		t.Fatalf("guard failed to flag a planted docs/dev/README.md prose-grep; flagged=%v", got)
+	}
+	if !contains(got, "doc_runtime_live_ci_grep_test.go") {
+		t.Fatalf("guard failed to flag a planted docs/runtime-live-ci.md prose-grep; flagged=%v", got)
+	}
+	if contains(got, "fixture_readme_read_test.go") {
+		t.Fatalf("guard wrongly flagged a non-instruction fixture README read; only the doc-site contract READMEs are instruction surfaces; flagged=%v", got)
 	}
 	if !contains(got, "instruction_read_test.go") {
 		t.Fatalf("adding a non-instruction fixture must not stop the guard flagging the instruction one; flagged=%v", got)
