@@ -5,6 +5,7 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"io"
 	"os"
 	"os/exec"
@@ -169,9 +170,11 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 
 	// A 401/is_error result is a LOUD launch failure (stale credential), never an
 	// AC-a behavior verdict — surface it distinctly so a token problem is not misread
-	// as a greet-stop or a gate-resolution regression.
-	finalMessage, extractErr := extractClaudeFinalMessage(stream)
-	if extractErr != nil {
+	// as a greet-stop or a gate-resolution regression. (The extracted final-message
+	// string is only used for this launch-failure check; the gate-status assertion
+	// below scans the whole stream, because the FO sometimes presents the gate in an
+	// earlier assistant turn and ends with an empty terminal `result` field.)
+	if _, extractErr := extractClaudeFinalMessage(stream); extractErr != nil {
 		t.Fatalf("claude launch failed: %v\nStream tail:\n%s", extractErr, tail(stream, 4000))
 	}
 
@@ -203,10 +206,42 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 		t.Errorf("entity carries a completed timestamp — the FO terminalized past the gate it should have stopped at\n%s", entity)
 	}
 
-	// (3) The FO EXITED REPORTING GATE STATUS: the final message presents a gate
-	// review and a decision prompt for the human operator (it did not silently stop).
-	lowerFinal := strings.ToLower(finalMessage)
-	if !strings.Contains(lowerFinal, "gate review:") || !strings.Contains(lowerFinal, "decision:") {
-		t.Errorf("final FO output did not report gate status (a gate review + decision prompt)\nFinal message:\n%s", finalMessage)
+	// (3) The FO REPORTED GATE STATUS before exiting: it AUTHORED a gate-review
+	// presentation with a decision prompt for the human operator (it did not
+	// silently stop). This scans the whole stream for an FO-AUTHORED assistant
+	// text/thinking block carrying both "Gate review:" and "Decision:" — NOT the
+	// extracted final message, because the FO sometimes presents the gate in an
+	// earlier turn and ends the run with an empty terminal `result` field (so the
+	// gate report is in the stream but not in the last message). It also keys on the
+	// FO authoring it (assistant block), not on the marker appearing in a Read of the
+	// present-gate skill template the FO loaded.
+	if !foAuthoredGateReview(stream) {
+		t.Errorf("FO did not report gate status (an authored gate review + decision prompt) anywhere in its output\nStream tail:\n%s", tail(stream, 4000))
 	}
+}
+
+// foAuthoredGateReview reports whether the FO AUTHORED a gate-review presentation
+// — an assistant text or thinking block carrying both "Gate review:" and
+// "Decision:" — anywhere in the stream. It keys on the FO authoring the block (the
+// gate report it emits), not on a Read tool_result that merely contains the
+// present-gate skill's template (which carries the literal "Gate review:" header as
+// a format example). Case-insensitive on the markers; the FO's wording varies.
+func foAuthoredGateReview(stream string) bool {
+	for _, line := range strings.Split(stream, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || !strings.HasPrefix(line, "{") {
+			continue
+		}
+		var e streamEntry
+		if json.Unmarshal([]byte(line), &e) != nil || e.Type != "assistant" || e.Message == nil {
+			continue
+		}
+		for _, b := range e.Message.Content {
+			authored := strings.ToLower(b.Text + "\n" + b.Thinking)
+			if strings.Contains(authored, "gate review:") && strings.Contains(authored, "decision:") {
+				return true
+			}
+		}
+	}
+	return false
 }
