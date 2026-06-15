@@ -5,7 +5,7 @@
 
 ## Goal (success criterion)
 
-An FO or ensign reads an entity's frontmatter + one target section (e.g. the latest `## Stage Report`) without loading the whole file — via a `spacedock status` read helper that returns the FM plus a section-heading→offset map — and the dev README is slim enough that the whole-file fallback stays cheap. Proven by the helper's real output over fixtures (correct FM + heading offsets that actually locate the sections) and the README/template line-count + behavior checks, never a prose-grep.
+An FO or ensign reads only the part of a workflow file it needs — a section, the frontmatter, a CI summary — and mutating a file does not re-echo the whole thing. The backbone is a `spacedock status` read helper that returns a file's parsed frontmatter plus a section-heading→line-offset map, so a caller reads one section with `Read(offset, limit)` instead of the whole file. Around it the sprint trims the other recurring read/mutation sinks (the status listing's SOURCE render, the read-then-`set` staleness echo, whole-log CI reads) and makes the shipped commission templates defer to the operating contract. Proven by real behavior — helper output over fixtures, live section reads, token-flow measurements — never a prose-grep.
 
 ## Why
 
@@ -14,10 +14,11 @@ This session's dogfood surfaced the cost: 280-line entity bodies and stage repor
 ## Definition of Done
 
 0.20.4 ships when, merged to `main`:
-- **The `status` read helper** returns an entity/markdown file's parsed frontmatter + a section-heading→line-offset map, so a caller can read a target section with `Read(offset, limit)` instead of the whole file. Proven by Go tests over real helper output (correct FM; heading offsets that locate the right section bytes), plus a live exercise of an FO/ensign reading a section through it.
+- **The `status` read helper** (the backbone) returns an entity/markdown file's parsed frontmatter + a section-heading→line-offset map, so a caller can read a target section with `Read(offset, limit)` instead of the whole file. Proven by Go tests over real helper output (correct FM; heading offsets that locate the right section bytes), plus a live exercise of an FO/ensign reading a section through it.
+- **The other read/mutation-cost reductions the sprint scopes are resolved** — each member meets its acceptance criteria, or, where a spike proves a sink is not tool-fixable (e.g. the read-then-`set` echo if it turns out harness-inherent), it is recorded as a roadmap decision rather than forced into code.
 - `v0.20.4` cut after the pre-cut antipattern audit is clean.
 
-The dev README's own slim-down is **FO-direct upkeep** (the FO owns and edits the workflow `README.md`), not a tracked sprint member — done alongside the helper so the slimmed README stays cheap to read. The commission-template slim (shipped scaffolding) rides with `ey`.
+Membership (the specific reductions) is the query above, not enumerated here. The dev README's own slim-down is **FO-direct upkeep** (the FO owns and edits the workflow `README.md`), done alongside the helper so the slimmed README stays cheap to read. The commission-template **restructure** (lead-with-the-end + defer-to-contract) is now a sprint member; `ey` (the narrower proof-policy rule-port into the operating contract) stays separate and composes with it.
 
 ## Out of scope
 
