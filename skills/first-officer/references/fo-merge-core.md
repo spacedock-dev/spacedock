@@ -1,6 +1,6 @@
 # First Officer Merge Core (host-neutral)
 
-The terminal merge-and-cleanup ceremony, the mod-block enforcement that guards it, and the host-neutral half of the terminal teardown. Lazily loaded at the terminal boundary — the boot-resident core names this file at the merge load point and reads it only when an entity reaches its terminal stage. A boot, dispatch, or gate that never terminalizes never reads it. The host's runtime adapter names this core at its merge seam and supplies the concrete terminal-teardown ceremony (step 10's per-host half).
+The terminal merge-and-cleanup ceremony, the mod-block enforcement that guards it, and step 10's boundary obligation. Lazily loaded at the terminal boundary (named by the boot-resident core); a boot, dispatch, or gate that never terminalizes never reads it. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.
 
 ## Merge and Cleanup
 
@@ -21,7 +21,7 @@ When an entity reaches its terminal stage:
 7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
 8. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
 9. Remove the worktree (`git worktree remove {path}`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is pending — the reviewer needs it. Remote cleanup belongs to the PR merge.
-10. **Teardown agents at terminal.** At the terminal boundary, derive the entity's worker cohort and run the host's terminal-teardown ceremony — cooperative shutdown of the cohort (best-effort, fire-and-forget), drop them from session memory, then the host's bounded team/worker teardown. Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host. The cohort-derivation rule, the team/worker-teardown call, the settle interval, the attempt cap, and any terminal-status marker are the host's — the runtime adapter's merge seam supplies them. This core names none of them; it states only the boundary obligation.
+10. **Teardown agents at terminal.** At the terminal boundary, derive the entity's worker cohort and run the host's terminal-teardown ceremony — cooperative shutdown of the cohort (best-effort, fire-and-forget), drop them from session memory, then the host's bounded team/worker teardown. Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host. The cohort-derivation rule, the team/worker-teardown call, the settle interval, the attempt cap, and any terminal-status marker are the host's — the runtime adapter supplies them. This core names none of them; it states only the boundary obligation.
 
 ### Ship-Local Ceremony
 
