@@ -1,7 +1,7 @@
 ---
 id: r0n903prs88q29vjkmcmtw2x
 title: FO contract documents the from-root `spacedock new` invocation (--workflow-dir) so filing an entity needs no trial-and-error
-status: implementation
+status: validation
 source: "captain (2026-06-14, this session) — filing an entity from the project root hit no-Spacedock-workflow-here / pass --workflow-dir. FO Write Scope (first-officer-shared-core.md:171) and Filing New Entities (claude-first-officer-runtime.md:43) both document `spacedock new <slug> [--folder] [--id-seed S --id-actor A]` WITHOUT --workflow-dir, but the Working Directory rule keeps the FO at the project root where `new` cannot auto-discover the workflow. `new --help` returns the general menu, not per-command usage, so the FO must trial-and-error the flags. Same fo-efficiency / friction-reduction class as the 0.20.4 structured-reads and 0203 work."
 started: 2026-06-15T00:32:39Z
 completed:
