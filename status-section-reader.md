@@ -93,8 +93,10 @@ All criteria are entity-level properties of the finished helper, each proven by 
   *Tested by:* Go behavior test driving the binary against a fixture workflow: a valid slug yields the map for that entity's file; an unknown ref exits 1 with the resolver's error.
 - **AC5 — Flag incompatibility.** `--read` combined with `--set`/`--next`/`--boot`/`--validate`/`--resolve`/etc. exits 1 with the established "cannot be combined with …" message.
   *Tested by:* Go test asserting the incompatibility exit/message for each conflicting flag (mirrors the existing per-flag incompatibility tests).
-- **AC6 — Live section read.** An FO or ensign, given a real entity (e.g. this one) and the helper, reads ONE target section (its latest `## Stage Report`) via `status --read … --json` then `Read(offset, lines)`, and the returned text is exactly that section — without loading the whole file.
-  *Verified by: live* FO/ensign exercise during validation (a runtime handoff is the claim; the spike already proved the offset mechanism in-process).
+- **AC6 — Live adoption at a real injection point.** The adoption is proven by an FO (or ensign) ACTUALLY USING `status --read` at one of the wired contract sites — not by the contract text saying to. Concretely: at the Completion-and-Gates step (`first-officer-shared-core.md:105`), the FO reads an entity's latest `## Stage Report` by calling `status --read <ref> --json`, taking that heading's `offset`/`lines`, and issuing `Read(path, offset, limit)` — and the returned bytes are exactly that report section, with the rest of the (≥100-line) body never loaded. The proof is the behavioral trace (the two tool calls and the section-only result), never the presence of the instruction.
+  *Verified by: live* FO section-read drive during validation, exercising the `:105` injection point. The instruction edit alone proves nothing (proof-policy: a contract saying "use --read" is not evidence; an agent using it is). The spike already proved the offset mechanism in-process; AC6 proves the wired contract actually drives the behavior.
+- **AC7 — Contract edits are under-test scaffolding.** Each wired contract/skill file (the FO + ensign references and the dispatch ensign-prompt) carries the `--read` adoption wording, and the change does not break the scaffolding's own guards (the dispatch golden-prompt tests, the ban-readme-substring guard, any skill-text contract test).
+  *Tested by:* the existing dispatch golden-prompt suite (`internal/dispatch/testdata/golden/*`, regenerated) passing, plus a re-run of the contract-lint / skill-text guards over the edited files. (Scaffolding guardrail: implementation makes these edits under the existing tests.)
 
 ## Test plan
 
@@ -104,13 +106,56 @@ All criteria are entity-level properties of the finished helper, each proven by 
 - **Live (validation stage):** AC6 — one FO/ensign section-read handoff against a real entity. Cost: one live exercise; runtime behavior is the only thing not provable in-process.
 - **No golden-file capture needed** for the parser (the oracle is the fixture's structure, computed in-test), avoiding a brittle byte-golden that would re-break on every fixture edit.
 
+## Contract adoption (where the FO/ensigns actually use `--read`)
+
+The tool only captures the recurring token savings if the live read-instruction sites adopt it. Six verified injection points (file:line confirmed cycle 2). The concrete before/after wording for each lives in `## Documentation changes` below; this section is the adoption MAP and the per-site rationale.
+
+| # | Site | Today | Adoption |
+|---|------|-------|----------|
+| 1 | FO `first-officer-shared-core.md:105` (Completion & Gates step 1) | "Read the entity file's last `## Stage Report` section." | `status --read <ref> --json` → that heading's offset/lines → `Read(offset, lines)`. **The prime FO use case** (the FO just read 127 lines for one report); this is the AC6 injection point. |
+| 2 | FO `first-officer-shared-core.md:217` (Probe & Ideation Discipline, Grep-over-Read) | "Prefer Grep over Read… Anchor on heading… Read only when you need the full text." | Add `status --read` as the STRUCTURED upgrade to heading-anchoring: when you want a whole named section (not a grep hit), `--read` gives the exact offset/lines so the follow-up `Read` is section-scoped, not whole-file. |
+| 3 | FO `claude-first-officer-runtime.md:39` (Entity-Body Inspection) | Defers to the shared-core Grep-over-Read rule; names the staleness echo. | Re-point the defer to also cover the new `--read` upgrade in the shared core — no independent wording, just keep the runtime note consistent (it already says "avoid a full-file Read for targeted section lookups"). |
+| 4 | Ensign `ensign-shared-core.md:18` (Working step 1) | "Read the entity file before making changes." | Qualify: read the SECTIONS you need via `status --read` (FM + the stage def's relevant section) rather than the whole body, when you don't need full text. The ensign's dispatch already hands it the stage def; `--read` covers re-reads of the body. |
+| 5 | Ensign `ensign-shared-core.md:92` (Stage Report Protocol) | "Append the report at the end of the entity file — do not read the entire entity body to find an insertion point." | `--read`'s `total_lines` IS the exact append offset — turn the "do not read to find an insertion point" rule into a positive instruction: get `total_lines` from `status --read … --json`, append after it. |
+| 6 | Dispatch ensign-prompt `internal/dispatch/build.go:541` & `:545` ("Read the entity file at {path} …") | Whole-spec read instruction baked into every dispatch prompt. | **Decision: do NOT swap this to `--read`.** The dispatched ensign genuinely needs the full spec to do the stage work — a section-only read here would starve it. Instead add a one-line hint AFTER the entity-read line: re-reads of the body during work (e.g. to find the stage-report append point, site #5) should use `status --read`. Keeps the first read whole, makes subsequent reads cheap. |
+
+**Why a hint, not a swap, at site 6:** the entity-read line is the ensign's single source of the spec; the savings is in REPEAT reads, not the first one. The golden-prompt tests (`internal/dispatch/testdata/golden/*`) pin this line, so the hint is an additive line the goldens regenerate to include (AC7).
+
 ## Documentation changes
 
-`--read` is a new user-visible CLI surface, so ideation proposes the doc diff (implementation applies it):
+Two classes: (a) the user-facing CLI doc for the new `--read` surface, and (b) the contract/skill-text adoption diffs (specific before/after wording per the ideation rule; implementation applies them under the scaffolding guards).
+
+### (a) User-facing CLI docs
 
 - **`docs/dev/README.md`** — under the existing `## Runtime Live CI` / helper-reference area (or a short `### Reading sections` note), add:
   > **Read one section, not the whole file.** `spacedock status --workflow-dir <wf> --read <entity-ref-or-path> --json` returns the file's frontmatter plus an ordered heading map (`text`, `level`, `offset`, `lines`). Pass a heading's `offset`/`lines` to `Read(path, offset, limit)` to load just that section — e.g. an entity's latest `## Stage Report`, or this README's `## Sprints`, without the rest.
 - **`mkdocs.yml` / docs site** — if the CLI reference page enumerates `status` flags, add a `--read <ref-or-path>` row with the one-line description above. (Concrete wording deferred to implementation against whichever doc file enumerates the flags; the before/after is the addition of that single flag row — no existing wording changes.)
+
+### (b) Contract / skill-text adoption diffs
+
+Site 1 — `skills/first-officer/references/first-officer-shared-core.md:105`:
+> **Before:** `1. Read the entity file's last `## Stage Report` section.`
+> **After:** `1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.`
+
+Site 2 — `first-officer-shared-core.md:217`:
+> **Before:** `- Prefer Grep over Read for targeted entity-body inspection. Anchor on heading or field name (`## Stage Report`, `### Feedback Cycles`, a specific frontmatter field). Read only when you need the full text.`
+> **After:** append one sentence: `… Read only when you need the full text. To pull a whole named section, `status --read <ref> --json` returns its `offset`/`lines` so the follow-up `Read(offset, limit)` is section-scoped, not whole-file.`
+
+Site 3 — `claude-first-officer-runtime.md:39`:
+> **Before:** `… avoid a full-file Read for targeted section lookups and trust `status --set` stdout (`field: old -> new`) for mutation narration.`
+> **After:** `… avoid a full-file Read for targeted section lookups (use the shared core's `status --read` section-read upgrade) and trust `status --set` stdout (`field: old -> new`) for mutation narration.`
+
+Site 4 — `skills/ensign/references/ensign-shared-core.md:18`:
+> **Before:** `1. Read the entity file before making changes.`
+> **After:** `1. Read the entity file before making changes — when you need only specific sections (the relevant stage-def section, your prior report), `status --read <entity-path> --json` returns each section's `offset`/`lines` for a scoped `Read`, rather than the whole body.`
+
+Site 5 — `ensign-shared-core.md:92`:
+> **Before:** `- Append the report at the end of the entity file — do not read the entire entity body to find an insertion point.`
+> **After:** `- Append the report at the end of the entity file — get the file's `total_lines` from `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.`
+
+Site 6 — `internal/dispatch/build.go` (the ensign-prompt assembly, after the `Read the entity file at {path}` line at `:541`/`:545`):
+> **Add** (a new line in the assembled prompt, regenerating the `testdata/golden/*` prompts): `For later re-reads of the body during work — e.g. to find the append point for your stage report — use `${SPACEDOCK_BIN:-spacedock} status --read {path} --json` to fetch a section's offset/lines rather than re-reading the whole file.`
+> (The first entity-read stays a whole-spec read; only repeat reads are redirected. The golden-prompt suite pins this output, so the added line is reflected in regenerated goldens — AC7.)
 
 ## Stage Report: ideation
 
@@ -124,3 +169,20 @@ All criteria are entity-level properties of the finished helper, each proven by 
 ### Summary
 
 Designed the 0.20.4 read-helper as a `--read <ref-or-path>` flag on `spacedock status` (reusing the existing discovery/resolver/`--json` machinery) that emits parsed frontmatter plus a 1-based-line heading map (text, level, offset, lines) so a caller reads one section via `Read(offset, limit)`. Spiked the riskiest path first — the offset contract — by running a throwaway parser over a known-structure fixture and confirming three real `Read(offset,limit)` calls returned exactly the predicted sections, including a level-aware "section owns its nested headings" case. Scope held distinct from the status-table SOURCE-column (`contract`/source-not-default) concern; ACs are oracle-based (fixture structure, never prose-match) with a live FO/ensign section-read as AC6, plus a proposed README doc diff.
+
+## Stage Report: ideation (cycle 2)
+
+Cycle-2 expands scope to include the contract ADOPTION wiring (captain bounce-back: the tool without adoption ships no recurring savings). All cycle-1 design kept; this is additive.
+
+- DONE: Design the contract ADOPTION at each verified live read-instruction site.
+  New body section "Contract adoption" maps all six sites (file:line re-verified cycle 2: FO shared-core 105 & 217, FO runtime 39, ensign shared-core 18 & 92, dispatch build.go 541/545) to a specific instruction change, with per-site rationale. Site 6 (dispatch ensign-prompt) is a deliberate HINT-not-swap: the first entity read must stay whole-spec or it starves the ensign; only repeat reads redirect.
+- DONE: Expand `## Documentation changes` with CONCRETE before/after instruction diffs for the contract files (not just the README CLI ref).
+  Body "Documentation changes" now split (a) user-facing CLI docs and (b) six per-site before/after blocks with verbatim current wording and the proposed replacement, per the ideation rule (template/skill text → specific wording).
+- DONE: Strengthen AC6 so the live drive proves a REAL injection point in use; proof is behavioral, never instruction prose.
+  AC6 rewritten to require the FO actually calling `status --read` at the `:105` Completion-and-Gates site (the two-tool-call trace: `--read --json` → `Read(offset,limit)` → section-only bytes), explicitly stating the instruction edit alone proves nothing. Added AC7 covering the contract edits as under-test scaffolding (dispatch goldens + skill-text guards).
+- DONE: Keep scope distinct from the status-table SOURCE render (source-not-default).
+  Unchanged from cycle 1 — "Out of scope" still names `defaultStatusFields`/`SOURCE` in format.go as the separate concern; adoption work is all file-BODY reads.
+
+### Summary
+
+Folded in the adoption wiring: a six-site contract-adoption map (all file:line re-verified) plus concrete before/after skill-text diffs for the FO references, the ensign references, and the dispatch ensign-prompt — with the dispatch site deliberately a re-read HINT rather than a first-read swap (a section-only first read would starve the ensign of the spec). AC6 now demands a behavioral live drive at the `:105` FO completion-gate site (proof is the agent using `--read`, never the contract saying to), and AC7 covers the contract edits as under-test scaffolding (dispatch goldens regenerate to include the added prompt line). Scope still held distinct from the status-table SOURCE-column concern.
