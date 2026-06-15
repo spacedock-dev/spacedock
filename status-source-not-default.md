@@ -1,9 +1,9 @@
 ---
 id: 0qdayfbj4kpb9myj7y2mcc4k
 title: Make the status SOURCE column conditional — drop it from the default listing, render only when requested
-status: backlog
+status: ideation
 source: captain (2026-06-14) "make source field not default" — the `spacedock status` listing renders the SOURCE column UNCONDITIONALLY (internal/status/format.go:14 defaultStatusFields; :111-116 header, :136-137 rows). At boot the overview emitted ~7,200 tokens for ~30 entities, each carrying a multi-sentence SOURCE (boot-forensics, this session). A greet/overview rarely needs SOURCE. Separate from e6a/status-section-reader (which is file-BODY structural reads); this is the status TABLE column render. 0.20.4 read-cost theme.
-started:
+started: 2026-06-15T05:35:19Z
 completed:
 verdict:
 score: 0.35
