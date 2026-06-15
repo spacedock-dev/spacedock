@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-context-budget-spurious-warnings
 issue: "#344"
 sprint: 0203-fo-efficiency
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#377"
 ---
 
