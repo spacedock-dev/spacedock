@@ -1,13 +1,13 @@
 ---
 id: 7ea4knxzvf3s4vve2zvr4ka0
 title: Determine + document the intended team-vs-bare dispatch mode for headless `-p` runs
-status: validation
+status: done
 source: "0203-T3 surfaced (2026-06-14): TestLiveEnsignCycle flaked on a sonnet team-vs-bare coin-flip; captain steer: \"the important thing is determining the expected and intended behavior and document\""
 started: 2026-06-15T03:31:26Z
-completed:
-verdict:
+completed: 2026-06-15T16:22:52Z
+verdict: PASSED
 score:
-worktree: .worktrees/spacedock-ensign-headless-dispatch-mode-intent
+worktree:
 issue:
 sprint: 0203-fo-efficiency
 mod-block:
