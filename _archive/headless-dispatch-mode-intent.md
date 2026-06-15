@@ -12,6 +12,7 @@ issue:
 sprint: 0203-fo-efficiency
 mod-block:
 pr: "#381"
+archived: 2026-06-15T16:23:41Z
 ---
 
 The FO's team-vs-bare dispatch-mode choice for a **headless `-p` (non-interactive)** run is under-specified in the contract, so models coin-flip — which makes `TestLiveEnsignCycle` (the legacy full-cycle live smoke) intermittently fail. The deliverable is NOT to paper over it by accepting either mode; it is to **determine the intended behavior and document it** so the FO is deterministic and the test asserts the intended mode.
