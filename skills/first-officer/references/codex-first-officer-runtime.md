@@ -1,18 +1,10 @@
 # Codex First Officer Runtime
 
-This file defines how the shared first-officer core executes on Codex.
+This file defines how the shared first-officer core executes on Codex. The host-neutral dispatch and merge procedures are in `references/fo-dispatch-core.md` / `fo-merge-core.md` (named by the boot-resident core); this file is the Codex parts those defer to.
 
-## Dispatch seam
+## Terminal Teardown (Merge-and-Cleanup step 10)
 
-The host-neutral dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly (`spacedock dispatch build` → spawn call), the reuse contract, worktree ownership, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`. Read it at the first dispatch. This file supplies the Codex specifics the core defers to: the spawn call is `spawn_agent`, the reuse-advance handle is `send_input`, the completion signal is the mailbox final-status notification, and Codex declares no context-budget probe (reuse-condition-0 is satisfied as unavailable → prefer fresh).
-
-## Merge seam
-
-The host-neutral merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, and Mod-Block Enforcement — lives in `references/fo-merge-core.md`. Read it at the terminal boundary. This file supplies the Codex half of Merge-and-Cleanup step 10 below.
-
-### Terminal Teardown (Codex — Merge-and-Cleanup step 10)
-
-This realizes Merge-and-Cleanup step 10 (`fo-merge-core.md`) on Codex. Codex has no team registry and no `TeamDelete`, so there is no bounded team-teardown loop, settle interval, attempt cap, or terminal-status marker — those are Claude specifics, absent here. The obligation is still mandatory at the terminal boundary:
+Codex has no team registry and no `TeamDelete`, so there is no bounded team-teardown loop, settle interval, attempt cap, or terminal-status marker — those are Claude specifics, absent here. The obligation is still mandatory at the terminal boundary:
 
 10. **Teardown agents at terminal.** Derive the entity's worker cohort — every Codex worker whose task name decomposes to this entity's slug. Issue the cooperative-shutdown call over the mailbox surface (best-effort, fire-and-forget) and drop them from session memory. There is no team object to delete and no roster to settle, so teardown is a single cooperative-shutdown pass, not a retry loop. Teardown is mandatory whether the merge ran locally or via a PR host. Residual risk: per `## Backstop (Codex)`, there is no reconcile sweep, so a skipped teardown stays missed until session end — the boundary step is the only enforcement, so do not skip it.
 
