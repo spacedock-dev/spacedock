@@ -116,6 +116,35 @@ func setSetupHelp(cmd *cobra.Command, w io.Writer, examples string) {
 	})
 }
 
+// setNewHelp installs a per-command help renderer for `new`: its own synopsis and
+// flag surface (--workflow-dir, --folder, --id-seed, --id-actor) instead of the
+// root's grouped menu (cobra walks to the parent HelpFunc only when a child has
+// none).
+func setNewHelp(cmd *cobra.Command, w io.Writer) {
+	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
+		fmt.Fprint(w, c.Short+`
+
+Usage:
+  spacedock new [--folder] SLUG < body
+
+Create an entity from a stdin body. Run from the project root: new auto-discovers
+the lone commissioned workflow. If the repo holds more than one, new reports the
+candidates and you pass --workflow-dir to pick one.
+
+Flags:
+  --workflow-dir DIR   Target this workflow explicitly (skips auto-discovery)
+  --folder             Write the entity in folder form (SLUG/index.md)
+  --id-seed SEED       Seed material for the minted id (id-style: sd-b32 only)
+  --id-actor ACTOR     Actor material for the minted id (id-style: sd-b32 only)
+
+Examples:
+  spacedock new my-task < body.md
+  spacedock new --folder my-task < body.md
+  spacedock new my-task --workflow-dir docs/dev < body.md
+`)
+	})
+}
+
 // declareFrontDoorHelpFlags registers the spacedock-owned front-door flags onto a
 // command's flag set purely so `--help` renders them (AC-4). The flags are never
 // parsed by cobra here (the command has DisableFlagParsing); parseFrontDoorArgs
