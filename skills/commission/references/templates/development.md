@@ -85,7 +85,7 @@ Terminal state: the task's PR is merged (tracked via the `pr` field and the `pr-
 
 ## Workflow-specific rules
 
-The FO/ensign operating contract already governs generic stage semantics and proof discipline — prefer a code gate over a prose-only rule, prove by exercising rather than re-reading, and reject any AC proven only by review of its own prose. Tasks in a commissioned development workflow inherit that from the contract their FO loads at boot; the rules below add only the dev-shape specifics.
+The FO/ensign operating contract already governs generic stage semantics and proof discipline — prefer a code gate over a prose-only rule, prove by exercising rather than re-reading, and reject any AC whose only proof is a review of its own prose. Tasks in a commissioned development workflow inherit these rules from the contract their FO loads at boot; the rules below add only the dev-shape specifics.
 
 - **Repo-mutation worktree layer.** `implementation` and `validation` run in a worktree against the codebase, and `validation` is `fresh` so an independent agent checks the AC. PR state lives on the `pr` field, managed by the `pr-merge` mod — there is no `pr_open` or `awaiting_merge` stage.
 - **Opt-in proof disciplines (copy into the `validation` stage when commissioning).** These are recommended dev-shape practices, not universal — a non-development workflow's acceptance proof may legitimately be a published artifact, a metric, or a human review. Adopt the ones the mission needs by folding them into the `validation` stage's Outputs and Bad lists:

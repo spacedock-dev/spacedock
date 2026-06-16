@@ -74,7 +74,7 @@ Terminal state: the artifact is locked and shipped (or filed, per the variant). 
 
 ## Workflow-specific rules
 
-The FO/ensign operating contract already governs generic stage semantics and proof discipline. Refinement is the universal base shape, so most of its discipline is the contract's; the rules below add only the refinement-shape specifics.
+The FO/ensign operating contract already governs generic stage semantics and proof discipline. Refinement is the universal base shape, so most of its discipline lives in the contract; the rules below add only the refinement-shape specifics.
 
 - **Human-in-the-loop quality bar.** `review` is an approval gate a human reviewer owns — the reviewer reads the whole draft and makes an explicit accept/reject call with concrete notes, never a vague "this needs work." `polish` is cosmetic-only; new content that should have gone through review does not belong there.
 - **No layers by default.** The base shape touches no repo and waits on no external event, so no structural layers fire. Variants that need them (e.g. outreach's `watching` stage) activate the layer through the variant, not the base.
