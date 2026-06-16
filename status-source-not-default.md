@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-status-source-not-default
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#387"
 ---
 
