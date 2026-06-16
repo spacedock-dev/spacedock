@@ -7,7 +7,7 @@ started: 2026-06-15T05:35:19Z
 completed:
 verdict:
 score: 0.33
-worktree:
+worktree: .worktrees/spacedock-ensign-commission-templates-defer-to-contract
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
