@@ -82,10 +82,10 @@ type statusEnvelope struct {
 }
 
 // defaultColumnWidths are the padRight min-widths printStatusTable uses for the
-// no-extras default row, in defaultStatusFields order. The final column (source)
+// no-extras default row, in defaultStatusFields order. The final column (score)
 // is unpadded, so it has no width entry — the cursor walk treats it as the row
 // tail.
-var defaultColumnWidths = []int{6, 30, 20, 30, 8}
+var defaultColumnWidths = []int{6, 30, 20, 30}
 
 // TestJSONStatusRoundTripsTableColumns (AC-1 oracle d) walks the parsed --json
 // entities against the default table the same run renders: each JSON value must
@@ -148,7 +148,7 @@ func TestJSONStatusRoundTripsTableColumns(t *testing.T) {
 // column's rendered width (max of padRight min-width and the value's rune length,
 // since padRight does not truncate) plus the single-space separator, so each
 // value is checked against ITS column position rather than the whole row. The
-// final column (source) is unpadded and consumes the row tail.
+// final column (score) is unpadded and consumes the row tail.
 func assertRowColumnsMatchJSON(t *testing.T, row string, e map[string]string, slug string) {
 	t.Helper()
 	runes := []rune(row)
@@ -165,7 +165,7 @@ func assertRowColumnsMatchJSON(t *testing.T, row string, e map[string]string, sl
 				field, val, slug, i, row, string(seg))
 		}
 		if i == len(defaultColumnWidths) {
-			// Last field (source) is unpadded — it is the row tail; nothing follows.
+			// Last field (score) is unpadded — it is the row tail; nothing follows.
 			continue
 		}
 		width := defaultColumnWidths[i]
