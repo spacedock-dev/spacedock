@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-commission-templates-defer-to-contract
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
-mod-block: merge:pr-merge
+mod-block:
 pr: "#388"
 ---
 
