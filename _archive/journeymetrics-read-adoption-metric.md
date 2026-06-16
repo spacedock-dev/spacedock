@@ -13,6 +13,7 @@ mod-block:
 pr: "#392"
 completed: 2026-06-16T21:17:05Z
 verdict: PASSED
+archived: 2026-06-16T21:17:05Z
 ---
 
 ## Scope note
