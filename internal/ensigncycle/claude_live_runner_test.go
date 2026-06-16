@@ -25,24 +25,6 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 	"response until all the work is complete. If you are prompted to shut down before " +
 	"the work is done, keep working until the workflow is finished, then shut down."
 
-// forceTeamModeCue is the STRONG, unambiguous team-mode override for the two live
-// tests whose oracle requires a real team to exist (the team-config roster read and
-// the bounded TeamDelete teardown marker). The headless `-p` dispatch-mode
-// determination sanctions BARE mode by default, and the dispatch module's
-// "In single-entity mode, skip team creation" rule causes the FO to generate a
-// fake team name string instead of calling the TeamCreate tool — so without an
-// explicit override the FO drives bare (no team, no roster) and reds these team-only
-// assertions on correct behavior. This cue makes team mode a MUST: the FO MUST call
-// the TeamCreate TOOL before any Agent() dispatch; generating or inventing a fake
-// team name string is prohibited. Same prose-lever pattern as the headless gate-stop
-// MUST. It names the dispatch MODE only — no stage, no task.
-const forceTeamModeCue = "You MUST run in team mode for this run. " +
-	"Call the TeamCreate TOOL — do NOT generate or invent a fake team name string. " +
-	"The dispatch module rule \"In single-entity mode, skip team creation\" does NOT " +
-	"apply when this cue is present: override it and call TeamCreate before any " +
-	"Agent() dispatch. After TeamCreate returns, use the returned team_name for all " +
-	"Agent() calls and spawn-standing-all. Bare mode (no team) is NOT acceptable. "
-
 // The Claude runner adapter: it turns a host-neutral sharedRuntimeScenario into a
 // real `spacedock claude` launch and returns the (before, after, observed) state
 // the shared assertions consume — the same assertions the Codex runner feeds. The

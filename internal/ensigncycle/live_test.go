@@ -74,11 +74,12 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// a sufficient early beat and the on-disk end-state is the load-bearing one.
 	//
 	// The team-only terminal-teardown MARKER (it fires only in team teardown) is NOT
-	// gated here — that coverage lives in the team-FORCED TestLiveEnsignCycleTeamTeardown
-	// (live_teardown_test.go). Gating the default path on the marker is exactly the
-	// relocated coin this cycle removes: a legitimate bare drive emits no marker and
-	// would red an otherwise-correct cycle. Each step is bounded by its own
-	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	// gated here: headless `-p` goes bare, so a legitimate drive emits no marker and
+	// gating on it would red an otherwise-correct cycle. The marker's offline coverage
+	// is the fixture watcher suite (teardown_grade_watcher_test.go over the
+	// sonnet_teamdelete_*.jsonl fixtures); live team end-to-end is deferred to the
+	// terminal/pty harness task m40mphxan8phr3t3tp03gk89. Each step is bounded by its
+	// own no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
 	// resets on ANY drained line, so it catches a SILENT hang (no new stream
