@@ -1,6 +1,6 @@
 ---
 title: FO contract token-cleanup proposal
-date: 2026-06-15
+date: "2026-06-15"
 status: proposal
 ---
 
