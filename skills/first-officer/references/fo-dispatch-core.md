@@ -1,12 +1,12 @@
 # First Officer Dispatch Core (host-neutral)
 
-The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first team-mode dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The runtime adapter supplies the host-specific parts this core delegates: team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile/backstop.
+The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The runtime adapter supplies the host-specific parts this core delegates: team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile/backstop.
 
 ## Dispatch
 
 The FO MUST use the runtime adapter's dispatch mechanism. Manual prompt assembly is prohibited except in documented break-glass scenarios.
 
-**Standing-teammate injection.** Before the first team-mode dispatch, inject the workflow's declared standing teammates: run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each spawn spec in the returned JSON array to the runtime adapter's spawn call (verbatim, same discipline as `spacedock dispatch build` output). The call is idempotent — already-alive members are omitted, so re-running is safe — and emits `[]` in bare mode or when no standing teammate is declared. Standing teammates are team-scoped: they die with the team at teardown. Read each teammate's routing usage from its mod, not from here.
+**Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call. The adapter resolves the workflow's declared standing teammates and forwards each returned spawn spec to its spawn call (verbatim, same discipline as `spacedock dispatch build` output). Injection is idempotent — already-alive members are omitted, so re-running is safe — and is a no-op when no standing teammate is declared or the runtime has no shared-teammate surface. Standing-teammate lifetime is the adapter's (team-scoped where the runtime has teams). Read each teammate's routing usage from its mod, not from here.
 
 For each entity reported by `status --next`:
 
@@ -34,7 +34,7 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
 0. Consult the runtime adapter's context-budget probe. If it reports the worker over budget, or the probe source is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). If the adapter declares no probe, this condition is satisfied. (Codex declares none; Claude supplies one — see the runtime adapter.)
-1. Not in bare mode (teams available).
+1. The runtime adapter exposes a live, reusable handle to the completed worker (its reuse-advance handle). When the adapter has no reusable-handle surface, this condition fails and the FO dispatches fresh.
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
 4. The reused worker's stamped model matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model`. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker). Members stamped with captain-session fallback values (e.g., `"opus[1m]"`) never match enum values (`sonnet`, `opus`, `haiku`) and force a one-time fresh dispatch that re-stamps the canonical enum.
@@ -73,7 +73,7 @@ Use the runtime adapter's spawn call to spawn each worker. **Use the spawn call 
 
 **MANDATORY — Dispatch assembly via `spacedock dispatch build`:**
 
-Do NOT assemble worker prompts manually. Do NOT construct the `prompt` string yourself. Do NOT invent `name` values. ALWAYS route initial-dispatch input through `spacedock dispatch build` and forward its output to the spawn call verbatim. The key fields that MUST come from helper output are `subagent_type`, `name`, `team_name`, `model`, and `prompt` (which contains the completion signal). Manual assembly is a protocol violation except in the documented break-glass fallback below.
+Do NOT assemble worker prompts manually. Do NOT construct the `prompt` string yourself. Do NOT invent `name` values. ALWAYS route initial-dispatch input through `spacedock dispatch build` and forward its output to the spawn call verbatim. The key fields that MUST come from helper output are `subagent_type`, `name`, `model`, and `prompt` (which contains the completion signal), plus any host-scoped fields the adapter declares (e.g. Claude `team_name`). The adapter names which emitted fields map to its spawn call and which are absent on its host. Manual assembly is a protocol violation except in the documented break-glass fallback below.
 
 The only permitted path for initial dispatch is:
 
@@ -95,7 +95,7 @@ The only permitted path for initial dispatch is:
 4. **REQUIRED — On exit 0, parse the stdout JSON and call the spawn call with the emitted fields verbatim.** The `name`, `description`, `prompt`, and `model` fields MUST come from helper output unchanged. The `description` field is REQUIRED — do not omit it. The `prompt` is a file-pointer (`Skill(...) ; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.`); the ensign Reads the file on first action and treats the body (including the completion-signal section) as the inline assignment. Do not strip or rewrite the prompt. Forward `output.model` as the spawn call's model parameter when present; when null, OMIT the model argument entirely (do NOT pass a null model — default-inheritance only applies when the argument is absent). The runtime adapter names the concrete spawn call and how it maps these fields.
 5. **On non-zero exit only** (or if the binary is unavailable): read stderr, report the helper failure to the captain, and fall back to Break-Glass Manual Dispatch below. A zero-exit run is never a break-glass trigger.
 
-In bare mode, dispatch blocks until the subagent completes — concurrent dispatch is not possible. Dispatch one entity at a time and process completions inline.
+Whether a dispatch blocks until worker completion or returns a handle to await later is the adapter's behavior, not a host-neutral invariant. When the adapter's dispatch is blocking, dispatch one entity at a time and process each completion inline before the next.
 
 **Reuse dispatch (advance handle):** `spacedock dispatch build` serves only initial dispatch. When advancing a reused ensign via the runtime adapter's reuse-advance handle, assemble the advancement message directly — the helper is not involved in the reuse path.
 

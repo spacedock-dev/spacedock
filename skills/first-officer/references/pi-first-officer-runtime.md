@@ -23,6 +23,8 @@ For Spacedock stage dispatches through `pi-subagents`, call `subagent(...)` with
 
 For Spacedock stage dispatches through `pi-subagents`, do not use the `subagent(... acceptance: ...)` contract. Put acceptance requirements in the task prompt/dispatch content instead. Spacedock owns the independent implementation-to-validation workflow: the gate is verification via entity stage reports, product/state commits, and independent validation, not same-agent acceptance finalization by the child that did the work.
 
+For the core's standing-injection call: `pi-subagents` has no standing surface (no-op); `pi-agent-teams` MAY map injection to `member_spawn` per the adapter's lifecycle mapping.
+
 ## Awaiting Completion
 
 For `pi-subagents`, the completion signal is the subagent result returned to the parent. After the result arrives, read the entity file and verify the stage report exactly as the shared core requires. Do not advance state based only on a cheerful worker summary.

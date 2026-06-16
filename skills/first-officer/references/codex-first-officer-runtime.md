@@ -35,6 +35,8 @@ recover, or tear down. Use Codex task names and mailbox notifications as the
 worker handle. Do not use Claude `SendMessage` completion syntax in Codex
 dispatch prompts.
 
+Codex has no shared standing-teammate surface; the core's standing-injection call is a no-op.
+
 ## Reuse And Feedback Routing
 
 Route feedback or continuation to an existing Codex worker with `send_input`.
