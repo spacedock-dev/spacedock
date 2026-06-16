@@ -10,7 +10,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
 
-func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result claudeScenarioResult, model string) {
+func emitClaudeScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result liveResult, model string) {
 	t.Helper()
 	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")
 	if dir == "" {
