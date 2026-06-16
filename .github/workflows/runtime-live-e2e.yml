@@ -249,7 +249,11 @@ jobs:
       # 60s) in the runners: it resets on every stream line and kills a hang at 60s
       # of stream SILENCE. This ceiling never fires in a healthy run, it only bounds
       # a pathological progressing-but-runaway loop.
+      # if: !cancelled() runs this step even when an EARLIER step (the ensign cycle)
+      # failed, so a flake there does not skip the shared-scenario proof — each step's
+      # result surfaces independently. It still skips on a real workflow cancellation.
       - name: Run live Claude shared scenarios
+        if: ${{ !cancelled() }}
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
@@ -265,7 +269,12 @@ jobs:
       # with the same grader the offline fixture suite uses. These are the live team
       # end-to-end coverage headless `-p` cannot carry. The per-stage no-progress
       # quiet budget is the real guard; -timeout is a loose backstop.
+      #
+      # if: !cancelled() decouples this step from a failure in the earlier ensign-cycle
+      # step (e.g. an unrelated TestLiveZeroDiscover flake), so the AC-3/4 pty proof
+      # always runs and reports its own pass/fail. It still skips on a real cancellation.
       - name: Run live pty team-mode harness
+        if: ${{ !cancelled() }}
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
