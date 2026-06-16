@@ -91,7 +91,7 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 ## Dispatch (deferred module)
 
-The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, standing-teammate injection (`spawn-standing-all`), reuse conditions, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`, lazily loaded at the first team-mode dispatch. The runtime adapter supplies the host-specific dispatch parts it delegates (team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep), read alongside the core at the first dispatch. A greet-and-stop boot never reads either.
+The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, standing-teammate injection (`spawn-standing-all`), reuse conditions, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`, lazily loaded at the first worker dispatch. The runtime adapter supplies the host-specific dispatch parts it delegates (team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep), read alongside the core at the first dispatch. A greet-and-stop boot never reads either.
 
 ## Completion and Gates
 

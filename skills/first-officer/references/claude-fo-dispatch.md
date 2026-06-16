@@ -50,12 +50,17 @@ Agent(
 ```
 This is the concrete Claude form of fo-dispatch-core.md's Break-Glass template; the contract (what it omits, the conditional `model=` slot, "use only when the helper is unavailable") is stated there.
 
+## Standing-Teammate Injection (Claude)
+
+The Claude realization of the core's standing-injection call (fo-dispatch-core.md `## Dispatch`): before the first team-mode dispatch, run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each spawn spec in the returned JSON array to `Agent()`. The call is idempotent (already-alive members omitted) and emits `[]` in bare mode or when none is declared. Standing teammates are team-scoped: they die with the team at teardown. (The `## Spawn Call (Agent)` sequencing rule above already states `spawn-standing-all` requires a real `team_name` from a prior `TeamCreate`.)
+
 ## Degraded Mode (spacedock seams)
 
 Degraded Mode itself — triggers, effects, captain report template, cooperative shutdown sweep — lives in `Skill(skill="spacedock:using-claude-team")`. Two spacedock-specific points the generic block references abstractly:
 
 - **Trigger:** the captain command `/spacedock bare` is the explicit operator-initiated degrade.
 - **Bare-mode dispatch emission:** the generic "no `team_name` on subsequent dispatch" effect is realized by building the dispatch in bare mode (`team_name: null`, `bare_mode: true`); `spacedock dispatch build` then emits a bare-mode Agent call with `name` and `team_name` absent.
+- **Bare-mode blocking dispatch:** in Claude bare mode the `Agent()` call blocks until the subagent completes — concurrent dispatch is not possible, so dispatch one entity at a time and process completions inline. (This is the Claude realization of fo-dispatch-core.md `## Dispatch Adapter`'s "when the adapter's dispatch is blocking" clause.)
 
 ## Context Budget and Dead Ensign Handling
 

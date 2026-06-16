@@ -452,6 +452,118 @@ func TestPortabilityCheckDiscriminatesHostSpecific(t *testing.T) {
 	}
 }
 
+// claudeTeamDispatchTokens are the LITERAL Claude-team command/flag tokens that
+// must NOT appear as core dispatch imperatives in the host-neutral dispatch core.
+// Their presence on a non-exempt line is itself the defect (structural-absence,
+// same family as retiredPluginPrivatePaths) — not a prose property. The
+// narrowly-paraphrasable phrase `team-mode` is deliberately NOT in this set: its
+// fix is the prose move, not a token ban, and banning a paraphrasable word would
+// be the prose-grep tautology the quarantine policy forbids.
+var claudeTeamDispatchTokens = []string{
+	"spawn-standing-all",
+	"--team {team_name}",
+}
+
+// adapterAsSubjectExemptions are the PHRASE-LEVEL exemptions: a token line is
+// allowed only when its sentence's subject is the adapter REALIZING the call. A
+// bare same-line `runtime adapter` mention is deliberately NOT an exemption — the
+// real current leak (line 9) names the adapter only as the forward destination
+// ("forward each spawn spec … to the runtime adapter's spawn call") while still
+// issuing the host command imperatively, so a bare-word exemption false-negatives
+// it. The exemption must name the adapter as the actor.
+var adapterAsSubjectExemptions = []string{
+	"Claude adapter",
+	"the adapter realizes",
+	"adapter maps",
+	"Claude realization",
+}
+
+// lineLeaksClaudeTeamDispatch reports whether a line carries a literal Claude-team
+// dispatch token UNEXEMPTED by a phrase-level adapter-as-subject phrase. This is the
+// scanner the host-neutral-core check and its discriminator control both drive.
+func lineLeaksClaudeTeamDispatch(line string) bool {
+	carriesToken := false
+	for _, tok := range claudeTeamDispatchTokens {
+		if strings.Contains(line, tok) {
+			carriesToken = true
+			break
+		}
+	}
+	if !carriesToken {
+		return false
+	}
+	for _, exempt := range adapterAsSubjectExemptions {
+		if strings.Contains(line, exempt) {
+			return false
+		}
+	}
+	return true
+}
+
+// TestDispatchCoreHasNoClaudeTeamImperative is a structural-ABSENCE check: the
+// host-neutral dispatch core (fo-dispatch-core.md) must carry no LITERAL Claude-team
+// command/flag token (`spawn-standing-all`, `--team {team_name}`) as a core
+// imperative. Codex and Pi load this core too, so a host command issued here reads
+// to them like a universal requirement they cannot satisfy. The expected value
+// comes from the rule (these are literal host command tokens that must not appear as
+// core imperatives), not from the file's own prose, so a host-neutral paraphrase
+// that drops the literal passes and an inverted/host-coupled imperative fails — same
+// family as TestRetiredPluginPrivatePathsAbsent. The Claude realization legitimately
+// lives in claude-fo-dispatch.md, whose lines name the adapter as the actor. The
+// paired discriminator control below keeps this from passing vacuously.
+func TestDispatchCoreHasNoClaudeTeamImperative(t *testing.T) {
+	path := filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read dispatch core %s: %v", path, err)
+	}
+	for i, line := range strings.Split(string(data), "\n") {
+		if lineLeaksClaudeTeamDispatch(line) {
+			t.Errorf("%s:%d carries a Claude-team dispatch imperative in the host-neutral core (Codex/Pi load this too); move the host realization to claude-fo-dispatch.md: %q", path, i+1, strings.TrimSpace(line))
+		}
+	}
+}
+
+// TestDispatchCoreClaudeTeamScannerDiscriminates is the DISCRIMINATOR control for
+// the host-neutral-core check: it proves the scanner flags a genuinely host-coupled
+// line and passes a host-neutral paraphrase, an adapter-as-subject realization, and
+// a meaning-inverting paraphrase — so TestDispatchCoreHasNoClaudeTeamImperative can
+// never pass vacuously (e.g. by a typo'd token never matching anything).
+func TestDispatchCoreClaudeTeamScannerDiscriminates(t *testing.T) {
+	// Host-coupled imperative — the real current-leak shape. MUST flag.
+	mustFlag := "run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each spawn spec to the runtime adapter's spawn call"
+	if !lineLeaksClaudeTeamDispatch(mustFlag) {
+		t.Errorf("discriminator control: host-coupled imperative was NOT flagged (the scanner would pass vacuously): %q", mustFlag)
+	}
+
+	// A bare same-line `runtime adapter` forward-target mention is NOT a sufficient
+	// exemption — the real leak carries exactly this and must still flag.
+	bareAdapterWord := "forward each spawn spec to the runtime adapter's spawn call via `spawn-standing-all`"
+	if !lineLeaksClaudeTeamDispatch(bareAdapterWord) {
+		t.Errorf("discriminator control: a bare `runtime adapter` forward-target word wrongly exempted a token line (false negative on the real leak shape): %q", bareAdapterWord)
+	}
+
+	// Host-neutral paraphrase that drops the literal token. MUST pass.
+	hostNeutral := "Before the first worker dispatch, inject standing teammates via the runtime adapter's standing-injection call."
+	if lineLeaksClaudeTeamDispatch(hostNeutral) {
+		t.Errorf("discriminator control: a host-neutral paraphrase was wrongly flagged: %q", hostNeutral)
+	}
+
+	// Adapter-as-subject realization naming the host command. MUST pass (this is the
+	// shape that legitimately lives in claude-fo-dispatch.md).
+	adapterSubject := "The Claude adapter realizes the standing-injection call: run `spacedock dispatch spawn-standing-all --team {team_name}` and forward each spawn spec to Agent()."
+	if lineLeaksClaudeTeamDispatch(adapterSubject) {
+		t.Errorf("discriminator control: an adapter-as-subject realization was wrongly flagged: %q", adapterSubject)
+	}
+
+	// Meaning-inverting paraphrase that still drops the literal. MUST pass — proving
+	// the check is not a prose-grep that a paraphrase could defeat.
+	inverted := "Standing teammates are NEVER injected before any dispatch on any host."
+	if lineLeaksClaudeTeamDispatch(inverted) {
+		t.Errorf("discriminator control: a meaning-inverting host-neutral paraphrase was wrongly flagged: %q", inverted)
+	}
+}
+
 // shippedInstructionMarkdown returns every markdown file under skills/ (excluding
 // the test-only integration dir) plus the canonical mods/ — the full shipped
 // instruction surface the structural-absence and portability checks walk. This is
