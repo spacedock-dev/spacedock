@@ -118,15 +118,9 @@ jobs:
         with:
           node-version: "20"
 
-      # Default-pinned to 2.1.177 — the last version that surfaces the native
-      # TeamCreate/TeamDelete tools in a headless `claude -p` session. 2.1.178
-      # dropped them (anthropics/claude-code#68721), which RED-fails the
-      # team-forced live tests. Unpin (drop the `|| '2.1.177'` default) when the
-      # upstream regression is fixed. A manual workflow_dispatch claude_version
-      # input still overrides this default.
       - name: Install Claude Code
         env:
-          CLAUDE_VERSION: ${{ inputs.claude_version || '2.1.177' }}
+          CLAUDE_VERSION: ${{ inputs.claude_version }}
         run: |
           if [ -n "$CLAUDE_VERSION" ]; then
             echo "Installing pinned Claude Code version: $CLAUDE_VERSION"
