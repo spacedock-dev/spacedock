@@ -303,3 +303,14 @@ PASSED. The sole change this cycle is the single additive headless gate-stop MUS
 ### Summary
 
 Fixed two pre-existing live-suite reliability bugs the CI surfaced, both in the `internal/ensigncycle` live harness. BUG 1: a new `livePluginDir(t)` stages an isolated plugin copy with no discoverable `docs/dev`, so no claude-live FO can wrong-root-boot into the real workflow — repointed all five claude-live `--plugin-dir` sites; verified by simulation that the staged root discovers zero workflows. BUG 2: a new shared `forceTeamModeCue` strong-MUST reliably forces team mode for the residency + teardown tests whose oracles require a real team, dissolving the headless bare-mode coin. The 2y extraction, the gate-stop MUST, and the cores/marker are untouched; offline tests + vet are green; the live behavior re-runs at PR CI. Branch HEAD b9c2c243.
+
+## Stage Report: implementation (forceTeamModeCue strengthening)
+
+- DONE: In internal/ensigncycle/claude_live_runner_test.go, update forceTeamModeCue to explicitly name and override the dispatch module's "In single-entity mode, skip team creation" rule — the FO must call the TeamCreate TOOL, not generate a fake team name.
+  New constant: (a) prohibits generating/inventing a fake team name string, (b) explicitly quotes and overrides the "In single-entity mode, skip team creation" rule, (c) requires calling TeamCreate TOOL before any Agent() dispatch, (d) requires using the returned team_name for all Agent() calls and spawn-standing-all. Commit 811af9c0.
+- DONE: Verify the change is correct (go build ./..., go vet ./internal/ensigncycle/...), commit with a clear message, and push to origin spacedock-ensign/shared-merge-dispatch-contract.
+  `go build ./...` exit 0; `go vet ./internal/ensigncycle/...` exit 0. Commit 811af9c0 pushed to origin. Branch HEAD 811af9c0.
+
+### Summary
+
+Strengthened forceTeamModeCue from a general "create a team (TeamCreate) before the first dispatch" to a precise three-part override: (a) prohibit generating a fake team name, (b) explicitly quote and override the dispatch module's "In single-entity mode, skip team creation" rule, (c) require calling the TeamCreate TOOL and using its returned team_name. The root cause of the test failures was that the FO read the dispatch module's single-entity-mode skip rule and generated a fake team name string instead of calling the real TeamCreate tool. build and vet pass; branch pushed at 811af9c0.
