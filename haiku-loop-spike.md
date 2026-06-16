@@ -1,8 +1,8 @@
 ---
 title: Spike — live Haiku FO drives a hand-simulated simplified loop, before any verb is built
-status: backlog
+status: ideation
 source: 'captain scope-lock (2026-06-15, this session) — 0205 is spike-first. Run a live Haiku FO drive on a hand-simulated simplified loop BEFORE building any binary verb, to prove the loop is Haiku-operable and map the irreducible-judgment boundary. Gates the rest of the 0205 carve (the must-build verb list comes from what Haiku breaks every time). Predicted Haiku failure modes to surface or refute — inventing rebase-conflict auto-recovery; interpreting a drift-class name semantically; bare-dispatching; auto-approving a gate; idle-vs-completion confusion.'
-started:
+started: 2026-06-16T02:21:21Z
 completed:
 verdict:
 score: 0.6
