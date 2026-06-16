@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-status-section-reader
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: in-progress
-mod-block: merge:pr-merge
+mod-block:
 pr: "#386"
 ---
 
