@@ -13,6 +13,7 @@ sprint: 0204-structured-reads
 sprint-readiness: ready
 mod-block:
 pr: "#388"
+archived: 2026-06-16T15:29:10Z
 ---
 
 The three shipped commission templates restate universal rules that already live in the FO/ensign operating contract. Restructure them the way the dev README was just slimmed (commit `48edae4c`): lead with the workflow's outcome, defer universal rules to the contract, and keep only each shape's workflow-specific rules in a dedicated slot. Every commission session then reads leaner, non-stale scaffolding, and the template's rule prose can no longer drift from the contract it paraphrases.
