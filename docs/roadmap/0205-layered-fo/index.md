@@ -1,13 +1,15 @@
 # 0205 — layered FO (0.20.5)
 
-> **Scope-locked 2026-06-15 (captain): spike-first, parallel-no-2y start.**
-> The live Haiku hand-simulated drive (the riskiest-mechanism spike) runs BEFORE any verb
-> is built and sets the must-build verb list. The no-2y-dependent work — the spike,
-> `gate-extract-verbs`, and the gate-half of the delegation mechanism — starts now in
-> parallel; the 2y-dependent core (`next-action`, `state-verbs`, `merge-finalize`, the
-> restructure) carves and starts once 2y lands (2y is finalizing, the last item for 0.20.3,
-> so this resolves imminently and the core starts clean against merged `main`).
-> Membership is the `--where sprint=0205-layered-fo` query as members are carved.
+> **Scope-locked 2026-06-15, re-sequenced 2026-06-16 (captain) after the preflight staff review.**
+> TRUE spike-first: the live Haiku drive (`w4`, haiku-loop-spike) is the only 0205 member driven now.
+> The staff review (`staff-review.md`) found the two verbs cannot be safely built before the spike
+> reports — the spike maps the residency and the local-extraction-vs-route-raw boundary they depend on —
+> so `gate-extract-verbs` and `fo-tier-delegation` are HELD (`sprint-readiness: defer`) pending the
+> spike's must-build list, then reworked against its findings AND real on-disk shapes. fo-tier's tier
+> default is flipped to FAIL-SAFE (unset → level-2-only) and must own the unbuilt `SPACEDOCK_FO_MODEL`
+> launcher surface — both folded into its post-spike rework. The 2y-dependent core (`next-action`,
+> `state-verbs`, `merge-finalize`, the restructure) carves once 2y lands (finalizing, last for 0.20.3).
+> Drivable now: `--where sprint=0205-layered-fo --where 'sprint-readiness != defer'` → the spike alone.
 
 **Sprint:** (after scope-lock) the entities matching `sprint: 0205-layered-fo` — list current members with `spacedock status --workflow-dir docs/dev --where sprint=0205-layered-fo`. Membership and per-task state are the query, never enumerated or tracked in this doc.
 **Theme:** make a weak model (Haiku) operable as the first officer by pushing the mechanical dispatch into binary verbs, so level-2 driving needs almost no judgment and level-3 judgment is delegated.
