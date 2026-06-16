@@ -7,7 +7,7 @@ started: 2026-06-15T05:19:11Z
 completed:
 verdict:
 score: 0.30
-worktree:
+worktree: .worktrees/spacedock-ensign-ci-log-read-summary
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
