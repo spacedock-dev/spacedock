@@ -9,7 +9,7 @@ score: 0.4
 worktree:
 issue:
 sprint: 0205-layered-fo
-sprint-readiness: ready
+sprint-readiness: defer
 id: 6reqad9gff9wk544det3x4fj
 ---
 
