@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-commission-templates-defer-to-contract
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 The three shipped commission templates restate universal rules that already live in the FO/ensign operating contract. Restructure them the way the dev README was just slimmed (commit `48edae4c`): lead with the workflow's outcome, defer universal rules to the contract, and keep only each shape's workflow-specific rules in a dedicated slot. Every commission session then reads leaner, non-stale scaffolding, and the template's rule prose can no longer drift from the contract it paraphrases.
@@ -203,3 +204,4 @@ OPEN RULING for the gate (surfaced to team-lead; no reply within the best-effort
 ### Feedback Cycles
 
 - Cycle 1 (validation, detached adversarial audit): Audit target (b) — AC-2 single-source marker set. Adversarial edit: a doctrine paraphrase injected into `development.md` on a throwaway copy that re-restates the universal proof doctrine while dodging all four pinned exact-string markers; `TestUniversalDoctrineHasSingleSource` still PASSED, confirming the body's anticipated known limitation (the marker set catches verbatim/near-verbatim re-restatement — verified by a realistic copy-paste red — but not a deliberate paraphrase). Disposition: recommended ACCEPTED as a documented coverage limitation, not routed back — pending the captain's gate ruling on the body's "must widen" clause. Audit target (a) — AC-1 grader vs. a rejection-narrating transcript over an accepted durable state: refuted nothing material (grader ignores narration by construction).
+- Cycle 1 — Commander ruling (conn) on the OPEN RULING: ACCEPTED as a documented known limitation; NOT routed back. Rationale: the single-source check reds on the realistic regression (verbatim/near-verbatim doctrine re-restatement, confirmed by a live copy-paste red); a deliberate paraphrase is an infinite space that more exact-string markers cannot close (arms race), and a structural absence-of-doctrine-section check would false-positive on legitimate `## Workflow-specific rules` prose. AC-1 (defer composes) is the load-bearing behavioral proof and passed live; AC-2 is a secondary drift-guard, so catching the realistic drift suffices. Revisit only if a paraphrase drift is ever observed in practice.
