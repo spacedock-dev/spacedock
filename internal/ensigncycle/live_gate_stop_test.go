@@ -94,7 +94,7 @@ var (
 // and a distinct prompt (no conn) from TestLiveEnsignCycle's conn-cue drive.
 func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 	binary := spacedockBinary(t)
-	repoRoot := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	childEnv := isolatedClaudeEnv(t, os.Getenv("HOME"))
@@ -117,7 +117,7 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 	// drives-to-the-gate-and-stops is exactly the behavior under test.
 	drivePrompt := "Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
-		"--plugin-dir", repoRoot,
+		"--plugin-dir", pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", drivePrompt,

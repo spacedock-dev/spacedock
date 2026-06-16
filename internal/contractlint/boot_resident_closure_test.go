@@ -10,15 +10,33 @@ import (
 	"testing"
 )
 
-// bootResidentBodies are the two contract bodies the FO loader inlines/reads at
-// boot: the slimmed shared core and the Claude runtime adapter. AC-4 walks these
-// (NOT a SKILL.md, which the existing TestUserSkillReferenceClosureResolves reads)
-// because the loader reads the bodies directly, and only the bodies name the
-// deferred load-points the boot core defers to (a sibling reference path, a bare
-// skill invocation, a canonical mod file).
+// bootResidentBodies are the contract bodies the FO loader inlines/reads at boot:
+// the slimmed shared core and each host's runtime adapter. AC-4 walks these (NOT a
+// SKILL.md, which the existing TestUserSkillReferenceClosureResolves reads) because
+// the loader reads the bodies directly, and only the bodies name the deferred
+// load-points the boot core defers to (a sibling reference path, a bare skill
+// invocation, a canonical mod file). The codex and pi adapters join the Claude one
+// so the closure walk catches a dead-end reference on every host, not only Claude.
 var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
 	filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
+	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
+}
+
+// foReferenceCores are the two host-neutral cores the boot-resident shared core names
+// at its dispatch and merge load points. Because every host loads the shared core at
+// boot, naming the cores there is what makes the ceremony REACHABLE on codex and pi —
+// no per-host re-naming is required. Each core must exist on disk (the closure walk
+// over bootResidentBodies resolves them once shared-core names them) and carry its
+// ceremony anchors.
+var foReferenceCores = map[string][]string{
+	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
+		"## Merge and Cleanup", "### Ship-Local Ceremony", "### Worktree removal safety", "## Mod-Block Enforcement",
+	},
+	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
+		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
+	},
 }
 
 // bodyReferenceRe matches a sibling reference read-path named in a contract body
@@ -153,5 +171,49 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 	if !sawReal {
 		t.Fatal("control: the real load-point (using-claude-team) was not resolved — the discriminator has nothing to contrast the dangling case against")
+	}
+}
+
+// TestHostNeutralCoresResolveAndCarryCeremony is the AC-1 reachability guard: the two
+// host-neutral cores the boot-resident shared core names at its dispatch and merge
+// load points exist on disk AND carry their ceremony anchors. Reachability for codex
+// and pi rides on the SINGLE core-naming in first-officer-shared-core.md — every host
+// loads the shared core at boot, so a core it names there is reachable on every host;
+// no per-adapter re-naming is required (the per-adapter restatement only added
+// redundancy). The closure half — that the shared core's named references resolve to
+// real files — is TestBootResidentDeferredLoadPointsResolve walking bootResidentBodies
+// (which includes the shared core). This test adds the content half: each core carries
+// its four ceremony anchors, so "reachable" means "reaches a real ceremony," not an
+// empty file. The independent source is the filesystem + the anchor set; a core
+// renamed/emptied/dropped fails.
+func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
+	root := repoRoot(t)
+	if len(foReferenceCores) == 0 {
+		t.Fatal("no host-neutral cores declared — the reachability check would pass vacuously")
+	}
+	// The shared core must NAME each core at a load point — that single naming is what
+	// makes the ceremony reachable on every host.
+	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
+	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
+	if err != nil {
+		t.Fatalf("read shared core %s: %v", sharedCore, err)
+	}
+	sharedBody := string(sharedData)
+	for corePath, anchors := range foReferenceCores {
+		base := filepath.Base(corePath)
+		if !strings.Contains(sharedBody, base) {
+			t.Errorf("%s does not name %s — the boot-resident core is the sole core-namer, so an unnamed core is unreachable on every host", sharedCore, base)
+		}
+		data, err := os.ReadFile(filepath.Join(root, corePath))
+		if err != nil {
+			t.Errorf("host-neutral core %s does not resolve on disk: %v", corePath, err)
+			continue
+		}
+		body := string(data)
+		for _, anchor := range anchors {
+			if !strings.Contains(body, anchor) {
+				t.Errorf("%s is missing ceremony anchor %q — the named core resolves but does not carry the ceremony, so reachability reaches an empty file", corePath, anchor)
+			}
+		}
 	}
 }

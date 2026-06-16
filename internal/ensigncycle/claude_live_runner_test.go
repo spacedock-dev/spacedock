@@ -38,7 +38,7 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 
 type claudeLiveRunner struct {
 	binary       string
-	repoRoot     string
+	pluginDir    string
 	env          []string
 	model        string
 	artifactRoot string
@@ -138,7 +138,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, share
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	t.Helper()
 	binary := spacedockBinary(t)
-	repo := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	// isolatedClaudeEnv resolves the credential (OAuth benchmark-token locally,
@@ -152,7 +152,7 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	home, _ := envValue(env, "HOME")
 	return claudeLiveRunner{
 		binary:       binary,
-		repoRoot:     repo,
+		pluginDir:    pluginDir,
 		env:          env,
 		model:        model,
 		artifactRoot: claudeLiveArtifactDir(t, "claude-shared-scenarios"),
@@ -327,7 +327,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
 	cmd := exec.Command(r.binary, "claude",
-		"--plugin-dir", r.repoRoot,
+		"--plugin-dir", r.pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", prompt+" "+antiShutdownOverride,

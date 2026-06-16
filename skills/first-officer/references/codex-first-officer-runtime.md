@@ -1,6 +1,12 @@
 # Codex First Officer Runtime
 
-This file defines how the shared first-officer core executes on Codex.
+This file defines how the shared first-officer core executes on Codex. The host-neutral dispatch and merge procedures are in `references/fo-dispatch-core.md` / `fo-merge-core.md` (named by the boot-resident core); this file is the Codex parts those defer to.
+
+## Terminal Teardown (Merge-and-Cleanup step 10)
+
+Codex has no team registry and no `TeamDelete`, so there is no bounded team-teardown loop, settle interval, attempt cap, or terminal-status marker — those are Claude specifics, absent here. The obligation is still mandatory at the terminal boundary:
+
+10. **Teardown agents at terminal.** Derive the entity's worker cohort — every Codex worker whose task name decomposes to this entity's slug. Issue the cooperative-shutdown call over the mailbox surface (best-effort, fire-and-forget) and drop them from session memory. There is no team object to delete and no roster to settle, so teardown is a single cooperative-shutdown pass, not a retry loop. Teardown is mandatory whether the merge ran locally or via a PR host. Residual risk: per `## Backstop (Codex)`, there is no reconcile sweep, so a skipped teardown stays missed until session end — the boundary step is the only enforcement, so do not skip it.
 
 ## Team Creation
 
@@ -14,23 +20,12 @@ unless the current task explicitly depends on the previous worker's context.
 
 ## Dispatch
 
-Use `spawn_agent` for initial worker dispatch. Assemble the dispatch input with
-`spacedock dispatch build`; Codex host is normally derived from
-`CODEX_THREAD_ID`, so pass `--host codex` only for deliberate tests or cross-host
-tooling. Write checklist, scope notes, and feedback context into files, then use
-the flag/file form:
-
-```
-spacedock dispatch build \
-  --workflow-dir {workflow_dir} \
-  --entity-path {entity_file_path} \
-  --stage {target_stage_name} \
-  --checklist-file {checklist_file} \
-  [--scope-notes-file {scope_notes_file}] \
-  [--feedback-context-file {feedback_context_file}] \
-  [--bare-mode] \
-  [--feedback-reflow]
-```
+The spawn call `fo-dispatch-core.md` `## Dispatch Adapter` defers to is `spawn_agent`
+for initial worker dispatch. Assemble the dispatch input through the core's
+mandatory `spacedock dispatch build` flow (write checklist, scope notes, and
+feedback context into files, then the flag/file form); Codex host is normally
+derived from `CODEX_THREAD_ID`, so pass `--host codex` only for deliberate tests or
+cross-host tooling.
 
 Forward the emitted prompt exactly as returned; for Codex it is a
 read-dispatch-file prompt. The FO must never forward a prompt containing `Skill(skill="spacedock:ensign")` to a Codex worker.

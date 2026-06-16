@@ -259,6 +259,10 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		// example into the dispatch reference — both legitimately carry `## Hook:`.
 		filepath.Join("skills", "first-officer", "references", "claude-fo-merge.md"):    true,
 		filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"): true,
+		// The host-neutral extraction re-homed Mod-Block Enforcement (which names the
+		// `## Hook: merge` mechanism surface) into the merge core; it legitimately
+		// carries the `## Hook:` token the same way the claude-fo-merge seam did.
+		filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
 		filepath.Join("mods", "pr-merge.md"): true,

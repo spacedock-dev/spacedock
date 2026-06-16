@@ -167,9 +167,11 @@ jobs:
 
       # TestLiveEnsignCycle is the full lifecycle canary, TEAM-AGNOSTIC: it gates on
       # dispatch-close + the on-disk terminal end-state, so it greens whether the
-      # headless `-p` FO drove team or bare (no team-vs-bare coin). TestLiveEnsignCycleTeamTeardown
-      # FORCES team mode and keeps the TERMINAL_TEARDOWN_BOUNDED teardown-marker
-      # coverage (the team-only signal removed from the canary's default path).
+      # headless `-p` FO drove team or bare (no team-vs-bare coin). Headless `-p` goes
+      # bare per the captain's go-bare determination, so the live suite carries no
+      # forced-team test; live team end-to-end (roster injection, the bounded teardown
+      # marker) is deferred to the terminal/pty harness task
+      # m40mphxan8phr3t3tp03gk89.
       # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
       # a gate:true stage and EXITS reporting gate status, without resolving the gate.
       # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
@@ -182,7 +184,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          go test -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveEnsignCycleTeamTeardown|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops|TestLiveStandingResidencyInjectsCommOfficer' ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+          go test -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
 
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the

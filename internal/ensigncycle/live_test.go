@@ -5,6 +5,7 @@
 package ensigncycle
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -73,11 +74,12 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// a sufficient early beat and the on-disk end-state is the load-bearing one.
 	//
 	// The team-only terminal-teardown MARKER (it fires only in team teardown) is NOT
-	// gated here — that coverage lives in the team-FORCED TestLiveEnsignCycleTeamTeardown
-	// (live_teardown_test.go). Gating the default path on the marker is exactly the
-	// relocated coin this cycle removes: a legitimate bare drive emits no marker and
-	// would red an otherwise-correct cycle. Each step is bounded by its own
-	// no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	// gated here: headless `-p` goes bare, so a legitimate drive emits no marker and
+	// gating on it would red an otherwise-correct cycle. The marker's offline coverage
+	// is the fixture watcher suite (teardown_grade_watcher_test.go over the
+	// sonnet_teamdelete_*.jsonl fixtures); live team end-to-end is deferred to the
+	// terminal/pty harness task m40mphxan8phr3t3tp03gk89. Each step is bounded by its
+	// own no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
 	// resets on ANY drained line, so it catches a SILENT hang (no new stream
@@ -199,7 +201,7 @@ func TestLiveEnsignCycle(t *testing.T) {
 func startRealisticLifecycleDrive(t *testing.T, drivePrompt string) (*streamWatcher, string) {
 	t.Helper()
 	binary := spacedockBinary(t)
-	repoRoot := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	// Resolve the isolated child env (clean HOME + the authoritative credential)
@@ -272,7 +274,7 @@ func startRealisticLifecycleDrive(t *testing.T, drivePrompt string) (*streamWatc
 	// is GENERIC — it governs shutdown TIMING only, naming no stage or task — so it
 	// does not coach workflow mechanics.
 	cmd := exec.Command(binary, "claude",
-		"--plugin-dir", repoRoot,
+		"--plugin-dir", pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", drivePrompt,
@@ -353,6 +355,91 @@ func repoRoot(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return root
+}
+
+// livePluginDir stages an ISOLATED plugin checkout for `--plugin-dir` and returns
+// its path. It exists to stop a wrong-root boot: the real repo root carries a
+// discoverable `docs/dev` workflow (with live entities), so an FO that anchors its
+// `git rev-parse --show-toplevel` + `status --discover` on the plugin path — instead
+// of its isolated cwd fixture — finds and drives the REAL workflow. Staging copies
+// ONLY the plugin scaffolding (`.claude-plugin/`, `skills/`, `agents/`) into a temp
+// dir with NO `docs/dev` sibling, then `git init`s it so a `rev-parse` from the
+// plugin path resolves to a workflow-free root. An FO that boots from here discovers
+// zero workflows and falls back to the cwd fixture. The result is cached per repo
+// root so parallel scenarios share one staged copy.
+func livePluginDir(t *testing.T) string {
+	t.Helper()
+	return cachedLivePluginDir(t, repoRoot(t))
+}
+
+var (
+	livePluginOnce sync.Once
+	livePluginPath string
+	livePluginErr  error
+)
+
+func cachedLivePluginDir(t *testing.T, repo string) string {
+	t.Helper()
+	livePluginOnce.Do(func() {
+		// MkdirTemp (not t.TempDir) so the staged plugin outlives the first test's
+		// cleanup and the cached path stays valid for every scenario in the run.
+		staged, err := os.MkdirTemp("", "spacedock-live-plugin-")
+		if err != nil {
+			livePluginErr = err
+			return
+		}
+		for _, sub := range []string{".claude-plugin", "skills", "agents"} {
+			src := filepath.Join(repo, sub)
+			if _, statErr := os.Stat(src); statErr != nil {
+				continue // optional members (e.g. a layout without a top-level agents/)
+			}
+			if copyErr := copyTree(src, filepath.Join(staged, sub)); copyErr != nil {
+				livePluginErr = copyErr
+				return
+			}
+		}
+		// git init so the FO's `git rev-parse --show-toplevel` resolves to this
+		// workflow-free root, not an enclosing checkout that has a docs/dev.
+		if out, gitErr := exec.Command("git", "-C", staged, "init", "-q").CombinedOutput(); gitErr != nil {
+			livePluginErr = fmt.Errorf("git init staged plugin: %v: %s", gitErr, out)
+			return
+		}
+		livePluginPath = staged
+	})
+	if livePluginErr != nil {
+		t.Fatalf("stage isolated live plugin dir: %v", livePluginErr)
+	}
+	return livePluginPath
+}
+
+// copyTree recursively copies src to dst, preserving file modes. Symlinks are
+// resolved to real files so the staged plugin has no path back into the real repo.
+func copyTree(src, dst string) error {
+	return filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, relErr := filepath.Rel(src, path)
+		if relErr != nil {
+			return relErr
+		}
+		target := filepath.Join(dst, rel)
+		info, infoErr := os.Stat(path) // Stat (not Lstat) resolves symlinks to real content
+		if infoErr != nil {
+			return infoErr
+		}
+		if info.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		if mkErr := os.MkdirAll(filepath.Dir(target), 0o755); mkErr != nil {
+			return mkErr
+		}
+		return os.WriteFile(target, data, info.Mode().Perm())
+	})
 }
 
 // readmeRealisticLifecycle is the live cycle's workflow README: a realistic

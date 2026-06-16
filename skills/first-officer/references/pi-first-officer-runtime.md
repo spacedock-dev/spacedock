@@ -1,6 +1,6 @@
 # Pi First Officer Runtime
 
-This file defines how the shared first-officer core executes on Pi.
+This file defines how the shared first-officer core executes on Pi. The host-neutral dispatch and merge procedures are in `references/fo-dispatch-core.md` / `fo-merge-core.md` (named by the boot-resident core); this file is the Pi parts those defer to.
 
 ## Runtime Shape
 
@@ -38,6 +38,8 @@ Fresh redispatch is the default safe behavior for the first Pi slice. Normal fol
 A non-fresh resume is only allowed as an explicit manual/debug exception. Mark the dispatch visibly as a manual/debug resume and tie it to durable metadata in the entity stage evidence, including worker label, substrate, run/session handle, entity slug, stage, state, and completion epoch.
 
 ## Shutdown
+
+This is the Pi terminal teardown — fo-merge-core.md's Merge-and-Cleanup step 10, mandatory at the terminal boundary whether the merge ran locally or via a PR host.
 
 For `pi-subagents`, a completed child invocation needs no mailbox shutdown. Mark the worker complete/closed in first-officer memory and continue.
 
