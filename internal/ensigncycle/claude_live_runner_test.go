@@ -40,12 +40,12 @@ type claudeLiveRunner struct {
 	binary       string
 	pluginDir    string
 	env          []string
-	model        string
+	modelName    string
 	artifactRoot string
-	// home is the isolated HOME the env sets (a per-run temp dir). The shallow-boot
-	// scenario checks ~/.claude/teams/{...}/config.json under it for the
+	// homeDir is the isolated HOME the env sets (a per-run temp dir). The
+	// shallow-boot scenario checks ~/.claude/teams/{...}/config.json under it for the
 	// lazy-TeamCreate proof — scoped to THIS run, never a stale prior team.
-	home string
+	homeDir string
 }
 
 // withPATHPrefix returns env with dir prepended to its PATH entry, so a stub
@@ -72,7 +72,28 @@ func withPATHPrefix(env []string, dir string) []string {
 	return out
 }
 
-type claudeScenarioResult struct {
+// liveDriver is the transport seam: it turns a prompt + workflow root into the
+// observed (finalMessage, stream) the shared assertions consume. The headless
+// `-p` runner (claudeLiveRunner) and the pty/tmux runner (ptyLiveDriver) are two
+// implementations; the scenario orchestration and assertions do not know which
+// transport ran. model and home expose the two concrete facts the per-scenario
+// orchestration needs beyond the launch itself — the metrics tag (model) and the
+// isolated team root the shallow-boot scenario probes (home/.claude/teams).
+// withStubPATH returns a driver copy whose launched FO subprocess resolves a stub
+// binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED).
+type liveDriver interface {
+	run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult
+	model() string
+	home() string
+	withStubPATH(dir string) liveDriver
+}
+
+// liveResult is the host-neutral observed state the shared assertions consume.
+// headless `-p`: finalMessage is the stream's result/success event, stream is the
+// stream-json transcript. pty/tmux: finalMessage is the FO-pane final text, stream
+// is the session jsonl written under CLAUDE_CONFIG_DIR (the SAME stream-json
+// dialect the assertions grade). The transport is invisible to the assertions.
+type liveResult struct {
 	finalMessage string
 	stream       string
 	artifactDir  string
@@ -81,7 +102,7 @@ type claudeScenarioResult struct {
 
 type claudeLiveScenario struct {
 	sharedRuntimeScenario
-	run func(*testing.T, claudeLiveRunner, sharedRuntimeScenario)
+	run func(*testing.T, liveDriver, sharedRuntimeScenario)
 }
 
 func TestLiveClaudeSharedScenarios(t *testing.T) {
@@ -121,11 +142,13 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 	return scenarios
 }
 
-// claudeScenarioRunners maps each shared scenario ID to its Claude runner. It is
-// the Claude side of the parity guard: the shared coverage meta-test fails if this
-// map lacks a runner for any sharedRuntimeScenarios() ID.
-func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, sharedRuntimeScenario) {
-	return map[string]func(*testing.T, claudeLiveRunner, sharedRuntimeScenario){
+// claudeScenarioRunners maps each shared scenario ID to its runner. The runners
+// take the liveDriver seam, not a concrete runner, so the SAME map drives the
+// headless `-p` runner and the pty/tmux driver. It is the parity guard: the shared
+// coverage meta-test fails if this map lacks a runner for any
+// sharedRuntimeScenarios() ID.
+func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
+	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
 		"gate-guardrail":              runClaudeGateGuardrailScenario,
 		"rejection-flow":              runClaudeRejectionFlowScenario,
 		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
@@ -149,18 +172,34 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	env := isolatedClaudeEnv(t, os.Getenv("HOME"))
 	env = withBinaryOnPath(env, binary)
 
-	home, _ := envValue(env, "HOME")
+	homeDir, _ := envValue(env, "HOME")
 	return claudeLiveRunner{
 		binary:       binary,
 		pluginDir:    pluginDir,
 		env:          env,
-		model:        model,
+		modelName:    model,
 		artifactRoot: claudeLiveArtifactDir(t, "claude-shared-scenarios"),
-		home:         home,
+		homeDir:      homeDir,
 	}
 }
 
-func runClaudeGateGuardrailScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+// claudeLiveRunner satisfies the liveDriver seam: the shared per-scenario
+// orchestration drives it through the interface, oblivious to the `-p` transport.
+var _ liveDriver = claudeLiveRunner{}
+
+func (r claudeLiveRunner) model() string { return r.modelName }
+func (r claudeLiveRunner) home() string  { return r.homeDir }
+
+// withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
+// binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
+// never mutates the receiver's env, so parallel scenarios sharing the runner stay
+// race-free.
+func (r claudeLiveRunner) withStubPATH(dir string) liveDriver {
+	r.env = withPATHPrefix(r.env, dir)
+	return r
+}
+
+func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeGateWorkflow(t, workflowRoot)
@@ -174,10 +213,10 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner claudeLiveRunner, scena
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
@@ -199,7 +238,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 // runClaudeFeedback3CycleEscalationScenario drives the real FO against a fixture
@@ -209,7 +248,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner claudeLiveRunner, scena
 // state ALONE (cycle count + escalation marker + no post-cycle-3 implementation
 // report) — the reviewer-reuse signal is host-specific and lives in rejection-flow,
 // not here; this scenario is purely a host-neutral durable-state grade.
-func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeEscalationWorkflow(t, workflowRoot)
@@ -219,10 +258,10 @@ func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner claudeLiveRu
 	if err := assertThirdCycleEscalation(after); err != nil {
 		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
@@ -236,7 +275,7 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
@@ -245,7 +284,7 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner claudeLiveRunner, 
 // the durable end-state file is indistinguishable between the two paths. The file
 // must also actually land (the run produced a real seed), so the stream grade is
 // proof of HOW, not just THAT, the entity was filed.
-func runClaudeFilingScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
@@ -257,7 +296,7 @@ func runClaudeFilingScenario(t *testing.T, runner claudeLiveRunner, scenario sha
 	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 // runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
@@ -268,7 +307,7 @@ func runClaudeFilingScenario(t *testing.T, runner claudeLiveRunner, scenario sha
 // then asserts the AC-2 behavioral signal (no TeamCreate before the greet) and the
 // AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
 // ~89k cache_creation spike) over the captured stream.
-func runClaudeShallowBootScenario(t *testing.T, runner claudeLiveRunner, scenario sharedRuntimeScenario) {
+func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
@@ -276,14 +315,13 @@ func runClaudeShallowBootScenario(t *testing.T, runner claudeLiveRunner, scenari
 
 	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
 	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
-	scenarioRunner := runner
-	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
+	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
 
 	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt())
 
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.
-	teamRoot := filepath.Join(runner.home, ".claude", "teams")
+	teamRoot := filepath.Join(runner.home(), ".claude", "teams")
 	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -297,7 +335,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner claudeLiveRunner, scenari
 	if err := assertShallowBootMeasured(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model)
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 // run launches the real `spacedock claude` front door for one shared scenario and
@@ -317,7 +355,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner claudeLiveRunner, scenari
 // sequential model work never trips as long as the stream keeps moving, and only
 // silence past the budget kills the process — the same ≤60s AC-1-guarded discipline
 // the live cycle uses.
-func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) claudeScenarioResult {
+func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult {
 	t.Helper()
 	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
@@ -334,7 +372,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		"--permission-mode", "bypassPermissions",
 		"--output-format", "stream-json",
 		"--verbose",
-		"--model", r.model,
+		"--model", r.modelName,
 	)
 	cmd.Dir = workflowRoot
 	// Per-scenario CLAUDE_CONFIG_DIR so parallel scenarios never share claude's
@@ -404,7 +442,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		t.Fatal(writeErr)
 	}
 
-	return claudeScenarioResult{
+	return liveResult{
 		finalMessage: finalMessage,
 		stream:       stream,
 		artifactDir:  artifactDir,
