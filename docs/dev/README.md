@@ -217,6 +217,7 @@ Validation pilots should use these when verifying implementation work:
 |----------|-----------------|--------|
 | Go unit suite | `go test ./...` | CLI routing, parser behavior, status implementation, fixtures |
 | Race-enabled Go suite | `go test ./... -race` | Concurrency hazards in Go code when relevant |
+| Clean log + `-json` archive from one run | `go test -c -o pkg.test ./pkg && ./pkg.test -test.v 2>&1 \| tee raw.txt \| go tool test2json -t -p pkg > detail.jsonl; rc=${PIPESTATUS[0]}; grep -vE '^[[:space:]]*(=== (RUN\|PAUSE\|CONT)\|--- PASS:\|--- SKIP:)' raw.txt; exit $rc` | The live-CI test-output shape: clean step log (failures-only, `file:line`) plus a full `-json` archive from a single run. Inspect the archive with `grep '"Action":"fail"' detail.jsonl` or a `go tool test2json`-aware reader. Stdlib-only (no third-party tool). |
 | Launcher help smoke test | `go run ./cmd/spacedock --help` | Basic command entrypoint behavior |
 | Launcher version smoke test | `go run ./cmd/spacedock --version` | Basic version output behavior |
 | Status validator | `spacedock status --workflow-dir docs/dev --validate` | Spacedock entity-contract validation |
