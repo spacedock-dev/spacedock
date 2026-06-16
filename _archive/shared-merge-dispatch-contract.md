@@ -12,6 +12,7 @@ id: 2yfsf01jf15fmts7xt7w71m2
 sprint: 0203-fo-efficiency
 mod-block:
 pr: "#385"
+archived: 2026-06-16T07:02:03Z
 ---
 
 The shared first-officer terminal-merge and dispatch ceremony is generic (pure `spacedock status` + `git`) but lives only in `claude-fo-merge.md` / `claude-fo-dispatch.md`. The boot-resident core defers to "the runtime's merge reference," but only Claude provides one. A codex or pi FO that reaches a terminal stage has no mod-block set->invoke->clear, no Ship-Local ceremony, no worktree-removal safety, and no archive sequence to follow. It improvises or breaks. Extract the host-neutral ceremony so every runtime has it; leave only the genuine host seam per file.
