@@ -159,6 +159,10 @@ To list the tasks ready for dispatch (the query the first officer runs each loop
 spacedock status --workflow-dir docs/dev --next
 ```
 
+### Reading sections
+
+**Read one section, not the whole file.** `spacedock status --workflow-dir <wf> --read <entity-ref-or-path> --json` returns the file's frontmatter plus an ordered heading map (`text`, `level`, `offset`, `lines`). Pass a heading's `offset`/`lines` to `Read(path, offset, limit)` to load just that section — e.g. an entity's latest `## Stage Report`, or this README's `## Sprints`, without the rest.
+
 ## Runtime Live CI
 
 The live runtime lanes prove host behavior, not text shape: a static grep over workflow YAML or skill prose never substitutes for launching the real host front door, observing its output, and checking the resulting workflow state. The full reference (shared scenarios, fixtures, assertions, per-host runners, local live execution, and the GitHub setup) lives in [`docs/runtime-live-ci.md`](../runtime-live-ci.md). Add or change a runtime scenario there.

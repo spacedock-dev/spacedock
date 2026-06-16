@@ -98,6 +98,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	if err != nil {
 		return errExit(stderr, err.Error())
 	}
+	readRef, err := parseSingleArg(args, "--read", "reference-or-path")
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
 	newSlug, err := parseNewArg(args)
 	if err != nil {
 		return errExit(stderr, err.Error())
@@ -204,6 +208,9 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if showValidate {
 			incompatible = append(incompatible, "--validate")
 		}
+		if readRef != "" {
+			incompatible = append(incompatible, "--read")
+		}
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--next-id cannot be combined with "+strings.Join(incompatible, ", "))
 		}
@@ -258,6 +265,9 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if showValidate {
 			incompatible = append(incompatible, "--validate")
 		}
+		if readRef != "" {
+			incompatible = append(incompatible, "--read")
+		}
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--resolve cannot be combined with "+strings.Join(incompatible, ", "))
 		}
@@ -296,6 +306,9 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if showValidate {
 			incompatible = append(incompatible, "--validate")
 		}
+		if readRef != "" {
+			incompatible = append(incompatible, "--read")
+		}
 		if rootPath != "" {
 			incompatible = append(incompatible, "--root")
 		}
@@ -303,6 +316,47 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 			return errExit(stderr, "--short-id cannot be combined with "+strings.Join(incompatible, ", "))
 		}
 		return printShortIDOrExit(roots, shortIDRef, asJSON, stdout, stderr)
+	}
+
+	if readRef != "" {
+		var incompatible []string
+		if showNext {
+			incompatible = append(incompatible, "--next")
+		}
+		if showBoot {
+			incompatible = append(incompatible, "--boot")
+		}
+		if showNextID {
+			incompatible = append(incompatible, "--next-id")
+		}
+		if includeArchive {
+			incompatible = append(incompatible, "--archived")
+		}
+		if len(whereFilters) > 0 {
+			incompatible = append(incompatible, "--where")
+		}
+		if hasFieldsFlag {
+			incompatible = append(incompatible, "--fields/--all-fields")
+		}
+		if archiveSlug != "" {
+			incompatible = append(incompatible, "--archive")
+		}
+		if setResult != nil {
+			incompatible = append(incompatible, "--set")
+		}
+		if resolveRef != "" {
+			incompatible = append(incompatible, "--resolve")
+		}
+		if showValidate {
+			incompatible = append(incompatible, "--validate")
+		}
+		if rootPath != "" {
+			incompatible = append(incompatible, "--root")
+		}
+		if len(incompatible) > 0 {
+			return errExit(stderr, "--read cannot be combined with "+strings.Join(incompatible, ", "))
+		}
+		return runReadSection(roots, readRef, asJSON, stdout, stderr)
 	}
 
 	if rootPath != "" {
@@ -525,7 +579,7 @@ func runDiscover(args []string, dir string, stderr, stdout io.Writer) int {
 	incompatibleFlags := map[string]bool{
 		"--boot": true, "--next": true, "--next-id": true, "--archived": true, "--where": true,
 		"--set": true, "--archive": true, "--fields": true, "--all-fields": true, "--workflow-dir": true,
-		"--validate": true, "--resolve": true, "--short-id": true, "--id-seed": true, "--id-actor": true,
+		"--validate": true, "--resolve": true, "--short-id": true, "--read": true, "--id-seed": true, "--id-actor": true,
 	}
 	var found map[string]bool = map[string]bool{}
 	for _, a := range args {

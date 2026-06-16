@@ -229,3 +229,36 @@ func resolveJSON(workflowDir string, e *entity) *jsonObj {
 func singletonJSON(cmd, key, value string) *jsonObj {
 	return newJSONObj().set("command", cmd).set(key, value)
 }
+
+// readJSON builds the {"command":"read",...} envelope for --read: the realpath'd
+// path, the file's total_lines, the frontmatter as a nested object (keys sorted
+// for byte stability, since ParseFrontmatter returns an unordered map), and the
+// ordered headings array (text/level/offset/lines, every value stringified to
+// hold the all-strings contract).
+func readJSON(path string, sr sectionRead) *jsonObj {
+	fm := newJSONObj()
+	keys := make([]string, 0, len(sr.frontmatter))
+	for k := range sr.frontmatter {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fm.set(k, sr.frontmatter[k])
+	}
+
+	headings := make(jsonArr, 0, len(sr.headings))
+	for _, h := range sr.headings {
+		headings = append(headings, newJSONObj().
+			set("text", h.text).
+			set("level", strconv.Itoa(h.level)).
+			set("offset", strconv.Itoa(h.offset)).
+			set("lines", strconv.Itoa(h.lines)))
+	}
+
+	return newJSONObj().
+		set("command", "read").
+		set("path", realpathOf(path)).
+		set("total_lines", strconv.Itoa(sr.totalLines)).
+		setValue("frontmatter", fm).
+		setValue("headings", headings)
+}
