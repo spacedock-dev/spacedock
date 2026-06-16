@@ -64,6 +64,13 @@ jobs:
       - name: Build
         run: go build ./...
 
+      # The offline suite includes the AC tests that exercise the live steps'
+      # clean-log + jsonl-archive shape over a fixture; they invoke the pinned
+      # gotestsum, so install it here (sha256-verified) to guarantee those tests
+      # RUN — they would otherwise self-skip when gotestsum is absent.
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Run offline test suite
         run: go test ./...
 
@@ -137,6 +144,17 @@ jobs:
           echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
           echo "$(pwd)" >> "$GITHUB_PATH"
 
+      # gotestsum renders the live test run as a CLEAN step log (a per-package
+      # progress view + an `=== Failed` recap listing each failing test with
+      # file:line) while writing the full `-json` event stream to a `--jsonfile`
+      # archive, from a SINGLE test run — so an FO/ensign reads the small step log
+      # for triage and fetches the archived `*-detail.jsonl` only for root cause.
+      # It is PINNED to a fixed release and the downloaded prebuilt binary is
+      # sha256-verified before use (no `@latest`, no unverified download, and no
+      # Go-toolchain change — the prebuilt is decoupled from the build toolchain).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -178,13 +196,19 @@ jobs:
       # zero-`status --discover` fixture: the FO reports no workflow found and STOPS,
       # taking no broad filesystem sweep). All are boot/front-door drives, so they
       # share this step and `-run` alternation rather than a second job.
+      # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
+      # (per-package progress + an `=== Failed` recap listing each failing test
+      # with file:line — no per-test === RUN / --- PASS firehose) and writes the
+      # full `-json` event stream to the `--jsonfile` archive for root-cause
+      # retrieval. gotestsum preserves the underlying `go test` exit code, so the
+      # step stays red on failure.
       - name: Run live ensign cycle
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          go test -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/ -v 2>&1 | tee live-e2e-transcript.txt
+          gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/
 
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
@@ -203,7 +227,7 @@ jobs:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
-          go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/ -v 2>&1 | tee claude-shared-scenarios-transcript.txt
+          gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
 
       - name: Upload live artifacts
         if: always()
@@ -212,8 +236,8 @@ jobs:
           name: runtime-live-e2e-claude-live-${{ matrix.model }}
           path: |
             ./spacedock
-            ./live-e2e-transcript.txt
-            ./claude-shared-scenarios-transcript.txt
+            ./live-e2e-detail.jsonl
+            ./claude-shared-scenarios-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**
@@ -269,6 +293,11 @@ jobs:
           echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
           echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
 
+      # Pinned, sha256-verified gotestsum for the clean log + `-json` archive (see
+      # the claude-live job for the rationale).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -313,7 +342,7 @@ jobs:
           fi
 
       - name: Verify Codex resolver against installed plugin
-        run: go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v
+        run: go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost
 
       - name: Show tool versions
         run: |
@@ -323,8 +352,12 @@ jobs:
           echo "- \`codex --version\`: \`$(codex --version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # Clean step log + archived `-json` detail from one run (see the claude-live
+      # job for the rationale).
       - name: Run live Codex shared scenarios
-        run: go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
@@ -333,6 +366,7 @@ jobs:
           name: runtime-live-e2e-codex-live
           path: |
             ./spacedock
+            ./codex-shared-scenarios-detail.jsonl
             live-artifacts/codex/**
             live-artifacts/journey-metrics/**
           if-no-files-found: warn
@@ -401,6 +435,11 @@ jobs:
           echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
           echo "$(pwd)" >> "$GITHUB_PATH"
 
+      # Pinned, sha256-verified gotestsum for the clean log + `-json` archive (see
+      # the claude-live job for the rationale).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -427,11 +466,17 @@ jobs:
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Effort: \`${{ inputs.effort }}\`" >> "$GITHUB_STEP_SUMMARY"
 
+      # Clean step log + archived `-json` detail from one run per step (see the
+      # claude-live job for the rationale).
       - name: Run Pi shared scenario coverage guard
-        run: go test -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' ./internal/ensigncycle -v
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
-        run: go test -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle -v
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
@@ -440,6 +485,8 @@ jobs:
           name: runtime-live-e2e-pi-live
           path: |
             ./spacedock
+            ./pi-coverage-detail.jsonl
+            ./pi-front-door-smoke-detail.jsonl
             live-artifacts/pi/**
             live-artifacts/journey-metrics/**
           if-no-files-found: warn
