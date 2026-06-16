@@ -32,7 +32,7 @@ func TestLiveEnsignCycleTeamTeardown(t *testing.T) {
 	// taking the bare single-entity path. antiShutdownOverride still rides along —
 	// it fights the per-turn #55297 teardown nag, which is exactly the team path
 	// this test exercises.
-	drivePrompt := "Run in team mode (create a team for concurrent dispatch). " +
+	drivePrompt := forceTeamModeCue +
 		"Drive the workflow to completion; you have the conn to resolve gates from each stage report's verdict (auto-approve). " +
 		antiShutdownOverride
 	watcher, root := startRealisticLifecycleDrive(t, drivePrompt)

@@ -35,7 +35,7 @@ import (
 // no credential is available; never fatals).
 func TestLiveStandingResidencyInjectsCommOfficer(t *testing.T) {
 	binary := spacedockBinary(t)
-	repoRoot := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	childEnv := isolatedClaudeEnv(t, os.Getenv("HOME"))
@@ -63,18 +63,17 @@ func TestLiveStandingResidencyInjectsCommOfficer(t *testing.T) {
 	task := "Use $spacedock:first-officer for this whole run."
 	// FORCE team mode. This test's load-bearing oracle is the team config.json
 	// roster — comm-officer must land in the members[] of a live team — so it
-	// REQUIRES team mode to exist at all. The prior `"Drive the workflow."` prompt
-	// was UNFORCED: it asserted isTeamCreate while leaving the team-vs-bare choice
-	// to the FO, so a legitimate headless bare drive (no team, no roster) would red
-	// the residency assertion on correct behavior — the same relocated coin the
-	// default cycle removes. Forcing team mode dissolves it: a team is guaranteed,
+	// REQUIRES team mode to exist at all. A SOFT cue ("run in team mode (create a
+	// team for concurrent dispatch)") was not enough: the headless `-p` dispatch-mode
+	// determination sanctions bare mode, so the FO could still drive bare (no team,
+	// no roster) and red the residency assertion on correct behavior. forceTeamModeCue
+	// is the strong, unambiguous MUST that dissolves the coin — a team is guaranteed,
 	// the standing-teammate injection has a roster to land in, and isTeamCreate is a
-	// real invariant rather than a coin-flip. The cue is the same generic team-mode
-	// instruction TestLiveEnsignCycleTeamTeardown uses — it names the dispatch mode,
-	// no stage or task.
-	drivePrompt := "Run in team mode (create a team for concurrent dispatch). Drive the workflow. " + antiShutdownOverride
+	// real invariant. The same shared cue forces team mode for
+	// TestLiveEnsignCycleTeamTeardown; it names the dispatch mode only, no stage/task.
+	drivePrompt := forceTeamModeCue + "Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
-		"--plugin-dir", repoRoot,
+		"--plugin-dir", pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", drivePrompt,

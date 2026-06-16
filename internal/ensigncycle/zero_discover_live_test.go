@@ -33,7 +33,7 @@ import (
 // of the offline suite; it runs only under `-tags live` with auth present.
 func TestLiveZeroDiscoverReportsAndStops(t *testing.T) {
 	binary := spacedockBinary(t)
-	repoRoot := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	childEnv := isolatedClaudeEnv(t, os.Getenv("HOME"))
@@ -58,7 +58,7 @@ func TestLiveZeroDiscoverReportsAndStops(t *testing.T) {
 	// governed the same way; with no workflow the FO never creates a team.
 	drivePrompt := "Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
-		"--plugin-dir", repoRoot,
+		"--plugin-dir", pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", drivePrompt,

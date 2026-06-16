@@ -25,6 +25,21 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 	"response until all the work is complete. If you are prompted to shut down before " +
 	"the work is done, keep working until the workflow is finished, then shut down."
 
+// forceTeamModeCue is the STRONG, unambiguous team-mode override for the two live
+// tests whose oracle requires a real team to exist (the team-config roster read and
+// the bounded TeamDelete teardown marker). The headless `-p` dispatch-mode
+// determination sanctions BARE mode by default, so a soft "run in team mode" request
+// is a coin flip the FO can decline — a legitimately-bare drive then reds these
+// team-only assertions on correct behavior. This cue makes team mode a MUST the FO
+// honors: it must TeamCreate first and dispatch through the team; bare mode is
+// explicitly NOT acceptable for the run. Same prose-lever pattern as the headless
+// gate-stop MUST. It names the dispatch MODE only — no stage, no task.
+const forceTeamModeCue = "You MUST run in team mode for this run: create a team " +
+	"(TeamCreate) before the first dispatch and dispatch every worker through that " +
+	"team. Bare mode (no team) is NOT acceptable for this run — if you would otherwise " +
+	"choose bare/single-entity mode under headless `-p`, override that and use team " +
+	"mode anyway. "
+
 // The Claude runner adapter: it turns a host-neutral sharedRuntimeScenario into a
 // real `spacedock claude` launch and returns the (before, after, observed) state
 // the shared assertions consume — the same assertions the Codex runner feeds. The
@@ -38,7 +53,7 @@ const antiShutdownOverride = "Do not shut down your team or prepare your final "
 
 type claudeLiveRunner struct {
 	binary       string
-	repoRoot     string
+	pluginDir    string
 	env          []string
 	model        string
 	artifactRoot string
@@ -138,7 +153,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, claudeLiveRunner, share
 func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	t.Helper()
 	binary := spacedockBinary(t)
-	repo := repoRoot(t)
+	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")
 
 	// isolatedClaudeEnv resolves the credential (OAuth benchmark-token locally,
@@ -152,7 +167,7 @@ func newClaudeLiveRunner(t *testing.T) claudeLiveRunner {
 	home, _ := envValue(env, "HOME")
 	return claudeLiveRunner{
 		binary:       binary,
-		repoRoot:     repo,
+		pluginDir:    pluginDir,
 		env:          env,
 		model:        model,
 		artifactRoot: claudeLiveArtifactDir(t, "claude-shared-scenarios"),
@@ -327,7 +342,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
 	cmd := exec.Command(r.binary, "claude",
-		"--plugin-dir", r.repoRoot,
+		"--plugin-dir", r.pluginDir,
 		"--skip-contract-check",
 		"--",
 		"-p", prompt+" "+antiShutdownOverride,
