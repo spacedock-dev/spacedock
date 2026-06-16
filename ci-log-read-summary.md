@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-ci-log-read-summary
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
+mod-block: merge:pr-merge
 ---
 
 The CI test steps dump VERBOSE `go test -v` output to stdout, and stdout is what floods FO/ensign context when reading a CI run. Fix it at the source: keep verbose detail OUT of the visible/stdout surface and ARCHIVE it to a file/artifact for root-cause retrieval; stdout carries only the clean concise `go test` result (package pass/fail + failures), small enough to read directly into context.
