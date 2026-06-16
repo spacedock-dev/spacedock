@@ -1,6 +1,6 @@
 ---
 title: Measure journeymetrics read adoption and trim the redundant dispatch-prompt hint
-status: implementation
+status: validation
 source: "captain (2026-06-16, 0204 sprint) — e6a's status --read adoption was proven WORKING once (AC6 single live drive). No ongoing verification that real FO/ensign sessions call --read; the six contract sites are wording, and wording-present is not behavior. journeymetrics already parses every journey transcript but records ToolCallsByName by tool NAME only — `status --read` is a Bash subcommand, invisible today as a generic Bash call."
 score:
 sprint: 0204-structured-reads
