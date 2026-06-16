@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -114,16 +113,24 @@ var ptyBusyMarkers = []string{"esc to interrupt", "Press up to edit queued"}
 // forced-team tests).
 type ptySession struct {
 	tmuxName    string
-	sessionFile string
+	projectsDir string // CLAUDE_CONFIG_DIR/projects/<encoded-cwd>: where the FO + teammate transcripts land
+	foSessionID string // the FO's OWN session UUID — the tail pins to this, never a teammate's transcript
 	configDir   string // the effective CLAUDE_CONFIG_DIR this run wrote under (teams/ + projects/ live here)
 	proc        *tmuxLiveProc
 	artifactDir string
 	started     time.Time
 }
 
-// newFileSource opens a fresh tail over the FO's session jsonl from byte 0, so a
-// caller's streamWatcher sees the whole transcript from launch.
-func (s ptySession) newFileSource() *fileLineSource { return newFileLineSource(s.sessionFile) }
+// newFileSource opens a fresh tail over the FO's OWN session jsonl from byte 0, so
+// a caller's streamWatcher sees the whole FO transcript from launch. It pins to the
+// FO's session UUID: once the FO creates a team and dispatches a teammate, that
+// teammate writes its OWN transcript into the same projects dir (newer, also
+// assistant-bearing), so a newest-file tail would FLIP to the teammate and miss the
+// FO's TeamCreate/Agent/TeamDelete (the F30 hazard gym's SessionFileByID solves).
+// Pinning by the FO's id keeps the tail on the FO across teammate spawns.
+func (s ptySession) newFileSource() *fileLineSource {
+	return newFileLineSourceByID(s.projectsDir, s.foSessionID)
+}
 
 // launchAndSend launches the interactive session WITHOUT a stdout pipe (claude
 // owns the pane tty — the no-pipe hazard), gates the first send on stable-idle (the
@@ -229,9 +236,27 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 			projectsDir, label, err, dumpPane, artifactDir)
 	}
 
+	// Capture the FO's OWN session UUID and pin the tail to it, so a teammate
+	// transcript spawned later never lures the read off the FO (F30 — observed: the
+	// tail read the comm-officer transcript and missed TeamCreate). The FO/root
+	// transcript is the one with NO `agentName` (teammate transcripts tag every entry
+	// with theirs — confirmed against every TeamCreate-bearing transcript on disk).
+	// waitForSessionFile above proved a transcript landed; this keys the id on the
+	// root file specifically, even if the FO dispatched a teammate during boot.
+	foSessionID := waitForFOSessionID(projectsDir, proc, ptyBootBudget)
+	if foSessionID == "" {
+		dumpPane := d.captureFOPane(session)
+		_ = os.WriteFile(filepath.Join(artifactDir, "pane-no-session-id.txt"), []byte(dumpPane), 0o644)
+		proc.kill()
+		t.Fatalf("could not read the FO root session id under %s for %s (first transcript seen: %s): the tail cannot pin to the FO without it\nFO pane:\n%s\nArtifacts: %s",
+			projectsDir, label, sessionFile, dumpPane, artifactDir)
+	}
+	t.Logf("[pty %s] pinned FO session id: %s", label, foSessionID)
+
 	return ptySession{
 		tmuxName:    session,
-		sessionFile: sessionFile,
+		projectsDir: projectsDir,
+		foSessionID: foSessionID,
 		configDir:   effectiveConfigDir,
 		proc:        proc,
 		artifactDir: artifactDir,
@@ -401,46 +426,7 @@ func tmuxHasSession(session string) bool {
 	return exec.Command("tmux", "has-session", "-t", session).Run() == nil
 }
 
-// --- session jsonl tail as a lineSource -----------------------------------
-
-// fileLineSource is the pty lineSource: it tails a session jsonl file, returning
-// the complete lines appended since the last drain. It is the file analog of
-// pipeLineSource (which tails a stdout pipe): the interactive session writes its
-// stream-json transcript to disk, not a pipe, so the driver tails the file for
-// liveness while feeding the SAME streamWatcher. It advances a byte offset only
-// past COMPLETE (newline-terminated) lines, so a half-written JSONL record split
-// across two appends is held until its newline arrives and never parsed early.
-type fileLineSource struct {
-	path   string
-	offset int64
-}
-
-func newFileLineSource(path string) *fileLineSource {
-	return &fileLineSource{path: path}
-}
-
-func (s *fileLineSource) drain() []string {
-	data, err := os.ReadFile(s.path)
-	if err != nil || int64(len(data)) <= s.offset {
-		return nil
-	}
-	tail := data[s.offset:]
-	// Only consume up to the last newline; bytes after it are a partial trailing
-	// line held for the next drain.
-	last := strings.LastIndexByte(string(tail), '\n')
-	if last < 0 {
-		return nil
-	}
-	consumed := tail[:last+1]
-	s.offset += int64(len(consumed))
-	var out []string
-	for _, line := range strings.Split(strings.TrimRight(string(consumed), "\n"), "\n") {
-		if line != "" {
-			out = append(out, line)
-		}
-	}
-	return out
-}
+// --- session jsonl resolution waiters (live-only: budget + procPoller) -----
 
 // waitForSessionFile blocks until a session jsonl appears in dir (the FO's own
 // transcript), bounded by budget. Returns the newest assistant-bearing file, or
@@ -462,58 +448,32 @@ func waitForSessionFile(dir string, proc procPoller, budget time.Duration) (stri
 	}
 }
 
-// activeSessionFile returns the live conversation transcript in dir: the newest
-// *.jsonl that already carries an assistant entry, else the newest overall (right
-// after launch, before the first assistant turn). Ported from spacedock-gym's
-// ActiveSessionFile (reference-only, not imported).
-func activeSessionFile(dir string) string {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return ""
-	}
-	type cand struct {
-		path    string
-		mod     int64
-		hasAsst bool
-	}
-	var cands []cand
-	for _, e := range entries {
-		if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
-			continue
+// waitForFOSessionID polls dir for the FO's own session UUID, bounded by budget.
+// The FO is the team ROOT, not a spawned teammate: its transcript entries carry NO
+// non-empty `agentName`, while a dispatched teammate's entries carry
+// `"agentName":"<teammate>"`. Keying on the root transcript (not the
+// newest-assistant-bearing file, which can already be a teammate's when the FO
+// dispatched during boot) pins the id to the FO. The id can lag the file by a tick,
+// so this retries; "" if the session dies or the budget elapses.
+func waitForFOSessionID(dir string, proc procPoller, budget time.Duration) string {
+	deadline := time.Now().Add(budget)
+	for {
+		if id := foRootSessionID(dir); id != "" {
+			return id
 		}
-		info, err := e.Info()
-		if err != nil {
-			continue
+		if _, exited := proc.poll(); exited {
+			return ""
 		}
-		path := filepath.Join(dir, e.Name())
-		body, _ := os.ReadFile(path)
-		cands = append(cands, cand{path, info.ModTime().UnixNano(), strings.Contains(string(body), `"type":"assistant"`)})
-	}
-	if len(cands) == 0 {
-		return ""
-	}
-	sort.Slice(cands, func(i, j int) bool {
-		if cands[i].hasAsst != cands[j].hasAsst {
-			return cands[i].hasAsst
+		if time.Now().After(deadline) {
+			return ""
 		}
-		return cands[i].mod > cands[j].mod
-	})
-	return cands[0].path
+		time.Sleep(ptyPollInterval)
+	}
 }
 
-// encodeProjectDir converts an absolute cwd into the directory name Claude Code
-// uses under <config>/projects: each of '/', '.', and '_' becomes '-'. Ported from
-// spacedock-gym's EncodeProjectDir (reference-only, not imported).
-func encodeProjectDir(cwd string) string {
-	return strings.Map(func(r rune) rune {
-		switch r {
-		case '/', '.', '_':
-			return '-'
-		default:
-			return r
-		}
-	}, cwd)
-}
+// (session-jsonl resolution helpers — fileLineSource, sessionFileByID,
+// sessionIDFromFile, foRootSessionID, activeSessionFile, encodeProjectDir — are pure
+// and live in pty_session_test.go so they compile + are unit-tested OFFLINE.)
 
 // configDirOrDefault returns the resolved CLAUDE_CONFIG_DIR, or the isolated-HOME
 // default (home/.claude) when the env did not set one — the mirror of
