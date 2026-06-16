@@ -36,8 +36,6 @@ Your git branch is spacedock-ensign/thing. All commits MUST be on this branch. D
 
 Read the entity file at <ROOT>/.worktrees/spacedock-ensign-thing/thing.md for the full spec. It contains:
 
-For later re-reads of the body during work — e.g. to find the append point for your stage report — use `${SPACEDOCK_BIN:-spacedock} status --read <ROOT>/.worktrees/spacedock-ensign-thing/thing.md --json` to fetch a section's offset/lines rather than re-reading the whole file.
-
 ### Completion checklist
 
 - a

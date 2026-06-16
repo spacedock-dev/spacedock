@@ -43,6 +43,8 @@ type Observation struct {
 	Turns           int
 	ToolCalls       int
 	ToolCallsByName map[string]int
+	StatusReadCalls int
+	ScopedReadCalls int
 	Tokens          TokenTotals
 	TotalCostUSD    float64
 	ModelUsage      map[string]ModelUsage
@@ -112,6 +114,8 @@ type Record struct {
 	Turns           int                    `json:"turns,omitempty"`
 	ToolCalls       int                    `json:"tool_calls,omitempty"`
 	ToolCallsByName map[string]int         `json:"tool_calls_by_name,omitempty"`
+	StatusReadCalls int                    `json:"status_read_calls,omitempty"`
+	ScopedReadCalls int                    `json:"scoped_read_calls,omitempty"`
 	Tokens          TokenTotals            `json:"tokens,omitempty"`
 	TotalCostUSD    float64                `json:"total_cost_usd,omitempty"`
 	ModelUsage      map[string]ModelUsage  `json:"model_usage,omitempty"`
@@ -135,6 +139,8 @@ type recordJSON struct {
 	Turns           int                    `json:"turns,omitempty"`
 	ToolCalls       int                    `json:"tool_calls,omitempty"`
 	ToolCallsByName map[string]int         `json:"tool_calls_by_name,omitempty"`
+	StatusReadCalls int                    `json:"status_read_calls,omitempty"`
+	ScopedReadCalls int                    `json:"scoped_read_calls,omitempty"`
 	Tokens          *TokenTotals           `json:"tokens,omitempty"`
 	TotalCostUSD    float64                `json:"total_cost_usd,omitempty"`
 	ModelUsage      map[string]ModelUsage  `json:"model_usage,omitempty"`
@@ -169,6 +175,8 @@ func (r Record) MarshalJSON() ([]byte, error) {
 		Turns:           r.Turns,
 		ToolCalls:       r.ToolCalls,
 		ToolCallsByName: r.ToolCallsByName,
+		StatusReadCalls: r.StatusReadCalls,
+		ScopedReadCalls: r.ScopedReadCalls,
 		Tokens:          tokens,
 		TotalCostUSD:    r.TotalCostUSD,
 		ModelUsage:      r.ModelUsage,

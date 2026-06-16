@@ -21,6 +21,8 @@ func ParseClaudeJSONL(data []byte) (ClaudeParseResult, error) {
 	assistantUsageSeen := map[string]bool{}
 	toolIDs := map[string]string{}
 	toolCallsByName := map[string]int{}
+	statusReadCalls := 0
+	scopedReadCalls := 0
 	var assistantUsage TokenTotals
 	var terminalUsage *TokenTotals
 	var terminalCost float64
@@ -73,6 +75,16 @@ func ParseClaudeJSONL(data []byte) (ClaudeParseResult, error) {
 				}
 				toolIDs[toolID] = block.Name
 				toolCallsByName[block.Name]++
+				switch block.Name {
+				case "Bash":
+					if commandInvokesStatusRead(bashCommand(block.Input)) {
+						statusReadCalls++
+					}
+				case "Read":
+					if readInputIsScoped(block.Input) {
+						scopedReadCalls++
+					}
+				}
 			}
 		case "result":
 			result, err := parseClaudeResult(row)
@@ -106,6 +118,8 @@ func ParseClaudeJSONL(data []byte) (ClaudeParseResult, error) {
 			Turns:           len(assistantIDs),
 			ToolCalls:       len(toolIDs),
 			ToolCallsByName: toolCallsByName,
+			StatusReadCalls: statusReadCalls,
+			ScopedReadCalls: scopedReadCalls,
 			Tokens:          tokens,
 			TotalCostUSD:    terminalCost,
 			ModelUsage:      terminalModelUsage,
@@ -212,9 +226,10 @@ type claudeAssistant struct {
 }
 
 type claudeContent struct {
-	Type string `json:"type"`
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	Type  string          `json:"type"`
+	ID    string          `json:"id"`
+	Name  string          `json:"name"`
+	Input json.RawMessage `json:"input"`
 }
 
 func parseClaudeAssistant(raw json.RawMessage) (claudeAssistant, error) {

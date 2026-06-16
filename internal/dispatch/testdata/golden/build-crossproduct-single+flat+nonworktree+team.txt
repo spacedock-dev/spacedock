@@ -32,8 +32,6 @@ Stage: backlog
 
 Read the entity file at <ROOT>/thing.md for the current spec.
 
-For later re-reads of the body during work — e.g. to find the append point for your stage report — use `${SPACEDOCK_BIN:-spacedock} status --read <ROOT>/thing.md --json` to fetch a section's offset/lines rather than re-reading the whole file.
-
 ### Completion checklist
 
 - a

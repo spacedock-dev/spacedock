@@ -15,6 +15,7 @@ type CodexCharacterization struct {
 	FieldsByEvent   map[string][]string `json:"fields_by_event"`
 	ToolCalls       int                 `json:"tool_calls,omitempty"`
 	ToolCallsByName map[string]int      `json:"tool_calls_by_name,omitempty"`
+	StatusReadCalls int                 `json:"status_read_calls,omitempty"`
 }
 
 func CharacterizeCodexExecJSONL(data []byte) (CodexCharacterization, error) {
@@ -23,6 +24,7 @@ func CharacterizeCodexExecJSONL(data []byte) (CodexCharacterization, error) {
 	fields := map[string]map[string]bool{}
 	toolSeen := map[string]bool{}
 	toolCallsByName := map[string]int{}
+	statusReadCalls := 0
 	model := ""
 	lineNo := 0
 	for scanner.Scan() {
@@ -50,6 +52,9 @@ func CharacterizeCodexExecJSONL(data []byte) (CodexCharacterization, error) {
 			if !toolSeen[callID] {
 				toolSeen[callID] = true
 				toolCallsByName[rawString(row["name"])]++
+				if commandInvokesStatusRead(codexCommand(row["arguments"])) {
+					statusReadCalls++
+				}
 			}
 		}
 		if fields[typ] == nil {
@@ -78,6 +83,7 @@ func CharacterizeCodexExecJSONL(data []byte) (CodexCharacterization, error) {
 		FieldsByEvent:   fieldsByEvent,
 		ToolCalls:       len(toolSeen),
 		ToolCallsByName: toolCallsByName,
+		StatusReadCalls: statusReadCalls,
 	}, nil
 }
 
