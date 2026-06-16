@@ -9,6 +9,8 @@ score: 0.66
 worktree:
 issue:
 id: ezfwkw33awtqgztgr6v7bb59
+sprint: 0204-structured-reads
+sprint-readiness: ready
 ---
 
 The 2y merge fixed the important reachability gap by extracting `fo-dispatch-core.md` and `fo-merge-core.md`, making the merge and dispatch ceremony reachable to Codex and Pi. One follow-up remains: the new `fo-dispatch-core.md` is named as host-neutral, but parts of it still describe Claude team mode as if it were universal.
