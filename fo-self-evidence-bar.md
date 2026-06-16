@@ -19,5 +19,12 @@ A runtime-neutral Working Principle (host-agnostic, no `claude-live`/`codex-live
 
 The dev-workflow README's `Proof policy` then INHERITS this (its path->lane bullet becomes the dev-specific realization and can slim to reference the generic principle).
 
+## Both modes — autonomous AND gate judgment
+This is NOT autonomous-only; the deliverable must cover both manifestations:
+- **Autonomous / given-the-conn:** the FO is the decider, so the Working Principle binds the merge/gate/triage decision directly.
+- **Interactive gate judgment:** the captain decides, but on the FO's PRESENTATION. The principle relocates to the evidence the FO surfaces — which lanes actually ran and passed, and the failure READ from this run — so the captain votes on facts, not the FO's convenient label. A mis-framed gate ("PASSED / lane unrelated / known flake") makes the human ratify the FO's error without ever seeing the actual evidence; it looks like oversight but is not — the human cannot catch what the FO never surfaced. This is the MORE dangerous case.
+
+So the work spans BOTH: the runtime-neutral Working Principle (binds the FO's own decisions) AND a `present-gate` evidence rule (the lane run/pass state and the failure-read-from-this-run surfaced in the gate review are evidence, not labels). A `present-gate` change is itself the kind of skill change whose proof is a live drive observing the rendered gate, so it dogfoods the principle.
+
 ## Notes for ideation
 This is itself a contract/scaffolding change, so it must go through implementation + validation and — per the principle it adds — the `claude-live`/`codex-live`/`pi-live` drives must be green before merge (the dogfood). The hard part is the AC: a behavioral FO principle resists a clean code gate (a contractlint "the phrase is present" check is the prose-grep tautology this very policy bans). Ideation must decide what genuinely proves it — a live FO scenario observing the right gate/triage decision, the structural absence of host-coupling, the binary-level merge check, or some composition — not a self-referential prose check.
