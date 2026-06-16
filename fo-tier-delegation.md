@@ -157,3 +157,48 @@ After (insert after the `### Feedback Cycles` bullet):
 ### Summary
 
 Designed the model-aware tier mechanism as four pieces in the established prose-function notation: `«fo.tier»()` self-identifies the FO tier from a single launcher-set `SPACEDOCK_FO_MODEL` source at a new Startup step 1.5; a six-row routing table names every judgment category's level-3 route; a `level-3-judge` standing teammate (`model: opus`) reuses the existing `comm-officer`/`spawn-standing-all` machinery; and a boot gate arms gate-verdict routing only for a level-2-only FO meeting `gate: true` stages, inert otherwise. The no-2y startable slice is the gate-verdicts row wired live; the other five rows ship as the documented table and compose with 2y. The riskiest mechanism — tier self-ID + routing holding in a live Haiku drive — is exercised in haiku-loop-spike, not a duplicate drive; AC-1 grades on a durable `### Gate Verdicts` `decided-by: level-3-judge` artifact. Key decision: the level-3 gate route is load-bearing-blocking (FO surfaces "level-3 unavailable" rather than self-authoring a verdict), which is the entire safety property and the one place it differs from comm-officer's best-effort polish.
+
+### Feedback Cycles
+
+#### Cycle 1: Opus level-3-judge ideation gate review (2026-06-16)
+
+**Verdict:** REJECT
+
+**Findings:**
+
+Level-3 gate review (Opus model) on ideation design. Three material gaps block ideation gate:
+
+**1. AC-1 proof gap (architecture mismatch with spike)**
+- AC-1 claims the haiku-loop-spike live drive produces `### Gate Verdicts` `decided-by: level-3-judge` durable artifact
+- Verified: w4 (haiku-loop-spike) as ideated uses per-judgment bare `Agent(model=opus)`, NOT a standing `level-3-judge` mod
+- w4 explicitly lists "Validating the standing-teammate residency mechanism" as OUT OF SCOPE
+- w4 produces no `### Gate Verdicts` artifact; grading is via captured tool-call stream, not durable state
+- **Action:** Either reconcile w4 to standing-mod shape and the durable artifact, or give 72 its own live drive
+
+**2. Tier default fails open (inverted safety)**
+- Current: `unset SPACEDOCK_FO_MODEL` → `level-3-capable` → Haiku self-approves verdicts
+- This violates the 0205 thesis: "weak FO self-identifies and escalates structurally"
+- **Action:** Flip to fail-safe — `unset` → `level-2-only` / require explicit capability assertion
+
+**3. Prose-function approach is fragile (integration friction)**
+- Design asks the Haiku FO to hand-follow `«gate.route-verdict»(slug, stage)` prose-function
+- Actual work in the body:
+  - Pull stage report section (which one? all 11 interleaved sections in real entities?)
+  - Pull AC section
+  - Format a routing message
+  - SendMessage with no timeout/retry mechanism
+  - Parse plain-text response (no schema, fragile to format changes)
+  - Write `### Gate Verdicts` line
+  - Path-scoped commit
+- All 8 steps in a prose-function body = 8 points of failure
+- Compare: a `spacedock gate route-verdict` binary verb owns this complexity
+- **Action:** Acknowledge the fragility; either accept it for this slice (post-2y verbs will fix it), or sequence the binary verb as a prerequisite
+
+**Spike integration note:** The integration spike (spawning Opus level-3-judge, routing 72's ideation gate) confirmed that the Opus model correctly identifies the material gaps. The message-passing worked; the verdict format was clear. But the manual prose-function approach requires the FO to handle data gathering, formatting, parsing, and durable-record writing without a safety schema.
+
+**Rework targets (for next ideation cycle):**
+1. Fix AC-1: reconcile with w4 architecture or own separate proof
+2. Fix tier default: unset → level-2-only
+3. Document the prose-function fragility and accept/mitigate it (or defer full binary verb to post-2y)
+4. Clarify the launcher `SPACEDOCK_FO_MODEL` export work (staff review finding #2)
+
