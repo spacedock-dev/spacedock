@@ -134,6 +134,15 @@ jobs:
         with:
           node-version: "20"
 
+      # tmux is the pty/tmux team-mode harness's transport (it drives a real
+      # interactive claude session in a detached tmux pane). ubuntu-latest does not
+      # ship tmux, so install it before the pty team-mode step below.
+      - name: Install tmux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux
+          tmux -V
+
       - name: Install Claude Code
         env:
           CLAUDE_VERSION: ${{ inputs.claude_version }}
@@ -205,10 +214,9 @@ jobs:
       # TestLiveEnsignCycle is the full lifecycle canary, TEAM-AGNOSTIC: it gates on
       # dispatch-close + the on-disk terminal end-state, so it greens whether the
       # headless `-p` FO drove team or bare (no team-vs-bare coin). Headless `-p` goes
-      # bare per the captain's go-bare determination, so the live suite carries no
+      # bare per the captain's go-bare determination, so this step carries no
       # forced-team test; live team end-to-end (roster injection, the bounded teardown
-      # marker) is deferred to the terminal/pty harness task
-      # m40mphxan8phr3t3tp03gk89.
+      # marker) runs in the dedicated pty/tmux team-mode step below.
       # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
       # a gate:true stage and EXITS reporting gate status, without resolving the gate.
       # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
@@ -248,6 +256,22 @@ jobs:
           set -o pipefail
           gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
 
+      # The pty/tmux team-mode harness: a REAL interactive claude session (not -p)
+      # where the native team tools are exposed and the session stays resident while
+      # teammates work. TestLivePtyStandingResidencyInjectsCommOfficer asserts the
+      # comm-officer standing teammate lands in the team config.json members[];
+      # TestLivePtyEnsignCycleTeamTeardown drives a real TeamCreate->dispatch->
+      # terminalize->teardown and grades the bounded TERMINAL_TEARDOWN_BOUNDED marker
+      # with the same grader the offline fixture suite uses. These are the live team
+      # end-to-end coverage headless `-p` cannot carry. The per-stage no-progress
+      # quiet budget is the real guard; -timeout is a loose backstop.
+      - name: Run live pty team-mode harness
+        env:
+          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile pty-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLivePtyStandingResidencyInjectsCommOfficer|TestLivePtyEnsignCycleTeamTeardown' ./internal/ensigncycle/
+
       - name: Upload live artifacts
         if: always()
         uses: actions/upload-artifact@v5
@@ -257,6 +281,7 @@ jobs:
             ./spacedock
             ./live-e2e-detail.jsonl
             ./claude-shared-scenarios-detail.jsonl
+            ./pty-team-mode-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**
