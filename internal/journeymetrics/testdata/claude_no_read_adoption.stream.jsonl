@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","model":"claude-sonnet-4-6"}
+{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":100,"output_tokens":10},"content":[{"type":"tool_use","id":"toolu_plainstatus","name":"Bash","input":{"command":"spacedock status --json"}}]}}
+{"type":"assistant","message":{"id":"msg_2","model":"claude-sonnet-4-6","usage":{"input_tokens":120,"output_tokens":12},"content":[{"type":"tool_use","id":"toolu_fullread","name":"Read","input":{"file_path":"/path/entity.md"}}]}}
+{"type":"result","subtype":"success","usage":{"input_tokens":300,"output_tokens":40},"total_cost_usd":0.05}

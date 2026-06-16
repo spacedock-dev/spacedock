@@ -53,6 +53,8 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 		Turns:           observation.Turns,
 		ToolCalls:       observation.ToolCalls,
 		ToolCallsByName: observation.ToolCallsByName,
+		StatusReadCalls: observation.StatusReadCalls,
+		ScopedReadCalls: observation.ScopedReadCalls,
 		Tokens:          observation.Tokens.withTotal(),
 		TotalCostUSD:    observation.TotalCostUSD,
 		ModelUsage:      normalizeModelUsage(observation.ModelUsage),
