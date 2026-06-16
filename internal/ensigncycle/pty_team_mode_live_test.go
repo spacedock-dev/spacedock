@@ -50,6 +50,16 @@ func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
 	writeFile(t, filepath.Join(root, "make-it-work.md"), entityFixture())
 	gitInit(t, root)
 
+	// macOS t.TempDir() returns a `/var/folders/...` path while the FO's boot command
+	// targets the EvalSymlinks-resolved `/private/var/folders/...` (the same
+	// directory), so comparing the unresolved root would false-flag every local macOS
+	// run as a wander. The CI Linux runner has no such symlink, so this is a no-op
+	// there; resolving here keeps detectWrongRootBoot accurate on BOTH.
+	rootResolved := root
+	if r, err := filepath.EvalSymlinks(root); err == nil {
+		rootResolved = r
+	}
+
 	prompt := forceTeamModeCue +
 		"Use spacedock:first-officer for this whole run. Drive the workflow. " +
 		antiShutdownOverride
@@ -67,7 +77,7 @@ func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
 	// done at OPEN.
 	watcher := newStreamWatcher(session.newFileSource(), session.proc, func(line string) { t.Log(line) })
 	if _, err := watcher.expect(isTeamCreate, ptyBootBudget, "TeamCreate"); err != nil {
-		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
+		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), rootResolved); wrongRoot != nil {
 			t.Fatalf("live residency drive failed at TeamCreate due to a wrong-root boot: %v\nUnderlying watcher error: %v\nArtifacts: %s", wrongRoot, err, session.artifactDir)
 		}
 		t.Fatalf("live residency drive failed at TeamCreate: %v\nFO pane:\n%s\nArtifacts: %s", err, driver.captureFOPane(session.tmuxName), session.artifactDir)
@@ -112,6 +122,14 @@ func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 	writeFile(t, filepath.Join(root, "make-it-work.md"), entityFixture())
 	gitInit(t, root)
 
+	// Resolve the fixture root so the wrong-root comparison normalizes macOS's
+	// /var->/private/var symlink (see the residency test for the full rationale); a
+	// no-op on the CI Linux runner.
+	rootResolved := root
+	if r, err := filepath.EvalSymlinks(root); err == nil {
+		rootResolved = r
+	}
+
 	// Force team mode, give the FO the conn so the gateless fixture drives to
 	// terminal, and carry the anti-early-shutdown override (it fights the per-turn
 	// teardown nag, which is exactly the team teardown path this test exercises).
@@ -129,7 +147,7 @@ func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 	// dispatch (the team-mode close anchor is unreliable, so OPEN is the early beat;
 	// Step 2's marker is the load-bearing proof the FULL cycle ran).
 	if _, err := watcher.expect(isEnsignDispatch, quietBudgetDispatchClose, "ensign dispatch open"); err != nil {
-		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), root); wrongRoot != nil {
+		if wrongRoot := detectWrongRootBoot(watcher.fullTranscript(), rootResolved); wrongRoot != nil {
 			t.Fatalf("live team-teardown drive failed waiting for the ensign dispatch to open due to a wrong-root boot: %v\nUnderlying watcher error: %v\nArtifacts: %s", wrongRoot, err, session.artifactDir)
 		}
 		t.Fatalf("live team-teardown drive failed waiting for the ensign dispatch to open: %v\nFO pane:\n%s\nArtifacts: %s", err, driver.captureFOPane(session.tmuxName), session.artifactDir)
