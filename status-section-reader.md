@@ -1,13 +1,13 @@
 ---
 id: e6aaveste2tm0nsyqt407k55
 title: spacedock status read helper — entity/markdown FM + section-heading offsets for surgical reads
-status: validation
+status: done
 source: "captain (2026-06-14) — 0.20.4 backbone. Reading whole entity bodies / stage reports / the README is a recurring FO + ensign token sink (this session: 280-line bodies, ~315-line README, 143KB CI logs, the Read-then-status--set staleness echo). A `spacedock status` helper that returns FM + a section-heading→offset map lets callers read the one section they need (Read offset/limit) instead of the whole file. Helps the README work (rzp) and other report-reading areas."
 started: 2026-06-14T21:14:19Z
-completed:
-verdict:
+completed: 2026-06-16T14:55:29Z
+verdict: PASSED
 score: "0.40"
-worktree: .worktrees/spacedock-ensign-status-section-reader
+worktree:
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: in-progress
