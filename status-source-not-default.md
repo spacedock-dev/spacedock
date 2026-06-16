@@ -7,7 +7,7 @@ started: 2026-06-15T05:35:19Z
 completed:
 verdict:
 score: 0.35
-worktree:
+worktree: .worktrees/spacedock-ensign-status-source-not-default
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
