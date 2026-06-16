@@ -13,6 +13,7 @@ sprint: 0204-structured-reads
 sprint-readiness: in-progress
 mod-block:
 pr: "#386"
+archived: 2026-06-16T14:55:29Z
 ---
 
 A `spacedock status` helper that, given an entity (or any markdown file), returns its parsed frontmatter PLUS a map of section headings with line offsets — so a caller reads the one section it needs (`Read(file, offset, limit)`) instead of loading the whole file. The general capability behind 0.20.4's reading-cost reduction.
