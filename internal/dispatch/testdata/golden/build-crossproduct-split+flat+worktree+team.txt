@@ -37,8 +37,6 @@ This workflow is split-root: the entity body and your stage report live in the s
 
 Read the entity file at <ROOT>/state-checkout/thing.md for the current spec.
 
-For later re-reads of the body during work — e.g. to find the append point for your stage report — use `${SPACEDOCK_BIN:-spacedock} status --read <ROOT>/state-checkout/thing.md --json` to fetch a section's offset/lines rather than re-reading the whole file.
-
 ### Completion checklist
 
 - a

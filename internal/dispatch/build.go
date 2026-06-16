@@ -535,25 +535,15 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 
 	// 4. Entity-read instruction. Under split root the entity lives in the state
 	// checkout; a non-split worktree stage rewrites the path into the worktree.
-	// The first entity read stays a whole-spec read; the trailing hint redirects
-	// only REPEAT reads of the body (e.g. finding the stage-report append point)
-	// to the section-scoped status --read, where the savings live.
-	readPath := entityPath
 	if worktreePath != "" && !splitRoot {
 		entityRel := pyRelpath(entityPath, gitRoot)
 		worktreeEntityPath = status.PyJoin(worktreePath, entityRel)
-		readPath = worktreeEntityPath
 		parts = append(parts, fmt.Sprintf(
 			"Read the entity file at %s for the full spec. It contains:\n", worktreeEntityPath))
 	} else {
 		parts = append(parts, fmt.Sprintf(
 			"Read the entity file at %s for the current spec.\n", entityPath))
 	}
-	parts = append(parts, fmt.Sprintf(
-		"For later re-reads of the body during work — e.g. to find the append point "+
-			"for your stage report — use `${SPACEDOCK_BIN:-spacedock} status --read %s --json` "+
-			"to fetch a section's offset/lines rather than re-reading the whole file.\n",
-		readPath))
 
 	// 6. Feedback context (conditional).
 	if feedbackContext != "" {
