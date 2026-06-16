@@ -1,17 +1,18 @@
 ---
 title: Build a terminal/pty live harness for team-mode e2e (residency + teardown)
-status: backlog
+status: ideation
 source: "FO + captain (2026-06-16, during 2yf): headless `claude -p` cannot sustain team mode — anthropics/claude-code 2.1.178 dropped the native TeamCreate/TeamDelete tools from headless sessions (anthropics/claude-code#68721), and even with tools present the SDK/headless session lifecycle races to end_turn before teammates finish (anthropics/claude-code-action#1124). Per 7e's recorded steer (headless `-p` goes bare), the two forced-team `-p` live tests (TestLiveEnsignCycleTeamTeardown, TestLiveStandingResidencyInjectsCommOfficer) were RETIRED in 2yf because they cannot work headless. Team-mode MECHANISMS stay covered offline (internal/dispatch/spawn_standing_all_test.go for comm-officer injection; internal/ensigncycle/teardown_grade_watcher_test.go + testdata/sonnet_teamdelete_*.jsonl for the bounded-teardown marker grading). The GAP this task closes: live end-to-end team-mode coverage (FO creates a real team, injects the comm-officer standing teammate into the roster, dispatches through the team, terminalizes, and runs the bounded teardown emitting TERMINAL_TEARDOWN_BOUNDED). That requires an INTERACTIVE (pseudo-terminal) harness where team tools are present and the session stays alive — the current live suite is entirely `claude -p`."
-started:
+started: 2026-06-16T15:15:39Z
 completed:
 verdict:
 score:
 worktree:
 issue:
 id: m40mphxan8phr3t3tp03gk89
-sprint:
+sprint: 0204-structured-reads
 mod-block:
 pr:
+sprint-readiness: in-progress
 ---
 
 ## Problem
