@@ -75,8 +75,18 @@ func runGotestsum(t *testing.T, runFilter string, env ...string) (string, int, s
 
 var runLineRe = regexp.MustCompile(`(?m)^\s*=== RUN`)
 
+// streamFirehoseMarker matches the token the fixture's TestPassingWithStreamFirehose
+// plants in every t.Log stream line (mirroring the live runner's per-line t.Log
+// watcher). The clean stdout must NOT carry it on a green run; the jsonl archive
+// must.
+const streamFirehoseMarker = "STREAM_FIREHOSE_LINE"
+
 // TestLiveCIStepStdoutIsCleanOnGreen is AC-1 (green): the changed command's
-// visible surface has no per-test === RUN verbosity, and the suite passes.
+// visible surface stays clean even when a PASSING test t.Logs a host stream
+// firehose — no per-test === RUN scaffolding AND no t.Log stream lines. The
+// firehose marker is the real-suite case: the live runner's
+// `func(line string){ t.Log(line) }` emits arbitrary text a scaffolding grep
+// cannot strip, so this asserts the tool routes it off stdout structurally.
 func TestLiveCIStepStdoutIsCleanOnGreen(t *testing.T) {
 	out, code, _ := runGotestsum(t, ".*")
 
@@ -88,6 +98,9 @@ func TestLiveCIStepStdoutIsCleanOnGreen(t *testing.T) {
 	}
 	if strings.Contains(out, "--- PASS:") {
 		t.Errorf("green step stdout carries per-test '--- PASS:' verbosity (want clean surface):\n%s", out)
+	}
+	if c := strings.Count(out, streamFirehoseMarker); c != 0 {
+		t.Errorf("green step stdout carries %d t.Log stream firehose lines (want 0 — the live runner's per-line t.Log must be routed to the archive, not stdout):\n%s", c, out)
 	}
 }
 
@@ -133,6 +146,12 @@ func TestLiveCIStepArchivesJSONDetail(t *testing.T) {
 	}
 	if !strings.Contains(body, "TestGammaFails") || !strings.Contains(body, "compute() = 7, want 42") {
 		t.Errorf("archive does not carry the planted failure's test + output for root cause:\n%s", body)
+	}
+	// The t.Log stream firehose is suppressed from stdout (AC-1) but MUST land in
+	// the archive — that is the triage-vs-root-cause split: the firehose is the
+	// full stream a root-cause read needs, kept off the small triage surface.
+	if !strings.Contains(body, streamFirehoseMarker) {
+		t.Errorf("archive does not carry the t.Log stream firehose (the full detail a root-cause read needs):\n%s", body)
 	}
 }
 
