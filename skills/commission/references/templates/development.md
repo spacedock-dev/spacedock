@@ -27,7 +27,7 @@ stages:
 
 # Development Workflow Template
 
-Refinement specialization for code that ships via PR/merge. Tasks move from a captain-curated backlog through ideation, get built in a dedicated worktree, are independently validated against the acceptance criteria, and land via PR review. The repo-mutation layer is active on `implementation` and `validation`; the `pr-merge` mod handles the PR lifecycle.
+Tasks move from a captain-curated backlog through ideation, get built in a dedicated worktree, are independently validated against the acceptance criteria, and land via PR review. This is the refinement shape specialized for code that ships via PR/merge: the repo-mutation layer is active on `implementation` and `validation`, and the `pr-merge` mod handles the PR lifecycle.
 
 Use this template when the captain's mission is to ship code in a repo where work is reviewed and merged via PR. The bucket-noun stage names (`implementation`, `validation`, `done`) describe where the entity is sitting; the `pr-merge` mod removes any temptation to add `pr_open` or `awaiting_merge` stages because PR state is tracked on the `pr` field, not as a stage.
 
@@ -65,76 +65,36 @@ Every task file has YAML frontmatter. Fields are documented below; see **Task Te
 
 ### `backlog`
 
-A task enters backlog when it is first proposed. It carries a seed description but no design work. This is a captain-curated holding stage with a gate — the captain decides which tasks advance to ideation.
-
-- **Inputs:** None — this is the initial state
-- **Outputs:** A seed task file with title, source, brief description
-- **Good:** Clear enough to recognize what the task is about
-- **Bad:** Empty stub that even the captain cannot triage
+A task enters backlog when it is first proposed: a seed description, no design work. Captain-curated holding stage — the gate decides which tasks advance to ideation.
 
 ### `ideation`
 
-A task moves to ideation when the captain greenlights it for design work. The work here is to flesh out the problem, propose an approach, define acceptance criteria, and write a test plan.
-
-- **Inputs:** The seed description and any relevant context (existing code, captain notes, related tasks)
-- **Outputs:** A fleshed-out task body with problem statement, proposed approach, acceptance criteria (entity-level end-state properties with `Verified by:` clauses), and a test plan
-- **Good:** Behavior-first, scoped, addresses a real need, AC items name end-state properties (not stage actions), test plan matches the AC's level of abstraction
-- **Bad:** Vague hand-waving, scope creep, AC items written as imperative verbs, test plans that prove the wrong thing
+The captain greenlights a task for design: flesh out the problem, propose an approach, define acceptance criteria as entity-level end-state properties with `Verified by:` clauses, and write a test plan that matches the AC's level of abstraction.
 
 ### `implementation`
 
-A task moves to implementation once its design is approved. The work happens in a dedicated worktree on a feature branch.
-
-- **Inputs:** The fleshed-out task body from ideation with approach and acceptance criteria
-- **Outputs:** The deliverable committed to the worktree branch with a stage report describing what was produced and where
-- **Good:** Minimal changes that satisfy the AC, clean code, tests where appropriate, deliverable self-contained for validation
-- **Bad:** Over-engineering, unrelated refactoring, skipping tests, leaving the deliverable incomplete for validation to finish
+The design is approved and the deliverable is built in a dedicated worktree on a feature branch — minimal changes that satisfy the AC, self-contained for validation.
 
 ### `validation`
 
-A task moves to validation after implementation is complete. A fresh agent independently verifies the deliverable meets the AC defined in ideation. The validator does not produce the deliverable — it checks what was produced.
-
-- **Inputs:** The implementation summary, the AC from the task body, the worktree branch
-- **Outputs:** A validation report covering each AC, with PASS/FAIL per criterion. Either gate-approval to `done` or rejection back to `implementation` with concrete fixes.
-- **Good:** Reproduces each AC's `Verified by:` clause, reports actual evidence not assertions, exercises edge cases the AC implies
-- **Bad:** Trusting implementation's self-report, skipping AC items, accepting "should work" without running the check
+A `fresh` agent independently verifies the deliverable against the ideation AC, reproducing each `Verified by:` clause rather than trusting the implementation's self-report. The validator checks what was produced; it does not produce it. Either gate-approval to `done` or rejection back to `implementation` with concrete fixes.
 
 ### `done`
 
-Terminal state. The task's PR is merged and the entity is archived.
+Terminal state: the task's PR is merged (tracked via the `pr` field and the `pr-merge` mod), `completed` set, `verdict: PASSED`, entity archived. Reached via real merge, not a manual flag flip.
 
-- **Inputs:** A merged PR (tracked via the `pr` field and the `pr-merge` mod's startup/idle hooks)
-- **Outputs:** None — terminal. `completed` set, `verdict: PASSED`, entity archived.
-- **Good:** Reached terminal via real merge, not by manual flag flip
-- **Bad:** Marking done before the PR actually merged
+## Workflow-specific rules
 
-## Recommended practices (opt-in)
+The FO/ensign operating contract already governs generic stage semantics and proof discipline — prefer a code gate over a prose-only rule, prove by exercising rather than re-reading, and reject any AC proven only by review of its own prose. Tasks in a commissioned development workflow inherit that from the contract their FO loads at boot; the rules below add only the dev-shape specifics.
 
-These are proven dev-workflow disciplines a captain can adopt into this workflow's validation stage. They are recommended, not mandatory — the universal first-officer contract does not impose them, because a non-development workflow's acceptance proof may legitimately be a published artifact, a metric, or a human review rather than a test or command. Adopt them by copying the guidance into the `validation` stage's Outputs and Bad lists above when commissioning a code-shipping workflow.
+- **Repo-mutation worktree layer.** `implementation` and `validation` run in a worktree against the codebase, and `validation` is `fresh` so an independent agent checks the AC. PR state lives on the `pr` field, managed by the `pr-merge` mod — there is no `pr_open` or `awaiting_merge` stage.
+- **Opt-in proof disciplines (copy into the `validation` stage when commissioning).** These are recommended dev-shape practices, not universal — a non-development workflow's acceptance proof may legitimately be a published artifact, a metric, or a human review. Adopt the ones the mission needs by folding them into the `validation` stage's Outputs and Bad lists:
+  - **Test-first authoring** — for a code or fixture deliverable, write the failing test first, watch it fail for the right reason, then write the minimum code to pass. The test is what the gate judges.
+  - **External-proof acceptance criteria** — each AC's evidence must come from a check outside the task body (a test, a command's output or exit code, a file the change produces, on-disk state). Reject self-referential ACs whose only proof is review of the task's own prose; if nothing ships, the decision belongs in the roadmap, not a terminal dev task.
+  - **Detached adversarial audit** — for high-stakes surfaces (a front-door launcher, status/guard mutation paths, shipped contract/scaffolding, CI/release machinery), run a read-only audit on a throwaway checkout that tries to refute the validation with an edit the deliverable's own tests should catch. `Material:` findings route back through the validation→implementation feedback flow; "refuted nothing material" is a valid recorded outcome.
+  - **Live scenario for runtime claims** — when an AC's truth is what an agent or model *does* at runtime, prove it with a scripted live scenario graded on durable before→after state plus observed output, with a negative case that reds the grade. Mark the AC `Verified by: live <ci-run:<id> | session:<path>>`; an offline proxy or a contract-text check proves the watcher or the words, never the runtime behavior.
 
-### Test-first authoring
-
-For a code or fixture deliverable, write the failing test first: write a test that captures the desired behavior, run it and watch it fail for the right reason, then write the minimum code to make it pass, and refactor green. The test is what the gate judges. This is a dev-workflow discipline — recommended, not mandatory; the universal contract does not impose it, because a non-development workflow's deliverable (a PRD, an analysis verdict, a published artifact) is judged against its own pre-fixed success criteria, not a test-first ritual.
-
-### External-proof acceptance criteria
-
-At the validation gate, require that each AC's cited evidence comes from a check OUTSIDE the task body — a test, a command's output or exit code, a file the change produces, or the resulting on-disk state. An AC whose only cited proof is review of the task's own prose ("verified by reviewing this task's decision section") proves only that the prose exists; it can never fail, so it does not satisfy the AC. Reject self-referential ACs. If the task's only deliverable is a decision with nothing shipped, do not recommend PASSED — the decision belongs in the roadmap, not a terminal dev task. (Behavioral enforcement of this rule, when a workflow wants it, is a workflow-opt-in `spacedock status --validate` guard — the workflow declares it; it is not universal binary behavior.)
-
-### Detached adversarial audit
-
-For high-stakes surfaces — a front-door launcher, the status/guard mutation paths, shipped contract/scaffolding, or CI/release machinery — treat a passing validation as necessary but not sufficient. Before merging, run (or dispatch) a read-only adversarial audit on a detached checkout of the merge result:
-
-- **When:** the high-stakes surfaces above; routine low-blast-radius changes do not need it.
-- **What:** the auditor works on a separate throwaway checkout (never the implementation worktree) and never mutates the deliverable. It tries to REFUTE the validation — construct an adversarial edit the deliverable's own tests should catch, and confirm they do. A test that stays green under a claim-breaking edit is a hole. Findings come in two tiers — `Material:` (a real correctness or test-strength hole) and `Polish:` (non-blocking); "refuted nothing material" is a valid recorded outcome.
-- **How recorded:** material findings route back through the validation→implementation feedback flow (a `### Feedback Cycles` entry naming the audit and its adversarial edit); the gate is not clean until they close.
-
-The audit catches the class of hole where the test passes but would also pass on a broken future edit — which a green suite cannot see itself.
-
-### Live scenario for runtime claims
-
-Choose the proof at the claim's altitude. When an AC's truth is what an agent or model DOES at runtime — it actually exits, it actually clears the hang, it actually produces the right durable state — the proof is a scripted live scenario, not an offline proxy. A recording proves the WATCHER (the consumer reads a frozen stream correctly), never the PRODUCER (does the real model, reading the contract, actually exit?). A contract-text check proves the WORDS are present, never the behaviour. Both pass while the runtime claim is still false — exactly the slip where a fix passed every offline check and three adversarial audits, was merged `pending-live-run`, and the live retrigger then showed it never closed the flake.
-
-A live scenario is authored as a triple: a descriptive **runbook** (the prompt/instructions a real agent runs), a **setup** (the fixture/state the run starts from), and **durable-outcome assertions** (entity state before→after plus observed output — NOT transcript phrasing, which is non-deterministic). Run it against a real agent and grade on the durable outcomes, with at least one negative case where a deliberately broken outcome reds the grade. Mark such an AC `Verified by: live <ci-run:<id> | session:<path>>`; under an external-proof opt-in workflow the live-run guard refuses to terminalize it until that citation resolves, so `pending-live-run` is an enforced state, not a hopeful label.
+  The generic rationale for each — why a prose-only proof never satisfies a behavioral claim — lives in the FO/ensign contract; the disciplines above are the dev-shape applications a captain opts into.
 
 ## Workflow State
 

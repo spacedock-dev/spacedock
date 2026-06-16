@@ -21,7 +21,7 @@ stages:
 
 # Refinement Workflow Template
 
-Iterate on an artifact through stages of improvement until it is locked. This is the universal base shape: an entity is drafted, reviewed for whether it is ready, polished if accepted, and marked done when finished. No layers active.
+Track an artifact through rounds of improvement to a locked, shipped result. This is the universal base shape: an entity is drafted, reviewed for whether it is ready, polished if accepted, and marked done when finished. No layers active.
 
 Use this template when the captain's mission is to track an artifact through rounds of improvement with a human-in-the-loop quality bar — design docs, PRDs, content pieces, outreach replies, integration records, anything where the work is "make this thing good enough." Variants in the Adoption section adapt the stage list and entity body to common end-use shapes (outreach, integration, content production, PRD authoring) without changing the underlying structure.
 
@@ -58,39 +58,27 @@ Every artifact file has YAML frontmatter. Fields are documented below; see **Art
 
 ### `draft`
 
-The artifact is being produced or revised. Work happens here every time the artifact enters the loop, including after a review bounce.
-
-- **Inputs:** The brief, prior reviewer notes (if this is a re-entry from review), source material
-- **Outputs:** A complete artifact body ready for review
-- **Good:** Addresses the brief, integrates prior feedback when re-entering, ready to be evaluated end-to-end
-- **Bad:** Half-finished sections, ignores reviewer notes from the prior round, produces something that cannot be evaluated as a whole
+The artifact is produced or revised — every time it enters the loop, including after a review bounce. The draft integrates prior reviewer notes and is complete enough to be evaluated end-to-end.
 
 ### `review`
 
-A reviewer reads the draft and decides: accept (advance to polish) or bounce back to draft with notes. This is an approval gate.
-
-- **Inputs:** The draft artifact
-- **Outputs:** Reviewer notes captured in the artifact body; either gate-approval to polish or rejection back to draft with concrete notes
-- **Good:** Specific, actionable notes; clear accept/reject decision; the reviewer reads the whole draft before deciding
-- **Bad:** Vague "this needs work" with no concrete asks, accepting things that have not been read carefully, deferring the decision indefinitely
+A reviewer reads the whole draft and makes a clear accept/reject decision behind an approval gate: gate-approval to `polish`, or rejection back to `draft` with specific, actionable notes.
 
 ### `polish`
 
-Final cleanup before the artifact is locked: formatting, copy edits, last-pass consistency, nothing structural.
-
-- **Inputs:** The accepted draft from review
-- **Outputs:** A polished artifact ready to be marked done
-- **Good:** Cosmetic improvements only, preserves the substance the reviewer accepted
-- **Bad:** Reopening structural decisions, introducing new content that should have gone through review
+Final cleanup before the artifact is locked — formatting, copy edits, last-pass consistency. Cosmetic only; preserves the substance the reviewer accepted and reopens nothing structural.
 
 ### `done`
 
-Terminal state. The artifact is locked and considered shipped (or filed, depending on the variant).
+Terminal state: the artifact is locked and shipped (or filed, per the variant). `completed` set, `verdict: PASSED`, archived. Start a new entity rather than reopening a done one.
 
-- **Inputs:** The polished artifact
-- **Outputs:** None — this is a terminal state. Mark `completed`, set `verdict: PASSED`, and archive.
-- **Good:** Clean handoff, terminal state set deliberately
-- **Bad:** Reopening a done artifact instead of starting a new one
+## Workflow-specific rules
+
+The FO/ensign operating contract already governs generic stage semantics and proof discipline. Refinement is the universal base shape, so most of its discipline is the contract's; the rules below add only the refinement-shape specifics.
+
+- **Human-in-the-loop quality bar.** `review` is an approval gate a human reviewer owns — the reviewer reads the whole draft and makes an explicit accept/reject call with concrete notes, never a vague "this needs work." `polish` is cosmetic-only; new content that should have gone through review does not belong there.
+- **No layers by default.** The base shape touches no repo and waits on no external event, so no structural layers fire. Variants that need them (e.g. outreach's `watching` stage) activate the layer through the variant, not the base.
+- **Variant menu.** Common end-use shapes are refinement with adjusted stages and a different entity body — `outreach`, `integration`, `content-production`, `prd-authoring` (see `## Adoption` → Surface variants). A variant changes the stage list and snippet, never the underlying draft → review → ship structure.
 
 ## Workflow State
 
