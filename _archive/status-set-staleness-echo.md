@@ -1,16 +1,17 @@
 ---
 id: j7tbbka0fpd9twbqgr7bhrqd
 title: Eliminate the Read-then-`status --set` staleness echo — mutating a just-read file re-emits the whole file as cache-write tokens
-status: ideation
+status: done
 source: FO + 0.20.4 scope survey (2026-06-14, this session) — on Claude Code, a `Read` of an entity file followed by a `status --set` mutation of the same file trips the harness file-staleness safety net, re-emitting the whole file as cache-write tokens. A recurring FO/ensign tax (validate-then-set, dispatch-then-set). Cited in e6a's Problem section and the sprint friction notes. Distinct from e6a (which avoids the whole-file READ); this attacks the whole-file WRITE-echo on mutation. 0.20.4 read-cost theme.
 started: 2026-06-15T05:19:11Z
-completed:
-verdict:
+completed: 2026-06-16T07:42:32Z
+verdict: PASSED
 score: 0.33
 worktree:
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
+archived: 2026-06-16T07:42:32Z
 ---
 
 A `Read` of an entity file followed by a `status --set` on the same file re-emits the whole file as cache-write tokens (the Claude Code file-staleness safety net). The FO contract works around it today (Grep-over-Read; trust `--set` stdout), but the echo still fires whenever a Read before a set is unavoidable. Kill the echo, or prove it is harness-inherent and document the avoidance.
