@@ -1,6 +1,6 @@
 ---
 title: Make the host-neutral dispatch core genuinely runtime-neutral
-status: implementation
+status: validation
 source: "captain + FO follow-up after 2y merged as v0.20.3 (2026-06-16) — remaining concern: the extracted host-neutral dispatch core still carries Claude/team-only language, even though Codex and Pi now load it too. Verified against origin/main 9bd1f46a: fo-dispatch-core.md still says first team-mode dispatch, keeps spawn-standing-all --team {team_name} in the core, requires team_name as helper output, and makes reuse depend on not being in bare mode."
 started: 2026-06-16T20:02:00Z
 completed:
