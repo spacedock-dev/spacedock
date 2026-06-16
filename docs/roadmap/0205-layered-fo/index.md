@@ -1,11 +1,13 @@
 # 0205 — layered FO (0.20.5)
 
-> **DRAFT — pending captain scope-lock.** This index is the shaping author's
-> proposed shape for sprint 0205. Goal, DoD, and the candidate-member
-> decomposition are written for the scope-lock conversation, not yet carved.
-> Membership becomes the `--where sprint=0205-layered-fo` query only after the
-> captain decides which members are in and which defer. Do not treat the
-> candidate list below as the sprint roster.
+> **Scope-locked 2026-06-15 (captain): spike-first, parallel-no-2y start.**
+> The live Haiku hand-simulated drive (the riskiest-mechanism spike) runs BEFORE any verb
+> is built and sets the must-build verb list. The no-2y-dependent work — the spike,
+> `gate-extract-verbs`, and the gate-half of the delegation mechanism — starts now in
+> parallel; the 2y-dependent core (`next-action`, `state-verbs`, `merge-finalize`, the
+> restructure) carves and starts once 2y lands (2y is finalizing, the last item for 0.20.3,
+> so this resolves imminently and the core starts clean against merged `main`).
+> Membership is the `--where sprint=0205-layered-fo` query as members are carved.
 
 **Sprint:** (after scope-lock) the entities matching `sprint: 0205-layered-fo` — list current members with `spacedock status --workflow-dir docs/dev --where sprint=0205-layered-fo`. Membership and per-task state are the query, never enumerated or tracked in this doc.
 **Theme:** make a weak model (Haiku) operable as the first officer by pushing the mechanical dispatch into binary verbs, so level-2 driving needs almost no judgment and level-3 judgment is delegated.
@@ -59,7 +61,7 @@ Defined as the sprint forms (ideation / the Commander):
 
 ## Dependencies
 
-**2y upstream — `shared-merge-dispatch-contract` (`2yfsf01jf15fmts7xt7w71m2`).** In flight on 0203 (status `validation`, PR #385 open, mod-blocked on `merge:pr-merge`). It extracts the host-neutral merge and dispatch ceremony into shared cores and defines where team/registry logic ends and the FO's operating loop begins. That extraction is what makes the seam between "mechanical steps Haiku can do safely" and "judgment steps it must delegate" visible. The next-action driver, state-verbs, merge-finalize, and the prose-function restructure all build ON the cores 2y produces.
+**2y upstream — `shared-merge-dispatch-contract` (`2yfsf01jf15fmts7xt7w71m2`).** Finalizing on 0203 — the last item for the 0.20.3 cut (status `validation`, PR #385 open, mod-blocked on `merge:pr-merge`). It extracts the host-neutral merge and dispatch ceremony into shared cores and defines where team/registry logic ends and the FO's operating loop begins. Because it lands imminently, the 2y-dependent members start clean against merged `main` rather than against a branch. That extraction is what makes the seam between "mechanical steps Haiku can do safely" and "judgment steps it must delegate" visible. The next-action driver, state-verbs, merge-finalize, and the prose-function restructure all build ON the cores 2y produces.
 
 **Sequencing.** 2y must land (merge to `main`) before the 2y-dependent members start, OR the sprint starts against the 2y branch with an explicit rebase plan. The gate-extract verbs and the gate-half of the delegation mechanism do NOT depend on 2y and can proceed in parallel. The haiku-drive-validation is LAST — it depends on every other member. Within the sprint, run the riskiest-mechanism spike (below) BEFORE committing the build, so the irreducible-judgment boundary is found empirically, not assumed.
 
