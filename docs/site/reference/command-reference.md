@@ -43,7 +43,7 @@ The first officer runs these against workflow state as it moves entities; you op
 
 | Command | What it does |
 |---------|--------------|
-| `spacedock status` | Read or mutate the state: the entity table, `--next`, `--where`, `--set`, `--validate`, `--boot`, `--read <ref-or-path>` (a file's frontmatter + heading offset/lines map, for section-scoped reads) |
+| `spacedock status` | Read or mutate the state: the entity table (omits the SOURCE column by default; `--fields source` or `--all-fields` restores it), `--next`, `--where`, `--set`, `--validate`, `--boot`, `--read <ref-or-path>` (a file's frontmatter + heading offset/lines map, for section-scoped reads) |
 | `spacedock new` | Create an entity (`new [--folder] SLUG`) from a body on stdin |
 | `spacedock dispatch` | Build the worker dispatch artifacts (`dispatch build`, `dispatch show-stage-def`) |
 | `spacedock state` | Manage a [split-root workflow](../advanced/split-root-state.md)'s state checkout (`state init` resumes one on a fresh clone, `state new` births one) |

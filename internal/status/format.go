@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	defaultStatusFields = []string{"id", "slug", "status", "title", "score", "source"}
+	defaultStatusFields = []string{"id", "slug", "status", "title", "score"}
 	defaultNextFields   = []string{"id", "slug", "status"}
 )
 
@@ -103,30 +103,30 @@ func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []
 	sorted := sortDefault(entities, stages)
 
 	if len(extras) == 0 {
-		row := func(a, b, c, d, e, f string) string {
+		row := func(a, b, c, d, e string) string {
 			return padRight(a, 6) + " " + padRight(b, 30) + " " + padRight(c, 20) + " " +
-				padRight(d, 30) + " " + padRight(e, 8) + " " + f
+				padRight(d, 30) + " " + e
 		}
 		if !suppressHeader {
-			fmt.Fprintln(w, row("ID", "SLUG", "STATUS", "TITLE", "SCORE", "SOURCE"))
-			fmt.Fprintln(w, row("--", "----", "------", "-----", "-----", "------"))
+			fmt.Fprintln(w, row("ID", "SLUG", "STATUS", "TITLE", "SCORE"))
+			fmt.Fprintln(w, row("--", "----", "------", "-----", "-----"))
 		}
 		for _, e := range sorted {
 			fmt.Fprintln(w, row(e.fields["id"], e.fields["slug"], e.fields["status"],
-				e.fields["title"], e.fields["score"], e.fields["source"]))
+				e.fields["title"], e.fields["score"]))
 		}
 		return
 	}
 
-	base := func(a, b, c, d, e, f string) string {
+	base := func(a, b, c, d, e string) string {
 		return padRight(a, 6) + " " + padRight(b, 30) + " " + padRight(c, 20) + " " +
-			padRight(d, 30) + " " + padRight(e, 8) + " " + padRight(f, 30)
+			padRight(d, 30) + " " + padRight(e, 8)
 	}
 	headerExtras := upperAll(extras)
 	sepExtras := dashSeps(headerExtras)
 	if !suppressHeader {
-		fmt.Fprintln(w, base("ID", "SLUG", "STATUS", "TITLE", "SCORE", "SOURCE")+" "+joinExtras(headerExtras))
-		fmt.Fprintln(w, base("--", "----", "------", "-----", "-----", "------")+" "+joinExtras(sepExtras))
+		fmt.Fprintln(w, base("ID", "SLUG", "STATUS", "TITLE", "SCORE")+" "+joinExtras(headerExtras))
+		fmt.Fprintln(w, base("--", "----", "------", "-----", "-----")+" "+joinExtras(sepExtras))
 	}
 	for _, e := range sorted {
 		cells := make([]string, len(extras))
@@ -134,7 +134,7 @@ func printStatusTable(w io.Writer, entities []*entity, stages []Stage, extras []
 			cells[i] = formatColumnCell(name, e.fields[name])
 		}
 		fmt.Fprintln(w, base(e.fields["id"], e.fields["slug"], e.fields["status"],
-			e.fields["title"], e.fields["score"], e.fields["source"])+" "+joinExtras(cells))
+			e.fields["title"], e.fields["score"])+" "+joinExtras(cells))
 	}
 }
 
