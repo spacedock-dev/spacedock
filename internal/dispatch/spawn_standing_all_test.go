@@ -12,6 +12,7 @@ import (
 // values are sourced from the fixture mod, NOT the binary.
 type spawnAllSpec struct {
 	SubagentType string `json:"subagent_type"`
+	Description  string `json:"description"`
 	Name         string `json:"name"`
 	TeamName     string `json:"team_name"`
 	Model        string `json:"model"`
@@ -54,6 +55,13 @@ func TestSpawnStandingAllEmitsAbsentMemberSpec(t *testing.T) {
 	got := specs[0]
 	if got.SubagentType != "general-purpose" {
 		t.Errorf("subagent_type = %q, want general-purpose", got.SubagentType)
+	}
+	// The Agent tool REQUIRES description; the spec must carry a non-empty one
+	// (spawn-standing-all derives it from the member name) or the forwarded
+	// Agent() call fails InputValidationError and the standing teammate never
+	// spawns.
+	if want := "standing teammate: comm-officer"; got.Description != want {
+		t.Errorf("description = %q, want %q", got.Description, want)
 	}
 	if got.Name != "comm-officer" {
 		t.Errorf("name = %q, want comm-officer", got.Name)

@@ -204,6 +204,7 @@ func buildSpawnSpec(home, modPath, teamName string) (spec spawnSpec, alreadyAliv
 
 	return spawnSpec{
 		SubagentType: subagentType,
+		Description:  fmt.Sprintf("standing teammate: %s", declaredName),
 		Name:         declaredName,
 		TeamName:     teamName,
 		Model:        model,
@@ -223,10 +224,13 @@ func emitAlreadyAlive(stdout io.Writer, name string) {
 }
 
 // spawnSpec is the Agent() call spec spawn-standing emits when the member is not
-// yet alive. Field order matches the oracle's dict: subagent_type, name,
-// team_name, model, prompt.
+// yet alive. The Agent tool REQUIRES description, so the spec carries one (else
+// the forwarded Agent() call fails InputValidationError and the teammate never
+// spawns). Field order matches dispatch build's envelope: subagent_type,
+// description, name, team_name, model, prompt.
 type spawnSpec struct {
 	SubagentType string `json:"subagent_type"`
+	Description  string `json:"description"`
 	Name         string `json:"name"`
 	TeamName     string `json:"team_name"`
 	Model        string `json:"model"`
