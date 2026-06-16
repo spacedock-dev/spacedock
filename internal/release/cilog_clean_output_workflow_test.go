@@ -1,16 +1,18 @@
 // ABOUTME: Structural guards binding runtime-live-e2e.yml's live test steps to the
-// ABOUTME: clean-stdout + one-run jsonl-archive shape, with no firehose regression.
+// ABOUTME: pinned-gotestsum clean-log + jsonl-archive shape, with no firehose regression.
 package release
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
-// transformedLiveSteps are every live test step that must carry the clean-output +
-// one-run archive shape: a single `go test -c` compile, the test binary tee'd to
-// `go tool test2json` for the .jsonl archive, and a `${PIPESTATUS[0]}` exit
-// capture so the trailing clean-view grep cannot mask a test failure.
+// transformedLiveSteps are every live test step that must run through gotestsum:
+// a single `gotestsum --jsonfile <name>-detail.jsonl --format <clean> -- <args>`
+// invocation — one run producing the clean step log AND the archived -json detail,
+// with the exit code preserved.
 var transformedLiveSteps = []string{
 	"Run live ensign cycle",
 	"Run live Claude shared scenarios",
@@ -19,12 +21,12 @@ var transformedLiveSteps = []string{
 	"Run live Pi front-door smoke",
 }
 
-// TestLiveWorkflowStepsUseOneRunCleanArchiveShape pins each transformed live step
-// to the source-side discipline: compile once, run once, archive the -json detail
-// via the toolchain's test2json, and preserve the exit code. This is the workflow
-// binding behind AC-1..AC-4 — the behavioral test proves the SHAPE works; this
-// proves every live step IS that shape.
-func TestLiveWorkflowStepsUseOneRunCleanArchiveShape(t *testing.T) {
+// TestLiveWorkflowStepsUseGotestsumOneRunShape pins each transformed live step to
+// the source-side discipline: gotestsum runs the suite once, archives the -json
+// detail to a `--jsonfile`, and preserves the exit. This is the workflow binding
+// behind AC-1..AC-4 — the behavioral test proves the SHAPE works; this proves
+// every live step IS that shape.
+func TestLiveWorkflowStepsUseGotestsumOneRunShape(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	steps := parseWorkflowSteps(live)
 
@@ -42,23 +44,58 @@ func TestLiveWorkflowStepsUseOneRunCleanArchiveShape(t *testing.T) {
 			continue
 		}
 		for _, want := range []string{
-			"go test -c",        // compile once, no run
-			"go tool test2json", // toolchain archive renderer (no third-party dep)
-			"-detail.jsonl",     // the archived -json event stream
-			"${PIPESTATUS[0]}",  // capture the test binary's exit past the grep
-			"grep -vE",          // the clean-view filter to the step log
+			"gotestsum",     // the one-run clean+archive renderer
+			"--jsonfile",    // the archived -json event stream
+			"-detail.jsonl", // the archive filename
+			" -- ",          // gotestsum passes the go test args after --
 		} {
 			if !strings.Contains(run, want) {
-				t.Errorf("live step %q lost the one-run clean-archive element %q:\n%s", name, want, run)
+				t.Errorf("live step %q lost the gotestsum one-run-archive element %q:\n%s", name, want, run)
 			}
 		}
 	}
 }
 
+// TestLiveWorkflowInstallsPinnedGotestsum is AC-5: every live job installs
+// gotestsum via the pinned, sha256-verifying install script — never a floating
+// `@latest` or an unverified download. The install script itself must pin a fixed
+// version and verify a checksum before trusting the binary.
+func TestLiveWorkflowInstallsPinnedGotestsum(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	steps := parseWorkflowSteps(live)
+
+	installs := 0
+	for _, s := range steps {
+		if strings.Contains(s.run, "install-gotestsum.sh") {
+			installs++
+		}
+	}
+	// claude-live, codex-live, pi-live each install gotestsum.
+	if installs < 3 {
+		t.Errorf("expected an Install gotestsum step in all three live jobs, found %d", installs)
+	}
+
+	script := readGotestsumInstallScript(t)
+	if !strings.Contains(script, `VERSION="`) {
+		t.Error("install-gotestsum.sh does not pin a fixed VERSION")
+	}
+	if strings.Contains(script, "@latest") || strings.Contains(script, "/latest/") {
+		t.Error("install-gotestsum.sh uses a floating @latest reference (must be a pinned release)")
+	}
+	if !strings.Contains(script, "shasum -a 256 -c") {
+		t.Error("install-gotestsum.sh does not sha256-verify the downloaded tarball before use")
+	}
+	// At least one concrete pinned checksum must be present (the linux_amd64 one
+	// the CI runners use); a bare `sha=""` would defeat the verification.
+	if !strings.Contains(script, "linux_amd64)") || !strings.Contains(script, "sha=\"") {
+		t.Error("install-gotestsum.sh is missing a concrete pinned checksum for the CI runner platform")
+	}
+}
+
 // TestLiveWorkflowHasNoFirehoseRegression is the adversarial twin: the old
 // `-v | tee *-transcript.txt` firehose (the verbose surface that flooded
-// FO/ensign reads) must not reappear on any executable line, and no `go test -v`
-// may pipe to a `tee`d transcript again.
+// FO/ensign reads) must not reappear, and no `go test ... -v` may pipe to a tee'd
+// transcript again on any executable line.
 func TestLiveWorkflowHasNoFirehoseRegression(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	for _, step := range parseWorkflowSteps(live) {
@@ -66,8 +103,6 @@ func TestLiveWorkflowHasNoFirehoseRegression(t *testing.T) {
 			if strings.Contains(command, "tee") && strings.Contains(command, "transcript.txt") {
 				t.Errorf("live step %q re-introduces a -v transcript firehose: %q", step.name, command)
 			}
-			// A `go test ... -v` (the driver firehose) piped to tee is the exact
-			// shape replaced; the binary-side `-test.v` feeding test2json is fine.
 			if strings.Contains(command, "go test ") && strings.Contains(command, " -v") && strings.Contains(command, "tee") {
 				t.Errorf("live step %q runs `go test -v | tee` again (firehose to stdout): %q", step.name, command)
 			}
@@ -75,10 +110,9 @@ func TestLiveWorkflowHasNoFirehoseRegression(t *testing.T) {
 	}
 }
 
-// TestLiveWorkflowPinsNoFloatingTool is AC-5: the chosen mechanism adds no
-// third-party build/test dependency, so there is no `go run <pkg>@latest` (or any
-// floating @latest) anywhere in the live test steps. If a future change adopts a
-// tool, this guard forces it to be pinned, not floating.
+// TestLiveWorkflowPinsNoFloatingTool is AC-5: no `go run <pkg>@latest` (or any
+// floating @latest) anywhere in the live test steps — the gotestsum dependency is
+// pinned and installed as a verified prebuilt, not floated.
 func TestLiveWorkflowPinsNoFloatingTool(t *testing.T) {
 	live := readWorkflow(t, "runtime-live-e2e.yml")
 	for _, step := range parseWorkflowSteps(live) {
@@ -86,9 +120,15 @@ func TestLiveWorkflowPinsNoFloatingTool(t *testing.T) {
 			if strings.Contains(command, "@latest") {
 				t.Errorf("live step %q uses a floating @latest dependency (must be pinned): %q", step.name, command)
 			}
-			if strings.Contains(command, "gotestsum") {
-				t.Errorf("live step %q references gotestsum; the chosen mechanism is stdlib-only (go tool test2json) — if a tool is adopted it must be pinned and this guard updated: %q", step.name, command)
-			}
 		}
 	}
+}
+
+func readGotestsumInstallScript(t *testing.T) string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "scripts", "install-gotestsum.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
 }

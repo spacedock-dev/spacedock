@@ -1,5 +1,5 @@
 // ABOUTME: Behavioral proof that the live-CI test steps emit a clean step log plus
-// ABOUTME: an archived -json detail from one run, with the exit code preserved.
+// ABOUTME: an archived -json detail from one gotestsum run, with the exit preserved.
 package release
 
 import (
@@ -11,90 +11,25 @@ import (
 	"testing"
 )
 
-// liveCleanOutputStepNames are the runtime-live-e2e.yml steps transformed to the
-// clean-stdout + archived-jsonl shape. The behavioral test derives its runnable
-// script from the FIRST of these (re-targeted to the in-repo fixture), so it
-// exercises the workflow's ACTUAL pipe shape rather than a hand-copied duplicate.
-var liveCleanOutputStepNames = []string{
-	"Run live ensign cycle",
-	"Run live Claude shared scenarios",
-	"Run live Codex shared scenarios",
-	"Run Pi shared scenario coverage guard",
-	"Run live Pi front-door smoke",
-}
-
-// fixtureScript extracts a transformed live step's run block from the workflow and
-// re-targets it at the committed fixture: it strips the `-tags live` and
-// `-test.timeout` (the fixture is neither live nor slow) and rewrites the
-// ensigncycle package path, binary names, and -test.run filter to the fixture, so
-// the script the test runs is the workflow's own shape with only the target
-// swapped. extraFlags is appended to the test-binary invocation (e.g. an env-gated
-// run filter); fail toggles the planted failures.
-func fixtureScript(t *testing.T, fixtureDir, jsonl, raw, runFilter string) string {
+// gotestsumBin resolves the pinned gotestsum the live steps run. It is on PATH in
+// CI (the live jobs run .github/scripts/install-gotestsum.sh first; the offline
+// gate installs it before `go test ./...` so this proof actually executes there).
+// When absent — a local checkout without gotestsum — the AC tests skip rather than
+// build-from-source, per the FO's AC-5 note; the binary-level guarantee is the
+// real assurance and CI always exercises it.
+func gotestsumBin(t *testing.T) string {
 	t.Helper()
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	steps := parseWorkflowSteps(live)
-	var block string
-	for _, s := range steps {
-		if s.name == liveCleanOutputStepNames[0] {
-			block = s.run
-			break
+	if p, err := exec.LookPath("gotestsum"); err == nil {
+		return p
+	}
+	if dir := os.Getenv("GOTESTSUM_BIN_DIR"); dir != "" {
+		p := filepath.Join(dir, "gotestsum")
+		if _, err := os.Stat(p); err == nil {
+			return p
 		}
 	}
-	if block == "" {
-		t.Fatalf("workflow has no step %q to derive the fixture script from", liveCleanOutputStepNames[0])
-	}
-	block = dedent(block)
-
-	// Re-target the ensigncycle live step at the fixture: drop the live tag and
-	// the long timeout, point the compile + run + archive at the fixture dir and
-	// fixed local artifact names, and replace the live -test.run alternation with
-	// the caller's filter.
-	repl := strings.NewReplacer(
-		"go test -c -tags live -o live-e2e.test ./internal/ensigncycle/",
-		`go -C "`+fixtureDir+`" test -c -o "$PWD/fixture.test" .`,
-		"./live-e2e.test", "./fixture.test",
-		"-test.timeout=40m ", "",
-		"-test.run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops'", runFilter,
-		"-p ensigncycle", "-p cleanoutputfixture",
-		"live-e2e-raw.txt", raw,
-		"live-e2e-detail.jsonl", jsonl,
-		`mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"`, ":",
-	)
-	script := repl.Replace(block)
-
-	// Guard the re-target: every ensigncycle/live token must be gone, or the
-	// derived script silently diverged from what we think the workflow says.
-	for _, leftover := range []string{"ensigncycle", "-tags live", "40m", "TestLive"} {
-		if strings.Contains(script, leftover) {
-			t.Fatalf("fixture re-target left %q in the derived script:\n%s", leftover, script)
-		}
-	}
-	if !strings.Contains(script, "go tool test2json") || !strings.Contains(script, "${PIPESTATUS[0]}") {
-		t.Fatalf("derived script lost the one-run archive shape:\n%s", script)
-	}
-	return script
-}
-
-// runFixtureStep runs the derived script under bash (the ${PIPESTATUS[0]} exit
-// capture is bash-specific, matching the GitHub Actions default shell) in a temp
-// dir, returning stdout+stderr, the exit code, and the temp dir.
-func runFixtureStep(t *testing.T, script string, env ...string) (string, int, string) {
-	t.Helper()
-	dir := t.TempDir()
-	cmd := exec.Command("bash", "-c", script)
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), env...)
-	out, err := cmd.CombinedOutput()
-	code := 0
-	if err != nil {
-		if exit, ok := err.(*exec.ExitError); ok {
-			code = exit.ExitCode()
-		} else {
-			t.Fatalf("running fixture step: %v\n%s", err, out)
-		}
-	}
-	return string(out), code, dir
+	t.Skip("gotestsum not on PATH or GOTESTSUM_BIN_DIR; CI installs the pinned binary before this runs")
+	return ""
 }
 
 func fixtureDir(t *testing.T) string {
@@ -106,13 +41,44 @@ func fixtureDir(t *testing.T) string {
 	return abs
 }
 
+// runGotestsum runs the live steps' command shape — `gotestsum --jsonfile
+// <jsonl> --format pkgname -- <go test args>` — over the in-repo fixture, in a
+// temp dir, returning combined stdout+stderr, the exit code, and the temp dir.
+// The args mirror a live step minus `-tags live` (the fixture has no live tag);
+// the rendering flags (`--jsonfile`, `--format pkgname`) are the workflow's.
+func runGotestsum(t *testing.T, runFilter string, env ...string) (string, int, string) {
+	t.Helper()
+	bin := gotestsumBin(t)
+	dir := t.TempDir()
+	jsonl := filepath.Join(dir, "detail.jsonl")
+	args := []string{
+		"--jsonfile", jsonl,
+		"--format", "pkgname",
+		"--", "-count=1", "-run", runFilter, ".",
+	}
+	cmd := exec.Command(bin, args...)
+	// Run inside the fixture module so `go test .` resolves its go.mod; the
+	// jsonl archive is written to the temp dir via the absolute --jsonfile path.
+	cmd.Dir = fixtureDir(t)
+	cmd.Env = append(os.Environ(), env...)
+	out, err := cmd.CombinedOutput()
+	code := 0
+	if err != nil {
+		if exit, ok := err.(*exec.ExitError); ok {
+			code = exit.ExitCode()
+		} else {
+			t.Fatalf("running gotestsum: %v\n%s", err, out)
+		}
+	}
+	return string(out), code, dir
+}
+
 var runLineRe = regexp.MustCompile(`(?m)^\s*=== RUN`)
 
 // TestLiveCIStepStdoutIsCleanOnGreen is AC-1 (green): the changed command's
 // visible surface has no per-test === RUN verbosity, and the suite passes.
 func TestLiveCIStepStdoutIsCleanOnGreen(t *testing.T) {
-	script := fixtureScript(t, fixtureDir(t), "detail.jsonl", "raw.txt", "-test.run '.*'")
-	out, code, _ := runFixtureStep(t, script)
+	out, code, _ := runGotestsum(t, ".*")
 
 	if code != 0 {
 		t.Fatalf("green fixture run exited %d, want 0\n%s", code, out)
@@ -126,11 +92,10 @@ func TestLiveCIStepStdoutIsCleanOnGreen(t *testing.T) {
 }
 
 // TestLiveCIStepStdoutIsFailuresOnlyOnRed is AC-1 (red): on a failing run the
-// visible surface shows the failing tests with file:line and the package result,
-// still with no === RUN firehose.
+// visible surface shows the failing tests with file:line, still with no === RUN
+// firehose, and the run goes red.
 func TestLiveCIStepStdoutIsFailuresOnlyOnRed(t *testing.T) {
-	script := fixtureScript(t, fixtureDir(t), "detail.jsonl", "raw.txt", "-test.run '.*'")
-	out, code, _ := runFixtureStep(t, script, "FIXTURE_FAIL=1")
+	out, code, _ := runGotestsum(t, ".*", "FIXTURE_FAIL=1")
 
 	if code == 0 {
 		t.Fatalf("red fixture run exited 0, want non-zero (rendering must not mask failures)\n%s", out)
@@ -139,10 +104,10 @@ func TestLiveCIStepStdoutIsFailuresOnlyOnRed(t *testing.T) {
 		t.Errorf("red step stdout carries %d '=== RUN' lines (want 0):\n%s", n, out)
 	}
 	for _, want := range []string{
-		"--- FAIL: TestGammaFails",
+		"TestGammaFails",
 		"a_test.go:", // the planted failure's file:line
-		"--- FAIL: TestZetaSubtests/case_bad",
-		"FAIL",
+		"TestZetaSubtests/case_bad",
+		"Failed", // gotestsum's "=== Failed" recap header
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("red step stdout missing failures-only signal %q:\n%s", want, out)
@@ -153,8 +118,7 @@ func TestLiveCIStepStdoutIsFailuresOnlyOnRed(t *testing.T) {
 // TestLiveCIStepArchivesJSONDetail is AC-2: the same run writes a non-empty -json
 // archive that carries the failing test's event, sufficient for root cause.
 func TestLiveCIStepArchivesJSONDetail(t *testing.T) {
-	script := fixtureScript(t, fixtureDir(t), "detail.jsonl", "raw.txt", "-test.run '.*'")
-	_, _, dir := runFixtureStep(t, script, "FIXTURE_FAIL=1")
+	_, _, dir := runGotestsum(t, ".*", "FIXTURE_FAIL=1")
 
 	data, err := os.ReadFile(filepath.Join(dir, "detail.jsonl"))
 	if err != nil {
@@ -173,15 +137,17 @@ func TestLiveCIStepArchivesJSONDetail(t *testing.T) {
 }
 
 // TestLiveCIStepRunsSuiteOnce is AC-3: the changed command runs the test binary
-// exactly once. A counter test appends one byte per execution; a "render clean,
-// then re-run for json" regression would record two.
+// exactly once. A counter test appends one byte per execution; a render-then-rerun
+// regression would record two.
 func TestLiveCIStepRunsSuiteOnce(t *testing.T) {
+	bin := gotestsumBin(t)
 	dir := t.TempDir()
 	counter := filepath.Join(dir, "counter")
-	script := fixtureScript(t, fixtureDir(t), "detail.jsonl", "raw.txt", "-test.run TestCounter")
-
-	cmd := exec.Command("bash", "-c", script)
-	cmd.Dir = dir
+	cmd := exec.Command(bin,
+		"--jsonfile", filepath.Join(dir, "detail.jsonl"), "--format", "pkgname",
+		"--", "-count=1", "-run", "TestCounter", ".",
+	)
+	cmd.Dir = fixtureDir(t)
 	cmd.Env = append(os.Environ(), "FIXTURE_COUNTER_FILE="+counter)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("counter fixture run failed: %v\n%s", err, out)
@@ -197,14 +163,12 @@ func TestLiveCIStepRunsSuiteOnce(t *testing.T) {
 }
 
 // TestLiveCIStepPreservesExitCode is AC-4: exit 0 on a passing fixture, non-zero
-// on a failing one — the trailing clean-view grep must not mask the test result.
+// on a failing one — gotestsum's rendering must not mask the test result.
 func TestLiveCIStepPreservesExitCode(t *testing.T) {
-	script := fixtureScript(t, fixtureDir(t), "detail.jsonl", "raw.txt", "-test.run '.*'")
-
-	if _, code, _ := runFixtureStep(t, script); code != 0 {
+	if _, code, _ := runGotestsum(t, ".*"); code != 0 {
 		t.Errorf("passing fixture: step exit %d, want 0", code)
 	}
-	if _, code, _ := runFixtureStep(t, script, "FIXTURE_FAIL=1"); code == 0 {
-		t.Error("failing fixture: step exit 0, want non-zero (grep no-match exit must not mask the failure)")
+	if _, code, _ := runGotestsum(t, ".*", "FIXTURE_FAIL=1"); code == 0 {
+		t.Error("failing fixture: step exit 0, want non-zero")
 	}
 }

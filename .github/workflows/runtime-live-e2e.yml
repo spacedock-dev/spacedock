@@ -64,6 +64,13 @@ jobs:
       - name: Build
         run: go build ./...
 
+      # The offline suite includes the AC tests that exercise the live steps'
+      # clean-log + jsonl-archive shape over a fixture; they invoke the pinned
+      # gotestsum, so install it here (sha256-verified) to guarantee those tests
+      # RUN — they would otherwise self-skip when gotestsum is absent.
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Run offline test suite
         run: go test ./...
 
@@ -137,6 +144,17 @@ jobs:
           echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
           echo "$(pwd)" >> "$GITHUB_PATH"
 
+      # gotestsum renders the live test run as a CLEAN step log (a per-package
+      # progress view + an `=== Failed` recap listing each failing test with
+      # file:line) while writing the full `-json` event stream to a `--jsonfile`
+      # archive, from a SINGLE test run — so an FO/ensign reads the small step log
+      # for triage and fetches the archived `*-detail.jsonl` only for root cause.
+      # It is PINNED to a fixed release and the downloaded prebuilt binary is
+      # sha256-verified before use (no `@latest`, no unverified download, and no
+      # Go-toolchain change — the prebuilt is decoupled from the build toolchain).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -178,28 +196,19 @@ jobs:
       # zero-`status --discover` fixture: the FO reports no workflow found and STOPS,
       # taking no broad filesystem sweep). All are boot/front-door drives, so they
       # share this step and `-run` alternation rather than a second job.
-      # Output discipline: the step log carries the CLEAN go test surface
-      # (per-test --- FAIL blocks with file:line + the package result, no
-      # per-test === RUN / --- PASS firehose), while the full verbose detail is
-      # archived as a `-json` event stream for root-cause retrieval — both from a
-      # SINGLE test run. The test binary is compiled once (`go test -c`, which
-      # does not run any test) and executed once; its native `-test.v` stream is
-      # tee'd to `go tool test2json` (a Go toolchain tool — no third-party
-      # dependency) for the .jsonl archive, and the raw stream is then filtered to
-      # the clean view. `${PIPESTATUS[0]}` carries the test binary's pass/fail
-      # exit (the trailing grep would otherwise mask it with its own no-match
-      # exit), so the step stays red on failure.
+      # Output discipline: gotestsum runs the suite ONCE, prints a CLEAN step log
+      # (per-package progress + an `=== Failed` recap listing each failing test
+      # with file:line — no per-test === RUN / --- PASS firehose) and writes the
+      # full `-json` event stream to the `--jsonfile` archive for root-cause
+      # retrieval. gotestsum preserves the underlying `go test` exit code, so the
+      # step stays red on failure.
       - name: Run live ensign cycle
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
           mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
-          go test -c -tags live -o live-e2e.test ./internal/ensigncycle/
-          ./live-e2e.test -test.v -test.count=1 -test.timeout=40m -test.run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' 2>&1 | tee live-e2e-raw.txt | go tool test2json -t -p ensigncycle > live-e2e-detail.jsonl
-          rc=${PIPESTATUS[0]}
-          grep -vE '^[[:space:]]*(=== (RUN|PAUSE|CONT)|--- PASS:|--- SKIP:)' live-e2e-raw.txt || true
-          exit "$rc"
+          gotestsum --jsonfile live-e2e-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLiveEnsignCycle|TestLiveDefaultHeadlessStopsAtGate|TestLiveZeroDiscoverReportsAndStops' ./internal/ensigncycle/
 
       # The shared scenario suite: the Claude lane runs the SAME host-neutral
       # gate/rejection/merge-hook scenarios the codex-live lane runs, through the
@@ -218,11 +227,7 @@ jobs:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
-          go test -c -tags live -o claude-shared-scenarios.test ./internal/ensigncycle/
-          ./claude-shared-scenarios.test -test.v -test.count=1 -test.timeout=40m -test.run TestLiveClaudeSharedScenarios 2>&1 | tee claude-shared-scenarios-raw.txt | go tool test2json -t -p ensigncycle > claude-shared-scenarios-detail.jsonl
-          rc=${PIPESTATUS[0]}
-          grep -vE '^[[:space:]]*(=== (RUN|PAUSE|CONT)|--- PASS:|--- SKIP:)' claude-shared-scenarios-raw.txt || true
-          exit "$rc"
+          gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
 
       - name: Upload live artifacts
         if: always()
@@ -288,6 +293,11 @@ jobs:
           echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
           echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
 
+      # Pinned, sha256-verified gotestsum for the clean log + `-json` archive (see
+      # the claude-live job for the rationale).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -342,17 +352,12 @@ jobs:
           echo "- \`codex --version\`: \`$(codex --version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
 
-      # Clean step log + archived `-json` detail from one run (see the Claude lane
-      # for the rationale). One compile, one execution; `${PIPESTATUS[0]}` carries
-      # the test exit past the trailing clean-view grep.
+      # Clean step log + archived `-json` detail from one run (see the claude-live
+      # job for the rationale).
       - name: Run live Codex shared scenarios
         run: |
           set -o pipefail
-          go test -c -tags live -o codex-shared-scenarios.test ./internal/ensigncycle
-          ./codex-shared-scenarios.test -test.v -test.count=1 -test.timeout=40m -test.run TestLiveCodexSharedScenarios 2>&1 | tee codex-shared-scenarios-raw.txt | go tool test2json -t -p ensigncycle > codex-shared-scenarios-detail.jsonl
-          rc=${PIPESTATUS[0]}
-          grep -vE '^[[:space:]]*(=== (RUN|PAUSE|CONT)|--- PASS:|--- SKIP:)' codex-shared-scenarios-raw.txt || true
-          exit "$rc"
+          gotestsum --jsonfile codex-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
@@ -430,6 +435,11 @@ jobs:
           echo "SPACEDOCK_REPO_ROOT=$GITHUB_WORKSPACE" >> "$GITHUB_ENV"
           echo "$(pwd)" >> "$GITHUB_PATH"
 
+      # Pinned, sha256-verified gotestsum for the clean log + `-json` archive (see
+      # the claude-live job for the rationale).
+      - name: Install gotestsum
+        run: bash .github/scripts/install-gotestsum.sh
+
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
@@ -456,26 +466,17 @@ jobs:
           echo "- \`go version\`: \`$(go version)\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Effort: \`${{ inputs.effort }}\`" >> "$GITHUB_STEP_SUMMARY"
 
-      # Clean step log + archived `-json` detail from one run (see the Claude lane
-      # for the rationale). One compile, one execution per step; `${PIPESTATUS[0]}`
-      # carries the test exit past the trailing clean-view grep.
+      # Clean step log + archived `-json` detail from one run per step (see the
+      # claude-live job for the rationale).
       - name: Run Pi shared scenario coverage guard
         run: |
           set -o pipefail
-          go test -c -tags live -o pi-coverage.test ./internal/ensigncycle
-          ./pi-coverage.test -test.v -test.count=1 -test.run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' 2>&1 | tee pi-coverage-raw.txt | go tool test2json -t -p ensigncycle > pi-coverage-detail.jsonl
-          rc=${PIPESTATUS[0]}
-          grep -vE '^[[:space:]]*(=== (RUN|PAUSE|CONT)|--- PASS:|--- SKIP:)' pi-coverage-raw.txt || true
-          exit "$rc"
+          gotestsum --jsonfile pi-coverage-detail.jsonl --format pkgname -- -tags live -count=1 -run 'TestSharedScenarioRunnerCoverage|TestPiSharedScenarioCoverage' ./internal/ensigncycle
 
       - name: Run live Pi front-door smoke
         run: |
           set -o pipefail
-          go test -c -tags live -o pi-front-door-smoke.test ./internal/ensigncycle
-          ./pi-front-door-smoke.test -test.v -test.count=1 -test.run TestLivePiFrontDoorSmoke 2>&1 | tee pi-front-door-smoke-raw.txt | go tool test2json -t -p ensigncycle > pi-front-door-smoke-detail.jsonl
-          rc=${PIPESTATUS[0]}
-          grep -vE '^[[:space:]]*(=== (RUN|PAUSE|CONT)|--- PASS:|--- SKIP:)' pi-front-door-smoke-raw.txt || true
-          exit "$rc"
+          gotestsum --jsonfile pi-front-door-smoke-detail.jsonl --format pkgname -- -tags live -count=1 -run TestLivePiFrontDoorSmoke ./internal/ensigncycle
 
       - name: Upload live artifacts
         if: always()
