@@ -1,13 +1,13 @@
 ---
 id: 6rtpj5avcp733tb15dfjcbbb
 title: Summarize CI artifacts for FO/ensign reads — replace whole-log (143KB) reads with a triage summary
-status: validation
+status: done
 source: FO + 0.20.4 scope survey (2026-06-14, this session) — CI logs (143KB cited in e6a's source as a recurring read sink) are read whole into FO/ensign context for validation and triage, when the agent needs only pass/fail + the failing lines. Tokens scale with the whole log. 0.20.4 read-cost theme; lower-frequency than the entity/README reads e6a covers.
 started: 2026-06-15T05:19:11Z
-completed:
-verdict:
+completed: 2026-06-16T19:09:34Z
+verdict: PASSED
 score: 0.30
-worktree: .worktrees/spacedock-ensign-ci-log-read-summary
+worktree:
 issue:
 sprint: 0204-structured-reads
 sprint-readiness: ready
