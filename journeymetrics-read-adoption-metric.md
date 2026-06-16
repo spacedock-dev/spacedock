@@ -9,6 +9,7 @@ issue:
 id: hf4jmbksapyg2d9s0zj85wca
 started: 2026-06-16T20:02:50Z
 worktree: .worktrees/spacedock-ensign-journeymetrics-read-adoption-metric
+mod-block: merge:pr-merge
 ---
 
 ## Scope note
