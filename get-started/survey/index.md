@@ -2,7 +2,7 @@
 title: "Survey your project"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-16 07:01:17"
+last_updated: "2026-06-16 07:21:07"
 ---
 
 # Survey your project
