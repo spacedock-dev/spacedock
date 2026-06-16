@@ -52,7 +52,7 @@ stages:
 
 # Experiment Workflow Template
 
-Refinement specialization with parked tiers and a structured entity body. Each experiment is a hypothesis tested through tiers of evidence: a cheap smoke pre-flight, the main run, an analysis gate, an out-of-sample holdout, then accepted or rejected. The parked-stages layer is active on `smoke`, `run`, and `holdout`; the `silence-watcher` idle-mod is offered for any parked stage with timeout/nudge semantics.
+Each experiment is a hypothesis tested through tiers of evidence: a cheap smoke pre-flight, the main run, an analysis gate, an out-of-sample holdout, then accepted or rejected. This is the refinement shape specialized with parked tiers and a structured entity body: the parked-stages layer is active on `smoke`, `run`, and `holdout`, and the `silence-watcher` idle-mod is offered for any parked stage with timeout/nudge semantics.
 
 Use this template when the captain's mission is to learn whether something works: hypothesis-test-learn loops, A/B tests, model evals, intervention trials, multi-tier evidence-driven promotion. Industry-of-art for the multi-tier evidence-driven promotion shape is **stage-gate** (Cooper, *Winning at New Products*); we use `experiment` as the captain-facing name for first-contact recognition and surface the lineage here for advanced captains.
 
@@ -89,62 +89,40 @@ Every experiment file has YAML frontmatter. Fields are documented below; see **E
 
 ### `hypothesis`
 
-The experiment is being defined. Captain-curated gate before tier work begins.
-
-- **Inputs:** A research lead, prior result, or captain hunch
-- **Outputs:** A hypothesis statement, the methodology that will test it, the success criteria for accepting vs rejecting, and the smoke pre-flight design
-- **Good:** Falsifiable hypothesis, success criteria fixed before evidence is gathered, methodology is reproducible
-- **Bad:** Vague directional claims, success criteria invented after seeing results, methodology that cannot be re-run
+The experiment is being defined behind a captain-curated gate: a falsifiable hypothesis, the reproducible methodology that tests it, the success criteria fixed before any evidence is gathered, and the smoke pre-flight design.
 
 ### `smoke`
 
-A cheap pre-flight that catches obvious failures (broken instrumentation, no signal at all, infrastructure not in place) before committing to the full run. Parked: the entity sits here while the smoke executes.
-
-- **Inputs:** The methodology and smoke design from `hypothesis`
-- **Outputs:** A smoke result captured in the experiment body. Either gate-approval to `run` (smoke passes — proceed to the real run) or rejection with notes (smoke fails — typically back to `hypothesis` to revise the methodology)
-- **Good:** Smoke is genuinely cheap (minutes, not days), tests instrumentation and at-least-some-signal, fails fast when the experiment is doomed
-- **Bad:** Smoke that takes nearly as long as the real run, smoke that "passes" without checking the dimensions that matter, skipping the smoke and burning the run on a broken setup
+A genuinely cheap pre-flight (minutes, not days) that catches broken instrumentation or no-signal-at-all before the full run. Parked while it executes. Gate-approval to `run`, or rejection back to `hypothesis` to revise the methodology.
 
 ### `run`
 
-The main experiment execution. Parked: the entity sits here while the run accumulates evidence.
-
-- **Inputs:** The smoke-validated methodology
-- **Outputs:** Run result captured in the experiment body — raw evidence, sample sizes, intermediate metrics
-- **Good:** Run executes the same methodology that was smoke-validated, evidence is captured in a form analysis can re-use
-- **Bad:** Methodology drift between smoke and run, evidence captured in a form only the runner can interpret
+The main execution, parked while evidence accumulates. Run the same methodology that was smoke-validated and capture the evidence — raw data, sample sizes, intermediate metrics — in a form analysis can re-use.
 
 ### `analysis`
 
-The run evidence is interpreted against the success criteria from `hypothesis`. Gate: the analyst decides whether the evidence supports advancing to holdout, or whether the experiment should be rejected outright.
-
-- **Inputs:** The run result and the success criteria from the hypothesis
-- **Outputs:** An analysis verdict in the experiment body. Either gate-approval to `holdout` (evidence supports the hypothesis — verify out-of-sample) or rejection straight to `rejected` (evidence does not support).
-- **Good:** Analysis applies the success criteria as written, distinguishes signal from noise, calls out confidence honestly
-- **Bad:** Moving the goalposts, p-hacking, accepting noise as signal, deferring the verdict indefinitely
+The run evidence is interpreted against the hypothesis's pre-fixed success criteria, behind a gate that distinguishes signal from noise without moving the goalposts. Gate-approval to `holdout` (verify out-of-sample), or rejection straight to `rejected`.
 
 ### `holdout`
 
-Out-of-sample verification. The accepted hypothesis is re-tested on data or a setting the run did not see. Parked while the holdout executes; fresh agent runs the holdout independently of whoever ran the analysis.
-
-- **Inputs:** The analysis-accepted hypothesis and the methodology
-- **Outputs:** Holdout result captured in the experiment body. Verdict drives the terminal: holdout supports → `accepted`; holdout fails → `rejected`.
-- **Good:** Holdout is genuinely out-of-sample (different data, different population, different time window), executed by someone independent of the analyst
-- **Bad:** Holdout that overlaps the run sample, holdout interpreted by the analyst (defeats the independence), skipping holdout for "obvious" results
+Out-of-sample verification: the accepted hypothesis is re-tested on data or a setting the run did not see, parked while it executes. A `fresh` agent runs it independently of whoever ran the analysis. Holdout supports → `accepted`; holdout fails → `rejected`.
 
 ### `accepted`
 
-Terminal state for hypotheses the holdout supported.
-
-- **Inputs:** The holdout-supported hypothesis
-- **Outputs:** None — terminal. `completed` set, `verdict: PASSED`, archived.
+Terminal state for hypotheses the holdout supported. `completed` set, `verdict: PASSED`, archived.
 
 ### `rejected`
 
-Terminal state for hypotheses that failed at any tier.
+Terminal state for hypotheses that failed at any tier (`smoke`, `analysis`, or `holdout`). `completed` set, `verdict: REJECTED`, archived — the body retains why, so future captains avoid re-running it.
 
-- **Inputs:** A failure verdict from `smoke` (back-out path is `hypothesis` for a revise; if hypothesis is abandoned, transition straight to `rejected`), `analysis`, or `holdout`
-- **Outputs:** None — terminal. `completed` set, `verdict: REJECTED`, archived. The experiment body retains why it was rejected so future captains can avoid re-running it.
+## Workflow-specific rules
+
+The FO/ensign operating contract already governs generic stage semantics and proof discipline — prefer a code gate over a prose-only rule, prove by exercising rather than re-reading, fix success criteria before gathering evidence. Experiments inherit these rules from the contract their FO loads at boot; the rules below add only the experiment-shape specifics.
+
+- **Falsifiable hypothesis, criteria fixed first.** The hypothesis must be falsifiable and its accept/reject success criteria must be written down before any evidence is gathered, so the verdict cannot be rationalized after seeing results.
+- **Tier-gating.** Evidence promotes through `smoke → run → analysis → holdout` and a tier never skips: smoke fails fast before the run is burned, analysis applies the criteria as written, and a decisive smoke or analysis can reject without continuing.
+- **Holdout out-of-sample independence.** The holdout must be genuinely out-of-sample (different data, population, or time window) and run by a `fresh` agent independent of the analyst — a holdout that overlaps the run sample or is interpreted by the analyst defeats its purpose.
+- **Parked tiers + silence-watcher.** The parked-stages layer marks `smoke`, `run`, and `holdout` as normal-to-sit-in rather than stalled; the `silence-watcher` mod is offered for any parked stage with timeout/nudge semantics.
 
 ## Workflow State
 
