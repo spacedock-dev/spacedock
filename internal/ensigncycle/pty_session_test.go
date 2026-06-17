@@ -235,6 +235,39 @@ func encodeProjectDir(cwd string) string {
 	}, cwd)
 }
 
+// nestedSessionMarkers are the env vars a parent Claude Code session exports that
+// make a child claude self-identify as a NESTED session, which SUPPRESSES the
+// child's on-disk conversation transcript since CC 2.1.170 ("sessions launched from
+// a shell that inherited Claude Code env vars don't save transcripts"). When the pty
+// harness itself runs inside a Claude session (a teammate/CI agent driving `go test
+// -tags live`), the tmux child inherits these and writes teams/<name>/config.json
+// but NO projects/<cwd>/<id>.jsonl — starving the idle gate, the stream drain, and
+// the teardown grade. The team flag (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) is
+// deliberately ABSENT from this list — it must survive to expose the native team
+// tools.
+var nestedSessionMarkers = []string{
+	"CLAUDECODE",
+	"CLAUDE_CODE_CHILD_SESSION",
+	"CLAUDE_CODE_SESSION_ID",
+	"CLAUDE_CODE_AGENT",
+	"CLAUDE_CODE_ENTRYPOINT",
+	"CLAUDE_CODE_EXECPATH",
+}
+
+// unsetNestedSessionArgs builds the argv tail for `env`: a `-u <marker>` pair for
+// each nestedSessionMarker, then cmd and its args. The pty driver launches the child
+// as `env <unsetNestedSessionArgs...>`, so the nested-session markers are actively
+// REMOVED from the child even though they ride in the tmux server's inherited
+// environment (tmux -e can add a per-session var but cannot remove a server-inherited
+// one, so the unset must travel on the launch command itself).
+func unsetNestedSessionArgs(cmd ...string) []string {
+	args := make([]string, 0, len(nestedSessionMarkers)*2+len(cmd))
+	for _, m := range nestedSessionMarkers {
+		args = append(args, "-u", m)
+	}
+	return append(args, cmd...)
+}
+
 // transcriptReachedIdle reports whether the FO transcript has reached a committed
 // idle turn — the render-independent boot/turn-end signal that replaces pane-text
 // scraping (which is fragile on a headless CI runner: missing terminfo → blank
@@ -434,6 +467,37 @@ func TestFORootResolvesWhenSelfIdentifying(t *testing.T) {
 			t.Error("foRootSessionFlatFile(teammate) reported root=true; a first-entry agentName must mark it NOT the FO root")
 		}
 	})
+}
+
+// TestUnsetNestedSessionArgs is the offline regression for the nested-session
+// transcript-suppression fix: `env <unsetNestedSessionArgs...>` must unset every
+// nested-session marker (so a child claude launched from inside a Claude session
+// still persists its transcript — CC 2.1.170), MUST NOT unset the team flag (the
+// child needs it for native team tools), and must preserve the launch command verbatim.
+func TestUnsetNestedSessionArgs(t *testing.T) {
+	got := unsetNestedSessionArgs("spacedock", "claude", "--model", "sonnet")
+
+	// Every nested marker is unset via a `-u <marker>` pair.
+	joined := strings.Join(got, " ")
+	for _, m := range nestedSessionMarkers {
+		if !strings.Contains(joined, "-u "+m) {
+			t.Errorf("nested-session marker %q is not unset; args: %v", m, got)
+		}
+	}
+
+	// The team flag must NOT be unset — the child needs it to expose team tools.
+	if strings.Contains(joined, "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS") {
+		t.Errorf("the team flag must NOT be unset; args: %v", got)
+	}
+
+	// The command + args survive verbatim as the tail (after all -u pairs).
+	tail := got[len(got)-4:]
+	want := []string{"spacedock", "claude", "--model", "sonnet"}
+	for i := range want {
+		if tail[i] != want[i] {
+			t.Errorf("launch command not preserved at tail[%d]: got %q, want %q (full: %v)", i, tail[i], want[i], got)
+		}
+	}
 }
 
 // committedAssistant is a COMMITTED assistant turn (non-null stop_reason).

@@ -183,13 +183,29 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 	// The launch line is the live runner's exact front door minus `-p`:
 	// spacedock-owned flags BEFORE `--`, host flags AFTER `--`. tmux runs it in the
 	// pane; the env is applied via the tmux invocation's own environment.
-	launch := shellJoin([]string{d.binary, "claude",
+	//
+	// `env -u` unsets the NESTED-SESSION markers a parent Claude Code session exports
+	// before exec'ing claude. When the harness itself runs inside a Claude session
+	// (the common case: a teammate/CI agent drives `go test -tags live`), the child
+	// claude inherits CLAUDECODE / CLAUDE_CODE_CHILD_SESSION / CLAUDE_CODE_SESSION_ID /
+	// CLAUDE_CODE_AGENT / CLAUDE_CODE_ENTRYPOINT / CLAUDE_CODE_EXECPATH and
+	// self-identifies as a NESTED session — which, since CC 2.1.170, SUPPRESSES the
+	// on-disk conversation transcript (the "sessions launched from a shell that
+	// inherited Claude Code env vars don't save transcripts" fix). With the markers
+	// present the FO writes teams/<name>/config.json but NO projects/<cwd>/<id>.jsonl,
+	// so the idle gate, the stream drain, and the teardown grade have nothing to read.
+	// Unsetting them restores transcript persistence. tmux -e cannot do this (it ADDS
+	// per-session vars, it cannot REMOVE a var the tmux server inherited), so the unset
+	// rides on the launch command itself. The team flag
+	// (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS) and the auth/config vars are NOT unset —
+	// they must reach the child for team tools + isolated transcript path.
+	launch := shellJoin(append([]string{"env"}, unsetNestedSessionArgs(d.binary, "claude",
 		"--plugin-dir", d.pluginDir,
 		"--skip-contract-check",
 		"--",
 		"--permission-mode", "bypassPermissions",
 		"--model", d.modelName,
-	})
+	)...))
 	// The child env MUST ride on per-session `-e KEY=VAL` flags, NOT the exec.Cmd's
 	// own Env: `tmux new-session` against a PRE-EXISTING tmux server inherits the
 	// SERVER's global environment and SILENTLY drops the command process's env — so
