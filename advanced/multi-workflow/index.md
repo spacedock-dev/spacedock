@@ -2,7 +2,7 @@
 title: "Multiple workflows"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-16 21:38:39"
+last_updated: "2026-06-17 01:00:51"
 ---
 
 # Multiple workflows
