@@ -292,50 +292,25 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 	}
 }
 
-// TestStartupGateGuidanceHasSingleSource is a DEDUP / single-source check: the
-// startup-gate abort guidance lives in exactly ONE prose file
-// (first-officer-shared-core.md), and agents/first-officer.md delegates rather than
-// mirroring it. A second copy would let the two surfaces drift — a real structural
-// defect (not a prose property): the count of files carrying the gate markers must
-// be exactly one.
-func TestStartupGateGuidanceHasSingleSource(t *testing.T) {
-	root := repoRoot(t)
-	markers := []string{"Contract version gate", "per-class remedy", "spacedock doctor"}
-
-	var sources []string
-	for _, tree := range []string{"skills", "agents"} {
-		base := filepath.Join(root, tree)
-		err := filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if d.IsDir() || filepath.Ext(p) != ".md" {
-				return nil
-			}
-			b, readErr := os.ReadFile(p)
-			if readErr != nil {
-				return readErr
-			}
-			text := string(b)
-			for _, m := range markers {
-				if strings.Contains(text, m) {
-					rel, _ := filepath.Rel(root, p)
-					sources = append(sources, rel)
-					return nil
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatalf("walk %s: %v", tree, err)
-		}
-	}
-
-	const sole = "skills/first-officer/references/first-officer-shared-core.md"
-	if len(sources) != 1 || sources[0] != sole {
-		t.Errorf("startup-gate prose has sources %v, want exactly [%s] (single source of truth)", sources, sole)
-	}
-}
+// The startup-gate single-source guard was RETIRED here per the package policy in
+// doc_test.go:11 ("delete the read and report the owed test"). It walked skills/+agents/
+// for hardcoded gate phrases (`"Contract version gate"`, `"per-class remedy"`,
+// `"spacedock doctor"`) and required exactly one file to carry them, claiming to red
+// when the guidance is mirrored so "the two surfaces drift". But the drift it guards
+// is a MEANING mirrored, not a byte copy: agents/first-officer.md could restate the
+// gate in its own words and the phrase-grep would stay green, so the check did not
+// actually prove the single-source property it advertised — it proved only that those
+// exact bytes appear once. That is the banned prose-grep (a literal-phrase substring
+// as a proxy for "the gate guidance is not restated elsewhere"); narrowing it to
+// verbatim-absence keeps it a prose-phrase-absence standing in for the meaning. No
+// token here IS the gate guidance, so the genuine-structural path (cf. the literal
+// claudeTeamDispatchTokens command tokens, where the token IS the thing) does not
+// apply. OWED PROOF: the human gate-review of the FO contract is what verifies the
+// startup gate is owned by first-officer-shared-core.md and delegated to (not mirrored
+// by) agents/first-officer.md — agents/first-officer.md today carries only the
+// delegating line "begin the Startup procedure from the shared core", which is the
+// design that keeps the surfaces from drifting; that delegation is prose a machine
+// cannot distinguish from a paraphrased mirror.
 
 // homeRootedClaudeRe matches only HOME-rooted personal-config forms: a `~/.claude`
 // tilde path, or `$HOME` / `os.UserHomeDir` joined with `.claude` on the same line.

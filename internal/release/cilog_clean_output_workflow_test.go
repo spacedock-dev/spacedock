@@ -75,19 +75,24 @@ func TestLiveWorkflowInstallsPinnedGotestsum(t *testing.T) {
 		t.Errorf("expected an Install gotestsum step in all three live jobs, found %d", installs)
 	}
 
-	script := readGotestsumInstallScript(t)
-	if !strings.Contains(script, `VERSION="`) {
-		t.Error("install-gotestsum.sh does not pin a fixed VERSION")
+	// Read the EXECUTABLE commands, not the raw text: commenting out every
+	// verify/pin line leaves the phrases in the file but renders the script inert,
+	// so a raw strings.Contains would stay green on a script that no longer
+	// verifies anything. executableShellCommands strips comment/blank lines and
+	// joins continuations, so a commented-out verification disappears here.
+	active := strings.Join(executableShellCommands(readGotestsumInstallScript(t)), "\n")
+	if !strings.Contains(active, `VERSION="`) {
+		t.Error("install-gotestsum.sh does not pin a fixed VERSION on an executable line")
 	}
-	if strings.Contains(script, "@latest") || strings.Contains(script, "/latest/") {
+	if strings.Contains(active, "@latest") || strings.Contains(active, "/latest/") {
 		t.Error("install-gotestsum.sh uses a floating @latest reference (must be a pinned release)")
 	}
-	if !strings.Contains(script, "shasum -a 256 -c") {
+	if !strings.Contains(active, "shasum -a 256 -c") {
 		t.Error("install-gotestsum.sh does not sha256-verify the downloaded tarball before use")
 	}
 	// At least one concrete pinned checksum must be present (the linux_amd64 one
 	// the CI runners use); a bare `sha=""` would defeat the verification.
-	if !strings.Contains(script, "linux_amd64)") || !strings.Contains(script, "sha=\"") {
+	if !strings.Contains(active, "linux_amd64)") || !strings.Contains(active, "sha=\"") {
 		t.Error("install-gotestsum.sh is missing a concrete pinned checksum for the CI runner platform")
 	}
 }
