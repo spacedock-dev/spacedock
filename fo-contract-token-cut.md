@@ -1,7 +1,7 @@
 ---
-title: 'No-guidance-control micro-test harness for FO-contract prose cuts + restructures'
+title: Recover ~638 boot-resident FO-contract tokens (micro-test-verified cuts)
 status: backlog
-source: 'superpowers v6 prose-efficacy lessons + CL direction (2026-06-16). The token-cleanup proposal and the binary-simplification dehydration lever (Phase 0.A, wg) verify prose cuts by adversarial REASONING only — docs-confidence, never empirical; nobody has run an FO with vs without a clause and observed the difference. The 0205 prose-function restructure will rewrite the highest-residency boot-resident prose with no cheap verifier. This is the missing empirical layer. Shares the bare-claude launch + durable-state grade harness with w4 haiku-loop-spike.'
+source: The 2026-06-15 fo-contract-token-cleanup proposal classified ~638 boot-resident tokens (safe-cut/cut-with-care/keep) by adversarial reasoning but filed no task to APPLY them; wg/95b were prior sweeps, now archived/done. This task owns the actual recovery, gated by the no-guidance-control micro-test (superpowers v6) that converts the reasoned verdicts into empirical ones. CL direction 2026-06-16.
 score: 0.5
 sprint: 0205-layered-fo
 sprint-readiness: defer
@@ -9,24 +9,29 @@ issue:
 id: y2r7ew51xqs6q3avsb6mcaka
 ---
 
-The missing empirical layer over the FO-contract prose-reduction work.
+Apply the ~638-token cut list in `docs/dev/_proposals/fo-contract-token-cleanup-2026-06-15.md` to the shipped FO-contract files — each cut empirically confirmed (not just reasoned) by a no-guidance-control micro-test. The deliverable is the trimmed contract files; the micro-test is the method that makes the cut safe.
 
 ## Problem
 
-Cut decisions today rest on adversarial REASONING, not measurement. `fo-contract-token-cleanup-2026-06-15.md` classifies ~638 boot-resident tokens as safe-cut / cut-with-care / keep, each verified by "construct a break attempt and judge whether the FO would misbehave" — a strong prior, but docs-confidence, not measurement. The `binary-simplification-roadmap` dehydration lever (Phase 0.A, wg) has the same gap, and 0205's prose-function restructure rewrites the most re-read prose in the system with no cheap verifier.
+The proposal classifies ~638 boot-resident tokens across four files (shared-core, the Claude runtime adapter, using-claude-team, present-gate) as safe-cut / cut-with-care / keep — every verdict reached by ADVERSARIAL REASONING ("construct a break attempt; would the FO misbehave?"). That is a strong prior but docs-confidence, not measurement: nobody has run an FO with and without a clause and observed the difference. So the cuts sit unapplied, and the 13 conservative "keep" verdicts may be over-cautious. The boot-resident contract is re-carried every turn of every FO session (~13.4K tokens of permanent occupancy, measured this session), so the recovery compounds across the whole session.
 
-## Approach (thin prototype — prove the method, do NOT build a framework)
+## Proposed approach
 
-A no-guidance-control micro-test, reusing the proven internal/ensigncycle bare-`claude --model haiku` launch + durable-state grade that haiku-loop-spike (w4) proved (AC-1). For a candidate clause: sample the FO's behavior N>=5 on the smallest realistic exercise that exposes the clause's job, in two arms — WITH the clause and WITHOUT it (the control) — in the real surrounding contract; read behavior by hand (a string match is not a behavior); variance-as-signal. Decision rule, both directions: control already satisfies -> confirmed dead weight (delete, do not merely compress); absence changes behavior across N -> confirmed load-bearing (keep). Prove it discriminates on three candidates spanning the verdict space: SC-13 (a keep — "keep dispatching ready entities when one blocks"), SC-5 (cut-with-care — dispatch deferred-module to a pointer), SC-3 (safe-cut — event-loop status parenthetical). Then stop.
+Apply the cuts, gated by the empirical layer the proposal now specifies (its "Cut criteria — no-guidance control" section):
 
-## Why it matters
+1. **Validating-first-step (pay the small bill first).** Prove the no-guidance-control micro-test discriminates, on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`). Reuse the bare-`claude` launch + durable-state grade the haiku-loop-spike (w4) proved (AC-1). For a candidate clause: sample FO behavior N>=5 on the smallest realistic exercise that exposes the clause's job, in two arms — WITH the clause and WITHOUT it (the control) — in the real surrounding contract; read behavior by hand (a string match is not a behavior); variance-as-signal. ~$0.15-0.30/sample.
+2. **Apply across the full list.** Control already satisfies the behavior -> confirmed dead weight (delete, do not merely compress). Absence changes behavior across N -> confirmed load-bearing (keep the load-bearing fragment, cut only the inert remainder). RE-TEST the 13 keeps — the control can overturn a `keep` whose feared misbehavior does not actually occur.
+3. **Ship through the dispatched-worker path.** The contract files are shipped scaffolding (not FO-direct-editable), so the trimmed files land via a dispatched worker in a worktree, with the four live shared scenarios (gate-guardrail, rejection-flow, feedback-3-cycle-escalation, merge-hook-guardrail) green on Claude AND Codex as the behavior-preservation oracle, plus a `wc` size-delta and a detached adversarial audit of the diff (per the proposal's Closing note).
 
-Converts the proposal's strongest layer (reasoned classification) into its missing layer (empirical evidence); can promote a safe-cut OR overturn a keep. Same harness 0205's spike needs. Sits upstream of the expensive 4-live-scenario behavior-preservation oracle (~$0.15-0.30/sample vs ~$12/run).
+## Deliverable
+
+The trimmed FO-contract files committed, with: a measured token-delta (target ~638, actual reported), the four live scenarios green on both hosts, and a per-cut record of the micro-test verdict (applied / kept / keep-overturned). The no-guidance-control method, proven here as a byproduct, is reused later by 0205's prose-function restructure — but THIS task ships the cut, not a method.
 
 ## Out of scope
 
-- Applying the 638-token cuts (that is the token-cleanup proposal, post-method, through the dispatched-worker path).
-- A general eval framework (YAGNI until the cut batch justifies it).
-- The judgment-audit generalization (Haiku-vs-opus baseline over all routing-table judgment points) — that rides w4 / 0205, not this.
+- A general eval framework (the micro-test is a thin per-clause check, not a product — YAGNI until a future batch justifies one).
+- 0205's prose-function restructure (it reuses the method; different task).
+- The judgment-audit generalization over the full routing table (rides w4 / 0205).
+- Net-new cut hunting beyond the proposal's verified list (re-testing the 13 keeps IS in scope; finding fresh cuts is not).
 
-Source: superpowers v6 writing-skills "Micro-Test Wording Before Full Scenarios", positive-instruction-redesign-design, strict-cost-sdd-design.
+Source: the 2026-06-15 token-cleanup proposal + superpowers v6 (writing-skills "Micro-Test Wording Before Full Scenarios", positive-instruction-redesign-design, strict-cost-sdd-design).
