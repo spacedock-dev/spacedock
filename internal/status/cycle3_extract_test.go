@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -282,4 +283,329 @@ func TestReadFieldsProjection(t *testing.T) {
 			t.Fatalf("absent key nonesuch = %q, want empty string (matching entityJSONObj)", v)
 		}
 	})
+}
+
+// interleavedFixturePath returns the committed fixture with INTERLEAVED stage
+// reports — ideation, implementation, validation, then a LATER implementation
+// (cycle 2) so the positional-last section is NOT the gated validation stage.
+func interleavedFixturePath(t *testing.T) string {
+	t.Helper()
+	p, err := filepath.Abs(filepath.Join("testdata", "section-reader", "interleaved-fixture.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// interleavedLines returns the fixture's splitLines view, so an emitted 1-based
+// range slices these directly: lines[start-1:end].
+func interleavedLines(t *testing.T) []string {
+	t.Helper()
+	data, err := os.ReadFile(interleavedFixturePath(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return splitLines(string(data))
+}
+
+// checklistEnvelope is the --checklist --json shape: the selected stage, the
+// section's heading line, and each item's status/text/1-based range.
+type checklistEnvelope struct {
+	Command string `json:"command"`
+	Stage   string `json:"stage"`
+	Items   []struct {
+		Status string `json:"status"`
+		Text   string `json:"text"`
+		Start  string `json:"start"`
+		End    string `json:"end"`
+	} `json:"checklist"`
+}
+
+// TestChecklistSelectsGatedStage (AC-1) asserts --stage validation --checklist
+// selects the validation report (NOT the positional-last implementation cycle 2)
+// and emits exactly its DONE/SKIPPED/FAILED items with 1-based ranges that slice
+// the fixture to the item's known bullet+evidence text. The fixture's cat -n line
+// numbers are the external oracle.
+func TestChecklistSelectsGatedStage(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	lines := interleavedLines(t)
+	fixture := interleavedFixturePath(t)
+
+	out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "validation", "--checklist", "--json")
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr)
+	}
+	var doc checklistEnvelope
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if doc.Stage != "validation" {
+		t.Fatalf("stage = %q, want validation", doc.Stage)
+	}
+	// The validation section's known items (oracle: cat -n above).
+	type wantItem struct {
+		status     string
+		start, end int
+		// bullet+evidence text, recomputed from the fixture lines for byte equality.
+	}
+	want := []wantItem{
+		{"DONE", 37, 38},
+		{"SKIPPED", 39, 40},
+		{"FAILED", 41, 42},
+	}
+	if len(doc.Items) != len(want) {
+		t.Fatalf("item count = %d, want %d\n%s", len(doc.Items), len(want), out)
+	}
+	for i, w := range want {
+		got := doc.Items[i]
+		if got.Status != w.status {
+			t.Errorf("item[%d].status = %q, want %q", i, got.Status, w.status)
+		}
+		gs, ge := atoiT(t, got.Start), atoiT(t, got.End)
+		if gs != w.start || ge != w.end {
+			t.Fatalf("item[%d] range = [%d,%d], want [%d,%d]", i, gs, ge, w.start, w.end)
+		}
+		// Slice the fixture by the emitted range and assert it equals the section's
+		// known bytes (the bullet line through its trailing evidence line).
+		gotSlice := strings.Join(lines[gs-1:ge], "\n")
+		wantSlice := strings.Join(lines[w.start-1:w.end], "\n")
+		if gotSlice != wantSlice {
+			t.Fatalf("item[%d] slice mismatch\n--- got ---\n%s\n--- want ---\n%s", i, gotSlice, wantSlice)
+		}
+	}
+	// The positional-last section is implementation (cycle 2); a positional-last
+	// bug would emit its "rework after the gate" item. Assert it is absent.
+	for _, it := range doc.Items {
+		if strings.Contains(it.Text, "rework after the gate") {
+			t.Fatalf("validation checklist leaked the positional-last implementation cycle-2 item: %+v", it)
+		}
+	}
+}
+
+// TestChecklistSelectsLatestCycle (AC-1) asserts --stage implementation selects
+// the LATEST implementation cycle (cycle 2) across the interleaved sections, not
+// the earlier cycle-1 section.
+func TestChecklistSelectsLatestCycle(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	fixture := interleavedFixturePath(t)
+
+	out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "implementation", "--checklist", "--json")
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr)
+	}
+	var doc checklistEnvelope
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	// Cycle-2 items present; cycle-1's "write the first cut" absent.
+	var sawCycle2, sawCycle1 bool
+	for _, it := range doc.Items {
+		if strings.Contains(it.Text, "rework after the gate") {
+			sawCycle2 = true
+		}
+		if strings.Contains(it.Text, "write the first cut") {
+			sawCycle1 = true
+		}
+	}
+	if !sawCycle2 {
+		t.Fatalf("latest implementation cycle (cycle 2) item absent: %+v", doc.Items)
+	}
+	if sawCycle1 {
+		t.Fatalf("earlier implementation cycle-1 item leaked into the latest-cycle selection: %+v", doc.Items)
+	}
+}
+
+// acScanEnvelope is the --ac-scan --json shape: the stage and per-AC citation map.
+type acScanEnvelope struct {
+	Command string `json:"command"`
+	Stage   string `json:"stage"`
+	ACs     []struct {
+		ID          string `json:"id"`
+		Line        string `json:"line"`
+		Unevidenced string `json:"unevidenced"` // all-strings contract: "true"/"false"
+		Citations   []struct {
+			Line string `json:"line"`
+			Text string `json:"text"`
+		} `json:"citations"`
+	} `json:"acs"`
+}
+
+// TestACScanScopedToChecklist (AC-2) asserts --ac-scan cites AC evidence from the
+// gated stage's checklist line ranges ONLY: AC-1 (cited at the validation DONE
+// evidence line 38) is unevidenced=false; AC-2 (mentioned only at the Summary
+// line 46, outside any checklist item) is unevidenced=true with no citations.
+// No satisfied / no natural_place key is emitted.
+func TestACScanScopedToChecklist(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	fixture := interleavedFixturePath(t)
+
+	out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "validation", "--ac-scan", "--json")
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr)
+	}
+	var doc acScanEnvelope
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	if len(doc.ACs) != 2 {
+		t.Fatalf("AC count = %d, want 2\n%s", len(doc.ACs), out)
+	}
+	byID := map[string]int{}
+	for i, ac := range doc.ACs {
+		byID[ac.ID] = i
+	}
+	ac1i, ok1 := byID["AC-1"]
+	ac2i, ok2 := byID["AC-2"]
+	if !ok1 || !ok2 {
+		t.Fatalf("expected AC-1 and AC-2 ids, got %v", byID)
+	}
+	ac1 := doc.ACs[ac1i]
+	if ac1.Unevidenced != "false" {
+		t.Errorf("AC-1 unevidenced = %q, want \"false\" (cited in the validation DONE evidence)", ac1.Unevidenced)
+	}
+	if len(ac1.Citations) == 0 {
+		t.Fatalf("AC-1 has no citations, want one at line 38")
+	}
+	if atoiT(t, ac1.Citations[0].Line) != 38 {
+		t.Errorf("AC-1 citation line = %s, want 38 (the DONE evidence line)", ac1.Citations[0].Line)
+	}
+	ac2 := doc.ACs[ac2i]
+	if ac2.Unevidenced != "true" {
+		t.Errorf("AC-2 unevidenced = %q, want \"true\" (mentioned only in the Summary prose, outside checklist ranges)", ac2.Unevidenced)
+	}
+	if len(ac2.Citations) != 0 {
+		t.Errorf("AC-2 has %d citations, want 0 (the Summary mention is NOT a checklist citation)", len(ac2.Citations))
+	}
+	// No satisfied / no natural_place key anywhere in the emitted JSON.
+	if strings.Contains(out, "satisfied") {
+		t.Errorf("emitted JSON contains a 'satisfied' key (the verdict is L3's, not extracted): %s", out)
+	}
+	if strings.Contains(out, "natural_place") {
+		t.Errorf("emitted JSON contains a 'natural_place' key (cut, routes to L3): %s", out)
+	}
+}
+
+// TestACScanScopeIsLoadBearing (AC-2 mutation test) proves the citation-scope
+// boundary is non-tautological: widening the scan to the WHOLE stage report
+// (counting the Summary prose at line 46) would flip AC-2 to evidenced. The
+// production --ac-scan must NOT do this, so AC-2 stays unevidenced. We assert the
+// boundary directly: AC-2's only on-disk mention (line 46) lies OUTSIDE every
+// emitted validation checklist range, so a correctly-scoped scan cannot cite it.
+func TestACScanScopeIsLoadBearing(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	lines := interleavedLines(t)
+	fixture := interleavedFixturePath(t)
+
+	// The checklist ranges the gated stage owns.
+	clOut, _, clCode := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "validation", "--checklist", "--json")
+	if clCode != 0 {
+		t.Fatalf("checklist exit=%d", clCode)
+	}
+	var cl checklistEnvelope
+	json.Unmarshal([]byte(clOut), &cl)
+
+	// Find AC-2's sole on-disk mention line (the Summary at 46) and prove it is
+	// outside every checklist range — so the scope boundary is what keeps AC-2
+	// unevidenced (a whole-report scan would include line 46 and flip it).
+	ac2Line := 0
+	for i, l := range lines {
+		if strings.Contains(l, "AC-2 is not yet evidenced") {
+			ac2Line = i + 1
+		}
+	}
+	if ac2Line == 0 {
+		t.Fatal("fixture invariant broken: AC-2's Summary mention not found")
+	}
+	inRange := false
+	for _, it := range cl.Items {
+		s, e := atoiT(t, it.Start), atoiT(t, it.End)
+		if ac2Line >= s && ac2Line <= e {
+			inRange = true
+		}
+	}
+	if inRange {
+		t.Fatalf("AC-2's Summary mention (line %d) is INSIDE a checklist range — the scope boundary would not be load-bearing", ac2Line)
+	}
+
+	// And the production scan, correctly scoped, reports AC-2 unevidenced.
+	out, _, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "validation", "--ac-scan", "--json")
+	if code != 0 {
+		t.Fatalf("ac-scan exit=%d", code)
+	}
+	var doc acScanEnvelope
+	json.Unmarshal([]byte(out), &doc)
+	for _, ac := range doc.ACs {
+		if ac.ID == "AC-2" && ac.Unevidenced != "true" {
+			t.Fatalf("AC-2 evidenced — the scan counted an out-of-checklist mention (scope not enforced)")
+		}
+	}
+}
+
+// TestGateModeLoudFailures (AC-5) asserts the gate modes fail loudly with a
+// non-zero exit and a named diagnostic, never a partial/silent emit: missing
+// --stage, a --stage matching no report (no silent positional-last fallback),
+// and --ac-scan over a file with no ## Acceptance criteria section.
+func TestGateModeLoudFailures(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	fixture := interleavedFixturePath(t)
+	plain := fixturePath(t) // section-reader/fixture.md has no ## Acceptance criteria
+
+	cases := []struct {
+		name     string
+		args     []string
+		wantWord string
+	}{
+		{"checklist without --stage", []string{"--read", fixture, "--checklist", "--json"}, "--stage"},
+		{"ac-scan without --stage", []string{"--read", fixture, "--ac-scan", "--json"}, "--stage"},
+		{"stage matches no report", []string{"--read", fixture, "--stage", "done", "--checklist", "--json"}, "done"},
+		{"ac-scan no acceptance criteria", []string{"--read", plain, "--stage", "ideation", "--ac-scan", "--json"}, "acceptance criteria"},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			args := append([]string{"--workflow-dir", root}, tc.args...)
+			out, stderr, code := runNative(t, root, env, args...)
+			if code == 0 {
+				t.Fatalf("exit=0 (want non-zero) — silent/partial emit\nstdout=%q", out)
+			}
+			if !strings.Contains(strings.ToLower(stderr), strings.ToLower(tc.wantWord)) {
+				t.Fatalf("stderr = %q, want a diagnostic naming %q", stderr, tc.wantWord)
+			}
+			// A loud failure emits nothing on stdout (no partial JSON).
+			if strings.TrimSpace(out) != "" {
+				t.Fatalf("stdout = %q, want empty on a loud failure", out)
+			}
+		})
+	}
+}
+
+// atoiT parses a string field to int, failing the test on a non-int (the
+// all-strings contract means every numeric leaf is a string).
+func atoiT(t *testing.T, s string) int {
+	t.Helper()
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		t.Fatalf("non-int string %q: %v", s, err)
+	}
+	return n
 }
