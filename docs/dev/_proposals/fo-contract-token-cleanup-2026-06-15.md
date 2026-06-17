@@ -143,7 +143,7 @@ Every verdict above was reached by *adversarial reasoning*: an analyst construct
 
 **Why the residency weighting is right.** The load-frequency weighting in this proposal is empirically backed: superpowers measured a long session re-reading a resident skill ~500× (`positive-instruction-redesign-design`, 2026-06-10), so a boot-resident cut compounds across the whole session while a lazy-loaded cut is paid once. Honest ceiling: ~46% of a run is prompt-immune thinking/narration (`strict-cost-sdd-design`) — prose changes govern only the instruction-resident remainder, so expect "delete dead weight + collapse prohibitions," not a flat percentage.
 
-The harness that runs this control is prototyped under the `contract-prose-microtest` task (`y2r7ew51xqs6q3avsb6mcaka`); it reuses the bare-`claude` launch + durable-state grade the `haiku-loop-spike` proved. The prototype validates the method on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`) — before this proposal's cuts are applied through the dispatched-worker path.
+This proposal's cuts are applied by the `fo-contract-token-cut` task (`y2r7ew51xqs6q3avsb6mcaka`): it first validates the no-guidance control on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`), reusing the bare-`claude` launch + durable-state grade the `haiku-loop-spike` proved — then applies the full list (re-testing the 13 `keep`s, since the control can overturn one) and ships the trimmed files through the dispatched-worker path. The deliverable is the trimmed contract files; the control is the method.
 
 ## Closing note
 
