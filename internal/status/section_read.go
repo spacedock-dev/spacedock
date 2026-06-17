@@ -174,6 +174,15 @@ func formatReadText(path string, sr sectionRead) string {
 	for _, h := range sr.headings {
 		fmt.Fprintf(&b, "level=%d offset=%d lines=%d text=%s\n", h.level, h.offset, h.lines, h.text)
 	}
+	for _, s := range parseStagesBlock(path) {
+		fmt.Fprintf(&b, "stage=%s worktree=%t gate=%t terminal=%t initial=%t", s.Name, s.Worktree, s.gate, s.terminal, s.initial)
+		for _, of := range []string{"feedback-to", "agent", "fresh", "model"} {
+			if v, ok := s.optional[of]; ok {
+				fmt.Fprintf(&b, " %s=%s", of, v)
+			}
+		}
+		b.WriteByte('\n')
+	}
 	return b.String()
 }
 
