@@ -6,7 +6,7 @@ started: 2026-06-16T02:21:21Z
 completed:
 verdict:
 score: 0.6
-worktree:
+worktree: .worktrees/spacedock-ensign-haiku-loop-spike
 issue:
 sprint: 0205-layered-fo
 sprint-readiness: ready
