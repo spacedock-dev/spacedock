@@ -12,6 +12,7 @@ sprint: 0205-layered-fo
 sprint-readiness: ready
 id: w4ryf4mg4vn1emwp906vd8yp
 mod-block: merge:pr-merge
+pr: "#393"
 ---
 
 The 0205 gating exercise. A live Haiku FO drives one real entity through a hand-simulated simplified loop — the FO follows the dispatch->gate->merge prose-functions by hand (guillemets), with a standing level-3 teammate (stronger model) handling every judgment call. Run BEFORE any binary verb is built. The result sets the must-build verb list and the delegation routing table's real boundary, so the rest of 0205 builds against evidence, not a guess.
