@@ -122,7 +122,10 @@ predicted failure mode:
   reliably stays a prose-function. The list is recorded as `{step → breaks|holds → becomes-verb}`.
 - **irreducible-judgment boundary** — what Haiku could NOT do even with the loop spelled out, that the
   level-3 teammate had to decide. This is the delegation routing table's real boundary, recorded as the
-  category list (gate verdict, chosen direction, scope, …) actually observed to route.
+  category list (gate verdict, chosen direction, scope, …) actually observed to route. The boundary is
+  read off the AC-3 judgment audit: each observed judgment event is diffed against the level-3 baseline,
+  and a category enters the boundary when Haiku had to route it — while any event Haiku *absorbed* that
+  the baseline would have escalated is recorded as a failing absorbed-judgment finding, not a clean hold.
 
 ### The 5 predicted failure modes — reachability triage (decided in ideation)
 
@@ -205,14 +208,27 @@ a protocol-shaped stage report) + a stream check that the prescribed binary call
 slice runs and passes AFTER AC-1's bare-launch smoke and BEFORE the full drive
 (validating-new-mechanisms ordering).
 
-**AC-3 — The fixture entity reaches its terminal stage through a Haiku-driven hand-loop, with the gate
-verdict on the record made by the level-3 model, not by Haiku.**
+**AC-3 — The fixture entity reaches its terminal stage through a Haiku-driven hand-loop, and EVERY
+judgment event the drive observes is audited against the level-3 baseline — the gate verdict, and each
+other adjudication the stream surfaces, traces to the level-3 model, not to a Haiku self-decision.**
 The durable end-state of the throwaway fixture workflow shows the driven entity archived/terminal with a
 recorded verdict, the appended stage report(s), and a gate-verdict provenance that traces to the
-level-3 `Agent(model=opus,…)` judgment call — not to a Haiku self-decision.
+level-3 `Agent(model=opus,…)` judgment call — not to a Haiku self-decision. The gate verdict is the
+highest-value judgment point, but it is not the only one the loop surfaces: the audit covers each judgment
+category the drive actually OBSERVES the FO handle (gate verdict, chosen-direction inference, scope/ambiguity
+calls, completion-vs-idle adjudication, escalate-or-recover). For each observed event the audit records
+whether Haiku routed it to level-3 or resolved it itself, scored against how the level-3 model handled the
+same class — borrowing the `superpowers` v6 judgment-audit method (enumerate the judgment points; diff the
+weak handler against a strong baseline over the same class; ANY silently-absorbed judgment call fails the
+audit regardless of the e2e pass/fail verdict — "the cheap model usually gets it right" is not acceptance
+evidence). This is the spike's bounded link to the judgment-audit-LANE idea: it produces a one-drive,
+single-writer-`-p`-observable diff, NOT a standing audit lane — that lane rides 0205 / the final
+`haiku-drive-validation`. The audit is bounded to what one bare `-p` drive can observe; events the drive
+never reaches (see the failure-mode reachability triage) are NOT-EXERCISABLE, not silent passes.
 Verified by: a durable-state oracle over the fixture after the drive (entity terminal + archived +
-verdict set), CROSS-CHECKED against the captured tool-call stream showing the verdict originated from
-the level-3 sub-call. Grading reads on-disk state + stream, never the FO's transcript prose. (Mirrors
+verdict set), CROSS-CHECKED against the captured tool-call stream showing each observed judgment event's
+verdict originated from the level-3 sub-call (or, where Haiku resolved it alone, recorded as an
+absorbed-judgment finding). Grading reads on-disk state + stream, never the FO's transcript prose. (Mirrors
 the `internal/ensigncycle` durable-state-plus-stream grade.) The provenance oracle is mechanism-SPECIFIC
 to this drive's residency (see the Level-3 wiring decision) — it does not stand in for the standing-mod
 shape a sibling member builds.
@@ -235,13 +251,37 @@ The entity body holds (a) the `{loop-step → breaks-every-time|holds-reliably �
 (b) the observed `{judgment-category → routed-to-level-3}` boundary list, each derived from the drive
 evidence under this rule: each drive is repeated N≥3 times; a loop step that breaks on ANY of the N≥3
 drives is classified must-build (a stochastic model that breaks sometimes breaks unsafely), and a step is
-"holds reliably" ONLY if clean across all N. The recorded list is PROVISIONAL — it sequences the carve of
+"holds reliably" ONLY if clean across all N.
+
+The any-break rule above is the drive's OWN measurement and is preserved unchanged. It is sharpened — not
+replaced — by one EXTERNAL PRIOR, labelled as such so it informs the classification without being counted
+as one of this drive's N observations: **a loop step that CARRIES a judgment trigger (a step whose body
+tells the FO to escalate, halt, or route a verdict rather than decide it) is presumed must-build even if
+Haiku appears to hold it mechanically across the N drives, because the trigger erodes through a weak
+model's paraphrase, not only the step's mechanics.** The prior comes from the `superpowers` v6.0.0
+strict-cost-SDD campaign (`docs/superpowers/specs/2026-06-10-strict-cost-sdd-design.md`, verified against
+source on 2026-06-16), which ran essentially this experiment one tier down and found: (i) forced-cheap
+task reviewers caught 0/10 planted defects at correct severity vs an opus baseline of 5/5, failing by
+ADVOCATING for the defect ("DRY praised as YAGNI") — "mechanical cheapness does not make the decisions
+mechanical"; and (ii) a structural escalation trigger ("a plan-mandated defect IS a finding the human
+adjudicates") held on the strong stack (a frozen-input micro went 0/6→6/6; opus controllers 2/2 caught
+their reviewer's miss) but transmitted through a cheap controller only 2/5 of dispatches and NEVER fired
+live even when transmitted (read-once dilution). So a trigger-carrying step can pass the e2e gate while
+the trigger it was supposed to carry has silently dissolved. The prior tightens the classification: such a
+step is presumed must-build (the trigger belongs in a REQUIRED emitted verb field, not in FO prose the
+weak model re-says), pending the drive's own N≥3 data — which can only CONFIRM must-build, never downgrade
+a trigger-carrying step to "holds reliably" on mechanical cleanliness alone. The prior never substitutes
+for the drive's measurement; it raises the bar a "holds" verdict must clear for the trigger-carrying
+subset.
+
+The recorded list is PROVISIONAL — it sequences the carve of
 the held sibling members (`gate-extract-verbs`, `fo-tier-delegation`), then is reconfirmed by the final
 `haiku-drive-validation` on the real `spacedock claude` shape (which loads the actual restructured
 contract, not this hand-loop). It is not the final typed input; it is the input that lets the siblings
 start against evidence.
 Verified by: the two recorded tables, each row citing the N≥3 drive observations that produced it and
-labelled provisional-pending-final-drive; downstream members consume them as a sequencing input.
+labelled provisional-pending-final-drive; trigger-carrying rows additionally cite the external prior as
+the reason a "holds" verdict is withheld; downstream members consume them as a sequencing input.
 
 ## Test plan
 
@@ -307,3 +347,14 @@ Designed the 0205 gating spike. The breadth-first map produced three load-bearin
 ### Summary
 
 Folded the three staff-review corrections into the body, ACs, and test plan together. The load-bearing one was fold 1: I had overclaimed the bare-`claude` launch as "already proven" — I re-verified by grep that every internal live test goes through the `spacedock claude` front door (which forces `--agent`), so bare `claude` with the contract unloaded is genuinely new and now gets a sub-minute AC-1 smoke ahead of everything. ACs renumbered to AC-1..AC-5 (smoke → slice → full-drive → failure-modes → provisional-list); cross-references (the residency provenance note, the ordering chain, the spike-first determination) updated to match. Folds 2 and 3 sharpen the must-build rule (N≥3, conservative, provisional pending the final real-shape drive) and the residency framing (boundary is residency-agnostic; the provenance oracle and failure-mode-1 HALT proof do not transfer cross-member), which aligns with the captain's 2026-06-16 re-sequencing that holds the two sibling verbs pending this spike's findings.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Fold in the superpowers v6 strict-cost-SDD evidence into AC-5's must-build decision rule as an EXTERNAL PRIOR (explicitly labeled external, NOT a measurement result, so it does not bias the drive's own data): a loop step carrying a judgment trigger is presumed must-build because the trigger erodes through a weak model's paraphrase — sharpen "any-break → must-build" with this prior, and keep the N≥3 rule and the provisional-pending-final-drive framing intact.
+  AC-5 now carries a labelled EXTERNAL PRIOR paragraph: the any-break rule is "preserved unchanged" and "sharpened — not replaced"; a trigger-carrying step (escalate/halt/route-a-verdict) is presumed must-build even if Haiku appears to hold it mechanically across N, because the trigger erodes through paraphrase. Prior cites the v6 spec path + the two verified findings (0/10 vs 5/5 reviewer advocacy; the escalation trigger transmitting 2/5 and never firing live), and states the prior "can only CONFIRM must-build, never downgrade … on mechanical cleanliness alone." N≥3 and provisional-pending-`haiku-drive-validation` framing untouched.
+- DONE: Generalize AC-3 from the single-judgment-point provenance oracle (gate verdict → opus sub-call) toward a routing-table judgment audit (a Haiku-vs-opus baseline diff over every judgment category the drive OBSERVES), recorded as the spike's link to the judgment-audit-lane idea, bounded to what a single-writer -p drive can observe — NOT a scope expansion into building the lane.
+  AC-3 heading + body widened from the single gate-verdict oracle to "EVERY judgment event the drive observes is audited against the level-3 baseline" (gate verdict, chosen-direction, scope/ambiguity, completion-vs-idle, escalate-or-recover), borrowing the v6 judgment-audit method (any silently-absorbed call fails regardless of e2e verdict). Explicitly "the spike's bounded link to the judgment-audit-LANE idea … NOT a standing audit lane — that lane rides 0205 / haiku-drive-validation," bounded to one bare `-p` drive; unreached events stay NOT-EXERCISABLE. Measurement section's irreducible-judgment bullet now reads the boundary off the AC-3 audit (absorbed-judgment = failing finding, not a clean hold).
+
+### Summary
+
+Cycle-3 pass: folded the post-cycle-2 `superpowers` v6.0.0 strict-cost-SDD evidence into AC-3 and AC-5 as a sharpening prior, NOT a redesign — cycles 1+2, the AC-1..AC-5 structure, N≥3, the conservative any-break rule, and the residency-agnostic boundary framing are all preserved. First verified the three claims against source (`git show v6.0.0:docs/superpowers/specs/2026-06-10-strict-cost-sdd-design.md`) rather than trusting the dispatch paraphrase: the 0/10-vs-5/5 reviewer-advocacy finding is L3 (forced-haiku reviewers), the escalation-trigger erosion is L2b (a 0/6→6/6 frozen-input micro and opus 2/2 live, but cheap-controller 2/5 transmission and zero live firing via read-once dilution), and the judgment-audit method is the L2 gate (interrogate each judgment event vs the strong baseline; any silently-absorbed call fails). One fidelity correction I carried: the cheap *controller* tier in the source is sonnet, the cheap *reviewer* tier is haiku — I phrased the prior as "a weak model's paraphrase" rather than over-claiming "haiku" for the L2b transmission result, and did not present the 0/6→6/6 micro as a live-controller number. AC-5's prior is explicitly bounded to only confirm/never-downgrade so it cannot stand in for the drive's own N≥3 data; AC-3's generalization is explicitly the single-`-p`-drive-observable diff and explicitly NOT a commitment to build a standing audit lane (that rides 0205 / the final drive). Did not re-open the residency or bare-Agent-vs-standing-mod decisions, did not touch prior-cycle reports. Optionally noted for the gate (not absorbed as scope): the cheap no-guidance-control micro-test that `fo-contract-token-cut` (0205) proves as a byproduct shares this spike's proven substrate and could front-run the N≥3 full drives to pre-screen which loop steps warrant a full drive — recorded as an option, not a dependency.
