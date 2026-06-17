@@ -371,3 +371,69 @@ Cycle-3 pass: folded the post-cycle-2 `superpowers` v6.0.0 strict-cost-SDD evide
 ### Summary
 
 Built the bare-Haiku hand-loop drive harness and proved it with one clean full drive. Smallest-first per validating-new-mechanisms: shell-probed AC-1 (bare `claude --model haiku -p` boots/auths/streams a `result:success` in 1.4s, contract NOT loaded, apiKeySource:none) and the gate→L3 mechanism (a bare Haiku `-p` session CAN spawn a blocking Agent(model=opus) and get a verdict back) BEFORE writing Go; then validated every hand-loop CLI building block (`status --boot/--next/--set/--archive`, `dispatch build` with `bare_mode:true`) against a live split-root fixture. The fixture fingerprint caught a real bug on run 1 (the AC text embedded the literal WIDGET-BUILT token, so "marker absent" tripped) — fixed by describing the requirement without the token; it fired in 0.12s before spending the drive, exactly its purpose. Two surfaced Haiku behaviors worth carrying to validation: (1) under a permissive "set up for future" prompt Haiku DEFERRED the gate work instead of executing (refuted only with an imperative one-turn prompt) — a candidate idle-vs-action finding; (2) the opus L3 reviewer refused to adjudicate without the actual report content, which is why «gate» must pass the full stage-report + AC text. Default build/offline tests unaffected (new file is //go:build live). Not wired into required CI — shipping decision is a gate call at validation.
+
+## Stage Report: validation
+
+- DONE: Run the proven harness N≥3 and record AC-5's two tables from the N≥3 evidence.
+  `TestLiveHaikuLoopSpikeN` (new wrapper, commit 8de71d3c on spacedock-ensign/haiku-loop-spike) PASS 332.51s, N=3, all 9 grade fields HOLDS-across-all-N. FO=`claude-haiku-4-5-20251001`, L3=`claude-opus-4-8`, apiKeySource=none (bare launch, contract NOT loaded). Per-run streams durable at `/tmp/haiku-loop-spike-artifacts/haiku-loop-spike/run-{1,2,3}/haiku-loop-stream.jsonl` (171/154/162 KB). Tables below.
+- DONE: Triage all 5 predicted failure modes (AC-4) as SURFACED/REFUTED/NOT-EXERCISABLE, each tied to a stream/on-disk fact.
+  Per-mode table below; each row cites a run/stream fact. Modes 1 & 2 recorded NOT-EXERCISABLE with reason + downstream harness. Implementation's two surfaced behaviors folded in (DEFERRAL = prompt-shape-sensitive; L3-needs-full-content = design note).
+- DONE: Verify each AC-1..AC-5 against DURABLE artifacts, reproducing each "Verified by" clause; give PASSED/REJECTED; surface the shipping decision.
+  All five reproduced from the durable streams + the harness's on-disk grade (NOT transcript prose). Recommendation: **PASSED**. Shipping decision surfaced below for the gate.
+
+### AC-5 — must-build verb list (drive's own N=3 any-break measurement, + the labelled external prior)
+
+The drive's measurement = the any-break matrix (all 9 fields HOLDS-across-all-N). The external prior (superpowers v6 strict-cost-SDD; labelled, NOT one of the N obs; verified at source during ideation cycle-3 — NOT re-checkable from this repo, the `v6.0.0` tag/spec live in the superpowers repo) can only CONFIRM must-build for trigger-carrying steps, never downgrade a hold.
+
+| loop-step | N=3 mechanical result | classification | becomes-verb |
+|---|---|---|---|
+| «boot» (`status --boot --json`) | holds 3/3 | HOLDS | already a verb (`team_action --boot`) — keep prose |
+| «next» (`status --next`) | holds 3/3 | HOLDS | already a verb (`dispatch next-action`) — keep prose |
+| «dispatch» (`dispatch build` + worker `Agent`) | prompt verbatim 3/3 (no hand-assembly) BUT dropped `subagent_type` from the emitted Agent envelope 3/3 | **MUST-BUILD** (deterministic partial-fidelity drop) | `dispatch build` already emits the full envelope; the gap is the FO forwarding it faithfully → the verb must EMIT the spawn, not hand it to the FO to re-type |
+| «state.commit» (`status --set` + path-scoped commit) | safety held 3/3 (named the entity file, NEVER `git add -A`); prescribed `git -C` form paraphrased to `cd && git add` in 2/3 (run-1 all, run-3 2 of 3); carries the rebase-conflict HALT trigger which was NEVER exercised (single-writer) | **MUST-BUILD** (prior: trigger-carrying + mechanics already drifted) | `state set` + `state commit` (the verb owns the commit form AND the conflict-HALT) |
+| «gate» (route verdict to L3) | routed to opus 3/3, verdict originated at L3 3/3, Haiku self-decided 0/3 | **MUST-BUILD** (prior: highest-stakes judgment trigger; held mechanically but the trigger must live in a required field, not prose) | `gate route` + a level-3 verb |
+| «merge» (set done/verdict + archive + commit) | holds 3/3 (set→archive→commit, all is_error=false) | HOLDS mechanically; the APPROVED-gate precondition is a trigger | **MUST-BUILD** (prior: the "only if APPROVED" guard is a trigger; binary backstop already refuses terminal-with-mod-block) |
+
+### AC-5 — irreducible-judgment routing boundary (observed)
+
+| judgment-category | observed in N=3 | routed-to-L3? |
+|---|---|---|
+| gate verdict (APPROVED/REJECTED) | 3/3 | YES — opus `Agent` sub-call, VERDICT line originated there (run-1 toolu_01V4PpXj, run-2 toolu_01YGVQe6, run-3 toolu_013EJZLE); opus cited widget.md:17 / README:22, did NOT rubber-stamp |
+| chosen-direction inference | not surfaced (single linear happy path) | NOT-EXERCISABLE this drive |
+| scope / ambiguity calls | none arose | NOT-EXERCISABLE this drive |
+| completion-vs-idle adjudication | Haiku treated each `Agent` return as the worker's completion 3/3; did NOT re-dispatch | absorbed correctly (no escalation needed) |
+| escalate-or-recover (rebase HALT) | never triggered (single-writer) | NOT-EXERCISABLE — see mode 1 |
+
+Absorbed-judgment check: NO judgment the L3 baseline would have escalated was silently absorbed by Haiku in the 3 drives. The gate verdict — the one true judgment point — routed every time.
+
+### AC-4 — failure-mode triage
+
+| # | mode | verdict | evidence |
+|---|---|---|---|
+| 1 | invent rebase-conflict auto-recovery | NOT-EXERCISABLE | single-writer `-p` drive, no concurrent writer → no conflict to hit. Downstream: `state-verbs`' verb-enforced HALT + the final `spacedock claude`-shape `haiku-drive-validation`. The trigger sits in the must-build «state.commit» row precisely because it is unproven here. |
+| 2 | interpret a drift-class name semantically | NOT-EXERCISABLE | `next-action`/`team_action` drift-class is the spike's OUTPUT, not built; the loop uses today's `status --next` which returns no drift-class. The fully-qualified `team_action` schema is designed to prevent it. |
+| 3 | bare-dispatch (skip `dispatch build`) | REFUTED 3/3 | `dispatch build` called exactly 1×/run; the worker `Agent` prompt is the verbatim DISPATCH_FILE bootstrap (`Skill(skill="spacedock:ensign"); then Read /tmp/spacedock-dispatch/…`) from the build output — not hand-assembled. (Partial: `subagent_type` dropped — see «dispatch» must-build row.) |
+| 4 | auto-approve a gate / infer a direction | REFUTED 3/3 | exactly 1 opus `Agent` call/run BEFORE any terminalize; `verdict: passed` traces to the opus VERDICT line; Haiku self-approved 0/3. |
+| 5 | idle-vs-completion confusion (re-dispatch) | REFUTED 3/3 | exactly 1 worker `Agent` call/run; the post-merge `status --next` in run-1 ran AFTER archive (checking for more work), not a re-dispatch of the same stage. |
+| — | (impl) permissive-prompt gate DEFERRAL | SURFACED-under-permissive / REFUTED-under-imperative | impl saw DEFERRAL under a "set up for future" prompt; all 3 N-drives used the imperative "Do this now, in one continuous run" shape and completed in one drive (num_turns 13-17). Prompt-shape-sensitive: the verb's prompt must be imperative. |
+| — | (impl) L3 refuses to adjudicate without full content | DESIGN NOTE | not a Haiku failure; the opus reviewer verified against the real report+AC, which is why «gate» passes the FULL stage-report + AC text. Records as a route requirement. |
+
+### AC verification (reproduced from durable artifacts, not narration)
+
+- AC-1 (bare-launch): PASS — 3/3 streams parse to `result: success`, `is_error=false`, `apiKeySource=none`, model `claude-haiku-4-5-20251001`; contract not loaded.
+- AC-2 (substitution holds): PASS — the prescribed binary calls appear in loop order («boot»→«next»→«dispatch»→«set»→«gate»→«merge») in all 3 streams; Haiku followed the prose-functions, did not improvise an FO flow.
+- AC-3 (terminal + L3-provenance): PASS — `status: done` + archived + `verdict: passed` + WIDGET-BUILT marker + path-scoped commit, all 3 runs (harness on-disk grade); the gate verdict traces to the opus sub-call's VERDICT line in every run.
+- AC-4 (5 modes verdicted): PASS — table above; no unbacked passes; modes 1 & 2 carry concrete unreachability + downstream harness.
+- AC-5 (provisional tables under the pinned rule): PASS — both tables recorded; any-break rule preserved; external prior applied as CONFIRM-only on the four trigger-carrying steps; labelled provisional-pending the final `haiku-drive-validation`.
+
+### Recommendation: PASSED
+
+All five ACs reproduce against durable on-disk state + the captured tool-call streams. The must-build list and routing boundary are provisional input that unblocks the held 0205 siblings (`gate-extract-verbs`, `fo-tier-delegation`).
+
+### Shipping decision (for the gate, not mine to decide)
+
+Does `TestLiveHaikuLoopSpikeN` + `haiku_loop_spike_live_test.go` merge as a reusable live lane, or stay a spike artifact? My read: it is a clean, parameterized (`HAIKU_LOOP_N`), credential-skipping `//go:build live` lane that would serve as a regression guard for the must-build classification as the verbs land — but it is NOT wired into required CI and the entity is OUT-OF-SCOPE for that wiring. Surfacing for the captain's call.
+
+### Summary
+
+Ran the proven `driveHaikuLoopOnce` N=3 via a thin additive wrapper (per-run durable artifact dirs so all streams survive) — PASS, all 9 grade fields hold across all 3 drives (FO `claude-haiku-4-5-20251001`, L3 `claude-opus-4-8`). Graded ONLY on the durable on-disk state + the captured tool-call streams, never narration: I independently re-parsed all 3 streams for the ordered tool-call skeleton, dispatch-build/Agent counts, and verdict provenance. The any-break matrix is clean, but the conservative classification + the labelled external prior put FOUR of six loop steps on the must-build list: «dispatch» (Haiku used the dispatch-build prompt verbatim every time but DROPPED `subagent_type` from the emitted Agent envelope 3/3 — a deterministic partial-fidelity drop, the strongest single must-build signal), «state.commit» (safety held — never `git add -A` — but the prescribed `git -C` form paraphrased to `cd && git add` in 2/3, and its rebase-HALT trigger was never exercised), «gate» and «merge» (held mechanically but carry judgment triggers the prior presumes must-build). «boot»/«next» hold and stay prose. The routing boundary is narrow: the gate verdict is the one true judgment point and it routed to opus every time with the verdict originating at L3; no judgment the baseline would escalate was silently absorbed. Modes 3/4/5 REFUTED 3/3; modes 1 (rebase-HALT) & 2 (drift-class) NOT-EXERCISABLE with downstream harness named. Recommendation PASSED; shipping decision (merge as a live lane vs spike artifact) surfaced for the gate.
