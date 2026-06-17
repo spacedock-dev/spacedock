@@ -18,60 +18,25 @@ var commissionTemplates = []string{
 	"skills/commission/references/templates/refinement.md",
 }
 
-// doctrineMarker pins one canonical contract phrasing to its sole owning file.
-// The marker set binds two independent, divergeable sources — the contract's own
-// wording and whatever a template carries — so the check reds precisely when a
-// template re-restates the doctrine, not merely because we wrote the words.
-type doctrineMarker struct {
-	phrase string
-	owner  string
-}
-
-var doctrineMarkers = []doctrineMarker{
-	{"Prefer a code gate over a prose-only rule", "skills/first-officer/references/first-officer-shared-core.md"},
-	{"wording-present is not behavior", "skills/first-officer/references/first-officer-shared-core.md"},
-	{"Prove by exercising, not by re-reading", "skills/ensign/references/ensign-shared-core.md"},
-	{"A substring search is not proof of behavior", "skills/ensign/references/ensign-shared-core.md"},
-}
-
-// TestUniversalDoctrineHasSingleSource is the AC-2 single-source / dedup check: each
-// universal-doctrine marker the templates used to paraphrase appears in exactly ONE
-// file under skills/+agents/ — its owning contract — and a second copy (a template
-// re-restating it) reds the test. This is not a presence tautology: it binds the
-// contract's content against every other shipped file, so it fails when the doctrine
-// drifts back into a template, the drift regression the restructure prevents.
-func TestUniversalDoctrineHasSingleSource(t *testing.T) {
-	root := repoRoot(t)
-	for _, marker := range doctrineMarkers {
-		var sources []string
-		for _, tree := range []string{"skills", "agents"} {
-			base := filepath.Join(root, tree)
-			err := filepath.WalkDir(base, func(p string, d os.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-				if d.IsDir() || filepath.Ext(p) != ".md" {
-					return nil
-				}
-				b, readErr := os.ReadFile(p)
-				if readErr != nil {
-					return readErr
-				}
-				if strings.Contains(string(b), marker.phrase) {
-					rel, _ := filepath.Rel(root, p)
-					sources = append(sources, rel)
-				}
-				return nil
-			})
-			if err != nil {
-				t.Fatalf("walk %s: %v", tree, err)
-			}
-		}
-		if len(sources) != 1 || sources[0] != marker.owner {
-			t.Errorf("doctrine marker %q has sources %v, want exactly [%s] (single source of truth — a template re-restating it reds this)", marker.phrase, sources, marker.owner)
-		}
-	}
-}
+// The AC-2 doctrine single-source guard was RETIRED here per doc_test.go's policy
+// (this package's own rule, line 11): "Do not add prose-to-code consistency checks
+// as behavior substitutes ... if no behavior test exists yet, delete the read and
+// report the owed test." It walked skills/+agents/ for a hardcoded doctrine phrase
+// (`strings.Contains(b, "Prefer a code gate over a prose-only rule")`, etc.) and
+// claimed to red when "the doctrine drifts back into a template". A doctrine is a
+// MEANING, not a literal: a paraphrased restatement ("Favor an enforceable code gate
+// rather than a prose-only rule…") carries the doctrine while dropping the bytes, so
+// the byte-grep stayed green on exactly the drift it advertised. That is the banned
+// prose-grep — a literal-phrase substring used as a proxy for whether a meaning is
+// present — and unlike the sibling claudeTeamDispatchTokens absence check (where the
+// literal command token IS the thing and a meaning-inverting paraphrase necessarily
+// drops it), no token here IS the doctrine; detecting paraphrase-drift requires
+// interpreting prose, which a machine cannot. Narrowing it to "verbatim-phrase
+// absence" would still be a prose-phrase-absence standing in for the meaning, i.e.
+// the same banned grep. OWED PROOF (#388 "templates defer doctrine to the contract"):
+// the human gate-review of the commission templates, the same review that owns the
+// qualitative lede judgement in TestTemplatesLeadWithOutcome below. The structural
+// half of AC-2 that a machine CAN see survives as TestTemplatesCarryWorkflowSpecificRulesSlot.
 
 // TestTemplatesCarryWorkflowSpecificRulesSlot is the AC-2 heading-presence half: each
 // commission template carries a `## Workflow-specific rules` section. This is a
