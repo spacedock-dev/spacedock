@@ -6,6 +6,7 @@ sprint: 0204-structured-reads
 id: xhttp6bs3h6w8afy4xf2zmz8
 worktree: .worktrees/spacedock-ensign-contractlint-antidrift-guard-hardening
 started: 2026-06-17T07:26:25Z
+mod-block: merge:pr-merge
 ---
 
 Two pre-cut-audit blockers + one non-blocking hole, all on the v0.20.4 contract/CI surface. Make the checks honest and policy-compliant; the shipped behavior is already correct, so this is test-strength, not a behavior fix.
