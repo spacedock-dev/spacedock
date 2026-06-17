@@ -60,11 +60,28 @@ func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
 		rootResolved = r
 	}
 
+	// The boot prompt: name the run and the intent. An interactive FO greets and
+	// PARKS for captain input after boot by contract (item 9 — correct behavior), so
+	// this first message does NOT auto-dispatch; the captain nudge below pushes it
+	// past the greet into the actual dispatch (which runs spawn-standing-all, the
+	// residency injection under test).
 	prompt := forceTeamModeCue +
-		"Use spacedock:first-officer for this whole run. Drive the workflow. " +
+		"Use spacedock:first-officer for this whole run. " +
 		antiShutdownOverride
 	session := driver.launchAndSend(t, "standing-residency", root, prompt)
 	defer session.proc.kill()
+
+	// Drive the FO past its contractual greet-stop like a captain: nudge with a "go +
+	// conn" message and wait for it to actually create the team. nudgePastGreet is
+	// bounded (≤3 nudges) and keys on the on-disk transcript carrying TeamCreate, then
+	// the EXISTING expect(isTeamCreate) + roster assertions run unchanged.
+	commOfficerNudge := "Yes — you have the conn for this run: dispatch make-it-work " +
+		"into implementation now, create the team, and drive to completion, approving " +
+		"gates yourself. Don't stop to ask."
+	if err := driver.nudgePastGreet(session, commOfficerNudge, linesHaveTeamCreate, 3, ptyBootBudget); err != nil {
+		t.Fatalf("live residency drive: the FO never created a team across captain nudges: %v\nFO pane:\n%s\nArtifacts: %s",
+			err, driver.captureFOPane(session.tmuxName), session.artifactDir)
+	}
 
 	// Watch the residency-relevant beats from the live session jsonl via the EXISTING
 	// streamWatcher: TeamCreate engages team mode, then the first ensign dispatch
@@ -130,16 +147,29 @@ func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
 		rootResolved = r
 	}
 
-	// Force team mode, give the FO the conn so the gateless fixture drives to
-	// terminal, and carry the anti-early-shutdown override (it fights the per-turn
-	// teardown nag, which is exactly the team teardown path this test exercises).
+	// The boot prompt names the run and force-team mode; the interactive FO greets and
+	// PARKS by contract (item 9), so the captain nudge below pushes it past the greet.
+	// The anti-early-shutdown override fights the per-turn teardown nag — exactly the
+	// team teardown path this test exercises.
 	prompt := forceTeamModeCue +
-		"Use spacedock:first-officer for this whole run. Drive the workflow to " +
-		"completion; you have the conn to resolve gates from each stage report's " +
-		"verdict (auto-approve). " +
+		"Use spacedock:first-officer for this whole run. " +
 		antiShutdownOverride
 	session := driver.launchAndSend(t, "team-teardown", root, prompt)
 	defer session.proc.kill()
+
+	// Drive the FO past its contractual greet-stop like a captain: nudge with a "go +
+	// conn, auto-approve gates" message until it actually dispatches the ensign (the
+	// first beat of the TeamCreate→dispatch→terminalize→teardown cycle). Bounded
+	// (≤3 nudges); the EXISTING expect(isEnsignDispatch) + teardown grade run unchanged
+	// after. If the FO re-parks at a gate, the same nudge ("approving gates yourself")
+	// covers it.
+	teardownNudge := "Yes — you have the conn for this run: dispatch make-it-work into " +
+		"implementation now, create the team, drive to completion, and approve gates " +
+		"yourself from each stage report's verdict. Don't stop to ask."
+	if err := driver.nudgePastGreet(session, teardownNudge, linesHaveEnsignDispatch, 3, quietBudgetDispatchClose); err != nil {
+		t.Fatalf("live team-teardown drive: the FO never dispatched an ensign across captain nudges: %v\nFO pane:\n%s\nArtifacts: %s",
+			err, driver.captureFOPane(session.tmuxName), session.artifactDir)
+	}
 
 	watcher := newStreamWatcher(session.newFileSource(), session.proc, func(line string) { t.Log(line) })
 
@@ -265,6 +295,39 @@ func ptyAnyTeamHasMember(t *testing.T, configPaths []string, name string) bool {
 			if strings.EqualFold(m.Name, name) {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+// linesHaveTeamCreate reports whether any raw transcript line is a TeamCreate
+// tool_use — the signalSeen predicate the residency nudge keys on (the FO created
+// the team, so spawn-standing-all has run). It reuses the EXISTING isTeamCreate
+// streamEntry predicate over each parsed line.
+func linesHaveTeamCreate(lines []string) bool {
+	return linesMatch(lines, isTeamCreate)
+}
+
+// linesHaveEnsignDispatch reports whether any raw transcript line is an
+// Agent(subagent_type="spacedock:ensign") tool_use — the signalSeen predicate the
+// teardown nudge keys on (the cycle progressed past boot into dispatch). It reuses
+// the EXISTING isEnsignDispatch streamEntry predicate over each parsed line.
+func linesHaveEnsignDispatch(lines []string) bool {
+	return linesMatch(lines, isEnsignDispatch)
+}
+
+// linesMatch parses each raw stream-json line into a streamEntry and reports
+// whether any satisfies the given streamEntry predicate (the same predicates the
+// streamWatcher's expect() uses), so the nudge loop and the watcher key on the
+// identical signal.
+func linesMatch(lines []string, predicate func(streamEntry) bool) bool {
+	for _, line := range lines {
+		var e streamEntry
+		if json.Unmarshal([]byte(line), &e) != nil {
+			continue
+		}
+		if predicate(e) {
+			return true
 		}
 	}
 	return false

@@ -118,13 +118,50 @@ func sessionIDFromFile(path string) (string, error) {
 	return "", sc.Err()
 }
 
-// foRootSessionID returns the sessionId of the team-ROOT transcript in dir — the
-// *.jsonl whose entries carry no spawned-teammate `agentName` — or "" if none yet.
-// A teammate transcript (e.g. the comm-officer's) tags every entry with its
-// `agentName`; the FO/root transcript does not (no `agentName` key at all —
-// confirmed against every TeamCreate-bearing transcript on disk). So the root is the
-// file with NO `"agentName":` occurrence. Scanning by name keeps the pick
-// deterministic when (transiently) more than one file has yet to be tagged.
+// foRootSessionFlatFile reports whether a flat *.jsonl in the projects dir is the
+// interactive FO's OWN (team-ROOT) transcript, by the FIRST-entry oracle: the FO
+// root's first sessionId-bearing entry carries NO top-level `agentName` (its first
+// entry's keys are [agentSetting|leafUuid|aiTitle, sessionId, type]). A
+// spawned-teammate transcript carries `agentName` on its first entry. The FO root
+// MAY later carry an `agent-name` entry naming `spacedock:first-officer` (the FO
+// self-identifying) — a whole-file `"agentName":` scan WRONGLY skips the FO's own
+// transcript on that self-identification, the F30-class resolver bug; keying on the
+// FIRST entry only avoids it. Confirmed against on-disk data: every flat
+// TeamCreate-bearing transcript's first entry has no top-level agentName, and no
+// flat transcript carries a top-level agentName on its first line (teammate/subagent
+// transcripts live in the sibling {id}/subagents/ subdir, not flat in this dir).
+func foRootSessionFlatFile(path string) (string, bool) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 1024*1024), 16*1024*1024)
+	for sc.Scan() {
+		var entry struct {
+			SessionID string `json:"sessionId"`
+			AgentName string `json:"agentName"`
+		}
+		if err := json.Unmarshal(sc.Bytes(), &entry); err != nil {
+			continue
+		}
+		if entry.SessionID == "" {
+			continue
+		}
+		// First sessionId-bearing entry decides: a top-level agentName marks a spawned
+		// teammate, never the FO root.
+		return entry.SessionID, entry.AgentName == ""
+	}
+	return "", false
+}
+
+// foRootSessionID returns the sessionId of the team-ROOT (FO's OWN) transcript in
+// dir — the flat *.jsonl whose FIRST sessionId-bearing entry carries no top-level
+// `agentName` — or "" if none yet. The FO/root transcript is the flat
+// {FO-session-id}.jsonl; teammate/subagent transcripts live in the sibling
+// {FO-session-id}/subagents/ subdir (skipped here, this reads only flat *.jsonl).
+// Scanning by name keeps the pick deterministic.
 func foRootSessionID(dir string) string {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -138,17 +175,7 @@ func foRootSessionID(dir string) string {
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		path := filepath.Join(dir, name)
-		body, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		// A spawned-teammate transcript carries `"agentName":` on its entries; the
-		// FO/root transcript never does. Skip files that carry it.
-		if strings.Contains(string(body), `"agentName":`) {
-			continue
-		}
-		if id, err := sessionIDFromFile(path); err == nil && id != "" {
+		if id, isRoot := foRootSessionFlatFile(filepath.Join(dir, name)); isRoot && id != "" {
 			return id
 		}
 	}
@@ -261,6 +288,22 @@ func foRootLine(sessionID, text string) string {
 	return `{"sessionId":"` + sessionID + `","type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"` + text + `"}]}}`
 }
 
+// foRootFirstLine is the FO/root transcript's FIRST on-disk entry: keys
+// [agentSetting, sessionId, type], no agentName — the captain's first-entry oracle
+// that positively marks the FO root (vs a teammate, whose first entry carries an
+// agentName). The interactive boot writes this before any assistant turn flushes.
+func foRootFirstLine(sessionID string) string {
+	return `{"type":"agentSetting","sessionId":"` + sessionID + `","agentSetting":{}}`
+}
+
+// foSelfAgentNameLine is the FO root self-identifying as spacedock:first-officer (a
+// real on-disk `agent-name` entry on the FO's OWN transcript — NOT a spawned
+// teammate). A whole-file `"agentName":` scan WRONGLY skips the FO's own transcript
+// on this line; the first-entry oracle does not. This is the captain's resolver bug.
+func foSelfAgentNameLine(sessionID string) string {
+	return `{"type":"agent-name","agentName":"spacedock:first-officer","sessionId":"` + sessionID + `"}`
+}
+
 // teammateLine is a spawned-teammate transcript entry: it carries a sessionId AND
 // an agentName (the discriminator that marks it NOT the root).
 func teammateLine(sessionID, agentName, text string) string {
@@ -328,6 +371,67 @@ func TestFOSessionPinning(t *testing.T) {
 		// A second drain with no new FO bytes returns nothing (offset advanced).
 		if more := src.drain(); len(more) != 0 {
 			t.Errorf("second drain with no new FO bytes should be empty, got %d lines", len(more))
+		}
+	})
+}
+
+// TestFORootResolvesWhenSelfIdentifying is the regression for the captain-adjudicated
+// resolver bug: a REAL interactive FO root transcript opens with the first-entry oracle
+// [agentSetting, sessionId, type] and LATER carries an `agent-name` entry naming
+// `spacedock:first-officer` (the FO self-identifying — NOT a spawned teammate). The
+// prior whole-file `"agentName":` scan WRONGLY skipped this FO transcript, so the tail
+// could never pin to the FO (the "FO writes no transcript" false finding). The
+// first-entry oracle resolves it correctly. It mirrors the exact on-disk shape
+// confirmed against the FO transcript on disk: keys [agentSetting, sessionId, type] on
+// line 1, an `agent-name`/`spacedock:first-officer` entry later, TeamCreate in body.
+func TestFORootResolvesWhenSelfIdentifying(t *testing.T) {
+	dir := t.TempDir()
+	// The FO/root transcript: first entry is the agentSetting oracle, then a later
+	// agent-name line naming spacedock:first-officer, then the TeamCreate the grade reads.
+	foPath := filepath.Join(dir, "fo-root.jsonl")
+	foLines := []string{
+		foRootFirstLine("fo-session-id"),
+		foSelfAgentNameLine("fo-session-id"),
+		`{"sessionId":"fo-session-id","type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"t","name":"TeamCreate","input":{}}]}}`,
+	}
+	if err := os.WriteFile(foPath, []byte(strings.Join(foLines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// A spawned comm-officer transcript alongside: first entry carries agentName.
+	teammatePath := filepath.Join(dir, "comm-officer.jsonl")
+	teammateLines := []string{
+		teammateLine("comm-session-id", "comm-officer", "online"),
+	}
+	if err := os.WriteFile(teammatePath, []byte(strings.Join(teammateLines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("foRootSessionID_resolves_self_identifying_FO", func(t *testing.T) {
+		// The bug: the whole-file "agentName": scan skipped this FO transcript because
+		// it self-identifies as spacedock:first-officer; the first-entry oracle resolves it.
+		if got := foRootSessionID(dir); got != "fo-session-id" {
+			t.Errorf("foRootSessionID = %q, want \"fo-session-id\" — the FO root that self-identifies as spacedock:first-officer must NOT be skipped", got)
+		}
+	})
+
+	t.Run("fileLineSource_pinned_to_FO_reads_TeamCreate", func(t *testing.T) {
+		// The end-to-end consequence: with the FO id pinned, the tail reads the FO's
+		// TeamCreate (which the prior bug missed by resolving to nothing).
+		src := newFileLineSourceByID(dir, "fo-session-id")
+		joined := strings.Join(src.drain(), "\n")
+		if !strings.Contains(joined, `"name":"TeamCreate"`) {
+			t.Errorf("the FO-pinned tail must carry TeamCreate; got:\n%s", joined)
+		}
+	})
+
+	t.Run("foRootSessionFlatFile_oracle", func(t *testing.T) {
+		// The FO root (first entry no agentName) is the root; the teammate (first entry
+		// has agentName) is not — the first-entry oracle directly.
+		if id, isRoot := foRootSessionFlatFile(foPath); !isRoot || id != "fo-session-id" {
+			t.Errorf("foRootSessionFlatFile(FO) = (%q,%v), want (\"fo-session-id\",true)", id, isRoot)
+		}
+		if _, isRoot := foRootSessionFlatFile(teammatePath); isRoot {
+			t.Error("foRootSessionFlatFile(teammate) reported root=true; a first-entry agentName must mark it NOT the FO root")
 		}
 	})
 }
