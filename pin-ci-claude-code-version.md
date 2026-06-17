@@ -1,10 +1,11 @@
 ---
 title: Pin CI live-e2e to a known-good Claude Code version (team tools regress at 2.1.178+)
-status: ideation
+status: implementation
 source: captain (2026-06-17) — team-tool availability regression
 score: 0.5
 id: 61an320jkjgeyqq55rfx7nw0
 started: 2026-06-17T14:38:40Z
+worktree: .worktrees/spacedock-ensign-pin-ci-claude-code-version
 ---
 
 ## Problem
