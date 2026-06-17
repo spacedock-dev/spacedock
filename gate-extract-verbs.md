@@ -1,12 +1,12 @@
 ---
 title: Gate-extract verbs — structured extraction of stage report, AC coverage, and reviewer findings (the verdict stays level-3)
-status: implementation
+status: ideation
 source: 'FO shaping 0205 (2026-06-15, this session) — the FO gate prep (checklist DONE/SKIPPED/FAILED review, the AC cross-check, the Material/Polish reviewer tiers) is structured extraction over a stage-report file: deterministic, but done by the model today. A weak FO can do it reliably only as a binary call returning structured data; the verdict (judgment) stays level-3. No 2y dependency. 0205 layered-FO, no-2y parallel track.'
 started: 2026-06-16T02:21:21Z
 completed:
 verdict:
 score: 0.4
-worktree: .worktrees/spacedock-ensign-gate-extract-verbs
+worktree:
 issue:
 sprint: 0205-layered-fo
 sprint-readiness: ready
