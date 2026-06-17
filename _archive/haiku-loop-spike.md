@@ -1,18 +1,19 @@
 ---
 title: Spike — live Haiku FO drives a hand-simulated simplified loop, before any verb is built
-status: validation
+status: done
 source: 'captain scope-lock (2026-06-15, this session) — 0205 is spike-first. Run a live Haiku FO drive on a hand-simulated simplified loop BEFORE building any binary verb, to prove the loop is Haiku-operable and map the irreducible-judgment boundary. Gates the rest of the 0205 carve (the must-build verb list comes from what Haiku breaks every time). Predicted Haiku failure modes to surface or refute — inventing rebase-conflict auto-recovery; interpreting a drift-class name semantically; bare-dispatching; auto-approving a gate; idle-vs-completion confusion.'
 started: 2026-06-16T02:21:21Z
-completed:
-verdict:
+completed: 2026-06-17T07:28:18Z
+verdict: PASSED
 score: 0.6
-worktree: .worktrees/spacedock-ensign-haiku-loop-spike
+worktree:
 issue:
 sprint: 0205-layered-fo
 sprint-readiness: ready
 id: w4ryf4mg4vn1emwp906vd8yp
 mod-block:
 pr: "#393"
+archived: 2026-06-17T07:28:18Z
 ---
 
 The 0205 gating exercise. A live Haiku FO drives one real entity through a hand-simulated simplified loop — the FO follows the dispatch->gate->merge prose-functions by hand (guillemets), with a standing level-3 teammate (stronger model) handling every judgment call. Run BEFORE any binary verb is built. The result sets the must-build verb list and the delegation routing table's real boundary, so the rest of 0205 builds against evidence, not a guess.
