@@ -1,6 +1,6 @@
 ---
 title: Pin CI live-e2e to a known-good Claude Code version (team tools regress at 2.1.178+)
-status: implementation
+status: validation
 source: captain (2026-06-17) — team-tool availability regression
 score: 0.5
 id: 61an320jkjgeyqq55rfx7nw0
