@@ -4,10 +4,12 @@ status: validation
 source: "Pre-cut antipattern audit for v0.20.4 (2026-06-17, 0204 Commander), confirmed from source. Two contractlint tests are literal-phrase strings.Contains greps that overclaim to be behavioral drift guards and VIOLATE the package's own policy (internal/contractlint/doc_test.go:11: 'Do not add prose-grep checks here ... If behavior matters, test it by running the behavior'). The shipped BEHAVIOR is correct (zero doctrine in templates today); the defect is hollow test-strength on the shipped contract surface. Captain decision: fix-first before the cut."
 sprint: 0204-structured-reads
 id: xhttp6bs3h6w8afy4xf2zmz8
-worktree: .worktrees/spacedock-ensign-contractlint-antidrift-guard-hardening
+worktree:
 started: 2026-06-17T07:26:25Z
 mod-block:
 pr: "#394"
+completed: 2026-06-17T07:52:13Z
+verdict: PASSED
 ---
 
 Two pre-cut-audit blockers + one non-blocking hole, all on the v0.20.4 contract/CI surface. Make the checks honest and policy-compliant; the shipped behavior is already correct, so this is test-strength, not a behavior fix.
