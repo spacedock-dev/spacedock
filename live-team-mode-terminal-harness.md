@@ -1,6 +1,6 @@
 ---
 title: Build a terminal/pty live harness for team-mode e2e (residency + teardown)
-status: implementation
+status: validation
 source: "FO + captain (2026-06-16, during 2yf): headless `claude -p` cannot sustain team mode — anthropics/claude-code 2.1.178 dropped the native TeamCreate/TeamDelete tools from headless sessions (anthropics/claude-code#68721), and even with tools present the SDK/headless session lifecycle races to end_turn before teammates finish (anthropics/claude-code-action#1124). Per 7e's recorded steer (headless `-p` goes bare), the two forced-team `-p` live tests (TestLiveEnsignCycleTeamTeardown, TestLiveStandingResidencyInjectsCommOfficer) were RETIRED in 2yf because they cannot work headless. Team-mode MECHANISMS stay covered offline (internal/dispatch/spawn_standing_all_test.go for comm-officer injection; internal/ensigncycle/teardown_grade_watcher_test.go + testdata/sonnet_teamdelete_*.jsonl for the bounded-teardown marker grading). The GAP this task closes: live end-to-end team-mode coverage (FO creates a real team, injects the comm-officer standing teammate into the roster, dispatches through the team, terminalizes, and runs the bounded teardown emitting TERMINAL_TEARDOWN_BOUNDED). That requires an INTERACTIVE (pseudo-terminal) harness where team tools are present and the session stays alive — the current live suite is entirely `claude -p`."
 started: 2026-06-16T15:15:39Z
 completed:
@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-live-team-mode-terminal-harness
 issue:
 id: m40mphxan8phr3t3tp03gk89
 sprint: 0204-structured-reads
-mod-block:
+mod-block: merge:pr-merge
 pr: "#390"
 sprint-readiness: in-progress
 ---
@@ -302,3 +302,16 @@ The team-lead flagged an internal contradiction in the prior addendum: "banner t
 - **Not a plugin-registration miss:** TeamCreate is a NATIVE CC deferred tool (the spacedock skills only describe the ToolSearch hop; `grep` of `plugin/` shows no plugin-side team-tool registration), so the bare probes' missing `--plugin-dir` is irrelevant.
 
 All three of the team-lead's confound classes are ruled out: (1) NOT the wrong-search-surface — `select:SendMessage` resolves; (2) NOT a renamed tool — keyword `team` finds none; (3) NOT a direct/non-deferred tool — direct call is `TEAMCREATE_UNAVAILABLE`. The 2.1.179 interactive session genuinely lacks the native team tools with the flag set. Since 2.1.177 (the entity's premise era, where my bare probes created teams) DID have them, this is a 2.1.178/179 regression that spread BEYOND #68721's documented HEADLESS scope into interactive sessions. The captain is correct that #68721 is headless-scoped; the interactive loss is a newer/broader regression. The (pin-2.1.177 + DISABLE_AUTOUPDATER) vs (defer) call stands for the captain.
+
+### Feedback Cycles
+
+**Captain decision (2026-06-16 session #4): DEFER m4 from v0.20.4 → carry to v0.20.5.** The read-cost DoD (the v0.20.4 cut criterion) is MET independently of m4; m4 is team-mode coverage, not part of it. Given the byte-verified upstream block (interactive 2.1.179 lacks the native team tools), the captain chose NOT to pin an old claude to green a test of a capability current users can't use, and NOT to merge a live-deferred AC into the cut. v0.20.4 cuts on the read-cost DoD alone; m4 carries forward.
+
+**State on deferral:**
+- **Harness is DONE and PROVEN** — the resolver first-entry-oracle fix (`c939aea8`, real F30-class bug, RED→GREEN `TestFORootResolvesWhenSelfIdentifying`) and the env-scrub fix (`2b4beaa0`, `unsetNestedSessionArgs` + `TestUnsetNestedSessionArgs`) are committed, offline-green (`go test ./...` 15/15, `go vet -tags live` clean), rebased clean on `origin/main`, and **force-pushed to #390** to preserve the work for v0.20.5.
+- **AC-1/2/5/6:** offline-green. **AC-3 (roster) + AC-4 (bounded-teardown marker over the FO transcript):** live-OBSERVED on 2.1.177 (real teams created; the resolver→idle-gate→teardown-grade chain reads the now-persisting FO transcript end-to-end). The env-scrub fix is what makes the FO transcript persist (it was the inherited-nested-session-marker artifact, not a transport property).
+- **The sole remaining block is the upstream platform:** native TeamCreate/TeamDelete are absent from interactive sessions on claude 2.1.178/179 (broader than #68721's headless scope). The live AC-3/AC-4 CI green is deferred until upstream restores the tools (then the team-mode assertions activate on the version users actually run) — or, at v0.20.5 close, via a capability-aware skip-not-fatal mirroring the AC-6 auth-skip.
+
+**v0.20.5 pickup:** re-validate when team tools return (or add the capability-skip); then merge #390. CI stays on latest as the regression sensor that caught both this and the zero-discover flake. Sprint re-tag (0204 → the v0.20.5 sprint) is a coordination decision deferred to when that sprint forms.
+
+**Production note (captain's call: note-only):** team mode (concurrent dispatch, comm-officer, standing teammates) is upstream-broken for any spacedock user on claude 2.1.178+ — they silently fall back to bare mode. Recorded here and for the session debrief; no separate task / GH issue filed per the captain.
