@@ -3,8 +3,8 @@ title: 'No-guidance-control micro-test harness for FO-contract prose cuts + rest
 status: backlog
 source: 'superpowers v6 prose-efficacy lessons + CL direction (2026-06-16). The token-cleanup proposal and the binary-simplification dehydration lever (Phase 0.A, wg) verify prose cuts by adversarial REASONING only — docs-confidence, never empirical; nobody has run an FO with vs without a clause and observed the difference. The 0205 prose-function restructure will rewrite the highest-residency boot-resident prose with no cheap verifier. This is the missing empirical layer. Shares the bare-claude launch + durable-state grade harness with w4 haiku-loop-spike.'
 score: 0.5
-sprint:
-sprint-readiness:
+sprint: 0205-layered-fo
+sprint-readiness: defer
 issue:
 id: y2r7ew51xqs6q3avsb6mcaka
 ---
