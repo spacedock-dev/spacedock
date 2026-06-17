@@ -205,3 +205,21 @@ Per captain's decision, the live AC-3/4 green comes via CI (ANTHROPIC_API_KEY �
 - **Force-pushed** (`--force-with-lease`) — PR #390 updated, CI re-triggered.
 
 The pty step greening in the CI-E2E run is m4's AC-3/4 live proof.
+
+### Stage Report addendum: LOAD-BEARING FINDING — the interactive FO writes NO on-disk transcript (CC 2.1.177); m4's transcript-observation premise is invalid
+
+While fixing the idle gate (CI failed because the pane-text gate is render-fragile on headless runners), a controlled probe surfaced a finding that invalidates m4's core observation mechanism and is being escalated to the captain for a possible re-scope. STOPPED here rather than force a green.
+
+**Finding:** In Claude Code 2.1.177 (interactive launch, isolated `CLAUDE_CONFIG_DIR`), the team-LEAD / FO NEVER persists its own conversation transcript to disk. Only SPAWNED teammates write a `projects/<cwd>/*.jsonl`. The FO's own TeamCreate / TeamDelete / `TERMINAL_TEARDOWN_BOUNDED` marker render ONLY in the live tmux pane, never on disk.
+
+**Reproducible probe (a detached tmux `spacedock claude` with HOME/CLAUDE_CONFIG_DIR/OAuth via `-e`, onboarding pre-seeded):**
+1. FO boots, auto-engages, runs `--version` / `git rev-parse` / `status --discover`, greets → NO `.jsonl` anywhere (config dir, isolated HOME, real HOME all checked; only an empty `session-env/<uuid>/`).
+2. FO creates a team (`teams/<name>/config.json` lands on disk) → STILL no FO transcript, no `projects/` dir.
+3. FO spawns a teammate via `Agent(run_in_background)` → ONE `projects/*.jsonl` appears, and it is the TEAMMATE's (every conversation entry `agentName=<teammate>`; 0 TeamCreate in it). The FO's TeamCreate is in no transcript.
+
+**Implications for the ACs:**
+- **AC-3 (comm-officer roster) — still satisfiable on disk:** the roster check reads the real `teams/<name>/config.json` directly, which IS written.
+- **AC-4 (FO-authored `TERMINAL_TEARDOWN_BOUNDED` graded over the captured FO transcript) — NOT satisfiable as specified:** there is no FO transcript to grade; the marker is pane-only.
+- **The idle gate, `expect(isTeamCreate)`, and the liveness drain** all assumed an FO transcript that does not exist. (This also explains the earlier residency run: it "saw" `teamName` entries only because it tailed the comm-officer TEAMMATE transcript via the F30-flipped resolver; its `expect(isTeamCreate)` actually timed out too — consistent.)
+
+**Status:** committed offline work stays valid (the idle-gate `transcriptReachedIdle` + `TestTranscriptReachedIdle`, the F30 FO-session pin + `TestFOSessionPinning`, the macOS symlink fix, the CI `if: !cancelled()` decoupling). The captain-nudge code is uncommitted, held pending the re-scope decision. No fix attempted around the finding — it is an architecture mismatch between m4's transcript-observation design and CC 2.1.177's interactive persistence behavior, escalated for the captain's call on m4's scope (and its place in the v0.20.4 path).
