@@ -24,14 +24,17 @@ import (
 //
 // It encodes the three spike hazards as code (AC-5):
 //   - NO stdout pipe on launch: claude owns the pane tty; the driver observes via
-//     tmux capture-pane and the on-disk session jsonl, never a pipe (a pipe makes
-//     stdout a non-tty and the interactive TUI never renders).
+//     the on-disk session jsonl (and capture-pane for diagnostics), never a pipe (a
+//     pipe makes stdout a non-tty and the interactive TUI never renders).
 //   - resolve the FO pane by #{pane_title}, not the active pane: an Agent dispatch
 //     materializes the ensign as a sibling pane that becomes active, so the FO's
 //     TeamDelete/marker live in the title-resolved FO pane (firstOfficerPaneIndex).
-//   - gate the first send on stable-idle: keystrokes sent mid-boot QUEUE behind the
-//     boot turn and the drive stalls; waitStableIdle holds the send until the FO
-//     pane shows no busy marker for N consecutive polls.
+//   - gate the first send on idle: keystrokes sent mid-boot QUEUE behind the boot
+//     turn and the drive stalls; waitTranscriptIdle holds the send until the pinned
+//     FO transcript reads a committed turn-end (transcriptReachedIdle) for N
+//     consecutive polls. The signal is the on-disk JSONL, NOT pane text — pane-text
+//     scraping is render-fragile on a headless CI runner (missing terminfo → blank
+//     capture-pane → it would never read idle).
 //
 // liveResult.stream is sourced from the session jsonl claude writes under the
 // pinned CLAUDE_CONFIG_DIR — the SAME stream-json dialect the existing assertions
@@ -88,22 +91,18 @@ func newPtyLiveDriver(t *testing.T) ptyLiveDriver {
 
 const (
 	// ptyBootBudget bounds how long the driver waits for the FO to reach a first
-	// stable-idle (boot complete, ready for the first keystroke). A team-mode boot
-	// + FO contract load is multi-minute, so this is roomier than a per-step budget.
+	// committed idle turn (boot complete, ready for the first keystroke). A team-mode
+	// boot + FO contract load is multi-minute, so this is roomier than a per-step
+	// budget.
 	ptyBootBudget = 4 * time.Minute
-	// ptyIdleStablePolls is how many CONSECUTIVE no-busy-marker pane reads gate the
-	// first send — the spike's queued-keystroke hazard (a send mid-boot queues
-	// behind the boot turn). N>1 avoids a transient between-turn blank.
+	// ptyIdleStablePolls is how many CONSECUTIVE idle reads of the FO transcript gate
+	// the first send — the queued-keystroke hazard (a send mid-boot queues behind the
+	// boot turn). N>1 debounces the residual race where the transcript flips to
+	// end_turn a beat before the TUI input box accepts keys.
 	ptyIdleStablePolls = 3
-	// ptyPollInterval paces the pane/idle polls.
+	// ptyPollInterval paces the idle polls.
 	ptyPollInterval = 2 * time.Second
 )
-
-// ptyBusyMarkers are pane-text fragments Claude Code's TUI renders WHILE a turn is
-// in flight. Their ABSENCE (plus a non-empty pane) is the stable-idle signal the
-// first send gates on. "esc to interrupt" is the load-bearing one — it is present
-// for the whole duration of any running turn and gone when the FO is idle.
-var ptyBusyMarkers = []string{"esc to interrupt", "Press up to edit queued"}
 
 // ptySession is a launched, prompted interactive session: the tmux name, the FO's
 // session jsonl on disk, the proc poller over the tmux session, and the artifact
@@ -167,8 +166,10 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 	// Seed the config-dir .claude.json so the INTERACTIVE launch skips every
 	// first-run dialog (theme/login pickers + the per-project trust-folder dialog).
 	// Without this seed a fresh isolated HOME stalls at a blocking picker BEFORE the
-	// FO loads — and the stable-idle gate would falsely fire into that picker, since
-	// a picker shows no busy marker. The headless `-p` suite never hits this (non-
+	// FO loads, so boot never reaches the committed end_turn the idle gate waits for.
+	// Pre-clearing onboarding also means boot ends at a clean end_turn (no picker
+	// open), which is why the transcript stop_reason signal is sufficient here without
+	// a separate picker-footer check. The headless `-p` suite never hits this (non-
 	// interactive `-p` consumes the OAuth token directly); the interactive transport
 	// must pre-clear onboarding itself. This is the implementation hazard the spike
 	// missed (it ran on already-onboarded operator auth).
@@ -209,22 +210,11 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 
 	started := time.Now()
 
-	if err := d.waitStableIdle(session, ptyBootBudget); err != nil {
-		dumpPane := d.captureFOPane(session)
-		_ = os.WriteFile(filepath.Join(artifactDir, "pane-at-stall.txt"), []byte(dumpPane), 0o644)
-		proc.kill()
-		t.Fatalf("FO never reached stable-idle for %s within %s: %v\nFO pane:\n%s\nArtifacts: %s",
-			label, ptyBootBudget, err, dumpPane, artifactDir)
-	}
-
-	if err := d.sendToFO(session, prompt); err != nil {
-		proc.kill()
-		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, artifactDir)
-	}
-
 	// The session jsonl appears under CLAUDE_CONFIG_DIR/projects/<encoded-cwd> once
 	// the FO's session is created — keyed by the same symlink-resolved cwd the seed
-	// used.
+	// used. Resolve it BEFORE the idle gate: the gate reads the on-disk transcript for
+	// a turn-end signal, not pane text (the render-fragile capture-pane scrape that
+	// stalled 0/3 on a headless CI runner with missing terminfo).
 	projectsDir := filepath.Join(effectiveConfigDir, "projects", encodeProjectDir(resolvedCwd))
 	t.Logf("[pty %s] polling for session jsonl under: %s", label, projectsDir)
 	sessionFile, err := waitForSessionFile(projectsDir, proc, ptyBootBudget)
@@ -236,13 +226,12 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 			projectsDir, label, err, dumpPane, artifactDir)
 	}
 
-	// Capture the FO's OWN session UUID and pin the tail to it, so a teammate
-	// transcript spawned later never lures the read off the FO (F30 — observed: the
-	// tail read the comm-officer transcript and missed TeamCreate). The FO/root
-	// transcript is the one with NO `agentName` (teammate transcripts tag every entry
-	// with theirs — confirmed against every TeamCreate-bearing transcript on disk).
-	// waitForSessionFile above proved a transcript landed; this keys the id on the
-	// root file specifically, even if the FO dispatched a teammate during boot.
+	// Capture the FO's OWN session UUID and pin to it, so a teammate transcript
+	// spawned later never lures the read off the FO (F30 — observed: the tail read the
+	// comm-officer transcript and missed TeamCreate). The FO/root transcript is the
+	// one with NO `agentName` (teammate transcripts tag every entry with theirs —
+	// confirmed against every TeamCreate-bearing transcript on disk). At boot only the
+	// FO root file exists (no teammate yet), so this keys the id on the root file.
 	foSessionID := waitForFOSessionID(projectsDir, proc, ptyBootBudget)
 	if foSessionID == "" {
 		dumpPane := d.captureFOPane(session)
@@ -252,6 +241,25 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 			projectsDir, label, sessionFile, dumpPane, artifactDir)
 	}
 	t.Logf("[pty %s] pinned FO session id: %s", label, foSessionID)
+
+	// Gate the first send on the FO's boot turn reaching a committed idle (the
+	// queued-keystroke hazard: a send mid-boot queues behind the boot turn and the
+	// drive stalls). transcriptReachedIdle reads the pinned FO transcript for a
+	// turn-end signal — render-INDEPENDENT, unlike the old pane-text scrape. The
+	// 3-poll debounce covers the residual race where the transcript flips to end_turn
+	// a beat before the TUI input box accepts keys.
+	if err := d.waitTranscriptIdle(projectsDir, foSessionID, proc, ptyBootBudget); err != nil {
+		dumpPane := d.captureFOPane(session)
+		_ = os.WriteFile(filepath.Join(artifactDir, "pane-at-stall.txt"), []byte(dumpPane), 0o644)
+		proc.kill()
+		t.Fatalf("FO never reached a committed idle turn for %s within %s: %v\nFO pane:\n%s\nArtifacts: %s",
+			label, ptyBootBudget, err, dumpPane, artifactDir)
+	}
+
+	if err := d.sendToFO(session, prompt); err != nil {
+		proc.kill()
+		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, artifactDir)
+	}
 
 	return ptySession{
 		tmuxName:    session,
@@ -322,21 +330,21 @@ func (d ptyLiveDriver) captureFOPane(session string) string {
 	return string(out)
 }
 
-// waitStableIdle blocks until the FO pane shows no busy marker for
-// ptyIdleStablePolls consecutive reads (the stable-idle gate), bounded by budget.
-// It errors if the session dies or the budget elapses without a stable idle.
-func (d ptyLiveDriver) waitStableIdle(session string, budget time.Duration) error {
+// waitTranscriptIdle blocks until the pinned FO transcript reads a committed idle
+// turn (transcriptReachedIdle) for ptyIdleStablePolls consecutive reads, bounded by
+// budget. The signal is the on-disk JSONL turn-end — render-INDEPENDENT, replacing
+// the pane-text scrape that stalled on a headless CI runner with missing terminfo
+// (blank capture-pane → never idle). It errors if the session dies or the budget
+// elapses without a stable idle. The consecutive-read debounce covers the residual
+// race where the transcript flips to end_turn a beat before the TUI accepts keys.
+func (d ptyLiveDriver) waitTranscriptIdle(projectsDir, sessionID string, proc procPoller, budget time.Duration) error {
 	deadline := time.Now().Add(budget)
 	consecutive := 0
 	for {
-		if !tmuxHasSession(session) {
-			return fmt.Errorf("tmux session %q died before reaching stable-idle", session)
-		}
-		pane, err := d.foTarget(session)
 		idle := false
-		if err == nil {
-			if out, capErr := exec.Command("tmux", "capture-pane", "-p", "-t", pane).CombinedOutput(); capErr == nil {
-				idle = paneIsStableIdle(string(out))
+		if path := sessionFileByID(projectsDir, sessionID); path != "" {
+			if data, err := os.ReadFile(path); err == nil {
+				idle = transcriptReachedIdle(strings.Split(string(data), "\n"))
 			}
 		}
 		if idle {
@@ -347,8 +355,11 @@ func (d ptyLiveDriver) waitStableIdle(session string, budget time.Duration) erro
 		} else {
 			consecutive = 0
 		}
+		if _, exited := proc.poll(); exited {
+			return fmt.Errorf("tmux session died before the FO reached a committed idle turn")
+		}
 		if time.Now().After(deadline) {
-			return fmt.Errorf("no stable-idle within %s (consecutive idle polls=%d/%d)", budget, consecutive, ptyIdleStablePolls)
+			return fmt.Errorf("no committed idle turn within %s (consecutive idle polls=%d/%d)", budget, consecutive, ptyIdleStablePolls)
 		}
 		time.Sleep(ptyPollInterval)
 	}
@@ -371,22 +382,6 @@ func (d ptyLiveDriver) sendToFO(session, text string) error {
 		return fmt.Errorf("tmux send-keys (enter): %w (%s)", err, out)
 	}
 	return nil
-}
-
-// paneIsStableIdle reports whether a captured pane is at a ready-for-input idle: a
-// non-empty pane carrying NO busy marker. The busy markers ("esc to interrupt",
-// the queued-message banner) are present for the whole duration of any running
-// turn; their absence over a non-empty pane is the stable-idle signal.
-func paneIsStableIdle(pane string) bool {
-	if strings.TrimSpace(pane) == "" {
-		return false
-	}
-	for _, m := range ptyBusyMarkers {
-		if strings.Contains(pane, m) {
-			return false
-		}
-	}
-	return true
 }
 
 // --- tmux session as a procPoller ----------------------------------------

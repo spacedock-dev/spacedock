@@ -208,6 +208,53 @@ func encodeProjectDir(cwd string) string {
 	}, cwd)
 }
 
+// transcriptReachedIdle reports whether the FO transcript has reached a committed
+// idle turn — the render-independent boot/turn-end signal that replaces pane-text
+// scraping (which is fragile on a headless CI runner: missing terminfo → blank
+// capture-pane → a negative "no busy marker" test never fires). It is gym's
+// WaitForTurn discipline (read the on-disk JSONL for a POSITIVE turn-end signal)
+// adapted to the INTERACTIVE transcript, which — unlike `claude -p` — emits NO
+// `type:"result"` event, so that count would never fire.
+//
+// Idle = the LAST COMMITTED assistant entry has a TERMINAL stop_reason and no later
+// entry reopened a turn:
+//   - committed assistant turn: type=="assistant" AND message.stop_reason non-empty
+//     (streamed deltas carry a null/absent stop_reason and are SKIPPED);
+//   - TERMINAL: end_turn / stop_sequence / max_tokens. stop_reason=="tool_use" is
+//     mid-turn → BUSY;
+//   - a later user/tool_result entry after that terminal assistant reopens the turn
+//     → BUSY (the FO is acting on a tool result, not awaiting input).
+func transcriptReachedIdle(lines []string) bool {
+	type idleEntry struct {
+		Type    string `json:"type"`
+		Message *struct {
+			StopReason *string `json:"stop_reason"`
+		} `json:"message"`
+	}
+	terminal := map[string]bool{"end_turn": true, "stop_sequence": true, "max_tokens": true}
+	sawTerminalAssistant := false
+	for _, line := range lines {
+		var e idleEntry
+		if json.Unmarshal([]byte(line), &e) != nil {
+			continue
+		}
+		switch e.Type {
+		case "assistant":
+			// Only COMMITTED assistant turns carry a non-null stop_reason; streamed
+			// deltas have it null/absent and must not be read as a turn end.
+			if e.Message == nil || e.Message.StopReason == nil || *e.Message.StopReason == "" {
+				continue
+			}
+			sawTerminalAssistant = terminal[*e.Message.StopReason]
+		case "user":
+			// A user/tool_result entry after a terminal assistant reopens the turn:
+			// the FO is mid-work on a tool result, not awaiting captain input.
+			sawTerminalAssistant = false
+		}
+	}
+	return sawTerminalAssistant
+}
+
 // foRootLine is a FO/root transcript entry: it carries a sessionId and NO
 // agentName (the root is not a spawned teammate).
 func foRootLine(sessionID, text string) string {
@@ -281,6 +328,79 @@ func TestFOSessionPinning(t *testing.T) {
 		// A second drain with no new FO bytes returns nothing (offset advanced).
 		if more := src.drain(); len(more) != 0 {
 			t.Errorf("second drain with no new FO bytes should be empty, got %d lines", len(more))
+		}
+	})
+}
+
+// committedAssistant is a COMMITTED assistant turn (non-null stop_reason).
+func committedAssistant(stopReason string) string {
+	return `{"type":"assistant","message":{"role":"assistant","stop_reason":"` + stopReason + `","content":[{"type":"text","text":"hi"}]}}`
+}
+
+// streamingAssistant is a streamed assistant DELTA (null stop_reason) — not yet a
+// committed turn end.
+const streamingAssistant = `{"type":"assistant","message":{"role":"assistant","stop_reason":null,"content":[{"type":"text","text":"thinking"}]}}`
+
+// userToolResult is a user/tool_result entry that reopens a turn after a terminal
+// assistant (the FO acting on a tool result, not awaiting input).
+const userToolResult = `{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t","content":"ok"}]}}`
+
+// TestTranscriptReachedIdle is the offline proof of the render-independent boot gate
+// that replaces pane-text scraping. It pins the false-pass guards from the fix spec:
+// a clean end_turn reads idle; streamed deltas (null stop_reason) do not; a
+// tool_use-stop turn is busy; and a user/tool_result after end_turn reopens the turn.
+func TestTranscriptReachedIdle(t *testing.T) {
+	t.Run("clean_end_turn_is_idle", func(t *testing.T) {
+		lines := []string{streamingAssistant, committedAssistant("end_turn")}
+		if !transcriptReachedIdle(lines) {
+			t.Error("a committed end_turn assistant turn must read idle")
+		}
+	})
+
+	t.Run("stop_sequence_and_max_tokens_are_idle", func(t *testing.T) {
+		for _, sr := range []string{"stop_sequence", "max_tokens"} {
+			if !transcriptReachedIdle([]string{committedAssistant(sr)}) {
+				t.Errorf("stop_reason %q is terminal and must read idle", sr)
+			}
+		}
+	})
+
+	t.Run("streaming_only_nulls_are_busy", func(t *testing.T) {
+		// Only streamed deltas (null stop_reason), no committed turn yet → BUSY.
+		lines := []string{streamingAssistant, streamingAssistant}
+		if transcriptReachedIdle(lines) {
+			t.Error("streamed deltas with null stop_reason must NOT read idle (no committed turn)")
+		}
+	})
+
+	t.Run("tool_use_stop_is_busy", func(t *testing.T) {
+		// stop_reason tool_use = the FO is mid-turn issuing a tool call → BUSY.
+		lines := []string{committedAssistant("tool_use")}
+		if transcriptReachedIdle(lines) {
+			t.Error("stop_reason tool_use is mid-turn and must NOT read idle")
+		}
+	})
+
+	t.Run("user_reopened_after_end_turn_is_busy", func(t *testing.T) {
+		// A user/tool_result AFTER a terminal assistant reopens the turn → BUSY.
+		lines := []string{committedAssistant("end_turn"), userToolResult}
+		if transcriptReachedIdle(lines) {
+			t.Error("a user/tool_result after end_turn reopens the turn and must NOT read idle")
+		}
+	})
+
+	t.Run("end_turn_after_reopen_is_idle_again", func(t *testing.T) {
+		// end_turn → tool_result reopen → another end_turn: the LAST committed turn
+		// is terminal with nothing after, so idle again.
+		lines := []string{committedAssistant("end_turn"), userToolResult, committedAssistant("end_turn")}
+		if !transcriptReachedIdle(lines) {
+			t.Error("a fresh end_turn after a reopened turn must read idle again")
+		}
+	})
+
+	t.Run("empty_transcript_is_busy", func(t *testing.T) {
+		if transcriptReachedIdle(nil) {
+			t.Error("an empty transcript must NOT read idle")
 		}
 	})
 }
