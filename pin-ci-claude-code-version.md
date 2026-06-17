@@ -5,9 +5,11 @@ source: captain (2026-06-17) — team-tool availability regression
 score: 0.5
 id: 61an320jkjgeyqq55rfx7nw0
 started: 2026-06-17T14:38:40Z
-worktree: .worktrees/spacedock-ensign-pin-ci-claude-code-version
+worktree:
 mod-block:
 pr: "#395"
+completed: 2026-06-17T18:58:19Z
+verdict: PASSED
 ---
 
 ## Problem
