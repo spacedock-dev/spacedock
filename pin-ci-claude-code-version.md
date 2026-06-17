@@ -7,6 +7,7 @@ id: 61an320jkjgeyqq55rfx7nw0
 started: 2026-06-17T14:38:40Z
 worktree: .worktrees/spacedock-ensign-pin-ci-claude-code-version
 mod-block: merge:pr-merge
+pr: "#395"
 ---
 
 ## Problem
