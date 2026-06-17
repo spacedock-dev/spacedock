@@ -229,9 +229,11 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 	// Capture the FO's OWN session UUID and pin to it, so a teammate transcript
 	// spawned later never lures the read off the FO (F30 — observed: the tail read the
 	// comm-officer transcript and missed TeamCreate). The FO/root transcript is the
-	// one with NO `agentName` (teammate transcripts tag every entry with theirs —
-	// confirmed against every TeamCreate-bearing transcript on disk). At boot only the
-	// FO root file exists (no teammate yet), so this keys the id on the root file.
+	// flat {FO-session-id}.jsonl whose FIRST sessionId-bearing entry carries no
+	// top-level `agentName` (teammate/subagent transcripts live in the sibling
+	// {FO-session-id}/subagents/ subdir; the FO root MAY itself carry a later
+	// `agent-name` entry naming spacedock:first-officer, which the first-entry oracle
+	// does not mistake for a teammate). At boot only the FO root file exists.
 	foSessionID := waitForFOSessionID(projectsDir, proc, ptyBootBudget)
 	if foSessionID == "" {
 		dumpPane := d.captureFOPane(session)
@@ -365,6 +367,64 @@ func (d ptyLiveDriver) waitTranscriptIdle(projectsDir, sessionID string, proc pr
 	}
 }
 
+// readPinnedTranscript returns the FO transcript lines (resolved by the pinned
+// session id), or nil if not yet present.
+func (s ptySession) readPinnedTranscript() []string {
+	path := sessionFileByID(s.projectsDir, s.foSessionID)
+	if path == "" {
+		return nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	return strings.Split(string(data), "\n")
+}
+
+// nudgePastGreet drives the interactive FO past its CONTRACTUAL greet-stop (item 9:
+// an interactive FO presents the summary then STOPS for input — correct behavior,
+// not a bug), exactly as a captain would: it sends a "go + conn" message and waits
+// for the next committed idle, re-checking the pinned transcript for signalSeen,
+// bounded by maxNudges. It returns nil once signalSeen is true (the FO acted), or an
+// error if the cap is hit or the session dies. Each nudge waits for a FRESH committed
+// turn (the transcript must grow past the pre-nudge length AND read idle), so a
+// stale pre-nudge idle never counts as the nudge's response.
+func (d ptyLiveDriver) nudgePastGreet(session ptySession, nudgeText string, signalSeen func([]string) bool, maxNudges int, perNudgeBudget time.Duration) error {
+	for attempt := 1; attempt <= maxNudges; attempt++ {
+		if signalSeen(session.readPinnedTranscript()) {
+			return nil
+		}
+		preLen := len(session.readPinnedTranscript())
+		if err := d.sendToFO(session.tmuxName, nudgeText); err != nil {
+			return fmt.Errorf("nudge %d/%d send failed: %w", attempt, maxNudges, err)
+		}
+		// Wait for a FRESH committed turn: the transcript grows past preLen AND reads
+		// idle again. A bare idle check would pass immediately on the stale pre-nudge
+		// idle without the FO having processed the nudge.
+		deadline := time.Now().Add(perNudgeBudget)
+		for {
+			lines := session.readPinnedTranscript()
+			if len(lines) > preLen && transcriptReachedIdle(lines) {
+				break
+			}
+			if signalSeen(lines) {
+				return nil
+			}
+			if _, exited := session.proc.poll(); exited {
+				return fmt.Errorf("tmux session died during nudge %d/%d", attempt, maxNudges)
+			}
+			if time.Now().After(deadline) {
+				break // this nudge produced no fresh idle; the outer loop re-nudges
+			}
+			time.Sleep(ptyPollInterval)
+		}
+	}
+	if signalSeen(session.readPinnedTranscript()) {
+		return nil
+	}
+	return fmt.Errorf("the FO did not produce the awaited signal after %d captain nudges", maxNudges)
+}
+
 // sendToFO types text into the title-resolved FO pane via send-keys, then Enter.
 // The text is sent with `-l` (literal) so claude's input box receives it verbatim;
 // a brief pause before Enter avoids the send-keys race where a fast Enter is
@@ -444,9 +504,9 @@ func waitForSessionFile(dir string, proc procPoller, budget time.Duration) (stri
 }
 
 // waitForFOSessionID polls dir for the FO's own session UUID, bounded by budget.
-// The FO is the team ROOT, not a spawned teammate: its transcript entries carry NO
-// non-empty `agentName`, while a dispatched teammate's entries carry
-// `"agentName":"<teammate>"`. Keying on the root transcript (not the
+// The FO is the team ROOT, not a spawned teammate: foRootSessionID identifies it by
+// the first-entry oracle (the flat transcript whose FIRST sessionId-bearing entry
+// carries no top-level `agentName`). Keying on the root transcript (not the
 // newest-assistant-bearing file, which can already be a teammate's when the FO
 // dispatched during boot) pins the id to the FO. The id can lag the file by a tick,
 // so this retries; "" if the session dies or the budget elapses.
