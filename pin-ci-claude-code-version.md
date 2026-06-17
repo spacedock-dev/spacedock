@@ -1,9 +1,10 @@
 ---
 title: Pin CI live-e2e to a known-good Claude Code version (team tools regress at 2.1.178+)
-status: backlog
+status: ideation
 source: captain (2026-06-17) — team-tool availability regression
 score: 0.5
 id: 61an320jkjgeyqq55rfx7nw0
+started: 2026-06-17T14:38:40Z
 ---
 
 The live-e2e CI lane (`.github/workflows/runtime-live-e2e.yml`) floats the Claude Code version: its `claude_version` workflow_dispatch input defaults to empty, which falls through to the installer's latest. Latest is now 2.1.178+, where headless `claude -p` lost the team tools (TeamCreate/SendMessage), and 2.1.179 interactive regressed too (established by `m4`, live-team-mode-terminal-harness). Team-mode FO drives and the standing level-3-judge residency both need a version where team tools work; 2.1.177 is the last known-good (team tools confirmed present in its registry).
