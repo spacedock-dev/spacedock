@@ -233,8 +233,6 @@ func TestReadFlagIncompatibility(t *testing.T) {
 		{"next-id", []string{"--next-id"}},
 		{"archive", []string{"--archive", "003-wire-cli"}},
 		{"where", []string{"--where", "status=ideation"}},
-		{"fields", []string{"--fields", "worktree"}},
-		{"all-fields", []string{"--all-fields"}},
 		{"archived", []string{"--archived"}},
 	}
 	for _, tc := range cases {

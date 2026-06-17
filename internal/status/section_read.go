@@ -123,8 +123,10 @@ func parseATXHeading(line string) (level int, text string, ok bool) {
 // file (an existing filesystem path is read directly; otherwise the argument is
 // resolved as an entity reference the same way --resolve resolves it), parses
 // the file into frontmatter + heading map, and emits the JSON envelope (--json)
-// or the key=value text mirror. Returns the exit code.
-func runReadSection(roots roots, ref string, asJSON bool, stdout, stderr io.Writer) int {
+// or the key=value text mirror. fields, when non-nil, projects the frontmatter
+// object to exactly those keys in order (the same --fields semantics --where /
+// --next apply). Returns the exit code.
+func runReadSection(roots roots, ref string, asJSON bool, fields []string, stdout, stderr io.Writer) int {
 	path, rc := resolveReadTarget(roots, ref, stderr)
 	if rc != 0 {
 		return rc
@@ -134,7 +136,7 @@ func runReadSection(roots roots, ref string, asJSON bool, stdout, stderr io.Writ
 		return errExit(stderr, "cannot read file: "+path)
 	}
 	if asJSON {
-		emitJSON(stdout, readJSON(path, sr))
+		emitJSON(stdout, readJSON(path, sr, fields))
 		return 0
 	}
 	fmt.Fprint(stdout, formatReadText(path, sr))

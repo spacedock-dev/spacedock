@@ -335,9 +335,6 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if len(whereFilters) > 0 {
 			incompatible = append(incompatible, "--where")
 		}
-		if hasFieldsFlag {
-			incompatible = append(incompatible, "--fields/--all-fields")
-		}
 		if archiveSlug != "" {
 			incompatible = append(incompatible, "--archive")
 		}
@@ -356,7 +353,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--read cannot be combined with "+strings.Join(incompatible, ", "))
 		}
-		return runReadSection(roots, readRef, asJSON, stdout, stderr)
+		return runReadSection(roots, readRef, asJSON, explicitFields, stdout, stderr)
 	}
 
 	if rootPath != "" {

@@ -231,19 +231,32 @@ func singletonJSON(cmd, key, value string) *jsonObj {
 }
 
 // readJSON builds the {"command":"read",...} envelope for --read: the realpath'd
-// path, the file's total_lines, the frontmatter as a nested object (keys sorted
-// for byte stability, since ParseFrontmatter returns an unordered map), and the
+// path, the file's total_lines, the frontmatter as a nested object, and the
 // ordered headings array (text/level/offset/lines, every value stringified to
-// hold the all-strings contract).
-func readJSON(path string, sr sectionRead) *jsonObj {
+// hold the all-strings contract). With fields non-nil, the frontmatter object is
+// projected to exactly those keys in their named order (a missing key is the
+// empty string), mirroring entityJSONObj's --where/--next semantics; with no
+// fields the whole map is emitted with keys sorted for byte stability (since
+// ParseFrontmatter returns an unordered map).
+func readJSON(path string, sr sectionRead, fields []string) *jsonObj {
 	fm := newJSONObj()
-	keys := make([]string, 0, len(sr.frontmatter))
-	for k := range sr.frontmatter {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		fm.set(k, sr.frontmatter[k])
+	if fields != nil {
+		// Named projection: exactly the requested keys, in request order, missing
+		// key -> empty string. resolveJSONFields with explicit fields returns them
+		// verbatim, so the projected order is the caller's order. This mirrors
+		// entityJSONObj's semantics over sr.frontmatter (readJSON has no *entity).
+		for _, k := range resolveJSONFields(nil, fields, false, nil) {
+			fm.set(k, sr.frontmatter[k])
+		}
+	} else {
+		keys := make([]string, 0, len(sr.frontmatter))
+		for k := range sr.frontmatter {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fm.set(k, sr.frontmatter[k])
+		}
 	}
 
 	headings := make(jsonArr, 0, len(sr.headings))

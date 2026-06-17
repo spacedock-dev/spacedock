@@ -168,3 +168,118 @@ func TestReadStagesArrayAbsentForPlainFile(t *testing.T) {
 		t.Fatalf("plain fixture (no stages: block) emitted a stages array: %s", out)
 	}
 }
+
+// fieldsFixturePath returns the committed entity whose known frontmatter
+// (id/title/status/verdict/score/source) is the AC-6 projection oracle.
+func fieldsFixturePath(t *testing.T) string {
+	t.Helper()
+	p, err := filepath.Abs(filepath.Join("testdata", "section-reader", "fields-fixture.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// frontmatterKeyOrder returns the frontmatter object's keys in emission order by
+// walking the raw JSON with a token decoder, so a projection's key ORDER (not
+// just membership) is assertable.
+func frontmatterKeyOrder(t *testing.T, out string) []string {
+	t.Helper()
+	var top map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(out), &top); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	raw, ok := top["frontmatter"]
+	if !ok {
+		t.Fatalf("no frontmatter object in %s", out)
+	}
+	dec := json.NewDecoder(strings.NewReader(string(raw)))
+	if _, err := dec.Token(); err != nil { // opening '{'
+		t.Fatalf("decode frontmatter: %v", err)
+	}
+	var keys []string
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			t.Fatalf("decode key: %v", err)
+		}
+		keys = append(keys, tok.(string))
+		var v json.RawMessage
+		if err := dec.Decode(&v); err != nil {
+			t.Fatalf("decode value: %v", err)
+		}
+	}
+	return keys
+}
+
+// TestReadFieldsProjection (AC-6) asserts status --read <entity> --fields k1,k2
+// projects the frontmatter to exactly the named keys in named order, omitting the
+// rest, reusing the existing --fields flag's semantics. With no --fields, the
+// whole frontmatter map is returned (unchanged from today). A requested-but-absent
+// key projects an empty string, matching entityJSONObj's behavior.
+func TestReadFieldsProjection(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	fixture := fieldsFixturePath(t)
+
+	t.Run("projects exactly the named keys in order", func(t *testing.T) {
+		out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--fields", "status,verdict", "--json")
+		if code != 0 {
+			t.Fatalf("exit=%d stderr=%q", code, stderr)
+		}
+		keys := frontmatterKeyOrder(t, out)
+		want := []string{"status", "verdict"}
+		if len(keys) != len(want) {
+			t.Fatalf("frontmatter keys = %v, want %v", keys, want)
+		}
+		for i, k := range want {
+			if keys[i] != k {
+				t.Fatalf("frontmatter key[%d] = %q, want %q (order matters)", i, keys[i], k)
+			}
+		}
+		var doc readEnvelope
+		json.Unmarshal([]byte(out), &doc)
+		if _, present := doc.Frontmatter["id"]; present {
+			t.Fatalf("unrequested key id present in projection: %v", doc.Frontmatter)
+		}
+		if doc.Frontmatter["status"] != "validation" || doc.Frontmatter["verdict"] != "approve" {
+			t.Fatalf("projected values wrong: %v", doc.Frontmatter)
+		}
+	})
+
+	t.Run("no --fields returns the whole map", func(t *testing.T) {
+		out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--json")
+		if code != 0 {
+			t.Fatalf("exit=%d stderr=%q", code, stderr)
+		}
+		var doc readEnvelope
+		if err := json.Unmarshal([]byte(out), &doc); err != nil {
+			t.Fatalf("not JSON: %v\n%s", err, out)
+		}
+		for _, k := range []string{"id", "title", "status", "verdict", "score", "source"} {
+			if _, present := doc.Frontmatter[k]; !present {
+				t.Fatalf("no-fields read dropped key %q: %v", k, doc.Frontmatter)
+			}
+		}
+	})
+
+	t.Run("requested-but-absent key projects empty string", func(t *testing.T) {
+		out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--fields", "status,nonesuch", "--json")
+		if code != 0 {
+			t.Fatalf("exit=%d stderr=%q", code, stderr)
+		}
+		keys := frontmatterKeyOrder(t, out)
+		want := []string{"status", "nonesuch"}
+		if len(keys) != len(want) || keys[0] != want[0] || keys[1] != want[1] {
+			t.Fatalf("frontmatter keys = %v, want %v (missing key projects empty, not dropped)", keys, want)
+		}
+		var doc readEnvelope
+		json.Unmarshal([]byte(out), &doc)
+		if v := doc.Frontmatter["nonesuch"]; v != "" {
+			t.Fatalf("absent key nonesuch = %q, want empty string (matching entityJSONObj)", v)
+		}
+	})
+}
