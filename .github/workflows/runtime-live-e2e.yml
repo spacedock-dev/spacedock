@@ -100,6 +100,15 @@ jobs:
       name: ${{ matrix.environment }}
     env:
       DISABLE_AUTOUPDATER: "1"
+      # Pinned Claude Code version. 2.1.177 is the LAST release that exposes the
+      # native team tools (TeamCreate/TeamDelete): 2.1.178 dropped them from
+      # headless `claude -p` (anthropics/claude-code#68721) and 2.1.179 dropped
+      # them from interactive sessions too, even with
+      # CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 present (m4 live-team-mode finding,
+      # NO_TEAM_TOOLS probe). Team-mode FO drives and the level-3-judge residency
+      # need this version. DISABLE_AUTOUPDATER above is load-bearing for the pin:
+      # without it claude auto-updates mid-job past 2.1.177 (m4 saw 2.1.177→2.1.179).
+      SPACEDOCK_PINNED_CLAUDE_VERSION: "2.1.177"
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
       # Per-leg artifact root the shared Claude scenario runner writes its
@@ -129,13 +138,12 @@ jobs:
         env:
           CLAUDE_VERSION: ${{ inputs.claude_version }}
         run: |
-          if [ -n "$CLAUDE_VERSION" ]; then
-            echo "Installing pinned Claude Code version: $CLAUDE_VERSION"
-            curl -fsSL https://claude.ai/install.sh | bash -s -- "$CLAUDE_VERSION"
-          else
-            echo "Installing latest Claude Code (no pin)"
-            curl -fsSL https://claude.ai/install.sh | bash
-          fi
+          # Empty workflow_dispatch input resolves to the team-tool-capable pin,
+          # NOT to installer-latest (which is 2.1.178+, team tools removed). A
+          # maintainer can still override with an explicit version or `latest`.
+          VERSION="${CLAUDE_VERSION:-$SPACEDOCK_PINNED_CLAUDE_VERSION}"
+          echo "Installing Claude Code version: $VERSION"
+          curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Build spacedock binary
@@ -163,7 +171,18 @@ jobs:
 
       - name: Show tool versions
         run: |
-          claude --version
+          # Enforce the pin: the leading version field MUST equal the pin or the
+          # job REDs. `claude --version` prints "2.1.177 (Claude Code)", so strip
+          # from the first space before comparing (a bare equality would red on
+          # the suffix). This is the checkable proof the live lane runs on the
+          # team-tool-capable version, not whatever floated to latest.
+          CLAUDE_VERSION_RAW="$(claude --version)"
+          CLAUDE_VERSION_FIELD="${CLAUDE_VERSION_RAW%% *}"
+          if [ "$CLAUDE_VERSION_FIELD" != "$SPACEDOCK_PINNED_CLAUDE_VERSION" ]; then
+            echo "::error::claude resolved to '$CLAUDE_VERSION_FIELD' (full: '$CLAUDE_VERSION_RAW'); expected pinned $SPACEDOCK_PINNED_CLAUDE_VERSION" >&2
+            exit 1
+          fi
+          echo "claude version pin verified: $CLAUDE_VERSION_FIELD"
           go version
           echo "### Tool versions" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`claude --version\`: \`$(claude --version)\`" >> "$GITHUB_STEP_SUMMARY"
