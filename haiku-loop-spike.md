@@ -11,7 +11,7 @@ issue:
 sprint: 0205-layered-fo
 sprint-readiness: ready
 id: w4ryf4mg4vn1emwp906vd8yp
-mod-block: merge:pr-merge
+mod-block:
 pr: "#393"
 ---
 
