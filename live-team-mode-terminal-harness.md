@@ -1,6 +1,6 @@
 ---
 title: Build a terminal/pty live harness for team-mode e2e (residency + teardown)
-status: validation
+status: implementation
 source: "FO + captain (2026-06-16, during 2yf): headless `claude -p` cannot sustain team mode — anthropics/claude-code 2.1.178 dropped the native TeamCreate/TeamDelete tools from headless sessions (anthropics/claude-code#68721), and even with tools present the SDK/headless session lifecycle races to end_turn before teammates finish (anthropics/claude-code-action#1124). Per 7e's recorded steer (headless `-p` goes bare), the two forced-team `-p` live tests (TestLiveEnsignCycleTeamTeardown, TestLiveStandingResidencyInjectsCommOfficer) were RETIRED in 2yf because they cannot work headless. Team-mode MECHANISMS stay covered offline (internal/dispatch/spawn_standing_all_test.go for comm-officer injection; internal/ensigncycle/teardown_grade_watcher_test.go + testdata/sonnet_teamdelete_*.jsonl for the bounded-teardown marker grading). The GAP this task closes: live end-to-end team-mode coverage (FO creates a real team, injects the comm-officer standing teammate into the roster, dispatches through the team, terminalizes, and runs the bounded teardown emitting TERMINAL_TEARDOWN_BOUNDED). That requires an INTERACTIVE (pseudo-terminal) harness where team tools are present and the session stays alive — the current live suite is entirely `claude -p`."
 started: 2026-06-16T15:15:39Z
 completed:
@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-live-team-mode-terminal-harness
 issue:
 id: m40mphxan8phr3t3tp03gk89
 sprint: 0204-structured-reads
-mod-block: merge:pr-merge
+mod-block:
 pr: "#390"
 sprint-readiness: in-progress
 ---
@@ -223,3 +223,13 @@ While fixing the idle gate (CI failed because the pane-text gate is render-fragi
 - **The idle gate, `expect(isTeamCreate)`, and the liveness drain** all assumed an FO transcript that does not exist. (This also explains the earlier residency run: it "saw" `teamName` entries only because it tailed the comm-officer TEAMMATE transcript via the F30-flipped resolver; its `expect(isTeamCreate)` actually timed out too — consistent.)
 
 **Status:** committed offline work stays valid (the idle-gate `transcriptReachedIdle` + `TestTranscriptReachedIdle`, the F30 FO-session pin + `TestFOSessionPinning`, the macOS symlink fix, the CI `if: !cancelled()` decoupling). The captain-nudge code is uncommitted, held pending the re-scope decision. No fix attempted around the finding — it is an architecture mismatch between m4's transcript-observation design and CC 2.1.177's interactive persistence behavior, escalated for the captain's call on m4's scope (and its place in the v0.20.4 path).
+
+### Feedback Cycles
+
+**Validation → implementation bounce (captain-adjudicated, 2026-06-16 session #4).** Captain's call: FINISH m4 into v0.20.4 — and the LOAD-BEARING FINDING above is **FALSE**. The interactive team-lead FO **does** persist its own session transcript to disk; the probe looked in the wrong place. FO-side de-risk (gathered with zero live-auth spend, against a live interactive FO session — the Commander's own):
+
+- The FO transcript is the **flat** `{CONFIG_DIR}/projects/{encode(cwd)}/{FO-session-id}.jsonl` (one entry-per-line stream; first entry keys `[agentSetting, sessionId, type]`, **no** `agentName`).
+- The sibling `{...}/{FO-session-id}/` **directory** (no `.jsonl`) holds `subagents/` + `workflows/` — i.e. the **teammate/subagent** transcripts. `session-env/` is env staging, unrelated to transcripts.
+- The committed probe read `session-env/<uuid>/` and/or the `<id>/` subdir (teammate transcripts) and missed the sibling flat file one level up — the **same class as F30** (the resolver flipping to the teammate transcript).
+
+**Routed implementation scope:** point the transcript resolver at the flat FO `<session-id>.jsonl` (confirm the path holds under the harness's isolated `CLAUDE_CONFIG_DIR`, polling for first-turn flush — do not single-shot check); correct the FALSE addendum; confirm `transcriptReachedIdle` and AC-4 resolve over the located FO transcript; commit the bounded captain-nudge; re-green locally. The FO (not the ensign) owns the re-push + CI-lane approval.
