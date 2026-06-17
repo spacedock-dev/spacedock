@@ -609,3 +609,58 @@ func atoiT(t *testing.T, s string) int {
 	}
 	return n
 }
+
+// TestBootTaxonomySourceSufficient (AC-4 source-sufficiency) proves the rewritten
+// FO Startup step 4 has a real source: a boot-shaped status --read docs/dev/README.md
+// --json yields, in its stages array, every per-stage flag step 4 enumerates
+// (initial/terminal/gate/worktree/feedback-to) for the five real stages — so the
+// contract sentence that points step 4 at status --read is sufficient, proven by
+// EXERCISING the real output, not a prose-grep over the contract.
+//
+// This AC proves only source-sufficiency. The behavioral adoption — a booting FO
+// actually CALLING status --read and not the Read tool — is observed by
+// haiku-drive-validation's live drive, not this member.
+func TestBootTaxonomySourceSufficient(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	readme := devReadmePath(t)
+
+	out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", readme, "--json")
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr)
+	}
+	var doc readEnvelope
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	byName := map[string]map[string]string{}
+	for _, s := range doc.Stages {
+		byName[s["name"]] = s
+	}
+	// The taxonomy flags step 4 enumerates, per real stage that sets them. Every
+	// stage object MUST carry the four typed flags (initial/terminal/gate/worktree)
+	// as string leaves; feedback-to is present only where the README sets it.
+	for _, name := range []string{"backlog", "ideation", "implementation", "validation", "done"} {
+		s, ok := byName[name]
+		if !ok {
+			t.Fatalf("stage %q absent from the boot taxonomy source: %v", name, byName)
+		}
+		for _, flag := range []string{"initial", "terminal", "gate", "worktree"} {
+			v, present := s[flag]
+			if !present {
+				t.Errorf("stage %q missing flag %q step 4 consumes: %v", name, flag, s)
+				continue
+			}
+			if v != "true" && v != "false" {
+				t.Errorf("stage %q flag %q = %q, want a string bool", name, flag, v)
+			}
+		}
+	}
+	// feedback-to is the one routing flag the gate needs; validation carries it.
+	if byName["validation"]["feedback-to"] != "implementation" {
+		t.Errorf("validation feedback-to = %q, want implementation (the gate's routing source)", byName["validation"]["feedback-to"])
+	}
+}
