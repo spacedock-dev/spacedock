@@ -9,7 +9,7 @@ score:
 worktree: .worktrees/spacedock-ensign-live-team-mode-terminal-harness
 issue:
 id: m40mphxan8phr3t3tp03gk89
-sprint: 0204-structured-reads
+sprint: 0205-layered-fo
 mod-block: merge:pr-merge
 pr: "#390"
 sprint-readiness: in-progress
