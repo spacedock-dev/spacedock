@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -175,6 +176,29 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 	// missed (it ran on already-onboarded operator auth).
 	if err := seedInteractiveClaudeConfig(effectiveConfigDir, resolvedCwd); err != nil {
 		t.Fatalf("seed interactive claude config for %s: %v", label, err)
+	}
+
+	// Seed the stored-login credential so the INTERACTIVE launch authenticates.
+	// Interactive Claude Code does NOT consume CLAUDE_CODE_OAUTH_TOKEN the way
+	// headless `-p` does (the env token 401s every interactive turn, banner
+	// "Claude API"); it reads the stored-login OAuth credential from the config
+	// dir's .credentials.json. isolatedClaudeEnv supplies only the env token, so
+	// without this seed the isolated interactive child has no credential it honors.
+	// The stored login lives in the operator's OS credential store (macOS keychain
+	// `Claude Code-credentials`), so this is best-effort + operator-local: when no
+	// stored login is reachable (CI Linux, no keychain) it is a no-op and the child
+	// falls back to the env-token / ANTHROPIC_API_KEY path unchanged — so AC-6's
+	// skip-not-fatal-without-auth (decided upstream in isolatedClaudeEnv) is intact.
+	//
+	// When the seed lands, DROP CLAUDE_CODE_OAUTH_TOKEN from the child env: with both
+	// present, interactive claude prefers the env token (banner "Claude API") and
+	// 401s, so the seeded stored login must be the ONLY credential for it to be
+	// authoritative (banner "Claude Max", a real authenticated turn). The token is
+	// dropped only on the seeded path; the no-keychain fallback keeps it.
+	if err := seedStoredLoginCredential(effectiveConfigDir); err != nil {
+		t.Logf("[pty %s] stored-login seed skipped (%v) — falling back to the env credential", label, err)
+	} else {
+		env = withoutEnvKey(env, "CLAUDE_CODE_OAUTH_TOKEN")
 	}
 
 	session := fmt.Sprintf("sdpty-%s-%d", label, time.Now().UnixNano())
@@ -601,6 +625,45 @@ func seedInteractiveClaudeConfig(configDir, resolvedCwd string) error {
 		return err
 	}
 	return os.WriteFile(path, out, 0o600)
+}
+
+// seedStoredLoginCredential writes <configDir>/.credentials.json from the
+// operator's stored-login OAuth credential so the INTERACTIVE child authenticates.
+// The interactive TUI reads this file (the `{"claudeAiOauth": {...}}` object),
+// unlike headless `-p`, which consumes CLAUDE_CODE_OAUTH_TOKEN directly. The
+// credential lives in the OS credential store (macOS keychain item
+// `Claude Code-credentials`), whose `-w` output is ALREADY the full
+// `{"claudeAiOauth": {...}}` shape claude expects, so it is written verbatim.
+//
+// It is best-effort + operator-local: it returns an error (the caller logs and
+// proceeds) when the credential store is unreachable — a non-macOS host (CI Linux),
+// no `security` binary, no stored login, or an empty/malformed payload. In every
+// such case the seed is a no-op and the child falls back to the env-token /
+// ANTHROPIC_API_KEY path, so AC-6's skip-not-fatal-without-auth (decided upstream in
+// isolatedClaudeEnv) is unaffected.
+func seedStoredLoginCredential(configDir string) error {
+	if runtime.GOOS != "darwin" {
+		return fmt.Errorf("stored-login seed is macOS-keychain only (GOOS=%s)", runtime.GOOS)
+	}
+	raw, err := exec.Command("security", "find-generic-password",
+		"-s", "Claude Code-credentials", "-w").Output()
+	if err != nil {
+		return fmt.Errorf("read keychain credential: %w", err)
+	}
+	cred := strings.TrimSpace(string(raw))
+	// Confirm the payload is the expected stored-login shape before seeding, so a
+	// malformed/empty keychain entry falls through to the env-credential path rather
+	// than writing a .credentials.json that 401s the same way the env token does.
+	var probe struct {
+		ClaudeAIOauth json.RawMessage `json:"claudeAiOauth"`
+	}
+	if cred == "" || json.Unmarshal([]byte(cred), &probe) != nil || len(probe.ClaudeAIOauth) == 0 {
+		return fmt.Errorf("keychain credential is empty or not the {claudeAiOauth:{...}} shape")
+	}
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(configDir, ".credentials.json"), []byte(cred), 0o600)
 }
 
 // shellJoin renders argv as a single shell command line, single-quoting any arg
