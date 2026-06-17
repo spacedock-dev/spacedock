@@ -6,7 +6,7 @@ sprint: 0204-structured-reads
 id: xhttp6bs3h6w8afy4xf2zmz8
 worktree: .worktrees/spacedock-ensign-contractlint-antidrift-guard-hardening
 started: 2026-06-17T07:26:25Z
-mod-block: merge:pr-merge
+mod-block:
 pr: "#394"
 ---
 
