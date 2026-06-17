@@ -10,6 +10,7 @@ mod-block:
 pr: "#394"
 completed: 2026-06-17T07:52:13Z
 verdict: PASSED
+archived: 2026-06-17T07:52:13Z
 ---
 
 Two pre-cut-audit blockers + one non-blocking hole, all on the v0.20.4 contract/CI surface. Make the checks honest and policy-compliant; the shipped behavior is already correct, so this is test-strength, not a behavior fix.
