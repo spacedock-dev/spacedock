@@ -3,7 +3,7 @@ title: dispatch build --request-file — single Markdown request file for FO dis
 status: backlog
 source: captain proposal (2026-06-17) — reduce FO dispatch-input ceremony; symmetric to the output file-pointer handoff
 score: 0.4
-sprint: 0205-layered-fo
+sprint: 0206-dispatch-driver
 sprint-readiness: ready
 id: vppqhf877vz8p9xykgdw98x6
 ---
