@@ -2,7 +2,7 @@
 title: "The operating model"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-17 07:27:36"
+last_updated: "2026-06-17 07:36:44"
 ---
 
 # The operating model
