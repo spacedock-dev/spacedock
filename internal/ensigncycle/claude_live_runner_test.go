@@ -476,3 +476,18 @@ func withClaudeConfigDir(env []string, dir string) []string {
 	}
 	return append(out, "CLAUDE_CONFIG_DIR="+dir)
 }
+
+// withoutEnvKey returns env with every KEY=... entry for key removed. The pty
+// driver uses it to drop CLAUDE_CODE_OAUTH_TOKEN once it has seeded the stored-login
+// credential, so the seeded login is the child's only (and authoritative) credential.
+func withoutEnvKey(env []string, key string) []string {
+	prefix := key + "="
+	out := make([]string, 0, len(env))
+	for _, e := range env {
+		if strings.HasPrefix(e, prefix) {
+			continue
+		}
+		out = append(out, e)
+	}
+	return out
+}
