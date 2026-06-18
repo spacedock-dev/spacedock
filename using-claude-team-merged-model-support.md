@@ -9,6 +9,8 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-using-claude-team-merged-model-support
 issue: "anthropics/claude-code#68721"
+pr: "#396"
+mod-block: merge:pr-merge
 ---
 
 Re-architect the Claude dispatch contract around the one runtime capability the FO needs — a live worker BACK-CHANNEL (a dispatched worker that can talk to `main` while it runs, and a lead that can advance it) — rather than a "team" concept. On Claude .178+ that back-channel is the normal dispatch shape (a named background `Agent`, no `TeamCreate`); on legacy hosts (pre-2.1.178) the same capability comes from the native `TeamCreate` registry. The legacy mechanism is fenced into a probe-loaded skill with a clear, externally-checkable removal trigger once the supported floor is .178+. `team` / `TeamCreate` / merged / legacy / `TeamDelete` are implementation detail of how each runtime provides the capability — not the design center. (Captain reframe, 2026-06-18; see `## Capability-framed restructure`.)
