@@ -13,6 +13,8 @@ issue: "anthropics/claude-code#68721"
 
 Make `skills/using-claude-team` work on Claude Code .178+ (the merged auto-team model, where `TeamCreate`/`TeamDelete` are gone and team membership comes from spawning named background subagents), while remaining compatible with legacy hosts that still expose `TeamCreate` — and mark a clear, triggered path to deprecate the legacy branch once the supported floor is .178+.
 
+**Deliverable layers (true scope — established by `## Scope finding` below):** this is NOT prose-only. It is (a) skill/contract PROSE — `skills/using-claude-team/SKILL.md` + `skills/first-officer/references/claude-fo-dispatch.md` — PLUS (b) a Go change in `internal/dispatch/build.go`: a merged-mode dispatch-emission path (emit `name` present + `team_name` absent, past the Rule-8 `team_name`-required guard at `build.go:442`), with Go unit tests. The precise nuance: `internal/claudeteam/reconcile.go` itself needs **no change** (auto-discovery already keys on `leadSessionId`/`$CLAUDE_CODE_SESSION_ID`); the Go change is in the SEPARATE `internal/dispatch/build.go` file.
+
 ## Problem
 
 `using-claude-team` makes `TeamCreate` the mandatory first call and **blocks all `Agent` dispatch until it resolves**. On .178+, `ToolSearch(select:TeamCreate)` returns no match, so the skill falls into **bare mode**: sequential, no concurrent dispatch, no direct ensign chat. Nothing breaks (all workflow functionality is preserved), but spacedock **needlessly surrenders concurrency** by gating on a primitive that no longer exists, while the primitives it actually needs (named background `Agent`, `SendMessage`, Tasks, on-disk team registry) are all present and working. The skill, the `claude-fo-dispatch.md` reconcile step, and the Terminal-Teardown / Degraded-Mode machinery are all written around `TeamCreate`/`TeamDelete` and the `#36806` registry-desync model, which no longer describe the runtime.
@@ -25,13 +27,13 @@ Two-mode bridge with a deprecation trigger:
 - **Merged path (.178+):** no `TeamCreate`. Team membership = `Agent(name=…, run_in_background=true)`. Lead<->teammate via `SendMessage(to=name)` / teammate->lead via `SendMessage(to="main")`. Teardown = per-name `SendMessage(shutdown_request)` -> `shutdown_approved` -> `teammate_terminated` (NO `TeamDelete`, no active-member race, no `TERMINAL_TEARDOWN_BOUNDED` apparatus). FO tracks its own ensign roster (it already does — `TaskList` is not used).
 - **Legacy path:** keep the existing `TeamCreate`/`TeamDelete` flow intact, clearly fenced and labelled deprecated, with a removal trigger (e.g. "remove when the min supported Claude Code no longer exposes `TeamCreate`, and no live lane still drives the legacy branch").
 - **Strip the `claude-team`/NAME_PATTERN leak** from the generic skill (line ~19): the FO no longer names the team, and the introspection helper keys on `leadSessionId`, never the team name, so the compat note is doubly obsolete.
-- **Flip `claude-fo-dispatch.md`'s reconcile step** from "pass your `TeamCreate` `{team_name}`" to the already-documented `leadSessionId` **auto-discovery** mode (thread `--session-id`, drop `--team-name`). The Go helper (`internal/claudeteam/reconcile.go`) needs **no change**.
+- **Flip `claude-fo-dispatch.md`'s reconcile step** from "pass your `TeamCreate` `{team_name}`" to the already-documented `leadSessionId` **auto-discovery** mode (drop `--team-name`; no `--session-id` plumbing is needed — OQ-5 confirms `reconcile.go` reads `$CLAUDE_CODE_SESSION_ID`). The reconcile Go helper (`internal/claudeteam/reconcile.go`) needs **no change**. NOTE (ideation correction, see `## Scope finding`): the seed's broader "no Go change" reading is INCOMPLETE — a SEPARATE Go file, `internal/dispatch/build.go`, DOES need a merged-mode emission path (Rule 8 at `build.go:442` blocks the `name`-present + `team_name`-absent merged dispatch shape). So the deliverable is prose PLUS that `build.go` change; only `reconcile.go` is change-free.
 
 ## Out of scope
 
 - The live pty/team-mode harness work — owned by `m4` (`live-team-mode-terminal-harness`, m40mphxan8phr3t3tp03gk89). This task is the **skill + FO-contract prose** layer; m4 is the **live test harness** layer. They must stay reconciled but are separate deliverables.
 - The team-mode verdict-omission question (reeppr990pyzzaejmbnyrvt7).
-- Any change to the Go `internal/claudeteam` helper — the spike showed it is already robust to the merged model.
+- Any change to the Go `internal/claudeteam` helper (`reconcile.go`) — the spike showed it is already robust to the merged model (auto-discovery keys on `leadSessionId`). This is the ONLY Go file out of scope: `internal/dispatch/build.go` IS in scope (the merged-mode emission path — see `## Scope finding`), so "no Go change" applies to `internal/claudeteam` specifically, not to the deliverable as a whole.
 - **tmux pane-backed teammate reap** — descoped per captain (2026-06-18). The merged model spawns teammates `in-process` (validated), where lead `shutdown_request` reap works; pane-backed reap is not a path this task targets.
 
 ## Spike findings — validated live 2026-06-18 on Claude Code 2.1.181
@@ -50,7 +52,7 @@ Probed with real `Agent` + `SendMessage` (NOT the Workflow harness — a differe
 
 ## Capability matrix — Claude Code 2.1.181 (merged auto-team model)
 
-Tested context: Claude Code **2.1.181**, interactive `cli` entrypoint (**NOT** headless `-p`), `in-process` teammate backend, model `claude-opus-4-8[1m]`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, no tmux. Each ✅/❌ was observed live this session; ❓ rows were NOT exercised and must not be read as either pass or fail.
+Tested context: Claude Code **2.1.181**. The standing-member / reap / registry rows were observed via the interactive `cli` entrypoint (`in-process` teammate backend, model `claude-opus-4-8[1m]`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, no tmux). The three rows that were ❓ UNTESTED in that interactive session — headless `-p` residency, flag-free operation, and `agentType` for a non-`general-purpose` `subagent_type` — were SUBSEQUENTLY resolved during ideation (see `## Open-question resolutions`): residency + flag-free via a nested `claude -p` stream-json spike (so those two are now **headless-validated**, not interactive-only), and the `agentType` stamping via on-disk registry inspection. Each ✅/❌ was observed live; no row remains ❓.
 
 | Capability | 2.1.181 | Evidence / exact signal |
 |---|---|---|
@@ -65,9 +67,9 @@ Tested context: Claude Code **2.1.181**, interactive `cli` entrypoint (**NOT** h
 | Teammate spawns a **synchronous** subagent | ✅ allowed | per the harness's own error guidance (`run_in_background=false`) |
 | `TaskList` / `TaskStop` reach background teammates | ❌ | `TaskStop <id>` → "No task found"; `TaskList` → empty |
 | On-disk team registry | ✅ present | `~/.claude/teams/session-<id>/config.json`; same schema as the `TeamCreate` era; `members[]` is a live, pruned roster (terminated members removed) |
-| Headless **`-p`** team mode (residency past `end_turn`) | ❓ UNTESTED | only interactive `cli` exercised this session |
-| **Flag-free** (no `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | ❓ UNTESTED | the flag was `=1` throughout |
-| `agentType` stamped for a non-`general-purpose` `subagent_type` (e.g. `spacedock:ensign`) | ❓ UNTESTED | probes used `general-purpose`, which the registry recorded faithfully |
+| Headless **`-p`** team mode (residency past `end_turn`) | ✅ | nested `claude -p` stream-json probe — spawn→deliver→reap within one resident `-p` run (both flag arms) |
+| **Flag-free** (no `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | ✅ | OQ-2 probe — identical behavior flag-unset vs `=1`; flag is a no-op for the merged channel |
+| `agentType` stamped for a non-`general-purpose` `subagent_type` (e.g. `spacedock:ensign`) | ✅ | OQ-3 — real on-disk `config.json`s stamp `agentType:"spacedock:ensign"`; FO-side fresh-dispatch confirm still flagged |
 
 ## Open questions (for ideation)
 
@@ -234,3 +236,9 @@ User-visible surface check: this task changes FO/skill *agent-facing* contract p
 ### Summary
 
 Resolved every open question with recorded evidence: the two live OQs (flag-free operation, headless `-p` residency) via paired nested `claude -p` stream-json probes that proved the merged named-background-`Agent` + `SendMessage(to="main")` channel works flag-free and stays resident on 2.1.181 — the bare-mode flag hint is stale; OQ-3/4/5/6 via on-disk registry inspection plus launcher/reconcile code reads. The load-bearing correction to the seed: it under-scoped the Go change. `internal/claudeteam/reconcile.go` genuinely needs none (auto-discovery already keys on `leadSessionId`/`$CLAUDE_CODE_SESSION_ID`), but `internal/dispatch/build.go` Rule 8 (`build.go:442`) blocks the merged dispatch shape (`name` present + `team_name` absent), so the deliverable is skill/contract prose PLUS a `build.go` merged-mode emission path with Go tests — recorded as the riskiest-path-first implementation item. Specified the two-mode bridge as 8 concrete before/after edits with the legacy `TeamCreate` machinery fenced under one deprecated subsection whose removal trigger references the real `SPACEDOCK_PINNED_CLAUDE_VERSION: "2.1.177"` pin (the legacy branch's only live consumer). Finalized 5 behavior-anchored ACs, each with fixture + live coverage; AC-4's helper behavior is already covered by `reconcile_session_test.go` (reuse, not duplicate). The OQ-6 seam with m4 is a host-regime split: m4 keeps the pinned-2.1.177 legacy live lane, this task adds a merged (unpinned) live lane.
+
+### Addendum: consistency reconciliation (post-report)
+
+Two internal-consistency fixes after the report was first written, reconciling the top-of-doc framing and the capability matrix with the evidence gathered in `## Open-question resolutions` (no new claims, no scope change):
+1. Capability matrix: flipped the three formerly-❓ rows (headless `-p` residency, flag-free, `agentType` stamping) to ✅ with the OQ-2/OQ-3 evidence, and rewrote the "Tested context" sentence so it no longer asserts those rows are untested — they were subsequently resolved (residency + flag-free are now headless-validated via the nested `claude -p` spike). No row remains ❓.
+2. Scope framing: added a top-of-doc **Deliverable layers** note and reconciled the lede/`## Proposed approach`/`## Out of scope` with `## Scope finding` — the deliverable is skill/contract prose PLUS the `internal/dispatch/build.go` merged-mode emission path; only `internal/claudeteam/reconcile.go` is change-free.
