@@ -6,11 +6,7 @@ The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapte
 
 Claude PROVIDES the worker back-channel (fo-dispatch-core.md `## Dispatch Adapter`, the organizing capability) via named background subagents, with no separate setup step: a worker is `Agent(name=…, run_in_background=true)` (no `team_name`); the worker messages the lead mid-run via `SendMessage(to="main")`; reuse-advance / steering is `SendMessage(to=name)`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below); Claude Code writes the on-disk roster `~/.claude/teams/session-<id>/config.json` automatically, keyed by session id, recording each member's `agentType`. Dispatch directly — there is nothing to load first.
 
-**Legacy override.** Before the first dispatch, run the deferred-tool probe `ToolSearch(query="select:TeamCreate", max_results=1)`. If it matches a `TeamCreate` definition (a pre-2.1.178 runtime), load:
-
-    Skill(skill="spacedock:using-legacy-claude-team")
-
-That skill OVERRIDES the tool-call signatures and caveats in the rest of this file for the legacy case — how membership is established, the `team_name`/`--team` the build and `spawn-standing-all` then carry, the registry-desync recovery, and the terminal teardown. When the probe returns no match (a current runtime), the skill is never read and this file applies as written. The rest of this file describes the current-runtime contract and does not restate the legacy overrides.
+**Legacy override (delete this line to sunset legacy mode):** if `ToolSearch(query="select:TeamCreate", max_results=1)` matches before the first dispatch (a pre-2.1.178 runtime), `Skill(skill="spacedock:using-legacy-claude-team")` and follow it — it OVERRIDES every tool-call signature below; otherwise this file applies as written.
 
 In single-entity mode, skip the background back-channel. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` and without `run_in_background` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
 
