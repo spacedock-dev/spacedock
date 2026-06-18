@@ -1,16 +1,18 @@
 # First Officer Dispatch Module (Claude)
 
-The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first team-mode dispatch: team creation, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep.
+The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first team-mode dispatch: team setup, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep.
 
-## Team Creation
+## Team Setup
 
-Before the first team-mode dispatch (the first `Agent()` call that uses a `team_name`), invoke the generic Claude-team-harness discipline:
+Before the first team-mode dispatch (the first `Agent()` call that establishes a teammate), invoke the generic Claude-team-harness discipline:
 
     Skill(skill="spacedock:using-claude-team")
 
-This loads the generic team lifecycle — deferred team-tool ToolSearch hop, TeamCreate-first sequencing and naming, the TeamCreate recovery procedure and the failure-recovery ladder, Degraded Mode, Awaiting Completion, and Terminal Team Teardown. Invoke it before the first team-mode tool call in the session — not at boot. A boot that greets and stops for input never dispatches, so it never creates a team and never pays the team-mode prefix re-cache. The spacedock-specific decisions below stay inline; the generic blocks they reference (`## Degraded Mode`, `## Awaiting Completion`, `## Terminal Team Teardown`) live in that skill, not in this file.
+This loads the generic team lifecycle — the deferred team-tool ToolSearch hop that doubles as the host **mode discriminator** (`ToolSearch(select:TeamCreate)` empty → merged .178+, present → legacy), merged team setup (no `TeamCreate`), Degraded Mode, Awaiting Completion, and Terminal Team Teardown. The legacy `TeamCreate` lifecycle (creation + naming, the recovery ladder, the bounded `TeamDelete` teardown) lives in that skill's `references/legacy-teamcreate.md`, read only on a legacy probe match. Invoke the skill before the first team-mode tool call in the session — not at boot. A boot that greets and stops for input never dispatches, so it never sets up a team and never pays the team-mode prefix re-cache. The spacedock-specific decisions below stay inline; the generic blocks they reference (`## Degraded Mode`, `## Awaiting Completion`, `## Terminal Team Teardown`) live in that skill, not in this file.
 
-In single-entity mode, skip team creation. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
+On the **merged host (.178+, the default forward path)** there is no `TeamCreate` and no `team_name`: a teammate is established by a named background `Agent` dispatch, and `spacedock dispatch build` emits the merged shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below). On a **legacy host** the build emits `name` + `team_name` and the `TeamCreate`-first sequencing in `references/legacy-teamcreate.md` applies.
+
+In single-entity mode, skip team setup. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` and without `run_in_background` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32`. The startup boot read is an FO-internal read; consume it as JSON: `status --boot --json` returns one object with the keys `command`, `mods`, `id_style`, `next_id`, `min_prefix` (present only for `sd-b32`), `orphans`, `pr_state`, `dispatchable`, `team_state` — every value a string. For `sd-b32`, call `status --next-id --id-seed "{slug-or-title}"` and optionally pass `--id-actor` so the SHA-derived candidate includes creation context. SD-B32 candidates are full stored IDs, not a reservation; call again immediately before writing the entity. For `slug`, derive the slug from the title and leave `id` blank.
 
@@ -18,21 +20,27 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker.
 
-**Sequencing rule:** Team lifecycle calls (TeamCreate, TeamDelete), `spawn-standing-all` invocations (which emit Agent specs forwarded into Agent dispatch), and Agent dispatch must NEVER appear in the same tool-call message as TeamCreate/TeamDelete — parallel execution causes races (see the recovery procedure in `Skill(skill="spacedock:using-claude-team")`). Resolve team state in one message, then dispatch (including spawn-standing-all-driven Agent calls) in a subsequent message. `spawn-standing-all` requires a real `team_name` from a prior successful `TeamCreate` and MUST NOT precede it.
+**Sequencing rule (merged host):** the merged dispatch is a single named background `Agent` call — there is no `TeamCreate` to sequence against, so dispatch directly. On a **legacy host** the `TeamCreate`/`TeamDelete` sequencing constraints (resolve team state in one message, then dispatch in a subsequent message; `spawn-standing-all` requires a real `team_name` from a prior successful `TeamCreate` and MUST NOT precede it) apply — see `references/legacy-teamcreate.md`.
 
-**No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/{team_name}/` before `Agent()` in the normal dispatch path. The on-disk check is a guaranteed false positive under registry-desync (anthropics/claude-code#36806 leaves on-disk state intact even when the in-memory team slot is invalidated). Trust the in-memory handle returned by `TeamCreate` and let `Agent()` surface any registry-desync error. On such an error, follow the TeamCreate failure recovery ladder and Degraded Mode semantics in `Skill(skill="spacedock:using-claude-team")` — do NOT reintroduce a pre-dispatch probe.
+**No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/` before `Agent()` in the normal dispatch path. On the merged host the auto-team `config.json` is written by Claude Code after the spawn, so a pre-dispatch probe reads nothing. On a legacy host the on-disk check is a guaranteed false positive under registry-desync (anthropics/claude-code#36806 leaves on-disk state intact even when the in-memory team slot is invalidated). Either way, dispatch directly and let `Agent()` surface any error; on a legacy registry-desync error follow the recovery ladder and Degraded Mode semantics in `Skill(skill="spacedock:using-claude-team")` — do NOT reintroduce a pre-dispatch probe.
 
 On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pass `--host claude` only for deliberate tests or cross-host tooling), map the emitted fields to `Agent()` verbatim — `model=output.model` only when non-null, do NOT pass `model=None`:
 ```
 Agent(
     subagent_type=output.subagent_type,
-    name=output.name,                 // omit if bare mode (field absent)
-    team_name=output.team_name,       // omit if bare mode (field absent)
-    description=output.description,   // REQUIRED — Agent tool rejects missing description
-    model=output.model,               // omit when output.model is null
-    prompt=output.prompt              // ~175 chars; ensign Reads dispatch_file_path on first action
+    name=output.name,                           // omit if bare mode (field absent)
+    team_name=output.team_name,                 // legacy only; omit on merged + bare (field absent)
+    run_in_background=output.run_in_background,  // merged only (the worker→lead back-channel); omit when field absent
+    description=output.description,             // REQUIRED — Agent tool rejects missing description
+    model=output.model,                         // omit when output.model is null
+    prompt=output.prompt                        // ~175 chars; ensign Reads dispatch_file_path on first action
 )
 ```
+
+**Bidirectional back-channel (merged host).** The merged shape is what grants the two-way comms a live worker needs, and each axis is one emitted field:
+- `name` present is the **lead→worker** channel — `SendMessage(to=name)`. This IS the host-neutral reuse-advance handle (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, reuse-condition-1: "the runtime adapter exposes a live, reusable handle"). A name-less dispatch forfeits reuse, so the merged dispatch always emits a `name`.
+- `run_in_background=true` is the **worker→lead** channel — a background teammate can `SendMessage` up to the lead mid-run (a synchronous/foreground subagent's only up-signal is its final return value).
+- The worker→lead completion target is pinned to the single name **`team-lead`** — the build helper emits `SendMessage(to="team-lead", …)` in the merged dispatch's completion-signal block, matching the ensign runtime's completion contract. Do not also accept `to="main"` as the completion signal; pin one name.
 
 **Reuse-advance handle (SendMessage):** When advancing a reused ensign (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, "If reuse"), send the next assignment via:
 
@@ -43,7 +51,7 @@ SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next st
 Agent(
     subagent_type="{dispatch_agent_id}",
     name="{worker_key}-{slug}-{stage}",  // if this exceeds 64 chars, cap it the way `spacedock dispatch build` does: keep the {worker_key} prefix and -{stage} suffix and, on id-style: sd-b32, replace the slug with a fixed-length prefix of the entity id (id-less slug workflows truncate the slug head instead)
-    team_name="{team_name}",
+    run_in_background=true,              // merged host (.178+): named background teammate, no team_name. On a legacy host use team_name="{team_name}" instead (see references/legacy-teamcreate.md).
     model="{effective_model}",
     prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry. Use the checklist item text verbatim when possible.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {stage}. Report written to {entity_file_path}.\")"
 )
@@ -52,7 +60,9 @@ This is the concrete Claude form of fo-dispatch-core.md's Break-Glass template; 
 
 ## Standing-Teammate Injection (Claude)
 
-The Claude realization of the core's standing-injection call (fo-dispatch-core.md `## Dispatch`): before the first team-mode dispatch, run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each spawn spec in the returned JSON array to `Agent()`. The call is idempotent (already-alive members omitted) and emits `[]` in bare mode or when none is declared. Standing teammates are team-scoped: they die with the team at teardown. (The `## Spawn Call (Agent)` sequencing rule above already states `spawn-standing-all` requires a real `team_name` from a prior `TeamCreate`.)
+The Claude realization of the core's standing-injection call (fo-dispatch-core.md `## Dispatch`): before the first team-mode dispatch, run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}` and forward each spawn spec in the returned JSON array to `Agent()`. The call is idempotent (already-alive members omitted, deduped against the team config) and emits `[]` in bare mode or when none is declared.
+
+On the merged host the **standing teammate shape** is the same merged dispatch the rest of this contract uses — a named background `Agent` (`run_in_background=true`, no `team_name`), scoped to the session auto-team, reaped per-name at terminal teardown. NOTE (known gap, flagged for the FO): the `spawn-standing-all` *helper* still requires a real `--team {team_name}` for its already-alive dedup (it reads the team config by name), so the merged session has no team name to pass it. Until the helper learns the session-auto-team dedup, on the merged host inject any declared standing teammate by a direct named background `Agent` dispatch (no helper-driven dedup) rather than via `spawn-standing-all`. On a **legacy host** the standing teammate is team-scoped (dies with the team at `TeamDelete`); that sequencing — `spawn-standing-all` requires a real `team_name` from a prior `TeamCreate` — lives in `references/legacy-teamcreate.md`.
 
 ## Degraded Mode (spacedock seams)
 
@@ -93,7 +103,7 @@ In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wai
 
 fo-dispatch-core.md's `## Event Loop` carries steps 1-4; on Claude the loop opens with a step 0:
 
-0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir} --team-name {team_name}` (a) at the first dispatch, AFTER the split-root `pull --rebase` and BEFORE the first `Agent()` dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. Pass your own `TeamCreate` `{team_name}` — the roster-derived classes (lingering/superseded/un-advanced-pr) require a team identity, so the sweep can only emit them against a roster it can trust. The team identity comes from either the explicit `--team-name {team_name}` or a current-session match (the helper narrows auto-discovery to the config whose `leadSessionId` equals this session). **Bare reconcile with no team identity is git-only**: it suppresses the roster-derived classes (a stale prior-session or parallel-session config must never be mistaken for the live team) and reports only the session-independent git/filesystem classes (stale-branch/local-main-drift), with a one-line stderr note. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"lingering|superseded|un-advanced-pr|stale-branch|local-main-drift",…}]}`. Empty `drift[]` is green. Act per drift class:
+0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir}` (a) at the first dispatch, AFTER the split-root `pull --rebase` and BEFORE the first `Agent()` dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. On the merged host (.178+) you have no `TeamCreate` name to pass, so omit `--team-name`: the team identity resolves by **`leadSessionId` auto-discovery** — the helper narrows to the auto-team `config.json` whose `leadSessionId` equals this session's `$CLAUDE_CODE_SESSION_ID` (set by Claude Code at launch, read by the reconcile command — no launcher plumbing needed). The roster-derived classes (lingering/superseded/un-advanced-pr) are emitted against that session-matched roster. On a **legacy** host that still has a `TeamCreate` name, pass `--team-name {team_name}` as before (the explicit override path is unchanged). **Bare reconcile with no team identity is git-only**: it suppresses the roster-derived classes (a stale prior-session or parallel-session config must never be mistaken for the live team) and reports only the session-independent git/filesystem classes (stale-branch/local-main-drift), with a one-line stderr note. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"lingering|superseded|un-advanced-pr|stale-branch|local-main-drift",…}]}`. Empty `drift[]` is green. Act per drift class:
    - **lingering** / **superseded** → `SendMessage({"type":"shutdown_request"})` to `name`; drop from session memory.
    - **un-advanced-pr** → enter Merge-and-Cleanup for the named slug.
    - **stale-branch** → only when `drift.owned == true`: `git -C {worktree} pull --rebase origin {drift.trunk}`; halt on conflict per the rebase-conflict halt rule. When `drift.owned` is false the item is report-only — surface it to the captain; do NOT rebase a worktree the current session does not own.

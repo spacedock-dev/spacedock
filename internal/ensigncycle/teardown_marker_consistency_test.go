@@ -24,15 +24,18 @@ import (
 //
 // The prose sources are the Claude merge reference's Merge-and-Cleanup step-10
 // (which owns the bounded-teardown marker after the contract split moved it out of
-// first-officer-shared-core.md) and the using-claude-team skill (the Claude
-// realization that owns the terminal teardown). They are read via the in-repo
-// layout path (the ensigncycle package sits at internal/ensigncycle, so the skill
-// references are two dirs up). This is a fixed repo-relative path, not a
-// machine-specific dependency.
+// first-officer-shared-core.md) and the using-claude-team skill's legacy
+// reference (the bounded `TeamDelete` teardown is a pre-2.1.178 `TeamCreate`-era
+// apparatus, so it lives in references/legacy-teamcreate.md, read only on a legacy
+// probe match; the merged SKILL.md teardown has no marker because the merged floor
+// has no bulk team-delete to bound). They are read via the in-repo layout path
+// (the ensigncycle package sits at internal/ensigncycle, so the skill references
+// are two dirs up). This is a fixed repo-relative path, not a machine-specific
+// dependency.
 func TestGradeMarkerMatchesContract(t *testing.T) {
 	contractFiles := []string{
 		filepath.Join("..", "..", "skills", "first-officer", "references", "claude-fo-merge.md"),
-		filepath.Join("..", "..", "skills", "using-claude-team", "SKILL.md"),
+		filepath.Join("..", "..", "skills", "using-claude-team", "references", "legacy-teamcreate.md"),
 	}
 	for _, f := range contractFiles {
 		b, err := os.ReadFile(f)

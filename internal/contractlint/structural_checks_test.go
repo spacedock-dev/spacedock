@@ -348,6 +348,11 @@ func isClaudeAdapter(path string) bool {
 		return true
 	}
 	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md")) ||
+		// The legacy TeamCreate lifecycle moved out of the SKILL.md into this
+		// conditionally-loaded reference; it carries the same legitimate
+		// ~/.claude/teams coupling (the NEVER-delete constraint + the diagnostic
+		// startup probe) the SKILL.md was exempt for.
+		strings.Contains(path, filepath.Join("using-claude-team", "references", "legacy-teamcreate.md")) ||
 		strings.Contains(path, filepath.Join("survey", "SKILL.md"))
 }
 
