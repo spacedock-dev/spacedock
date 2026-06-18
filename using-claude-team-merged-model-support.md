@@ -71,6 +71,21 @@ Tested context: Claude Code **2.1.181**. The standing-member / reap / registry r
 | **Flag-free** (no `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | ✅ | OQ-2 probe — identical behavior flag-unset vs `=1`; flag is a no-op for the merged channel |
 | `agentType` stamped for a non-`general-purpose` `subagent_type` (e.g. `spacedock:ensign`) | ✅ | OQ-3 — real on-disk `config.json`s stamp `agentType:"spacedock:ensign"`; FO-side fresh-dispatch confirm still flagged |
 
+### What changed, 2.1.177 → 2.1.181
+
+| | 2.1.177 (legacy `TeamCreate`) | 2.1.181 (merged) |
+|---|---|---|
+| Team tools | `TeamCreate`/`TeamDelete` present | absent (by design) |
+| Establish membership | `TeamCreate`, then named members | named background `Agent`, no `TeamCreate` |
+| Lead reap | `TeamDelete` (whole team) + per-member shutdown | per-member `shutdown_request` only (no bulk teardown) |
+| Enable flag | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` needed | flag-free |
+| Team dir | caller-named | auto, `session-<id>` |
+| Headless `-p` team mode | ❌ (the reason the m4 pty harness exists) | ✅ (merged channel stays resident) |
+
+The 2.1.181 column is this session's live probes; the 2.1.177 column is the documented legacy `TeamCreate` model + m4's recorded pinned-2.1.177 pty spike (NOT re-tested this session).
+
+Unchanged across both: teammate self-exit is reply-only; the on-disk `config.json` schema is the same shape.
+
 ## Open questions (for ideation)
 
 - **OQ-1 — DESCOPED (captain, 2026-06-18): tmux pane-backed reap is out of scope.** The merged model spawns teammates `in-process`, where lead `shutdown_request` reap is validated (see capability matrix). Whether the #68721 comment's "shutdown not honored" was pane-specific is no longer a question this task chases.
