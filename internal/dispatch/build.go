@@ -60,20 +60,25 @@ var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true}
 
 // buildOutput is the stdout JSON envelope. Field order is the emission order
 // (insertion order in the oracle): schema_version, subagent_type, description,
-// fetch_commands, dispatch_file_path, prompt, model, then name / team_name in
-// team mode only. Model is a *string so an unresolved model serializes as the
-// JSON literal null; Name / TeamName are *string with omitempty so bare-mode
-// dispatches omit the keys entirely (absent, not null).
+// fetch_commands, dispatch_file_path, prompt, model, then name / team_name /
+// run_in_background. Model is a *string so an unresolved model serializes as the
+// JSON literal null; Name / TeamName / RunInBackground are *T with omitempty so
+// bare-mode dispatches omit the keys entirely (absent, not null). RunInBackground
+// is set only on the merged Claude shape (.178+: named background teammate, no
+// team_name) — it carries the worker→lead back-channel half of the dispatch (the
+// `name` carries the lead→worker half), so a legacy team-name or bare dispatch
+// omits it.
 type buildOutput struct {
-	SchemaVersion int      `json:"schema_version"`
-	SubagentType  string   `json:"subagent_type"`
-	Description   string   `json:"description"`
-	FetchCommands []string `json:"fetch_commands"`
-	DispatchFile  string   `json:"dispatch_file_path"`
-	Prompt        string   `json:"prompt"`
-	Model         *string  `json:"model"`
-	Name          *string  `json:"name,omitempty"`
-	TeamName      *string  `json:"team_name,omitempty"`
+	SchemaVersion   int      `json:"schema_version"`
+	SubagentType    string   `json:"subagent_type"`
+	Description     string   `json:"description"`
+	FetchCommands   []string `json:"fetch_commands"`
+	DispatchFile    string   `json:"dispatch_file_path"`
+	Prompt          string   `json:"prompt"`
+	Model           *string  `json:"model"`
+	Name            *string  `json:"name,omitempty"`
+	TeamName        *string  `json:"team_name,omitempty"`
+	RunInBackground *bool    `json:"run_in_background,omitempty"`
 }
 
 // buildError prints `error: {msg}` to stderr and returns code (1 by default).
@@ -275,6 +280,17 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	bareMode := optBool(fields, "bare_mode")
 	isFeedbackReflow := optBool(fields, "is_feedback_reflow")
 
+	// Merged mode is the Claude .178+ team shape: a non-bare claude dispatch with
+	// no team_name. On .178+ TeamCreate/TeamDelete are gone, so team membership is
+	// established by a named background teammate (Agent(name=…, run_in_background=
+	// true)) with no team registry name. It is distinct from legacy team mode
+	// (team_name present, requires TeamCreate) and from bare mode (no name at all,
+	// sequential). The merged shape emits a name (the lead→worker SendMessage and
+	// reuse-advance handle), run_in_background (the worker→lead back-channel), and
+	// no team_name. Claude-only: codex/pi have their own non-team named-dispatch
+	// shapes handled by their host branches.
+	mergedMode := !bareMode && host == "claude" && teamName == ""
+
 	// FO bootstrap discipline: a bare_mode dispatch with no recent TeamCreate
 	// evidence on disk gets an advisory stderr warning (exit stays 0). The evidence
 	// read and the warning text both live in the Claude seam; HOME resolution stays
@@ -437,11 +453,12 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 			"dispatching to feedback target stage '%s' but feedback_context is missing", stage)
 	}
 
-	// Rule 8: Team name non-empty in Claude team mode. Codex has no team
-	// registry, so non-bare Codex dispatches keep a task name and omit team_name.
-	if !bareMode && host == "claude" && teamName == "" {
-		return buildError(stderr, 1, "team mode requires team_name")
-	}
+	// Rule 8 (retired for the merged floor): a non-bare Claude dispatch with no
+	// team_name is the merged .178+ team shape (mergedMode above), not an error.
+	// On .178+ TeamCreate is gone, so there is no team_name to require; membership
+	// comes from a named background teammate. The pre-.178 legacy path still keys
+	// on team_name being present, so the two non-bare Claude shapes — merged
+	// (team_name absent) and legacy (team_name present) — are both valid here.
 
 	// Rule 6: subagent_type from the stage agent field.
 	subagentType := "spacedock:ensign"
@@ -579,8 +596,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	}
 	parts = append(parts, strings.Join(fetchLines, "\n"))
 
-	// 10. Completion signal (Claude team mode or Codex named dispatch).
-	if !bareMode && (teamName != "" || host == "codex") {
+	// 10. Completion signal (Claude legacy team mode, Claude merged mode, or
+	// Codex named dispatch). The merged shape (mergedMode: claude, no team_name)
+	// gets the same Claude SendMessage(to="team-lead") block as legacy team mode —
+	// the worker→lead completion target is pinned to the single name "team-lead"
+	// (AC-6), matching the ensign runtime's completion contract. Bare mode (no
+	// name) still omits it; its dispatch blocks and returns inline.
+	if !bareMode && (teamName != "" || mergedMode || host == "codex") {
 		entityFileRef := entityPath
 		if worktreePath != "" && !splitRoot {
 			entityFileRef = worktreeEntityPath
@@ -597,11 +619,16 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// dispatch dir; emit a tiny prompt the ensign Reads on first action. A bare
 	// {derivedName}.md is identical across every dispatch of one slug+stage, so two
 	// concurrent FOs — or back-to-back runs of one fixture — alias the same file
-	// and an ensign can Read a STALE prior dispatch's entity pointer. Each real FO
-	// TeamCreate yields a unique team name (`{project}-{dir}-{YYYYMMDD-HHMM}-
-	// {shortuuid}`), so keying the file on the team name disambiguates every team-
-	// mode dispatch. Dispatches with no team_name keep the plain derived name.
-	// derivedName stays the readable team-member name; only the on-disk path is keyed.
+	// and an ensign can Read a STALE prior dispatch's entity pointer. In legacy
+	// team mode each real FO TeamCreate yields a unique team name (`{project}-
+	// {dir}-{YYYYMMDD-HHMM}-{shortuuid}`), so keying the file on the team name
+	// disambiguates every team-mode dispatch. On the merged floor there is no team
+	// name, so the per-session auto-team id ($CLAUDE_CODE_SESSION_ID) is the
+	// disambiguator instead — two concurrent merged FOs run distinct sessions, so
+	// it separates their dispatch files exactly as the team name did. Dispatches
+	// with neither (bare, or a merged dispatch with no session id in env) keep the
+	// plain derived name. derivedName stays the readable team-member name; only the
+	// on-disk path is keyed.
 	dispatchFileName := derivedName
 	if teamName != "" {
 		// team_name is prepended to a filesystem path, so it gets the same
@@ -619,6 +646,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 				teamName, teamNamePattern.String())
 		}
 		dispatchFileName = teamName + "-" + derivedName
+	} else if mergedMode {
+		if sessionToken := pathSafeSessionToken(os.Getenv("CLAUDE_CODE_SESSION_ID")); sessionToken != "" {
+			dispatchFileName = sessionToken + "-" + derivedName
+		}
 	}
 	if len(dispatchFileName) > dispatchFileNameMaxLen {
 		return buildError(stderr, 1,
@@ -650,6 +681,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		if teamName != "" {
 			out.TeamName = &teamName
 		}
+	}
+	if mergedMode {
+		// The merged dispatch is Agent(name=…, run_in_background=true): the named
+		// background teammate whose up-channel (SendMessage to the lead) is what
+		// run_in_background confers. The FO maps this field to Agent verbatim.
+		runInBackground := true
+		out.RunInBackground = &runInBackground
 	}
 
 	return emitBuildJSON(stdout, out)
@@ -704,6 +742,39 @@ func capWorkerName(workerKey, slug, stage, id, idStyle string) string {
 	}
 	truncated = strings.TrimRight(truncated, "-")
 	return fmt.Sprintf("%s-%s-%s", workerKey, truncated, stage)
+}
+
+// sessionTokenMaxLen caps the merged-mode session disambiguator prepended to the
+// dispatch filename. A Claude session id is a UUID-shaped token (~36 chars); the
+// cap keeps the combined {sessionToken}-{derivedName}.md well under the
+// filesystem name limit while staying long enough that two concurrent sessions
+// never collide (their ids differ in the high-entropy leading characters).
+const sessionTokenMaxLen = 36
+
+// pathSafeSessionToken sanitizes a session id into the kebab character class the
+// dispatch filename already enforces (lowercase letters, digits, hyphens), so a
+// merged-mode dispatch keyed on $CLAUDE_CODE_SESSION_ID never builds an
+// unsanitized /tmp path. Uppercase is lowered; any other character becomes a
+// hyphen; leading/trailing hyphens are trimmed and the result capped. An empty or
+// all-unsafe id yields "" so the caller falls back to the plain derived name.
+func pathSafeSessionToken(sessionID string) string {
+	if sessionID == "" {
+		return ""
+	}
+	var b strings.Builder
+	for _, r := range strings.ToLower(sessionID) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('-')
+		}
+	}
+	token := strings.Trim(b.String(), "-")
+	if len(token) > sessionTokenMaxLen {
+		token = strings.TrimRight(token[:sessionTokenMaxLen], "-")
+	}
+	return token
 }
 
 func firstActionBlock(host string) string {
