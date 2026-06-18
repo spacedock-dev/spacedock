@@ -84,11 +84,15 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 	case "spawn-standing-all":
 		flags := parseFlags(args[1:], map[string]bool{"--workflow-dir": true, "--team": true})
 		wd, okWD := flags["--workflow-dir"]
-		team, okTeam := flags["--team"]
-		if !okWD || !okTeam {
-			fmt.Fprintln(stderr, "error: dispatch spawn-standing-all requires --workflow-dir and --team")
+		if !okWD {
+			fmt.Fprintln(stderr, "error: dispatch spawn-standing-all requires --workflow-dir")
 			return 2
 		}
+		// --team is the mode discriminator, mirroring build.go's team_name: a
+		// legacy host passes the TeamCreate name; a merged .178+ host omits it
+		// (no TeamCreate name to pass) and each spec is emitted in the merged
+		// background shape (name present, team_name absent, run_in_background true).
+		team := flags["--team"]
 		return runSpawnStandingAll(os.Getenv("HOME"), wd, team, stdout, stderr)
 	case "reconcile":
 		return runReconcile(args[1:], stdout, stderr)
