@@ -6,7 +6,7 @@ The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapte
 
 Claude PROVIDES the worker back-channel (fo-dispatch-core.md `## Dispatch Adapter`, the organizing capability) via named background subagents, with no separate setup step: a worker is `Agent(name=…, run_in_background=true)` (no `team_name`); the worker messages the lead mid-run via `SendMessage(to="main")`; reuse-advance / steering is `SendMessage(to=name)`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below); Claude Code writes the on-disk roster `~/.claude/teams/session-<id>/config.json` automatically, keyed by session id, recording each member's `agentType`. Dispatch directly — there is nothing to load first.
 
-**Legacy override (delete this line to sunset legacy mode):** if `ToolSearch(query="select:TeamCreate", max_results=1)` matches before the first dispatch (a pre-2.1.178 runtime), `Skill(skill="spacedock:using-legacy-claude-team")` and follow it — it OVERRIDES every tool-call signature below; otherwise this file applies as written.
+**Legacy override (delete this line to sunset legacy mode):** if `ToolSearch(query="select:TeamCreate", max_results=1)` matches before the first dispatch (the runtime still exposes the native team registry), `Skill(skill="spacedock:using-legacy-claude-team")` and follow it — it OVERRIDES every tool-call signature below; otherwise this file applies as written.
 
 In single-entity mode, skip the background back-channel. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` and without `run_in_background` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
 

@@ -1,18 +1,18 @@
 ---
 name: using-legacy-claude-team
-description: "LEGACY (pre-2.1.178 Claude Code) worker back-channel via TeamCreate — team creation + naming, the registry-desync recovery ladder, and the bounded TeamDelete terminal teardown. Read ONLY when ToolSearch(select:TeamCreate) matches a TeamCreate tool (a pre-2.1.178 host); on a current host the FO's normal dispatch contract in claude-fo-dispatch.md provides the same back-channel with no TeamCreate."
+description: "LEGACY worker back-channel via TeamCreate — team creation + naming, the registry-desync recovery ladder, and the bounded TeamDelete terminal teardown. Read ONLY when ToolSearch(select:TeamCreate) matches a TeamCreate tool (a runtime that still exposes the native team registry); when it does not match, the FO's normal dispatch contract in claude-fo-dispatch.md provides the same back-channel with no TeamCreate."
 user-invocable: false
 ---
 
-# Using Legacy Claude Team (DEPRECATED — pre-2.1.178 hosts only)
+# Using Legacy Claude Team (DEPRECATED — runtimes that still expose TeamCreate)
 
-A live worker needs a back-channel to talk to `main` while it runs. On a current Claude Code host that back-channel is the normal dispatch contract — a named background `Agent` whose `SendMessage(to="main")` reaches the lead — and it needs no team-creation step; see `claude-fo-dispatch.md`. This skill provides the SAME back-channel the LEGACY way, through the native `TeamCreate` team registry that pre-2.1.178 hosts expose.
+A live worker needs a back-channel to talk to `main` while it runs. When the runtime provides that back-channel through named background subagents, it is the normal dispatch contract — a named background `Agent` whose `SendMessage(to="main")` reaches the lead — and it needs no team-creation step; see `claude-fo-dispatch.md`. This skill provides the SAME back-channel the LEGACY way, through the native `TeamCreate` team registry, for a runtime that still exposes it.
 
-Read this skill only when the mode discriminator `ToolSearch(query="select:TeamCreate", max_results=1)` matches a `TeamCreate` tool (Claude Code < 2.1.178). On a current host the probe returns no match, the FO never reads this file, and the back-channel comes from the named-background-`Agent` shape inline in `claude-fo-dispatch.md`.
+Read this skill only when the capability probe `ToolSearch(query="select:TeamCreate", max_results=1)` matches a `TeamCreate` tool (the runtime exposes the native team registry). When the probe returns no match, the FO never reads this file, and the back-channel comes from the named-background-`Agent` shape inline in `claude-fo-dispatch.md`.
 
 **Sunset is a one-line removal.** This skill is reached through a SINGLE line in `claude-fo-dispatch.md` — the one labelled `**Legacy override (delete this line to sunset legacy mode):**`. Delete that one line and the entire legacy path is gone from the live contract: no probe, no skill load, no override. Then this skill directory and the `TeamCreate`/`TeamDelete` branches in `internal/dispatch/build.go` + `internal/dispatch/standing.go` are dead code, removable at leisure.
 
-**Removal trigger (externally checkable):** do the above when `SPACEDOCK_PINNED_CLAUDE_VERSION` in `.github/workflows/runtime-live-e2e.yml` no longer pins a team-tools-capable version (i.e. moves to ≥ 2.1.178 or the pin is dropped) AND no live lane drives the legacy branch. That pin is the single live consumer of this path today (it exists, per its own comment, only because 2.1.177 is the last release exposing native team tools); when it stops pinning ≤ 2.1.177, the legacy branch has no live coverage and is dead code.
+**Removal trigger (externally checkable):** do the above when no runtime the FO targets still exposes `TeamCreate` AND no live lane drives the legacy branch. The externally-checkable proxy for that condition is the CI pin `SPACEDOCK_PINNED_CLAUDE_VERSION` in `.github/workflows/runtime-live-e2e.yml`: that lane exists only to keep a `TeamCreate`-exposing runtime under live test (the single live consumer of this path), so when the pin no longer covers a `TeamCreate`-capable runtime — it moves forward or is dropped — the legacy branch has lost its last live consumer and is dead code. The AC-5 layering test binds to that pin's literal value, so a pin bump trips the test as the removal signal.
 
 ## What this overrides in `claude-fo-dispatch.md`
 
