@@ -47,10 +47,32 @@ Probed with real `Agent` + `SendMessage` (NOT the Workflow harness — a differe
 8. **On-disk registry is intact + accurate.** The auto-team writes `~/.claude/teams/session-<id>/config.json`, named by **session id** (not the FO scheme), with the SAME schema (`name`/`leadAgentId`/`leadSessionId`/`members[]`/`inboxes/`). `members[]` is a **live pruned roster** (terminated members removed; `inboxes/*.json` linger). Each member records `agentType` = the spawn `subagent_type` (probe recorded `general-purpose`).
 9. **The `claude-team` helper survives unchanged.** `internal/claudeteam/reconcile.go` auto-discovers by globbing all team dirs and matching `leadSessionId == current session` AND a member with `agentType == "spacedock:ensign"`; `--team-name` is only an optional override. So the session-id rename does NOT break discovery — the helper never used the team name. Only the CALLER must switch to auto-discovery mode (no `TeamCreate` name to pass).
 
+## Capability matrix — Claude Code 2.1.181 (merged auto-team model)
+
+Tested context: Claude Code **2.1.181**, interactive `cli` entrypoint (**NOT** headless `-p`), `in-process` teammate backend, model `claude-opus-4-8[1m]`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, no tmux. Each ✅/❌ was observed live this session; ❓ rows were NOT exercised and must not be read as either pass or fail.
+
+| Capability | 2.1.181 | Evidence / exact signal |
+|---|---|---|
+| `TeamCreate` / `TeamDelete` tools | ❌ absent (by design) | `ToolSearch(select:TeamCreate,TeamDelete)` → "No matching deferred tools found" |
+| Spawn named background teammate without `TeamCreate` | ✅ | `Agent(name=…, run_in_background=true)` returns a live addressable teammate |
+| Teammate → lead message | ✅ | `SendMessage(to="main")` delivered to the root verbatim |
+| Lead → teammate message | ✅ | `SendMessage(to=<name>)` reaches the teammate inbox |
+| Standing teammate persists + retains state across waves | ✅ | recalled a secret value + an incrementing counter across separate inbound messages |
+| Lead-initiated reap via `shutdown_request` | ✅ (in-process) | `shutdown_request` → teammate `shutdown_approved` → `teammate_terminated` |
+| Teammate self-originated exit | ❌ (NOT a regression) | `shutdown_response` is valid only as a REPLY to an inbound `shutdown_request`; legacy `TeamCreate` members were identical |
+| Background teammate spawns a background **grandchild** | ❌ blocked (flat roster) | "Teammates cannot spawn other teammates — the team roster is flat"; nameless bg → "In-process teammates cannot spawn background agents. Use run_in_background=false for synchronous subagents." |
+| Teammate spawns a **synchronous** subagent | ✅ allowed | per the harness's own error guidance (`run_in_background=false`) |
+| `TaskList` / `TaskStop` reach background teammates | ❌ | `TaskStop <id>` → "No task found"; `TaskList` → empty |
+| On-disk team registry | ✅ present | `~/.claude/teams/session-<id>/config.json`; same schema as the `TeamCreate` era; `members[]` is a live, pruned roster (terminated members removed) |
+| Headless **`-p`** team mode (residency past `end_turn`) | ❓ UNTESTED | only interactive `cli` exercised this session |
+| **tmux pane-backed** teammate reap | ❓ UNTESTED | all probes were `in-process` |
+| **Flag-free** (no `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) | ❓ UNTESTED | the flag was `=1` throughout |
+| `agentType` stamped for a non-`general-purpose` `subagent_type` (e.g. `spacedock:ensign`) | ❓ UNTESTED | probes used `general-purpose`, which the registry recorded faithfully |
+
 ## Open questions (for ideation)
 
 - **OQ-1 (load-bearing): does lead `shutdown_request` reap a tmux PANE-BACKED teammate, or only `in-process`?** The spike was all in-process; the #68721 comment's "shutdown not honored" may be pane-specific. m4 spawns teammates into separate tmux panes — directly relevant. This is the one finding that could still be a true per-member-reap regression.
-- **OQ-2: does `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` still gate the named-background-subagent + `SendMessage(to="main")` channel on .178+, or is it now flag-free?** The spike never set it explicitly. m4's CI sets the flag. The skill's bare-mode hint tells captains to set it — possibly stale.
+- **OQ-2: does `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` still gate the named-background-subagent + `SendMessage(to="main")` channel on .178+, or is it now flag-free?** During the spike the flag was PRESENT (`=1` in the session env), so flag-free operation is UNTESTED. m4's CI sets the flag. The skill's bare-mode hint tells captains to set it — possibly stale.
 - **OQ-3: does a real `subagent_type="spacedock:ensign"` dispatch record `agentType:"spacedock:ensign"` in the auto-team config**, so `reconcile.go`'s `hasEnsign` gate fires? Needs a one-shot real-ensign smoke test (probe used `general-purpose`, which would be correctly excluded).
 - **OQ-4: exact mode-detection contract.** Is `ToolSearch(select:TeamCreate)` presence reliable across 2.1.177 <-> .178 <-> .181, and does it belong in the generic skill or the spacedock FO layer?
 - **OQ-5: is `--session-id` plumbed** through `spacedock claude`/the launcher so the reconcile sweep can run in `leadSessionId` auto-discovery mode without a `TeamCreate` name?
