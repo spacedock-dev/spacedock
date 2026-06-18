@@ -2,7 +2,7 @@
 title: "Bridge an external tracker"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-17 18:58:17"
+last_updated: "2026-06-18 22:59:03"
 ---
 
 # Bridge an external tracker
