@@ -1,7 +1,7 @@
 ---
 id: 9243ej9j3a434c3k2ba3g06j
 title: Bridge using-claude-team to .178+ merged team semantics (with a legacy-deprecation path)
-status: validation
+status: implementation
 source: "FO + captain live spike (2026-06-18) on Claude Code 2.1.181: validated the subagent-as-team-member machinery after anthropics/claude-code#68721 removed TeamCreate/TeamDelete (followup comment 4741152246, by bjcoombs, confirms the team->subagent merge is intentional). using-claude-team is built on the now-removed TeamCreate primitive and, on .178+, silently degrades to bare mode (surrendering concurrency) because it gates all dispatch on a TeamCreate that no longer exists."
 started: 2026-06-18T14:55:53Z
 completed:
