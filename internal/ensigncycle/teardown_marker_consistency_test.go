@@ -25,11 +25,12 @@ import (
 // The prose source is the using-legacy-claude-team skill's `## Terminal Team
 // Teardown`. The bounded `TeamDelete` teardown that emits the marker is a
 // pre-2.1.178 `TeamCreate`-era apparatus, so it lives ONLY in the legacy skill,
-// read on a legacy probe match. The current-host teardown — per-name
-// `SendMessage(shutdown_request)`, in claude-fo-merge.md step-10 — has no marker
-// because there is no bulk team-delete to bound. It is read via the in-repo layout
-// path (the ensigncycle package sits at internal/ensigncycle, so the skill is two
-// dirs up). This is a fixed repo-relative path, not a machine-specific dependency.
+// read on a legacy probe match. The current-runtime teardown — per-name
+// `SendMessage(shutdown_request)`, in claude-fo-dispatch.md `## Terminal Worker
+// Teardown` — has no marker because there is no bulk team-delete to bound. The
+// legacy skill is read via the in-repo layout path (the ensigncycle package sits
+// at internal/ensigncycle, so the skill is two dirs up). This is a fixed
+// repo-relative path, not a machine-specific dependency.
 func TestGradeMarkerMatchesContract(t *testing.T) {
 	contractFiles := []string{
 		filepath.Join("..", "..", "skills", "using-legacy-claude-team", "SKILL.md"),

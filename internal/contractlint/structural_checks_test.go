@@ -254,14 +254,9 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		filepath.Join("mods", "pr-merge.md"):                                                      true,
 		filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"): true,
 		filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"):    true,
-		// The contract split relocated the merge module's Mod-Hook prose into the
-		// merge reference and the standing-teammate declaration's `## Hook: startup`
-		// example into the dispatch reference — both legitimately carry `## Hook:`.
-		filepath.Join("skills", "first-officer", "references", "claude-fo-merge.md"):    true,
-		filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"): true,
 		// The host-neutral extraction re-homed Mod-Block Enforcement (which names the
 		// `## Hook: merge` mechanism surface) into the merge core; it legitimately
-		// carries the `## Hook:` token the same way the claude-fo-merge seam did.
+		// carries the `## Hook:` token.
 		filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
@@ -340,10 +335,9 @@ func isClaudeAdapter(path string) bool {
 	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
 		return true
 	}
-	// The Claude-host dispatch/merge coupling (the `~/.claude/teams` and
-	// subagent-jsonl reads) lives in the claude-fo-dispatch / claude-fo-merge
-	// references; they are the legitimate Claude coupling surface, exempt from the
-	// HOME-rooted check.
+	// The Claude-host dispatch coupling (the `~/.claude/teams` and subagent-jsonl
+	// reads) lives in the claude-fo-dispatch reference; it is the legitimate Claude
+	// coupling surface, exempt from the HOME-rooted check.
 	if strings.HasPrefix(base, "claude-fo-") && strings.HasSuffix(base, ".md") {
 		return true
 	}

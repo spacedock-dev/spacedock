@@ -8,9 +8,9 @@ The Claude dispatch parts — the worker back-channel, the ID/next-id read, the 
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see claude-fo-dispatch.md for the full read shape). A boot that only greets does not file a task.
 
-## Merge reference (load at terminalization)
+## Terminal teardown (load at terminalization)
 
-The Claude merge part — the concrete step-10 per-name terminal teardown — lives in `references/claude-fo-merge.md`, read alongside the host-neutral `fo-merge-core.md` (named by the boot-resident core) at the terminal boundary, the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads either. The legacy bounded `TeamDelete` teardown lives in `Skill(skill="spacedock:using-legacy-claude-team")`, loaded only on a legacy probe match.
+The host-neutral `fo-merge-core.md` (named by the boot-resident core, read at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. In legacy mode the further bounded `TeamDelete` teardown lives in `Skill(skill="spacedock:using-legacy-claude-team")`, loaded only on a legacy probe match.
 
 ## Captain Interaction
 

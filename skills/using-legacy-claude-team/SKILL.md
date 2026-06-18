@@ -12,6 +12,17 @@ Read this skill only when the mode discriminator `ToolSearch(query="select:TeamC
 
 **Removal trigger (externally checkable):** delete this skill — plus the `TeamCreate` probe branch the FO contract reads it from, and the `TeamCreate`/`TeamDelete` branches in `internal/dispatch/build.go` and `internal/dispatch/standing.go` — when `SPACEDOCK_PINNED_CLAUDE_VERSION` in `.github/workflows/runtime-live-e2e.yml` no longer pins a team-tools-capable version (i.e. moves to ≥ 2.1.178 or the pin is dropped) AND no live lane drives the legacy branch. That pin is the single live consumer of this path today (it exists, per its own comment, only because 2.1.177 is the last release exposing native team tools); when it stops pinning ≤ 2.1.177, the legacy branch has no live coverage and is dead code.
 
+## What this overrides in `claude-fo-dispatch.md`
+
+This skill is read in place of the current-runtime contract: where it conflicts with `claude-fo-dispatch.md`, this skill wins. The overrides:
+
+- **Membership setup:** the named-background-`Agent`-only model becomes `TeamCreate`-first (`## Team Creation` below) — `TeamCreate` MUST run before any `Agent`/`SendMessage`.
+- **`spacedock dispatch build`:** emits `team_name` (the name from the prior `TeamCreate`) alongside `name`; map it to `Agent(team_name=…)` instead of the no-`team_name` shape.
+- **`spacedock dispatch spawn-standing-all`:** run it `--team {team_name}` (the `claude-fo-dispatch.md` form omits `--team`). The call is idempotent (already-alive members omitted, deduped against the team config), each spec carries `team_name`, and the standing teammate is team-scoped (dies with the team at `TeamDelete`). It MUST NOT precede a successful `TeamCreate`.
+- **`spacedock dispatch reconcile`:** pass `--team-name {team_name}` (the `claude-fo-dispatch.md` form omits it and auto-discovers by `leadSessionId`); the explicit name is the team identity here.
+- **Failure handling:** the registry-desync recovery ladder (`## Team Creation` below) governs `Agent()`/team-registry errors before `claude-fo-dispatch.md`'s `## Degraded Mode` fires.
+- **Terminal teardown:** the bounded `TeamDelete` procedure (`## Terminal Team Teardown` below) replaces the per-name `## Terminal Worker Teardown`.
+
 ## Deferred Team Tools
 
 The legacy Claude Code team tools (`TeamCreate`, `TeamDelete`, `SendMessage`) are deferred — their schemas are not loaded at session start, so calling one directly fails until its schema is fetched. Before the first call to any team tool, run `ToolSearch(query="select:{ToolName}", max_results=1)` to fetch its schema (e.g. `ToolSearch(query="select:TeamCreate", max_results=1)` before the first `TeamCreate`, `ToolSearch(query="select:SendMessage", max_results=1)` before the first `SendMessage`). Once a tool's schema appears in the ToolSearch result, it is callable exactly like a normal tool. `Agent` is not deferred. Address an agent by its declared `name` via `SendMessage`; your plain text output is NOT visible to other agents.

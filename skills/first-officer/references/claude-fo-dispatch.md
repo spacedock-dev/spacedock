@@ -4,19 +4,13 @@ The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapte
 
 ## Worker Back-Channel
 
-A live worker needs a back-channel — it must talk to `main` while it runs (a completion signal, a clarification, a finding) and the lead must be able to advance it. On Claude that back-channel is conferred by the normal dispatch shape, with no separate setup step:
+Claude PROVIDES the worker back-channel (fo-dispatch-core.md `## Dispatch Adapter`, the organizing capability) via named background subagents, with no separate setup step: a worker is `Agent(name=…, run_in_background=true)` (no `team_name`); the worker messages the lead mid-run via `SendMessage(to="main")`; reuse-advance / steering is `SendMessage(to=name)`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below); Claude Code writes the on-disk roster `~/.claude/teams/session-<id>/config.json` automatically, keyed by session id, recording each member's `agentType`. Dispatch directly — there is nothing to load first.
 
-- The worker is a **named background `Agent`**: `Agent(name=…, run_in_background=true)`, no `team_name`. `spacedock dispatch build` emits this shape (`name` present, `team_name` absent, `run_in_background` true) for you to map verbatim (below). Claude Code writes the on-disk roster `~/.claude/teams/session-<id>/config.json` automatically, keyed by session id, recording each member's `agentType`.
-- **worker→lead** is `SendMessage(to="main")` — a background worker can message up to the lead mid-run (a synchronous/foreground subagent's only up-signal is its final return value).
-- **lead→worker** is `SendMessage(to=<name>)` — this is the host-neutral reuse-advance handle (fo-dispatch-core.md `## Reuse and Fresh Dispatch`, reuse-condition-1).
-
-There is no team-creation step and nothing to load before the first dispatch — dispatch directly.
-
-**Legacy hosts (pre-2.1.178).** The discriminator is the deferred-tool probe `ToolSearch(query="select:TeamCreate", max_results=1)`: a match means a legacy host that confers the same back-channel through the native `TeamCreate` registry instead. On a match — and only then — load that path's machinery:
+**Legacy override.** Before the first dispatch, run the deferred-tool probe `ToolSearch(query="select:TeamCreate", max_results=1)`. If it matches a `TeamCreate` definition (a pre-2.1.178 runtime), load:
 
     Skill(skill="spacedock:using-legacy-claude-team")
 
-It carries the legacy team lifecycle (creation + naming, the recovery ladder, the bounded `TeamDelete` teardown). On a current host the probe returns no match, the skill is never read, and only the back-channel shape above applies. The build then emits `name` + `team_name` and the `TeamCreate`-first sequencing in that skill governs.
+That skill OVERRIDES the tool-call signatures and caveats in the rest of this file for the legacy case — how membership is established, the `team_name`/`--team` the build and `spawn-standing-all` then carry, the registry-desync recovery, and the terminal teardown. When the probe returns no match (a current runtime), the skill is never read and this file applies as written. The rest of this file describes the current-runtime contract and does not restate the legacy overrides.
 
 In single-entity mode, skip the background back-channel. Use bare-mode dispatch for all agent spawning — the Agent tool without `team_name` and without `run_in_background` blocks until the subagent completes, which prevents premature session termination in `-p` mode.
 
@@ -26,16 +20,16 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 The spawn call (fo-dispatch-core.md `## Dispatch Adapter`) is the Agent tool. **Use Agent() for initial dispatch** — SendMessage is only for advancing a reused agent to its next stage. **NEVER use `subagent_type="first-officer"`** — that clones yourself instead of dispatching a worker.
 
-**Sequencing rule:** the dispatch is a single named background `Agent` call — there is nothing to sequence against, so dispatch directly. On a legacy host the `TeamCreate`/`TeamDelete` sequencing constraints (resolve team state in one message, then dispatch in a subsequent message; `spawn-standing-all` requires a real `team_name` from a prior successful `TeamCreate` and MUST NOT precede it) apply — see `Skill(skill="spacedock:using-legacy-claude-team")`.
+**Sequencing rule:** the dispatch is a single named background `Agent` call — there is nothing to sequence against, so dispatch directly.
 
-**No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/` before `Agent()` in the normal dispatch path. The auto-team `config.json` is written by Claude Code after the spawn, so a pre-dispatch probe reads nothing. On a legacy host the on-disk check is additionally a guaranteed false positive (the registry-desync model lives in the legacy skill). Either way, dispatch directly and let `Agent()` surface any error; on a legacy registry-desync error follow the recovery ladder and Degraded Mode semantics in `Skill(skill="spacedock:using-legacy-claude-team")` — do NOT reintroduce a pre-dispatch probe.
+**No pre-dispatch filesystem probe.** Do NOT run any filesystem check against `~/.claude/teams/` before `Agent()`. The auto-team `config.json` is written by Claude Code after the spawn, so a pre-dispatch probe reads nothing. Dispatch directly and let `Agent()` surface any error — do NOT reintroduce a pre-dispatch probe.
 
 On a zero-exit `spacedock dispatch build` (`host` derived from `CLAUDECODE`; pass `--host claude` only for deliberate tests or cross-host tooling), map the emitted fields to `Agent()` verbatim — `model=output.model` only when non-null, do NOT pass `model=None`:
 ```
 Agent(
     subagent_type=output.subagent_type,
     name=output.name,                           // the lead→worker back-channel; omit if bare mode (field absent)
-    team_name=output.team_name,                 // legacy only; absent in the normal shape and in bare mode
+    team_name=output.team_name,                 // absent in the normal shape; map it verbatim if the build emits it
     run_in_background=output.run_in_background,  // the worker→lead back-channel; omit when field absent
     description=output.description,             // REQUIRED — Agent tool rejects missing description
     model=output.model,                         // omit when output.model is null
@@ -54,7 +48,7 @@ SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next st
 Agent(
     subagent_type="{dispatch_agent_id}",
     name="{worker_key}-{slug}-{stage}",  // if this exceeds 64 chars, cap it the way `spacedock dispatch build` does: keep the {worker_key} prefix and -{stage} suffix and, on id-style: sd-b32, replace the slug with a fixed-length prefix of the entity id (id-less slug workflows truncate the slug head instead)
-    run_in_background=true,              // named background worker, no team_name. On a legacy host use team_name="{team_name}" instead (see Skill(skill="spacedock:using-legacy-claude-team")).
+    run_in_background=true,              // named background worker, no team_name
     model="{effective_model}",
     prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry. Use the checklist item text verbatim when possible.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {stage}. Report written to {entity_file_path}.\")"
 )
@@ -63,12 +57,7 @@ This is the concrete Claude form of fo-dispatch-core.md's Break-Glass template; 
 
 ## Standing-Teammate Injection (Claude)
 
-The Claude realization of the core's standing-injection call (fo-dispatch-core.md `## Dispatch`): before the first worker dispatch, run `spacedock dispatch spawn-standing-all` and forward each spawn spec in the returned JSON array to `Agent()`. `--team` is the legacy discriminator, mirroring `spacedock dispatch build`:
-
-- **Normal:** run `spacedock dispatch spawn-standing-all --workflow-dir {wd}` with NO `--team`. Each emitted spec is the dispatch shape — `name` present, `team_name` absent, `run_in_background:true` — so the standing teammate is injected by a named background `Agent` dispatch scoped to the session auto-team, reaped per-name at terminal teardown. This path does NOT dedup against a team config (there is none keyed by name), so it emits every declared standing teammate; idempotency is your own-roster concern — do not re-inject a standing teammate you already spawned this session.
-- **Legacy host:** run `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team_name}`. The call is idempotent (already-alive members omitted, deduped against the team config), each spec carries `team_name`, and the standing teammate is team-scoped (dies with the team at `TeamDelete`); that sequencing — `spawn-standing-all` requires a real `team_name` from a prior `TeamCreate` — lives in `Skill(skill="spacedock:using-legacy-claude-team")`.
-
-Either way the call emits `[]` in bare mode or when none is declared.
+The Claude realization of the core's standing-injection call (fo-dispatch-core.md `## Dispatch`): before the first worker dispatch, run `spacedock dispatch spawn-standing-all --workflow-dir {wd}` and forward each spawn spec in the returned JSON array to `Agent()`. Each emitted spec is the dispatch shape — `name` present, `team_name` absent, `run_in_background:true` — so the standing teammate is injected by a named background `Agent` dispatch scoped to the session auto-team, reaped per-name at terminal teardown. The call does NOT dedup against a team config (there is none keyed by name), so it emits every declared standing teammate; idempotency is your own-roster concern — do not re-inject a standing teammate you already spawned this session. The call emits `[]` in bare mode or when none is declared.
 
 ## Awaiting Completion
 
@@ -82,7 +71,7 @@ After dispatching an ensign (or routing work to a kept-alive ensign), you are wa
 
 **First-turn-after-dispatch decision procedure.** When a turn begins and your most recent dispatch-related action was an `Agent(...)` spawn whose completion signal (1, 2, or 3 above) has NOT yet been observed in the stream, you MUST end the turn immediately with no tool calls and no text. Do not:
 
-- emit `SendMessage(to="{ensign}", message={"type":"shutdown_request"})` — this is the exact bug this section exists to prevent. Before a completion signal the entity is not terminal, so reaping the worker is premature. (At the TERMINAL boundary the opposite holds — see `## Terminal Worker Teardown`, where workers are reaped per-name. On a legacy host the bulk-`TeamDelete` half of teardown also belongs to the terminal boundary, never here — see `Skill(skill="spacedock:using-legacy-claude-team")`.)
+- emit `SendMessage(to="{ensign}", message={"type":"shutdown_request"})` — this is the exact bug this section exists to prevent. Before a completion signal the entity is not terminal, so reaping the worker is premature. (At the TERMINAL boundary the opposite holds — see `## Terminal Worker Teardown`, where workers are reaped per-name.)
 - emit `Bash` with commands like `sleep 30` or `wait` — the runtime handles the wait for you; sleeping in Bash wastes time and does not accelerate delivery.
 - re-dispatch a replacement ensign — you have no evidence the first ensign failed.
 - write reassuring text like "Waiting for completion signal" — this converts idle-polling into a multi-turn generation loop that drifts into hallucination on subsequent wake-ups.
@@ -94,7 +83,7 @@ Just emit `end_turn` with empty content. The runtime will wake you up again when
 **Anti-patterns that indicate this bug.** If you catch yourself about to emit any of these, STOP and end the turn empty:
 
 - `shutdown_request` with reason `"session ending"`, `"wrapping up"`, `"timeout"`, or any other self-generated reason when no completion signal has arrived. The runtime does NOT signal session-end via your context; it signals it via an actual user message.
-- `shutdown_request` fired against a worker with no completion signal observed (the premature-reap bug; on a legacy host the classic form is a `shutdown_request` chased immediately by `TeamDelete`).
+- `shutdown_request` fired against a worker with no completion signal observed (the premature-reap bug).
 - Any action whose justification is "enough time has passed" or "the ensign appears idle" — you cannot measure time from inside a turn, and ensign idleness is normal between dispatch and completion.
 
 **DISPATCH IDLE GUARDRAIL.** After dispatching an agent, wait for an explicit completion message. Idle notifications are normal between-turn state for background workers — they are not a reason to tear a worker down, and they usually mean the agent is waiting for input. Only shut down when: (1) the agent sends a completion message, (2) the captain explicitly requests shutdown, or (3) you are transitioning the entity to a new stage (AFTER you have observed the prior stage's completion signal per the list above). Never interpret idle notifications as "stuck" or "unresponsive."
@@ -107,12 +96,11 @@ Degraded Mode is an explicit, session-wide mid-session transition to sequential 
 
 Any one of the following trips Degraded Mode:
 
-- On a legacy host (`Skill(skill="spacedock:using-legacy-claude-team")`): the first "Team does not exist" error (or equivalent registry-desync signal) surfaced by `Agent()` or any team-registry tool. (Registry desync is a `TeamCreate`-era phenomenon — a current host has no team registry to desync.)
 - Any SECOND dispatch failure within the session — no time window, no durable counter. The counter-free rule is deliberate: the FO cannot reliably track failure timestamps across context pressure and idle notifications, so "second failure anywhere in the session" is the fail-early trigger.
 - The captain command `/spacedock bare` — the explicit operator-initiated degrade.
-- `Agent` or `SendMessage` themselves are unavailable on the host (a genuinely degraded runtime with no concurrent-dispatch substrate).
+- `Agent` or `SendMessage` themselves are unavailable (a genuinely degraded runtime with no concurrent-dispatch substrate).
 
-A `ToolSearch(select:TeamCreate)` that returns no match is NOT a degrade trigger — it is the normal current-host path (`## Worker Back-Channel`), where the named-background-`Agent` + `SendMessage` back-channel works with no opt-in flag.
+A `ToolSearch(select:TeamCreate)` that returns no match is NOT a degrade trigger — it is the normal path (`## Worker Back-Channel`), where the named-background-`Agent` + `SendMessage` back-channel works with no opt-in flag.
 
 ### Effects
 
@@ -142,8 +130,6 @@ There is no bulk team-delete. Tear down per-roster-member:
 
 1. Send the cooperative `SendMessage({"type":"shutdown_request"})` to every roster member in the entity's cohort. This is cooperative — the member emits `shutdown_response`/`shutdown_approved` and leaves the roster asynchronously.
 2. The auto-team `members[]` prunes the terminated member (the live roster is pruned; the member's `inboxes/*.json` may linger). There is no `active member(s)` race and no bounded settle-and-cap apparatus on this path — there is no team-wide delete to race a settling member against. The FO tracks its own ensign roster (it already does).
-
-On a legacy host (`Skill(skill="spacedock:using-legacy-claude-team")`), teardown is the bounded `TeamDelete` settle-and-cap procedure documented there; it is loaded only on the probe match.
 
 ## Context Budget and Dead Ensign Handling
 
@@ -176,7 +162,7 @@ In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wai
 
 fo-dispatch-core.md's `## Event Loop` carries steps 1-4; on Claude the loop opens with a step 0:
 
-0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir}` (a) at the first dispatch, AFTER the split-root `pull --rebase` and BEFORE the first `Agent()` dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. You have no `TeamCreate` name to pass, so omit `--team-name`: the team identity resolves by **`leadSessionId` auto-discovery** — the helper narrows to the auto-team `config.json` whose `leadSessionId` equals this session's `$CLAUDE_CODE_SESSION_ID` (set by Claude Code at launch, read by the reconcile command — no launcher plumbing needed). The roster-derived classes (lingering/superseded/un-advanced-pr) are emitted against that session-matched roster. On a legacy host that still has a `TeamCreate` name, pass `--team-name {team_name}` as before (the explicit override path is unchanged). **Bare reconcile with no team identity is git-only**: it suppresses the roster-derived classes (a stale prior-session or parallel-session config must never be mistaken for the live team) and reports only the session-independent git/filesystem classes (stale-branch/local-main-drift), with a one-line stderr note. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"lingering|superseded|un-advanced-pr|stale-branch|local-main-drift",…}]}`. Empty `drift[]` is green. Act per drift class:
+0. **Reconcile sweep.** Run `spacedock dispatch reconcile --workflow-dir {workflow_dir}` (a) at the first dispatch, AFTER the split-root `pull --rebase` and BEFORE the first `Agent()` dispatch; (b) at idle (step 4); (c) after each merge, immediately after Merge-and-Cleanup step 10. You have no `TeamCreate` name to pass, so omit `--team-name`: the team identity resolves by **`leadSessionId` auto-discovery** — the helper narrows to the auto-team `config.json` whose `leadSessionId` equals this session's `$CLAUDE_CODE_SESSION_ID` (set by Claude Code at launch, read by the reconcile command — no launcher plumbing needed). The roster-derived classes (lingering/superseded/un-advanced-pr) are emitted against that session-matched roster. **Bare reconcile with no team identity is git-only**: it suppresses the roster-derived classes (a stale prior-session or parallel-session config must never be mistaken for the live team) and reports only the session-independent git/filesystem classes (stale-branch/local-main-drift), with a one-line stderr note. Stdout: `{"command":"reconcile","team_name":…,"drift":[{"class":"lingering|superseded|un-advanced-pr|stale-branch|local-main-drift",…}]}`. Empty `drift[]` is green. Act per drift class:
    - **lingering** / **superseded** → `SendMessage({"type":"shutdown_request"})` to `name`; drop from session memory.
    - **un-advanced-pr** → enter Merge-and-Cleanup for the named slug.
    - **stale-branch** → only when `drift.owned == true`: `git -C {worktree} pull --rebase origin {drift.trunk}`; halt on conflict per the rebase-conflict halt rule. When `drift.owned` is false the item is report-only — surface it to the captain; do NOT rebase a worktree the current session does not own.
@@ -188,4 +174,4 @@ Step 4's "re-run the host's step-0 reconcile sweep" (fo-dispatch-core.md) resolv
 
 ### Backstop (Claude)
 
-The merge-module terminal-teardown (step 10) and the reuse-module supersede-shutdown steps remain mandatory at their boundaries. On Claude, the step-0/step-4 reconcile sweep converges anyway: the lingering class catches a missed teardown, the superseded class catches a missed supersede shutdown. Cost of a miss: one extra event-loop cycle the agent burns.
+The terminal teardown (`## Terminal Worker Teardown`, fo-merge-core.md step 10) and the reuse-module supersede-shutdown steps remain mandatory at their boundaries. On Claude, the step-0/step-4 reconcile sweep converges anyway: the lingering class catches a missed teardown, the superseded class catches a missed supersede shutdown. Cost of a miss: one extra event-loop cycle the agent burns.
