@@ -1,6 +1,6 @@
 ---
 title: Prose-function restructure — express the FO cores as «fn» invocations (shipped-verb backticks or hand-followed guillemets)
-status: validation
+status: done
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "prose-function-restructure"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
@@ -8,9 +8,11 @@ group: restructure
 sprint-readiness: ready
 id: czw7whmaqjkasx1sjbq0at4h
 started: 2026-06-19T07:45:59Z
-worktree: .worktrees/spacedock-ensign-prose-function-restructure
+worktree:
 mod-block:
 pr: "#402"
+verdict: PASSED
+completed: 2026-06-19T21:21:55Z
 ---
 
 Express the boot-resident core + dispatch core + gate flow + merge flow as prose-function invocations (`«state.boot»`, `«dispatch.next-action»`, `«gate.assemble-verdict»`, `«merge.guard»`, `«feedback.route»`) whose bodies name a shipped verb (backticks) or carry the hand-followed recipe (guillemets). The migration substrate: every verb member's "the verb shipped" becomes one body guillemet→backtick flip, not a contract rewrite. Verbs already shipped this sprint flip to backticks NOW with real targets on `main`; verbs still un-shipped stay guillemets with a named target. Depends on 2y (MERGED); re-grounded for the shipped-sprint reality below.
