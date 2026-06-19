@@ -9,7 +9,7 @@ sprint-readiness: ready
 id: mzmc0dgkq1nbazxx8j0mnfn6
 started: 2026-06-17T20:55:24Z
 worktree: .worktrees/spacedock-ensign-merge-finalize
-mod-block: merge:pr-merge
+mod-block:
 pr: "#400"
 ---
 
