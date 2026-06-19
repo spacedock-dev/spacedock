@@ -13,6 +13,7 @@ sprint: 0221-layered-fo
 group: cleanup
 sprint-readiness: ready
 mod-block: merge:pr-merge
+pr: "#398"
 ---
 
 Harden the wrong-root boot guard so a compound `cd X; …` boot command is parsed correctly, eliminating a false-positive that latest-opus trips.
