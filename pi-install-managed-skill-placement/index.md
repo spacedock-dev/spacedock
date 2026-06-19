@@ -176,3 +176,53 @@ The riskiest mechanism — `pi install` + `package.json pi.skills` making pi-sub
 ### Summary
 
 Ideation complete. Mechanism confirmed against live code + superpowers reference. Riskiest mechanism spiked PASSED (pi install + pi.skills → discoverable from non-repo cwd). Four deliverables designed, four behavior-bound ACs finalized, test plan covers live install + probe + Go test + dev override + pi-live lane. No product files edited (ideation = design only). Entity body + stage report committed to state checkout.
+
+## Staff review #2 fold-in (2026-06-19)
+
+### Gap 1 — `repoRoot` source post-install undefined (spec gap, closed)
+
+**The gap (verified against live code).** The doctor at `internal/cli/pi.go:293-294` computes `firstOfficerOK`/`ensignOK` via `ops.Stat(cfg.firstOfficer)` / `ops.Stat(cfg.ensign)`, and `cfg.firstOfficer`/`cfg.ensign` derive from `repoRoot` (`pi.go:263-264`: `filepath.Join(repo, "skills", "{first-officer,ensign}", "SKILL.md")`). `piRuntimeConfigFromEnv` (`pi.go:220-228`) resolves `repo` as `--plugin-dir` → `SPACEDOCK_REPO_ROOT` → **cwd** (fallback). `piRuntimeLaunchReady` (`pi.go:299`) gates launch readiness on `firstOfficerOK && ensignOK`.
+
+This task's D3 (run `pi install`) writes NO repo-path install record — it registers a package in `settings.json` `packages` and places the repo in pi's package store. This task's D4 retires the `--skill` flags and the cwd fallback. But AC-3 references an "install-record resolution" that D3 does not produce.
+
+**Consequence (verified):** under the headline scenario (parent launched from a non-repo cwd, package installed, no `--plugin-dir`/`SPACEDOCK_REPO_ROOT`), `repoRoot` resolves to cwd (the demoted/retired fallback) → the doctor's `Stat(cfg.firstOfficer/ensign)` checks a NONEXISTENT path → `firstOfficerOK`/`ensignOK` report FALSE → `piRuntimeLaunchReady` returns FALSE. The doctor would report the runtime NOT ready and the skills broken, even though the skills ARE discoverable via the package-root scan (`collectSettingsPackageSkillPaths`). This is an internal inconsistency in this task's own AC-3 (it names a producer its design does not define).
+
+### Resolution — (a) retire the repo-path Stat checks in favor of package-registration + package-root-scan verification
+
+**Decision: resolution (a).** The doctor RETIRES its repo-path `Stat(cfg.firstOfficer/ensign)` checks (pi.go:293-294, 324-325) in favor of confirming the package is registered AND discoverable via the real mechanism this task ships.
+
+**Rationale:** D4 retires the `--skill cfg.firstOfficerDir()` / `--skill cfg.ensignDir()` launch flags (pi.go:87-89) — the parent-side discovery mechanism those Stat checks test. Once the flags are gone, `cfg.firstOfficer`/`cfg.ensign` (the paths the flags pointed at) are no longer the discovery mechanism for EITHER the parent (the extension's `resources_discover` handles parent discovery) OR the child (the package-root scan handles child discovery). The Stat-based checks are testing a retired mechanism. The real discovery mechanism is: (parent) the extension's `resources_discover` returning the skills dir; (child) `collectSettingsPackageSkillPaths` reading `settings.json packages` → `package.json pi.skills`. The doctor should test THAT.
+
+Rejected (b) (launcher reads the package store path from `settings.json packages` and sets `repoRoot` to the installed package's root, keeping the Stat checks repointed at the installed package). (b) preserves the doctor's existing shape but adds plumbing to resolve the package store path into `repoRoot`, and it tests a path (`Stat` of a file inside the installed package) that is an implementation detail of the package store, not the actual discovery contract. (a) is cleaner: the doctor verifies the contract (package registered + discoverable), not a filesystem coincidence.
+
+**New D5 — Doctor skill-check retirement + package-registration verification.** Append to the approach (after D4):
+
+- **D5a — Retire `firstOfficerOK`/`ensignOK` as repo-path Stat checks.** Remove the `res.firstOfficerOK = ops.Stat(cfg.firstOfficer) == nil` / `res.ensignOK = ops.Stat(cfg.ensign) == nil` lines (pi.go:293-294). Remove the corresponding `printPiCheck` lines (pi.go:324-325). Remove `firstOfficerOK`/`ensignOK` from `piRuntimeLaunchReady` (pi.go:299). The `cfg.firstOfficer`/`cfg.ensign` fields and their derivation (pi.go:263-264) are also retired — they exist only to feed the retired flags/checks.
+- **D5b — Add `spacedockPackageOK` check.** Replace the retired skill checks with a single check: is the Spacedock package registered in `settings.json packages` AND discoverable via the package-root scan? Concretely: read `~/.pi/agent/settings.json` `packages` (the same source `collectSettingsPackageSkillPaths` reads); confirm a Spacedock entry is present; confirm `discoverAvailableSkills(cwd)` (or the equivalent internal call) lists `ensign` (and `first-officer`) as `user-package` source. `spacedockPackageOK` replaces `firstOfficerOK && ensignOK` in `piRuntimeLaunchReady`. The doctor report prints `spacedockPackageOK` with the registered source and the discovered skills, with the remedy "run `spacedock install --host pi`" on failure.
+- **D5c — `repoRoot` resolution.** With the Stat checks and `--skill` flags retired, `repoRoot` is no longer needed for skill discovery (the package-root scan is cwd-independent). `repoRoot` is retained ONLY for the dev-override path: when `--plugin-dir` or `SPACEDOCK_REPO_ROOT` is set (a developer working in a clone without `pi install`), `repoRoot` resolves to that path and the extension's `resources_discover` uses it. When NEITHER is set AND the package is installed, `repoRoot` is empty/unused — the package store is the source. The cwd fallback is removed entirely (not demoted) — it served only the retired `--skill` flags, and leaving it would silently re-introduce the "skills found at `<cwd>/skills/`" false-positive/negative the package mechanism eliminates. AC-3's "demoted below the install record" option is withdrawn; the cwd fallback is removed.
+
+**Composition consumer — capstone `cwd:<repo>` source.** The capstone (`pi-back-channel-dispatch`) sources its `cwd:<repo>` working-directory argument from "the same install-recorded / explicitly-resolved repo path the launcher records." With this fold-in, that source is now: `--plugin-dir` / `SPACEDOCK_REPO_ROOT` (dev override), OR the installed package's resolved root (read from `settings.json packages` via `resolveSettingsPackageRoot` — the same call `collectSettingsPackageSkillPaths` uses). The capstone's gap-1 re-check claim that the "source is unchanged" is TRUE under this fold-in: the source is the resolved package root (install case) or the explicit override (dev case), not `2m1`'s retired install-record file. The capstone should source `cwd:<repo>` from this resolved path.
+
+### AC-3 revision
+
+**AC-3 (revised) — The launcher's `--skill` flags, the cwd fallback, and the repo-path Stat skill checks are retired; the doctor verifies the package is registered and discoverable.**
+Verified by: a Go test that (a) `piRuntimeConfigFromEnv` no longer emits `--skill cfg.firstOfficerDir()` / `--skill cfg.ensignDir()` in the launch args (the extension handles parent discovery); (b) the cwd fallback is removed (not demoted) — `repoRoot` is empty when no `--plugin-dir`/`SPACEDOCK_REPO_ROOT` is set and the package is installed; (c) `checkPiRuntime` no longer computes `firstOfficerOK`/`ensignOK` via `Stat(cfg.firstOfficer/ensign)` — instead it computes `spacedockPackageOK` (package registered in `settings.json packages` AND `ensign` discoverable as `user-package` source); (d) `piRuntimeLaunchReady` gates on `spacedockPackageOK`, not on the retired `firstOfficerOK`/`ensignOK`; (e) the doctor reports `spacedockPackageOK` TRUE from a NON-REPO cwd when the package is installed (the headline scenario that was broken before this fold-in). Existing frontdoor tests stay green (non-regression). The retirement and the new check are behavior-tested, not just documented.
+
+### What this fold-in does NOT change
+
+- D1 (root `package.json`), D2 (`.pi/extensions/spacedock.ts`), D3 (`spacedock install --host pi` runs `pi install`) are unchanged.
+- AC-1, AC-2, AC-4 are unchanged.
+- The spike evidence (package-root scan discovers skills from non-repo cwd) is unchanged and still authoritative.
+- The capstone's gap-1 re-check (cwd:<repo> reframed as working-directory concern) is unchanged in stance; this fold-in specifies the `repoRoot` SOURCE the re-check left undefined.
+
+## Stage Report: ideation (staff review #2 fold-in 2026-06-19)
+
+- DONE: Verified gap 1 against live code — doctor's `firstOfficerOK`/`ensignOK` (pi.go:293-294) are `Stat(cfg.firstOfficer/ensign)` from `repoRoot` (pi.go:263-264); `piRuntimeLaunchReady` (pi.go:299) gates on them; `repoRoot` falls back to cwd (pi.go:220-228). Under the non-repo-cwd installed scenario, the doctor reports NOT ready despite skills being discoverable. Real spec gap.
+- DONE: Picked resolution (a) — retire the repo-path Stat checks (D4 retires the `--skill` flags they test; the real mechanism is package-registration + package-root scan). Rejected (b) (repoint Stat at installed package) — tests a filesystem coincidence, not the discovery contract.
+- DONE: Appended D5 (retire Stat checks + `cfg.firstOfficer/ensign`; add `spacedockPackageOK` checking package registration + package-root-scan discovery; remove cwd fallback entirely, not demote; `repoRoot` retained only for dev-override path).
+- DONE: Revised AC-3 — `--skill` flags + cwd fallback + repo-path Stat checks all retired; doctor verifies package registered + discoverable; `piRuntimeLaunchReady` gates on `spacedockPackageOK`; doctor reports TRUE from non-repo cwd when installed. Behavior-bound Go test.
+- DONE: Specified the capstone's `cwd:<repo>` source — `--plugin-dir`/`SPACEDOCK_REPO_ROOT` (dev) or the installed package's resolved root (via `resolveSettingsPackageRoot`). The capstone's re-check "source is unchanged" claim is now true.
+
+### Summary
+
+Gap 1 (repoRoot source post-install) closed. Resolution (a): the doctor retires its repo-path Stat skill checks (which test the retired `--skill` flags) in favor of `spacedockPackageOK` (package registered + discoverable via package-root scan). The cwd fallback is removed entirely (not demoted). AC-3 revised to behavior-test the retirement + the new check from a non-repo cwd. The capstone's `cwd:<repo>` source is specified. Append-only; prior approach/ACs/test-plan preserved (AC-3 superseded by this fold-in's revision). No product files edited (ideation = design only).
