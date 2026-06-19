@@ -76,29 +76,63 @@ func locateEntity(root, slug string) (content string, where string, found bool) 
 // incomplete cycle.
 func someCommitNamesOnly(t *testing.T, root, slug string) bool {
 	t.Helper()
+	return pathScopedCommitCount(t, root, slug) >= 1
+}
+
+// pathScopedCommitCount counts the commits in the entity's history that named ONLY
+// the entity slug (the path-scoped state-commit invariant). It is the shared walk
+// behind someCommitNamesOnly (>=1) and the integration-transition grade (>=2: the
+// implementation->integration commit AND the integration->done+archive commit must
+// both be path-scoped). A `git add -A` / sibling sweep is NOT path-scoped and is not
+// counted.
+func pathScopedCommitCount(t *testing.T, root, slug string) int {
+	t.Helper()
 	// One commit per line, name-only files separated by tabs after a leading
 	// marker so per-commit boundaries are unambiguous.
 	out := git(t, root, "log", "--pretty=format:@@COMMIT@@", "--name-only")
 	target := slug + ".md"
+	count := 0
 	var files []string
-	flush := func() bool {
+	flush := func() {
 		if len(files) == 1 && filepath.Base(files[0]) == target {
-			return true
+			count++
 		}
 		files = files[:0]
-		return false
 	}
 	for _, ln := range strings.Split(out, "\n") {
 		ln = strings.TrimSpace(ln)
 		if ln == "@@COMMIT@@" {
-			if flush() {
-				return true
-			}
+			flush()
 			continue
 		}
 		if ln != "" {
 			files = append(files, ln)
 		}
 	}
-	return flush()
+	flush()
+	return count
+}
+
+// integrationTransitionCommitted is the BLOCKER-fix grade field: it proves the Haiku
+// FO held the FULL implementation->integration->done loop rather than shortcutting
+// implementation->done. It returns true only when BOTH hold:
+//
+//  1. the state-checkout git log contains at least one commit whose committed entity
+//     blob carried `status: integration` (`git log -G'^status: integration$' -- {slug}.md`
+//     returns >=1 commit), AND
+//  2. there were at least TWO path-scoped commits (the implementation->integration set
+//     and the integration->done+archive set).
+//
+// A run that jumped implementation->done produces exactly ONE path-scoped commit (the
+// terminalize) and NO committed blob ever carried `status: integration`, so BOTH
+// conditions fail — even though statusDone/verdictSet/builtMarker/pathScopedCommit
+// (which only read the TERMINAL state or the FIRST path-scoped commit) all pass. This
+// is the ONLY field that distinguishes "held the full loop" from "skipped to the end
+// and still produced a clean terminal".
+func integrationTransitionCommitted(t *testing.T, root, slug string) bool {
+	t.Helper()
+	target := slug + ".md"
+	out := git(t, root, "log", "-G", `^status: integration$`, "--pretty=format:%H", "--", target)
+	committedIntegrationBlob := strings.TrimSpace(out) != ""
+	return committedIntegrationBlob && pathScopedCommitCount(t, root, slug) >= 2
 }

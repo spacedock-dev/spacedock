@@ -105,6 +105,73 @@ func TestSomeCommitNamesOnly(t *testing.T) {
 	})
 }
 
+// TestIntegrationTransitionCommitted is the AC-3 negative check: it proves the
+// integrationTransitionCommitted grade field is LOAD-BEARING — a Haiku FO that
+// shortcuts implementation->done (skipping the integration advance) FAILS it even
+// though it produced a clean terminal state. The state dir is seeded with ONLY the
+// entity (the split-root fixture shape), so the seed commit is itself path-scoped;
+// each subsequent advance/terminalize commit is path-scoped too. No model is spent —
+// only the git-log grading logic is exercised.
+func TestIntegrationTransitionCommitted(t *testing.T) {
+	// The full loop: implementation -> integration (one path-scoped commit whose
+	// blob carries `status: integration`) -> done+archive (a second path-scoped
+	// commit). The grade must pass.
+	t.Run("full_loop_passes", func(t *testing.T) {
+		root := t.TempDir()
+		entity := filepath.Join(root, "widget.md")
+		writeFile(t, entity, "---\nstatus: implementation\n---\nbody\n")
+		gitInit(t, root) // seed commit names ONLY widget.md (state dir holds only it)
+
+		// implementation -> integration: the committed blob carries `status: integration`.
+		writeFile(t, entity, "---\nstatus: integration\n---\nbody\nWIDGET-BUILT\n")
+		gitCommitPathScoped(t, root, "widget.md", "advance: integration")
+
+		// integration -> done + archive: a second path-scoped commit (terminal).
+		writeFile(t, entity, "---\nstatus: done\nverdict: passed\ncompleted: 2026-06-19\n---\nbody\nWIDGET-BUILT\n")
+		gitCommitPathScoped(t, root, "widget.md", "terminalize: done")
+
+		if !integrationTransitionCommitted(t, root, "widget") {
+			t.Fatal("the full implementation->integration->done loop must grade integrationTransitionCommitted=true")
+		}
+	})
+
+	// The SHORTCUT: implementation -> done in ONE terminalize commit. No committed
+	// blob ever carried `status: integration`, so the grade must FAIL — this is the
+	// gap someCommitNamesOnly/statusDone/verdictSet cannot catch (they all pass on a
+	// clean terminal).
+	t.Run("skipped_advance_fails", func(t *testing.T) {
+		root := t.TempDir()
+		entity := filepath.Join(root, "widget.md")
+		writeFile(t, entity, "---\nstatus: implementation\n---\nbody\n")
+		gitInit(t, root) // seed commit names ONLY widget.md
+
+		// implementation -> done directly (no integration). One terminalize commit.
+		writeFile(t, entity, "---\nstatus: done\nverdict: passed\ncompleted: 2026-06-19\n---\nbody\nWIDGET-BUILT\n")
+		gitCommitPathScoped(t, root, "widget.md", "terminalize: done (shortcut)")
+
+		// Sanity: the fields a shortcut DOES satisfy still pass, proving the gap is real.
+		if !someCommitNamesOnly(t, root, "widget") {
+			t.Fatal("the shortcut's terminalize commit is path-scoped — someCommitNamesOnly must pass (this is the gap)")
+		}
+		// The load-bearing assertion: integrationTransitionCommitted FAILS the shortcut.
+		if integrationTransitionCommitted(t, root, "widget") {
+			t.Fatal("a skipped implementation->done shortcut must grade integrationTransitionCommitted=false")
+		}
+	})
+}
+
+// TestCompletedSetAnchor pins the `completed:` frontmatter anchor: it matches a
+// finalized entity carrying a non-empty timestamp and rejects an empty/unset
+// `completed:` (the not-yet-terminalized shape). No model spent.
+func TestCompletedSetAnchor(t *testing.T) {
+	if !completedSet.MatchString("---\nstatus: done\ncompleted: 2026-06-19T00:00:00Z\n---\nbody") {
+		t.Error("completed: <timestamp> must match a finalized entity")
+	}
+	if completedSet.MatchString("---\nstatus: done\ncompleted:\n---\nbody") {
+		t.Error("an empty completed: must NOT match (the not-yet-terminalized shape)")
+	}
+}
+
 // TestLiveStageReportHeading pins the stage-agnostic heading anchor the live test
 // uses. The real full FO cycle finishes at the TERMINAL stage, so the ensign that
 // completes it writes `## Stage Report: done` — the backlog-specific skeleton regex
