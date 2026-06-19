@@ -14,6 +14,7 @@ group: cleanup
 sprint-readiness: ready
 mod-block:
 pr: "#398"
+archived: 2026-06-19T17:41:32Z
 ---
 
 Harden the wrong-root boot guard so a compound `cd X; …` boot command is parsed correctly, eliminating a false-positive that latest-opus trips.
