@@ -1,9 +1,9 @@
 ---
 id: rrrhd7e79w41w1p39r0268e8
 title: Unpin CI Claude Code version — run live-e2e on the merged-team floor (retire the #395 pin)
-status: backlog
+status: ideation
 source: 'Captain 2026-06-18 — 9243/#396 (using-claude-team merged-model support) merged + green on 2.1.181. The #395 keystone pinned live-e2e to 2.1.177 (last native-TeamCreate release) ONLY to keep the legacy team contract alive. With the merged contract shipped, the pin should be retired so CI runs the current (merged-team) Claude. Ships in 0.20.5 alongside m4''s merged lane.'
-started:
+started: 2026-06-19T00:33:52Z
 completed:
 verdict:
 score: 0.6
