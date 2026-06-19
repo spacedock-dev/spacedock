@@ -8,8 +8,8 @@ completed:
 verdict:
 worktree:
 issue:
-sprint:
-sprint-readiness:
+sprint: 0223-pi-dispatch-contract
+sprint-readiness: ready
 id: k8tbnmcbyqc5kkhj0m9vewq4
 ---
 
