@@ -9,7 +9,7 @@ sprint-readiness: ready
 id: czw7whmaqjkasx1sjbq0at4h
 started: 2026-06-19T07:45:59Z
 worktree: .worktrees/spacedock-ensign-prose-function-restructure
-mod-block: merge:pr-merge
+mod-block:
 pr: "#402"
 ---
 
