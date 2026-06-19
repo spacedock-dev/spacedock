@@ -39,6 +39,11 @@ const forceTeamModeCue = "You MUST run in team mode for this run: create a team 
 // members[] in a second pane. Skips (never fatals) without auth (isolatedClaudeEnv,
 // AC-6).
 func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
+	// Legacy lane: this test drives native TeamCreate on an interactive session. On
+	// a merged host (claude ≥2.1.178, native team tools gone) it cannot run, so SKIP
+	// rather than RED when CI unpins past the merged floor (the merged lane owns the
+	// in-process named-background-teammate coverage).
+	skipUnlessTeamCreateCapable(t)
 	driver := newPtyLiveDriver(t)
 
 	// Stage the realistic ≥3-stage lifecycle fixture PLUS a `_mods/comm-officer.md`
@@ -145,6 +150,10 @@ func TestLivePtyStandingResidencyInjectsCommOfficer(t *testing.T) {
 // teardown_grade_watcher_test.go with synthetic fixtures), which this live oracle does
 // not duplicate or weaken. Skips (never fatals) without auth (AC-6).
 func TestLivePtyEnsignCycleTeamTeardown(t *testing.T) {
+	// Legacy lane: drives native TeamCreate on an interactive session. On a merged
+	// host (claude ≥2.1.178, native team tools gone) it cannot run, so SKIP rather
+	// than RED when CI unpins past the merged floor.
+	skipUnlessTeamCreateCapable(t)
 	driver := newPtyLiveDriver(t)
 
 	root := t.TempDir()
