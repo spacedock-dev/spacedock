@@ -33,8 +33,8 @@ var legacyMachineryStrings = []string{
 // stale. The whole env-var token must be absent from BOTH the normal-path dispatch
 // contract and the legacy skill — re-introducing it anywhere resurrects the
 // obsolete advice. The CI lane in runtime-live-e2e.yml legitimately sets the flag
-// for the pinned 2.1.177 legacy lane; that is test config, not captain-facing
-// skill prose, so it is out of this check's scope (skills/ only).
+// (test config, not captain-facing skill prose), so it is out of this check's
+// scope (skills/ only).
 var deletedFromMergedFloor = []string{
 	"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
 }
@@ -70,8 +70,8 @@ func readFileString(t *testing.T, path string) string {
 // real context weight every such session pays. This asserts ABSENCE from the
 // normal-path contract only — it does not grep the legacy skill for its own prose
 // (that would be a tautological prose-grep); the legacy machinery's continued
-// existence is proven behaviorally by the pinned-2.1.177 CI live lane, not by a
-// string match here.
+// existence is bound by TestLegacyConsumerRetiredButPathLives (the skill file and
+// its dispatch-contract load line still resolve), not by a string match here.
 func TestNormalPathContractInlinesNoLegacyMachinery(t *testing.T) {
 	contract := readFileString(t, normalPathDispatchContractPath(t))
 	legacySkill := readFileString(t, legacyClaudeTeamSkillPath(t))
@@ -103,17 +103,36 @@ func TestNormalPathContractNamesLegacySkill(t *testing.T) {
 	}
 }
 
-// TestLegacyRemovalTriggerIsExternallyAnchored is AC-5's divergeable-pin binding:
-// it reads the REAL .github/workflows/runtime-live-e2e.yml — an independent source
-// the legacy skill's removal-trigger prose can diverge from — and asserts the pin
-// still names a team-tools-capable version (2.1.177, the last release exposing
-// native team tools). It binds two independent sources (this test's hardcoded
-// expectation and the live CI file), so it is NOT a self-referential prose-grep:
-// when the pin moves past 2.1.177 this assertion goes red, the signal that the
-// legacy branch has lost its only live consumer and the skill may be deleted.
-func TestLegacyRemovalTriggerIsExternallyAnchored(t *testing.T) {
+// TestLegacyConsumerRetiredButPathLives is AC-5's removal-trigger binding after
+// the #395 pin retired. The legacy removal trigger has TWO conditions: (1) no live
+// lane drives the legacy branch, AND (2) no runtime the FO targets still exposes
+// TeamCreate. Unpinning the live lane (this task) satisfies only (1) — a user on
+// installer-`stable` (2.1.170, still TeamCreate-capable) still hits the legacy
+// path, so condition (2) is unmet and the path is NOT dead code. This test binds
+// two independent sources so it stays a structural guard, not a self-referential
+// prose-grep:
+//   - the REAL .github/workflows/runtime-live-e2e.yml NO LONGER pins a
+//     TeamCreate-capable version (SPACEDOCK_PINNED_CLAUDE_VERSION absent) — the
+//     live consumer is RETIRED; AND
+//   - the legacy skill and its dispatch-contract load line STILL EXIST — the
+//     best-effort legacy path is RETAINED, not deleted.
+//
+// The externally-checkable proxy for legacy DELETION is no longer this CI pin (now
+// retired); it is the future condition "even installer-`stable` Claude is ≥ the
+// merged floor" — a separate trigger, out of this task's scope.
+func TestLegacyConsumerRetiredButPathLives(t *testing.T) {
 	workflow := readFileString(t, filepath.Join(repoRoot(t), ".github", "workflows", "runtime-live-e2e.yml"))
-	if !strings.Contains(workflow, `SPACEDOCK_PINNED_CLAUDE_VERSION: "2.1.177"`) {
-		t.Errorf("the live-e2e workflow no longer pins SPACEDOCK_PINNED_CLAUDE_VERSION to 2.1.177 — the legacy branch may have lost its live consumer; re-evaluate the using-legacy-claude-team removal trigger")
+	if strings.Contains(workflow, "SPACEDOCK_PINNED_CLAUDE_VERSION") {
+		t.Errorf("the live-e2e workflow still pins SPACEDOCK_PINNED_CLAUDE_VERSION — the #395 pin should be retired so the live lane floats to the merged floor (the live legacy consumer is retired)")
+	}
+
+	contract := readFileString(t, normalPathDispatchContractPath(t))
+	if !strings.Contains(contract, "spacedock:using-legacy-claude-team") {
+		t.Errorf("claude-fo-dispatch.md no longer names spacedock:using-legacy-claude-team — the best-effort legacy path must be RETAINED (a user on installer-stable still hits it); deletion is a separate trigger")
+	}
+
+	legacySkill := readFileString(t, legacyClaudeTeamSkillPath(t))
+	if strings.TrimSpace(legacySkill) == "" {
+		t.Errorf("using-legacy-claude-team/SKILL.md is empty or missing — the best-effort legacy path must be RETAINED until even installer-stable Claude clears the merged floor")
 	}
 }
