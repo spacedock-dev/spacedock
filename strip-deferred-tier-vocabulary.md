@@ -1,7 +1,7 @@
 ---
 id: ga1e7heckpazwbmtxzrg2kms
 title: Strip deferred-72 tier vocabulary leaked into czw's «gate.assemble-verdict» body (pre-cut ship-blocker)
-status: implementation
+status: validation
 source: '0221 pre-cut antipattern audit (2026-06-19): czw (prose-function restructure) leaked the DEFERRED 72 member''s tier vocabulary into the shipped contract — first-officer-shared-core.md:127,130 instruct a level-2-only FO to escalate the verdict to a level-3 judge, the ONLY occurrence of level/L3/judge in the contract, with nothing defining the concept (72 deferred). Ship-blocker for the v0.22.1 tag. Audit also recommended a contractlint absence-guard to prevent recurrence.'
 started: 2026-06-19T21:31:06Z
 completed:
