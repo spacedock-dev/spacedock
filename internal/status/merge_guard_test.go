@@ -51,6 +51,47 @@ func TestMergeGuardArmsUnderLocal(t *testing.T) {
 	}
 }
 
+// TestMergeGuardArmIsPolicyGated is the load-bearing inversion pin (AC-1 vs AC-5).
+// On the IDENTICAL precondition — empty mod-block, empty pr, `--verdict passed` —
+// the ONLY differing variable is the `merge:` policy, and it must flip the
+// outcome: merge: local ARMS (exit 0, sets mod-block, does not terminalize), while
+// merge: pr REFUSES at the merge-hook guard (exit 1, no arm, entity unchanged).
+// This resolves the policy-blindness contradiction between the Phase A prose and
+// AC-5: an empty-mod-block / empty-pr entity is indistinguishable as "armable" vs
+// "ceremony-skipping" by frontmatter, so a policy-blind arm cannot satisfy AC-5.
+// Gating arm to merge: local (fully in-process, safe to auto-drive) while merge: pr
+// routes the unarmed finalize to the guard refusal uniquely satisfies the oracle.
+// Flipping arm back to policy-blind turns the merge: pr leg RED (it would arm,
+// exit 0, instead of refusing).
+func TestMergeGuardArmIsPolicyGated(t *testing.T) {
+	// merge: local leg — arms.
+	localRoot, localOut, localErr, localCode := driveMergeGuard(t, "merge-local-workflow", "020-no-sentinel", "--verdict", "passed")
+	if localCode != 0 {
+		t.Fatalf("merge: local empty-mod-block --verdict passed must ARM (exit 0), got %d (stderr=%q)", localCode, localErr)
+	}
+	if !strings.Contains(localOut, "armed") {
+		t.Fatalf("merge: local leg must signal armed, got %q", localOut)
+	}
+	if got := frontmatterField(t, filepath.Join(localRoot, "020-no-sentinel.md"), "mod-block"); got != "merge:local-merge" {
+		t.Fatalf("merge: local arm must set mod-block, got %q", got)
+	}
+
+	// merge: pr leg — refuses, does NOT arm. Same precondition, opposite outcome.
+	prRoot, prOut, prErr, prCode := driveMergeGuard(t, "merge-pr-workflow", "020-no-sentinel", "--verdict", "passed")
+	if prCode != 1 {
+		t.Fatalf("merge: pr empty-mod-block --verdict passed must REFUSE (exit 1, not arm), got %d (stdout=%q)", prCode, prOut)
+	}
+	if strings.Contains(prOut, "armed") {
+		t.Fatalf("merge: pr leg must NOT arm, got %q", prOut)
+	}
+	if !strings.Contains(prErr, "cannot advance to terminal") {
+		t.Fatalf("merge: pr leg must propagate the merge-hook refusal, got %q", prErr)
+	}
+	if got := frontmatterField(t, filepath.Join(prRoot, "020-no-sentinel.md"), "mod-block"); got != "" {
+		t.Fatalf("merge: pr refusal must NOT arm a mod-block, got %q", got)
+	}
+}
+
 // TestMergeGuardArmThenFinalizeLocal (AC-1, the happy path): arm, then a second
 // run finalizes — the entity ends terminal+passed, archived, mod-block cleared.
 func TestMergeGuardArmThenFinalizeLocal(t *testing.T) {
