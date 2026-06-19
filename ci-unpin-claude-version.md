@@ -9,7 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-ci-unpin-claude-version
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#390"
 ---
 
