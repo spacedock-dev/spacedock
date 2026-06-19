@@ -9,6 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-ci-unpin-claude-version
 issue:
+mod-block: merge:pr-merge
 ---
 
 Retire the 2.1.177 CI pin so the live-e2e lane runs current/unpinned Claude Code (the merged-team floor), now that #396 shipped the merged-team contract.
