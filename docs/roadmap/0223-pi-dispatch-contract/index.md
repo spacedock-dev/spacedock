@@ -159,8 +159,8 @@ The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates
 - [x] **Re-carve** (captain 2026-06-19) — archived `k8t`+`2m1` (clone-bound workarounds), filed merged `eq` (install-managed package placement, spike PASSED); capstone gap-1 re-checked (cwd:<repo> reframed as working-directory concern). ✓
 - [x] **⚠️ Preflight staff review #2** (run `efff49c9`) — verdict Gaps to close; blocker GENUINELY CLOSED by re-carve; seven follow-through gaps (1 spec + 6 doc). ✓
 - [x] **Close staff-review #2 gaps** — all 7 closed: gap 1 (`eq` repoRoot source, state `e862e42e`), gap 6 (`b2` AC-2 sub-bullet, state `55fc0552`), gaps 2–5,7 inline (main `0cda9851`) ✓
-- [ ] **Present ideation gates** — per member; never self-approve (pending gap 1 + 6 fold-ins landing)
-- [ ] **Package** — write `dispatch-sprint-execution.md` (cold-boot Commander package with Q1–Q13 baked in)
+- [x] **Present ideation gates** — all 3 approved by captain 2026-06-19 (pi-install-managed-skill-placement, pi-dispatch-model-stamping, pi-back-channel-dispatch capstone). Captain directs: package Commander cold-boot doc, do NOT drive implementation from this session ✓
+- [x] **Package** — write `dispatch-sprint-execution.md` (cold-boot Commander package with Q1–Q13 baked in) — below ✓
 
 **Drive — Commander (separate cold-booted session on pi)**
 - [ ] Implementation → validation → done per member; detached adversarial audit at validation for every high-stakes surface (the shipped FO/ensign contract + host adapters + the `spacedock pi` front door)
