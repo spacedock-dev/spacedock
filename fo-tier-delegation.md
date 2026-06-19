@@ -1,6 +1,6 @@
 ---
 title: Model-aware tier self-identification + level-3 delegation routing
-status: implementation
+status: validation
 source: 'FO shaping 0205 (2026-06-15, this session) — for a weak FO to be safe by construction it must self-identify its tier and route every judgment call to a stronger standing teammate, never adjudicate alone. No such mechanism exists. The gate-half (route all gate verdicts to level-3 when the FO is Haiku and the workflow has gate:true stages) is the no-2y startable slice; the full seam visibility composes with 2y. 0205 layered-FO.'
 started: 2026-06-16T02:21:21Z
 completed:
