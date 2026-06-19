@@ -9,7 +9,7 @@ issue:
 id: y2r7ew51xqs6q3avsb6mcaka
 ---
 
-Apply the ~638-token cut list in `docs/dev/_proposals/fo-contract-token-cleanup-2026-06-15.md` to the shipped FO-contract files — each cut empirically confirmed (not just reasoned) by a no-guidance-control micro-test. The deliverable is the trimmed contract files; the micro-test is the method that makes the cut safe.
+Apply the ~638-token cut list in `docs/dev/_proposals/fo-contract-token-cleanup.md` to the shipped FO-contract files — each cut empirically confirmed (not just reasoned) by a no-guidance-control micro-test. The deliverable is the trimmed contract files; the micro-test is the method that makes the cut safe.
 
 ## Problem
 

@@ -9,6 +9,7 @@ verdict:
 score: 0.4
 worktree:
 issue:
+sprint: 0205-layered-fo
 ---
 
 Harden the wrong-root boot guard so a compound `cd X; …` boot command is parsed correctly, eliminating a false-positive that latest-opus trips.
