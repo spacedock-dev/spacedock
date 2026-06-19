@@ -1,6 +1,6 @@
 ---
 title: Prose-function restructure — express the FO cores as «fn» invocations (shipped-verb backticks or hand-followed guillemets)
-status: implementation
+status: validation
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "prose-function-restructure"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
