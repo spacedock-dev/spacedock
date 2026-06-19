@@ -110,14 +110,19 @@ Whether a dispatch blocks until worker completion or returns a handle to await l
 
 ## Event Loop
 
-After each agent completion:
+After each agent completion, `«dispatch.next-action»()` — pick the next thing to do, or end the iteration. Its body is the skeleton below.
 
 These are FO-internal scheduling reads — parse them as JSON, not the padded human table. Each read below uses `--json` so the FO consumes a compact, byte-stable document (one rule: every value is a string) instead of scraping column padding that a token proxy can mangle. `--fields` narrows the read to the keys the FO needs. The `--json` envelopes are: `status`/`--where` → `{"command":"status","entities":[…]}`; `--next` → `{"command":"next","dispatchable":[{"id","slug","current","next","worktree"},…]}`. The captain-facing state display (shared-core) still forwards the human table verbatim — JSON is for the machine, the table is for the human.
+
+## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
 The runtime adapter may insert a host step 0 (a roster-reconcile sweep) before step 1; a host with no roster source omits it. The skeleton is:
 
 1. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g., re-present the PR summary). Do not dispatch new work for a mod-blocked entity.
 2. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus the named frontmatter keys; `--fields` is additive over the fixed five, since the computed dispatch columns are not projectable).
 3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the host's step-0 reconcile sweep when the adapter declares one, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
+
+- **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
+- → **prose**, becomes `` `spacedock dispatch next-action` `` (0222) — the driver binary is descoped to roadmap 0222; until it ships the FO hand-follows the skeleton above.
 
 Repeat from step 1 after each agent completion until the captain ends the session or, in single-entity mode, until the target entity is resolved.

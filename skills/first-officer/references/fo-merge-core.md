@@ -4,6 +4,15 @@ The terminal merge-and-cleanup ceremony, the mod-block enforcement that guards i
 
 ## Merge and Cleanup
 
+When an entity reaches its terminal stage, `«merge.guard»(slug)` runs the atomic merge-finalize ceremony — the mod-block set→invoke→clear→terminalize sequence below, as one call.
+
+## «merge.guard»(slug): atomically set→invoke→clear the merge mod-block, then terminalize
+
+- **effect:** run the terminal merge-finalize ceremony for the entity — set `mod-block=merge:{mod_name}`, invoke the registered merge hook, detect completion, clear the mod-block in its own call, default-merge if no hook handled it, terminalize (`completed verdict={verdict} worktree=`), and archive. The mechanism-level enforcement in **Mod-Block Enforcement** below guards every step (the guard refuses a terminal transition while `mod-block` is non-empty, refuses combining `mod-block=` with terminal fields, and refuses terminalizing with merge hooks registered while `pr` and `mod-block` are both empty — all without `--force`).
+- **done-when:** the entity is archived terminal with its mod-block cleared and `pr`/sentinel recorded (or the hook left the entity blocked, in which case `mod-block` stays set and the pending state is reported).
+- **block:** if the hook blocks (`pr` set, captain approval pending, or an external wait), leave `mod-block` set and do not local-merge. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+- → **shipped** (this sprint): `` `spacedock merge guard <slug>` `` — invoke it directly. The hand-followed sequence it automates is the steps below.
+
 When an entity reaches its terminal stage:
 
 1. If merge hooks are registered, set the mod-block before invoking:
