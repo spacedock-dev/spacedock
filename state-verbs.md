@@ -1,6 +1,6 @@
 ---
 title: State-repo verbs — spacedock state ready / sweep / commit <slug> (rebase-HALT enforced by the verb)
-status: validation
+status: done
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "state-verbs"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
@@ -8,9 +8,11 @@ group: verb-core
 sprint-readiness: ready
 id: rgq0m30693ke84zvb8yna078
 started: 2026-06-17T20:55:24Z
-worktree: .worktrees/spacedock-ensign-state-verbs
+worktree:
 mod-block:
 pr: "#399"
+verdict: PASSED
+completed: 2026-06-19T19:46:51Z
 ---
 
 `spacedock state ready` / `state sweep` / `state commit <slug>` behind the «state.ensure-ready» / «state.sweep-merged» / «state.commit» prose-functions. The commit verb is path-scoped, pushes with retry-on-reject-rebase, and REFUSES to return on a rebase conflict (exit non-zero, stderr naming the paths, repo left in rebase-abort) — so the FO cannot proceed even if it wanted to. The rebase-conflict halt is enforced by the verb, not by FO discipline.
