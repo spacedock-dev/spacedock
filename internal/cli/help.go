@@ -27,6 +27,7 @@ Workflow
   status      [args]                 Show or update workflow state
   new         [--folder] SLUG        Create an entity from a stdin body (auto-discovers the workflow)
   state       init                   Initialize a cloned split-root workflow's state checkout
+  merge       guard <slug>           Run the terminal merge-finalize ceremony for an entity
   completion  bash|zsh               Print a bash or zsh completion script
   dispatch    build | show-stage-def Build worker dispatch artifacts
 
@@ -141,6 +142,39 @@ Examples:
   spacedock new my-task < body.md
   spacedock new --folder my-task < body.md
   spacedock new my-task --workflow-dir docs/dev < body.md
+`)
+	})
+}
+
+// setMergeHelp installs a per-command help renderer for `merge`: the `guard`
+// subcommand synopsis, its flag surface, and the three-phase ceremony it drives,
+// instead of the root's grouped menu (cobra walks to the parent HelpFunc only when
+// a child has none).
+func setMergeHelp(cmd *cobra.Command, w io.Writer) {
+	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
+		fmt.Fprint(w, c.Short+`
+
+Usage:
+  spacedock merge guard <slug> --verdict passed|rejected [--workflow-dir DIR]
+
+Drive the terminal merge ceremony for an entity as one ordered envelope: arm the
+mod-block before the hook, detect hook completion by the state delta, clear the
+mod-block in a standalone step, then terminalize and archive. The verb owns the
+sequence so the steps cannot be combined, skipped, or reordered; it does NOT
+invoke the merge hook or make the merge verdict (you pass that in with --verdict).
+
+Re-run guard after invoking the hook: it resumes from the entity's current state
+(armed -> blocked on an open PR, or armed -> finalized once the merge has landed).
+
+Flags:
+  --verdict passed|rejected   The merge decision (required; a verdict-less finalize is refused)
+  --workflow-dir DIR          Target this workflow explicitly (skips auto-discovery)
+  --json                      Emit the phase signal as JSON
+  --quiet                     Emit a terse machine-readable phase signal
+
+Examples:
+  spacedock merge guard my-task --verdict passed
+  spacedock merge guard my-task --verdict rejected --workflow-dir docs/dev
 `)
 	})
 }
