@@ -4,10 +4,10 @@ title: Unpin CI Claude Code version — run live-e2e on the merged-team floor (r
 status: validation
 source: 'Captain 2026-06-18 — 9243/#396 (using-claude-team merged-model support) merged + green on 2.1.181. The #395 keystone pinned live-e2e to 2.1.177 (last native-TeamCreate release) ONLY to keep the legacy team contract alive. With the merged contract shipped, the pin should be retired so CI runs the current (merged-team) Claude. Ships in 0.20.5 alongside m4''s merged lane.'
 started: 2026-06-19T00:33:52Z
-completed:
-verdict:
+completed: 2026-06-19T06:44:50Z
+verdict: PASSED
 score: 0.6
-worktree: .worktrees/spacedock-ensign-ci-unpin-claude-version
+worktree:
 issue:
 mod-block:
 pr: "#390"
