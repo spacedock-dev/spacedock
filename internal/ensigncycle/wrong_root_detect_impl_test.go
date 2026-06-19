@@ -101,21 +101,36 @@ func wanderTarget(command, fixtureRoot string) (string, bool) {
 // bootPathArgs pulls the path arguments a boot command supplies: the target of a
 // leading `cd`, and the value after `--workflow-dir`. It splits on whitespace (the
 // boot commands are simple `cd …`, `spacedock status --boot --workflow-dir …`
-// forms; quoting is not exercised by the real boot stream).
+// forms; quoting is not exercised by the real boot stream). A compound boot chains
+// the path token straight into a shell separator with no preceding space —
+// `cd <root>; ls`, `cd <root>&& ls` — so each extracted token has any trailing
+// `;`/`&&`/`|` trimmed before it reaches the isUnder check.
 func bootPathArgs(command string) []string {
 	fields := strings.Fields(command)
 	var paths []string
 	for i, f := range fields {
 		switch {
 		case f == "cd" && i+1 < len(fields):
-			paths = append(paths, fields[i+1])
+			paths = append(paths, trimBootSeparator(fields[i+1]))
 		case f == "--workflow-dir" && i+1 < len(fields):
-			paths = append(paths, fields[i+1])
+			paths = append(paths, trimBootSeparator(fields[i+1]))
 		case strings.HasPrefix(f, "--workflow-dir="):
-			paths = append(paths, strings.TrimPrefix(f, "--workflow-dir="))
+			paths = append(paths, trimBootSeparator(strings.TrimPrefix(f, "--workflow-dir=")))
 		}
 	}
 	return paths
+}
+
+// trimBootSeparator strips a single trailing shell separator (`;`, `&&`, `|`) that a
+// compound boot glues onto a path token with no preceding space. It leaves an
+// already-clean path untouched.
+func trimBootSeparator(tok string) string {
+	for _, sep := range []string{"&&", ";", "|"} {
+		if strings.HasSuffix(tok, sep) {
+			return strings.TrimSuffix(tok, sep)
+		}
+	}
+	return tok
 }
 
 // isUnder reports whether path p is nested under dir (both already cleaned).

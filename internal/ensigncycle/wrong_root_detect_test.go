@@ -115,6 +115,39 @@ func TestDetectWrongRootBoot(t *testing.T) {
 		}
 	})
 
+	t.Run("compound_cd_into_fixture_passes", func(t *testing.T) {
+		// Latest-opus chains its boot in one bash call: `cd <fixtureRoot>; ls; …`.
+		// strings.Fields glues the trailing `;` onto the path token (`<fixtureRoot>;`),
+		// which must not be read as a wander off the (correct) fixture root.
+		stream := streamLine(`cd ` + fixtureRoot + `; ls -la; echo "===README==="; sed -n '1,60p' README.md`)
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector red a `;`-glued compound cd into the fixture root: %v", err)
+		}
+	})
+
+	t.Run("compound_cd_into_fixture_amp_passes", func(t *testing.T) {
+		// The `&&`-glued-with-no-space form (`cd <fixtureRoot>&& ls`) glues `&&` onto
+		// the path token the same way; it must also not flag a wander.
+		stream := streamLine(`cd ` + fixtureRoot + `&& ls`)
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector red a `&&`-glued compound cd into the fixture root: %v", err)
+		}
+	})
+
+	t.Run("compound_cd_away_from_fixture_reds", func(t *testing.T) {
+		// The no-false-negative direction: a genuine off-fixture compound boot must
+		// STILL red, naming both roots. Guards the trim against over-stripping and
+		// silently disabling detection.
+		stream := streamLine(`cd ` + realRepo + `; ls -la; cat README.md`)
+		err := detectWrongRootBoot(stream, fixtureRoot)
+		if err == nil {
+			t.Fatal("detector passed a compound boot cd'ing into the real repo — want a wrong-root error")
+		}
+		if !strings.Contains(err.Error(), fixtureRoot) || !strings.Contains(err.Error(), realRepo) {
+			t.Errorf("error must name both expected (%q) and actual (%q): %v", fixtureRoot, realRepo, err)
+		}
+	})
+
 	t.Run("empty_stream_does_not_false_red", func(t *testing.T) {
 		// No Bash commands at all (e.g. a launch failure stream) is not a wrong-root
 		// boot — it is a different failure the caller's own checks surface.
