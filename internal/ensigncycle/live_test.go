@@ -77,9 +77,11 @@ func TestLiveEnsignCycle(t *testing.T) {
 	// gated here: headless `-p` goes bare, so a legitimate drive emits no marker and
 	// gating on it would red an otherwise-correct cycle. The marker's offline coverage
 	// is the fixture watcher suite (teardown_grade_watcher_test.go over the
-	// sonnet_teamdelete_*.jsonl fixtures); live team end-to-end is deferred to the
-	// terminal/pty harness task m40mphxan8phr3t3tp03gk89. Each step is bounded by its
-	// own no-progress quiet budget; a stalled step fails FAST and LOCALIZED.
+	// sonnet_teamdelete_*.jsonl fixtures); the LIVE team end-to-end marker (and the
+	// comm-officer roster injection) is owned by the pty/tmux harness
+	// (pty_team_mode_live_test.go), which drives a real interactive session where
+	// team mode is exposed. Each step is bounded by its own no-progress quiet budget;
+	// a stalled step fails FAST and LOCALIZED.
 	//
 	// KNOWN GAP (conscious, by design — NOT a missing timeout): the quiet budget
 	// resets on ANY drained line, so it catches a SILENT hang (no new stream

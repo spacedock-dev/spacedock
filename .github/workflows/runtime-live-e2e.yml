@@ -99,16 +99,14 @@ jobs:
     environment:
       name: ${{ matrix.environment }}
     env:
+      # Freeze the installed version for the run's duration: the Install step below
+      # resolves installer-`latest` ONCE, and this keeps that resolved binary from
+      # auto-updating mid-run (a multi-minute test must not drift to a second
+      # version partway through — the "Show tool versions" step records the exact
+      # version that ran). It no longer holds a PIN: the live lane floats to current
+      # Claude (the merged-team floor #396 ships on), so CI tests what users run
+      # rather than the retired team-tool-capable 2.1.177 (#395, now retired).
       DISABLE_AUTOUPDATER: "1"
-      # Pinned Claude Code version. 2.1.177 is the LAST release that exposes the
-      # native team tools (TeamCreate/TeamDelete): 2.1.178 dropped them from
-      # headless `claude -p` (anthropics/claude-code#68721) and 2.1.179 dropped
-      # them from interactive sessions too, even with
-      # CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 present (m4 live-team-mode finding,
-      # NO_TEAM_TOOLS probe). Team-mode FO drives and the level-3-judge residency
-      # need this version. DISABLE_AUTOUPDATER above is load-bearing for the pin:
-      # without it claude auto-updates mid-job past 2.1.177 (m4 saw 2.1.177→2.1.179).
-      SPACEDOCK_PINNED_CLAUDE_VERSION: "2.1.177"
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
       # Per-leg artifact root the shared Claude scenario runner writes its
@@ -134,14 +132,25 @@ jobs:
         with:
           node-version: "20"
 
+      # tmux is the pty/tmux team-mode harness's transport (it drives a real
+      # interactive claude session in a detached tmux pane). ubuntu-latest does not
+      # ship tmux, so install it before the pty team-mode step below.
+      - name: Install tmux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux
+          tmux -V
+
       - name: Install Claude Code
         env:
           CLAUDE_VERSION: ${{ inputs.claude_version }}
         run: |
-          # Empty workflow_dispatch input resolves to the team-tool-capable pin,
-          # NOT to installer-latest (which is 2.1.178+, team tools removed). A
-          # maintainer can still override with an explicit version or `latest`.
-          VERSION="${CLAUDE_VERSION:-$SPACEDOCK_PINNED_CLAUDE_VERSION}"
+          # Empty workflow_dispatch input floats to installer-`latest` — the live
+          # lane tests the version users actually run (the merged-team floor #396
+          # ships on), not a frozen pin. A maintainer can still override with an
+          # explicit version or `stable` via the claude_version dispatch input
+          # (the escape hatch to pin a known-good version for a release cut).
+          VERSION="${CLAUDE_VERSION:-latest}"
           echo "Installing Claude Code version: $VERSION"
           curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
@@ -171,18 +180,11 @@ jobs:
 
       - name: Show tool versions
         run: |
-          # Enforce the pin: the leading version field MUST equal the pin or the
-          # job REDs. `claude --version` prints "2.1.177 (Claude Code)", so strip
-          # from the first space before comparing (a bare equality would red on
-          # the suffix). This is the checkable proof the live lane runs on the
-          # team-tool-capable version, not whatever floated to latest.
-          CLAUDE_VERSION_RAW="$(claude --version)"
-          CLAUDE_VERSION_FIELD="${CLAUDE_VERSION_RAW%% *}"
-          if [ "$CLAUDE_VERSION_FIELD" != "$SPACEDOCK_PINNED_CLAUDE_VERSION" ]; then
-            echo "::error::claude resolved to '$CLAUDE_VERSION_FIELD' (full: '$CLAUDE_VERSION_RAW'); expected pinned $SPACEDOCK_PINNED_CLAUDE_VERSION" >&2
-            exit 1
-          fi
-          echo "claude version pin verified: $CLAUDE_VERSION_FIELD"
+          # No pin to enforce: the live lane floats to current Claude. Record the
+          # resolved version (the install step froze it for the run) so a failure
+          # is always attributable to a known version, and surface it in the step
+          # summary for the regression-sensor read.
+          echo "claude version (frozen for this run): $(claude --version)"
           go version
           echo "### Tool versions" >> "$GITHUB_STEP_SUMMARY"
           echo "- \`claude --version\`: \`$(claude --version)\`" >> "$GITHUB_STEP_SUMMARY"
@@ -205,10 +207,9 @@ jobs:
       # TestLiveEnsignCycle is the full lifecycle canary, TEAM-AGNOSTIC: it gates on
       # dispatch-close + the on-disk terminal end-state, so it greens whether the
       # headless `-p` FO drove team or bare (no team-vs-bare coin). Headless `-p` goes
-      # bare per the captain's go-bare determination, so the live suite carries no
+      # bare per the captain's go-bare determination, so this step carries no
       # forced-team test; live team end-to-end (roster injection, the bounded teardown
-      # marker) is deferred to the terminal/pty harness task
-      # m40mphxan8phr3t3tp03gk89.
+      # marker) runs in the dedicated pty/tmux team-mode step below.
       # TestLiveDefaultHeadlessStopsAtGate is AC-a: default `-p` with NO conn drives to
       # a gate:true stage and EXITS reporting gate status, without resolving the gate.
       # TestLiveZeroDiscoverReportsAndStops is the cheap boot-only lean-boot guard (a
@@ -241,12 +242,58 @@ jobs:
       # 60s) in the runners: it resets on every stream line and kills a hang at 60s
       # of stream SILENCE. This ceiling never fires in a healthy run, it only bounds
       # a pathological progressing-but-runaway loop.
+      # if: !cancelled() runs this step even when an EARLIER step (the ensign cycle)
+      # failed, so a flake there does not skip the shared-scenario proof — each step's
+      # result surfaces independently. It still skips on a real workflow cancellation.
       - name: Run live Claude shared scenarios
+        if: ${{ !cancelled() }}
         env:
           SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
         run: |
           set -o pipefail
           gotestsum --jsonfile claude-shared-scenarios-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./internal/ensigncycle/
+
+      # The pty/tmux team-mode harness: a REAL interactive claude session (not -p)
+      # where the native team tools are exposed and the session stays resident while
+      # teammates work. TestLivePtyStandingResidencyInjectsCommOfficer asserts the
+      # comm-officer standing teammate lands in the team config.json members[];
+      # TestLivePtyEnsignCycleTeamTeardown drives a real TeamCreate->dispatch->
+      # terminalize->teardown and grades the bounded TERMINAL_TEARDOWN_BOUNDED marker
+      # with the same grader the offline fixture suite uses. These are the live team
+      # end-to-end coverage headless `-p` cannot carry. The per-stage no-progress
+      # quiet budget is the real guard; -timeout is a loose backstop.
+      #
+      # if: !cancelled() decouples this step from a failure in the earlier ensign-cycle
+      # step (e.g. an unrelated TestLiveZeroDiscover flake), so the AC-3/4 pty proof
+      # always runs and reports its own pass/fail. It still skips on a real cancellation.
+      - name: Run live pty team-mode harness
+        if: ${{ !cancelled() }}
+        env:
+          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile pty-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLivePtyStandingResidencyInjectsCommOfficer|TestLivePtyEnsignCycleTeamTeardown' ./internal/ensigncycle/
+
+      # The MERGED team-mode lane: a HEADLESS `claude -p` FO (no tmux) on the
+      # current/unpinned merged host (>=2.1.178) drives the workflow as a named
+      # BACKGROUND Agent dispatch (no TeamCreate) — the in-process team shape #396
+      # committed. TestLiveMergedTeamModeDispatch asserts no TeamCreate (init tools +
+      # no tool_use), a merged Agent dispatch (name + run_in_background + no
+      # team_name), the on-disk subagents meta member (agentType=spacedock:ensign),
+      # reconcile (no --team-name) exit 0, and the team-lead completion target. This
+      # is the second live lane: the legacy pty lane above SKIPs on a merged host
+      # (native team tools gone), this lane is the regression sensor for the merged
+      # floor. No tmux needed — it is a `-p` launch like the shared-scenario step.
+      #
+      # if: !cancelled() decouples it from an earlier step's failure so it always
+      # runs and reports its own pass/fail; it still skips on a real cancellation.
+      - name: Run live merged team-mode lane
+        if: ${{ !cancelled() }}
+        env:
+          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile merged-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveMergedTeamModeDispatch ./internal/ensigncycle/
 
       - name: Upload live artifacts
         if: always()
@@ -257,6 +304,8 @@ jobs:
             ./spacedock
             ./live-e2e-detail.jsonl
             ./claude-shared-scenarios-detail.jsonl
+            ./pty-team-mode-detail.jsonl
+            ./merged-team-mode-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**
