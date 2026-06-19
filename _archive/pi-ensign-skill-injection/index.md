@@ -1,11 +1,11 @@
 ---
 title: Pi ensign skill injection — make the Spacedock ensign skill discoverable by pi-subagents
-status: ideation
+status: done
 source: "Captain (2026-06-19): dispatched pi-back-channel-dispatch ideation with skill:[\"ensign\"]; run meta carried \"skillsWarning: Skills not found: ensign\". The worker ran skill-less and defaulted to implementation behavior in an ideation (gate, read-only) stage. Root-cause the injection failure and fix it so dispatched Pi ensigns actually load the Spacedock ensign contract."
 score:
 started: 2026-06-19T18:00:51Z
-completed:
-verdict:
+completed: 2026-06-19T22:41:06Z
+verdict: REJECTED
 worktree:
 issue:
 sprint: 0223-pi-dispatch-contract
