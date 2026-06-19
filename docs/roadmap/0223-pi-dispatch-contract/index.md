@@ -24,6 +24,16 @@ spacedock status --workflow-dir docs/dev --where sprint=0223-pi-dispatch-contrac
 
 Members 1–3 are independent, small, and unblock correct dispatch — parallelizable. Member 4 (capstone) depends on correct dispatch being *possible*, so it rides after/alongside; its friction 4 (`worker-identity-capture`) is where member 3's model-stamping lands structurally.
 
+## Staff preflight review (run `3adf00ee`, 2026-06-19)
+
+Independent reviewer (glm-5.2, not the FO, not the ideation ensigns) refuted the sprint as a whole. Full review at `staff-review.md`. **Verdict: Gaps to close — not yet cold-boot drivable.** DoD coverage, sequencing, blast-radius, and scope all passed clean; one blocker + two minor gaps:
+
+1. **[Blocker — owner: member 4] Child-cwd seam.** Member 1's `.pi/skills/ensign` symlink is cwd-keyed; member 2 makes the parent launchable from a non-repo cwd; the child's cwd defaults to the parent's. Under member 2's headline scenario, member 1's symlink isn't discovered and ensign doesn't load (DoD bullet b re-breaks). Verified closeable: `subagent(...)` exposes a top-level `cwd` param (`pi-subagents/src/extension/schemas.ts:69`); the capstone must pass `cwd: <repo>` on every dispatch + pin AC-2's launch cwd to non-repo. **Folded into member 4 via run `73dadc9f`.**
+2. **[Gap — owner: member 4, confirm against member 3] Pi canonical-model-space declaration.** Neither ideation firmly owns it; member 3 defers to the capstone, capstone doesn't claim. Risk: double-ship drift or silent reuse breakage. **Folded into member 4 via run `73dadc9f`** (capstone references member 3's declaration, doesn't re-declare).
+3. **[Gap — owner: Shaping FO, in the cold-boot package] Three missing quirks** — launch-cwd guidance (Q11), 1-2-3-landed preflight (Q12), null-model contradiction window (Q13). **Added to this index as Q11–Q13.**
+
+No material redesign needed. Once gap 1+2 land in member 4's ideation, the sprint is cold-boot drivable.
+
 ## The binding concept
 
 The dispatch core (`skills/first-officer/references/fo-dispatch-core.md`) organizes its entire model around one declared adapter capability — the **Worker back-channel**. Today no host adapter declares it cleanly in runtime-neutral terms; the Pi adapter declares none at all and treats Pi as bare/one-shot, even though the proven pi-intercom substrate implements exactly the back-channel the core intends. The capstone hardens the core to named capabilities (`worker-back-channel`, `async-dispatch`, `inbound-message-service`, `worker-identity-capture`, `completion-signal`) and wires the Pi adapter's bindings. Members 1–3 are the prerequisite dispatch-correctness fixes the capstone's verification depends on (the right model, the loaded ensign contract, the explicitly-resolved repo).
@@ -114,15 +124,28 @@ The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates
 
 **Quirk:** Sandbox is enabled (safehouse). `gh`, `git push`, `spacedock install` work via the safehouse allow-list. If a worker hits a sandbox denial, surface it rather than treating it as a hard failure — it is a known environment quirk, not a contract violation.
 
+### Q11 — Capstone live-drive launch cwd (staff-review gap 1, cold-boot face)
+
+**Quirk:** The capstone's AC-2 `pi-live` drive MUST launch from a **non-repo cwd** AND pass `cwd: <resolved repo root>` on the `subagent(...)` dispatch call. This exercises the three-way composition (member 1's cwd-keyed `.pi/skills/ensign` symlink + member 2's non-repo-cwd launch + member 4's dispatch wiring). If the Commander launches from a repo cwd, member 2's fix is unexercised and the composition seam stays hidden; if from a non-repo cwd WITHOUT `cwd: <repo>` on the dispatch, member 1's symlink is not discovered and ensign doesn't load (DoD bullet b re-breaks). The capstone's `async-dispatch`/`worker-identity-capture` binding carries the `cwd: <repo>` wiring instruction (folded from staff review). The repo path is sourced from member 2's install-recorded/explicitly-resolved path.
+
+### Q12 — Preflight: confirm members 1, 2, 3 landed before the capstone's pi-live drive (staff-review gap 3b)
+
+**Quirk:** Before attempting the capstone's AC-2 live drive, confirm all three siblings have landed: (a) member 1 — `subagents-doctor` lists `ensign` (project source); (b) member 2 — `spacedock doctor --host pi` shows the install-recorded repo source (not "working directory"); (c) member 3 — a null-model probe dispatch stamps the parent's live model (run-meta `model` == FO session live model, not `settings.json` defaultModel). A Commander who jumps to the capstone without 1–3 will hit the very frictions Q2/Q3 describe as workarounds, but framed as pre-member-1/3 workarounds, not as "the capstone is blocked until its siblings land."
+
+### Q13 — Core/adapter null-model contradiction window (staff-review gap 3c)
+
+**Quirk:** Between member 3 landing and the capstone landing, the core (`fo-dispatch-core.md`) says "when null, OMIT the model argument entirely" while the Pi adapter (`pi-first-officer-runtime.md`) says "stamp the parent's live model when null." This contradiction is **intentional and temporary** — member 3 documents it; the capstone generalizes it into a named `model-resolution` rule. A Commander reading both during member 3's verification will see the disagreement; it is not a bug, it is the planned transition window.
+
 ## Sprint lifecycle checklist (owner-tagged — copy into this index to track)
 
 **Shape — Shaping FO (this session)**
 - [x] **Scope-lock** with the captain — members in/deferred ✓
 - [x] **Carve** — stamp `sprint` / `sprint-readiness` on all four; write this `index.md` ✓
-- [ ] **Ideate** each gated member — riskiest mechanism first; check existing ideation state (members 1, 4 have partial ideation; members 2, 3 fresh)
-- [ ] **⚠️ Preflight staff review (sprint-wide)** — dispatch ONE independent reviewer (not the FO, not the ideation ensigns) over the sprint as a whole → `staff-review.md`
-- [ ] **Present ideation gates** — per member; never self-approve
-- [ ] **Package** — write `dispatch-sprint-execution.md` (the cold-boot Commander package with Q1–Q10 baked in)
+- [x] **Ideate** each gated member — riskiest mechanism first; all four ideations complete with spiked riskiest mechanisms (members 1, 2, 3 clean; member 4 capstone re-ideated to fold in staff-review gaps) ✓
+- [x] **⚠️ Preflight staff review (sprint-wide)** — independent reviewer (run `3adf00ee`, glm-5.2) ran; verdict **Gaps to close — not yet cold-boot drivable**; one blocker (child-cwd seam) + two minor gaps. Full review at `staff-review.md`. Fold-in to member 4 dispatched (run `73dadc9f`). ✓
+- [ ] **Fold staff-review gaps into member 4** — gap 1 (cwd:<repo> wiring + AC-2 launch-cwd pin) and gap 2 (Pi canonical-model-space declaration ownership) being folded via run `73dadc9f`
+- [ ] **Present ideation gates** — per member; never self-approve (pending gap fold-in)
+- [ ] **Package** — write `dispatch-sprint-execution.md` (cold-boot Commander package with Q1–Q13 baked in, including the staff-review gap-3 quirks Q11–Q13)
 
 **Drive — Commander (separate cold-booted session on pi)**
 - [ ] Implementation → validation → done per member; detached adversarial audit at validation for every high-stakes surface (the shipped FO/ensign contract + host adapters + the `spacedock pi` front door)
