@@ -45,9 +45,9 @@ var foReferenceCores = map[string][]string{
 var bodyReferenceRe = regexp.MustCompile(`references/[A-Za-z0-9_./-]+\.md`)
 
 // bodySkillRe matches a lazy skill invocation `spacedock:<name>` the boot core
-// names as a deferred load point. The first-dispatch / terminal / gate skills
-// (using-claude-team, present-gate, feedback-rejection-flow) each resolve to their
-// skills/<name>/SKILL.md.
+// names as a deferred load point. The legacy-probe / gate skills
+// (using-legacy-claude-team, present-gate, feedback-rejection-flow) each resolve
+// to their skills/<name>/SKILL.md.
 var bodySkillRe = regexp.MustCompile(`spacedock:([a-z0-9-]+)`)
 
 // bodyModRe matches a CONCRETE _mods reference (e.g. `_mods/pr-merge.md`) the boot
@@ -60,9 +60,9 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 // load points. The ensign skill is the dispatched-worker contract, not a boot-core
 // load point, so it is excluded; the FO-self reference would be a self-load.
 var lazyLoadSkills = map[string]bool{
-	"using-claude-team":       true,
-	"present-gate":            true,
-	"feedback-rejection-flow": true,
+	"using-legacy-claude-team": true,
+	"present-gate":             true,
+	"feedback-rejection-flow":  true,
 }
 
 // deferredLoadPoint is one extracted load-point: the on-disk path the body names
@@ -149,7 +149,7 @@ func TestBootResidentDeferredLoadPointsResolve(t *testing.T) {
 func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	root := repoRoot(t)
 	fixture := "At first dispatch, read references/claude-fo-this-file-does-not-exist.md\n" +
-		"and at terminal, invoke spacedock:using-claude-team.\n"
+		"and at terminal, invoke spacedock:using-legacy-claude-team.\n"
 	points := extractDeferredLoadPoints(fixture)
 	if len(points) == 0 {
 		t.Fatal("control fixture extracted no load-points — the dangling-target case never exercises the stat")
@@ -170,7 +170,7 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 		t.Fatal("control: the dangling deferred reference was not extracted — the guard cannot fail on a moved/deleted target")
 	}
 	if !sawReal {
-		t.Fatal("control: the real load-point (using-claude-team) was not resolved — the discriminator has nothing to contrast the dangling case against")
+		t.Fatal("control: the real load-point (using-legacy-claude-team) was not resolved — the discriminator has nothing to contrast the dangling case against")
 	}
 }
 

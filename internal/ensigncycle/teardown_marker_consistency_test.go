@@ -18,21 +18,22 @@ import (
 // consistent grade-const + fixtures drift that skips the contract would slip
 // through: the offline grade would green a drifted marker the live FO never emits
 // because the contract still mandates the old string. Asserting the grade const
-// appears VERBATIM in both contract files ties grade↔contract directly; the
+// appears VERBATIM in the contract source ties grade↔contract directly; the
 // integration lint ties integration-const↔contract; together the three copies are
 // pinned to one prose source.
 //
-// The prose sources are the Claude merge reference's Merge-and-Cleanup step-10
-// (which owns the bounded-teardown marker after the contract split moved it out of
-// first-officer-shared-core.md) and the using-claude-team skill (the Claude
-// realization that owns the terminal teardown). They are read via the in-repo
-// layout path (the ensigncycle package sits at internal/ensigncycle, so the skill
-// references are two dirs up). This is a fixed repo-relative path, not a
-// machine-specific dependency.
+// The prose source is the using-legacy-claude-team skill's `## Terminal Team
+// Teardown`. The bounded `TeamDelete` teardown that emits the marker is a
+// pre-2.1.178 `TeamCreate`-era apparatus, so it lives ONLY in the legacy skill,
+// read on a legacy probe match. The current-runtime teardown — per-name
+// `SendMessage(shutdown_request)`, in claude-fo-dispatch.md `## Terminal Worker
+// Teardown` — has no marker because there is no bulk team-delete to bound. The
+// legacy skill is read via the in-repo layout path (the ensigncycle package sits
+// at internal/ensigncycle, so the skill is two dirs up). This is a fixed
+// repo-relative path, not a machine-specific dependency.
 func TestGradeMarkerMatchesContract(t *testing.T) {
 	contractFiles := []string{
-		filepath.Join("..", "..", "skills", "first-officer", "references", "claude-fo-merge.md"),
-		filepath.Join("..", "..", "skills", "using-claude-team", "SKILL.md"),
+		filepath.Join("..", "..", "skills", "using-legacy-claude-team", "SKILL.md"),
 	}
 	for _, f := range contractFiles {
 		b, err := os.ReadFile(f)

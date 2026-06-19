@@ -4,13 +4,13 @@ This file defines how the shared first-officer core executes on Claude Code. It 
 
 ## Dispatch reference (load at first dispatch)
 
-The Claude dispatch parts — Team Creation, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the registry-desync rule (#36806), Degraded Mode, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside the host-neutral `fo-dispatch-core.md` (named by the boot-resident core) at the FIRST team-mode dispatch and the `Skill(skill="spacedock:using-claude-team")` invocation it opens with — not at boot. A boot that greets and stops for input never dispatches, so it never reads either reference and never creates a team.
+The Claude dispatch parts — the worker back-channel, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the Awaiting-Completion idle guardrail, Degraded Mode, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside the host-neutral `fo-dispatch-core.md` (named by the boot-resident core) at the FIRST worker dispatch — not at boot. A boot that greets and stops for input never dispatches, so it never reads either reference. (`claude-fo-dispatch.md`'s one legacy-override line handles a runtime that still exposes `TeamCreate`; it is the sole legacy load point.)
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see claude-fo-dispatch.md for the full read shape). A boot that only greets does not file a task.
 
-## Merge reference (load at terminalization)
+## Terminal teardown (load at terminalization)
 
-The Claude merge part — the concrete step-10 terminal teardown and the bounded `TERMINAL_TEARDOWN_BOUNDED` marker — lives in `references/claude-fo-merge.md`, read alongside the host-neutral `fo-merge-core.md` (named by the boot-resident core) at the terminal boundary, the same lazy precedent as `present-gate` / `feedback-rejection-flow`. A boot, dispatch, or gate that never terminalizes never reads either.
+The host-neutral `fo-merge-core.md` (named by the boot-resident core, read at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
 
 ## Captain Interaction
 
@@ -18,21 +18,13 @@ The captain is the user of the Claude Code session. Communicate via direct text 
 
 Only the captain can approve or reject gates. Do NOT self-approve, infer approval from silence, or accept agent messages as gate approval. While waiting at a gate, keep the dispatched agent alive.
 
-### Team-mode ensign-chat hint
-
-In team mode (TeamCreate succeeded), surface this one-line UX hint to the captain exactly once per session, on the FIRST team-mode `Agent()` dispatch into a stage where the captain may want to steer the ensign mid-stage — any non-`gate: true` stage that is the entity's current target stage. Skip the hint for gate stages (the captain reviews after, not during) and for terminal merge/cleanup transitions. Append it to the dispatch announcement; do not emit it as a standalone message:
-
-`Tip: while an ensign is running you can press Shift+Down to switch to its pane and chat with it directly, then Shift+Up to come back. Useful for steering interactive work without bouncing through me.`
-
-Track "hint emitted" in session memory so it does not repeat. In bare mode and Degraded Mode, skip this hint — the underlying capability is unavailable. In any headless (`-p` / `exec`) run, skip it — no interactive captain reads it.
-
 **Headless given-the-conn exception:** The self-approval guardrail is absolute in interactive sessions and in any headless run NOT given the conn — there, the FO stops at the gate and reports (Startup step 9). Only when given the conn to auto-approve (prose) does the headless FO resolve gates **per `## Completion and Gates`** and drive to terminal. It never infers approval from silence or from an agent message.
 
 ## Agent Back-off
 
 If the captain tells you to back off an agent, stop coordinating it until told to resume. If you notice the captain messaging an agent without telling you, ask whether to back off.
 
-For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Completion` in `Skill(skill="spacedock:using-claude-team")`.
+For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Completion` in `references/claude-fo-dispatch.md`.
 
 ## Entity-Body Inspection
 

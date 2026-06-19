@@ -100,20 +100,22 @@ func runSpawnStanding(home, modPath, teamName string, stdout, stderr io.Writer) 
 
 // runSpawnStandingAll drives the full standing-teammate inject loop in one call:
 // enumerate the workflow's declared standing mods, build a spawn spec for each,
-// dedup the already-alive members against the team config, and emit a JSON ARRAY
-// of the specs for the members NOT yet alive. Empty input (bare mode / no _mods /
-// no standing mods) emits `[]`. Loud failure (exit 1, stderr naming the mod) on
-// the same conditions runSpawnStanding fails on — validation is shared via
-// buildSpawnSpec, not re-implemented. Composes the _mods scan (discovery) +
-// buildSpawnSpec (validate + MemberExists dedup + spec), mirroring build.go's
-// generic show-standing injection.
+// and emit a JSON ARRAY of the specs to spawn. Empty input (no _mods / no standing
+// mods) emits `[]`. Loud failure (exit 1, stderr naming the mod) on the same
+// conditions runSpawnStanding fails on — validation is shared via buildSpawnSpec,
+// not re-implemented. Composes the _mods scan (discovery) + buildSpawnSpec
+// (validate + spec), mirroring build.go's generic show-standing injection.
+//
+// teamName is the mode discriminator, mirroring build.go's team_name:
+//   - legacy (teamName non-empty): each spec carries team_name and is deduped
+//     against the team config (MemberExists), so an already-alive member is
+//     omitted from the array.
+//   - merged (teamName == ""): the .178+ host has no TeamCreate name, so each
+//     spec is the merged background shape (name present, team_name absent,
+//     run_in_background true). There is no team config keyed by name to dedup
+//     against, so every declared standing teammate is emitted; idempotency is the
+//     FO's own-roster concern on the merged floor, not a config probe.
 func runSpawnStandingAll(home, workflowDir, teamName string, stdout, stderr io.Writer) int {
-	if teamName == "" || teamName == "none" || teamName == "None" {
-		fmt.Fprintf(stderr,
-			"error: spawn-standing-all requires a real team name; got '%s'. "+
-				"Call TeamCreate first and pass the returned team_name via --team.\n", teamName)
-		return 1
-	}
 	if !isDir(workflowDir) {
 		fmt.Fprintf(stderr, "error: workflow directory not found: %s\n", workflowDir)
 		return 1
@@ -198,15 +200,34 @@ func buildSpawnSpec(home, modPath, teamName string) (spec spawnSpec, alreadyAliv
 			"invalid model '%s' in '## Hook: startup' of %s — %s", model, modPath, spawnModelEnumList)
 	}
 
+	// Merged mode (no team name): there is no team config keyed by name to dedup
+	// against, so skip the MemberExists probe and emit the merged background shape
+	// — name present, team_name absent (nil), run_in_background true. Mirrors
+	// build.go's merged dispatch emission for an ensign.
+	if teamName == "" {
+		runInBackground := true
+		return spawnSpec{
+			SubagentType:    subagentType,
+			Description:     fmt.Sprintf("standing teammate: %s", declaredName),
+			Name:            declaredName,
+			Model:           model,
+			Prompt:          *meta.AgentPrompt,
+			RunInBackground: &runInBackground,
+		}, false, ""
+	}
+
+	// Legacy mode (real team name): dedup the already-alive member against the
+	// team config, and carry team_name on the emitted spec.
 	if claudeteam.MemberExists(home, teamName, declaredName) {
 		return spawnSpec{Name: declaredName}, true, ""
 	}
 
+	tn := teamName
 	return spawnSpec{
 		SubagentType: subagentType,
 		Description:  fmt.Sprintf("standing teammate: %s", declaredName),
 		Name:         declaredName,
-		TeamName:     teamName,
+		TeamName:     &tn,
 		Model:        model,
 		Prompt:       *meta.AgentPrompt,
 	}, false, ""
@@ -227,14 +248,19 @@ func emitAlreadyAlive(stdout io.Writer, name string) {
 // yet alive. The Agent tool REQUIRES description, so the spec carries one (else
 // the forwarded Agent() call fails InputValidationError and the teammate never
 // spawns). Field order matches dispatch build's envelope: subagent_type,
-// description, name, team_name, model, prompt.
+// description, name, team_name, model, prompt. TeamName is a *string with
+// omitempty so the legacy spec emits team_name in place while the merged spec
+// omits it (absent, not null). RunInBackground is a *bool with omitempty, set
+// only on the merged spec (the named-background-teammate shape); the legacy spec
+// leaves it nil so the legacy emission stays byte-identical.
 type spawnSpec struct {
-	SubagentType string `json:"subagent_type"`
-	Description  string `json:"description"`
-	Name         string `json:"name"`
-	TeamName     string `json:"team_name"`
-	Model        string `json:"model"`
-	Prompt       string `json:"prompt"`
+	SubagentType    string  `json:"subagent_type"`
+	Description     string  `json:"description"`
+	Name            string  `json:"name"`
+	TeamName        *string `json:"team_name,omitempty"`
+	Model           string  `json:"model"`
+	Prompt          string  `json:"prompt"`
+	RunInBackground *bool   `json:"run_in_background,omitempty"`
 }
 
 // emitSpawnJSON writes the spec as two-space-indented JSON with a trailing

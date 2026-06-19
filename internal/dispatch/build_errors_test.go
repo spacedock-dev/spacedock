@@ -54,8 +54,11 @@ verify.
 term.
 `
 
-// TestBuildByteIdenticalErrors asserts the 18 deterministic error byte-strings
+// TestBuildByteIdenticalErrors asserts the deterministic error byte-strings
 // are byte-identical between native and oracle (stderr) and exit codes match.
+// The legacy "team mode requires team_name" case is retired: on the merged .178+
+// floor a non-bare Claude dispatch with no team_name is the valid merged shape,
+// not an error — covered as a positive case in build_merged_mode_test.go.
 func TestBuildByteIdenticalErrors(t *testing.T) {
 	cases := []struct {
 		name string
@@ -160,12 +163,6 @@ func TestBuildByteIdenticalErrors(t *testing.T) {
 			}
 			ep := writeFlatEntity(t, wd, "validation", wtRel)
 			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"validation","checklist":["- a"],"team_name":"t","is_feedback_reflow":true}`
-		}},
-		{"team-mode-requires-team-name", func(t *testing.T, root string) (string, string) {
-			wd := writeGood(t, root)
-			ep := writeFlatEntity(t, wd, "backlog", "")
-			// bare_mode false (default) and no team_name.
-			return wd, `{"schema_version":2,"entity_path":"` + ep + `","workflow_dir":"` + wd + `","stage":"backlog","checklist":["- a"]}`
 		}},
 		{"invalid-stage-name", func(t *testing.T, root string) (string, string) {
 			// A stage name with an uppercase letter fails the kebab-case regex

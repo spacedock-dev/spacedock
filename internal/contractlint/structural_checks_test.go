@@ -20,7 +20,7 @@ import (
 // discovers. The test-only `integration` package is deliberately absent.
 var userSkills = []string{
 	"commission", "debrief", "refit", "survey", "ensign",
-	"first-officer", "using-claude-team", "present-gate", "feedback-rejection-flow",
+	"first-officer", "using-legacy-claude-team", "present-gate", "feedback-rejection-flow",
 }
 
 // skillsRoot is the shipped skill tree under test.
@@ -254,14 +254,9 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		filepath.Join("mods", "pr-merge.md"):                                                      true,
 		filepath.Join("skills", "first-officer", "references", "claude-first-officer-runtime.md"): true,
 		filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"):    true,
-		// The contract split relocated the merge module's Mod-Hook prose into the
-		// merge reference and the standing-teammate declaration's `## Hook: startup`
-		// example into the dispatch reference — both legitimately carry `## Hook:`.
-		filepath.Join("skills", "first-officer", "references", "claude-fo-merge.md"):    true,
-		filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"): true,
 		// The host-neutral extraction re-homed Mod-Block Enforcement (which names the
 		// `## Hook: merge` mechanism surface) into the merge core; it legitimately
-		// carries the `## Hook:` token the same way the claude-fo-merge seam did.
+		// carries the `## Hook:` token.
 		filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
@@ -332,22 +327,24 @@ var machineDependentPaths = []string{
 
 // isClaudeAdapter reports whether a shipped file is a Claude-host coupling surface
 // (a claude-*-runtime.md adapter, a claude-fo-*.md FO module reference, or the
-// Claude-only using-claude-team skill), where a `~/.claude/teams` read is the
-// legitimate quarantined coupling. ONLY the personal-config check excludes these;
-// the interpreter / machine-path checks apply.
+// Claude-only using-legacy-claude-team skill), where a `~/.claude/teams` read is
+// the legitimate quarantined coupling. ONLY the personal-config check excludes
+// these; the interpreter / machine-path checks apply.
 func isClaudeAdapter(path string) bool {
 	base := filepath.Base(path)
 	if strings.HasPrefix(base, "claude-") && strings.HasSuffix(base, "-runtime.md") {
 		return true
 	}
-	// The contract split moved the Claude-host dispatch/merge coupling (the
-	// `~/.claude/teams` and subagent-jsonl reads) out of the runtime adapter into
-	// the claude-fo-dispatch / claude-fo-merge references; they are the same
-	// legitimate Claude coupling surface, exempt from the HOME-rooted check.
+	// The Claude-host dispatch coupling (the `~/.claude/teams` and subagent-jsonl
+	// reads) lives in the claude-fo-dispatch reference; it is the legitimate Claude
+	// coupling surface, exempt from the HOME-rooted check.
 	if strings.HasPrefix(base, "claude-fo-") && strings.HasSuffix(base, ".md") {
 		return true
 	}
-	return strings.Contains(path, filepath.Join("using-claude-team", "SKILL.md")) ||
+	// The legacy TeamCreate lifecycle carries the same legitimate ~/.claude/teams
+	// coupling (the NEVER-delete constraint + the diagnostic startup probe); it
+	// lives in the conditionally-loaded legacy skill, read only on a probe match.
+	return strings.Contains(path, filepath.Join("using-legacy-claude-team", "SKILL.md")) ||
 		strings.Contains(path, filepath.Join("survey", "SKILL.md"))
 }
 

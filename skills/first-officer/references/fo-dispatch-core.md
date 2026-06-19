@@ -71,6 +71,13 @@ Use `worker_key` in worktree paths (`.worktrees/{worker_key}-{slug}`) and branch
 
 Use the runtime adapter's spawn call to spawn each worker. **Use the spawn call for initial dispatch** — the reuse-advance handle is only for advancing a reused agent to its next stage in the completion path.
 
+**Worker back-channel capability (the organizing capability).** The runtime adapter DECLARES whether it provides a live worker **back-channel**: a dispatched worker that can message the lead WHILE it is still running, and a lead that can message back to advance, steer, or query it. This declared handle is reuse-condition-1's "live, reusable handle" — the single capability the dispatch model organizes around:
+
+- **Adapter provides a back-channel** → the FO dispatches addressable, reusable, concurrent workers and routes reuse-advance, mid-run steering, and the completion signal through that channel. Reuse (above) is possible because the completed worker is still reachable through it.
+- **Adapter provides none** → fresh one-shot dispatch only: each worker is spawned, runs to completion, and its return value is the sole completion signal. Reuse-condition-1 fails, so the FO always dispatches fresh; there is no mid-run steering and no reusable handle.
+
+This is generic dispatch LOGIC. HOW a runtime confers the back-channel (a named background worker, a team registry, a subagent mailbox) and the concrete call that addresses it are the adapter's — see the runtime adapter.
+
 **MANDATORY — Dispatch assembly via `spacedock dispatch build`:**
 
 Do NOT assemble worker prompts manually. Do NOT construct the `prompt` string yourself. Do NOT invent `name` values. ALWAYS route initial-dispatch input through `spacedock dispatch build` and forward its output to the spawn call verbatim. The key fields that MUST come from helper output are `subagent_type`, `name`, `model`, and `prompt` (which contains the completion signal), plus any host-scoped fields the adapter declares (e.g. Claude `team_name`). The adapter names which emitted fields map to its spawn call and which are absent on its host. Manual assembly is a protocol violation except in the documented break-glass fallback below.
