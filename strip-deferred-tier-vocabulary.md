@@ -28,3 +28,16 @@ czw re-expressed `«gate.assemble-verdict»`'s verdict-decision body as "a level
 ## Out of scope
 
 - Re-introducing the tier mechanism — that rides 72 (fo-tier-delegation) when it un-defers, WITH its «fo.tier» source. czw's leak was in the right place, just premature.
+
+## Stage Report: implementation
+
+- DONE: Strip the deferred-72 tier vocabulary from czw's «gate.assemble-verdict» body (decide-effect lines ~127, ~130); revert to mechanism-neutral wording — the FO renders its own `Recommend` line and assembles the present-gate verdict.
+  Two prose edits in first-officer-shared-core.md (code commit 25f04976); grep for `level-2-only|level-3|«fo.tier»|\bL3\b|\bjudge\b` across skills/first-officer/references/*.md now returns ZERO. czw's «fn» notation, the `→ prose` routing oracle, and the six behavioral clusters are untouched (diff is exactly the two lines).
+- DONE: Add a contractlint structural-absence guard mirroring layering_restore_test.go's token-absence + discriminator family, asserting the deferred-tier tokens stay ABSENT from the shipped FO contract cores until 72 ships, WITH a paired discriminator control proving non-vacuity.
+  internal/contractlint/deferred_tier_absence_test.go: TestFOContractCoresHaveNoDeferredTierToken (scans all 7 FO cores) + TestDeferredTierTokenScannerDiscriminates (flags genuine leak shapes, passes mechanism-neutral phrasings). Non-vacuity proven by mutation: stubbing the shared scanner to never-flag reds the discriminator while the absence check passes vacuously; planting a tier token back into the core reds the absence check.
+- DONE: Verify full `go test ./...` green; new absence-guard + discriminator pass; czw's prose_function_routing_test.go (internal/cli) + layering_restore + boot-resident closure + ceremony suites still green; commit, clean status, HEAD sha.
+  `go test ./...` all packages `ok` (no FAIL); TestProseFunctionNotationBindsToRouting/RoutingGuard/RoutingOracleDiscriminates PASS; layering_restore + BootResidentDeferredLoadPoints + HostNeutralCoresResolveAndCarryCeremony PASS. go vet + gofmt clean. Committed 25f04976 on spacedock-ensign/strip-deferred-tier-vocabulary, working tree clean.
+
+### Summary
+
+Stripped the two decide-effect lines in `«gate.assemble-verdict»` back to mechanism-neutral phrasing (the FO renders its own `Recommend` line), removing the only `level`/`L3`/`judge`/`«fo.tier»` occurrences in the shipped contract — a dangling reference to member-72's deferred tier mechanism. Added a non-vacuous contractlint absence-guard (token scan + paired discriminator) over all seven FO contract cores to prevent recurrence until 72 un-defers. Surgical: czw's «fn» restructure, routing oracle, and behavioral clusters left intact; full suite green. Code HEAD: 25f04976.
