@@ -9,6 +9,7 @@ id: 4asxw7kxvdzdtf87w9rjkxwx
 started: 2026-06-19T22:53:22Z
 worktree: .worktrees/spacedock-ensign-verbs-operative-rewire
 mod-block: merge:pr-merge
+pr: "#404"
 ---
 
 Complete the vertical slice `rgq`/`mz`/`czw` shipped empty: the verbs exist and route, but the contract instructs the hand sequence and mis-describes the merge verb. Make the verb the operative path AND guard it mechanically. (Per the captain's call, A and B are ONE bundled slice, not two layer-tasks.)
