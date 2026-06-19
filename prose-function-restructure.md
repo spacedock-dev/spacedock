@@ -1,12 +1,13 @@
 ---
 title: Prose-function restructure — express the FO cores as «fn» invocations (shipped-verb backticks or hand-followed guillemets)
-status: backlog
+status: ideation
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "prose-function-restructure"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0205-layered-fo
 group: restructure
 sprint-readiness: ready
 id: czw7whmaqjkasx1sjbq0at4h
+started: 2026-06-19T07:45:59Z
 ---
 
 Express the boot-resident core + dispatch core + gate flow + merge flow as prose-function invocations («state.boot», «dispatch.next-action», «gate.assemble-verdict», «merge.guard», «feedback.route») with bodies that name a shipped verb (backticks) or carry the hand-followed recipe (guillemets). The migration substrate; every verb member flips one body guillemet→backtick. Verbs not shipping this sprint stay guillemets with a named target. Depends on 2y (the merge/dispatch cores it restructures, MERGED).
