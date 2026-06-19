@@ -473,3 +473,71 @@ now factually stale after the renumber) and updated all to step 3 — a faithful
 execution of the renumber intent. No behavioral seam touched: dispatch+status suites
 cached-unchanged; full `go test ./...` 15/15 green. Code committed to the worktree
 (16697bf3); sibling worktree= guard left to its split-out task.
+
+### Feedback Cycles
+
+**Cycle 1 — detached adversarial audit (validation, 2026-06-19).** Audit run on a
+THROWAWAY detached worktree at the impl SHA (16697bf3), never the impl worktree;
+removed after. Eight claim-breaking edits; six caught, two findings recorded. Both
+findings are non-blocking (the deliverable matches its ratified spec) but on the
+record per the detached-audit instruction.
+
+- *Caught (load-bearing confirmed):* re-planted model enum in core →
+  `TestDispatchCoreHasNoClaudeModelToken` FAIL; re-planted `gh pr view` in core →
+  `TestEventLoopCoreHasNoPRScan` + `TestNoUnexpectedPRViewScanIntroduced` FAIL;
+  vacuous model-token scanner → `...ModelTokenScannerDiscriminates` FAIL; vacuous
+  PR-scan scanner → `...PRScanScannerDiscriminates` FAIL; `gh pr view` planted in a
+  REAL non-allowed shipped file (fo-merge-core.md) → `TestNoUnexpectedPRViewScanIntroduced`
+  FAIL; `gh pr view` stripped from the mod → `TestPRViewAllowListIsLoadBearing` FAIL.
+- *Finding A (no guard on the relocated mod-block clear — NON-BLOCKING).* Removing
+  the two-step `mod-block=` clear from the shipped `mods/pr-merge.md` startup hook
+  (reverting Move B's relocation) leaves the FULL `go test ./...` suite GREEN — nothing
+  catches it. The `internal/status` terminal-guard suite pins the Go MECHANISM
+  (`TestMergeLocalModBlockPendingStillBlocks`, `TestMergeLocalCombinedClearAndTerminalizeRefused`)
+  but never reads the mod prose, so it cannot prove the shipped mod actually ISSUES the
+  clear. Judged non-blocking: AC-5 scopes its claim narrowly and correctly to "the Go
+  mechanism is unchanged," and staff review RATIFIED dropping the presence-grep over
+  instruction prose (AC-2) as "the banned prose-grep." A presence-grep asserting the mod
+  contains `mod-block=` is exactly that tautology. The relocation is verified by reading
+  the diff (present in both startup + idle hooks). This is a principled proof-policy
+  limit, not a defect — but a future deletion of the relocated clear would regress the
+  merged-PR-while-mod-blocked finalize silently. Surfaced for the captain's awareness.
+- *Finding B (AC-4 negative control is a tautology — NON-BLOCKING).*
+  `TestPRViewAllowListConstrains` hardcodes `plantedRel` + `plantedContent` and
+  re-implements the allow-list check inline against in-memory constants; it never reads
+  disk. When the REAL scan's allow-list flag was defeated (`if false && …`), the negative
+  control still PASSED — it cannot detect the real scan being weakened. Its expected value
+  is the text the author wrote (the validation "Bad" clause: a static check counts only
+  against an independent source that can diverge). Judged non-blocking because AC-4's
+  REAL load-bearing proof is the other two trio members (`TestNoUnexpectedPRViewScanIntroduced`
+  catches a real planted file; `TestPRViewAllowListIsLoadBearing` reds when the mod stops
+  carrying the token) — both proven genuine above. The negative control adds nothing but
+  weakens nothing; recommend either deleting it or rewriting it to plant a real temp file
+  and drive the actual scan. Recorded, not gated.
+
+## Stage Report: validation
+
+- DONE: Detached adversarial audit on a THROWAWAY checkout — construct claim-breaking edits (re-introduce a model token into fo-dispatch-core.md, re-introduce gh pr view into the core, remove the shipped-template mod-block-block clear, make a discriminator control vacuous) and confirm a test catches EACH; refute that the absence checks AND discriminator controls are load-bearing, not prose-grep tautologies.
+  Throwaway detached worktree at 16697bf3 (removed after). Mutations 1/2/4a/4b/4c/4d each caught by the named test (see `### Feedback Cycles` cycle 1). AC-1 absence check + discriminator share `lineLeaksClaudeModelToken` (genuine coupling). Two findings recorded: (A) the relocated mod-block clear has no guard — mutation 3 stays green (NON-BLOCKING, ratified proof-policy limit); (B) the AC-4 negative control is a tautology (NON-BLOCKING, AC-4's real weight is the other two trio members).
+- DONE: Behavior-neutrality — TestBuildModelPrecedence + the context-budget family-rule + the dispatch/status/contractlint closure-ceremony suites stay green WITHOUT edits (AC-5); confirm the merged-PR-while-mod-blocked finalize works (shipped mods/pr-merge.md relocated mod-block-clear is a STANDALONE --set separate from the terminalize).
+  Full `go test ./...` = 15/15 packages ok on clean throwaway HEAD. `TestBuildModelPrecedence` (sonnet/opus/haiku/null) green; context-budget family rule (`TestContextBudget1MFalseNegativeGone`) green; `TestHostNeutralCoresResolveAndCarryCeremony` (pins the `## Event Loop` anchor) green. Shipped pr-merge.md startup + idle each issue a standalone `mod-block=` clear then a separate terminalize `--set` (per fo-merge-core.md:19); the status terminal-guard suite confirms a combined clear+terminalize still refuses.
+- DONE: AC-4 end-state — a no-pr-merge-mod workflow has a PR-free generic loop; gh pr view appears ONLY in mods/pr-merge.md across skills/+mods/ (allow-list load-bearing via the positive control); confirm the step 2-4→1-3 renumber left NO stale cross-references; the worktree=-guard sibling stays SPLIT-OUT.
+  `grep -rn "gh pr view" skills/ mods/` → only mods/pr-merge.md:13,29. No stale event-loop step cross-refs remain (the four "step N" matches are the `## Dispatch`/merge-core/startup procedures, not the event loop). Sibling `handlers.go:116-118` unchanged and absent from the commit diff — split out, not folded.
+
+### Summary
+
+PASSED. Ran the detached adversarial audit on a throwaway checkout per the
+high-stakes-surface proof policy. Six of eight claim-breaking edits were caught by
+the named test, confirming the absence checks and the material discriminator/positive
+controls are load-bearing (not prose-grep tautologies); both layering leaks are
+genuinely closed (no model tokens and no `gh pr view` in the host-neutral core; `gh pr
+view` only in mods/pr-merge.md). Behavior is provably unchanged: full `go test ./...`
+15/15 green without edits, `TestBuildModelPrecedence` + the context-budget family rule
+lock the code-resolved enum/mapping, and the relocated two-step mod-block clear matches
+the terminal-guard mechanism the status suite pins. Two NON-BLOCKING findings recorded
+in `### Feedback Cycles`: (A) the relocated mod-block clear has no test guard (a
+ratified proof-policy limit — a presence-grep over the mod prose would be the banned
+tautology; the relocation is diff-verified), and (B) the AC-4 negative control is a
+tautology that passed even when the real scan was defeated (harmless — AC-4's real
+weight is the other two trio members, both proven genuine). Neither rejects the gate;
+both are on the record for the captain. Sibling worktree=-guard correctly split out.
