@@ -55,54 +55,113 @@ The dispatch core's back-channel section is also currently written partly in hos
 
 ## Approach
 
-Two coordinated deliverables:
+Two coordinated deliverables: (A) harden the dispatch core to runtime-neutral named capabilities, and (B) wire the Pi adapter's capability bindings.
+
+### No spike needed
+
+The riskiest mechanism — the async subagent + intercom back-channel round-trip — is **already proven live** by run `0637e2ed` (recorded in the Stage Report below): a foreground dispatch auto-detached for intercom coordination, the worker's `need_decision` reached the FO mid-run, and the FO replied within the 10-minute window. The archived spike `cq9kb7cdpp9y48tn8gwzmqzq` proved the full host talkback chain (`contact_supervisor` `progress_update` + `need_decision` → FO reply → child resume → durable marker). The pi-intercom SKILL documents the orchestrator-side handling of all three escalation types. The named-capability core rewrite is prose-structural (reorganizes existing contract text; no unverified runtime mechanism). The one integration detail — that `subagent(... async:true)` + `status`/`resume` frees the FO event loop to service escalations — is the async form of what `0637e2ed` already demonstrated in the foreground-detached form; the async path is strictly more capable (the FO is never blocked).
 
 ### A. Harden the dispatch core to runtime-neutral named capabilities
 
-Rewrite the back-channel section of `skills/first-officer/references/fo-dispatch-core.md` (and the reuse/event-loop sections it touches) so the core speaks in **named capabilities** rather than host-specific tools. Each capability is a behavioral contract; each runtime adapter implements it by naming its concrete tools and logic. Candidate named capabilities (ideation finalizes the exact set and names):
+Rewrite the `## Dispatch Adapter` section's "Worker back-channel capability" subsection and the reuse/event-loop sections it touches in `skills/first-officer/references/fo-dispatch-core.md` so the core speaks in **named capabilities** rather than host-specific tools. Each capability is a behavioral contract the core references by name; each runtime adapter declares which it provides and binds each to concrete tools. No host tool call appears in the host-neutral core.
 
-- **`worker-back-channel`** (the organizing capability) — declare present/absent. When present, names: (a) the worker→FO escalation call and its message types, (b) the FO→worker advance/steer/query call, (c) whether the channel is multiplexing or single-pending. When absent, the core's one-shot/fresh-only path applies.
-- **`async-dispatch`** — whether the spawn call is blocking or returns an awaitable handle; names the await/resume mechanism. Required when `worker-back-channel` is present (a blocking spawn cannot service inbound escalations).
-- **`inbound-message-service`** — the event-loop step that drains pending worker messages; names the listen call.
-- **`worker-identity-capture`** — what the adapter records at spawn so a still-running worker is addressable for steering and reuse-advance.
-- **`completion-signal`** — the set of signals the adapter treats as completion-equivalent (return value, inbound done-message), with the file-verify as the gate.
+**Finalized named-capability set (7):**
 
-The Claude, Codex, and Pi adapters each get a short "Capability implementations" subsection naming their concrete tools: Claude (`Agent` background teammate + `SendMessage`, team registry), Codex (`send_input` to a persistent thread), Pi (`contact_supervisor` + `intercom` send/reply/ask, `subagent(... async:true)` + `status`/`resume`). The core's logic references capabilities by name; adapters bind names to tools.
+| Capability | Declares | Core section that references it |
+|---|---|---|
+| `worker-back-channel` (organizing) | present/absent; when present names (a) worker→FO escalation call + message types, (b) FO→worker advance/steer/query call, (c) multiplexing or single-pending | Dispatch Adapter; reuse-condition-1 |
+| `async-dispatch` | blocking or async; when async names the await/resume/interrupt mechanism | Dispatch Adapter (step 9 "wait for the worker result"); required when `worker-back-channel` is present |
+| `inbound-message-service` | present/absent; when present names the listen call that drains pending worker messages | Event Loop (new step between step 0 and step 1); required when `worker-back-channel` is present |
+| `worker-identity-capture` | the schema recorded at spawn: worker label, substrate, run/session handle, intercom address, entity slug, stage, state, completion epoch, stamped model | Reuse conditions (condition-1 handle + condition-4 model) |
+| `completion-signal` | the set of signals treated as completion-equivalent (return value, inbound done-message), with file-verify as the gate | Dispatch Adapter (step 9) + Completion and Gates |
+| `context-budget-probe` (already informally named) | present/absent; when present names the probe call | Reuse condition-0 (already references it) |
+| `roster-reconcile` (already informally named) | present/absent; when present names the reconcile sweep call and drift classes | Event Loop step 0 (already references it) |
 
-This is itself a contract/scaffolding change, so per the dev-workflow proof policy it must go through implementation + validation, and per the self-evidence-bar principle the live `claude-live` / `codex-live` / `pi-live` drives must be green before merge (the dogfood — the change touches every host adapter).
+`context-budget-probe` and `roster-reconcile` are already informally named in the core (reuse-condition-0 says "the runtime adapter's context-budget probe"; event-loop step 0 says "the host's step-0 reconcile sweep"). The hardening formalizes them as named capabilities alongside the 5 new ones, so the core is uniformly capability-named.
+
+**Before/after for the core's "Worker back-channel capability" section:**
+
+The current section declares the concept but references host-specific patterns ("a named background worker, a team registry, a subagent mailbox"). The rewrite replaces it with a `## Named Capabilities` section that declares each capability by name with its behavioral contract, and references the adapter for the concrete binding. The two-bullet present/absent shape stays (it is the core's logic); the host-specific examples move to each adapter's `## Capability implementations` subsection.
+
+**Before/after for reuse conditions:** condition-0 already says "the runtime adapter's context-budget probe" → formalize as `context-budget-probe` capability. Condition-1 already says "the runtime adapter's reuse-advance handle" → formalize as `worker-back-channel` + `worker-identity-capture`. Condition-4's "the host's canonical enum" stays adapter-declared. The host-specific parentheticals ("Codex declares none; Claude supplies one") move to the adapters.
+
+**Before/after for the event loop:** step 0 already says "the host's step-0 reconcile sweep" → formalize as `roster-reconcile`. Add a new step 0.5 (or fold into step 0) for `inbound-message-service`: when the adapter declares it, the FO drains pending worker messages (`intercom pending` on Pi) at each iteration before checking dispatchables.
+
+**Adapter bindings** — each FO runtime adapter gets a `## Capability implementations` subsection:
+
+| Capability | Claude | Codex | Pi (this task wires) |
+|---|---|---|---|
+| `worker-back-channel` | PRESENT: `Agent(run_in_background=true)` + `SendMessage(to="team-lead")` (worker→FO), `SendMessage(to=name)` (FO→worker); multiplexing | PRESENT: `spawn_agent` + mailbox final-status (worker→FO), `send_input` (FO→worker); multiplexing | PRESENT: `contact_supervisor` (worker→FO), `intercom send/reply` (FO→worker); single-pending (friction 7 deferred) |
+| `async-dispatch` | ASYNC: `run_in_background=true` returns immediately | ASYNC: `spawn_agent` returns handle; `wait_agent` is explicit foreground wait | ASYNC: `subagent(... async:true)` returns run id; `subagent({action:"status"})` polls; `interrupt`/`resume` steer |
+| `inbound-message-service` | PRESENT: `system task_notification` entries + `SendMessage` inbox | PRESENT: mailbox final-status notification | PRESENT: `intercom({action:"pending"})` drains pending asks; reply via `intercom({action:"reply"})` |
+| `worker-identity-capture` | agent name + `agentType` on disk + model from team config | task name + mailbox handle | `subagent-worker-{runId}-{childIdx}` intercom target + run id + stamped model (sibling: `pi-dispatch-model-stamping`) |
+| `completion-signal` | DUAL: "Done:" inbox message OR `task_notification` OR captain shutdown | DUAL: mailbox final-status notification (sole) | DUAL: subagent return (status:completed) OR inbound done-message via `contact_supervisor`/`intercom send` |
+| `context-budget-probe` | PRESENT: `spacedock dispatch context-budget --name {name}` | NONE | NONE |
+| `roster-reconcile` | PRESENT: `spacedock dispatch reconcile` (drift classes: lingering/superseded/un-advanced-pr/stale-branch/local-main-drift) | NONE | NONE |
+
+This is a contract/scaffolding change to a high-stakes surface (the shipped FO/ensign contract + host adapters). Per the dev-workflow proof policy, the path→lane mapping is the gate: a change to the host-neutral dispatch core requires `claude-live` AND `codex-live` AND `pi-live` green; a change to the Pi adapter requires `pi-live`. The structural contractlint for capability-name↔adapter-binding is legitimate (binds two independent values that can diverge, not prose-grep).
 
 ### B. Wire the Pi back-channel (frictions 1–6)
 
-Implement the Pi adapter's capability bindings: declare `worker-back-channel` present (1), specify async dispatch via `subagent(... async:true)` + `status`/`resume` (2), add the `inbound-message-service` step using `intercom pending` (3), capture worker intercom identity at spawn (4), add the ensign talkback protocol to `pi-ensign-runtime.md` (5), and declare the completion-signal duality with file-verify gate (6).
+Implement the Pi adapter's `## Capability implementations` subsection in `skills/first-officer/references/pi-first-officer-runtime.md` with the bindings above, and add the talkback protocol to `skills/ensign/references/pi-ensign-runtime.md`. Concretely:
 
-## Acceptance criteria (provisional — ideation finalizes; proof = behavior, never prose-grep)
+**Friction 1 — declare `worker-back-channel` PRESENT.** The adapter declares the back-channel: worker→FO via `contact_supervisor` (`need_decision` blocking 10-min, `progress_update` non-blocking, `interview_request` blocking 10-min structured); FO→worker via `intercom({action:"send", to:"<intercom-target>", message:"..."})` for steering/advance and `intercom({action:"reply", message:"..."})` for replying to a pending ask. Single-pending (intercom allows one pending `ask` per session — friction 7 deferred). The back-channel is available when `pi-subagents` supplies child bridge metadata (the `contact_supervisor` tool is injected into the child).
 
-**AC-1 — The dispatch core describes back-channel dispatch in runtime-neutral named capabilities, with each host adapter binding those names to concrete tools.**
-Verified by: a structural check that the core references capabilities by name (not host tool calls), and each adapter (Claude/Codex/Pi) carries a capability→tool binding; a contractlint structural check is legitimate here (it binds two independent values — the core's named capability and the adapter's binding — that can diverge, so it is not prose-grep).
+**Friction 2 — declare `async-dispatch` ASYNC.** Dispatch via `subagent(... async: true)` which returns a run id. Poll with `subagent({action:"status", id:"<run-id>"})`. Interrupt with `subagent({action:"interrupt", id:"<run-id>"})`. The FO event loop polls status between event-loop steps; when a worker sends `contact_supervisor`, the FO is free to reply because the dispatch is async. This replaces the current `bare_mode: true` foreground-blocking default.
 
-**AC-2 — A Pi FO dispatches an async worker and services an inbound `need_decision` escalation mid-run, replying within the 10-minute window, with the ensign resuming and completing.**
-Verified by: a live Pi drive (the `pi-live` lane) where a dispatched ensign hits a seeded ambiguity, `contact_supervisor need_decision`s the FO, the FO replies via `intercom reply`, the ensign resumes and completes; durable evidence in the entity body and the state checkout.
+**Friction 3 — declare `inbound-message-service` PRESENT.** The FO checks `intercom({action:"pending"})` at each event-loop iteration (between status polls and dispatchable checks). When a `need_decision` arrives, reply within 10 minutes via `intercom({action:"reply", message:"..."})`. When a `progress_update` arrives, read and acknowledge (no reply required). When an `interview_request` arrives, reply with the provided JSON shape. This is the new event-loop step 0.5.
+
+**Friction 4 — declare `worker-identity-capture` schema.** At spawn, record: worker label (`worker`), substrate (`pi-subagents`), run id (from `subagent(... async:true)` return), intercom target (`subagent-worker-{runId}-1` — constructed from the run id; 1-indexed child), entity slug, stage, state, completion epoch, stamped model (from sibling task `pi-dispatch-model-stamping`). The intercom target is the FO→worker address for steering and reuse-advance.
+
+**Friction 5 — add ensign talkback protocol.** Add a `## Clarification` section to `skills/ensign/references/pi-ensign-runtime.md`:
+
+> If requirements are unclear or ambiguous, ask for clarification via `contact_supervisor` with `reason: "need_decision"` rather than guessing. Describe what you understand and what's ambiguous so the FO can route a quick answer. The FO replies via `intercom({action:"reply", message:"..."})`; after receiving the reply, resume working.
+>
+> For non-blocking plan-changing discoveries (a riskier mechanism panning out, a scope boundary discovered), send `contact_supervisor` with `reason: "progress_update"` — the FO reads and acknowledges; no reply is required and you continue working.
+
+This mirrors the Claude ensign's `SendMessage(to="team-lead")` clarification and the Codex ensign's thread-based clarification, adapted to Pi's `contact_supervisor` surface.
+
+**Friction 6 — declare `completion-signal` DUAL.** Completion may arrive as (a) the subagent return value (`subagent({action:"status"})` returns `status: completed`) or (b) an inbound done-message via `contact_supervisor` or `intercom send`. Both signals trigger the same verify path: read the entity file, verify the stage report. The file-verify is the gate — neither signal alone advances state. This replaces the current "subagent return is the sole completion signal" rule.
+
+### Documentation changes
+
+This task changes the FO/ensign contract (skill files) — these ARE the docs. `docs/runtime-support.md` line 188 mentions the Pi readiness check and supervisor-talkback probe but does not reference the dispatch back-channel by name; no doc diff needed there. The dev README does not reference the back-channel. The skill files are the deliverable AND the docs.
+
+## Acceptance criteria (entity-level; proof = behavior, never prose-grep)
+
+**AC-1 — The dispatch core's back-channel, reuse, and event-loop logic references named capabilities (not host tool calls), and each host adapter carries a capability→tool binding for each declared capability.**
+Verified by: a structural contractlint test that extracts the named-capability set from `fo-dispatch-core.md` (the `## Named Capabilities` section) and from each adapter's `## Capability implementations` subsection, then compares them as sets — the adapter must bind every capability the core declares. Pattern: `reconcile_class_binding_test.go` (dual-extraction, set comparison, empty-set guard). This binds two independent values (the core's named capability and the adapter's binding) that can diverge, so it is legitimate structural contractlint, NOT prose-grep.
+
+**AC-2 — A Pi FO dispatches an async worker that sends `contact_supervisor need_decision` mid-run, the FO replies within the 10-minute intercom timeout, and the ensign resumes and completes.**
+Verified by: a live `pi-live` drive — a dispatched ensign hits a seeded ambiguity, `contact_supervisor need_decision`s the FO, the FO replies via `intercom({action:"reply"})`, the ensign resumes and completes. Durable evidence in the entity body and the state checkout (run id, escalation text, reply text, completion status).
 
 **AC-3 — A Pi FO verifies completion from either signal (subagent return OR inbound done-message), with the entity-file stage report as the gate in both cases.**
-Verified by: a live or harness run exercising both signal paths, each followed by the file-verify; the ensign's final result alone never advances state.
+Verified by: a live or harness run exercising both signal paths, each followed by the file-verify (`status --read <ref> --json` → last `## Stage Report` section). The ensign's final result alone never advances state.
 
-**AC-4 — The Pi ensign adapter directs clarifications to `contact_supervisor` and resumes after the reply.**
-Verified by: the ensign talkback protocol in `pi-ensign-runtime.md`, exercised by the AC-2 live drive (the ensign's `need_decision` is the proof, not the prose).
+**AC-4 — The Pi ensign adapter directs clarifications to `contact_supervisor` and the ensign resumes after the FO's reply.**
+Verified by: the AC-2 live drive — the ensign's `need_decision` is the behavioral proof, not the prose in `pi-ensign-runtime.md`.
 
-**AC-5 — Worker intercom identity is captured at spawn and carried in reuse metadata.**
-Verified by: a reuse-metadata schema check (structural, two independent values) plus the AC-2 drive showing the FO can address the still-running worker by captured identity.
+**AC-5 — Worker intercom identity is captured at spawn and the FO can address a still-running worker by that identity.**
+Verified by: the AC-2 drive showing the FO addresses the worker by its captured intercom target (`subagent-worker-{runId}-1`), plus a structural schema check that the identity-capture fields are present in the adapter's declared schema.
+
+**AC-6 — The runtime-neutral core rewrite does not regress Claude or Codex back-channel behavior.**
+Verified by: `claude-live` and `codex-live` lanes green after the core rewrite (the dogfood — the change touches every host adapter). A red live lane is diagnosed by reading THIS run's failing test, not by inheriting a prior session's label.
 
 ## Out of scope
 
-- Frictions 7–9 (concurrency serialization of `ask`, standing `comm-officer` on Pi, reuse-advance on Pi) — deferred, addressed separately, depend on 1–6 landing first.
+- Frictions 7–9 (concurrency serialization of `ask`, standing `comm-officer` on Pi, reuse-advance on Pi) — deferred to a follow-up sprint, depend on 1–6 landing first. The boundary is clean: friction 7 is the `single-pending` declaration in `worker-back-channel`; friction 8 is the `standing-injection` no-op; friction 9 is the `fresh-redispatch` default. Each has a sharp seam in the named-capability declarations.
 - Host behavior implementation — the pi-intercom talkback is already proven and shipped; this task does not modify the host.
-- The two open PRs (`#397` gate-extract-verbs, `#398` wrong-root-guard) — host-neutral, unrelated.
 
 ## Test plan
 
-- **Structural / contractlint** (AC-1, AC-5): capability-name references in the core; capability→tool bindings in each adapter; reuse-metadata schema. These bind independent values and are legitimate structural checks, not prose-grep.
-- **Live `pi-live` drive** (AC-2, AC-3, AC-4): a seeded-ambiguity ensign dispatch that exercises the full back-channel round-trip and both completion-signal paths. Bounded: one child, one `need_decision`, one reply, one resume, one completion. Mirrors the archived spike's bounded shape.
-- **Live `claude-live` / `codex-live` regression** (AC-1 dogfood): the core rewrite touches every host adapter; the other two live lanes must stay green to prove the runtime-neutral rewrite did not regress a host that already had a back-channel.
+| AC | Test type | Cost/complexity | What it proves |
+|---|---|---|---|
+| AC-1 | Structural contractlint (Go test) | Low — dual-extraction + set comparison, following `reconcile_class_binding_test.go` pattern | The core references capabilities by name; each adapter binds them. Not prose-grep. |
+| AC-2 | Live `pi-live` drive | Medium — one async dispatch, one seeded `need_decision`, one reply, one resume, one completion. Bounded, mirrors the archived spike's shape. | The back-channel round-trip works end-to-end on Pi. |
+| AC-3 | Live `pi-live` or harness | Medium — both signal paths (subagent return + inbound done-message), each file-verified | Completion-signal duality with file-verify gate. |
+| AC-4 | Live `pi-live` drive (AC-2 subsumes) | None additional — AC-2's `need_decision` is the proof | Ensign talkback protocol is exercised, not just prose. |
+| AC-5 | Live (AC-2 subsumes) + structural schema check | Low — identity-capture fields present in adapter declaration | FO can address a still-running worker by captured identity. |
+| AC-6 | Live `claude-live` + `codex-live` regression | Medium — both lanes must run green after the core rewrite | The runtime-neutral rewrite did not regress a host that already had a back-channel. |
 
 ## Related
 
@@ -125,3 +184,17 @@ Verified by: a reuse-metadata schema check (structural, two independent values) 
 ### Summary
 
 Live spike evidence is recorded above and establishes the back-channel / mid-run escalation path on the current Pi substrate. The contract-doc edits are intentionally not committed in this cycle; they remain a draft artifact only, pending a clean re-dispatch under a corrected skill/model context.
+
+## Stage Report: ideation (re-dispatch 2026-06-19)
+
+- DONE: Finalized the named-capability set — 7 capabilities (5 new: `worker-back-channel`, `async-dispatch`, `inbound-message-service`, `worker-identity-capture`, `completion-signal`; 2 already informally named: `context-budget-probe`, `roster-reconcile`). The core's logic references capabilities by name; each adapter binds them to concrete tools.
+- DONE: Specified the Pi adapter bindings for all 7 capabilities (frictions 1–6) — `worker-back-channel` PRESENT via `contact_supervisor` + `intercom send/reply`; `async-dispatch` ASYNC via `subagent(async:true)` + `status`/`interrupt`; `inbound-message-service` via `intercom pending`; `worker-identity-capture` schema including intercom target + stamped model; `completion-signal` DUAL (subagent return OR inbound done-message, file-verify gate); `context-budget-probe` NONE; `roster-reconcile` NONE.
+- DONE: Specified the ensign talkback protocol (friction 5) — `## Clarification` section for `pi-ensign-runtime.md` using `contact_supervisor` (`need_decision` for blocking, `progress_update` for non-blocking), mirroring Claude's `SendMessage(to="team-lead")` and Codex's thread-based clarification.
+- DONE: Finalized 6 behavior-bound ACs (AC-1 structural contractlint for capability-name↔adapter-binding; AC-2 live pi-live back-channel round-trip; AC-3 completion-signal duality; AC-4 ensign talkback exercised by AC-2; AC-5 worker identity capture; AC-6 claude-live/codex-live regression). Each AC has a test method.
+- DONE: Recorded "no spike needed" — the riskiest mechanism (async subagent + intercom back-channel) is already proven live by run `0637e2ed` (cited, not re-spiked). The archived spike `cq9kb7cdpp9y48tn8gwzmqzq` proved the host talkback chain.
+- DONE: Confirmed the deferred boundary (frictions 7–9) is clean — each has a sharp seam in the named-capability declarations (`single-pending` in `worker-back-channel`, `standing-injection` no-op, `fresh-redispatch` default).
+- SKIPPED: Documentation diff — the skill files ARE the docs; `docs/runtime-support.md` and the dev README do not reference the dispatch back-channel by name; no separate doc diff needed.
+
+### Summary
+
+Ideation finalized. The entity body now carries the full approach (Deliverable A: 7 named capabilities with before/after for the core rewrite; Deliverable B: Pi adapter bindings for frictions 1–6 including the ensign talkback protocol wording), 6 behavior-bound ACs, and a test plan with cost/complexity. The spike evidence from the prior run is preserved. No product files were edited (ideation = design only). Ready for the ideation gate.
