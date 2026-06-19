@@ -58,3 +58,14 @@ Stripped the two decide-effect lines in `«gate.assemble-verdict»` back to mech
 ### Summary
 
 REJECTED. The named-token strip is mechanically complete (grep → ZERO) and the contractlint absence-guard is proven load-bearing by both required mutations. But the strip is INCOMPLETE on coherence: it removed the two body sentences that routed the verdict to a tier "decider" yet left the `«gate.assemble-verdict»` heading (line 124) reading "route the verdict to **the decider**" and the intro (line 116) "route the verdict" — naming an undefined "decider" that the now-mechanism-neutral body contradicts. This is the exact dangling-decider reference the checklist's second item rejects, and it diverges from base intent (2c9609f8 had no decider-routing concept). Bounce-back (surgical, one file): rephrase line 124's heading to drop "to the decider" — e.g. `assemble the gate review and render the verdict` — and align line 116 so the heading/intro promise matches the body (the FO renders its own `Recommend` line); no code change, no test change, the absence-guard already covers it.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Drop the dangling "decider" — rephrase line 124's heading to drop "to the decider" and align line 116's intro so heading/intro match the body (the FO renders its own `Recommend` line).
+  Both edits made in first-officer-shared-core.md (code commit 5127caa1): line 124 heading → "assemble the gate review and render the verdict"; line 116 intro → "render the verdict:". Diff this cycle is exactly those two lines. `grep -rn 'decider' skills/` now returns ZERO. czw's «fn» notation, the `→ prose` routing oracle, and the six behavioral clusters remain untouched.
+- DONE: Re-run `go test ./...` green (no test change expected); commit, clean status, HEAD sha.
+  `go test ./...` all packages `ok` (no FAIL); no test file changed (prose-only — "decider" is a one-off framing word, not a systematic token, so the absence-guard correctly does not cover it). Committed 5127caa1 on spacedock-ensign/strip-deferred-tier-vocabulary, working tree clean.
+
+### Summary
+
+Closed the last dangling reference the validation cycle flagged: "the decider" — the level-3-judge tier framing under a different word, defined nowhere, contradicting the now-mechanism-neutral body. Aligned the `«gate.assemble-verdict»` heading and the gated-stage intro to the body (assemble the gate review and render the verdict). `grep -rn decider skills/` → ZERO; full suite green; prose-only, no test change. Code HEAD: 5127caa1.
