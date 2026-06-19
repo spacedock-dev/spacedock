@@ -541,3 +541,23 @@ tautology; the relocation is diff-verified), and (B) the AC-4 negative control i
 tautology that passed even when the real scan was defeated (harmless — AC-4's real
 weight is the other two trio members, both proven genuine). Neither rejects the gate;
 both are on the record for the captain. Sibling worktree=-guard correctly split out.
+
+## Stage Report: implementation (cycle 2)
+
+Closed validation finding B; finding A accepted as a ratified proof-policy limit (no change).
+
+- DONE: Fix finding B — make the AC-4 negative control `TestPRViewAllowListConstrains` load-bearing instead of a tautology.
+  Factored the real allow-list scan into a shared helper `prViewLeaksOutsideAllowList` that BOTH the production check (`TestNoUnexpectedPRViewScanIntroduced`) and the negative control drive — no more inlined re-implementation. The control now plants a real non-allowed shipped file (`skills/first-officer/references/zz-pr-view-negative-control.md`, written + cleaned up via defer), runs the REAL scan over the actual shipped-surface walk, and asserts the scan flags the plant (commit 95b24e4d).
+- DONE: Prove non-vacuity by mutation and record the outcome.
+  MUTATION: stubbed the shared `prViewLeaksOutsideAllowList` to never flag (`if false && …`) → `TestPRViewAllowListConstrains` went RED via its scan-flagging assertion (`leaks=[]`, layering_restore_test.go:231), not via a setup guard. Restored the helper → GREEN. This proves the control reds when the real scan logic is defeated, the discipline the absence-check discriminators already follow.
+- ACCEPTED (no change): finding A — the relocated mod-block clear in shipped `mods/pr-merge.md` has no test guard.
+  Per the team-lead's direction: ratified proof-policy limit. A presence-grep over the mod prose would be the banned tautology; the relocation is diff-verified against the dev-local reference and gets incidental live-e2e coverage on the merged-PR path. Left as recorded in `### Feedback Cycles`; no presence-grep added.
+
+### Summary (cycle 2)
+
+The cycle-1 negative control was the exact defect the PR is about — a discriminator that
+can't fail. Fixed by extracting the allow-list scan into one shared helper both callers
+drive, then planting a real non-allowed file and asserting the REAL scan flags it; proven
+load-bearing by a mutation that stubs the helper and turns the control RED via its scan
+assertion. Finding A left untouched per the ratified proof policy. `go test ./...` 15/15
+green; `go vet` clean. Committed to the worktree branch (95b24e4d).
