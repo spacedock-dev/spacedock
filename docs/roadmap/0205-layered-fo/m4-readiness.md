@@ -1,5 +1,7 @@
 # m4 readiness — both-semantics live team-mode harness
 
+> **SHIPPED in `v0.22.0` (2026-06-19).** m4 + ci-unpin landed via PR #390 (merged), both entities archived PASSED, tag `v0.22.0` published. Version labels below that read `0.20.5` refer to the cut that shipped as **0.22.0**; the layered-FO sprint that depended on this floor now targets **0.22.1**. This package is retained as the historical record of the both-semantics seam + the headless-registry finding.
+
 > FO package for finishing **m4** (`live-team-mode-terminal-harness`, PR #390). Authored 2026-06-18 (shaping FO).
 >
 > **UPDATE 2026-06-18 (captain re-scope + 9243 merged):** 9243 (`using-claude-team`, #396) is **MERGED** on main and green on Claude Code 2.1.181 locally. The release plan re-scoped: **0.20.5 = m4's merged lane green on unpinned Claude + the CI unpin** (the 0205-layered-fo sprint bumped to 0.20.6). m4's deliverable is the **MERGED lane**; the legacy 2.1.177 interactive lane is **NOT fixed** — legacy support is **best-effort in code** (the conditionally-loaded `using-legacy-claude-team` path), retired when STABLE Claude Code catches up to the merged floor. **The legacy auth diagnosis + probe below are OFF the critical path** (kept for posterity; do not gate the cut on them). m4's local branch is **re-rebased onto main (#396)** — build green.
