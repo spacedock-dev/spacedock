@@ -333,15 +333,17 @@ func newNewCommand(ctx context.Context, env []string, dir string, stdin io.Reade
 	return cmd
 }
 
-// newStateCommand wires `spacedock state init|new` for split-root state-checkout
-// management. Flag parsing is disabled so the post-subcommand argv (the optional
-// --workflow-dir) reaches the handler verbatim. `init` resumes a cloned workflow's
-// state checkout; `new` births one around a present split-root README. An unknown
-// or missing subcommand is a usage error (exit 2).
+// newStateCommand wires `spacedock state init|new|ready|sweep|commit` for split-root
+// state-checkout management. Flag parsing is disabled so the post-subcommand argv
+// (the optional --workflow-dir, a commit <slug>) reaches the handler verbatim.
+// `init` resumes a cloned workflow's state checkout; `new` births one; `ready`
+// integrates peers' state on boot; `sweep` lists merged-but-not-terminalized
+// entities; `commit <slug>` path-scoped-commits and syncs one entity. An unknown or
+// missing subcommand is a usage error (exit 2).
 func newStateCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
 	return &cobra.Command{
-		Use:                "state init|new [--workflow-dir DIR]",
-		Short:              "Manage a split-root workflow's state checkout (init resumes, new births)",
+		Use:                "state init|new|ready|sweep|commit [--workflow-dir DIR]",
+		Short:              "Manage a split-root workflow's state checkout (init/new births, ready/sweep/commit sync)",
 		GroupID:            "workflow",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -349,7 +351,7 @@ func newStateCommand(ctx context.Context, env []string, dir string, stdout, stde
 				return cmd.Help()
 			}
 			if len(args) == 0 {
-				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init or new)")
+				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init|new|ready|sweep|commit)")
 				return exitCodeError{2}
 			}
 			var code int
@@ -358,8 +360,14 @@ func newStateCommand(ctx context.Context, env []string, dir string, stdout, stde
 				code = runStateInit(ctx, args[1:], env, dir, stdout, stderr)
 			case "new":
 				code = runStateNew(ctx, args[1:], env, dir, stdout, stderr)
+			case "ready":
+				code = runStateReady(ctx, args[1:], env, dir, stdout, stderr)
+			case "sweep":
+				code = runStateSweep(ctx, args[1:], env, dir, stdout, stderr)
+			case "commit":
+				code = runStateCommit(ctx, args[1:], env, dir, stdout, stderr)
 			default:
-				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init or new)")
+				fmt.Fprintln(stderr, "spacedock state: unknown subcommand (want: init|new|ready|sweep|commit)")
 				return exitCodeError{2}
 			}
 			if code != 0 {
@@ -554,7 +562,7 @@ _spacedock() {
   fi
   case "${COMP_WORDS[1]}" in
     status) COMPREPLY=( $(compgen -W "$status_flags" -- "$cur") ) ;;
-    state) COMPREPLY=( $(compgen -W "init --workflow-dir" -- "$cur") ) ;;
+    state) COMPREPLY=( $(compgen -W "init new ready sweep commit --workflow-dir" -- "$cur") ) ;;
     completion) COMPREPLY=( $(compgen -W "bash zsh" -- "$cur") ) ;;
   esac
 }
@@ -574,7 +582,7 @@ _spacedock() {
   fi
   case "${words[2]}" in
     status) compadd -- $status_flags ;;
-    state) compadd -- init --workflow-dir ;;
+    state) compadd -- init new ready sweep commit --workflow-dir ;;
     completion) compadd -- bash zsh ;;
   esac
 }

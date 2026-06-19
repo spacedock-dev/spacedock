@@ -76,6 +76,14 @@ type rosterLoader func(home, teamName, sessionID string) (claudeteam.ReconcileTe
 // "MERGED", "OPEN"). Tests inject a stub; production passes ghRunnerExec.
 type ghRunner func(prRef string) (string, error)
 
+// GhRunner is the exported alias of ghRunner so callers outside this package (the
+// `state sweep` verb) can inject a stub for tests and pass GhRunnerExec in
+// production, sharing the one merged-detection probe.
+type GhRunner = ghRunner
+
+// GhRunnerExec is the exported production gh probe `state sweep` passes.
+func GhRunnerExec(prRef string) (string, error) { return ghRunnerExec(prRef) }
+
 // gitRunner runs `git -C dir args...` returning combined output and error.
 // Tests inject a stub when they need a fixture-controlled answer; production
 // passes gitRunnerExec.
@@ -641,6 +649,64 @@ func classC(active map[string]entityRecord, gh ghRunner) []driftItem {
 		}
 	}
 	return out
+}
+
+// sweptEntity is one merged-but-not-terminalized entity in the `state sweep`
+// report — the state-repo's read-only view of the un-advanced-PR drift class.
+type sweptEntity struct {
+	Slug   string `json:"slug"`
+	PR     string `json:"pr"`
+	Reason string `json:"reason"`
+}
+
+// sweepResult is the `state sweep` JSON envelope. swept is the merged-but-not-
+// terminalized set; an empty sweep encodes an empty array, never null.
+type sweepResult struct {
+	Command     string        `json:"command"`
+	StateBranch string        `json:"state_branch,omitempty"`
+	Swept       []sweptEntity `json:"swept"`
+	Reason      string        `json:"reason"`
+}
+
+// Sweep is the read-only `state sweep` computation: the entities whose code PR has
+// MERGED but whose state has not been terminalized. It reuses classC's un-advanced-
+// PR detection over the split-root state checkout's active entities — NO second
+// merged-detection path — and makes no commit, push, or mutation. The gh probe is
+// injected so tests pin a deterministic merged-state; production passes
+// GhRunnerExec. An inline (single-root) workflow sweeps its own dir. Exit 0 the
+// sweep ran (set may be empty or populated); 1 setup failure (no README/state).
+func Sweep(workflowDir string, gh GhRunner, jsonOut bool, stdout, stderr io.Writer) int {
+	if info, err := os.Stat(workflowDir); err != nil || !info.IsDir() {
+		fmt.Fprintf(stderr, "spacedock state sweep: workflow directory not found: %s\n", workflowDir)
+		return 1
+	}
+	stateRoot := splitRootStateCheckout(workflowDir)
+	if stateRoot == "" {
+		stateRoot = workflowDir
+	}
+	active := loadEntityFrontmatter(activeEntityDir(stateRoot))
+	drift := classC(active, gh)
+
+	swept := make([]sweptEntity, 0, len(drift))
+	for _, d := range drift {
+		swept = append(swept, sweptEntity{Slug: d.Slug, PR: d.PR, Reason: d.Reason})
+	}
+	branch, _ := status.StateBranch(workflowDir)
+	reason := fmt.Sprintf("%d entity(ies) merged but not yet terminalized.", len(swept))
+
+	if jsonOut {
+		enc := json.NewEncoder(stdout)
+		enc.SetIndent("", "  ")
+		enc.Encode(sweepResult{
+			Command: "state sweep", StateBranch: branch, Swept: swept, Reason: reason,
+		})
+		return 0
+	}
+	fmt.Fprintln(stdout, reason)
+	for _, s := range swept {
+		fmt.Fprintf(stdout, "  %s (PR %s): %s\n", s.Slug, s.PR, s.Reason)
+	}
+	return 0
 }
 
 // classD flags worktrees whose branch HEAD is behind origin/{trunk}. The remedy
