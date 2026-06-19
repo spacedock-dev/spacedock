@@ -45,6 +45,12 @@ import (
 //
 // Skips (never fatals) without auth (isolatedClaudeEnv, the same AC-6 gate).
 func TestLiveMergedTeamModeDispatch(t *testing.T) {
+	// Merged lane: this asserts the in-process named-background shape. On a LEGACY
+	// host (claude <2.1.178, native TeamCreate present) the FO drives the native team
+	// registry instead, so SKIP there — the legacy interactive pty lane covers that
+	// host. The mirror of skipUnlessTeamCreateCapable: exactly one team lane runs per
+	// pinned/unpinned claude.
+	skipUnlessMergedHost(t)
 	binary := spacedockBinary(t)
 	pluginDir := livePluginDir(t)
 	model := envOr("SPACEDOCK_LIVE_MODEL", "sonnet")

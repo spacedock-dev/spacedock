@@ -281,6 +281,27 @@ jobs:
           set -o pipefail
           gotestsum --jsonfile pty-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run 'TestLivePtyStandingResidencyInjectsCommOfficer|TestLivePtyEnsignCycleTeamTeardown' ./internal/ensigncycle/
 
+      # The MERGED team-mode lane: a HEADLESS `claude -p` FO (no tmux) on the
+      # current/unpinned merged host (>=2.1.178) drives the workflow as a named
+      # BACKGROUND Agent dispatch (no TeamCreate) — the in-process team shape #396
+      # committed. TestLiveMergedTeamModeDispatch asserts no TeamCreate (init tools +
+      # no tool_use), a merged Agent dispatch (name + run_in_background + no
+      # team_name), the on-disk subagents meta member (agentType=spacedock:ensign),
+      # reconcile (no --team-name) exit 0, and the team-lead completion target. This
+      # is the second live lane: the legacy pty lane above SKIPs on a merged host
+      # (native team tools gone), this lane is the regression sensor for the merged
+      # floor. No tmux needed — it is a `-p` launch like the shared-scenario step.
+      #
+      # if: !cancelled() decouples it from an earlier step's failure so it always
+      # runs and reports its own pass/fail; it still skips on a real cancellation.
+      - name: Run live merged team-mode lane
+        if: ${{ !cancelled() }}
+        env:
+          SPACEDOCK_LIVE_MODEL: ${{ matrix.model }}
+        run: |
+          set -o pipefail
+          gotestsum --jsonfile merged-team-mode-detail.jsonl --format pkgname -- -tags live -count=1 -timeout 40m -run TestLiveMergedTeamModeDispatch ./internal/ensigncycle/
+
       - name: Upload live artifacts
         if: always()
         uses: actions/upload-artifact@v5
@@ -291,6 +312,7 @@ jobs:
             ./live-e2e-detail.jsonl
             ./claude-shared-scenarios-detail.jsonl
             ./pty-team-mode-detail.jsonl
+            ./merged-team-mode-detail.jsonl
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/projects
             ${{ runner.temp }}/spacedock-claude-config/${{ matrix.model }}/*/projects
             live-artifacts/claude/**

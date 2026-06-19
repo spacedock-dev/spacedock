@@ -6,6 +6,7 @@ package ensigncycle
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -28,5 +29,29 @@ func skipUnlessTeamCreateCapable(t *testing.T) {
 	}
 	if !teamCreateCapable(version) {
 		t.Skip(teamCapabilitySkipReason(version))
+	}
+}
+
+// skipUnlessMergedHost is the symmetric gate for the merged lane: it SKIPs the
+// caller when the live claude is a LEGACY host (below the merged floor, native
+// TeamCreate still present). On a legacy host the FO finds TeamCreate via ToolSearch
+// and drives the native team registry, NOT the in-process named-background shape the
+// merged lane asserts — so the merged test would mis-fire there. The two gates are
+// mirror images: the legacy lane runs only below the floor, the merged lane only at/
+// above it, so whichever claude CI pins to, exactly one team lane runs and the other
+// SKIPs cleanly. An unprobeable claude is treated as merged (teamCreateCapable false)
+// — the merged lane runs (skip-not-fatal stays with the auth gate downstream).
+func skipUnlessMergedHost(t *testing.T) {
+	t.Helper()
+	out, err := exec.Command("claude", "--version").Output()
+	if err != nil {
+		// Cannot read the version → assume merged (the unpinned default is merged);
+		// let the lane run and fail loudly if the host turns out to be legacy.
+		t.Logf("merged team-mode lane: `claude --version` failed (%v) — proceeding (assuming a merged host)", err)
+		return
+	}
+	if teamCreateCapable(string(out)) {
+		t.Skipf("merged team-mode lane SKIPPED: the live claude (%q) is BELOW the merged floor (2.1.%d) — native TeamCreate is present, so the FO drives the legacy team registry, not the in-process merged shape this lane asserts. The legacy interactive pty lane covers this host.",
+			strings.TrimSpace(string(out)), mergedFloorMinor)
 	}
 }
