@@ -292,3 +292,17 @@ The capstone's AC-2 `pi-live` drive depends on the ensign being discoverable by 
 ### Summary
 
 Gap-1 re-check complete. The child-cwd seam is removed at its root by install-managed placement; the `cwd:<repo>` wiring is retained but reframed as a working-directory concern (skill-discovery rationale SUPERSEDED); AC-2's ensign-loaded pre-check is re-attributed to the package-root scan; the capstone's pi-live drive now depends on `pi-install-managed-skill-placement`. Prior fold-in statements marked SUPERSEDED above are no longer authoritative. This re-check is append-only; no prior section was rewritten.
+
+## Staff review #2 fold-in (2026-06-19)
+
+Staff review #2 (docs/roadmap/0223-pi-dispatch-contract/staff-review-2.md) gap 6: the "## Staff review fold-in (2026-06-19)" section's AC-2 sub-bullet still reads "verify the ensign loads ... via member 1's `.pi/skills/ensign` symlink." That references (a) an archived member — member 1 was `pi-ensign-skill-injection` (`k8t`), now ARCHIVED REJECTED and superseded by the merged task `pi-install-managed-skill-placement` (`eq`); and (b) a mechanism `eq` does not ship — `eq` ships no symlink; ensign loads via the package-root scan (`collectSettingsPackageSkillPaths` reading `settings.json` `packages` → `package.json` `pi.skills`), not via a `.pi/skills/ensign` symlink and not via `cwd:<repo>`.
+
+**SUPERSEDED pointer (applies to the fold-in AC-2 sub-bullet above):** the "via member 1's `.pi/skills/ensign` symlink" claim is **SUPERSEDED** by the "## Staff review gap-1 re-check (2026-06-19)" section below and by the re-carve. Member 1 is now `pi-install-managed-skill-placement` (`eq`); it ships no symlink. Ensign loads via the package-root scan (cwd-independent, proven by `eq`'s spike). `cwd:<repo>` is retained in `async-dispatch` only as a working-directory concern (ensign's working dir = repo), NOT for skill discovery. Read the "Staff review gap-1 re-check" section for the authoritative stance.
+
+**Cosmetic companion (gap 6 cosmetic):** the fold-in Gap-2 statement says "member 3" where it should say "member 2" — `pi-dispatch-model-stamping` is member 2 after the re-carve (the capstone is member 3). Correction: "member 2 (`pi-dispatch-model-stamping`)", not "member 3".
+
+## Stage Report: ideation (staff review #2 fold-in 2026-06-19)
+
+- DONE: Appended the SUPERSEDED pointer for the fold-in AC-2 sub-bullet's stale "via member 1's .pi/skills/ensign symlink" claim (archived member k8t; absent symlink mechanism). The pointer directs readers to the gap-1 re-check section and clarifies ensign loads via the package-root scan, cwd:<repo> is a working-directory concern only.
+- DONE: Appended the cosmetic correction — fold-in Gap-2 "member 3" → "member 2" (pi-dispatch-model-stamping is member 2 post-re-carve).
+- Append-only; no prior section rewritten. No product files edited.
