@@ -1,15 +1,19 @@
 # m4 readiness — both-semantics live team-mode harness
 
-> FO package for finishing **m4** (`live-team-mode-terminal-harness`, PR #390). Captures the both-semantics plan, the legacy-lane diagnosis + probe, the rebase status, and the merged-lane test spec. Authored 2026-06-18 (shaping FO), against 9243 (`using-claude-team-merged-model-support`) crunching in parallel.
+> FO package for finishing **m4** (`live-team-mode-terminal-harness`, PR #390). Authored 2026-06-18 (shaping FO).
+>
+> **UPDATE 2026-06-18 (captain re-scope + 9243 merged):** 9243 (`using-claude-team`, #396) is **MERGED** on main and green on Claude Code 2.1.181 locally. The release plan re-scoped: **0.20.5 = m4's merged lane green on unpinned Claude + the CI unpin** (the 0205-layered-fo sprint bumped to 0.20.6). m4's deliverable is the **MERGED lane**; the legacy 2.1.177 interactive lane is **NOT fixed** — legacy support is **best-effort in code** (the conditionally-loaded `using-legacy-claude-team` path), retired when STABLE Claude Code catches up to the merged floor. **The legacy auth diagnosis + probe below are OFF the critical path** (kept for posterity; do not gate the cut on them). m4's local branch is **re-rebased onto main (#396)** — build green.
 
 ## The both-semantics seam (captain requirement: "m4 must work in either old and new claude-team semantics")
 
 Per 9243's OQ-6 host-regime split, m4 ends up with **two live lanes** (plus an explicitly-forced bare lane tracked separately as `bare-mode-coverage`):
 
-- **Legacy lane** — pinned claude **2.1.177**, **interactive tmux/pty**, native `TeamCreate`. The current PR #390 harness. This lane exists *only* to keep the 2.1.177 pin alive (9243's deprecation trigger retires the legacy path when no live lane drives it). Currently **CI-RED on Linux** (see diagnosis).
-- **Merged lane** — current/**unpinned** claude (≥2.1.178), **headless `claude -p`, no tmux**, auto-spawn team (no `TeamCreate`). Works flag-free headless (9243 OQ-2, reproduced this session). Sidesteps the interactive-pty-auth wall that fails the legacy lane. **Not yet authored** (spec below); base is rebased-in, pending 9243 settling.
+- **Merged lane (the 0.20.5 deliverable)** — current/**unpinned** claude (≥2.1.178), **headless `claude -p`, no tmux**, auto-spawn team (no `TeamCreate`). Works flag-free headless (9243 OQ-2, reproduced this session). Sidesteps the interactive-pty-auth wall that fails the legacy lane. **Not yet authored** (spec below); base is rebased onto main #396 — authorable now that 9243 is merged.
+- **Legacy lane (best-effort, NOT fixed)** — pinned claude **2.1.177**, **interactive tmux/pty**, native `TeamCreate`. The current PR #390 harness, **CI-RED on Linux** (auth/onboarding; see diagnosis). Per the re-scope it is **not fixed and not kept as a separate pinned job** — legacy support stays best-effort in 9243's conditionally-loaded `using-legacy-claude-team` path. When CI unpins in 0.20.5, these interactive pty tests should **skip on a merged host** (`ToolSearch(select:TeamCreate)` empty ⇒ no TeamCreate ⇒ skip, not fail) rather than RED, and the legacy path retires when stable Claude catches up to the merged floor.
 
-## Legacy-lane diagnosis (CI-RED) — pinned to a fork, probe ready to settle it
+## Legacy-lane diagnosis (CI-RED) — OFF the critical path (posterity only)
+
+> The captain re-scope (above) does NOT fix the legacy lane. The diagnosis + probe below are retained for whoever later needs the legacy interactive path to work; they do not gate the 0.20.5 cut. The actionable legacy step now is to **skip these tests on a merged host**, not fix them.
 
 Both pty tests (`TestLivePtyStandingResidencyInjectsCommOfficer`, `TestLivePtyEnsignCycleTeamTeardown`) fail identically at the FIRST gate `waitForSessionFile`: the interactive child writes **no session jsonl** and the FO pane is **0 bytes**, timing out at 4 min. The tmux session stays **alive** the whole time (timeout, not death) → the child **blocks on a pre-transcript screen**. Render is refuted (real 220×50 TTY; idle gate reads on-disk jsonl, not pane text). Headless steps 13/14 pass with the same `ANTHROPIC_API_KEY` → the credential is valid; the divergence is interactive-only. On Linux the stored-login seed is skipped (`seedStoredLoginCredential` is macOS-keychain-only), so the child carries only the env credential interactive claude may not honor as a non-blocking login.
 
@@ -21,8 +25,8 @@ Both pty tests (`TestLivePtyStandingResidencyInjectsCommOfficer`, `TestLivePtyEn
 
 ## Rebase status
 
-- m4's **local** branch is rebased onto 9243's committed tip `a94e4825` (merged-mode `build.go`/`standing.go` spliced under m4's harness commits — `go build ./...` OK, 9243's dispatch unit tests green, m4's harness compiles). 9243 preserved legacy emission byte-identically, so m4's legacy tests stay valid.
-- This base is **provisional + unpushed**: 9243 is local-only and being edited in another session. m4 re-rebases when 9243 lands. The legacy probe was branched off the **pushed** tip `31d22d25` to stay pushable without dragging in 9243's unpushed commits.
+- 9243 landed on main as **#396** (squash commit `1d691b45`). m4's local branch is **re-rebased onto main** (`git rebase --onto origin/main a94e4825` — the 11 harness commits replayed onto main, the 3 stale pre-squash merged-mode commits dropped since #396 supersedes them). `go build ./...` OK. m4 touches only `internal/ensigncycle/*` + the CI yaml — disjoint from #396's dispatch/skill files, so the replay was clean.
+- **Local + unpushed.** PR #390 still points at the old pushed tip `31d22d25`; the re-rebased branch will be force-pushed when m4's merged lane is authored (a Commander/ensign step, not a shaping-FO push). The legacy auth-probe branch `spacedock-ensign/m4-pty-auth-probe` (off `31d22d25`) is parked, off the critical path.
 
 ## Merged-lane test spec (authoring deferred until 9243 settles its contract prose)
 
@@ -40,8 +44,13 @@ Both pty tests (`TestLivePtyStandingResidencyInjectsCommOfficer`, `TestLivePtyEn
 
 **Live coverage = a SECOND live-e2e lane on unpinned/current claude** (9243's own recommendation): the merged lane becomes the regression sensor for the merged floor; the pinned-2.1.177 lane stays the legacy sensor. That two-lane split is the live realization of 9243's OQ-6 seam.
 
-## Next steps
+## Next steps (the 0.20.5 cut)
 
-1. **Pin the legacy fork** — captain approves a single-model CI-E2E run of `TestPtyAuthProbe`; read `probe-pane.ansi`; apply the targeted fix.
-2. **Author the merged lane** — once 9243 lands (its contract prose settles + it merges to main), re-rebase m4 onto main and author the merged-lane test per the spec above.
-3. **Bare lane** — tracked separately (`bare-mode-coverage`), sequenced after these + tied to pin-retirement.
+0.20.5 = **m4 merged lane green on unpinned Claude + CI unpinned.** The work:
+
+1. **Author the merged lane** — re-rebase done (m4 on main #396). Author the merged-lane test per the spec above (completion target = `team-lead`, per #396's committed `build.go`). Implementation work → a dispatched ensign (or captain-greenlit FO-driven, as m4 has been).
+2. **Skip-gate the legacy lane on merged hosts** — the interactive pty tests skip when `ToolSearch(select:TeamCreate)` is empty (merged host), so unpinning makes them SKIP, not RED. Legacy stays best-effort.
+3. **Unpin CI** — filed as `ci-unpin-claude-version` (see below): set the live-e2e lane to current/unpinned Claude (≥2.1.178 merged floor), retire the #395 keystone pin + its `claude_version_pin_guard_test.go` enforcement, keep `DISABLE_AUTOUPDATER` semantics sane for a floating version. The pin-guard test currently REDs on any non-2.1.177 pin, so the unpin must update/retire that guard in the same change.
+4. **Cut 0.20.5** after the merged lane is green on unpinned CI and the pre-cut antipattern audit is clean.
+
+**Deferred to 0.20.6+:** the legacy auth fix (off critical path, posterity probe parked); `bare-mode-coverage` (forced-bare scenario + `-p`-assumes-bare audit, tied to pin-retirement); the layered-FO verb core / tier / restructure / haiku-drive (the bumped 0205 sprint).
