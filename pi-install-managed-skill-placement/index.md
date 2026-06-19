@@ -85,3 +85,94 @@ Verified by: a dev-mode install from a local path that discovers the skills from
 - `internal/cli/pi.go` (`runInitWithPi`, `piRuntimeConfigFromEnv`, `runPi`) — the install + resolution source of truth.
 - `pi-back-channel-dispatch` (`b23y61pgk93ph44pz506m2wy`) — capstone; this task removes its staff-review gap-1 child-cwd seam. A parallel re-ideation of the capstone's fold-in accompanies this task.
 - `0223-pi-dispatch-contract` sprint index.
+
+## Ideation finalization (2026-06-19)
+
+### Mechanism confirmation (all verified against live code)
+
+1. **`spacedock install --host pi` is check-only** — `internal/cli/pi.go:runInitWithPi` (line 100) runs `checkPiRuntime` and prints a report; no `ops.Install` call, no file writes. Confirmed: `grep -n "ops.Install" internal/cli/pi.go` returns nothing.
+2. **The cwd fallback** — `piRuntimeConfigFromEnv` (pi.go:214) resolves `repo` as `--plugin-dir` → `SPACEDOCK_REPO_ROOT` → `dir` (cwd, fallback at ~line 226). The `--skill` flags (pi.go:87-89) pass `cfg.firstOfficerDir()` and `cfg.ensignDir()` to the parent pi session only.
+3. **pi-subagents children use their own discovery** — `buildSkillPaths` (skills.ts:318) is a filesystem scan; children do NOT inherit the parent's `--skill` flags. The repo's `skills/` is in none of the scan paths.
+4. **`pi install git:` is a first-class source** — `pi install --help` confirms `git:github.com/user/repo` is valid; it registers in `settings.json` `packages` (currently a string array: `["npm:pi-subagents", "npm:pi-intercom", ...]`).
+5. **`collectSettingsPackageSkillPaths` (skills.ts:288) is the key discovery path for installed packages** — it reads `settings.json` `packages` entries and resolves each via `resolveSettingsPackageRoot` (skills.ts:267), which handles `git:` (→ `{agentDir}/git/{host}/{repoPath}`), `npm:` (→ `{agentDir}/npm/node_modules/{name}`), `file:`, `~/`, absolute, and relative paths. Then `extractSkillPathsFromPackageRoot` reads `package.json -> pi.skills` from the resolved package root.
+6. **The superpowers reference** — `obra/superpowers` ships BOTH a pi extension (`.pi/extensions/superpowers.ts` implementing `resources_discover` → `{ skillPaths: [skillsDir] }`) AND `package.json` `pi.skills: ["./skills"]`. The extension handles parent-session discovery; the `pi.skills` entry handles child discovery via `collectSettingsPackageSkillPaths`.
+
+### Spike evidence (live, 2026-06-19) — RISKIEST MECHANISM PROVEN
+
+**Question:** Does `pi install` of a minimal package with `package.json pi.skills` make `discoverAvailableSkills` list the skill, from a non-repo cwd?
+
+**Pre-install** (no spike package): `discoverAvailableSkills(cwd)` → total 2 (`find-skills`, `pi-intercom`). Spike skill ABSENT.
+
+**Spike package** (`/tmp/pi-skill-spike/`): minimal `package.json` with `{ "name": "pi-skill-spike", "type": "module", "pi": { "skills": ["./skills"] } }` + `skills/spike-skill/SKILL.md`.
+
+**Install:** `pi install /tmp/pi-skill-spike` → "Installed /tmp/pi-skill-spike". Registered in `settings.json packages` as `"../../../../tmp/pi-skill-spike"` (relative to agentDir).
+
+**Post-install from the repo cwd:** `discoverAvailableSkills(cwd)` → total 3, including `spike-skill ( user-package )`. PRESENT.
+
+**Post-install from `/tmp` (non-repo cwd):** `discoverAvailableSkills("/tmp")` → total 3, including `spike-skill ( user-package )`. **PRESENT from a non-repo cwd — no cwd dependency.**
+
+**Cleanup:** `pi remove /tmp/pi-skill-spike` → cleanly unregistered. `settings.json packages` restored to original 3 entries.
+
+**Conclusion:** The mechanism works end-to-end. `pi install` + `package.json pi.skills` makes pi-subagents children discover the skill via `collectSettingsPackageSkillPaths` with NO cwd dependency, NO symlink, NO clone requirement. The superpowers pattern (extension + `pi.skills`) is proven to work for Spacedock's repo shape.
+
+### Approach (finalized)
+
+Four deliverables, all in implementation's scope (ideation designs only):
+
+**D1 — Root `package.json`.** Add at the repo root:
+```json
+{
+  "name": "spacedock",
+  "type": "module",
+  "pi": {
+    "extensions": ["./.pi/extensions/spacedock.ts"],
+    "skills": ["./skills"]
+  }
+}
+```
+The `pi.skills` entry is what pi-subagents' `collectSettingsPackageSkillPaths` reads after `pi install` registers the package. The `pi.extensions` entry is what pi loads for the parent-session `resources_discover` hook.
+
+**D2 — `.pi/extensions/spacedock.ts`.** A pi extension implementing `resources_discover` returning `{ skillPaths: [<repo>/skills] }`, with the path resolved relative to the extension's own location (`dirname(fileURLToPath(import.meta.url))` → `../..` → `skills/`), exactly like superpowers. This makes the main pi session discover the skills, replacing the launcher's `--skill` flags. The extension is the parent-side discovery mechanism; `pi.skills` is the child-side. Both are needed.
+
+**D3 — `spacedock install --host pi` rewrite.** Stop being check-only. Run `pi install git:github.com/spacedock-dev/spacedock` (published source) or `pi install <local --plugin-dir path>` (dev override). This registers the package in `settings.json packages` and places the repo in pi's package store (`{agentDir}/git/github.com/spacedock-dev/spacedock` for git:, or the local path for dev). The existing doctor check stays as a post-install verification step. The `--plugin-dir` flag for install (currently rejected at pi.go:199) is lifted to specify a local dev source.
+
+**D4 — Retirement of `--skill` flags + cwd fallback.** In `piRuntimeConfigFromEnv`, retire the `--skill cfg.firstOfficerDir()` and `--skill cfg.ensignDir()` flags from the `runPi` launch args (pi.go:87-89) — the extension's `resources_discover` handles parent discovery. Retire the cwd fallback (pi.go:226-228) — the installed package is found by `collectSettingsPackageSkillPaths` regardless of cwd. For the dev-override transition (a developer working in a clone without `pi install`), `--plugin-dir` / `SPACEDOCK_REPO_ROOT` still resolve the repo for the extension to find skills; the cwd fallback is demoted to a last resort with a warning, or removed entirely if the dev-override path is sufficient.
+
+### Finalized ACs (behavior-bound, never prose-grep)
+
+**AC-1 — `spacedock install --host pi` actually installs the package.**
+Verified by: running `spacedock install --host pi` and confirming (a) `~/.pi/agent/settings.json` `packages` includes the Spacedock entry (`git:github.com/spacedock-dev/spacedock` or a local path), and (b) the repo is present in pi's package store (`{agentDir}/git/github.com/spacedock-dev/spacedock` for git:, or the local path). A live run, not a prose claim.
+
+**AC-2 — Both the main pi session and pi-subagents children discover the Spacedock skills post-install, with no clone/cwd/symlink dependency.**
+Verified by: (a) `subagents-doctor` (or `discoverAvailableSkills(cwd)`) lists `ensign` (and other Spacedock skills) as `user-package` source post-install; (b) a probe `subagent(... skill:["ensign"])` dispatch whose run meta carries NO `skillsWarning` AND whose child exhibits ensign-contract behavior (the inverse of the `0637e2ed` failure — ideation probe = design in entity body, not product edits); (c) the probe is run from a NON-REPO cwd, proving no cwd dependency. The spike proved this mechanism works (see Spike evidence).
+
+**AC-3 — The launcher's `--skill` flags and cwd fallback are retired (or demoted below the install record with a documented transition).**
+Verified by: a Go test that `piRuntimeConfigFromEnv` no longer emits `--skill cfg.firstOfficerDir()` / `--skill cfg.ensignDir()` in the launch args when the package is installed (the extension handles parent discovery), and that the cwd fallback is either removed or demoted below the install-record resolution. Existing frontdoor tests stay green. The retirement is behavior-tested, not just documented.
+
+**AC-4 — The dev override (`--plugin-dir` / `pi install ./local/path`) points at a local checkout so changes are picked up without reinstall.**
+Verified by: a dev-mode install from a local path (`pi install ./local/path` or `spacedock install --host pi --plugin-dir <local>`) that discovers the skills from that checkout; a change to a skill file (e.g. appending a comment to `skills/ensign/SKILL.md`) is visible in `discoverAvailableSkills` without reinstall — the local path is read live, not copied.
+
+### Test plan
+
+- **Live `spacedock install --host pi`** (AC-1) — `settings.json packages` + package store present. Bounded live run.
+- **`subagents-doctor` + probe dispatch from non-repo cwd** (AC-2) — the load-bearing behavioral proof. `discoverAvailableSkills("/tmp")` lists ensign; a `subagent(... skill:["ensign"])` dispatch from `/tmp` has no `skillsWarning` and the child behaves as an ensign. The spike proved the discovery mechanism; implementation reproduces it for the real Spacedock package.
+- **Go test for `piRuntimeConfigFromEnv`** (AC-3) — assert the `--skill` flags are absent from launch args when installed; assert the cwd fallback is removed/demoted. Existing frontdoor tests green (non-regression).
+- **Dev-override install** (AC-4) — `pi install ./local/path` discovers skills; edit a skill file; `discoverAvailableSkills` reflects the edit without reinstall.
+- **`pi-live` lane green** — this task touches `internal/cli/pi.go` (high-stakes: the front-door launcher) + adds `package.json` + `.pi/extensions/`. Per the path→lane mapping, `pi-live` required. The `package.json` + `.pi/extensions/` are pi-convention artifacts; `internal/cli/pi.go` is the launcher change.
+
+### No further spike needed
+
+The riskiest mechanism — `pi install` + `package.json pi.skills` making pi-subagents discover the skill from a non-repo cwd — is PROVEN by the spike above. The extension (`resources_discover`) pattern is proven by the superpowers reference. The `resolveSettingsPackageRoot` path resolution for `git:`/local sources is confirmed in source. No unverified mechanism remains.
+
+## Stage Report: ideation
+
+- DONE: Mechanism confirmed against live code — `spacedock install --host pi` is check-only (no `ops.Install`); cwd fallback at pi.go:226; `--skill` flags at 87-89; `collectSettingsPackageSkillPaths` (skills.ts:288) reads `settings.json packages` via `resolveSettingsPackageRoot` (skills.ts:267) which handles `git:`/`npm:`/`file:`/local paths.
+- DONE: Riskiest mechanism SPIKED PASSED — `pi install /tmp/pi-skill-spike` (minimal package with `pi.skills`) → `discoverAvailableSkills` lists `spike-skill` as `user-package` from both repo cwd AND `/tmp` (non-repo). No cwd dependency. Cleaned up with `pi remove`.
+- DONE: Approach finalized — 4 deliverables (root `package.json` with `pi` block; `.pi/extensions/spacedock.ts` with `resources_discover`; `spacedock install --host pi` rewrite to run `pi install`; retirement of `--skill` flags + cwd fallback).
+- DONE: ACs finalized (4, behavior-bound) — install actually installs; both parent+child discover from non-repo cwd; `--skill`/cwd retired or demoted; dev override works with live edits.
+- DONE: Test plan finalized — live install, subagents-doctor + probe from non-repo, Go test for config resolution, dev-override live edit, `pi-live` lane.
+- DONE: Composition with capstone recorded — this task removes the staff-review gap-1 child-cwd seam; the capstone's `cwd:<repo>` wiring is no longer needed for skill discovery (may remain for working-directory concern).
+
+### Summary
+
+Ideation complete. Mechanism confirmed against live code + superpowers reference. Riskiest mechanism spiked PASSED (pi install + pi.skills → discoverable from non-repo cwd). Four deliverables designed, four behavior-bound ACs finalized, test plan covers live install + probe + Go test + dev override + pi-live lane. No product files edited (ideation = design only). Entity body + stage report committed to state checkout.
