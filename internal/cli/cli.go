@@ -147,6 +147,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newStatusCommand(ctx, env, dir, stdin, stdout, stderr, runner),
 		newNewCommand(ctx, env, dir, stdin, stdout, stderr, runner),
 		newStateCommand(ctx, env, dir, stdout, stderr),
+		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, stdin, stdout, stderr),
 	)
@@ -378,6 +379,41 @@ func newStateCommand(ctx context.Context, env []string, dir string, stdout, stde
 	}
 }
 
+// newMergeCommand wires `spacedock merge guard <slug>` for the terminal
+// merge-finalize ceremony. Flag parsing is disabled so the post-subcommand argv
+// (the slug plus --workflow-dir / --verdict / --json / --quiet) reaches the
+// handler verbatim. `guard` drives the atomic mod-block set->invoke->clear->
+// terminalize sequence; an unknown or missing subcommand is a usage error (exit 2).
+func newMergeCommand(ctx context.Context, env []string, dir string, stdout, stderr io.Writer) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                "merge guard <slug> --verdict passed|rejected",
+		Short:              "Run the terminal merge-finalize ceremony for an entity",
+		GroupID:            "workflow",
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if wantsHelp(args) {
+				return cmd.Help()
+			}
+			if len(args) == 0 {
+				fmt.Fprintln(stderr, "spacedock merge: unknown subcommand (want: guard)")
+				return exitCodeError{2}
+			}
+			switch args[0] {
+			case "guard":
+				if code := status.MergeGuard(args[1:], dir, stdout, stderr); code != 0 {
+					return exitCodeError{code}
+				}
+				return nil
+			default:
+				fmt.Fprintln(stderr, "spacedock merge: unknown subcommand (want: guard)")
+				return exitCodeError{2}
+			}
+		},
+	}
+	setMergeHelp(cmd, stdout)
+	return cmd
+}
+
 // newCompletionCommand wires `spacedock completion bash|zsh`, emitting a static
 // completion script to stdout (exit 0). An unknown or missing shell prints the
 // named usage error and returns 2 — the CLI-layer usage-error code, matching the
@@ -554,7 +590,7 @@ _spacedock() {
   local cur prev verbs status_flags
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
-  verbs="claude codex pi install doctor status new state completion dispatch --version --help"
+  verbs="claude codex pi install doctor status new state merge completion dispatch --version --help"
   status_flags="--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
@@ -563,6 +599,7 @@ _spacedock() {
   case "${COMP_WORDS[1]}" in
     status) COMPREPLY=( $(compgen -W "$status_flags" -- "$cur") ) ;;
     state) COMPREPLY=( $(compgen -W "init new ready sweep commit --workflow-dir" -- "$cur") ) ;;
+    merge) COMPREPLY=( $(compgen -W "guard" -- "$cur") ) ;;
     completion) COMPREPLY=( $(compgen -W "bash zsh" -- "$cur") ) ;;
   esac
 }
@@ -574,7 +611,7 @@ const zshCompletion = `#compdef spacedock
 # spacedock zsh completion
 _spacedock() {
   local -a verbs status_flags
-  verbs=(claude codex pi install doctor status new state completion dispatch --version --help)
+  verbs=(claude codex pi install doctor status new state merge completion dispatch --version --help)
   status_flags=(--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
   if (( CURRENT == 2 )); then
     compadd -- $verbs
@@ -583,6 +620,7 @@ _spacedock() {
   case "${words[2]}" in
     status) compadd -- $status_flags ;;
     state) compadd -- init new ready sweep commit --workflow-dir ;;
+    merge) compadd -- guard ;;
     completion) compadd -- bash zsh ;;
   esac
 }
