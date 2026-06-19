@@ -3,7 +3,7 @@ title: Command-surface gate — enforce the anti-sprawl routing principles in th
 status: backlog
 source: captain (2026-06-17) — the command-surface-and-routing-principles.md proposal is PROSE; a prose rule's ceiling is "the wording is present" (the same failure mode as the Shaping-FO/Commander role-boundary slip). Make it a CODE gate.
 score: 0.4
-sprint: 0205-layered-fo
+sprint:
 group: surface
 sprint-readiness: ready
 id: dwd8hhn898apwgay08mdj7p6
