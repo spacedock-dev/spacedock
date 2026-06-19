@@ -136,3 +136,53 @@ Firmed up the premise spike as the strictly-MECHANICAL isolation of the w4 spike
 ### Summary
 
 Tightening of the already-approved ideation; left the sound design (mechanical-only loop, finalize-guard grounding, fixture shape, riskiest-mechanism determination) intact. The load-bearing fix closes a grading hole: `someCommitNamesOnly` was the ONLY commit-evidence field and it green-lights on the first path-scoped commit, so a Haiku FO collapsing `implementation→done` would have passed every AC field and defeated the 3-stage fixture's whole purpose — the new `integrationTransitionCommitted` field makes the skipped middle advance FAIL the grade. Source claims re-verified by reading `handlers.go:197` (finalize guard keys on the finalize action) and `liveassert_test.go:77-104` (the first-match `flush()` that necessitated the fix). Honest-scope accounting and the PASS-licensing residual close the two remaining over-read risks. Staff-review and shipping-decision notes from cycle 1 still stand.
+
+## Recorded result (implementation)
+
+### Premise finding
+
+**Drive not run — credential absent (present-but-invalid).** The mechanical-only harness is built and offline-graded, but the live N≥3 Haiku drive could NOT execute in this environment: the only credential present (`~/.claude/benchmark-token`, mtime Jun 18) returns HTTP 401 "Invalid authentication credentials" — confirmed both as `CLAUDE_CODE_OAUTH_TOKEN` (the harness's operator path, which `decideClaudeEnv` selects for any non-empty benchmark-token) AND as `ANTHROPIC_API_KEY`. No env-var credential is set (`ANTHROPIC_API_KEY`/`CLAUDE_CODE_OAUTH_TOKEN` both unset). Sibling files in `~/.claude/` (`benchmark-token.expired-401`, `benchmark-token.stale-march31`, `benchmark-token.before-rdt-refresh`) corroborate a stale-token history — the current token is the latest in that lineage and is itself expired.
+
+Because a present-but-invalid credential is a LOUD launch failure by design (`driveHaikuLoopOnce` t.Fatals on the `is_error`/401 result event rather than grading it), the live test did NOT `t.Skip` (the benchmark-token IS present, so `isolatedClaudeEnv` proceeds to launch) and instead failed at the auth gate — exactly the no-fabricated-pass posture the assignment requires. The can-hold / cannot-hold question is therefore UNRESOLVED across N; it requires a fresh valid Haiku credential and a re-run of `TestLiveHaikuLoopSpikeN` (`SPACEDOCK_BIN=<built binary> go test -tags live ./internal/ensigncycle/ -run TestLiveHaikuLoopSpikeN -timeout 25m`).
+
+**PASS-licensing residual (carried, not earned).** No PASS is claimed here, so the residual is forward-looking: when the drive does run green, it will license ONLY "the mechanical verbs are individually Haiku-drivable in order → must-build sequencing is sound", NOT "Haiku drives the shipped contract" (discovery breadth, gate judgment, tier self-id, feedback cycles, the real `spacedock claude` front-door remain `kt-full`'s burden).
+
+### Durable-state grade (offline portion — the only portion runnable without a credential)
+
+The durable-state oracle (the grading logic AC-3 pins) is fully exercised offline and PASSES, so the grade is re-runnable from disk by a teammate without a model:
+
+- `go test ./internal/ensigncycle/` (default tags) — full suite green; the new offline checks `TestIntegrationTransitionCommitted` (full-loop passes / skipped-advance fails), `TestCompletedSetAnchor` all pass (5/5 of the spike-specific offline assertions).
+- **Load-bearing negative check (AC-3):** `TestIntegrationTransitionCommitted/skipped_advance_fails` fabricates a skipped-advance git history (one terminalize commit, no `status: integration` blob) and confirms `integrationTransitionCommitted=false` while `someCommitNamesOnly`=true — proving the new field is the ONLY distinguisher between "held the full loop" and "skipped to the end with a clean terminal".
+- The live test compiles under `-tags live` and the launch path is wired correctly (the 401 surfaces at the API, after a clean `system/init` event listing `model: claude-haiku-4-5-20251001`, so the harness reached the real launch — the failure is the credential, not the harness).
+
+### Deviation-class table
+
+Every MECHANICAL-loop deviation class is NOT-EXERCISABLE this run because the live drive never executed (no durable stream / on-disk end-state to grade). The honest record per AC-2:
+
+| Deviation class | Status | Reason / evidence |
+| --- | --- | --- |
+| (1) skipped/hand-assembled `dispatch build` | NOT-EXERCISABLE this run | live drive blocked at auth (401); no stream produced. The `dispatchBuildCalled` stream fact is in the harness and ready; needs a valid credential to populate. |
+| (2) skipped a stage advance (`implementation→done` shortcut) | NOT-EXERCISABLE this run | live drive blocked at auth. The `integrationTransitionCommitted` field that catches this is BUILT and offline-proven load-bearing (see negative check), but no live run exercised it against a real Haiku FO. |
+| (3) exited before terminalize/archive | NOT-EXERCISABLE this run | live drive blocked at auth; no end-state to grade against the terminal fingerprint. |
+| (4) re-dispatched a completed stage (idle-vs-completion confusion) | NOT-EXERCISABLE this run | live drive blocked at auth; no multi-turn stream produced. |
+| (5) non-path-scoped commit (`git add -A` / sibling sweep) | NOT-EXERCISABLE this run | live drive blocked at auth; no FO commits produced. `someCommitNamesOnly`/`pathScopedCommitCount` are offline-proven (`TestSomeCommitNamesOnly`). |
+| skipped `spacedock new` / entity creation | NOT-EXERCISABLE (by design) | the loop drives a PRE-SEEDED fixture entity; the FO never creates an entity, so there is no creation surface in the mechanical loop. Covered downstream by `kt-full`'s `«new»`/`«next»` discovery half. |
+| broad-search-after-zero-discover | NOT-EXERCISABLE (by design) | the loop hands the FO exactly one entity; no "discover finds nothing → broaden" branch exists in a single-pre-seeded-entity drive. Discovery breadth is full-contract `«next»`, covered by `kt-full`. |
+| cycle-3 escalation marker (`### Feedback Cycles`) | OUT-OF-SCOPE | the JUDGMENT half — presupposes a gate verdict, feedback target, and cycle counter, none of which exist in the gate-stripped mechanical loop. Belongs to `72`/`kt-full`. |
+| rebase-conflict auto-recovery | NOT-EXERCISABLE (by design) | no concurrent writer in a single `-p` drive. |
+| N=3 ≠ statistical reliability (RESIDUAL) | RESIDUAL | even when the drive runs, a HELD-across-all-N result licenses only "no break across 3 runs of this stripped loop", NOT a quantified flake rate. The captain-flagged flakiness could surface at N=10 or under load. |
+
+When the live drive runs, classes (1)–(5) transition to OBSERVED (with run number + stream/end-state excerpt) or HELD-across-all-N per the pinned rule: a class that fires on ANY of the N≥3 drives is recorded unreliable for that step; "holds reliably" requires clean across ALL N. The by-design / out-of-scope / residual rows stay as-is regardless of the drive.
+
+## Stage Report: implementation
+
+- DONE: Build the stripped //go:build live harness (derived from internal/ensigncycle/haiku_loop_spike_live_test.go + its N-wrapper): the mechanical 3-stage non-gate fixture (implementation→integration→done), gate/L3 surface removed, grade fields per the test plan INCLUDING the new `integrationTransitionCommitted` field — a skipped implementation→done advance MUST fail the grade (verify with a fabricated skipped-advance log grading false).
+  Rewrote both haiku-loop files to the mechanical-only loop (commit 56e89b57 on `spacedock-ensign/haiku-loop-premise-spike`): non-gate 3-stage README, `«gate»`-free prompt (`boot→next→dispatch→advance(→integration)→terminalize(→done)+archive`), `integrationTransitionCommitted` + `completedSet` + `noStrongerModelAgent` added, `opusAgentSpawned`/`gateVerdictFromL3` removed. The fabricated skipped-advance negative check (`TestIntegrationTransitionCommitted/skipped_advance_fails`) grades the field `false` while `someCommitNamesOnly` stays `true` — offline test green.
+- DONE: Run the live N≥3 Haiku drive IF a live credential is present, and record the durable-state grade + the deviation-class table; if NO live credential is available, build + offline-grade the harness and report the live-drive SKIP clearly — do NOT fabricate a pass.
+  No usable live credential: `~/.claude/benchmark-token` returns 401 as both OAuth token and API key (verified by two minimal probes), and `.expired-401`/`.stale-march31` siblings confirm the stale lineage. Recorded the live-drive as "drive not run — credential absent (present-but-invalid)", the offline durable-state grade as the only runnable portion (full suite green, load-bearing negative check passes), and the full deviation-class table as NOT-EXERCISABLE-this-run / by-design / out-of-scope / residual. No pass fabricated.
+- DONE: State the premise finding (can-hold / cannot-hold / 'drive not run — credential absent'), respecting the PASS-licensing residual. Commit the harness + the recorded result on the impl branch.
+  Premise finding recorded as "drive not run — credential absent (present-but-invalid)"; the can-hold/cannot-hold question is UNRESOLVED and needs a fresh credential + a re-run of `TestLiveHaikuLoopSpikeN`. Harness committed on the impl branch (56e89b57); this recorded result lands path-scoped in the state checkout. PASS-licensing residual carried forward (no PASS claimed).
+
+### Summary
+
+Built the gate-stripped mechanical-only premise harness by deriving from the w4 gate spike: removed the `«gate»`/opus-L3 step and its verdict-PROVENANCE grade, switched the fixture to the non-gate 3-stage `implementation→integration→done`, and added the load-bearing `integrationTransitionCommitted` grade field so a Haiku FO collapsing `implementation→done` fails the grade — proven via an offline fabricated skipped-advance history (the field grades `false` where `someCommitNamesOnly` grades `true`). The live N≥3 Haiku drive could NOT run: the only credential in this environment (`~/.claude/benchmark-token`) is expired (401 as both OAuth token and API key, corroborated by `.expired-401`/`.stale-march31` siblings), so per the assignment I built + offline-graded and recorded the drive as "not run — credential absent", explicitly NOT a fabricated pass. The can-hold/cannot-hold premise is unresolved pending a valid Haiku credential and a re-run of `TestLiveHaikuLoopSpikeN`; the harness is ready and the offline durable-state oracle is green.
