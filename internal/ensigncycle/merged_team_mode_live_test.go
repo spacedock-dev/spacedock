@@ -29,19 +29,25 @@ import (
 // in-process member meta + a reconcile exit-0 check. No scenario/fixture/assertion
 // is forked.
 //
-// GROUND-TRUTH SCOPE (verified by a live probe on local 2.1.181, recorded in the
-// stage report): a headless `claude -p` merged host does NOT write a
-// `~/.claude/teams/session-<id>/config.json` auto-team registry — that registry is
-// an INTERACTIVE-session artifact. The in-process member record Claude Code DOES
-// write headless is `projects/<cwd>/<session-id>/subagents/agent-*.meta.json`,
-// carrying the same agentType="spacedock:ensign" + name + no-team_name shape. So:
-//   - the on-disk member oracle reads that subagents meta (the real path);
-//   - reconcile (no --team-name) is asserted to EXIT 0 (the command contract runs;
-//     it degrades to git-only since no on-disk roster lands headless — a non-empty
-//     resolved roster is NOT asserted, because none is written);
+// GROUND-TRUTH SCOPE (verified by a live probe on local 2.1.181, corroborated by
+// the team-lead's own earlier headless `-p` trials, recorded in the stage report):
+// a headless `claude -p` merged host does NOT write a
+// `~/.claude/teams/session-<id>/config.json` auto-team registry. That registry is
+// the INTERACTIVE / TeamCreate-era artifact 9243 observed — it does not materialize
+// for an in-process named-background `Agent(run_in_background=true)` dispatch under
+// `-p`. The member record Claude Code DOES write headless is
+// `projects/<cwd>/<session-id>/subagents/agent-*.meta.json`, carrying the same
+// agentType="spacedock:ensign" + name + no-team_name shape. CONSEQUENCES, hence the
+// scoping (deliberate, NOT a coverage gap):
+//   - the on-disk member oracle reads that subagents meta (the real path) — #3;
+//   - reconcile (no --team-name) is asserted to EXIT 0 only (the command contract
+//     runs) — #4. Because no `teams/config.json` lands headless, the leadSessionId
+//     auto-discovery has nothing on disk to match, so reconcile degrades to git-only
+//     (team_name="", empty drift); a non-empty resolved roster is NOT asserted;
 //   - the per-name shutdown_request teardown + members[] prune are interactive-only
-//     beats and are NOT asserted here (no on-disk roster to prune); the kept terminus
-//     is the entity reaching its terminal state, identical to TestLiveEnsignCycle.
+//     beats and are NOT asserted here (there is no `teams/config.json` members[] to
+//     prune) — #5; the kept terminus is the entity reaching its terminal state,
+//     identical to TestLiveEnsignCycle.
 //
 // Skips (never fatals) without auth (isolatedClaudeEnv, the same AC-6 gate).
 func TestLiveMergedTeamModeDispatch(t *testing.T) {
