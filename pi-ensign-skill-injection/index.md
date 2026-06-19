@@ -42,27 +42,72 @@ Consequence: `skill: ["ensign"]` on a `subagent(...)` call emits `Warning: skill
 - `subagents-doctor` output: `skills: total 2 (user 1, user-package 1)` — ensign not listed.
 - The worker then made contract-doc edits during ideation (contained — reverted, nothing landed on `main`; only a state-checkout stage-report commit `0a1e2787`).
 
-## Approach (candidate fixes — ideation confirms and picks)
+## Problem — the parent/child discovery split (reframed)
 
-Make the ensign skill discoverable by pi-subagents. Candidate mechanisms, all project-scoped (travel with the clone, no per-machine setup):
+The captain's constraint (load-bearing): the skill should NOT be discoverable merely because pi was launched from this repo's cwd. The bug is a **parent/child discovery split**, not a cwd-accident on the parent side:
 
-- **(a) Symlink**: `.pi/skills/ensign -> ../../skills/ensign`. Simplest; the skill source of truth stays at `skills/ensign/`; `.pi/skills/ensign/SKILL.md` resolves through the symlink. Source classified `project` (highest priority).
-- **(b) `.pi/settings.json` skills entry**: declare the path explicitly. More config, but no symlink (some platforms/checkouts handle symlinks poorly).
-- **(c) `package.json -> pi.skills` array**: declare `["skills/ensign/SKILL.md"]` (or the dir). Works only if a `package.json` is present at the project root (there is one — `package-lock.json` is untracked in `git status`, so confirm).
-- **(d) Move the skill**: relocate `skills/ensign/` to `.pi/skills/ensign/`. Rejected — breaks the existing main-agent discovery and the skill's relationship to `skills/` siblings.
+- **Parent pi session**: `spacedock pi` passes `--skill <repo>/skills/ensign/SKILL.md` explicitly to the `pi` binary (`internal/cli/pi.go:87-89`). The parent finds ensign because the launcher registers it — explicit, launch-managed.
+- **pi-subagents children**: use their OWN discovery (`discoverAvailableSkills(cwd)` → `buildSkillPaths` in `node_modules/pi-subagents/src/agents/skills.ts:318`) and do NOT inherit the parent's `--skill` flags. The search paths are `.pi/skills/`, `.agents/skills/`, `~/.pi/agent/skills/`, package roots, settings — none of which contain the Spacedock ensign skill at `skills/ensign/SKILL.md`.
 
-Ideation picks one (recommend (a) symlink — lowest drift, source of truth unchanged), records the decision, and plans verification. Note: the first-officer runtime adapter (`skills/first-officer/references/pi-first-officer-runtime.md`) says "The child must load the Spacedock ensign skill and Pi ensign runtime adapter before working" — the fix makes that instruction actually achievable on pi-subagents; update the adapter if the mechanism needs documenting.
+So the parent sees ensign (via `--skill`), the child does not (via filesystem discovery). The child-side fix is a **project-declared skill** — a committed repo artifact under `.pi/skills/` that pi-subagents' `buildSkillPaths` discovers. This is distinct from the parent's `--skill` flag and distinct from the parent-side cwd-fallback fix (sibling task `pi-launcher-repo-resolution`).
+
+Note: `{cwd}/.pi/skills` is cwd-keyed, so it works only when the child's cwd is the repo. This is acceptable BECAUSE it is a committed project artifact (not cwd-luck): the FO dispatches with cwd = project root, so the child inherits the repo as its cwd, and the committed `.pi/skills/ensign` symlink is found. The project declares the skill; the child discovers it because the project declared it.
+
+## Approach — mechanism decision: (a) project-declared symlink
+
+### Spike evidence (live, 2026-06-19)
+
+**Riskiest mechanism**: does a `.pi/skills/ensign -> ../../skills/ensign` symlink actually make `discoverAvailableSkills(cwd)` list ensign? **SPIKED — PASSED.**
+
+Pre-fix (no `.pi/` dir): ran the real `discoverAvailableSkills(cwd)` from `pi-subagents/src/agents/skills.ts` via `npx tsx`:
+```
+total: 2
+  find-skills -> (user)
+  pi-intercom -> (user-package)
+```
+Ensign ABSENT — matches the `0637e2ed` failure.
+
+Created `.pi/skills/ensign -> ../../skills/ensign` (throwaway spike). Post-fix:
+```
+total: 3
+  ensign -> (project)
+  find-skills -> (user)
+  pi-intercom -> (user-package)
+ensign found: YES
+  source: project
+```
+Ensign PRESENT, classified `project` (highest priority). Symlink removed after — implementation creates it properly.
+
+### Mechanism decision: (a) `.pi/skills/ensign -> ../../skills/ensign` symlink
+
+The symlink is a **project-declared skill for child discovery** — committed, travels with the clone, source of truth stays at `skills/ensign/`. pi-subagents' `buildSkillPaths` resolves it through the symlink and classifies it `project` (highest priority).
+
+**Why over the alternatives:**
+- **(b) `.pi/settings.json` skills entry**: extra config file for no benefit — the symlink achieves the same discovery with zero config drift. Symlink-phobia (some platforms handle symlinks poorly) is not a real concern here: macOS/Linux dev environments, and the symlink target is within the same repo. Rejected.
+- **(c) `package.json -> pi.skills`**: CONFIRMED no root `package.json` exists today (`ls package.json` → not found). Would require adding a `package.json` solely for this purpose — more surface area, more drift. Rejected.
+- **(d) Move the skill** to `.pi/skills/ensign/`: breaks the existing main-agent discovery (the launcher's `--skill <repo>/skills/ensign/SKILL.md` path) and the skill's relationship to `skills/` siblings. Rejected.
+
+### What implementation ships
+
+1. `.pi/skills/ensign -> ../../skills/ensign` (symlink, committed to the repo).
+2. If the first-officer runtime adapter (`skills/first-officer/references/pi-first-officer-runtime.md`) needs documenting that the child loads the ensign skill via this project-declared path, propose the doc edit in the implementation stage report (do not edit in ideation).
+3. Consider whether `first-officer` and other Spacedock skills (`commission`, `debrief`, `refit`) should also be symlinked under `.pi/skills/` — they are NOT injected by the FO dispatch today (only `ensign` is), so out of scope for this task. Note as a follow-up consideration.
+
+### Composition with siblings
+
+- `pi-launcher-repo-resolution` (sibling, same sprint) fixes the **parent-side** cwd-fallback. Together: parent gets the skill via `--skill` (explicit, install-recorded repo), child gets it via `.pi/skills/ensign` (project-declared). Both sides explicit, no cwd-luck.
+- `pi-back-channel-dispatch` (capstone, same sprint) depends on this task — its `pi-live` drive requires a dispatched ensign that actually loaded the ensign contract.
 
 ## Acceptance criteria (provisional — ideation finalizes; proof = behavior, never prose-grep)
 
-**AC-1 — `subagents-doctor` lists the ensign skill as discoverable.**
-Verified by: `subagents-doctor` output showing ensign in the skills count/list (a live run, not a static claim).
+**AC-1 — `discoverAvailableSkills(cwd)` lists the ensign skill as discoverable post-fix.**
+Verified by: running the real `discoverAvailableSkills(cwd)` from `pi-subagents/src/agents/skills.ts` (or `subagents-doctor` if available) post-fix and observing ensign in the list with source `project`. The spike already proved this (see Spike evidence); implementation reproduces it as a committed artifact.
 
-**AC-2 — A `subagent(... skill:["ensign"])` dispatch loads the ensign contract with no "skills not found" warning.**
-Verified by: a probe dispatch whose run meta carries no `skillsWarning` AND whose child exhibits ensign-contract behavior (e.g., in an ideation probe, produces a design in the entity body rather than editing product files — the inverse of the `0637e2ed` failure).
+**AC-2 — A `subagent(... skill:["ensign"])` dispatch loads the ensign contract with no "skills not found" warning, and the child exhibits ensign-contract behavior.**
+Verified by: a probe dispatch (FO-side — the child worker has no `subagent` tool) whose run meta carries NO `skillsWarning` AND whose child exhibits ensign-contract behavior (in an ideation probe, produces a design in the entity body rather than editing product files — the inverse of the `0637e2ed` failure). This AC is FO-run: implementation hands the probe to the FO.
 
-**AC-3 — The discovery mechanism is project-scoped and travels with the clone.**
-Verified by: the fix lives in the repo (symlink or committed config), not in `~/.pi/agent/` user config; a fresh clone on another machine discovers ensign with no manual setup.
+**AC-3 — The discovery mechanism is a committed project artifact that travels with the clone.**
+Verified by: `.pi/skills/ensign` is a symlink committed to the repo (not `~/.pi/agent/` user config); `git log` shows it as a committed file; a fresh clone discovers ensign with no manual setup (the symlink resolves through the repo's own `skills/ensign/`).
 
 ## Out of scope
 
@@ -72,12 +117,30 @@ Verified by: the fix lives in the repo (symlink or committed config), not in `~/
 
 ## Test plan
 
-- `subagents-doctor` (AC-1) — live, cheap.
-- A probe `subagent(... skill:["ensign"])` dispatch (AC-2) — run meta has no `skillsWarning`; child behavior matches ensign contract. Bounded probe, not a full stage drive.
-- Fresh-clone or `git stash`-and-verify reasoning for AC-3 (the fix is a committed repo artifact; confirm it is version-controlled).
+- **AC-1 — `discoverAvailableSkills(cwd)` (or `subagents-doctor`) post-fix**: live, cheap. The spike already proved the mechanism; implementation reproduces it as a committed artifact and re-runs the discovery to confirm. Cost: trivial (one `npx tsx` call or `subagents-doctor`).
+- **AC-2 — Probe `subagent(... skill:["ensign"])` dispatch**: FO-side (child has no `subagent` tool). Run a bounded ideation-style probe dispatch; check run meta for no `skillsWarning`; verify child produces a design in the entity body rather than editing product files. Cost: one probe dispatch + verification. The probe is NOT a full stage drive — it tests injection + behavior, not stage completion.
+- **AC-3 — Committed artifact check**: `git log -- .pi/skills/ensign` shows it as a committed symlink; verify the symlink resolves (`readlink .pi/skills/ensign` → `../../skills/ensign`, `ls .pi/skills/ensign/SKILL.md` → resolves). A fresh-clone reasoning suffices (the symlink target is within the repo, so any clone has it). Cost: trivial.
+
+## No spike needed (beyond the one already run)
+
+The riskiest mechanism — does a `.pi/skills/ensign` symlink actually make `discoverAvailableSkills(cwd)` list ensign? — was **spiked and PASSED** (see Approach → Spike evidence). The mechanism relies on proven stdlib symlink resolution + pi-subagents' existing `buildSkillPaths` filesystem scan. No unverified mechanism remains.
 
 ## Related
 
 - `pi-back-channel-dispatch` (`b23y61pgk93ph44pz506m2wy`) — sibling Pi-dispatch-friction task; this one unblocks correct ensign dispatch for that and every subsequent Pi stage dispatch.
+- `pi-launcher-repo-resolution` (`2m1cgn22ygmwtxe43z2hx7xw`) — sibling, fixes the parent-side cwd-fallback. Composes: parent gets the skill via `--skill`, child gets it via `.pi/skills/ensign`.
 - Run `0637e2ed` — the failure instance.
 - `node_modules/pi-subagents/src/agents/skills.ts:318` (`buildSkillPaths`) — the search-path source of truth.
+
+## Stage Report: ideation
+
+- DONE: Root cause reframed against the captain's constraint — the bug is a parent/child discovery split (parent uses `--skill` flags from the launcher, child uses its own `discoverAvailableSkills(cwd)` filesystem scan), not a cwd-accident. The child-side fix is a project-declared skill, distinct from the parent-side cwd-fallback fix (sibling task `pi-launcher-repo-resolution`).
+- DONE: Riskiest mechanism SPIKED — created `.pi/skills/ensign -> ../../skills/ensign` symlink, ran the real `discoverAvailableSkills(cwd)` from `pi-subagents/src/agents/skills.ts` via `npx tsx`. Pre-fix: 2 skills, ensign ABSENT. Post-fix: 3 skills, ensign PRESENT, source `project` (highest priority). Symlink removed after spike (implementation creates it properly). Durable evidence recorded in the Approach → Spike evidence section.
+- DONE: Mechanism decision finalized — (a) `.pi/skills/ensign -> ../../skills/ensign` symlink. Project-declared skill for child discovery; committed, travels with the clone, source of truth stays at `skills/ensign/`. Rationale recorded over (b) `.pi/settings.json` (extra config, no benefit), (c) `package.json pi.skills` (no root `package.json` exists — confirmed), (d) move (breaks parent-side discovery).
+- DONE: ACs finalized — AC-1 `discoverAvailableSkills` lists ensign post-fix (live); AC-2 probe dispatch loads ensign with no `skillsWarning` AND child exhibits ensign-contract behavior (FO-side — child has no `subagent` tool); AC-3 committed project artifact, travels with clone.
+- DONE: Test plan finalized — AC-1 live discovery re-run; AC-2 FO-side probe dispatch; AC-3 `git log` + `readlink` verification.
+- DONE: No product files edited (ideation = design only). Main clean. No `.pi/` wiring created (spike cleaned up).
+
+### Summary
+
+Ideation complete for `pi-ensign-skill-injection`. The root cause is a parent/child skill-discovery split: the parent pi session gets the ensign skill via the launcher's `--skill` flags, but pi-subagents children use their own `discoverAvailableSkills(cwd)` filesystem scan that doesn't include `skills/ensign/SKILL.md`. The fix is a project-declared `.pi/skills/ensign -> ../../skills/ensign` symlink — a committed repo artifact that pi-subagents' `buildSkillPaths` discovers with `project` source priority. The mechanism was spiked live and PASSED (ensign goes from absent to present, source `project`). ACs and test plan are finalized and behavior-bound. No product files were edited; the spike symlink was cleaned up.
