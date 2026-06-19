@@ -52,3 +52,15 @@ delegates every judgment or discussion call to a stronger teammate, the level-3 
 - **Relationship to existing roles** — how this composes with the shaping-FO / Commander
   split and the captain. The captain is already the ultimate level-3 override; this would
   insert a model-aware level-3 *agent* between the mechanical FO and the human.
+
+## Progress note — using-claude-team capability reframe shipped (2026-06-19, from the driving/dispatch FO)
+
+The `using-claude-team` merged-model reframe shipped to `main` (PR #396; dev task `using-claude-team-merged-model-support`, done/PASSED). It makes this architecture's **automation ↔ driving/dispatch seam** concrete:
+
+- The FO **dispatch contract is now organized around the worker back-channel capability**, stated as generic logic in `fo-dispatch-core.md` (`## Dispatch Adapter`): the runtime adapter *declares* whether it provides a live worker back-channel (a worker that can message the lead while running). Has-it → addressable/reusable/concurrent dispatch; absent → fresh one-shot. No host mechanism in the core — a `host_neutrality` test guards that.
+- The Claude adapter (`claude-fo-dispatch.md`) is reduced to a thin per-runtime *declaration* (named background `Agent` + `SendMessage(to="main")`) plus a **one-line legacy override**. All legacy `TeamCreate`/`TeamDelete` machinery is quarantined in `using-legacy-claude-team`, probe-loaded, **capability-keyed not version-keyed**, sunset = delete one line. `claude-fo-merge.md` deleted (step-10 teardown generified to per-name `shutdown_request`).
+- Prior-art check (superpowers v6 "runtime tool mapping") validated the shape — same capability-vs-mechanism split (host-neutral action vocabulary + per-runtime declaration + degradable fallback). The **bidirectional back-channel is our novel addition** (their mapping is dispatch-only).
+
+**Implication for `0206-dispatch-driver`:** build `next-action-driver` on the capability-framed contract — `team_action` (`send_shutdown` / `rebase`) maps onto the per-name teardown + the back-channel handle, not a "team" concept; the legacy `TeamCreate` regime is fully behind the probe.
+
+Validation: offline `go test ./...` green (+ host-neutrality + boot-closure guards); detached adversarial audit (10 claim-breaking edits → 10 test reds); merged path proven live locally (sonnet, 2.1.181); legacy path green on the pinned-2.1.177 CI lane (#396 `claude-live`). The capability framing was captain-driven across the session.
