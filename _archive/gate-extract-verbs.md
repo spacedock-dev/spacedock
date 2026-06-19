@@ -14,6 +14,7 @@ id: 6reqad9gff9wk544det3x4fj
 group: gate-extract
 mod-block:
 pr: "#397"
+archived: 2026-06-19T18:07:41Z
 ---
 
 Extend the EXISTING `status --read` into the one generic markdown-structure helper a weak FO leans on, instead of adding a parallel `spacedock gate` command. Four additions: (a) structured/nested frontmatter output so the `stages:` taxonomy is machine-readable — retiring the boot-time Read-tool + `show-stage-def` kludge; (b) a `--checklist` mode that extracts the gated stage's DONE/SKIPPED/FAILED items with line ranges across interleaved `## Stage Report:` sections; (c) an `--ac-scan` mode that cites each AC's evidence scoped to those checklist lines and flags the unevidenced ones; (d) frontmatter field projection via the EXISTING `--fields` flag, so a caller picks which frontmatter keys come back. The verdict, reviewer-tiering, and chosen-direction call still route to level-3 (the three cycle-2 cuts stand). The captain chose this consolidation over a new command at the cycle-2 gate — and the same anti-proliferation reasoning extends to flags: reuse `--fields`, do not invent a `--read`-specific variant.
