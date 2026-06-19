@@ -136,29 +136,62 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	defer poller.kill()
 	watcher := newStreamWatcher(newPipeLineSource(pr), poller, func(line string) { t.Log(line) })
 
-	// Drain to exit (or a 60s no-progress stall). The `-p` run terminates itself when
-	// the FO finishes, so the full transcript is the merged-shape oracle. The roomier
-	// dispatch-close budget bounds stream silence across the multi-turn drive.
-	stream, stallErr := watcher.drainToExit(quietBudgetDispatchClose, "merged-lane drive")
+	// Drive to the load-bearing END-STATE, then kill — NOT to FO subprocess exit.
+	// A headless `-p` FO with the anti-early-shutdown override keeps emitting
+	// post-completion turns (the terminal merge ceremony, cooperative worker
+	// shutdown, a post-merge reconcile, idle-loop polling) AFTER the entity is
+	// archived, so waiting for the process to EXIT can outrun the package timeout on
+	// a slower run even though the deliverable was reached early (observed: one run
+	// finished in 338s, a fuller-ceremony run crossed 600s still emitting). The
+	// deliverable is "the merged FO dispatched a named background ensign and the
+	// entity reached its terminal state" — so gate on THAT (the same expect-then-kill
+	// discipline TestLiveEnsignCycle uses), then reap the still-chatty subprocess and
+	// grade the accumulated transcript. Each step is bounded by the no-progress quiet
+	// budget; the deferred poller.kill() reaps on every exit path.
+	//
+	// Step 1: the first merged ensign dispatch OPENS (the FO drove past boot into
+	// dispatch — an early fail-fast that a greet-stop or wrong-root never reaches).
+	if _, err := watcher.expect(isEnsignDispatch, quietBudgetDispatchClose, "merged ensign dispatch open"); err != nil {
+		stream := watcher.fullTranscript()
+		_ = os.WriteFile(filepath.Join(artifactDir, "merged-stream.jsonl"), []byte(stream), 0o644)
+		if wrongRoot := detectWrongRootBoot(stream, resolvedRoot); wrongRoot != nil {
+			t.Fatalf("merged-lane drive failed waiting for the ensign dispatch to open due to a wrong-root boot: %v\nUnderlying watcher error: %v\nArtifacts: %s", wrongRoot, err, artifactDir)
+		}
+		if _, extractErr := extractClaudeFinalMessage(stream); extractErr != nil {
+			t.Fatalf("merged-lane launch failed (credential/launch error, not a behavior failure): %v\nArtifacts: %s\nStream tail:\n%s", extractErr, artifactDir, tail(stream, 4000))
+		}
+		t.Fatalf("merged-lane drive: the FO never dispatched a merged ensign (it fell to bare/sequential or stalled at boot): %v\nArtifacts: %s", err, artifactDir)
+	}
+
+	// Step 2: the entity reaches its on-disk terminal end-state (the mode-invariant
+	// completion proof). expectCondition drains the stream each poll (liveness; the
+	// budget resets on activity) while checking the filesystem.
+	entityTerminal := func() bool {
+		body, _, found := locateEntity(root, "make-it-work")
+		return found && frontmatterField.MatchString(body) && someCommitNamesOnly(t, root, "make-it-work")
+	}
+	if err := watcher.expectCondition(entityTerminal, quietBudgetDispatchClose, "entity terminalized"); err != nil {
+		stream := watcher.fullTranscript()
+		_ = os.WriteFile(filepath.Join(artifactDir, "merged-stream.jsonl"), []byte(stream), 0o644)
+		t.Fatalf("merged-lane drive failed waiting for the entity to terminalize+commit (status: done + path-scoped commit): %v\nArtifacts: %s", err, artifactDir)
+	}
+
+	// The end-state is reached; reap the still-running (post-completion-chatty)
+	// subprocess and grade the accumulated transcript. The kill is what bounds
+	// wallclock — the assertions below run on what the FO already emitted through the
+	// terminal state, never waiting on its idle loop.
+	poller.kill()
+	stream := watcher.fullTranscript()
 	duration := time.Since(started)
-	t.Logf("merged-lane drive ran %s, %d transcript lines", duration.Round(time.Second), len(splitStreamLines(stream)))
+	t.Logf("merged-lane drive reached terminal state in %s, %d transcript lines", duration.Round(time.Second), len(splitStreamLines(stream)))
 	_ = os.WriteFile(filepath.Join(artifactDir, "merged-stream.jsonl"), []byte(stream), 0o644)
 
-	// A wrong-root boot (a CI env leak luring the FO off `root`) is the most specific
-	// diagnosis on any failure path; name it first.
-	if wrongRoot := detectWrongRootBoot(stream, resolvedRoot); wrongRoot != nil {
-		if stallErr != nil {
-			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", wrongRoot, stallErr, artifactDir)
-		}
-		t.Fatalf("%v\nArtifacts: %s", wrongRoot, artifactDir)
-	}
 	// A 401/is_error result is a LOUD launch failure, never fed into an assertion.
+	// (Reached terminal state implies a real run, but keep the explicit guard so a
+	// degenerate transcript fails loudly as a launch issue, not a behavior one.)
 	if _, extractErr := extractClaudeFinalMessage(stream); extractErr != nil {
 		t.Fatalf("merged-lane launch failed (credential/launch error, not a behavior failure): %v\nArtifacts: %s\nStream tail:\n%s",
 			extractErr, artifactDir, tail(stream, 4000))
-	}
-	if stallErr != nil {
-		t.Fatalf("merged-lane drive stalled: %v\nArtifacts: %s", stallErr, artifactDir)
 	}
 
 	lines := splitStreamLines(stream)
