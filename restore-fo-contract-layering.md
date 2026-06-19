@@ -447,3 +447,29 @@ the shipped template's startup + idle advancement, grounded in the dev local cop
 as reference. The discriminator controls are now mandated explicitly (not just
 promised), the only presence-grep is dropped, and the split-out spec carries the
 combined-clear non-regression constraint with concrete code/contract citations.
+
+## Stage Report: implementation
+
+- DONE: Move A: relocate the Claude model tokens (opus[1m] + the sonnet/opus/haiku enum) OUT of fo-dispatch-core.md (BOTH sites: reuse-condition-4 AND the Break-Glass template) INTO claude-fo-dispatch.md, genericizing the core to 'the host's canonical model enum'; the re-stamp behavior is unchanged. AC-1 (zero model tokens in core, with the ScannerDiscriminates control) + AC-2 (behavioral: TestBuildModelPrecedence + context-budget unchanged; the AC-2.2 presence-grep stays DROPPED) prove it.
+  Core grep `opus|sonnet|haiku` now empty; both sites moved (reuse-cond-4 → Context-Budget paragraph, Break-Glass → Break-Glass note). AC-1 + ScannerDiscriminates green; TestBuildModelPrecedence + context-budget family-rule tests green and cached-unchanged (commit 16697bf3).
+- DONE: Move B: delete the gh-pr-view PR scan from generic event-loop step 1, AND relocate the standalone mod-block-clear into the SHIPPED template ./mods/pr-merge.md's startup AND idle merged-PR advancement (separate --set, per fo-merge-core.md:19, with explicit status={terminal} for the generic case). Edit ONLY the shipped ./mods/pr-merge.md — leave docs/dev/_mods/pr-merge.md (the dev-local count-11 copy) UNTOUCHED; keep the literal gh pr view in the idle hook (AC-4's positive control depends on it).
+  Step 1 deleted, 2-4 renumbered to 1-3; two-step `mod-block=` clear-then-terminalize added to shipped pr-merge.md startup + idle. `git diff` confirms docs/dev/_mods/pr-merge.md untouched; idle hook retains `gh pr view`. `gh pr view` now appears only in mods/pr-merge.md across skills/+mods/.
+- DONE: Ship the discriminator controls, not just the absence halves: AC-3's TestEventLoopPRScanScannerDiscriminates (flags a planted PR-scan line, passes the idle-hook line); AC-4's positive control (pr-merge.md DOES carry gh pr view, allow-list load-bearing) + negative control (planted non-allowed file flagged); AC-5: the existing dispatch/status/contractlint suites stay green (no behavioral edits). Do NOT fold in the worktree= guard sibling — it splits out to status-set-worktree-clear-guard.
+  All 7 new tests in internal/contractlint/layering_restore_test.go green (3 absence + 4 discriminator/control). AC-5: full `go test ./...` = 15/15 packages ok, dispatch+status cached-unchanged. Sibling worktree= guard NOT touched (split-out preserved).
+
+### Summary
+
+Two behavior-neutral text moves restoring leaked boundaries, plus contractlint
+structural-absence guards with discriminator controls (TDD: tests written + confirmed
+RED before the doc edits, then GREEN after). Move A genericized both model-enum leak
+sites in fo-dispatch-core.md to "the host's canonical model enum" and relocated the
+concrete `sonnet|opus|haiku` + `opus[1m]` tokens to claude-fo-dispatch.md. Move B
+deleted the `gh pr view` scan from generic event-loop step 1 (renumber 2-4→1-3) and
+relocated the two-step `mod-block=` clear-then-terminalize into the shipped
+pr-merge.md startup + idle hooks. NOTE: the spec's pre-impl grep claimed the only
+stale step-number cross-reference was the positional "step 4's re-run" phrase; I found
+three additional bare "step 4" tokens in claude-fo-dispatch.md (lines 159/161/173,
+now factually stale after the renumber) and updated all to step 3 — a faithful
+execution of the renumber intent. No behavioral seam touched: dispatch+status suites
+cached-unchanged; full `go test ./...` 15/15 green. Code committed to the worktree
+(16697bf3); sibling worktree= guard left to its split-out task.
