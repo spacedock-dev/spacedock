@@ -1,11 +1,12 @@
 ---
 title: Premise spike — can a Haiku FO hold the mechanical dispatch loop (no tier/L3)?
 source: '0221-layered-fo rework (2026-06-19): the load-bearing premise of the Haiku-operable/layered FO is that a weak model can reliably DRIVE the mechanical dispatch loop (boot→dispatch→advance→terminalize), needing help only on judgment. Untested — opus itself deviates (5xs). This is the cheapest path that, if it fails, invalidates the tier bet (72, standing-L3, kt-full). Run it FIRST.'
-status: backlog
+status: ideation
 score: 0.85
 sprint: 0221-layered-fo
 group: validation
 id: mvctb79y19fvhbsepyagdd8f
+started: 2026-06-19T22:53:20Z
 ---
 
 Test the riskiest, cheapest path first: a live Haiku-model FO drives ONE entity through the mechanical loop end to end — boot → dispatch a worker → review the report → advance → terminalize/merge — with NO tier self-identification, NO standing `level-3-judge`, NO gate-verdict escalation (all of that is deferred-72 / `kt-full`). The question is binary: can a weak model hold the contract loop at all?
