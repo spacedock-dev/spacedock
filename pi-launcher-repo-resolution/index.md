@@ -1,9 +1,9 @@
 ---
 title: Pi launcher repo resolution — stop resolving the Spacedock repo from cwd; record it at install
-status: backlog
+status: ideation
 source: "Captain (2026-06-19, 0223-pi-dispatch-contract sprint scope-lock): `spacedock pi` resolves repoRoot as --plugin-dir -> SPACEDOCK_REPO_ROOT -> working directory (cwd). The cwd fallback means running the homebrew binary from any directory points `--skill <cwd>/skills/ensign/SKILL.md` wherever you happen to stand — the skill is registered by cwd-luck, not explicit install. Captain: 'it should not use the current directory's skill without me explicitly running pi with --skills.'"
 score:
-started:
+started: 2026-06-19T21:53:58Z
 completed:
 verdict:
 worktree:
