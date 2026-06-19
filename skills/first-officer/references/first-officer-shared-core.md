@@ -175,7 +175,7 @@ The FO declares intent against the state repo by invoking the prose-functions be
 
 ## «state.commit»(slug): record one entity's change durably and concurrency-safe
 
-- **effect:** path-scoped commit + sync per **Split-Root State Sync** below — `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`, never a bare `git add -A` / `git commit`; then push; on push rejection `pull --rebase` then re-push; retry on `index.lock` contention after ~2s.
+- **effect:** delegate to `spacedock state commit <slug>` — it path-scoped-commits the entity and runs the full sync (push; on push rejection `pull --rebase` then re-push; rebase-conflict halt) per **Split-Root State Sync** below. The hand `git -C add/commit … push/pull --rebase` sequence is the documented fallback the verb automates, not the FO's first move.
 - **done-when:** the entity's change is committed (and pushed to `origin` when one exists).
 - **block:** rebase conflict on sync → halt per the **rebase-conflict halt** below.
 - → **shipped** (this sprint): `` `spacedock state commit <slug>` `` — invoke it directly.
@@ -186,8 +186,8 @@ When the workflow is split-root (README declares `state:` checkout, e.g. `state:
 
 **Concurrency-safe state commits.** The state checkout is a single non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity, cross-attributing or clobbering it. Every writer MUST commit concurrency-safe, in order of preference:
 
-- **Preferred — tool-managed atomic state commits.** When the status tool owns `add`+`commit` under a lock, route through it.
-- **Fallback — path-scoped commits per writer.** `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Never a bare `git add -A` or bare `git commit`. Retry on `index.lock` contention after ~2s.
+- **Preferred — `spacedock state commit <slug>`.** The verb resolves the entity's path under the state checkout and runs the path-scoped commit → push → on-reject `pull --rebase` → re-push sequence (and the rebase-conflict halt) atomically. Invoke it directly; do not hand-roll the git sequence.
+- **Fallback (no verb available / degraded) — path-scoped commits per writer.** `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Never a bare `git add -A` or bare `git commit`. Retry on `index.lock` contention after ~2s.
 
 **Multi-writer sync (push / pull --rebase).** The state branch is shared via `origin`. Three sync points extend the path-scoped-commit rule — NOT a pull before every dispatch:
 
