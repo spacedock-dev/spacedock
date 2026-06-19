@@ -111,13 +111,27 @@ move to the Claude adapter.
 ### Move B — delete the PR-pending scan from the generic event loop
 
 `fo-dispatch-core.md` `## Event Loop` step 1 runs a `gh pr view` PR-pending scan
-in the host-neutral loop. PR lifecycle is the `pr-merge` mod's domain; its `idle`
-hook already does this scan. Delete step 1 from the generic loop and renumber
-2-4 → 1-3; the `pr-merge` idle hook becomes the sole PR scanner (fired by the
-generic loop's existing "Fire `idle` hooks", step 4 today / step 3 after
-renumber). Update the `pr-merge` idle hook's "defense in depth" framing (it no
-longer backstops a core scan — it IS the scan) and the mod's line-96 detection-
-path list (drop "the event loop PR check").
+in the host-neutral loop AND does a second thing: it clears the merged entity's
+`mod-block` (`status --set {slug} mod-block=`) so the subsequent terminalization
+passes the merge-hook guard. PR lifecycle is the `pr-merge` mod's domain; its
+`idle` hook already does the scan. Delete step 1 from the generic loop and
+renumber 2-4 → 1-3; the `pr-merge` idle hook becomes the sole PR scanner (fired by
+the generic loop's existing "Fire `idle` hooks", step 4 today / step 3 after
+renumber).
+
+**The mod-block-clear must be RELOCATED, not just dropped (gap closed).** Core
+step-1 clears `mod-block` before terminalizing. The SHIPPED TEMPLATE
+`./mods/pr-merge.md` does NOT clear `mod-block` in its merged-PR advancement
+(grep: `mod-block` count ZERO) — it relies on the core's step-1 clear. So deleting
+step-1 without relocating the clear would leave a shipped-template workflow's
+merged-PR-while-mod-blocked finalize blocked by the terminalize guard
+(`handlers.go:156-169` combined-clear / mod-block-pending refusal). The dev local
+copy `docs/dev/_mods/pr-merge.md` (count 11) is the correct reference: its
+startup/idle advancement already does the two-step clear-then-terminalize. Port
+that two-step shape into the SHIPPED template's startup AND idle merged-PR
+advancement (a STANDALONE `mod-block=` `--set`, separate from the terminal fields,
+per `fo-merge-core.md:19` — the mechanism refuses combining `mod-block=` with
+terminal fields).
 
 **Before** (`fo-dispatch-core.md`, `## Event Loop`, step 1):
 
@@ -137,26 +151,52 @@ path list (drop "the event loop PR check").
 > 3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the host's step-0
 >    reconcile sweep …
 
-The "PR-pending advancement on merge" clearing-`mod-block` detail relocates into
-the `pr-merge` idle hook (the only place it now runs). The Claude adapter's
-step-0 reconcile-sweep prose (`claude-fo-dispatch.md`) renumbers its
-cross-references from "step 4" if any name the old step numbers — verified during
-implementation; the only current reference is "step 4's re-run the host's step-0
-reconcile sweep" which is positional and survives the renumber (idle remains the
-last step).
+The Claude adapter's step-0 reconcile-sweep prose (`claude-fo-dispatch.md`)
+renumbers its cross-references from "step 4" if any name the old step numbers —
+verified during implementation; the only current reference is "step 4's re-run the
+host's step-0 reconcile sweep" which is positional and survives the renumber (idle
+remains the last step).
 
-**Before** (`mods/pr-merge.md` `## Hook: idle`, line 25):
+**Before** (`mods/pr-merge.md` `## Hook: startup`, the `MERGED` advancement —
+shipped template, which never clears mod-block):
 
-> This provides a periodic re-check in case the event loop's built-in PR scan
-> missed a state change (defense in depth).
+> If `MERGED`, advance the entity to its terminal stage: set `status` to the
+> terminal stage, `completed` to ISO 8601 now, `verdict: PASSED`, clear
+> `worktree`, archive the file, and clean up any worktree/branch. Report each
+> auto-advanced entity to the captain.
+
+**After** (`mods/pr-merge.md` `## Hook: startup`):
+
+> If `MERGED`, advance the entity to its terminal stage. Because a `mod-block` may
+> be set while the PR is pending, the clear and the terminalization are two
+> separate `--set` calls (the mechanism refuses combining `mod-block=` with
+> terminal fields):
+> 1. `spacedock status --workflow-dir {dir} --set {slug} mod-block=` when a
+>    `mod-block` is set (skip when empty);
+> 2. `spacedock status --workflow-dir {dir} --set {slug} status={terminal}
+>    completed verdict=PASSED worktree=`, then `spacedock status --workflow-dir
+>    {dir} --archive {slug}`.
+>
+> Clean up any worktree/branch. Report each auto-advanced entity to the captain.
+
+**Before** (`mods/pr-merge.md` `## Hook: idle`):
+
+> Check PR-pending entities using the same logic as the startup hook: scan entity
+> files for non-empty `pr` and non-terminal status, run `gh pr view` for each, and
+> advance merged PRs. This provides a periodic re-check in case the event loop's
+> built-in PR scan missed a state change (defense in depth). Report any advanced
+> entities to the captain.
 
 **After** (`mods/pr-merge.md` `## Hook: idle`):
 
-> This is the workflow's PR-pending scan: the generic event loop fires this idle
-> hook and owns no PR scan of its own, so a workflow with no `pr-merge` mod never
-> reaches for `gh` in its loop.
+> Check PR-pending entities using the same logic as the startup hook: scan entity
+> files for non-empty `pr` and non-terminal status, run `gh pr view` for each, and
+> advance merged PRs (two-step `mod-block=` clear then terminalize). This is the
+> workflow's PR-pending scan: the generic event loop fires this idle hook and owns
+> no PR scan of its own, so a workflow with no `pr-merge` mod never reaches for
+> `gh` in its loop. Report any advanced entities to the captain.
 
-**Before** (`mods/pr-merge.md`, line 96):
+**Before** (`mods/pr-merge.md`, last paragraph — the detection-path list):
 
 > The FO handles advancement to the terminal stage and archival when it detects
 > the merge (via the event loop PR check, idle hook, or startup hook).
@@ -169,9 +209,11 @@ last step).
 
 Behavior preserved: merged-PR advancement still happens — via the idle hook
 (every idle cycle), the startup hook (boot), and the reconcile sweep's
-`un-advanced-pr` class (`reconcile.go`, independent roster-derived safety net).
-What changes: a `merge: local` / non-code workflow with no `pr-merge` mod no
-longer issues `gh` from its event loop.
+`un-advanced-pr` class (`reconcile.go`, independent roster-derived safety net) —
+AND the mod-block clear that the terminalize guard depends on now rides the mod's
+own advancement (relocated from core step-1), so a merged-PR-while-mod-blocked
+finalize still passes the guard. What changes: a `merge: local` / non-code
+workflow with no `pr-merge` mod no longer issues `gh` from its event loop.
 
 ## Spike determination
 
@@ -213,40 +255,34 @@ ARE the host-coupled defect (same as `spawn-standing-all`), not a paraphrasable
 meaning. Discriminator keeps it non-vacuous.
 
 **AC-2 — The move RELOCATED the enum, it did not DELETE it.** The Claude-specific
-model contract still lives in the system, now in its declared home. *Proof — two
-independent signals, NOT a standalone presence-grep:*
-
-1. *Behavioral (the load-bearing proof):* the model enum the contract documents
-   is CODE-resolved and stays correct — `TestBuildModelPrecedence` locks
-   `sonnet`/`opus`/`haiku`/null as the `dispatch build` effective_model values, and
-   the `dispatch context-budget` family-rule tests lock the `[1m]` → 1M mapping.
-   The contract text is documentation OF this code; the code is unchanged, so the
-   behavior the enum describes is provably intact regardless of which file's prose
-   names it. This is shared with AC-5 and is what actually proves "not deleted."
-2. *Structural (supplementary, honestly weak):* a contractlint presence assertion
-   that `claude-fo-dispatch.md` names the relocated tokens (`opus[1m]` and the enum
-   words). This is acknowledged as the weaker half — a paraphrase could drop a
-   literal and the move would still be correct — so it is NOT relied on as the
-   proof of relocation; it is a low-cost tripwire that the move landed text in the
-   adapter, paired with AC-1's absence check on the core (the present-here /
-   absent-there pattern the legacy-layering test uses, where the absence half
-   carries the real weight). If staff review judges even the supplementary presence
-   assertion too prose-grep-adjacent, DROP it and rely on AC-1 (absence from core) +
-   AC-2.1 (behavioral) alone — the absence-from-core check plus unchanged code
-   behavior already proves the move both happened and broke nothing.
+model contract still works after the move. *Proof — behavioral, no presence-grep:*
+the model enum the contract documents is CODE-resolved and stays correct —
+`TestBuildModelPrecedence` locks `sonnet`/`opus`/`haiku`/null as the `dispatch
+build` effective_model values, and the `dispatch context-budget` family-rule tests
+lock the `[1m]` → 1M mapping. The contract text is documentation OF this code; the
+code is unchanged, so the behavior the enum describes is provably intact
+regardless of which file's prose names it. Paired with AC-1 (absence from the
+core), this proves the move both happened (the tokens left the core) and broke
+nothing (the behavior they documented still runs). The structural presence-grep
+"the adapter names the relocated tokens" is DROPPED per staff review — it is the
+banned prose-grep (a paraphrase could drop a literal and the move would still be
+correct), and AC-1 + the behavioral proof already carry the full weight.
 
 **AC-3 — The host-neutral event loop carries zero `gh` PR-scan.**
 `fo-dispatch-core.md` contains the token `gh pr view` zero times. *Proof:* a
 contractlint structural-absence test (`TestEventLoopCoreHasNoPRScan`) scanning
-`fo-dispatch-core.md` for `gh pr view`, PLUS a discriminator control proving it
-flags a planted PR-scan line (`check PR state via gh pr view and advance merged
-PRs`) and passes the idle-hook-firing line that remains (`Fire idle hooks, re-run
-the host's step-0 reconcile sweep`). `gh pr view` IS the host-coupled defect (a
-`merge: local` workflow can't satisfy it), not a paraphrasable meaning.
-*Scoping note:* the token is `gh pr view`, NOT `pr !=` — `--where "pr !="` is a
-legitimate status-query primitive documented in `first-officer-shared-core.md:48`
-and used by the pr-merge mod; banning it would be over-broad. The `gh` reach is
-the leak; the status filter is not.
+`fo-dispatch-core.md` for `gh pr view`. **The paired discriminator control
+(`TestEventLoopPRScanScannerDiscriminates`) ships WITH it — the absence half
+without the discriminator is not acceptable** (a typo'd token would pass
+vacuously). The discriminator MUST: (a) flag a planted PR-scan line (`check PR
+state via gh pr view and advance merged PRs`), and (b) pass the idle-hook-firing
+line that legitimately remains (`Fire idle hooks, re-run the host's step-0
+reconcile sweep`). `gh pr view` IS the host-coupled defect (a `merge: local`
+workflow can't satisfy it), not a paraphrasable meaning. *Scoping note:* the token
+is `gh pr view`, NOT `pr !=` — `--where "pr !="` is a legitimate status-query
+primitive documented in `first-officer-shared-core.md:48` and used by the pr-merge
+mod; banning it would be over-broad. The `gh` reach is the leak; the status filter
+is not.
 
 **AC-4 — A no-`pr-merge`-mod workflow has a PR-free generic loop.** After the
 change, `gh pr view` on the shipped instruction surface (skills/ + mods/, the same
@@ -256,23 +292,39 @@ structural-absence test with an allowed-file map `{mods/pr-merge.md: true}` —
 directly modeled on `TestNoUnexpectedModHookOrPRMergeIntroduced`'s
 `allowedPRMergeFiles` map (the existing test already restricts PR-merge
 *invocations* to the canonical mod; this adds `gh pr view` to that same allow-list
-discipline). Any other shipped file naming `gh pr view` fails. A workflow whose
-README registers no `pr-merge` mod therefore loads no instruction that reaches
-`gh` in its loop — the end-to-end confirmation the checklist's item 3 asks for,
-expressed as a checkable surface invariant rather than a live drive. *(The pre-
-move grep confirms the only two current `gh pr view` sites are the core line being
-deleted and the pr-merge mod; after the move only the mod remains.)*
+discipline). Any other shipped file naming `gh pr view` fails. **Two discriminator
+controls ship WITH the absence half** (modeled on
+`TestPortabilityCheckDiscriminatesHostSpecific`, which proves the legitimately
+host-specific form is present yet not flagged):
+
+1. *Positive control:* assert `mods/pr-merge.md` DOES contain `gh pr view` (its
+   startup + idle hooks legitimately scan), so the allow-list entry is load-bearing
+   — if the mod ever stopped carrying the token the control reds, proving the
+   allow-list exempts a real occurrence rather than a vacuous one.
+2. *Negative control:* a planted non-allowed file carrying `gh pr view` is flagged
+   by the same scan, proving the allow-list actually constrains.
+
+A workflow whose README registers no `pr-merge` mod therefore loads no instruction
+that reaches `gh` in its loop — the end-to-end confirmation the checklist's item 3
+asks for, expressed as a checkable surface invariant rather than a live drive.
+*(The pre-move grep confirms the only two current `gh pr view` sites are the core
+line being deleted and the pr-merge mod; after the move only the mod remains.)*
 
 **AC-5 — Behavior is unchanged.** The reuse re-stamp rule and merged-PR
-advancement behave identically. *Proof:* the existing behavioral suites stay
-green with no edits — `internal/dispatch` (`TestBuildModelPrecedence` and the
-build/reuse hazards suite, the code that actually resolves `effective_model`),
-`internal/status` (the merge-policy/terminal-guard suite), and the
+advancement behave identically, INCLUDING the merged-PR-while-mod-blocked finalize
+(the relocated mod-block clear). *Proof:* the existing behavioral suites stay green
+with no edits — `internal/dispatch` (`TestBuildModelPrecedence` and the build/reuse
+hazards suite, the code that actually resolves `effective_model`), `internal/status`
+(the merge-policy/terminal-guard suite, which pins that a standalone `mod-block=`
+clear followed by a terminalize passes and a combined clear+terminalize still
+refuses — exactly the two-step shape the relocated mod prose now follows), and the
 `internal/contractlint` closure/ceremony suite (`TestBootResidentDeferredLoadPointsResolve`,
 `TestHostNeutralCoresResolveAndCarryCeremony` — the event loop's `## Event Loop`
 anchor and the cores' reference closure survive the step deletion). Green-after =
-proof the move touched no behavioral seam. This AC owns no NEW test; it is the
-gate's cross-check that the existing seams stayed green.
+proof the move touched no behavioral seam: the mod-block-clear mechanism the
+terminalize guard depends on is unchanged Go code; only WHICH instruction issues
+the clear moved (core step-1 → the mod's own advancement). This AC owns no NEW
+test; it is the gate's cross-check that the existing seams stayed green.
 
 ## Sibling finding: `status --set` merge-hook guard false-trip on `worktree=` clear
 
@@ -312,20 +364,42 @@ standalone case.
 Recommended split-out: a new sprint task `status-set-worktree-clear-guard` —
 fix `isTerminalUpdate()` to not classify a standalone `worktree=` clear as
 terminal (gate on `completed`/`verdict`/terminal-`status`, which already cover the
-legitimate terminalize shape), with a behavioral golden proving a non-terminal
-`--set worktree=` under a registered merge hook now passes. Filed as a sibling,
-not folded here.
+legitimate terminalize shape `completed verdict={v} worktree=`), with a behavioral
+golden proving a non-terminal `--set worktree=` under a registered merge hook now
+passes (exit 0, worktree cleared).
+
+**CONSTRAINT carried into the split-out spec (must not regress the combined-clear
+guard).** The fix MUST NOT simply delete `handlers.go:116-118`. `fo-merge-core.md`
+(lines 19 and 59) makes `worktree=` a terminal field WHEN COMBINED with
+`mod-block=` / other terminal fields — the combined-clear refusal lists `worktree=`
+explicitly. In code, the combined-clear guard (`handlers.go:156-169`) reads
+`isTerminalUpdate()`: when `clearingModBlock` is true AND `isTerminalUpdate()` is
+true, it refuses. A `mod-block= worktree=` combined call relies on the
+`worktree`-is-terminal branch (116-118) to make `isTerminalUpdate()` true; deleting
+that branch outright would let a combined `mod-block= worktree=` clear slip past the
+combined-clear refusal — a regression the merge-policy/terminal-guard suite must
+catch. So the fix must keep `worktree=` terminal WHEN the same `--set` also carries
+`mod-block=` (or `completed`/`verdict`/terminal-`status`), and only stop
+false-tripping on a STANDALONE `worktree=` clear. The split-out task's test plan
+must include a regression golden: `--set {slug} mod-block= worktree=` (combined)
+STILL refuses (exit 1, combined-clear reason). Filed as a sibling, not folded here.
 
 ## Staff review
 
-**Flagged for staff review before the ideation gate.** This is a shipped-contract
-+ dispatch-core change (`fo-dispatch-core.md` is the host-neutral dispatch core
-every host loads; `claude-fo-dispatch.md` and `mods/pr-merge.md` ship). The review
-should confirm: (a) the structural-absence ACs are genuine checks against an
-independent rule, not prose-greps (the package's own `doc_test.go` policy is the
-rubric); (b) the behavior-neutral claim holds — no code reads the moved prose;
-(c) the SPLIT-OUT decision for the sibling finding is right; (d) the before/after
-wording preserves the re-stamp rule and the merged-PR advancement paths verbatim.
+**Staff review completed (cycle 1) — approach confirmed sound; four gaps closed in
+cycle 2 (see the cycle-2 stage report).** This is a shipped-contract + dispatch-core
+change (`fo-dispatch-core.md` is the host-neutral dispatch core every host loads;
+`claude-fo-dispatch.md` and `mods/pr-merge.md` ship). The review confirmed the proof
+pattern is legitimate, the behavior-neutral claim holds, and the split-out is right;
+it raised four gaps, all now resolved: (1) Move B relocates the mod-block clear into
+the shipped pr-merge template's startup + idle advancement (the shipped template
+never cleared it; core step-1 did); (2) AC-3/AC-4 now mandate their discriminator
+controls explicitly; (3) the AC-2 presence-grep is dropped; (4) the split-out spec
+carries the combined-clear non-regression constraint. The original review rubric —
+(a) ACs are genuine structural checks not prose-greps (the package's own
+`doc_test.go` policy is the rubric); (b) no code reads the moved prose; (c) the
+split-out is right; (d) the before/after wording preserves the re-stamp rule and the
+merged-PR advancement paths verbatim — is satisfied by the reworked body.
 
 ## Stage Report: ideation
 
@@ -349,3 +423,27 @@ sibling `worktree=`-clear guard false-trip (`handlers.go:116-118`) and decided
 SPLIT-OUT (different layer, independent blast radius, off critical path). No spike
 needed — the no-code-reads-the-prose assumption is proven by the existing code
 path. Flagged for staff review (shipped-contract + dispatch-core change).
+
+## Stage Report: ideation (cycle 2)
+
+Closed the four staff-review gaps before the gate.
+
+- DONE: Gap 1 (MATERIAL — Move B mod-block-clear relocation).
+  Confirmed via grep that the SHIPPED template `./mods/pr-merge.md` has `mod-block` count ZERO (relies on core step-1's clear) while the dev local `docs/dev/_mods/pr-merge.md` (count 11) does the two-step clear-then-terminalize. Reworked Move B: added the standalone `mod-block=` clear (separate `--set`, per `fo-merge-core.md:19`) to the shipped template's startup AND idle merged-PR advancement, with verbatim before/after. AC-5 now covers the merged-PR-while-mod-blocked finalize.
+- DONE: Gap 2 (ship the AC-3/AC-4 discriminator controls).
+  AC-3 now mandates `TestEventLoopPRScanScannerDiscriminates` (flags planted PR-scan line, passes idle-hook line). AC-4 now mandates two controls modeled on `TestPortabilityCheckDiscriminatesHostSpecific`: a positive control (pr-merge.md DOES carry `gh pr view`, allow-list load-bearing) and a negative control (planted non-allowed file is flagged).
+- DONE: Gap 3 (drop AC-2.2 presence-grep).
+  AC-2 rewritten to rely on AC-1 (absence from core) + the behavioral proof (`TestBuildModelPrecedence` + context-budget family rule) only. The presence-grep is explicitly dropped as the banned prose-grep.
+- DONE: Gap 4 (combined-clear constraint into the split-out spec).
+  Verified `fo-merge-core.md:19/59` list `worktree=` as a combined-clear terminal field, and `handlers.go:156-169` reads `isTerminalUpdate()` for the combined-clear refusal. Added a CONSTRAINT to the `status-set-worktree-clear-guard` spec: do NOT delete `handlers.go:116-118` outright — keep `worktree=` terminal when combined with `mod-block=`/terminal fields, stop false-tripping only on a STANDALONE clear, with a regression golden (`--set mod-block= worktree=` still refuses).
+
+### Summary (cycle 2)
+
+All four gaps closed. The material one (gap 1) was a real behavior-correctness miss
+on my part: core step-1 clears `mod-block` AND the shipped pr-merge template never
+did, so deleting step-1 without relocating the clear would have blocked
+shipped-template merged-PR finalizes. Move B now relocates the two-step clear into
+the shipped template's startup + idle advancement, grounded in the dev local copy
+as reference. The discriminator controls are now mandated explicitly (not just
+promised), the only presence-grep is dropped, and the split-out spec carries the
+combined-clear non-regression constraint with concrete code/contract citations.
