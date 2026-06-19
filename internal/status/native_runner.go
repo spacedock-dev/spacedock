@@ -102,6 +102,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	if err != nil {
 		return errExit(stderr, err.Error())
 	}
+	gateStage, err := parseSingleArg(args, "--stage", "stage-name")
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
 	newSlug, err := parseNewArg(args)
 	if err != nil {
 		return errExit(stderr, err.Error())
@@ -122,6 +126,8 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	showValidate := contains(args, "--validate")
 	asJSON := contains(args, "--json")
 	quiet := contains(args, "--quiet")
+	showChecklist := contains(args, "--checklist")
+	showACScan := contains(args, "--ac-scan")
 	hasFieldsFlag := explicitFields != nil || allFieldsFlag
 
 	// --new accepts --id-seed/--id-actor too, so only gate them when neither
@@ -335,9 +341,6 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if len(whereFilters) > 0 {
 			incompatible = append(incompatible, "--where")
 		}
-		if hasFieldsFlag {
-			incompatible = append(incompatible, "--fields/--all-fields")
-		}
 		if archiveSlug != "" {
 			incompatible = append(incompatible, "--archive")
 		}
@@ -356,7 +359,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		if len(incompatible) > 0 {
 			return errExit(stderr, "--read cannot be combined with "+strings.Join(incompatible, ", "))
 		}
-		return runReadSection(roots, readRef, asJSON, stdout, stderr)
+		if showChecklist || showACScan {
+			return runReadGate(roots, readRef, gateStage, showChecklist, showACScan, asJSON, stdout, stderr)
+		}
+		return runReadSection(roots, readRef, asJSON, explicitFields, stdout, stderr)
 	}
 
 	if rootPath != "" {

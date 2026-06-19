@@ -123,8 +123,10 @@ func parseATXHeading(line string) (level int, text string, ok bool) {
 // file (an existing filesystem path is read directly; otherwise the argument is
 // resolved as an entity reference the same way --resolve resolves it), parses
 // the file into frontmatter + heading map, and emits the JSON envelope (--json)
-// or the key=value text mirror. Returns the exit code.
-func runReadSection(roots roots, ref string, asJSON bool, stdout, stderr io.Writer) int {
+// or the key=value text mirror. fields, when non-nil, projects the frontmatter
+// object to exactly those keys in order (the same --fields semantics --where /
+// --next apply). Returns the exit code.
+func runReadSection(roots roots, ref string, asJSON bool, fields []string, stdout, stderr io.Writer) int {
 	path, rc := resolveReadTarget(roots, ref, stderr)
 	if rc != 0 {
 		return rc
@@ -134,7 +136,7 @@ func runReadSection(roots roots, ref string, asJSON bool, stdout, stderr io.Writ
 		return errExit(stderr, "cannot read file: "+path)
 	}
 	if asJSON {
-		emitJSON(stdout, readJSON(path, sr))
+		emitJSON(stdout, readJSON(path, sr, fields))
 		return 0
 	}
 	fmt.Fprint(stdout, formatReadText(path, sr))
@@ -173,6 +175,15 @@ func formatReadText(path string, sr sectionRead) string {
 	fmt.Fprintf(&b, "path=%s total_lines=%d\n", realpathOf(path), sr.totalLines)
 	for _, h := range sr.headings {
 		fmt.Fprintf(&b, "level=%d offset=%d lines=%d text=%s\n", h.level, h.offset, h.lines, h.text)
+	}
+	for _, s := range parseStagesBlock(path) {
+		fmt.Fprintf(&b, "stage=%s worktree=%t gate=%t terminal=%t initial=%t", s.Name, s.Worktree, s.gate, s.terminal, s.initial)
+		for _, of := range []string{"feedback-to", "agent", "fresh", "model"} {
+			if v, ok := s.optional[of]; ok {
+				fmt.Fprintf(&b, " %s=%s", of, v)
+			}
+		}
+		b.WriteByte('\n')
 	}
 	return b.String()
 }

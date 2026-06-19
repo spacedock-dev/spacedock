@@ -231,19 +231,32 @@ func singletonJSON(cmd, key, value string) *jsonObj {
 }
 
 // readJSON builds the {"command":"read",...} envelope for --read: the realpath'd
-// path, the file's total_lines, the frontmatter as a nested object (keys sorted
-// for byte stability, since ParseFrontmatter returns an unordered map), and the
+// path, the file's total_lines, the frontmatter as a nested object, and the
 // ordered headings array (text/level/offset/lines, every value stringified to
-// hold the all-strings contract).
-func readJSON(path string, sr sectionRead) *jsonObj {
+// hold the all-strings contract). With fields non-nil, the frontmatter object is
+// projected to exactly those keys in their named order (a missing key is the
+// empty string), mirroring entityJSONObj's --where/--next semantics; with no
+// fields the whole map is emitted with keys sorted for byte stability (since
+// ParseFrontmatter returns an unordered map).
+func readJSON(path string, sr sectionRead, fields []string) *jsonObj {
 	fm := newJSONObj()
-	keys := make([]string, 0, len(sr.frontmatter))
-	for k := range sr.frontmatter {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		fm.set(k, sr.frontmatter[k])
+	if fields != nil {
+		// Named projection: exactly the requested keys, in request order, missing
+		// key -> empty string. resolveJSONFields with explicit fields returns them
+		// verbatim, so the projected order is the caller's order. This mirrors
+		// entityJSONObj's semantics over sr.frontmatter (readJSON has no *entity).
+		for _, k := range resolveJSONFields(nil, fields, false, nil) {
+			fm.set(k, sr.frontmatter[k])
+		}
+	} else {
+		keys := make([]string, 0, len(sr.frontmatter))
+		for k := range sr.frontmatter {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fm.set(k, sr.frontmatter[k])
+		}
 	}
 
 	headings := make(jsonArr, 0, len(sr.headings))
@@ -255,10 +268,45 @@ func readJSON(path string, sr sectionRead) *jsonObj {
 			set("lines", strconv.Itoa(h.lines)))
 	}
 
-	return newJSONObj().
+	obj := newJSONObj().
 		set("command", "read").
 		set("path", realpathOf(path)).
 		set("total_lines", strconv.Itoa(sr.totalLines)).
 		setValue("frontmatter", fm).
 		setValue("headings", headings)
+
+	// A file carrying a stages: taxonomy (the workflow README) surfaces it as a
+	// structured sibling array — every leaf a string, like headings — so a reader
+	// consumes the stage names/ordering and the per-stage flags machine-readably
+	// instead of re-deriving them from the flattened "stages":"" scalar. A file
+	// with no stages: block emits no array (the array is keyed on the block).
+	if stages := parseStagesBlock(path); len(stages) > 0 {
+		obj.setValue("stages", stagesJSONArr(stages))
+	}
+
+	return obj
+}
+
+// stagesJSONArr renders the resolved workflow stages as an ordered array of
+// ordered objects, every leaf a string. The typed gate/terminal/initial/worktree
+// flags are always present (a stage always has a resolved bool); the optional
+// feedback-to/agent/fresh/model keys appear only when the stage declares them,
+// matching the stages: block's own presence semantics.
+func stagesJSONArr(stages []Stage) jsonArr {
+	arr := make(jsonArr, 0, len(stages))
+	for _, s := range stages {
+		o := newJSONObj().
+			set("name", s.Name).
+			set("worktree", strconv.FormatBool(s.Worktree)).
+			set("gate", strconv.FormatBool(s.gate)).
+			set("terminal", strconv.FormatBool(s.terminal)).
+			set("initial", strconv.FormatBool(s.initial))
+		for _, of := range []string{"feedback-to", "agent", "fresh", "model"} {
+			if v, ok := s.optional[of]; ok {
+				o.set(of, v)
+			}
+		}
+		arr = append(arr, o)
+	}
+	return arr
 }
