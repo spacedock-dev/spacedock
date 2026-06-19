@@ -1,6 +1,6 @@
 ---
 title: Merge-guard verb — spacedock merge guard <slug> (atomic mod-block set→invoke→clear→terminalize)
-status: validation
+status: done
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "merge-finalize"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
@@ -8,9 +8,11 @@ group: verb-core
 sprint-readiness: ready
 id: mzmc0dgkq1nbazxx8j0mnfn6
 started: 2026-06-17T20:55:24Z
-worktree: .worktrees/spacedock-ensign-merge-finalize
+worktree:
 mod-block:
 pr: "#400"
+verdict: PASSED
+completed: 2026-06-19T20:12:30Z
 ---
 
 `spacedock merge guard <slug>` enforces the mod-block set→invoke→clear→terminalize-only-after sequence atomically (set before the hook, detect completion by state delta, clear in a standalone `--set`, terminalize only after) — so the single highest Haiku merge risk (combining / skipping / reordering those steps) is owned by the binary. The status tool's existing refusal of terminal-with-mod-block-set is the backstop.
