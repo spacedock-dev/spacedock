@@ -3,7 +3,7 @@ title: Recover ~638 boot-resident FO-contract tokens (micro-test-verified cuts)
 status: backlog
 source: The 2026-06-15 fo-contract-token-cleanup proposal classified ~638 boot-resident tokens (safe-cut/cut-with-care/keep) by adversarial reasoning but filed no task to APPLY them; wg/95b were prior sweeps, now archived/done. This task owns the actual recovery, gated by the no-guidance-control micro-test (superpowers v6) that converts the reasoned verdicts into empirical ones. CL direction 2026-06-16.
 score: 0.5
-sprint: 0205-layered-fo
+sprint: 0221-layered-fo
 sprint-readiness: defer
 issue:
 id: y2r7ew51xqs6q3avsb6mcaka

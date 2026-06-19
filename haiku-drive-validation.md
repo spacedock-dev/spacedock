@@ -3,7 +3,7 @@ title: Haiku-drive validation — a live Haiku FO drives one entity dispatch→g
 status: backlog
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "haiku-drive-validation"; the sprint gate proof, sequenced LAST.
 score: 0.5
-sprint: 0205-layered-fo
+sprint: 0221-layered-fo
 group: validation
 sprint-readiness: defer
 id: kt96jb8yagkean75j0k1ep6n

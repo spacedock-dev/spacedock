@@ -3,7 +3,7 @@ title: State-repo verbs — spacedock state ready / sweep / commit <slug> (rebas
 status: ideation
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "state-verbs"; 2y MERGED unblocks it.
 score: 0.5
-sprint: 0205-layered-fo
+sprint: 0221-layered-fo
 group: verb-core
 sprint-readiness: ready
 id: rgq0m30693ke84zvb8yna078

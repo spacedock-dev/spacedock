@@ -9,7 +9,7 @@ verdict:
 score: 0.4
 worktree:
 issue:
-sprint: 0205-layered-fo
+sprint: 0221-layered-fo
 group: cleanup
 sprint-readiness: ready
 ---

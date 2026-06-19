@@ -8,7 +8,7 @@ verdict:
 score: 0.4
 worktree: .worktrees/spacedock-ensign-gate-extract-verbs
 issue:
-sprint: 0205-layered-fo
+sprint: 0221-layered-fo
 sprint-readiness: ready
 id: 6reqad9gff9wk544det3x4fj
 group: gate-extract
