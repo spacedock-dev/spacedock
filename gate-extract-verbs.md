@@ -12,7 +12,7 @@ sprint: 0221-layered-fo
 sprint-readiness: ready
 id: 6reqad9gff9wk544det3x4fj
 group: gate-extract
-mod-block: merge:pr-merge
+mod-block:
 pr: "#397"
 ---
 
