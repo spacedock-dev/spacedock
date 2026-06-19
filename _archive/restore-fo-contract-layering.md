@@ -14,6 +14,7 @@ sprint-readiness: ready
 group: cleanup
 mod-block:
 pr: "#401"
+archived: 2026-06-19T20:15:47Z
 ---
 
 The host-neutral FO dispatch core has leaked host-specific and mod-specific detail; restore the core/adapter and core/mod boundaries before more contract is built on it.
