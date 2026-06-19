@@ -6,10 +6,10 @@ started: 2026-06-16T02:21:21Z
 completed:
 verdict:
 score: 0.5
-worktree: .worktrees/spacedock-ensign-fo-tier-delegation
+worktree:
 issue:
 sprint: 0221-layered-fo
-sprint-readiness: ready
+sprint-readiness: defer
 id: 72r2x0nnvx9az9x1adf08svq
 group: delegation
 ---
