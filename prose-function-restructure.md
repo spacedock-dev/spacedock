@@ -9,6 +9,7 @@ sprint-readiness: ready
 id: czw7whmaqjkasx1sjbq0at4h
 started: 2026-06-19T07:45:59Z
 worktree: .worktrees/spacedock-ensign-prose-function-restructure
+mod-block: merge:pr-merge
 ---
 
 Express the boot-resident core + dispatch core + gate flow + merge flow as prose-function invocations (`«state.boot»`, `«dispatch.next-action»`, `«gate.assemble-verdict»`, `«merge.guard»`, `«feedback.route»`) whose bodies name a shipped verb (backticks) or carry the hand-followed recipe (guillemets). The migration substrate: every verb member's "the verb shipped" becomes one body guillemet→backtick flip, not a contract rewrite. Verbs already shipped this sprint flip to backticks NOW with real targets on `main`; verbs still un-shipped stay guillemets with a named target. Depends on 2y (MERGED); re-grounded for the shipped-sprint reality below.
