@@ -17,13 +17,14 @@ spacedock status --workflow-dir docs/dev --where sprint=0223-pi-dispatch-contrac
 
 | # | member | id | status | layer |
 |---|--------|----|--------|-------|
-| 1 | `pi-install-managed-skill-placement` | `eqrcrxcyye56nfwm997bj33d` | ideation | **merged** — ship Spacedock as a pi package; `spacedock install --host pi` actually installs; both parent + child discover skills (supersedes archived `k8t` + `2m1`) |
+| 1 | `pi-install-managed-skill-placement` | `eqrcrxcyye56nfwm997bj33d` | implementation | **merged** — ship Spacedock as a pi package; `spacedock install --host pi` actually installs; both parent + child discover skills (supersedes archived `k8t` + `2m1`) |
 | 2 | `pi-dispatch-model-stamping` | `bdtx7bmhekpy1x12ab53d9k3` | ideation | null model → parent live model, not settings default |
-| 3 | `pi-back-channel-dispatch` | `b23y61pgk93ph44pz506m2wy` | ideation | **capstone** — declare + wire the worker↔FO back-channel over intercom; harden `fo-dispatch-core.md` to runtime-neutral named capabilities |
+| 3 | `pi-safehouse-flag-parity` | `qn5sg36exf6apjjxymbfthgj` | ideation | pi front-door `--safehouse-*` flags + safehouse wrapping (mirrors claude/codex); unblocks member 1's install verification on sandboxed sessions |
+| 4 | `pi-back-channel-dispatch` | `b23y61pgk93ph44pz506m2wy` | ideation | **capstone** — declare + wire the worker↔FO back-channel over intercom; harden `fo-dispatch-core.md` to runtime-neutral named capabilities |
 
 > **Re-carved 2026-06-19 (captain):** members `pi-ensign-skill-injection` (`k8t`) and `pi-launcher-repo-resolution` (`2m1`) ARCHIVED REJECTED — both picked clone-bound workarounds (repo symlink; cwd-fallback record) for the fact that `spacedock install --host pi` is check-only. Superseded by the merged `pi-install-managed-skill-placement` (`eq`), which ships Spacedock as a pi package (`package.json` `pi.skills` + `.pi/extensions/spacedock.ts`) so `pi install git:github.com/spacedock-dev/spacedock` makes both parent (extension `resources_discover`) and child (pi-subagents `collectSettingsPackageSkillPaths`) discover skills with no clone/cwd/symlink. Spike PASSED. The capstone's staff-review gap-1 (`cwd:<repo>` for skill discovery) is re-checked and reframed as a working-directory concern (the child-cwd seam is gone). Second staff review pending.
 
-Members 1 (install) and 2 (model-stamping) are independent and parallelizable. Member 3 (capstone) depends on 1+2 landed for its `pi-live` drive (needs install-managed skill discovery + parent-model stamping); its core-rewrite Deliverable A can start in parallel.
+Members 1 (install), 2 (model-stamping), and 3 (safehouse-flag-parity) are independent and parallelizable. Member 4 (capstone) depends on 1+2 landed for its `pi-live` drive (needs install-managed skill discovery + parent-model stamping); its core-rewrite Deliverable A can start in parallel. **Member 3 (safehouse-flag-parity) lands before or alongside member 1's AC-1 verification** — member 1's `pi install` writes to `~/.pi/agent` (outside the repo); on a sandboxed session the Commander needs member 3's `--safehouse-add-dirs ~/.pi/agent` to grant that access (Q14).
 
 ## Staff preflight review #1 (run `3adf00ee`, 2026-06-19)
 
@@ -53,9 +54,10 @@ The dispatch core (`skills/first-officer/references/fo-dispatch-core.md`) organi
 
 ## Sequencing
 
-- **Parallel start:** members 1 (`eq`) + 2 (`bdt`) — independent code surfaces (`eq`: `pi.go` + `package.json` + `.pi/extensions/`; `bdt`: `pi-first-officer-runtime.md` prose). No inter-member dependency.
-- **Member 3 (`b2` capstone) `pi-live` drive requires 1 + 2 landed** — AC-2 needs ensign discoverable via install-managed placement (`eq`) + parent model stamped (`bdt`). The capstone's gap-1 re-check updates the dependency from the archived `k8t`+`2m1` to `eq`.
-- **Capstone Deliverable A (core rewrite) starts in parallel** — prose-structural reorganization of `fo-dispatch-core.md`; does not depend on 1+2. The `claude-live`/`codex-live` regression (AC-6) can run as soon as the core rewrite is draft.
+- **Parallel start:** members 1 (`eq`), 2 (`bdt`), 3 (`qn` safehouse-flag-parity) — independent code surfaces (`eq`: `pi.go` + `package.json` + `.pi/extensions/`; `bdt`: `pi-first-officer-runtime.md` prose; `qn`: `pi.go` + `help.go` safehouse flags/wrapping). No inter-member dependency. Note `eq` and `qn` both touch `internal/cli/pi.go` — coordinate so they don't collide on the same regions (`eq` owns `runInitWithPi`/`piRuntimeConfigFromEnv`/`checkPiRuntime`; `qn` owns `parsePiFrontDoorArgs`/`runPi` launch wrapping + `setPiHelp`).
+- **Member 3 (`qn` safehouse-flag-parity) lands before or alongside member 1 (`eq`) AC-1 verification** — `eq`'s `pi install` writes to `~/.pi/agent` (outside the repo); on a sandboxed session the Commander needs `qn`'s `--safehouse-add-dirs ~/.pi/agent` to grant that access (Q14). If `qn` hasn't landed, the break-glass is `safehouse --add-dirs ~/.pi/agent -- spacedock pi ...` (external wrap).
+- **Member 4 (`b2` capstone) `pi-live` drive requires 1 + 2 landed** — AC-2 needs ensign discoverable via install-managed placement (`eq`) + parent model stamped (`bdt`). The capstone's gap-1 re-check updates the dependency from the archived `k8t`+`2m1` to `eq`.
+- **Capstone Deliverable A (core rewrite) starts in parallel** — prose-structural reorganization of `fo-dispatch-core.md`; does not depend on 1-3. The `claude-live`/`codex-live` regression (AC-6) can run as soon as the core rewrite is draft.
 
 ## Definition of Done
 
@@ -147,7 +149,11 @@ The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates
 
 ### Q13 — Core/adapter null-model contradiction window (staff-review gap 3c)
 
-**Quirk:** Between member 2 (`bdt`) landing and the capstone (member 3) landing, the core (`fo-dispatch-core.md`) says "when null, OMIT the model argument entirely" while the Pi adapter (`pi-first-officer-runtime.md`) says "stamp the parent's live model when null." This contradiction is **intentional and temporary** — member 2 documents it; the capstone generalizes it into a named `model-resolution` rule. A Commander reading both during member 2's verification will see the disagreement; it is not a bug, it is the planned transition window.
+**Quirk:** Between member 2 (`bdt`) landing and the capstone (member 4) landing, the core (`fo-dispatch-core.md`) says "when null, OMIT the model argument entirely" while the Pi adapter (`pi-first-officer-runtime.md`) says "stamp the parent's live model when null." This contradiction is **intentional and temporary** — member 2 documents it; the capstone generalizes it into a named `model-resolution` rule. A Commander reading both during member 2's verification will see the disagreement; it is not a bug, it is the planned transition window.
+
+### Q14 — Safehouse directory access for member 1's install verification (pi-safehouse-flag-parity dependency)
+
+**Quirk:** Member 1 (`eq`) AC-1 verification runs `spacedock install --host pi`, which makes `pi install` write to `~/.pi/agent/` (the pi package store + `settings.json packages`) — **outside** the repo. On a sandboxed pi session, the pi front door today does NOT register `--safehouse-add-dirs` (only `--plugin-dir`), so the Commander cannot grant `~/.pi/agent` access through the launcher — the install verification will hit a sandbox write denial. Member 3 (`qn` `pi-safehouse-flag-parity`) fixes this by mirroring the claude/codex `--safehouse-*` flags + safehouse wrapping into `pi.go`. **Land member 3 before or alongside member 1's AC-1 verification.** Until member 3 lands, the break-glass is to wrap externally: `safehouse --add-dirs ~/.pi/agent -- spacedock pi ...` (the Commander invokes safehouse directly rather than through the launcher). After member 3 lands, the Commander grants access through the launcher: `spacedock pi --safehouse-add-dirs ~/.pi/agent ...`.
 
 ## Sprint lifecycle checklist (owner-tagged — copy into this index to track)
 
