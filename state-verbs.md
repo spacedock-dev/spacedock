@@ -1,6 +1,6 @@
 ---
 title: State-repo verbs — spacedock state ready / sweep / commit <slug> (rebase-HALT enforced by the verb)
-status: implementation
+status: validation
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "state-verbs"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
