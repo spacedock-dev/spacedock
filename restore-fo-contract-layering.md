@@ -1,13 +1,13 @@
 ---
 id: zyhwwm5a9a08vv6htpef1c34
 title: Restore core/adapter and core/mod layering in the FO contract
-status: validation
+status: done
 source: '0221 captain review (2026-06-19, CL): auditing the layered-FO contract surfaced two pre-existing layering leaks in the host-neutral fo-dispatch-core.md. Defer 72 (tier-delegation); land this cleanup + the prose-function notation on a clean foundation first.'
 started: 2026-06-19T18:31:45Z
-completed:
-verdict:
+completed: 2026-06-19T20:15:47Z
+verdict: PASSED
 score: 0.5
-worktree: .worktrees/spacedock-ensign-restore-fo-contract-layering
+worktree:
 issue:
 sprint: 0221-layered-fo
 sprint-readiness: ready
