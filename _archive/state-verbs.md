@@ -13,6 +13,7 @@ mod-block:
 pr: "#399"
 verdict: PASSED
 completed: 2026-06-19T19:46:51Z
+archived: 2026-06-19T19:46:51Z
 ---
 
 `spacedock state ready` / `state sweep` / `state commit <slug>` behind the «state.ensure-ready» / «state.sweep-merged» / «state.commit» prose-functions. The commit verb is path-scoped, pushes with retry-on-reject-rebase, and REFUSES to return on a rebase conflict (exit non-zero, stderr naming the paths, repo left in rebase-abort) — so the FO cannot proceed even if it wanted to. The rebase-conflict halt is enforced by the verb, not by FO discipline.
