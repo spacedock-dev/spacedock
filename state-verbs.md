@@ -9,7 +9,7 @@ sprint-readiness: ready
 id: rgq0m30693ke84zvb8yna078
 started: 2026-06-17T20:55:24Z
 worktree: .worktrees/spacedock-ensign-state-verbs
-mod-block: merge:pr-merge
+mod-block:
 pr: "#399"
 ---
 
