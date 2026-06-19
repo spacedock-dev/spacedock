@@ -124,10 +124,10 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review, route the verdict to the decider
 
 - **effect — extract (deterministic).** Roll up the gate's structured inputs from the entity via the shipped extract modes: the stage-report checklist accounting (`status --read <ref> --checklist`) and the AC coverage scan (`status --read <ref> --ac-scan`). These feed the verdict; they do not make it.
-- **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. Route it: a level-2-only FO escalates the decision to a level-3 judge; a capable FO renders its own `Recommend` line. Either way the captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
+- **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. The FO renders its own `Recommend` line. The captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
 - **done-when:** the gate review is presented to the captain and the FO is waiting on the captain's decision (the worker kept alive).
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
-- → **prose** — the verdict is judgment; no `` `spacedock gate assemble-verdict` `` binary ships (RATIFIED keep-prose). The deterministic extract sub-calls the `effect — extract` bullet names are `6re`'s shipped `status --read --checklist` / `--ac-scan`; the decision routes to L3 or the FO's own `present-gate` `Recommend` line.
+- → **prose** — the verdict is judgment; no `` `spacedock gate assemble-verdict` `` binary ships (RATIFIED keep-prose). The deterministic extract sub-calls the `effect — extract` bullet names are `6re`'s shipped `status --read --checklist` / `--ac-scan`; the decision is the FO's own `present-gate` `Recommend` line.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
