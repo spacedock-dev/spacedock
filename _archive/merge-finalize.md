@@ -13,6 +13,7 @@ mod-block:
 pr: "#400"
 verdict: PASSED
 completed: 2026-06-19T20:12:30Z
+archived: 2026-06-19T20:12:30Z
 ---
 
 `spacedock merge guard <slug>` enforces the mod-block set→invoke→clear→terminalize-only-after sequence atomically (set before the hook, detect completion by state delta, clear in a standalone `--set`, terminalize only after) — so the single highest Haiku merge risk (combining / skipping / reordering those steps) is owned by the binary. The status tool's existing refusal of terminal-with-mod-block-set is the backstop.
