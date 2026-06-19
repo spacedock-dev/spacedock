@@ -13,6 +13,7 @@ sprint: 0221-layered-fo
 sprint-readiness: ready
 group: cleanup
 mod-block: merge:pr-merge
+pr: "#403"
 ---
 
 The prose-function restructure smuggled the deferred 72 member's tier vocabulary into the most safety-critical contract decision (the gate verdict). Strip it back to mechanism-neutral phrasing and add a structural guard so deferred-member vocabulary cannot leak until its member ships.
