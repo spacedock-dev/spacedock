@@ -1,12 +1,12 @@
 ---
 title: Pi back-channel dispatch — declare and wire the worker↔FO back-channel over pi-intercom
-status: ideation
+status: implementation
 source: "Captain (2026-06-19): the pi-intercom supervisor-talkback capability is proven (archived spike cq9kb7cdpp9y48tn8gwzmqzq, PR #301 spike-only) but the Spacedock Pi FO/ensign adapters do not wire it. Treat the capability as already implemented for the host session; find the contract/adapter frictions and harden the dispatch core to runtime-neutral named capabilities."
 score:
 started: 2026-06-19T17:20:10Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-back-channel-dispatch
 issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
