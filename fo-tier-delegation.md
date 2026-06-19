@@ -93,7 +93,7 @@ Verified by: a fixture-driven test of the tier-resolution + arming decision over
 Verified by: `spacedock dispatch spawn-standing-all --workflow-dir {wd} --team {team}` emitting an Agent spec for `level-3-judge` with `model: opus` in its returned JSON array (asserted against the array contents), confirming the mod is discovered and spawned by the same mechanism as `comm-officer`, not a new code path.
 
 **AC-4 — A level-3-capable FO leaves the gate flow unchanged: it authors its own `Recommend` line and writes no `decided-by: level-3-judge` record.**
-Verified by: a fixture/behavior test asserting that with `SPACEDOCK_FO_MODEL` unset or `opus`/`sonnet`, `«fo.tier»()` returns `route_gate_verdicts: false`, so the gate flow's verdict path is the unmodified present-gate flow — proving the mechanism is a no-op for capable sessions and adds no cost to the common case.
+Verified by: a fixture/behavior test asserting that with `SPACEDOCK_FO_MODEL` set to an explicitly-capable `opus`/`sonnet`, `«fo.tier»()` returns `route_gate_verdicts: false`, so the gate flow's verdict path is the unmodified present-gate flow — proving the mechanism is a no-op for capable sessions and adds no cost to the common case. (The `unset` case is NOT capable: it resolves fail-safe to level-2-only and arms, per AC-2's five-case fixture — the capable arm is only an explicitly-resolved `opus`/`sonnet`.)
 
 ## Test plan
 
@@ -213,4 +213,19 @@ Level-3 gate review (Opus model) on ideation design. Three material gaps block i
 2. Fix tier default: unset → level-2-only
 3. Document the prose-function fragility and accept/mitigate it (or defer full binary verb to post-2y)
 4. Clarify the launcher `SPACEDOCK_FO_MODEL` export work (staff review finding #2)
+
+## Stage Report: implementation
+
+- DONE: Fail-safe tier default — «fo.tier»() maps unset/unresolvable/garbage SPACEDOCK_FO_MODEL → level-2-only → route_gate_verdicts=true when a gate:true stage exists, NEVER capable; resolved the AC-2/AC-4 contradiction in favor of AC-2's fail-safe and corrected AC-4's body prose to drop the unset case.
+  `internal/fotier` (commit 5f87ea04): capable models are the explicit opt-in (opus/sonnet only); everything else → Level2Only. AC-2 five-case fixture + AC-4 capable-inert test, 9/9 fotier tests green. AC-4 body prose edited to cover only explicitly-capable opus/sonnet.
+- DONE: SPACEDOCK_FO_MODEL export is genuinely-new front-door work — parse --model from frontdoor.go's passthrough, normalize aliases, export the var, AND add --env-pass SPACEDOCK_FO_MODEL to the safehouse boundary; proven by a test that the var reaches a launched FO.
+  `internal/cli/frontdoor.go` (commit 643fc3e8): resolvedFOModel parses --model (space/equals form) → fotier.NormalizeModel; withFOModelEnv exports it; foModelEnvPassFlags rides --env-pass; both omit-on-unresolved. TestClaudeFrontDoorExportsFOModel (7 cases, incl. absent/garbage → unset) + safehouse env-pass forward/omit tests, all green on the launchedEnv seam.
+- DONE: level-3-judge standing mod (model: opus) discovered + spawned by the EXISTING spawn-standing-all with no new machinery (AC-3); apply the three contract doc-diffs; wire ONLY the gate-verdicts row live, the other 5 table rows documented-but-deferred.
+  `docs/dev/_mods/level-3-judge.md` (commit 57bf3aef) emits via the real spawn-standing-all path with model opus, asserted by TestLevel3JudgeModSpawnsWithOpus against the live docs/dev tree. Three doc-diffs applied to first-officer-shared-core.md (commit 883ea091): Startup step 1.5, the gated-stage verdict-route bullet (gate.route-verdict → level-3-judge), the ### Gate Verdicts FO Write-Scope bullet. Routing table ships all six rows; only the gate-verdicts row is wired live.
+- SKIPPED: AC-1 (live Haiku FO drive of the standing route writing the ### Gate Verdicts durable line).
+  Out of this member's scope per the checklist — it rides the haiku-drive-validation member (kt), sequenced last after 2y lands. This member built the mechanism AC-1 exercises (the standing mod, the launcher export, the tier function, the contract route); it does not run the live drive.
+
+### Summary
+
+Built the four pieces of the model-aware tier mechanism as four focused commits, each with its own proof. `internal/fotier` is the deterministic core: a fail-safe tier map (unset/garbage → level-2-only, capable is the explicit opus/sonnet opt-in) plus the arming decision, pinned by the AC-2 five-case fixture and AC-4 capable-inert test. The launcher (`frontdoor.go`) parses `--model`, normalizes it, exports `SPACEDOCK_FO_MODEL`, and forwards it through the safehouse `--env-pass` boundary — proven on the captured launch-env seam that a missing/garbage `--model` leaves the var unset (the exact case the fail-safe protects). The `level-3-judge` mod (model: opus) is discovered by the existing `spawn-standing-all` with zero new machinery (AC-3 against the real tree), and the three FO contract doc-diffs wire the gate-verdicts route live while the other five table rows ship documented-but-deferred. Key decision applied per the checklist: AC-2 and AC-4 contradicted on the unset case; resolved in favor of AC-2's fail-safe and corrected AC-4's prose to cover only explicitly-capable opus/sonnet. Full `go test ./...` green (16 packages, 0 failures); gofmt/vet clean. AC-1's live Haiku drive is deferred to the kt member by design.
 
