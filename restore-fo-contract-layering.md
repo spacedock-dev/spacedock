@@ -12,7 +12,7 @@ issue:
 sprint: 0221-layered-fo
 sprint-readiness: ready
 group: cleanup
-mod-block: merge:pr-merge
+mod-block:
 pr: "#401"
 ---
 
