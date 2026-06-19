@@ -35,17 +35,17 @@ Independent reviewer (glm-5.2, not the FO, not the ideation ensigns) refuted the
 
 ## Staff preflight review #2 (run `efff49c9`, 2026-06-19)
 
-Independent reviewer (glm-5.2) re-refuted the re-carved 3-member sprint. Full review at `staff-review-2.md`. **Verdict: Gaps to close — not yet cold-boot drivable.** Review #1's blocker (child-cwd seam) is GENUINELY CLOSED by the re-carve (verified end-to-end); merge is clean; blast-radius correct; no material redesign. Seven follow-through gaps from the re-carve not being propagated through the docs:
+Independent reviewer (glm-5.2) re-refuted the re-carved 3-member sprint. Full review at `staff-review-2.md`. **Verdict at review time: Gaps to close — not yet cold-boot drivable.** Review #1's blocker (child-cwd seam) is GENUINELY CLOSED by the re-carve (verified end-to-end); merge is clean; blast-radius correct; no material redesign. Seven follow-through gaps from the re-carve not being propagated through the docs. **All 7 now CLOSED:**
 
-1. **[Gap — owner: `eq`] `repoRoot` source post-install undefined** — `eq`'s D3 writes no repo-path record; AC-3 references an "install-record resolution" its design doesn't produce; the doctor (`pi.go:293-294,324-325`) still `Stat`s `cfg.firstOfficer/ensign` from `repoRoot`, so under a non-repo launch it reports broken skills that actually work via the package-root scan. **Closing via async fold-in re-dispatch (run in flight).**
-2. **[Gap — owner: Shaping FO] Q11 contradictory + partly false** — claims ensign doesn't load without `cwd:<repo>`, disproven by `eq`'s spike and retracted by the capstone's re-check. **Closed below (Q11 rewritten).**
-3. **[Gap — owner: Shaping FO] Q12 stale numbering + references `2m1`'s install-record mechanism.** **Closed below (Q12 rewritten).**
-4. **[Gap — owner: Shaping FO] `## Sequencing` section stale (old 4-member layout).** **Closed below (Sequencing rewritten).**
-5. **[Gap — owner: Shaping FO] DoD "Proven by" items 1–2 name archived `k8t`/`2m1`; bullet (c) says "install-recorded path".** **Closed below (DoD refreshed).**
-6. **[Gap — owner: `b2` capstone] Fold-in AC-2 sub-bullet still reads "via member 1's `.pi/skills/ensign` symlink" (archived member, absent mechanism).** **Closing via async fold-in re-dispatch (run in flight).**
-7. **[Cosmetic — owner: Shaping FO] Q3, Q9, Q13 stale member names/numbers.** **Closed below (Q3/Q9/Q13 refreshed).**
+1. ✅ **[Gap — owner: `eq`] `repoRoot` source post-install undefined** — closed (state commit `e862e42e`): D5 retires the doctor's repo-path `Stat` checks, adds `spacedockPackageOK` (package registered + package-root-scan discovery), removes the cwd fallback entirely; AC-3 revised to a 5-sub-assertion Go test.
+2. ✅ **[Gap — owner: Shaping FO] Q11 contradictory + partly false** — closed (main commit `0cda9851`): `cwd:<repo>` reframed as working-directory concern, false failure claim dropped.
+3. ✅ **[Gap — owner: Shaping FO] Q12 stale** — closed (`0cda9851`): re-numbered to 3-member layout, re-based on `eq`'s install verification.
+4. ✅ **[Gap — owner: Shaping FO] `## Sequencing` stale** — closed (`0cda9851`): rewritten to 3-member layout.
+5. ✅ **[Gap — owner: Shaping FO] DoD "Proven by" stale** — closed (`0cda9851`): names `eq`, "install-registered pi package".
+6. ✅ **[Gap — owner: `b2` capstone] Fold-in AC-2 sub-bullet reconciliation** — closed (state commit `55fc0552`): SUPERSEDED pointer on the stale symlink claim + member-3→2 cosmetic.
+7. ✅ **[Cosmetic — owner: Shaping FO] Q3, Q9, Q13 stale names/numbers** — closed (`0cda9851`): refreshed.
 
-Once gaps 1 + 6 land (async) and 2–5, 7 are fixed inline (below), the sprint is cold-boot drivable per the review's exit criterion.
+Sprint is now cold-boot drivable per review #2's exit criterion.
 
 ## The binding concept
 
@@ -158,7 +158,7 @@ The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates
 - [x] **⚠️ Preflight staff review #1** (run `3adf00ee`) — verdict Gaps to close; one blocker (child-cwd seam) + two minor gaps. Folded into capstone + Q11–Q13 added. ✓
 - [x] **Re-carve** (captain 2026-06-19) — archived `k8t`+`2m1` (clone-bound workarounds), filed merged `eq` (install-managed package placement, spike PASSED); capstone gap-1 re-checked (cwd:<repo> reframed as working-directory concern). ✓
 - [x] **⚠️ Preflight staff review #2** (run `efff49c9`) — verdict Gaps to close; blocker GENUINELY CLOSED by re-carve; seven follow-through gaps (1 spec + 6 doc). ✓
-- [ ] **Close staff-review #2 gaps** — gap 1 (`eq` repoRoot source) + gap 6 (`b2` AC-2 sub-bullet reconciliation) async; gaps 2–5, 7 fixed inline in this index ✓ (this commit)
+- [x] **Close staff-review #2 gaps** — all 7 closed: gap 1 (`eq` repoRoot source, state `e862e42e`), gap 6 (`b2` AC-2 sub-bullet, state `55fc0552`), gaps 2–5,7 inline (main `0cda9851`) ✓
 - [ ] **Present ideation gates** — per member; never self-approve (pending gap 1 + 6 fold-ins landing)
 - [ ] **Package** — write `dispatch-sprint-execution.md` (cold-boot Commander package with Q1–Q13 baked in)
 
