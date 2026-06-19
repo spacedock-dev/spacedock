@@ -1,6 +1,6 @@
 ---
 title: Merge-guard verb — spacedock merge guard <slug> (atomic mod-block set→invoke→clear→terminalize)
-status: implementation
+status: validation
 source: 0205 carve (2026-06-17, captain "stamp them") — index DoD candidate "merge-finalize"; 2y MERGED unblocks it.
 score: 0.5
 sprint: 0221-layered-fo
