@@ -1,7 +1,7 @@
 ---
 id: 3e2bb3r432vbgp8nnw54wnjk
 title: Wrong-root boot guard mis-parses a compound `cd X; …` boot (strip the trailing `;`)
-status: implementation
+status: validation
 source: 'v0.22.0 cut (2026-06-19): the opus claude-live lane on PR #390 went red on TestLiveClaudeSharedScenarios/rejection-flow — a FALSE POSITIVE. The cut shipped on the sonnet proof with an e2e-gate waiver; this is the recorded follow-up to make the guard robust so the live lane is clean-green (no waiver) next time.'
 started: 2026-06-19T07:45:59Z
 completed:
