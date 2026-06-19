@@ -112,3 +112,16 @@ Verified by: a reuse-metadata schema check (structural, two independent values) 
 - `skills/ensign/references/pi-ensign-runtime.md` — the Pi ensign adapter (friction 5).
 - `skills/ensign/references/claude-ensign-runtime.md` / `codex-ensign-runtime.md` — the reference clarification protocols Pi ensign lacks.
 - Deferred follow-up: a sibling task for frictions 7–9 (file after this lands).
+
+## Stage Report: ideation
+
+- DONE: Spike evidence (live, 2026-06-19) — run id `0637e2ed`; the worker sent `need_decision` during the dispatch, the supervisor reply arrived within the 10-minute window, and the substrate detached the foreground dispatch for intercom coordination (`Detached for intercom coordination`) without explicit `async:true`.
+  This is durable evidence that the Pi back-channel works on the current `pi-subagents` substrate while the worker is still running.
+- DONE: Contract rewrite remains DRAFT only; do not commit the skill-file edits from this run.
+  Supervisor instruction: the draft edits were made against a skill-less / default-model run and are not authoritative. Keep the contract changes out of the repo state for this cycle and re-dispatch cleanly later.
+- DONE: In-flight frictions surfaced for the follow-up re-dispatch.
+  (a) null `model` resolved to `settings.json` defaultModel rather than the parent run's live model; (b) skill injection failed with `Skills not found: ensign`.
+
+### Summary
+
+Live spike evidence is recorded above and establishes the back-channel / mid-run escalation path on the current Pi substrate. The contract-doc edits are intentionally not committed in this cycle; they remain a draft artifact only, pending a clean re-dispatch under a corrected skill/model context.
