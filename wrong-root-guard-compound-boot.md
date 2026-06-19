@@ -87,3 +87,16 @@ None. `bootPathArgs`/`detectWrongRootBoot` are test-harness code (`wrong_root_de
 ### Summary
 
 Fleshed out the seed into a behavior-first spec for a pure test-harness parser fix: strip a trailing shell-separator (`;`/`&&`/`|`) from each path token `bootPathArgs` extracts, so an opus compound boot `cd <fixtureRoot>; ls; …` resolves to the clean fixture path instead of `<fixtureRoot>;` (which fails the `isUnder` check and false-positives). Spiked the riskiest path first — copies of `bootPathArgs`/`wanderTarget`/`isUnder` confirm the cause and the fix in both directions (false-positive gone, genuine wrong-root still flagged) — so no unverified mechanism remains for implementation. Scoped to the minimal per-token trim (rejected full command-splitting as unnecessary); doc-diff is none.
+
+## Stage Report: implementation
+
+- DONE: Failing-first: add the AC-1 subcases (;-glued 'cd <fixtureRoot>; ls; …' and &&-glued 'cd <fixtureRoot>&& ls') and confirm they RED against the CURRENT bootPathArgs with the false-positive wrong-root error (proving they exercise the bug) BEFORE applying the fix.
+  Added `compound_cd_into_fixture_passes` and `compound_cd_into_fixture_amp_passes` to `wrong_root_detect_test.go`; ran pre-fix — both RED with "FO booted the wrong root … targets <fixtureRoot>;/<fixtureRoot>&&", confirming they exercise the glued-separator bug. Commit fededa4f.
+- DONE: Apply the minimal trailing-separator trim (;/&&/|) to the THREE extraction points in bootPathArgs (cd target, --workflow-dir spaced value, --workflow-dir= value) — NOT full command-splitting; leave the whitespace split intact.
+  Added `trimBootSeparator` (strips one trailing `&&`/`;`/`|`) and wrapped all three extraction points in `bootPathArgs` (`wrong_root_detect_impl_test.go`); `strings.Fields` whitespace split unchanged. Commit fededa4f.
+- DONE: AC-2 no-false-negative: a genuine off-fixture compound boot ('cd <realRepo>; …') STILL reds (error names both roots), and the full TestDetectWrongRootBoot set (new + 6 existing directions) is green after the trim. AC-3 (live opus lane green, no waiver) rides the next live-e2e run, not this member.
+  `compound_cd_away_from_fixture_reds` (added pre-fix; green pre- and post-fix) asserts a non-nil error naming both roots — the over-strip guard. Post-trim `go test -run TestDetectWrongRootBoot` = 10/10 green (3 new + 7 existing); `go vet` clean; full `ensigncycle` package green. AC-3 deferred to the next live-e2e run by design.
+
+### Summary
+
+Pure test-harness parser fix: a compound boot glues a trailing shell separator onto the cd/workflow-dir path token (`cd <root>; ls` → token `<root>;`), so `isUnder` failed and `detectWrongRootBoot` false-positived a wrong-root wander on the correct root (the opus claude-live false positive from the v0.22.0 cut). Added `trimBootSeparator` to strip one trailing `&&`/`;`/`|` at the three `bootPathArgs` extraction points, leaving the whitespace split intact — no full command-splitting, no product/contract change. Written failing-first: the two AC-1 cases red pre-fix and pass post-fix, the AC-2 off-fixture case stays red naming both roots, and all 10 `TestDetectWrongRootBoot` subcases are green (vet clean, package green). AC-3 (live opus lane, no waiver) rides the next live-e2e run.
