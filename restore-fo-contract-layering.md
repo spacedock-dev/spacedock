@@ -1,9 +1,9 @@
 ---
 id: zyhwwm5a9a08vv6htpef1c34
 title: Restore core/adapter and core/mod layering in the FO contract
-status: backlog
+status: ideation
 source: '0221 captain review (2026-06-19, CL): auditing the layered-FO contract surfaced two pre-existing layering leaks in the host-neutral fo-dispatch-core.md. Defer 72 (tier-delegation); land this cleanup + the prose-function notation on a clean foundation first.'
-started:
+started: 2026-06-19T18:31:45Z
 completed:
 verdict:
 score: 0.5
