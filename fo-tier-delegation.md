@@ -11,6 +11,7 @@ issue:
 sprint: 0205-layered-fo
 sprint-readiness: ready
 id: 72r2x0nnvx9az9x1adf08svq
+group: delegation
 ---
 
 The mechanism that makes a weak FO safe by construction: it knows it is weak and escalates structurally, never by luck.
