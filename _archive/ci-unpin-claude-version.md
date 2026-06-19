@@ -11,6 +11,7 @@ worktree:
 issue:
 mod-block:
 pr: "#390"
+archived: 2026-06-19T06:44:50Z
 ---
 
 Retire the 2.1.177 CI pin so the live-e2e lane runs current/unpinned Claude Code (the merged-team floor), now that #396 shipped the merged-team contract.
