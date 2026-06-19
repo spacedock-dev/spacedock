@@ -9,6 +9,7 @@ sprint-readiness: ready
 id: mzmc0dgkq1nbazxx8j0mnfn6
 started: 2026-06-17T20:55:24Z
 worktree: .worktrees/spacedock-ensign-merge-finalize
+mod-block: merge:pr-merge
 ---
 
 `spacedock merge guard <slug>` enforces the mod-block set→invoke→clear→terminalize-only-after sequence atomically (set before the hook, detect completion by state delta, clear in a standalone `--set`, terminalize only after) — so the single highest Haiku merge risk (combining / skipping / reordering those steps) is owned by the binary. The status tool's existing refusal of terminal-with-mod-block-set is the backstop.
