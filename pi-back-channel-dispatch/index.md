@@ -247,3 +247,48 @@ Ideation finalized. The entity body now carries the full approach (Deliverable A
 ### Summary
 
 Staff-review fold-in complete. Both gaps (the child-`cwd` composition blocker and the Pi model-space ownership ambiguity) are addressed by append-only additions to the existing ideation: a `cwd: <resolved repo root>` dispatch-call instruction in the `async-dispatch` binding, a non-repo-launch `cwd` pin + ensign-loaded pre-check sub-bullet on AC-2, and an explicit member-3-owns / capstone-references ownership statement on `worker-identity-capture`. The prior ideation (commit `701dd7ae`) is preserved; no approach/AC/test-plan text was rewritten. Ready for the ideation gate.
+
+## Staff review gap-1 re-check (2026-06-19)
+
+This section re-evaluates the prior Gap-1 fold-in (the "## Staff review fold-in (2026-06-19)" section above) against a material change in the sprint composition: members 1 (`pi-ensign-skill-injection`, `k8t`) and 2 (`pi-launcher-repo-resolution`, `2m1`) are BOTH ARCHIVED REJECTED, superseded by the merged task `pi-install-managed-skill-placement` (`eqrcrxcyye56nfwm997bj33d`). The new mechanism ships Spacedock as a pi package (`package.json` `pi.skills` + `.pi/extensions/spacedock.ts` with `resources_discover`); `spacedock install --host pi` runs `pi install git:...`. BOTH parent (extension) and child discover skills with NO cwd dependency, NO symlink, NO `--skill` flag. The spike for `pi-install-managed-skill-placement` PROVED this: a minimal package with `pi.skills` made `discoverAvailableSkills` list the skill from BOTH repo and non-repo cwd (via `collectSettingsPackageSkillPaths` scanning `settings.json` `packages` → `package.json` `pi.skills`). This re-check is append-only; prior sections are not rewritten.
+
+### 1. The child-cwd seam (gap 1) no longer exists for skill discovery
+
+The Gap-1 fold-in existed to close a three-way composition hole: member 1's `.pi/skills/ensign` symlink was cwd-keyed, and under member 2's non-repo launch the child did not discover ensign. That seam is GONE for skill discovery. `pi-install-managed-skill-placement`'s package-root scan (`collectSettingsPackageSkillPaths`, reading `settings.json` `packages` → each package's `package.json` `pi.skills`) is NOT cwd-keyed — it reads from pi's settings/package store, not from `{child-cwd}/.pi/skills`. The spike proved the skill is discovered from both repo and non-repo cwd. So the failure mode the fold-in was wired to prevent (ensign silently falls back to bare `worker` under a non-repo launch) is removed at its root by the install-managed mechanism, not by a `cwd:` argument.
+
+### 2. Re-assessment of the `cwd:<repo>` wiring — still useful, for a DIFFERENT reason
+
+The `cwd: <resolved repo root>` argument on every `subagent(...)` call is still worth keeping in the `async-dispatch` binding, but the JUSTIFICATION is reframed:
+
+- **SUPERSEDED claim:** the prior fold-in's statement that `cwd:<repo>` is "required for ensign discovery" (that the child must inherit the repo as `cwd` so member 1's `.pi/skills/ensign` project-declared skill is discovered) is **SUPERSEDED**. Skill discovery no longer depends on the child's `cwd`; it depends on the installed package's `pi.skills`. The "ensign loads because `cwd:<repo>`" causal chain is no longer authoritative.
+- **Reframed justification (working-directory concern):** pass `cwd: <resolved repo root>` so the **ensign's working directory is the repo**. Ensigns read entity files, run `go test`, and commit to the repo; their working directory should be the repo root regardless of the parent's launch `cwd`. This is a working-directory concern, sourced from the same install-recorded / explicitly-resolved repo path the launcher records — NOT a skill-discovery concern. The source path (install-recorded / `--plugin-dir` / `SPACEDOCK_REPO_ROOT` resolution) is unchanged; only the *reason* it is forwarded as `cwd:` changes.
+
+The `async-dispatch` binding's `cwd:` parameter instruction is therefore retained but re-scoped: "pass `cwd: <resolved repo root>` so the ensign's working directory is the repo" (sourced from the install-recorded / explicitly-resolved repo path), replacing the prior "so member 1's `.pi/skills/ensign` project-declared skill is discovered" rationale.
+
+### 3. AC-2 revision — non-repo launch pin retained, ensign-loaded pre-check re-sourced
+
+- The **non-repo launch pin** on AC-2 is STILL VALUABLE and retained: launching the parent FO from a non-repo `cwd` is what EXERCISES the install-managed discovery path, proving there is no cwd dependency in skill discovery. If the drive launched from a repo `cwd`, a cwd-keyed fallback could hide the regression; the non-repo launch makes the install-managed discovery provably load-bearing.
+- The **ensign-loaded pre-check** (verify the ensign loads the Spacedock ensign contract — no `skillsWarning`, ensign-contract behavior — before the `need_decision` round-trip is evaluated) is RETAINED, but its satisfaction is now attributed to the **package-root scan** (`collectSettingsPackageSkillPaths` reading the installed package's `pi.skills`), NOT to `cwd:<repo>`. The pre-check proves the install-managed mechanism delivered ensign to the child; `cwd:<repo>` is present only for the working directory.
+- AC-2's existing statement and test method are not rewritten; this re-check re-attributes the ensign-loaded pre-check's cause (package-root scan, not `cwd`) and keeps the non-repo launch pin as the exercise of install-managed discovery.
+
+### 4. Dependency change — capstone's pi-live drive now requires `pi-install-managed-skill-placement`
+
+The capstone's AC-2 `pi-live` drive depends on the ensign being discoverable by the child. Previously this composed against members 1 (`k8t`) and 2 (`2m1`); both are now ARCHIVED REJECTED. The drive now requires that **`pi-install-managed-skill-placement` (`eqrcrxcyye56nfwm997bj33d`) has landed** — specifically that `spacedock install --host pi` actually installs the package so the child's package-root scan finds `pi.skills`. The capstone's pi-live drive cannot go green until `pi-install-managed-skill-placement` is installed in the drive environment. The archived `k8t` / `2m1` are no longer the dependency.
+
+### What this re-check does NOT change
+
+- It does NOT rewrite the prior fold-in section, the approach (7 named capabilities; Pi adapter bindings for frictions 1–6), the 6 ACs' existing statements, or the test plan. It appends a re-assessment and marks the superseded claim explicitly.
+- It does NOT remove the `cwd:<repo>` wiring from the `async-dispatch` binding — it reframes the wiring's justification from skill-discovery to working-directory.
+- It does NOT add a new member or spike: the install-managed mechanism is already proven by the `pi-install-managed-skill-placement` spike.
+- It preserves prior live spike evidence (run `0637e2ed`, archived spike `cq9kb7cdpp9y48tn8gwzmqzq`) — unchanged and cited above.
+
+## Stage Report: ideation (gap-1 re-check 2026-06-19)
+
+- DONE: Re-checked Gap-1 against the sprint composition change (members 1 + 2 ARCHIVED REJECTED; superseded by `pi-install-managed-skill-placement`, `eqrcrxcyye56nfwm997bj33d`). Confirmed the child-cwd seam no longer exists for skill discovery because the install-managed package-root scan (`collectSettingsPackageSkillPaths`) is not cwd-keyed — proven by the `pi-install-managed-skill-placement` spike (skill discovered from both repo and non-repo cwd).
+- DONE: Re-assessed the `cwd:<repo>` wiring. Retained in the `async-dispatch` binding but reframed as a working-directory concern (ensigns read entity files, run `go test`, commit to the repo), sourced from the install-recorded / explicitly-resolved repo path. Marked the prior fold-in's claim that `cwd:<repo>` is "required for ensign discovery" as SUPERSEDED.
+- DONE: Revised the AC-2 attribution. Non-repo launch pin retained (it exercises install-managed discovery, proving no cwd dependency); ensign-loaded pre-check retained but re-sourced to the package-root scan rather than `cwd:<repo>`.
+- DONE: Recorded the dependency change — the capstone's AC-2 pi-live drive now requires `pi-install-managed-skill-placement` landed (not the archived `k8t` / `2m1`).
+
+### Summary
+
+Gap-1 re-check complete. The child-cwd seam is removed at its root by install-managed placement; the `cwd:<repo>` wiring is retained but reframed as a working-directory concern (skill-discovery rationale SUPERSEDED); AC-2's ensign-loaded pre-check is re-attributed to the package-root scan; the capstone's pi-live drive now depends on `pi-install-managed-skill-placement`. Prior fold-in statements marked SUPERSEDED above are no longer authoritative. This re-check is append-only; no prior section was rewritten.
