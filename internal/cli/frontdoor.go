@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/spacedock-dev/spacedock/internal/contract"
+	"github.com/spacedock-dev/spacedock/internal/fotier"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
@@ -63,6 +64,13 @@ const spacedockBinEnv = "SPACEDOCK_BIN"
 // NOT independently enable the feature.
 const agentTeamsEnv = "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
 
+// spacedockFOModelEnv carries the FO's launcher-resolved model into its session so
+// «fo.tier»() can self-identify its tier at boot. The launcher parses --model off
+// the host passthrough, normalizes it (fotier.NormalizeModel), and exports the
+// canonical name here; an absent or unresolvable --model leaves it unset, which the
+// FO resolves fail-safe to level-2-only.
+const spacedockFOModelEnv = "SPACEDOCK_FO_MODEL"
+
 func launchEnv(parent []string) []string {
 	env := withoutEnv(parent, spacedockBinEnv)
 	if bin, ok := resolvedLauncherBin(); ok {
@@ -91,6 +99,48 @@ func hasEnv(env []string, key string) bool {
 		}
 	}
 	return false
+}
+
+// withFOModelEnv sets SPACEDOCK_FO_MODEL on env to the resolved model, replacing
+// any inherited value. An empty model (absent or unresolvable --model) leaves the
+// var unset — never a stale pass-through — so the FO resolves fail-safe to
+// level-2-only. Layered over launchEnv (which owns SPACEDOCK_BIN) by the launchers.
+func withFOModelEnv(env []string, model string) []string {
+	env = withoutEnv(env, spacedockFOModelEnv)
+	if model != "" {
+		env = append(env, spacedockFOModelEnv+"="+model)
+	}
+	return env
+}
+
+// resolvedFOModel extracts --model from the host passthrough (space `--model X` or
+// equals `--model=X` form) and normalizes it to a canonical model name, or "" when
+// absent or unresolvable. This is the launcher half of the tier mechanism: the
+// value it returns is what reaches the FO as SPACEDOCK_FO_MODEL.
+func resolvedFOModel(passthrough []string) string {
+	for i, a := range passthrough {
+		if a == "--model" {
+			if i+1 < len(passthrough) {
+				return fotier.NormalizeModel(passthrough[i+1])
+			}
+			return ""
+		}
+		if v, ok := strings.CutPrefix(a, "--model="); ok {
+			return fotier.NormalizeModel(v)
+		}
+	}
+	return ""
+}
+
+// foModelEnvPassFlags returns the `--env-pass SPACEDOCK_FO_MODEL` safehouse flags
+// that forward the resolved FO model through safehouse's env sanitization into the
+// sandbox, mirroring launcherBinEnvPassFlags for SPACEDOCK_BIN. Omitted when no
+// model resolves (never a stale pass-through of an unset var).
+func foModelEnvPassFlags(model string) []string {
+	if model != "" {
+		return []string{"--env-pass", spacedockFOModelEnv}
+	}
+	return nil
 }
 
 // launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
@@ -377,6 +427,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	}
 	warnStrayPromptAfterDash(fd, "claude", "spacedock claude", stderr)
 
+	foModel := resolvedFOModel(fd.passthrough)
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
 	if !resume {
@@ -407,15 +458,17 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
-		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
-		// it into the sandbox. It rides the safehouse flags (before `--`), so the
-		// inner program stays `claude` and safehouse's program-keyed profile
-		// auto-detection still fires. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
+		// Forward SPACEDOCK_BIN + SPACEDOCK_FO_MODEL through safehouse's env
+		// sanitization with `--env-pass`: the launchers set them on the safehouse
+		// process, these flags carry them into the sandbox. They ride the safehouse
+		// flags (before `--`), so the inner program stays `claude` and safehouse's
+		// program-keyed profile auto-detection still fires. Each is omitted when its
+		// value cannot be resolved (the launcher bin, or the FO model).
+		passFlags := append(launcherBinEnvPassFlags(), foModelEnvPassFlags(foModel)...)
+		argv = safehouse.Wrap(inner, append(passFlags, extra...))
 	}
 
-	code, err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ())))
+	code, err := ops.Launch(argv, withFOModelEnv(withAgentTeams(launchEnv(os.Environ())), foModel))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
@@ -590,6 +643,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	}
 	warnStrayPromptAfterDash(fd, "codex", "spacedock codex", stderr)
 
+	foModel := resolvedFOModel(fd.passthrough)
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := codexResume(fd.passthrough)
 	if !resume {
@@ -619,15 +673,17 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
-		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
-		// it into the sandbox. It rides the safehouse flags (before `--`), so the
-		// inner program stays `codex` and safehouse's program-keyed profile
-		// auto-detection still fires. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
+		// Forward SPACEDOCK_BIN + SPACEDOCK_FO_MODEL through safehouse's env
+		// sanitization with `--env-pass`: the launchers set them on the safehouse
+		// process, these flags carry them into the sandbox. They ride the safehouse
+		// flags (before `--`), so the inner program stays `codex` and safehouse's
+		// program-keyed profile auto-detection still fires. Each is omitted when its
+		// value cannot be resolved (the launcher bin, or the FO model).
+		passFlags := append(launcherBinEnvPassFlags(), foModelEnvPassFlags(foModel)...)
+		argv = safehouse.Wrap(inner, append(passFlags, extra...))
 	}
 
-	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	code, err := ops.Launch(argv, withFOModelEnv(launchEnv(os.Environ()), foModel))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: launch failed: %v\n", err)
 		return 1
