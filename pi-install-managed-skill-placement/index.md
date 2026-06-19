@@ -1,12 +1,12 @@
 ---
 title: Pi install-managed skill placement — ship Spacedock as a pi package; make spacedock install --host pi actually install
-status: ideation
+status: implementation
 source: "Captain (2026-06-19): supersedes pi-ensign-skill-injection (k8t, archived REJECTED) and pi-launcher-repo-resolution (2m1, archived REJECTED). Both picked clone-bound workarounds (repo symlink; cwd-fallback record) for the fact that spacedock install --host pi is check-only (writes nothing). Verified against the obra/superpowers reference (.pi/extensions/superpowers.ts + package.json pi.skills) and pi-subagents source: the correct mechanism is install-managed package placement. pi install git:github.com/spacedock-dev/spacedock is the install source."
 score:
 started: 2026-06-19T22:41:57Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-install-managed-skill-placement
 issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
