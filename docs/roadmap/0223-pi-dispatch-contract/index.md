@@ -17,22 +17,25 @@ spacedock status --workflow-dir docs/dev --where sprint=0223-pi-dispatch-contrac
 
 | # | member | id | status | layer |
 |---|--------|----|--------|-------|
-| 1 | `pi-ensign-skill-injection` | `k8tbnmcbyqc5kkhj0m9vewq4` | ideation | child-side skill discovery (Layer 1) |
-| 2 | `pi-launcher-repo-resolution` | `2m1cgn22ygmwtxe43z2hx7xw` | ideation | launcher repo resolution, no cwd fallback (Layer 2) |
-| 3 | `pi-dispatch-model-stamping` | `bdtx7bmhekpy1x12ab53d9k3` | ideation | null model → parent live model, not settings default |
-| 4 | `pi-back-channel-dispatch` | `b23y61pgk93ph44pz506m2wy` | ideation | **capstone** — declare + wire the worker↔FO back-channel over intercom; harden `fo-dispatch-core.md` to runtime-neutral named capabilities |
+| 1 | `pi-install-managed-skill-placement` | `eqrcrxcyye56nfwm997bj33d` | ideation | **merged** — ship Spacedock as a pi package; `spacedock install --host pi` actually installs; both parent + child discover skills (supersedes archived `k8t` + `2m1`) |
+| 2 | `pi-dispatch-model-stamping` | `bdtx7bmhekpy1x12ab53d9k3` | ideation | null model → parent live model, not settings default |
+| 3 | `pi-back-channel-dispatch` | `b23y61pgk93ph44pz506m2wy` | ideation | **capstone** — declare + wire the worker↔FO back-channel over intercom; harden `fo-dispatch-core.md` to runtime-neutral named capabilities |
 
-Members 1–3 are independent, small, and unblock correct dispatch — parallelizable. Member 4 (capstone) depends on correct dispatch being *possible*, so it rides after/alongside; its friction 4 (`worker-identity-capture`) is where member 3's model-stamping lands structurally.
+> **Re-carved 2026-06-19 (captain):** members `pi-ensign-skill-injection` (`k8t`) and `pi-launcher-repo-resolution` (`2m1`) ARCHIVED REJECTED — both picked clone-bound workarounds (repo symlink; cwd-fallback record) for the fact that `spacedock install --host pi` is check-only. Superseded by the merged `pi-install-managed-skill-placement` (`eq`), which ships Spacedock as a pi package (`package.json` `pi.skills` + `.pi/extensions/spacedock.ts`) so `pi install git:github.com/spacedock-dev/spacedock` makes both parent (extension `resources_discover`) and child (pi-subagents `collectSettingsPackageSkillPaths`) discover skills with no clone/cwd/symlink. Spike PASSED. The capstone's staff-review gap-1 (`cwd:<repo>` for skill discovery) is re-checked and reframed as a working-directory concern (the child-cwd seam is gone). Second staff review pending.
 
-## Staff preflight review (run `3adf00ee`, 2026-06-19)
+Members 1 (install) and 2 (model-stamping) are independent and parallelizable. Member 3 (capstone) depends on 1+2 landed for its `pi-live` drive (needs install-managed skill discovery + parent-model stamping); its core-rewrite Deliverable A can start in parallel.
 
-Independent reviewer (glm-5.2, not the FO, not the ideation ensigns) refuted the sprint as a whole. Full review at `staff-review.md`. **Verdict: Gaps to close — not yet cold-boot drivable.** DoD coverage, sequencing, blast-radius, and scope all passed clean; one blocker + two minor gaps:
+## Staff preflight review #1 (run `3adf00ee`, 2026-06-19)
 
-1. **[Blocker — owner: member 4] Child-cwd seam.** Member 1's `.pi/skills/ensign` symlink is cwd-keyed; member 2 makes the parent launchable from a non-repo cwd; the child's cwd defaults to the parent's. Under member 2's headline scenario, member 1's symlink isn't discovered and ensign doesn't load (DoD bullet b re-breaks). Verified closeable: `subagent(...)` exposes a top-level `cwd` param (`pi-subagents/src/extension/schemas.ts:69`); the capstone must pass `cwd: <repo>` on every dispatch + pin AC-2's launch cwd to non-repo. **Folded into member 4 via run `73dadc9f`.**
-2. **[Gap — owner: member 4, confirm against member 3] Pi canonical-model-space declaration.** Neither ideation firmly owns it; member 3 defers to the capstone, capstone doesn't claim. Risk: double-ship drift or silent reuse breakage. **Folded into member 4 via run `73dadc9f`** (capstone references member 3's declaration, doesn't re-declare).
-3. **[Gap — owner: Shaping FO, in the cold-boot package] Three missing quirks** — launch-cwd guidance (Q11), 1-2-3-landed preflight (Q12), null-model contradiction window (Q13). **Added to this index as Q11–Q13.**
+Independent reviewer (glm-5.2, not the FO, not the ideation ensigns) refuted the sprint as a whole. Full review at `staff-review.md`. **Verdict: Gaps to close — not yet cold-boot drivable.** Found one blocker (child-cwd seam) + two minor gaps. **All three gaps are now closed by the re-carve:**
 
-No material redesign needed. Once gap 1+2 land in member 4's ideation, the sprint is cold-boot drivable.
+1. ~~[Blocker] Child-cwd seam~~ — CLOSED by the re-carve. The gap assumed members 1 (`k8t` symlink) + 2 (`2m1` cwd-fallback) would compose with the capstone via `cwd:<repo>` wiring. The merged `pi-install-managed-skill-placement` removes the seam at its root (package-root scan, not cwd-keyed). The capstone's `cwd:<repo>` is re-checked (run `af9a980a`) and reframed as a working-directory concern.
+2. ~~[Gap] Pi canonical-model-space declaration ownership~~ — CLOSED (capstone references member 3's declaration, doesn't re-declare; folded via run `73dadc9f`).
+3. ~~[Gap] Three missing cold-boot quirks~~ — CLOSED (Q11–Q13 added to this index).
+
+## Staff preflight review #2 (pending)
+
+A second independent reviewer will re-refute the re-carved sprint (3 members: `eq`, `bdt`, `b2`). Focus: does the merged task cleanly absorb members 1+2's scope? Does the capstone's revised gap-1 stance hold? Is the sprint cold-boot drivable now? Output → `staff-review-2.md`.
 
 ## The binding concept
 
