@@ -134,16 +134,15 @@ var allowedPRViewFiles = map[string]bool{
 	filepath.Join("mods", "pr-merge.md"): true,
 }
 
-// TestNoUnexpectedPRViewScanIntroduced is a structural-ABSENCE check over the shipped
-// surface: after the move, `gh pr view` appears ONLY in mods/pr-merge.md. Any other
-// shipped file naming `gh pr view` fails. A no-pr-merge-mod workflow therefore loads no
-// instruction that reaches `gh` in its loop. Two discriminator controls ship below.
-func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
-	root := repoRoot(t)
-	files := shippedInstructionMarkdown(t)
-	if len(files) == 0 {
-		t.Fatal("walked zero shipped instruction files — scope bug; the absence check would pass vacuously")
-	}
+// prViewLeaksOutsideAllowList is the REAL allow-list scan, factored so the production
+// check AND the negative discriminator control drive the SAME logic — not two inlined
+// copies. It walks the given files, reads each, and returns the repo-relative paths that
+// name `gh pr view` while absent from `allow`. Defeating this one function (widening
+// `allow`, dropping the token match) reds both callers — that is what makes the negative
+// control load-bearing rather than a re-implementation that can't fail.
+func prViewLeaksOutsideAllowList(t *testing.T, root string, files []string, allow map[string]bool) []string {
+	t.Helper()
+	var leaks []string
 	for _, path := range files {
 		rel, err := filepath.Rel(root, path)
 		if err != nil {
@@ -155,9 +154,25 @@ func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
 			t.Errorf("read %s: %v", path, err)
 			continue
 		}
-		if strings.Contains(string(data), "gh pr view") && !allowedPRViewFiles[rel] {
-			t.Errorf("%s names `gh pr view` outside the canonical pr-merge mod — a no-pr-merge-mod workflow must reach no `gh` in its loop", rel)
+		if strings.Contains(string(data), "gh pr view") && !allow[rel] {
+			leaks = append(leaks, rel)
 		}
+	}
+	return leaks
+}
+
+// TestNoUnexpectedPRViewScanIntroduced is a structural-ABSENCE check over the shipped
+// surface: after the move, `gh pr view` appears ONLY in mods/pr-merge.md. Any other
+// shipped file naming `gh pr view` fails. A no-pr-merge-mod workflow therefore loads no
+// instruction that reaches `gh` in its loop. Two discriminator controls ship below.
+func TestNoUnexpectedPRViewScanIntroduced(t *testing.T) {
+	root := repoRoot(t)
+	files := shippedInstructionMarkdown(t)
+	if len(files) == 0 {
+		t.Fatal("walked zero shipped instruction files — scope bug; the absence check would pass vacuously")
+	}
+	for _, rel := range prViewLeaksOutsideAllowList(t, root, files, allowedPRViewFiles) {
+		t.Errorf("%s names `gh pr view` outside the canonical pr-merge mod — a no-pr-merge-mod workflow must reach no `gh` in its loop", rel)
 	}
 }
 
@@ -177,17 +192,41 @@ func TestPRViewAllowListIsLoadBearing(t *testing.T) {
 	}
 }
 
-// TestPRViewAllowListConstrains is the NEGATIVE discriminator control: a planted
-// non-allowed file carrying `gh pr view` is flagged by the same allow-list scan, proving
-// the allow-list actually constrains rather than exempting everything.
+// TestPRViewAllowListConstrains is the NEGATIVE discriminator control: it plants a real
+// non-allowed shipped file carrying `gh pr view`, runs the REAL allow-list scan
+// (prViewLeaksOutsideAllowList — the same function the production check drives), and
+// asserts the scan FLAGS the plant. This is NOT a re-implementation of the scan: defeating
+// the shared scan reds this control, so it cannot pass vacuously. Non-vacuity was verified
+// by mutation: stubbing prViewLeaksOutsideAllowList to never flag turns this control RED via
+// its scan-flagging assertion (recorded in the implementation stage report's cycle-2 section).
 func TestPRViewAllowListConstrains(t *testing.T) {
-	plantedRel := filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md")
-	plantedContent := "For each entity, check PR state via `gh pr view` and advance merged PRs."
-	if allowedPRViewFiles[plantedRel] {
-		t.Fatalf("negative control invalid: planted path %q is on the allow-list", plantedRel)
+	root := repoRoot(t)
+	// Plant a real non-allowed shipped file under skills/ so the actual shipped-surface
+	// walk picks it up; clean it up after.
+	plantPath := filepath.Join(skillsRoot(t), "first-officer", "references", "zz-pr-view-negative-control.md")
+	plantRel, err := filepath.Rel(root, plantPath)
+	if err != nil {
+		t.Fatalf("rel %s: %v", plantPath, err)
 	}
-	flagged := strings.Contains(plantedContent, "gh pr view") && !allowedPRViewFiles[plantedRel]
-	if !flagged {
-		t.Errorf("negative control: a planted non-allowed file carrying `gh pr view` was NOT flagged — the allow-list does not constrain")
+	if allowedPRViewFiles[plantRel] {
+		t.Fatalf("negative control invalid: planted path %q is on the allow-list", plantRel)
+	}
+	plantBody := "<!-- negative control -->\nFor each entity, check PR state via `gh pr view` and advance merged PRs.\n"
+	if err := os.WriteFile(plantPath, []byte(plantBody), 0o644); err != nil {
+		t.Fatalf("plant non-allowed file %s: %v", plantPath, err)
+	}
+	defer os.Remove(plantPath)
+
+	files := shippedInstructionMarkdown(t)
+	leaks := prViewLeaksOutsideAllowList(t, root, files, allowedPRViewFiles)
+	found := false
+	for _, rel := range leaks {
+		if rel == plantRel {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("negative control: the REAL allow-list scan did NOT flag the planted non-allowed file %q (leaks=%v) — the allow-list does not constrain", plantRel, leaks)
 	}
 }
