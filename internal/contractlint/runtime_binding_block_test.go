@@ -149,7 +149,7 @@ func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 			"next foreground wait is reinstalled",
 			"queued/activity-driven delivery",
 			"autonomous FO wake-up",
-			"re-run the kept-alive validation reviewer through the same turn-starting `«addressable-worker»` binding",
+			"MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`",
 		},
 		filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"): {
 			"Pi-native substrate selected by the launch/test harness",
@@ -170,6 +170,33 @@ func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 			if !strings.Contains(text, want) {
 				t.Errorf("%s missing preserved runtime semantic %q", rel, want)
 			}
+		}
+	}
+}
+
+func TestCodexValidationReviewerReuseRequiresTurnStartingFollowupTask(t *testing.T) {
+	rel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	text := readRepoFile(t, rel)
+	runtime := markdownSectionFromText(t, text, "## Runtime implementation")
+	feedback := markdownSectionFromText(t, text, "## Feedback reviewer reuse")
+
+	for _, want := range []string{
+		"`followup_task(target,message)` is the turn-starting reuse/advance route",
+		"`send_message(target,message)` is non-triggering context/preservation only",
+		"does not require `send_message` to be present",
+		"completed validation reviewer remains addressable",
+	} {
+		if !strings.Contains(runtime, want) {
+			t.Errorf("%s runtime implementation missing Codex reviewer-reuse binding %q", rel, want)
+		}
+	}
+	for _, want := range []string{
+		"MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`",
+		"Do not fresh-dispatch merely because the reviewer completed or already sent a completion signal.",
+		"After a PASSED re-review, re-enter the normal gate flow and advance or terminalize from durable state.",
+	} {
+		if !strings.Contains(feedback, want) {
+			t.Errorf("%s feedback reviewer reuse note missing %q", rel, want)
 		}
 	}
 }
