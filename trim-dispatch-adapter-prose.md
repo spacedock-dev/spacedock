@@ -19,3 +19,14 @@ Do NOT cut await/reuse/guardrail contract to hit a line count. The `## Awaiting 
 - **AC-3** — `go build ./...` + `go test ./internal/contractlint/` green; scoped to the dispatch adapter prose.
 
 Follows b2 (pi-back-channel-dispatch) — operates on the SAME adapter files; sequence AFTER b2 lands to avoid conflict.
+
+## Folded-in contract-hygiene findings (captain review 2026-06-20)
+
+These are the token reduction the binary-migration program OWES — the END (a measurably leaner contract), not deferrable polish. AC-1's "cumulative line delta NEGATIVE" is the right gate; hold every item below to it. All are contract-file (scaffolding) edits → dispatched worker, contractlint-guarded; none behavioral.
+
+- **Decouple step-number coupling + add the missing capabilities (PR #414 #4/#5).** `claude-first-officer-runtime.md:13`, `claude-fo-dispatch.md:159 & 171`, and `fo-merge-core.md` couple teardown to "Merge-and-Cleanup step 10" — banned by `docs/runtime-support.md:13`. Root cause: the core (post-#409) defines six capability `«fn»`s but NO `«worker.shutdown»` (nor `«worker.spawn»`), though `runtime-support.md:9` names them. Add `«worker.shutdown»` (and `«worker.spawn»`) as core capability `«fn»`s with per-host `→` bindings, then replace the step-10 references with the capability name.
+- **Evergreen the contract — strip temporal markers.** The operating contract must carry NO sprint/version/roadmap temporality: `→ **shipped** (this sprint):` (×4 — `fo-merge-core.md:14`, `first-officer-shared-core.md:166/174/181`) → `→ **shipped**:`; "tracked for 0.20.6" (`claude-fo-dispatch.md:159`); "(0222) … descoped to roadmap 0222" (`fo-dispatch-core.md:150`). These annotations encode means-thinking (what shipped this sprint), not value.
+- **Name capabilities concretely — drop generic "the verb".** "the verb" (×7 — shared-core ×3, fo-merge-core ×4) is confusing; say `«merge.guard»` / `spacedock merge guard` (or the specific capability).
+- **#6 — design decision, NOT an auto-cut.** Host tool bindings in the core's `→` lines are the contractlint-guarded transition form `runtime-support.md:15` permits; the stricter shape (distribute bindings to per-runtime files) is optional. Record the decision before any cut.
+
+Root insight (see entity `p2` / `pr-complete-binary-command`): the contract GREW (`fo-merge-core.md` 41→49 this sprint) because `merge guard` is a THIN finalize-helper — the prose carries "when X signals, the FO does Y" choreography on top of the still-FO-owned orchestration. The verb is the MEANS; the leaner contract is the END, and it was never harvested. The real collapse is the FAT `spacedock pr complete` (p2) absorbing the orchestration so the choreography prose disappears.
