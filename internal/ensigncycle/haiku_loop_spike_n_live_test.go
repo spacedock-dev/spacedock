@@ -14,11 +14,11 @@ import (
 )
 
 // TestLiveHaikuLoopSpikeN wraps the proven single-drive driveHaikuLoopOnce in a
-// count loop for the AC-5 must-build decision rule (a loop step that breaks on
-// ANY of the N>=3 drives is must-build; "holds reliably" requires clean across
-// ALL N). It is purely additive over the implementation-proven single drive: it
-// does NOT touch driveHaikuLoopOnce, only calls it N times, each into its OWN
-// run-{i} artifact subdir so all N tool-call streams are DURABLE on disk for the
+// count loop for the AC-2 decision rule (a loop step that breaks on ANY of the
+// N>=3 drives is recorded unreliable for that step; "holds reliably" requires
+// clean across ALL N). It is purely additive over the implementation-proven single
+// drive: it does NOT touch driveHaikuLoopOnce, only calls it N times, each into its
+// OWN run-{i} artifact subdir so all N tool-call streams are DURABLE on disk for the
 // FO's classification (the single-drive path reused a fixed stream filename, which
 // N runs would overwrite — the per-run subdir is the only difference).
 //
@@ -49,12 +49,12 @@ func TestLiveHaikuLoopSpikeN(t *testing.T) {
 		grades = append(grades, grade)
 	}
 
-	// AC-5 any-break classification, computed from the durable grades. A field that
-	// is false on ANY run marks that loop step as breaks-on-any-N (must-build); a
-	// field true across ALL N is holds-across-all-N. This is the drive's OWN
-	// measurement; the external prior (trigger-carrying steps) is applied by the FO
-	// on top of it, never folded into these counts.
-	t.Logf("=== AC-5 any-break matrix over N=%d drives ===", n)
+	// AC-2 any-break classification, computed from the durable grades. A field that
+	// is false on ANY run marks that loop step as breaks-on-any-N (recorded
+	// unreliable); a field true across ALL N is holds-across-all-N. This is the
+	// drive's OWN measurement; the external prior (trigger-carrying steps) is applied
+	// by the FO on top of it, never folded into these counts.
+	t.Logf("=== AC-2 any-break matrix over N=%d drives ===", n)
 	report := func(label string, get func(haikuLoopGrade) bool) {
 		breaks := 0
 		for _, g := range grades {
@@ -66,17 +66,18 @@ func TestLiveHaikuLoopSpikeN(t *testing.T) {
 		if breaks > 0 {
 			verdict = "BREAKS-on-" + strconv.Itoa(breaks) + "-of-" + strconv.Itoa(n)
 		}
-		t.Logf("  %-22s %s", label, verdict)
+		t.Logf("  %-32s %s", label, verdict)
 	}
 	report("entityLocated", func(g haikuLoopGrade) bool { return g.entityLocated })
 	report("builtMarker", func(g haikuLoopGrade) bool { return g.builtMarker })
 	report("statusDone", func(g haikuLoopGrade) bool { return g.statusDone })
+	report("completedSet", func(g haikuLoopGrade) bool { return g.completedSet })
 	report("entityArchived", func(g haikuLoopGrade) bool { return g.entityArchived })
 	report("verdictSet", func(g haikuLoopGrade) bool { return g.verdictSet })
 	report("pathScopedCommit", func(g haikuLoopGrade) bool { return g.pathScopedCommit })
+	report("integrationTransitionCommitted", func(g haikuLoopGrade) bool { return g.integrationTransitionCommitted })
 	report("dispatchBuildCalled", func(g haikuLoopGrade) bool { return g.dispatchBuildCalled })
-	report("opusAgentSpawned", func(g haikuLoopGrade) bool { return g.opusAgentSpawned })
-	report("gateVerdictFromL3", func(g haikuLoopGrade) bool { return g.gateVerdictFromL3 })
+	report("noStrongerModelAgent", func(g haikuLoopGrade) bool { return g.noStrongerModelAgent })
 
 	// The wrapper does NOT fail on a break: a broken step is the SIGNAL the spike
 	// measures (it becomes a must-build verb), not a harness failure. The FO reads
