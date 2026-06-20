@@ -1,6 +1,6 @@
 ---
 title: Pi FO runtime — apply runtime-support.md principles (positive bindings, no step coupling, capability names)
-status: validated
+status: validation
 source: "Captain (2026-06-20): sweeping runtime-contract verbosity post-#414. Three spots in skills/first-officer/references/pi-first-officer-runtime.md violate docs/runtime-support.md's own 'Runtime contract principles' — negative host contrast, mutable-step-number coupling, Claude-centric enum contrast. The pi adapter was heavily rewritten by 0223 concurrently, so the prior prose sweeps didn't reach it."
 score:
 started: 2026-06-20T18:09:00Z
