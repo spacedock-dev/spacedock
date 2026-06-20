@@ -42,3 +42,13 @@ Make `spacedock merge guard <slug>` own the full `merge: pr` lifecycle so the FO
 
 ### Summary
 The verb now owns the full merge:pr lifecycle: auto-arm under both policies, finalize off a local merge SENTINEL (never raw pr-presence — fixing the premature-finalize bug where an open-PR entity was archived before its PR landed), and a path-scoped archive commit by the verb. Two superseded policy-gated tests were reframed (not deleted) to the new contract while preserving their guard-not-bypassed intent. CONSISTENCY HANDOFF: fo-merge-core.md now names the `pr-merge:{n}` sentinel as the FINALIZE key, but the fo-realm `docs/dev/_mods/pr-merge.md` MERGED-detection still finalizes directly rather than recording that sentinel + re-running `merge guard` — left for the FO (fo-realm file, outside this stage's stated deliverable; the verb accepts both sentinel forms today).
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: prIndicatesMerged finalizes ONLY on a well-formed merge sentinel — a positive-integer pr-merge:{N} or a non-empty local-merge:{sha}; pr-merge:abc, pr-merge:0, and empty/quoted-empty sentinels must NOT finalize. Write the red test first (proving the current fail-open), then implement to green.
+  Red first: `TestPRIndicatesMerged` + `TestMergeGuardDoesNotFinalizeOnMalformedSentinel` (fixture `100-pr-malformed-sentinel.md`, `pr: pr-merge:abc`) confirmed FAILING against the bare-HasPrefix code (it finalized+archived `abc`). Fix: `prIndicatesMerged` now `strconv.Atoi`-validates a positive pr-merge suffix and `isSHALike`-validates a non-empty hex local-merge suffix; all other forms (garbage/zero/empty/quoted-empty/bare-#N) return false. Both tests green; happy-path `pr-merge:42`/`local-merge:{sha}` still finalize. Code commit 98769858 (post-rebase).
+- DONE: Branch rebased onto current origin/main (now 2 behind) and full `go test ./...` green.
+  `git fetch origin && git rebase origin/main` — clean (the 2 ahead were the "fail closed on invalid validate roots" pair `c32473dd`/`3e2cb0a7`, no merge.go overlap). Full `go test ./...` green (all packages ok; status 27s, cli 43s).
+
+### Summary
+Closed the fail-OPEN hole the detached audit found: `prIndicatesMerged` (internal/status/merge.go) did a bare `strings.HasPrefix` with zero suffix validation, so any garbage sentinel drove an irreversible finalize+archive. The smallest reasonable fix validates the suffix after the prefix — positive integer for `pr-merge:`, non-empty hex token for `local-merge:` — failing CLOSED on everything else. Auto-arm and archive-commit logic untouched (out of scope); the folder-form archive path-awareness and mod↔core sentinel convergence remain separately backlogged.
