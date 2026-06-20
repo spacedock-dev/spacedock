@@ -33,4 +33,4 @@ When done, return one concise final result that names:
 - the commit or durable evidence produced;
 - any residual risk or blocker.
 
-Either the final result (the subagent return) or an explicit done-message sent via `contact_supervisor` / `intercom send` is a valid completion signal — the FO verifies the entity-file stage report either way. After sending that completion result, stop. Do not idle waiting for another message unless the active Pi substrate explicitly delivers one or the FO routes follow-up through the back-channel.
+The final result (the subagent return) is the primary completion signal; an optional done-advisory sent via `intercom send` (NOT `contact_supervisor`, which offers no completion reason) may precede the subagent return as a heads-up; the FO file-verifies the stage report either way. After sending that completion result, stop. Do not idle waiting for another message unless the active Pi substrate explicitly delivers one or the FO routes follow-up through the back-channel.
