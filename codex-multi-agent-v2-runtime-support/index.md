@@ -246,3 +246,24 @@ PASSED. The acceptance criteria are satisfied by code/fixture tests, updated run
 ### Summary
 
 Validation passed AC-1 through AC-5, reproduced the feedback-cycle fix in the live Codex shared-scenario lane, and confirmed the required Go, race, formatting, and focused checks. The recommended gate result is PASSED with the live `send_input` stream-label caveat recorded.
+
+## Stage Report: implementation (feedback cycle 3)
+
+- DONE: Remove runtime-host and runtime-tool leakage from the shared feedback rejection procedure.
+  `skills/feedback-rejection-flow/SKILL.md` now routes only through `«addressable-worker»` and waits only through `«completion-signal»`. It no longer names Codex, Claude, `followup_task`, `send_message`, `SendMessage`, `list_agents`, or other host-specific tool names.
+- DONE: Keep concrete Codex call shapes in the Codex runtime adapter binding section.
+  `skills/first-officer/references/codex-first-officer-runtime.md` keeps the explicit bindings in `## Live Tool Surface Probe`; other Codex runtime and probe prose now refers to capabilities such as `«worker.spawn»`, `«addressable-worker»`, `«completion-signal»`, and `«roster-reconcile»`.
+- DONE: Extend contractlint for the host-neutral boundary.
+  Added checks that fail if feedback-rejection-flow contains runtime host/tool names, and checks that concrete Codex tool call shapes stay in the Codex live binding section while still proving the live Codex binding exists.
+
+### Verification
+
+- PASS: `go test ./internal/contractlint -run 'TestCodex|TestFeedback' -count=1` -> 4 passed in 1 package.
+- PASS: `go test ./internal/ensigncycle -run TestAssertCodexReviewerReuse -count=1` -> 9 passed in 1 package.
+- RAN: `gofmt -w ./cmd ./internal`; as before, it produced unrelated comment/alignment churn in `internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`, and `internal/ensigncycle/haiku_loop_spike_live_test.go`, which was reverted before commit.
+- PASS: `go test ./...` -> 1681 passed in 17 packages.
+- PASS: `go test ./... -race` -> 1681 passed in 17 packages.
+
+### Summary
+
+Feedback cycle 3 makes the rejection-flow procedure host-neutral and moves concrete runtime call shapes behind the Codex adapter binding boundary. Focused contract and reviewer-reuse checks pass, along with the full Go and race suites.
