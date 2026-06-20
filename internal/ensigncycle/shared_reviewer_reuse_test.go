@@ -11,7 +11,8 @@ import (
 // They are the producer signal that the FO reused the kept-alive validation
 // reviewer for the cycle-2 re-review rather than fresh-dispatching (the #141
 // keepalive contract the Go port dropped): Claude reuses via a SendMessage tool
-// call, Codex via a `send_input` call. They live under the DEFAULT build tags
+// call, Codex multi_agent_v2 via `followup_task`, and legacy Codex fixtures via
+// `send_input`. They live under the DEFAULT build tags
 // (parsing only stdlib JSON) so the offline table tests exercise them without
 // spending a model, alongside the //go:build live runners that feed them real
 // transcripts.
@@ -201,8 +202,8 @@ func assertClaudeSingleEntityRejectionFlow(stream string) error {
 }
 
 // codexCollabItem is one `codex exec --json` stream item. Codex surfaces its
-// multi-agent calls as `collab_tool_call` items (tool = spawn_agent / send_input /
-// wait / close_agent); the worker is addressed by opaque `receiver_thread_ids`,
+// multi-agent calls as `collab_tool_call` items (tool = spawn_agent / followup_task /
+// send_input for legacy pre-v2 fixtures / wait / close_agent); the worker is addressed by opaque `receiver_thread_ids`,
 // not by a name. The validation reviewer's thread is bound by the spawn_agent whose
 // prompt dispatches the validation stage (its completed item carries the spawned
 // thread id in receiver_thread_ids).
@@ -219,9 +220,10 @@ type codexCollabItem struct {
 // assertCodexReviewerReuse scans the `codex exec --json` transcript for the FO
 // reusing the kept-alive cycle-1 validation reviewer for the cycle-2 re-review —
 // the durable producer signal it did NOT fresh-dispatch the cycle-2 validator (the
-// #141 keepalive contract). Codex reuses via a `send_input` collab_tool_call to the
-// reviewer's thread; the thread is bound by the `spawn_agent` whose prompt
-// dispatched the validation stage. It enforces BOTH halves of "genuine reuse",
+// #141 keepalive contract). Codex multi_agent_v2 reuses via a `followup_task`
+// collab_tool_call to the reviewer's thread; legacy pre-v2 fixtures use
+// `send_input`. The thread is bound by the `spawn_agent` whose prompt dispatched
+// the validation stage. It enforces BOTH halves of "genuine reuse",
 // because binding ANY validation-prompt spawn alone false-passes a fresh-dispatch
 // (the cycle-8 M2 hole):
 //
@@ -229,10 +231,10 @@ type codexCollabItem struct {
 //     validation spawn_agent; a reuse run re-engages that same thread. A run that
 //     fresh-spawns the cycle-2 validator emits a SECOND validation spawn_agent — the
 //     forbidden behavior — so >1 validation spawn_agent is an immediate FAIL, even
-//     though a send_input to the fresh thread otherwise looks like reuse.
-//  2. A send_input to the cycle-1 reviewer's bound thread. With exactly one
-//     validation spawn, a send_input to its thread is the re-review — not the
-//     feedback-to-implementation send_input (which targets the impl thread), not
+//     though a follow-up to the fresh thread otherwise looks like reuse.
+//  2. A turn-triggering reuse call to the cycle-1 reviewer's bound thread. With
+//     exactly one validation spawn, a follow-up to its thread is the re-review —
+//     not feedback-to-implementation routing (which targets the impl thread), not
 //     loose narration.
 func assertCodexReviewerReuse(jsonl string) error {
 	// First pass: count validation spawn_agents and bind their thread id(s). A
@@ -271,8 +273,8 @@ func assertCodexReviewerReuse(jsonl string) error {
 		return fmt.Errorf("the FO emitted %d validation spawn_agents — it FRESH-dispatched the cycle-2 validator instead of reusing the kept-alive cycle-1 reviewer (the #141 keepalive contract violation)", validationSpawnCount)
 	}
 
-	// Second pass: with exactly one validation reviewer, a send_input to its bound
-	// thread is the cycle-2 re-review reuse signal.
+	// Second pass: with exactly one validation reviewer, a turn-triggering reuse
+	// call to its bound thread is the cycle-2 re-review reuse signal.
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -283,7 +285,7 @@ func assertCodexReviewerReuse(jsonl string) error {
 			continue
 		}
 		it := ev.Item
-		if it.Type != "collab_tool_call" || it.Tool != "send_input" {
+		if it.Type != "collab_tool_call" || !codexReviewerReuseTool(it.Tool) {
 			continue
 		}
 		for _, tid := range it.ReceiverThreadIDs {
@@ -292,7 +294,11 @@ func assertCodexReviewerReuse(jsonl string) error {
 			}
 		}
 	}
-	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no send_input for the cycle-2 re-review")
+	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no followup_task/send_input for the cycle-2 re-review")
+}
+
+func codexReviewerReuseTool(tool string) bool {
+	return tool == "followup_task" || tool == "send_input"
 }
 
 // codexDispatchesValidation reports whether a spawn_agent prompt dispatched the

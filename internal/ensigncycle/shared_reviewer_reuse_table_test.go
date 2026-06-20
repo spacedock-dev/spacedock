@@ -161,23 +161,26 @@ func TestClaudeSingleEntityRejectionFlow(t *testing.T) {
 }
 
 func TestAssertCodexReviewerReuse(t *testing.T) {
-	// The real Codex collab_tool_call shape. A spawn_agent dispatching the validation
-	// stage binds the reviewer's thread id (vThread); a later send_input to vThread is
-	// the cycle-2 reviewer reuse. Both events, correlated, are the only passing shape.
+	// The Codex collab_tool_call shape. A spawn_agent dispatching the validation
+	// stage binds the reviewer's thread id (vThread); a later followup_task
+	// (or legacy send_input fixture) to vThread is the cycle-2 reviewer reuse.
+	// Both events, correlated, are the only passing shape.
 	const vThread = "019e9695-1a3a-7481-be31-a1e81d53ec6d"
 	const iThread = "019e9693-ad11-7701-b615-90d6a86b2dc8"
 	spawnValidation := `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["` + vThread + `"],"prompt":"Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-validation.md and treat its content as your assignment."}}`
 	spawnImpl := `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["` + iThread + `"],"prompt":"Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-implementation.md and treat its content as your assignment."}}`
 	reuseValidation := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"send_input","receiver_thread_ids":["` + vThread + `"],"prompt":"Re-run validation for rejection-task as cycle 2 using your existing validation reviewer context."}}`
+	reuseValidationV2 := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"followup_task","receiver_thread_ids":["` + vThread + `"],"prompt":"Re-run validation for rejection-task as cycle 2 using your existing validation reviewer context."}}`
 	feedbackToImpl := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"send_input","receiver_thread_ids":["` + iThread + `"],"prompt":"Feedback routed from validation to implementation for rejection-task. The fix marker is absent."}}`
 
 	realReuse := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + reuseValidation
+	realReuseV2 := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + reuseValidationV2
 
 	// FRESH-DISPATCH false-pass (the cycle-8 M2 hole): the FO drives cycle-1
 	// validation (spawn #1 → vThread), then FRESH-spawns a SECOND cycle-2 validation
-	// reviewer (vThread2 — its prompt also names validation) and send_inputs to THAT
+	// reviewer (vThread2 — its prompt also names validation) and routes to THAT
 	// new thread. The old assertion bound ANY validation-prompt spawn as "the
-	// validation thread", so a send_input to the fresh cycle-2 thread passed as
+	// validation thread", so a message to the fresh cycle-2 thread passed as
 	// "reuse". The strengthened assertion must RED it: two validation spawn_agents
 	// means the FO fresh-dispatched, it did not reuse the kept-alive cycle-1 reviewer.
 	const vThread2 = "019e9696-2b4b-8592-cf42-b2f92e64fd7e"
@@ -191,6 +194,7 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		wantErr bool
 	}{
 		{"real send_input to the validation reviewer thread", realReuse, false},
+		{"real followup_task to the validation reviewer thread", realReuseV2, false},
 		{"fresh cycle-2 spawn_agent + send_input must RED", freshDispatch, true},
 		{
 			"loose narration only",
