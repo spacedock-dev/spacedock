@@ -117,7 +117,9 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 		t.Fatalf("read %s: %v", codexRuntimeRel, err)
 	}
 	codexRuntime := string(data)
-	bindingSection, outsideBinding := extractMarkdownSection(t, codexRuntime, "## Live Tool Surface Probe")
+	probeSection, outsideProbe := extractMarkdownSection(t, codexRuntime, "## Live Tool Surface Probe")
+	runtimeSection, outsideRuntime := extractMarkdownSection(t, outsideProbe, "## Runtime implementation")
+	allowedSections := probeSection + "\n" + runtimeSection
 
 	for _, want := range []string{
 		"`spawn_agent(task_name,message,fork_turns)`",
@@ -127,13 +129,13 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 		"`list_agents(path_prefix?)`",
 		"`interrupt_agent`",
 	} {
-		if !strings.Contains(bindingSection, want) {
-			t.Errorf("%s live binding section missing %q", codexRuntimeRel, want)
+		if !strings.Contains(allowedSections, want) {
+			t.Errorf("%s Codex runtime binding/probe sections missing %q", codexRuntimeRel, want)
 		}
 	}
 
 	paths := map[string]string{
-		codexRuntimeRel: outsideBinding,
+		codexRuntimeRel: outsideRuntime,
 	}
 	for _, rel := range []string{
 		filepath.Join("skills", "ensign", "references", "codex-ensign-runtime.md"),

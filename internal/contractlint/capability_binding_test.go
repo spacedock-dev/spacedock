@@ -22,12 +22,13 @@ func dispatchCorePath(t *testing.T) string {
 var capabilityHosts = []string{"Claude", "Codex", "Pi"}
 
 // fnHeadingRe: a capability «fn» DEFINITION heading `## «name»:` (the colon distinguishes
-// a definition from an inline reference). fnRefRe: any undotted `«name»` reference. The
-// dotted prose-functions («state.commit», «dispatch.next-action») have dots and are
-// excluded; the meta-mention «fn» is excluded via metaTokens.
+// a definition from an inline reference). fnRefRe: any capability `«name»` reference. Most
+// dotted prose-functions («state.commit», «dispatch.next-action») are excluded; the
+// first-class worker lifecycle capabilities are included explicitly.
 var (
-	fnHeadingRe = regexp.MustCompile(`(?m)^## «([a-z][a-z-]+)»:`)
-	fnRefRe     = regexp.MustCompile(`«([a-z][a-z-]+)»`)
+	fnNameRe    = `(?:worker\.(?:spawn|shutdown)|[a-z][a-z-]+)`
+	fnHeadingRe = regexp.MustCompile(`(?m)^## «(` + fnNameRe + `)»:`)
+	fnRefRe     = regexp.MustCompile(`«(` + fnNameRe + `)»`)
 	arrowRe     = regexp.MustCompile(`(?m)^- → (.*)$`)
 	metaTokens  = map[string]bool{"fn": true}
 )
@@ -128,6 +129,22 @@ func TestCapabilityBinding(t *testing.T) {
 		for _, host := range capabilityHosts {
 			if !bound[host] {
 				t.Errorf("capability «%s» → line does not bind host %q (missing `**%s:**`); every capability «fn» must carry a Claude/Codex/Pi realization on its → line", name, host, host)
+			}
+		}
+	}
+}
+
+func TestDispatchCoreDefinesWorkerLifecycleCapabilities(t *testing.T) {
+	raw, err := os.ReadFile(dispatchCorePath(t))
+	if err != nil {
+		t.Fatalf("read dispatch core: %v", err)
+	}
+	data := string(raw)
+	for _, name := range []string{"worker.spawn", "worker.shutdown"} {
+		block := fnBlock(t, data, name)
+		for _, host := range capabilityHosts {
+			if !hostsBoundByArrow(block)[host] {
+				t.Errorf("capability «%s» → line does not bind host %q", name, host)
 			}
 		}
 	}
