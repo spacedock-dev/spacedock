@@ -81,3 +81,22 @@ Boundary with `trim-dispatch-adapter-prose` (`ad`): this ticket owns only `skill
 ### Summary
 
 Ideation recommends trimming the boot-resident `«state.commit»` prose now. The command and tests own the operational safety mechanics; the shared core should keep only the intent, direct command call, exit-0 done condition, and exit-3 FO halt/surface obligation.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved measured trim for `«state.commit»` in `skills/first-officer/references/first-officer-shared-core.md`, targeting at least a 350 `o200k_base` token cut from the current `«state.commit»` plus split-root sync prose while preserving the unique FO obligations.
+  Before/after with `o200k_base`: shared core 7666 -> 7233 tokens; `«state.commit»` plus sync block 587 -> 166 tokens, a 421-token block cut; code commit `eb2be8d`.
+- DONE: Update any directly affected contractlint tests so they backstop the compact obligation rather than preserving the old multi-step recipe.
+  Updated `internal/contractlint/prose_function_backstop_test.go` to pin the compact "do not force-push or auto-resolve" halt anchor instead of the removed multi-step recipe.
+- DONE: Verify or cite behavior-level tests for path-scoped state commit, no-origin/no-op handling, non-fast-forward sync, and exit-3 rebase-conflict halt; add focused tests only if the existing source/test reality is insufficient.
+  Existing `internal/cli/state_commit_test.go` covers path-scoped commits, no-origin local-only JSON, clean no-op, non-fast-forward rebase/re-push, and exit-3 conflict halt; `internal/cli/state_ready_test.go` covers boot-side rebase halt.
+- DONE: Keep the boundary with `ad`: do not touch dispatch adapters, runtime await/reuse/guardrail prose, worker capability bindings, or merge choreography unless strictly required by this state-commit trim.
+  Changed only `skills/first-officer/references/first-officer-shared-core.md` and the directly affected contractlint backstop.
+- DONE: Run focused verification for touched contractlint/state areas, and broader `go test ./...` if Go behavior changes.
+  Ran `go test ./internal/contractlint ./internal/status ./internal/cli` (`986` passed), `go test ./internal/contractlint` (`49` passed), `go test ./...` (`1692` passed), `go test ./... -race` (`1692` passed), `gofmt -w ./cmd ./internal`, and `git diff --check`.
+- DONE: Append a Stage Report: implementation to the entity file with before/after token counts, changed files, verification evidence, and commit all implementation outputs on the worktree branch plus the entity report path-scoped in state.
+  This report is appended here; code commit is `eb2be8d`, and the state commit follows path-scoped in `docs/dev/.spacedock-state`.
+
+### Summary
+
+Trimmed the boot-resident state commit contract to the direct command call, exit-0 done condition, and exit-3 FO halt/surface obligation. The removed mechanics are already owned by `spacedock state commit` and covered by real-git state command tests, while contractlint now backstops the compact no-force/no-auto-resolve obligation.
