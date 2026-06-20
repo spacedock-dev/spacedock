@@ -13,24 +13,64 @@ sprint-readiness:
 id: t0gk2fatt18tj28xm6sr1xd1
 ---
 
-Codex and Pi first-officer runtime references should become compact runtime implementation maps keyed by the shared core's `«fn»` capability names, rather than prose sections that re-narrate the lifecycle. The target shape is a short runtime intro, a `## Runtime implementation` binding list, and only short residual sections for probe/harness notes that do not fit a capability name.
+Codex and Pi first-officer runtime references should become compact runtime implementation maps keyed by the shared core's `«fn»` capability names, rather than prose sections that re-narrate the lifecycle. The finished shape is a short runtime intro, a `## Runtime implementation` binding list, and only short residual sections for probe, wait, feedback, or harness notes that do not fit a capability bullet.
 
 ## Problem
 
 `skills/first-officer/references/pi-first-officer-runtime.md` and `skills/first-officer/references/codex-first-officer-runtime.md` already contain most of the required binding facts, but they are spread across lifecycle prose sections (`Dispatch`, `Awaiting Completion`, `Follow-up and Reuse`, `Shutdown`, etc.). Pi still carries negative host contrast and step-number coupling. Codex is probe-based after PR #414 but still mixes binding facts with lifecycle narration. This duplicates responsibilities the shared core should own: when each capability is invoked.
 
+There is also a core-shape prerequisite: `fo-dispatch-core.md` currently defines `«addressable-worker»`, `«async-dispatch»`, `«worker-identity»`, `«completion-signal»`, `«context-budget»`, and `«roster-reconcile»`, but it references `«worker.spawn»` and `«worker.shutdown»` without first-class capability headings. Codex and Pi cannot honestly key complete adapter binding blocks to shared `«fn»` names until those two capabilities are defined in the core.
+
 ## Proposed approach
 
-Create a focused Codex+Pi cleanup that converts each adapter to a binding-first shape:
+Implement this as a focused Codex+Pi cleanup:
 
-- short file intro: the shared core owns invocation timing; this file binds host realization
-- `## Runtime implementation` with bullets for `«worker.spawn»`, `«addressable-worker»`, `«async-dispatch»`, `«worker-identity»`, `«completion-signal»`, `«worker.shutdown»`, `«context-budget»`, and `«roster-reconcile»`
-- short residual sections only for live-tool probes, harness isolation, or compatibility notes that are not lifecycle bindings
-- no negative host contrast except deliberate compatibility hazards
-- no mutable shared-procedure step-number coupling
-- no dispatch/await/reuse lifecycle re-narration unless it carries a host-specific guardrail not expressible in a binding bullet
+1. Add minimal first-class core headings in `skills/first-officer/references/fo-dispatch-core.md` for `## «worker.spawn»:` and `## «worker.shutdown»:`.
+   - `«worker.spawn»` should bind the initial worker creation call that consumes `spacedock dispatch build` output. Keep this small: the existing mandatory build flow remains the detailed procedure.
+   - `«worker.shutdown»` should bind cooperative terminal/supersede shutdown. Keep the core generic and put each host's concrete action in its `→` line.
+   - Add only the minimum Claude segments needed for host coverage and existing `capability_binding` invariants. Do not trim or reorganize Claude adapter prose here; `ad` owns that.
+2. Rewrite the Codex FO adapter to:
+   - keep a short intro saying the shared core owns invocation timing
+   - keep `## Live Tool Surface Probe` as a compact residual section
+   - add `## Runtime implementation` with bullets for `«worker.spawn»`, `«addressable-worker»`, `«async-dispatch»`, `«worker-identity»`, `«completion-signal»`, `«worker.shutdown»`, `«context-budget»`, and `«roster-reconcile»`
+   - move foreground-wait interruption/reinstallation and queued/autonomous mailbox classification into a short residual `## Codex wait notes`
+   - move feedback reviewer reuse into the `«addressable-worker»` bullet or a short residual `## Feedback reviewer reuse` note if the bullet becomes too dense
+   - remove `## Dispatch`, `## Reuse And Feedback Routing`, and `## Awaiting Completion` headings
+3. Rewrite the Pi FO adapter to:
+   - keep a short intro saying the shared core owns invocation timing and Pi owns host realization
+   - add `## Runtime implementation` with the same capability bullets
+   - fold model stamping and canonical Pi model space into `«worker-identity»`
+   - fold file-verification gate semantics into `«completion-signal»`
+   - fold `context: "fresh"`, `cwd: <resolved repo root>`, no `acceptance`, and harness-selected substrate into `«worker.spawn»` / `«async-dispatch»`
+   - fold first-slice fresh redispatch/default no non-fresh resume into `«addressable-worker»`
+   - fold `pi-subagents` complete/closed memory and `pi-agent-teams` member/team teardown into `«worker.shutdown»`
+   - keep `## Live harness isolation` as the only expected residual section
+   - remove `## Runtime Shape`, `## Dispatch`, `### Model Resolution`, `### Canonical Model Space`, `## Awaiting Completion`, `## Follow-up and Reuse`, and `## Shutdown` headings
+4. Keep the boundary with `ad`: this task changes Codex+Pi adapters, the two minimal core capability definitions, and focused contractlint/test helpers only. `ad` remains responsible for Claude adapter trim, broad adapter prose reduction, and any final cross-runtime polish after this binding-block shape exists.
 
-This task should add or adjust contractlint guards so Codex/Pi adapter tool names stay in their runtime binding/probe sections and so the adapters do not reintroduce `## Dispatch`, `## Awaiting Completion`, `## Follow-up and Reuse`, or `## Shutdown` as lifecycle narration after the conversion.
+No spike needed: the implementation relies on existing Markdown parsing patterns in `internal/contractlint`, existing `capability_binding_test.go` extraction of `## «fn»:` headings plus per-host `→` lines, and existing Codex/Pi runtime facts already present in the adapter files. The riskiest piece is structural enforcement, and that should be handled first with failing contractlint cases before rewriting the adapters.
+
+## Semantics to preserve
+
+Codex must preserve:
+
+- live probe-based binding, not runtime-version naming: `spawn_agent`, `send_message` + `followup_task` or compatibility `send_input`, `wait_agent`, `list_agents`, and unbound `interrupt_agent` unless a shutdown-specific probe exists
+- helper-built dispatch prompt forwarding, sanitized task-name mapping, and retained mapping from helper-emitted identity to slug/stage/cycle
+- final-status mailbox notification as the completion signal; foreground wait is an idle action only, not the signal itself
+- foreground wait timeout/interruption is non-terminal, and the global wait is reinstalled only when waiting is again the next useful idle action
+- queued/activity-driven notification classification versus autonomous idle wake-up classification
+- validation reviewer reuse after a REJECTED report through the same turn-starting `«addressable-worker»` binding when the reviewer remains addressable
+
+Pi must preserve:
+
+- Pi-native dispatch substrate mapping, with `pi-subagents` default and `pi-agent-teams` optional adapter mapping
+- `subagent(...)` dispatch with `context: "fresh"`, `cwd: <resolved repo root>`, no `acceptance`, and only additive transport metadata around the build artifact
+- null-model stamping from the parent's live Pi model via `intercom({action:"list"})`; stage-declared model override preserved
+- Pi canonical model space as Pi-native provider/model strings, not the Claude enum
+- file-verification gate: subagent return or advisory alone never advances state
+- same-turn continuation after a verified non-gated, non-terminal report
+- fresh assignment cycles as the default first Pi slice; non-fresh resume only as an explicit manual/debug exception with durable metadata
+- live harness isolation: isolated Pi config/session dirs, copied auth only, durable proof via exit code, entity state changes, git log, and stage report content
 
 ## Sequencing recommendation with `ad`
 
@@ -38,26 +78,72 @@ Recommended order: run this task before `ad`'s broad adapter trim.
 
 Reason: this task is a narrow structural normalization for Codex+Pi only. It creates the binding-block shape that `ad` can then use as the target when trimming remaining per-adapter operational prose. Running `ad` first would force it to decide the same binding-placement question while also preserving Claude await/reuse/guardrails, increasing risk and review surface.
 
-Boundary: this task should not touch Claude except for shared test utilities if unavoidable. `ad` remains owner of Claude adapter trim, await/reuse/guardrail preservation, broad per-adapter prose reduction, and any cross-runtime final pass after Codex+Pi have binding blocks. If `ad` adds first-class `«worker.spawn»` / `«worker.shutdown»` to the core first, this task should consume that; otherwise this task may add the minimal core capability headings required for Codex/Pi binding bullets and leave broad Claude migration to `ad`.
+Decision: this task should add the minimal first-class `«worker.spawn»` and `«worker.shutdown»` headings to `fo-dispatch-core.md` before rewriting Codex/Pi adapters. Deferring that prerequisite to `ad` would leave Codex/Pi binding blocks keyed partly to names the shared core does not define, and would make `ad` solve a cross-runtime core-shape question while doing broad Claude prose trimming. This task should not otherwise restructure Claude.
 
 ## Out of scope
 
-Do not change runtime behavior, live runners, launch/install UX, or Claude guardrails. Do not remove Codex wait-interruption semantics or feedback-reviewer reuse semantics; express them as binding/probe notes if they remain load-bearing.
+Do not change runtime behavior, live runners, launch/install UX, or Claude guardrails. Do not remove Codex wait-interruption semantics or feedback-reviewer reuse semantics; express them as binding/probe notes if they remain load-bearing. Do not touch ensign runtime adapters unless an existing contractlint test requires wording alignment after the FO adapter headings move.
 
 ## Acceptance criteria
 
 **AC-1 - Codex and Pi FO runtime adapters use a binding-block structure.**
-Verified by: diff review and contractlint showing each file has a `## Runtime implementation` section keyed by the shared `«fn»` capability names and no longer uses lifecycle narration headings for dispatch/await/reuse/shutdown.
+Verified by: contractlint showing each file has exactly one `## Runtime implementation` section with bullets keyed to `«worker.spawn»`, `«addressable-worker»`, `«async-dispatch»`, `«worker-identity»`, `«completion-signal»`, `«worker.shutdown»`, `«context-budget»`, and `«roster-reconcile»`, and no longer uses lifecycle narration headings for dispatch/await/reuse/shutdown.
 
 **AC-2 - Runtime support principles are enforced for Codex and Pi.**
-Verified by: contractlint or targeted tests rejecting negative host contrast, mutable shared-procedure step-number coupling, and concrete host tool names outside binding/probe sections in the Codex/Pi FO runtime adapters.
+Verified by: contractlint rejecting negative host contrast, mutable shared-procedure step-number coupling, and concrete host tool names outside `## Runtime implementation` / probe / harness sections in the Codex/Pi FO runtime adapters.
 
 **AC-3 - Load-bearing host-specific semantics are preserved.**
-Verified by: focused tests and review showing Codex probe-based tool binding, wait reinstallation/interruption semantics, feedback reviewer reuse, Pi model stamping, Pi file-verification gate, and Pi harness isolation notes remain present in compact form.
+Verified by: focused contractlint tests or table-driven structural checks showing Codex probe-based tool binding, wait reinstallation/interruption semantics, feedback reviewer reuse, Pi model stamping, Pi file-verification gate, and Pi harness isolation notes remain present in compact form.
 
 **AC-4 - The task composes cleanly with `ad`.**
 Verified by: implementation report naming what remains for `ad`, with no Claude adapter rewrite beyond unavoidable shared/core/test edits.
 
+**AC-5 - Adapter prose is measurably smaller while preserving binding coverage.**
+Verified by: a line-count or byte-count check in the implementation report showing the combined Codex+Pi FO adapter body size is lower than the pre-change `main` baseline, while AC-1 and AC-3 pass. The expected target is at least a 20% combined line-count reduction because lifecycle narration headings are removed rather than renamed.
+
 ## Test plan
 
-Run `go test ./internal/contractlint` and any focused Codex/Pi runtime contract tests touched by the change. If shared `fo-dispatch-core.md` capability headings are added or moved, run the existing capability-binding tests and `go test ./...`.
+Add or update focused tests under `internal/contractlint`:
+
+- Extend capability binding coverage to include the new `«worker.spawn»` and `«worker.shutdown»` core definitions; the existing definition/call/host-coverage check should go red until the headings exist.
+- Add a Codex/Pi runtime binding-block test that parses each adapter, extracts `## Runtime implementation`, and compares its bullet capability set to the expected ordered set.
+- Add a lifecycle-heading absence test for Codex/Pi adapters rejecting `## Dispatch`, `## Awaiting Completion`, `## Follow-up and Reuse`, `## Reuse And Feedback Routing`, `## Shutdown`, `### Model Resolution`, and `### Canonical Model Space`.
+- Replace or update `TestCodexToolNamesStayInRuntimeBindingSection` so Codex concrete tool names are allowed only in `## Runtime implementation` and `## Live Tool Surface Probe`; keep the existing negative-control intent around `interrupt_agent`.
+- Add the same style of Pi guard for `subagent(`, `intercom(`, `member_spawn`, `delegate`, `message_dm`, `member_shutdown`, `team_done`, `context: "fresh"`, `cwd: <resolved repo root>`, and `acceptance`, allowing them only in runtime binding or harness sections.
+- Add tests that reject mutable step-number coupling in Codex/Pi adapters (`Dispatch step`, `Event Loop step`, `Merge-and-Cleanup step`, bare `step 10`) and reject known negative host-contrast phrases unless a deliberately named compatibility note section is added.
+- Keep `codex_foreground_wait_shape_test.go` or its successor pointed at the new Codex wait residual section so the non-terminal wait interruption wording remains guarded.
+
+Run:
+
+```bash
+go test ./internal/contractlint
+go test ./...
+```
+
+Use `go test ./... -race` only if implementation changes beyond Markdown and contractlint tests touch runtime code.
+
+## Implementation notes for the next worker
+
+- Start with tests. The first red should be the missing core headings and the missing `## Runtime implementation` sections.
+- Use the existing `extractMarkdownSection` / `markdownSubsection` helpers if they remain suitable; otherwise add a small Markdown section extractor local to contractlint.
+- When rewriting adapters, prefer one capability bullet per host fact. Use residual sections only when a fact spans multiple capabilities or documents a probe/harness concern.
+- Keep docs/runtime-support.md unchanged unless the implementation discovers the preferred shape is incomplete; it already states the target contract.
+
+## Stage Report: ideation
+
+- DONE: Turn the seed task into a concrete implementation plan for converting Codex and Pi FO runtime adapters to `## Runtime implementation` binding blocks keyed by core `«fn»` capability names.
+  The body now names exact file edits, target sections, capability bullets, residual sections, and first-test strategy.
+- DONE: Decide whether this task must add first-class `«worker.spawn»` and `«worker.shutdown»` headings to `fo-dispatch-core.md`, or whether it should defer that prerequisite to `ad`; record the sequencing recommendation clearly.
+  Decision recorded: this task should add minimal core headings first; `ad` keeps broad Claude adapter trim.
+- DONE: Specify exactly which Codex and Pi semantics must be preserved in compact form: Codex probe-based binding, wait reinstallation/interruption, feedback reviewer reuse; Pi model stamping, file-verification gate, harness isolation.
+  Added `## Semantics to preserve` with explicit Codex and Pi bullets.
+- DONE: Define contractlint or focused test changes that will enforce the binding-block shape and prevent lifecycle narration/negative contrast/step-number coupling from returning.
+  Added focused contractlint test plan covering binding sections, lifecycle-heading absence, tool-name placement, negative contrast, and step-number coupling.
+- DONE: Keep the boundary with `ad` explicit: this task is Codex+Pi only; `ad` owns Claude and broad adapter trim.
+  Boundary appears in proposed approach, sequencing decision, and AC-4.
+- DONE: Append a Stage Report: ideation and commit only this entity path in the state checkout.
+  Report appended here; commit follows as a path-scoped state checkout commit.
+
+### Summary
+
+Ideation converted the seed into an implementation-ready cleanup plan. The key decision is to add minimal `«worker.spawn»` and `«worker.shutdown»` core capability headings in this task, then rewrite only Codex and Pi FO adapters into binding blocks while leaving broad Claude trimming for `ad`.
