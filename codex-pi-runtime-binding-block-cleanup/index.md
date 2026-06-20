@@ -12,6 +12,7 @@ sprint: 0221-layered-fo
 sprint-readiness:
 id: t0gk2fatt18tj28xm6sr1xd1
 mod-block: merge:pr-merge
+pr: "#418"
 ---
 
 Codex and Pi first-officer runtime references should become compact runtime implementation maps keyed by the shared core's `«fn»` capability names, rather than prose sections that re-narrate the lifecycle. The finished shape is a short runtime intro, a `## Runtime implementation` binding list, and only short residual sections for probe, wait, feedback, or harness notes that do not fit a capability bullet.
