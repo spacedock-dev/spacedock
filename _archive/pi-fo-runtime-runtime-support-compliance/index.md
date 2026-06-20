@@ -6,13 +6,14 @@ score:
 started: 2026-06-20T18:09:00Z
 completed: 2026-06-20T19:30:00Z
 verdict: PASSED
-worktree: .worktrees/spacedock-ensign-pi-fo-runtime-runtime-support-compliance
+worktree:
 issue:
 sprint:
 sprint-readiness:
 id: 2ygdt8xs5wxnpys9vrc8djaq
-mod-block: merge:pr-merge
+mod-block:
 pr: "#417"
+archived: 2026-06-20T20:26:11Z
 ---
 
 # Pi FO runtime — apply runtime-support.md principles
