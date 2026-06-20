@@ -68,3 +68,23 @@ Rework:
 
 ### Summary
 Rework per Feedback Cycle 1 (captain-directed). The code logic was already correct and scoped; this cycle is a truthful-framing pass. Corrected the entity prose and the Go doc-comments to state that `~/.claude/settings.json` (env flag + `teammateMode: auto`) is the authoritative back-channel enabler and the launcher's `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` export is best-effort / a no-op when settings already enable it — never an independent enabler. The ACs now explicitly disclaim the falsified end-to-end claim. No production logic changed; build and `internal/cli` tests stay green, diff stays scoped to the two claude-launch files.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: AC-1 — launcher sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in the claude child env when the parent does not set it. Verified by the launcher test asserting the child env carries the flag.
+  `go test ./internal/cli/ -run AgentTeams -v -count=1` → `TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset` PASS (asserts `envValue(fake.launchedEnv, agentTeamsEnv) == "1"`).
+- DONE: AC-2 — an explicit parent value is PRESERVED, not overridden (parent `=0` stays `=0`). Verified by the parent-set test.
+  Same run → `TestClaudeFrontDoorPreservesExplicitAgentTeams` PASS (`t.Setenv(agentTeamsEnv,"0")` → child env still `=0`).
+- DONE: codex scope-guard — the claude-only flag is NOT injected on the codex launch path.
+  Same run → `TestCodexFrontDoorDoesNotEnableAgentTeams` PASS (codex `launchedEnv` omits the flag). 3/3 PASS total.
+- DONE: AC-1 test is load-bearing (not vacuous) — detached-adversarial mutation.
+  Reverted prod line 377 to bare `launchEnv(os.Environ())`; AC-1 went RED (`...in launch env = "", false; want "1"`), AC-2/codex stayed green; restored — `git status` clean, `git diff HEAD -- frontdoor.go` empty.
+- DONE: AC-3 — scoped + green: `go build ./...` and the launcher test package pass; diff touches only the claude launch path.
+  `go build ./...` clean; `go test ./internal/cli/ -count=1` ok (24.7s, uncached); `git diff --name-only origin/main...HEAD` = exactly `internal/cli/frontdoor.go` + `internal/cli/frontdoor_test.go`; diffstat +88/-1; the sole prod logic change is line 377's `withAgentTeams` wrap (codex line 559 + `runPi` unchanged, no contract/skills/references).
+- DONE: LIGHT LOCAL LIVE CHECK — built launcher from worktree; child env carries the flag (the narrowed AC's plumbing claim, NOT back-channel enablement).
+  Built `/tmp/spacedock-validate-launcher` from `cmd/spacedock`; ran real launcher with a stub `claude` on PATH that prints `printenv CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. `env -u …` parent → child `CHILD_FLAG=[1]` (AC-1 plumbing live); `=0` parent → child `CHILD_FLAG=[0]` (AC-2 live). Exercises the real exec path, not a string match. Did NOT re-assert the falsified e2e back-channel claim (out of scope).
+- DONE: entity NO LONGER claims "enables the back-channel end-to-end"; authoritative-enabler note present in both entity body and `frontdoor.go` doc-comment.
+  Every "enables the back-channel end-to-end" occurrence is a disclaimer/historical-record line (19/44/48/56), not a live assertion; `## Fix` + `## Acceptance criteria` disclaim it. Authoritative note: entity body line 16 (`Authoritative enabler vs. launcher export` — names `~/.claude/settings.json` + `teammateMode: "auto"`) and `frontdoor.go` doc-comment lines 58-59/74.
+
+### Summary
+RECOMMENDATION: PASSED. The cycle-1 captain directive is satisfied: the change is KEPT, and the ACs now claim ONLY the child-env plumbing. All three narrowed ACs hold at unit level (`AgentTeams` 3/3 PASS, fresh `-count=1`), and AC-1 is load-bearing under a detached mutation (revert prod line → AC-1 RED, restore byte-exact). The narrowed AC's plumbing claim is additionally proven live: the real launcher built from the worktree injects `=1` into the child env when the parent is unset (`CHILD_FLAG=[1]`) and preserves an explicit `=0` (`CHILD_FLAG=[0]`), observed via a stub child that reports its received env — not a substring check. Scope is exactly the two intended files (+88/-1), with the codex/pi launch paths untouched. The previously-FAILED item — proving end-to-end back-channel enablement — is correctly OUT OF SCOPE now (captain dropped it as falsified on Claude Code 2.1.183), and the entity/code truthfully frame `~/.claude/settings.json` as the authoritative enabler. No falsified claim survives as a live assertion.
