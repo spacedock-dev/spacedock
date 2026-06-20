@@ -193,6 +193,11 @@ Ideation converted the seed into an implementation-ready cleanup plan. The key d
 
 Implementation normalized Codex and Pi FO adapters into binding-block maps keyed to the shared capability names while preserving the load-bearing runtime semantics from #417 and the entity body. The code work is committed as `19dde2b8`; this state report records the verification evidence and line-count reduction.
 
+### Feedback Cycles
+
+- Cycle 1 fix: validation rejected the initial shared-core shape because the new `«worker.spawn»` and `«worker.shutdown»` headings carried concrete Claude/Codex/Pi `→` bindings. Commit `e60979c` keeps those headings first-class but host-neutral in `fo-dispatch-core.md`, and updates contractlint so concrete lifecycle bindings for Codex/Pi are asserted from runtime adapter `## Runtime implementation` blocks instead of new shared-core `→` clauses.
+- Verification after cycle 1: `go test ./internal/contractlint` passed with 59 tests; `go test ./...` passed with 1712 tests in 17 packages; `go test ./... -race` passed with 1712 tests in 17 packages. `gofmt -w ./cmd ./internal` was run; unrelated formatting-only diffs outside the task scope were restored before commit.
+
 ## Stage Report: validation
 
 - DONE: Review code commit `19dde2b8` on branch `spacedock-ensign/codex-pi-runtime-binding-block-cleanup` in worktree `.worktrees/spacedock-ensign-codex-pi-runtime-binding-block-cleanup` against the t0g entity body, Pi commander feedback, and acceptance criteria.
