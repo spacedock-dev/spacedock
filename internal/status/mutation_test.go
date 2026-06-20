@@ -52,10 +52,18 @@ func cpTree(t *testing.T, src, dst string) {
 
 func gitInit(t *testing.T, dir string) {
 	t.Helper()
+	// Set a PERSISTENT local identity on the temp repo (not just an ephemeral `-c` on
+	// the seed commit). The verb's own commits (commitArchiveMove) run plain `git
+	// commit` without `-c`, so they must resolve an identity from the repo's config —
+	// independent of global/system config and git's auto-detection. A CI lane with no
+	// global identity and auto-detection disabled (e.g. user.useConfigOnly) would
+	// otherwise exit-128 the verb's commit.
 	for _, args := range [][]string{
 		{"init", "-q"},
-		{"-c", "user.email=t@t", "-c", "user.name=t", "add", "-A"},
-		{"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "spacedock-test"},
+		{"add", "-A"},
+		{"commit", "-q", "-m", "init"},
 	} {
 		cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
 		if out, err := cmd.CombinedOutput(); err != nil {

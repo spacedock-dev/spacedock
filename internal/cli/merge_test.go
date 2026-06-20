@@ -41,7 +41,18 @@ func stageMergeFixture(t *testing.T, fixture string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	for _, args := range [][]string{{"init", "-q"}, {"add", "-A"}, {"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "seed"}} {
+	// Set a PERSISTENT local identity on the temp repo. The verb's own commits
+	// (commitArchiveMove) run plain `git commit` without `-c`, so they must resolve
+	// an identity from the repo's config — independent of global/system config and
+	// git's auto-detection. A CI lane with no global identity and auto-detection
+	// disabled would otherwise exit-128 the verb's commit.
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "spacedock-test"},
+		{"add", "-A"},
+		{"commit", "-q", "-m", "seed"},
+	} {
 		cmd := exec.Command("git", args...)
 		cmd.Dir = dst
 		if out, err := cmd.CombinedOutput(); err != nil {
