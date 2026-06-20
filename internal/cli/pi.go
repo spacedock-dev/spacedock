@@ -29,7 +29,7 @@ const piSpacedockPackageSource = "git:github.com/spacedock-dev/spacedock"
 type piRuntimeOps interface {
 	LookPath(name string) (string, error)
 	Stat(path string) error
-	Launch(argv []string) error
+	Launch(argv []string, env []string) error
 	// PiInstall runs `pi install <source>` and returns its combined output. The
 	// real implementation execs `pi`; tests record the source and return canned
 	// output. This is the install seam that retires Pi's check-only status.
@@ -57,7 +57,9 @@ type execPiRuntimeOps struct{}
 
 func (execPiRuntimeOps) LookPath(name string) (string, error) { return exec.LookPath(name) }
 func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Stat(path); return err }
-func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv, os.Environ()) }
+func (execPiRuntimeOps) Launch(argv []string, env []string) error {
+	return execHost{}.Launch(argv, env)
+}
 
 // resolveFnmMultishellPi resolves a looked-up `pi` path that lives under fnm's
 // per-shell multishell symlink farm to its stable node-installation bin, so the
@@ -87,6 +89,66 @@ func resolveFnmMultishellPi(lookedUp string) (stable string, ok bool) {
 		return "", false
 	}
 	return stable, true
+}
+
+// fnmStableSandboxDir computes the safehouse --add-dirs grant that makes the
+// sandbox see the stable `pi` Node is handed under wrap, so the sandboxed launch
+// resolves and loads the script + its hoisted deps (feedback cycle 2). The
+// stable `pi` is a symlink chain: installation/bin/pi ->
+// installation/lib/node_modules/@earendil-works/pi-coding-agent/dist/cli.js,
+// and in a dev-link (npm link) install @earendil-works/pi-coding-agent is ITSELF
+// a symlink out to a monorepo (e.g. ~/git/pi-mono/packages/coding-agent). So the
+// real script escapes the fnm installation, and granting just the bin dir (or
+// the installation) is insufficient — Node must traverse the chain AND require
+// the package's runtime deps, which are hoisted to a workspace/dep root's
+// node_modules. realScript is filepath.EvalSymlinks(stable) (the real cli.js).
+// Walk up from its dir; grant the first ancestor that (a) contains a node_modules
+// dir AND (b) is a workspace root (package.json with a `workspaces` key) — that
+// is the dep-hoist root for the script. If no workspace root is found, grant the
+// HIGHEST ancestor containing node_modules (the top of the node_modules-bearing
+// subtree — the normal `npm i -g` case lands on installation/lib, which covers
+// the pi package + all its deps). Returns "" on failure so runPi omits the grant
+// (never blocks the launch). Targeted — grants pi's actual code+dep tree, not
+// the whole filesystem.
+func fnmStableSandboxDir(stable string) string {
+	realScript, err := filepath.EvalSymlinks(stable)
+	if err != nil || realScript == "" {
+		return ""
+	}
+	dir := filepath.Dir(realScript)
+	var highestNodeModules string
+	for {
+		if info, err := os.Stat(filepath.Join(dir, "node_modules")); err == nil && info.IsDir() {
+			if isWorkspaceRoot(dir) {
+				return dir
+			}
+			highestNodeModules = dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return highestNodeModules
+}
+
+// isWorkspaceRoot reports whether dir carries a package.json with a `workspaces`
+// key (the monorepo/workspace root signal). A missing or null workspaces entry
+// does not count.
+func isWorkspaceRoot(dir string) bool {
+	data, err := os.ReadFile(filepath.Join(dir, "package.json"))
+	if err != nil {
+		return false
+	}
+	var pkg struct {
+		Workspaces json.RawMessage `json:"workspaces"`
+	}
+	if err := json.Unmarshal(data, &pkg); err != nil {
+		return false
+	}
+	ws := strings.TrimSpace(string(pkg.Workspaces))
+	return ws != "" && ws != "null"
 }
 
 func (execPiRuntimeOps) PiInstall(source string) (string, error) {
@@ -152,11 +214,12 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// Translate the de-prefixed safehouse knobs into the safehouse `extra` slot
 	// (the same function claude/codex use) and compute the wrap decision identically:
 	// a `.safehouse` profile in dir, the bare `--safehouse` flag, or any knob. An
-	// unknown key is a hard error (no Launch), mirroring the claude/codex gate. Per
-	// PI-SPECIFIC DECISION 2, the wrap arm uses safehouse.Wrap(inner, extra) with NO
-	// launcherBinEnvPassFlags() and NO launchEnv threading — runPi/execPiRuntimeOps
-	// never forward SPACEDOCK_BIN today (Launch takes no env), so the minimal wrap
-	// introduces no regression.
+	// unknown key is a hard error (no Launch), mirroring the claude/codex gate. The
+	// wrap arm mirrors claude/codex's env-forwarding plumbing (frontdoor.go:345):
+	// launcherBinEnvPassFlags() carries SPACEDOCK_BIN through the sandbox via
+	// --env-pass and Launch is called with launchEnv(os.Environ()); the pi-specific
+	// load-bearing addition is --safehouse-add-dirs <fnm-install-bin-dir> (see the
+	// resolution block below) so the sandbox can see the stable `pi` it is handed.
 	extra, err := safehouse.TranslateFlags(fd.safehouseFlags)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
@@ -186,28 +249,35 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// Resolve the fnm per-shell multishell symlink to its stable node-installation
 	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
 	// path fnm never tears down. On any miss/failure argv[0] stays "pi" (current
-	// behavior, no regression on non-fnm setups or direct installs). This resolution
-	// is GATED to the non-wrap path only: under safehouse the inner command execs
-	// INSIDE the sandbox, whose filesystem view does not include
-	// ~/.local/share/fnm/node-versions/... (not the workdir, not added via
-	// --safehouse-add-dirs), so handing safehouse the stable ABSOLUTE path as the
-	// inner token makes Node's Module._resolveFilename fail with MODULE_NOT_FOUND
-	// (manual pi-live smoke, feedback cycle 1 revised). Instead, under wrap we
-	// leave argv[0]="pi" and let safehouse exec the BARE name, which resolves via
-	// the sandbox's PATH — mirroring claude/codex (frontdoor.go:315,498 pass the
-	// bare name as inner[0] even when wrapped). The fnm-multishell race then
-	// re-exists under safehouse (safehouse may exec a tearing-down multishell
-	// `pi`); this is NO WORSE than claude/codex today and is a rare shared surface,
-	// recorded as a known limitation. The unsandboxed launch keeps the race fix
-	// (the stable path is visible, no teardown). The real fix for the sandboxed
-	// case is env/PATH forwarding into the sandbox (the qn-deferred Decision 2,
-	// SPACEDOCK_BIN-through-sandbox, requires a Launch(argv, env) signature
-	// change) — deferred, out of scope here.
-	if !wrap {
-		if lp, err := ops.LookPath("pi"); err == nil {
-			if stable, ok := resolveFnmMultishellPi(lp); ok {
-				argv[0] = stable
-			}
+	// behavior, no regression on non-fnm setups or direct installs). The resolution
+	// applies ALWAYS — wrap or not (feedback cycle 2). The prior cycles each did
+	// only half: cycle-1 reorder resolved the stable ABSOLUTE path under wrap, but
+	// the sandbox's filesystem view does not include ~/.local/share/fnm/
+	// node-versions/... (not the workdir, not added) → Node's
+	// Module._resolveFilename failed with MODULE_NOT_FOUND on the stable path;
+	// cycle-1-revised gated the resolution to !wrap and left the bare "pi" under
+	// wrap, but the sandbox PRESERVES the inherited PATH, which carried a stale
+	// (tearing-down) fnm_multishells/<pid>_<ts> dir → MODULE_NOT_FOUND on the
+	// multishell path. The coupled fix (feedback cycle 2, captain-approved reframe):
+	// resolve the stable path ALWAYS, AND under wrap grant the sandbox visibility
+	// of pi's ACTUAL code + hoisted deps via --safehouse-add-dirs <grant>. The
+	// root cause under safehouse is filesystem VISIBILITY, not only the multishell
+	// teardown: the stable `pi` is a symlink chain that escapes the fnm
+	// installation (in a dev-link install, out to a monorepo like ~/git/pi-mono),
+	// and the .safehouse profile grants only the workdir, so the sandbox sees
+	// neither the multishell dir, the installation, nor the dev-link target. The
+	// grant is computed by fnmStableSandboxDir from the FULLY RESOLVED real script
+	// — the workspace root (package.json with `workspaces`) whose node_modules
+	// holds the hoisted runtime deps, or the highest node_modules-bearing ancestor
+	// (the normal npm-i-g install lands on installation/lib). Under !wrap the
+	// stable path is visible (no sandbox) → deterministic; under wrap the grant
+	// makes the resolved code+deps visible → deterministic. The race/visibility
+	// gap is closed for both.
+	fnmSandboxDir := ""
+	if lp, err := ops.LookPath("pi"); err == nil {
+		if stable, ok := resolveFnmMultishellPi(lp); ok {
+			argv[0] = stable
+			fnmSandboxDir = fnmStableSandboxDir(stable)
 		}
 	}
 	if wrap {
@@ -215,9 +285,22 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		argv = safehouse.Wrap(argv, extra)
+		// Mirror claude/codex's wrap plumbing (frontdoor.go:345):
+		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN through the sandbox via
+		// --env-pass (launchEnv sets it on the safehouse process; the flag carries
+		// it through) so the launcher the helper calls resolve survives the
+		// boundary. The pi-specific load-bearing addition is
+		// --safehouse-add-dirs <fnmSandboxDir>: the dir whose node_modules holds
+		// the stable `pi`'s real script + hoisted deps (computed by
+		// fnmStableSandboxDir), which the sandbox cannot see by default. Targeted —
+		// grants pi's actual code+dep tree, not the whole filesystem.
+		piExtra := append(launcherBinEnvPassFlags(), extra...)
+		if fnmSandboxDir != "" {
+			piExtra = append(piExtra, "--add-dirs="+fnmSandboxDir)
+		}
+		argv = safehouse.Wrap(argv, piExtra)
 	}
-	if err := ops.Launch(argv); err != nil {
+	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
 		return 1
 	}
