@@ -2,11 +2,14 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -16,10 +19,38 @@ import (
 
 const piBootstrapPrompt = "Use $spacedock:first-officer for this whole Pi session."
 
+// piSpacedockPackageSource is the published install source for the Spacedock
+// package. `spacedock install --host pi` runs `pi install <source>`, which
+// registers the package in ~/.pi/agent/settings.json `packages` and places the
+// repo in pi's package store. The dev override (--plugin-dir) replaces this with
+// a local checkout path so in-tree edits are picked up without reinstall.
+const piSpacedockPackageSource = "git:github.com/spacedock-dev/spacedock"
+
 type piRuntimeOps interface {
 	LookPath(name string) (string, error)
 	Stat(path string) error
 	Launch(argv []string) error
+	// PiInstall runs `pi install <source>` and returns its combined output. The
+	// real implementation execs `pi`; tests record the source and return canned
+	// output. This is the install seam that retires Pi's check-only status.
+	PiInstall(source string) (string, error)
+	// SpacedockPackageStatus reports whether the Spacedock package is registered
+	// in ~/.pi/agent/settings.json `packages` and whether the ensign (and
+	// first-officer) skills are discoverable via the package-root skill scan —
+	// the same mechanism pi-subagents' collectSettingsPackageSkillPaths uses.
+	// agentDir is the pi agent directory (~/.pi/agent or PI_CODING_AGENT_DIR);
+	// home is used to resolve ~ entries.
+	SpacedockPackageStatus(agentDir, home string) piPackageStatus
+}
+
+// piPackageStatus is the result of the package-registration + skill-discovery
+// check that replaces the retired repo-path Stat skill checks.
+type piPackageStatus struct {
+	registered               bool
+	ensignDiscoverable       bool
+	firstOfficerDiscoverable bool
+	source                   string // the settings.json packages entry for spacedock
+	packageRoot              string // the resolved package root
 }
 
 type execPiRuntimeOps struct{}
@@ -28,17 +59,26 @@ func (execPiRuntimeOps) LookPath(name string) (string, error) { return exec.Look
 func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Stat(path); return err }
 func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv, os.Environ()) }
 
+func (execPiRuntimeOps) PiInstall(source string) (string, error) {
+	out, err := exec.Command("pi", "install", source).CombinedOutput()
+	return string(out), err
+}
+
+func (execPiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageStatus {
+	return piSpacedockPackageStatus(agentDir, home)
+}
+
 type piRuntimeConfig struct {
-	repoRoot              string
+	repoRoot              string // dev-override only: --plugin-dir / SPACEDOCK_REPO_ROOT
 	packageRoot           string
 	intercomPackageRoot   string
 	extensionPath         string
 	subagentsSkill        string
-	firstOfficer          string
-	ensign                string
 	authPath              string
 	openAIAPIKey          string
 	sessionDir            string
+	agentDir              string
+	home                  string
 	pluginDirSource       string
 	packageRootSource     string
 	intercomPackageSource string
@@ -55,8 +95,8 @@ type piCheckResult struct {
 	subagentsIntercomBridgeOK bool
 	intercomPackageOK         bool
 	intercomSkillOK           bool
-	firstOfficerOK            bool
-	ensignOK                  bool
+	spacedockPackageOK        bool
+	packageStatus             piPackageStatus
 	packageRoot               string
 	intercomPackageRoot       string
 	repoRoot                  string
@@ -81,12 +121,15 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 
 	launchBanner("pi", dir, safehouse.Present(dir), ops.LookPath, stderr)
 
+	// The Spacedock first-officer/ensign skills are no longer passed as --skill
+	// flags: the installed package's .pi/extensions/spacedock.ts extension
+	// discovers them for the parent session via resources_discover, and
+	// pi-subagents children discover them via the package-root scan. Only the
+	// pi-subagents extension + skill are passed explicitly here.
 	argv := []string{
 		"pi",
 		"--extension", cfg.extensionPath,
 		"--skill", cfg.subagentsSkill,
-		"--skill", cfg.firstOfficerDir(),
-		"--skill", cfg.ensignDir(),
 	}
 	argv = append(argv, fd.passthrough...)
 	argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
@@ -103,7 +146,27 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return code
 	}
 	if host != "pi" {
+		// --plugin-dir is the pi dev-override install source; it is not supported
+		// for claude/codex install (which use the host plugin marketplace).
+		if pluginDir != "" {
+			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
+			return 2
+		}
 		return runInit(ctx, args, hostOps, stdout, stderr)
+	}
+	if !checkOnly {
+		source := piSpacedockPackageSource
+		if pluginDir != "" {
+			source = pluginDir
+		}
+		out, err := piOps.PiInstall(source)
+		if strings.TrimSpace(out) != "" {
+			fmt.Fprint(stdout, out)
+		}
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock install: pi install %q failed: %v\n", source, err)
+			return 1
+		}
 	}
 	cfg := piRuntimeConfigFromEnv(env, cwd(), pluginDir)
 	check := checkPiRuntime(piOps, cfg)
@@ -111,20 +174,21 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		printPiDoctorReport(stdout, check)
 		return piDoctorExit(check)
 	}
+	printPiDoctorReport(stdout, check)
 	if piRuntimeLaunchReady(check) {
-		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  pi-intercom: %s\n  Spacedock skills: %s\n", check.packageRoot, check.intercomPackageRoot, check.repoRoot)
+		fmt.Fprintf(stdout, "Pi runtime ready.\n  pi-subagents: %s\n  pi-intercom: %s\n  Spacedock package: %s\n", check.packageRoot, check.intercomPackageRoot, check.packageStatus.source)
 		printPiSupervisorTalkbackBoundary(stdout)
 		return 0
 	}
-	fmt.Fprintf(stdout,
-		"Pi runtime setup incomplete.\n\n"+
-			"Required next steps:\n"+
-			"  1. Install Pi and authenticate so %s exists.\n"+
-			"  2. Install the subagent substrate, for example: pi install npm:pi-subagents\n"+
-			"  3. Install the supervisor-talkback substrate, for example: pi install npm:pi-intercom or npm install pi-intercom into the Pi npm root.\n"+
-			"  4. If pi-subagents or pi-intercom are installed outside the default locations, set PI_SUBAGENTS_PACKAGE_ROOT and PI_INTERCOM_PACKAGE_ROOT.\n"+
-			"  5. Re-run: spacedock doctor --host pi\n\n", check.authPath)
-	printPiDoctorReport(stdout, check)
+	fmt.Fprintf(stdout, "Pi runtime setup incomplete.\n\n"+
+		"Required next steps:\n"+
+		"  1. Install Pi and authenticate so %s exists.\n"+
+		"  2. Install the subagent substrate, for example: pi install npm:pi-subagents\n"+
+		"  3. Install the supervisor-talkback substrate, for example: pi install npm:pi-intercom or npm install pi-intercom into the Pi npm root.\n"+
+		"  4. Install the Spacedock package: spacedock install --host pi\n"+
+		"  5. If pi-subagents or pi-intercom are installed outside the default locations, set PI_SUBAGENTS_PACKAGE_ROOT and PI_INTERCOM_PACKAGE_ROOT.\n"+
+		"  6. Re-run: spacedock doctor --host pi\n\n", check.authPath)
+	printPiSupervisorTalkbackBoundary(stdout)
 	return 0
 }
 
@@ -193,10 +257,9 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 			}
 			i++
 		case "--plugin-dir":
-			if command == "install" {
-				fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
-				return "", false, "", 2
-			}
+			// Accepted for both install (pi dev-override source) and doctor.
+			// Non-pi install rejects it in runInitWithPi; non-pi doctor rejects
+			// it via the re-parse in runDoctor.
 			if i+1 >= len(args) {
 				fmt.Fprintf(stderr, "spacedock %s: --plugin-dir requires a path\n", command)
 				return "", false, "", 2
@@ -212,20 +275,21 @@ func parsePiSetupArgs(command string, args []string, stderr io.Writer) (host str
 }
 
 func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig {
+	_ = dir
 	envMap := envMap(env)
 	home := envMap["HOME"]
 	if home == "" {
 		home = os.Getenv("HOME")
 	}
+	// repoRoot is the dev-override path only (--plugin-dir / SPACEDOCK_REPO_ROOT).
+	// The cwd fallback is removed (D5c): the installed package is discovered via
+	// the package-root scan regardless of cwd, and repoRoot is no longer needed
+	// for skill discovery (the retired --skill flags were its only consumer).
 	repo := pluginDir
 	pluginDirSource := "--plugin-dir"
 	if repo == "" {
 		repo = envMap["SPACEDOCK_REPO_ROOT"]
 		pluginDirSource = "SPACEDOCK_REPO_ROOT"
-	}
-	if repo == "" {
-		repo = dir
-		pluginDirSource = "working directory"
 	}
 	pkg := envMap["PI_SUBAGENTS_PACKAGE_ROOT"]
 	pkgSource := "PI_SUBAGENTS_PACKAGE_ROOT"
@@ -239,15 +303,13 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 		intercomPkg = filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom")
 		intercomPkgSource = "default ~/.pi/agent/npm/node_modules/pi-intercom"
 	}
-	authRoot := envMap["PI_CODING_AGENT_DIR"]
-	authPath := ""
+	agentDir := envMap["PI_CODING_AGENT_DIR"]
 	authPathSource := "PI_CODING_AGENT_DIR"
-	if authRoot != "" {
-		authPath = filepath.Join(authRoot, "auth.json")
-	} else {
-		authPath = filepath.Join(home, ".pi", "agent", "auth.json")
-		authPathSource = "default ~/.pi/agent/auth.json"
+	if agentDir == "" {
+		agentDir = filepath.Join(home, ".pi", "agent")
+		authPathSource = "default ~/.pi/agent"
 	}
+	authPath := filepath.Join(agentDir, "auth.json")
 	sessionDir := envMap["PI_CODING_AGENT_SESSION_DIR"]
 	sessionDirSource := "PI_CODING_AGENT_SESSION_DIR"
 	if sessionDir == "" {
@@ -260,11 +322,11 @@ func piRuntimeConfigFromEnv(env []string, dir, pluginDir string) piRuntimeConfig
 		intercomPackageRoot:   intercomPkg,
 		extensionPath:         filepath.Join(pkg, "src", "extension", "index.ts"),
 		subagentsSkill:        filepath.Join(pkg, "skills", "pi-subagents"),
-		firstOfficer:          filepath.Join(repo, "skills", "first-officer", "SKILL.md"),
-		ensign:                filepath.Join(repo, "skills", "ensign", "SKILL.md"),
 		authPath:              authPath,
 		openAIAPIKey:          envMap["OPENAI_API_KEY"],
 		sessionDir:            sessionDir,
+		agentDir:              agentDir,
+		home:                  home,
 		pluginDirSource:       pluginDirSource,
 		packageRootSource:     pkgSource,
 		intercomPackageSource: intercomPkgSource,
@@ -290,13 +352,18 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	res.subagentsIntercomBridgeOK = ops.Stat(filepath.Join(cfg.packageRoot, "src", "intercom", "intercom-bridge.ts")) == nil
 	res.intercomPackageOK = ops.Stat(cfg.intercomPackageRoot) == nil
 	res.intercomSkillOK = ops.Stat(filepath.Join(cfg.intercomPackageRoot, "skills", "pi-intercom", "SKILL.md")) == nil
-	res.firstOfficerOK = ops.Stat(cfg.firstOfficer) == nil
-	res.ensignOK = ops.Stat(cfg.ensign) == nil
+	// The retired repo-path Stat checks (firstOfficerOK/ensignOK) are replaced by
+	// spacedockPackageOK: the package is registered AND ensign is discoverable via
+	// the package-root skill scan — the real discovery contract, not a filesystem
+	// coincidence at a cwd-derived path.
+	status := ops.SpacedockPackageStatus(cfg.agentDir, cfg.home)
+	res.packageStatus = status
+	res.spacedockPackageOK = status.registered && status.ensignDiscoverable
 	return res
 }
 
 func piRuntimeLaunchReady(c piCheckResult) bool {
-	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.firstOfficerOK && c.ensignOK
+	return c.piBinOK && c.extensionOK && c.subagentsSkillOK && c.subagentsIntercomBridgeOK && c.intercomPackageOK && c.intercomSkillOK && c.spacedockPackageOK
 }
 
 func piDoctorHealthy(c piCheckResult) bool {
@@ -321,9 +388,18 @@ func printPiDoctorReport(w io.Writer, c piCheckResult) {
 	printPiCheck(w, c.subagentsIntercomBridgeOK, "pi-subagents intercom bridge", filepath.Join(c.packageRoot, "src", "intercom", "intercom-bridge.ts"), "install/update pi-subagents or set PI_SUBAGENTS_PACKAGE_ROOT to a package root containing the intercom bridge")
 	printPiCheck(w, c.intercomPackageOK, "pi-intercom package root", c.intercomPackageRoot, "set PI_INTERCOM_PACKAGE_ROOT to the installed pi-intercom package root")
 	printPiCheck(w, c.intercomSkillOK, "pi-intercom skill", filepath.Join(c.intercomPackageRoot, "skills", "pi-intercom"), "install pi-intercom or set PI_INTERCOM_PACKAGE_ROOT to a package root containing skills/pi-intercom/SKILL.md")
-	printPiCheck(w, c.firstOfficerOK, "Spacedock first-officer skill", filepath.Join(c.repoRoot, "skills", "first-officer"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
-	printPiCheck(w, c.ensignOK, "Spacedock ensign skill", filepath.Join(c.repoRoot, "skills", "ensign"), "pass --plugin-dir <spacedock checkout> or set SPACEDOCK_REPO_ROOT")
+	printPiCheck(w, c.spacedockPackageOK, "Spacedock package", piPackageReportPath(c.packageStatus), "run `spacedock install --host pi` to install the Spacedock package (or `spacedock install --host pi --plugin-dir <checkout>` for a dev override)")
 	printPiSupervisorTalkbackBoundary(w)
+}
+
+func piPackageReportPath(s piPackageStatus) string {
+	if s.packageRoot != "" {
+		return s.packageRoot
+	}
+	if s.source != "" {
+		return s.source
+	}
+	return ""
 }
 
 func printPiSupervisorTalkbackBoundary(w io.Writer) {
@@ -346,9 +422,6 @@ func printPiCheck(w io.Writer, ok bool, label, path, remedy string) {
 	}
 }
 
-func (c piRuntimeConfig) firstOfficerDir() string { return filepath.Dir(c.firstOfficer) }
-func (c piRuntimeConfig) ensignDir() string       { return filepath.Dir(c.ensign) }
-
 func lastString(v []string) string {
 	if len(v) == 0 {
 		return ""
@@ -365,4 +438,207 @@ func envMap(env []string) map[string]string {
 		}
 	}
 	return m
+}
+
+// piSpacedockPackageStatus replicates the package-registration + skill-discovery
+// contract that pi-subagents' collectSettingsPackageSkillPaths uses: it reads
+// ~/.pi/agent/settings.json `packages`, resolves each entry's package root (via
+// resolveSettingsPackageRoot), reads the package's package.json, and confirms a
+// package named "spacedock" is registered with ensign discoverable under its
+// pi.skills paths. This is the real discovery check — not a Stat of a cwd-derived
+// path — so it holds from a non-repo cwd once the package is installed.
+func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
+	if agentDir == "" {
+		return piPackageStatus{}
+	}
+	data, err := os.ReadFile(filepath.Join(agentDir, "settings.json"))
+	if err != nil {
+		return piPackageStatus{}
+	}
+	var settings struct {
+		Packages []json.RawMessage `json:"packages"`
+	}
+	if json.Unmarshal(data, &settings) != nil {
+		return piPackageStatus{}
+	}
+	for _, raw := range settings.Packages {
+		src := piPackageSourceFromEntry(raw)
+		if src == "" {
+			continue
+		}
+		root := resolveSettingsPackageRoot(src, agentDir, home)
+		if root == "" {
+			continue
+		}
+		name, skillPaths := readPackagePiSkills(root)
+		if name != "spacedock" {
+			continue
+		}
+		st := piPackageStatus{registered: true, source: src, packageRoot: root}
+		for _, sp := range skillPaths {
+			dir := filepath.Join(root, sp)
+			if piSkillFileExists(dir, "ensign") {
+				st.ensignDiscoverable = true
+			}
+			if piSkillFileExists(dir, "first-officer") {
+				st.firstOfficerDiscoverable = true
+			}
+		}
+		return st
+	}
+	return piPackageStatus{}
+}
+
+func piPackageSourceFromEntry(raw json.RawMessage) string {
+	var s string
+	if json.Unmarshal(raw, &s) == nil {
+		return s
+	}
+	var obj struct {
+		Source string `json:"source"`
+	}
+	if json.Unmarshal(raw, &obj) == nil {
+		return obj.Source
+	}
+	return ""
+}
+
+func readPackagePiSkills(root string) (name string, skills []string) {
+	data, err := os.ReadFile(filepath.Join(root, "package.json"))
+	if err != nil {
+		return "", nil
+	}
+	var pkg struct {
+		Name string `json:"name"`
+		Pi   struct {
+			Skills []string `json:"skills"`
+		} `json:"pi"`
+	}
+	if json.Unmarshal(data, &pkg) != nil {
+		return "", nil
+	}
+	return pkg.Name, pkg.Pi.Skills
+}
+
+func piSkillFileExists(dir, skill string) bool {
+	_, err := os.Stat(filepath.Join(dir, skill, "SKILL.md"))
+	return err == nil
+}
+
+// resolveSettingsPackageRoot replicates pi-subagents' resolveSettingsPackageRoot:
+// it resolves a settings.json `packages` entry to a filesystem package root,
+// handling git:, npm:, file:, ~, absolute, and relative path sources.
+func resolveSettingsPackageRoot(source, baseDir, home string) string {
+	s := strings.TrimSpace(source)
+	if s == "" {
+		return ""
+	}
+	if strings.HasPrefix(s, "git:") {
+		host, repoPath := parseGitPackagePath(strings.TrimSpace(strings.TrimPrefix(s, "git:")))
+		if host == "" || repoPath == "" {
+			return ""
+		}
+		return filepath.Join(baseDir, "git", host, repoPath)
+	}
+	if strings.HasPrefix(s, "npm:") {
+		name := parseNpmPackageName(strings.TrimSpace(strings.TrimPrefix(s, "npm:")))
+		if name == "" {
+			return ""
+		}
+		return filepath.Join(baseDir, "npm", "node_modules", name)
+	}
+	norm := strings.TrimPrefix(s, "file:")
+	if norm == "~" {
+		return home
+	}
+	if strings.HasPrefix(norm, "~/") {
+		return filepath.Join(home, norm[2:])
+	}
+	if filepath.IsAbs(norm) {
+		return norm
+	}
+	if norm == "." || norm == ".." || strings.HasPrefix(norm, "./") || strings.HasPrefix(norm, "../") {
+		return filepath.Join(baseDir, norm)
+	}
+	return ""
+}
+
+var scpGitRe = regexp.MustCompile(`^git@([^:]+):(.+)$`)
+
+// parseGitPackagePath replicates pi-subagents' parseGitPackagePath, returning the
+// host and normalized repo path for a git: package source.
+func parseGitPackagePath(spec string) (host, repoPath string) {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return "", ""
+	}
+	if m := scpGitRe.FindStringSubmatch(spec); m != nil {
+		host = m[1]
+		repoPath = m[2]
+	} else if u, err := url.Parse(spec); err == nil && u.IsAbs() && u.Host != "" {
+		host = u.Hostname()
+		repoPath = strings.TrimPrefix(u.Path, "/")
+	} else if i := strings.Index(spec, "/"); i > 0 {
+		host = spec[:i]
+		repoPath = spec[i+1:]
+	} else {
+		return "", ""
+	}
+	repoPath = stripGitRef(repoPath)
+	repoPath = strings.TrimSuffix(repoPath, ".git")
+	repoPath = strings.TrimPrefix(repoPath, "/")
+	if !isSafePackagePath(host) || !isSafePackagePath(repoPath) || len(strings.Split(repoPath, "/")) < 2 {
+		return "", ""
+	}
+	return host, repoPath
+}
+
+// parseNpmPackageName replicates pi-subagents' parseNpmPackageName: it extracts
+// the package name (without @version) from an npm: source.
+func parseNpmPackageName(spec string) string {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return ""
+	}
+	re := regexp.MustCompile(`^(@?[^@]+(?:/[^@]+)?)(?:@(.+))?$`)
+	m := re.FindStringSubmatch(spec)
+	name := spec
+	if m != nil && m[1] != "" {
+		name = m[1]
+	}
+	if !isSafePackagePath(name) {
+		return ""
+	}
+	return name
+}
+
+// stripGitRef replicates pi-subagents' stripGitRef: it strips a @ref or #ref
+// suffix (the first @ or #, whichever comes first) from a repo path.
+func stripGitRef(repoPath string) string {
+	at := strings.Index(repoPath, "@")
+	hash := strings.Index(repoPath, "#")
+	var idx int = -1
+	if at >= 0 && (hash < 0 || at < hash) {
+		idx = at
+	} else if hash >= 0 {
+		idx = hash
+	}
+	if idx < 0 {
+		return repoPath
+	}
+	return repoPath[:idx]
+}
+
+// isSafePackagePath replicates pi-subagents' isSafePackagePath: a path is safe
+// when it is non-empty, not absolute, and has no "." or ".." segments.
+func isSafePackagePath(value string) bool {
+	if value == "" || filepath.IsAbs(value) {
+		return false
+	}
+	for _, part := range strings.Split(value, string(filepath.Separator)) {
+		if part == "" || part == "." || part == ".." {
+			return false
+		}
+	}
+	return true
 }

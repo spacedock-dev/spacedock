@@ -88,8 +88,10 @@ Usage:
   spacedock pi [task] [--plugin-dir <checkout>] [-- pi-flags]
 
 Start Pi as your Spacedock first officer by loading the Pi-native pi-subagents
-extension/skill and the Spacedock first-officer/ensign skills. The optional task
-is appended to the launch prompt; everything after -- forwards verbatim to pi.
+extension/skill. The Spacedock first-officer/ensign skills are discovered from
+the installed Spacedock package (run: spacedock install --host pi); the optional
+--plugin-dir loads a local checkout as a dev override. The optional task is
+appended to the launch prompt; everything after -- forwards verbatim to pi.
 
 Flags:
 `)

@@ -1,0 +1,13 @@
+{
+  "name": "spacedock",
+  "type": "module",
+  "private": true,
+  "pi": {
+    "extensions": [
+      "./.pi/extensions/spacedock.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
+  }
+}

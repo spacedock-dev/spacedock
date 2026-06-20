@@ -12,9 +12,13 @@ import (
 )
 
 type fakePiRuntimeOps struct {
-	lookPath map[string]string
-	statOK   map[string]bool
-	launched []string
+	lookPath      map[string]string
+	statOK        map[string]bool
+	launched      []string
+	piInstalls    []string // sources captured by PiInstall
+	piInstallOut  string
+	piInstallErr  error
+	packageStatus piPackageStatus
 }
 
 func (f *fakePiRuntimeOps) LookPath(name string) (string, error) {
@@ -34,6 +38,27 @@ func (f *fakePiRuntimeOps) Stat(path string) error {
 func (f *fakePiRuntimeOps) Launch(argv []string) error {
 	f.launched = append([]string(nil), argv...)
 	return nil
+}
+
+func (f *fakePiRuntimeOps) PiInstall(source string) (string, error) {
+	f.piInstalls = append(f.piInstalls, source)
+	return f.piInstallOut, f.piInstallErr
+}
+
+func (f *fakePiRuntimeOps) SpacedockPackageStatus(agentDir, home string) piPackageStatus {
+	return f.packageStatus
+}
+
+// healthyPiPackageStatus is the canned status for a registered, discoverable
+// Spacedock package — the state `spacedock install --host pi` produces.
+func healthyPiPackageStatus() piPackageStatus {
+	return piPackageStatus{
+		registered:               true,
+		ensignDiscoverable:       true,
+		firstOfficerDiscoverable: true,
+		source:                   "git:github.com/spacedock-dev/spacedock",
+		packageRoot:              "/pkg-store/spacedock",
+	}
 }
 
 func TestPiCommandRegisteredInTopLevelHelp(t *testing.T) {
@@ -61,8 +86,9 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 	pkg := t.TempDir()
 	writePiSubagentsFixtures(t, pkg)
 	ops := &fakePiRuntimeOps{
-		lookPath: piHealthyPathFixtures(),
-		statOK:   statOKForPiResources(repo, pkg),
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
 	}
 	var stdout, stderr bytes.Buffer
 
@@ -70,12 +96,13 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
+	// The retired --skill <repo>/skills/{first-officer,ensign} flags are absent;
+	// only the pi-subagents skill is passed. The Spacedock skills are discovered
+	// from the installed package's extension (resources_discover), not the flags.
 	wantPrefix := []string{
 		"pi",
 		"--extension", filepath.Join(pkg, "src", "extension", "index.ts"),
 		"--skill", filepath.Join(pkg, "skills", "pi-subagents"),
-		"--skill", filepath.Join(repo, "skills", "first-officer"),
-		"--skill", filepath.Join(repo, "skills", "ensign"),
 		"--model", "google/gemini",
 	}
 	if len(ops.launched) < len(wantPrefix)+1 {
@@ -92,49 +119,72 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 			t.Fatalf("pi launch argv contains banned runtime token %q: %v", banned, ops.launched)
 		}
 	}
+	// Exactly one --skill flag (pi-subagents); the retired first-officer/ensign
+	// skill flags must not appear.
+	if got := strings.Count(joined, "--skill"); got != 1 {
+		t.Fatalf("expected exactly 1 --skill flag (pi-subagents only), got %d: %v", got, ops.launched)
+	}
+	if strings.Contains(joined, filepath.Join(repo, "skills", "first-officer")) || strings.Contains(joined, filepath.Join(repo, "skills", "ensign")) {
+		t.Fatalf("pi launch argv must not pass retired repo skill flags: %v", ops.launched)
+	}
 	prompt := ops.launched[len(ops.launched)-1]
 	if !strings.Contains(prompt, "Use $spacedock:first-officer") || !strings.Contains(prompt, "review this") {
 		t.Fatalf("pi prompt missing FO skill or task: %q", prompt)
 	}
 }
 
-func TestPiInstallRejectsPluginDir(t *testing.T) {
-	var stdout, stderr bytes.Buffer
-	ops := &fakeHost{}
-	piOps := &fakePiRuntimeOps{}
-
-	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", "/checkout"}, ops, piOps, nil, &stdout, &stderr)
-	if code != 2 {
-		t.Fatalf("exit=%d want 2; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
-	}
-	if !strings.Contains(stderr.String(), "--plugin-dir is not supported") {
-		t.Fatalf("stderr should clearly reject install --plugin-dir, got %q", stderr.String())
-	}
-	if len(ops.installCmds) != 0 {
-		t.Fatalf("install seam called despite rejected --plugin-dir: %v", ops.installCmds)
-	}
-}
-
-func TestPiInstallAcceptedAndDoesNotUsePluginCommands(t *testing.T) {
+func TestPiInstallAcceptsPluginDirAsDevOverride(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
 	pkg := t.TempDir()
 	writePiSubagentsFixtures(t, pkg)
 	ops := &fakeHost{}
+	piOps := &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
 	var stdout, stderr bytes.Buffer
 
-	code := runInitWithPi(context.Background(), []string{"--host", "pi"}, ops, &fakePiRuntimeOps{
-		lookPath: piHealthyPathFixtures(),
-		statOK:   statOKForPiResources(repo, pkg),
-	}, append(piTestEnv(pkg, t.TempDir()), "SPACEDOCK_REPO_ROOT="+repo), &stdout, &stderr)
+	code := runInitWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", "/checkout"}, ops, piOps, piTestEnv(pkg, t.TempDir()), &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d want 0; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	// --plugin-dir is the dev-override install source: pi install <path>.
+	if len(piOps.piInstalls) != 1 || piOps.piInstalls[0] != "/checkout" {
+		t.Fatalf("expected pi install /checkout, got %v", piOps.piInstalls)
+	}
+	if len(ops.installCmds) != 0 {
+		t.Fatalf("install --host pi must not call the host plugin install seam: %v", ops.installCmds)
+	}
+}
+
+func TestPiInstallRunsPiInstallAndDoesNotUsePluginCommands(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := &fakeHost{}
+	piOps := &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+	var stdout, stderr bytes.Buffer
+
+	code := runInitWithPi(context.Background(), []string{"--host", "pi"}, ops, piOps, append(piTestEnv(pkg, t.TempDir()), "SPACEDOCK_REPO_ROOT="+repo), &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	// install --host pi runs `pi install <published source>`, not the host plugin seam.
+	if len(piOps.piInstalls) != 1 || piOps.piInstalls[0] != piSpacedockPackageSource {
+		t.Fatalf("expected pi install %q, got %v", piSpacedockPackageSource, piOps.piInstalls)
 	}
 	if len(ops.installCmds) != 0 {
 		t.Fatalf("install --host pi called host plugin install seam: %v", ops.installCmds)
 	}
 	out := stdout.String()
-	for _, want := range []string{"Pi runtime ready", "pi-subagents", "pi-intercom", pkg, repo, "necessary supervisor-talkback setup prerequisites only"} {
+	for _, want := range []string{"Pi runtime ready", "pi-subagents", "pi-intercom", pkg, "Spacedock package", "necessary supervisor-talkback setup prerequisites only"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("install --host pi output missing %q:\n%s", want, out)
 		}
@@ -307,6 +357,94 @@ func TestPiRuntimeConfigDefaultsIntercomAndAuthPathsUnderHome(t *testing.T) {
 	assertEqual(t, cfg.intercomPackageRoot, filepath.Join(home, ".pi", "agent", "npm", "node_modules", "pi-intercom"))
 	assertEqual(t, cfg.authPath, filepath.Join(home, ".pi", "agent", "auth.json"))
 	assertEqual(t, cfg.sessionDir, filepath.Join(home, ".pi", "agent", "sessions"))
+	assertEqual(t, cfg.agentDir, filepath.Join(home, ".pi", "agent"))
+}
+
+// TestPiRuntimeConfigRetiresSkillFlagsAndCwdFallback is the AC-3 behavior test: the
+// launcher's --skill first-officer/ensign flags and the cwd fallback are retired,
+// the doctor gates on spacedockPackageOK (package registered + ensign discoverable
+// as user-package), and the doctor reports OK from a non-repo cwd when installed.
+func TestPiRuntimeConfigRetiresSkillFlagsAndCwdFallback(t *testing.T) {
+	t.Run("cwd fallback removed", func(t *testing.T) {
+		// No --plugin-dir, no SPACEDOCK_REPO_ROOT: repoRoot is empty (NOT the cwd),
+		// even from a non-repo cwd. The cwd fallback is removed, not demoted.
+		cfg := piRuntimeConfigFromEnv([]string{"HOME=/h"}, "/some/non-repo/cwd", "")
+		assertEqual(t, cfg.repoRoot, "")
+		assertEqual(t, cfg.pluginDirSource, "SPACEDOCK_REPO_ROOT")
+	})
+
+	t.Run("dev override retained", func(t *testing.T) {
+		cfg := piRuntimeConfigFromEnv([]string{"HOME=/h"}, "/cwd", "/checkout")
+		assertEqual(t, cfg.repoRoot, "/checkout")
+		assertEqual(t, cfg.pluginDirSource, "--plugin-dir")
+		cfg2 := piRuntimeConfigFromEnv([]string{"HOME=/h", "SPACEDOCK_REPO_ROOT=/env-repo"}, "/cwd", "")
+		assertEqual(t, cfg2.repoRoot, "/env-repo")
+	})
+
+	t.Run("launch args have no retired skill flags", func(t *testing.T) {
+		repo := t.TempDir()
+		writePiSkillFixtures(t, repo)
+		pkg := t.TempDir()
+		writePiSubagentsFixtures(t, pkg)
+		ops := &fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOKForPiResources(repo, pkg),
+			packageStatus: healthyPiPackageStatus(),
+		}
+		var stdout, stderr bytes.Buffer
+		code := runPi(context.Background(), []string{"--plugin-dir", repo}, "/tmp", piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+		}
+		joined := strings.Join(ops.launched, " ")
+		if got := strings.Count(joined, "--skill"); got != 1 {
+			t.Fatalf("expected exactly 1 --skill flag (pi-subagents only), got %d: %v", got, ops.launched)
+		}
+		for _, banned := range []string{filepath.Join(repo, "skills", "first-officer"), filepath.Join(repo, "skills", "ensign")} {
+			if strings.Contains(joined, banned) {
+				t.Fatalf("retired repo skill flag present in launch args: %v", ops.launched)
+			}
+		}
+	})
+
+	t.Run("doctor gates on spacedockPackageOK from non-repo cwd", func(t *testing.T) {
+		pkg := t.TempDir()
+		writePiSubagentsFixtures(t, pkg)
+		home := t.TempDir()
+		auth := filepath.Join(home, ".pi", "agent", "auth.json")
+		statOK := statOKForPiResources(t.TempDir(), pkg)
+		statOK[auth] = true
+
+		// Not installed: packageStatus zero -> spacedockPackageOK false -> not ready,
+		// reported from a non-repo cwd (/tmp). This is the inverse of the old
+		// cwd-fallback false-positive.
+		var stdout, stderr bytes.Buffer
+		code := runDoctorWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, &fakePiRuntimeOps{
+			lookPath: piHealthyPathFixtures(),
+			statOK:   statOK,
+		}, piTestEnv(pkg, home), &stdout, &stderr)
+		if code == 0 {
+			t.Fatalf("doctor should be non-zero when package not installed; stdout=%q", stdout.String())
+		}
+		if !strings.Contains(stdout.String(), "MISSING Spacedock package") {
+			t.Fatalf("doctor should report MISSING Spacedock package when not installed:\n%s", stdout.String())
+		}
+
+		// Installed: packageStatus healthy -> spacedockPackageOK true -> ready,
+		// still from a non-repo cwd (/tmp). No --plugin-dir, no SPACEDOCK_REPO_ROOT.
+		var stdout2, stderr2 bytes.Buffer
+		code2 := runDoctorWithPi(context.Background(), []string{"--host", "pi"}, &fakeHost{}, &fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOK,
+			packageStatus: healthyPiPackageStatus(),
+		}, piTestEnv(pkg, home), &stdout2, &stderr2)
+		if code2 != 0 {
+			t.Fatalf("doctor should be zero when package installed from non-repo cwd; exit=%d stdout=%q", code2, stdout2.String())
+		}
+		if !strings.Contains(stdout2.String(), "OK Spacedock package") {
+			t.Fatalf("doctor should report OK Spacedock package when installed:\n%s", stdout2.String())
+		}
+	})
 }
 
 func TestRuntimeSupportDocsKeepPiDoctorVsLiveTalkbackBoundary(t *testing.T) {
@@ -358,8 +496,9 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 	t.Run("openai-api-key-auth", func(t *testing.T) {
 		var stdout, stderr bytes.Buffer
 		code := runDoctorWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", repo}, &fakeHost{}, &fakePiRuntimeOps{
-			lookPath: piHealthyPathFixtures(),
-			statOK:   statOKForPiResources(repo, pkg),
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOKForPiResources(repo, pkg),
+			packageStatus: healthyPiPackageStatus(),
 		}, append(piTestEnv(pkg, home), "OPENAI_API_KEY=test-key"), &stdout, &stderr)
 		if code != 0 {
 			t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
@@ -374,16 +513,23 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 		statOK := statOKForPiResources(repo, pkg)
 		statOK[auth] = true
 		code := runDoctorWithPi(context.Background(), []string{"--host", "pi", "--plugin-dir", repo}, &fakeHost{}, &fakePiRuntimeOps{
-			lookPath: piHealthyPathFixtures(),
-			statOK:   statOK,
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOK,
+			packageStatus: healthyPiPackageStatus(),
 		}, piTestEnv(pkg, home), &stdout, &stderr)
 		if code != 0 {
 			t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 		}
 		out := stdout.String()
-		for _, want := range []string{"OK pi CLI", "OK Pi auth", "OK pi-subagents extension", "OK pi-subagents intercom bridge", "OK pi-intercom package root", "OK pi-intercom skill", "OK Spacedock first-officer skill", "OK Spacedock ensign skill", "live child talkback", "durable marker probe"} {
+		for _, want := range []string{"OK pi CLI", "OK Pi auth", "OK pi-subagents extension", "OK pi-subagents intercom bridge", "OK pi-intercom package root", "OK pi-intercom skill", "OK Spacedock package", "live child talkback", "durable marker probe"} {
 			if !strings.Contains(out, want) {
 				t.Fatalf("healthy doctor output missing %q:\n%s", want, out)
+			}
+		}
+		// The retired repo-path skill checks must not appear.
+		for _, notWant := range []string{"OK Spacedock first-officer skill", "OK Spacedock ensign skill"} {
+			if strings.Contains(out, notWant) {
+				t.Fatalf("healthy doctor output should not print retired skill check %q:\n%s", notWant, out)
 			}
 		}
 	})
