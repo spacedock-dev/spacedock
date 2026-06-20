@@ -2,7 +2,7 @@
 title: "Gates & decisions"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-20 05:00:40"
+last_updated: "2026-06-20 06:09:27"
 ---
 
 # Gates & decisions
