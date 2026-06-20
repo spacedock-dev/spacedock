@@ -11,6 +11,7 @@ issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
 id:
+mod-block: merge:pr-merge
 ---
 
 # Pi dev-override package-OK
