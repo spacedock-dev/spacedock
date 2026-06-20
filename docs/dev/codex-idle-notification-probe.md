@@ -21,7 +21,7 @@ must be treated as operator activity, not idle wake evidence.
 ## Foreground wait comparison
 
 1. Dispatch a worker with the exact no-write prompt and record its handle.
-2. When the live Codex tool surface exposes `wait_agent(timeout_ms)`, bind `«completion-signal»` foreground waiting to that global wait only when there is no ready workflow work.
+2. When the live Codex tool surface exposes a foreground wait binding, use `«completion-signal»` foreground waiting only when there is no ready workflow work.
 3. Record whether the call returns a timeout or a final status.
 4. If captain input, Esc, or another operator interruption returns control,
    record it as a non-terminal foreground-wait return; do not classify it as a
@@ -31,12 +31,12 @@ must be treated as operator activity, not idle wake evidence.
 5. Classify a final status observed through this explicit wait path as
    `foreground_wait`.
 
-Use `«roster-reconcile»` through `list_agents(path_prefix?)` only to inspect active/completed task paths for attribution and debugging. Durable workflow state remains authoritative.
+Use `«roster-reconcile»` only to inspect active/completed task paths for attribution and debugging. Durable workflow state remains authoritative.
 
 ## No-wait idle probe
 
 1. Dispatch a worker with the exact no-write prompt and record its handle.
-2. Do not call `wait_agent`; end the FO turn.
+2. Do not use foreground wait; end the FO turn.
 3. Keep the session idle for the minimum idle window of 90 seconds after the FO
    turn ends.
 4. During that idle window, avoid captain messages, shell-outs, terminal jobs,
@@ -58,7 +58,7 @@ Use `«roster-reconcile»` through `list_agents(path_prefix?)` only to inspect a
 
 ## Interpretation Rules
 
-- `foreground_wait`: `wait_agent(timeout_ms)` returned
+- `foreground_wait`: foreground wait returned
   a timeout or final-status mailbox update, and any operator interruption that
   returned control was recorded as a non-terminal foreground-wait return
   followed by reinstalling the global wait only when waiting was again the next
@@ -80,6 +80,6 @@ when known, and `null` when the observation did not capture an exact timestamp.
 
 Codex shutdown probing is separate from this idle-notification recipe.
 `«worker.shutdown»` remains unresolved until a live or fixture-backed
-probe proves whether `interrupt_agent` terminates, pauses, or leaves a worker
-addressable. Do not bless `interrupt_agent` as a shutdown binding from idle-wake
+probe proves whether live interruption terminates, pauses, or leaves a worker
+addressable. Do not bless live interruption as a shutdown binding from idle-wake
 evidence alone.

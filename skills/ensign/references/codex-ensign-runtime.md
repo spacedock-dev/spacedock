@@ -14,15 +14,15 @@ Codex declares none for the context-budget probe. The FO owns reuse decisions; t
 
 Initial dispatch comes from `spacedock dispatch build` with `host: "codex"`. The generated file carries fetch commands, worktree rules, split-root state commit guidance, checklist, and completion-signal wording. Do not reconstruct those fields manually.
 
-When the live Codex tool surface exposes `spawn_agent(task_name,message,fork_turns)`, the FO maps the helper output to `«worker.spawn»`: the helper `prompt` is passed unchanged as the worker message, while unsupported helper fields such as `description`, `subagent_type`, and `model` are not passed to the live spawn tool. The helper `name` remains the `«worker-identity»` source, even when the live `task_name` is sanitized to lowercase digits and underscores.
+When `«worker.spawn»` is bound, the FO maps the helper output to the live worker dispatch capability: the helper `prompt` is passed unchanged as the worker message, while unsupported helper fields are not passed to the live spawn tool. The helper `name` remains the `«worker-identity»` source, even when the live task name is sanitized to lowercase digits and underscores.
 
 ## Awaiting Completion
 
-The FO observes completion through the async final-status notification in the FO mailbox. After sending the completion signal, stop and let Codex deliver it; do not send follow-up chatter unless the FO routes more work through a live `«addressable-worker»` binding such as `followup_task(target,message)`.
+The FO observes completion through the async final-status notification in the FO mailbox. After sending the completion signal, stop and let Codex deliver it; do not send follow-up chatter unless the FO routes more work through `«addressable-worker»`.
 
 ## Clarification
 
-If requirements are unclear, ask in the Codex worker thread. Describe what you understand and what is ambiguous so the FO can route a non-triggering note through `send_message(target,message)` or turn-starting work through `followup_task(target,message)`.
+If requirements are unclear, ask in the Codex worker thread. Describe what you understand and what is ambiguous so the FO can route a non-triggering note or turn-starting work through `«addressable-worker»`.
 
 ## Captain Communication
 
@@ -37,12 +37,12 @@ thread:
 Done: {entity title} completed {stage}. Report written to {entity_file_path}.
 ```
 
-The entity file is the artifact. Do not include the checklist or summary in the message. Plain text only. Never send JSON; never emit a Claude `SendMessage(to="team-lead", ...)` call on Codex.
+The entity file is the artifact. Do not include the checklist or summary in the message. Plain text only. Never send JSON; never emit another host's completion call on Codex.
 
 ## Feedback Interaction
 
-For feedback stages, when the live Codex tool surface exposes `followup_task(target,message)`, the FO routes turn-starting feedback through that `«addressable-worker»` binding. Apply the feedback, update the stage report if needed, and send the same completion signal when finished.
+For feedback stages, when `«addressable-worker»` is bound, the FO routes turn-starting feedback through it. Apply the feedback, update the stage report if needed, and send the same completion signal when finished.
 
 ## Shutdown Response Protocol
 
-If the FO sends an explicit cooperative shutdown request through `send_message(target,message)`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost. In that case, briefly name what must be preserved before shutdown. Codex `«worker.shutdown»` remains unresolved until probed; do not assume `interrupt_agent` is a safe shutdown instruction.
+If the FO sends an explicit cooperative shutdown request through `«addressable-worker»`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost. In that case, briefly name what must be preserved before shutdown. Codex `«worker.shutdown»` remains unresolved until probed; do not assume live interruption is a safe shutdown instruction.

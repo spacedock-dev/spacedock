@@ -55,9 +55,9 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"`«worker.shutdown»`",
 		"Do not bless `interrupt_agent`",
 		"Do not infer capabilities from a Codex version name",
-		"re-run the kept-alive reviewer through the same `«addressable-worker»` binding",
-		"Fresh-spawn the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
-		"Do not infer that `followup_task` is absent from the absence of earlier follow-up events",
+		"re-run the kept-alive reviewer through the same `«addressable-worker»` capability",
+		"Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
+		"Do not infer that the turn-starting addressable-worker route is absent from the absence of earlier follow-up events",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("Codex current-runtime references missing %q", want)
@@ -67,4 +67,112 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 	if _, err := os.Stat(filepath.Join(root, "skills", "first-officer", "references", "codex-v2-first-officer-runtime.md")); !os.IsNotExist(err) {
 		t.Fatalf("Codex v2 must be a host-binding section in the existing Codex runtime reference, not a separate runtime file")
 	}
+}
+
+func TestFeedbackRejectionFlowStaysHostNeutral(t *testing.T) {
+	root := repoRoot(t)
+	rel := filepath.Join("skills", "feedback-rejection-flow", "SKILL.md")
+	data, err := os.ReadFile(filepath.Join(root, rel))
+	if err != nil {
+		t.Fatalf("read %s: %v", rel, err)
+	}
+	text := string(data)
+
+	for _, banned := range []string{
+		"Codex",
+		"Claude",
+		"followup_task",
+		"send_message",
+		"send_input",
+		"SendMessage",
+		"list_agents",
+		"wait_agent",
+		"spawn_agent",
+		"interrupt_agent",
+	} {
+		if strings.Contains(text, banned) {
+			t.Errorf("%s contains runtime-specific host or tool name %q", rel, banned)
+		}
+	}
+
+	for _, want := range []string{
+		"`«addressable-worker»`",
+		"`«completion-signal»`",
+		"Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%s missing host-neutral capability wording %q", rel, want)
+		}
+	}
+}
+
+func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
+	root := repoRoot(t)
+	codexRuntimeRel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	data, err := os.ReadFile(filepath.Join(root, codexRuntimeRel))
+	if err != nil {
+		t.Fatalf("read %s: %v", codexRuntimeRel, err)
+	}
+	codexRuntime := string(data)
+	bindingSection, outsideBinding := extractMarkdownSection(t, codexRuntime, "## Live Tool Surface Probe")
+
+	for _, want := range []string{
+		"`spawn_agent(task_name,message,fork_turns)`",
+		"`send_message(target,message)`",
+		"`followup_task(target,message)`",
+		"`wait_agent(timeout_ms)`",
+		"`list_agents(path_prefix?)`",
+		"`interrupt_agent`",
+	} {
+		if !strings.Contains(bindingSection, want) {
+			t.Errorf("%s live binding section missing %q", codexRuntimeRel, want)
+		}
+	}
+
+	paths := map[string]string{
+		codexRuntimeRel: outsideBinding,
+	}
+	for _, rel := range []string{
+		filepath.Join("skills", "ensign", "references", "codex-ensign-runtime.md"),
+		filepath.Join("skills", "feedback-rejection-flow", "SKILL.md"),
+		filepath.Join("docs", "dev", "codex-idle-notification-probe.md"),
+	} {
+		data, err := os.ReadFile(filepath.Join(root, rel))
+		if err != nil {
+			t.Fatalf("read %s: %v", rel, err)
+		}
+		paths[rel] = string(data)
+	}
+
+	for rel, text := range paths {
+		for _, banned := range []string{
+			"spawn_agent(",
+			"send_message(",
+			"followup_task(",
+			"wait_agent(",
+			"list_agents(",
+			"send_input",
+			"SendMessage",
+			"interrupt_agent",
+		} {
+			if strings.Contains(text, banned) {
+				t.Errorf("%s contains runtime tool outside Codex live binding section: %q", rel, banned)
+			}
+		}
+	}
+}
+
+func extractMarkdownSection(t *testing.T, text, heading string) (section string, remainder string) {
+	t.Helper()
+	start := strings.Index(text, heading)
+	if start == -1 {
+		t.Fatalf("missing heading %q", heading)
+	}
+	afterStart := start + len(heading)
+	nextRel := strings.Index(text[afterStart:], "\n## ")
+	if nextRel == -1 {
+		return text[start:], text[:start]
+	}
+	end := afterStart + nextRel
+	return text[start:end], text[:start] + text[end:]
 }
