@@ -1,12 +1,12 @@
 ---
 title: Trim state.commit contract token load
-status: ideation
+status: implementation
 source: "Captain follow-up after per-runtime contract token count (2026-06-20): shared-core grew +943 tokens since v0.22.0; biggest new body is «state.commit» at ~587 tokens. Determine and ship the leanest safe form."
 started: 2026-06-20T18:36:31Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-state-commit-contract-token-followup
 issue:
 sprint: 0221-layered-fo
 sprint-readiness:
