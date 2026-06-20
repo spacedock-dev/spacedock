@@ -2,23 +2,11 @@
 
 This file defines how the shared first-officer core executes on Codex. The host-neutral dispatch and merge procedures are in `references/fo-dispatch-core.md` / `fo-merge-core.md` (named by the boot-resident core); this file is the Codex parts those defer to.
 
-## Terminal Teardown (Merge-and-Cleanup step 10)
+## Cleanup Capability Bindings
 
-Codex has no team registry and no `TeamDelete`, so there is no bounded team-teardown loop, settle interval, attempt cap, or terminal-status marker — those are Claude specifics, absent here. The obligation is still mandatory at the terminal boundary.
+`«worker.shutdown»` remains unresolved until probed. `«roster-reconcile»` may provide active/completed task-path reads when bound. `«addressable-worker»` may carry cooperative preservation text when present. Durable workflow state remains authoritative.
 
-Codex leaves `«worker.shutdown»` unresolved until probed. Do not bless the live interruption tool as a shutdown binding yet; first prove whether it terminates, pauses, or leaves a worker addressable. Keep cooperative preservation text separate from any hard interruption.
-
-10. **Teardown agents at terminal.** Derive the entity's worker cohort — every Codex worker whose task name decomposes to this entity's slug. When `«roster-reconcile»` is bound, use it to inspect active/completed task paths for stale-cohort classification and terminal cleanup targeting; durable workflow state remains authoritative for advancement. Until `«worker.shutdown»` has a probed binding, send only cooperative preservation-aware shutdown text through `«addressable-worker»` when that capability exists, and drop the worker from session memory after completion or explicit captain direction. There is no team object to delete and no roster to settle, so teardown is a single cooperative pass, not a retry loop. Teardown is mandatory whether the merge ran locally or via a PR host.
-
-## Team Creation
-
-Codex does not expose Claude Code's `TeamCreate` registry. Do not create or
-delete teams, and do not inspect Claude team directories. Codex workers are
-spawned and observed through the multi-agent mailbox surface.
-
-Codex declares none for the context-budget probe. When the shared core asks for a
-reuse budget signal, treat the probe as unavailable and prefer a fresh dispatch
-unless the current task explicitly depends on the previous worker's context.
+`«context-budget»` is unavailable unless a future probe binds it.
 
 ## Live Tool Surface Probe
 
@@ -45,12 +33,7 @@ read-dispatch-file prompt. The FO must never forward a prompt containing `Skill(
 
 When `«worker.spawn»` is bound, sanitize the helper-emitted `name` through `«worker-identity»` to a lowercase digit/underscore task name, pass the emitted `prompt` unchanged as the worker message, omit unsupported helper fields, and record the sanitized task path as the live worker handle. Helper-emitted `name` remains the host-neutral worker identity source; retain the mapping from sanitized task path back to entity slug, stage, and cycle so cohorts and teardown targets remain classifiable.
 
-Codex has no team registry, so there is no `team_name` lifecycle to create,
-recover, or tear down. Use Codex task names and mailbox notifications as the
-worker handle. Do not use another host's completion syntax in Codex
-dispatch prompts.
-
-Codex has no shared standing-teammate surface; the core's standing-injection call is a no-op.
+Use Codex task names and mailbox notifications as the worker handle. Codex dispatch prompts carry the file-pointer completion contract emitted by `spacedock dispatch build`.
 
 ## Reuse And Feedback Routing
 
@@ -102,9 +85,8 @@ in the FO mailbox and then resumes the shared event loop.
 ## Captain Interaction
 
 The captain is the user of the Codex session. Communicate gate results,
-clarifications, and status directly in the conversation. Do not invent a
-team-lead mailbox on Codex.
+clarifications, and status directly in the conversation.
 
-## Backstop (Codex)
+## Roster Reconcile Binding
 
-When `«roster-reconcile»` is bound, Codex has active/completed task-path reads. It can support stale-cohort classification, debugging, and terminal cleanup targeting, but it is not a durable workflow-state source and does not replace state-checkout evidence. A missed terminal teardown or supersede shutdown can still persist until session end if the boundary step is skipped; the shared-core boundary steps remain the enforcement point.
+When `«roster-reconcile»` is bound, Codex has active/completed task-path reads for attribution, stale-cohort classification, debugging, and cleanup targeting. Durable workflow state remains authoritative.

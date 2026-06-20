@@ -162,6 +162,79 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 	}
 }
 
+func TestCodexFirstOfficerRuntimeAvoidsNegativeHostContrast(t *testing.T) {
+	root := repoRoot(t)
+	rel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	data, err := os.ReadFile(filepath.Join(root, rel))
+	if err != nil {
+		t.Fatalf("read %s: %v", rel, err)
+	}
+	text := string(data)
+
+	for _, banned := range []string{
+		"## Terminal Teardown",
+		"Merge-and-Cleanup step",
+		"10. **Teardown agents at terminal.**",
+		"## Team Creation",
+		"## Backstop",
+		"TeamDelete",
+		"TeamCreate",
+		"team registry",
+		"team-lead",
+		"Claude specifics",
+		"Do not create teams",
+		"Codex declares none",
+		"no-op",
+	} {
+		if strings.Contains(text, banned) {
+			t.Errorf("%s contains negative host-contrast wording %q", rel, banned)
+		}
+	}
+
+	for _, want := range []string{
+		"`«worker.shutdown»` remains unresolved until probed.",
+		"`«roster-reconcile»` may provide active/completed task-path reads when bound.",
+		"`«addressable-worker»` may carry cooperative preservation text when present.",
+		"Durable workflow state remains authoritative.",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%s missing positive Codex capability wording %q", rel, want)
+		}
+	}
+}
+
+func TestCodexEnsignRuntimeAvoidsNegativeHostContrast(t *testing.T) {
+	root := repoRoot(t)
+	rel := filepath.Join("skills", "ensign", "references", "codex-ensign-runtime.md")
+	data, err := os.ReadFile(filepath.Join(root, rel))
+	if err != nil {
+		t.Fatalf("read %s: %v", rel, err)
+	}
+	text := string(data)
+
+	for _, banned := range []string{
+		"Claude",
+		"another host",
+		"Codex declares none",
+		"Do not reconstruct",
+		"Do not send follow-up",
+	} {
+		if strings.Contains(text, banned) {
+			t.Errorf("%s contains negative host-contrast wording %q", rel, banned)
+		}
+	}
+
+	for _, want := range []string{
+		"`«context-budget»` is unavailable unless a future probe binds it.",
+		"Use the generated file as the source of truth.",
+		"After sending the completion signal, stop unless the FO routes more work through `«addressable-worker»`.",
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("%s missing positive Codex ensign wording %q", rel, want)
+		}
+	}
+}
+
 func extractMarkdownSection(t *testing.T, text, heading string) (section string, remainder string) {
 	t.Helper()
 	start := strings.Index(text, heading)
