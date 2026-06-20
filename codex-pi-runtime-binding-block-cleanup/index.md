@@ -197,6 +197,8 @@ Implementation normalized Codex and Pi FO adapters into binding-block maps keyed
 
 - Cycle 1 fix: validation rejected the initial shared-core shape because the new `«worker.spawn»` and `«worker.shutdown»` headings carried concrete Claude/Codex/Pi `→` bindings. Commit `e60979c` keeps those headings first-class but host-neutral in `fo-dispatch-core.md`, and updates contractlint so concrete lifecycle bindings for Codex/Pi are asserted from runtime adapter `## Runtime implementation` blocks instead of new shared-core `→` clauses.
 - Verification after cycle 1: `go test ./internal/contractlint` passed with 59 tests; `go test ./...` passed with 1712 tests in 17 packages; `go test ./... -race` passed with 1712 tests in 17 packages. `gofmt -w ./cmd ./internal` was run; unrelated formatting-only diffs outside the task scope were restored before commit.
+- Cycle 2 fix: follow-up requested hard Codex idle-stop foreground wait semantics. Commit `892a734` updates the Codex FO runtime so an unresolved Codex worker plus no dispatchable/gate/state work requires `wait_agent(timeout_ms)` before ending the turn or reporting idle/status, and requires reinstalling foreground wait after interrupted waits while preserving final-status mailbox notification as the completion signal.
+- Verification after cycle 2: focused Codex wait tests passed with 4 tests; `go test ./internal/contractlint` passed with 60 tests. `gofmt -w ./cmd ./internal` was run; unrelated formatting-only diffs outside the task scope were restored before commit.
 
 ## Stage Report: validation
 
