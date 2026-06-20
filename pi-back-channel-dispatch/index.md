@@ -1,6 +1,6 @@
 ---
 title: Pi back-channel dispatch — declare and wire the worker↔FO back-channel over pi-intercom
-status: validation
+status: implementation
 source: "Captain (2026-06-19): the pi-intercom supervisor-talkback capability is proven (archived spike cq9kb7cdpp9y48tn8gwzmqzq, PR #301 spike-only) but the Spacedock Pi FO/ensign adapters do not wire it. Treat the capability as already implemented for the host session; find the contract/adapter frictions and harden the dispatch core to runtime-neutral named capabilities."
 score:
 started: 2026-06-19T17:20:10Z
@@ -8,10 +8,10 @@ completed:
 verdict:
 worktree: .worktrees/spacedock-ensign-pi-back-channel-dispatch
 issue:
-sprint: 0223-pi-dispatch-contract
+sprint: 0221-layered-fo
 sprint-readiness: ready
 id: b23y61pgk93ph44pz506m2wy
-mod-block: merge:pr-merge
+mod-block:
 pr: "#409"
 ---
 
@@ -409,3 +409,12 @@ Validation PASSED. All 6 ACs proven: AC-1 (contractlint), AC-2 (live back-channe
 ### FO verdict
 
 Do NOT cut from `cf8e3a5c` as-is. Dispatch fix ensign for SB1+SB2 (+ NB2 same-file + NB5 typo) on the `b2` branch; re-push #409; the live lanes (env-gated) are the behavioral gate. Non-blockers recorded for the next sprint.
+
+## Feedback Cycles
+
+### Cycle 1 — 0221 takeover + capability reframe (rework)
+0221-layered-fo took ownership (captain-directed): the capability layer (Approach A) is a shared-FO-contract concern. Sent back from validation to implementation with this refinement — full rationale in `_reviews/0221-fo-review-pr409-capability-refactor.md`:
+
+1. **Capabilities-as-«fn», not a parallel registry.** Express each capability as a `«fn»` the core body CALLS by name, with the per-host binding on its `→` line (same shape as `«state.commit» → spacedock state commit`). Dissolve the `## Named Capabilities` registry AND every adapter's `## Capability implementations` table. This turns the +172-line addition into a NET CUT — also remove the pre-existing present/absent prose (the `fo-dispatch-core.md` "Worker back-channel capability" block + the per-adapter back-channel prose). KEEP the judgment/safety guardrails (`claude-fo-dispatch.md` `## Awaiting Completion`) — those are not capabilities.
+2. **Rename for legibility:** `worker-back-channel`→`addressable-worker` (fold `inbound-message-service` in); `worker-identity-capture`→`worker-identity`; `context-budget-probe`→`context-budget`. Keep `async-dispatch`/`completion-signal`/`roster-reconcile`.
+3. **Fix M1 (degraded variant):** the Claude `addressable-worker` binding must be ABSENT-honest — Claude Code 2.1.183 has no SendMessage/TeamCreate (spike: a fresh `claude -p` enumerates only Agent/Task*/TaskOutput/TaskStop; the back-channel substrate is Pi-only). Remove the `claude-fo-dispatch.md` "no-TeamCreate = the normal SendMessage-works path" equivalence; the `→ Claude: ABSENT` line is the honest binding. (M3 fixed in 2f26eeba; the «fn» reframe also closes M2.)
