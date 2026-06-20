@@ -18,6 +18,12 @@ Do not assume Claude team tools exist in Pi. Completion is reported by the worke
 - Commit the entity body/stage report path-scoped in the state checkout when the assignment asks for a state commit.
 - Treat each follow-up assignment as a fresh cycle; never assume a previous completion still satisfies the current assignment.
 
+## Clarification
+
+If requirements are unclear or ambiguous, ask for clarification via `contact_supervisor` with `reason: "need_decision"` rather than guessing. Describe what you understand and what's ambiguous so the FO can route a quick answer. The FO replies via `intercom({action:"reply", message:"..."})`; after receiving the reply, resume working. `need_decision` blocks with a 10-minute timeout — ask only when genuinely blocked, and surface enough context for a one-shot answer.
+
+For non-blocking plan-changing discoveries (a riskier mechanism panning out, a scope boundary discovered, an unexpected dependency), send `contact_supervisor` with `reason: "progress_update"` — the FO reads and acknowledges; no reply is required and you continue working without waiting.
+
 ## Completion
 
 When done, return one concise final result that names:
@@ -27,4 +33,4 @@ When done, return one concise final result that names:
 - the commit or durable evidence produced;
 - any residual risk or blocker.
 
-After sending that completion result, stop. Do not idle waiting for another message unless the active Pi substrate explicitly delivers one.
+The final result (the subagent return) is the primary completion signal; an optional done-advisory sent via `intercom send` (NOT `contact_supervisor`, which offers no completion reason) may precede the subagent return as a heads-up; the FO file-verifies the stage report either way. After sending that completion result, stop. Do not idle waiting for another message unless the active Pi substrate explicitly delivers one or the FO routes follow-up through the back-channel.
