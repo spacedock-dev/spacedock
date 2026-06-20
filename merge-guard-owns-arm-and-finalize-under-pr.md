@@ -101,3 +101,17 @@ NO_GO blocker fix: the cycle-3 FIX 3 atomic-finalize rollback leaked the git IND
 
 ### Summary
 Closed the NO_GO entity-loss blocker: the FIX 3 rollback reversed the working tree but not the git index, leaving a staged rename to `_archive` that a later commit would sweep into HEAD (orphaning the live entity) and that broke the recovery re-run. `rollbackArchive` now unstages the same pathspecs path-scoped, with the form taken from the snapshot so folder-form unstages correctly post-move. The false-green test — which only checked the worktree proxy — now proves the END across both forms: clean index, clean tree, and a successful recovery re-run. Robustness folded in: joined-error rollback with a loud CRITICAL on partial failure, and snapshot/restore of the file mode.
+
+## Stage Report: implementation (cycle 5)
+
+CI-blocker fix: the `offline` lane (secret-free, no global git identity) failed every merge-guard finalize test with `failed to commit archive move: exit status 128`. A test-hermeticity bug, not a product change.
+
+- DONE: persistent git identity in the merge-guard test temp-repos (offline-lane hermeticity).
+  Root cause confirmed: the verb's own `commitArchiveMove` runs plain `git commit` without `-c`, so it resolved identity from global config / git auto-detection that the offline lane lacks; the seed commit's ephemeral `-c user.email=t@t` only covered the seed. Fix: both temp-repo helpers — `gitInit` (`internal/status/mutation_test.go`) and `stageMergeFixture` (`internal/cli/merge_test.go`) — now set PERSISTENT LOCAL identity (`git config user.email test@example.com` + `user.name spacedock-test`) right after `git init`, so the verb's commits are identity-hermetic. Code commit `6516d44f` (post-rebase). Scoped to the two helpers the merge-guard tests use; other test git-helpers carry `-c` on their own commits and never drive the verb, so they're unaffected.
+- DONE: reproduced the offline lane and verified RED→GREEN (no false-green).
+  `GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null` alone did NOT reproduce on this machine (git auto-synthesizes a `user@host` identity). Reproduced faithfully by pointing `GIT_CONFIG_GLOBAL` at a `[user] useConfigOnly = true` config with `GIT_CONFIG_SYSTEM=/dev/null` (auto-detection disabled = the lane's strictness): RED before (exit 128 across both packages), GREEN after the fix. Team-lead's exact `/dev/null` command also green.
+- DONE: rebase + full suite + re-push.
+  Rebased clean onto origin/main @ `a5e8c01e` (docs/workflow-only commits, no overlap). Full `go test ./...` GREEN; offline-lane repro GREEN post-rebase. Branch force-with-lease pushed (rebase rewrote hashes) — PR #415 updated.
+
+### Summary
+The offline CI lane failed because the verb's archive commit had no git identity to resolve — the temp-repos seeded identity only ephemerally on the seed commit, while the verb commits plain. Setting persistent local identity on the temp repo in both merge-guard test helpers makes the verb's commits hermetic. Verified against a faithful offline-lane repro (auto-detection disabled), since the naive `/dev/null` env did not reproduce on this machine. Unrelated pre-existing vet warning noted: `internal/cli/pi_frontdoor_test.go:584` "append with no values" (from #416, not my files, not gating `go test`) — left for its owner.
