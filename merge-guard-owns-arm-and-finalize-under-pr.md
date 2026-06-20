@@ -52,3 +52,18 @@ The verb now owns the full merge:pr lifecycle: auto-arm under both policies, fin
 
 ### Summary
 Closed the fail-OPEN hole the detached audit found: `prIndicatesMerged` (internal/status/merge.go) did a bare `strings.HasPrefix` with zero suffix validation, so any garbage sentinel drove an irreversible finalize+archive. The smallest reasonable fix validates the suffix after the prefix — positive integer for `pr-merge:`, non-empty hex token for `local-merge:` — failing CLOSED on everything else. Auto-arm and archive-commit logic untouched (out of scope); the folder-form archive path-awareness and mod↔core sentinel convergence remain separately backlogged.
+
+### Feedback Cycles
+
+#### Detached adversarial audit (validation, FO-run via parallel subagent workflows; mutation-probed, tests executed)
+
+Two rounds, per the validation stage's high-stakes detached-audit-on-throwaway requirement.
+
+- **Round 1 — pre-fix (985e9f82 → rebased 04a9362b), 3 lenses.** Verdict CONCERNS → GO_WITH_FIXES.
+  - **MATERIAL (CLOSED in cycle 2):** `prIndicatesMerged` bare `strings.HasPrefix`, zero suffix validation → `pr-merge:abc` / `pr-merge:0` / quoted-empty drove a full irreversible finalize+archive (fail-OPEN). Adversarial edit drove garbage sentinels end-to-end through MergeGuard and confirmed the archive. Closed by commit 98769858 (suffix validation, red-first TDD).
+  - note1 reframed tests: **SOUND** — mutation probe (forcing `--force` into emitSet) turned `TestMergeGuardArmedButNoMergeRefusesFinalize` RED, revealing a dual guard (set + archive); the never-bypass invariant is relocated, not removed.
+  - note2 mod↔core sentinel: **REAL but BENIGN** — bare `#N` fail-safe blocks, paths mutually exclusive (resolveEntityPath misses _archive) → backlog.
+  - CONCERN C: `commitArchiveMove` hardcodes flat `slug.md`, would exit-128 on folder-form entities → backlog (dogfood entity is flat-form, unaffected).
+- **Round 2 — post-fix (throwaway checkout @ 98769858), 2 lenses.** Verdict SOUND → GO. No fail-CLOSED regression: `pr-merge:{N}` + `local-merge:{short-sha}` still finalize; all status+cli tests green; never-bypass guard + bare-#N block untouched. Residual benign fail-OPEN (`pr-merge:+42` / `0042` via Atoi sign/leading-zero leniency; unbounded/uppercase isSHALike) — still names a real positive PR, never emitted by the honest hook → backlog hardening.
+
+Backlog from the audits (none cut-blocking): folder-form `commitArchiveMove` path-awareness; mod↔core sentinel convergence; canonical-sentinel hardening (reject sign/leading-zeros, bound SHA length); archive-commit robustness vs the non-deterministic validate pre-commit hook.
