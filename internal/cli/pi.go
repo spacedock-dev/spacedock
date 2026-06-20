@@ -59,6 +59,36 @@ func (execPiRuntimeOps) LookPath(name string) (string, error) { return exec.Look
 func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Stat(path); return err }
 func (execPiRuntimeOps) Launch(argv []string) error           { return execHost{}.Launch(argv, os.Environ()) }
 
+// resolveFnmMultishellPi resolves a looked-up `pi` path that lives under fnm's
+// per-shell multishell symlink farm to its stable node-installation bin, so the
+// launched argv[0] points at a path fnm never tears down. fnm creates
+// `~/.local/state/fnm_multishells/<pid>_<ts>/bin` per shell and unlinks the
+// `<pid>_<ts>` symlink on shell exit; between Go's LookPath and the child Node's
+// Module._resolveFilename (milliseconds later) a sibling shell exiting can
+// ENOENT the multishell path. The stable install bin's parent
+// (`~/.local/share/fnm/node-versions/<ver>/installation/bin`) is a real dir fnm
+// never tears down. lookedUp is the result of ops.LookPath("pi"). On any miss,
+// resolution failure, or when lookedUp is already the stable path, it returns
+// ("", false) so runPi leaves argv[0] untouched (no regression).
+func resolveFnmMultishellPi(lookedUp string) (stable string, ok bool) {
+	if !strings.Contains(lookedUp, "/fnm_multishells/") {
+		return "", false
+	}
+	binDir := filepath.Dir(lookedUp)
+	stableDir, err := filepath.EvalSymlinks(binDir)
+	if err != nil {
+		return "", false
+	}
+	stable = filepath.Join(stableDir, "pi")
+	if _, err := os.Lstat(stable); err != nil {
+		return "", false
+	}
+	if stable == lookedUp {
+		return "", false
+	}
+	return stable, true
+}
+
 func (execPiRuntimeOps) PiInstall(source string) (string, error) {
 	out, err := exec.Command("pi", "install", source).CombinedOutput()
 	return string(out), err
@@ -159,6 +189,15 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 			return 1
 		}
 		argv = safehouse.Wrap(argv, extra)
+	}
+	// Resolve the fnm per-shell multishell symlink to its stable node-installation
+	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
+	// path fnm never tears down. On any miss/failure argv[0] stays "pi" (current
+	// behavior, no regression on non-fnm setups or direct installs).
+	if lp, err := ops.LookPath("pi"); err == nil {
+		if stable, ok := resolveFnmMultishellPi(lp); ok {
+			argv[0] = stable
+		}
 	}
 	if err := ops.Launch(argv); err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
