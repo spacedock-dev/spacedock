@@ -47,6 +47,8 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"`«addressable-worker»`",
 		"`send_message(target,message)`",
 		"`followup_task(target,message)`",
+		"`followup_task` starts a worker turn on the addressed worker",
+		"completed-but-still-addressable worker",
 		"`«completion-signal»`",
 		"`wait_agent(timeout_ms)`",
 		"queued/activity-driven",
@@ -56,6 +58,7 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"Do not bless `interrupt_agent`",
 		"Do not infer capabilities from a Codex version name",
 		"re-run the kept-alive reviewer through the same `«addressable-worker»` capability",
+		"reviewer already sent a completion signal",
 		"Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
 		"Do not infer that the turn-starting addressable-worker route is absent from the absence of earlier follow-up events",
 	} {
