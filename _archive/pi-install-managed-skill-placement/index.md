@@ -13,6 +13,7 @@ sprint-readiness: ready
 id: eqrcrxcyye56nfwm997bj33d
 mod-block:
 pr: "#406"
+archived: 2026-06-20T01:00:59Z
 ---
 
 # Pi install-managed skill placement
