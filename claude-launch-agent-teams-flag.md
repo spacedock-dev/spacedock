@@ -1,6 +1,6 @@
 ---
 title: spacedock claude exports CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 so FO sessions get the worker back-channel
-status: implementation
+status: validation
 sprint: 0221-layered-fo
 group: binary-ux
 id: 662sh1n92mkf33rzgwxy8zcd
