@@ -193,3 +193,33 @@ Implementation added standalone Codex multi_agent_v2 host bindings to the existi
 ### Summary
 
 Feedback cycle 1 fixed the remaining live rejection-flow failure by making Codex multi_agent_v2 reviewer reuse explicit and non-optional for feedback re-review. The final local Codex live lane passed all seven shared scenarios.
+
+## Stage Report: validation
+
+- DONE: Verified AC-1, initial Codex v2 dispatch mapping.
+  Evidence: `internal/dispatch/codex_v2_adapter.go` maps helper JSON `name` to a lowercase/underscore `task_name`, preserves `prompt` as `message`, omits unsupported helper fields from `ToolArgs`, and returns slug/stage identity. `TestCodexMultiAgentV2SpawnInputMapsBuildOutput` and `TestCodexMultiAgentV2SpawnInputRejectsSanitizedCollision` passed via `go test ./internal/dispatch` (243 passed).
+- DONE: Verified AC-2, continuation and steering wording plus legacy fixture handling.
+  Evidence: `skills/first-officer/references/codex-first-officer-runtime.md` and `skills/feedback-rejection-flow/SKILL.md` distinguish `send_message(target,message)` from `followup_task(target,message)` and require kept-reviewer re-review instead of fresh-spawning. `TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings` passed, and `TestAssertCodexReviewerReuse` passed with the parser accepting v2 `followup_task` plus explicitly legacy `send_input`.
+- DONE: Verified AC-3, waiting semantics.
+  Evidence: Codex FO runtime and `docs/dev/codex-idle-notification-probe.md` describe global `wait_agent(timeout_ms)`, interruptible foreground waits, queued/activity-driven no-wait delivery, and attribution through mailbox/task-path/roster/durable state. Contractlint coverage passed in `TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings`.
+- DONE: Verified AC-4, terminal/supersede shutdown remains unresolved rather than over-blessed.
+  Evidence: `skills/first-officer/references/codex-first-officer-runtime.md` keeps `«worker.shutdown»` unresolved and says not to bless `interrupt_agent`; `skills/ensign/references/codex-ensign-runtime.md` keeps cooperative shutdown separate from hard interruption. Contractlint coverage passed. No concrete shutdown binding is claimed.
+- DONE: Verified AC-5, old Codex assumptions are either preserved as legacy or retired from v2 references.
+  Evidence: `rg --files | rg '(^|/)codex[-_]?v2|codex.*multi_agent_v2|multi_agent_v2'` found only the dispatch adapter/test and contractlint test, not a separate Codex v2 runtime reference file. Legacy `send_input` remains in parser/fixture contexts while the v2 runtime references reject unversioned `send_input` and `wait_agent(handle)`.
+- DONE: Reproduced the feedback-cycle fix against the live shared-scenario lane.
+  Evidence: `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-codex-live-validation-f2r8cnyxj9-20260619235358 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` passed all six subtests in 778.905s, including `rejection-flow` in 424.86s. The rejection-flow artifact emitted exactly one validation `spawn_agent` and routed cycle-2 validation to the original validation thread; final durable state contained `- Cycle 1: REJECTED`, `- Cycle 2: PASSED`, and `shared-rejection-fix: applied`.
+- DONE: Ran required regression gates.
+  Evidence: `gofmt -w ./cmd ./internal` completed; it again produced unrelated comment punctuation churn in `internal/cli/prose_function_routing_test.go` and `internal/status/section_read.go`, which was restored before this report. `go test ./...` passed with 1637 tests in 17 packages. `go test ./... -race` passed with 1637 tests in 17 packages.
+
+### Findings
+
+- Residual risk: the live rejection-flow artifact used Codex stream events labeled `send_input` for reuse, even though the v2 runtime references now require `followup_task(target,message)` for turn-triggering rework. The live run still proves the behavioral fix that failed earlier: the FO did not fresh-spawn the cycle-2 validator and did re-review on the kept validation worker. Direct live proof of a `followup_task` event remains outside this artifact.
+- Scope note: the branch includes `docs/dev/_debriefs/2026-06-19-02.md`, which is not part of the AC surface for this runtime-support task. It did not affect tests or validation, but it should be reviewed before merge as unrelated branch content.
+
+### Recommendation
+
+PASSED. The acceptance criteria are satisfied by code/fixture tests, updated runtime references, preserved legacy parser handling, and a passing live shared-scenario lane. The only material caveat is that the live transcript proves kept-reviewer reuse under the current stream label rather than a direct `followup_task` event.
+
+### Summary
+
+Validation passed AC-1 through AC-5, reproduced the feedback-cycle fix in the live Codex shared-scenario lane, and confirmed the required Go, race, formatting, and focused checks. The recommended gate result is PASSED with the live `send_input` stream-label caveat recorded.
