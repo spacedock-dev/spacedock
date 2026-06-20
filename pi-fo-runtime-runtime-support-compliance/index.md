@@ -35,6 +35,12 @@ Current: *"This is the Pi terminal teardown — fo-merge-core.md's Merge-and-Cle
 
 Violates: *"Do not couple adapter text to mutable procedure step numbers. If a shared procedure says to run `«worker.shutdown»` at the terminal boundary, adapters should bind `«worker.shutdown»`; they should not say 'Merge-and-Cleanup step 10' or duplicate the shared teardown sequence."*
 
+### 4. Negative Claude contrast — ensign (skills/ensign/references/pi-ensign-runtime.md:9)
+
+Current: *"Do not assume Claude team tools exist in Pi. Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification."*
+
+Violates: the same positive-binding principle (lower risk — it's runtime-specific — but still better as a positive Pi completion/clarification binding). The second sentence (completion = worker's final result / adapter notification) is the positive substance; the first sentence ("Do not assume Claude team tools exist in Pi") is the negative contrast that can drop.
+
 ### 3. Claude-centric enum contrast (line ~40, Canonical Model Space)
 
 Current: *"The core's enum assumption is Claude-centric (`sonnet`/`opus`/`haiku`). **Pi has no such enum.** On Pi, any provider/model string is a valid model... There is no Claude-centric `sonnet`/`opus`/`haiku` enum on Pi."*
@@ -57,22 +63,26 @@ Replace "fo-merge-core.md's Merge-and-Cleanup step 10" with the capability bindi
 
 Reframe from "Pi has no such enum" (negating Claude) to "Pi model-space binding = provider/model strings" (asserting Pi). Drop "The core's enum assumption is Claude-centric" and "There is no Claude-centric `sonnet`/`opus`/`haiku` enum on Pi." Keep the substance: the Pi canonical model space is all valid pi-subagents model strings (provider-qualified or `~`-prefixed); reuse-condition-4's comparator operates on these Pi-native strings. Cite `docs/runtime-support.md`'s positive-binding principle if a rationale sentence is needed.
 
+### Fix 4 (ensign, line ~9) — positive Pi completion binding
+
+Replace "Do not assume Claude team tools exist in Pi. Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification." with a positive Pi completion binding: "Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification." (Drop the negative "Do not assume Claude team tools exist in Pi." sentence — the positive completion statement that follows is the binding.) Lower-risk than fixes 1-3 (runtime-specific), but folds into the same sweep for consistency.
+
 ## Scope
 
 In scope:
-- The three targeted rewrites in `skills/first-officer/references/pi-first-officer-runtime.md`.
+- Four targeted rewrites: three in `skills/first-officer/references/pi-first-officer-runtime.md` + one in `skills/ensign/references/pi-ensign-runtime.md`.
 - Cite `docs/runtime-support.md` as the authority where a rationale helps (one sentence max — don't bloat).
 
 Out of scope:
-- The rest of the pi adapter — only the three flagged spots.
+- The rest of the pi adapter — only the four flagged spots.
 - Other host adapters (claude/codex) — separate sweep work.
 - `docs/runtime-support.md` itself — it's the authority; don't edit the guide.
 - Substantive contract changes — this is prose-shape only; the substance (Pi's substrate, shutdown behavior, model space) is unchanged.
 
 ## Acceptance criteria (provisional — ideation finalizes; proof = behavior, never prose-grep)
 
-**AC-1 — The three spots are positive Pi bindings, no negative Claude contrast.**
-Verified by: a structural review that (a) the Runtime Shape section opens with the Pi substrate (no "does not expose Claude" / "Do not call... Claude team tools"); (b) the Shutdown section binds `«worker.shutdown»` (no "Merge-and-Cleanup step 10"); (c) the Canonical Model Space section asserts Pi's model space positively (no "Pi has no such enum" / "no Claude-centric enum"). Note: a contractlint "the phrase is absent" check is the prose-grep tautology the dev-workflow proof policy bans — the structural review is the gate, binding two independent values (the runtime-support.md principle and the adapter text) that can diverge.
+**AC-1 — The four spots are positive Pi bindings, no negative Claude contrast.**
+Verified by: a structural review that (a) the Runtime Shape section opens with the Pi substrate (no "does not expose Claude" / "Do not call... Claude team tools"); (b) the Shutdown section binds `«worker.shutdown»` (no "Merge-and-Cleanup step 10"); (c) the Canonical Model Space section asserts Pi's model space positively (no "Pi has no such enum" / "no Claude-centric enum"); (d) the ensign Agent Surface section states Pi completion positively (no "Do not assume Claude team tools exist in Pi"). Note: a contractlint "the phrase is absent" check is the prose-grep tautology the dev-workflow proof policy bans — the structural review is the gate, binding two independent values (the runtime-support.md principle and the adapter text) that can diverge.
 
 **AC-2 — The substance is preserved.**
 Verified by: the Pi substrate list (`pi-subagents`/`pi-agent-teams`), the shutdown specifics (no mailbox shutdown / adapter lifecycle mapping), and the model-space declaration (provider/model strings; reuse-condition-4 comparator on Pi-native strings) are all still present and correct. The rewrites are shape-only.
@@ -82,7 +92,7 @@ Verified by: `go test ./...` (the contractlint/structural tests that pin host-ne
 
 ## Test plan
 
-- Structural review (AC-1, AC-2): the three spots rewritten as positive bindings; substance preserved.
+- Structural review (AC-1, AC-2): the four spots rewritten as positive bindings; substance preserved.
 - `go test ./...` (AC-3): the host-neutrality contractlint tests (e.g. `prose_inflator_locks_test.go` on the sweep branch, if merged to main) stay green; if any test pins the removed negative phrasing, update it to pin the positive binding instead (record why — the test was pinning the smell, not the contract).
 - `gofmt -l` clean.
 - This is a shipped-contract change (high-stakes surface per the dev-workflow proof policy). Detached adversarial audit at validation: construct an edit that re-introduces a negative contrast and confirm a reviewer catches it.
