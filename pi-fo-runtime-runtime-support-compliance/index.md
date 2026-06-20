@@ -6,7 +6,7 @@ score:
 started: 2026-06-20T18:09:00Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-fo-runtime-runtime-support-compliance
 issue:
 sprint:
 sprint-readiness:
