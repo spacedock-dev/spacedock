@@ -220,3 +220,22 @@ Implementation normalized Codex and Pi FO adapters into binding-block maps keyed
 ### Summary
 
 Validation recommends PASSED. The implementation meets the binding-block structure, runtime-support guardrails, preserved Codex/Pi semantics, `ad` boundary, and size-reduction acceptance criteria, with contractlint, full test, and race suites passing.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Review updated code commit `e60979c9` on branch `spacedock-ensign/codex-pi-runtime-binding-block-cleanup` after feedback rejected concrete host bindings in the shared core.
+  Reviewed `e60979c9`; recommendation: PASSED.
+- DONE: Verify the new `«worker.spawn»` and `«worker.shutdown»` headings in `fo-dispatch-core.md` are host-neutral and do not add concrete Claude/Codex/Pi tool bindings; existing older transitional `→` lines may remain for `ad` scope.
+  `TestDispatchCoreDefinesWorkerLifecycleCapabilities` passed; manual review found no `→` lines or `**Claude:**` / `**Codex:**` / `**Pi:**` bindings inside those two new core blocks.
+- DONE: Verify Codex and Pi `## Runtime implementation` blocks carry the concrete bindings for `«worker.spawn»`, `«worker.shutdown»`, and the expected capability set.
+  `TestCodexAndPiFirstOfficerRuntimeBindingBlocks` passed; Codex/Pi runtime blocks carry the ordered eight-capability set including concrete spawn and shutdown bindings.
+- DONE: Re-verify AC-1 through AC-5 from the entity body, including Codex/Pi preserved semantics, runtime-support guardrails, `ad` boundary, and adapter size reduction.
+  AC-1 through AC-5 pass: contractlint guards binding shape, lifecycle-heading removal, host-tool placement, preserved semantics, and line reduction; changed files remain scoped to core docs, Codex/Pi adapters, and contractlint tests.
+- DONE: Run `go test ./internal/contractlint` and `go test ./...`; run `go test ./... -race` unless there is a clear reason not to, and report exact commands/results.
+  `go test ./internal/contractlint`: 59 passed in 1 package; `go test ./...`: 1712 passed in 17 packages; `go test ./... -race`: 1712 passed in 17 packages.
+- DONE: Append a fresh Stage Report: validation cycle 2 with PASSED or REJECTED recommendation, evidence for every AC, and commit only this entity path in state.
+  This cycle 2 report records PASSED and will be committed path-scoped to this entity in the state checkout.
+
+### Summary
+
+Validation cycle 2 recommends PASSED. The feedback fix in `e60979c9` keeps new shared-core lifecycle capability headings host-neutral while preserving concrete Codex/Pi bindings in runtime adapter `## Runtime implementation` blocks, and all required test gates passed.
