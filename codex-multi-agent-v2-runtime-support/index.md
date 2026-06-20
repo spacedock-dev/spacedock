@@ -151,3 +151,23 @@ Ideation narrowed Codex multi_agent_v2 support to an adapter update inside the e
 ### Summary
 
 The ideation body now follows the `«fn»` binding model from the cross-sprint review instead of adding a second capability registry. `send_message` and `followup_task` are framed as Codex v2 realizations of `«addressable-worker»`, `wait_agent(timeout_ms)` sits under `«completion-signal»`, task-name sanitation under `«worker-identity»`, and `list_agents` under `«roster-reconcile»`.
+
+## Stage Report: implementation
+
+- DONE: Update the existing Codex runtime references with standalone-safe multi_agent_v2 host-binding language, using `«fn»` anchors without requiring b2/shared-core changes to have landed first.
+  Added Codex multi_agent_v2 bindings to the existing Codex FO and ensign runtime references, the feedback rejection flow, and the idle-notification probe. The implementation keeps `host: codex`, uses `«worker.spawn»`, `«worker-identity»`, `«addressable-worker»`, `«completion-signal»`, `«roster-reconcile»`, and leaves `«worker.shutdown»` unresolved until probed instead of adding a separate Codex v2 runtime file.
+- DONE: Replace or version-gate stale Codex assumptions around `send_input`, `wait_agent(handle)`, task-name mapping, completion delivery, roster reads, and unresolved shutdown behavior.
+  Replaced unversioned runtime prose with `spawn_agent(task_name,message,fork_turns)`, `send_message(target,message)`, `followup_task(target,message)`, global `wait_agent(timeout_ms)`, `list_agents(path_prefix?)`, queued/activity-driven no-wait delivery, and an explicit "do not bless `interrupt_agent`" shutdown statement. Legacy `send_input` remains only in legacy fixture/parser contexts.
+- DONE: Add focused tests or contractlint/live-fixture updates that prove the Codex v2 wording and dispatch mapping expectations without weakening existing host-neutral helper guarantees.
+  Added `internal/dispatch` tests and adapter code proving helper JSON maps to v2 spawn args while preserving prompt bytes and omitting unsupported helper fields; added contractlint coverage for v2 binding prose and absence of unversioned stale wording; updated Codex shared-scenario reuse parsing and fixtures to accept `followup_task` while preserving legacy `send_input` fixture coverage.
+
+### Verification
+
+- PASS: `go test ./...` -> 1637 passed in 17 packages.
+- PASS: `go test ./... -race` -> 1637 passed in 17 packages.
+- RAN: `gofmt -w ./cmd ./internal`, then scoped `gofmt` on touched Go files after reverting unrelated comment corruption from the whole-tree formatting pass.
+- FAIL: `go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` -> `TestLiveCodexSharedScenarios/rejection-flow` failed because the live FO emitted 2 validation `spawn_agent` calls, meaning it fresh-dispatched the cycle-2 validator instead of reusing the kept-alive cycle-1 reviewer. The same live run reported 5 passed, 2 failed in `internal/ensigncycle`.
+
+### Summary
+
+Implementation added standalone Codex multi_agent_v2 host bindings to the existing Codex runtime references, introduced a small dispatch-build-to-v2-spawn adapter with collision detection, and updated contract/parser tests for v2 `followup_task` reuse. Offline and race suites pass; the Codex live lane still exposes the live rejection-flow fresh-dispatch behavior and is recorded as a remaining runtime failure.
