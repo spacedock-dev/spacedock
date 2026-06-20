@@ -41,7 +41,18 @@ func stageMergeFixture(t *testing.T, fixture string) string {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	for _, args := range [][]string{{"init", "-q"}, {"add", "-A"}, {"-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "seed"}} {
+	// Set a PERSISTENT local identity on the temp repo. The verb's own commits
+	// (commitArchiveMove) run plain `git commit` without `-c`, so they must resolve
+	// an identity from the repo's config — independent of global/system config and
+	// git's auto-detection. A CI lane with no global identity and auto-detection
+	// disabled would otherwise exit-128 the verb's commit.
+	for _, args := range [][]string{
+		{"init", "-q"},
+		{"config", "user.email", "test@example.com"},
+		{"config", "user.name", "spacedock-test"},
+		{"add", "-A"},
+		{"commit", "-q", "-m", "seed"},
+	} {
 		cmd := exec.Command("git", args...)
 		cmd.Dir = dst
 		if out, err := cmd.CombinedOutput(); err != nil {
@@ -141,12 +152,22 @@ func TestMergeGuardEndToEndArmFinalize(t *testing.T) {
 }
 
 // TestMergeGuardEndToEndRefusalPropagated drives the AC-5 refusal through cobra:
-// the merge-hook guard's exit 1 + stderr reaches the process exit code unchanged.
+// under merge: pr the verb auto-arms an empty-mod-block entity, but if the hook is
+// never invoked (no merge sentinel) the re-run finalize hits the merge-hook guard,
+// whose exit 1 + stderr must reach the process exit code unchanged — the verb never
+// bypasses the guard. First run arms (exit 0); the second run refuses (exit 1).
 func TestMergeGuardEndToEndRefusalPropagated(t *testing.T) {
 	root := stageMergeFixture(t, "merge-pr-workflow")
-	out, errOut, code := runMergeCLI(t, root, "merge", "guard", "020-no-sentinel", "--verdict", "passed", "--workflow-dir", root)
+	out1, err1, code1 := runMergeCLI(t, root, "merge", "guard", "020-no-sentinel", "--verdict", "passed", "--workflow-dir", root)
+	if code1 != 0 {
+		t.Fatalf("auto-arm should exit 0, got %d (stderr=%q)", code1, err1)
+	}
+	if !strings.Contains(out1, "armed") {
+		t.Fatalf("first run should auto-arm, got %q", out1)
+	}
+	out2, errOut, code := runMergeCLI(t, root, "merge", "guard", "020-no-sentinel", "--verdict", "passed", "--workflow-dir", root)
 	if code != 1 {
-		t.Fatalf("refusal should propagate exit 1, got %d (stdout=%q)", code, out)
+		t.Fatalf("armed-but-no-merge refusal should propagate exit 1, got %d (stdout=%q)", code, out2)
 	}
 	if !strings.Contains(errOut, "cannot advance to terminal") {
 		t.Fatalf("guard refusal should reach stderr verbatim, got %q", errOut)

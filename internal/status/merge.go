@@ -3,8 +3,12 @@
 package status
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -92,8 +96,11 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		return errExit(stderr, "entity not found: "+slug)
 	}
 
-	policy, perr := resolveMergePolicy(roots.definitionDir)
-	if perr != nil {
+	// Validate the merge: policy up front so an invalid value (a workflow-config
+	// typo) fails fast before any mutation. The classifier below no longer branches
+	// on the policy — auto-arm and the merge-sentinel finalize apply under both
+	// merge: local and merge: pr — but the parse still guards the config error.
+	if _, perr := resolveMergePolicy(roots.definitionDir); perr != nil {
 		return errExit(stderr, perr.Error())
 	}
 
@@ -107,32 +114,91 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	// pr/mod-block/verdict plus the policy decides armed / blocked / finalize. No
 	// new mutation primitive — every transition below emits a proven --set/--archive.
 	switch {
-	case pr != "" && verdict != "rejected":
-		// Phase B blocked: the hook opened a PR. Leave mod-block + pr intact, do not
-		// terminalize. A rejected verdict overrides — a rejected entity finalizes
-		// regardless of a stale pr.
-		return signalBlocked(slug, pr, quiet, asJSON, stdout)
-
 	case verdict == "rejected":
 		// A rejected entity never merged, so the pr-requirement is vacuous: finalize
 		// straight through, clearing an in-flight mod-block standalone first (AC-6).
 		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
 
-	case policy == mergeLocal && modBlock == "" && hookRegistered:
-		// Phase A arm (merge: local): the verb owns the full local-merge ceremony, so
-		// it arms the mod-block before the FO invokes the hook. Under merge: pr the
-		// arm+hook step opens a PR (outward-facing, captain-approval-gated) and stays
-		// the FO's; the verb resumes at Phase B once the hook has run.
+	case prIndicatesMerged(pr):
+		// FINALIZE from a detected-MERGED state. The `pr` field carries a merge
+		// sentinel (pr-merge:{n} / local-merge:{sha}) — the LOCAL signal the FO's
+		// pr-merge hook records when `gh` detects the PR MERGED. The verb never talks
+		// to GitHub; it keys off this sentinel. This finalizes EVEN from a non-armed
+		// (empty mod-block) state — the stranded case a re-validation bounce leaves
+		// behind (AC-2). The merge-hook guard is satisfied because the sentinel is a
+		// non-empty pr that honestly records the landed merge.
+		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
+
+	case pr != "":
+		// Phase B blocked: a bare/open PR reference (e.g. #42) — the hook opened a PR
+		// that has NOT merged. NEVER finalize on pr-presence alone; archiving here
+		// would strand the task before its PR landed (the premature-finalize bug).
+		// Leave mod-block + pr intact and wait for the merge sentinel.
+		return signalBlocked(slug, pr, quiet, asJSON, stdout)
+
+	case modBlock == "" && hookRegistered:
+		// Phase A AUTO-ARM. Entering terminal with an empty mod-block and a merge hook
+		// registered is the START of the merge ceremony, under BOTH merge: local AND
+		// merge: pr (AC-1): the verb owns arming the mod-block (mod-block=merge:{hook})
+		// and signals the FO to invoke the hook. The verb never invokes the hook or
+		// local-merges; the FO runs it (merge: local does the --no-ff merge; merge: pr
+		// opens the captain-gated PR). Ceremony integrity holds downstream: a merge: pr
+		// entity can only FINALIZE once a merge sentinel records the landed PR, so an
+		// arm-then-immediate-finalize is impossible without the hook running.
 		return arm(roots, slug, mergeHooks[0], quiet, asJSON, stdout, stderr)
 
 	default:
 		// Phase C finalize. Under merge: local a cleared/clearable mod-block stands as
-		// completion. Under merge: pr with no pr and a passed verdict the terminalize
-		// --set hits the merge-hook guard, which refuses (cannot advance to terminal);
-		// the verb propagates that exit 1 verbatim rather than --forcing past it (AC-5).
+		// completion. Under merge: pr with no pr, no mod-block, and no hook registered
+		// the terminalize --set is unguarded and succeeds. A merge: pr with a hook
+		// registered never reaches here with an empty mod-block — auto-arm above claims
+		// that state — so the merge-hook guard cannot strand a finalize.
 		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
 	}
 }
+
+// prIndicatesMerged reports whether the pr field carries a WELL-FORMED merge
+// sentinel — the LOCAL signal that a merge already LANDED, as opposed to a bare/open
+// PR reference (#42, owner/repo#42, a URL) that is still in review. The pr-merge hook
+// writes a `pr-merge:{number}` sentinel on MERGED detection; the no-PR local fallback
+// writes `local-merge:{sha}`. A finalize+archive is irreversible, so the prefix match
+// is not enough — the suffix must validate: a pr-merge sentinel finalizes only when
+// its suffix parses as a positive PR number, and a local-merge sentinel only when its
+// suffix is a non-empty SHA-like token. A bare reference, a garbage suffix, or an
+// empty suffix returns false — the safe, fail-CLOSED direction, since finalizing on
+// one would archive a task whose PR never landed.
+func prIndicatesMerged(pr string) bool {
+	pr = strings.TrimSpace(pr)
+	if suffix := strings.TrimPrefix(pr, mergedPRSentinelPrefix); suffix != pr {
+		n, err := strconv.Atoi(suffix)
+		return err == nil && n > 0
+	}
+	if suffix := strings.TrimPrefix(pr, localMergeSentinelPrefix); suffix != pr {
+		return isSHALike(suffix)
+	}
+	return false
+}
+
+// isSHALike reports whether s is a non-empty token of hex digits — the shape of the
+// short merge-commit SHA the local-merge fallback records. It rejects an empty suffix
+// and any non-hex character so a malformed local-merge sentinel does not finalize.
+func isSHALike(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		isHex := (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+		if !isHex {
+			return false
+		}
+	}
+	return true
+}
+
+// mergedPRSentinelPrefix is the pr-field prefix the pr-merge hook writes on MERGED
+// detection (`pr=pr-merge:{number}`) so the local state honestly records that the
+// PR landed. It mirrors localMergeSentinelPrefix for the no-PR fallback.
+const mergedPRSentinelPrefix = "pr-merge:"
 
 // arm performs Phase A: set mod-block=merge:{hook} in its own --set and signal the
 // FO to invoke the hook. The underlying runSet is the proven mutation path.
@@ -149,7 +215,23 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 // proven guarded path; the verb refuses to proceed to a later step if an earlier
 // one's guard refuses, propagating the guard's exit 1 + stderr verbatim and never
 // passing --force.
+//
+// The archive move + commit is ATOMIC: the on-disk rename (runArchive) and its commit
+// (commitArchiveMove) must both land or neither does. If the commit fails (a failing
+// pre-commit hook, a lock), the entity would otherwise be stranded — mod-block
+// cleared, status terminal, file moved into _archive where resolveEntityPath cannot
+// find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
+// location before mutating, and on commit failure reverses the move and restores the
+// original content, returning the entity to its exact pre-finalize state.
 func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, stdout, stderr io.Writer) int {
+	// Snapshot the pre-finalize state up front — before any mutation — so a failed
+	// archive commit can be rolled back to exactly the state the FO would re-run
+	// against. The live path and form resolve here while the file still sits at its
+	// live location; the bytes capture the untouched content.
+	snapshot, snapErr := captureArchiveState(roots.entityDir, slug)
+	if snapErr != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard: failed to snapshot %s before finalize: %v", slug, snapErr))
+	}
 	if modBlock != "" {
 		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, stderr); rc != 0 {
 			return rc
@@ -170,7 +252,170 @@ func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, s
 	if rc := runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, slug, false, true, false, io.Discard, stderr); rc != 0 {
 		return rc
 	}
+	if rc := commitArchiveMove(roots.entityDir, slug, stderr); rc != 0 {
+		if rbErr := rollbackArchive(roots.entityDir, slug, snapshot); rbErr != nil {
+			// The commit failed AND the rollback could not fully restore the
+			// pre-finalize state — the entity may be half-mutated with a partial archive
+			// or a leaked index entry. This needs human attention, not a silent rc=1, so
+			// say so unmistakably and name the entity and its expected live path.
+			fmt.Fprintf(stderr,
+				"merge guard: CRITICAL — archive commit for %s failed and rollback did NOT fully restore it: %v\n"+
+					"  the entity may be in an inconsistent state (expected live at %s). "+
+					"Inspect `git status`/`git diff --cached` and the entity location before re-running.\n",
+				slug, rbErr, snapshot.livePath)
+		}
+		return rc
+	}
 	return signalFinalized(slug, terminal, verdict, quiet, asJSON, stdout)
+}
+
+// archiveSnapshot captures an entity's pre-archive state so finalize can reverse a
+// failed archive commit: the live source path (where the entity sat before the
+// rename), whether it was folder-form, the source file's exact bytes, and its mode.
+type archiveSnapshot struct {
+	livePath string
+	isFolder bool
+	content  []byte
+	mode     os.FileMode
+}
+
+// captureArchiveState reads an entity's pre-archive state. It resolves the live path
+// the way runArchive does (folder form wins over flat) and snapshots the source
+// file's bytes and mode for a byte- and mode-faithful restore.
+func captureArchiveState(entityDir, slug string) (archiveSnapshot, error) {
+	folderIndex := filepath.Join(entityDir, slug, "index.md")
+	flatPath := filepath.Join(entityDir, slug+".md")
+	livePath := flatPath
+	isFolder := false
+	if isRegularFile(folderIndex) {
+		livePath = folderIndex
+		isFolder = true
+	}
+	info, err := os.Stat(livePath)
+	if err != nil {
+		return archiveSnapshot{}, err
+	}
+	content, err := os.ReadFile(livePath)
+	if err != nil {
+		return archiveSnapshot{}, err
+	}
+	return archiveSnapshot{livePath: livePath, isFolder: isFolder, content: content, mode: info.Mode().Perm()}, nil
+}
+
+// rollbackArchive reverses runArchive AND its index staging after a failed commit. It
+// must return the entity to its EXACT pre-finalize state on every axis the commit
+// touched: the working tree (move the archived entity back, restore the pre-archive
+// bytes+mode) AND the git index (unstage the rename `commitArchiveMove` staged before
+// the commit failed). Without the unstage the index keeps a phantom staged rename to
+// _archive that a later plain commit would sweep into HEAD — committing the entity
+// ONLY at _archive and orphaning the live file — and that breaks the recovery re-run's
+// `git add` (exit 128). The flat form moves _archive/{slug}.md → {slug}.md; the folder
+// form moves the whole _archive/{slug}/ → {slug}/.
+//
+// It attempts every step even if an earlier one fails, joining the errors, so a
+// partial failure surfaces all of what went wrong rather than masking later steps.
+func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
+	var errs []error
+
+	if snap.isFolder {
+		archivedFolder := filepath.Join(entityDir, "_archive", slug)
+		liveFolder := filepath.Join(entityDir, slug)
+		if err := os.Rename(archivedFolder, liveFolder); err != nil {
+			errs = append(errs, fmt.Errorf("reverse folder rename: %w", err))
+		}
+	} else {
+		archivedFile := filepath.Join(entityDir, "_archive", slug+".md")
+		if err := os.Rename(archivedFile, snap.livePath); err != nil {
+			errs = append(errs, fmt.Errorf("reverse file rename: %w", err))
+		}
+	}
+	// Restore the pre-archive content+mode only if the file is back at its live path
+	// (a failed reverse-rename leaves nothing to write to).
+	if isRegularFile(snap.livePath) {
+		if err := os.WriteFile(snap.livePath, snap.content, snap.mode); err != nil {
+			errs = append(errs, fmt.Errorf("restore content: %w", err))
+		}
+	}
+	// Unstage the leaked rename — the same pathspecs commitArchiveMove staged, under
+	// the same git-worktree guard. `git reset -- <paths>` only touches the index, not
+	// the working tree we just restored.
+	if gitRoot := FindGitRoot(entityDir); hasGitEntry(gitRoot) {
+		source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, snap.isFolder)
+		if _, err := runGitCmd(gitRoot, "reset", "-q", "--", source, dest); err != nil {
+			errs = append(errs, fmt.Errorf("unstage archive rename: %w", err))
+		}
+	}
+
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// commitArchiveMove commits the archive rename PATH-SCOPED so the verb — not the FO
+// — owns the commit (AC-3). It stages exactly the paths the rename touches (the
+// vacated source and the new _archive dest) and commits only those, so a sibling
+// entity left dirty in the same tree is never swept in by a `git add -A`. The
+// pathspecs mirror runArchive's form resolution: a flat-form entity moves
+// {slug}.md → _archive/{slug}.md (two file paths); a folder-form entity moves the
+// whole {slug}/ → _archive/{slug}/ (two directory paths, capturing index.md and any
+// siblings). The form is read from where the entity landed in _archive, since the
+// source has already been moved by the time this runs. When the entity root is not
+// under a git work tree the move is a plain on-disk archive and the commit is
+// skipped (no error). A real git failure exits 1 with stderr.
+func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
+	gitRoot := FindGitRoot(entityDir)
+	if !hasGitEntry(gitRoot) {
+		return 0
+	}
+	source, dest := archiveMovePathspecs(gitRoot, entityDir, slug, archivedAsFolder(entityDir, slug))
+	// Stage the vacated source (deletion) and the new dest. git records this as a
+	// rename in the commit. `git add -- <path>` is path-scoped; --all is never used.
+	if _, err := runGitCmd(gitRoot, "add", "--", source, dest); err != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard: failed to stage archive move for %s: %v", slug, err))
+	}
+	if _, err := runGitCmd(gitRoot, "commit", "-q", "-m", "archive "+slug+" (merge guard)", "--", source, dest); err != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
+	}
+	return 0
+}
+
+// archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
+// for the archive rename, mirroring runArchive's flat/folder resolution. A folder-
+// form entity renames the whole {slug}/ directory; a flat-form entity renames the
+// {slug}.md file. The caller supplies the form explicitly so the pathspecs are
+// stable regardless of where the entity currently sits on disk — rollback computes
+// them AFTER moving the entity back out of _archive, when a disk re-detection would
+// misread the form.
+func archiveMovePathspecs(gitRoot, entityDir, slug string, isFolder bool) (source, dest string) {
+	if isFolder {
+		return relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
+			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug))
+	}
+	return relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
+		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md"))
+}
+
+// archivedAsFolder reports whether the entity landed in _archive as a folder
+// (_archive/{slug}/index.md), used by commitArchiveMove to pick the rename pathspecs
+// from where the entity sits post-move.
+func archivedAsFolder(entityDir, slug string) bool {
+	return isRegularFile(filepath.Join(entityDir, "_archive", slug, "index.md"))
+}
+
+// relToGitRoot renders path relative to gitRoot for a path-scoped `git add`/`commit`
+// pathspec. It falls back to the absolute path when the relativization fails so the
+// pathspec still resolves.
+func relToGitRoot(gitRoot, path string) string {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	rel, err := filepath.Rel(gitRoot, abs)
+	if err != nil {
+		return abs
+	}
+	return rel
 }
 
 // emitSet runs one proven --set mutation through runSet, discarding its success
