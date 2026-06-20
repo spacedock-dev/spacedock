@@ -421,7 +421,7 @@ Do NOT cut from `cf8e3a5c` as-is. Dispatch fix ensign for SB1+SB2 (+ NB2 same-fi
 
 ## Stage Report: implementation (Feedback Cycle 1 rework — 2026-06-19)
 
-Branch `spacedock-ensign/pi-back-channel-dispatch`, code commit `7d55dd66` (6 files, +140/−150 vs the prior #409 HEAD).
+Branch `spacedock-ensign/pi-back-channel-dispatch`, code commit `01fc4333` (rebased onto remote tip `0387bd4f`; 6 files, +140/−150 vs the prior #409 HEAD). Pushed.
 
 - DONE: Capabilities-as-«fn». Re-expressed all capabilities as «fn» prose-functions in `fo-dispatch-core.md` that the body CALLS by name (`«addressable-worker»`, `«async-dispatch»`, `«worker-identity»`, `«completion-signal»`, `«context-budget»`, `«roster-reconcile»`), each with its per-host realization on its `→` line (`→ **Claude:** … · **Codex:** … · **Pi:** …`, same shape as `«state.commit» → spacedock state commit`).
   DISSOLVED the `## Named Capabilities` registry in `fo-dispatch-core.md` AND every adapter's `## Capability implementations` table (Claude/Codex/Pi) — the per-host binding now lives only on each `→` line. Removed the pre-existing `fo-dispatch-core.md` "Worker back-channel capability" present/absent block. `claude-fo-dispatch.md` `## Awaiting Completion` (premature-reap ban, idle guardrail) is byte-untouched (`git diff` shows only the line-99 Degraded-Mode equivalence removed, in `## Degraded Mode`, not `## Awaiting Completion`).
