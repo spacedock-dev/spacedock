@@ -37,3 +37,16 @@ In `internal/status/migration_check_test.go`, decode `direct` into `map[string]y
 ### Summary
 
 Replaced the over-strict `map[string]any` + `scalarString` comparison (which let yaml.v3 auto-type bare dates to `time.Time`, rendering `2026-06-19T00:00:00Z` against the reader's raw `2026-06-19`) with a `map[string]yaml.Node` decode comparing `node.Value`, exactly mirroring the product reader's "raw scalar text / nested → empty string" contract. A peer had band-aided the live debrief date to quoted on origin/main (335c59fa); I reproduced the original RED on an unquoted date, fixed the root cause in the test only, and proved robustness with a self-owned UNQUOTED fixture that survives any future re-quoting. Negative control confirms the relaxation is not vacuous. Committed test-only on `spacedock-ensign/migration-check-raw-scalar` (4220693f).
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 — `go test ./internal/status -run TestMigrationCheckFixturesParseConsistently` PASSES on the rebased worktree
+  Verbose run GREEN: `--- PASS: TestMigrationCheckFixturesParseConsistently (0.05s)`, 68 frontmatters verified. Worktree rebased on origin/main `f64259fb`; band-aid `335c59fa` confirmed in HEAD ancestry; debrief `2026-06-19-01.md` carries the quoted `session-date: "2026-06-19"`; self-owned UNQUOTED fixture `TestMigrationCheckUnquotedDateStaysRawString` present (commit `8023ff11`).
+- DONE: Reproduce AC-2 non-vacuity — relaxed `node.Value` comparison still goes RED on a genuine reader-vs-yaml divergence, then restore
+  Transient reader mutation (`fields[key] = v.Value + "X"` in `frontmatter.go:121`) reddened BOTH the live walk (`migration_check_test.go:115: reader="taskX" direct="task"`) and the date-specific subtest (`migration_check_test.go:176: reader: some-date="2026-06-19X"`). `frontmatter.go` restored byte-clean (`git status --short` empty, no diff vs HEAD) — relax proven load-bearing on the exact date case it protects.
+- DONE: Confirm AC-3 test-only — `go build ./...` and full `go test ./internal/status` GREEN; diff touches ONLY `migration_check_test.go`
+  `go build ./...` exit 0; full package suite `ok` (16.9s); `git diff --name-only origin/main...HEAD` = `internal/status/migration_check_test.go` (1 file, +57/-28). No product code, no debrief/frontmatter edits.
+
+### Summary
+
+PASSED. All three acceptance criteria independently reproduced on the rebased worktree (`8023ff11`, atop origin/main `f64259fb`). The root-cause fix — `map[string]yaml.Node` decode comparing `node.Value` via a `nodeScalarString` helper that mirrors `parseFrontmatterContent` exactly (scalar → raw text, nested → "") — un-reds the migration check without quoting any date. AC-2's negative control confirms the relax is non-vacuous (reds on both the live walk and the self-owned unquoted-date subtest, restored byte-clean). The diff is strictly test-only (1 file). The bidirectional key-coverage assertions (reader→direct and direct→reader) and the self-owned unquoted fixture make the relaxation robust to any future re-quoting of the live debrief.
