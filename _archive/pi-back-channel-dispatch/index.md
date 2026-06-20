@@ -4,15 +4,16 @@ status: validation
 source: "Captain (2026-06-19): the pi-intercom supervisor-talkback capability is proven (archived spike cq9kb7cdpp9y48tn8gwzmqzq, PR #301 spike-only) but the Spacedock Pi FO/ensign adapters do not wire it. Treat the capability as already implemented for the host session; find the contract/adapter frictions and harden the dispatch core to runtime-neutral named capabilities."
 score:
 started: 2026-06-19T17:20:10Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-back-channel-dispatch
+completed: 2026-06-20T06:34:46Z
+verdict: PASSED
+worktree:
 issue:
 sprint: 0221-layered-fo
 sprint-readiness: ready
 id: b23y61pgk93ph44pz506m2wy
-mod-block: merge:pr-merge
+mod-block:
 pr: "#409"
+archived: 2026-06-20T06:34:46Z
 ---
 
 # Pi back-channel dispatch
