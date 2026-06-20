@@ -16,6 +16,25 @@ Keep runtime tool names in runtime binding sections. Host-neutral core text and 
 
 Treat probes as the source of runtime truth. Do not file a `v2` or host-variant runtime solely because a version label changed; first probe the live tool surface and update the binding map when the lifecycle capability is the same. A separate runtime file is justified only when the lifecycle semantics differ enough that the shared capability contract would become misleading.
 
+### Runtime binding-block shape
+
+A first-officer runtime adapter should default to a bindings block, not lifecycle prose. The shared core owns when capabilities are invoked; the runtime file owns how the host realizes them.
+
+Preferred shape:
+
+- `«worker.spawn»` -> host-native spawn call and dispatch-build mapping.
+- `«addressable-worker»` -> PRESENT/ABSENT plus worker-to-FO and FO-to-worker message routes.
+- `«async-dispatch»` -> async/blocking behavior and wait/poll mechanism.
+- `«worker-identity»` -> handle, address, model stamp, and canonical model space.
+- `«completion-signal»` -> observable completion signal; note that file verification remains the gate.
+- `«worker.shutdown»` -> terminal/supersede shutdown binding.
+- `«context-budget»` -> probe binding or ABSENT.
+- `«roster-reconcile»` -> reconcile binding or ABSENT.
+
+Keep residual sections short and factual: live-tool probes, harness isolation, compatibility notes, or host-specific guardrails that do not fit a capability name. Do not re-narrate the shared dispatch, await, reuse, gate, or merge lifecycle in the adapter.
+
+If a host-specific rule is load-bearing, first try to attach it to the relevant capability bullet. Add a separate prose section only when the rule spans multiple capabilities or documents a probe/harness concern.
+
 ## Runtime layers
 
 Add support in small layers. Each layer should have its own proof.
