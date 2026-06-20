@@ -6,7 +6,7 @@ source: "FO dogfood (2026-06-06) - plugin 0.19.5 Codex runtime instructs `dispat
 score: "0.27"
 worktree: ""
 issue:
-sprint: 0198-pre-flip-hardening
+sprint: 0221-layered-fo
 group: binary-ux
 sprint-readiness: defer
 started: 2026-06-08T15:29:12Z
