@@ -112,3 +112,18 @@ Ideation corrected the seed hypothesis: the observed flip is deterministic root 
 ### Summary
 
 Implementation closed the fail-open `--validate` path for empty or misresolved roots while keeping entity discovery filesystem-based. The new tests prove wrong roots fail closed, correct split-root validation scans untracked blank-id flat and folder entities deterministically, hook-shaped envs match clean shells, and existing tracked/staged/committed behavior remains intact.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1 through AC-4 against the implementation commit, including wrong-root fail-closed behavior and blank-id flat/folder scanning under clean and git-hook environments.
+  Evidence: `go test ./internal/status -run 'TestValidate(FailsClosedForMisresolvedSplitRoot|ReportsUntrackedBlankIDFlatAndFolderEntities|KeepsTrackedStagedCommittedEntitiesWhileFailingBadUntracked)' -count=1 -v` passed all 9 subtests; `TestValidateFailsClosedForMisresolvedSplitRoot -count=10` passed 50 subtests.
+- DONE: Independently inspect the code and tests for compatibility regressions in normal status output and tracked/staged/committed validate behavior.
+  Evidence: inspected commit `5e6083e9`; the guard is called only for `--validate`, default status remains on the existing path, and the tracked/staged/committed regression test keeps good entities quiet while a bad untracked sibling fails.
+- DONE: Confirm the reported verification and adversarial audit evidence is real, sufficient, and reproducible; recommend PASSED or REJECTED with concrete evidence.
+  Evidence: clean-tree `go test ./...` and `go test ./... -race` each reported 1642 passed tests across 17 packages; a throwaway-clone audit that removed the guard made `TestValidateFailsClosedForMisresolvedSplitRoot` fail with `VALID` in clean and hook-shaped runs. Recommendation: PASSED.
+- DONE: Run the project-required formatter command.
+  Evidence: `gofmt -w ./cmd ./internal` ran; it touched two unrelated pre-existing comment-only files (`internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`), so those validation-stage formatter edits were restored. `gofmt -l ./cmd ./internal` still lists only those unrelated files, not this task's implementation files.
+
+### Summary
+
+Validation reproduced the acceptance-criteria evidence and the adversarial red check for the fail-open root path. The implementation satisfies the scoped behavior change: bad or misresolved validation targets no longer print `VALID`, correct split-root validation scans untracked blank-id flat and folder entities, hook-shaped envs match clean shells, and normal/tracked/staged/committed status behavior remains covered.
