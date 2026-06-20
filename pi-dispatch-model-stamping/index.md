@@ -11,7 +11,7 @@ issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
 id: bdtx7bmhekpy1x12ab53d9k3
-mod-block: merge:pr-merge
+mod-block:
 pr: "#405"
 ---
 
