@@ -13,6 +13,7 @@ sprint-readiness: ready
 id: qn5sg36exf6apjjxymbfthgj
 mod-block:
 pr: "#407"
+archived: 2026-06-20T02:08:56Z
 ---
 
 # Pi safehouse flag parity
