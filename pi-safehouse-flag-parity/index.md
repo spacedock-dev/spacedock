@@ -1,12 +1,12 @@
 ---
 title: Pi safehouse flag parity — register --safehouse-* flags + safehouse wrapping on the pi front door
-status: ideation
+status: implementation
 source: "Captain (2026-06-19): the pi front door (internal/cli/pi.go + setPiHelp in help.go) registers only --plugin-dir; it does NOT register --safehouse-enable / --safehouse-add-dirs / --safehouse-add-dirs-ro and does NOT wrap the launch in safehouse. claude/codex (frontdoor.go:706-712 + the wrap decision at 310) do. A Commander on a sandboxed pi session cannot grant additional directory access through the launcher — and member 1's verification (pi install writes to ~/.pi/agent) needs that access. Same file as member 1 (pi.go), different concern."
 score:
 started: 2026-06-19T23:43:03Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-safehouse-flag-parity
 issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
