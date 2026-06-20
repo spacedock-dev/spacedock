@@ -10,7 +10,7 @@ worktree:
 issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
-id: 
+id: 18s156v0txff12fv61yqptk2
 mod-block:
 pr: "#408"
 archived: 2026-06-20T01:34:15Z
