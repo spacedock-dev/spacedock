@@ -100,3 +100,22 @@ Ideation recommends trimming the boot-resident `«state.commit»` prose now. The
 ### Summary
 
 Trimmed the boot-resident state commit contract to the direct command call, exit-0 done condition, and exit-3 FO halt/surface obligation. The removed mechanics are already owned by `spacedock state commit` and covered by real-git state command tests, while contractlint now backstops the compact no-force/no-auto-resolve obligation.
+
+## Stage Report: validation
+
+- DONE: Review the implementation diff on branch `spacedock-ensign/state-commit-contract-token-followup` in worktree `.worktrees/spacedock-ensign-state-commit-contract-token-followup` against the ideation recommendation and acceptance criteria.
+  Commit `eb2be8d` changes only `skills/first-officer/references/first-officer-shared-core.md` and `internal/contractlint/prose_function_backstop_test.go`, matching the recommended state-commit/shared-core scope.
+- DONE: Verify AC-1 with reproducible `o200k_base` token counts for `first-officer-shared-core.md` and the `«state.commit»` section/block; confirm the cut meets or exceeds the target or report the exact miss.
+  Reproduced with `uvx --from tiktoken python`: shared core 7666 -> 7233 tokens; `«state.commit»` plus removed sync block 587 -> 166 tokens, a 421-token block cut exceeding the 350-token target.
+- DONE: Verify AC-2 by running or reproducing the relevant behavior-level tests for state commit safety and confirming the report's cited tests cover path-scoped commit, no-origin/no-op behavior, non-fast-forward sync, and exit-3 conflict halt.
+  Ran `go test ./internal/cli -run 'TestStateCommit(HaltsOnSameEntityConflict|IsPathScoped|MultiWriterHappyPath|NoOriginLocalOnly|NoOpWhenClean)|TestStateReadyHaltsOnBootConflict'`: 6 passed, covering conflict halt, path scope, non-fast-forward rebase/re-push, no-origin, no-op, and boot conflict halt.
+- DONE: Verify AC-3 by reviewing the resulting contract text and contractlint changes for the runtime-support principles: capability-oriented shared core, no unnecessary duplicated mechanics, no mutable step-number coupling, and no runtime-specific tool binding introduced by this task.
+  Reviewed compact `«state.commit»` text: it names the `spacedock state commit <slug>` capability, removes duplicated git mechanics and numbered sync steps, and adds no runtime-specific tool binding; `go test ./internal/contractlint` passed 49 tests.
+- DONE: Run the implementation's cited verification or a justified focused subset; at minimum run the contractlint/state tests needed for the touched files, and report exact commands/results.
+  Ran `go test ./internal/contractlint ./internal/status ./internal/cli`: 986 passed; `go test ./internal/contractlint`: 49 passed; `git diff --check`: clean.
+- DONE: Append a Stage Report: validation with a PASSED or REJECTED recommendation, cite evidence for every AC, and commit only the entity report path-scoped in state.
+  Recommendation: PASSED. This report is appended here; state commit follows path-scoped for this entity only.
+
+### Summary
+
+Validation recommends PASSED. The implementation meets the token-reduction target, keeps state safety backed by behavior-level tests, and leaves the shared-core contract capability-oriented without preserving the old multi-step git recipe.
