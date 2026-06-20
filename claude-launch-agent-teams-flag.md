@@ -7,6 +7,7 @@ id: 662sh1n92mkf33rzgwxy8zcd
 worktree: .worktrees/spacedock-ensign-claude-launch-agent-teams-flag
 started: 2026-06-20T04:47:59Z
 mod-block: merge:pr-merge
+pr: "#412"
 ---
 
 The worker↔FO back-channel (`SendMessage`/`TeamCreate`) is gated behind the experimental env flag `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`, OFF by default. A `spacedock claude` FO session launched without it can spawn NAMED background agents (the `Agent` tool) but cannot ADDRESS them — `SendMessage` reports "exists but is not enabled in this context" — so reuse-advance, mid-run steering, and cooperative shutdown silently do not work, and the FO contract's back-channel assumption is false. Confirmed this session (Claude Code 2.1.183, flag unset): `SendMessage` was absent until the flag was set; transcript forensics show same-`agentSetting` FO sessions split purely on the flag (flag-on used `SendMessage` 20–55×, flag-off zero). "named ≠ addressable."
