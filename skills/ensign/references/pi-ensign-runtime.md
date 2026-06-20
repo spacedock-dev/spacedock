@@ -6,7 +6,7 @@ This file defines how the shared ensign core executes on Pi.
 
 A Pi ensign receives a bounded assignment from a Pi-native substrate such as `pi-subagents` or, through an adapter, `pi-agent-teams`. The assignment content is authoritative: entity path, workflow directory, target stage, stage definition fetch command, worktree path when present, and completion checklist.
 
-Do not assume Claude team tools exist in Pi. Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification.
+Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification.
 
 ## Pi-Specific Rules
 

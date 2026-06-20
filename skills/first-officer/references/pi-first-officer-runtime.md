@@ -4,7 +4,7 @@ This file defines how the shared first-officer core executes on Pi. The host-neu
 
 ## Runtime Shape
 
-Pi is a first-class runtime target, but it does not expose Claude Code team-tool signatures. Do not call or ask workers to call Claude team tools. Pi dispatch uses a Pi-native substrate selected by the launch/test harness:
+Pi is a first-class runtime target. Pi dispatch uses a Pi-native substrate selected by the launch/test harness:
 
 - default: `pi-subagents`, where the parent first officer uses the `subagent(...)` tool to run a bounded ensign assignment and observes the returned result as completion evidence;
 - optional: `pi-agent-teams`, where an adapter maps Spacedock lifecycle intents to the `teams` tool actions (`member_spawn` or `delegate`, `message_dm`, `member_shutdown`, `team_done`).
@@ -31,15 +31,15 @@ The dispatch core (`fo-dispatch-core.md` step 4 + `«worker-identity»`) delegat
 
 **Null case — stamp the parent's live model.** When `dispatch build` emits `model: null` (the common case — `stages.defaults` declares no model), before calling `subagent(...)`, read the FO's own live model via `intercom({action:"list"})`. The "Current session" entry carries the live model in parentheses, e.g. `subagent-chat-019ee0d6 (b4c9b23b) — /Users/.../spacedock-v1 (z-ai/glm-5.2) [same cwd, tool:subagent]`. Pass that model explicitly on the spawn call: `subagent(... model: "<live model>")`. `intercom` is always connected for the boot-resident FO, so this is a single reliable programmatic read — no disk-grep, no session-file inference.
 
-**Stage-declared model wins (override preserved).** When `dispatch build` emits a non-null `output.model` (the stage or `stages.defaults` declares a model), pass that value on the `subagent(... model: "<declared model>")` call unchanged. The stage-declared model overrides the parent's live model — the override path is the same as on other hosts. Stage-declared models on Pi MUST use Pi-valid model strings (see the model-space declaration below), not the Claude-centric enum.
+**Stage-declared model wins (override preserved).** When `dispatch build` emits a non-null `output.model` (the stage or `stages.defaults` declares a model), pass that value on the `subagent(... model: "<declared model>")` call unchanged. The stage-declared model overrides the parent's live model — the override path is the same as on other hosts. Stage-declared models on Pi MUST use Pi-valid model strings (see the model-space declaration below).
 
 **Q13 — resolved.** The core's model-resolution (under `«worker-identity»`) now delegates the null case to each host: Pi stamps the parent's live model via `intercom({action:"list"})`; Claude inherits the team's model; Codex inherits the thread's model. The earlier "Q13 contradiction window" (core OMIT-on-null vs Pi stamp) was the planned transition state before the capstone generalized the rule; it is now closed — the core and this adapter agree.
 
 ### Canonical Model Space (Pi — for reuse-condition-4)
 
-The dispatch core's reuse-condition-4 (`fo-dispatch-core.md` condition 4) says a member stamped with a captain-session fallback value — one outside the host's canonical model enum — never matches an enum value and forces a one-time fresh dispatch. The core's enum assumption is Claude-centric (`sonnet`/`opus`/`haiku`). **Pi has no such enum.** On Pi, any provider/model string is a valid model: `z-ai/glm-5.2`, `~openai/gpt-mini-latest`, `anthropic/claude-sonnet-4`, `google/gemini-2.5-pro`, etc. There is no Claude-centric `sonnet`/`opus`/`haiku` enum on Pi.
+The dispatch core's reuse-condition-4 (`fo-dispatch-core.md` condition 4) compares a worker's stamped model against the host's canonical model space. **Pi's model-space binding is provider/model strings**: `z-ai/glm-5.2`, `~openai/gpt-mini-latest`, `anthropic/claude-sonnet-4`, `google/gemini-2.5-pro`, etc. — any valid pi-subagents model string (provider-qualified or `~`-prefixed). Reuse-condition-4's comparator operates on these Pi-native strings.
 
-This adapter DECLARES the Pi canonical model space as: all valid pi-subagents model strings (provider-qualified or `~`-prefixed provider-relative strings). Reuse-condition-4's model-match comparator MUST operate on these Pi-native strings, not the Claude enum. Otherwise every Pi reuse would be a "captain-session fallback value outside the enum" and force fresh dispatch — defeating reuse entirely. The stamped model from the Model Resolution rule above is a Pi-native string in this declared space, so reuse-condition-4's comparator has a meaningful value to match against `next_stage.effective_model`.
+This adapter DECLARES the Pi canonical model space as: all valid pi-subagents model strings (provider-qualified or `~`-prefixed provider-relative strings). Reuse-condition-4's model-match comparator MUST operate on these Pi-native strings. Otherwise every Pi reuse would match a captain-session fallback value (one outside the canonical model space) and force fresh dispatch — defeating reuse entirely. The stamped model from the Model Resolution rule above is a Pi-native string in this declared space, so reuse-condition-4's comparator has a meaningful value to match against `next_stage.effective_model`.
 
 This model-space declaration is `«worker-identity»`'s model-space field (OWNER: this task). The capstone (`pi-back-channel-dispatch`) REFERENCES it but does not re-declare it — see the entity body's composition section.
 
@@ -59,7 +59,7 @@ A non-fresh resume is only allowed as an explicit manual/debug exception. Mark t
 
 ## Shutdown
 
-This is the Pi terminal teardown — fo-merge-core.md's Merge-and-Cleanup step 10, mandatory at the terminal boundary whether the merge ran locally or via a PR host.
+This is the Pi realization of `«worker.shutdown»` — the terminal-boundary teardown the shared core names. It runs at the terminal boundary whether the merge ran locally or via a PR host.
 
 For `pi-subagents`, a completed child invocation needs no mailbox shutdown. Mark the worker complete/closed in first-officer memory and continue.
 
