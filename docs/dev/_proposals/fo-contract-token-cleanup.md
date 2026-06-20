@@ -1,16 +1,19 @@
 ---
-title: FO contract token-cleanup proposal
+title: FO contract token-cleanup
 date: "2026-06-15"
+revised: "2026-06-19"
 status: proposal
 ---
 
-# FO contract token-cleanup proposal (2026-06-15)
+# FO contract token-cleanup
 
-This is an evidence-based, adversarially-verified token-cleanup pass over the first-officer contract files. Each candidate below was proposed by an analyst and then independently verified against the live files and cross-referenced load points; only the candidates that survived verification as `safe-cut` or `cut-with-care` are listed here. The verdicts that came back `keep` are recorded at the bottom with the concrete first-officer misbehavior each removal would cause, so they are on the record and not re-proposed. Cuts are weighted by load frequency: a cut in `first-officer-shared-core.md` or `claude-first-officer-runtime.md` is boot-resident and pays back every FO session; `using-claude-team/SKILL.md` loads at first team-mode dispatch (most working sessions); `present-gate/SKILL.md` loads only per gate. Total confirmed savings across the kept candidates: **638 tokens** (282 boot-resident in shared-core, 165 boot-resident in the runtime adapter, 98 at first dispatch, 93 per gate). These are proposals for the captain, not applied edits.
+> **Revised 2026-06-19 — reconciled with the #396 claude-team reframe.** PR #396 removed `TeamCreate`/`TeamDelete` on Claude Code ≥2.1.178: a worker is now a named background `Agent` with no team-creation step; the `using-claude-team` skill was renamed to `using-legacy-claude-team` (loaded only on legacy-`TeamCreate` runtimes); the runtime adapter's `## Team-mode ensign-chat hint` section was deleted outright; and `claude-fo-merge.md` was folded into `claude-fo-dispatch.md`. Consequences threaded through this pass: **RT-4 and RT-2 are retired** (their targets no longer exist), the `using-claude-team` cuts (UCT-*) **demote to legacy-only** (lowest payback tier), and the corrected default-path total is **~420 tokens**, not 638. The 2026-06-15 analysis is preserved below with these corrections marked inline.
+
+This is an evidence-based, adversarially-verified token-cleanup pass over the first-officer contract files. Each candidate below was proposed by an analyst and then independently verified against the live files and cross-referenced load points; only the candidates that survived verification as `safe-cut` or `cut-with-care` are listed here. The verdicts that came back `keep` are recorded at the bottom with the concrete first-officer misbehavior each removal would cause, so they are on the record and not re-proposed. Cuts are weighted by load frequency: a cut in `first-officer-shared-core.md` or `claude-first-officer-runtime.md` is boot-resident and **compounds across the whole session** (the boot read is re-cached on every turn). The lazily-loaded files — `fo-dispatch-core.md`/`claude-fo-dispatch.md` (first dispatch), `present-gate/SKILL.md` (first gate), `fo-merge-core.md` (first terminal) — load **once, when first needed, and stay resident**, so a cut there is paid once per session that reaches that point, not per event. (A skill is not re-read on later gates or dispatches; the harness reminds the model not to re-invoke an already-loaded skill.) `using-legacy-claude-team/SKILL.md` is the lowest tier: post-#396 it loads only on legacy-`TeamCreate` runtimes (the pinned-2.1.177 CI lane), never on the merged default path. Corrected total on the default path: **~420 tokens** (~327 boot-resident: 282 shared-core + ~45 runtime adapter; ~93 at first gate), plus ~84 that applies only on legacy-`TeamCreate` runtimes. (The original pass reported 638, before #396 deleted RT-4's ~120-token target and renamed the team skill.) These are proposals for the captain, not applied edits.
 
 This pass does not overlap the prior `fo-contract-prose-audit` (PR #367), which cut only four dead `S7b`/`(B6)` step-numbering pointers plus a comm-officer polish. None of those four locations recur here. That audit also FLAGGED-not-cut the merge module's two adjacent mod-block sections as a judgment-call restructure out of scope; this pass likewise leaves them untouched.
 
-A note on the two cross-file dedup pairs. The shared-core `## Dispatch (deferred module)` and `## Merge and Cleanup (deferred module)` sections (SC-5, SC-7) restate the dispatch/merge machinery that the boot-resident runtime adapter also carries. The redundant copy is the shared-core one, so the cut is applied THERE and the runtime adapter is kept intact. The mirror-image runtime candidates (RT-1, RT-2) came back `keep` precisely because the runtime adapter is the SOLE place naming the concrete reference filenames (`references/claude-fo-dispatch.md`, `references/claude-fo-merge.md`); cutting the runtime copy would strand the filename. So each concept is cut exactly once, at the copy that does not hold the load-bearing filename.
+A note on the two cross-file dedup pairs. The shared-core `## Dispatch (deferred module)` and `## Merge and Cleanup (deferred module)` sections (SC-5, SC-7) restate the dispatch/merge machinery that the boot-resident runtime adapter also carries. The redundant copy is the shared-core one, so the cut is applied THERE and the runtime adapter is kept intact. The mirror-image runtime candidate RT-1 came back `keep` precisely because the runtime adapter is the SOLE place naming the concrete reference filename `references/claude-fo-dispatch.md`; cutting the runtime copy would strand the filename. So each concept is cut exactly once, at the copy that does not hold the load-bearing filename. (RT-2, the merge half of this pair, is **retired post-#396**: `claude-fo-merge.md` no longer exists — the terminal teardown folded into `claude-fo-dispatch.md`'s `## Terminal Worker Teardown`, so SC-7's pointer now defers there, not to a deleted file.)
 
 ## first-officer-shared-core.md (boot-resident, every session)
 
@@ -42,28 +45,28 @@ Integrate the explicit count ("{N} done, {N} skipped, {N} failed") into the prec
 
 ## claude-first-officer-runtime.md (boot-resident, every session)
 
-Confirmed savings here: 165 tokens.
+Confirmed savings here: ~45 tokens (RT-3 only; RT-4 retired — see below).
 
-### RT-4 — `## Team-mode ensign-chat hint`, lines 21-28, cut-with-care, ~120 tokens
-Compress the hint section's tracking and exception prose. The reword MUST retain the placement guard "Append it to the dispatch announcement; do not emit it as a standalone message." — that phrase is the sole statement of where in the turn the hint goes, and it interacts with `using-claude-team` `## Awaiting Completion`, which bans any post-`Agent()`-dispatch turn that emits standalone text (the hallucination-drift footgun). Drop the explanatory parentheticals and per-mode reasons; keep once-per-session, first-dispatch, the gate/terminal/bare/degraded/single-entity skips, and the session-memory tracking. The single-entity gate auto-resolve (lines 29-30) stays untouched. Net saving is lower than a naive count because the placement guard and the exact hint text must survive.
+### RT-4 — RETIRED (superseded by #396)
+The `## Team-mode ensign-chat hint` section this cut targeted was **deleted outright by #396** — the hint was tied to team mode, now legacy. There is nothing left to compress; the ~120 tokens were realized by deletion. Removed from the savings tally and the Top-recommendations list. (Historical note: this was the largest single cut in the original 2026-06-15 pass.)
 
-### RT-3 — `## Entity-Body Inspection`, lines 37-39, safe-cut, ~45 tokens
-Collapse the body sentence to a thin pointer at the shared core's `## Probe and Ideation Discipline`. The shared-core copy (lines 213-219) is strictly more complete: it carries the Grep-over-Read rule, the Read-then-Bash staleness echo already platform-qualified ("On Claude Code"), and the full `status --set` narration form. Both files are boot-resident and co-loaded, so the defer target is resident before entity-body inspection is needed. Keep the `## Entity-Body Inspection` heading as a thin pointer (the file's line-3 index enumerates it) to avoid a dangling reference; collapse only the body sentence.
+### RT-3 — `## Entity-Body Inspection`, lines 29-31, safe-cut, ~45 tokens
+Collapse the body sentence to a thin pointer at the shared core's `## Probe and Ideation Discipline`. The shared-core copy (lines 210-219) is strictly more complete: it carries the Grep-over-Read rule, the Read-then-Bash staleness echo already platform-qualified ("On Claude Code"), and the full `status --set` narration form. Both files are boot-resident and co-loaded, so the defer target is resident before entity-body inspection is needed. Keep the `## Entity-Body Inspection` heading as a thin pointer (the file's line-3 index enumerates it) to avoid a dangling reference; collapse only the body sentence.
 
-## using-claude-team/SKILL.md (loaded at first dispatch)
+## using-legacy-claude-team/SKILL.md (LEGACY — loaded only on legacy-`TeamCreate` runtimes)
 
-Confirmed savings here: 98 tokens.
+Confirmed savings here: ~84 tokens — but **legacy-only post-#396**. This file (formerly `using-claude-team/SKILL.md`, renamed by #396) loads only when the `ToolSearch(select:TeamCreate)` probe matches a TeamCreate-exposing runtime; on the merged `.178+` default path it never loads, so these cuts pay back only on the pinned-2.1.177 CI lane. Lowest tier. Line citations below are re-pointed to the renamed file.
 
-### UCT-4 — `## Terminal Team Teardown`, lines 99-101, cut-with-care, ~62 tokens
-Compress the section-head meta-commentary that distinguishes terminal teardown from `## Awaiting Completion`, but retain an explicit conflation guard at the section head. The phase reconciliation survives in the section body (line 109 "this is the one place the FO actively attempts `TeamDelete`") and at line 81's forward cross-ref, but only at the TAIL — the cut paragraph is the only framing BEFORE the line-105 `TeamDelete` instruction. Removing it risks a top-down reader treating the required terminal `TeamDelete` as the banned premature-teardown and stranding the `claude -p` subprocess (#275/#282). Keep "This governs the TERMINAL phase only" plus a one-clause "do not conflate with the pre-completion ban above."
+### UCT-4 — `## Terminal Team Teardown`, `using-legacy-claude-team/SKILL.md` lines 54-65, cut-with-care, ~62 tokens (legacy-only)
+Compress the section-head meta-commentary that distinguishes terminal teardown from `## Awaiting Completion`, but retain an explicit conflation guard at the section head. The phase reconciliation survives in the section body (line 109 "this is the one place the FO actively attempts `TeamDelete`") and at line 81's forward cross-ref, but only at the TAIL — the cut paragraph is the only framing BEFORE the line-105 `TeamDelete` instruction. Removing it risks a top-down reader treating the required terminal `TeamDelete` as the banned premature-teardown and stranding the `claude -p` subprocess (#275/#282). Keep "This governs the TERMINAL phase only" plus a one-clause "do not conflate with the pre-completion ban in `claude-fo-dispatch.md`" (post-#396 `## Awaiting Completion` lives there, not in this file).
 
-### UCT-1 — `## Deferred Team Tools`, line 13, safe-cut, ~22 tokens
+### UCT-1 — `## Deferred Team Tools`, `using-legacy-claude-team/SKILL.md` line 30, safe-cut, ~22 tokens (legacy-only)
 Delete "Once a tool's schema appears in the ToolSearch result, it is callable exactly like a normal tool." The fetch-then-callable mechanism survives in the two preceding sentences ("calling one directly fails until its schema is fetched" + "Before the first call to any team tool, run ToolSearch ..."), which also carry the first-call-only scoping so no re-fetch-every-call regression appears. The harness also delivers this exact fact verbatim to every FO at boot via the deferred-tool system reminder. Verifier ran three break attempts, all blocked by the surviving sentences.
 
-### UCT-5 — `## Degraded Mode`, lines 36-38, safe-cut, ~14 tokens
-Drop the overlapping adjectives ("explicit, session-wide mid-session transition") and keep the irreversibility invariant verbatim. Scope is restated at line 50 ("for the remainder of the session") and line 60; "explicit" is in mild tension with the auto-triggers (first/second dispatch failure trip Degraded Mode without an explicit command); "mid-session" is carried by the Triggers subsection. Verifier built three misbehavior scenarios, each blocked by a labeled subsection (Captain Report Template, Effects, Triggers). The lost "mid-session vs startup bare mode" signpost is recoverable from Triggers — small enough to remain safe-cut.
+### UCT-5 — NEEDS RE-DERIVATION (moved file post-#396)
+The `## Degraded Mode` section this cut targeted **left the team skill entirely** — #396 folded it into `claude-fo-dispatch.md` (the irreversibility sentence is now at `claude-fo-dispatch.md:89`, with new trailing text "to sequential bare dispatch"). The original ~14-token cut rested on scope being restated at the team skill's "lines 50/60" and a Triggers subsection — neighbors that moved with the section, so the safety justification no longer holds in place. Re-derive against `claude-fo-dispatch.md` before applying; do not apply as written. (This relocates it from legacy-only back onto the first-dispatch default path.)
 
-## present-gate/SKILL.md (loaded per gate)
+## present-gate/SKILL.md (loaded once at the first gate, resident thereafter)
 
 Confirmed savings here: 93 tokens.
 
@@ -89,27 +92,33 @@ Tighten "to render the decision the FO has already made" to "to render the FO's 
 
 ## Top recommendations (highest value first)
 
-Boot-resident cuts rank above equal-size lazy-loaded cuts. Within a file, larger and higher-confidence first.
+Boot-resident cuts (which compound across the session) rank above the load-once lazy cuts; among lazy cuts, default-path first-gate cuts rank above legacy-only cuts (which load only on a `TeamCreate` runtime). Within a tier, larger and higher-confidence first.
 
-1. **RT-4** — runtime, team-mode ensign-chat hint compression, ~120 tokens, boot-resident. Largest single saving in the pass; cut-with-care, must retain the placement guard and exact hint text.
-2. **SC-5** — shared-core, dispatch deferred-module section to a pointer, ~85 tokens, boot-resident. Cut-with-care; loss is descriptive only, the runtime adapter holds the load point.
-3. **SC-7** — shared-core, merge-and-cleanup deferred-module section to a pointer, ~60 tokens, boot-resident, safe-cut. Six break attempts failed.
-4. **RT-3** — runtime, entity-body inspection to a pointer, ~45 tokens, boot-resident, safe-cut. Shared-core copy is strictly more complete.
-5. **SC-2** — shared-core, README-body defer rationale, ~36 tokens, boot-resident, cut-with-care.
-6. **SC-8** — shared-core, worktree-ownership defer sentence (narrower than proposed), ~36 tokens, boot-resident, cut-with-care.
-7. **SC-3** — shared-core, event-loop status parenthetical, ~28 tokens, boot-resident, safe-cut.
-8. **SC-12** — shared-core, Working Principles lead-in, ~24 tokens, boot-resident, safe-cut.
-9. **SC-4** — shared-core, single-entity-lookup bullet, ~8 tokens, boot-resident, safe-cut.
-10. **SC-6** — shared-core, count-summary inline-fold, ~5 tokens, boot-resident, cut-with-care.
-11. **UCT-4** — team skill, terminal-teardown meta-commentary, ~62 tokens, first-dispatch, cut-with-care. Keep a section-head conflation guard.
-12. **UCT-1** — team skill, deferred-tool callability sentence, ~22 tokens, first-dispatch, safe-cut.
-13. **UCT-5** — team skill, Degraded Mode adjectives, ~14 tokens, first-dispatch, safe-cut.
-14. **PG-6** — present-gate Rule 7, ~30 tokens, per-gate, safe-cut.
-15. **PG-7** — present-gate Rule 8, ~20 tokens, per-gate, cut-with-care. Keep the bold header and dual-direction cue.
-16. **PG-5** — present-gate Rule 6, ~15 tokens, per-gate, cut-with-care.
-17. **PG-2** — present-gate assembly preamble, ~12 tokens, per-gate, cut-with-care.
-18. **PG-8** — present-gate Rule 9, ~11 tokens, per-gate, safe-cut.
-19. **PG-1** — present-gate lines 8-9, ~5 tokens, per-gate, safe-cut.
+**Boot-resident (compounds every session):**
+1. **SC-5** — shared-core, dispatch deferred-module section to a pointer, ~85 tokens. Cut-with-care; loss is descriptive only, the runtime adapter holds the load point.
+2. **SC-7** — shared-core, merge-and-cleanup deferred-module section to a pointer, ~60 tokens, safe-cut. Six break attempts failed. (Pointer now defers to `claude-fo-dispatch.md`'s `## Terminal Worker Teardown`, post-#396.)
+3. **RT-3** — runtime, entity-body inspection to a pointer, ~45 tokens, safe-cut. Shared-core copy is strictly more complete.
+4. **SC-2** — shared-core, README-body defer rationale, ~36 tokens, cut-with-care.
+5. **SC-8** — shared-core, worktree-ownership defer sentence (narrower than proposed), ~36 tokens, cut-with-care.
+6. **SC-3** — shared-core, event-loop status parenthetical, ~28 tokens, safe-cut.
+7. **SC-12** — shared-core, Working Principles lead-in, ~24 tokens, safe-cut.
+8. **SC-4** — shared-core, single-entity-lookup bullet, ~8 tokens, safe-cut.
+9. **SC-6** — shared-core, count-summary inline-fold, ~5 tokens, cut-with-care.
+
+**First-gate (present-gate; paid once per session that gates):**
+10. **PG-6** — present-gate Rule 7, ~30 tokens, safe-cut.
+11. **PG-7** — present-gate Rule 8, ~20 tokens, cut-with-care. Keep the bold header and dual-direction cue.
+12. **PG-5** — present-gate Rule 6, ~15 tokens, cut-with-care.
+13. **PG-2** — present-gate assembly preamble, ~12 tokens, cut-with-care.
+14. **PG-8** — present-gate Rule 9, ~11 tokens, safe-cut.
+15. **PG-1** — present-gate lines 8-9, ~5 tokens, safe-cut.
+
+**Legacy-only (`using-legacy-claude-team`; pays back only on a `TeamCreate` runtime):**
+16. **UCT-4** — legacy team skill, terminal-teardown meta-commentary, ~62 tokens, cut-with-care. Keep a section-head conflation guard (now pointing at `claude-fo-dispatch.md`).
+17. **UCT-1** — legacy team skill, deferred-tool callability sentence, ~22 tokens, safe-cut.
+18. **UCT-5** — NEEDS RE-DERIVATION: its `## Degraded Mode` target moved to `claude-fo-dispatch.md` (#396); re-derive before applying.
+
+(**RT-4 retired** — its target was deleted by #396; see the runtime-adapter section.)
 
 ## Kept as load-bearing (do not re-propose)
 
@@ -121,10 +130,10 @@ These came back `keep` under adversarial verification. Each line names the FO mi
 - **SC-11** (shared-core, "the FO owns the process it operates ... distinct from the product the workflow builds"): the dynamic process/product discriminator. In a meta-workflow that PRODUCES a README, the static reword ("not product scaffolding") lets an FO conclude it owns a produced `output/.../README.md` and edit it directly on main, bypassing the dispatched-worker-in-worktree path. Sole statement.
 - **SC-13** (shared-core, "keep dispatching other ready entities when one blocks"): sole statement that a single-entity block must not stall the whole event loop. The per-entity halt language at lines 116/196 says a blocker "legitimately halts the turn"; without this clause an FO reads that as license to stop the whole session, leaving independently-ready entities idle. The event loop lives in a lazily-loaded file that does not restate this posture.
 - **RT-1** (runtime, dispatch-reference machinery list + filename): sole statement of the concrete path `references/claude-fo-dispatch.md`; the shared-core deliberately defers the filename here. Cutting it produces a circular pointer with the filename nowhere, so at first dispatch the FO cannot resolve which file to read and dispatches by improvisation.
-- **RT-2** (runtime, merge-reference machinery list + filename): the only place in the skill stating `references/claude-fo-merge.md` (repo-wide grep: one hit). Cutting it strands the merge ceremony at terminalization — the FO guesses or skips the set/invoke/clear mod-block sequence and the bounded `TERMINAL_TEARDOWN_BOUNDED` teardown.
+- **RT-2** — RETIRED post-#396: its load-bearing target `references/claude-fo-merge.md` was deleted (terminal teardown generified into `claude-fo-dispatch.md`'s `## Terminal Worker Teardown`). No filename left to strand, so this keep no longer applies.
 - **RT-5** (runtime, Agent Back-off): the reword drops clause 2 ("if you notice the captain messaging an agent without telling you, ask whether to back off"), the sole proactive side-channel-detection guard that makes the Shift+Down ensign-chat feature safe. Without it the FO races the captain's mid-stage steering. It also inverts "until told to resume" into "ask before resuming."
-- **UCT-2** (team skill, line 34 "Block all Agent dispatch until team setup resolves"): sole standing dispatch gate for the mid-session recovery window. Without it an FO that hits "Team does not exist" can emit the fresh-suffixed `TeamCreate` and the re-dispatched `Agent()` in the same parallel message, racing the TeamCreate and re-contaminating the desynced slot (the #36806 footgun). The recovery ladder describes steps, not the standing gate.
-- **UCT-3** (team skill, lines 88-96 Awaiting Completion guardrails): three sole-statement losses — the `system init`-is-not-a-completion-signal classification, the rationalization anti-patterns ("session ending"/"enough time has passed" + "you cannot measure time from inside a turn"), and the DISPATCH IDLE GUARDRAIL that the boot-resident runtime adapter (`Agent Back-off`) explicitly points into. Cutting them lets an FO act on an idle wake, rationalize a premature `shutdown_request`+`TeamDelete`, or read a between-turns idle as "unresponsive" and tear down the team.
+- **UCT-2** (`using-legacy-claude-team/SKILL.md` line 52 "Block all Agent dispatch until team setup resolves") — legacy-only post-#396, keep stands: sole standing dispatch gate for the mid-session recovery window. Without it an FO that hits "Team does not exist" can emit the fresh-suffixed `TeamCreate` and the re-dispatched `Agent()` in the same parallel message, racing the TeamCreate and re-contaminating the desynced slot (the #36806 footgun). The recovery ladder describes steps, not the standing gate.
+- **UCT-3** (`claude-fo-dispatch.md` `## Awaiting Completion`, lines ~58-85 — relocated there from the team skill by #396; keep stands): three sole-statement losses — the `system init`-is-not-a-completion-signal classification, the rationalization anti-patterns ("session ending"/"enough time has passed" + "you cannot measure time from inside a turn"), and the DISPATCH IDLE GUARDRAIL that the boot-resident runtime adapter (`Agent Back-off`) explicitly points into. Cutting them lets an FO act on an idle wake, rationalize a premature `shutdown_request`+`TeamDelete`, or read a between-turns idle as "unresponsive" and tear down the team.
 - **PG-3** (present-gate Rule 1 second sentence): the votability test ("if the captain stops reading after line three, they can still vote") is the sole operational acceptance guard for spine self-sufficiency. The first sentence only names which lines are the spine; without the test an FO buries the decision-critical substance below the fold and still satisfies "these four lines are the spine."
 - **PG-4** (present-gate Rule 2): the reword drops the behavioral guard ("don't make the captain infer from the Checklist gist or open the entity file") and the `validation picks PASS/REJECTED` disambiguator. Without them an FO renders `Chosen direction: see Checklist` (breaking the line-3 spine) or classifies a REJECTED validation gate as `n/a` (burying the verdict).
 - **PG-9** (present-gate Rule 10): sole carve-out that the structural headings (`Gate review:`, `Checklist:`, `Decision:`) and the `{entity title}` placeholder stay generic while only the FO-authored noun localizes. Shared-core line 211 pushes the FO to localize "gate presentations," and `{entity title}` literally contains "entity"; without Rule 10 an FO on a `ticket` workflow rewrites the canonical headings (`Gate review:` to `Ticket review:`) and drifts the gate output off its stable format.
@@ -143,8 +152,8 @@ Every verdict above was reached by *adversarial reasoning*: an analyst construct
 
 **Why the residency weighting is right.** The load-frequency weighting in this proposal is empirically backed: superpowers measured a long session re-reading a resident skill ~500× (`positive-instruction-redesign-design`, 2026-06-10), so a boot-resident cut compounds across the whole session while a lazy-loaded cut is paid once. Honest ceiling: ~46% of a run is prompt-immune thinking/narration (`strict-cost-sdd-design`) — prose changes govern only the instruction-resident remainder, so expect "delete dead weight + collapse prohibitions," not a flat percentage.
 
-This proposal's cuts are applied by the `fo-contract-token-cut` task (`y2r7ew51xqs6q3avsb6mcaka`): it first validates the no-guidance control on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`), reusing the bare-`claude` launch + durable-state grade the `haiku-loop-spike` proved — then applies the full list (re-testing the 13 `keep`s, since the control can overturn one) and ships the trimmed files through the dispatched-worker path. The deliverable is the trimmed contract files; the control is the method.
+This proposal's cuts are applied by the `fo-contract-token-cut` task (`y2r7ew51xqs6q3avsb6mcaka`): it first validates the no-guidance control on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`), reusing the bare-`claude` launch + durable-state grade the `haiku-loop-spike` proved — then applies the **default-path list** (the 9 boot-resident cuts SC-2/3/4/5/6/7/8/12 + RT-3, plus the 6 first-gate PG cuts), re-testing the remaining `keep`s since the control can overturn one, and ships the trimmed files through the dispatched-worker path. **Post-#396 scope note:** RT-4 and RT-2 are retired (targets deleted), and the `using-legacy-claude-team` cuts (UCT-1/2/4, plus UCT-5 which needs re-derivation against `claude-fo-dispatch.md`) are deferred behind legacy-skill maintenance — they save tokens only on the pinned-2.1.177 CI lane, not the merged default path. The deliverable is the trimmed contract files; the control is the method.
 
 ## Closing note
 
-These are PROPOSALS for the captain. The FO contract files are shipped scaffolding (`skills/` is product, not FO-direct-editable per the scaffolding guardrail in `## FO Write Scope`), so the actual edits ship through a dispatched worker in a worktree under test, exactly the path the prior `fo-contract-prose-audit` used: the four live shared scenarios (`gate-guardrail`, `rejection-flow`, `feedback-3-cycle-escalation`, `merge-hook-guardrail`) stay green on Claude and Codex as the behavior-preservation oracle, plus a `wc` size-delta and a detached adversarial audit of the diff. The boot-resident cuts (shared-core and the runtime adapter, items 1-10 in Top recommendations) are the highest value: they pay back on every FO session, where a per-gate cut pays back only when a gate renders.
+These are PROPOSALS for the captain. The FO contract files are shipped scaffolding (`skills/` is product, not FO-direct-editable per the scaffolding guardrail in `## FO Write Scope`), so the actual edits ship through a dispatched worker in a worktree under test, exactly the path the prior `fo-contract-prose-audit` used: the four live shared scenarios (`gate-guardrail`, `rejection-flow`, `feedback-3-cycle-escalation`, `merge-hook-guardrail`) stay green on Claude and Codex as the behavior-preservation oracle, plus a `wc` size-delta and a detached adversarial audit of the diff. The boot-resident cuts (shared-core and the runtime adapter, items 1-9 in Top recommendations) are the highest value: they pay back on every FO session and compound across it, where a first-gate cut pays back once per session that reaches a gate.

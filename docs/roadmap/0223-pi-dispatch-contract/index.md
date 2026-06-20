@@ -155,6 +155,56 @@ The Commander drives this sprint on Pi (boots `spacedock:first-officer`, creates
 
 **Quirk:** Member 1 (`eq`) AC-1 verification runs `spacedock install --host pi`, which makes `pi install` write to `~/.pi/agent/` (the pi package store + `settings.json packages`) — **outside** the repo. On a sandboxed pi session, the pi front door today does NOT register `--safehouse-add-dirs` (only `--plugin-dir`), so the Commander cannot grant `~/.pi/agent` access through the launcher — the install verification will hit a sandbox write denial. Member 3 (`qn` `pi-safehouse-flag-parity`) fixes this by mirroring the claude/codex `--safehouse-*` flags + safehouse wrapping into `pi.go`. **Land member 3 before or alongside member 1's AC-1 verification.** Until member 3 lands, the break-glass is to wrap externally: `safehouse --add-dirs ~/.pi/agent -- spacedock pi ...` (the Commander invokes safehouse directly rather than through the launcher). After member 3 lands, the Commander grants access through the launcher: `spacedock pi --safehouse-add-dirs ~/.pi/agent ...`.
 
+## Quirk disposition (close-out — fold the cold-boot Q1-Q14 into their durable homes)
+
+The cold-boot package yelled Q1-Q14 at the Commander as pi-specific quirks. With the sprint landing, each quirk retires into a durable home. Recommended disposition for the next sprint's cold-boot package (and the Shaping FO's close-out):
+
+### Folded into the pi front door / pi runtime adapter (DONE — retired)
+
+- **Q2** (explicit model stamp on every dispatch) → `bdt` (`pi-first-officer-runtime.md` `### Model Resolution`). The adapter now instructs the FO; the "Commander MUST compensate" framing is moot. Next session's FO follows the rule as standard practice.
+- **Q3** (skill injection broken) → `eq` (install-managed package placement; `package.json` `pi.skills` + `.pi/extensions/spacedock.ts` + `spacedock install --host pi` runs `pi install`). `ensign` is `user-package`-discoverable post-install; the bare-`worker` `find /` stalls don't recur.
+- **Q14** (external safehouse wrap) → `qn` (`pi.go` `parsePiFrontDoorArgs`/`runPi` wrap + `setPiHelp`). `spacedock pi --safehouse-add-dirs ~/.pi/agent` grants via the launcher. (Follow-up: the inner node-pi shim fails to start inside safehouse — a safehouse×node env-sanitization interaction, not a wrap-arm defect; the grant is proven. File as a safehouse-runtime follow-up for the next sprint.)
+
+### Folded into the pi FO adapter + the host-neutral core by the capstone (DONE — retired)
+
+- **Q6** (back-channel mid-run service) → `b2` `pi-first-officer-runtime.md` `## Capability implementations` (`worker-back-channel` PRESENT via `contact_supervisor`+`intercom`; `inbound-message-service` via `intercom pending`; `async-dispatch` ASYNC). The event-loop step 0.5 ships.
+- **Q13** (core/adapter null-model contradiction) → `b2` `fo-dispatch-core.md` `model-resolution` named rule under `worker-identity-capture` (the core delegates null-model resolution to each adapter; no hard-coded omit-on-null). Closed by the pre-cut audit-fix (SB1).
+
+### Already in the host-neutral FO core — retire the "quirk" framing, fold into named rules
+
+These were never pi-specific; the cold-boot package yelled them at the Commander as emphasis. The capstone's named-capability rewrite + the shipped `spacedock state` verbs now name them; the per-quirk framing should collapse into the core's rules:
+
+- **Q1** (async dispatch mandatory) → the `async-dispatch` named capability (`b2`). "Required when `worker-back-channel` present" is the core rule, not a pi quirk.
+- **Q5** (path-scoped state commits) → shipped as `spacedock state commit <slug>` (the `state-verbs` task, PR #399). The core's "Split-Root State Sync" already names it.
+- **Q7** (completion = subagent return + file-verify) → the shared core's `## Completion and Gates` + the `completion-signal` named capability (`b2`). FO discipline, not pi-specific.
+- **Q9** (preserve in-flight spike evidence) → the shared core's "Probe and Ideation Discipline" (cite, don't re-spike). FO discipline, not pi-specific.
+- **Q10** (sandbox mode) → operational; surface denials as env quirks, not contract violations. Not a pi-runtime thing.
+
+### Drive-procedure / verification concerns — stay in the cold-boot package (not runtime)
+
+- **Q4** (state branch is `spacedock-state/dev`, not `main`) → Commander drive-procedure (the state checkout's branch). Stays in the package; the shipped `spacedock state ready` verb owns the mechanics.
+- **Q11** (capstone live-drive non-repo cwd) → the capstone's AC-2 verification pin (exercises install-managed discovery from a non-repo cwd). A test-drive concern, not a pi-runtime behavior. Stays in the capstone's verification.
+- **Q12** (preflight 1+2 before capstone pi-live) → Commander drive-procedure step (confirm deps landed before the live drive). Stays in the package.
+
+### Proof-policy / merge gate — host-neutral
+
+- **Q8** (live lanes required for merge; path→lane mapping is the gate) → the dev-workflow proof policy (the README's path→lane mapping + the `claude-live`/`codex-live`/`pi-live` lane declarations). Not pi-specific. The pre-cut audit (run `c63d6187`) reinforced this: the offline gate (name-set contractlint) cannot catch binding bugs; the live lanes are the behavioral gate (the #408 lesson — `eq`'s D5b regression passed offline, failed `pi-live`).
+
+### Structural gap surfaced this drive (NOT a quirk — a repo-config follow-up)
+
+- **`main` has no branch protection.** 4 PRs merged this sprint on ensign-validator + CI-green + chat approval, with no GitHub-enforced human code review, and the sprint scaffolding + a debrief fix were pushed straight to `main`. The capstone's claude/codex review (initiated after this surfaced) was the first real human code review. **Repo-admin action:** enable `main` branch protection (require PR reviews + required status checks + restrict direct pushes) before the release cut. The Commander cannot toggle this.
+- **`CI-E2E-PI` env-approval gate added this drive** (pi-live now blocks on env approval, matching claude-live/codex-live). Set via the GitHub environments API; not a repo-file change. Consistent with the other live lanes.
+
+### Recorded for the next sprint (pre-cut audit non-blockers)
+
+- NB1: `TestCapabilityBinding` discriminates name-set drift only (a wrong binding target passes). Add a binding-target assertion OR make AC-6 live lanes a hard pre-cut gate.
+- NB2 (bigger half): the core's `worker-identity-capture` schema names an `intercom address` field two of three adapters don't declare. Rename to adapter-declared "worker address".
+- NB3: Codex `worker-back-channel` worker→FO half is completion-only (narrower than the core's "mid-run escalation" contract). Clarify the core or document Codex's actual shape.
+- NB4: pre-existing `gofmt` drift (`internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`). `gofmt -w ./cmd ./internal` before the tag.
+- NB5 (cwd-source pin): the FO's `cwd:<repo>` source read isn't pinned to a command (the dev-worktree vs installed-clone case). Pin to a `subagents-doctor` field.
+- Frictions 7-9 (deferred by design): concurrency serialization of `ask`; standing `comm-officer` on Pi; reuse-advance on Pi. Seed the next sprint.
+- Safehouse×node startup interaction (qn follow-up): the inner node-pi shim fails inside safehouse; the grant is proven. Safehouse-runtime follow-up.
+
 ## Sprint lifecycle checklist (owner-tagged — copy into this index to track)
 
 **Shape — Shaping FO (this session)**

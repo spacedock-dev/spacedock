@@ -40,7 +40,7 @@ the ideation ensigns (they would grade their own work).
 - [ ] **Scope-lock** with the captain — which entities are in, which defer *(captain decides)*
 - [ ] **Carve** — stamp `sprint` / `group` / `sprint-readiness` on members; write `index.md` (goal, members-as-query, DoD, out-of-scope)
 - [ ] **Ideate** each gated member — problem / approach / AC + test-plan, with the **riskiest mechanism exercised first** (a spike, or a recorded "no spike needed"); check existing ideation state first — never re-ideate a banked design
-- [ ] **⚠️ Preflight staff review** — dispatch an *independent* reviewer (not the FO, not the ideation ensigns) to refute: design soundness, proof-gaps, tautological / prose-grep ACs, over-engineering, blast-radius → `staff-review.md`; fold Material findings *before* the gates lock
+- [ ] **⚠️ Preflight staff review (sprint-wide)** — dispatch ONE *independent* reviewer (not the FO, not the ideation ensigns) to refute the **sprint as a whole, not individual tasks**: DoD coverage (every DoD bullet owned by an in-scope member), sequencing / dependency order, cross-member composition & wiring (shared-region collisions, seams), blast-radius across the set, scope (missing / over-scoped members), and Commander cold-boot readiness → `staff-review.md`. Per-task design soundness / AC quality / proof-gaps / riskiest-mechanism-first is the **ideation gate's** job — surface a per-task gap here only when it threatens the sprint's deliverable. Fold Material findings *before* the gates lock
 - [ ] **Present ideation gates** — checklist accounting + AC cross-check per member; never self-approve *(captain decides)*
 - [ ] **Package** — write `dispatch-sprint-execution.md` (boot recipe, per-member build notes, in-drive gates, release-cut recipe)
 
