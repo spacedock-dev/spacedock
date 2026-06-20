@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -154,17 +155,42 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	}
 }
 
-// prIndicatesMerged reports whether the pr field carries a merge sentinel — the
-// LOCAL signal that a merge already LANDED, as opposed to a bare/open PR reference
-// (#42, owner/repo#42, a URL) that is still in review. The pr-merge hook writes a
-// `pr-merge:{number}` sentinel on MERGED detection; the no-PR local fallback writes
-// `local-merge:{sha}`. Either honestly records a shipped merge, so the verb may
-// finalize. A bare reference does not — finalizing on it would archive a task
-// before its PR landed.
+// prIndicatesMerged reports whether the pr field carries a WELL-FORMED merge
+// sentinel — the LOCAL signal that a merge already LANDED, as opposed to a bare/open
+// PR reference (#42, owner/repo#42, a URL) that is still in review. The pr-merge hook
+// writes a `pr-merge:{number}` sentinel on MERGED detection; the no-PR local fallback
+// writes `local-merge:{sha}`. A finalize+archive is irreversible, so the prefix match
+// is not enough — the suffix must validate: a pr-merge sentinel finalizes only when
+// its suffix parses as a positive PR number, and a local-merge sentinel only when its
+// suffix is a non-empty SHA-like token. A bare reference, a garbage suffix, or an
+// empty suffix returns false — the safe, fail-CLOSED direction, since finalizing on
+// one would archive a task whose PR never landed.
 func prIndicatesMerged(pr string) bool {
 	pr = strings.TrimSpace(pr)
-	return strings.HasPrefix(pr, mergedPRSentinelPrefix) ||
-		strings.HasPrefix(pr, localMergeSentinelPrefix)
+	if suffix := strings.TrimPrefix(pr, mergedPRSentinelPrefix); suffix != pr {
+		n, err := strconv.Atoi(suffix)
+		return err == nil && n > 0
+	}
+	if suffix := strings.TrimPrefix(pr, localMergeSentinelPrefix); suffix != pr {
+		return isSHALike(suffix)
+	}
+	return false
+}
+
+// isSHALike reports whether s is a non-empty token of hex digits — the shape of the
+// short merge-commit SHA the local-merge fallback records. It rejects an empty suffix
+// and any non-hex character so a malformed local-merge sentinel does not finalize.
+func isSHALike(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		isHex := (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+		if !isHex {
+			return false
+		}
+	}
+	return true
 }
 
 // mergedPRSentinelPrefix is the pr-field prefix the pr-merge hook writes on MERGED

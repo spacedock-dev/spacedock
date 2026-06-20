@@ -146,6 +146,66 @@ func TestMergeGuardBlocksOnOpenPRNoModBlock(t *testing.T) {
 	}
 }
 
+// TestMergeGuardDoesNotFinalizeOnMalformedSentinel (the fail-open gate): a sentinel
+// whose prefix matches but whose suffix is garbage (pr: pr-merge:abc) must NOT
+// finalize. A bare HasPrefix match would treat `abc` as a landed merge and drive a
+// full finalize+archive — a fail-OPEN hole. The verb must instead leave the entity
+// at its non-terminal status, unarchived; only a well-formed sentinel finalizes.
+func TestMergeGuardDoesNotFinalizeOnMalformedSentinel(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "100-pr-malformed-sentinel", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("malformed-sentinel guard should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	if strings.Contains(out, "finalized") {
+		t.Fatalf("malformed sentinel (pr-merge:abc) must NOT finalize, got %q", out)
+	}
+	entity := filepath.Join(root, "100-pr-malformed-sentinel.md")
+	if got := frontmatterField(t, entity, "status"); got != "implementation" {
+		t.Fatalf("malformed sentinel must NOT terminalize, status=%q", got)
+	}
+	if fileExists(filepath.Join(root, "_archive", "100-pr-malformed-sentinel.md")) {
+		t.Fatal("malformed sentinel must NOT archive (fail-open hole)")
+	}
+}
+
+// TestPRIndicatesMerged pins the suffix-validation contract: a sentinel finalizes
+// ONLY when well-formed — a pr-merge: suffix that parses as a positive integer, or
+// a local-merge: suffix that is a non-empty SHA-like token. Every garbage form (a
+// non-numeric or zero pr-merge suffix, an empty/quoted-empty suffix, a bare PR
+// reference) must return false, the fail-CLOSED direction.
+func TestPRIndicatesMerged(t *testing.T) {
+	cases := []struct {
+		pr   string
+		want bool
+	}{
+		// Well-formed — these finalize.
+		{"pr-merge:42", true},
+		{"pr-merge:99", true},
+		{"local-merge:abc1234", true},
+		{"local-merge:0a1b2c3", true},
+		// Malformed pr-merge suffix — must NOT finalize.
+		{"pr-merge:abc", false},
+		{"pr-merge:0", false},
+		{"pr-merge:-1", false},
+		{"pr-merge:12x", false},
+		{"pr-merge:", false},
+		{`"pr-merge:"`, false},
+		// Malformed local-merge suffix — must NOT finalize.
+		{"local-merge:", false},
+		{`"local-merge:"`, false},
+		// Bare / open PR references and empties — never finalize.
+		{"", false},
+		{"#42", false},
+		{"owner/repo#42", false},
+		{"https://github.com/o/r/pull/42", false},
+	}
+	for _, c := range cases {
+		if got := prIndicatesMerged(c.pr); got != c.want {
+			t.Errorf("prIndicatesMerged(%q) = %v, want %v", c.pr, got, c.want)
+		}
+	}
+}
+
 // TestMergeGuardArmThenFinalizeLocal (AC-1, the happy path): arm, then a second
 // run finalizes — the entity ends terminal+passed, archived, mod-block cleared.
 func TestMergeGuardArmThenFinalizeLocal(t *testing.T) {
