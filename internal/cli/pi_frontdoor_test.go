@@ -17,6 +17,7 @@ type fakePiRuntimeOps struct {
 	lookPath      map[string]string
 	statOK        map[string]bool
 	launched      []string
+	launchedEnv   []string
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error
@@ -37,8 +38,9 @@ func (f *fakePiRuntimeOps) Stat(path string) error {
 	return errors.New("missing")
 }
 
-func (f *fakePiRuntimeOps) Launch(argv []string) error {
+func (f *fakePiRuntimeOps) Launch(argv []string, env []string) error {
 	f.launched = append([]string(nil), argv...)
+	f.launchedEnv = append([]string(nil), env...)
 	return nil
 }
 
@@ -787,8 +789,13 @@ func TestPiFrontDoorWrapsWhenKnobPresent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("TranslateFlags err = %v", err)
 	}
+	// Feedback cycle 2: pi now mirrors claude/codex's wrap plumbing —
+	// launcherBinEnvPassFlags() prefixes the safehouse extra with --env-pass
+	// SPACEDOCK_BIN (AC-4) so the launcher the helper calls resolve survives the
+	// sandbox boundary. The operator's add-dirs follows.
+	wantExtra = append(launcherBinEnvPassFlags(), wantExtra...)
 	if !equalArgv(piSafehouseExtra(ops.launched), wantExtra) {
-		t.Fatalf("extra = %v, want TranslateFlags output %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
+		t.Fatalf("extra = %v, want TranslateFlags output prefixed by launcherBinEnvPassFlags %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
 	}
 	inner := piSafehouseInnerArgv(ops.launched)
 	// The retired --skill <repo>/skills/{first-officer,ensign} flags are absent
@@ -830,7 +837,8 @@ func TestPiFrontDoorPlainWhenNoTrigger(t *testing.T) {
 }
 
 // TestPiFrontDoorWrapsWhenSafehouseProfileAlone pins AC-2: a .safehouse profile
-// alone (no flags) also triggers the wrap; the extra slot is empty.
+// alone (no flags) also triggers the wrap; the extra slot carries only the
+// env-pass prefix (launcherBinEnvPassFlags, AC-4) — no operator add-dirs/enables.
 func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
@@ -847,8 +855,8 @@ func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
 	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
 		t.Fatalf("expected safehouse-wrapped argv for .safehouse profile alone, got %v", ops.launched)
 	}
-	if !equalArgv(piSafehouseExtra(ops.launched), nil) {
-		t.Fatalf("extra should be empty for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
+	if !equalArgv(piSafehouseExtra(ops.launched), launcherBinEnvPassFlags()) {
+		t.Fatalf("extra should be just launcherBinEnvPassFlags for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
 	}
 }
 
