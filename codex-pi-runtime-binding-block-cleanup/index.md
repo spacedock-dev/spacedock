@@ -129,6 +129,24 @@ Use `go test ./... -race` only if implementation changes beyond Markdown and con
 - When rewriting adapters, prefer one capability bullet per host fact. Use residual sections only when a fact spans multiple capabilities or documents a probe/harness concern.
 - Keep docs/runtime-support.md unchanged unless the implementation discovers the preferred shape is incomplete; it already states the target contract.
 
+## Peer feedback from Pi commander
+
+PR #417 (`pi-fo-runtime-runtime-support-compliance`) is a subset of this Pi rewrite, not a conflict. This task supersedes #417's Pi FO adapter shape by removing the lifecycle sections #417 touched and relocating their positive bindings into `## Runtime implementation` bullets. Preserve #417's substance and update its guard tests rather than deleting their intent: `TestPiFirstOfficerRuntimeAvoidsNegativeHostContrast` should still ban the smell phrases, but its positive-binding assertions should target the new `→` binding bullets (model-space provider/model strings, `«worker.shutdown»` realization), not old prose sentences. Keep `TestPiEnsignRuntimeAvoidsNegativeHostContrast` intact unless an ensign-side change is explicitly needed.
+
+The runtime-support guide update is now an explicit prerequisite/scope input: local commit `09464de` adds `### Runtime binding-block shape` to `docs/runtime-support.md`. Implementation should leave it alone unless the binding-block work proves the guide incomplete.
+
+The core-heading prerequisite remains correct. Add `«worker.spawn»` and `«worker.shutdown»` first with failing contractlint cases before adapter rewrites. Once `«worker.shutdown»` is first-class, the Pi `→` line must carry the #417 shutdown substance: for `pi-subagents`, a completed child invocation needs no mailbox shutdown and the FO marks the worker complete/closed in memory; for `pi-agent-teams`, the adapter lifecycle maps to `member_shutdown`.
+
+Pi-specific substance to preserve from #417 / 0223:
+
+- null-model stamping via `intercom({action:"list"})`; omit-on-null is wrong on Pi because it resolves to `settings.json` `defaultModel`
+- Pi canonical model space is provider/model strings, not the Claude enum
+- every `subagent(...)` call uses `cwd: <resolved repo root>` as a working-directory concern, not a skill-discovery concern
+- file verification remains the completion gate; neither subagent return nor advisory alone advances state
+- fresh redispatch remains the default first Pi slice; reuse-advance is friction 9 and deferred
+
+Token expectation: #417 already cut roughly 67 tokens from the Pi runtime refs through positive-binding cleanup. This structural rewrite removes most of the current Pi FO adapter lifecycle narration, so implementation should expect a meaningful size reduction, not just a heading reshuffle.
+
 ## Stage Report: ideation
 
 - DONE: Turn the seed task into a concrete implementation plan for converting Codex and Pi FO runtime adapters to `## Runtime implementation` binding blocks keyed by core `«fn»` capability names.
