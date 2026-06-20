@@ -11,7 +11,7 @@ issue:
 sprint:
 sprint-readiness:
 id: f2r8cnyxj9pf24xrsf71szb0
-mod-block: merge:pr-merge
+mod-block:
 pr: "#414"
 ---
 
