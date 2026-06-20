@@ -60,4 +60,44 @@ The Claude adapter declares `worker-back-channel — PRESENT` via `SendMessage`.
 2. **Define `model-resolution`** (M2) and **resolve the OMIT-vs-stamp contradiction** (M3) before the capstone merges.
 3. Harden `TestCapabilityBinding` with `count == 7` / known-enum (M-minor); fix the `install-recordred` typo.
 
-The PR is *current* (rebased onto origin/main incl. #404 + #410, behind 0), so these are content fixes, not rebase work.
+The PR is *current* (rebased onto origin/main), so these are content fixes, not rebase work.
+
+---
+
+## Addendum — after follow-up commits (`2f26eeba`, `0387bd4f`) + 0221 captain review
+
+**Updated finding status:**
+- **M3 (null-model OMIT-vs-stamp): FIXED** — `fo-dispatch-core.md:109` now delegates the null case to the adapter's `model-resolution` rule (Claude/Codex omit the arg, Pi stamps the parent's live model); the core no longer hard-codes omit-on-null.
+- **M2 (dangling `model-resolution`): mostly resolved** — now described where used (`:83`, `:109`), no longer a bare dangling reference. (Still not a standalone definition; folding it into a `«fn»` — see below — would close it cleanly.)
+- **M1 (Claude degraded-variant detection): STILL OPEN — the load-bearing remaining defect.** `claude-fo-dispatch.md:99` still hardcodes "a `ToolSearch(select:TeamCreate)` no-match … is the normal path where the named-background-`Agent` + `SendMessage` back-channel works." No boot-time probe; that file isn't in the diff. The spike proved this false on every current Claude session: a fresh `claude -p` enumerates `Agent`/`Task*`/`TaskOutput`/`TaskStop` and **`SENDMESSAGE: no`, `TEAMCREATE: no`**; spacedock source has no Claude-side SendMessage/TeamCreate (the back-channel substrate is Pi-only, `internal/cli/pi.go`); superpowers maps Claude to `Agent` + `TaskOutput`/`TaskStop`, no SendMessage. A live Claude FO IS the degraded variant.
+
+### Root-cause recommendation (captain-directed): express capabilities as `«fn»`s, not a parallel registry
+
+The refactor is **+172 net lines** (+193/−21) because it adds a declarative layer *beside* the contract's existing `«fn»` prose-function mechanism — each capability is now stated in **three** places (the core `## Named Capabilities` registry, each adapter's `## Capability implementations` table, and the body that references it). That is the source of the bloat, and it is why the change grows the contract instead of simplifying it.
+
+The `«fn»` mechanism (`«state.commit»`, `«gate.assemble-verdict»`, `«feedback.route»`) already provides exactly what capabilities need: **declared once, invoked from the body by name, with the per-host realization on its `→` line.** Capabilities should *be* `«fn»`s:
+
+```
+Today (additive, 3 statements per capability):
+  body prose: "the adapter declares whether it provides a back-channel…"
+  + ## Named Capabilities        (core registry, 7 bullets)
+  + ## Capability implementations (per-adapter table × N adapters)
+
+«fn»-style (one definition, body calls it):
+  body: … route reuse-advance via «addressable-worker» …
+  + ## «addressable-worker»: address / hear from a still-running worker
+      - block: ABSENT → reuse-condition-1 fails; fresh one-shot only
+      - → Claude: ABSENT (no SendMessage in Claude Code 2.1.183) · Codex: mailbox send_input / final-status · Pi: intercom send / contact_supervisor
+```
+
+The `→` line **is** the per-host binding (same shape as `«state.commit» → spacedock state commit`), so the core registry and every adapter's `## Capability implementations` table both vanish, and the body **shrinks** (inline "the adapter declares whether…" prose becomes a `«fn»` call). Net **reduction**, not +172.
+
+This also dissolves **M1** for free: `→ Claude: ABSENT` is the honest per-host binding, and "present only when the runtime actually exposes it" is just the `«fn»`'s shipped-vs-prose status applied per host — no separate detection mechanism or static-PRESENT to go stale.
+
+### Naming (superpowers has no equivalent to match, so legibility is the guide)
+- `worker-back-channel` → **`addressable-worker`** — names the property (the FO can address a still-running worker; bidirectional follows). "back-channel" is mechanism jargon.
+- `inbound-message-service` → **fold into `addressable-worker`** — it is the worker→FO half of the same channel.
+- `worker-identity-capture` → **`worker-identity`** — "-capture" is *how*, not *what*.
+- `context-budget-probe` → **`context-budget`** — drop the mechanism suffix.
+- `async-dispatch`, `completion-signal`, `roster-reconcile` → keep (already action/property names).
+- Net: 7 → ~5 capabilities, nudging toward superpowers' coarser, action-named set.
