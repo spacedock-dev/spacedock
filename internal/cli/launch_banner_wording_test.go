@@ -179,8 +179,9 @@ func TestPiBannerEmittedBeforeLaunch(t *testing.T) {
 	pkg := t.TempDir()
 	writePiSubagentsFixtures(t, pkg)
 	ops := &fakePiRuntimeOps{
-		lookPath: piHealthyPathFixtures(),
-		statOK:   statOKForPiResources(repo, pkg),
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
 	}
 	var stdout, stderr bytes.Buffer
 
