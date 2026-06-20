@@ -138,7 +138,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 
 ## Merge and Cleanup (deferred module)
 
-The terminal merge-and-cleanup ceremony — the set→invoke→clear mod-block sequence, the Ship-Local ceremony, worktree-removal safety, and the mod-block enforcement — lives in `references/fo-merge-core.md`, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter supplies the host's concrete terminal teardown (step 10 — on Claude the bounded `TERMINAL_TEARDOWN_BOUNDED` teardown), read alongside the core. A boot, dispatch, or gate that never terminalizes never reads either.
+The terminal merge-and-cleanup ceremony — the `«merge.guard»` envelope, the FO-owned steps the verb does not perform (invoke the hook, default local merge, worktree removal, worker teardown), worktree-removal safety, and the mod-block guard — lives in `references/fo-merge-core.md`, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter supplies the host's concrete terminal teardown (step 10 — on Claude the bounded `TERMINAL_TEARDOWN_BOUNDED` teardown), read alongside the core. A boot, dispatch, or gate that never terminalizes never reads either.
 
 ## State Management
 
@@ -175,27 +175,16 @@ The FO declares intent against the state repo by invoking the prose-functions be
 
 ## «state.commit»(slug): record one entity's change durably and concurrency-safe
 
-- **effect:** path-scoped commit + sync per **Split-Root State Sync** below — `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`, never a bare `git add -A` / `git commit`; then push; on push rejection `pull --rebase` then re-push; retry on `index.lock` contention after ~2s.
+- **effect:** `spacedock state commit <slug>` path-scoped-commits the entity and runs the full sync (push; on push rejection `pull --rebase` then re-push) per **Split-Root State Sync** below.
 - **done-when:** the entity's change is committed (and pushed to `origin` when one exists).
 - **block:** rebase conflict on sync → halt per the **rebase-conflict halt** below.
 - → **shipped** (this sprint): `` `spacedock state commit <slug>` `` — invoke it directly.
 
 ### Split-Root State Sync
 
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the state branch is shared via `origin` and committed concurrency-safe.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the state branch is shared via `origin`. `spacedock state commit <slug>` owns the whole concurrency-safe write: it resolves the entity path under the state checkout, path-scoped-commits it (never a bare `git add -A`, which would sweep up a sibling writer's staged entity), and runs the full sync — push, and on a non-fast-forward rejection `pull --rebase` then re-push. The FO invokes the verb; it does not hand-roll the git sequence. The boot `pull --rebase` (the Startup pull-on-boot step, `«state.ensure-ready»()`) integrates peers' state once at boot, not per-read.
 
-**Concurrency-safe state commits.** The state checkout is a single non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity, cross-attributing or clobbering it. Every writer MUST commit concurrency-safe, in order of preference:
-
-- **Preferred — tool-managed atomic state commits.** When the status tool owns `add`+`commit` under a lock, route through it.
-- **Fallback — path-scoped commits per writer.** `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Never a bare `git add -A` or bare `git commit`. Retry on `index.lock` contention after ~2s.
-
-**Multi-writer sync (push / pull --rebase).** The state branch is shared via `origin`. Three sync points extend the path-scoped-commit rule — NOT a pull before every dispatch:
-
-- **After a state commit → push.** `git -C {state_checkout} push origin {state_branch}`.
-- **On push rejection (non-fast-forward) → `pull --rebase` then re-push.** `git -C {state_checkout} pull --rebase origin {state_branch}` replays the local single-file commit atop the peer's; disjoint paths → no conflict. Then re-push.
-- **At FO boot (before first dispatch) → `pull --rebase`.** Integrate peers' state once at boot (the Startup pull-on-boot step), not per-read.
-
-**No-origin carve-out.** When the state checkout has no `origin` remote, none of the three sync points apply: boot reports `STATE_BACKEND: … remote: none — state not remotely synced` (and `state_remote: none` in `--boot --json`), the dispatch omits the push/pull reminder, and writers commit path-scoped locally only. State remains local-only until an `origin` is configured — surface that to the captain rather than treating the missing remote as a sync failure.
+**No-origin carve-out.** When the state checkout has no `origin` remote, the verb commits locally only: boot reports `STATE_BACKEND: … remote: none — state not remotely synced` (and `state_remote: none` in `--boot --json`), the dispatch omits the push/pull reminder, and state stays local-only until an `origin` is configured. Surface that to the captain rather than treating the missing remote as a sync failure.
 
 **Rebase-conflict halt.** If `pull --rebase` CONFLICTS (two writers editing the SAME entity's frontmatter concurrently), the FO MUST:
 
@@ -211,7 +200,7 @@ This matches the escalate-rather-than-guess discipline. A full lock model is out
 The FO may write these on main — nothing else:
 
 - **Entity frontmatter** — via `spacedock status --set` for all field updates
-- **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path (runs from the project root; `new` discovers the single commissioned workflow automatically — if the repo holds more than one, `new` reports the candidates and you pass `--workflow-dir {workflow_dir}`). Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into the frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts, the FO does the path-scoped commit + push after `new` (per State Management's concurrency-safe state-commit rule).
+- **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path (runs from the project root; `new` discovers the single commissioned workflow automatically — if the repo holds more than one, `new` reports the candidates and you pass `--workflow-dir {workflow_dir}`). Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into the frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts, the FO runs `«state.commit»(slug)` after `new` to commit and sync it.
 - **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
 - **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
 - **State-transition commits** — dispatch, advance, merge boundary commits

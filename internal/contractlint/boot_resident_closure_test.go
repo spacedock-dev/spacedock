@@ -32,7 +32,7 @@ var bootResidentBodies = []string{
 // ceremony anchors.
 var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
-		"## Merge and Cleanup", "### Ship-Local Ceremony", "### Worktree removal safety", "## Mod-Block Enforcement",
+		"## Merge and Cleanup", "## «merge.guard»", "### Worktree removal safety", "## Mod-Block Guard",
 	},
 	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
 		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",

@@ -1,52 +1,24 @@
 # First Officer Merge Core (host-neutral)
 
-The terminal merge-and-cleanup ceremony, the mod-block enforcement that guards it, and step 10's boundary obligation. Lazily loaded at the terminal boundary (named by the boot-resident core); a boot, dispatch, or gate that never terminalizes never reads it. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.
+The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, and step 10's boundary obligation. Lazily loaded at the terminal boundary (named by the boot-resident core); a boot, dispatch, or gate that never terminalizes never reads it. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.
 
 ## Merge and Cleanup
 
-When an entity reaches its terminal stage, `«merge.guard»(slug)` runs the atomic merge-finalize ceremony — the mod-block set→invoke→clear→terminalize sequence below, as one call.
+When an entity reaches its terminal stage, `«merge.guard»(slug)` drives the terminal merge-finalize ceremony as a re-entrant partial envelope whose role depends on the workflow's `merge:` policy. Under `merge: pr` (the default) the verb is a THIN finalize-helper: the FO arms the mod-block, opens the captain-gated PR, and detects the merge; the verb only reads the `pr`/`mod-block`/`verdict` state delta and signals `blocked` (a PR is pending — leave state intact) or `finalized` (the PR landed — clear the mod-block standalone, terminalize, archive). Under `merge: local` the verb additionally owns the arm step: with no in-flight mod-block it sets `mod-block=merge:{hook}` and signals the FO to invoke the hook, then finalizes on re-run. In neither policy does the verb itself invoke the hook or local-merge, and the clear+terminalize is always two separate `--set` calls, not one.
 
 ## «merge.guard»(slug): atomically set→invoke→clear the merge mod-block, then terminalize
 
-- **effect:** run the terminal merge-finalize ceremony for the entity — set `mod-block=merge:{mod_name}`, invoke the registered merge hook, detect completion, clear the mod-block in its own call, default-merge if no hook handled it, terminalize (`completed verdict={verdict} worktree=`), and archive. The mechanism-level enforcement in **Mod-Block Enforcement** below guards every step (the guard refuses a terminal transition while `mod-block` is non-empty, refuses combining `mod-block=` with terminal fields, and refuses terminalizing with merge hooks registered while `pr` and `mod-block` are both empty — all without `--force`).
-- **done-when:** the entity is archived terminal with its mod-block cleared and `pr`/sentinel recorded (or the hook left the entity blocked, in which case `mod-block` stays set and the pending state is reported).
-- **block:** if the hook blocks (`pr` set, captain approval pending, or an external wait), leave `mod-block` set and do not local-merge. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+- **effect:** drive the terminal merge-finalize ceremony, policy-conditional. **arm (merge: local only):** with an empty mod-block, set `mod-block=merge:{mod_name}` and signal the FO to invoke the hook (the verb does NOT invoke it). **finalize (on re-run):** read the `pr`/`mod-block`/`verdict` delta — if a `pr` is set and the verdict is not `rejected`, signal `blocked` and leave state intact; otherwise clear the mod-block in its own standalone `--set`, terminalize (`completed verdict={verdict} worktree=`), and archive. The verb never invokes the hook and never local-merges; the mechanism-level mod-block guard (below) refuses any out-of-order terminal transition without `--force`.
+- **done-when:** the entity is archived terminal with its mod-block cleared and `pr`/sentinel recorded (or the hook left it blocked, mod-block still set and the pending state reported).
+- **block:** if the hook blocks (`pr` set, captain approval pending, external wait), leave `mod-block` set and do not local-merge. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
 - → **shipped** (this sprint): `` `spacedock merge guard <slug>` `` — invoke it directly. The hand-followed sequence it automates is the steps below.
 
-When an entity reaches its terminal stage:
+The verb performs the arm/clear/terminalize/archive sequence. The FO owns only what the verb does NOT:
 
-1. If merge hooks are registered, set the mod-block before invoking:
-   `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}`
-   Commit: `mod-block: {slug} awaiting merge:{mod_name}`.
-   The mechanism enforces this — `status --set` and `status --archive` refuse terminal updates while merge hooks exist with both `pr` and `mod-block` empty, unless `--force`, `merge: local`, or `verdict=rejected` exempts (a rejected entity never ran the merge ceremony). Setting `mod-block` also lets session resume identify which mod is blocking.
-2. Run merge hooks before local merge, archival, or status advancement.
-3. Detect hook completion via the state delta. A hook blocks if (a) `pr` is now set, (b) its prose requires captain approval and the captain has not responded, or (c) it declares an external wait. Otherwise it completed.
-4. If blocked, leave `mod-block` set, report the pending state, and do not local-merge.
-5. If completed without blocking, clear the mod-block in its own `--set` call:
-   `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=`
-   Commit: `mod-block: {slug} cleared ({mod_name} completed)`.
-   The clear MUST be standalone — `status --set` exits 1 if `mod-block=` is combined with `status={terminal}`, `completed`, `verdict`, or `worktree=` in one call. Use two commits, or `--force` with captain approval only.
-6. If no merge hook handled the merge, perform the default local merge from the stage worktree branch.
-7. Update frontmatter: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
-8. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
-9. Remove the worktree (`git worktree remove {path}`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is pending — the reviewer needs it. Remote cleanup belongs to the PR merge.
-10. **Teardown workers at terminal.** At the terminal boundary, derive the entity's worker cohort and cooperatively shut each one down (best-effort, fire-and-forget — the runtime adapter supplies the shutdown call), then drop them from session memory. Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host. The cohort-derivation rule and the cooperative-shutdown call are the adapter's. A runtime MAY add a further teardown step beyond the cooperative shutdown (e.g. a bounded team-registry teardown); the adapter declares it where it applies. This core presumes none — it states only the boundary obligation: cohort shutdown, then drop from session memory.
-
-### Ship-Local Ceremony
-
-When the merge boundary has no PR host (README declares `merge: local`, or pr-merge fallback applies — no `gh`, push failed, captain chose local), the FO runs one fixed ceremony per entity. The README's top-level `merge:` key (default `pr`) selects this ceremony or the PR path. The happy path uses no `--force`:
-
-1. Set the merge mod-block: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=merge:{mod_name}` (commit path-scoped).
-2. Resolve the integration trunk `BASE=$(spacedock dispatch trunk --workflow-dir {workflow_dir})` (configured trunk, default `main`), then invoke the merge hook (local `--no-ff` merge of `{branch}` onto `{BASE}`).
-3. Record the merge so the terminal guard is satisfied without `--force`:
-   - If `merge: local`, the policy exempts the pr-requirement — skip to step 4.
-   - Otherwise set the post-merge sentinel `spacedock status --workflow-dir {workflow_dir} --set {slug} pr=local-merge:{short-sha}` (the merge commit on `{BASE}`; set only after merge has landed; commit path-scoped). The status table renders as `{short-sha} (local)`.
-4. Clear the mod-block in a standalone `--set`: `spacedock status --workflow-dir {workflow_dir} --set {slug} mod-block=` (commit path-scoped). MUST be separate from terminalization — the guard refuses combining `mod-block=` with terminal fields.
-5. Terminalize: `spacedock status --workflow-dir {workflow_dir} --set {slug} completed verdict={verdict} worktree=`.
-6. Archive: `spacedock status --workflow-dir {workflow_dir} --archive {slug}`.
-7. Remove worktree, delete local branch (Merge-and-Cleanup step 9), and run the terminal agent teardown (step 10). Teardown is mandatory at the terminal boundary whether the merge ran locally or via a PR host.
-
-The set→invoke→clear sequence (steps 1, 2, 4) is mandatory whenever a merge hook is registered, regardless of `merge: local`. `--force` is never part of the happy path — if the guard refuses, a step was skipped, not a flag forgotten.
+1. **Invoke the merge hook.** When the verb signals `armed`, run the merge hooks (`merge: local` does the local `--no-ff` merge; `merge: pr` opens the captain-gated PR and sets `pr`), then re-run `merge guard`. The verb signals; the FO invokes.
+2. **Default local merge** when no merge hook is registered: merge `{branch}` onto the trunk (`spacedock dispatch trunk --workflow-dir {workflow_dir}`, default `main`) from the stage worktree branch. The verb never local-merges under any policy.
+3. **Remove the worktree** (`git worktree remove {path}`, no `--force`) and delete the local branch (`git branch -d {branch}`). Do NOT delete the remote branch while a PR is pending — the reviewer needs it; remote cleanup belongs to the PR merge.
+4. **Teardown workers at terminal (step 10).** At the terminal boundary, derive the entity's worker cohort and cooperatively shut each one down (best-effort, fire-and-forget — the runtime adapter supplies the shutdown call), then drop them from session memory. Mandatory whether the merge ran locally or via a PR host. The cohort-derivation rule and the cooperative-shutdown call are the adapter's. A runtime MAY add a further teardown step (e.g. a bounded team-registry teardown); the adapter declares it where it applies. This core states only the boundary obligation: cohort shutdown, then drop from session memory.
 
 ### Worktree removal safety
 
@@ -60,18 +32,10 @@ If removal fails on untracked files, the FO MUST:
 
 `--force` is never default; it is an explicit captain-confirmed bypass.
 
-## Mod-Block Enforcement
+## Mod-Block Guard
 
-Merge hooks can block (captain approval before pushing, waiting for PR merge). The FO enforces through the entity `mod-block` field and a mechanism-level invariant in `status --set` / `status --archive`:
+The mod-block guard exists so the FO recovers on session resume and so the merge ceremony cannot skip its hook. `merge guard` owns the set→clear mechanics; the FO's standing concern is recovery:
 
-- **Set** by the FO before invoking a merge hook: `mod-block=merge:{mod_name}`.
-- **Cleared** after the blocking action completes or the captain force-overrides. The clear runs in its own `--set` — combining `mod-block=` with terminal fields (`status={terminal}`, `completed`, `verdict`, `worktree=`) is refused without `--force`.
-- **Guarded** — `status --set` refuses terminal transitions while `mod-block` is non-empty unless `--force` is passed.
-- **Enforced at the mechanism level** — `status --set` and `status --archive` also refuse terminal transitions and archival when merge hooks (`_mods/*.md` with `## Hook: merge`) are registered AND `pr` is empty AND `mod-block` is empty. `--force` bypasses. `merge: local` exempts only the pr-requirement; `verdict=rejected` likewise exempts only the pr-requirement on both surfaces (a rejected entity never ran the merge ceremony, so the requirement is vacuous); the mod-block-pending and combined-clear refusals remain. See the Ship-Local Ceremony.
-- **Survives session resume** — the FO reads `mod-block` from frontmatter on boot and resumes the pending action.
-
-In the empty-pr/empty-mod-block state the merge hook has provably not run. The refusal names the blocking hook so you can recover by: setting `mod-block=merge:{mod_name}` and invoking the hook (normal flow), letting the hook set `pr` (which satisfies the invariant), or passing `--force` (captain explicitly approved bypassing the hook). Do NOT pass `--force` merely to clear the guard — it exists to catch exactly the mistake of skipping the hook.
-
-On session resume, scan entities with non-empty `mod-block` and resume the pending action. Do not re-run the hook from scratch — check what it left (PR created? branch pushed?) and continue from there.
-
-If the blocking mod file (`{workflow_dir}/_mods/{mod_name}.md`) is missing or unreadable, report to the captain: "Blocking mod {mod_name} is missing. The entity is stuck. Options: restore the mod file, or use `--force` to clear the block and resume normal flow." Wait for direction.
+- **Survives session resume.** Read `mod-block` from frontmatter on boot. A non-empty `mod-block=merge:{mod_name}` means a merge hook is mid-flight — do not re-run it from scratch; check what it left (PR created? branch pushed?) and re-run `merge guard` to continue.
+- **The guard refuses, it does not auto-fix.** `status --set`/`status --archive` refuse a terminal transition while `mod-block` is non-empty, refuse combining `mod-block=` with terminal fields, and refuse terminalizing with merge hooks registered while `pr` and `mod-block` are both empty (the hook provably has not run). `--force` bypasses; `merge: local` and `verdict=rejected` exempt only the pr-requirement. Do NOT `--force` merely to clear the guard — it catches exactly the mistake of skipping the hook.
+- **A missing blocking mod is a captain escalation.** If `{workflow_dir}/_mods/{mod_name}.md` is missing or unreadable, report: "Blocking mod {mod_name} is missing. The entity is stuck. Options: restore the mod file, or use `--force` to clear the block and resume normal flow." Wait for direction.
