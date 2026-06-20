@@ -187,6 +187,10 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 	freshCycle2Spawn := `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","receiver_thread_ids":["` + vThread2 + `"],"prompt":"Read /tmp/spacedock-dispatch/spacedock-ensign-rejection-task-validation.md and treat its content as your assignment."}}`
 	sendInputToFresh := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"send_input","receiver_thread_ids":["` + vThread2 + `"],"prompt":"Re-run validation for rejection-task as cycle 2."}}`
 	freshDispatch := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + freshCycle2Spawn + "\n" + sendInputToFresh
+	noAddressableSurface := `{"type":"item.completed","item":{"type":"agent_message","text":"The live Codex tool surface has spawn_agent and wait_agent, but no followup_task/send_message reuse route exposed here."}}`
+	absentTwoFresh := noAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
+	absentOnlyOneValidation := noAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl
+	absentButReuseTool := noAddressableSurface + "\n" + realReuseV2
 
 	cases := []struct {
 		name    string
@@ -196,6 +200,9 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		{"real send_input to the validation reviewer thread", realReuse, false},
 		{"real followup_task to the validation reviewer thread", realReuseV2, false},
 		{"fresh cycle-2 spawn_agent + send_input must RED", freshDispatch, true},
+		{"addressable-worker absent: two fresh validation spawns", absentTwoFresh, false},
+		{"addressable-worker absent: missing second fresh validation spawn must RED", absentOnlyOneValidation, true},
+		{"addressable-worker absent: reuse tool contradicts absent classification", absentButReuseTool, true},
 		{
 			"loose narration only",
 			`{"type":"item.completed","item":{"type":"agent_message","text":"I will send_input to the validation worker."}}`,

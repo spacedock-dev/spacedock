@@ -46,7 +46,7 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"`«addressable-worker»`",
 		"`send_message(target,message)`",
 		"`followup_task(target,message)`",
-		"`followup_task(target,message)` is the turn-starting reuse/advance route",
+		"`followup_task(target,message)` is the current turn-starting reuse/advance route",
 		"Legacy `send_input` is a fallback only when that surface is actually present.",
 		"completed-but-still-addressable worker",
 		"`«completion-signal»`",

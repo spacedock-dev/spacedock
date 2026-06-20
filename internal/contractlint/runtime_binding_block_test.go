@@ -174,25 +174,34 @@ func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 	}
 }
 
-func TestCodexValidationReviewerReuseRequiresTurnStartingFollowupTask(t *testing.T) {
+func TestCodexValidationReviewerReuseFollowsAddressableWorkerProbe(t *testing.T) {
 	rel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	text := readRepoFile(t, rel)
+	probe := markdownSectionFromText(t, text, "## Live Tool Surface Probe")
 	runtime := markdownSectionFromText(t, text, "## Runtime implementation")
 	feedback := markdownSectionFromText(t, text, "## Feedback reviewer reuse")
 
 	for _, want := range []string{
-		"`followup_task(target,message)` is the turn-starting reuse/advance route",
-		"`send_message(target,message)` is non-triggering context/preservation only",
-		"does not require `send_message` to be present",
-		"completed validation reviewer remains addressable",
+		"PRESENT only when a turn-starting route is live: `followup_task(target,message)`",
+		"ABSENT when the live surface exposes only `spawn_agent` and `wait_agent`",
+		"`send_message(target,message)` is non-triggering only and never makes `«addressable-worker»` PRESENT by itself",
 	} {
-		if !strings.Contains(runtime, want) {
-			t.Errorf("%s runtime implementation missing Codex reviewer-reuse binding %q", rel, want)
+		if !strings.Contains(probe, want) {
+			t.Errorf("%s live probe section missing Codex addressable-worker probe branch %q", rel, want)
 		}
 	}
 	for _, want := range []string{
-		"MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`",
-		"Do not fresh-dispatch merely because the reviewer completed or already sent a completion signal.",
+		"`followup_task(target,message)` is the current turn-starting reuse/advance route",
+		"`send_message(target,message)` is non-triggering context/preservation only",
+		"When absent, reuse-condition-1 fails and feedback re-review fresh-dispatches a separate validation reviewer.",
+	} {
+		if !strings.Contains(runtime, want) {
+			t.Errorf("%s runtime implementation missing Codex addressable-worker binding %q", rel, want)
+		}
+	}
+	for _, want := range []string{
+		"When `«addressable-worker»` is PRESENT, keep the validation reviewer addressable after its REJECTED report and MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`.",
+		"When `«addressable-worker»` is ABSENT, fresh-dispatch a separate validation reviewer for cycle 2.",
 		"After a PASSED re-review, re-enter the normal gate flow and advance or terminalize from durable state.",
 	} {
 		if !strings.Contains(feedback, want) {

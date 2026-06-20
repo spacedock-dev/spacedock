@@ -28,7 +28,7 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 		{
 			name:          "rejection-flow",
 			oldPythonTest: "tests/test_rejection_flow.py",
-			intent:        "FO drives a two-cycle rejection trajectory — route back, re-implement, re-validate via reviewer reuse — restoring the dropped second cycle.",
+			intent:        "FO drives a two-cycle rejection trajectory — route back, re-implement, and re-validate, reusing the reviewer when the host exposes an addressable-worker route.",
 		},
 		{
 			name:          "feedback-3-cycle-escalation",

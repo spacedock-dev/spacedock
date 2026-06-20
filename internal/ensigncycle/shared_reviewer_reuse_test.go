@@ -217,15 +217,19 @@ type codexCollabItem struct {
 	} `json:"item"`
 }
 
-// assertCodexReviewerReuse scans the `codex exec --json` transcript for the FO
-// reusing the kept-alive cycle-1 validation reviewer for the cycle-2 re-review —
-// the durable producer signal it did NOT fresh-dispatch the cycle-2 validator (the
-// #141 keepalive contract). Codex multi_agent_v2 reuses via a `followup_task`
-// collab_tool_call to the reviewer's thread; legacy pre-v2 fixtures use
-// `send_input`. The thread is bound by the `spawn_agent` whose prompt dispatched
-// the validation stage. It enforces BOTH halves of "genuine reuse",
-// because binding ANY validation-prompt spawn alone false-passes a fresh-dispatch
-// (the cycle-8 M2 hole):
+// assertCodexReviewerReuse scans the `codex exec --json` transcript for the FO's
+// rejection-flow reviewer routing. When the transcript proves a turn-starting
+// `«addressable-worker»` route exists, the FO must reuse the kept-alive cycle-1
+// validation reviewer for the cycle-2 re-review — the durable producer signal it
+// did NOT fresh-dispatch the cycle-2 validator (the #141 keepalive contract).
+// Current public Codex live surfaces may expose only spawn/wait; when the FO
+// explicitly observes that no turn-starting reuse route is exposed, the contract is
+// characterized as addressable-worker ABSENT and the cycle-2 reviewer is fresh.
+// Codex multi_agent_v2 reuses via a `followup_task` collab_tool_call to the
+// reviewer's thread; legacy pre-v2 fixtures use `send_input`. The thread is bound
+// by the `spawn_agent` whose prompt dispatched the validation stage. In the PRESENT
+// branch it enforces BOTH halves of "genuine reuse", because binding ANY
+// validation-prompt spawn alone false-passes a fresh-dispatch (the cycle-8 M2 hole):
 //
 //  1. NO fresh cycle-2 validation spawn. The rejection-flow drives ONE cycle-1
 //     validation spawn_agent; a reuse run re-engages that same thread. A run that
@@ -237,6 +241,10 @@ type codexCollabItem struct {
 //     not feedback-to-implementation routing (which targets the impl thread), not
 //     loose narration.
 func assertCodexReviewerReuse(jsonl string) error {
+	if codexAddressableWorkerAbsent(jsonl) {
+		return assertCodexFreshValidationWhenAddressableAbsent(jsonl)
+	}
+
 	// First pass: count validation spawn_agents and bind their thread id(s). A
 	// reused reviewer drives one validation spawn; a fresh cycle-2 dispatch drives a
 	// second.
@@ -299,6 +307,41 @@ func assertCodexReviewerReuse(jsonl string) error {
 
 func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
+}
+
+func codexAddressableWorkerAbsent(jsonl string) bool {
+	lower := strings.ToLower(jsonl)
+	return strings.Contains(lower, "no followup_task/send_message reuse route exposed") ||
+		strings.Contains(lower, "followup_task/message reuse is unavailable") ||
+		strings.Contains(lower, "reviewer reuse is not available in this host")
+}
+
+func assertCodexFreshValidationWhenAddressableAbsent(jsonl string) error {
+	validationSpawnCount := 0
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev codexCollabItem
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		it := ev.Item
+		if it.Type != "collab_tool_call" {
+			continue
+		}
+		if codexReviewerReuseTool(it.Tool) {
+			return fmt.Errorf("Codex addressable-worker was characterized ABSENT, but transcript contains turn-starting reuse tool %q", it.Tool)
+		}
+		if it.Tool == "spawn_agent" && ev.Type == "item.completed" && codexDispatchesValidation(it.Prompt) {
+			validationSpawnCount++
+		}
+	}
+	if validationSpawnCount < 2 {
+		return fmt.Errorf("Codex addressable-worker ABSENT rejection-flow produced %d validation spawn_agents, want >= 2 fresh validation reviewers for cycle 1 and cycle 2", validationSpawnCount)
+	}
+	return nil
 }
 
 // codexDispatchesValidation reports whether a spawn_agent prompt dispatched the
