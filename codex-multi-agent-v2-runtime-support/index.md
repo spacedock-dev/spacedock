@@ -267,3 +267,25 @@ Validation passed AC-1 through AC-5, reproduced the feedback-cycle fix in the li
 ### Summary
 
 Feedback cycle 3 makes the rejection-flow procedure host-neutral and moves concrete runtime call shapes behind the Codex adapter binding boundary. Focused contract and reviewer-reuse checks pass, along with the full Go and race suites.
+
+## Stage Report: implementation (feedback cycle 4)
+
+- DONE: Remove Codex adapter negative host-contrast prose.
+  Removed the Codex FO `## Team Creation` section, team registry / `TeamDelete` contrast, `team-lead` mailbox warning, and no-op/absent-team framing. The Codex ensign runtime now describes dispatch files, context-budget availability, and completion behavior positively.
+- DONE: Remove shared merge cleanup procedure from the Codex adapter.
+  Replaced `## Terminal Teardown (Merge-and-Cleanup step 10)` and the numbered teardown paragraph with `## Cleanup Capability Bindings`, which only states Codex binding status for `«worker.shutdown»`, `«roster-reconcile»`, `«addressable-worker»`, and durable workflow state authority.
+- DONE: Extend contractlint for the cleaner adapter boundary.
+  Added Codex FO/ensign negative-contrast guards banning step-number coupling, `Team Creation`, `TeamDelete`/`TeamCreate`, `team registry`, `team-lead`, `Backstop`, `Codex declares none`, `no-op`, and related ensign contrast wording while requiring positive capability binding text.
+
+### Verification
+
+- PASS: `go test ./internal/contractlint -run 'TestCodex|TestFeedback' -count=1` -> 6 passed in 1 package.
+- PASS: `go test ./internal/ensigncycle -run TestAssertCodexReviewerReuse -count=1` -> 9 passed in 1 package.
+- PASS: sweep `rg` for removed contrast terms in Codex FO/ensign runtime references -> no matches.
+- RAN: `gofmt -w ./cmd ./internal`; it again produced unrelated comment/alignment churn in `internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`, and `internal/ensigncycle/haiku_loop_spike_live_test.go`, which was reverted before commit.
+- PASS: `go test ./...` -> 1683 passed in 17 packages.
+- PASS: `go test ./... -race` -> 1683 passed in 17 packages.
+
+### Summary
+
+Feedback cycle 4 leaves Codex runtime references as positive adapter bindings instead of negative comparisons or shared procedure restatements. Terminal cleanup semantics now live in shared-core capabilities; the Codex adapter only records binding status and available Codex evidence.
