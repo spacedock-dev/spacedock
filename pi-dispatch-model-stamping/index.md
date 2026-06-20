@@ -1,6 +1,6 @@
 ---
 title: Pi dispatch model stamping — null model resolves to the parent's live model, not settings defaultModel
-status: implementation
+status: validation
 source: "Captain (2026-06-19, 0223-pi-dispatch-contract sprint scope-lock): dispatched pi-back-channel-dispatch ideation with model omitted (dispatch build emitted model:null); the worker ran on ~openai/gpt-mini-latest (settings.json defaultModel) while the FO session was on z-ai/glm-5.2. 'default-inheritance' on pi-subagents means 'use the configured default', NOT 'inherit the parent session's live model.'"
 score:
 started: 2026-06-19T21:53:58Z
