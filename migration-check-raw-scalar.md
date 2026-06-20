@@ -7,6 +7,7 @@ group: binary-ux
 id: vkh9e4398r126dq17r0njz5p
 worktree: .worktrees/spacedock-ensign-migration-check-raw-scalar
 started: 2026-06-20T01:20:23Z
+mod-block: merge:pr-merge
 ---
 
 Pre-existing `main`-red: `TestMigrationCheckFixturesParseConsistently` (`internal/status`) fails on `docs/dev/_debriefs/2026-06-19-01.md`'s unquoted `session-date: 2026-06-19`. The test's `direct` decode — `yaml.Unmarshal` into `map[string]any` (`migration_check_test.go:100`) — lets yaml.v3 auto-type the bare date to `time.Time`, which `scalarString` (`:246`) renders `"2026-06-19T00:00:00Z"`, disagreeing with `ParseFrontmatter`'s string `"2026-06-19"`. The product reader is CORRECT per the contract's "every frontmatter value is a string"; the TEST is over-strict (it compares the string reader against yaml's auto-TYPED view). This reds `offline` on EVERY PR (verbs #404 had to `--admin` past it).
