@@ -17,6 +17,13 @@ func TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape(t *testing.T
 	requireForegroundWaitLifecycleClaim(t, path, section)
 }
 
+func TestCodexWaitNotesRequireIdleStopForegroundWait(t *testing.T) {
+	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	section := markdownSubsection(t, path, "## Codex wait notes")
+
+	requireIdleStopForegroundWaitInvariant(t, path, section)
+}
+
 func TestForegroundWaitLifecycleClaimRejectsTerminalMutations(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -101,6 +108,25 @@ func requireForegroundWaitLifecycleClaim(t *testing.T, path, section string) {
 	t.Helper()
 	if err := foregroundWaitLifecycleClaimError(section); err != nil {
 		t.Errorf("%s section has unsafe foreground-wait lifecycle wording: %v", path, err)
+	}
+}
+
+func requireIdleStopForegroundWaitInvariant(t *testing.T, path, section string) {
+	t.Helper()
+	normalized := strings.ToLower(strings.Join(strings.Fields(section), " "))
+	for _, want := range []string{
+		"unresolved codex worker",
+		"no other dispatchable, gate, or state work",
+		"must call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status",
+		"next idle action must reinstall foreground wait",
+	} {
+		if !strings.Contains(normalized, want) {
+			t.Errorf("%s Codex wait notes missing hard idle-stop invariant phrase %q", path, want)
+		}
+	}
+	if strings.Contains(normalized, "may use foreground wait") ||
+		strings.Contains(normalized, "use foreground wait only when") {
+		t.Errorf("%s Codex wait notes weakens foreground wait into optional guidance", path)
 	}
 }
 

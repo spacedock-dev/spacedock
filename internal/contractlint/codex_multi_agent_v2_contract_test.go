@@ -120,6 +120,7 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 	probeSection, outsideProbe := extractMarkdownSection(t, codexRuntime, "## Live Tool Surface Probe")
 	runtimeSection, outsideRuntime := extractMarkdownSection(t, outsideProbe, "## Runtime implementation")
 	allowedSections := probeSection + "\n" + runtimeSection
+	waitSection, outsideWait := extractMarkdownSection(t, outsideRuntime, "## Codex wait notes")
 
 	for _, want := range []string{
 		"`spawn_agent(task_name,message,fork_turns)`",
@@ -135,7 +136,7 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 	}
 
 	paths := map[string]string{
-		codexRuntimeRel: outsideRuntime,
+		codexRuntimeRel: outsideWait,
 	}
 	for _, rel := range []string{
 		filepath.Join("skills", "ensign", "references", "codex-ensign-runtime.md"),
@@ -164,6 +165,16 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 				t.Errorf("%s contains runtime tool outside Codex live binding section: %q", rel, banned)
 			}
 		}
+	}
+
+	if strings.Contains(waitSection, "spawn_agent(") ||
+		strings.Contains(waitSection, "send_message(") ||
+		strings.Contains(waitSection, "followup_task(") ||
+		strings.Contains(waitSection, "list_agents(") ||
+		strings.Contains(waitSection, "send_input") ||
+		strings.Contains(waitSection, "SendMessage") ||
+		strings.Contains(waitSection, "interrupt_agent") {
+		t.Errorf("%s Codex wait notes may mention only wait_agent as a concrete runtime tool", codexRuntimeRel)
 	}
 }
 
