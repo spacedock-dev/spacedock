@@ -5,7 +5,7 @@ source: "Captain (2026-06-20): sweeping runtime-contract verbosity post-#414. Th
 score:
 started: 2026-06-20T18:09:00Z
 completed: 2026-06-20T19:30:00Z
-verdict: passed
+verdict: PASSED
 worktree: .worktrees/spacedock-ensign-pi-fo-runtime-runtime-support-compliance
 issue:
 sprint:
