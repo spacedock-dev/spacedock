@@ -97,7 +97,7 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 			}
 			return nil
 		}
-		var direct map[string]any
+		var direct map[string]yaml.Node
 		if err := yaml.Unmarshal(slice, &direct); err != nil {
 			t.Errorf("%s: yaml.v3 direct unmarshal failed: %v", rel, err)
 			return nil
@@ -105,12 +105,12 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 
 		// 3. Agree key-by-key on TOP-LEVEL SCALARS (the reader surface).
 		for k, v := range got {
-			raw, ok := direct[k]
+			node, ok := direct[k]
 			if !ok {
 				t.Errorf("%s: reader has key %q but direct decode does not", rel, k)
 				continue
 			}
-			want := scalarString(raw)
+			want := nodeScalarString(node)
 			if want != v {
 				t.Errorf("%s: key %q reader=%q direct=%q", rel, k, v, want)
 			}
@@ -155,6 +155,48 @@ func TestMigrationCheckFixturesParseConsistently(t *testing.T) {
 		t.Fatal("walked no frontmatters — repo layout changed or the prune over-reached?")
 	}
 	t.Logf("migration-check verified %d frontmatters across fixtures + live", checked)
+}
+
+// TestMigrationCheckUnquotedDateStaysRawString is the hermetic, CI-stable proof
+// that the relaxed comparison handles an UNQUOTED bare date independent of any
+// live debrief that happens to quote its session-date. yaml.v3 auto-types a
+// bare `2026-06-19` scalar to a time.Time when decoded into map[string]any,
+// which the old comparison rendered as "2026-06-19T00:00:00Z" — diverging from
+// the reader's raw "2026-06-19" and reddening the migration check on every PR
+// that landed an unquoted date. The node-based comparison reads the RAW scalar
+// text, so the two sides agree. This fixture owns its own unquoted date rather
+// than relying on the live corpus, so the proof survives any future re-quoting
+// of the debrief frontmatter.
+func TestMigrationCheckUnquotedDateStaysRawString(t *testing.T) {
+	content := []byte("---\nsome-date: 2026-06-19\nstatus: done\n---\n\nbody\n")
+
+	// The public reader surfaces the raw scalar text.
+	got := parseFrontmatterContent(content)
+	if got["some-date"] != "2026-06-19" {
+		t.Fatalf("reader: some-date=%q, want %q", got["some-date"], "2026-06-19")
+	}
+
+	// The relaxed direct decode (yaml.Node, node.Value) agrees with the reader.
+	slice := frontmatterSlice(content)
+	var direct map[string]yaml.Node
+	if err := yaml.Unmarshal(slice, &direct); err != nil {
+		t.Fatalf("direct unmarshal: %v", err)
+	}
+	if want := nodeScalarString(direct["some-date"]); want != got["some-date"] {
+		t.Errorf("unquoted bare date diverged: reader=%q direct=%q", got["some-date"], want)
+	}
+
+	// Anchor: the OLD map[string]any decode WOULD have auto-typed the bare date
+	// to a time.Time, which is exactly the divergence this relaxation fixes. If
+	// yaml.v3 ever stops auto-typing bare dates, this guard flags that the relax
+	// is no longer load-bearing for the date case.
+	var typed map[string]any
+	if err := yaml.Unmarshal(slice, &typed); err != nil {
+		t.Fatalf("typed unmarshal: %v", err)
+	}
+	if _, isString := typed["some-date"].(string); isString {
+		t.Fatalf("expected yaml.v3 to auto-type bare date to non-string; got string %q — relaxation no longer load-bearing for dates", typed["some-date"])
+	}
 }
 
 // TestMigrationCheckPrunesStateTree is the hermetic, CI-stable positive proof
@@ -240,30 +282,17 @@ func TestMigrationCheckPrunesStateTree(t *testing.T) {
 	}
 }
 
-// scalarString renders a yaml.v3-decoded scalar back to the string the
-// reader returns: a nil/empty becomes "", a map or slice becomes "" (the
-// nested-lines-ignored semantic), anything else is its string form.
-func scalarString(v any) string {
-	if v == nil {
-		return ""
+// nodeScalarString renders a top-level yaml.v3 node back to the string the
+// reader returns, decoding into the SAME yaml.Node surface ParseFrontmatter
+// uses: a scalar node yields its RAW source text (node.Value) — so a bare
+// `2026-06-19` stays "2026-06-19" rather than yaml.v3's auto-typed
+// time.Time round-trip — and a nested mapping or sequence yields "" (the
+// indented-lines-ignored semantic). This mirrors parseFrontmatterContent
+// exactly: scalar -> v.Value, nested -> "".
+func nodeScalarString(n yaml.Node) string {
+	if n.Kind == yaml.ScalarNode {
+		return n.Value
 	}
-	switch x := v.(type) {
-	case string:
-		return x
-	case map[string]any, []any:
-		return ""
-	case bool:
-		if x {
-			return "true"
-		}
-		return "false"
-	default:
-		// Numbers, etc. — render via yaml.v3 itself for consistency.
-		out, err := yaml.Marshal(v)
-		if err != nil {
-			return ""
-		}
-		s := strings.TrimRight(string(out), "\n")
-		return s
-	}
+	// Mapping or sequence — the reader surfaces these as the empty string.
+	return ""
 }
