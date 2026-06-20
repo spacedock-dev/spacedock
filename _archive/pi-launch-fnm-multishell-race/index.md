@@ -4,15 +4,16 @@ status: validation
 source: "Captain (2026-06-20): `./spacedock pi --plugin-dir . -- --model z-ai/glm-5.2 --thinking xhigh` failed with `Error: Cannot find module '/Users/clkao/.local/state/fnm_multishells/65968_1781888446149/bin/pi'` (Node MODULE_NOT_FOUND). Root cause: spacedock's `exec.LookPath(\"pi\")` resolves to an fnm per-shell multishell symlink; between LookPath (Go, at launch) and Node's Module._resolveFilename (milliseconds later), fnm tore down the 65968_… multishell dir (that shell exited), so the absolute path Node was handed is dead. Reproduced: `node …/65968_…/bin/pi --version` works after the fact (fnm recreated/cleaned it) — the failure window is tiny but real. Not a Spacedock bug per se, but Spacedock is the victim and can be resilient."
 score:
 started: 2026-06-20T05:07:34Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-launch-fnm-multishell-race
+completed: 2026-06-20T18:05:41Z
+verdict: PASSED
+worktree:
 issue:
 sprint:
 sprint-readiness:
 id: j7nhrmghyy0kmwtphd0fmq32
 mod-block:
 pr: "#416"
+archived: 2026-06-20T18:05:41Z
 ---
 
 # Pi launch fnm-multishell race
