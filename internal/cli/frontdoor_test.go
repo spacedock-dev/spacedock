@@ -243,6 +243,46 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 	}
 }
 
+// TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset (AC-1): with no parent
+// value for CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS, the launched claude child env
+// carries it set to 1 — a best-effort export, not the authoritative enabler (the
+// authoritative enabler is ~/.claude/settings.json; see agentTeamsEnv).
+func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
+	t.Setenv(agentTeamsEnv, "") // register restore-on-cleanup, then unset for real
+	os.Unsetenv(agentTeamsEnv)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	if !ok || got != "1" {
+		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "1", fake.launchedEnv)
+	}
+}
+
+// TestClaudeFrontDoorPreservesExplicitAgentTeams (AC-2): an explicit parent value
+// for CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is preserved, not overridden — an
+// operator who set =0 keeps =0. The launcher respects the override either way.
+func TestClaudeFrontDoorPreservesExplicitAgentTeams(t *testing.T) {
+	t.Setenv(agentTeamsEnv, "0")
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	if !ok || got != "0" {
+		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "0", fake.launchedEnv)
+	}
+}
+
 // TestClaudeFrontDoorFailFastOnMismatch (AC-2): a real version mismatch still
 // fails fast even without --no-install — auto-install must NOT paper over an
 // incompatibility. The verdict reaches runClaude's mismatch branch, not the
@@ -613,6 +653,24 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
+	}
+}
+
+// TestCodexFrontDoorDoesNotEnableAgentTeams: the agent-teams flag is a
+// claude-only concern; the codex launch path must NOT inject it (scope guard).
+func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
+	t.Setenv(agentTeamsEnv, "") // register restore-on-cleanup, then unset for real
+	os.Unsetenv(agentTeamsEnv)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if got, ok := envValue(fake.launchedEnv, agentTeamsEnv); ok {
+		t.Fatalf("%s in codex launch env = %q, want omitted", agentTeamsEnv, got)
 	}
 }
 

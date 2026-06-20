@@ -54,12 +54,41 @@ var executablePath = os.Executable
 
 const spacedockBinEnv = "SPACEDOCK_BIN"
 
+// agentTeamsEnv is the env flag associated with claude's worker↔FO back-channel
+// (SendMessage/TeamCreate). The authoritative enabler is ~/.claude/settings.json
+// (env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 + teammateMode:auto), which re-applies
+// the flag to every child regardless of shell env; the launcher export below does
+// NOT independently enable the feature.
+const agentTeamsEnv = "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
+
 func launchEnv(parent []string) []string {
 	env := withoutEnv(parent, spacedockBinEnv)
 	if bin, ok := resolvedLauncherBin(); ok {
 		env = append(env, spacedockBinEnv+"="+bin)
 	}
 	return env
+}
+
+// withAgentTeams sets agentTeamsEnv=1 in the launched child env unless the parent
+// already set it — an explicit operator value (even =0) is preserved. This is a
+// best-effort export for users without the authoritative settings.json enabler
+// (see agentTeamsEnv) and a no-op when settings already enable it; it does NOT
+// independently enable the back-channel. Claude-only: codex/pi do not call this.
+func withAgentTeams(env []string) []string {
+	if hasEnv(env, agentTeamsEnv) {
+		return env
+	}
+	return append(env, agentTeamsEnv+"=1")
+}
+
+func hasEnv(env []string, key string) bool {
+	prefix := key + "="
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
@@ -345,7 +374,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
-	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
+	if err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ()))); err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
 	}
