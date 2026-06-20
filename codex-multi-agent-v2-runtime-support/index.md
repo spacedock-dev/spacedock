@@ -1,12 +1,12 @@
 ---
 title: Codex multi_agent_v2 runtime dispatch support
-status: ideation
+status: implementation
 source: "FO live dispatch observation (2026-06-20): while dispatching status-validate-determinism under Codex multi_agent_v2, the current Codex runtime adapter no longer matches the live tool surface. v2 exposes spawn_agent(task_name,message,fork_turns), list_agents, wait_agent(timeout_ms), send_message, followup_task, and interrupt_agent. The shipped adapter still names send_input, wait_agent(handle), and hyphenated dispatch-build names as direct handles."
 score:
 started: 2026-06-20T03:58:46Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-multi-agent-v2-runtime-support
 issue:
 sprint:
 sprint-readiness:
