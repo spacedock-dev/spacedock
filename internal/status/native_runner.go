@@ -178,6 +178,11 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 			return errExit(stderr, "this is a state checkout; point --workflow-dir at the definition dir (the one whose README declares state:): "+defDir)
 		}
 	}
+	if showValidate {
+		if rc := validateRootsOrExit(roots, rootPath, stderr); rc != 0 {
+			return rc
+		}
+	}
 
 	// --new atomic create.
 	if newSlug != "" {
