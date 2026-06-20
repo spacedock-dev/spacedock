@@ -71,13 +71,13 @@ Use `worker_key` in worktree paths (`.worktrees/{worker_key}-{slug}`) and branch
 
 Use `«worker.spawn»` to spawn each worker. **Use the spawn call for initial dispatch** — the reuse-advance handle is only for advancing a reused agent to its next stage in the completion path.
 
-The dispatch model is built from the capability `«fn»`s below, which the body CALLS by name; each `«fn»`'s `→` line carries its per-host realization (same shape as `«state.commit» → spacedock state commit`), PRESENT/ABSENT per host. No host tool call appears outside a `→` line in this host-neutral core. `«addressable-worker»` is the organizing capability — its presence is what makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path.
+The dispatch model is built from the capability `«fn»`s below, which the body CALLS by name. New capability definitions are host-neutral; runtime adapters bind concrete realizations in their `## Runtime implementation` blocks. Older transitional `→` lines remain only where this core still carries legacy host coverage. `«addressable-worker»` is the organizing capability — its presence is what makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path.
 
 ## «worker.spawn»: create the initial worker from helper output
 
 Consumes a successful `spacedock dispatch build` artifact and creates the worker for the target stage. The helper owns assignment assembly; the runtime adapter maps emitted fields to its spawn surface.
 
-- → **Claude:** `Agent(name=…, run_in_background=…)` with helper-emitted name, description, prompt, and model when present. · **Codex:** `spawn_agent(task_name,message,fork_turns)` with helper-emitted prompt as message and sanitized task name derived from helper identity. · **Pi:** `subagent(...)` on the selected Pi substrate with helper assignment content plus Pi transport metadata.
+The runtime adapter owns the concrete spawn call, helper-field mapping, model/null handling, and any host transport metadata.
 
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
@@ -102,7 +102,7 @@ Records worker label, substrate, run/session handle, worker address, entity slug
 
 Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any required preservation message. If ABSENT, record the worker closed in FO memory only after completion or explicit supersede state makes that safe.
 
-- → **Claude:** `TaskStop` for one-shot workers; team-backed workers use the team adapter's cooperative terminal teardown. · **Codex:** ABSENT unless a live tool-surface probe binds a shutdown-specific action; cooperative preservation text may still flow through `«addressable-worker»`. · **Pi:** `pi-subagents` completed child invocations need no mailbox shutdown and are marked complete/closed in FO memory; `pi-agent-teams` maps to `member_shutdown` or team completion.
+The runtime adapter owns the concrete shutdown, no-op, or in-memory closure binding and any host-specific preservation channel.
 
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
