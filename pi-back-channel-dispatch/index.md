@@ -387,3 +387,25 @@ Phase 2 complete — the live dogfood. The worker↔FO back-channel my Phase-1 w
 ### Summary
 
 Validation PASSED. All 6 ACs proven: AC-1 (contractlint), AC-2 (live back-channel round-trip, FO-corroborated), AC-3 (dual completion signal), AC-4 (ensign talkback), AC-5 (worker identity capture + addressability), AC-6 (offline regression gate green; live lanes in CI). Phase-2 evidence (`aa9db584`) is not self-referential and is corroborated by the FO who lived the reply half. Region discipline holds (single Phase-1 code commit, no Phase-2 code edits). Non-regression holds (`go test ./...` fully green on the rebased branch).
+
+## Pre-cut antipattern audit (independent reviewer run c63d6187, 2026-06-20)
+
+**Reviewer:** independent staff-eng (not the Commander, not an implementer). **Subject:** capstone branch `cf8e3a5c` in the context of assembled sprint on main. Full report: `/tmp/spacedock-dispatch/b2-audit-result.md`.
+
+### SHIP-BLOCKERS (FO adjudication)
+
+- **SB1 — Q13 null-model contradiction NOT closed (VALID).** Core `fo-dispatch-core.md:109` (step 4) still hard-codes "when null, OMIT the model argument entirely"; the capstone's own `:83` bullet self-contradicts ("adapter resolves per model-resolution rule … — the core OMITS on null"). `bdt` handed this to the capstone. **Fix:** rewrite step 4 + the `:83` bullet to delegate null-model resolution to the adapter's `model-resolution` rule (adapter decides omit-vs-pass-explicitly); remove the hard-coded OMIT clauses.
+- **SB2 — `completion-signal` DUAL `contact_supervisor` done-path is a fiction (VALID).** `contact_supervisor` has `need_decision`/`interview_request`/`progress_update` — no "done" reason. `pi-first-officer-runtime.md:68` + `pi-ensign-runtime.md:36` claim a done-message-via-`contact_supervisor` path the tool doesn't expose. Codex honestly declares "single observable signal"; Pi overstates "DUAL." `TestCapabilityBinding` (name-set only) can't catch it. **Fix:** drop the `contact_supervisor` done-branch; re-grade Pi's completion as subagent-return + optional raw `intercom send` done-message + file-verify gate.
+- **SB3 — Phase-2 live proof "absent from branch" (PARTIALLY STALE — FO pushback).** The auditor reviewed the branch only and concluded "the work wasn't done." Phase 2 DID happen — the live AC-2/3/5 round-trip is evidenced in the **state checkout** at `aa9db584` (the FO lived the reply half; the validator cross-checked). Phase 2 was a live-proof stage report by design (the dogfood produces no code), so "absent from the branch" is true but not a defect. **However**, SB3's deeper point survives: the live proof did NOT catch SB2 (neither the ensign nor the FO verified the `contact_supervisor` "done" reason was a real API reason). **Fix:** SB1+SB2 fixes + the live lanes on the re-pushed #409 are the SB3 closure; Phase 2 is not redone.
+
+### NON-BLOCKERS (record for next sprint)
+
+- **NB1** — `TestCapabilityBinding` discriminates name-set drift only (mutation: a wrong binding target passes). Follow-up: add a binding-target assertion OR make AC-6 live lanes a hard pre-cut gate.
+- **NB2** — host-specific terms leaked into the host-neutral core (`intercom address` field at `:37`/`:83`; `Claude team_name` example at `:90`). Claude/Codex adapters declare no `intercom address` field. Follow-up: rename to adapter-declared "worker address"; move `team_name` into the Claude adapter. (FO note: trivial same-file fix — folding into the SB1/SB2 fix commit.)
+- **NB3** — Codex `worker-back-channel` worker→FO half is completion-only (mailbox final-status), narrower than the core's "mid-run escalation" contract. Benign. Follow-up: clarify core or document Codex's actual escalation shape.
+- **NB4** — pre-existing `gofmt` drift (`prose_function_routing_test.go`, `section_read.go`) on main, not capstone-introduced. Follow-up: `gofmt -w ./cmd ./internal` before the tag.
+- **NB5** — typo `install-recordred` (`pi-first-officer-runtime.md:65`) + underspecified `cwd`-source read. (FO note: typo folded into the SB2 fix commit; cwd-source pin is a Phase-2-seam follow-up.)
+
+### FO verdict
+
+Do NOT cut from `cf8e3a5c` as-is. Dispatch fix ensign for SB1+SB2 (+ NB2 same-file + NB5 typo) on the `b2` branch; re-push #409; the live lanes (env-gated) are the behavioral gate. Non-blockers recorded for the next sprint.
