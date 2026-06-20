@@ -146,7 +146,7 @@ The terminal merge-and-cleanup ceremony — the `«merge.guard»` envelope, the 
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
-The worktree-ownership rules (which active state lives in the worktree copy vs. `main`, and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The concurrency-safe commit / multi-writer sync / rebase-conflict-halt rules below stay boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
+The worktree-ownership rules (which active state lives in the worktree copy vs. `main`, and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
 
 The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics, so the Startup flow reads as intention. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied — so the boot sequence (`«state.boot»()`, `«state.ensure-ready»()`, `«state.sweep-merged»()`, greet) converges rather than runs as a script, and each can become a binary independently without touching the flow. Every state write is one call: `«state.commit»(slug)`.
 
@@ -175,25 +175,10 @@ The FO declares intent against the state repo by invoking the prose-functions be
 
 ## «state.commit»(slug): record one entity's change durably and concurrency-safe
 
-- **effect:** `spacedock state commit <slug>` path-scoped-commits the entity and runs the full sync (push; on push rejection `pull --rebase` then re-push) per **Split-Root State Sync** below.
-- **done-when:** the entity's change is committed (and pushed to `origin` when one exists).
-- **block:** rebase conflict on sync → halt per the **rebase-conflict halt** below.
-- → **shipped** (this sprint): `` `spacedock state commit <slug>` `` — invoke it directly.
-
-### Split-Root State Sync
-
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the state branch is shared via `origin`. `spacedock state commit <slug>` owns the whole concurrency-safe write: it resolves the entity path under the state checkout, path-scoped-commits it (never a bare `git add -A`, which would sweep up a sibling writer's staged entity), and runs the full sync — push, and on a non-fast-forward rejection `pull --rebase` then re-push. The FO invokes the verb; it does not hand-roll the git sequence. The boot `pull --rebase` (the Startup pull-on-boot step, `«state.ensure-ready»()`) integrates peers' state once at boot, not per-read.
-
-**No-origin carve-out.** When the state checkout has no `origin` remote, the verb commits locally only: boot reports `STATE_BACKEND: … remote: none — state not remotely synced` (and `state_remote: none` in `--boot --json`), the dispatch omits the push/pull reminder, and state stays local-only until an `origin` is configured. Surface that to the captain rather than treating the missing remote as a sync failure.
-
-**Rebase-conflict halt.** If `pull --rebase` CONFLICTS (two writers editing the SAME entity's frontmatter concurrently), the FO MUST:
-
-1. **HALT** the dispatch. Do not proceed against an unmerged state tree.
-2. **Abort the rebase**: `git -C {state_checkout} rebase --abort`.
-3. **Surface** the conflicting entity path(s) and peer commit to the captain, and stop. Manual intervention required.
-4. The FO must NOT `--force` / `--force-with-lease` push; must NOT auto-resolve (`-X ours/theirs` — discarding either side silently loses a peer's frontmatter edit).
-
-This matches the escalate-rather-than-guess discipline. A full lock model is out of scope; the halt is the boundary behavior.
+- **effect:** invoke `spacedock state commit <slug>` after each state mutation. The command resolves the split-root entity, commits only that entity path, syncs with `origin` when present, and reports local-only/no-op as needed.
+- **done-when:** the command exits 0 with the entity committed, and pushed when an origin exists.
+- **block:** exit 3 means a same-entity rebase conflict was aborted by `spacedock state commit`; HALT, surface the named conflicting path(s) to the captain, and do not force-push or auto-resolve.
+- → **shipped**: `` `spacedock state commit <slug>` `` — invoke it directly.
 
 ## FO Write Scope
 

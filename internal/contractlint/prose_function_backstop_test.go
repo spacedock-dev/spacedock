@@ -1,5 +1,5 @@
-// ABOUTME: AC-2c catastrophe backstop — the two highest-stakes rule clusters survive the
-// ABOUTME: prose-function restructure: the rebase-halt prohibition anchors + the verbatim reuse diagnostic.
+// ABOUTME: AC-2c catastrophe backstop — the highest-stakes rule clusters survive the
+// ABOUTME: prose-function restructure: the compact rebase-halt anchor + the verbatim reuse diagnostic.
 package contractlint
 
 import (
@@ -11,31 +11,27 @@ import (
 
 // catastropheClause is one load-bearing string whose silent loss in the prose-function
 // restructure would be catastrophic AND whose exact wording is itself load-bearing — the
-// reuse diagnostic is contractually pinned ("must appear verbatim"); the rebase-halt
-// prohibition clauses are the no-data-loss safety nets. `path` is the restructured core that
+// reuse diagnostic is contractually pinned ("must appear verbatim"); the compact rebase-halt
+// prohibition anchor is the no-data-loss safety net. `path` is the restructured core that
 // must still carry `want`.
 type catastropheClause struct {
 	path string
 	want string
 }
 
-// catastropheClauses is DELIBERATELY narrow — only the two clusters where a silent drop is
+// catastropheClauses is DELIBERATELY narrow — only the clusters where a silent drop is
 // catastrophic and the wording is load-bearing. It is NOT extended to the rest of the rule
 // set: presence-grepping every rule would re-introduce the banned prose-grep tautology (the
 // matched text is authored by the same restructuring implementer). The real preservation
 // guard is the validator's detached original-vs-restructured audit (AC-2b); this is a cheap
 // tripwire subordinate to it.
 var catastropheClauses = []catastropheClause{
-	// Rebase-conflict-halt prohibition anchors (shared-core State Management). The 4-step HALT
-	// relocates under the restructured «state.ensure-ready» / «state.commit» bodies' referenced
-	// rebase-conflict halt; these two prohibition clauses must survive the relocation.
+	// Rebase-conflict-halt prohibition anchor (shared-core State Management). The compact
+	// «state.commit» body must still preserve the FO's no-data-loss halt obligation without
+	// pinning the old multi-step git recipe.
 	{
 		path: filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
-		want: "must NOT `--force` / `--force-with-lease` push",
-	},
-	{
-		path: filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
-		want: "must NOT auto-resolve (`-X ours/theirs`",
+		want: "do not force-push or auto-resolve",
 	},
 	// The verbatim reuse diagnostic (dispatch-core Reuse and Fresh Dispatch). Contractually
 	// pinned to appear character-for-character.
@@ -45,7 +41,7 @@ var catastropheClauses = []catastropheClause{
 	},
 }
 
-// TestProseFunctionCatastropheClausesSurvive (AC-2c) asserts each of the two highest-stakes
+// TestProseFunctionCatastropheClausesSurvive (AC-2c) asserts each highest-stakes
 // clusters' load-bearing strings survives somewhere in its restructured core. A content-presence
 // assertion is the right shape here precisely because the wording itself is contractual (a
 // paraphrase of the verbatim diagnostic would BREAK the contract, so presence — not the usual
