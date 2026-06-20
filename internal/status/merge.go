@@ -5,6 +5,7 @@ package status
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -213,7 +214,23 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 // proven guarded path; the verb refuses to proceed to a later step if an earlier
 // one's guard refuses, propagating the guard's exit 1 + stderr verbatim and never
 // passing --force.
+//
+// The archive move + commit is ATOMIC: the on-disk rename (runArchive) and its commit
+// (commitArchiveMove) must both land or neither does. If the commit fails (a failing
+// pre-commit hook, a lock), the entity would otherwise be stranded — mod-block
+// cleared, status terminal, file moved into _archive where resolveEntityPath cannot
+// find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
+// location before mutating, and on commit failure reverses the move and restores the
+// original content, returning the entity to its exact pre-finalize state.
 func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, stdout, stderr io.Writer) int {
+	// Snapshot the pre-finalize state up front — before any mutation — so a failed
+	// archive commit can be rolled back to exactly the state the FO would re-run
+	// against. The live path and form resolve here while the file still sits at its
+	// live location; the bytes capture the untouched content.
+	snapshot, snapErr := captureArchiveState(roots.entityDir, slug)
+	if snapErr != nil {
+		return errExit(stderr, fmt.Sprintf("merge guard: failed to snapshot %s before finalize: %v", slug, snapErr))
+	}
 	if modBlock != "" {
 		if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: "", hasValue: true}}, stderr); rc != 0 {
 			return rc
@@ -235,24 +252,81 @@ func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, s
 		return rc
 	}
 	if rc := commitArchiveMove(roots.entityDir, slug, stderr); rc != 0 {
+		if rbErr := rollbackArchive(roots.entityDir, slug, snapshot); rbErr != nil {
+			fmt.Fprintf(stderr, "merge guard: rollback after failed archive commit FAILED for %s: %v\n", slug, rbErr)
+		}
 		return rc
 	}
 	return signalFinalized(slug, terminal, verdict, quiet, asJSON, stdout)
 }
 
+// archiveSnapshot captures an entity's pre-archive state so finalize can reverse a
+// failed archive commit: the live source path (where the entity sat before the
+// rename), whether it was folder-form, and the source file's exact bytes.
+type archiveSnapshot struct {
+	livePath string
+	isFolder bool
+	content  []byte
+}
+
+// captureArchiveState reads an entity's pre-archive state. It resolves the live path
+// the way runArchive does (folder form wins over flat) and snapshots the source
+// file's bytes for a byte-faithful restore.
+func captureArchiveState(entityDir, slug string) (archiveSnapshot, error) {
+	folderIndex := filepath.Join(entityDir, slug, "index.md")
+	flatPath := filepath.Join(entityDir, slug+".md")
+	livePath := flatPath
+	isFolder := false
+	if isRegularFile(folderIndex) {
+		livePath = folderIndex
+		isFolder = true
+	}
+	content, err := os.ReadFile(livePath)
+	if err != nil {
+		return archiveSnapshot{}, err
+	}
+	return archiveSnapshot{livePath: livePath, isFolder: isFolder, content: content}, nil
+}
+
+// rollbackArchive reverses runArchive after a failed commit: it moves the archived
+// entity back to its live location and restores the source file's pre-archive bytes
+// (reverting the `archived` stamp and the terminalize/clear --set mutations). The
+// flat form moves _archive/{slug}.md → {slug}.md; the folder form moves the whole
+// _archive/{slug}/ → {slug}/. The entity ends byte-identical to its pre-finalize
+// state.
+func rollbackArchive(entityDir, slug string, snap archiveSnapshot) error {
+	if snap.isFolder {
+		archivedFolder := filepath.Join(entityDir, "_archive", slug)
+		liveFolder := filepath.Join(entityDir, slug)
+		if err := os.Rename(archivedFolder, liveFolder); err != nil {
+			return err
+		}
+	} else {
+		archivedFile := filepath.Join(entityDir, "_archive", slug+".md")
+		if err := os.Rename(archivedFile, snap.livePath); err != nil {
+			return err
+		}
+	}
+	return os.WriteFile(snap.livePath, snap.content, 0o644)
+}
+
 // commitArchiveMove commits the archive rename PATH-SCOPED so the verb — not the FO
-// — owns the commit (AC-3). It stages exactly the two paths the rename touches (the
+// — owns the commit (AC-3). It stages exactly the paths the rename touches (the
 // vacated source and the new _archive dest) and commits only those, so a sibling
-// entity left dirty in the same tree is never swept in by a `git add -A`. When the
-// entity root is not under a git work tree the move is a plain on-disk archive and
-// the commit is skipped (no error). A real git failure exits 1 with stderr.
+// entity left dirty in the same tree is never swept in by a `git add -A`. The
+// pathspecs mirror runArchive's form resolution: a flat-form entity moves
+// {slug}.md → _archive/{slug}.md (two file paths); a folder-form entity moves the
+// whole {slug}/ → _archive/{slug}/ (two directory paths, capturing index.md and any
+// siblings). The form is read from where the entity landed in _archive, since the
+// source has already been moved by the time this runs. When the entity root is not
+// under a git work tree the move is a plain on-disk archive and the commit is
+// skipped (no error). A real git failure exits 1 with stderr.
 func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
 	gitRoot := FindGitRoot(entityDir)
 	if !hasGitEntry(gitRoot) {
 		return 0
 	}
-	source := relToGitRoot(gitRoot, entityDir+"/"+slug+".md")
-	dest := relToGitRoot(gitRoot, entityDir+"/_archive/"+slug+".md")
+	source, dest := archiveMovePathspecs(gitRoot, entityDir, slug)
 	// Stage the vacated source (deletion) and the new dest. git records this as a
 	// rename in the commit. `git add -- <path>` is path-scoped; --all is never used.
 	if _, err := runGitCmd(gitRoot, "add", "--", source, dest); err != nil {
@@ -262,6 +336,21 @@ func commitArchiveMove(entityDir, slug string, stderr io.Writer) int {
 		return errExit(stderr, fmt.Sprintf("merge guard: failed to commit archive move for %s: %v", slug, err))
 	}
 	return 0
+}
+
+// archiveMovePathspecs returns the source and dest pathspecs (relative to gitRoot)
+// for the archive rename, mirroring runArchive's flat/folder resolution. A folder-
+// form entity (it landed at _archive/{slug}/index.md) renames the whole {slug}/
+// directory; a flat-form entity renames the {slug}.md file. The form is detected
+// post-move from the _archive dest because the source no longer exists at its live
+// location.
+func archiveMovePathspecs(gitRoot, entityDir, slug string) (source, dest string) {
+	if isRegularFile(filepath.Join(entityDir, "_archive", slug, "index.md")) {
+		return relToGitRoot(gitRoot, filepath.Join(entityDir, slug)),
+			relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug))
+	}
+	return relToGitRoot(gitRoot, filepath.Join(entityDir, slug+".md")),
+		relToGitRoot(gitRoot, filepath.Join(entityDir, "_archive", slug+".md"))
 }
 
 // relToGitRoot renders path relative to gitRoot for a path-scoped `git add`/`commit`

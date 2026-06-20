@@ -1,7 +1,7 @@
 ---
 name: pr-merge
 description: Open a code-branch PR to the configured trunk at the merge boundary and track it to merge, state-root-aware
-version: 0.12.3
+version: 0.12.4
 reconciled-from-shipped: 0.12.2
 fo-realm: "FO realm — the FO maintains this file directly; changes do NOT go through the dev workflow (process the FO operates, not product built under test)."
 local-customization: "Split-root variant of the shipped template: entity state lives in .spacedock-state (pr:/mod-block: via status --set, path-scoped); the hook never touches .spacedock-state from the code worktree; the PR carries only the code-branch range."
@@ -17,10 +17,10 @@ The two origins stay clean by construction: the code PR carries only the code-br
 
 Scan all entity files (in the workflow directory only, not `_archive/`) for entities with a non-empty `pr` field and a non-terminal status. For each, extract the PR number (strip any `#`, `owner/repo#` prefix) and check: `gh pr view {number} --json state --jq '.state'`.
 
-If `MERGED`, advance the entity to its terminal stage. Because a `mod-block` is set while the PR is pending, the clear and the terminalization are two separate `--set` calls (the mechanism refuses combining `mod-block=` with terminal fields):
-1. `spacedock status --workflow-dir docs/dev --set {slug} mod-block=` (commit: `mod-block: {slug} cleared (pr-merge completed)`),
-2. `spacedock status --workflow-dir docs/dev --set {slug} completed verdict=PASSED worktree=`, then `spacedock status --workflow-dir docs/dev --archive {slug}`.
-Both `--set`s and the archive are committed path-scoped to the state checkout. Remove the worktree (`git worktree remove {path}`) and delete the **local** branch (`git branch -d {branch}`) — the remote branch was already cleaned by the PR merge. Report each auto-advanced entity to the captain.
+If `MERGED`, advance the entity to its terminal stage by delegating the finalize to the `merge guard` verb — the same verb the FO drives at the merge boundary, so the mod's finalize path and the verb's are one shipped path:
+1. Record the landed merge as the `pr-merge` sentinel so the verb keys off a signal that honestly says "this PR merged" rather than the bare `#{N}` open-PR reference: `spacedock status --workflow-dir docs/dev --set {slug} pr=pr-merge:{N}` (commit: `pr: {slug} pr-merge:{N} merged`).
+2. Finalize through the verb: `spacedock merge guard {slug} --workflow-dir docs/dev --verdict passed`. The verb clears the in-flight `mod-block` (standalone `--set`), terminalizes (`status`+`verdict=passed`+`completed` in one `--set`), archives, and commits the archive move path-scoped — atomically, rolling back on a commit failure. It refuses to combine the `mod-block=` clear with the terminal fields (the same two-step the FO relies on), so the ceremony integrity holds.
+The sentinel `--set` is committed path-scoped to the state checkout; the verb owns its own commits. Remove the worktree (`git worktree remove {path}`) and delete the **local** branch (`git branch -d {branch}`) — the remote branch was already cleaned by the PR merge. Report each auto-advanced entity to the captain. (The `pr` field now records the `pr-merge:{N}` sentinel post-finalize, where it was a bare `#{N}` before — the only state-recording delta; the lifecycle behavior, terminal+archived, is identical.)
 
 If `CLOSED` (closed without merge), report to the captain: "{entity title} has PR {pr number} which was closed without merging. How to proceed? Options: reopen the PR, create a new PR from the same branch, or clear `pr` and fall back to the local `--no-ff` merge." Wait for the captain's direction before taking action.
 
@@ -30,7 +30,7 @@ If `gh` is not available, warn the captain and skip PR state checks.
 
 ## Hook: idle
 
-Check PR-pending entities using the same logic as the startup hook: scan entity files for non-empty `pr` and non-terminal status, run `gh pr view` for each, and advance merged PRs (two-step `mod-block=` clear then terminalize, path-scoped). This provides a periodic re-check in case the event loop's built-in PR scan missed a state change (defense in depth). Report any advanced entities to the captain.
+Check PR-pending entities using the same logic as the startup hook: scan entity files for non-empty `pr` and non-terminal status, run `gh pr view` for each, and advance merged PRs by recording the `pr=pr-merge:{N}` sentinel then finalizing through `spacedock merge guard {slug} --workflow-dir docs/dev --verdict passed` (which clears `mod-block`, terminalizes, archives, and commits path-scoped). This provides a periodic re-check in case the event loop's built-in PR scan missed a state change (defense in depth). Report any advanced entities to the captain.
 
 ## Hook: merge
 
@@ -68,7 +68,7 @@ If the push fails (no remote, auth error), report to the captain and fall back t
 
 3. Record it on the entity STATE: `spacedock status --workflow-dir docs/dev --set {slug} pr=#{N}`. This writes `pr:` into the state-checkout entity frontmatter; the FO commits it path-scoped to `.spacedock-state` (`git -C docs/dev/.spacedock-state add -- {slug}/index.md && git -C docs/dev/.spacedock-state commit -m "pr: {slug} #{N} pending" -- {slug}/index.md`) and pushes `spacedock-state/dev` so the PR-pending state survives session resume and is visible on a 2nd host.
 
-Setting `pr:` is the **blocking** signal (FO Merge-and-Cleanup step 3a). The FO set `mod-block=merge:pr-merge` before invoking this hook; with `pr:` now set the hook has blocked, so the FO leaves `mod-block` set, reports PR-pending to the captain, and does NOT local-merge or archive. The entity stays at its current stage with `pr` set until the PR merges. The FO advances to the terminal stage and archives when it detects the merge (via the event-loop PR check, the idle hook, or the startup hook) — see those hooks for the two-step `mod-block=` clear then terminalize.
+Setting `pr:` is the **blocking** signal (FO Merge-and-Cleanup step 3a). The FO set `mod-block=merge:pr-merge` before invoking this hook; with `pr:` now set the hook has blocked, so the FO leaves `mod-block` set, reports PR-pending to the captain, and does NOT local-merge or archive. The entity stays at its current stage with `pr` set until the PR merges. The FO advances to the terminal stage and archives when it detects the merge (via the event-loop PR check, the idle hook, or the startup hook) — see those hooks for the sentinel-record-then-`merge guard` finalize.
 
 ### PR body template
 
