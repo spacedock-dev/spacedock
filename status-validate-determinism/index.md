@@ -12,6 +12,7 @@ sprint:
 sprint-readiness:
 id: a1a9k6tqnpj7292z80xxwkf2
 mod-block: merge:pr-merge
+pr: "#413"
 ---
 
 # status --validate non-deterministic on untracked entity files
