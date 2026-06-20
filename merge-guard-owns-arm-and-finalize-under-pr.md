@@ -6,6 +6,7 @@ group: binary-ux
 id: xdcf177r7sqtkb9w3mdafp4w
 worktree: .worktrees/spacedock-ensign-merge-guard-owns-arm-and-finalize-under-pr
 started: 2026-06-20T06:38:47Z
+mod-block: merge:pr-merge
 ---
 
 This session hand-rolled the terminal merge ceremony 5× (vk, mvc, ga, launcher-flag, b2): set `mod-block=merge:pr-merge`, commit, push the code branch, open/update the PR, set `pr:`, wait for merge, then clear `mod-block`, terminalize `verdict=PASSED worktree=`, archive, remove worktree+branch. `spacedock merge guard` was NOT usable end-to-end because of two documented gaps:
