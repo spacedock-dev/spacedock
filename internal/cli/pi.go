@@ -119,13 +119,33 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		return 1
 	}
 
-	launchBanner("pi", dir, safehouse.Present(dir), ops.LookPath, stderr)
+	// Translate the de-prefixed safehouse knobs into the safehouse `extra` slot
+	// (the same function claude/codex use) and compute the wrap decision identically:
+	// a `.safehouse` profile in dir, the bare `--safehouse` flag, or any knob. An
+	// unknown key is a hard error (no Launch), mirroring the claude/codex gate. Per
+	// PI-SPECIFIC DECISION 2, the wrap arm uses safehouse.Wrap(inner, extra) with NO
+	// launcherBinEnvPassFlags() and NO launchEnv threading — runPi/execPiRuntimeOps
+	// never forward SPACEDOCK_BIN today (Launch takes no env), so the minimal wrap
+	// introduces no regression.
+	extra, err := safehouse.TranslateFlags(fd.safehouseFlags)
+	if err != nil {
+		fmt.Fprintf(stderr, "spacedock pi: %v\n", err)
+		return 1
+	}
+	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
+
+	launchBanner("pi", dir, wrap, ops.LookPath, stderr)
 
 	// The Spacedock first-officer/ensign skills are no longer passed as --skill
 	// flags: the installed package's .pi/extensions/spacedock.ts extension
 	// discovers them for the parent session via resources_discover, and
 	// pi-subagents children discover them via the package-root scan. Only the
 	// pi-subagents extension + skill are passed explicitly here.
+
+	// The inner argv is byte-identical wrapped or not (PI-SPECIFIC DECISION 1): pi
+	// has no per-action permission-prompting flag to suppress, so NO inner
+	// permission-mode flag is added on the wrap arm — safehouse isolation alone is
+	// the boundary, and the operator's --tools/--exclude-tools passthrough wins.
 	argv := []string{
 		"pi",
 		"--extension", cfg.extensionPath,
@@ -133,6 +153,13 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	}
 	argv = append(argv, fd.passthrough...)
 	argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
+	if wrap {
+		if ok, hint := safehouse.Available(ops.LookPath); !ok {
+			fmt.Fprintln(stderr, hint)
+			return 1
+		}
+		argv = safehouse.Wrap(argv, extra)
+	}
 	if err := ops.Launch(argv); err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
 		return 1
@@ -210,8 +237,25 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	fs := pflag.NewFlagSet("spacedock-pi", pflag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	pluginDir := fs.StringArray("plugin-dir", nil, "Load local Spacedock skill checkout")
+	// The safehouse subset mirrors bindFrontDoorFlags' safehouse flags (same names
+	// for operator muscle-memory transfer across hosts). --skip-contract-check / --no-install
+	// are NOT registered: pi has no contract gate, so advertising them would mislead.
+	forceSafehouse := fs.Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
+	enable := fs.StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
+	addDirs := fs.StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
+	addDirsRO := fs.StringArray("safehouse-add-dirs-ro", nil, "Grant safehouse read-only access to a directory; repeatable")
 	if err := fs.Parse(args); err != nil {
 		return frontDoorArgs{}, nil, err
+	}
+	fd.forceSafehouse = *forceSafehouse
+	for _, v := range *enable {
+		fd.safehouseFlags = append(fd.safehouseFlags, "enable="+v)
+	}
+	for _, v := range *addDirs {
+		fd.safehouseFlags = append(fd.safehouseFlags, "add-dirs="+v)
+	}
+	for _, v := range *addDirsRO {
+		fd.safehouseFlags = append(fd.safehouseFlags, "add-dirs-ro="+v)
 	}
 	positionals := fs.Args()
 	dash := fs.ArgsLenAtDash()

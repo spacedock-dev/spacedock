@@ -78,14 +78,23 @@ Examples:
 }
 
 // setPiHelp installs the Pi-specific launch help. Pi loads explicit skills and
-// extensions instead of a Claude/Codex plugin manifest.
+// extensions instead of a Claude/Codex plugin manifest. The safehouse subset
+// mirrors the claude/codex help (same flag names) so operator muscle memory
+// transfers across hosts; --skip-contract-check / --no-install are NOT declared
+// because pi has no contract gate. The flags are declared on the command only so
+// FlagUsages renders them (the pi command is DisableFlagParsing, exactly like
+// claude/codex); parsePiFrontDoorArgs owns the real parsing.
 func setPiHelp(cmd *cobra.Command, w io.Writer) {
-	cmd.Flags().String("plugin-dir", "", "Load a local Spacedock skill checkout")
+	cmd.Flags().StringArray("plugin-dir", nil, "Load a local Spacedock skill checkout")
+	cmd.Flags().Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
+	cmd.Flags().StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
+	cmd.Flags().StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")
+	cmd.Flags().StringArray("safehouse-add-dirs-ro", nil, "Grant safehouse read-only access to a directory; repeatable")
 	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
 		fmt.Fprint(w, tagline+`
 
 Usage:
-  spacedock pi [task] [--plugin-dir <checkout>] [-- pi-flags]
+  spacedock pi [task] [--plugin-dir <checkout>] [--safehouse-* knobs] [-- pi-flags]
 
 Start Pi as your Spacedock first officer by loading the Pi-native pi-subagents
 extension/skill. The Spacedock first-officer/ensign skills are discovered from
@@ -93,17 +102,25 @@ the installed Spacedock package (run: spacedock install --host pi); the optional
 --plugin-dir loads a local checkout as a dev override. The optional task is
 appended to the launch prompt; everything after -- forwards verbatim to pi.
 
+When any --safehouse-* knob (or a .safehouse profile, or the bare --safehouse) is
+present, the launch is wrapped as `+"`"+`safehouse --trust-workdir-config [extra] -- pi …`+"`"+`
+so a sandboxed session can grant additional directory access. No inner
+permission flag is added — pi's posture is its --tools/--exclude-tools passthrough
+and the safehouse isolation itself.
+
 Flags:
 `)
 		fmt.Fprint(w, c.Flags().FlagUsages())
 		fmt.Fprint(w, `
 Forwarding:
-  Tokens before -- are spacedock's (the task + --plugin-dir). Tokens after --
-  forward verbatim to pi, e.g. --model, --print, or --session-dir.
+  Tokens before -- are spacedock's (the task + --plugin-dir + the --safehouse-*
+  knobs). Tokens after -- forward verbatim to pi, e.g. --model, --print, or
+  --session-dir.
 
 Examples:
   spacedock pi --plugin-dir ./checkout
   spacedock pi "drive the workflow" --plugin-dir ./checkout -- --model google/gemini
+  spacedock pi --safehouse-add-dirs ~/scratch -- --model google/gemini
 `)
 	})
 }

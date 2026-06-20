@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
 type fakePiRuntimeOps struct {
@@ -672,7 +674,8 @@ func statOKForPiResources(repo, pkg string) map[string]bool {
 
 func piHealthyPathFixtures() map[string]string {
 	return map[string]string{
-		"pi": "/bin/pi",
+		"pi":        "/bin/pi",
+		"safehouse": "/bin/safehouse",
 	}
 }
 
@@ -681,5 +684,266 @@ func piTestEnv(pkg, home string) []string {
 		"PI_SUBAGENTS_PACKAGE_ROOT=" + pkg,
 		"PI_INTERCOM_PACKAGE_ROOT=" + pkg + "-intercom",
 		"HOME=" + home,
+	}
+}
+
+// piSafehouseReadyOps builds a fakePiRuntimeOps with the healthy path fixtures
+// (pi + safehouse resolvable) and the stat set for the repo/pkg resources, so a
+// safehouse-wrapped runPi reaches the launch seam.
+func piSafehouseReadyOps(repo, pkg string) *fakePiRuntimeOps {
+	return &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+}
+
+// piSafehouseInnerArgv returns the inner pi argv (after the safehouse `--`
+// separator) from a wrapped launch argv, or argv unchanged when unwrapped.
+func piSafehouseInnerArgv(argv []string) []string {
+	if len(argv) == 0 || argv[0] != "safehouse" {
+		return argv
+	}
+	for i, tok := range argv {
+		if tok == "--" {
+			return argv[i+1:]
+		}
+	}
+	return nil
+}
+
+// piSafehouseExtra returns the safehouse `extra` slot (tokens between
+// --trust-workdir-config and the `--` separator) from a wrapped launch argv.
+func piSafehouseExtra(argv []string) []string {
+	if len(argv) < 2 || argv[0] != "safehouse" || argv[1] != "--trust-workdir-config" {
+		return nil
+	}
+	for i := 2; i < len(argv); i++ {
+		if argv[i] == "--" {
+			return argv[2:i]
+		}
+	}
+	return nil
+}
+
+// TestPiFrontDoorAcceptsSafehouseFlags pins AC-1: parsePiFrontDoorArgs accepts the
+// four --safehouse-* flags (space/= /repeatable) without error and populates
+// fd.forceSafehouse + fd.safehouseFlags with the re-prefixed tokens. Today pflag
+// rejects these with exit 2.
+func TestPiFrontDoorAcceptsSafehouseFlags(t *testing.T) {
+	cases := []struct {
+		name           string
+		args           []string
+		forceSafehouse bool
+		safehouseFlags []string
+	}{
+		{"bare-safehouse", []string{"--safehouse"}, true, nil},
+		{"enable-equals", []string{"--safehouse-enable=ssh"}, false, []string{"enable=ssh"}},
+		{"enable-space", []string{"--safehouse-enable", "ssh"}, false, []string{"enable=ssh"}},
+		{"enable-comma", []string{"--safehouse-enable=ssh,docker"}, false, []string{"enable=ssh,docker"}},
+		{"add-dirs-equals", []string{"--safehouse-add-dirs=~/scratch"}, false, []string{"add-dirs=~/scratch"}},
+		{"add-dirs-space", []string{"--safehouse-add-dirs", "~/scratch"}, false, []string{"add-dirs=~/scratch"}},
+		{"add-dirs-repeat", []string{"--safehouse-add-dirs", "/a", "--safehouse-add-dirs", "/b"}, false, []string{"add-dirs=/a", "add-dirs=/b"}},
+		{"add-dirs-ro-equals", []string{"--safehouse-add-dirs-ro=~/ro"}, false, []string{"add-dirs-ro=~/ro"}},
+		{"add-dirs-ro-space", []string{"--safehouse-add-dirs-ro", "~/ro"}, false, []string{"add-dirs-ro=~/ro"}},
+		{"all-knobs", []string{"--safehouse", "--safehouse-enable", "ssh", "--safehouse-add-dirs", "~/scratch", "--safehouse-add-dirs-ro", "~/ro"}, true, []string{"enable=ssh", "add-dirs=~/scratch", "add-dirs-ro=~/ro"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fd, _, err := parsePiFrontDoorArgs(tc.args)
+			if err != nil {
+				t.Fatalf("parsePiFrontDoorArgs(%v) err = %v (today pflag rejects these with exit 2)", tc.args, err)
+			}
+			if fd.forceSafehouse != tc.forceSafehouse {
+				t.Errorf("forceSafehouse = %v, want %v", fd.forceSafehouse, tc.forceSafehouse)
+			}
+			if !equalArgv(fd.safehouseFlags, tc.safehouseFlags) {
+				t.Errorf("safehouseFlags = %v, want %v", fd.safehouseFlags, tc.safehouseFlags)
+			}
+		})
+	}
+}
+
+// TestPiFrontDoorWrapsWhenKnobPresent pins AC-2: with a knob present and a
+// resolvable safehouse binary, runPi produces safehouse --trust-workdir-config
+// <TranslateFlags-extra> -- pi …, where extra matches safehouse.TranslateFlags'
+// output (the same function claude/codex use).
+func TestPiFrontDoorWrapsWhenKnobPresent(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := piSafehouseReadyOps(repo, pkg)
+	var stdout, stderr bytes.Buffer
+
+	code := runPi(context.Background(), []string{"--plugin-dir", repo, "--safehouse-add-dirs=/a"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
+		t.Fatalf("expected safehouse-wrapped argv, got %v", ops.launched)
+	}
+	wantExtra, err := safehouse.TranslateFlags([]string{"add-dirs=/a"})
+	if err != nil {
+		t.Fatalf("TranslateFlags err = %v", err)
+	}
+	if !equalArgv(piSafehouseExtra(ops.launched), wantExtra) {
+		t.Fatalf("extra = %v, want TranslateFlags output %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
+	}
+	inner := piSafehouseInnerArgv(ops.launched)
+	// The retired --skill <repo>/skills/{first-officer,ensign} flags are absent
+	// (eq's install-managed merge: the installed package's extension discovers
+	// the Spacedock skills via resources_discover); only the pi-subagents skill is
+	// passed, matching TestPiFrontDoorLaunchesWithNativeResourcePaths.
+	wantPrefix := []string{
+		"pi",
+		"--extension", filepath.Join(pkg, "src", "extension", "index.ts"),
+		"--skill", filepath.Join(pkg, "skills", "pi-subagents"),
+	}
+	if len(inner) < len(wantPrefix)+1 {
+		t.Fatalf("wrapped inner argv too short: %v", inner)
+	}
+	for i, want := range wantPrefix {
+		if inner[i] != want {
+			t.Fatalf("wrapped inner[%d]=%q want %q\ninner=%v", i, inner[i], want, inner)
+		}
+	}
+}
+
+// TestPiFrontDoorPlainWhenNoTrigger pins AC-2: with no knob, no --safehouse, and
+// no .safehouse profile, runPi produces the plain pi argv (no safehouse prefix).
+func TestPiFrontDoorPlainWhenNoTrigger(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := piSafehouseReadyOps(repo, pkg)
+	var stdout, stderr bytes.Buffer
+
+	code := runPi(context.Background(), []string{"--plugin-dir", repo}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr.String())
+	}
+	if len(ops.launched) == 0 || ops.launched[0] != "pi" {
+		t.Fatalf("expected plain pi argv (no safehouse prefix), got %v", ops.launched)
+	}
+}
+
+// TestPiFrontDoorWrapsWhenSafehouseProfileAlone pins AC-2: a .safehouse profile
+// alone (no flags) also triggers the wrap; the extra slot is empty.
+func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	dir := safehouseFixtureDir(t)
+	ops := piSafehouseReadyOps(repo, pkg)
+	var stdout, stderr bytes.Buffer
+
+	code := runPi(context.Background(), []string{"--plugin-dir", repo}, dir, piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr.String())
+	}
+	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
+		t.Fatalf("expected safehouse-wrapped argv for .safehouse profile alone, got %v", ops.launched)
+	}
+	if !equalArgv(piSafehouseExtra(ops.launched), nil) {
+		t.Fatalf("extra should be empty for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
+	}
+}
+
+// TestPiFrontDoorUnknownSafehouseKeyErrors pins AC-2: an unknown --safehouse-* key
+// exits non-zero with no Launch, mirroring TestUnknownSafehouseKeyErrors.
+func TestPiFrontDoorUnknownSafehouseKeyErrors(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := piSafehouseReadyOps(repo, pkg)
+	var stdout, stderr bytes.Buffer
+
+	code := runPi(context.Background(), []string{"--safehouse-bogus=x"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code == 0 {
+		t.Fatalf("exit=0 want non-zero for unknown --safehouse-* key")
+	}
+	if ops.launched != nil {
+		t.Fatalf("Launch invoked on unknown --safehouse-* key: %v", ops.launched)
+	}
+	if !strings.Contains(stderr.String(), "--safehouse-bogus") {
+		t.Fatalf("error does not name the knob --safehouse-bogus: %q", stderr.String())
+	}
+}
+
+// TestPiFrontDoorWrapInnerEqualsUnwrapped pins AC-3 (PI-SPECIFIC DECISION 1): the
+// wrapped inner argv (tokens after safehouse --trust-workdir-config [extra] --) is
+// byte-identical to the unwrapped pi argv. No --dangerously-skip-permissions-
+// equivalent and no --tools/--exclude-tools default is injected by the wrap; the
+// wrap prefix is the only difference.
+func TestPiFrontDoorWrapInnerEqualsUnwrapped(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+
+	// Unwrapped: no knob, no --safehouse, no .safehouse profile.
+	plainOps := piSafehouseReadyOps(repo, pkg)
+	var stdout, stderr bytes.Buffer
+	if code := runPi(context.Background(), []string{"--plugin-dir", repo}, t.TempDir(), piTestEnv(pkg, t.TempDir()), plainOps, &stdout, &stderr); code != 0 {
+		t.Fatalf("plain exit=%d stderr=%q", code, stderr.String())
+	}
+	unwrapped := plainOps.launched
+
+	// Wrapped: a knob triggers the wrap, no .safehouse profile.
+	wrapOps := piSafehouseReadyOps(repo, pkg)
+	var wout, werr bytes.Buffer
+	if code := runPi(context.Background(), []string{"--plugin-dir", repo, "--safehouse-add-dirs=/tmp/probe"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), wrapOps, &wout, &werr); code != 0 {
+		t.Fatalf("wrapped exit=%d stderr=%q", code, werr.String())
+	}
+	wrapped := wrapOps.launched
+	if len(wrapped) == 0 || wrapped[0] != "safehouse" {
+		t.Fatalf("expected safehouse-wrapped argv, got %v", wrapped)
+	}
+	inner := piSafehouseInnerArgv(wrapped)
+	if !equalArgv(inner, unwrapped) {
+		t.Fatalf("wrapped inner argv != unwrapped pi argv:\n wrapped inner=%v\n unwrapped    =%v", inner, unwrapped)
+	}
+	for _, banned := range []string{"--dangerously-skip-permissions", "--dangerously-bypass-approvals-and-sandbox"} {
+		for _, tok := range inner {
+			if tok == banned || strings.HasPrefix(tok, banned+"=") {
+				t.Fatalf("wrap injected a permission-mode flag %q into the inner argv: %v", banned, inner)
+			}
+		}
+	}
+}
+
+// TestPiHelpCarriesSafehouseDetail pins AC-4: `spacedock pi --help` (exit 0)
+// carries the four --safehouse-* usages + the --safehouse-add-dirs ~/scratch
+// example + the -- forwarding note, and does NOT declare --skip-contract-check / --no-install
+// (pi has no contract gate).
+func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run([]string{"pi", "--help"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{
+		"--safehouse",
+		"--safehouse-enable",
+		"--safehouse-add-dirs",
+		"--safehouse-add-dirs-ro",
+		"--plugin-dir",
+		"--safehouse-add-dirs ~/scratch",
+		"forward verbatim",
+		"Examples:",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("pi --help missing %q:\n%s", want, out)
+		}
+	}
+	for _, notWant := range []string{"--skip-contract-check", "--no-install"} {
+		if strings.Contains(out, notWant) {
+			t.Errorf("pi --help should not declare %q:\n%s", notWant, out)
+		}
 	}
 }
