@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings(t *testing.T) {
+func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testing.T) {
 	root := repoRoot(t)
 	paths := []string{
 		filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
@@ -25,17 +25,22 @@ func TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings(t *testing.T) {
 		text := string(data)
 		joined += "\n--- " + rel + " ---\n" + text
 		for _, banned := range []string{
+			"Codex multi_agent_v2",
+			"multi_agent_v2",
+			"Codex v2",
+			"pre-v2",
 			"send_input",
 			"wait_agent(handle)",
 		} {
 			if strings.Contains(text, banned) {
-				t.Errorf("%s contains unversioned stale Codex v2 wording %q", rel, banned)
+				t.Errorf("%s contains stale or version-assuming Codex wording %q", rel, banned)
 			}
 		}
 	}
 
 	for _, want := range []string{
-		"Codex multi_agent_v2",
+		"live tool surface",
+		"not from a runtime-version label",
 		"`«worker.spawn»`",
 		"`spawn_agent(task_name,message,fork_turns)`",
 		"`«worker-identity»`",
@@ -49,12 +54,13 @@ func TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings(t *testing.T) {
 		"`list_agents(path_prefix?)`",
 		"`«worker.shutdown»`",
 		"Do not bless `interrupt_agent`",
-		"re-run the kept-alive reviewer with `followup_task(target,message)`",
+		"Do not infer capabilities from a Codex version name",
+		"re-run the kept-alive reviewer through the same `«addressable-worker»` binding",
 		"Fresh-spawn the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
 		"Do not infer that `followup_task` is absent from the absence of earlier follow-up events",
 	} {
 		if !strings.Contains(joined, want) {
-			t.Errorf("Codex v2 references missing %q", want)
+			t.Errorf("Codex current-runtime references missing %q", want)
 		}
 	}
 

@@ -14,11 +14,11 @@ Codex declares none for the context-budget probe. The FO owns reuse decisions; t
 
 Initial dispatch comes from `spacedock dispatch build` with `host: "codex"`. The generated file carries fetch commands, worktree rules, split-root state commit guidance, checklist, and completion-signal wording. Do not reconstruct those fields manually.
 
-On Codex multi_agent_v2, the FO maps the helper output to `«worker.spawn»` through `spawn_agent(task_name,message,fork_turns)`: the helper `prompt` is passed unchanged as the worker message, while unsupported helper fields such as `description`, `subagent_type`, and `model` are not passed to the live spawn tool. The helper `name` remains the `«worker-identity»` source, even when the live `task_name` is sanitized to lowercase digits and underscores.
+When the live Codex tool surface exposes `spawn_agent(task_name,message,fork_turns)`, the FO maps the helper output to `«worker.spawn»`: the helper `prompt` is passed unchanged as the worker message, while unsupported helper fields such as `description`, `subagent_type`, and `model` are not passed to the live spawn tool. The helper `name` remains the `«worker-identity»` source, even when the live `task_name` is sanitized to lowercase digits and underscores.
 
 ## Awaiting Completion
 
-The FO observes completion through the async final-status notification in the FO mailbox. After sending the completion signal, stop and let Codex deliver it; do not send follow-up chatter unless the FO routes more work through `followup_task(target,message)` under the Codex multi_agent_v2 `«addressable-worker»` binding.
+The FO observes completion through the async final-status notification in the FO mailbox. After sending the completion signal, stop and let Codex deliver it; do not send follow-up chatter unless the FO routes more work through a live `«addressable-worker»` binding such as `followup_task(target,message)`.
 
 ## Clarification
 
@@ -41,8 +41,8 @@ The entity file is the artifact. Do not include the checklist or summary in the 
 
 ## Feedback Interaction
 
-For feedback stages on Codex multi_agent_v2, the FO routes turn-starting feedback through `followup_task(target,message)`. Apply the feedback, update the stage report if needed, and send the same completion signal when finished.
+For feedback stages, when the live Codex tool surface exposes `followup_task(target,message)`, the FO routes turn-starting feedback through that `«addressable-worker»` binding. Apply the feedback, update the stage report if needed, and send the same completion signal when finished.
 
 ## Shutdown Response Protocol
 
-If the FO sends an explicit cooperative shutdown request through `send_message(target,message)`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost. In that case, briefly name what must be preserved before shutdown. Codex multi_agent_v2 `«worker.shutdown»` remains unresolved until probed; do not assume `interrupt_agent` is a safe shutdown instruction.
+If the FO sends an explicit cooperative shutdown request through `send_message(target,message)`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost. In that case, briefly name what must be preserved before shutdown. Codex `«worker.shutdown»` remains unresolved until probed; do not assume `interrupt_agent` is a safe shutdown instruction.

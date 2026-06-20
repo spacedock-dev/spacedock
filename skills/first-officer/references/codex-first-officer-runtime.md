@@ -6,9 +6,9 @@ This file defines how the shared first-officer core executes on Codex. The host-
 
 Codex has no team registry and no `TeamDelete`, so there is no bounded team-teardown loop, settle interval, attempt cap, or terminal-status marker — those are Claude specifics, absent here. The obligation is still mandatory at the terminal boundary.
 
-Codex multi_agent_v2 leaves `«worker.shutdown»` unresolved until probed. Do not bless `interrupt_agent` as a shutdown binding yet; first prove whether it terminates, pauses, or leaves a worker addressable. Keep cooperative preservation text separate from any hard interruption.
+Codex leaves `«worker.shutdown»` unresolved until probed. Do not bless `interrupt_agent` as a shutdown binding yet; first prove whether it terminates, pauses, or leaves a worker addressable. Keep cooperative preservation text separate from any hard interruption.
 
-10. **Teardown agents at terminal.** Derive the entity's worker cohort — every Codex worker whose task name decomposes to this entity's slug. On Codex multi_agent_v2, use `«roster-reconcile»` through `list_agents(path_prefix?)` to inspect active/completed task paths for stale-cohort classification and terminal cleanup targeting; durable workflow state remains authoritative for advancement. Until `«worker.shutdown»` has a probed binding, send only cooperative preservation-aware shutdown text over `send_message(target,message)` and drop the worker from session memory after completion or explicit captain direction. There is no team object to delete and no roster to settle, so teardown is a single cooperative pass, not a retry loop. Teardown is mandatory whether the merge ran locally or via a PR host.
+10. **Teardown agents at terminal.** Derive the entity's worker cohort — every Codex worker whose task name decomposes to this entity's slug. When the live tool surface exposes `list_agents(path_prefix?)`, use it as `«roster-reconcile»` to inspect active/completed task paths for stale-cohort classification and terminal cleanup targeting; durable workflow state remains authoritative for advancement. Until `«worker.shutdown»` has a probed binding, send only cooperative preservation-aware shutdown text over `send_message(target,message)` when that live tool exists, and drop the worker from session memory after completion or explicit captain direction. There is no team object to delete and no roster to settle, so teardown is a single cooperative pass, not a retry loop. Teardown is mandatory whether the merge ran locally or via a PR host.
 
 ## Team Creation
 
@@ -19,6 +19,18 @@ spawned and observed through the multi-agent mailbox surface.
 Codex declares none for the context-budget probe. When the shared core asks for a
 reuse budget signal, treat the probe as unavailable and prefer a fresh dispatch
 unless the current task explicitly depends on the previous worker's context.
+
+## Live Tool Surface Probe
+
+At boot, bind the Codex `«fn»`s from the actual tools exposed in this session, not from a runtime-version label. The expected live bindings are:
+
+- `«worker.spawn»` when `spawn_agent(task_name,message,fork_turns)` is present.
+- `«addressable-worker»` when `send_message(target,message)` and `followup_task(target,message)` are present.
+- `«completion-signal»` foreground waiting when `wait_agent(timeout_ms)` is present.
+- `«roster-reconcile»` when `list_agents(path_prefix?)` is present.
+- `«worker.shutdown»` remains unresolved until a shutdown-specific probe proves a binding.
+
+If a referenced tool is missing or rejects the call shape, report that concrete tool-surface blocker and fall back only to behavior the live surface actually supports. Do not infer capabilities from a Codex version name or from historical transcript labels.
 
 ## Dispatch
 
@@ -32,7 +44,7 @@ cross-host tooling.
 Forward the emitted prompt exactly as returned; for Codex it is a
 read-dispatch-file prompt. The FO must never forward a prompt containing `Skill(skill="spacedock:ensign")` to a Codex worker.
 
-For Codex multi_agent_v2, bind `«worker.spawn»` to `spawn_agent(task_name,message,fork_turns)`: sanitize the helper-emitted `name` through `«worker-identity»` to a lowercase digit/underscore `task_name`, pass the emitted `prompt` unchanged as `message`, omit unsupported `description`, `subagent_type`, and `model`, and record the sanitized task path as the live worker handle. Helper-emitted `name` remains the host-neutral worker identity source; retain the mapping from sanitized task path back to entity slug, stage, and cycle so cohorts and teardown targets remain classifiable.
+When the live tool surface exposes `spawn_agent(task_name,message,fork_turns)`, bind it as `«worker.spawn»`: sanitize the helper-emitted `name` through `«worker-identity»` to a lowercase digit/underscore `task_name`, pass the emitted `prompt` unchanged as `message`, omit unsupported `description`, `subagent_type`, and `model`, and record the sanitized task path as the live worker handle. Helper-emitted `name` remains the host-neutral worker identity source; retain the mapping from sanitized task path back to entity slug, stage, and cycle so cohorts and teardown targets remain classifiable.
 
 Codex has no team registry, so there is no `team_name` lifecycle to create,
 recover, or tear down. Use Codex task names and mailbox notifications as the
@@ -43,9 +55,9 @@ Codex has no shared standing-teammate surface; the core's standing-injection cal
 
 ## Reuse And Feedback Routing
 
-Codex multi_agent_v2 is not a one-shot worker surface: a spawned worker remains addressable by its live task path/handle while it is active or completed and still listed by the runtime. On Codex multi_agent_v2, `«addressable-worker»` is realized by `send_message(target,message)` for non-triggering context notes and cooperative preservation text, and by `followup_task(target,message)` for reuse, feedback, or rework that must start a worker turn. Reuse is appropriate when the next task depends heavily on the worker's retained context; otherwise dispatch a fresh worker from entity state.
+When the live tool surface exposes addressable workers, a spawned worker remains addressable by its live task path/handle while it is active or completed and still listed by the runtime. Bind `«addressable-worker»` to `send_message(target,message)` for non-triggering context notes and cooperative preservation text, and to `followup_task(target,message)` for reuse, feedback, or rework that must start a worker turn. Reuse is appropriate when the next task depends heavily on the worker's retained context; otherwise dispatch a fresh worker from entity state.
 
-Feedback rejection is the load-bearing exception to casual fresh dispatch: keep the validation reviewer addressable after its REJECTED report, route the fix to the implementation worker, then re-run the kept-alive validation reviewer with `followup_task(target,message)`. Do not fresh-spawn cycle-2 validation merely because the run is headless, scoped to one entity, or running on Codex. Do not infer that `followup_task` is absent from the absence of earlier follow-up events, from a transcript that has only used spawn/wait so far, or from the historical `wait` event label. Attempt the v2 `followup_task` binding; if the live tool surface rejects the call, report that concrete blocker instead of silently fresh-spawning cycle-2 validation. Fresh-spawn the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail. Legacy pre-v2 input-routing terms belong only to explicitly versioned legacy fixtures or references.
+Feedback rejection is the load-bearing exception to casual fresh dispatch: when the live surface provides `«addressable-worker»`, keep the validation reviewer addressable after its REJECTED report, route the fix to the implementation worker, then re-run the kept-alive validation reviewer with `followup_task(target,message)`. Do not fresh-spawn cycle-2 validation merely because the run is headless, scoped to one entity, or running on Codex. Do not infer that `followup_task` is absent from the absence of earlier follow-up events, from a transcript that has only used spawn/wait so far, or from a historical `wait` event label. Attempt the probed `followup_task` binding; if the live tool surface rejects the call, report that concrete blocker instead of silently fresh-spawning cycle-2 validation. Fresh-spawn the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail. Legacy input-routing terms belong only to explicitly marked legacy fixtures or references.
 
 ## Awaiting Completion
 
@@ -62,7 +74,7 @@ background work may still end the FO turn and rely on the mailbox.
 
 ### Foreground wait
 
-On Codex multi_agent_v2, `«completion-signal»` may use global `wait_agent(timeout_ms)` only after workflow and gate work is exhausted. A wait timeout return is normal and retryable. It means no final-status mailbox update arrived before the deadline; it is not a failure, a zombie signal, or a teardown trigger. Before calling `wait_agent`, tell the captain that pressing Esc or otherwise causing an operator interruption only returns control; the worker is not failed, closed, or redispatched, and the next foreground wait is reinstalled when waiting is again the next useful idle action. A wait return must be attributed by mailbox content, task path, `list_agents(path_prefix?)` roster state, or durable workflow state, not by a handle argument. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
+When the live tool surface exposes `wait_agent(timeout_ms)`, `«completion-signal»` may use that global foreground wait only after workflow and gate work is exhausted. A wait timeout return is normal and retryable. It means no final-status mailbox update arrived before the deadline; it is not a failure, a zombie signal, or a teardown trigger. Before calling `wait_agent`, tell the captain that pressing Esc or otherwise causing an operator interruption only returns control; the worker is not failed, closed, or redispatched, and the next foreground wait is reinstalled when waiting is again the next useful idle action. A wait return must be attributed by mailbox content, task path, `list_agents(path_prefix?)` roster state when present, or durable workflow state, not by a handle argument. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
 
 ### Queued notification flushed by later activity
 
@@ -97,4 +109,4 @@ team-lead mailbox on Codex.
 
 ## Backstop (Codex)
 
-Codex multi_agent_v2 has `«roster-reconcile»` through `list_agents(path_prefix?)` for active/completed task-path reads. It can support stale-cohort classification, debugging, and terminal cleanup targeting, but it is not a durable workflow-state source and does not replace state-checkout evidence. A missed terminal teardown or supersede shutdown can still persist until session end if the boundary step is skipped; the shared-core boundary steps remain the enforcement point.
+When the live tool surface exposes `list_agents(path_prefix?)`, Codex has `«roster-reconcile»` for active/completed task-path reads. It can support stale-cohort classification, debugging, and terminal cleanup targeting, but it is not a durable workflow-state source and does not replace state-checkout evidence. A missed terminal teardown or supersede shutdown can still persist until session end if the boundary step is skipped; the shared-core boundary steps remain the enforcement point.
