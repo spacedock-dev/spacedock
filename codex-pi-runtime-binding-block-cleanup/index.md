@@ -241,3 +241,22 @@ Validation recommends PASSED. The implementation meets the binding-block structu
 ### Summary
 
 Validation cycle 2 recommends PASSED. The feedback fix in `e60979c9` keeps new shared-core lifecycle capability headings host-neutral while preserving concrete Codex/Pi bindings in runtime adapter `## Runtime implementation` blocks, and all required test gates passed.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Review updated code commit `892a734b` after the Codex wait hardening follow-up.
+  Reviewed `892a734b`; recommendation: PASSED.
+- DONE: Verify Codex wait notes now make unresolved-worker idle waiting a MUST: unresolved Codex worker plus no other dispatchable/gate/state work requires `wait_agent(timeout_ms)` before ending turn or reporting idle/status, and interrupted waits must be reinstalled on the next idle action if unresolved.
+  `codex-first-officer-runtime.md` now states the FO MUST call `wait_agent(timeout_ms)` before ending/reporting idle and MUST reinstall foreground wait on the next idle action after interruption when the worker remains unresolved.
+- DONE: Verify contractlint guards this hard invariant and does not allow weakening it into optional guidance.
+  `TestCodexWaitNotesRequireIdleStopForegroundWait` requires the hard idle-stop phrases and rejects optional forms such as "may use foreground wait" or "use foreground wait only when".
+- DONE: Re-verify the previous cycle-2 feedback remains fixed: new `«worker.spawn»` and `«worker.shutdown»` shared-core headings are host-neutral, with concrete Codex/Pi bindings in runtime blocks.
+  Manual review confirmed the new shared-core lifecycle headings contain no host `→` lines; `TestCodexAndPiFirstOfficerRuntimeBindingBlocks` passed with concrete Codex/Pi runtime bindings.
+- DONE: Run `go test ./internal/contractlint` and a justified broader suite or cite the implementation's broader tests if not rerun; report exact commands/results.
+  `go test ./internal/contractlint`: 60 passed in 1 package; `go test ./...`: 1713 passed in 17 packages; `go test ./... -race`: 1713 passed in 17 packages; `gofmt -w ./cmd ./internal` was run and unrelated formatting side effects were restored.
+- DONE: Append Stage Report: validation cycle 3 with PASSED or REJECTED recommendation, evidence, and commit only this entity path in state.
+  This cycle 3 report records PASSED and will be committed path-scoped to this entity in the state checkout.
+
+### Summary
+
+Validation cycle 3 recommends PASSED. The Codex wait follow-up hardens idle-stop foreground waiting from optional guidance into a guarded MUST, while the cycle-2 host-neutral shared-core lifecycle headings and Codex/Pi runtime binding blocks remain intact.
