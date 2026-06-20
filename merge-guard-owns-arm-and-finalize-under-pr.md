@@ -69,3 +69,19 @@ Two rounds, per the validation stage's high-stakes detached-audit-on-throwaway r
 - **Round 2 — post-fix (throwaway checkout @ 98769858), 2 lenses.** Verdict SOUND → GO. No fail-CLOSED regression: `pr-merge:{N}` + `local-merge:{short-sha}` still finalize; all status+cli tests green; never-bypass guard + bare-#N block untouched. Residual benign fail-OPEN (`pr-merge:+42` / `0042` via Atoi sign/leading-zero leniency; unbounded/uppercase isSHALike) — still names a real positive PR, never emitted by the honest hook → backlog hardening.
 
 Backlog from the audits (none cut-blocking): folder-form `commitArchiveMove` path-awareness; mod↔core sentinel convergence; canonical-sentinel hardening (reject sign/leading-zeros, bound SHA length); archive-commit robustness vs the non-deterministic validate pre-commit hook.
+
+## Stage Report: implementation (cycle 3)
+
+Closes three audit-backlog items (folder-form, mod↔core convergence, archive-commit robustness) before PR #415 merges. Captain-approved.
+
+- DONE: commitArchiveMove handles folder-form (folder-form fixture + test proves finalize+archive+path-scoped commit); flat-form byte-identical.
+  `commitArchiveMove` now resolves the rename pathspecs via `archiveMovePathspecs`, mirroring `runArchive`: folder-form renames the whole `{slug}/` dir, flat-form the `{slug}.md` file. `TestMergeGuardFinalizesFolderFormEntity` (fixture `110-pr-merged-folder/index.md`) was red first (`exit status 128` on the `git add`), now green; the flat-form `TestMergeGuardFinalizeCommitsArchivePathScoped` stays green (byte-identical path).
+- DONE: pr-merge mod MERGED-detection (startup + idle) converges to: set pr-merge:{N} sentinel + re-run `merge guard --verdict passed`; end state identical.
+  `docs/dev/_mods/pr-merge.md` (fo-realm) startup + idle MERGED paths rewritten to record `pr=pr-merge:{N}` then finalize through the verb (clear+terminalize+archive+commit), replacing the hand-rolled two-`--set`+`--archive`. CLOSED-without-merge escalation unchanged; noted pr now records the sentinel post-finalize (was bare `#N`). Version 0.12.3→0.12.4. Prose-only (no Go test); contractlint + full suite green.
+- DONE: finalize is atomic: a failing archive commit rolls back to pre-finalize state (live, non-terminal, mod-block intact); test injects a failing commit and asserts unchanged.
+  `finalize` snapshots the pre-finalize bytes + live location before mutating (`captureArchiveState`); on `commitArchiveMove` failure it reverses the rename and restores the original content (`rollbackArchive`). `TestMergeGuardFinalizeRollsBackOnCommitFailure` (real failing pre-commit hook injected into the staged repo) was red first (entity stranded in `_archive`), now green — entity byte-identical to pre-finalize. Rollback scoped to commit failure only, so the never-bypass guard-refusal behavior (`TestMergeGuardArmedButNoMergeRefusesFinalize`) is unchanged.
+- DONE: rebase + full suite + push.
+  Rebased clean onto origin/main @ `d4b7ac61` (#416 had landed). Full `go test ./...` GREEN (all packages; status 26s, cli 39s, dispatch 27s). Code branch force-with-lease pushed (rebase rewrote hashes) — PR #415 updated. Single code commit `52380e72` (pre-rebase) carries all three fixes.
+
+### Summary
+Three fixes folded into PR #415: (1) folder-form-aware archive commit (mirrors runArchive resolution; flat-form byte-identical); (2) atomic finalize that rolls back the rename + frontmatter on a commit failure rather than stranding the entity half-archived; (3) the pr-merge mod's MERGED-detection now finalizes through the `merge guard` verb (dogfooded == shipped path), end state identical with the pr field recording the sentinel. All TDD red-first. Residual canonical-sentinel hardening (Atoi sign/leading-zero leniency, unbounded SHA) remains backlogged — benign, never emitted by the honest hook.
