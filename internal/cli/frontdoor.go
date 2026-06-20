@@ -54,12 +54,39 @@ var executablePath = os.Executable
 
 const spacedockBinEnv = "SPACEDOCK_BIN"
 
+// agentTeamsEnv gates claude's worker↔FO back-channel (SendMessage/TeamCreate).
+// It is OFF by default in claude, so a first-officer session launched without it
+// can spawn named background agents but cannot address them. The `spacedock
+// claude` launcher enables it by construction so the FO contract's back-channel
+// assumption holds.
+const agentTeamsEnv = "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
+
 func launchEnv(parent []string) []string {
 	env := withoutEnv(parent, spacedockBinEnv)
 	if bin, ok := resolvedLauncherBin(); ok {
 		env = append(env, spacedockBinEnv+"="+bin)
 	}
 	return env
+}
+
+// withAgentTeams enables the claude back-channel in the launched child env unless
+// the parent already set agentTeamsEnv — an explicit operator value (even =0) is
+// preserved. Claude-only: codex/pi launch paths do not call this.
+func withAgentTeams(env []string) []string {
+	if hasEnv(env, agentTeamsEnv) {
+		return env
+	}
+	return append(env, agentTeamsEnv+"=1")
+}
+
+func hasEnv(env []string, key string) bool {
+	prefix := key + "="
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
@@ -345,7 +372,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
-	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
+	if err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ()))); err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
 	}
