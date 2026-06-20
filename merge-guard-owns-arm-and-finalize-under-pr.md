@@ -22,3 +22,23 @@ Make `spacedock merge guard <slug>` own the full `merge: pr` lifecycle so the FO
 - **AC-1** — `spacedock merge guard <slug>` on a `merge: pr` entity entering terminal with an empty mod-block AUTO-ARMS (sets `mod-block=merge:pr-merge`) and reports `armed`. Verified by a test driving the verb on a fixture entity.
 - **AC-2** — `spacedock merge guard <slug>` finalizes a detected-MERGED PR (clear mod-block + terminalize + archive) even when `mod-block` is empty (the stranded-non-armed case). Verified by a test seeding a merged-PR + non-armed fixture and asserting terminal+archived after one invocation.
 - **AC-3** — the archive move is committed by the verb path-scoped (no rename mis-stage); `go test` for the merge package green; the FO contract's merge ceremony prose updates to the one-verb-per-phase flow.
+
+## Stage Report: implementation
+
+- DONE: AUTO-ARM — when entering terminal under merge:pr with an empty mod-block, set mod-block=merge:{hook} and signal `armed`
+  `internal/status/merge.go` auto-arm now fires under BOTH policies (removed the `policy == mergeLocal` gate); `TestMergeGuardAutoArmsUnderBothPolicies` green. (Arm value is `merge:{registered-hook}`; in production the merge mod is `pr-merge` → `merge:pr-merge`.)
+- DONE: FINALIZE — when the PR is detected MERGED, clear mod-block then terminalize then archive, EVEN from a non-armed state
+  New `prIndicatesMerged()` predicate: finalize keys off a merge sentinel in `pr` (`pr-merge:{n}` / `local-merge:{sha}`), never raw pr-presence. `TestMergeGuardFinalizesFromMergedSentinelNonArmed` (stranded empty-mod-block case) green.
+- DONE: the archive move is committed PATH-SCOPED by the verb (no rename mis-stage / no bare git add -A)
+  New `commitArchiveMove()` stages only the entity's two rename paths and commits them; `TestMergeGuardFinalizeCommitsArchivePathScoped` proves a dirty sibling is NOT swept in.
+- DONE: TDD — AC-1 auto-arm, AC-2 finalize-from-non-armed-MERGED, AC-3 path-scoped archive commit (failing tests first, then to green)
+  All three written red first (confirmed failing), then implemented to green. Fixtures `080-pr-merged.md` (merged sentinel, non-armed) + `090-pr-open-unmerged.md` (open #42, must block).
+- DONE: premature-finalize gate (Codex FO steering) — bare/open PR must block, not finalize
+  `TestMergeGuardBlocksOnOpenPRNoModBlock` pins it: open `#42` + empty mod-block → `blocked`, NOT archived.
+- DONE: `go build ./...` and the merge-package tests green
+  Full `go build ./...` clean; `go test ./internal/status ./internal/cli` green; full `go test ./...` green.
+- DONE: Update `skills/first-officer/references/fo-merge-core.md` to the one-verb-per-phase flow; keep mod-block guard semantics
+  Rewrote Merge-and-Cleanup + the «merge.guard» entry to armed/blocked/finalized-on-sentinel; added the SPACEDOCK_BIN launcher-invariant note. Mod-block + merge-hook guard sections unchanged. `TestProseFunctionNotationBindsToRouting` + contractlint green.
+
+### Summary
+The verb now owns the full merge:pr lifecycle: auto-arm under both policies, finalize off a local merge SENTINEL (never raw pr-presence — fixing the premature-finalize bug where an open-PR entity was archived before its PR landed), and a path-scoped archive commit by the verb. Two superseded policy-gated tests were reframed (not deleted) to the new contract while preserving their guard-not-bypassed intent. CONSISTENCY HANDOFF: fo-merge-core.md now names the `pr-merge:{n}` sentinel as the FINALIZE key, but the fo-realm `docs/dev/_mods/pr-merge.md` MERGED-detection still finalizes directly rather than recording that sentinel + re-running `merge guard` — left for the FO (fo-realm file, outside this stage's stated deliverable; the verb accepts both sentinel forms today).
