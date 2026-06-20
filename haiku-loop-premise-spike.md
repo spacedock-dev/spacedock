@@ -1,7 +1,7 @@
 ---
 title: Premise spike — can a Haiku FO hold the mechanical dispatch loop (no tier/L3)?
 source: '0221-layered-fo rework (2026-06-19): the load-bearing premise of the Haiku-operable/layered FO is that a weak model can reliably DRIVE the mechanical dispatch loop (boot→dispatch→advance→terminalize), needing help only on judgment. Untested — opus itself deviates (5xs). This is the cheapest path that, if it fails, invalidates the tier bet (72, standing-L3, kt-full). Run it FIRST.'
-status: implementation
+status: validation
 score: 0.85
 sprint: 0221-layered-fo
 group: validation
