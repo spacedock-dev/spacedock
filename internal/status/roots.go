@@ -4,6 +4,8 @@ package status
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -62,6 +64,34 @@ func resolveRoots(workflowDir, baseDir string) (roots, error) {
 	r.entityDir = filepath.Join(abs, relPath)
 	r.entityDirSpelling = PyJoin(spellingOr(workflowDir, abs), relPath)
 	return r, nil
+}
+
+// validateRootsOrExit makes the explicit --validate surface fail closed: it must
+// certify a commissioned workflow definition dir and, for split-root workflows,
+// an existing state entity dir. The default table path intentionally keeps its
+// historical empty-dir compatibility and does not call this guard.
+func validateRootsOrExit(roots roots, rootPath string, stderr io.Writer) int {
+	if rootPath != "" {
+		return 0
+	}
+	readme := filepath.Join(roots.definitionDir, "README.md")
+	if !(isRegularFile(readme) && len(parseStagesBlock(readme)) > 0) {
+		if defDir, ok := stateCheckoutParent(roots.definitionDir); ok {
+			return errExit(stderr, "this is a state checkout; point --workflow-dir at the definition dir (the one whose README declares state:): "+defDir)
+		}
+		return errExit(stderr, "--validate requires --workflow-dir to resolve to a commissioned Spacedock workflow: "+roots.definitionDir)
+	}
+	mode, relPath, err := ClassifyState(ParseFrontmatter(readme)["state"])
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
+	if mode == StateSplitRoot {
+		info, statErr := os.Stat(roots.entityDir)
+		if statErr != nil || !info.IsDir() {
+			return errExit(stderr, "--validate requires state checkout directory declared by README state: "+relPath+" at "+roots.entityDir)
+		}
+	}
+	return 0
 }
 
 // mergePolicy is a workflow's declared merge policy, read from the README's

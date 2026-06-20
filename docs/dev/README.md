@@ -221,7 +221,7 @@ Validation pilots should use these when verifying implementation work:
 | Clean log + `-json` archive from one run | `gotestsum --jsonfile detail.jsonl --format pkgname -- ./pkg` | The live-CI test-output shape: a clean step log (per-package progress + an `=== Failed` recap with `file:line`) plus a full `-json` archive, from a single run, with the `go test` exit preserved. Locally: `go install gotest.tools/gotestsum@v1.13.0` (the version CI pins), or run `.github/scripts/install-gotestsum.sh` for the same sha256-verified prebuilt. Inspect the archive with `grep '"Action":"fail"' detail.jsonl` or a `go tool test2json`-aware reader. |
 | Launcher help smoke test | `go run ./cmd/spacedock --help` | Basic command entrypoint behavior |
 | Launcher version smoke test | `go run ./cmd/spacedock --version` | Basic version output behavior |
-| Status validator | `spacedock status --workflow-dir docs/dev --validate` | Spacedock entity-contract validation |
+| Status validator | `spacedock status --workflow-dir docs/dev --validate` from the repo root, or pass an absolute workflow definition dir | Spacedock entity-contract validation; fails closed if `--workflow-dir` does not resolve to a commissioned workflow |
 | Status table | `spacedock status --workflow-dir docs/dev` | Status enumeration output |
 | State behavior extension | `docs/specs/state-behavior-extension.md` | Split-root state semantics and external tracker bridge principles |
 | Bootstrap roadmap | `docs/roadmap/bootstrap-roadmap.md` | Stage-specific required tests |
