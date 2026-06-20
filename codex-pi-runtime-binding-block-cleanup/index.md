@@ -190,3 +190,26 @@ Ideation converted the seed into an implementation-ready cleanup plan. The key d
 ### Summary
 
 Implementation normalized Codex and Pi FO adapters into binding-block maps keyed to the shared capability names while preserving the load-bearing runtime semantics from #417 and the entity body. The code work is committed as `19dde2b8`; this state report records the verification evidence and line-count reduction.
+
+## Stage Report: validation
+
+- DONE: Review code commit `19dde2b8` on branch `spacedock-ensign/codex-pi-runtime-binding-block-cleanup` in worktree `.worktrees/spacedock-ensign-codex-pi-runtime-binding-block-cleanup` against the t0g entity body, Pi commander feedback, and acceptance criteria.
+  Reviewed commit `19dde2b8`; recommendation: PASSED.
+- DONE: Verify AC-1: Codex and Pi FO runtime adapters have exactly one `## Runtime implementation` binding block keyed to the expected capability set and no lifecycle narration headings for dispatch/await/reuse/shutdown remain.
+  `TestCodexAndPiFirstOfficerRuntimeBindingBlocks` and lifecycle-heading checks passed; manual heading scan found one binding block in each adapter with the expected ordered capability set.
+- DONE: Verify AC-2: runtime-support principles are enforced for Codex and Pi, including negative host contrast, mutable step-number coupling, and concrete host tool placement limited to binding/probe/harness sections.
+  Contractlint guard tests passed for negative contrast, step coupling, Codex tool placement, and Pi tool placement; host tool names are limited to Codex probe/runtime and Pi runtime/harness sections.
+- DONE: Verify AC-3: load-bearing Codex and Pi semantics from the entity body and #417 feedback are preserved in compact form, including Codex wait/reuse semantics and Pi model/cwd/file-verification/fresh-redispatch semantics.
+  Guarded by `TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe`, `TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape`, and `TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved`; manual review confirmed #417 Pi shutdown/model/file-verification substance remains.
+- DONE: Verify AC-4: the change composes with `ad` by leaving Claude adapter prose and live runners untouched except minimal shared/core test coverage.
+  Commit `19dde2b8` touches only FO core docs, Codex/Pi FO runtime refs, and contractlint tests; no Claude adapter rewrite or live runner changes found.
+- DONE: Verify AC-5: reproduce or confirm the reported Codex+Pi FO adapter size reduction and ensure binding coverage remains complete.
+  Reproduced line counts against `origin/main`: Codex 92 -> 52, Pi 72 -> 22, combined 164 -> 74 lines, down 90 lines (54.9%); binding coverage tests passed.
+- DONE: Run `go test ./internal/contractlint` and a broader appropriate suite; report exact commands/results. If you do not run `go test ./... -race`, say why.
+  `go test ./internal/contractlint`: 59 passed; `go test ./...`: 1712 passed in 17 packages; `go test ./... -race`: 1712 passed in 17 packages. `gofmt -w ./cmd ./internal` completed but produced unrelated formatting/comment rewrites outside commit `19dde2b8`; validation restored those local changes and committed no code.
+- DONE: Append a Stage Report: validation with PASSED or REJECTED recommendation, evidence for each AC, and commit only this entity path in state.
+  This report records the PASSED recommendation and AC evidence; state commit follows path-scoped for this entity only.
+
+### Summary
+
+Validation recommends PASSED. The implementation meets the binding-block structure, runtime-support guardrails, preserved Codex/Pi semantics, `ad` boundary, and size-reduction acceptance criteria, with contractlint, full test, and race suites passing.
