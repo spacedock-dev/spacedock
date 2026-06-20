@@ -97,3 +97,18 @@ diff --git a/docs/dev/README.md b/docs/dev/README.md
 ### Summary
 
 Ideation corrected the seed hypothesis: the observed flip is deterministic root misresolution for a relative `--workflow-dir`, not nondeterministic `discoverEntityFiles` scanning. The task is now shaped around fail-closed `--validate` root handling plus command-level regression tests that prove untracked on-disk entities are still scanned when the workflow definition dir is correct.
+
+## Stage Report: implementation
+
+- DONE: Added fail-closed validation-root handling before `validateWorkflow`.
+  Evidence: code commit `5e6083e` adds `validateRootsOrExit`, which rejects `--validate` when the resolved target is not a workflow README with stages or when a split-root `state:` directory is missing. The guard is validation-only, preserving default table compatibility.
+- DONE: Added command-level regression tests for wrong roots, blank-id flat/folder entities, and clean-shell versus hook-shaped env parity.
+  Evidence: `internal/status/validate_roots_test.go` covers misresolved relative `docs/dev` from state and definition CWDs, repeated absolute-definition validation over untracked blank-id flat/folder entities, and clean plus `GIT_DIR`/`GIT_INDEX_FILE` environments.
+- DONE: Preserved tracked/staged/committed validate behavior and updated the user-facing docs note.
+  Evidence: `TestValidateKeepsTrackedStagedCommittedEntitiesWhileFailingBadUntracked` mixes good committed, staged, and untracked entities with a bad untracked sibling; `docs/dev/README.md` now tells validators to run from repo root or pass an absolute workflow definition dir.
+- DONE: Completed the required validation and adversarial audit.
+  Evidence: `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed. Temporarily removing the new guard made `TestValidateFailsClosedForMisresolvedSplitRoot` fail with `VALID` from the misresolved roots, then the guard was restored and both full Go gates passed again.
+
+### Summary
+
+Implementation closed the fail-open `--validate` path for empty or misresolved roots while keeping entity discovery filesystem-based. The new tests prove wrong roots fail closed, correct split-root validation scans untracked blank-id flat and folder entities deterministically, hook-shaped envs match clean shells, and existing tracked/staged/committed behavior remains intact.
