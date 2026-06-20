@@ -165,3 +165,26 @@ Token expectation: #417 already cut roughly 67 tokens from the Pi runtime refs t
 ### Summary
 
 Ideation converted the seed into an implementation-ready cleanup plan. The key decision is to add minimal `«worker.spawn»` and `«worker.shutdown»` core capability headings in this task, then rewrite only Codex and Pi FO adapters into binding blocks while leaving broad Claude trimming for `ad`.
+
+## Stage Report: implementation
+
+- DONE: Implement the approved t0g plan from the entity body: add minimal first-class `«worker.spawn»` and `«worker.shutdown»` headings to `fo-dispatch-core.md`, then convert only Codex and Pi FO runtime adapters to `## Runtime implementation` binding blocks.
+  Code commit `19dde2b8` adds the core headings and rewrites only `codex-first-officer-runtime.md` / `pi-first-officer-runtime.md` into ordered capability binding blocks.
+- DONE: Base all work on current `origin/main`, which includes #417 (`bae7cba0`) and runtime-support docs commit `4403e095`; preserve #417 Pi substance and retarget its contractlint guard assertions to the new binding bullets.
+  Rebased onto `origin/main` at `54580acc`; history includes `bae7cba0` and `4403e095`, and Pi guard assertions now target binding-block wording.
+- DONE: Preserve Codex semantics: probe-based binding, sanitized task mapping, wait timeout/interruption/reinstallation semantics, queued-vs-autonomous notification classification, and feedback reviewer reuse through turn-starting `«addressable-worker»`.
+  Guarded by `TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe`, `TestCodexForegroundWaitSectionCarriesOperatorInterruptionShape`, and `TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved`.
+- DONE: Preserve Pi semantics: null-model stamping via `intercom({action:"list"})`, provider/model canonical model space, `cwd:<resolved repo root>` on subagent calls, file verification as the completion gate, fresh redispatch default, and harness isolation notes.
+  Guarded by `TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved`, Pi tool-placement checks, and the retained Pi negative-contrast tests.
+- DONE: Add/update contractlint tests for core capability headings, Codex/Pi binding-block sections, lifecycle-heading absence, negative contrast, step-number coupling, and host tool-name placement.
+  Added `runtime_binding_block_test.go`; updated capability extraction and Codex tool placement guards.
+- DONE: Keep boundary with `ad`: do not rewrite Claude adapter prose beyond minimal core `→` coverage needed by capability tests, and do not touch live runners or behavior code unless tests require it.
+  Claude adapter and live runners were untouched; changes are scoped to FO core docs, Codex/Pi FO adapters, and contractlint tests.
+- DONE: Run `go test ./internal/contractlint` and `go test ./...`; run `gofmt -w ./cmd ./internal` if Go tests are edited; include size/line-count impact for Codex+Pi FO adapters.
+  `go test ./internal/contractlint`: 59 passed; `go test ./...`: 1712 passed in 17 packages; `go test ./... -race`: 1712 passed in 17 packages; `gofmt -w ./cmd ./internal` run. Codex+Pi FO adapter lines: 164 -> 74, down 90 lines (54.9%).
+- DONE: Append a Stage Report: implementation with changed files, token/line impact, verification evidence, residual risk, and commit all worktree changes plus the implementation stage report path-scoped in state.
+  Changed files: `fo-dispatch-core.md`, Codex/Pi FO runtime refs, and contractlint tests. Residual risk: compact prose still relies on validation to confirm no reviewer-facing nuance was over-trimmed; `ad` still owns broad Claude adapter trim and final cross-runtime polish.
+
+### Summary
+
+Implementation normalized Codex and Pi FO adapters into binding-block maps keyed to the shared capability names while preserving the load-bearing runtime semantics from #417 and the entity body. The code work is committed as `19dde2b8`; this state report records the verification evidence and line-count reduction.
