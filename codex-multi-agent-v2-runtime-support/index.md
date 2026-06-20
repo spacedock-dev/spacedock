@@ -196,6 +196,27 @@ Implementation added standalone Codex multi_agent_v2 host bindings to the existi
 
 Feedback cycle 1 fixed the remaining live rejection-flow failure by making Codex multi_agent_v2 reviewer reuse explicit and non-optional for feedback re-review. The final local Codex live lane passed all seven shared scenarios.
 
+## Stage Report: implementation (feedback cycle 2)
+
+- DONE: Remove agent-facing `Codex multi_agent_v2` / v2 behavior guidance and align Codex runtime prose with probe-based `«fn»` host bindings.
+  Replaced runtime and skill wording with live tool-surface probes: bind `«worker.spawn»` from `spawn_agent(task_name,message,fork_turns)`, `«addressable-worker»` from `send_message(target,message)` / `followup_task(target,message)`, foreground `«completion-signal»` from `wait_agent(timeout_ms)`, and `«roster-reconcile»` from `list_agents(path_prefix?)`. Kept `«worker.shutdown»` unresolved until a shutdown-specific probe proves a binding.
+- DONE: Preserve concrete blocker behavior instead of version inference.
+  Codex runtime instructions now say missing or shape-rejecting tools are concrete tool-surface blockers, and fallback is allowed only to behavior the live surface actually supports. They also retain the feedback-rejection rule to attempt the probed `followup_task` binding instead of inferring absence from older transcript labels.
+- DONE: Update contractlint so version-taxonomy leakage fails.
+  Renamed the Codex contractlint test around current runtime live tool-surface probes and banned `Codex multi_agent_v2`, `multi_agent_v2`, `Codex v2`, and `pre-v2` from the agent-facing Codex runtime/skill references.
+
+### Verification
+
+- PASS: `go test ./internal/contractlint -run TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe` -> 1 passed.
+- PASS: `go test ./internal/ensigncycle -run TestAssertCodexReviewerReuse` -> 9 passed.
+- RAN: `gofmt -w ./cmd ./internal`; unrelated formatting/comment churn in `internal/cli/prose_function_routing_test.go`, `internal/status/section_read.go`, and `internal/ensigncycle/haiku_loop_spike_live_test.go` was reverted before commit.
+- PASS: `go test ./...` -> 1679 passed in 17 packages.
+- PASS: `go test ./... -race` -> 1679 passed in 17 packages.
+
+### Summary
+
+Feedback cycle 2 removes version-based Codex behavior guidance from agent-facing runtime files. Codex instructions now bind capabilities from the live tool surface and report concrete tool-shape blockers instead of reasoning from a runtime version label.
+
 ## Stage Report: validation
 
 - DONE: Verified AC-1, initial Codex v2 dispatch mapping.
