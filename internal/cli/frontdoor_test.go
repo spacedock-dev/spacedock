@@ -245,8 +245,8 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 
 // TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset (AC-1): with no parent
 // value for CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS, the launched claude child env
-// carries it set to 1 — the worker↔FO back-channel is reliable by construction
-// rather than ambient-env-dependent.
+// carries it set to 1 — a best-effort export, not the authoritative enabler (the
+// authoritative enabler is ~/.claude/settings.json; see agentTeamsEnv).
 func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
 	t.Setenv(agentTeamsEnv, "") // register restore-on-cleanup, then unset for real
 	os.Unsetenv(agentTeamsEnv)

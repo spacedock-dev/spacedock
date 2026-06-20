@@ -54,11 +54,11 @@ var executablePath = os.Executable
 
 const spacedockBinEnv = "SPACEDOCK_BIN"
 
-// agentTeamsEnv gates claude's worker↔FO back-channel (SendMessage/TeamCreate).
-// It is OFF by default in claude, so a first-officer session launched without it
-// can spawn named background agents but cannot address them. The `spacedock
-// claude` launcher enables it by construction so the FO contract's back-channel
-// assumption holds.
+// agentTeamsEnv is the env flag associated with claude's worker↔FO back-channel
+// (SendMessage/TeamCreate). The authoritative enabler is ~/.claude/settings.json
+// (env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 + teammateMode:auto), which re-applies
+// the flag to every child regardless of shell env; the launcher export below does
+// NOT independently enable the feature.
 const agentTeamsEnv = "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"
 
 func launchEnv(parent []string) []string {
@@ -69,9 +69,11 @@ func launchEnv(parent []string) []string {
 	return env
 }
 
-// withAgentTeams enables the claude back-channel in the launched child env unless
-// the parent already set agentTeamsEnv — an explicit operator value (even =0) is
-// preserved. Claude-only: codex/pi launch paths do not call this.
+// withAgentTeams sets agentTeamsEnv=1 in the launched child env unless the parent
+// already set it — an explicit operator value (even =0) is preserved. This is a
+// best-effort export for users without the authoritative settings.json enabler
+// (see agentTeamsEnv) and a no-op when settings already enable it; it does NOT
+// independently enable the back-channel. Claude-only: codex/pi do not call this.
 func withAgentTeams(env []string) []string {
 	if hasEnv(env, agentTeamsEnv) {
 		return env
