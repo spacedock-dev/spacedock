@@ -1,6 +1,6 @@
 ---
 title: Migration-check compares RAW scalar frontmatter values (un-red main; fix the auto-typed-date false failure)
-status: implementation
+status: validation
 score: 0.6
 sprint: 0221-layered-fo
 group: binary-ux
