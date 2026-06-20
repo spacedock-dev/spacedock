@@ -17,3 +17,15 @@ The worker↔FO back-channel (`SendMessage`/`TeamCreate`) is gated behind the ex
 - **AC-1** — `spacedock claude` sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in the launched `claude` process environment when the parent env does not set it. Verified by a launcher test asserting the child env (the exec/command env the launcher builds) carries the flag.
 - **AC-2** — an explicit parent value is PRESERVED, not overridden (e.g. parent `=0` stays `=0`). Verified by a test exercising the parent-set path.
 - **AC-3** — scoped + green: `go build ./...` and the launcher test package pass; `git diff` touches only the `spacedock claude` launch path (no codex/pi launch change, no contract/skills change).
+
+## Stage Report: implementation
+
+- DONE: Export `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` into the claude child env when the parent does not set it; preserve an explicit parent value (even =0).
+  `internal/cli/frontdoor.go` runClaude launch site now wraps `withAgentTeams(launchEnv(os.Environ()))`; `withAgentTeams` appends `=1` only when `hasEnv` is false. Codex/pi launch sites unchanged. Commit 330ae64b.
+- DONE: TDD — failing launcher test FIRST asserting the unset-parent and set-parent paths; then implement to green.
+  Added `TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset` (AC-1), `TestClaudeFrontDoorPreservesExplicitAgentTeams` (AC-2), plus a codex scope-guard test; confirmed compile-fail (undefined `agentTeamsEnv`) before adding the constant/helper, then 3/3 PASS.
+- DONE: Scoped + green: `go build ./...` and the launcher test package pass; diff touches ONLY the `spacedock claude` launch path.
+  `go build ./...` clean; `go test ./internal/cli/` ok (41.7s); `git diff origin/main...HEAD` = only `frontdoor.go` + `frontdoor_test.go` (no codex/pi launch change, no contract/skills/references change).
+
+### Summary
+`spacedock claude` now enables claude's worker↔FO back-channel by construction: the launcher injects `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` into the exec'd claude child env unless the parent already set it (explicit operator value, even =0, is preserved). The fix is a 2-function helper (`withAgentTeams`/`hasEnv`) applied at the runClaude `ops.Launch` site only; the shared `launchEnv` and the codex/pi launch paths are untouched. Test-driven: tests written and confirmed red (compile-fail) before the constant/helper existed, then green.
