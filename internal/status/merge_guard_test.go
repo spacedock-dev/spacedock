@@ -567,61 +567,141 @@ func installFailingPreCommitHook(t *testing.T, root string) {
 	}
 }
 
+// removePreCommitHook deletes the failing pre-commit hook so a recovery re-run can
+// commit cleanly.
+func removePreCommitHook(t *testing.T, root string) {
+	t.Helper()
+	if err := os.Remove(filepath.Join(root, ".git", "hooks", "pre-commit")); err != nil {
+		t.Fatalf("remove hook: %v", err)
+	}
+}
+
 // TestMergeGuardFinalizeRollsBackOnCommitFailure (FIX 3): finalize mutates disk in
-// order — clear mod-block, terminalize, archive (rename), then commit LAST. If the
-// commit fails (here a failing pre-commit hook), the verb must ROLL BACK every disk
-// mutation so the entity returns to its exact pre-finalize state: live (non-terminal)
-// status, the original pr/mod-block, no `archived` stamp, and the file back at its
-// live location — NOT stranded half-finalized in _archive where a re-run can't find
-// it. The verb exits 1 with the failure on stderr.
+// order — clear mod-block, terminalize, archive (rename), commit LAST. The commit
+// stages the rename (`git add`) BEFORE it runs, so a failed commit (here a failing
+// pre-commit hook) must roll back BOTH the working tree AND the git index. The
+// rollback is proven by its END, not a worktree proxy: after it, (a) the working tree
+// is byte-identical to pre-finalize and (b) the index is empty (no leaked staged
+// rename to _archive that a later commit would sweep into HEAD, losing the live
+// entity) and (c) RECOVERY works — a re-run with the commit now passing SUCCEEDS and
+// archives, rather than exit-128ing on the leaked index. Asserted across BOTH flat
+// and folder form.
 func TestMergeGuardFinalizeRollsBackOnCommitFailure(t *testing.T) {
+	cases := []struct {
+		name       string
+		slug       string
+		liveRel    string // entity path relative to the workflow root, pre-archive
+		archiveRel string // where it would land in _archive
+	}{
+		{"flat-form", "080-pr-merged", "080-pr-merged.md", "_archive/080-pr-merged.md"},
+		{"folder-form", "110-pr-merged-folder", "110-pr-merged-folder/index.md", "_archive/110-pr-merged-folder/index.md"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			root := stageFixture(t, "merge-pr-workflow")
+			installFailingPreCommitHook(t, root)
+
+			entity := filepath.Join(root, tc.liveRel)
+			preStatus := frontmatterField(t, entity, "status")
+			prePR := frontmatterField(t, entity, "pr")
+			preModBlock := frontmatterField(t, entity, "mod-block")
+			preBytes, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatalf("read pre-state: %v", err)
+			}
+
+			var out, errBuf bytes.Buffer
+			code := MergeGuard([]string{"--workflow-dir", root, tc.slug, "--verdict", "passed"}, root, &out, &errBuf)
+			if code != 1 {
+				t.Fatalf("a failing archive commit must exit 1, got %d (stdout=%q)", code, out.String())
+			}
+			if strings.Contains(out.String(), "finalized") {
+				t.Fatalf("verb must not claim finalized on a commit failure, got %q", out.String())
+			}
+
+			// The entity is back at its live location — NOT in _archive.
+			if !fileExists(entity) {
+				t.Fatal("rollback must restore the entity to its live location")
+			}
+			if fileExists(filepath.Join(root, tc.archiveRel)) {
+				t.Fatal("rollback must remove the entity from _archive")
+			}
+			// Frontmatter restored to pre-finalize values, no `archived` stamp leaked.
+			if got := frontmatterField(t, entity, "status"); got != preStatus {
+				t.Fatalf("rollback must restore status to %q, got %q", preStatus, got)
+			}
+			if got := frontmatterField(t, entity, "pr"); got != prePR {
+				t.Fatalf("rollback must restore pr to %q, got %q", prePR, got)
+			}
+			if got := frontmatterField(t, entity, "mod-block"); got != preModBlock {
+				t.Fatalf("rollback must restore mod-block to %q, got %q", preModBlock, got)
+			}
+			if got := frontmatterField(t, entity, "archived"); got != "" {
+				t.Fatalf("rollback must not leave an archived stamp, got %q", got)
+			}
+			// Byte-for-byte identical to the pre-finalize file.
+			postBytes, err := os.ReadFile(entity)
+			if err != nil {
+				t.Fatalf("read post-state: %v", err)
+			}
+			if string(postBytes) != string(preBytes) {
+				t.Fatalf("rollback must restore the entity byte-for-byte\n--- pre ---\n%s\n--- post ---\n%s", preBytes, postBytes)
+			}
+
+			// The git INDEX is clean — no leaked staged rename to _archive. A non-empty
+			// `git diff --cached` here is the entity-LOSS path: a later plain commit would
+			// sweep the phantom rename into HEAD, leaving the live file an untracked orphan.
+			if staged := gitOutput(t, root, "diff", "--cached", "--name-only"); staged != "" {
+				t.Fatalf("rollback must leave the index CLEAN, but staged paths remain:\n%s", staged)
+			}
+			// The working tree is clean too (the seed commit + rollback leave nothing dirty).
+			if porcelain := gitOutput(t, root, "status", "--porcelain"); porcelain != "" {
+				t.Fatalf("rollback must leave the working tree CLEAN, git status:\n%s", porcelain)
+			}
+
+			// RECOVERY: with the commit now passing, a re-run finalizes — it does NOT
+			// exit-128 on a leaked index, and the entity archives.
+			removePreCommitHook(t, root)
+			var rout, rerr bytes.Buffer
+			rcode := MergeGuard([]string{"--workflow-dir", root, tc.slug, "--verdict", "passed"}, root, &rout, &rerr)
+			if rcode != 0 {
+				t.Fatalf("recovery re-run after rollback must SUCCEED (exit 0), got %d (stderr=%q)", rcode, rerr.String())
+			}
+			if !strings.Contains(rout.String(), "finalized") {
+				t.Fatalf("recovery re-run must signal finalized, got %q", rout.String())
+			}
+			if !fileExists(filepath.Join(root, tc.archiveRel)) {
+				t.Fatal("recovery re-run must archive the entity")
+			}
+			if fileExists(entity) {
+				t.Fatal("recovery re-run must move the entity out of the live location")
+			}
+		})
+	}
+}
+
+// TestMergeGuardRollbackPreservesFileMode (FIX 3 robustness): rollback restores the
+// source file's ORIGINAL mode, not a hardcoded 0o644. A non-default mode set before
+// the failed finalize survives the rollback.
+func TestMergeGuardRollbackPreservesFileMode(t *testing.T) {
 	root := stageFixture(t, "merge-pr-workflow")
 	installFailingPreCommitHook(t, root)
 
 	entity := filepath.Join(root, "080-pr-merged.md")
-	preStatus := frontmatterField(t, entity, "status")
-	prePR := frontmatterField(t, entity, "pr")
-	preModBlock := frontmatterField(t, entity, "mod-block")
-	preBytes, err := os.ReadFile(entity)
-	if err != nil {
-		t.Fatalf("read pre-state: %v", err)
+	if err := os.Chmod(entity, 0o600); err != nil {
+		t.Fatalf("chmod: %v", err)
 	}
 
 	var out, errBuf bytes.Buffer
-	code := MergeGuard([]string{"--workflow-dir", root, "080-pr-merged", "--verdict", "passed"}, root, &out, &errBuf)
-	if code != 1 {
-		t.Fatalf("a failing archive commit must exit 1, got %d (stdout=%q)", code, out.String())
-	}
-	if strings.Contains(out.String(), "finalized") {
-		t.Fatalf("verb must not claim finalized on a commit failure, got %q", out.String())
+	if code := MergeGuard([]string{"--workflow-dir", root, "080-pr-merged", "--verdict", "passed"}, root, &out, &errBuf); code != 1 {
+		t.Fatalf("failing commit must exit 1, got %d", code)
 	}
 
-	// The entity is back at its live location — NOT in _archive.
-	if !fileExists(entity) {
-		t.Fatal("rollback must restore the entity to its live location")
-	}
-	if fileExists(filepath.Join(root, "_archive", "080-pr-merged.md")) {
-		t.Fatal("rollback must remove the entity from _archive")
-	}
-	// Frontmatter restored to pre-finalize values, and no `archived` stamp leaked.
-	if got := frontmatterField(t, entity, "status"); got != preStatus {
-		t.Fatalf("rollback must restore status to %q, got %q", preStatus, got)
-	}
-	if got := frontmatterField(t, entity, "pr"); got != prePR {
-		t.Fatalf("rollback must restore pr to %q, got %q", prePR, got)
-	}
-	if got := frontmatterField(t, entity, "mod-block"); got != preModBlock {
-		t.Fatalf("rollback must restore mod-block to %q, got %q", preModBlock, got)
-	}
-	if got := frontmatterField(t, entity, "archived"); got != "" {
-		t.Fatalf("rollback must not leave an archived stamp, got %q", got)
-	}
-	// Byte-for-byte identical to the pre-finalize file.
-	postBytes, err := os.ReadFile(entity)
+	info, err := os.Stat(entity)
 	if err != nil {
-		t.Fatalf("read post-state: %v", err)
+		t.Fatalf("stat restored entity: %v", err)
 	}
-	if string(postBytes) != string(preBytes) {
-		t.Fatalf("rollback must restore the entity byte-for-byte\n--- pre ---\n%s\n--- post ---\n%s", preBytes, postBytes)
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Fatalf("rollback must restore the original mode 0o600, got %o", got)
 	}
 }
