@@ -11,6 +11,8 @@ issue:
 sprint:
 sprint-readiness:
 id: j7nhrmghyy0kmwtphd0fmq32
+mod-block: merge:pr-merge
+pr: "#416"
 ---
 
 # Pi launch fnm-multishell race
