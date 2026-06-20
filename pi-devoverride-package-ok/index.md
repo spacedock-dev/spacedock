@@ -4,9 +4,9 @@ status: implementation
 source: "Commander (2026-06-20): pi-live lane on qn PR #407 (TestLivePiFrontDoorSmoke) failed — eq's D5b spacedockPackageOK only checks settings.json packages, not the --plugin-dir dev override, so a dev-override launch bails 'Pi runtime is not ready'. Fix on main (post-eq-merge); unblocks qn #407."
 score:
 started: 2026-06-20T01:30:00Z
-completed:
-verdict:
-worktree: .worktrees/spacedock-ensign-pi-devoverride-package-ok
+completed: 2026-06-20T01:34:15Z
+verdict: PASSED
+worktree:
 issue:
 sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
