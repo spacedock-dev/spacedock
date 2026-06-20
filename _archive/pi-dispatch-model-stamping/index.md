@@ -13,6 +13,7 @@ sprint-readiness: ready
 id: bdtx7bmhekpy1x12ab53d9k3
 mod-block:
 pr: "#405"
+archived: 2026-06-20T00:59:01Z
 ---
 
 # Pi dispatch model stamping
