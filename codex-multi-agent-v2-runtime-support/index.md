@@ -171,3 +171,25 @@ The ideation body now follows the `«fn»` binding model from the cross-sprint r
 ### Summary
 
 Implementation added standalone Codex multi_agent_v2 host bindings to the existing Codex runtime references, introduced a small dispatch-build-to-v2-spawn adapter with collision detection, and updated contract/parser tests for v2 `followup_task` reuse. Offline and race suites pass; the Codex live lane still exposes the live rejection-flow fresh-dispatch behavior and is recorded as a remaining runtime failure.
+
+## Stage Report: implementation (feedback cycle 1)
+
+- DONE: Root-cause why the v2 runtime bindings/tests still allow or induce fresh cycle-2 validation dispatch instead of `followup_task` to the existing validation worker.
+  The live transcript showed the FO read the new Codex v2 reviewer-reuse requirement, then self-classified the host as lacking `followup_task` because the observed stream had only used spawn/wait so far. That caused a fallback to fresh cycle-2 validation. The root cause was instructional ambiguity: the runtime contract did not forbid inferring missing `followup_task` from prior transcript shape.
+- DONE: Fix the implementation so multi_agent_v2 rejection-flow reuses the kept-alive validation reviewer via the correct addressable-worker binding, while preserving durable state assertions and legacy fixture compatibility where explicitly versioned.
+  Tightened `codex-first-officer-runtime.md` and `feedback-rejection-flow/SKILL.md`: Codex multi_agent_v2 is not one-shot; feedback rejection must keep the first validation reviewer addressable, re-run it with `followup_task(target,message)`, and only fresh-spawn when the existing reviewer is not addressable or reuse conditions fail. The FO must attempt the v2 binding and report a concrete tool-surface blocker instead of silently fresh-spawning.
+- DONE: Add/adjust focused tests so this failure is caught without relying only on the live lane.
+  Extended `TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings` to require the kept-reviewer `followup_task` rule, the fresh-spawn exception boundary, and the "do not infer absence" wording. Existing shared-scenario parser tests still preserve legacy `send_input` fixture compatibility while accepting v2 `followup_task`.
+
+### Verification
+
+- PASS: `go test ./internal/contractlint -run TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings` -> 1 passed.
+- PASS: `go test ./internal/ensigncycle -run TestAssertCodexReviewerReuse` -> 9 passed.
+- RAN: `gofmt -w ./cmd ./internal`; it again introduced unrelated comment punctuation churn in `internal/cli/prose_function_routing_test.go` and `internal/status/section_read.go`, which was reverted before commit.
+- PASS: `go test ./...` -> 1637 passed in 17 packages.
+- PASS: `go test ./... -race` -> 1637 passed in 17 packages.
+- PASS: `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-codex-live-f2r8cnyxj9-followup-attempt go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` -> 7 passed in 1 package.
+
+### Summary
+
+Feedback cycle 1 fixed the remaining live rejection-flow failure by making Codex multi_agent_v2 reviewer reuse explicit and non-optional for feedback re-review. The final local Codex live lane passed all seven shared scenarios.
