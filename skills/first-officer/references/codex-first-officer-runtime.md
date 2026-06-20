@@ -100,18 +100,6 @@ The captain is the user of the Codex session. Communicate gate results,
 clarifications, and status directly in the conversation. Do not invent a
 team-lead mailbox on Codex.
 
-## Capability implementations
-
-The Codex adapter binds each named capability the core declares (`fo-dispatch-core.md` `## Named Capabilities`) to concrete Codex tools.
-
-- `worker-back-channel` — PRESENT. Worker→FO via the mailbox final-status notification; FO→worker via `send_input`. Multiplexing (multiple mailbox handles in parallel).
-- `async-dispatch` — ASYNC. `spawn_agent` returns a handle; `wait_agent` is the explicit foreground wait, not the completion signal itself.
-- `inbound-message-service` — PRESENT. The mailbox final-status notification surface.
-- `worker-identity-capture` — task name + mailbox handle + model from the thread. When `dispatch build` emits a null model, Codex inherits the thread's model per the `model-resolution` rule.
-- `completion-signal` — PRESENT (single observable signal). The async final-status notification in the FO mailbox; the entity-file stage report is the gate in every case.
-- `context-budget-probe` — NONE. The FO treats the probe as unavailable and prefers a fresh dispatch unless the current task explicitly depends on the previous worker's context.
-- `roster-reconcile` — NONE. No roster source; the shared-core boundary steps are the only enforcement.
-
 ## Backstop (Codex)
 
 None. There is no `spacedock dispatch reconcile` analog on Codex — no roster source, no drift classifier, no periodic sweep. A missed terminal teardown or supersede shutdown stays missed until session end; the shared-core boundary steps are the only enforcement.

@@ -1,6 +1,6 @@
-// ABOUTME: AC-1 — binds the named-capability set in two independent sources
-// ABOUTME: (fo-dispatch-core.md `## Named Capabilities` and each host adapter's
-// ABOUTME: `## Capability implementations` subsection) as equal sets.
+// ABOUTME: AC-1 — binds the capability «fn» layer of the host-neutral dispatch core
+// ABOUTME: across two divergeable surfaces: «fn» DEFINITIONS (## «name» + per-host → line)
+// ABOUTME: and body CALLS («name»), plus per-host (Claude/Codex/Pi) → coverage.
 package contractlint
 
 import (
@@ -11,112 +11,124 @@ import (
 	"testing"
 )
 
-// dispatchCorePath is the host-neutral dispatch core that declares the named
-// capabilities in its `## Named Capabilities` section.
 func dispatchCorePath(t *testing.T) string {
 	t.Helper()
 	return filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
 }
 
-// adapterPaths returns the three FO runtime adapters that bind each capability to
-// concrete tools in their `## Capability implementations` subsection.
-func adapterPaths(t *testing.T) []string {
-	t.Helper()
-	base := filepath.Join(skillsRoot(t), "first-officer", "references")
-	return []string{
-		filepath.Join(base, "claude-first-officer-runtime.md"),
-		filepath.Join(base, "codex-first-officer-runtime.md"),
-		filepath.Join(base, "pi-first-officer-runtime.md"),
-	}
-}
+// capabilityHosts: every capability «fn»'s → line MUST name all three. A missing host
+// segment is an unbound capability on that host — the structural successor to the
+// dissolved per-adapter `## Capability implementations` tables.
+var capabilityHosts = []string{"Claude", "Codex", "Pi"}
 
-// sectionHeadingRe matches a top-level Markdown heading line (`## …`). Used to
-// bound a section's slice to the text between its heading and the next heading.
-var sectionHeadingRe = regexp.MustCompile(`(?m)^## `)
+// fnHeadingRe: a capability «fn» DEFINITION heading `## «name»:` (the colon distinguishes
+// a definition from an inline reference). fnRefRe: any undotted `«name»` reference. The
+// dotted prose-functions («state.commit», «dispatch.next-action») have dots and are
+// excluded; the meta-mention «fn» is excluded via metaTokens.
+var (
+	fnHeadingRe = regexp.MustCompile(`(?m)^## «([a-z][a-z-]+)»:`)
+	fnRefRe     = regexp.MustCompile(`«([a-z][a-z-]+)»`)
+	arrowRe     = regexp.MustCompile(`(?m)^- → (.*)$`)
+	metaTokens  = map[string]bool{"fn": true}
+)
 
-// sectionBlock returns the slice of a Markdown file bounded by the given heading
-// title (`## {title}`) and the next top-level heading. Fails if the heading is
-// missing. The slice includes the heading line.
-func sectionBlock(t *testing.T, path, title string) string {
+// fnBlock returns a «fn»'s definition body (heading to next `## `), including its → line.
+func fnBlock(t *testing.T, data, name string) string {
 	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
-	heading := "## " + title
-	loc := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(heading) + `\b`).FindIndex(data)
+	loc := regexp.MustCompile(`(?m)^## «` + regexp.QuoteMeta(name) + `»:`).FindStringIndex(data)
 	if loc == nil {
-		t.Fatalf("heading %q not found in %s", heading, path)
+		t.Fatalf("capability «%s» definition heading not found", name)
 	}
 	rest := data[loc[0]:]
-	// Drop the matched heading line, then find the next `## ` heading after it.
-	nextNL := strings.IndexByte(string(rest), '\n')
+	nl := strings.IndexByte(rest, '\n')
 	search := rest
-	if nextNL >= 0 {
-		search = rest[nextNL+1:]
+	if nl >= 0 {
+		search = rest[nl+1:]
 	}
-	if end := sectionHeadingRe.FindIndex(search); end != nil {
-		rest = append([]byte(nil), rest[:nextNL+1+end[0]]...)
+	if end := regexp.MustCompile(`(?m)^## `).FindStringIndex(search); end != nil {
+		rest = rest[:nl+1+end[0]]
 	}
-	return string(rest)
+	return rest
 }
 
-// capabilityBulletRe matches a Markdown bullet that binds a named capability: a
-// line starting with `- “name“ ` where name is a lowercase hyphenated token.
-// The backtick-delimited name is the single capability identifier both the core
-// and each adapter use, so the extractor binds that identifier — not surrounding
-// prose — to the capability set.
-var capabilityBulletRe = regexp.MustCompile(`(?m)^- ` + "`" + `([a-z][a-z-]+)` + "`" + `(?:[ —:])`)
-
-// extractCapabilities scans a section block for capability-binding bullets and
-// returns the set of capability names. Fails (via the caller's empty-set guard)
-// if it yields none — a broken extractor that returns [] on both sides would
-// otherwise make the equality pass vacuously.
-func extractCapabilities(t *testing.T, block, source string) []string {
-	t.Helper()
-	var out []string
-	for _, m := range capabilityBulletRe.FindAllStringSubmatch(block, -1) {
-		out = append(out, m[1])
+// hostsBoundByArrow returns the capabilityHosts named (`**Host:**`) on a block's → line.
+// Empty for a «fn» with no host-naming arrow (a non-capability prose «fn»).
+func hostsBoundByArrow(block string) map[string]bool {
+	out := map[string]bool{}
+	m := arrowRe.FindStringSubmatch(block)
+	if m == nil {
+		return out
 	}
-	if len(out) == 0 {
-		t.Fatalf("%s capability extraction yielded zero capabilities — extractor bug; the binding would pass vacuously", source)
+	for _, host := range capabilityHosts {
+		if strings.Contains(m[1], "**"+host+":**") {
+			out[host] = true
+		}
 	}
 	return out
 }
 
-// TestCapabilityBinding (AC-1) asserts the named-capability set the host-neutral
-// dispatch core declares (`fo-dispatch-core.md` `## Named Capabilities`) and the
-// bound-capability set EACH host adapter declares (`## Capability implementations`)
-// are the SAME set. They are independent values that can diverge: a capability
-// renamed, added, or dropped in the core OR in any single adapter reds the
-// binding. It is a structural dual-extraction check (two delimited-token parses
-// over independent files), NOT prose-grep: it never asserts a doc contains a
-// given word; it compares extracted enumerations. The behavior that the adapters
-// bind the right concrete tools is proven by the live lanes (AC-2/AC-6), not
-// here — this test binds only the capability-name contract surface.
+// TestCapabilityBinding (AC-1) binds the capability «fn» layer across two surfaces of
+// fo-dispatch-core.md that can diverge — the «fn» DEFINITIONS (`## «name»:` headings whose
+// body carries a per-host → line) and the body CALLS (`«name»` references beyond the
+// heading) — and asserts they are the SAME set: a capability defined-but-never-called (dead
+// definition) or called-but-never-defined (dangling call) reds. It then asserts every
+// defined capability «fn»'s → line binds all three hosts. It is a structural
+// multi-extraction check (heading parse, reference count, per-host segment parse over one
+// file), NOT prose-grep — it compares enumerations and host coverage, never asserts the doc
+// contains a word. The bound tools' behavior is proven by the live lanes (AC-2/AC-6).
 func TestCapabilityBinding(t *testing.T) {
-	coreBlock := sectionBlock(t, dispatchCorePath(t), "Named Capabilities")
-	core := extractCapabilities(t, coreBlock, "core `## Named Capabilities`")
-	coreSet := toSet(core)
+	raw, err := os.ReadFile(dispatchCorePath(t))
+	if err != nil {
+		t.Fatalf("read dispatch core: %v", err)
+	}
+	data := string(raw)
 
-	for _, path := range adapterPaths(t) {
-		rel := relPath(t, path)
-		block := sectionBlock(t, path, "Capability implementations")
-		adapter := extractCapabilities(t, block, rel+" `## Capability implementations`")
-		adapterSet := toSet(adapter)
-		if !setEqual(coreSet, adapterSet) {
-			t.Errorf("capability set mismatch between the core and adapter %s:\n  core (fo-dispatch-core.md `## Named Capabilities`): %v\n  adapter (%s `## Capability implementations`): %v\nevery core-declared capability must be bound by each adapter; neither side may rename, add, or drop a capability without the other",
-				rel, sortedSet(coreSet), rel, sortedSet(adapterSet))
+	// DEFINED: `## «name»:` headings whose body has a per-host → line (excludes the
+	// scheduling «dispatch.next-action», whose → **prose** line names no host).
+	defined := map[string]bool{}
+	for _, m := range fnHeadingRe.FindAllStringSubmatch(data, -1) {
+		if len(hostsBoundByArrow(fnBlock(t, data, m[1]))) > 0 {
+			defined[m[1]] = true
 		}
 	}
-}
-
-// relPath returns a repo-relative path for readable error output.
-func relPath(t *testing.T, path string) string {
-	t.Helper()
-	rel, err := filepath.Rel(repoRoot(t), path)
-	if err != nil {
-		return path
+	if len(defined) == 0 {
+		t.Fatal("no capability «fn» definitions (## «name»: + per-host → line) found — extractor bug; would pass vacuously")
 	}
-	return rel
+
+	// CALLED: an undotted, non-meta `«name»` referenced MORE than its single heading line.
+	// Exactly-once = heading-only (dead definition); no heading = dangling call. Both
+	// diverge from DEFINED and red the set-equality.
+	refCount, headingCount := map[string]int{}, map[string]int{}
+	for _, m := range fnRefRe.FindAllStringSubmatch(data, -1) {
+		if !metaTokens[m[1]] {
+			refCount[m[1]]++
+		}
+	}
+	for _, m := range fnHeadingRe.FindAllStringSubmatch(data, -1) {
+		headingCount[m[1]]++
+	}
+	called := map[string]bool{}
+	for name, n := range refCount {
+		if n-headingCount[name] >= 1 {
+			called[name] = true
+		}
+	}
+	if len(called) == 0 {
+		t.Fatal("no capability «fn» body calls found — extractor bug; would pass vacuously")
+	}
+
+	if !setEqual(defined, called) {
+		t.Errorf("capability «fn» set mismatch between DEFINITIONS and body CALLS in fo-dispatch-core.md:\n  defined (## «name»: + → line): %v\n  called  (body «name» refs):    %v\nevery capability «fn» must be both defined and called; neither side may rename, add, or drop one without the other",
+			sortedSet(defined), sortedSet(called))
+	}
+
+	// Per-host coverage: every defined capability «fn»'s → line binds all three hosts.
+	for name := range defined {
+		bound := hostsBoundByArrow(fnBlock(t, data, name))
+		for _, host := range capabilityHosts {
+			if !bound[host] {
+				t.Errorf("capability «%s» → line does not bind host %q (missing `**%s:**`); every capability «fn» must carry a Claude/Codex/Pi realization on its → line", name, host, host)
+			}
+		}
+	}
 }

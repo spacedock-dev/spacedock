@@ -96,8 +96,6 @@ Any one of the following trips Degraded Mode:
 - The captain command `/spacedock bare` — the explicit operator-initiated degrade.
 - `Agent` or `SendMessage` themselves are unavailable (a genuinely degraded runtime with no concurrent-dispatch substrate).
 
-A `ToolSearch(select:TeamCreate)` that returns no match is NOT a degrade trigger — it is the normal path (`## Worker Back-Channel`), where the named-background-`Agent` + `SendMessage` back-channel works with no opt-in flag.
-
 ### Effects
 
 Once Degraded Mode is active, the following invariants hold for the remainder of the session:

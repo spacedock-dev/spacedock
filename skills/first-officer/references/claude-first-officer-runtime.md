@@ -30,18 +30,6 @@ For the dispatch-idle and idle-hallucination guardrails, see `## Awaiting Comple
 
 See `## Probe and Ideation Discipline` in the shared core for the Grep-over-Read rule. The Claude Code runtime is where the Read-then-Bash-mutation staleness echo fires — avoid a full-file Read for targeted section lookups (use the shared core's `status --read` section-read upgrade) and trust `status --set` stdout (`field: old -> new`) for mutation narration.
 
-## Capability implementations
-
-The Claude adapter binds each named capability the core declares (`fo-dispatch-core.md` `## Named Capabilities`) to concrete Claude Code tools. The detailed spawn/advance/reconcile mechanics live in `references/claude-fo-dispatch.md`; this subsection is the capability→tool binding.
-
-- `worker-back-channel` — PRESENT. Worker→FO via `SendMessage(to="team-lead")`; FO→worker via `SendMessage(to=name)`. Multiplexing (multiple named background workers in parallel).
-- `async-dispatch` — ASYNC. `Agent(name=…, run_in_background=true)` returns immediately; completion is observed via `task_notification`. In single-entity mode the back-channel is skipped and bare-mode dispatch blocks until completion.
-- `inbound-message-service` — PRESENT. `system task_notification` entries and the `SendMessage` inbox.
-- `worker-identity-capture` — agent name + `agentType` on disk + model from team config. The host canonical model space is `sonnet`, `opus`, `haiku`. When `dispatch build` emits a null model, Claude inherits the team's model per the `model-resolution` rule.
-- `completion-signal` — DUAL. A "Done:" `SendMessage` to `team-lead`, a `task_notification`, or captain shutdown; the entity-file stage report is the gate in every case.
-- `context-budget-probe` — PRESENT. `spacedock dispatch context-budget --name {name}`.
-- `roster-reconcile` — PRESENT. `spacedock dispatch reconcile` (drift classes: lingering, superseded, un-advanced-pr, stale-branch, local-main-drift).
-
 ## Filing New Entities
 
 To file a seed task, do NOT use the Write tool to hand-assemble frontmatter after a `status --next-id` preview — that two-step flow can land a stale id when the `--next-id` candidate drifts between preview and write. Use `spacedock new <slug> [--folder] [--id-seed S --id-actor A]` via Bash from the project root (`new` auto-discovers the lone workflow, else pass `--workflow-dir {workflow_dir}` — see `spacedock new --help`), piping a complete entity stub on stdin (frontmatter with `id` omitted or blank, followed by the brief description body): it mints the id, stamps it into the frontmatter, and atomically writes the stamped entity as flat `<slug>.md` in one call (see `## FO Write Scope` in the shared core for the full contract). `--next-id` is a candidate-preview surface only. `new` writes but does not commit; for split-root state checkouts the FO still does the path-scoped commit + push after `new` (per the shared core's State Management rule).

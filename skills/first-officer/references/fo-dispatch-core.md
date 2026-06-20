@@ -1,6 +1,6 @@
 # First Officer Dispatch Core (host-neutral)
 
-The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The runtime adapter supplies the host-specific parts this core delegates: team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile/backstop.
+The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The host-specific parts this core delegates ride the `→` lines of the capability `«fn»`s below: worker creation, the spawn call, the reuse-advance handle, `«context-budget»`, and `«roster-reconcile»`.
 
 ## Dispatch
 
@@ -22,7 +22,7 @@ For each entity reported by `status --next`:
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
 7. Create the worktree on first dispatch to a worktree stage.
 8. Dispatch a worker via the runtime adapter. The assignment must include: entity identity and title, target stage name, the full stage definition, the entity path, the worktree path and branch when applicable, the checklist, and feedback instructions when the stage has `feedback-to`.
-9. Await the worker result per the adapter's `async-dispatch` capability (blocking or async) before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via the adapter's `completion-signal` capability (return value and/or inbound done-message), with the entity-file stage report as the gate in every case.
+9. Await the worker result per `«async-dispatch»` (blocking or async) before advancing frontmatter or dispatching the next stage for that entity. Completion is recognized via `«completion-signal»` (return value and/or inbound done-message), with the entity-file stage report as the gate in every case.
 
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
@@ -33,11 +33,11 @@ A feedback-stage worker checks and reports on what was produced; it does not sil
 Advancing a completed worker. The gate-presentation spine (checklist review, AC cross-check, the "not a stopping point" rule, gated-stage decisions) is in the boot-resident core's `## Completion and Gates`; the reuse machinery it defers to lives here. A completed worker is reusable only when it is still addressable through a live runtime handle AND all reuse conditions below pass. Otherwise dispatch fresh.
 
 **Reuse conditions** (all must hold — if any fails, dispatch fresh):
-0. Consult the adapter's `context-budget-probe` capability. If it reports the worker over budget, or the probe is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). If the adapter declares the capability absent, this condition is satisfied.
-1. The adapter declares `worker-back-channel` present and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `worker-identity-capture` schema's intercom address. When the adapter declares the capability absent, this condition fails and the FO dispatches fresh.
+0. `«context-budget»()` — if it reports the worker over budget, or the probe is unavailable, dispatch fresh (fail-safe — never silent-reuse on an absent reading). When `«context-budget»` is ABSENT on the host, this condition is satisfied.
+1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. When `«addressable-worker»` is ABSENT, this condition fails and the FO dispatches fresh.
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
-4. The reused worker's stamped model (recorded by `worker-identity-capture`) matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model` using the adapter's `host canonical model space`. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker; the adapter's `model-resolution` rule stamps the null case per its host). A member stamped with a captain-session fallback value — one outside the host's canonical model space — never matches and forces a one-time fresh dispatch that re-stamps a canonical value. The host's canonical model space and its fallback shapes are the adapter's (see `worker-identity-capture` in each runtime adapter).
+4. The reused worker's stamped model (recorded by `«worker-identity»`) matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model` using the host canonical model space `«worker-identity»` declares. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker; the host's `«worker-identity»` model-resolution stamps the null case). A member stamped with a captain-session fallback value — one outside the host's canonical model space — never matches and forces a one-time fresh dispatch that re-stamps a canonical value. The host's canonical model space and its fallback shapes are `«worker-identity»`'s per-host realization.
 
 When the comparator forces fresh dispatch due to model mismatch, the FO MUST emit a captain-visible diagnostic of the form `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. The anchor phrase `does not match next stage effective_model` must appear verbatim.
 
@@ -71,19 +71,35 @@ Use `worker_key` in worktree paths (`.worktrees/{worker_key}-{slug}`) and branch
 
 Use the runtime adapter's spawn call to spawn each worker. **Use the spawn call for initial dispatch** — the reuse-advance handle is only for advancing a reused agent to its next stage in the completion path.
 
-**Worker back-channel capability (the organizing capability).** The runtime adapter DECLARES the named capabilities in `## Named Capabilities` below; `worker-back-channel` is the organizing one. When the adapter declares it present, the FO dispatches addressable, reusable, concurrent workers and routes reuse-advance, mid-run steering, and the completion signal through that channel — reuse (above) is possible because the completed worker is still reachable through it. When the adapter declares it absent, fresh one-shot dispatch only: each worker is spawned, runs to completion, and its return value is the sole completion signal; reuse-condition-1 fails, so the FO always dispatches fresh, with no mid-run steering and no reusable handle. The concrete calls and runtime-specific logic are the adapter's — see each runtime adapter's `## Capability implementations` subsection.
+The dispatch model is built from the capability `«fn»`s below, which the body CALLS by name; each `«fn»`'s `→` line carries its per-host realization (same shape as `«state.commit» → spacedock state commit`), PRESENT/ABSENT per host. No host tool call appears outside a `→` line in this host-neutral core. `«addressable-worker»` is the organizing capability — its presence is what makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path.
 
-## Named Capabilities
+## «addressable-worker»: address a still-running worker and hear from it mid-run
 
-The dispatch core references the following named capabilities by name; each runtime adapter declares which it provides and binds each to concrete tools in its `## Capability implementations` subsection. No host tool call appears in this host-neutral core — the concrete calls and runtime-specific logic live in the adapters.
+- **block:** ABSENT → reuse-condition-1 fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle, event-loop step 0.5 omitted). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
+- → **Claude:** ABSENT — Claude Code 2.1.183 exposes no `SendMessage`/`TeamCreate` (a fresh `claude -p` enumerates only `Agent`/`Task*`/`TaskOutput`/`TaskStop`); fresh one-shot, `task_notification`-observed completion, `TaskStop` teardown, no reuse. · **Codex:** PRESENT — worker→FO via the mailbox final-status notification (completion-only); FO→worker via `send_input`; multiplexing; listen via the mailbox. · **Pi:** PRESENT — worker→FO via `contact_supervisor` (`need_decision` blocking 10-min, `interview_request` blocking structured 10-min, `progress_update` non-blocking); FO→worker via `intercom({action:"send", to:"<target>"})` to steer/advance and `intercom({action:"reply"})` to answer a pending ask; single-pending; listen via `intercom({action:"pending"})`.
 
-- `worker-back-channel` (organizing) — declares present/absent. When present, names (a) the worker→FO escalation call and its message types, (b) the FO→worker advance/steer/query call, and (c) whether the channel multiplexes or is single-pending. This declared handle is reuse-condition-1's "live, reusable handle" — the single capability the dispatch model organizes around. When absent, reuse-condition-1 fails and the FO dispatches fresh one-shot workers whose return value is the sole completion signal.
-- `async-dispatch` — declares blocking or async. When async, names the await/resume/interrupt mechanism. Required when `worker-back-channel` is present: a blocking FO cannot service mid-run escalations within the worker's timeout window.
-- `inbound-message-service` — declares present/absent. When present, names the listen call that drains pending worker messages at each event-loop iteration (event-loop step 0.5). Required when `worker-back-channel` is present.
-- `worker-identity-capture` — declares the schema recorded at spawn: worker label, substrate, run/session handle, intercom address, entity slug, stage, state, completion epoch, and stamped model. The schema's `host canonical model space` field is adapter-declared and is the value reuse-condition-4's comparator matches against. When `dispatch build` emits a null model, the adapter resolves the model per its host's `model-resolution` rule (each adapter stamps the value its host supplies).
-- `completion-signal` — declares the set of signals treated as completion-equivalent (return value and/or inbound done-message), with the entity-file stage report as the gate in every case. Neither signal alone advances state.
-- `context-budget-probe` — declares present/absent. When present, names the probe call. Referenced by reuse-condition-0.
-- `roster-reconcile` — declares present/absent. When present, names the reconcile sweep call and its drift classes. Referenced by event-loop step 0.
+## «async-dispatch»: dispatch a worker without blocking the FO event loop
+
+- → **Claude:** ASYNC — `Agent(name=…, run_in_background=true)` returns immediately; single-entity/bare mode blocks until completion. · **Codex:** ASYNC — `spawn_agent` returns a handle; `wait_agent` is the explicit foreground wait. · **Pi:** ASYNC — `subagent(... async: true)` returns a run id; poll `subagent({action:"status", id})`; `subagent({action:"interrupt", id})` steers; pass `cwd: <resolved repo root>` on every call so the ensign's working dir is the repo.
+
+## «worker-identity»: the spawn-time metadata that keeps a worker addressable and reuse-comparable
+
+Records worker label, substrate, run/session handle, worker address, entity slug, stage, state, completion epoch, stamped model, and the host canonical model space (reuse-condition-4's comparator value). Each host's model-resolution stamps the model, including the `dispatch build` null case.
+
+- → **Claude:** agent name + `agentType` on disk + model from team config; canonical model space = the Claude enum in `claude-fo-dispatch.md`; null-model → inherit the team's model. · **Codex:** task name + mailbox handle + model from the thread; null-model → inherit the thread's model. · **Pi:** `subagent-worker-{runId}-1` worker address + run id; stamped model and the Pi canonical model space are OWNED BY `pi-dispatch-model-stamping` (this segment REFERENCES it); null-model → stamp the parent's live model via `intercom({action:"list"})` (omit-on-null is WRONG on Pi — it resolves to `settings.json` `defaultModel`).
+
+## «completion-signal»: the signals that trigger the completion-verify path
+
+- → **Claude:** DUAL — a `Done:` inbox message, a `task_notification`, or captain shutdown. · **Codex:** single observable signal — the async final-status notification in the FO mailbox. · **Pi:** PRIMARY (subagent return, `status: completed`) + optional advisory (a non-blocking heads-up via raw `intercom send` before return; `contact_supervisor` carries no completion reason).
+
+## «context-budget»: probe whether a completed worker is still under context budget for reuse
+
+- **block:** an over-budget or unavailable reading forces fresh dispatch (fail-safe). ABSENT → reuse-condition-0 is satisfied.
+- → **Claude:** PRESENT — `spacedock dispatch context-budget --name {name}`. · **Codex:** ABSENT. · **Pi:** ABSENT.
+
+## «roster-reconcile»: sweep the host roster for drift before dispatching
+
+- → **Claude:** PRESENT — `spacedock dispatch reconcile` (drift classes: lingering, superseded, un-advanced-pr, stale-branch, local-main-drift). · **Codex:** ABSENT. · **Pi:** ABSENT.
 
 **MANDATORY — Dispatch assembly via `spacedock dispatch build`:**
 
@@ -106,14 +122,14 @@ The only permitted path for initial dispatch is:
    ```
    `--bare-mode` must reflect the current dispatch context — read it from live team state, never infer from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage.
 3. **JSON compatibility path.** Programmatic callers may still provide the schema-version-2 JSON request object on stdin, and may inspect it with `spacedock dispatch build --print-schema` or validate a file with `spacedock dispatch build --validate-only {request_file}`. For first-officer dispatch, prefer the flag/file form above.
-4. **REQUIRED — On exit 0, parse the stdout JSON and call the spawn call with the emitted fields verbatim.** The `name`, `description`, `prompt`, and `model` fields MUST come from helper output unchanged. The `description` field is REQUIRED — do not omit it. The `prompt` is a file-pointer (`Skill(...) ; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.`); the ensign Reads the file on first action and treats the body (including the completion-signal section) as the inline assignment. Do not strip or rewrite the prompt. Forward `output.model` as the spawn call's model parameter when present. When null, the adapter resolves the model per its host's `model-resolution` rule (see `worker-identity-capture`) — on Claude/Codex the adapter omits the argument (the team/thread model inherits); on Pi the adapter stamps the parent's live model explicitly. The core does NOT hard-code omit-on-null; the adapter's `model-resolution` rule owns the null case. The runtime adapter names the concrete spawn call and how it maps these fields.
+4. **REQUIRED — On exit 0, parse the stdout JSON and call the spawn call with the emitted fields verbatim.** The `name`, `description`, `prompt`, and `model` fields MUST come from helper output unchanged. The `description` field is REQUIRED — do not omit it. The `prompt` is a file-pointer (`Skill(...) ; then Read /tmp/spacedock-dispatch/{name}.md and treat its content as your assignment.`); the ensign Reads the file on first action and treats the body (including the completion-signal section) as the inline assignment. Do not strip or rewrite the prompt. Forward `output.model` as the spawn call's model parameter when present. When null, `«worker-identity»`'s per-host model-resolution owns the null case — on Claude/Codex the host inherits the team/thread model (omit the argument); on Pi the host stamps the parent's live model explicitly. The core does NOT hard-code omit-on-null. The runtime adapter names the concrete spawn call and how it maps these fields.
 5. **On non-zero exit only** (or if the binary is unavailable): read stderr, report the helper failure to the captain, and fall back to Break-Glass Manual Dispatch below. A zero-exit run is never a break-glass trigger.
 
-Whether a dispatch blocks until worker completion or returns a handle to await later is the adapter's `async-dispatch` behavior, not a host-neutral invariant. When the adapter's dispatch is blocking, dispatch one entity at a time and process each completion inline before the next.
+Whether a dispatch blocks until worker completion or returns a handle to await later is `«async-dispatch»`'s per-host behavior, not a host-neutral invariant. When the dispatch is blocking, dispatch one entity at a time and process each completion inline before the next.
 
 **Reuse dispatch (advance handle):** `spacedock dispatch build` serves only initial dispatch. When advancing a reused ensign via the runtime adapter's reuse-advance handle, assemble the advancement message directly — the helper is not involved in the reuse path.
 
-**Break-Glass Manual Dispatch (fallback ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. The runtime adapter supplies the host-shaped minimal template — it inlines the stage definition verbatim rather than referencing a `spacedock dispatch show-stage-def` fetch command (the helper is precisely what just failed, so the ensign cannot rely on it), and omits worktree instructions, feedback context, scope notes, the standing-teammates routing block, the FO-forwarding warning prose, and the per-stage operational prose the production helper emits. The `model` slot is conditional — include it only when the stage (or `stages.defaults`) declares a model in the host's canonical model enum; otherwise omit the entire model argument. The concrete enum is the runtime adapter's. Use only when the helper is unavailable.
+**Break-Glass Manual Dispatch (fallback ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. The runtime adapter supplies the host-shaped minimal template — it inlines the stage definition verbatim rather than referencing a `spacedock dispatch show-stage-def` fetch command (the helper is precisely what just failed, so the ensign cannot rely on it), and omits worktree instructions, feedback context, scope notes, the standing-teammates routing block, the FO-forwarding warning prose, and the per-stage operational prose the production helper emits. The `model` slot is conditional — include it only when the stage (or `stages.defaults`) declares a model in the host's canonical model space; otherwise omit the entire model argument. The concrete model space is `«worker-identity»`'s per-host realization. Use only when the helper is unavailable.
 
 ## Event Loop
 
@@ -123,12 +139,12 @@ These are FO-internal scheduling reads — parse them as JSON, not the padded hu
 
 ## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
-The runtime adapter may insert a host step 0 (its `roster-reconcile` capability sweep) before step 0.5; a host that declares the capability absent omits it. The skeleton is:
+`«roster-reconcile»` inserts a host step 0 before step 0.5; a host where it is ABSENT omits it. The skeleton is:
 
-0.5. **Drain inbound worker messages.** When the adapter declares `inbound-message-service` present, drain pending worker messages (the adapter names the listen call) at each iteration before checking dispatchables. Reply to a `need_decision` / `interview_request` within the worker's timeout window; read and acknowledge a `progress_update` (no reply required). A host that declares the capability absent omits this step. Required when `worker-back-channel` is present.
+0.5. **Drain inbound worker messages.** When `«addressable-worker»` is PRESENT, drain pending worker messages (its listen call) at each iteration before checking dispatchables. Reply to a `need_decision` / `interview_request` within the worker's timeout window; read and acknowledge a `progress_update` (no reply required). When `«addressable-worker»` is ABSENT, this step is omitted.
 1. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g., re-present the PR summary). Do not dispatch new work for a mod-blocked entity.
 2. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus the named frontmatter keys; `--fields` is additive over the fixed five, since the computed dispatch columns are not projectable).
-3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the host's step-0 reconcile sweep when the adapter declares one, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
+3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the `«roster-reconcile»` step-0 sweep when PRESENT on the host, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
 - → **prose**, becomes `` `spacedock dispatch next-action` `` (0222) — the driver binary is descoped to roadmap 0222; until it ships the FO hand-follows the skeleton above.
