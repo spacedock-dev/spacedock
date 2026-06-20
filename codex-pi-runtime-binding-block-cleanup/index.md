@@ -184,6 +184,8 @@ Ideation converted the seed into an implementation-ready cleanup plan. The key d
   `go test ./internal/contractlint`: 59 passed; `go test ./...`: 1712 passed in 17 packages; `go test ./... -race`: 1712 passed in 17 packages; `gofmt -w ./cmd ./internal` run. Codex+Pi FO adapter lines: 164 -> 74, down 90 lines (54.9%).
 - DONE: Append a Stage Report: implementation with changed files, token/line impact, verification evidence, residual risk, and commit all worktree changes plus the implementation stage report path-scoped in state.
   Changed files: `fo-dispatch-core.md`, Codex/Pi FO runtime refs, and contractlint tests. Residual risk: compact prose still relies on validation to confirm no reviewer-facing nuance was over-trimmed; `ad` still owns broad Claude adapter trim and final cross-runtime polish.
+- FAILED: Push the state branch so peers see the entity/report.
+  `git -C docs/dev/.spacedock-state push origin spacedock-state/dev` failed with `Permission denied (publickey)`; local state commit is present but not remote-synced from this worker.
 
 ### Summary
 
