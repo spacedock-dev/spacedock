@@ -89,6 +89,12 @@ checksum:
   algorithm: sha256
 
 release:
+  # `auto` marks the GitHub release as a pre-release (not "latest") when the tag
+  # carries a semver pre-release indicator, e.g. v0.23.0-pre. goreleaser's own
+  # default is `false`, so without this a -pre tag would publish as a full latest
+  # release. This is the signal `homebrew_casks.skip_upload: auto` reads to skip
+  # the cask bump for a pre-release; a final vX.Y.Z stays a normal release.
+  prerelease: auto
   github:
     owner: spacedock-dev
     name: spacedock
@@ -104,6 +110,11 @@ homebrew_casks:
   # archive, installs the `next` plugin). Each pins ONLY its own channel's archive
   # via `ids: [<archive-id>]` so the two casks never cross-pin.
   - name: spacedock
+    # `auto` skips the cask bump when goreleaser marks the release a pre-release
+    # (release.prerelease: auto flags a hyphenated tag like v0.23.0-pre), so a
+    # `-pre` cut never advances the stable `spacedock` cask. A final vX.Y.Z is not
+    # a pre-release, so the cask still publishes.
+    skip_upload: auto
     ids:
       - spacedock-stable
     repository:
@@ -140,6 +151,9 @@ homebrew_casks:
   # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
   # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
   - name: spacedock@next
+    # Same pre-release guard as the stable cask: a hyphenated (pre-release) tag
+    # skips the edge cask bump, while a final vX.Y.Z still publishes it.
+    skip_upload: auto
     ids:
       - spacedock-edge
     repository:

@@ -197,6 +197,11 @@ jobs:
       # key is a DIFFERENT file (marketplace.json) and is left untouched here; it is
       # the moving-branch re-pull key (AC-2d), pj's surface.
       - name: Stamp plugin manifests to the release version
+        # A hyphenated tag is a pre-release (v0.23.0-pre); it ships binary +
+        # content as a GitHub pre-release but must stay OUT of the stable channel,
+        # so skip both the manifest stamp and the stable-ref advance below. A final
+        # vX.Y.Z has no hyphen and still runs, advancing stable as before.
+        if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
