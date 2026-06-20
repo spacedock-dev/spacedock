@@ -1,6 +1,6 @@
 ---
 title: merge guard owns the full merge:pr lifecycle — auto-arm + finalize-from-detected-merged (eliminate FO hand-rolling)
-status: implementation
+status: validation
 sprint: 0221-layered-fo
 group: binary-ux
 id: xdcf177r7sqtkb9w3mdafp4w
