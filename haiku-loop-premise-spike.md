@@ -9,6 +9,7 @@ id: mvctb79y19fvhbsepyagdd8f
 started: 2026-06-19T22:53:20Z
 worktree: .worktrees/spacedock-ensign-haiku-loop-premise-spike
 mod-block: merge:pr-merge
+pr: "#411"
 ---
 
 Test the riskiest, cheapest path first: a live Haiku-model FO drives ONE entity through the mechanical loop end to end — boot → dispatch a worker → review the report → advance → terminalize/merge — with NO tier self-identification, NO standing `level-3-judge`, NO gate-verdict escalation (all of that is deferred-72 / `kt-full`). The question is binary: can a weak model hold the contract loop at all?
