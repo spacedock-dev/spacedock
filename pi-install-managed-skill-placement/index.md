@@ -12,6 +12,7 @@ sprint: 0223-pi-dispatch-contract
 sprint-readiness: ready
 id: eqrcrxcyye56nfwm997bj33d
 mod-block: merge:pr-merge
+pr: "#406"
 ---
 
 # Pi install-managed skill placement
