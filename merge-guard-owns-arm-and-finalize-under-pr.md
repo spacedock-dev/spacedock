@@ -85,3 +85,19 @@ Closes three audit-backlog items (folder-form, mod↔core convergence, archive-c
 
 ### Summary
 Three fixes folded into PR #415: (1) folder-form-aware archive commit (mirrors runArchive resolution; flat-form byte-identical); (2) atomic finalize that rolls back the rename + frontmatter on a commit failure rather than stranding the entity half-archived; (3) the pr-merge mod's MERGED-detection now finalizes through the `merge guard` verb (dogfooded == shipped path), end state identical with the pr field recording the sentinel. All TDD red-first. Residual canonical-sentinel hardening (Atoi sign/leading-zero leniency, unbounded SHA) remains backlogged — benign, never emitted by the honest hook.
+
+## Stage Report: implementation (cycle 4)
+
+NO_GO blocker fix: the cycle-3 FIX 3 atomic-finalize rollback leaked the git INDEX — a real entity-LOSS path the adversarial re-verify reproduced end-to-end. Closed before #415 merges.
+
+- DONE: rollbackArchive must UNSTAGE the leaked rename (index leak = entity-loss).
+  `commitArchiveMove` runs `git add -- source dest` before the failing commit; the cycle-3 `rollbackArchive` reversed only the working tree, leaving a phantom staged rename to `_archive` in the index (a later plain commit sweeps it into HEAD → entity at `_archive`, live file orphaned; recovery re-run exit-128s). Fix: `rollbackArchive` now also runs path-scoped `git reset -- source dest` on the SAME pathspecs, under the same `hasGitEntry` guard. Form comes from the snapshot (`snap.isFolder`) — `archiveMovePathspecs` now takes `isFolder` explicitly, because re-detecting from disk after the move-back misreads folder-form. Code commit `680e935a`.
+- DONE: Fix the FALSE-GREEN test — assert the END (index clean + recovery works), not the worktree proxy, across BOTH flat and folder form.
+  `TestMergeGuardFinalizeRollsBackOnCommitFailure` is now table-driven over flat (`080-pr-merged`) + folder (`110-pr-merged-folder`). Each asserts (a) `git diff --cached` EMPTY + `git status --porcelain` CLEAN after rollback, and (b) RECOVERY: removing the failing hook and re-running `merge guard --verdict passed` SUCCEEDS and archives (not exit 128). Red first: both forms failed the index assertion (`_archive/...` staged) against the old rollback; green after the unstage.
+- DONE: Secondary robustness (folded into rollbackArchive).
+  `rollbackArchive` attempts every step and `errors.Join`s failures; a rollback that cannot fully restore is surfaced by `finalize` as a CRITICAL message naming the entity + expected live path (not a silent rc=1). `captureArchiveState` now snapshots the source file MODE and rollback restores it — `TestMergeGuardRollbackPreservesFileMode` (chmod 0o600 → rollback → still 0o600) proves it; no hardcoded 0o644.
+- DONE: base check + full suite + push.
+  origin/main UNCHANGED at `d4b7ac61` (my merge-base) — no rebase needed. Full `go test ./...` GREEN (all packages; status 50s, cli 76s, dispatch 54s). Code commit `680e935a` pushed (fast-forward) — PR #415 updated.
+
+### Summary
+Closed the NO_GO entity-loss blocker: the FIX 3 rollback reversed the working tree but not the git index, leaving a staged rename to `_archive` that a later commit would sweep into HEAD (orphaning the live entity) and that broke the recovery re-run. `rollbackArchive` now unstages the same pathspecs path-scoped, with the form taken from the snapshot so folder-form unstages correctly post-move. The false-green test — which only checked the worktree proxy — now proves the END across both forms: clean index, clean tree, and a successful recovery re-run. Robustness folded in: joined-error rollback with a loud CRITICAL on partial failure, and snapshot/restore of the file mode.
