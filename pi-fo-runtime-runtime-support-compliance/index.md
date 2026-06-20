@@ -11,6 +11,8 @@ issue:
 sprint:
 sprint-readiness:
 id: 2ygdt8xs5wxnpys9vrc8djaq
+mod-block: merge:pr-merge
+pr: "#417"
 ---
 
 # Pi FO runtime — apply runtime-support.md principles
