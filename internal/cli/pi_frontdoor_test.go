@@ -535,6 +535,102 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 	})
 }
 
+// TestPiRuntimeDevOverrideSatisfiesPackageGate verifies the regression fix for
+// the --plugin-dir / SPACEDOCK_REPO_ROOT dev-override launch path: when the
+// Spacedock package is NOT registered in settings.json (fresh pi-home), a
+// dev-override repoRoot that contains skills/ensign/SKILL.md satisfies the
+// package gate so the launch path reaches the ensign. The inverse (no
+// repoRoot, no package) still fails the gate — the install-managed contract.
+func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+
+	t.Run("dev override satisfies gate without installed package", func(t *testing.T) {
+		home := t.TempDir()
+		cfg := piRuntimeConfigFromEnv(append(piTestEnv(pkg, home), "SPACEDOCK_REPO_ROOT="+repo), "/non-repo-cwd", "")
+		if cfg.repoRoot != repo {
+			t.Fatalf("cfg.repoRoot=%q want %q", cfg.repoRoot, repo)
+		}
+		check := checkPiRuntime(&fakePiRuntimeOps{
+			lookPath: piHealthyPathFixtures(),
+			statOK:   statOKForPiResources(repo, pkg),
+			// No package registered in settings.json.
+			packageStatus: piPackageStatus{},
+		}, cfg)
+		if !check.spacedockPackageOK {
+			t.Fatalf("dev override should satisfy spacedockPackageOK; packageStatus=%+v", check.packageStatus)
+		}
+		if !piRuntimeLaunchReady(check) {
+			t.Fatalf("dev override should make runtime launch-ready; check=%+v", check)
+		}
+		if check.packageStatus.source != repo+" (dev override)" {
+			t.Fatalf("packageStatus.source=%q want %q", check.packageStatus.source, repo+" (dev override)")
+		}
+		if check.packageStatus.packageRoot != repo {
+			t.Fatalf("packageStatus.packageRoot=%q want %q", check.packageStatus.packageRoot, repo)
+		}
+	})
+
+	t.Run("runPi launches with dev override and no installed package", func(t *testing.T) {
+		home := t.TempDir()
+		var stdout, stderr bytes.Buffer
+		code := runPi(context.Background(), []string{"do work", "--plugin-dir", repo, "--", "--print"}, "/non-repo-cwd",
+			append(piTestEnv(pkg, home)), &fakePiRuntimeOps{
+				lookPath:      piHealthyPathFixtures(),
+				statOK:        statOKForPiResources(repo, pkg),
+				packageStatus: piPackageStatus{}, // not installed
+			}, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("runPi exit=%d want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+		}
+		if strings.Contains(stdout.String(), "MISSING Spacedock package") {
+			t.Fatalf("dev override must not report MISSING Spacedock package:\n%s", stdout.String())
+		}
+	})
+
+	t.Run("no repoRoot and no package fails gate", func(t *testing.T) {
+		home := t.TempDir()
+		cfg := piRuntimeConfigFromEnv(piTestEnv(pkg, home), "/non-repo-cwd", "")
+		if cfg.repoRoot != "" {
+			t.Fatalf("cfg.repoRoot=%q want empty", cfg.repoRoot)
+		}
+		check := checkPiRuntime(&fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOKForPiResources(t.TempDir(), pkg),
+			packageStatus: piPackageStatus{},
+		}, cfg)
+		if check.spacedockPackageOK {
+			t.Fatalf("without repoRoot or installed package, spacedockPackageOK should be false")
+		}
+		if piRuntimeLaunchReady(check) {
+			t.Fatalf("without repoRoot or installed package, runtime should not be launch-ready")
+		}
+	})
+
+	t.Run("dev override without ensign skill does not satisfy gate", func(t *testing.T) {
+		bareRepo := t.TempDir() // no skills/ensign/SKILL.md
+		home := t.TempDir()
+		statOK := map[string]bool{
+			filepath.Join(pkg, "src", "extension", "index.ts"):          true,
+			filepath.Join(pkg, "skills", "pi-subagents", "SKILL.md"):    true,
+			filepath.Join(pkg, "src", "intercom", "intercom-bridge.ts"): true,
+			pkg + "-intercom": true,
+			filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"): true,
+		}
+		cfg := piRuntimeConfigFromEnv(append(piTestEnv(pkg, home), "SPACEDOCK_REPO_ROOT="+bareRepo), "/non-repo-cwd", "")
+		check := checkPiRuntime(&fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOK,
+			packageStatus: piPackageStatus{},
+		}, cfg)
+		if check.spacedockPackageOK {
+			t.Fatalf("dev override without ensign skill must not satisfy spacedockPackageOK")
+		}
+	})
+}
+
 func assertEqual(t *testing.T, got, want string) {
 	t.Helper()
 	if got != want {

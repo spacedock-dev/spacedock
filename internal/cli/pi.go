@@ -359,6 +359,24 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	status := ops.SpacedockPackageStatus(cfg.agentDir, cfg.home)
 	res.packageStatus = status
 	res.spacedockPackageOK = status.registered && status.ensignDiscoverable
+	// Dev override: --plugin-dir / SPACEDOCK_REPO_ROOT points at a local
+	// Spacedock checkout. When the package is not registered in settings.json
+	// (e.g. a fresh pi-home), the dev-override checkout satisfies the gate if
+	// it contains the ensign skill (skills/ensign/SKILL.md). This restores the
+	// documented dev-override launch path that the package-OK gate
+	// inadvertently broke. When repoRoot is empty, spacedockPackageOK still
+	// requires the registered package (the install-managed contract).
+	if !res.spacedockPackageOK && cfg.repoRoot != "" &&
+		ops.Stat(filepath.Join(cfg.repoRoot, "skills", "ensign", "SKILL.md")) == nil {
+		res.spacedockPackageOK = true
+		res.packageStatus = piPackageStatus{
+			registered:               true,
+			ensignDiscoverable:       true,
+			firstOfficerDiscoverable: ops.Stat(filepath.Join(cfg.repoRoot, "skills", "first-officer", "SKILL.md")) == nil,
+			source:                   cfg.repoRoot + " (dev override)",
+			packageRoot:              cfg.repoRoot,
+		}
+	}
 	return res
 }
 
