@@ -1,6 +1,6 @@
 ---
 title: spacedock claude exports CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 so FO sessions get the worker back-channel
-status: validation
+status: implementation
 sprint: 0221-layered-fo
 group: binary-ux
 id: 662sh1n92mkf33rzgwxy8zcd
@@ -43,3 +43,13 @@ The worker↔FO back-channel (`SendMessage`/`TeamCreate`) is gated behind the ex
 
 ### Summary
 RECOMMENDATION: REJECTED. The code change is correct and well-scoped — AC-1/AC-2/AC-3 unit-level pass, the AC-1 test is load-bearing under mutation, the launcher provably injects `=1` into the live child env, and the diff is exactly the two intended files. But the entity's premise is falsified by live evidence on the cited version (Claude Code 2.1.183): the worker↔FO back-channel works WITHOUT the flag. With the flag unset, and even with it explicitly `=0` in FO context, I spawned a named background agent and addressed it via `SendMessage`, receiving a reply — the full round-trip. The required E2E proof ("the env flag actually enables the back-channel end-to-end, not just that the env map carries it") therefore cannot be satisfied: there is no before/after delta to observe. This is the validation-stage reject criterion "tests pass but prove an obsolete/wrong target behavior" — the unit tests verify env-map plumbing that is now a runtime no-op for the stated goal. Recommend the captain decide whether to (a) drop the change as no-longer-needed, (b) re-establish the gating premise (identify the exact session shape where flag-off truly disables addressing — the entity's original forensics may predate a Claude Code behavior change), or (c) keep the harmless belt-and-suspenders injection but rewrite the ACs to claim only "flag is set in child env," not "enables the back-channel."
+
+## Feedback Cycles
+
+### Cycle 1 — validation REJECTED → rewrite ACs (captain-directed)
+Validation found (live e2e) that `env -u CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS claude -p` STILL exposes SendMessage — the env var is not the runtime gate on this machine. The real enabler is `~/.claude/settings.json` (`env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"` + `teammateMode: "auto"`), which re-applies the flag to every child regardless of shell env. So the launcher's env-export does not independently prove "enables the back-channel." Captain's call: KEEP the harmless export, REWRITE the ACs to claim only what the code does.
+
+Rework:
+1. Rewrite `## Acceptance criteria` to claim ONLY: the launcher sets `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in the claude child env when the parent is unset, preserves an explicit parent value, scoped to the claude launch path. DROP the "enables the back-channel end-to-end" / live-e2e claim.
+2. Add a short note (entity body + one-line code comment near `withAgentTeams`): the AUTHORITATIVE enabler is `~/.claude/settings.json` (env flag + `teammateMode: auto`); the launcher export is best-effort for users without that setting and a no-op when settings already enable it — it does NOT independently enable the feature.
+3. Keep `frontdoor.go` + the 3 tests (already green for the narrowed ACs). Confirm `go build ./...` + `go test ./internal/cli/` green; diff still scoped to the claude launch path.
