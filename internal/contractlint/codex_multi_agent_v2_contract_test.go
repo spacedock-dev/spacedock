@@ -29,7 +29,6 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 			"multi_agent_v2",
 			"Codex v2",
 			"pre-v2",
-			"send_input",
 			"wait_agent(handle)",
 		} {
 			if strings.Contains(text, banned) {
@@ -48,6 +47,7 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"`send_message(target,message)`",
 		"`followup_task(target,message)`",
 		"`followup_task` starts a worker turn on the addressed worker",
+		"`send_input` is both the compatibility address and turn-starting route",
 		"completed-but-still-addressable worker",
 		"`«completion-signal»`",
 		"`wait_agent(timeout_ms)`",
@@ -60,7 +60,7 @@ func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testi
 		"re-run the kept-alive reviewer through the same `«addressable-worker»` capability",
 		"reviewer already sent a completion signal",
 		"Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
-		"Do not infer that the turn-starting addressable-worker route is absent from the absence of earlier follow-up events",
+		"Do not infer that the turn-starting addressable-worker route is absent from the absence of newer follow-up tools",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("Codex current-runtime references missing %q", want)
