@@ -4,16 +4,17 @@ title: Strip deferred-72 tier vocabulary leaked into czw's «gate.assemble-verdi
 status: validation
 source: '0221 pre-cut antipattern audit (2026-06-19): czw (prose-function restructure) leaked the DEFERRED 72 member''s tier vocabulary into the shipped contract — first-officer-shared-core.md:127,130 instruct a level-2-only FO to escalate the verdict to a level-3 judge, the ONLY occurrence of level/L3/judge in the contract, with nothing defining the concept (72 deferred). Ship-blocker for the v0.22.1 tag. Audit also recommended a contractlint absence-guard to prevent recurrence.'
 started: 2026-06-19T21:31:06Z
-completed:
-verdict:
+completed: 2026-06-20T04:29:56Z
+verdict: PASSED
 score: 0.5
-worktree: .worktrees/spacedock-ensign-strip-deferred-tier-vocabulary
+worktree:
 issue:
 sprint: 0221-layered-fo
 sprint-readiness: ready
 group: cleanup
-mod-block: merge:pr-merge
+mod-block:
 pr: "#403"
+archived: 2026-06-20T04:29:56Z
 ---
 
 The prose-function restructure smuggled the deferred 72 member's tier vocabulary into the most safety-critical contract decision (the gate verdict). Strip it back to mechanism-neutral phrasing and add a structural guard so deferred-member vocabulary cannot leak until its member ships.
