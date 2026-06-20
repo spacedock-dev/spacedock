@@ -11,7 +11,7 @@ issue:
 sprint: 0221-layered-fo
 sprint-readiness: ready
 id: b23y61pgk93ph44pz506m2wy
-mod-block:
+mod-block: merge:pr-merge
 pr: "#409"
 ---
 
