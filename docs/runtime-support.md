@@ -4,6 +4,18 @@ Runtime support means Spacedock can launch or drive a host as a first officer, d
 
 Use this guide when adding a new host such as Pi, or when turning a spike into a supported runtime lane.
 
+## Runtime contract principles
+
+Keep the shared Spacedock contract host-neutral. Shared workflow instructions should name lifecycle capabilities such as `«worker.spawn»`, `«addressable-worker»`, `«completion-signal»`, `«roster-reconcile»`, and `«worker.shutdown»`; runtime adapters own the concrete host tool calls that realize those capabilities.
+
+Write adapters as positive bindings for the host that is running. Prefer "Pi maps `«worker.shutdown»` to ..." over "Pi has no Claude TeamDelete." Avoid negative contrast against another runtime unless the document is deliberately explaining a migration or compatibility hazard.
+
+Do not couple adapter text to mutable procedure step numbers. If a shared procedure says to run `«worker.shutdown»` at the terminal boundary, adapters should bind `«worker.shutdown»`; they should not say "Merge-and-Cleanup step 10" or duplicate the shared teardown sequence.
+
+Keep runtime tool names in runtime binding sections. Host-neutral core text and shared skills should call the capability name, not `SendMessage`, `followup_task`, `subagent`, `TeamDelete`, or any other concrete host tool. If a shared doc must mention host realizations for a transition period, guard it with contractlint so the list stays intentional and cannot drift into imperative procedure text.
+
+Treat probes as the source of runtime truth. Do not file a `v2` or host-variant runtime solely because a version label changed; first probe the live tool surface and update the binding map when the lifecycle capability is the same. A separate runtime file is justified only when the lifecycle semantics differ enough that the shared capability contract would become misleading.
+
 ## Runtime layers
 
 Add support in small layers. Each layer should have its own proof.
