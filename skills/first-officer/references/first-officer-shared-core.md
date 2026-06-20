@@ -113,7 +113,7 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
-If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the captain-facing gate review and route the verdict:
+If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the captain-facing gate review and render the verdict:
 - never self-approve
 - present the stage report by invoking `Skill(skill="spacedock:present-gate")` and following its template + assembly rules
 - keep the worker alive while waiting at the gate
@@ -121,13 +121,13 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 - on captain reject at a `feedback-to` stage, `«feedback.route»(slug, stage)` (priority over generic rejection)
 - on captain approve to a non-terminal next stage, apply the reuse conditions. On reuse: keep the agent and SendMessage the next stage. On fresh: shut down the agent and any kept-alive `feedback-to` target the next stage does not need.
 
-## «gate.assemble-verdict»(slug, stage): assemble the gate review, route the verdict to the decider
+## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
 - **effect — extract (deterministic).** Roll up the gate's structured inputs from the entity via the shipped extract modes: the stage-report checklist accounting (`status --read <ref> --checklist`) and the AC coverage scan (`status --read <ref> --ac-scan`). These feed the verdict; they do not make it.
-- **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. Route it: a level-2-only FO escalates the decision to a level-3 judge; a capable FO renders its own `Recommend` line. Either way the captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
+- **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. The FO renders its own `Recommend` line. The captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
 - **done-when:** the gate review is presented to the captain and the FO is waiting on the captain's decision (the worker kept alive).
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
-- → **prose** — the verdict is judgment; no `` `spacedock gate assemble-verdict` `` binary ships (RATIFIED keep-prose). The deterministic extract sub-calls the `effect — extract` bullet names are `6re`'s shipped `status --read --checklist` / `--ac-scan`; the decision routes to L3 or the FO's own `present-gate` `Recommend` line.
+- → **prose** — the verdict is judgment; no `` `spacedock gate assemble-verdict` `` binary ships (RATIFIED keep-prose). The deterministic extract sub-calls the `effect — extract` bullet names are `6re`'s shipped `status --read --checklist` / `--ac-scan`; the decision is the FO's own `present-gate` `Recommend` line.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
