@@ -49,6 +49,9 @@ func TestCodexMultiAgentV2RuntimeReferencesUseLiveHostBindings(t *testing.T) {
 		"`list_agents(path_prefix?)`",
 		"`«worker.shutdown»`",
 		"Do not bless `interrupt_agent`",
+		"re-run the kept-alive reviewer with `followup_task(target,message)`",
+		"Fresh-spawn the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
+		"Do not infer that `followup_task` is absent from the absence of earlier follow-up events",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("Codex v2 references missing %q", want)
