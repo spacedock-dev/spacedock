@@ -1,9 +1,9 @@
 ---
 title: status --validate non-deterministic on untracked entity files (root cause of escaped blank-id)
-status: backlog
+status: ideation
 source: "Shaping FO (2026-06-20): investigating why a Commander-filed entity (pi-devoverride-package-ok) shipped with a blank id through its whole lifecycle (create → pr-pending → mod-block → terminalize → archive) and only surfaced when a fresh boot ran --validate. A pre-commit hook running `spacedock status --validate` could not reliably block the same blank-id entity: the same file on disk returns `Error: missing required id` on some invocations and `VALID` on others, across both clean-shell and git-hook (GIT_DIR/GIT_INDEX_FILE set) environments. The non-determinism is in the status tool's entity scan, not the hook."
 score:
-started:
+started: 2026-06-20T02:39:48Z
 completed:
 verdict:
 worktree:
