@@ -1,7 +1,7 @@
 ---
 title: Make the shipped state/merge verbs the operative contract path + bind «fn» bodies to their verbs (oracle)
 source: '0221-layered-fo rework (2026-06-19): validated findings 1+2 — the contract does not operatively USE the shipped verbs. `### Split-Root State Sync` names an abstract "status tool" not `spacedock state commit`, and `«state.commit»`s effect restates the hand git sequence; `«merge.guard»`s prose claims it "invoke[s] the registered merge hook" / runs "as one call" / "default-merge[s]", all FALSE of the shipped re-entrant partial envelope (merge.go doc-comment: "It does NOT invoke the merge hook"). Bundles the contract rewire (A) with a routing oracle (B) written test-first.'
-status: implementation
+status: validation
 score: 0.75
 sprint: 0221-layered-fo
 group: foundation
