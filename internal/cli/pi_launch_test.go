@@ -134,6 +134,64 @@ func TestRunPi_LaunchArgv0_StableForMultishell(t *testing.T) {
 	}
 }
 
+// TestRunPi_LaunchArgv0_BarePiUnderWrap pins the feedback-cycle-1 REVISED
+// regression: when BOTH the safehouse wrap is triggered AND ops.LookPath("pi")
+// returns a fnm multishell path, the fnm resolution must be SUPPRESSED under
+// wrap. The launched argv[0] must be "safehouse" and the inner token after the
+// safehouse "--" separator must be the bare "pi" (NOT the stable install bin
+// path). Rationale: safehouse execs the inner command INSIDE the sandbox, whose
+// filesystem view does not include ~/.local/share/fnm/node-versions/... (not
+// the workdir, not added via --safehouse-add-dirs), so handing safehouse the
+// stable ABSOLUTE path as the inner token makes Node's Module._resolveFilename
+// fail with MODULE_NOT_FOUND (manual pi-live smoke, feedback cycle 1 revised).
+// Under wrap we leave argv[0]="pi" (parity with claude/codex, which pass the
+// bare name as inner[0] even when wrapped — frontdoor.go:315,498); the race is
+// accepted as a known shared limitation under safehouse. This test REDs on the
+// cycle-1 reorder code (which set inner=stable even under wrap) and GREENs after
+// the !wrap gate lands.
+func TestRunPi_LaunchArgv0_BarePiUnderWrap(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	multishellPi, stablePi := buildFnmMultishellTree(t)
+
+	ops := &fakePiRuntimeOps{
+		lookPath: map[string]string{
+			"pi":        multishellPi,
+			"safehouse": "/bin/safehouse",
+		},
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+	var stdout, stderr bytes.Buffer
+
+	// A --safehouse-* knob triggers the wrap (no .safehouse profile needed);
+	// safehouse.Available passes because the fake resolves "safehouse".
+	code := runPi(context.Background(), []string{"--plugin-dir", repo, "--safehouse-add-dirs=/a", "--", "--version"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("runPi exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if len(ops.launched) == 0 {
+		t.Fatalf("Launch was not invoked")
+	}
+	// argv[0] must be "safehouse" — the fnm resolution must not clobber the wrap.
+	if got := ops.launched[0]; got != "safehouse" {
+		t.Fatalf("launched argv[0]=%q, want safehouse\nargv=%v", got, ops.launched)
+	}
+	// The inner pi token (right after the safehouse "--" separator) must be the
+	// BARE "pi", NOT the stable install bin path and NOT the multishell path.
+	// Handing safehouse the stable absolute path makes Node's
+	// Module._resolveFilename fail with MODULE_NOT_FOUND inside the sandbox.
+	inner := piSafehouseInnerArgv(ops.launched)
+	if len(inner) == 0 {
+		t.Fatalf("no inner argv after safehouse -- separator: %v", ops.launched)
+	}
+	if got := inner[0]; got != "pi" {
+		t.Fatalf("inner argv[0]=%q, want bare %q (fnm resolution must be suppressed under wrap; stable path %q is not visible in the sandbox)\ninner=%v", got, "pi", stablePi, inner)
+	}
+}
+
 // TestRunPi_LaunchArgv0_UnchangedForDirect pins AC-2: when ops.LookPath("pi")
 // returns a non-multishell path, the launched argv[0] is the literal "pi"
 // exactly as today.

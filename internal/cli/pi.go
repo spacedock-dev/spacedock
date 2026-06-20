@@ -183,21 +183,39 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	}
 	argv = append(argv, fd.passthrough...)
 	argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
+	// Resolve the fnm per-shell multishell symlink to its stable node-installation
+	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
+	// path fnm never tears down. On any miss/failure argv[0] stays "pi" (current
+	// behavior, no regression on non-fnm setups or direct installs). This resolution
+	// is GATED to the non-wrap path only: under safehouse the inner command execs
+	// INSIDE the sandbox, whose filesystem view does not include
+	// ~/.local/share/fnm/node-versions/... (not the workdir, not added via
+	// --safehouse-add-dirs), so handing safehouse the stable ABSOLUTE path as the
+	// inner token makes Node's Module._resolveFilename fail with MODULE_NOT_FOUND
+	// (manual pi-live smoke, feedback cycle 1 revised). Instead, under wrap we
+	// leave argv[0]="pi" and let safehouse exec the BARE name, which resolves via
+	// the sandbox's PATH — mirroring claude/codex (frontdoor.go:315,498 pass the
+	// bare name as inner[0] even when wrapped). The fnm-multishell race then
+	// re-exists under safehouse (safehouse may exec a tearing-down multishell
+	// `pi`); this is NO WORSE than claude/codex today and is a rare shared surface,
+	// recorded as a known limitation. The unsandboxed launch keeps the race fix
+	// (the stable path is visible, no teardown). The real fix for the sandboxed
+	// case is env/PATH forwarding into the sandbox (the qn-deferred Decision 2,
+	// SPACEDOCK_BIN-through-sandbox, requires a Launch(argv, env) signature
+	// change) — deferred, out of scope here.
+	if !wrap {
+		if lp, err := ops.LookPath("pi"); err == nil {
+			if stable, ok := resolveFnmMultishellPi(lp); ok {
+				argv[0] = stable
+			}
+		}
+	}
 	if wrap {
 		if ok, hint := safehouse.Available(ops.LookPath); !ok {
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
 		argv = safehouse.Wrap(argv, extra)
-	}
-	// Resolve the fnm per-shell multishell symlink to its stable node-installation
-	// bin so execHost.Launch's stdlib exec.LookPath(<absolute>) hands Node a script
-	// path fnm never tears down. On any miss/failure argv[0] stays "pi" (current
-	// behavior, no regression on non-fnm setups or direct installs).
-	if lp, err := ops.LookPath("pi"); err == nil {
-		if stable, ok := resolveFnmMultishellPi(lp); ok {
-			argv[0] = stable
-		}
 	}
 	if err := ops.Launch(argv); err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
