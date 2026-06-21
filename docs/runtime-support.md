@@ -18,6 +18,8 @@ Treat probes as the source of runtime truth. Do not file a `v2` or host-variant 
 
 Prefer pseudo-code contracts over narrative instructions. Shared and runtime contracts should look like callable bodies keyed by capability names, with compact fields such as `guard`, `effect`, `done-when`, `block`, and `→` binding/status lines. Use prose only for fuzzy judgment, host quirks proven by probes, or rationale that cannot be encoded as an executable-shaped obligation.
 
+A `→` line states where the capability is realized: `→ shipped` names the binary that already implements it (invoke it directly); `→ runtime-binding` defers to the host adapter (and, for a deferred-module section, names the host-neutral core file the boot core loads at that load point); `→ prose` marks an obligation that stays judgment-owned with no binary backing. A deferred-module section (the boot core's dispatch/merge load points) may itself take this compact shape — a `→ runtime-binding` line naming the core file plus `done-when`/`guard` lines — rather than a narrative paragraph.
+
 ### Runtime binding-block shape
 
 A first-officer runtime adapter should default to a bindings block, not lifecycle prose. The shared core owns when capabilities are invoked; the runtime file owns how the host realizes them.
