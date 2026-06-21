@@ -12,8 +12,9 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
 
    In every class, do NOT proceed to discovery or `--boot`.
 2. Discover the project root with `git rev-parse --show-toplevel`.
-3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `spacedock status --discover`: one path → use it; zero → report no workflow found; multiple → present the list (or fail with an ambiguity error in single-entity mode).
-4. Read the workflow stage taxonomy via `${SPACEDOCK_BIN:-spacedock} status --read {workflow_dir}/README.md --json` — its `stages` array carries stage names/ordering and the per-stage `initial`/`terminal`/`gate`/`worktree`/`feedback-to`/`agent` flags the greet and gate need, plus the mission line / entity labels (`entity-label` / `entity-label-plural`) / `id-style` from the flat `frontmatter` object. DEFER the README body (per-stage prose, proof policy, templates, CI docs); the body loads only when its consuming phase runs (a dispatch copies a stage subsection via `show-stage-def`; the merge ceremony reads `merge:` policy). A greet-and-stop boot never reads the body.
+3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `spacedock status --discover`: one path → use it; zero → report no workflow found and STOP; multiple → present the list (or fail with an ambiguity error in single-entity mode).
+   - **block (zero discover):** do NOT broad-search the filesystem to hunt a workflow — no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root. Report no workflow and stop. (Code-gated by the `detectBroadSearchAtBoot` boot detector.)
+4. Read the workflow stage taxonomy via `${SPACEDOCK_BIN:-spacedock} status --read {workflow_dir}/README.md --json` — its `stages` array carries stage names/ordering and the per-stage `initial`/`terminal`/`gate`/`worktree`/`feedback-to`/`agent` flags the greet and gate need, plus the mission line / entity labels (`entity-label` / `entity-label-plural`) / `id-style` from the flat `frontmatter` object. DEFER the README body (per-stage prose, proof policy, templates, CI docs); it loads only when its consuming phase runs (a dispatch copies a stage subsection via `show-stage-def`; the merge ceremony reads `merge:` policy).
 5. `«state.boot»()` — read all startup information in one call. Consume it as JSON (every value a string); the human-formatted table is NOT rendered for the FO's own reasoning. The before-greet boot is all READS — none reads a mod file or creates a team. Sections:
    - **MODS** (MODS-REPORT) — the `mods` map names which hooks are registered at which lifecycle point (startup, idle, merge). Reading the map does NOT open any mod file; it lets the greet *report* a registered hook (a pending merge-PR advancement, a comm-officer spawn) without opening the mod. Startup hooks (RUN-STARTUP-HOOKS) run deferred: the comm-officer spawn defers to first dispatch (it needs a live team); the pr-merge startup-hook advancement runs before-greet at the Merged-PR sweep below, gated on an actually-merged PR.
    - **ID_STYLE** — `sequential`, `sd-b32`, or `slug`.
@@ -60,13 +61,11 @@ The commissioned README directs the captain to dispatch the FO to inspect workfl
 - "what's archived?" / "show me the done entities"
 - any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
 
-Distinct from event-loop `status` calls (the `--next` / `--where` the FO runs after each completion — FO-internal scheduling reads).
-
 **Canonical invocations** (all start with `spacedock status --workflow-dir {workflow_dir}`):
 - Overview: no extra flags.
 - Dispatchables: `--next`.
 - Archive view: `--archived`.
-- Single-entity lookup: `--resolve {ref}`, then a follow-up `--where slug={resolved-slug}` for a fuller view.
+- Single-entity: `--resolve {ref}` then `--where slug={resolved-slug}`.
 
 **Output rendering guidance.** Forward `status` stdout verbatim inside a fenced code block, with a one-line preface naming the request ("Workflow overview:", "Dispatchable entities:", "Archived entities:"). On empty results, render a literal note ("No dispatchable entities right now.") instead of an empty fence. Do not paraphrase rows, omit columns, invent fields, summarize counts, or editorialize.
 
@@ -90,18 +89,18 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 ## Dispatch (deferred module)
 
-The dispatch machinery — the per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, standing-teammate injection (`spawn-standing-all`), reuse conditions, and the event-loop skeleton — lives in `references/fo-dispatch-core.md`, lazily loaded at the first worker dispatch. The runtime adapter supplies the host-specific dispatch parts it delegates (team/worker creation, the spawn call, the reuse-advance handle, the context-budget probe, and the event-loop reconcile sweep), read alongside the core at the first dispatch. A greet-and-stop boot never reads either.
+- → **runtime-binding**: `references/fo-dispatch-core.md` (host-neutral) + the runtime adapter's dispatch section, loaded together at the FIRST worker dispatch.
+- **done-when:** a dispatch is needed — the core (dispatch procedure, worker resolution, dispatch-adapter assembly, `spawn-standing-all`, reuse conditions, event-loop skeleton) and the adapter's host parts (worker creation, spawn call, reuse-advance handle, context-budget probe, reconcile sweep) are both resident.
+- **guard:** a greet-and-stop boot reads neither.
 
 ## Completion and Gates
 
 When a worker completes:
 
 1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.
-2. Review it against the checklist. Every dispatched item must appear as DONE, SKIPPED, or FAILED.
+2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
-
-The checklist review produces an explicit count summary: `{N} done, {N} skipped, {N} failed`.
 
 **AC coverage cross-check.** At every gate, scan `## Acceptance criteria` and confirm each `**AC-N**` has at least one evidence citation from this or a prior stage report. Name any AC without evidence; REJECT if this stage was the natural place to address it. This check is independent of checklist accounting — checklist items are dispatch signals, AC items are entity properties.
 
@@ -138,7 +137,9 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 
 ## Merge and Cleanup (deferred module)
 
-The terminal merge-and-cleanup ceremony — the `«merge.guard»` envelope, the FO-owned steps the verb does not perform (invoke the hook, default local merge, worktree removal, worker teardown), worktree-removal safety, and the mod-block guard — lives in `references/fo-merge-core.md`, lazily loaded at the terminal boundary. The FO reaches it the same way it reaches `present-gate` / `feedback-rejection-flow`: by naming the load point when an entity reaches its terminal stage. The runtime adapter supplies the host's concrete terminal teardown (step 10 — on Claude the bounded `TERMINAL_TEARDOWN_BOUNDED` teardown), read alongside the core. A boot, dispatch, or gate that never terminalizes never reads either.
+- → **runtime-binding**: `references/fo-merge-core.md` (host-neutral) + the runtime adapter's terminal-teardown section, loaded together at the terminal boundary — reached by naming the load point when an entity reaches its terminal stage, as `present-gate` / `feedback-rejection-flow` are.
+- **done-when:** an entity terminalizes — the core (`«merge.guard»` envelope, the FO-owned hook/merge/worktree-removal/teardown steps, worktree-removal safety, mod-block guard) and the adapter's host teardown are both resident.
+- **guard:** a boot, dispatch, or gate that never terminalizes reads neither.
 
 ## State Management
 
@@ -146,7 +147,7 @@ The terminal merge-and-cleanup ceremony — the `«merge.guard»` envelope, the 
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
-The worktree-ownership rules (which active state lives in the worktree copy vs. `main`, and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
+The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
 
 The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics, so the Startup flow reads as intention. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied — so the boot sequence (`«state.boot»()`, `«state.ensure-ready»()`, `«state.sweep-merged»()`, greet) converges rather than runs as a script, and each can become a binary independently without touching the flow. Every state write is one call: `«state.commit»(slug)`.
 
@@ -215,8 +216,6 @@ Ask the human before dispatch when requirements are materially ambiguous, a desi
 Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. Report state once on idle or at a gate, not repeatedly while waiting.
 
 ## Working Principles
-
-These habits implement the operating posture stated in the skill entry point — they are how the FO frames work and adjudicates gates in practice.
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
 
