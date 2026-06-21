@@ -59,3 +59,32 @@ Pure doc reconciliation (plus the one new AC-2 guard); the machinery is already 
 
 ### Summary
 Reconciled both releasing.md views to the live e2e-gate machinery in one pass and added the AC-2 manifest/tag guard. Key finding: `docs/site/contributing/releasing.md` is a SYMLINK to `docs/releasing.md` (not a byte-copy), so AC-4 byte-identity holds by construction — editing the target updates both; the mirror never appears in `git status`. AC-1 proven by exercising `EvaluateE2EGate`: tagging the greened SHA PASSES, tagging a fresh ungated post-stamp SHA BLOCKS. AC-2 proven against real release history. Full repo test suite green (0 failures).
+
+## Stage Report: validation
+
+- DONE: Run applicable tests — `go test ./cmd/spacedock-release/... ./internal/release/...` and full `go test ./...`.
+  Both green, 0 failures across all 16 packages (e.g. internal/cli 41s, internal/release 7.8s ok); 11 new manifest-tag-gate tests pass.
+- DONE: Verify AC-1 (core bug fix) — reconciled procedure GREENs the exact main commit then tags THAT e2e-green SHA; reproduce the EvaluateE2EGate exercise.
+  Exercised `EvaluateE2EGate` with one green run for the greened SHA: tag-the-greened-SHA → pass=true ("run 42 matches release commit"); tag-a-fresh-ungated-pre-stamp-SHA → pass=false ("no conclusion:success run found"). Ship path is gated on the tagged SHA (release.yml:124 `git rev-list -1 $GITHUB_REF_NAME`, goreleaser `needs: e2e-gate`).
+- DONE: Verify AC-2 (divergeable, non-tautological) — manifest-tag-gate / EvaluateManifestTagGate against REAL history.
+  Reproduced via the CLI against the actual manifests at the real tags: v0.20.0 (real plugin.json 0.19.9, both manifests) → exit 1/BLOCK; v0.22.0 (0.22.0) → exit 0/PASS. Tag semver and manifest version are independent artifacts that demonstrably diverged at v0.20.0 — not a tautology.
+- DONE: Verify AC-3 — false "repoint to the released tag"/"standalone marketplace repo" prose DELETED; moving-stable auto-advance + idempotent stamp documented.
+  Removed phrases grep to NONE in docs/releasing.md; moving-`stable` (`git push origin main:refs/heads/stable`) + idempotent-stamp prose present (L24-33). Cross-checked release.yml L229 + the idempotent `git diff --quiet` skip (L213); live `git ls-remote origin refs/heads/stable` = f96f4a1a = v0.22.0 SHA, as the AC asserts.
+- DONE: Verify AC-4 — both releasing.md views byte-identical.
+  `docs/site/contributing/releasing.md` is a git-tracked symlink (mode 120000 → `../../releasing.md`); `diff` is empty. Byte-identity holds by construction.
+- DONE: Verify AC-5 — dead `next` marketplace version field deferred OUT, noted in the doc.
+  Deferral note present at docs/releasing.md L157-160 ("deferred to a marketplace-repo task and is NOT part of this flow").
+- DONE: Run the DETACHED adversarial audit over the reconciled doc + the new guard on a throwaway checkout.
+  Ran on a throwaway clone (/tmp, since removed). The two pure predicates are individually solid; the audit surfaced wiring/prose gaps recorded below. Cleaned up; no audit artifacts touched the worktree or state checkout.
+- FAILED: AC-2 as "enforceable proof behind the doc" (proposed-approach item 4) — the guard is advisory-only.
+  `grep -rln manifest-tag-gate .github/workflows/` → ZERO. The gate's only caller is a manual `go run` in docs/releasing.md step 3 (L76). e2e-gate is a real CI job goreleaser `needs:` (release.yml:99,128) with a workflow guard test; manifest-tag-gate has neither. A cutter who skips step 3's line tags a manifest-mismatched commit and nothing blocks the ship — the exact v0.20.0 inversion (tagged a commit whose plugin.json read 0.19.9) recurs undetected.
+- FAILED: Doc deliverable carries a broken markdown artifact.
+  docs/releasing.md ends with a stray unbalanced ``` code fence on its last line (L163); `grep -c '```'` = 19 (odd). The `## Notes` section is plain bullets with no opening fence, so L163 closes nothing. Affects the mirror via the symlink.
+
+### Feedback Cycles
+
+- **Cycle 1 — validation REJECTED (detached adversarial audit, general-purpose agent on throwaway checkout).** Two ACs land but two material defects remain in the deliverable. Recommendation: REJECTED → route back to implementation.
+  1. **BLOCKER (AC-2 intent) — manifest-tag-gate is advisory-only, not CI-enforced.** Add a `manifest-tag-gate` step to the `e2e-gate` (or a sibling gate) job in release.yml — `go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json` — with goreleaser `needs:` it, PLUS a workflow guard test mirroring `internal/release/e2egate_workflow_test.go`. Carry the same `if: !contains(github.ref, '-')` pre-release skip the stamp step uses (release.yml:204), else a `v0.23.0-pre.1` tag self-blocks against a `0.23.0` manifest (audit confirmed exit 1 on that pairing).
+  2. **MINOR — stray ``` code fence at docs/releasing.md:163.** Delete line 163 (the last line). Mirror updates via the symlink.
+  3. **MINOR (consider) — step-6 stale-ref trap.** docs/releasing.md L110/L114 tag `$(git rev-parse origin/main)`. The audit's git experiment showed this flips safe↔unsafe on whether an out-of-band `git fetch` ran (step 5's changelog line tempts one). Suggest step 4 capture the greened SHA (`REL_SHA=$(git rev-parse HEAD)`) and step 6 tag `$REL_SHA`, removing the `origin/main` indirection. The e2e-gate still backstops the ship, so this is a clarity fix, not a ship-safety hole.
+  - Out of scope (machinery, not this doc task — noted, not blocking): audit MAJOR that release.yml advances `stable` to `main` HEAD at stamp-time rather than the tagged SHA (release.yml:229), and MINOR that `SPACEDOCK_E2E_GATE_WAIVER` is a sticky repo var with no clear-after step. The task scope is the doc + the one in-repo guard; these belong to the marketplace/release-machinery surface and should be filed separately.
