@@ -113,3 +113,16 @@ The ensign binding-block shape this cut adopts is documented in `docs/runtime-su
 - `pi-ensign-runtime.md`, `claude-ensign-runtime.md`, `codex-ensign-runtime.md` — the files to restructure.
 - `TestPiEnsignRuntimeAvoidsNegativeHostContrast` (#417) — the guard to update.
 - `skills/ensign/SKILL.md` — wires the runtime adapter; update if ensign files are absorbed.
+
+## Stage Report: implementation
+
+- DONE: wc -c — codex-ensign-runtime.md (≤2390) AND pi-ensign-runtime.md (≤1768) meet the v0.22.0 baseline; claude and shared-core byte-unchanged
+  codex 2847→1522 (gate 2390), pi 2838→1333 (gate 1768), claude 2556=2556, ensign-shared-core 8829=8829 (`git diff --stat` empty for both byte-locked files). Commit c79268f6.
+- DONE: The byte reduction came from removing shared-core duplication, not dropping host-specific bindings; each adapter still carries its host-specific concerns
+  Removed (shared core already owns): Agent Surface, dispatch/fetch-command narration, worktree, split-root, frontmatter, path-scoped commit, fresh-cycle, feedback interaction. Kept as `## Runtime implementation` bullets — codex: Clarification / Completion signal / Captain communication / Shutdown response; pi: Clarification / Completion signal (pi has no captain comms or mailbox shutdown, so those bullets are omitted, not negatively contrasted).
+- DONE: The #417 pi-ensign contractlint guard matches the landed binding-block shape, docs/runtime-support.md documents the binding-block shape, and go test ./... passes
+  #417 guard re-targeted to pin the `- `Clarification` ->` and `- `Completion signal` ->` binding bullets; docs/runtime-support.md gains an ensign binding-block subsection after the FO one; `go test ./...` green, `gofmt -l ./cmd ./internal` clean, `go test ./internal/contractlint/...` green.
+
+### Summary
+
+Restructured the codex and pi ensign runtime adapters to compact `## Runtime implementation` binding blocks keyed by host-specific concerns (clarification, completion signal, and — codex only — captain communication and shutdown response), removing the ~70-80% duplication of `ensign-shared-core.md`. AC-2 cross-check confirmed the shared core already carries every removed discipline, so no shared-core edits were needed (and it stays byte-locked as the authority). The claude-ensign adapter is left byte-unchanged per the checklist's net-zero guardrail — it was already at its v0.22.0 baseline (never grew), so the value problem the cut targets does not exist there; this is a deliberate AC-1/checklist reconciliation a validator should confirm. Note: `ensign-shared-core.md`'s Fetch-on-Demand line still points at "your runtime adapter's `## Completion Signal`" heading, which the restructured codex/pi files render as a `Completion signal` binding bullet rather than an H2; the reference is generic and the byte-locked claude adapter still has the H2, so I left the shared core untouched rather than breach the guardrail — flagging for validator awareness.
