@@ -23,8 +23,8 @@ func TestChannelEntryIsAlwaysManifestName(t *testing.T) {
 // marketplace; an edge binary (any other devBranch) resolves `spacedock-edge`.
 func TestChannelMarketplaceCarriesTheChannel(t *testing.T) {
 	cases := []struct {
-		channel       string
-		devBranch     string
+		channel         string
+		devBranch       string
 		wantMarketplace string
 	}{
 		{channel: "stable", devBranch: "main", wantMarketplace: "spacedock"},
