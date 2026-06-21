@@ -1,6 +1,6 @@
 ---
 title: Live opus FO intermittently routes the cycle-2 rejection re-review to the impl worker (fix≠reviewer violation) — rejection-flow flake
-status: validation
+status: implementation
 sprint: 0230-stable-finalization
 group: fo-reliability
 id: 7hczkc0c6ezgwy1p627ejp6x
@@ -60,3 +60,12 @@ The cycle-1 prose-hardening was a misdirected fix: re-grading the ORIGINAL faili
 ### Summary
 
 RECOMMENDATION: REJECTED — escalate. The committed deliverable (prose-hardening a0d7b5f6) validates against the WRONG target. I independently confirmed the cycle-2 implementation report's root-cause correction: the original failing opus CI run routed the re-review to a fresh validation worker; the "impl-as-validator" failures are `assertClaudeSingleEntityRejectionFlow` (line 193) misclassifying contract-mandated `shutdown_request`s to impl handles (body-blind substring check). The real fix is the body-aware assertion change the impl report proposes (exempt `shutdown_request` bodies — the offline `implAsValidator` fixture's `"now validate your own rework"` keeps a genuine violation RED; make the `>=2` premise team-aware) — and it is UNCOMMITTED, awaiting team-lead approval. My N=3 opus runs pass but never exercise the team-mode shutdown_request path, so they don't prove the prose fixed anything. The captain/FO must decide: (a) fix the assertion (the actual bug) and keep or revert the benign prose, or (b) keep prose-only and accept the flake re-run policy. This is above the validator's authority to adjudicate; I am rejecting the prose-only deliverable as a wrong-target fix and surfacing the verified false-positive evidence.
+
+## Feedback Cycles
+
+### Cycle 1 — validation REJECTED (2026-06-21)
+
+- **Reviewer verdict:** REJECTED. The committed prose-hardening (`a0d7b5f6`) validates against the wrong target.
+- **Root cause (impl + independent validator converged):** the flake is a TEST FALSE-POSITIVE, not an opus reliability gap. `assertClaudeSingleEntityRejectionFlow` (`internal/ensigncycle/shared_reviewer_reuse_test.go:193`) flags ANY `SendMessage` whose `to` contains "implementation" as impl-as-validator misrouting WITHOUT reading the body. Opus drives team mode and correctly reaps superseded workers with `{"type":"shutdown_request"}` to the impl handle (supersede-shutdown contract requires this); the assertion miscounts that mandatory teardown as a re-review. Sonnet passes only because bare mode has no named workers to reap. Verified across 4 graded streams (orig CI 27861449587/att1 + 3 fresh opus runs): routing correct every time.
+- **Captain ruling (2026-06-21):** fix the assertion (#1 exempt `shutdown_request` bodies; #2 make the `>=2` premise team-aware for the reviewer-reuse path) AND revert the benign prose `a0d7b5f6`. Re-validate with the offline table + a live opus run that actually exercises the team-mode shutdown path.
+- **Routed to:** implementation (same worktree, kept-alive impl worker).
