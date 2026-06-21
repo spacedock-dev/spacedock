@@ -16,7 +16,7 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
    - **block (zero discover):** do NOT broad-search the filesystem to hunt a workflow — no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root. Report no workflow and stop. (Code-gated by the `detectBroadSearchAtBoot` boot detector.)
 4. Read the workflow stage taxonomy via `${SPACEDOCK_BIN:-spacedock} status --read {workflow_dir}/README.md --json` — its `stages` array carries stage names/ordering and the per-stage `initial`/`terminal`/`gate`/`worktree`/`feedback-to`/`agent` flags the greet and gate need, plus the mission line / entity labels (`entity-label` / `entity-label-plural`) / `id-style` from the flat `frontmatter` object. DEFER the README body (per-stage prose, proof policy, templates, CI docs); it loads only when its consuming phase runs (a dispatch copies a stage subsection via `show-stage-def`; the merge ceremony reads `merge:` policy).
 5. `«state.boot»()` — read all startup information in one call. Consume it as JSON (every value a string); the human-formatted table is NOT rendered for the FO's own reasoning. The before-greet boot is all READS — none reads a mod file or creates a team. Sections:
-   - **MODS** (MODS-REPORT) — the `mods` map names which hooks are registered at which lifecycle point (startup, idle, merge). Reading the map does NOT open any mod file; it lets the greet *report* a registered hook (a pending merge-PR advancement, a comm-officer spawn) without opening the mod. Startup hooks (RUN-STARTUP-HOOKS) run deferred: the comm-officer spawn defers to first dispatch (it needs a live team); the pr-merge startup-hook advancement runs before-greet at the Merged-PR sweep below, gated on an actually-merged PR.
+   - **MODS** (MODS-REPORT) — the `mods` map names which hooks are registered at which lifecycle point (startup, idle, merge). Reading the map does NOT open any mod file; it lets the greet *report* a registered hook (a pending merge-PR advancement, a comm-officer spawn) without opening the mod. Startup hooks run deferred: the comm-officer spawn defers to first dispatch (it needs a live team); the pr-merge advancement runs before-greet at the Merged-PR sweep below, gated on an actually-merged PR.
    - **ID_STYLE** — `sequential`, `sd-b32`, or `slug`.
    - **NEXT_ID** — strategy-dependent ID candidate (not a reservation for `sd-b32`; `n/a (id-style: slug)` for `slug`).
    - **MIN_PREFIX** — `sd-b32` only; currently `MIN_PREFIX: 2`.
@@ -24,9 +24,9 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
    - **PR_STATE** — PR-pending entities with current live merge state. This is the boot-resident report the greet renders from; the Merged-PR sweep below advances a merged PR — it is not a read.
    - **DISPATCHABLE** — entities ready for dispatch (same as `--next`).
    - **TEAM_STATE** — whether a team is already present; the greet reports it but does NOT create one.
-   - **STATE_BACKEND** — `split-root` or `single-root`, the resolved entity dir, and whether it is present. The split-root halt-gate below keys off this.
-6. `«state.ensure-ready»()` — converge the split-root checkout to linked-and-integrated before any dispatch (the halt-gate + the pull-on-boot). A single-root workflow is a no-op. See its declaration under **State Management** below.
-7. `«state.sweep-merged»()` — advance every merged-PR entity to terminal at boot, before the greet. The common boot (no merged PR) reads zero mod files. See its declaration under **State Management** below.
+   - **STATE_BACKEND** — `split-root` or `single-root`, the resolved entity dir, and whether it is present.
+6. `«state.ensure-ready»()` — converge the split-root checkout to linked-and-integrated before any dispatch (the halt-gate + the pull-on-boot). A single-root workflow is a no-op.
+7. `«state.sweep-merged»()` — advance every merged-PR entity to terminal at boot, before the greet. The common boot (no merged PR) reads zero mod files.
 8. **Interactive vs headless.** Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary (boot JSON + README frontmatter) as today, including `gh`-absent UNKNOWN PR status.
    - **Interactive:** present the summary (and any ready `gate: true` gate as captain-facing text), then STOP for input; do NOT auto-dispatch. The expensive deferrals stay past the greet, reached on the captain's first direction.
    - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate it stops on, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, exactly as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored gate content, so the reviewable `Gate review:` … `Decision:` presentation is the deliverable of a headless gate-stop, not an optional flourish. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
@@ -112,21 +112,18 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
-If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the captain-facing gate review and render the verdict:
-- never self-approve
-- present the stage report by invoking `Skill(skill="spacedock:present-gate")` and following its template + assembly rules
-- keep the worker alive while waiting at the gate
+If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on the outcome:
 - on a feedback gate recommending `REJECTED`, `«feedback.route»(slug, stage)` instead of waiting for manual review
 - on captain reject at a `feedback-to` stage, `«feedback.route»(slug, stage)` (priority over generic rejection)
 - on captain approve to a non-terminal next stage, apply the reuse conditions. On reuse: keep the agent and SendMessage the next stage. On fresh: shut down the agent and any kept-alive `feedback-to` target the next stage does not need.
 
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
-- **effect — extract (deterministic).** Roll up the gate's structured inputs from the entity via the shipped extract modes: the stage-report checklist accounting (`status --read <ref> --checklist`) and the AC coverage scan (`status --read <ref> --ac-scan`). These feed the verdict; they do not make it.
-- **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. The FO renders its own `Recommend` line. The captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
-- **done-when:** the gate review is presented to the captain and the FO is waiting on the captain's decision (the worker kept alive).
+- **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
+- **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
+- **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
-- → **prose** — the verdict is judgment; no binary ships. The extract sub-calls are the shipped `status --read --checklist` / `--ac-scan`; the decision is the FO's own `present-gate` `Recommend` line.
+- → **prose** — no binary ships; the verdict is judgment.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
@@ -149,37 +146,37 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 
 The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
 
-The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied — so the boot sequence (`«state.boot»()`, `«state.ensure-ready»()`, `«state.sweep-merged»()`, greet) converges. Every state write is one call: `«state.commit»(slug)`.
+The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
 
 ## «state.boot»(): read all startup state in one call
 
-- **effect:** yield the boot record — the MODS / ID_STYLE / NEXT_ID / MIN_PREFIX / ORPHANS / PR_STATE / DISPATCHABLE / TEAM_STATE / STATE_BACKEND sections (Startup step 5), consumed as JSON, all reads, no mod-file open, no team creation.
+- **effect:** yield the boot record — the Startup step 5 sections, consumed as JSON; all reads, no mod-file open, no team creation.
 - **done-when:** the boot record is in hand for the greet.
-- → **shipped**: `` `spacedock status --boot --json` `` — already a binary; invoke it directly.
+- → **shipped**: `` `spacedock status --boot --json` ``.
 
 ## «state.ensure-ready»(): the split-root checkout is linked and integrated with peers before any dispatch
 
 - **guard:** `state_backend == split-root` (a single-root workflow is a no-op).
-- **effect — halt-gate.** If `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree). The boot table would render EMPTY and `--validate` VALID — a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-invoke `«state.boot»()` and proceed only after `entity_dir_present == true`.
+- **effect — halt-gate.** If `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree); the boot table renders EMPTY yet `--validate` VALID, a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-invoke `«state.boot»()` and proceed only after `entity_dir_present == true`.
 - **effect — pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read).
 - **done-when:** `entity_dir_present == true` and the boot rebase is clean.
 - **block:** on `pull --rebase` CONFLICT, follow the **rebase-conflict halt** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
-- → **shipped** (this sprint): `` `spacedock state ready` `` — invoke it directly.
+- → **shipped** (this sprint): `` `spacedock state ready` ``.
 
 ## «state.sweep-merged»(): merged PRs reach their terminal stage at boot, before the greet
 
 - **guard:** `pr_state` has an entry whose `state == "MERGED"` and whose entity status is non-terminal.
-- **effect:** for each such entry, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip when no such entry exists — the common boot reads zero mod files. This is the one mod-file read correctness-bound to the greet: a boot that greets and stops never enters the event loop, so a merged PR would be reported off live `pr_state` but never advanced unless advanced here.
+- **effect:** for each such entry, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip when no such entry exists — the common boot reads zero mod files. A greet-and-stop boot never enters the event loop, so a merged PR is advanced here or not at all.
 - **done-when:** no `MERGED` + non-terminal entity remains.
 - **block:** when `pr_state.status == "gh not available"`, the merge state is unknowable — skip the sweep (per the pr-merge mod's "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as stale or absent.
-- → **shipped** (this sprint): `` `spacedock state sweep` `` — invoke it directly.
+- → **shipped** (this sprint): `` `spacedock state sweep` ``.
 
 ## «state.commit»(slug): record one entity's change durably and concurrency-safe
 
 - **effect:** invoke `spacedock state commit <slug>` after each state mutation. The command resolves the split-root entity, commits only that entity path, syncs with `origin` when present, and reports local-only/no-op as needed.
 - **done-when:** the command exits 0 with the entity committed, and pushed when an origin exists.
 - **block:** exit 3 means a same-entity rebase conflict was aborted by `spacedock state commit`; HALT, surface the named conflicting path(s) to the captain, and do not force-push or auto-resolve.
-- → **shipped**: `` `spacedock state commit <slug>` `` — invoke it directly.
+- → **shipped**: `` `spacedock state commit <slug>` ``.
 
 ## FO Write Scope
 
