@@ -8,7 +8,7 @@ completed:
 verdict:
 worktree:
 issue:
-sprint:
+sprint: 0230-stable-finalization
 sprint-readiness:
 id: x1khmz0e80fyhe7vnjg8w59y
 ---
@@ -86,8 +86,8 @@ Verified by: a structural review that each file carries only host-specific conte
 **AC-2 — The shared ensign core covers every discipline the per-host files previously duplicated.**
 Verified by: a cross-check that `ensign-shared-core.md` carries worktree, split-root, frontmatter, path-scoped commit, proof, assignment reading, feedback routing — all the content the per-host files carried redundantly.
 
-**AC-3 — Token reduction.**
-Verified by: a before/after char/word count; each ensign adapter should be ~500-800c (from 1,768-2,847c), saving ~4,000-5,000c total.
+**AC-3 (VALUE / the gate) — absolute `wc -c` <= the v0.22.0 baseline.**
+The gate is the absolute byte count against the v0.22.0 baseline (the independent ref that moved the wrong way: codex +457, pi +1070), NOT a before/after reduction: `codex-ensign-runtime.md` <= 2390 B (now 2847) AND `pi-ensign-runtime.md` <= 1768 B (now 2838). `claude-ensign-runtime.md` (2556) and `ensign-shared-core.md` (8829) are AT baseline → net-zero guardrail: they must not grow. Report each file's absolute `wc -c` beside its baseline (`git show v0.22.0:skills/ensign/references/<file> | wc -c`). The ~500-800c per-adapter figure (saving ~4,000-5,000c total) remains the aspirational target, but the pass/fail GATE is the absolute v0.22.0 number above.
 
 **AC-4 — Contractlint guards updated + green.**
 Verified by: `go test ./internal/contractlint/...` green; the #417 pi ensign guard (and any codex ensign guard) updated to pin the new binding-block shape.
