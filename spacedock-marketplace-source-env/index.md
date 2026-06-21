@@ -9,6 +9,7 @@ id: z2tjv3570ahjxewv1c309rbc
 started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-spacedock-marketplace-source-env
 mod-block: merge:pr-merge
+pr: "#424"
 ---
 
 ## Problem
