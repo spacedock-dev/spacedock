@@ -104,7 +104,7 @@ When a worker completes:
 
 **AC coverage cross-check.** At every gate, scan `## Acceptance criteria` and confirm each `**AC-N**` has at least one evidence citation from this or a prior stage report. Name any AC without evidence; REJECT if this stage was the natural place to address it. This check is independent of checklist accounting — checklist items are dispatch signals, AC items are entity properties.
 
-**Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events. The clean surface is a structural guarantee of the workflow (the firehose no longer reaches stdout), not a discipline the FO must enforce — see the code gate over prose principle below; this note points at that guarantee.
+**Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events.
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
@@ -126,7 +126,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 - **effect — decide (judgment).** The verdict (approve/reject, is-this-AC-satisfied, is-this-chosen-direction-sound) is irreducible JUDGMENT. The FO renders its own `Recommend` line. The captain-facing presentation is `present-gate`'s template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, the `Decision:` prompt), assembled per its template + assembly rules.
 - **done-when:** the gate review is presented to the captain and the FO is waiting on the captain's decision (the worker kept alive).
 - **block:** never self-approve; never resolve a gate the contract reserves to the captain.
-- → **prose** — the verdict is judgment; no `` `spacedock gate assemble-verdict` `` binary ships (RATIFIED keep-prose). The deterministic extract sub-calls the `effect — extract` bullet names are `6re`'s shipped `status --read --checklist` / `--ac-scan`; the decision is the FO's own `present-gate` `Recommend` line.
+- → **prose** — the verdict is judgment; no binary ships. The extract sub-calls are the shipped `status --read --checklist` / `--ac-scan`; the decision is the FO's own `present-gate` `Recommend` line.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
 
@@ -149,7 +149,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)` — assemble the
 
 The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
 
-The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics, so the Startup flow reads as intention. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied — so the boot sequence (`«state.boot»()`, `«state.ensure-ready»()`, `«state.sweep-merged»()`, greet) converges rather than runs as a script, and each can become a binary independently without touching the flow. Every state write is one call: `«state.commit»(slug)`.
+The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied — so the boot sequence (`«state.boot»()`, `«state.ensure-ready»()`, `«state.sweep-merged»()`, greet) converges. Every state write is one call: `«state.commit»(slug)`.
 
 ## «state.boot»(): read all startup state in one call
 
