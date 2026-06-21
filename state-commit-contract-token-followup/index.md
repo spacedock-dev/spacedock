@@ -1,19 +1,19 @@
 ---
 title: Trim state.commit contract token load
-status: done
+status: validation
 source: "Captain follow-up after per-runtime contract token count (2026-06-20): shared-core grew +943 tokens since v0.22.0; biggest new body is «state.commit» at ~587 tokens. Determine and ship the leanest safe form."
 started: 2026-06-20T18:36:31Z
-completed: 2026-06-21T03:19:37Z
-verdict: passed
+completed:
+verdict:
 score:
 worktree: .worktrees/spacedock-ensign-state-commit-contract-token-followup
 issue:
 sprint: 0221-layered-fo
 sprint-readiness:
 id: 6cccykszyvxz5mxhrf270fa2
-mod-block:
-pr: local-merge:3bbcdfbf
-archived: 2026-06-21T03:19:37Z
+mod-block: merge:pr-merge
+pr: 419
+archived:
 ---
 
 The v0.22.0-to-current contract token comparison showed `skills/first-officer/references/first-officer-shared-core.md` grew by about 943 `o200k_base` tokens. The largest new section is `«state.commit»(slug)` at roughly 587 tokens. This task should determine whether that body can collapse now that the binary/state-verb path exists, and then implement a safe reduction or produce a documented no-cut decision if the mechanics remain load-bearing.
