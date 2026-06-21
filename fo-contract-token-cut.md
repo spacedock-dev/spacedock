@@ -98,3 +98,13 @@ Per the captain's ruling, recovered the byte budget primarily by COLLAPSING CALL
 ### Summary
 
 PASS (pending one infra-gated live re-run). Reproduced every AC independently on a throwaway checkout of HEAD ae0e756e (never the impl worktree): AC-1 byte gates all met with the 13 keeps + both contractlint pins byte-intact, and the cycle-2 call-site collapse confirmed body-semantics-preserving by diff (gate-routing/feedback-route/state-management callers collapse to invocations whose mechanics live unchanged in fo-dispatch-core.md). AC-4 is a real Startup block bound to a discriminating offline+live detector; AC-6 vocabulary matches the shipped files with no drift. AC-2 Codex: both M1-collapsed call sites GREEN (rejection-flow on the authorized re-run of the M7 byte-identical-to-main stochastic flake; feedback-3-cycle direct). The single OUTSTANDING item is the Claude half of AC-2's live re-run, blocked on a 5-hour Claude credit cap (429/out_of_credits, resets 2:20pm PT) — pure infra, not a contract regression; the verdict does not hang on it given the diff is provably call-site-only and the implementer captured Claude 4/4 serially. Recommend PASS; will run the Claude half after the credit reset if the FO wants the belt-and-suspenders re-reproduction.
+
+### AC-2 Claude half — completed (credit cap cleared)
+
+The FO rotated the live token to a credited (max) account; I re-established the throwaway ae0e756e checkout and ran the Claude half SERIALLY (per the stream-bleed lesson). A single confirmation run first verified the quota was fresh (no 429/out_of_credits event past the ~22s fast-fail window), then both M1-collapsed call sites passed:
+- Claude rejection-flow: GREEN (510.53s) — the gate-routing reuse-or-fresh advance + feedback-route collapse, the riskiest cycle-2 call site.
+- Claude feedback-3-cycle-escalation: GREEN (89.88s) — durable cycle-count/escalation-marker/no-post-cycle-3 grade.
+
+AC-2 is now fully reproduced on BOTH hosts: rejection-flow GREEN Claude + GREEN Codex (re-run), feedback-3-cycle GREEN Claude + GREEN Codex. gate-guardrail + merge-hook audited from the implementer's evidence against strong durable-state oracles (`assertGateHeld` and the merge-hook grade), consistent with the captured Claude 4/4. No outstanding items.
+
+VERDICT: PASS. Every acceptance criterion (AC-1/2/4/5/6) reproduces GREEN independently on the throwaway checkout; the cycle-2 call-site collapse is proven body-semantics-preserving; no regression, no self-referential evidence, no stale-target test.
