@@ -244,6 +244,23 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		"--extension", cfg.extensionPath,
 		"--skill", cfg.subagentsSkill,
 	}
+	// Dev override (--plugin-dir / SPACEDOCK_REPO_ROOT, i.e. cfg.repoRoot != ""):
+	// the Spacedock extension (.pi/extensions/spacedock.ts) is NOT registered in
+	// ~/.pi/agent/settings.json `packages` for the dev checkout, so pi does not
+	// auto-load it (pi does not auto-discover .pi/extensions/ from cwd — verified
+	// empirically). Pass the extension + the checkout's skills explicitly so the
+	// parent session loads the Spacedock first-officer/ensign skills via the
+	// extension's resources_discover. This is the dev-override equivalent of what
+	// `pi install` registers for the installed path. The os.Stat guard makes the
+	// addition graceful: if the extension is absent at the resolved path, the
+	// flags are not added (no crash, falls back to the installed-path mechanism).
+	if cfg.repoRoot != "" {
+		spacedockExt := filepath.Join(cfg.repoRoot, ".pi", "extensions", "spacedock.ts")
+		spacedockSkills := filepath.Join(cfg.repoRoot, "skills")
+		if _, err := os.Stat(spacedockExt); err == nil {
+			argv = append(argv, "--extension", spacedockExt, "--skill", spacedockSkills)
+		}
+	}
 	argv = append(argv, fd.passthrough...)
 	argv = append(argv, launchPrompt(piBootstrapPrompt, fd))
 	// Resolve the fnm per-shell multishell symlink to its stable node-installation

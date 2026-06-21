@@ -137,6 +137,123 @@ func TestPiFrontDoorLaunchesWithNativeResourcePaths(t *testing.T) {
 	}
 }
 
+// TestRunPi_DevOverridePassesSpacedockExtensionAndSkills pins the dev-override
+// skill-loading fix (AC-2): when --plugin-dir / SPACEDOCK_REPO_ROOT is set
+// (cfg.repoRoot != "") AND the Spacedock extension exists at
+// <repo>/.pi/extensions/spacedock.ts, runPi appends --extension <ext> and
+// --skill <repo>/skills so pi loads the extension (resources_discover) and the
+// parent session announces the Spacedock FO/ensign skills. pi does NOT
+// auto-discover .pi/extensions/ from cwd, so without these flags the dev path
+// boots skill-less (the eq regression).
+func TestRunPi_DevOverridePassesSpacedockExtensionAndSkills(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	// The dev-override extension must exist for the os.Stat guard to add the flags.
+	writeFileWithDirs(t, filepath.Join(repo, ".pi", "extensions", "spacedock.ts"), "export default function(){}\n")
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+	var stdout, stderr bytes.Buffer
+	code := runPi(context.Background(), []string{"--plugin-dir", repo, "--", "--version"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	joined := strings.Join(ops.launched, " ")
+	wantExt := filepath.Join(repo, ".pi", "extensions", "spacedock.ts")
+	wantSkills := filepath.Join(repo, "skills")
+	if !strings.Contains(joined, "--extension "+wantExt) {
+		t.Fatalf("dev-override argv missing --extension %q: %v", wantExt, ops.launched)
+	}
+	if !strings.Contains(joined, "--skill "+wantSkills) {
+		t.Fatalf("dev-override argv missing --skill %q: %v", wantSkills, ops.launched)
+	}
+	// The pi-subagents extension + skill are still passed first.
+	if got := strings.Count(joined, "--skill"); got != 2 {
+		t.Fatalf("expected 2 --skill flags (pi-subagents + spacedock skills), got %d: %v", got, ops.launched)
+	}
+	// Ordering: pi-subagents extension/skill precede the Spacedock extension/skill.
+	piSubExt := strings.Index(joined, "--extension "+filepath.Join(pkg, "src", "extension", "index.ts"))
+	sdExt := strings.Index(joined, "--extension "+wantExt)
+	if piSubExt < 0 || sdExt < 0 || sdExt < piSubExt {
+		t.Fatalf("expected pi-subagents extension before spacedock extension: %v", ops.launched)
+	}
+}
+
+// TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully pins the os.Stat
+// guard: when the dev-override is active but <repo>/.pi/extensions/spacedock.ts
+// is absent, runPi does NOT add the Spacedock extension/skill flags (no crash).
+func TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	// NOTE: .pi/extensions/spacedock.ts intentionally NOT created.
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	ops := &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: healthyPiPackageStatus(),
+	}
+	var stdout, stderr bytes.Buffer
+	code := runPi(context.Background(), []string{"--plugin-dir", repo, "--", "--version"}, t.TempDir(), piTestEnv(pkg, t.TempDir()), ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	joined := strings.Join(ops.launched, " ")
+	wantExt := filepath.Join(repo, ".pi", "extensions", "spacedock.ts")
+	if strings.Contains(joined, wantExt) {
+		t.Fatalf("dev-override argv must not reference absent extension %q: %v", wantExt, ops.launched)
+	}
+	if strings.Contains(joined, "--skill "+filepath.Join(repo, "skills")) {
+		t.Fatalf("dev-override argv must not add spacedock skills when extension absent: %v", ops.launched)
+	}
+	if got := strings.Count(joined, "--skill"); got != 1 {
+		t.Fatalf("expected exactly 1 --skill flag (pi-subagents only), got %d: %v", got, ops.launched)
+	}
+}
+
+// TestRunPi_InstalledPathDoesNotPassSpacedockExtension pins AC-3: when there is
+// NO dev override (cfg.repoRoot == ""), runPi does NOT add the Spacedock
+// extension/skill flags. The installed path relies on pi auto-loading registered
+// extensions from settings.json `packages` at startup (the install-managed
+// contract shipped by eq) — verified empirically; runPi does not need to pass
+// the extension explicitly in the installed case.
+func TestRunPi_InstalledPathDoesNotPassSpacedockExtension(t *testing.T) {
+	repo := t.TempDir()
+	writePiSkillFixtures(t, repo)
+	pkg := t.TempDir()
+	writePiSubagentsFixtures(t, pkg)
+	// No --plugin-dir / SPACEDOCK_REPO_ROOT: installed path (cfg.repoRoot == "").
+	env := piTestEnv(pkg, t.TempDir())
+	// Provide a healthy registered package status so the launch-ready gate passes.
+	status := healthyPiPackageStatus()
+	// Point the package root at the repo so the ensign skill Stat check resolves.
+	status.packageRoot = repo
+	ops := &fakePiRuntimeOps{
+		lookPath:      piHealthyPathFixtures(),
+		statOK:        statOKForPiResources(repo, pkg),
+		packageStatus: status,
+	}
+	var stdout, stderr bytes.Buffer
+	code := runPi(context.Background(), []string{"--", "--version"}, t.TempDir(), env, ops, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	joined := strings.Join(ops.launched, " ")
+	if strings.Contains(joined, filepath.Join(".pi", "extensions", "spacedock.ts")) {
+		t.Fatalf("installed-path argv must not pass the Spacedock extension: %v", ops.launched)
+	}
+	if strings.Contains(joined, "--skill "+filepath.Join(repo, "skills")) {
+		t.Fatalf("installed-path argv must not pass the repo skills: %v", ops.launched)
+	}
+	if got := strings.Count(joined, "--skill"); got != 1 {
+		t.Fatalf("installed-path argv must have exactly 1 --skill (pi-subagents), got %d: %v", got, ops.launched)
+	}
+}
+
 func TestPiInstallAcceptsPluginDirAsDevOverride(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)

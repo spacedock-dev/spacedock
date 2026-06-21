@@ -26,8 +26,8 @@ var proseFunctionCores = []string{
 // migrationTargetRe matches a prose-function declaration's `→` migration-target line and
 // captures (1) the notation word — `shipped` (a backtick, a live verb) or `prose` (a
 // guillemet, hand-followed) — and (2) the FIRST backticked `spacedock …` verb token on the
-// line, if any. A `→ **shipped**: ` `spacedock state ready` `` line yields ("shipped",
-// "spacedock state ready"); a `→ **prose**, becomes ` `spacedock dispatch next-action` ``
+// line, if any. A shipped line naming `spacedock state ready` yields ("shipped",
+// "spacedock state ready"); a prose line naming `spacedock dispatch next-action`
 // line yields ("prose", "spacedock dispatch next-action"); a bare `→ **prose**` line with no
 // `spacedock …` token (the `«feedback.route»` skill-is-the-body form) yields ("prose", "").
 var migrationTargetRe = regexp.MustCompile("→ \\*\\*(shipped|prose)\\*\\*[^\\n]*?`(spacedock [^`]+)`")
