@@ -186,7 +186,7 @@ func sequenceInstallsID(steps []installStep, id string) bool {
 // drives the real runCodex no-plugin auto-install with devBranch set per channel
 // and OBSERVES the seam values, then reconstructs the production codex install
 // argv from them — the channel-correct entry id (`spacedock@spacedock` stable /
-// `spacedock-edge@spacedock` edge) must be the `plugin add` target. The values are
+// `spacedock@spacedock-edge` edge) must be the `plugin add` target. The values are
 // read off the recorded seam, never grepped from a constant.
 func TestCodexNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 	saved := devBranch
