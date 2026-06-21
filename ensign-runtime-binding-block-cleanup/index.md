@@ -95,6 +95,9 @@ Verified by: `go test ./internal/contractlint/...` green; the #417 pi ensign gua
 **AC-5 — Gates green.**
 Verified by: `go test ./...`; `gofmt -l ./cmd ./internal`.
 
+**AC-6 — docs/runtime-support.md alignment.**
+The ensign binding-block shape this cut adopts is documented in `docs/runtime-support.md`'s Runtime-implementation section (extending the FO-adapter shape t0g added), aligned with WHICHEVER final approach lands — compact per-host binding blocks OR full absorption into the FO adapter (per approach step 3). No drift between the authority doc and the shipped ensign files (or their removal, if absorbed).
+
 ## Test plan
 
 - Structural review (AC-1, AC-2): binding blocks carry only host-specific content; shared core covers the rest.
