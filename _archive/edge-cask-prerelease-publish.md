@@ -1,11 +1,15 @@
 ---
 title: Edge cask publishes on pre-releases — spacedock@next skip_upload auto→false
-status: implementation
+status: done
 sprint: 0221-layered-fo
 group: release-engineering
 id: g0n7592mf99saddc5g3vp91h
 worktree: .worktrees/spacedock-ensign-edge-cask-prerelease-publish
 started: 2026-06-21T03:12:46Z
+pr: local-merge:68c127fd
+verdict: passed
+completed: 2026-06-21T03:21:31Z
+archived: 2026-06-21T03:21:31Z
 ---
 
 So the `spacedock@next` Homebrew cask (the edge tap) tracks pre-release tags. Today both casks carry `skip_upload: auto`, so a `-pre` tag skips BOTH — the edge tap stays stale. Let the EDGE cask publish on pre-releases while keeping the STABLE cask clean.
