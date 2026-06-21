@@ -1,7 +1,7 @@
 ---
-title: Recover ~638 boot-resident FO-contract tokens (micro-test-verified cuts)
+title: Convert remaining FO contract cuts into pseudo-code capability bodies
 status: backlog
-source: The 2026-06-15 fo-contract-token-cleanup proposal classified ~638 boot-resident tokens (safe-cut/cut-with-care/keep) by adversarial reasoning but filed no task to APPLY them; wg/95b were prior sweeps, now archived/done. This task owns the actual recovery, gated by the no-guidance-control micro-test (superpowers v6) that converts the reasoned verdicts into empirical ones. CL direction 2026-06-16.
+source: The 2026-06-15 fo-contract-token-cleanup proposal classified candidate cuts by adversarial reasoning, then revised the default-path total to ~420 tokens after #396 retired RT-4/RT-2 and demoted UCT cuts to legacy-only. After #418 and the state.commit follow-up, the remaining objective is not just token recovery: contracts should read like pseudo-code capability bodies, with prose reserved for fuzzy judgment and probe-backed quirks.
 score: 0.5
 sprint: 0221-layered-fo
 sprint-readiness: defer
@@ -10,28 +10,31 @@ id: y2r7ew51xqs6q3avsb6mcaka
 group: cleanup
 ---
 
-Apply the ~638-token cut list in `docs/dev/_proposals/fo-contract-token-cleanup.md` to the shipped FO-contract files — each cut empirically confirmed (not just reasoned) by a no-guidance-control micro-test. The deliverable is the trimmed contract files; the micro-test is the method that makes the cut safe.
+Rebase `docs/dev/_proposals/fo-contract-token-cleanup.md` against current `main` and apply the still-valid cuts as pseudo-code-shaped contract bodies. The deliverable is not only fewer tokens: shared/runtime contracts should prefer `«fn»` sections with compact `guard` / `effect` / `done-when` / `block` / `→` lines, and use prose only where the obligation is fuzzy, judgment-owned, or probe-specific. Each risky cut is empirically confirmed by a no-guidance-control micro-test before it lands.
 
 ## Problem
 
-The proposal classifies ~638 boot-resident tokens across four files (shared-core, the Claude runtime adapter, using-claude-team, present-gate) as safe-cut / cut-with-care / keep — every verdict reached by ADVERSARIAL REASONING ("construct a break attempt; would the FO misbehave?"). That is a strong prior but docs-confidence, not measurement: nobody has run an FO with and without a clause and observed the difference. So the cuts sit unapplied, and the 13 conservative "keep" verdicts may be over-cautious. The boot-resident contract is re-carried every turn of every FO session (~13.4K tokens of permanent occupancy, measured this session), so the recovery compounds across the whole session.
+The proposal's original `~638` target is stale. The proposal itself now says the default path is ~420 tokens, RT-4/RT-2 are retired, UCT cuts are legacy-only, and UCT-5 needs re-derivation. Since then, `codex-pi-runtime-binding-block-cleanup` (#418) moved Codex/Pi adapters toward capability binding blocks, and `state-commit-contract-token-followup` trimmed the largest new shared-core state body by replacing mechanics prose with a compact `«state.commit»` body.
+
+The remaining problem is broader than shaving words. The FO contracts still mix callable capability bodies with narrative lifecycle prose. The target shape is pseudo-code: the core names what gets invoked and when, runtime files bind how the host realizes each `«fn»`, and prose is reserved for fuzzy judgment or probe-backed host quirks.
 
 ## Proposed approach
 
-Apply the cuts, gated by the empirical layer the proposal now specifies (its "Cut criteria — no-guidance control" section):
+Rebase first, then apply:
 
-1. **Validating-first-step (pay the small bill first).** Prove the no-guidance-control micro-test discriminates, on three candidates spanning the verdict space — SC-13 (a `keep`), SC-5 (`cut-with-care`), SC-3 (`safe-cut`). Reuse the bare-`claude` launch + durable-state grade the haiku-loop-spike (w4) proved (AC-1). For a candidate clause: sample FO behavior N>=5 on the smallest realistic exercise that exposes the clause's job, in two arms — WITH the clause and WITHOUT it (the control) — in the real surrounding contract; read behavior by hand (a string match is not a behavior); variance-as-signal. ~$0.15-0.30/sample.
-2. **Apply across the full list.** Control already satisfies the behavior -> confirmed dead weight (delete, do not merely compress). Absence changes behavior across N -> confirmed load-bearing (keep the load-bearing fragment, cut only the inert remainder). RE-TEST the 13 keeps — the control can overturn a `keep` whose feared misbehavior does not actually occur.
-3. **Ship through the dispatched-worker path.** The contract files are shipped scaffolding (not FO-direct-editable), so the trimmed files land via a dispatched worker in a worktree, with the four live shared scenarios (gate-guardrail, rejection-flow, feedback-3-cycle-escalation, merge-hook-guardrail) green on Claude AND Codex as the behavior-preservation oracle, plus a `wc` size-delta and a detached adversarial audit of the diff (per the proposal's Closing note).
+1. **Reconcile scope against current main.** Remove retired RT-4/RT-2 targets, keep UCT items legacy-only, re-derive UCT-5 before applying, and do not redo work already landed by #418 or the `«state.commit»` follow-up.
+2. **Prefer pseudo-code bodies.** Convert surviving shared-core/runtime targets into compact callable bodies or binding bullets before reaching for explanatory prose. Good shapes include `guard`, `effect`, `done-when`, `block`, and `→ shipped/prose/runtime-binding`.
+3. **Validate risky removals.** Use the proposal's no-guidance-control micro-test for clauses whose removal could change behavior. For a candidate clause: sample FO behavior N>=5 on the smallest realistic exercise that exposes the clause's job, in two arms — WITH the clause and WITHOUT it — in the real surrounding contract; read behavior by hand; treat variance as signal.
+4. **Ship through the dispatched-worker path.** The contract files are shipped scaffolding, so the trimmed files land via a dispatched worker in a worktree, with live shared scenarios green on relevant hosts, token/line deltas reported, and detached adversarial audit of the diff.
 
 ## Deliverable
 
-The trimmed FO-contract files committed, with: a measured token-delta (target ~638, actual reported), the four live scenarios green on both hosts, and a per-cut record of the micro-test verdict (applied / kept / keep-overturned). The no-guidance-control method, proven here as a byproduct, is reused later by 0205's prose-function restructure — but THIS task ships the cut, not a method.
+The trimmed FO-contract files committed, with: measured token/line deltas, a list of proposal items applied/retired/deferred, a per-risky-cut micro-test verdict, and a short statement of how the resulting text follows the pseudo-code contract principle in `docs/runtime-support.md`.
 
 ## Out of scope
 
 - A general eval framework (the micro-test is a thin per-clause check, not a product — YAGNI until a future batch justifies one).
-- 0205's prose-function restructure (it reuses the method; different task).
+- Reworking already-landed #418 Codex/Pi binding-block shape or the `«state.commit»` compact body except to avoid conflicts.
 - The judgment-audit generalization over the full routing table (rides w4 / 0205).
 - Net-new cut hunting beyond the proposal's verified list (re-testing the 13 keeps IS in scope; finding fresh cuts is not).
 
