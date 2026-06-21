@@ -47,3 +47,15 @@ Out of scope (flag, do not attempt): the dead `next` marketplace `version` field
 
 ## Notes
 Pure doc reconciliation (plus the one new AC-2 guard); the machinery is already correct. Surfaced by the 0202 cut.
+
+## Stage Report: implementation
+
+- DONE: Reconcile docs/releasing.md so a cutter tags the e2e-GREEN commit, not a fresh pre-stamp SHA; step 3 stops pre-stamping a new commit and describes the moving-`stable`-branch auto-advance.
+  Rewrote step 3 to stamp+commit+push to main, GREEN that exact commit via `gh workflow run "Runtime Live E2E"`, then `git tag -a vX.Y.Z $(git rev-parse origin/main)`; "What the Tag Push Does" now states the gate binds `run.HeadSha == tagged-commit` and Runtime Live E2E is workflow_dispatch-only. Code SHA c97ec639.
+- DONE: Add a divergeable guard the cutter can actually fail — assert the tagged commit's plugin.json version == the tag semver.
+  New `spacedock-release manifest-tag-gate <tag> <plugin.json>...` + pure predicate `EvaluateManifestTagGate`. Exercised against REAL history: v0.20.0 (manifest 0.19.9) exits 1/BLOCK, v0.22.0 (manifest 0.22.0) exits 0/PASS. 11 new tests, all green.
+- DONE: VERIFY FIRST (record the finding) — state exactly what was removed vs added in the steady-state fold; `next` marketplace version-field cleanup OUT of scope.
+  CONFIRMED main-centric: live doc already said "cut from `main`" and origin/stable (f96f4a1a) advances from main via `git push origin main:refs/heads/stable` (release.yml L229). The fold was a DELETION of the false "repointed to the released tag" / "commit in the standalone marketplace repo" prose (old L19-23, L49-50) + added the moving-`stable` + idempotent-stamp description. No `next`->main step invented (machinery has none). Dead `next` marketplace version field noted as deferred to the marketplace-repo task (AC-5).
+
+### Summary
+Reconciled both releasing.md views to the live e2e-gate machinery in one pass and added the AC-2 manifest/tag guard. Key finding: `docs/site/contributing/releasing.md` is a SYMLINK to `docs/releasing.md` (not a byte-copy), so AC-4 byte-identity holds by construction — editing the target updates both; the mirror never appears in `git status`. AC-1 proven by exercising `EvaluateE2EGate`: tagging the greened SHA PASSES, tagging a fresh ungated post-stamp SHA BLOCKS. AC-2 proven against real release history. Full repo test suite green (0 failures).
