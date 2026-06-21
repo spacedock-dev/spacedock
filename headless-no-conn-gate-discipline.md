@@ -1,6 +1,6 @@
 ---
 title: Headless no-conn FO gate-discipline — sonnet fabricates a given-the-conn grant and self-approves gates (+ zero-discover FS sweep)
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 score: 0.6
 group: contract
