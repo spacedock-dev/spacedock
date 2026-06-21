@@ -16,6 +16,8 @@ Keep runtime tool names in runtime binding sections. Host-neutral core text and 
 
 Treat probes as the source of runtime truth. Do not file a `v2` or host-variant runtime solely because a version label changed; first probe the live tool surface and update the binding map when the lifecycle capability is the same. A separate runtime file is justified only when the lifecycle semantics differ enough that the shared capability contract would become misleading.
 
+Prefer pseudo-code contracts over narrative instructions. Shared and runtime contracts should look like callable bodies keyed by capability names, with compact fields such as `guard`, `effect`, `done-when`, `block`, and `→` binding/status lines. Use prose only for fuzzy judgment, host quirks proven by probes, or rationale that cannot be encoded as an executable-shaped obligation.
+
 ### Runtime binding-block shape
 
 A first-officer runtime adapter should default to a bindings block, not lifecycle prose. The shared core owns when capabilities are invoked; the runtime file owns how the host realizes them.

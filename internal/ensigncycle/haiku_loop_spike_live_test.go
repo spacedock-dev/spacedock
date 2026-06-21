@@ -221,7 +221,7 @@ func haikuLoopPrompt(fx haikuLoopFixture) string {
 // narration.
 type haikuLoopGrade struct {
 	// Durable end-state (read from disk after the drive).
-	entityLocated bool
+	entityLocated  bool
 	entityArchived bool
 	statusDone     bool
 	completedSet   bool
@@ -236,8 +236,8 @@ type haikuLoopGrade struct {
 	integrationTransitionCommitted bool
 
 	// Stream-derived facts (parsed from the captured tool-call stream).
-	dispatchBuildCalled   bool // a `spacedock dispatch build` Bash call appeared
-	noStrongerModelAgent  bool // NO Agent(model=opus|sonnet) tool_use appeared anywhere
+	dispatchBuildCalled  bool // a `spacedock dispatch build` Bash call appeared
+	noStrongerModelAgent bool // NO Agent(model=opus|sonnet) tool_use appeared anywhere
 }
 
 // driveHaikuLoopOnce runs ONE bare-`claude --model haiku -p` mechanical-loop drive

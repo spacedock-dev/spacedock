@@ -190,7 +190,7 @@ func formatReadText(path string, sr sectionRead) string {
 
 // codeFenceMarker returns the fence marker (``` ``` ``` or `~~~`) when line opens
 // or closes a fenced code block, else "". A fence is a line whose first
-// non-whitespace run is three or more `` ` `` or `~`; the returned marker is the
+// non-whitespace run is three or more backticks or `~`; the returned marker is the
 // three-char prefix so a closing fence is matched by the same opening marker.
 func codeFenceMarker(line string) string {
 	trimmed := strings.TrimSpace(line)
