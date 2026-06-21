@@ -151,9 +151,11 @@ homebrew_casks:
   # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
   # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
   - name: spacedock@next
-    # Same pre-release guard as the stable cask: a hyphenated (pre-release) tag
-    # skips the edge cask bump, while a final vX.Y.Z still publishes it.
-    skip_upload: auto
+    # `false` publishes the edge cask on every tag, including pre-releases, so the
+    # edge tap tracks `-pre` cuts. This diverges from the stable cask's `auto`
+    # (which skips on a pre-release) — the edge channel is meant to surface
+    # pre-release builds, while stable never gets a pre-release.
+    skip_upload: false
     ids:
       - spacedock-edge
     repository:
