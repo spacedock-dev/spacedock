@@ -12,6 +12,7 @@ sprint: 0230-stable-finalization
 sprint-readiness:
 id: x1khmz0e80fyhe7vnjg8w59y
 mod-block: merge:pr-merge
+pr: "#423"
 ---
 
 # Ensign runtime binding block cleanup
