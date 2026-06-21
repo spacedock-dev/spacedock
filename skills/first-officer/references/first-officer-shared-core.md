@@ -113,9 +113,8 @@ If not gated: terminal → merge; else decide reuse-or-fresh.
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
 If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on the outcome:
-- on a feedback gate recommending `REJECTED`, `«feedback.route»(slug, stage)` instead of waiting for manual review
-- on captain reject at a `feedback-to` stage, `«feedback.route»(slug, stage)` (priority over generic rejection)
-- on captain approve to a non-terminal next stage, apply the reuse conditions. On reuse: keep the agent and SendMessage the next stage. On fresh: shut down the agent and any kept-alive `feedback-to` target the next stage does not need.
+- on a feedback gate recommending `REJECTED`, or on captain reject at a `feedback-to` stage (priority over generic rejection), `«feedback.route»(slug, stage)` instead of waiting for manual review
+- on captain approve to a non-terminal next stage, advance reuse-or-fresh per the deferred dispatch module's reuse conditions.
 
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
@@ -146,7 +145,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
 
-The FO declares intent against the state repo by invoking the prose-functions below; their bodies own the mechanics. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
+The FO declares state intent by invoking the prose-functions below. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
 
 ## «state.boot»(): read all startup state in one call
 
