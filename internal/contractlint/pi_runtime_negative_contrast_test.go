@@ -59,11 +59,13 @@ func TestPiFirstOfficerRuntimeAvoidsNegativeHostContrast(t *testing.T) {
 }
 
 // TestPiEnsignRuntimeAvoidsNegativeHostContrast is the Pi ensign equivalent of
-// TestCodexEnsignRuntimeAvoidsNegativeHostContrast. The Pi ensign adapter has
-// zero legitimate "Claude" mentions (the runtime-support.md sweep removed the
-// lone negative "Do not assume Claude team tools exist in Pi." sentence), so a
-// targeted phrase ban is safe here: it passes today and would have caught the
-// FIX-4 regression if the removed sentence were re-introduced.
+// TestCodexEnsignRuntimeAvoidsNegativeHostContrast. The Pi ensign adapter is a
+// compact binding block keyed by the Pi-specific concerns (clarification,
+// completion signal); the shared ensign core owns the rest. The adapter has zero
+// legitimate "Claude" mentions, so a targeted phrase ban is safe here: it passes
+// today and would catch a re-introduced negative host-contrast sentence. The
+// positive assertions pin the binding-block bullets so the host-specific Pi
+// completion and clarification bindings survive the shared-core duplication trim.
 func TestPiEnsignRuntimeAvoidsNegativeHostContrast(t *testing.T) {
 	root := repoRoot(t)
 	rel := filepath.Join("skills", "ensign", "references", "pi-ensign-runtime.md")
@@ -83,12 +85,17 @@ func TestPiEnsignRuntimeAvoidsNegativeHostContrast(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		// FIX 4 — the positive Pi completion binding retained after the negative
-		// "Do not assume Claude team tools exist in Pi." sentence was dropped.
+		// The completion-signal binding bullet — the Pi-specific completion signal
+		// the shared core does not carry.
+		"- `Completion signal` ->",
 		"Completion is reported by the worker's final result in the Pi turn or by the active Pi adapter's task-completion notification.",
+		// The clarification binding bullet — the Pi-specific contact_supervisor
+		// surface the shared core does not carry.
+		"- `Clarification` ->",
+		"contact_supervisor` with `reason: \"need_decision\"`",
 	} {
 		if !strings.Contains(text, want) {
-			t.Errorf("%s missing positive Pi ensign wording %q", rel, want)
+			t.Errorf("%s missing positive Pi ensign binding wording %q", rel, want)
 		}
 	}
 }

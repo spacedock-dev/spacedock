@@ -39,6 +39,17 @@ Keep residual sections short and factual: live-tool probes, harness isolation, c
 
 If a host-specific rule is load-bearing, first try to attach it to the relevant capability bullet. Add a separate prose section only when the rule spans multiple capabilities or documents a probe/harness concern.
 
+An ensign runtime adapter follows the same default: a `## Runtime implementation` bindings block, not lifecycle prose. The shared ensign core (`ensign-shared-core.md`) owns the discipline (assignment reading, worktree, split-root commit, frontmatter, proof, stage report); the adapter binds only the concerns that differ by host. The ensign block is keyed by the ensign-controlled concern, not the FO's worker-lifecycle capabilities.
+
+Preferred shape:
+
+- `Clarification` -> the host channel for asking the FO a blocking or non-blocking question.
+- `Completion signal` -> the observable signal the ensign emits when done; note that the FO file-verifies the stage report as the gate.
+- `Captain communication` -> the direct-to-captain channel when the stage involves captain interaction (host-only; omit where the host has no such channel).
+- `Shutdown response` -> the cooperative shutdown acknowledgement (host-only; omit where the host has no mailbox shutdown).
+
+Do not re-narrate the shared dispatch, worktree, split-root, frontmatter, path-scoped-commit, or feedback-routing discipline in the ensign adapter — the shared ensign core carries it. Omit a bullet whose concern the host does not have rather than binding it to a negative contrast against another host.
+
 ## Runtime layers
 
 Add support in small layers. Each layer should have its own proof.
