@@ -170,6 +170,7 @@ func newClaudeCommand(ctx context.Context, env []string, dir string, stdout, std
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
+			applyMarketplaceSourceOverride(env)
 			if code := runClaude(ctx, args, dir, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
@@ -192,6 +193,7 @@ func newCodexCommand(ctx context.Context, env []string, dir string, stdout, stde
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
+			applyMarketplaceSourceOverride(env)
 			if code := runCodex(ctx, args, dir, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
@@ -240,6 +242,7 @@ func newInstallCommand(ctx context.Context, env []string, stdout, stderr io.Writ
 				return cmd.Help()
 			}
 			applyDevBranchOverride(env)
+			applyMarketplaceSourceOverride(env)
 			if code := runInitWithPi(ctx, args, execHost{}, execPiRuntimeOps{}, env, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
@@ -528,6 +531,20 @@ func applyDevBranchOverride(env []string) {
 	for _, kv := range env {
 		if strings.HasPrefix(kv, "SPACEDOCK_DEV_BRANCH=") {
 			devBranch = strings.TrimPrefix(kv, "SPACEDOCK_DEV_BRANCH=")
+			return
+		}
+	}
+}
+
+// applyMarketplaceSourceOverride lets SPACEDOCK_MARKETPLACE_SOURCE override the
+// default marketplace add source (`spacedock-dev/marketplace`) on the install
+// paths. An UNSET env var leaves the default in place — the released binary keeps
+// installing from the production marketplace — while an explicit value wins,
+// pointing the install at a local/alternate marketplace for dogfooding.
+func applyMarketplaceSourceOverride(env []string) {
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "SPACEDOCK_MARKETPLACE_SOURCE=") {
+			marketplaceSource = strings.TrimPrefix(kv, "SPACEDOCK_MARKETPLACE_SOURCE=")
 			return
 		}
 	}

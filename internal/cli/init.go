@@ -11,12 +11,15 @@ import (
 )
 
 // marketplaceSource is the marketplace add source: the standalone marketplace
-// repo (NOT the plugin repo). It holds the one marketplace.json with two entries
-// of one source — `spacedock` (stable, pinned to a release tag) and
-// `spacedock-edge` (edge, tracking next HEAD). The binary's devBranch stamp
-// selects which entry installs (see channelEntry); the version pin lives in the
-// manifest, not an @ref on the install command.
-const marketplaceSource = "spacedock-dev/marketplace"
+// repo (NOT the plugin repo). It exposes the channel marketplaces — `spacedock`
+// (stable, pinned to a release tag) and `spacedock-edge` (edge, tracking next
+// HEAD) — each a marketplace.json with the single `spacedock` entry. The binary's
+// devBranch stamp selects which marketplace installs (see channelMarketplace); the
+// version pin lives in the manifest, not an @ref on the install command. It is a
+// var (not a const) so `SPACEDOCK_MARKETPLACE_SOURCE` can override it — pointing
+// the install at a local/alternate marketplace to dogfood a channel fix before it
+// reaches the production marketplace; tests save/restore it.
+var marketplaceSource = "spacedock-dev/marketplace"
 
 // runInit installs/updates the per-host plugin (claude or codex) then runs doctor.
 // `--check` runs the report without installing. Both hosts install programmatically
