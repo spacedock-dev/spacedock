@@ -7,7 +7,7 @@ id: 7hczkc0c6ezgwy1p627ejp6x
 started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-opus-rejection-flow-reviewer-routing-flake
 mod-block: merge:pr-merge
-pr: "#425"
+pr: pr-merge:425
 ---
 
 `TestLiveClaudeSharedScenarios/rejection-flow` failed on the **claude-live opus** lane (CI-E2E-OPUS) of PR #409's run 27861449587 (`claude_live_runner_test.go:122`) with the assertion `assertClaudeSingleEntityRejectionFlow` reporting "the cycle-2 re-review was routed to an implementation worker (`spacedock-ensign-rejection-task-implementation`)."
