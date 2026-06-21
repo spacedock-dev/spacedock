@@ -211,6 +211,32 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 	absentOnlyOneValidation := noAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl
 	absentButReuseTool := noAddressableSurface + "\n" + realReuseV2
 
+	// The absence declarations a live Codex FO actually emitted when the host
+	// surface exposed only spawn_agent/wait_agent and it contract-correctly
+	// fresh-dispatched the cycle-2 reviewer. These are verbatim from the six
+	// identical failing rejection-flow transcripts the #141 keepalive lane
+	// produced. The brittle fixed-phrase absent detector matched NONE of them, so
+	// the assertion took its PRESENT branch and RED-flagged a contract-correct
+	// fresh-dispatch (the M7-shape false-positive). The detector must recognize a
+	// genuine reuse-route-absent declaration however the FO words it.
+	liveAbsentWordings := []string{
+		"The available multi-agent surface exposes spawn_agent and wait_agent, but no follow-up/send-message binding.",
+		"This host has no follow-up/send binding for worker reuse.",
+		"Since the cycle-1 reviewer is not addressable on this host, I'm dispatching a fresh validation reviewer for cycle 2.",
+		"This surface has spawn_agent and wait_agent, but no followup_task or equivalent turn-starting reuse route.",
+		"Reviewer reuse is not supported by this tool surface.",
+		"This host cannot address the kept-alive reviewer for follow-up.",
+		"This host exposes the older multi-agent surface: I can spawn and wait for workers, but I do not have a followup_task/live reuse call.",
+		"This Codex surface exposes spawn/wait but no addressable follow-up tool.",
+		"Since this host does not expose a turn-starting addressable-worker binding, I'm fresh-dispatching validation instead of reusing the cycle-1 reviewer.",
+		"This Codex host did not expose an addressable reviewer reuse/follow-up tool.",
+	}
+	liveAbsentTwoFresh := make([]string, len(liveAbsentWordings))
+	for i, w := range liveAbsentWordings {
+		decl := `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(w) + `}}`
+		liveAbsentTwoFresh[i] = decl + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
+	}
+
 	cases := []struct {
 		name    string
 		jsonl   string
@@ -223,6 +249,16 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		{"addressable-worker absent: current live wording plus two fresh validation spawns", currentAbsentTwoFresh, false},
 		{"addressable-worker absent: missing second fresh validation spawn must RED", absentOnlyOneValidation, true},
 		{"addressable-worker absent: reuse tool contradicts absent classification", absentButReuseTool, true},
+		{"live FO absence wording 0 + two fresh validation spawns", liveAbsentTwoFresh[0], false},
+		{"live FO absence wording 1 + two fresh validation spawns", liveAbsentTwoFresh[1], false},
+		{"live FO absence wording 2 + two fresh validation spawns", liveAbsentTwoFresh[2], false},
+		{"live FO absence wording 3 + two fresh validation spawns", liveAbsentTwoFresh[3], false},
+		{"live FO absence wording 4 + two fresh validation spawns", liveAbsentTwoFresh[4], false},
+		{"live FO absence wording 5 + two fresh validation spawns", liveAbsentTwoFresh[5], false},
+		{"live FO absence wording 6 + two fresh validation spawns", liveAbsentTwoFresh[6], false},
+		{"live FO absence wording 7 + two fresh validation spawns", liveAbsentTwoFresh[7], false},
+		{"live FO absence wording 8 + two fresh validation spawns", liveAbsentTwoFresh[8], false},
+		{"live FO absence wording 9 + two fresh validation spawns", liveAbsentTwoFresh[9], false},
 		{
 			"loose narration only",
 			`{"type":"item.completed","item":{"type":"agent_message","text":"I will send_input to the validation worker."}}`,
