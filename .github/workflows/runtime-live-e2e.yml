@@ -422,11 +422,21 @@ jobs:
         run: |
           # Baseline: the OLD shape — entry named `spacedock-edge` in a marketplace
           # named `spacedock` — must FAIL codex's entry-name vs plugin.json name
-          # check. (The plugin's own plugin.json name is `spacedock`.)
-          oldmkt="$RUNNER_TEMP/spacedock-codex-oldshape"
-          mkdir -p "$oldmkt/.agents/plugins" "$oldmkt/plugins"
-          ln -s "$GITHUB_WORKSPACE" "$oldmkt/plugins/spacedock"
-          cat > "$oldmkt/.agents/plugins/marketplace.json" <<'JSON'
+          # check. (The plugin's own plugin.json name is `spacedock`.) The baseline's
+          # marketplace is ALSO named `spacedock`, which collides with the real
+          # `spacedock` marketplace this job already registered ("marketplace
+          # 'spacedock' is already added from a different source"). Run the baseline
+          # under its OWN isolated CODEX_HOME (a subshell export, scoped to these
+          # commands) so the old-shape add can't collide; the fix portion below runs
+          # in the job's default CODEX_HOME and integrates with the rest of the job.
+          (
+            baseline_home="$RUNNER_TEMP/spacedock-codex-baseline-home"
+            mkdir -p "$baseline_home"
+            export CODEX_HOME="$baseline_home"
+            oldmkt="$RUNNER_TEMP/spacedock-codex-oldshape"
+            mkdir -p "$oldmkt/.agents/plugins" "$oldmkt/plugins"
+            ln -s "$GITHUB_WORKSPACE" "$oldmkt/plugins/spacedock"
+            cat > "$oldmkt/.agents/plugins/marketplace.json" <<'JSON'
           {
             "name": "spacedock",
             "plugins": [
@@ -439,17 +449,25 @@ jobs:
             ]
           }
           JSON
-          codex plugin marketplace add "$oldmkt"
-          if codex plugin add spacedock-edge@spacedock 2> "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"; then
-            echo "BASELINE REGRESSION: codex accepted the old entry-name shape spacedock-edge@spacedock; the name-match constraint this AC depends on no longer holds." >&2
-            cat "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt" >&2
-            exit 1
-          fi
-          echo "Baseline confirmed: codex rejects spacedock-edge@spacedock (entry name != plugin.json name)." | tee -a "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"
+            codex plugin marketplace add "$oldmkt"
+            if codex plugin add spacedock-edge@spacedock 2> "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"; then
+              echo "BASELINE REGRESSION: codex accepted the old entry-name shape spacedock-edge@spacedock; the name-match constraint this AC depends on no longer holds." >&2
+              cat "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt" >&2
+              exit 1
+            fi
+            if ! grep -Fq "does not match" "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"; then
+              echo "BASELINE add failed, but NOT with the expected name-mismatch error (e.g. a marketplace collision); the baseline must fail for the name-match reason." >&2
+              cat "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt" >&2
+              exit 1
+            fi
+            echo "Baseline confirmed: codex rejects spacedock-edge@spacedock (entry name != plugin.json name)." | tee -a "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"
+          )
 
           # Fix: the NEW shape — entry still `spacedock`, marketplace named
           # `spacedock-edge` — must SUCCEED. This is the channelMarketplace fix the
-          # binary now emits (spacedock@spacedock-edge).
+          # binary now emits (spacedock@spacedock-edge). It runs in the job's default
+          # CODEX_HOME; the `spacedock-edge` marketplace name is distinct from the
+          # already-registered `spacedock`, so no collision.
           edgemkt="$RUNNER_TEMP/spacedock-codex-edge-marketplace"
           mkdir -p "$edgemkt/.agents/plugins" "$edgemkt/plugins"
           ln -s "$GITHUB_WORKSPACE" "$edgemkt/plugins/spacedock"
