@@ -118,3 +118,15 @@ Validation PASSED (all ACs GREEN both hosts). A detached 4-lens adversarial audi
 - **Finding:** the codex-FO trim dropped the pre-wait captain-notice EMIT-imperative ("Before foreground waiting, briefly tell the captain that interruption only returns control; the worker is not failed, closed, or redispatched"), replacing it with a pointer to `### Foreground wait` — but that section is a CONTENT spec (what the cue must say), not an EMIT/timing imperative (that it must be emitted before waiting). Not code-gated: contractlint passes against the trimmed text; the emit strings are unasserted parser fixtures.
 - **Captain ruling:** re-add a concise pre-wait emit imperative to codex-FO `## Codex wait notes` (must stay ≤6004 B) AND add a contractlint assertion so the emit-before-wait obligation is code-gated, not prose-only. Re-validate offline (contractlint + build); no live re-run needed (additive prose + assertion; trimmed behavior unchanged).
 - **Routed to:** implementation (same worktree, kept-alive impl worker).
+
+## Stage Report: implementation (audit rework)
+
+- DONE: re-added the pre-wait captain-notice EMIT imperative to codex-FO `## Codex wait notes`: "Before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched." Dropped the now-redundant `(the operator cue is in ### Foreground wait)` pointer. Commit 18498f42.
+  The imperative now states THAT the cue is emitted before waiting (the timing obligation), where `### Foreground wait` only specifies WHAT it says.
+- DONE: code-gated it — new `TestCodexWaitNotesRequireEmitBeforeWaitImperative` in `internal/contractlint/codex_foreground_wait_shape_test.go` pins the emit-trigger phrase ``before calling `wait_agent`, tell the captain``, which is discriminating (it does NOT appear in `### Foreground wait`). Demonstrated non-tautological: temporarily reverting the emit line to the pointer form made the test FAIL (`codex_foreground_wait_shape_test.go:44` red on the missing emit phrase, NOT saved by the lifecycle phrase that `### Foreground wait` still carries); restoring the line returned it GREEN.
+- DONE: byte gate — codex-FO 5991 B ≤ 6004 (13 under; emit re-added, redundant pointer removed to make room). shared-core 28325 ≤ 28586, claude-FO 4370, pi-FO 3754 all UNCHANGED by this rework.
+- DONE: offline proof — `go test ./internal/contractlint/` GREEN (incl. the new assertion), `go build ./...` GREEN. No live re-run: this is additive prose + an assertion; the trimmed behavior is unchanged, so AC-2's dual-host green from the prior cycle stands.
+
+### Summary (audit rework)
+
+Folded in the one detached-audit finding the captain approved: restored the dropped pre-wait captain-notice emit imperative to codex-FO and made it load-bearing with a non-tautological contractlint assertion (red-then-green demonstrated). codex-FO stays under baseline (5991/6004); no other FO file changed; contractlint + build green. Goes straight back to validation for the offline re-check.
