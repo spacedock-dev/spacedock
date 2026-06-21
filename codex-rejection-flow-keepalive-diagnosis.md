@@ -1,6 +1,6 @@
 ---
 title: Codex rejection-flow #141 reviewer-keepalive — diagnose real-gap vs assertion-false-positive, fix the right target
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 score: 0.5
 group: contract
