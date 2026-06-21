@@ -1,6 +1,6 @@
 ---
 title: Pi dev-override skill loading — runPi must pass the Spacedock extension + skills when --plugin-dir is set
-status: implementation
+status: validation
 source: "Captain (2026-06-20): eq (#406) retired the --skill cfg.firstOfficerDir() / --skill cfg.ensignDir() flags (D4) and moved skill discovery to the .pi/extensions/spacedock.ts extension's resources_discover. But runPi never passes the Spacedock extension to pi — it passes only --extension <pi-subagents> + --skill <pi-subagents>. The installed path works by accident (pi auto-loads registered extensions from settings.json packages); the dev path (--plugin-dir .) is BROKEN — the Spacedock skills are not loaded. pi does not auto-discover .pi/extensions/ from cwd (verified empirically). This is a regression from eq, and the pi parity gap with z2t's --plugin-dir caveat (z2t AC-6 documents that --plugin-dir bypasses installed-plugin resolution; pi's --plugin-dir bypasses skill loading entirely)."
 score:
 started: 2026-06-21T04:22:56Z
