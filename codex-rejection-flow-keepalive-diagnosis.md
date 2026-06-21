@@ -8,6 +8,7 @@ issue:
 id: 25q1qfeeae29j6wcxva82wk8
 worktree: .worktrees/spacedock-ensign-codex-rejection-flow-keepalive-diagnosis
 started: 2026-06-21T21:53:41Z
+mod-block: merge:pr-merge
 ---
 
 Surfaced by the 0230 flake-landscape investigation: the codex rejection-flow lane fails 6/15 deterministically (all 6 identical) — the codex FO fresh-dispatches the cycle-2 validator instead of reusing the kept-alive cycle-1 reviewer (`assertCodexReviewerReuse`, the #141 keepalive contract). The v0.23.0 tag fires only on a green Runtime Live E2E, and this does NOT re-run-clear, so it must be resolved (fix or scoped) before the cut.
