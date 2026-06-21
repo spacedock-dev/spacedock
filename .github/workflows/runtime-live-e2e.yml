@@ -409,6 +409,76 @@ jobs:
             exit 1
           fi
 
+      # AC-1: the EDGE channel install end-to-end on the real codex CLI. Codex
+      # enforces that a marketplace entry's name equals the plugin's own plugin.json
+      # `name` (`spacedock`). The OLD channel encoding put the channel in the ENTRY
+      # name (`spacedock-edge`), so `codex plugin add spacedock-edge@spacedock` was
+      # rejected — the failing-today baseline. The fix puts the channel in the
+      # marketplace NAME (`spacedock-edge`) with the entry still `spacedock`, so
+      # `codex plugin add spacedock@spacedock-edge` passes. This step proves BOTH on
+      # the live host: the old shape still fails (baseline moves the wrong way) and
+      # the new shape succeeds (the fix flips it).
+      - name: Codex edge channel install (name-match baseline → fix)
+        run: |
+          # Baseline: the OLD shape — entry named `spacedock-edge` in a marketplace
+          # named `spacedock` — must FAIL codex's entry-name vs plugin.json name
+          # check. (The plugin's own plugin.json name is `spacedock`.)
+          oldmkt="$RUNNER_TEMP/spacedock-codex-oldshape"
+          mkdir -p "$oldmkt/.agents/plugins" "$oldmkt/plugins"
+          ln -s "$GITHUB_WORKSPACE" "$oldmkt/plugins/spacedock"
+          cat > "$oldmkt/.agents/plugins/marketplace.json" <<'JSON'
+          {
+            "name": "spacedock",
+            "plugins": [
+              {
+                "name": "spacedock-edge",
+                "source": { "source": "local", "path": "./plugins/spacedock" },
+                "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+                "category": "workflow"
+              }
+            ]
+          }
+          JSON
+          codex plugin marketplace add "$oldmkt"
+          if codex plugin add spacedock-edge@spacedock 2> "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"; then
+            echo "BASELINE REGRESSION: codex accepted the old entry-name shape spacedock-edge@spacedock; the name-match constraint this AC depends on no longer holds." >&2
+            cat "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt" >&2
+            exit 1
+          fi
+          echo "Baseline confirmed: codex rejects spacedock-edge@spacedock (entry name != plugin.json name)." | tee -a "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-baseline-err.txt"
+
+          # Fix: the NEW shape — entry still `spacedock`, marketplace named
+          # `spacedock-edge` — must SUCCEED. This is the channelMarketplace fix the
+          # binary now emits (spacedock@spacedock-edge).
+          edgemkt="$RUNNER_TEMP/spacedock-codex-edge-marketplace"
+          mkdir -p "$edgemkt/.agents/plugins" "$edgemkt/plugins"
+          ln -s "$GITHUB_WORKSPACE" "$edgemkt/plugins/spacedock"
+          cat > "$edgemkt/.agents/plugins/marketplace.json" <<'JSON'
+          {
+            "name": "spacedock-edge",
+            "plugins": [
+              {
+                "name": "spacedock",
+                "source": { "source": "local", "path": "./plugins/spacedock" },
+                "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+                "category": "workflow"
+              }
+            ]
+          }
+          JSON
+          codex plugin marketplace add "$edgemkt"
+          codex plugin add spacedock@spacedock-edge
+          codex plugin list | tee "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-plugin-list.txt"
+          if ! grep -Fq "spacedock@spacedock-edge" "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-plugin-list.txt"; then
+            echo "codex-live edge install did not list spacedock@spacedock-edge after a successful add." >&2
+            exit 1
+          fi
+          if ! grep -Fq "$edgemkt/plugins/spacedock" "$SPACEDOCK_LIVE_ARTIFACT_DIR/codex-edge-plugin-list.txt"; then
+            echo "codex-live edge install did not list the current checkout plugin path." >&2
+            exit 1
+          fi
+          echo "Fix confirmed: codex installed spacedock@spacedock-edge from the spacedock-edge marketplace name."
+
       - name: Verify Codex resolver against installed plugin
         run: go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost
 
