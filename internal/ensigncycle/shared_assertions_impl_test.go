@@ -8,12 +8,26 @@ import (
 
 const rejectionFixMarker = "shared-rejection-fix: applied"
 
-// escalationMarker is the exact line the escalation fixture README instructs the
-// FO to record on the 3rd rejection instead of routing back a 4th time. Like
-// rejectionFixMarker it is a fixture-driven on-disk obligation graded as durable
-// state, never transcript phrasing — so assertThirdCycleEscalation grades behavior,
-// not wording (scenario-testing-principles).
+// escalationMarker is the exact line the escalation fixture README OFFERS as one
+// way the FO can record the 3rd-rejection escalation. It lives in the README's
+// `### Feedback Cycles` body prose, which the FO contract tells the FO to DEFER
+// (it reads only the README's structural index, not the per-stage body, outside a
+// dispatch) — so a contract-faithful FO that escalates correctly may word the
+// handoff in its own prose instead of transcribing this token. The behavioral
+// obligation graded by assertThirdCycleEscalation is the escalation-to-human
+// HANDOFF, recorded in the `### Feedback Cycles` section; this exact line is one
+// accepted form of it, not the only one (scenario-testing-principles).
 const escalationMarker = "feedback-escalation: human-review-required"
+
+// escalationToHuman matches the durable escalation-to-human handoff the FO records
+// in the `### Feedback Cycles` section on the 3rd rejection. It accepts the
+// fixture's offered marker AND the FO's own contract-faithful wording — any
+// escalate/hand-off verb paired with the human target — because the marker is
+// deferred README body prose the FO is not obligated to transcribe verbatim. It
+// stays a behavioral oracle, not a transcript tautology: a third cycle entry that
+// records the rejection but NO escalation handoff (the FO recorded cycle 3 and then
+// stalled) carries neither token and stays RED.
+var escalationToHuman = regexp.MustCompile(`(?i)(escalat\w*|hand(?:ed|ing)?[ -]?off|hand(?:ed|ing)? to)\b.{0,40}\bhuman`)
 
 var implementationStatus = regexp.MustCompile(`(?im)^status:\s*implementation\s*$`)
 
@@ -90,21 +104,23 @@ func assertRejectionFlow(entity, observed string) error {
 // FO reaches the 3rd consecutive REJECTED validation and must escalate to the
 // human instead of auto-bouncing a 4th time. The escalated end-state is separable
 // from the failure end-states on durable signals only: at least three
-// `### Feedback Cycles` entries (the three rejection rounds) and the
-// fixture-instructed escalation marker line, BOTH inside the `### Feedback Cycles`
-// section (not a stray line elsewhere); NO new implementation report past the one
-// the fixture seeded (a 4th auto-bounce would route back and append a second
-// report); and the entity NOT advanced to terminal (escalation parks for the
-// human, it does not self-resolve to done). Grading on these on-disk facts, never
-// on wording, is what keeps this a behavioral oracle rather than a transcript
-// tautology.
+// `### Feedback Cycles` entries (the three rejection rounds) and a recorded
+// escalation-to-human handoff, BOTH inside the `### Feedback Cycles` section (not a
+// stray line elsewhere); NO new implementation report past the one the fixture
+// seeded (a 4th auto-bounce would route back and append a second report); and the
+// entity NOT advanced to terminal (escalation parks for the human, it does not
+// self-resolve to done). The handoff is graded by BEHAVIOR — the fixture's offered
+// marker OR the FO's own escalate-to-human wording — not by the exact token,
+// because that token lives in deferred README body prose the contract-faithful FO
+// reads only on demand. Grading on these on-disk facts, never on transcript
+// phrasing, is what keeps this a behavioral oracle rather than a tautology.
 func assertThirdCycleEscalation(entity string) error {
 	section := feedbackCyclesSection(entity)
 	if cycles := len(feedbackCycleEntry.FindAllString(section, -1)); cycles < 3 {
 		return fmt.Errorf("escalation entity has %d `### Feedback Cycles` entries, want at least 3", cycles)
 	}
-	if !strings.Contains(section, escalationMarker) {
-		return fmt.Errorf("escalation entity did not record the human-escalation marker in the `### Feedback Cycles` section on the 3rd cycle")
+	if !strings.Contains(section, escalationMarker) && !escalationToHuman.MatchString(section) {
+		return fmt.Errorf("escalation entity did not record an escalation-to-human handoff in the `### Feedback Cycles` section on the 3rd cycle")
 	}
 	if reports := len(implementationReport.FindAllString(entity, -1)); reports > 1 {
 		return fmt.Errorf("escalation entity has %d implementation reports, want 1 — a post-cycle-3 report means the FO auto-bounced a 4th time instead of escalating", reports)
