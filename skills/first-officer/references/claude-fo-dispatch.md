@@ -150,9 +150,7 @@ A non-zero exit with no `reuse_ok: true` means the FO never silent-reuses on an 
 
 ## Feedback Rejection Flow (bare mode)
 
-In bare mode, the feedback rejection flow is sequential: dispatch the fix agent (the `feedback-to` target — wait for completion), then dispatch a SEPARATE reviewer (wait for completion), then present at gate. The fix agent and the reviewer are always two distinct dispatches: the worker that applied the fix must never review its own rework. For the re-review, fresh-dispatch a new validation worker — bare mode has no kept-alive reviewer to reuse, and the fix agent's handle is NOT a re-review handle. Routing the re-review back to the fix agent (the `…-implementation` worker) is the impl-as-validator violation; never do it.
-
-With the background back-channel ONLY (not bare mode), the fix agent and the kept-alive reviewer are still two distinct workers — keep the reviewer alive when entering the flow so the re-review reuses that reviewer, never the fix agent.
+In bare mode, the feedback rejection flow is sequential: dispatch fix agent (wait for completion), then dispatch reviewer (wait for completion), then present at gate. With the background back-channel, the fix agent and reviewer can interact via messaging — keep the reviewer alive when entering the flow.
 
 ## Event Loop — reconcile sweep (step 0)
 
