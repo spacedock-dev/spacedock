@@ -1,11 +1,15 @@
 ---
 title: Pre-release tag guards — release.yml skips stable-promotion + goreleaser skips cask bump for v*-pre tags
-status: implementation
+status: done
 sprint: 0221-layered-fo
 group: release-engineering
 id: evkr57zq9g6c2fbk9v8b40kr
 worktree: .worktrees/spacedock-ensign-release-prerelease-guards
 started: 2026-06-20T21:13:05Z
+pr: local-merge:e8dfd687
+verdict: passed
+completed: 2026-06-21T03:07:04Z
+archived: 2026-06-21T03:07:04Z
 ---
 
 Enable a single coherent pre-release tag (`v0.23.0-pre`, openai/codex style) that ships binary + content together as a GitHub pre-release WITHOUT promoting to stable. The release machinery currently treats every `v*` tag as a full stable cut: a `-pre` tag would (wrongly) stamp main's manifests, advance the `stable` ref, and bump both Homebrew casks. Add two guards so a hyphenated (pre-release) tag stays out of the stable channel; a normal `vX.Y.Z` tag is unaffected.
