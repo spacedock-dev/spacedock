@@ -188,7 +188,9 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 	sendInputToFresh := `{"type":"item.started","item":{"type":"collab_tool_call","tool":"send_input","receiver_thread_ids":["` + vThread2 + `"],"prompt":"Re-run validation for rejection-task as cycle 2."}}`
 	freshDispatch := spawnValidation + "\n" + spawnImpl + "\n" + feedbackToImpl + "\n" + freshCycle2Spawn + "\n" + sendInputToFresh
 	noAddressableSurface := `{"type":"item.completed","item":{"type":"agent_message","text":"The live Codex tool surface has spawn_agent and wait_agent, but no followup_task/send_message reuse route exposed here."}}`
+	currentNoAddressableSurface := `{"type":"item.completed","item":{"type":"agent_message","text":"Codex has no turn-starting follow-up route for a completed worker, so there is no completed-worker follow-up route for validation reuse."}}`
 	absentTwoFresh := noAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
+	currentAbsentTwoFresh := currentNoAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
 	absentOnlyOneValidation := noAddressableSurface + "\n" + spawnValidation + "\n" + spawnImpl
 	absentButReuseTool := noAddressableSurface + "\n" + realReuseV2
 
@@ -201,6 +203,7 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		{"real followup_task to the validation reviewer thread", realReuseV2, false},
 		{"fresh cycle-2 spawn_agent + send_input must RED", freshDispatch, true},
 		{"addressable-worker absent: two fresh validation spawns", absentTwoFresh, false},
+		{"addressable-worker absent: current live wording plus two fresh validation spawns", currentAbsentTwoFresh, false},
 		{"addressable-worker absent: missing second fresh validation spawn must RED", absentOnlyOneValidation, true},
 		{"addressable-worker absent: reuse tool contradicts absent classification", absentButReuseTool, true},
 		{

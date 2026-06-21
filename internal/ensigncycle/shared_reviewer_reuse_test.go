@@ -313,6 +313,8 @@ func codexAddressableWorkerAbsent(jsonl string) bool {
 	lower := strings.ToLower(jsonl)
 	return strings.Contains(lower, "no followup_task/send_message reuse route exposed") ||
 		strings.Contains(lower, "followup_task/message reuse is unavailable") ||
+		strings.Contains(lower, "no turn-starting follow-up route for a completed worker") ||
+		strings.Contains(lower, "no completed-worker follow-up route") ||
 		strings.Contains(lower, "reviewer reuse is not available in this host")
 }
 
