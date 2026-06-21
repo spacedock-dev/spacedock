@@ -30,7 +30,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`tests/test_gate_guardrail.py`, `tests/test_rejection_flow.py`, `tests/test_merge_hook_guardrail.py`):
 
 - `gate-guardrail`: starts at a human gate and asserts the first officer presents the gate instead of self-approving, mutating, or archiving the entity.
-- `rejection-flow`: drives a two-cycle rejection trajectory — route the concrete finding back through implementation, re-implement, and re-validate a second cycle reusing the kept-alive reviewer — restoring the second cycle the Go port dropped.
+- `rejection-flow`: drives a two-cycle rejection trajectory — route the concrete finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer when the host exposes an addressable-worker route and otherwise fresh-dispatching a separate reviewer.
 - `feedback-3-cycle-escalation`: starts from two prior rejection cycles at a third REJECTED validation and asserts the first officer escalates to the human on the third cycle instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
 
@@ -101,4 +101,3 @@ plugins/spacedock -> $GITHUB_WORKSPACE
 The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` then confirms Spacedock resolves the installed Codex manifest. The Codex live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the current-checkout stack instead of a remote `next` install. The Claude lane loads the current checkout directly via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
 
 A one-off host-only smoke is not enough for either lane: it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. The shared scenarios run real headless hosts, observe output, and check resulting workflow state; jsonl, stderr, and final-message artifacts upload for debugging.
-

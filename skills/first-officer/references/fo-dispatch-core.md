@@ -1,6 +1,6 @@
 # First Officer Dispatch Core (host-neutral)
 
-The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The host-specific parts this core delegates ride the `→` lines of the capability `«fn»`s below: worker creation, the spawn call, the reuse-advance handle, `«context-budget»`, and `«roster-reconcile»`.
+The per-entity dispatch procedure, worker resolution, the dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. The host-specific parts this core delegates ride the `→` lines of the capability `«fn»`s below: worker creation, the spawn call, the reuse-advance handle, cooperative shutdown, `«context-budget»`, and `«roster-reconcile»`.
 
 ## Dispatch
 
@@ -43,9 +43,9 @@ When the comparator forces fresh dispatch due to model mismatch, the FO MUST emi
 
 **If reuse:** Keep the agent alive. Update frontmatter on main (`spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the next assignment through the runtime adapter's reuse-advance handle (its live-worker messaging call) — the message carries: the next stage name, the full `### Stage definition` subsection copied from the README verbatim, the `### Completion checklist` assembled from Dispatch step 2, and an instruction to continue working on the entity at its path and commit before signaling completion. The reuse path does NOT route through `spacedock dispatch build` — assemble the advancement message directly.
 
-**If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise shut it down. Then run `status --next` and dispatch the next stage.
+**If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 
-**Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, shut down the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
+**Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, invoke `«worker.shutdown»` for the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
 
 ## Worktree Ownership
 
@@ -69,9 +69,15 @@ Use `worker_key` in worktree paths (`.worktrees/{worker_key}-{slug}`) and branch
 
 ## Dispatch Adapter
 
-Use the runtime adapter's spawn call to spawn each worker. **Use the spawn call for initial dispatch** — the reuse-advance handle is only for advancing a reused agent to its next stage in the completion path.
+Use `«worker.spawn»` to spawn each worker. **Use the spawn call for initial dispatch** — the reuse-advance handle is only for advancing a reused agent to its next stage in the completion path.
 
-The dispatch model is built from the capability `«fn»`s below, which the body CALLS by name; each `«fn»`'s `→` line carries its per-host realization (same shape as `«state.commit» → spacedock state commit`), PRESENT/ABSENT per host. No host tool call appears outside a `→` line in this host-neutral core. `«addressable-worker»` is the organizing capability — its presence is what makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path.
+The dispatch model is built from the capability `«fn»`s below, which the body CALLS by name. New capability definitions are host-neutral; runtime adapters bind concrete realizations in their `## Runtime implementation` blocks. Older transitional `→` lines remain only where this core still carries legacy host coverage. `«addressable-worker»` is the organizing capability — its presence is what makes a worker reusable; when ABSENT, fresh one-shot dispatch is the only path.
+
+## «worker.spawn»: create the initial worker from helper output
+
+Consumes a successful `spacedock dispatch build` artifact and creates the worker for the target stage. The helper owns assignment assembly; the runtime adapter maps emitted fields to its spawn surface.
+
+The runtime adapter owns the concrete spawn call, helper-field mapping, model/null handling, and any host transport metadata.
 
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
@@ -91,6 +97,12 @@ Records worker label, substrate, run/session handle, worker address, entity slug
 ## «completion-signal»: the signals that trigger the completion-verify path
 
 - → **Claude:** DUAL — a `Done:` inbox message, a `task_notification`, or captain shutdown. · **Codex:** single observable signal — the async final-status notification in the FO mailbox. · **Pi:** PRIMARY (subagent return, `status: completed`) + optional advisory (a non-blocking heads-up via raw `intercom send` before return; `contact_supervisor` carries no completion reason).
+
+## «worker.shutdown»: cooperatively close a terminal or superseded worker
+
+Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any required preservation message. If ABSENT, record the worker closed in FO memory only after completion or explicit supersede state makes that safe.
+
+The runtime adapter owns the concrete shutdown, no-op, or in-memory closure binding and any host-specific preservation channel.
 
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
