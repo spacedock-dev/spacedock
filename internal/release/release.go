@@ -33,6 +33,21 @@ func replaceFirstVersion(blob []byte, value string) []byte {
 	return out
 }
 
+// ManifestVersion reads the top-level `version` field of a plugin manifest
+// (plugin.json / .codex-plugin/plugin.json). It returns an empty string with no
+// error when the manifest parses but carries no top-level `version` (a stamp that
+// never ran), so the manifest/tag gate can block on a missing version rather than
+// erroring. A manifest that does not parse is an error.
+func ManifestVersion(manifest []byte) (string, error) {
+	var top struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(manifest, &top); err != nil {
+		return "", fmt.Errorf("parse manifest: %w", err)
+	}
+	return top.Version, nil
+}
+
 // StampVersion rewrites the top-level `version` field of a plugin manifest
 // (plugin.json / .codex-plugin/plugin.json) to version, preserving the rest of
 // the file's formatting. When the manifest has no top-level `version` key (e.g.
