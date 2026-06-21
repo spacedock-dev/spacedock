@@ -1,6 +1,6 @@
 ---
 title: Convert remaining FO contract cuts into pseudo-code capability bodies
-status: validation
+status: done
 source: The 2026-06-15 fo-contract-token-cleanup proposal classified candidate cuts by adversarial reasoning, then revised the default-path total to ~420 tokens after #396 retired RT-4/RT-2 and demoted UCT cuts to legacy-only. After #418 and the state.commit follow-up, the remaining objective is not just token recovery: contracts should read like pseudo-code capability bodies, with prose reserved for fuzzy judgment and probe-backed quirks.
 score: 0.5
 sprint: 0230-stable-finalization
@@ -10,8 +10,11 @@ id: y2r7ew51xqs6q3avsb6mcaka
 group: cleanup
 started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-fo-contract-token-cut
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:426
+verdict: passed
+completed: 2026-06-21T21:34:25Z
+archived: 2026-06-21T21:34:25Z
 ---
 
 Rebase `docs/dev/_proposals/fo-contract-token-cleanup.md` against current `main` and apply the still-valid cuts as pseudo-code-shaped contract bodies. The deliverable is not only fewer tokens: shared/runtime contracts should prefer `«fn»` sections with compact `guard` / `effect` / `done-when` / `block` / `→` lines, and use prose only where the obligation is fuzzy, judgment-owned, or probe-specific. Each risky cut is empirically confirmed by a no-guidance-control micro-test before it lands.
