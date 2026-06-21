@@ -9,7 +9,6 @@ verdict:
 score:
 worktree:
 issue:
-sprint: 0230-stable-finalization
 sprint-readiness: defer
 ---
 
@@ -20,4 +19,6 @@ The 0.20.0 flip was a one-time divergent replacement. The RECURRING stable relea
 
 `docs/releasing.md` currently describes a MAIN-integration flow ("ensure all release content is merged to `main`", worktree off `main`) that does NOT match the next-integration + advance-`main`-at-release reality — reconcile it (or supersede it). Note: `marketplace-repo-decouple` (w6) would simplify this to a clean fast-forward with no per-release settle; sequence accordingly.
 
-This `docs/releasing.md` reconciliation is part of the single consolidated work item tracked by `releasing-doc-pre-stamp-drift` (with `stamp-then-tag-release-ritual`) — run as one pass, since all three touch the same file.
+## Folded into releasing-doc-pre-stamp-drift (0230)
+
+This task's runbook substance is folded into the consolidated `releasing-doc-pre-stamp-drift` member as its approach step 3 (fold the steady-state runbook into `docs/releasing.md`). This entity is no longer a separate 0230 member. Verify-first caveat carried by the lead: `docs/releasing.md:3` already says stable is "cut from `main`" and origin/stable advances from `main`, which contradicts this entity's "dev integrates on `next`" premise — so the fold is likely a DELETION of stale next-framing, not the addition of a next->main step. Do not document a next-line the live machinery doesn't have.

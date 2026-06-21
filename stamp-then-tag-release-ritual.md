@@ -9,14 +9,15 @@ verdict:
 score:
 worktree:
 issue:
-sprint: 0230-stable-finalization
 group: release-model
 sprint-readiness: defer
 ---
 
 Invert the release ordering to **stamp-then-tag** so the commit a release tag points at carries the matching `plugin.json` version, and pin `docs/releasing.md` to the post-flip reality. See `docs/roadmap/0201-post-flip-release-model/index.md`.
 
-The `docs/releasing.md` reconciliation here is part of the single consolidated work item tracked by `releasing-doc-pre-stamp-drift` (with `steady-state-stable-release-runbook`) — run as one pass, since all three touch the same file.
+## Folded into releasing-doc-pre-stamp-drift (0230)
+
+This task's in-0230 substance is folded into the consolidated `releasing-doc-pre-stamp-drift` member: the `docs/releasing.md` stamp-then-tag pinning becomes that member's approach step 2, and the manifest-version==tag-semver guard (AC-1 here) becomes its AC-2 — the only new in-repo guard the sprint adds. This entity is no longer a separate 0230 member. Out-of-0230 remainder stays backlog: the dead `next` marketplace `version`-field cleanup (AC-2 here) lives in the standalone spacedock-dev/marketplace repo, unreachable from this repo, so it is not enforceable in-repo and is carried by the marketplace-repo task.
 
 ## Problem
 

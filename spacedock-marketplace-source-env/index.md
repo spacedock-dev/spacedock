@@ -48,15 +48,42 @@ The binary installs to both claude and codex from the same `marketplaceSource`, 
 
 ## Acceptance criteria
 
-- **AC-1 (end-to-end value)** — On a clean box, installing the edge channel SUCCEEDS end-to-end on each supported host: a real `codex plugin add` AND `claude plugin install` complete with no entry-name vs `plugin.json` name mismatch, and the launcher then resolves and launches the edge plugin on each. Codex fails this today — the independent baseline that moves the wrong way; the fix must flip it to success, and claude (enforcement currently unverified) must also pass under the fix. A unit assertion of the plugin id alone does NOT satisfy this AC.
-- **AC-2 (channel naming)** — `channelEntry` / `channelPluginID` and the Codex + claude install sequences emit a name-match-safe id (entry name equals the manifest `spacedock`). The change is host-agnostic: stable (`spacedock@spacedock`) and edge (`spacedock@spacedock-edge`) both resolve on claude and codex. The standalone marketplace repo exposes the `spacedock-edge` marketplace name.
-- **AC-3 (programmatic fresh install — Codex only)** — `spacedock install --host codex` with no plugin installed RUNS the marketplace add + plugin add and ensures the marketplace source is (re-)pinned, rather than printing prose. The tolerated `marketplace remove` no longer masks a failed re-pin — a real re-pin failure surfaces. (The claude arm already installs programmatically; no change there.)
-- **AC-4 (channel-aware resolver — both hosts)** — `resolveCodexManifest` AND `resolveClaudeManifest` resolve the channel's id (an edge binary recognizes/refreshes an installed `spacedock@spacedock-edge` on either host), not the hardcoded stable id.
-- **AC-5 (source override)** — `spacedock codex` and `spacedock install --host codex` honor `SPACEDOCK_MARKETPLACE_SOURCE` on the install/auto-install path, preserving the default `spacedock-dev/marketplace` when unset. Tests observe the actual source passed to the install seam (unset/default + override cases).
-- **AC-6 (docs)** — Codex / front-door development guidance documents the channel scheme, the env override + local-marketplace use case, and the `--plugin-dir` caveat (it bypasses installed-plugin resolution but does not solve launcher safehouse wrapping).
-- **AC-7 (validation)** — `go test ./internal/cli` green; a test exercises the Codex entry-name vs `plugin.json` name-match constraint (or a faithful fixture) so this integration gap cannot regress silently.
+- **AC-1 (end-to-end value, REQUIRES one refinement)** — On a clean box the edge channel installs end-to-end with NO entry-name vs plugin.json name mismatch and the launcher then resolves/launches the edge plugin. The REQUIRED, blocking evidence is a real `codex plugin add` of the EDGE channel succeeding where it fails today: extend the existing live lane (runtime-live-e2e.yml:400-402 already runs `codex plugin marketplace add` + `codex plugin add` + `codex plugin list`, today only the STABLE `spacedock@spacedock` entry from a synthesized local marketplace) to exercise the edge entry-name path that currently fails. Codex failing today is the independent baseline that moves the wrong way; the fix must flip it to success. A unit/fixture assertion of the plugin id alone does NOT satisfy this AC.
+- **AC-1b (claude half, refined out of AC-1's hard CI gate)** — The same marketplace-name fix makes the claude edge install name-match-safe by construction; claude must NOT regress. Claude enforcement is currently unverified and a real `claude plugin install` mutates GLOBAL claude plugin state, so it is confirmed on a throwaway checkout / out-of-band (recorded in the task), NOT wired as a blocking CI hard-gate. Claude coverage in CI is the channel-aware resolver test (AC-4) plus the construction guarantee, not a live global-state-mutating install.
+- **AC-2 (channel naming)** — `channelEntry`/`channelPluginID` and both hosts' install sequences emit a name-match-safe id where the entry name equals manifest `spacedock`: stable `spacedock@spacedock` and edge `spacedock@spacedock-edge` both resolve on claude and codex. channel_selection_test.go's current expectations (`spacedock-edge@spacedock`) are updated to the new shape. The standalone marketplace repo exposes the `spacedock-edge` marketplace name.
+- **AC-3 (programmatic fresh install - Codex only)** — `spacedock install --host codex` with no plugin installed RUNS the marketplace add + plugin add and ensures the marketplace source is (re-)pinned, instead of printing prose (init.go:67-72). A real re-pin failure surfaces rather than being masked by the tolerated `marketplace remove`. The claude arm already installs programmatically; no change there.
+- **AC-4 (channel-aware resolver - both hosts)** — resolveCodexManifest AND resolveClaudeManifest (plus codexCacheManifest's cache path) resolve the channel's id, so an edge binary recognizes/refreshes an installed edge plugin on either host, not the hardcoded stable id.
+- **AC-5 (source override)** — `spacedock codex`, the front-door auto-install, and `spacedock install --host codex` honor `SPACEDOCK_MARKETPLACE_SOURCE`, preserving the default `spacedock-dev/marketplace` when unset. Tests observe the actual source passed to the install seam (the fakeHost seam at frontdoor_test.go:42 records {host, source, devBranch}) for unset/default + override cases.
+- **AC-6 (docs)** — Codex / front-door development guidance (docs/site/get-started/install.md and/or docs/site/contributing/agent-development.md) documents the channel scheme, the env override + local-marketplace dogfood use case, and the `--plugin-dir` caveat (bypasses installed-plugin resolution, does not solve launcher safehouse wrapping). Per docs/dev/README.md:108 the concrete before/after doc diff is recorded in the task body at ideation (see "AC-6 doc diff" below), applied at implementation.
+- **AC-7 (validation)** — `go test ./internal/cli` green; a test exercises the Codex entry-name vs plugin.json name-match constraint (or a faithful fixture) so this integration gap cannot regress silently. This is the mechanism-shipped backstop that serves AC-1; it does NOT substitute for AC-1's real `codex plugin add`.
+
+## Implementation note (channel_selection_test.go expectation flip)
+
+`channel_selection_test.go` currently LOCKS the broken shape `spacedock-edge@spacedock` (~lines 49/85/127/193), GREEN against today's broken `channelPluginID` (host_exec.go:230-232). After the fix flips the id to `spacedock@spacedock-edge`, those expectations must update to the new shape as PART of AC-2 — it is NOT a regression. A Commander should not mistake the post-fix failing test for a break.
+
+## AC-6 doc diff (before/after for docs/site/get-started/install.md)
+
+Today install.md "## Skills" (lines 45-48) shows only the claude stable install:
+
+```bash
+claude plugin marketplace add spacedock-dev/marketplace
+claude plugin install spacedock@spacedock
+```
+
+After (document the channel scheme + the source override; entry name equals manifest `spacedock` on both channels so the host name-match passes):
+
+```bash
+# Stable (default channel) — marketplace named `spacedock`, entry `spacedock`
+claude plugin marketplace add spacedock-dev/marketplace
+claude plugin install spacedock@spacedock
+
+# Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
+claude plugin install spacedock@spacedock-edge
+```
+
+Plus a short note that `SPACEDOCK_MARKETPLACE_SOURCE` overrides the default `spacedock-dev/marketplace` install source (for dogfooding a local/alternate marketplace), and the `--plugin-dir` caveat (it bypasses installed-plugin resolution but does not solve launcher safehouse wrapping). Final exact wording is firmed at implementation; this is the gate-reviewed before/after the ideation gate approves.
 
 ## Notes
 
 - Root cause of the integration gap: `channel_selection_test.go` asserts `spacedock-edge@spacedock` but never ran a real `codex plugin add`, so Codex's name-match was never exercised — the "validate the riskiest path end-to-end" step that was skipped.
-- Related: `marketplace-repo-decouple` (`w6bhzvezybbrarkk56zemndd`) — the standalone marketplace repo this builds on.
+- Related: `marketplace-repo-decouple` (`w6bhzvezybbrarkk56zemndd`) — the standalone marketplace repo this builds on (done/REJECTED-superseded by `marketplace-repo-and-pinned-channels`, PR #352; the `spacedock-edge` marketplace-name prerequisite is SHIPPED, not a dependency).
