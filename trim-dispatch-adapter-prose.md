@@ -1,6 +1,6 @@
 ---
 title: Trim remaining dispatch adapter prose into capability bindings
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 group: binary-ux
 id: adk755xqeb4a9dxhhgtjwawh
