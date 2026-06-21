@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-21 21:34:53"
+last_updated: "2026-06-21 22:06:27"
 ---
 
 # Install Spacedock
@@ -43,9 +43,23 @@ Replace `claude` with `codex` or `pi` for the respective coding agents.
 Spacedock installs the relevant skills on launch. To install them manually:
 
 ```
+# Stable (default channel) — marketplace named `spacedock`, entry `spacedock`
 claude plugin marketplace add spacedock-dev/marketplace
 claude plugin install spacedock@spacedock
+
+# Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
+claude plugin install spacedock@spacedock-edge
 ```
+
+The channel is the marketplace name; the entry name stays `spacedock` on both channels (it equals the plugin's own `name`, so the host's entry-name vs plugin-name check passes). Codex installs the same way with `codex plugin add`.
+
+Set `SPACEDOCK_MARKETPLACE_SOURCE` to install from a local or alternate marketplace instead of the default `spacedock-dev/marketplace` — useful for dogfooding a marketplace change before it reaches the production marketplace:
+
+```
+SPACEDOCK_MARKETPLACE_SOURCE=/path/to/local/marketplace spacedock install --host codex
+```
+
+Launching with `--plugin-dir` loads a local plugin checkout directly and bypasses installed-plugin resolution, but it does not wrap the launch in the safehouse sandbox — use it for plugin development, not as an install substitute.
 
 ## Sandboxing
 

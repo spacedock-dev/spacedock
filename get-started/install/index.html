@@ -71,7 +71,7 @@
         "headline": "Install",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/get-started/install/",
-        "dateModified": "2026-06-21 21:34:53",
+        "dateModified": "2026-06-21 22:06:27",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1332,8 +1332,22 @@ The optional sandbox, safehouse, is installed separately — see
 <p>Replace <code>claude</code> with <code>codex</code> or <code>pi</code> for the respective coding agents.</p>
 <h2 id="skills">Skills<a class="headerlink" href="#skills" title="Permanent link">&para;</a></h2>
 <p>Spacedock installs the relevant skills on launch. To install them manually:</p>
-<pre class="highlight"><code class="language-bash">claude plugin marketplace add spacedock-dev/marketplace
-claude plugin install spacedock@spacedock</code></pre>
+<pre class="highlight"><code class="language-bash"># Stable (default channel) — marketplace named `spacedock`, entry `spacedock`
+claude plugin marketplace add spacedock-dev/marketplace
+claude plugin install spacedock@spacedock
+
+# Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
+claude plugin install spacedock@spacedock-edge</code></pre>
+<p>The channel is the marketplace name; the entry name stays <code>spacedock</code> on both
+channels (it equals the plugin's own <code>name</code>, so the host's entry-name vs
+plugin-name check passes). Codex installs the same way with <code>codex plugin add</code>.</p>
+<p>Set <code>SPACEDOCK_MARKETPLACE_SOURCE</code> to install from a local or alternate
+marketplace instead of the default <code>spacedock-dev/marketplace</code> — useful for
+dogfooding a marketplace change before it reaches the production marketplace:</p>
+<pre class="highlight"><code class="language-bash">SPACEDOCK_MARKETPLACE_SOURCE=/path/to/local/marketplace spacedock install --host codex</code></pre>
+<p>Launching with <code>--plugin-dir</code> loads a local plugin checkout directly and bypasses
+installed-plugin resolution, but it does not wrap the launch in the safehouse
+sandbox — use it for plugin development, not as an install substitute.</p>
 <h2 id="sandboxing">Sandboxing<a class="headerlink" href="#sandboxing" title="Permanent link">&para;</a></h2>
 <p>See <a href="../../reference/sandbox/">supported sandboxes</a>.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
@@ -1361,7 +1375,7 @@ with coding agents, or start with <a href="../first-workflow/">your first workfl
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="June 21, 2026 21:34:53 UTC">2026-06-21 21:34:53</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="June 21, 2026 22:06:27 UTC">2026-06-21 22:06:27</span>
   </span>
 
     
