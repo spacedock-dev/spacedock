@@ -1,12 +1,12 @@
 ---
 title: Convert ensign runtime adapters to capability binding blocks (t0g ensign-side)
-status: ideation
+status: implementation
 source: "Captain (2026-06-21): the same verbosity pattern t0g fixed for FO adapters exists in all three ensign runtime files — ~70-80% shared-core duplication (Agent Surface, worktree rules, split-root, frontmatter, path-scoped commit, file-pointer, feedback routing), ~20-30% genuinely host-specific (clarification tool name, completion signal mechanism, captain communication, shutdown response protocol). The shared ensign core already carries the discipline; the per-host ensign files should become compact binding blocks or be absorbed into the FO adapter's → lines."
 score:
 started: 2026-06-21T06:05:14Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-ensign-runtime-binding-block-cleanup
 issue:
 sprint: 0230-stable-finalization
 sprint-readiness:
