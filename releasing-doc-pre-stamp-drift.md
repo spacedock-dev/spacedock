@@ -1,7 +1,7 @@
 ---
 id: 7yd3mbsy2am5qggc17sxvz2v
 title: Reconcile docs/releasing.md to the live release machinery (one consolidated pass)
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Release' step 3 says to stamp+commit the version before tagging, but v0.20.1 and v0.20.2 both tagged the gated commit directly and let release.yml stamp post-tag (a pre-stamp creates an ungated commit the exact-SHA e2e-gate blocks on)."
 group: cleanup
