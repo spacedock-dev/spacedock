@@ -117,6 +117,13 @@ homebrew_casks:
     skip_upload: auto
     ids:
       - spacedock-stable
+    # Both channels install the same `spacedock` command from the bare `spacedock`
+    # archive file, so only one may be linked at a time. Declaring the edge cask a
+    # conflict makes brew refuse to install both at once — the channel-switch model
+    # (uninstall one, install the other). The stable cask keeps the default binary
+    # stanza: its cask name already equals the archive file.
+    conflicts:
+      - cask: spacedock@next
     repository:
       owner: spacedock-dev
       name: homebrew-tap
@@ -158,6 +165,16 @@ homebrew_casks:
     skip_upload: false
     ids:
       - spacedock-edge
+    # The archive ships the binary as `spacedock`, so the edge command is also
+    # `spacedock` — pin the binary stanza explicitly because the default would be
+    # the cask name `spacedock@next`, which has no matching file in the archive.
+    # Both channels install the same `spacedock` command, so the edge cask declares
+    # the stable cask a conflict: brew installs one channel at a time (uninstall to
+    # switch).
+    binaries:
+      - spacedock
+    conflicts:
+      - cask: spacedock
     repository:
       owner: spacedock-dev
       name: homebrew-tap
