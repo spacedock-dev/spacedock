@@ -1,6 +1,6 @@
 ---
 title: Codex edge channel install — marketplace-name channels, programmatic install, source override
-status: validation
+status: done
 sprint: 0230-stable-finalization
 score: ""
 source: captain request after local Codex marketplace setup; extended after the v0.23.0-pre.2 edge dogfood exposed the Codex edge install is broken end-to-end
@@ -10,6 +10,9 @@ started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-spacedock-marketplace-source-env
 mod-block:
 pr: pr-merge:424
+verdict: passed
+completed: 2026-06-21T22:06:33Z
+archived: 2026-06-21T22:06:33Z
 ---
 
 ## Problem
