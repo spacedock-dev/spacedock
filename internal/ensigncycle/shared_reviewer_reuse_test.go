@@ -348,13 +348,65 @@ func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
 }
 
+// codexAddressableWorkerAbsent reports whether the FO observed that the live
+// Codex surface exposes no turn-starting reuse route for a completed worker, so a
+// fresh cycle-2 reviewer is the contract-correct choice. The live FO words this
+// observation freely ("no follow-up/send binding for worker reuse", "the cycle-1
+// reviewer is not addressable on this host", "no followup_task or equivalent
+// turn-starting reuse route"), so a fixed phrase list false-RED-flags a
+// contract-correct fresh-dispatch. The detector instead reads the FO's narration
+// (agent_message text only — never command output, which can echo the runtime
+// doc) and treats a message that negates a reuse-route concept as the absence
+// observation. A reuse tool actually appearing in the transcript still overrides
+// this via assertCodexFreshValidationWhenAddressableAbsent.
 func codexAddressableWorkerAbsent(jsonl string) bool {
-	lower := strings.ToLower(jsonl)
-	return strings.Contains(lower, "no followup_task/send_message reuse route exposed") ||
-		strings.Contains(lower, "followup_task/message reuse is unavailable") ||
-		strings.Contains(lower, "no turn-starting follow-up route for a completed worker") ||
-		strings.Contains(lower, "no completed-worker follow-up route") ||
-		strings.Contains(lower, "reviewer reuse is not available in this host")
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev struct {
+			Item struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			} `json:"item"`
+		}
+		if err := json.Unmarshal([]byte(line), &ev); err != nil || ev.Item.Type != "agent_message" {
+			continue
+		}
+		if codexNarrationNegatesReuseRoute(ev.Item.Text) {
+			return true
+		}
+	}
+	return false
+}
+
+// codexNarrationNegatesReuseRoute reports whether a single FO narration message
+// states that the reuse/follow-up route is absent — a reuse-route concept
+// ("follow-up", "followup_task", "addressable", "reuse") negated within the same
+// message ("no", "not", "cannot", "n't", "without"). Scoping the negation and the
+// concept to one message keeps an affirmative reuse message ("the reviewer can be
+// kept addressable and reused") from matching on an unrelated negation elsewhere.
+func codexNarrationNegatesReuseRoute(text string) bool {
+	lower := strings.ToLower(text)
+	concepts := []string{"follow-up", "follow up", "followup", "addressable", "reuse", "reusable"}
+	hasConcept := false
+	for _, c := range concepts {
+		if strings.Contains(lower, c) {
+			hasConcept = true
+			break
+		}
+	}
+	if !hasConcept {
+		return false
+	}
+	negations := []string{"no ", "not ", "cannot", "n't", "without ", "never "}
+	for _, n := range negations {
+		if strings.Contains(lower, n) {
+			return true
+		}
+	}
+	return false
 }
 
 func assertCodexFreshValidationWhenAddressableAbsent(jsonl string) error {
