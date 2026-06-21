@@ -121,7 +121,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
 - **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
-- **block:** never self-approve; never resolve a gate the contract reserves to the captain.
+- **block:** never self-approve; never INFER the conn from a bare drive prompt; never resolve a gate the contract reserves to the captain (headless without a quotable conn grant: present and stop).
 - → **prose** — no binary ships; the verdict is judgment.
 
 ## «feedback.route»(slug, stage): route a rejection back to its feedback-to target and re-gate
