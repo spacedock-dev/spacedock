@@ -16,11 +16,12 @@ for its design + ACs. Goal/DoD + the VALUE GATE: `index.md`. Foundation: this cu
 `v0.22.0` stable floor; `main` is at `b7ecd04a` (the `#420` cask fix). The plugin manifests
 read `0.22.0` (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`).
 
-> **Query caveat.** Two of member 4's reconciliation targets still carry
-> `sprint: 0201-post-flip-release-model` and will NOT appear in the 0230 query
-> (`stamp-then-tag-release-ritual` `ezn308z0chwc2zvmyny9ry8w`,
-> `steady-state-stable-release-runbook` `qpfmdxy6438fsndp9nw4c89e`). They are folded into
-> member 4 by reference — see member 4 below.
+> **Member 4 is ONE pass over three query members.** All six members carry
+> `sprint: 0230-stable-finalization` (state commit `5b0dcbc8`) and DO appear in the query.
+> Member 4's three targets — `releasing-doc-pre-stamp-drift` (`7yd3mbsy2am5qggc17sxvz2v`),
+> `stamp-then-tag-release-ritual` (`ezn308z0chwc2zvmyny9ry8w`), and
+> `steady-state-stable-release-runbook` (`qpfmdxy6438fsndp9nw4c89e`) — collide on
+> `docs/releasing.md`, so reconcile all three in ONE serialized pass — see member 4 below.
 
 ## Deliverable & DoD — begin with the end
 
@@ -161,14 +162,14 @@ fresh-install check.
 
 ### Member 4 — `docs/releasing.md` reconciliation · ONE serialized pass · before the cut
 
-Three entities collide on `docs/releasing.md` — serialize them into a single pass, do NOT
-dispatch in parallel:
+Three entities (all `sprint: 0230-stable-finalization`) collide on `docs/releasing.md` —
+serialize them into a single pass, do NOT dispatch in parallel:
 - `releasing-doc-pre-stamp-drift` (`7yd3mbsy2am5qggc17sxvz2v`) — step 3 today does a manual
   `stamp-version` → commit, creating a fresh SHA the e2e-gate has never run green on.
-- `stamp-then-tag-release-ritual` (`ezn308z0chwc2zvmyny9ry8w`, on `sprint: 0201` — by
-  reference) — the tagged commit's manifest must match its tag.
-- `steady-state-stable-release-runbook` (`qpfmdxy6438fsndp9nw4c89e`, on `sprint: 0201` — by
-  reference) — advance `main` from a green `next` tip; reconcile `docs/releasing.md`.
+- `stamp-then-tag-release-ritual` (`ezn308z0chwc2zvmyny9ry8w`) — the tagged commit's
+  manifest must match its tag.
+- `steady-state-stable-release-runbook` (`qpfmdxy6438fsndp9nw4c89e`) — advance `main` from a
+  green `next` tip; reconcile `docs/releasing.md`.
 
 The bug they collectively fix: `docs/releasing.md`'s `## What the Tag Push Does` already
 says goreleaser "publishes only after the `e2e-gate` job confirms the tagged commit has a

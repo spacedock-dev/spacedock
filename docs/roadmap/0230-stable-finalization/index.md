@@ -20,13 +20,14 @@ spacedock status --workflow-dir docs/dev --where sprint=0230-stable-finalization
 spacedock status --workflow-dir docs/dev --where sprint=0230-stable-finalization --where 'sprint-readiness != defer'
 ```
 
-> **Query caveat (load-bearing for the Commander).** Two of member 4's reconciliation
-> targets — `stamp-then-tag-release-ritual` (`ezn308z0chwc2zvmyny9ry8w`) and
-> `steady-state-stable-release-runbook` (`qpfmdxy6438fsndp9nw4c89e`) — still carry
-> `sprint: 0201-post-flip-release-model` frontmatter, so the `--where sprint=0230` query
-> will NOT surface them. They are folded into member 4 BY REFERENCE (they collide on the
-> same file, `docs/releasing.md`). The Commander reconciles all three in one pass; do not
-> treat the query result as the complete reconciliation scope for member 4.
+> **Member 4 is ONE consolidated pass over three query members.** All six members carry
+> `sprint: 0230-stable-finalization` (state commit `5b0dcbc8`) and DO surface in the query.
+> Member 4's three reconciliation targets — `releasing-doc-pre-stamp-drift`
+> (`7yd3mbsy2am5qggc17sxvz2v`), `stamp-then-tag-release-ritual` (`ezn308z0chwc2zvmyny9ry8w`),
+> and `steady-state-stable-release-runbook` (`qpfmdxy6438fsndp9nw4c89e`) — all collide on
+> the same file (`docs/releasing.md`), so the Commander reconciles all three in ONE
+> serialized pass rather than three parallel dispatches. The query returns them as three
+> entities; member 4 is the single consolidated unit of work over them.
 
 ## Goal (success criterion)
 
