@@ -1,6 +1,6 @@
 ---
 title: Live opus FO intermittently routes the cycle-2 rejection re-review to the impl worker (fix≠reviewer violation) — rejection-flow flake
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 group: fo-reliability
 id: 7hczkc0c6ezgwy1p627ejp6x
