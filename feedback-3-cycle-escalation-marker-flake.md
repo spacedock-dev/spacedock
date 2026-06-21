@@ -1,6 +1,6 @@
 ---
 title: feedback-3-cycle-escalation lane flaky — live FO escalates correctly on cycle 3 but omits the exact human-escalation marker
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 score: 0.4
 group: cleanup
