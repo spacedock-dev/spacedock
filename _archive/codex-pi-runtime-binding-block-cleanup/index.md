@@ -1,18 +1,19 @@
 ---
 title: Convert Codex and Pi runtime adapters to capability binding blocks
-status: validation
+status: done
 source: "Captain direction (2026-06-20): move toward per-host runtime files as bindings blocks keyed by core «fn» capability names, starting with Codex and Pi; recommend sequencing with ad/trim-dispatch-adapter-prose."
 started: 2026-06-20T20:14:02Z
-completed:
-verdict:
+completed: 2026-06-21T01:56:02Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-codex-pi-runtime-binding-block-cleanup
 issue:
 sprint: 0221-layered-fo
 sprint-readiness:
 id: t0gk2fatt18tj28xm6sr1xd1
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:418
+archived: 2026-06-21T01:56:02Z
 ---
 
 Codex and Pi first-officer runtime references should become compact runtime implementation maps keyed by the shared core's `«fn»` capability names, rather than prose sections that re-narrate the lifecycle. The finished shape is a short runtime intro, a `## Runtime implementation` binding list, and only short residual sections for probe, wait, feedback, or harness notes that do not fit a capability bullet.
