@@ -1,48 +1,12 @@
 # Codex Ensign Runtime
 
-How the shared ensign core executes on Codex.
+How the shared ensign core executes on Codex. The shared core owns the ensign discipline (assignment reading, worktree, split-root commit, proof, stage report); this adapter binds only the Codex-specific concerns.
 
-## Agent Surface
+## Runtime implementation
 
-The ensign is dispatched through Codex multi-agent dispatch. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
+- `Clarification` -> ask in the Codex worker thread, naming what you understand and what is ambiguous so the FO can route an answer through `«addressable-worker»`.
+- `Completion signal` -> one minimal final message in the Codex worker thread: `Done: {entity title} completed {stage}. Report written to {entity_file_path}.` Plain text, single line; the entity file is the artifact. After sending the completion signal, stop unless the FO routes more work through `«addressable-worker»`.
+- `Captain communication` -> when the stage involves direct captain interaction, communicate via direct Codex conversation text; keep operational signals concise so the FO mailbox notification stays easy to interpret.
+- `Shutdown response` -> on an explicit cooperative shutdown request through `«addressable-worker»`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost, in which case briefly name what must be preserved first.
 
-Codex dispatch build prompts are file pointers. Read the named dispatch file directly and treat its content as the assignment.
-
-`«context-budget»` is unavailable unless a future probe binds it. The FO owns reuse decisions; the ensign follows the assignment.
-
-## Dispatch
-
-Initial dispatch comes from `spacedock dispatch build` with `host: "codex"`. The generated file carries fetch commands, worktree rules, split-root state commit guidance, checklist, and completion-signal wording. Use the generated file as the source of truth.
-
-When `«worker.spawn»` is bound, the FO maps the helper output to the live worker dispatch capability: the helper `prompt` is passed unchanged as the worker message, while unsupported helper fields are not passed to the live spawn tool. The helper `name` remains the `«worker-identity»` source, even when the live task name is sanitized to lowercase digits and underscores.
-
-## Awaiting Completion
-
-The FO observes completion through the async final-status notification in the FO mailbox. After sending the completion signal, stop unless the FO routes more work through `«addressable-worker»`.
-
-## Clarification
-
-If requirements are unclear, ask in the Codex worker thread. Describe what you understand and what is ambiguous so the FO can route a non-triggering note or turn-starting work through `«addressable-worker»`.
-
-## Captain Communication
-
-When dispatched for a stage that involves direct interaction with the captain, communicate via direct Codex conversation text. Keep operational completion signals concise so the FO mailbox notification stays easy to interpret.
-
-## Completion Signal
-
-When your work is done, send one minimal final message in the Codex worker
-thread:
-
-```text
-Done: {entity title} completed {stage}. Report written to {entity_file_path}.
-```
-
-The entity file is the artifact. Keep the completion signal plain text and limited to the single line above.
-
-## Feedback Interaction
-
-For feedback stages, when `«addressable-worker»` is bound, the FO routes turn-starting feedback through it. Apply the feedback, update the stage report if needed, and send the same completion signal when finished.
-
-## Shutdown Response Protocol
-
-If the FO sends an explicit cooperative shutdown request through `«addressable-worker»`, acknowledge in plain text and stop unless load-bearing in-flight work would be lost. In that case, briefly name what must be preserved before shutdown. Codex `«worker.shutdown»` remains unresolved until probed; do not assume live interruption is a safe shutdown instruction.
+`«context-budget»` is unavailable unless a future probe binds it. The FO owns reuse decisions. Codex dispatch build prompts are file pointers carrying fetch commands, worktree rules, split-root commit guidance, checklist, and completion-signal wording. Use the generated file as the source of truth.
