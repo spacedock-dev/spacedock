@@ -1,6 +1,6 @@
 ---
 title: Convert remaining FO contract cuts into pseudo-code capability bodies
-status: validation
+status: implementation
 source: The 2026-06-15 fo-contract-token-cleanup proposal classified candidate cuts by adversarial reasoning, then revised the default-path total to ~420 tokens after #396 retired RT-4/RT-2 and demoted UCT cuts to legacy-only. After #418 and the state.commit follow-up, the remaining objective is not just token recovery: contracts should read like pseudo-code capability bodies, with prose reserved for fuzzy judgment and probe-backed quirks.
 score: 0.5
 sprint: 0230-stable-finalization
@@ -108,3 +108,13 @@ The FO rotated the live token to a credited (max) account; I re-established the 
 AC-2 is now fully reproduced on BOTH hosts: rejection-flow GREEN Claude + GREEN Codex (re-run), feedback-3-cycle GREEN Claude + GREEN Codex. gate-guardrail + merge-hook audited from the implementer's evidence against strong durable-state oracles (`assertGateHeld` and the merge-hook grade), consistent with the captured Claude 4/4. No outstanding items.
 
 VERDICT: PASS. Every acceptance criterion (AC-1/2/4/5/6) reproduces GREEN independently on the throwaway checkout; the cycle-2 call-site collapse is proven body-semantics-preserving; no regression, no self-referential evidence, no stale-target test.
+
+## Feedback Cycles
+
+### Cycle 1 — post-validation audit rework (2026-06-21)
+
+Validation PASSED (all ACs GREEN both hosts). A detached 4-lens adversarial audit then found ONE non-blocking CONCERN, and the captain elected to fold the fix in before merge:
+
+- **Finding:** the codex-FO trim dropped the pre-wait captain-notice EMIT-imperative ("Before foreground waiting, briefly tell the captain that interruption only returns control; the worker is not failed, closed, or redispatched"), replacing it with a pointer to `### Foreground wait` — but that section is a CONTENT spec (what the cue must say), not an EMIT/timing imperative (that it must be emitted before waiting). Not code-gated: contractlint passes against the trimmed text; the emit strings are unasserted parser fixtures.
+- **Captain ruling:** re-add a concise pre-wait emit imperative to codex-FO `## Codex wait notes` (must stay ≤6004 B) AND add a contractlint assertion so the emit-before-wait obligation is code-gated, not prose-only. Re-validate offline (contractlint + build); no live re-run needed (additive prose + assertion; trimmed behavior unchanged).
+- **Routed to:** implementation (same worktree, kept-alive impl worker).
