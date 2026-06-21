@@ -1,10 +1,11 @@
 ---
 title: Live opus FO intermittently routes the cycle-2 rejection re-review to the impl worker (fix≠reviewer violation) — rejection-flow flake
-status: ideation
+status: implementation
 sprint: 0230-stable-finalization
 group: fo-reliability
 id: 7hczkc0c6ezgwy1p627ejp6x
 started: 2026-06-21T06:05:14Z
+worktree: .worktrees/spacedock-ensign-opus-rejection-flow-reviewer-routing-flake
 ---
 
 `TestLiveClaudeSharedScenarios/rejection-flow` failed on the **claude-live opus** lane (CI-E2E-OPUS) of PR #409's run 27861449587 (`claude_live_runner_test.go:122`): the live opus FO, on the cycle-2 feedback rejection, routed the re-review to an IMPLEMENTATION worker (`spacedock-ensign-rejection-task-implementation`) instead of dispatching a SEPARATE reviewer. The assertion: in bare mode the fix agent and the reviewer must be separate sequential dispatches — the impl worker must never serve as its own validator.
