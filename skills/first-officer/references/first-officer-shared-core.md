@@ -161,7 +161,7 @@ The FO declares intent against the state repo by invoking the prose-functions be
 - **effect — pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read).
 - **done-when:** `entity_dir_present == true` and the boot rebase is clean.
 - **block:** on `pull --rebase` CONFLICT, follow the **rebase-conflict halt** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
-- → **shipped** (this sprint): `` `spacedock state ready` ``.
+- → **shipped**: `` `spacedock state ready` ``.
 
 ## «state.sweep-merged»(): merged PRs reach their terminal stage at boot, before the greet
 
@@ -169,7 +169,7 @@ The FO declares intent against the state repo by invoking the prose-functions be
 - **effect:** for each such entry, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip when no such entry exists — the common boot reads zero mod files. A greet-and-stop boot never enters the event loop, so a merged PR is advanced here or not at all.
 - **done-when:** no `MERGED` + non-terminal entity remains.
 - **block:** when `pr_state.status == "gh not available"`, the merge state is unknowable — skip the sweep (per the pr-merge mod's "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as stale or absent.
-- → **shipped** (this sprint): `` `spacedock state sweep` ``.
+- → **shipped**: `` `spacedock state sweep` ``.
 
 ## «state.commit»(slug): record one entity's change durably and concurrency-safe
 
