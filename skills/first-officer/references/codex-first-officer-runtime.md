@@ -27,13 +27,13 @@ Do not infer capabilities from a Codex version name. Do not infer that the turn-
 
 ## Codex wait notes
 
-When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. Before foreground waiting, briefly tell the captain that interruption only returns control; the worker is not failed, closed, or redispatched. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait; the next foreground wait is reinstalled without treating the interruption as completion.
+When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. Before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait without treating the interruption as completion.
 
 A wait return must be attributed by mailbox content, task path, `«roster-reconcile»` state when present, or durable workflow state, not by a handle argument. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
 
 ### Foreground wait
 
-The foreground-wait operator cue must continue to state that an interruption returns control, does not fail, close, or redispatch the worker, and allows the next foreground wait to retry the same unresolved worker when waiting is again the next useful idle action.
+The operator cue must state that an interruption returns control; the worker is not failed, closed, or redispatched, and the next foreground wait is reinstalled to retry the same unresolved worker when waiting is again the next useful idle action.
 
 ### Queued notification flushed by later activity
 

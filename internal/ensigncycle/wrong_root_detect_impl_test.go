@@ -32,6 +32,13 @@ import (
 // stay under the fixture.
 func detectWrongRootBoot(stream, fixtureRoot string) error {
 	clean := filepath.Clean(fixtureRoot)
+	// On macOS the fixture root is a `/var/folders/...` symlink while the FO, having
+	// cd'd in, reports the EvalSymlinks-resolved `/private/var/...` form — the same
+	// directory. Resolve the fixture root so an under-fixture path in either form is
+	// recognized, matching the EvalSymlinks guard the sibling live runners use.
+	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
+		clean = resolved
+	}
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || !strings.HasPrefix(line, "{") {
