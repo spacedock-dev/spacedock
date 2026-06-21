@@ -1,10 +1,11 @@
 ---
 title: Trim remaining dispatch adapter prose into capability bindings
-status: ideation
+status: implementation
 sprint: 0230-stable-finalization
 group: binary-ux
 id: adk755xqeb4a9dxhhgtjwawh
 started: 2026-06-21T06:05:14Z
+worktree: .worktrees/spacedock-ensign-trim-dispatch-adapter-prose
 ---
 
 After the b2 capabilities-as-«fn» reframe and #418's Codex/Pi binding-block cleanup, the target is clear: per-runtime files should be capability bindings, not lifecycle narration. The shared core owns when each `«fn»` runs; adapters bind how the host realizes it.
