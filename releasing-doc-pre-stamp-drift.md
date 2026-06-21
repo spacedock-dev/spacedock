@@ -1,11 +1,12 @@
 ---
 id: 7yd3mbsy2am5qggc17sxvz2v
 title: Reconcile docs/releasing.md to the live release machinery (one consolidated pass)
-status: ideation
+status: implementation
 sprint: 0230-stable-finalization
 source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Release' step 3 says to stamp+commit the version before tagging, but v0.20.1 and v0.20.2 both tagged the gated commit directly and let release.yml stamp post-tag (a pre-stamp creates an ungated commit the exact-SHA e2e-gate blocks on)."
 group: cleanup
 started: 2026-06-21T06:05:14Z
+worktree: .worktrees/spacedock-ensign-releasing-doc-pre-stamp-drift
 ---
 
 `docs/releasing.md`'s "Cutting a Stable Release" procedure (step 3) documents a manual pre-stamp commit before the annotated tag. Actual practice (v0.20.1, v0.20.2) tags the gated commit directly; release.yml stamps the plugin manifests post-tag.
