@@ -9,6 +9,7 @@ id: v56dg1amaa33zgfrg6r0q3bn
 worktree: .worktrees/spacedock-ensign-feedback-3-cycle-escalation-marker-flake
 started: 2026-06-21T21:14:12Z
 mod-block: merge:pr-merge
+pr: "#427"
 ---
 
 The `feedback-3-cycle-escalation` shared scenario intermittently fails the live e2e-gate (observed on SONNET, CI-E2E, in the M5 and M6 PR runs 27913790926 / 27913761338): `claude_live_runner_test.go:122` — "escalation entity did not record the human-escalation marker in the `### Feedback Cycles` section on the 3rd cycle." The captured transcript shows the FO ESCALATES correctly on cycle 3 (it stops re-routing and hands to the human) but writes prose ("escalated to the human") instead of the fixture's exact marker string `feedback-escalation: human-review-required`. This is a second e2e-gate reliability risk alongside M7's rejection-flow false-positive — the v0.23.0 tag fires only on a green Runtime Live E2E.
