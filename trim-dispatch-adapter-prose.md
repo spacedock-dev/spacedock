@@ -1,7 +1,7 @@
 ---
 title: Trim remaining dispatch adapter prose into capability bindings
 status: backlog
-sprint: 0221-layered-fo
+sprint: 0230-stable-finalization
 group: binary-ux
 id: adk755xqeb4a9dxhhgtjwawh
 ---

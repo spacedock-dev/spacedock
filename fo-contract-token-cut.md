@@ -3,7 +3,7 @@ title: Convert remaining FO contract cuts into pseudo-code capability bodies
 status: backlog
 source: The 2026-06-15 fo-contract-token-cleanup proposal classified candidate cuts by adversarial reasoning, then revised the default-path total to ~420 tokens after #396 retired RT-4/RT-2 and demoted UCT cuts to legacy-only. After #418 and the state.commit follow-up, the remaining objective is not just token recovery: contracts should read like pseudo-code capability bodies, with prose reserved for fuzzy judgment and probe-backed quirks.
 score: 0.5
-sprint: 0221-layered-fo
+sprint: 0230-stable-finalization
 sprint-readiness: defer
 issue:
 id: y2r7ew51xqs6q3avsb6mcaka
@@ -39,3 +39,7 @@ The trimmed FO-contract files committed, with: measured token/line deltas, a lis
 - Net-new cut hunting beyond the proposal's verified list (re-testing the 13 keeps IS in scope; finding fresh cuts is not).
 
 Source: the 2026-06-15 token-cleanup proposal + superpowers v6 (writing-skills "Micro-Test Wording Before Full Scenarios", positive-instruction-redesign-design, strict-cost-sdd-design).
+
+## Folded in
+
+This clawback also folds in the zero-discover "no filesystem sweep" prohibition (from `zero-discover-broad-search-hardening`): on a zero `status --discover` boot, the FO reports no workflow and STOPS — it does NOT broad-search the filesystem (no `find`/`ls` sweep over the project root). State the prohibition as an explicit contract line backed by the `detectBroadSearchAtBoot` detector as its code-gate.

@@ -2,6 +2,7 @@
 id: 7yd3mbsy2am5qggc17sxvz2v
 title: docs/releasing.md step 3 (manual pre-stamp) is stale vs the tag-the-gated-commit practice
 status: backlog
+sprint: 0230-stable-finalization
 source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Release' step 3 says to stamp+commit the version before tagging, but v0.20.1 and v0.20.2 both tagged the gated commit directly and let release.yml stamp post-tag (a pre-stamp creates an ungated commit the exact-SHA e2e-gate blocks on)."
 group: cleanup
 ---
@@ -23,3 +24,7 @@ Verified by: the reconciled doc; if any release-machinery test asserts the flow,
 
 ## Notes
 Pure doc reconciliation; the machinery is already correct. Surfaced by the 0202 cut.
+
+## Consolidated in 0230
+
+This is ONE `docs/releasing.md` reconciliation work item together with `stamp-then-tag-release-ritual` and `steady-state-stable-release-runbook` — run as a single pass, not in parallel, since all three edit the same file and would collide.

@@ -9,7 +9,7 @@ verdict:
 score:
 worktree:
 issue:
-sprint: 0201-post-flip-release-model
+sprint: 0230-stable-finalization
 sprint-readiness: defer
 ---
 
@@ -19,3 +19,5 @@ The 0.20.0 flip was a one-time divergent replacement. The RECURRING stable relea
 - At a cut: take a **green `next` tip** (live e2e green), advance `main` to it via `--force-with-lease` (a straight `next → main` fast-forward would revert `source.ref` to `next`), **re-apply the `main`-only settle** (`source.ref: main` + calendar bump), then tag the green-run commit (tag-the-green-tip + the `e2e-gate`).
 
 `docs/releasing.md` currently describes a MAIN-integration flow ("ensure all release content is merged to `main`", worktree off `main`) that does NOT match the next-integration + advance-`main`-at-release reality — reconcile it (or supersede it). Note: `marketplace-repo-decouple` (w6) would simplify this to a clean fast-forward with no per-release settle; sequence accordingly.
+
+This `docs/releasing.md` reconciliation is part of the single consolidated work item tracked by `releasing-doc-pre-stamp-drift` (with `stamp-then-tag-release-ritual`) — run as one pass, since all three touch the same file.
