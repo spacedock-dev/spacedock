@@ -1,12 +1,12 @@
 ---
 title: Pi dev-override skill loading — runPi must pass the Spacedock extension + skills when --plugin-dir is set
-status: ideation
+status: implementation
 source: "Captain (2026-06-20): eq (#406) retired the --skill cfg.firstOfficerDir() / --skill cfg.ensignDir() flags (D4) and moved skill discovery to the .pi/extensions/spacedock.ts extension's resources_discover. But runPi never passes the Spacedock extension to pi — it passes only --extension <pi-subagents> + --skill <pi-subagents>. The installed path works by accident (pi auto-loads registered extensions from settings.json packages); the dev path (--plugin-dir .) is BROKEN — the Spacedock skills are not loaded. pi does not auto-discover .pi/extensions/ from cwd (verified empirically). This is a regression from eq, and the pi parity gap with z2t's --plugin-dir caveat (z2t AC-6 documents that --plugin-dir bypasses installed-plugin resolution; pi's --plugin-dir bypasses skill loading entirely)."
 score:
 started: 2026-06-21T04:22:56Z
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-pi-dev-override-skill-loading
 issue:
 sprint:
 sprint-readiness: ready
@@ -106,3 +106,15 @@ Verified by: a Go test or live smoke confirming the installed path (no `cfg.repo
 - `internal/cli/pi.go` (`runPi`, `piRuntimeConfigFromEnv`) — the source of truth.
 - `.pi/extensions/spacedock.ts` — the extension that fires `resources_discover` (shipped by `eq`).
 - `docs/runtime-support.md` — the runtime guide (may need updating: the `--plugin-dir` dev path now loads the extension explicitly).
+
+## Stage Report: implementation
+
+- DONE: Fixed the eq regression in `internal/cli/pi.go` `runPi`. When the dev-override is active (`cfg.repoRoot != ""`, i.e. `--plugin-dir` / `SPACEDOCK_REPO_ROOT`), runPi now appends `--extension <repo>/.pi/extensions/spacedock.ts` and `--skill <repo>/skills` after the existing pi-subagents extension/skill argv, guarded by `os.Stat(spacedockExt)` so an absent extension falls back gracefully (no crash, no flags). This makes the dev path self-sufficient: pi loads the Spacedock extension via `--extension`, the extension fires `resources_discover`, and the Spacedock FO/ensign skills are announced to the parent session. pi does not auto-discover `.pi/extensions/` from cwd (verified empirically in the entity body), so without these flags the dev path boots skill-less.
+- DONE: Verified the installed path (no `--plugin-dir`, `cfg.repoRoot == ""`). Determination: the installed path does NOT need the same treatment. pi auto-loads registered extensions from `~/.pi/agent/settings.json` `packages` at startup — the install-managed contract shipped by eq (D3: `spacedock install --host pi` runs `pi install` → registers the package → pi auto-loads `.pi/extensions/spacedock.ts` → `resources_discover` fires → skills announced). Confirmed against the live `~/.pi/agent/settings.json` which lists the Spacedock package (`git:github.com/spacedock-dev/spacedock` and a local path entry) under `packages`. runPi therefore does NOT add the Spacedock extension/skill flags when `cfg.repoRoot == ""`; the installed mechanism handles it. A Go test (`TestRunPi_InstalledPathDoesNotPassSpacedockExtension`) pins this: the installed-path argv has exactly one `--skill` (pi-subagents) and no Spacedock extension/skill tokens.
+- DONE: Added three focused Go tests in `internal/cli/pi_frontdoor_test.go`: (1) `TestRunPi_DevOverridePassesSpacedockExtensionAndSkills` — dev-override argv includes `--extension <repo>/.pi/extensions/spacedock.ts` + `--skill <repo>/skills`, exactly two `--skill` flags, pi-subagents extension precedes the Spacedock extension; (2) `TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully` — dev-override with the extension file absent adds no Spacedock flags, exactly one `--skill` (pi-subagents), no crash; (3) `TestRunPi_InstalledPathDoesNotPassSpacedockExtension` — installed path (no dev override) does not add the Spacedock extension/skill flags. The pre-existing `TestPiFrontDoorLaunchesWithNativeResourcePaths` still passes unchanged (its fixture repo has no `.pi/extensions/spacedock.ts`, so the os.Stat guard skips — the graceful-fallback path).
+- DONE: Required gates green. `gofmt -w ./cmd ./internal` clean. `go test ./...` all packages PASS. `go test ./internal/cli/ -race` PASS.
+- DONE: Manual smoke (load-bearing). Built the worktree binary and ran from the repo root: `./spacedock pi --plugin-dir . -- --version` → launches clean, prints `0.79.8`, no MODULE_NOT_FOUND, no skill-load failure, exit 0. Full FO boot: `./spacedock pi --plugin-dir . "report the current workflow state summary in one line, then stop"` → the FO greets with the workflow state summary (`Workflow docs/dev is discovered; boot shows sd-b32 IDs (next_id=...), no orphans, no PRs, no dispatchables, no team present, and split-root state is not initialized because .spacedock-state is missing`), exit 0. The FO contract loaded (sd-b32 IDs, next_id, orphans/PRs/dispatchables, split-root state) — the behavioral proof for AC-1. Worktree commit: `d11f7cc9d7b646df7f0415e11bb4939b36df6608` on `spacedock-ensign/pi-dev-override-skill-loading`.
+
+### Summary
+
+Closed the eq (#406) dev-override skill-loading regression. `runPi` now passes `--extension <repo>/.pi/extensions/spacedock.ts` + `--skill <repo>/skills` when `cfg.repoRoot != ""` (guarded by `os.Stat`), so `./spacedock pi --plugin-dir .` loads the Spacedock FO/ensign skills from the local checkout and the FO boots with its contract. The installed path (`cfg.repoRoot == ""`) is unchanged and verified correct: pi auto-loads the registered extension from `settings.json` `packages` at startup, so runPi does not need to pass the extension there. Three Go tests pin the dev-override add, the graceful fallback, and the installed-path no-op; all gates green; live smoke confirms a clean `--version` launch and a full FO boot that greets with the workflow state summary.
