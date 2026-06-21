@@ -12,7 +12,7 @@ sprint: 0221-layered-fo
 sprint-readiness:
 id: 6cccykszyvxz5mxhrf270fa2
 mod-block: merge:pr-merge
-pr: 419
+pr: pr-merge:419
 archived:
 ---
 
