@@ -11,6 +11,8 @@ issue:
 sprint:
 sprint-readiness: ready
 id: ev8gzecy33zm84spxrj239md
+mod-block: merge:pr-merge
+pr: "#421"
 ---
 
 # Pi dev-override skill loading
