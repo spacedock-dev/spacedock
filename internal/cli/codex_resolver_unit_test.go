@@ -177,6 +177,10 @@ func TestCodexEntryInstalledRealFormats(t *testing.T) {
 // predicate fix alone is insufficient: the front door only launches if this
 // cache tail lands on a real manifest.
 func TestCodexCacheManifestResolvesCachedPluginJSON(t *testing.T) {
+	saved := devBranch
+	devBranch = "main" // stable channel resolves under cache/spacedock/spacedock
+	defer func() { devBranch = saved }()
+
 	home := t.TempDir()
 	t.Setenv("CODEX_HOME", home)
 	manifest := filepath.Join(home, "plugins", "cache", "spacedock", "spacedock", "0.12.1", ".codex-plugin", "plugin.json")

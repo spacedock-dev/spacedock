@@ -1,5 +1,5 @@
-// ABOUTME: AC-3 channel-resolution seam — devBranch selects the marketplace ENTRY
-// ABOUTME: NAME (spacedock vs spacedock-edge) from the marketplace repo, no @ref shorthand.
+// ABOUTME: AC-3 channel-resolution seam — devBranch selects the marketplace NAME
+// ABOUTME: (spacedock vs spacedock-edge); the entry stays spacedock, no @ref shorthand.
 package cli
 
 import (
@@ -10,25 +10,29 @@ import (
 	"testing"
 )
 
-// TestChannelEntryFromDevBranch locks the channel-selection rule under Model B:
-// the binary's devBranch stamp selects the marketplace ENTRY NAME, not a git ref
-// pinned into the plugin repo. A stable binary (devBranch=main) resolves the
-// `spacedock` entry; an edge binary (devBranch=next) resolves `spacedock-edge`.
-// The tag pin lives in the marketplace manifest, so the channel is the entry, not
-// an @branch shorthand on the install command.
-func TestChannelEntryFromDevBranch(t *testing.T) {
+// TestChannelMarketplaceFromDevBranch locks the channel-selection rule: the
+// binary's devBranch stamp selects the marketplace NAME, not a git ref pinned into
+// the plugin repo. A stable binary (devBranch=main) resolves the `spacedock`
+// marketplace; an edge binary (devBranch=next) resolves `spacedock-edge`. The tag
+// pin lives in the marketplace manifest, so the channel is the marketplace name,
+// not an @branch shorthand on the install command. The entry name stays `spacedock`
+// on both channels (== manifest name, so the host name-match passes).
+func TestChannelMarketplaceFromDevBranch(t *testing.T) {
 	cases := []struct {
-		channel   string
-		devBranch string
-		wantEntry string
+		channel         string
+		devBranch       string
+		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantEntry: "spacedock"},
-		{channel: "edge", devBranch: "next", wantEntry: "spacedock-edge"},
+		{channel: "stable", devBranch: "main", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
-			if got := channelEntry(tc.devBranch); got != tc.wantEntry {
-				t.Errorf("channelEntry(%q) = %q, want %q (the %s channel)", tc.devBranch, got, tc.wantEntry, tc.channel)
+			if got := channelMarketplace(tc.devBranch); got != tc.wantMarketplace {
+				t.Errorf("channelMarketplace(%q) = %q, want %q (the %s channel)", tc.devBranch, got, tc.wantMarketplace, tc.channel)
+			}
+			if got := channelEntry(tc.devBranch); got != "spacedock" {
+				t.Errorf("channelEntry(%q) = %q, want spacedock (entry stays the manifest name on every channel)", tc.devBranch, got)
 			}
 		})
 	}
@@ -36,24 +40,26 @@ func TestChannelEntryFromDevBranch(t *testing.T) {
 
 // TestClaudeChannelInstallArgvSequence is AC-3's claude half: with marketplaceSource
 // repointed to the marketplace repo and devBranch set per channel, the issued
-// claude install argv installs the channel-correct ENTRY id (`spacedock@spacedock`
-// stable / `spacedock-edge@spacedock` edge) and the marketplace add carries the
-// BARE marketplace-repo source — no `@<branch>` shorthand. The plugin id (`@spacedock`
-// suffix) is the marketplace NAME; the entry before the `@` is the channel.
+// claude install argv installs the channel-correct id (`spacedock@spacedock` stable
+// / `spacedock@spacedock-edge` edge) and the marketplace add carries the BARE
+// marketplace-repo source — no `@<branch>` shorthand. The plugin id suffix is the
+// marketplace NAME (the channel); the entry before the `@` is always `spacedock`.
+// The marketplace-remove cleanup targets the channel's marketplace name.
 func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
-		channel   string
-		devBranch string
-		wantID    string
+		channel         string
+		devBranch       string
+		wantID          string
+		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock-edge@spacedock"},
+		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
 				{argv: []string{"plugin", "uninstall", tc.wantID}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+				{argv: []string{"plugin", "marketplace", "remove", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "install", tc.wantID}},
 			}
@@ -74,22 +80,24 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 }
 
 // TestCodexChannelInstallArgvSequence is AC-3's codex half: the codex install argv
-// adds the BARE marketplace-repo source (no `--ref`, since the channel is the entry
-// name, not a branch ref) and adds the channel-correct entry id.
+// adds the BARE marketplace-repo source (no `--ref`, since the channel is the
+// marketplace name, not a branch ref) and adds the channel-correct id. The
+// marketplace-remove cleanup targets the channel's marketplace name.
 func TestCodexChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
-		channel   string
-		devBranch string
-		wantID    string
+		channel         string
+		devBranch       string
+		wantID          string
+		wantMarketplace string
 	}{
-		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock-edge@spacedock"},
+		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock", wantMarketplace: "spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge", wantMarketplace: "spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
 				{argv: []string{"plugin", "remove", tc.wantID}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+				{argv: []string{"plugin", "marketplace", "remove", tc.wantMarketplace}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "add", tc.wantID}},
 			}
@@ -125,7 +133,7 @@ func TestClaudeNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 		wantID    string
 	}{
 		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock-edge@spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
@@ -190,7 +198,7 @@ func TestCodexNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 		wantID    string
 	}{
 		{channel: "stable", devBranch: "main", wantID: "spacedock@spacedock"},
-		{channel: "edge", devBranch: "next", wantID: "spacedock-edge@spacedock"},
+		{channel: "edge", devBranch: "next", wantID: "spacedock@spacedock-edge"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {

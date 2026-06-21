@@ -24,6 +24,12 @@ func TestCodexPluginInstallIsHostNative(t *testing.T) {
 	if _, err := exec.LookPath("codex"); err != nil {
 		t.Skip("codex not on PATH; behavioral install test requires the host CLI")
 	}
+	// devBranch=main installs the stable `spacedock` channel and resolves it under
+	// cache/spacedock/spacedock — the resolver reads the package devBranch, so it
+	// must match the channel this test installs.
+	saved := devBranch
+	devBranch = "main"
+	defer func() { devBranch = saved }()
 
 	tmp := t.TempDir()
 	marketplace := buildLocalCodexMarketplace(t, tmp)
@@ -91,6 +97,11 @@ func TestCodexInitRefreshAdvancesBehindPlugin(t *testing.T) {
 	if _, err := exec.LookPath("codex"); err != nil {
 		t.Skip("codex not on PATH; refresh-advances smoke requires the host CLI")
 	}
+	// devBranch=main installs and resolves the stable `spacedock` channel; the
+	// resolver reads the package devBranch, so it must match the seeded channel.
+	saved := devBranch
+	devBranch = "main"
+	defer func() { devBranch = saved }()
 
 	tmp := t.TempDir()
 	behind := buildCodexMarketplaceAtVersion(t, filepath.Join(tmp, "behind"), "0.0.1")

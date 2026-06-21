@@ -18,10 +18,10 @@ import (
 // manifest, not an @ref on the install command.
 const marketplaceSource = "spacedock-dev/marketplace"
 
-// runInit installs/updates the per-host plugin (claude) or emits the documented
-// add command pair (codex), then runs doctor. `--check` runs the report without
-// installing. No skill-file copies — install goes through the host plugin
-// mechanism, which is what makes Skill()/--agent spacedock:first-officer resolve.
+// runInit installs/updates the per-host plugin (claude or codex) then runs doctor.
+// `--check` runs the report without installing. Both hosts install programmatically
+// through the host plugin mechanism (claude `install` / codex `add`) — no skill-file
+// copies — which is what makes Skill()/--agent spacedock:first-officer resolve.
 func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.Writer) int {
 	host, check, code := parseInitArgs(args, stderr)
 	if code != 0 {
@@ -42,52 +42,33 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		}
 		return runDoctor(ctx, []string{"--host", "claude"}, ops, stdout, stderr)
 	case "codex":
-		resolved, err := ops.ResolveManifest("codex")
-		if err != nil {
-			fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
-			return 1
-		}
 		if check {
-			return contract.RunDoctor(resolved, "codex", Version, stdout, stderr)
-		}
-		if resolved != "" {
-			// An already-present plugin is refreshed on `install` like the claude
-			// arm — drive the install seam, then run doctor. Without this the codex
-			// arm was a doctor-only no-op that left a behind plugin in place.
-			out, err := ops.Install("codex", marketplaceSource, devBranch)
+			resolved, err := ops.ResolveManifest("codex")
 			if err != nil {
-				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
+				fmt.Fprintf(stderr, "spacedock init: could not resolve the installed codex plugin: %v\n", err)
 				return 1
 			}
-			if out != "" {
-				fmt.Fprintln(stdout, out)
-			}
-			return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
+			return contract.RunDoctor(resolved, "codex", Version, stdout, stderr)
 		}
-
-		// Codex install is documented prose when no installed plugin resolves: the
-		// host install verb is `add` (NOT `install`), and the channel entry the
-		// binary's devBranch selects is named in the documented `plugin add`.
-		printCodexInstallProse(stdout)
-		return 0
+		// `install --host codex` drives the install seam (marketplace add + plugin
+		// add, re-pinning the source) and runs doctor — the same programmatic path
+		// as the claude arm, whether or not a plugin is already present. A fresh box
+		// installs; a present plugin is refreshed. The install verb is codex's `add`
+		// (supplied by codexInstallArgvSequence), and the channel marketplace the
+		// binary's devBranch selects is the install target.
+		out, err := ops.Install("codex", marketplaceSource, devBranch)
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
+			return 1
+		}
+		if out != "" {
+			fmt.Fprintln(stdout, out)
+		}
+		return runDoctor(ctx, []string{"--host", "codex"}, ops, stdout, stderr)
 	default:
 		fmt.Fprintf(stderr, "spacedock install: unknown host %q (want claude or codex)\n", host)
 		return 2
 	}
-}
-
-// printCodexInstallProse emits the documented Codex install command pair: add the
-// marketplace-repo source, then add the channel entry the binary's devBranch
-// selects (`spacedock@spacedock` stable / `spacedock-edge@spacedock` edge). No
-// `--ref` — the channel is the entry name and the version pin lives in the
-// manifest, not a branch ref.
-func printCodexInstallProse(stdout io.Writer) {
-	fmt.Fprintf(stdout,
-		"Codex has no programmatic plugin install from spacedock. Run these in your shell:\n"+
-			"  codex plugin marketplace add %s\n"+
-			"  codex plugin add %s\n"+
-			"Then use the spacedock:first-officer skill in your Codex session.\n",
-		marketplaceSource, channelPluginID(devBranch))
 }
 
 // runDoctor is the `spacedock doctor` command path. With `--plugin-manifest PATH`

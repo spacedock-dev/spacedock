@@ -27,10 +27,10 @@ func TestInstallToleratesRemoveStepFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin marketplace remove spacedock:exit=1",
+		"stub:plugin marketplace remove spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
-		"stub:plugin uninstall spacedock-edge@spacedock:exit=0",
-		"stub:plugin install spacedock-edge@spacedock:exit=0",
+		"stub:plugin uninstall spacedock@spacedock-edge:exit=0",
+		"stub:plugin install spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -39,12 +39,12 @@ func TestInstallToleratesRemoveStepFailure(t *testing.T) {
 }
 
 // TestInstallToleratesUninstallStepFailure locks the fresh-box uninstall
-// tolerance half of AC-2: when `claude plugin uninstall spacedock@spacedock`
-// exits 1 (the empirically observed "Plugin not found in installed plugins"
-// shape against claude 2.1.160 on a box where the plugin is not installed) and
-// every other subcommand exits 0, execHost.Install MUST return a nil error and
-// the combined output MUST contain all four steps' stub markers. Without the
-// per-step tolerance flag on the uninstall step this test would fail at step 0.
+// tolerance half of AC-2: when `claude plugin uninstall <channel-id>` exits 1
+// (the empirically observed "Plugin not found in installed plugins" shape against
+// claude 2.1.160 on a box where the plugin is not installed) and every other
+// subcommand exits 0, execHost.Install MUST return a nil error and the combined
+// output MUST contain all four steps' stub markers. Without the per-step tolerance
+// flag on the uninstall step this test would fail at step 0.
 func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -57,10 +57,10 @@ func TestInstallToleratesUninstallStepFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated uninstall failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin uninstall spacedock-edge@spacedock:exit=1",
-		"stub:plugin marketplace remove spacedock:exit=0",
+		"stub:plugin uninstall spacedock@spacedock-edge:exit=1",
+		"stub:plugin marketplace remove spacedock-edge:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
-		"stub:plugin install spacedock-edge@spacedock:exit=0",
+		"stub:plugin install spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
