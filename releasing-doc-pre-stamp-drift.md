@@ -1,7 +1,7 @@
 ---
 id: 7yd3mbsy2am5qggc17sxvz2v
 title: Reconcile docs/releasing.md to the live release machinery (one consolidated pass)
-status: validation
+status: implementation
 sprint: 0230-stable-finalization
 source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Release' step 3 says to stamp+commit the version before tagging, but v0.20.1 and v0.20.2 both tagged the gated commit directly and let release.yml stamp post-tag (a pre-stamp creates an ungated commit the exact-SHA e2e-gate blocks on)."
 group: cleanup
@@ -88,3 +88,9 @@ Reconciled both releasing.md views to the live e2e-gate machinery in one pass an
   2. **MINOR — stray ``` code fence at docs/releasing.md:163.** Delete line 163 (the last line). Mirror updates via the symlink.
   3. **MINOR (consider) — step-6 stale-ref trap.** docs/releasing.md L110/L114 tag `$(git rev-parse origin/main)`. The audit's git experiment showed this flips safe↔unsafe on whether an out-of-band `git fetch` ran (step 5's changelog line tempts one). Suggest step 4 capture the greened SHA (`REL_SHA=$(git rev-parse HEAD)`) and step 6 tag `$REL_SHA`, removing the `origin/main` indirection. The e2e-gate still backstops the ship, so this is a clarity fix, not a ship-safety hole.
   - Out of scope (machinery, not this doc task — noted, not blocking): audit MAJOR that release.yml advances `stable` to `main` HEAD at stamp-time rather than the tagged SHA (release.yml:229), and MINOR that `SPACEDOCK_E2E_GATE_WAIVER` is a sticky repo var with no clear-after step. The task scope is the doc + the one in-repo guard; these belong to the marketplace/release-machinery surface and should be filed separately.
+
+- **Cycle 1 — captain ruling (2026-06-21):** REJECT confirmed; route back to implementation. Captain folded the out-of-scope stable-advance MAJOR into this rework (one release.yml pass). Fixes:
+  1. Wire `manifest-tag-gate` into release.yml's `e2e-gate` job + goreleaser `needs:` it + a workflow guard test (mirror `e2egate_workflow_test.go`); carry the `if: !contains(github.ref, '-')` pre-release skip.
+  2. Delete the stray ``` fence at docs/releasing.md:163.
+  3. Step-6 clarity: capture `REL_SHA=$(git rev-parse HEAD)` in step 4 and tag `$REL_SHA` (drop the `origin/main` indirection).
+  4. FOLDED IN (the audit MAJOR): release.yml advances `stable` to the TAGGED SHA, not main HEAD at stamp-time (release.yml:229) — fix it so `stable` and the tag point at the same commit.
