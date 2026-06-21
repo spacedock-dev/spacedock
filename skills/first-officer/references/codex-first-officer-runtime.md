@@ -27,7 +27,7 @@ Do not infer capabilities from a Codex version name. Do not infer that the turn-
 
 ## Codex wait notes
 
-When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait without treating the interruption as completion (the operator cue is in `### Foreground wait`).
+When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. Before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait without treating the interruption as completion.
 
 A wait return must be attributed by mailbox content, task path, `«roster-reconcile»` state when present, or durable workflow state, not by a handle argument. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
 

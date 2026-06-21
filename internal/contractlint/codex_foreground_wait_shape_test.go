@@ -24,6 +24,28 @@ func TestCodexWaitNotesRequireIdleStopForegroundWait(t *testing.T) {
 	requireIdleStopForegroundWaitInvariant(t, path, section)
 }
 
+// TestCodexWaitNotesRequireEmitBeforeWaitImperative pins the emit-before-wait
+// captain-notice IMPERATIVE in `## Codex wait notes`. The `### Foreground wait`
+// subsection states WHAT the cue says; the wait-notes section must state THAT the
+// FO emits it before calling `wait_agent`, or the operator gets foreground-waited on
+// with no notice that an interruption is safe. The two pinned fragments — the
+// "Before calling `wait_agent`, tell the captain" trigger and the
+// "not failed, closed, or redispatched" lifecycle reassurance — must co-occur in
+// this section; a pointer to `### Foreground wait` does NOT satisfy the imperative.
+func TestCodexWaitNotesRequireEmitBeforeWaitImperative(t *testing.T) {
+	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	section := markdownSubsection(t, path, "## Codex wait notes")
+	normalized := strings.ToLower(strings.Join(strings.Fields(section), " "))
+	for _, want := range []string{
+		"before calling `wait_agent`, tell the captain",
+		"not failed, closed, or redispatched",
+	} {
+		if !strings.Contains(normalized, want) {
+			t.Errorf("%s `## Codex wait notes` is missing the emit-before-wait imperative phrase %q — the section must state THAT the FO tells the captain the interruption is safe before foreground-waiting, not merely point at `### Foreground wait`", path, want)
+		}
+	}
+}
+
 func TestForegroundWaitLifecycleClaimRejectsTerminalMutations(t *testing.T) {
 	tests := []struct {
 		name    string
