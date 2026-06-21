@@ -35,3 +35,16 @@ These are the token reduction the binary-migration program OWES — the END (a m
 - **Binding-location decision is resolved for Codex/Pi.** #418 made per-runtime binding blocks the preferred shape for those adapters. For remaining runtimes, follow `docs/runtime-support.md`: put concrete host tools in runtime binding sections; keep shared/core text on capability names.
 
 Root insight (see entity `p2` / `pr-complete-binary-command`): the contract GREW (`fo-merge-core.md` 41→49 this sprint) because `merge guard` is a THIN finalize-helper — the prose carries "when X signals, the FO does Y" choreography on top of the still-FO-owned orchestration. The verb is the MEANS; the leaner contract is the END, and it was never harvested. The real collapse is the FAT `spacedock pr complete` (p2) absorbing the orchestration so the choreography prose disappears.
+
+## Stage Report: implementation
+
+- DONE: AC-1 (the value gate): fo-dispatch-core.md ≤ 17488 B AND fo-merge-core.md ≤ 8059 B
+  fo-dispatch-core.md 22929→17446 B; fo-merge-core.md 8597→7436 B; cumulative 31526→24882 B, signed delta −6644 B (cut > 5979 target). Commit 2171cf77.
+- DONE: SB2 byte-intact protection (in-surface reuse/await text + «merge.guard» phase semantics + never-finalize rule stay byte-intact; git-diff-ZERO to claude-fo-dispatch.md; do NOT touch shared-core's `→ shipped` markers)
+  Verified byte-intact vs HEAD: reuse conditions 0-4, the verbatim `does not match next stage effective_model` diagnostic, supersede-shutdown, the «async-dispatch»/«completion-signal»/«context-budget» →/block lines, the «merge.guard» effect (armed/blocked/finalized) + `never finalize on pr-presence alone`. `git diff HEAD` shows zero changes to claude-fo-dispatch.md and first-officer-shared-core.md.
+- DONE: go build + contractlint green; live gate/rejection/merge-hook scenarios stay green; docs/runtime-support.md alignment for any binding shape this cut changes
+  `go build ./...` and full `go test ./...` green (including internal/cli's prose-function routing binder and the full contractlint suite — capability_binding, boot_resident_closure, structural_checks, prose_function_backstop, layering_restore). docs/runtime-support.md already documents the `→ shipped`/adapter-owns-host-tools conventions this cut lands; no doc edit needed (the cut moved the core toward the doc's principle, no drift). Live `-tags live` scenarios not run in this worker (validation/captain territory).
+
+### Summary
+
+Collapsed the multi-step `spacedock dispatch build` procedure into a compact `«dispatch.build»()` guard/effect/done-when/block/→shipped body (AC-3), deferred the duplicated per-host tool detail on the `«addressable-worker»`/`«worker-identity»`/`«roster-reconcile»` `→` lines to the adapters' `## Runtime implementation` blocks (where #418 already binds them), and removed the `fo-merge-core.md` armed/blocked/finalized narration bullets that restated the `«merge.guard»` definition. Evergreened the two temporal markers (the `(0222)`/`roadmap 0222` next-action note and the already-harvested merge `→ shipped` marker) without dropping the prose-function routing test's verb anchor. AC-2-protected spans and the two do-not-touch files are byte-intact.
