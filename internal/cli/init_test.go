@@ -41,9 +41,8 @@ func TestInitClaudeIssuesHostPluginCommands(t *testing.T) {
 // marketplace-add target is the standalone marketplace repo
 // `spacedock-dev/marketplace`, NOT the plugin repo `spacedock-dev/spacedock` (the
 // manifest moved out of the plugin branch). Without this, a silent revert of the
-// marketplaceSource constant back to the plugin repo would not fail `go test` —
-// both the claude install seam and the codex add-prose carry the source, so both
-// paths are asserted.
+// marketplaceSource back to the plugin repo would not fail `go test` — both hosts'
+// install seams carry the source, so both paths are asserted.
 func TestInitMarketplaceSourceIsMarketplaceRepo(t *testing.T) {
 	const wantSource = "spacedock-dev/marketplace"
 
@@ -65,8 +64,8 @@ func TestInitMarketplaceSourceIsMarketplaceRepo(t *testing.T) {
 		}
 	})
 
-	t.Run("codex-add-prose", func(t *testing.T) {
-		fake := &fakeHost{}
+	t.Run("codex-install-seam", func(t *testing.T) {
+		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
 
 		code := runInit(context.Background(), []string{"--host", "codex"}, fake, &stdout, &stderr)
@@ -74,12 +73,11 @@ func TestInitMarketplaceSourceIsMarketplaceRepo(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		out := stdout.String()
-		if !strings.Contains(out, "codex plugin marketplace add "+wantSource) {
-			t.Fatalf("codex add-prose marketplace source not %q:\n%s", wantSource, out)
+		if len(fake.installCmds) < 2 {
+			t.Fatalf("codex install seam recorded %v, want at least {host, source}", fake.installCmds)
 		}
-		if strings.Contains(out, "spacedock-dev/spacedock") {
-			t.Fatalf("codex add-prose still names the plugin repo spacedock-dev/spacedock; the manifest moved to the marketplace repo:\n%s", out)
+		if got := fake.installCmds[1]; got != wantSource {
+			t.Fatalf("codex marketplace source = %q, want %q (pre-migration plugin repo must not return)", got, wantSource)
 		}
 	})
 }
@@ -149,9 +147,11 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		}
 	})
 
+	// not-installed: AC-3 — on a fresh box (no plugin resolves) the codex arm RUNS
+	// the install seam (marketplace add + plugin add, re-pinning the source), like
+	// the claude arm, instead of printing manual prose. The recorded {host, source,
+	// branch} call is the source of truth; no "Run these in your shell" prose.
 	t.Run("not-installed", func(t *testing.T) {
-		// The codex add-prose adds the channel entry the binary's devBranch selects;
-		// pin a stable binary (devBranch=main) so the prose names spacedock@spacedock.
 		saved := devBranch
 		devBranch = "main"
 		defer func() { devBranch = saved }()
@@ -164,23 +164,18 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		out := stdout.String()
-		for _, want := range []string{
-			"codex plugin marketplace add",
-			"codex plugin add spacedock@spacedock",
-		} {
-			if !strings.Contains(out, want) {
-				t.Errorf("codex init prose missing %q:\n%s", want, out)
-			}
+		wantInstall := []string{"codex", marketplaceSource, "main"}
+		if !equalArgv(fake.installCmds, wantInstall) {
+			t.Fatalf("install seam = %v, want %v — fresh-box codex install must run the seam, not print prose", fake.installCmds, wantInstall)
 		}
-		if strings.Contains(out, "codex plugin install") {
-			t.Errorf("codex init prose must not use 'codex plugin install' (verb is add):\n%s", out)
+		if out := stdout.String(); strings.Contains(out, "Run these in your shell") {
+			t.Errorf("fresh-box codex install must not fall back to manual prose:\n%s", out)
 		}
 	})
 
-	// not-installed-edge: an edge binary (devBranch=next) names the edge channel
-	// entry spacedock-edge@spacedock in the add-prose — the channel selection
-	// reaches the documented codex install.
+	// not-installed-edge: an edge binary (devBranch=next) drives the install seam
+	// with devBranch=next, so the channel selection reaches the codex install — the
+	// seam then targets the `spacedock@spacedock-edge` id (the edge marketplace).
 	t.Run("not-installed-edge", func(t *testing.T) {
 		saved := devBranch
 		devBranch = "next"
@@ -194,8 +189,15 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		if got := stdout.String(); !strings.Contains(got, "codex plugin add spacedock-edge@spacedock") {
-			t.Errorf("edge codex init prose missing 'codex plugin add spacedock-edge@spacedock':\n%s", got)
+		wantInstall := []string{"codex", marketplaceSource, "next"}
+		if !equalArgv(fake.installCmds, wantInstall) {
+			t.Fatalf("edge codex install seam = %v, want %v", fake.installCmds, wantInstall)
+		}
+		// The observed seam values reconstruct the production codex install argv: the
+		// edge channel id must be the `plugin add` target.
+		seq := codexInstallArgvSequence(fake.installCmds[1], fake.installCmds[2])
+		if !codexSequenceAddsID(seq, "spacedock@spacedock-edge") {
+			t.Fatalf("edge codex install sequence does not `plugin add spacedock@spacedock-edge`; steps=%v", seq)
 		}
 	})
 

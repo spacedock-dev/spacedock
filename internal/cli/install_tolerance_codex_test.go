@@ -13,7 +13,7 @@ import (
 // every step → Install("codex", "spacedock-dev/marketplace", "next") returns nil
 // and the combined output carries all four step markers, including the bare
 // marketplace-repo `plugin marketplace add spacedock-dev/marketplace` (no --ref)
-// and the edge channel's `plugin add spacedock-edge@spacedock`. The stub's echoed
+// and the edge channel's `plugin add spacedock@spacedock-edge`. The stub's echoed
 // argv is the independent source of truth.
 func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -27,10 +27,10 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 		t.Fatalf("Install returned error on all-zero codex stub: %v\nout=%q", err, out)
 	}
 	wantOrder := []string{
-		"stub:plugin remove spacedock-edge@spacedock:exit=0",
-		"stub:plugin marketplace remove spacedock:exit=0",
+		"stub:plugin remove spacedock@spacedock-edge:exit=0",
+		"stub:plugin marketplace remove spacedock-edge:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
-		"stub:plugin add spacedock-edge@spacedock:exit=0",
+		"stub:plugin add spacedock@spacedock-edge:exit=0",
 	}
 	last := -1
 	for _, want := range wantOrder {
@@ -47,7 +47,7 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 }
 
 // TestCodexInstallToleratesMarketplaceRemoveFailure locks AC-1b: the fresh-box
-// path where `codex plugin marketplace remove spacedock` exits 1 ("is not
+// path where `codex plugin marketplace remove <marketplace>` exits 1 ("is not
 // configured or installed") and every other step exits 0. Install MUST return a
 // nil error and the combined output MUST carry all four step markers — the
 // marketplace remove is a tolerated cleanup step.
@@ -63,10 +63,10 @@ func TestCodexInstallToleratesMarketplaceRemoveFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated marketplace-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin remove spacedock-edge@spacedock:exit=0",
-		"stub:plugin marketplace remove spacedock:exit=1",
+		"stub:plugin remove spacedock@spacedock-edge:exit=0",
+		"stub:plugin marketplace remove spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
-		"stub:plugin add spacedock-edge@spacedock:exit=0",
+		"stub:plugin add spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -91,9 +91,9 @@ func TestCodexInstallToleratesPluginRemoveFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated plugin-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
-		"stub:plugin remove spacedock-edge@spacedock:exit=1",
+		"stub:plugin remove spacedock@spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
-		"stub:plugin add spacedock-edge@spacedock:exit=0",
+		"stub:plugin add spacedock@spacedock-edge:exit=0",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("combined output missing %q\nout=%q", want, out)
@@ -137,10 +137,10 @@ func TestCodexInstallFailsFastOnPluginAdd(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Install returned nil error; want plugin-add fail-fast\nout=%q", out)
 	}
-	if !strings.Contains(err.Error(), "plugin add spacedock-edge@spacedock") {
+	if !strings.Contains(err.Error(), "plugin add spacedock@spacedock-edge") {
 		t.Errorf("error %q does not wrap the codex plugin add subcommand argv", err)
 	}
-	if !strings.Contains(out, "stub:plugin add spacedock-edge@spacedock:exit=1") {
+	if !strings.Contains(out, "stub:plugin add spacedock@spacedock-edge:exit=1") {
 		t.Errorf("combined output missing plugin-add stub marker; out=%q", out)
 	}
 }

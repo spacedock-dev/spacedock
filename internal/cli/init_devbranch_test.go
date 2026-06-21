@@ -41,21 +41,22 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 // first (claude tracks an installed plugin via its marketplace record, so the
 // marketplace remove later would orphan a live uninstall; tolerated, fresh-box
 // exit 1 with "Plugin not found in installed plugins"), then `plugin marketplace
-// remove spacedock` (tolerated, fresh-box exit 1 with "not found"), then `plugin
-// marketplace add` with the BARE marketplace-repo source (no @ref — the channel
-// is the entry name and the version pin lives in the manifest), then `plugin
-// install <id>`. The id is the channel entry the devBranch selects:
-// `spacedock-edge@spacedock` for the edge binary, `spacedock@spacedock` for
-// stable. The marketplace-remove step is what defeats the "already on disk" no-op
-// in marketplace add when a stale source is declared. The asymmetry: BOTH cleanup
-// steps (uninstall + remove) are tolerated; BOTH pinning steps (add + install)
-// are fail-fast.
+// remove <marketplace>` (tolerated, fresh-box exit 1 with "not found"), then
+// `plugin marketplace add` with the BARE marketplace-repo source (no @ref — the
+// channel is the marketplace name and the version pin lives in the manifest), then
+// `plugin install <id>`. The id is the channel the devBranch selects, with the
+// channel in the marketplace name: `spacedock@spacedock-edge` for the edge binary
+// (marketplace remove targets `spacedock-edge`), `spacedock@spacedock` for stable.
+// The marketplace-remove step is what defeats the "already on disk" no-op in
+// marketplace add when a stale source is declared. The asymmetry: BOTH cleanup
+// steps (uninstall + remove) are tolerated; BOTH pinning steps (add + install) are
+// fail-fast.
 func TestInstallArgvSequence(t *testing.T) {
 	wantEdge := []installStep{
-		{argv: []string{"plugin", "uninstall", "spacedock-edge@spacedock"}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "uninstall", "spacedock@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
-		{argv: []string{"plugin", "install", "spacedock-edge@spacedock"}},
+		{argv: []string{"plugin", "install", "spacedock@spacedock-edge"}},
 	}
 	if got := installArgvSequence("spacedock-dev/marketplace", "next"); !reflect.DeepEqual(got, wantEdge) {
 		t.Errorf("installArgvSequence(devBranch=next) = %v, want %v", got, wantEdge)

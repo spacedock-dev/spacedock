@@ -42,9 +42,12 @@ func (e execHost) ResolveManifest(host string) (string, error) {
 	return e.resolveClaudeManifest(host)
 }
 
-// resolveClaudeManifest shells `claude plugin list --json`, finds the spacedock@
-// spacedock entry, and returns <installPath>/.claude-plugin/plugin.json. Returns
-// "" (no error) when the host reports no matching install or no installPath.
+// resolveClaudeManifest shells `claude plugin list --json`, finds the channel's
+// plugin id (`spacedock@spacedock` stable / `spacedock@spacedock-edge` edge — the
+// binary's devBranch selects it), and returns <installPath>/.claude-plugin/
+// plugin.json. Returns "" (no error) when the host reports no matching install or
+// no installPath. Matching the channel id (not the hardcoded stable id) is what
+// lets an edge binary recognize/refresh an installed edge plugin.
 func (execHost) resolveClaudeManifest(host string) (string, error) {
 	out, err := exec.Command(host, "plugin", "list", "--json").Output()
 	if err != nil {
@@ -54,8 +57,9 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 	if err := json.Unmarshal(out, &entries); err != nil {
 		return "", fmt.Errorf("parse %s plugin list --json: %w", host, err)
 	}
+	id := channelPluginID(devBranch)
 	for _, e := range entries {
-		if e.ID == "spacedock@spacedock" {
+		if e.ID == id {
 			if e.InstallPath == "" {
 				return "", nil
 			}
@@ -65,11 +69,12 @@ func (execHost) resolveClaudeManifest(host string) (string, error) {
 	return "", nil
 }
 
-// resolveCodexManifest confirms spacedock@spacedock is installed via the text
-// `codex plugin list` and resolves the manifest under the Codex plugin cache.
-// Codex's listing carries no install path (its `--json` form has one only for
-// the marketplace root, not the cached plugin), so the deterministic cache
-// layout is the resolver. Codex installs land at
+// resolveCodexManifest confirms the channel's plugin id (`spacedock@spacedock`
+// stable / `spacedock@spacedock-edge` edge — the binary's devBranch selects it) is
+// installed via the text `codex plugin list` and resolves the manifest under the
+// Codex plugin cache. Codex's listing carries no install path (its `--json` form
+// has one only for the marketplace root, not the cached plugin), so the
+// deterministic cache layout is the resolver. Codex installs land at
 // <CODEX_HOME>/plugins/cache/<marketplace>/<plugin>/<version>/.codex-plugin/plugin.json.
 // Returns "" (no error) when the plugin is not installed or no cached manifest
 // exists for it yet.
@@ -78,19 +83,21 @@ func (execHost) resolveCodexManifest() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("codex plugin list: %w (%s)", err, strings.TrimSpace(string(out)))
 	}
-	if !codexEntryInstalled(string(out), "spacedock@spacedock") {
+	if !codexEntryInstalled(string(out), channelPluginID(devBranch)) {
 		return "", nil
 	}
 	return codexCacheManifest()
 }
 
-// codexCacheManifest resolves the cached spacedock@spacedock manifest under the
-// Codex plugin cache: <CODEX_HOME>/plugins/cache/spacedock/spacedock/<version>/
-// .codex-plugin/plugin.json. It picks the semver-greatest version dir and
-// returns that manifest path, or "" (no error) when no cached manifest exists
-// yet (absent cache root, no version dir, or the manifest file is missing).
+// codexCacheManifest resolves the channel's cached manifest under the Codex plugin
+// cache: <CODEX_HOME>/plugins/cache/<marketplace>/spacedock/<version>/.codex-plugin/
+// plugin.json, where <marketplace> is the channel marketplace name (`spacedock`
+// stable / `spacedock-edge` edge) and the entry dir is always `spacedock`. It picks
+// the semver-greatest version dir and returns that manifest path, or "" (no error)
+// when no cached manifest exists yet (absent cache root, no version dir, or the
+// manifest file is missing).
 func codexCacheManifest() (string, error) {
-	cacheRoot := filepath.Join(codexHome(), "plugins", "cache", "spacedock", "spacedock")
+	cacheRoot := filepath.Join(codexHome(), "plugins", "cache", channelMarketplace(devBranch), channelEntry(devBranch))
 	versionDir, err := latestVersionDir(cacheRoot)
 	if err != nil || versionDir == "" {
 		return "", nil
@@ -209,26 +216,36 @@ func manifestSubpath(host string) string {
 	return filepath.Join(".claude-plugin", "plugin.json")
 }
 
-// channelEntry maps the binary's devBranch stamp to the marketplace ENTRY name
-// it installs: a stable binary (devBranch=main) installs the `spacedock` entry; an
-// edge binary (any other devBranch, e.g. next) installs `spacedock-edge`. The two
-// entries live in the one marketplace repo and resolve distinct pinned versions
-// (stable pinned to a release tag, edge tracking next HEAD), so the channel is the
-// entry name — the version pin lives in the manifest, not an @ref on the install
-// command.
+// channelEntry is the marketplace ENTRY name the binary installs. It is always
+// `spacedock` — equal to the plugin's own plugin.json `name` — on every channel,
+// because the host (codex confirmed, claude by construction) rejects a marketplace
+// entry whose name differs from the manifest name. The channel is NOT the entry
+// name; it is the marketplace name (see channelMarketplace).
 func channelEntry(devBranch string) string {
+	return "spacedock"
+}
+
+// channelMarketplace maps the binary's devBranch stamp to the marketplace NAME the
+// channel resolves from: a stable binary (devBranch=main) resolves the `spacedock`
+// marketplace; an edge binary (any other devBranch, e.g. next) resolves
+// `spacedock-edge`. The standalone marketplace repo exposes both names as distinct
+// marketplace.json sources, each with the single `spacedock` entry pinned to that
+// channel's version (stable to a release tag, edge tracking next HEAD). Encoding
+// the channel here — not in the entry name — keeps the entry equal to the manifest
+// `name`, so the host name-match passes on both channels.
+func channelMarketplace(devBranch string) string {
 	if devBranch == "main" {
 		return "spacedock"
 	}
 	return "spacedock-edge"
 }
 
-// channelPluginID is the `<entry>@spacedock` plugin id for the channel devBranch
-// selects: `spacedock@spacedock` (stable) or `spacedock-edge@spacedock` (edge).
-// The `@spacedock` suffix is the marketplace NAME (the marketplace.json `name`);
-// the prefix is the channel entry.
+// channelPluginID is the `<entry>@<marketplace>` plugin id for the channel devBranch
+// selects: `spacedock@spacedock` (stable) or `spacedock@spacedock-edge` (edge). The
+// entry (before the `@`) is always `spacedock`; the suffix is the channel
+// marketplace NAME (the marketplace.json `name`).
 func channelPluginID(devBranch string) string {
-	return channelEntry(devBranch) + "@spacedock"
+	return channelEntry(devBranch) + "@" + channelMarketplace(devBranch)
 }
 
 // Launch replaces the current process with argv via execve, so the host CLI
@@ -257,23 +274,25 @@ type installStep struct {
 // uninstall any existing channel plugin first (cause-and-effect — claude
 // tracks an installed plugin via its marketplace record, so the marketplace
 // remove later would orphan a live uninstall), drop the existing marketplace
-// declaration for spacedock (so the next add re-pins the source instead of
-// no-op'ing on "already on disk"), add the marketplace-repo source, then install
-// the channel entry the devBranch selects (`spacedock` stable / `spacedock-edge`
-// edge). The marketplace add carries the BARE marketplace-repo source — the
-// channel and version pin live in the manifest, not an @ref shorthand. The
-// tolerance asymmetry: BOTH cleanup steps (plugin uninstall + marketplace remove)
-// are tolerated as best-effort, because claude exits 1 on the fresh-box cases
-// ("Plugin not found in installed plugins" for uninstall, "Marketplace 'spacedock'
-// not found" for remove) with no way to distinguish those from real failures via
-// stable stderr matching. BOTH pinning steps (marketplace add + plugin install)
-// stay fail-fast — they are the real-failure backstops that surface a broken
-// install (network, contract incompatibility, missing source).
+// declaration for the channel marketplace name (so the next add re-pins the
+// source instead of no-op'ing on "already on disk"), add the marketplace-repo
+// source, then install the channel id the devBranch selects (`spacedock@spacedock`
+// stable / `spacedock@spacedock-edge` edge — the entry is always `spacedock`, the
+// channel is the marketplace name). The marketplace add carries the BARE
+// marketplace-repo source — the channel and version pin live in the marketplace
+// manifest, not an @ref shorthand. The tolerance asymmetry: BOTH cleanup steps
+// (plugin uninstall + marketplace remove) are tolerated as best-effort, because
+// claude exits 1 on the fresh-box cases ("Plugin not found in installed plugins"
+// for uninstall, "Marketplace not found" for remove) with no way to distinguish
+// those from real failures via stable stderr matching. BOTH pinning steps
+// (marketplace add + plugin install) stay fail-fast — they are the real-failure
+// backstops that surface a broken install (network, contract incompatibility,
+// missing source).
 func installArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	return []installStep{
 		{argv: []string{"plugin", "uninstall", id}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "install", id}},
 	}
@@ -283,19 +302,19 @@ func installArgvSequence(source, devBranch string) []installStep {
 // 4-command cleanup-then-pin shape, but in codex's verb vocabulary (`plugin
 // remove` / `plugin add`, not claude's `uninstall` / `install`). The marketplace
 // add carries the BARE marketplace-repo source with NO `--ref` — the channel is
-// the entry name (`spacedock` stable / `spacedock-edge` edge) the devBranch
-// selects, and the version pin lives in the manifest, not a branch ref. The
-// tolerance asymmetry matches claude: BOTH cleanup steps (plugin remove +
-// marketplace remove) are tolerated — on a fresh box `plugin remove` exits 0
-// (idempotent) but `marketplace remove` exits 1 ("marketplace `spacedock` is not
-// configured or installed"), and neither is a real failure. BOTH pinning steps
-// (marketplace add + plugin add) stay fail-fast — they are the real-failure
-// backstops.
+// the marketplace name (`spacedock` stable / `spacedock-edge` edge) the devBranch
+// selects, the entry is always `spacedock`, and the version pin lives in the
+// marketplace manifest, not a branch ref. The tolerance asymmetry matches claude:
+// BOTH cleanup steps (plugin remove + marketplace remove) are tolerated — on a
+// fresh box `plugin remove` exits 0 (idempotent) but `marketplace remove` exits 1
+// ("marketplace is not configured or installed"), and neither is a real failure.
+// BOTH pinning steps (marketplace add + plugin add) stay fail-fast — they are the
+// real-failure backstops.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	return []installStep{
 		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", channelMarketplace(devBranch)}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "add", id}},
 	}

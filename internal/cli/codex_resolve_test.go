@@ -21,6 +21,12 @@ func TestCodexResolveManifestAgainstInstalledHost(t *testing.T) {
 	if err != nil {
 		t.Skip("codex not on PATH; codex resolver test requires the host CLI")
 	}
+	// Verify the stable channel resolver against a stable (`spacedock@spacedock`)
+	// install: the resolver reads the package devBranch to pick the channel id, so
+	// pin it to main to match the stable id this test confirms.
+	saved := devBranch
+	devBranch = "main"
+	defer func() { devBranch = saved }()
 
 	listOut, err := exec.Command(codexBin, "plugin", "list").CombinedOutput()
 	if err != nil {
