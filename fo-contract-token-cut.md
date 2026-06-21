@@ -4,7 +4,7 @@ status: ideation
 source: The 2026-06-15 fo-contract-token-cleanup proposal classified candidate cuts by adversarial reasoning, then revised the default-path total to ~420 tokens after #396 retired RT-4/RT-2 and demoted UCT cuts to legacy-only. After #418 and the state.commit follow-up, the remaining objective is not just token recovery: contracts should read like pseudo-code capability bodies, with prose reserved for fuzzy judgment and probe-backed quirks.
 score: 0.5
 sprint: 0230-stable-finalization
-sprint-readiness: defer
+sprint-readiness:
 issue:
 id: y2r7ew51xqs6q3avsb6mcaka
 group: cleanup
