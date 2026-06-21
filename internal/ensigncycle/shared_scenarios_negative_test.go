@@ -112,6 +112,32 @@ func TestRejectionFlowNegativeSingleCycle(t *testing.T) {
 	}
 }
 
+// TestThirdCycleEscalationAcceptsCIObservedHandoff pins the exact durable
+// `### Feedback Cycles` body the live sonnet FO wrote in the CI run that FAILED the
+// old exact-token assertion (run 27913790926, claude_live_runner_test.go:122): it
+// escalated CORRECTLY on the 3rd rejection — recorded the third cycle, parked the
+// entity, dispatched no fourth round — but worded the handoff in its own prose
+// ("Escalated to human") instead of transcribing the fixture's offered marker (which
+// lives in deferred README body prose the FO is not obligated to read). The old
+// exact-token check red-flagged this contract-faithful escalation; the behavior-aware
+// check accepts it. This is the literal flake this scenario closes.
+func TestThirdCycleEscalationAcceptsCIObservedHandoff(t *testing.T) {
+	// The verbatim cycle-3 line the failing CI stream's FO appended to the section.
+	ciObserved := escalationEntity() +
+		"- Cycle 3: REJECTED — fix marker still absent after three rounds. Escalated to human.\n"
+	if strings.Contains(ciObserved, escalationMarker) {
+		t.Fatal("the CI-observed body must NOT contain the exact marker token — that absence is exactly why the old check failed it")
+	}
+	// The old exact-token check would still reject this body — the regression we fix.
+	if strings.Contains(feedbackCyclesSection(ciObserved), escalationMarker) {
+		t.Fatal("the CI-observed section must lack the exact marker token")
+	}
+	// The behavior-aware assertion accepts the contract-faithful escalation.
+	if err := assertThirdCycleEscalation(ciObserved); err != nil {
+		t.Fatalf("the CI-observed escalate-to-human body (recorded cycle 3, parked, no exact marker) must PASS the behavior-aware assertion: %v", err)
+	}
+}
+
 func TestThirdCycleEscalationNegativeAutoBounce(t *testing.T) {
 	// The escalated end-state the live run must reach passes: the real fixture plus
 	// the third cycle entry and the escalation marker, with NO new implementation
@@ -150,6 +176,38 @@ func TestThirdCycleEscalationNegativeAutoBounce(t *testing.T) {
 	}
 	if err := assertThirdCycleEscalation(stalled); err == nil {
 		t.Fatal("expected a stalled-at-cycle-2 end-state (only two cycle entries, no marker) to fail assertThirdCycleEscalation")
+	}
+
+	// Broken end-state — recorded cycle 3 but never escalated: the FO appended a
+	// third `- Cycle N:` rejection line (so the cycle-count check passes) but stalled
+	// without recording any escalation-to-human handoff — no marker, no escalate/human
+	// wording anywhere in the section. This is the exact gap the escalation-handoff
+	// check guards now that it accepts the FO's own wording: a behavior matcher that
+	// merely required three cycles would pass this non-escalation. Must fail on the
+	// handoff check.
+	cycle3NoEscalation := escalationEntity() +
+		"- Cycle 3: REJECTED — fix marker still absent after a third validation round.\n"
+	if got := len(feedbackCycleEntry.FindAllString(feedbackCyclesSection(cycle3NoEscalation), -1)); got != 3 {
+		t.Fatalf("no-escalation isolating case must carry exactly three in-section cycle entries, got %d", got)
+	}
+	if strings.Contains(cycle3NoEscalation, escalationMarker) || escalationToHuman.MatchString(cycle3NoEscalation) {
+		t.Fatal("no-escalation isolating case must contain NO escalation-to-human handoff (no marker, no escalate/human wording)")
+	}
+	if err := assertThirdCycleEscalation(cycle3NoEscalation); err == nil {
+		t.Fatal("expected three cycles recorded but NO escalation-to-human handoff (FO recorded cycle 3 and stalled) to fail assertThirdCycleEscalation on the handoff check")
+	}
+
+	// The FO's own contract-faithful wording satisfies the handoff check: a third
+	// cycle whose entry records an escalate-to-human handoff in natural prose (NOT
+	// the fixture's exact marker token) must PASS. This is the live behavior the
+	// over-strict exact-token check rejected — the flake this scenario closes.
+	cycle3NaturalWording := escalationEntity() +
+		"- Cycle 3: REJECTED — third consecutive rejection; escalated to the human per the workflow README.\n"
+	if strings.Contains(cycle3NaturalWording, escalationMarker) {
+		t.Fatal("natural-wording case must NOT contain the exact marker token — it proves the behavior matcher accepts the FO's own prose")
+	}
+	if err := assertThirdCycleEscalation(cycle3NaturalWording); err != nil {
+		t.Fatalf("expected a third cycle recording an escalate-to-human handoff in the FO's own wording (no exact marker) to PASS: %v", err)
 	}
 
 	// Isolating case for the no-post-cycle-3-report check: marker present AND three
