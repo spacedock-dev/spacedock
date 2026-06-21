@@ -10,6 +10,7 @@ id: y2r7ew51xqs6q3avsb6mcaka
 group: cleanup
 started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-fo-contract-token-cut
+mod-block: merge:pr-merge
 ---
 
 Rebase `docs/dev/_proposals/fo-contract-token-cleanup.md` against current `main` and apply the still-valid cuts as pseudo-code-shaped contract bodies. The deliverable is not only fewer tokens: shared/runtime contracts should prefer `«fn»` sections with compact `guard` / `effect` / `done-when` / `block` / `→` lines, and use prose only where the obligation is fuzzy, judgment-owned, or probe-specific. Each risky cut is empirically confirmed by a no-guidance-control micro-test before it lands.
