@@ -118,3 +118,25 @@ Verified by: a Go test or live smoke confirming the installed path (no `cfg.repo
 ### Summary
 
 Closed the eq (#406) dev-override skill-loading regression. `runPi` now passes `--extension <repo>/.pi/extensions/spacedock.ts` + `--skill <repo>/skills` when `cfg.repoRoot != ""` (guarded by `os.Stat`), so `./spacedock pi --plugin-dir .` loads the Spacedock FO/ensign skills from the local checkout and the FO boots with its contract. The installed path (`cfg.repoRoot == ""`) is unchanged and verified correct: pi auto-loads the registered extension from `settings.json` `packages` at startup, so runPi does not need to pass the extension there. Three Go tests pin the dev-override add, the graceful fallback, and the installed-path no-op; all gates green; live smoke confirms a clean `--version` launch and a full FO boot that greets with the workflow state summary.
+
+## Stage Report: validation
+
+- **AC-1 — `./spacedock pi --plugin-dir .` loads the Spacedock FO/ensign skills.** Re-confirmed in the validation env (pi present, `~/.pi/agent/settings.json` present). Built the worktree binary and ran from the repo root: `spacedock pi --plugin-dir . -- --version` → launches clean, prints `0.79.8`, no MODULE_NOT_FOUND, no skill-load failure, exit 0. Full FO boot: `spacedock pi --plugin-dir . "report the current workflow state summary in one line, then stop"` → FO greets with the workflow state summary (`Workflow docs/dev: split-root state checkout is not initialized (.spacedock-state missing), no dispatchable entities, no PRs, team absent, ID style sd-b32 (next z0jbe5mne3fks4b99019223x).`), exit 0. The sd-b32 IDs / next_id / split-root / dispatchables / PRs / team fields prove the FO contract loaded — the dev path is no longer skill-less. PASSED.
+- **AC-2 — `runPi` passes `--extension <repo>/.pi/extensions/spacedock.ts` + `--skill <repo>/skills` when `cfg.repoRoot != ""`.** Verified `TestRunPi_DevOverridePassesSpacedockExtensionAndSkills` (pi_frontdoor_test.go): (a) asserts `--extension <repo>/.pi/extensions/spacedock.ts` present, (b) asserts `--skill <repo>/skills` present, (c) asserts exactly two `--skill` flags (pi-subagents + spacedock), (d) asserts pi-subagents extension precedes the Spacedock extension via index comparison. The implementation in `internal/cli/pi.go` matches: appends `--extension`, `spacedockExt`, `--skill`, `spacedockSkills` after the pi-subagents argv, guarded by `os.Stat(spacedockExt)`. PASSED.
+- **AC-3 — installed path (no `--plugin-dir`) does NOT add the Spacedock flags.** Verified `TestRunPi_InstalledPathDoesNotPassSpacedockExtension`: launches with no `--plugin-dir`/`SPACEDOCK_REPO_ROOT` (cfg.repoRoot == ""), asserts the argv contains no `.pi/extensions/spacedock.ts` token, no `--skill <repo>/skills`, and exactly one `--skill` (pi-subagents). The implementation's `if cfg.repoRoot != ""` guard excludes the installed path. PASSED.
+
+### Adversarial audit
+
+- **(a) Removed the `os.Stat` guard** (always append the Spacedock flags when `cfg.repoRoot != ""`): `TestRunPi_DevOverrideWithoutExtensionFallsBackGracefully` went RED — "dev-override argv must not reference absent extension". Confirms the guard is load-bearing for the graceful-fallback case. ✅ mutation caught.
+- **(b) Inverted the condition to `cfg.repoRoot == ""`**: `TestRunPi_DevOverridePassesSpacedockExtensionAndSkills` went RED — "dev-override argv missing --extension". Confirms the dev-override guard is correctly keyed on the non-empty repoRoot. ✅ mutation caught.
+- **(c) Removed `--skill <repo>/skills`** (kept only `--extension`): `TestRunPi_DevOverridePassesSpacedockExtensionAndSkills` went RED — "dev-override argv missing --skill" (the exactly-two-`--skill` assertion). Confirms both flags are asserted, not just the extension. ✅ mutation caught.
+
+### Gate results
+
+- `go test ./...` — PASS (all packages).
+- `go test ./... -race` — PASS (all packages).
+- `gofmt -l ./cmd ./internal` — clean (no output).
+
+### Summary
+
+VERDICT: **PASSED**. The fix at commit `d11f7cc9` correctly closes the eq (#406) dev-override skill-loading regression. `runPi` appends `--extension <repo>/.pi/extensions/spacedock.ts` + `--skill <repo>/skills` when `cfg.repoRoot != ""` (after the existing pi-subagents extension/skill), guarded by `os.Stat` so an absent extension falls back gracefully. The installed path (`cfg.repoRoot == ""`) is unchanged and correctly omits the flags (pi auto-loads the registered extension from `settings.json` `packages`). All three ACs are met, all three adversarial mutations turned the right tests RED, all required gates are green, and the live FO-boot smoke re-confirms AC-1 in the validation env.
