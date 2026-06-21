@@ -1,11 +1,12 @@
 ---
 title: Codex edge channel install — marketplace-name channels, programmatic install, source override
-status: backlog
+status: ideation
 sprint: 0230-stable-finalization
 score: ""
 source: captain request after local Codex marketplace setup; extended after the v0.23.0-pre.2 edge dogfood exposed the Codex edge install is broken end-to-end
 priority: high
 id: z2tjv3570ahjxewv1c309rbc
+started: 2026-06-21T06:05:14Z
 ---
 
 ## Problem
