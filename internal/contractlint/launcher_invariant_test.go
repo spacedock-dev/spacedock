@@ -42,7 +42,7 @@ func foReferenceDir(t *testing.T) string {
 // backtick) by an invocation flag. The leading boundary keeps `${SPACEDOCK_BIN:-spacedock}`
 // from matching — that form has `:-` before `spacedock`, not a span/space boundary.
 var launcherHelperInvocation = regexp.MustCompile(
-	"`spacedock (?:status|state|dispatch|merge|new)\\b[^`]*?--(?:workflow-dir|boot|discover|set|next-id|validate|json|resolve|where|next|archived)\\b")
+	"`spacedock (?:status|state|dispatch|merge|new)\\b[^`]*?--(?:workflow-dir|boot|discover|set|next-id|validate|json|resolve|where|next|archived|name)\\b")
 
 // launcherDiagnosticContext marks a line where a bare `spacedock` is legitimate: the
 // version-gate PATH fallback probe, the `doctor` remedy, an install hint, or a
@@ -113,6 +113,22 @@ func TestBareLauncherHelperScannerDiscriminates(t *testing.T) {
 	leakSet := "Entity frontmatter — via `spacedock status --set` for all field updates"
 	if !lineHasBareLauncherHelperCall(leakSet) {
 		t.Errorf("discriminator: a bare `spacedock status --set` invocation was NOT flagged: %q", leakSet)
+	}
+
+	// A bare `--name` helper invocation — the imperative context-budget probe. MUST
+	// flag: this is the class the lint missed at claude-fo-dispatch.md:132 because
+	// `--name` was absent from the invocation-flag allowlist.
+	leakName := "**Context budget check:** Run `spacedock dispatch context-budget --name {ensign-name}`. Parse the JSON output."
+	if !lineHasBareLauncherHelperCall(leakName) {
+		t.Errorf("discriminator: a bare `spacedock dispatch context-budget --name` invocation was NOT flagged (the line-132 escape class): %q", leakName)
+	}
+
+	// The `→`-binding TWIN of the same `dispatch context-budget --name` text at
+	// fo-dispatch-core.md:98 — it names the SHIPPED command surface per host, not an
+	// FO-emitted call. MUST pass, so adding `--name` does not over-flag the binding line.
+	bindingTwin := "- → **Claude:** PRESENT — `spacedock dispatch context-budget --name {name}`. · **Codex:** ABSENT. · **Pi:** ABSENT."
+	if lineHasBareLauncherHelperCall(bindingTwin) {
+		t.Errorf("discriminator: the `→`-binding twin of the `--name` invocation was wrongly flagged: %q", bindingTwin)
 	}
 
 	// The resolved-launcher form. MUST pass — this is the contract-blessed invocation.
