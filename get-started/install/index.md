@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-22 03:24:53"
+last_updated: "2026-06-22 03:33:37"
 ---
 
 # Install Spacedock
@@ -48,10 +48,11 @@ claude plugin marketplace add spacedock-dev/marketplace
 claude plugin install spacedock@spacedock
 
 # Edge (tracks next) — marketplace named `spacedock-edge`, entry still `spacedock`
+claude plugin marketplace add spacedock-dev/marketplace@edge
 claude plugin install spacedock@spacedock-edge
 ```
 
-The channel is the marketplace name; the entry name stays `spacedock` on both channels (it equals the plugin's own `name`, so the host's entry-name vs plugin-name check passes). Codex installs the same way with `codex plugin add`.
+The channel is the marketplace name; the entry name stays `spacedock` on both channels (it equals the plugin's own `name`, so the host's entry-name vs plugin-name check passes). Each channel adds its own marketplace source — the stable marketplace lives at the repo root (named `spacedock`), the edge one on the `@edge` branch (named `spacedock-edge`) — so the `@edge` ref is what registers the `spacedock-edge` marketplace the edge entry resolves from. Codex installs the same way with `codex plugin add`.
 
 Set `SPACEDOCK_MARKETPLACE_SOURCE` to install from a local or alternate marketplace instead of the default `spacedock-dev/marketplace` — useful for dogfooding a marketplace change before it reaches the production marketplace:
 
