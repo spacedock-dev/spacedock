@@ -8,6 +8,7 @@ issue:
 id: y8ky0vjzmxhc6gemrc70ffry
 worktree: .worktrees/spacedock-ensign-headless-no-conn-gate-discipline
 started: 2026-06-21T21:53:38Z
+mod-block: merge:pr-merge
 ---
 
 A live-lane reliability + contract-integrity gap surfaced by the 0230 flake-landscape investigation (30-run survey). The v0.23.0 tag fires only on a green Runtime Live E2E; two sonnet-only failures in the "Run live ensign cycle" suite are GENUINE FO misbehaviors (the tests grade correct behavior — the inverse of M7/M8), so they BLOCK a trustworthy tag.
