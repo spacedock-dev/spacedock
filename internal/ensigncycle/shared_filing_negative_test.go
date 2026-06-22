@@ -34,6 +34,24 @@ func TestAssertClaudeFilingViaNew(t *testing.T) {
 		t.Fatalf("expected the `--new` alias to count as atomic filing: %v", err)
 	}
 
+	// Positive: the contract-blessed var-capture launcher idiom — capture the
+	// resolved launcher once (`B=${SPACEDOCK_BIN:-spacedock}`) then invoke it as
+	// `$B new <slug>`. The `$B new` line carries NEITHER `spacedock` nor
+	// `SPACEDOCK_BIN` literally, so a regex keyed only on those tokens misses it.
+	// This is correct FO behavior (the launcher invariant), so it must pass.
+	filedVarCapture := claudeToolUse("Bash", `{"command":"B=${SPACEDOCK_BIN:-spacedock}\n$B new `+slug+` --workflow-dir ."}`)
+	if err := assertClaudeFilingViaNew(filedVarCapture, slug); err != nil {
+		t.Fatalf("expected the `$B new` var-capture idiom to count as atomic filing: %v", err)
+	}
+
+	// Negative: a `$VAR new <slug>` call whose var was NEVER captured from
+	// `${SPACEDOCK_BIN:-spacedock}` is not a launcher filing — the var-capture path
+	// must stay tied to a real launcher resolution, not any `$X new`.
+	bareVar := claudeToolUse("Bash", `{"command":"$EDITOR new `+slug+`.md"}`)
+	if err := assertClaudeFilingViaNew(bareVar, slug); err == nil {
+		t.Fatal("expected a `$VAR new` call with no launcher capture to fail")
+	}
+
 	// Negative: no atomic filing at all — the FO only previewed the id and never
 	// committed to a create path. Must fail on the missing-`new` half.
 	previewOnly := claudeToolUse("Bash", `{"command":"spacedock status --next-id --workflow-dir ."}`)
@@ -73,6 +91,15 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 	filed := codexCommand("spacedock new " + slug + " --workflow-dir .")
 	if err := assertCodexFilingViaNew(filed, slug); err != nil {
 		t.Fatalf("expected a `new`-filed Codex stream to pass: %v", err)
+	}
+
+	// Positive: the contract-blessed var-capture launcher idiom on Codex — the
+	// capture and the `$B new <slug>` call land in one command_execution split by
+	// a newline, so the call segment carries no literal `spacedock`/`SPACEDOCK_BIN`.
+	// Correct FO behavior; must pass.
+	filedVarCapture := codexCommand("B=${SPACEDOCK_BIN:-spacedock}\\n$B new " + slug + " --workflow-dir .")
+	if err := assertCodexFilingViaNew(filedVarCapture, slug); err != nil {
+		t.Fatalf("expected the `$B new` var-capture idiom to count as atomic filing on Codex: %v", err)
 	}
 
 	// Negative: no atomic filing — must fail on the missing-`new` half.

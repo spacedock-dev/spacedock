@@ -22,17 +22,48 @@ import (
 // newInvocation matches a spacedock atomic-create invocation in a command string:
 // either the `new` subcommand or the `--new` flag (its alias), in a `spacedock`
 // or `${SPACEDOCK_BIN…}` launcher call. The slug is matched separately so the
-// command must carry BOTH the create verb and the requested slug.
+// command must carry BOTH the create verb and the requested slug. Single-line by
+// design (`[^\n]*?` never crosses a newline) so it does not pair a launcher token
+// on one line with a `new` verb on an unrelated later line.
 var newInvocation = regexp.MustCompile(`(?:spacedock|SPACEDOCK_BIN)[^\n]*?(?:\bnew\b|--new)`)
+
+// launcherCapture matches the contract-blessed var-capture of the resolved
+// launcher — `B=${SPACEDOCK_BIN:-spacedock}` — anywhere in a command string. The
+// captured var name is recorded so the create call below can require THAT var.
+var launcherCapture = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}`)
 
 // nextIDInvocation matches a `status --next-id` candidate-preview command — the
 // first half of the manual filing pair the atomic path replaces.
 var nextIDInvocation = regexp.MustCompile(`--next-id\b`)
 
 // commandFilesViaNew reports whether a command string is the atomic-create call
-// for the requested slug: a `new`/`--new` invocation that names the slug.
+// for the requested slug: a `new`/`--new` invocation that names the slug. It
+// accepts two launcher shapes: a direct `spacedock … new` / `${SPACEDOCK_BIN…} new`
+// call, and the var-capture idiom `B=${SPACEDOCK_BIN:-spacedock}; $B new` where the
+// create call invokes the captured var (so the `$B new` segment carries no literal
+// launcher token). The slug must always appear.
 func commandFilesViaNew(command, slug string) bool {
-	return newInvocation.MatchString(command) && strings.Contains(command, slug)
+	if !strings.Contains(command, slug) {
+		return false
+	}
+	if newInvocation.MatchString(command) {
+		return true
+	}
+	return capturedLauncherFilesViaNew(command)
+}
+
+// capturedLauncherFilesViaNew reports whether the command captured the resolved
+// launcher into a var (`B=${SPACEDOCK_BIN:-spacedock}`) and then ran `$B new` /
+// `$B --new` with that exact var. Tying recognition to the captured var name keeps
+// it from matching an unrelated `$X new` that never resolved a spacedock launcher.
+func capturedLauncherFilesViaNew(command string) bool {
+	m := launcherCapture.FindStringSubmatch(command)
+	if m == nil {
+		return false
+	}
+	varName := regexp.QuoteMeta(m[1])
+	call := regexp.MustCompile(`"?\$\{?` + varName + `\}?"?[^\n]*?(?:\bnew\b|--new)`)
+	return call.MatchString(command)
 }
 
 // assertClaudeFilingViaNew scans the stream-json transcript for the FO filing the
