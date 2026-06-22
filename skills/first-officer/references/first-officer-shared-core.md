@@ -4,15 +4,15 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
 
 ## Startup
 
-**Launcher command invariant:** When `SPACEDOCK_BIN` is set by `spacedock claude` or `spacedock codex`, prefer that launcher for every Spacedock helper call; when unset, empty, or unusable, fall back to `spacedock` on `$PATH`. Shell examples may use bare `spacedock` as shorthand for `${SPACEDOCK_BIN:-spacedock}`.
+**Launcher command invariant:** Resolve ONE launcher at the version gate — `SPACEDOCK_BIN` when set/executable, else `spacedock` on `$PATH` — report its path/version, and use THAT launcher (written `${SPACEDOCK_BIN:-spacedock}`) for every later Spacedock helper call. Never drift to a bare `spacedock` mid-session — a different `$PATH` binary shifts the command surface. Bare `spacedock` is fine only for naming a command (prose, `→` binding lines), the fallback probe, and diagnostic/install hints — never a post-gate helper invocation.
 
 1. **Contract version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=1,<2`. Abort by class:
    - **Binary absent or non-executable** — `${SPACEDOCK_BIN:-spacedock} --version` is not found or emits no parseable `contract <N>` token. If `SPACEDOCK_BIN` is unusable, retry once with bare `spacedock` on `$PATH`; if still absent, ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — the binary is missing. Once spacedock is on PATH, launch with `spacedock claude` to start your first officer.
-   - **Binary present but contract out of range** — `<N>` is below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy (bare-shorthand: `spacedock doctor`).
+   - **Binary present but contract out of range** — `<N>` is below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy.
 
    In every class, do NOT proceed to discovery or `--boot`.
 2. Discover the project root with `git rev-parse --show-toplevel`.
-3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `spacedock status --discover`: one path → use it; zero → report no workflow found and STOP; multiple → present the list (or fail with an ambiguity error in single-entity mode).
+3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `${SPACEDOCK_BIN:-spacedock} status --discover`: one path → use it; zero → report no workflow found and STOP; multiple → present the list (or fail with an ambiguity error in single-entity mode).
    - **block (zero discover):** do NOT broad-search the filesystem to hunt a workflow — no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root. Report no workflow and stop. (Code-gated by the `detectBroadSearchAtBoot` boot detector.)
 4. Read the workflow stage taxonomy via `${SPACEDOCK_BIN:-spacedock} status --read {workflow_dir}/README.md --json` — its `stages` array carries stage names/ordering and the per-stage `initial`/`terminal`/`gate`/`worktree`/`feedback-to`/`agent` flags the greet and gate need, plus the mission line / entity labels (`entity-label` / `entity-label-plural`) / `id-style` from the flat `frontmatter` object. DEFER the README body (per-stage prose, proof policy, templates, CI docs); it loads only when its consuming phase runs (a dispatch copies a stage subsection via `show-stage-def`; the merge ceremony reads `merge:` policy).
 5. `«state.boot»()` — read all startup information in one call. Consume it as JSON (every value a string); the human-formatted table is NOT rendered for the FO's own reasoning. The before-greet boot is all READS — none reads a mod file or creates a team. Sections:
@@ -61,7 +61,7 @@ The commissioned README directs the captain to dispatch the FO to inspect workfl
 - "what's archived?" / "show me the done entities"
 - any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
 
-**Canonical invocations** (all start with `spacedock status --workflow-dir {workflow_dir}`):
+**Canonical invocations** (all start with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir}`):
 - Overview: no extra flags.
 - Dispatchables: `--next`.
 - Archive view: `--archived`.
@@ -181,7 +181,7 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 
 The FO may write these on main — nothing else:
 
-- **Entity frontmatter** — via `spacedock status --set` for all field updates
+- **Entity frontmatter** — via `${SPACEDOCK_BIN:-spacedock} status --set` for all field updates
 - **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path (runs from the project root; `new` discovers the single commissioned workflow automatically — if the repo holds more than one, `new` reports the candidates and you pass `--workflow-dir {workflow_dir}`). Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into the frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts, the FO runs `«state.commit»(slug)` after `new` to commit and sync it.
 - **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
 - **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
