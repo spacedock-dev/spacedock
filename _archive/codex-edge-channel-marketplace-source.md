@@ -1,17 +1,18 @@
 ---
 id: fea266y405b95053aq86q5d8
 title: Codex edge install — per-channel marketplace source (edge branch + channel-specific binary source)
-status: validation
+status: done
 source: handoff-codex-edge-0230 (z2 spacedock-marketplace-source-env follow-up)
 sprint: 0230-stable-finalization
 started: 2026-06-22T00:36:49Z
-completed:
-verdict:
+completed: 2026-06-22T03:33:56Z
+verdict: passed
 score: 0.7
 worktree: .worktrees/spacedock-ensign-codex-edge-channel-marketplace-source
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:431
+archived: 2026-06-22T03:33:56Z
 ---
 
 The codex edge channel cannot install. The edge binary builds plugin id `spacedock@spacedock-edge`, but `codex plugin marketplace add spacedock-dev/marketplace` registers a marketplace NAMED `spacedock` (the repo's root `marketplace.json` `name`, which carries `spacedock-edge` only as an *entry*), so `codex plugin add spacedock@spacedock-edge` fails: `plugin spacedock was not found in marketplace spacedock-edge`. z2 shipped the binary half but validated its marketplace half only against a synthesized live-lane fixture — the real repo + real source were never wired, which masked this. Blocks pre.3 and v0.23.0.
