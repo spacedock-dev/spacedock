@@ -10,6 +10,7 @@ score: 0.35
 worktree: .worktrees/spacedock-ensign-fo-binary-launcher-invariant
 issue:
 sprint: 0230-stable-finalization
+mod-block: merge:pr-merge
 ---
 
 Tighten the first-officer contract and tests so a FO cannot silently switch from the resolved `SPACEDOCK_BIN` launcher to a different `spacedock` binary on PATH after startup.
