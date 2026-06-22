@@ -7,6 +7,7 @@ source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Relea
 group: cleanup
 started: 2026-06-21T06:05:14Z
 worktree: .worktrees/spacedock-ensign-releasing-doc-pre-stamp-drift
+mod-block: merge:pr-merge
 ---
 
 `docs/releasing.md`'s "Cutting a Stable Release" procedure (step 3) documents a manual pre-stamp commit before the annotated tag. Actual practice (v0.20.1, v0.20.2) tags the gated commit directly; release.yml stamps the plugin manifests post-tag.
