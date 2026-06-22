@@ -16,7 +16,7 @@
     "automation"
   ],
   "skills": "./skills/",
-  "requires-contract": ">=1,<2",
+  "requires-contract": ">=2,<3",
   "interface": {
     "displayName": "Spacedock",
     "shortDescription": "Plain text workflows for AI agents",

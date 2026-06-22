@@ -121,7 +121,7 @@ func buildPluginGitRepo(t *testing.T, root string) string {
 func writePluginVersion(t *testing.T, root, version string) {
 	t.Helper()
 	mustWrite(t, filepath.Join(root, ".claude-plugin", "plugin.json"),
-		fmt.Sprintf(`{ "name": "spacedock", "version": "%s", "requires-contract": ">=1,<2", "skills": "./skills/" }`+"\n", version))
+		fmt.Sprintf(`{ "name": "spacedock", "version": "%s", "requires-contract": ">=2,<3", "skills": "./skills/" }`+"\n", version))
 	mustWrite(t, filepath.Join(root, "skills", "demo", "SKILL.md"),
 		fmt.Sprintf("---\nname: demo\ndescription: demo\n---\nbody v%s\n", version))
 }

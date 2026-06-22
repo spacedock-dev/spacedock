@@ -45,7 +45,7 @@ func (f *fakeHost) Install(host, source, branch string) (string, error) {
 }
 
 // compatibleManifest returns a fixture path whose requires-contract brackets
-// CONTRACT_VERSION (the testdata/compatible.json fixture is >=1,<2).
+// CONTRACT_VERSION (the testdata/compatible.json fixture is >=2,<3).
 func compatibleManifest(t *testing.T) string {
 	t.Helper()
 	p, err := filepath.Abs(filepath.Join("..", "contract", "testdata", "compatible.json"))
