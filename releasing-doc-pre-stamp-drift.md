@@ -94,3 +94,17 @@ Reconciled both releasing.md views to the live e2e-gate machinery in one pass an
   2. Delete the stray ``` fence at docs/releasing.md:163.
   3. Step-6 clarity: capture `REL_SHA=$(git rev-parse HEAD)` in step 4 and tag `$REL_SHA` (drop the `origin/main` indirection).
   4. FOLDED IN (the audit MAJOR): release.yml advances `stable` to the TAGGED SHA, not main HEAD at stamp-time (release.yml:229) — fix it so `stable` and the tag point at the same commit.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: BLOCKER — WIRE manifest-tag-gate into CI so it actually blocks.
+  Added a "Gate the cut on the tagged manifest matching the tag semver" step to release.yml's `e2e-gate` job (goreleaser already `needs: e2e-gate`), running `manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json` with the `if: "!contains(github.ref, '-')"` pre-release skip. New `internal/release/manifest_tag_gate_workflow_test.go` mirrors e2egate_workflow_test.go: red-then-green wiring guard + 3 adversarial twins (dropped gate step, dropped needs edge, missing pre-release skip). Code SHA e32c27f5.
+- DONE: MINOR — delete the stray ``` code fence at docs/releasing.md:163.
+  Removed; fence count now even (18), doc renders clean. Mirror updates via the symlink.
+- DONE: Step-6 clarity — capture REL_SHA and tag it, dropping the origin/main indirection.
+  Step 4 now captures `REL_SHA=$(git rev-parse HEAD)`; step 6 tags `"$REL_SHA"` with a note that this survives a stray `git fetch` moving origin/main.
+- DONE: FOLDED IN — advance `stable` to the TAGGED commit SHA, not main HEAD at stamp-time.
+  release.yml stamp step now resolves `RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"` before switching to main and pushes `"$RELEASE_COMMIT:refs/heads/stable"`. Hardened the existing stable-ref guard (renamed `stableRefPushSource`, `TestStampStepAdvancesStableRefToTaggedCommit` asserts the source is `$RELEASE_COMMIT`) + adversarial twin `TestStableRefGuardRejectsMainSource` rejecting the divergeable `main:refs/heads/stable` form.
+
+### Summary
+Closed the cycle-1 reject: the manifest-tag-gate is now CI-enforced in the e2e-gate job goreleaser needs, so a tag/manifest mismatch blocks the cut rather than relying on an advisory manual step — with the pre-release `if` skip so `-pre.N` tags don't self-block. Also captured REL_SHA for the tag target, removed the stray fence, and bound the moving-`stable` advance to the tagged SHA (the folded-in audit MAJOR), each backed by a red-then-green guard. Proven by exercising the binary: exit 1 on v0.20.0/0.19.9, exit 0 on v0.22.0/0.22.0, exit 1 on v0.23.0-pre.1/0.23.0 (the self-block the skip avoids). release.yml is valid YAML; full repo test suite green (0 failures). NOTE: the release.yml edit needs the `workflow` OAuth scope to push — committed locally on the worktree branch; the FO pushes via the scoped credential helper.
