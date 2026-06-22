@@ -1,14 +1,14 @@
 ---
 id: fea266y405b95053aq86q5d8
 title: Codex edge install — per-channel marketplace source (edge branch + channel-specific binary source)
-status: ideation
+status: implementation
 source: handoff-codex-edge-0230 (z2 spacedock-marketplace-source-env follow-up)
 sprint: 0230-stable-finalization
-started:
+started: 2026-06-22T00:36:49Z
 completed:
 verdict:
 score: 0.7
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-edge-channel-marketplace-source
 issue:
 ---
 
