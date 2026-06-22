@@ -98,3 +98,25 @@ Note: `fo-dispatch-core.md:98` carries the same `spacedock dispatch context-budg
 ### Summary
 
 Recommendation: **REJECTED** — one material finding, small and bounded. The value gate is met (all 10 tracked files at/under v0.22.0; `first-officer-shared-core.md` is even 28583, 3 B under the 28586 ceiling — the report's "28586/28586" predates the final commit `4d933f6e`). The +36 B in untracked `claude-fo-dispatch.md` (22943→22979) is two `spacedock`→`${SPACEDOCK_BIN:-spacedock}` conversions on the only two runnable helper-call examples (`spawn-standing-all`, `reconcile`) — **necessary, not trimmable**: +18 B/call is the irreducible cost of the resolved-launcher idiom, and leaving them bare would reintroduce the exact drift bug. AC-1/AC-2/AC-3/AC-4 are all reproduced from independent evidence with genuinely non-vacuous controls, `go test ./...` is green, and there is NO shipped FO behavior change (the 4 doc diffs are pure launcher-token swaps; `shared_filing_test.go` is `_test.go`; `build.go`/`launcher_command.go` untouched this task). The blocker: the detached audit caught that `claude-fo-dispatch.md:132` ("Run `spacedock dispatch context-budget --name {ensign-name}`") is a bare post-gate helper invocation the invariant forbids — the implementer converted two sibling calls in that file but missed this third — and the AC-2 lint can't catch it because `--name` is absent from its invocation-flag allowlist. Both fix halves (convert line 132; add `name` to the lint allowlist) are proven to work on the throwaway checkout. This is a live counterexample to the very invariant the task ships, so it must close before PASSED.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Convert `claude-fo-dispatch.md:132` `spacedock dispatch context-budget --name {ensign-name}` → `${SPACEDOCK_BIN:-spacedock} ...` — the third runnable helper invocation in that file (sibling to the already-converted `spawn-standing-all` + `reconcile`).
+  Converted; landed in untracked `claude-fo-dispatch.md` (+18 B → 22997). Commit 029a4b14.
+- DONE: Close the AC-2 lint hole — add `name` to `launcherHelperInvocation`'s invocation-flag allowlist, RED-first.
+  Added `name` to the regex; with it added the lint REDs on the still-bare line 132 (and ONLY line 132 — full re-scan flagged no other line), then GREENs after the conversion. Re-confirmed adversarially: lint reds on a line-132 regression, greens on restore. Commit 029a4b14.
+- DONE: Keep the `→`-binding twin at `fo-dispatch-core.md:98` (same `dispatch context-budget --name` text) EXEMPT, with a control.
+  Added a discriminator control asserting the `--name` bare form IS flagged and the line-98 `- → **Claude:** PRESENT` binding twin is NOT; both pass. The existing `- → ` prefix exemption already covers line 98.
+- DONE: Re-scan ALL FO/ensign refs with the broadened lint; convert any new catch within byte budget; re-run `go test ./...` green; re-measure.
+  Comprehensive sweep (any bare `spacedock <helper> --<anyflag>` outside `${SPACEDOCK_BIN}`/`→`/diagnostic) surfaces only lines 77 & 185 of shared-core — both command-NAME/signature mentions ("`spacedock new <slug> --id-seed …` mints it", `[--folder]` usage brackets), NOT imperative invocations, so correctly NOT in the defect class and NOT flagged (consistent with the validator scoping the bounce-back to `--name` only). `go test ./...` exit 0, no FAIL/panic.
+
+### Byte budget (cycle 2, wc -c, now / v0.22.0 baseline)
+
+first-officer-shared-core 28583/28586 (3)  fo-dispatch-core 17464/17488 (24)  fo-merge-core 7454/8059 (605)
+claude-first-officer-runtime 4387/4575  codex-first-officer-runtime 5991/6004  pi-first-officer-runtime 3754/3754 (0)
+ensign-shared-core 8829/8829 (0)  codex-ensign 1522/2390  pi-ensign 1333/1768  claude-ensign 2556/2556 (0)
+claude-fo-dispatch 22997 (was 22943 base, +54: 3 launcher conversions) — NOT in the value-gate baseline table.
+
+### Summary (cycle 2)
+
+The Cycle-1 material finding is closed. Line 132's bare context-budget invocation now resolves the pinned launcher, and the AC-2 lint's invocation-flag allowlist gained `name` so this class is caught going forward — driven RED-first (lint flags the still-bare line 132 before the conversion) with a paired control locking the line-132-flagged / line-98-exempt distinction. A full re-scan of every FO/ensign reference surfaces no other escape (the only other bare-flag occurrences are descriptive command-name mentions, outside the invariant's post-gate-invocation scope). `go test ./...` is green, and every value-gate-tracked file remains at/under its v0.22.0 baseline; the one converted line lands in untracked `claude-fo-dispatch.md`, so no net-trim was needed. New tip: 029a4b14.
