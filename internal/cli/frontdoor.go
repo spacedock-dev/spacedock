@@ -323,7 +323,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 				return 1
 			}
 			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "claude")
-			if _, err := ops.Install("claude", marketplaceSource, devBranch); err != nil {
+			if _, err := ops.Install("claude", channelMarketplaceSource(devBranch), devBranch); err != nil {
 				fmt.Fprintf(stderr, "spacedock claude: auto-install failed: %v\n", err)
 				return 1
 			}
@@ -506,7 +506,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 				return 1
 			}
 			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "codex")
-			if _, err := ops.Install("codex", marketplaceSource, devBranch); err != nil {
+			if _, err := ops.Install("codex", channelMarketplaceSource(devBranch), devBranch); err != nil {
 				fmt.Fprintf(stderr, "spacedock codex: auto-install failed: %v\n", err)
 				return 1
 			}

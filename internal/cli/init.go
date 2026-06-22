@@ -10,16 +10,21 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// marketplaceSource is the marketplace add source: the standalone marketplace
-// repo (NOT the plugin repo). It exposes the channel marketplaces — `spacedock`
-// (stable, pinned to a release tag) and `spacedock-edge` (edge, tracking next
-// HEAD) — each a marketplace.json with the single `spacedock` entry. The binary's
-// devBranch stamp selects which marketplace installs (see channelMarketplace); the
-// version pin lives in the manifest, not an @ref on the install command. It is a
-// var (not a const) so `SPACEDOCK_MARKETPLACE_SOURCE` can override it — pointing
-// the install at a local/alternate marketplace to dogfood a channel fix before it
-// reaches the production marketplace; tests save/restore it.
-var marketplaceSource = "spacedock-dev/marketplace"
+// defaultMarketplaceSource is the production marketplace add source: the standalone
+// marketplace repo (NOT the plugin repo). The channel selects a branch of it via
+// channelMarketplaceSource — stable installs from the bare repo (root marketplace.json
+// named `spacedock`), edge from `@edge` (root marketplace.json named `spacedock-edge`)
+// — each a marketplace.json with the single `spacedock` entry. The version pin lives in
+// the manifest, not an @ref on the install command.
+const defaultMarketplaceSource = "spacedock-dev/marketplace"
+
+// marketplaceSource is the marketplace add source. It is a var (not a const) so
+// `SPACEDOCK_MARKETPLACE_SOURCE` can override it — pointing the install at a
+// local/alternate marketplace to dogfood a channel fix before it reaches the
+// production marketplace; tests save/restore it. When overridden it replaces the
+// resolved source verbatim (channelMarketplaceSource appends no channel ref to an
+// operator's chosen source); unset, it is the production default the channel branches.
+var marketplaceSource = defaultMarketplaceSource
 
 // runInit installs/updates the per-host plugin (claude or codex) then runs doctor.
 // `--check` runs the report without installing. Both hosts install programmatically
@@ -34,7 +39,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 	switch host {
 	case "claude":
 		if !check {
-			out, err := ops.Install(host, marketplaceSource, devBranch)
+			out, err := ops.Install(host, channelMarketplaceSource(devBranch), devBranch)
 			if err != nil {
 				fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
 				return 1
@@ -59,7 +64,7 @@ func runInit(ctx context.Context, args []string, ops hostOps, stdout, stderr io.
 		// installs; a present plugin is refreshed. The install verb is codex's `add`
 		// (supplied by codexInstallArgvSequence), and the channel marketplace the
 		// binary's devBranch selects is the install target.
-		out, err := ops.Install("codex", marketplaceSource, devBranch)
+		out, err := ops.Install("codex", channelMarketplaceSource(devBranch), devBranch)
 		if err != nil {
 			fmt.Fprintf(stderr, "spacedock install: host install failed: %v\n", err)
 			return 1
