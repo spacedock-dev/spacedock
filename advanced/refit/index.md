@@ -2,7 +2,7 @@
 title: "Refit a workflow"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-22 00:29:46"
+last_updated: "2026-06-22 03:24:53"
 ---
 
 # Refit a workflow
