@@ -28,7 +28,9 @@ import (
 // key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
-// is set, and blocks the cut (exit 1) otherwise. notes summarizes the commit log
+// is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
+// unless every tagged plugin.json's version equals the tag semver (the stamp-then-tag
+// ordering). notes summarizes the commit log
 // since the last tag into clean release notes and, on confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
 // goreleaser via --release-notes).
@@ -46,6 +48,8 @@ func main() {
 		os.Exit(journeyCosts(os.Args[2:]))
 	case "e2e-gate":
 		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
+	case "manifest-tag-gate":
+		os.Exit(runManifestTagGate(os.Args[2:]))
 	case "notes":
 		os.Exit(notes(os.Args[2:]))
 	default:
@@ -321,6 +325,7 @@ Usage:
   spacedock-release bump-calendar <marketplace.json>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release e2e-gate <release-commit-sha>
+  spacedock-release manifest-tag-gate <tag> <plugin.json> [<plugin.json> ...]
   spacedock-release notes <release-version>
 `)
 }

@@ -154,34 +154,64 @@ func TestStableChannelBinaryPairAgreesOnMain(t *testing.T) {
 	}
 }
 
-// stampStepAdvancesStableRef reports whether the "Stamp plugin manifests" step
-// pushes the stamped commit to the stable channel ref. It looks for a
-// `git push origin <src>:refs/heads/stable` command in the step's run block.
-func stampStepAdvancesStableRef(workflow string) bool {
+// stableRefPushSource returns the push source (the part before `:refs/heads/stable`)
+// the "Stamp plugin manifests" step advances the stable channel ref to, with any
+// surrounding shell quotes stripped, or "" when the step has no such push. It looks
+// for a `git push origin <src>:refs/heads/stable` command in the step's run block.
+func stableRefPushSource(workflow string) string {
 	for _, step := range parseWorkflowSteps(workflow) {
 		if step.name != "Stamp plugin manifests to the release version" {
 			continue
 		}
 		for _, command := range executableShellCommands(step.run) {
 			fields := strings.Fields(command)
-			if len(fields) == 4 && fields[0] == "git" && fields[1] == "push" && fields[2] == "origin" && strings.HasSuffix(fields[3], ":refs/heads/stable") {
-				return true
+			if len(fields) != 4 || fields[0] != "git" || fields[1] != "push" || fields[2] != "origin" {
+				continue
+			}
+			refspec := strings.Trim(fields[3], `"'`)
+			if src, ok := strings.CutSuffix(refspec, ":refs/heads/stable"); ok {
+				return src
 			}
 		}
 	}
-	return false
+	return ""
 }
 
-// TestStampStepAdvancesStableRef locks the stable-channel publish mechanism: the
-// release stamp step MUST push the release commit to the `stable` ref, because the
-// spacedock-dev/marketplace stable entry pins source.ref=stable. Without this push
-// the stable channel would freeze at the prior release forever (a fresh
-// `spacedock@spacedock` install would resolve the old commit), since the marketplace
-// manifest is intentionally static and no longer hand-edited per release. The
-// command is parsed out of the real release.yml, so dropping the push reds this.
-func TestStampStepAdvancesStableRef(t *testing.T) {
-	if !stampStepAdvancesStableRef(readReleaseWorkflow(t)) {
-		t.Error("release.yml stamp step does not push to refs/heads/stable; the stable marketplace channel (source.ref=stable) would never advance past the prior release")
+// TestStampStepAdvancesStableRefToTaggedCommit locks the stable-channel publish
+// mechanism AND the tag-binding: the release stamp step MUST push the TAGGED commit
+// ($RELEASE_COMMIT) to the `stable` ref, because the spacedock-dev/marketplace
+// stable entry pins source.ref=stable. Without this push the stable channel would
+// freeze at the prior release forever (a fresh `spacedock@spacedock` install would
+// resolve the old commit). Pushing the tagged SHA rather than `main` keeps stable
+// and the tag the SAME commit even if main advanced after the tag fired — the
+// former `main:refs/heads/stable` form could point stable at a different commit
+// than the tag. The command is parsed out of the real release.yml, so dropping the
+// push, or regressing to a `main` source, reds this.
+func TestStampStepAdvancesStableRefToTaggedCommit(t *testing.T) {
+	src := stableRefPushSource(readReleaseWorkflow(t))
+	if src == "" {
+		t.Fatal("release.yml stamp step does not push to refs/heads/stable; the stable marketplace channel (source.ref=stable) would never advance past the prior release")
+	}
+	if src != "$RELEASE_COMMIT" {
+		t.Errorf("stable ref is advanced to %q, not the tagged commit $RELEASE_COMMIT; stable and the tag could diverge if main advances after the tag fires", src)
+	}
+}
+
+// TestStableRefGuardRejectsMainSource is the adversarial twin: regress the stable
+// push back to the divergeable `main:refs/heads/stable` form and the guard must
+// RED, because that source resolves to whatever main HEAD is at push time rather
+// than the tagged commit.
+func TestStableRefGuardRejectsMainSource(t *testing.T) {
+	workflow := readReleaseWorkflow(t)
+	adversarial := strings.Replace(workflow,
+		`git push origin "$RELEASE_COMMIT:refs/heads/stable"`,
+		`git push origin main:refs/heads/stable`,
+		1)
+	if adversarial == workflow {
+		t.Fatal("fixture release.yml missing the `$RELEASE_COMMIT:refs/heads/stable` push to regress")
+	}
+	if src := stableRefPushSource(adversarial); src == "$RELEASE_COMMIT" {
+		t.Fatal("guard still saw the tagged-commit source after regressing to a main source")
 	}
 }
 
