@@ -1,17 +1,18 @@
 ---
 id: v9pvmzhxvcmvps9tnz73vs4v
 title: FO binary launcher invariant — prevent SPACEDOCK_BIN/PATH drift during boot and helper calls
-status: validation
+status: done
 source: captain request after Pi FO used PATH spacedock for later helper calls despite SPACEDOCK_BIN being set
 started: 2026-06-22T00:31:00Z
-completed:
-verdict:
+completed: 2026-06-22T05:33:52Z
+verdict: passed
 score: 0.35
 worktree: .worktrees/spacedock-ensign-fo-binary-launcher-invariant
 issue:
 sprint: 0230-stable-finalization
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:433
+archived: 2026-06-22T05:33:52Z
 ---
 
 Tighten the first-officer contract and tests so a FO cannot silently switch from the resolved `SPACEDOCK_BIN` launcher to a different `spacedock` binary on PATH after startup.
