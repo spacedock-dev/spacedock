@@ -124,6 +124,19 @@ jobs:
           echo "release commit for $GITHUB_REF_NAME: $RELEASE_COMMIT"
           go run ./cmd/spacedock-release e2e-gate "$RELEASE_COMMIT"
 
+      # Assert the tagged commit's plugin manifests already carry the tag's semver
+      # — the stamp-then-tag ordering docs/releasing.md documents. The checkout
+      # above is at the tagged commit, so these are the tagged commit's manifests.
+      # A mismatch (the v0.20.0 pre-stamp inversion: tag 0.20.0, manifest 0.19.9)
+      # exits non-zero and blocks the cut, since goreleaser needs: this job. The
+      # `if` skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
+      # X.Y.Z manifest), matching the stamp step's pre-release carve-out below.
+      - name: Gate the cut on the tagged manifest matching the tag semver
+        if: "!contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json
+
   goreleaser:
     needs: e2e-gate
     runs-on: macos-latest
@@ -205,6 +218,11 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          # The tagged commit is the SHA the e2e-gate greened and the manifest-tag
+          # gate matched. Resolve it BEFORE switching to main, so the stable ref
+          # below advances to exactly THIS commit, not whatever main HEAD happens to
+          # be at push time.
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
           git fetch origin main
           git switch main
           go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
@@ -218,12 +236,14 @@ jobs:
               -- .claude-plugin/plugin.json .codex-plugin/plugin.json
             git push origin main
           fi
-          # Advance the stable channel ref to the stamped release commit. The
+          # Advance the stable channel ref to the TAGGED commit. The
           # spacedock-dev/marketplace stable entry pins source.ref=stable (a moving
           # branch, not a per-release tag), so a fresh `spacedock@spacedock` install
           # resolves whatever this branch points at — this push is what publishes the
           # release to the stable channel, replacing a hand-edit of the marketplace
-          # repo. main HEAD is the stamped release commit and stable is a prior
-          # release commit, so this fast-forwards. Same-repo push, so the default
-          # GITHUB_TOKEN suffices (no cross-repo PAT, unlike the homebrew-tap push).
-          git push origin main:refs/heads/stable
+          # repo. Pushing $RELEASE_COMMIT (the tagged SHA), not `main`, keeps stable
+          # and the tag the SAME commit even if main advanced after the tag fired.
+          # The tagged commit is on main's history, so this fast-forwards. Same-repo
+          # push, so the default GITHUB_TOKEN suffices (no cross-repo PAT, unlike the
+          # homebrew-tap push).
+          git push origin "$RELEASE_COMMIT:refs/heads/stable"

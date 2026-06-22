@@ -87,18 +87,20 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    the moving `stable` ref to this commit after the tag fires (see "What the Tag
    Push Does").
 
-4. Green that exact commit. Dispatch Runtime Live E2E on the pushed `main` HEAD and
-   wait for a `conclusion: success` run — the `e2e-gate` matches a green run to the
-   tagged SHA, and the workflow is `workflow_dispatch`-only, so nothing greens the
-   commit unless you dispatch it:
+4. Green that exact commit. Capture the release SHA, then dispatch Runtime Live
+   E2E on it and wait for a `conclusion: success` run — the `e2e-gate` matches a
+   green run to the tagged SHA, and the workflow is `workflow_dispatch`-only, so
+   nothing greens the commit unless you dispatch it:
 
    ```bash
+   REL_SHA=$(git rev-parse HEAD)
    gh workflow run "Runtime Live E2E" --ref main
    gh run watch "$(gh run list --workflow 'Runtime Live E2E' --branch main --limit 1 --json databaseId --jq '.[0].databaseId')"
    ```
 
-   The tagged commit must be the SHA this run goes green on. (For an emergency cut
-   when the live matrix is unavailable, the gate accepts the auditable
+   `REL_SHA` is the stamped commit from step 3 (the worktree HEAD you just pushed);
+   it is the SHA this run must go green on, and the SHA you tag in step 6. (For an
+   emergency cut when the live matrix is unavailable, the gate accepts the auditable
    `SPACEDOCK_E2E_GATE_WAIVER` repo variable instead.)
 
 5. Write a changelog. Summarize the commits since the last tag into plain text:
@@ -114,11 +116,13 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
 6. Create the annotated tag on the greened commit:
 
    ```bash
-   git tag -a vX.Y.Z -F <changelog-file> $(git rev-parse origin/main)
+   git tag -a vX.Y.Z -F <changelog-file> "$REL_SHA"
    ```
 
-   `$(git rev-parse origin/main)` is the stamped, greened commit from steps 3–4;
-   tag THAT SHA so the `e2e-gate` finds its matching green run.
+   `$REL_SHA` is the stamped, greened commit captured in step 4; tag THAT SHA so
+   the `e2e-gate` finds its matching green run. (Tagging the captured SHA, not
+   `git rev-parse origin/main`, keeps the target stable even if a stray `git fetch`
+   moves `origin/main` between steps.)
 
 7. Review:
 
@@ -167,4 +171,3 @@ a dev-only path.
   marketplace-repo task and is NOT part of this flow.
 - This flow is the v1 adaptation of the original `scripts/release.sh` from the
   upstream spacedock plugin repo.
-```
