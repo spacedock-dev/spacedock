@@ -37,3 +37,23 @@ Do NOT change any verb behavior — this is purely the compatibility-version bum
 - A fixture or the real published v0.22.0 binary (`contract 1`) confirms AC-1's rejection.
 - `go test ./...` green; re-measure the value-gate byte table.
 - High-stakes contract/release surface: detached adversarial audit at validation (throwaway checkout).
+
+## Stage Report: implementation
+
+- DONE: Bump the contract version to 2 consistently (constant, both manifests, contract-range TEXT, tests).
+  contract.go `CONTRACT_VERSION 1->2` (only non-test source change); `.claude-plugin`/`.codex-plugin` `requires-contract >=2,<3`; first-officer-shared-core Startup step 1 range text `>=2,<3` (byte-neutral, stays 28583); doctor/bracketing fixtures retargeted (compatible.json + testdata/plugin.json `>=2,<3`, too-old-binary.json `>=3,<4`); TestCompatibleUpgradeHint + gate + install/decoupling/codex fixtures tracked. Commit c113a368.
+- DONE: AC-1 RED-first: prove a contract-1 binary is now REJECTED where it passed before.
+  New `skills/integration/contract_skew_test.go` failed RED (contract-1 verdict=compatible) pre-bump, GREEN post-bump. Confirmed with the REAL published v0.22.0 binary (`spacedock_0.22.0_darwin_arm64`, reports `contract 1`): `doctor` against the bumped `>=2,<3` manifest -> "Upgrade the binary to continue." exit 1; against the pre-bump `>=1,<2` -> "OK" exit 0; the post-bump contract-2 binary -> "OK" exit 0. Bracketing test holds (2 ∈ [2,3)) and goes RED if either side reverts to 1 / `>=1,<2` (both divergence directions exercised).
+- DONE: Self-check before handoff: `go test ./...` green; NO verb-behavior change; re-measure the value-gate byte table.
+  `go test ./...` exit 0, 15 packages ok. Non-test source diff is the single `CONTRACT_VERSION` line. shared-core 28583 (HEAD=working, ≤ v0.22.0 baseline 28586); no other FO/ensign reference file touched, all stay at their HEAD bytes.
+
+### Summary
+
+Bumped the skill↔binary contract version 1->2 so 0.23.0 skills cleanly reject a contract-1 (v0.22.0) binary at the boot gate instead of breaking on missing verbs. Each `>=1,<2` occurrence was triaged: live-contract declarations and `CONTRACT_VERSION`-paired fixtures moved to `>=2,<3` (or `>=3,<4` for the too-old-binary fixture); abstract Compare-math literals and the StampVersion field-preservation fixture were left unchanged. The range-text edit is byte-neutral. AC-1 proven end-to-end against the real published v0.22.0 binary, and the bracketing guard is divergeable in both directions.
+
+### Value-gate byte table (FO/ensign reference files)
+
+| file | v0.22.0 baseline | this branch | edit |
+|------|------------------|-------------|------|
+| first-officer-shared-core.md | 28586 | 28583 | byte-neutral range swap, unchanged from HEAD |
+| (all other FO/ensign reference files) | — | unchanged from HEAD | not touched |
