@@ -1,7 +1,7 @@
 ---
 id: v9pvmzhxvcmvps9tnz73vs4v
 title: FO binary launcher invariant — prevent SPACEDOCK_BIN/PATH drift during boot and helper calls
-status: implementation
+status: validation
 source: captain request after Pi FO used PATH spacedock for later helper calls despite SPACEDOCK_BIN being set
 started: 2026-06-22T00:31:00Z
 completed:
