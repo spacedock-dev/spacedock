@@ -1,7 +1,7 @@
 ---
 id: 7yd3mbsy2am5qggc17sxvz2v
 title: Reconcile docs/releasing.md to the live release machinery (one consolidated pass)
-status: validation
+status: implementation
 sprint: 0230-stable-finalization
 source: "0202 Commander drive (2026-06-13). releasing.md 'Cutting a Stable Release' step 3 says to stamp+commit the version before tagging, but v0.20.1 and v0.20.2 both tagged the gated commit directly and let release.yml stamp post-tag (a pre-stamp creates an ungated commit the exact-SHA e2e-gate blocks on)."
 group: cleanup
@@ -129,3 +129,10 @@ Closed the cycle-1 reject: the manifest-tag-gate is now CI-enforced in the e2e-g
 
 ### Summary
 Cycle-2 closed the cycle-1 BLOCKER: the manifest-tag-gate is now genuinely CI-enforced (gate step in e2e-gate, goreleaser needs it, fatal under set -e), proven by reproducing the workflow guards red-then-green against the REAL on-disk release.yml, and the folded-in stable-advance binds `stable` to the tagged SHA. The binary blocks the v0.20.0 inversion and passes a match; full suite green. REJECTED on one concrete in-deliverable defect: docs/releasing.md:25 still describes `git push origin main:refs/heads/stable`, the exact form the same commit's code change removed and the new adversarial guard rejects — a stale-prose contradiction (AC-3 / captain item 4). Bundled for the same one-line rework: optional guard-hardening so the workflow guards catch `if: && false` / `continue-on-error` / RELEASE_COMMIT-reassignment un-wirings (the established sibling guard shares these blind spots, so this is class-wide hardening, captain's call).
+
+### Feedback Cycles (cycle 3 — routing)
+
+- **Cycle 3 — captain-authorized route (2026-06-21).** Cycle-2 validation REJECTED on one in-deliverable defect (AC-3): docs/releasing.md narrates `git push origin main:refs/heads/stable` while cycle-2's own code pushes `$RELEASE_COMMIT:refs/heads/stable` (the `main:` form `TestStableRefGuardRejectsMainSource` rejects). The release machinery itself is proven good across two detached audits. The 3-cycle escalation surfaced to the captain, who authorized one final route. SCOPE for this cycle:
+  1. **Rebase the branch onto current `origin/main` and RESOLVE the `docs/releasing.md` conflict** by integrating fe's (#431) branch-per-channel marketplace edits with this task's reconciliation — #431 merged edits to the SAME doc after this branch forked, so the cut procedure and the marketplace/channel description must read as one coherent doc.
+  2. **Apply the AC-3 fix:** docs/releasing.md describes `git push origin "$RELEASE_COMMIT:refs/heads/stable"` (the tagged-SHA advance), matching release.yml:249 and `TestStableRefGuardRejectsMainSource`. One-line substance; mirror updates via the symlink.
+  OUT OF SCOPE (captain ruling — file as a follow-up, do NOT fold in): the class-wide workflow-guard hardening (syntactic-presence checks miss `if: && false` / `continue-on-error` / RELEASE_COMMIT reassignment); the MINOR REL_SHA-vs-greened-SHA doc clarity note.
