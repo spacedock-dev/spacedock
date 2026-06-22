@@ -64,6 +64,32 @@ func TestDetectBroadSearchAtBoot(t *testing.T) {
 			wantNames: "ls -R",
 		},
 		{
+			name: "ls_non_recursive_repo_root_reds",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`ls ` + fixtureRoot),
+			},
+			wantRed:   true,
+			wantNames: "ls",
+		},
+		{
+			name: "bare_ls_default_cwd_reds",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`ls -la`),
+			},
+			wantRed:   true,
+			wantNames: "ls",
+		},
+		{
+			name: "ls_scoped_under_resolved_workflow_passes",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`ls ` + fixtureRoot + `/docs/dev`),
+			},
+			wantRed: false,
+		},
+		{
 			name: "recursive_glob_readme_reds",
 			lines: []string{
 				streamLine(`spacedock status --discover`),

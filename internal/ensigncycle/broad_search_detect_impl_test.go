@@ -68,9 +68,11 @@ func detectBroadSearchAtBoot(stream, fixtureRoot string) error {
 	return nil
 }
 
-// broadSweepTools are the recursive-search shell tools a workflow-hunting sweep
-// uses. `grep -r`/`ls -R` need the recursive flag; the rest are recursive by use.
-var broadSweepTools = []string{"find", "rg", "fd"}
+// broadSweepTools are the directory-listing/search shell tools a workflow-hunting
+// sweep uses, broad whenever they target the project root (the zero branch forbids
+// ANY root-scoped find/ls, not just a recursive one). `grep` still needs `-r` to be
+// a sweep — a non-recursive `grep pattern file` is a single-file read, not a hunt.
+var broadSweepTools = []string{"find", "ls", "rg", "fd"}
 
 // broadSweepCommand reports whether a Bash command is a broad filesystem sweep
 // aimed at the project root or a broad ancestor (not a scoped path under a resolved
@@ -86,12 +88,12 @@ func broadSweepCommand(command, fixtureRoot string) (string, bool) {
 
 	var sig string
 	switch {
+	case tool == "ls" && hasRecursiveFlag(fields):
+		sig = "ls -R" // name the recursive form distinctly; a plain root `ls` reds as "ls"
 	case contains(broadSweepTools, tool):
 		sig = tool
 	case tool == "grep" && hasRecursiveFlag(fields):
 		sig = "grep -r"
-	case tool == "ls" && hasRecursiveFlag(fields):
-		sig = "ls -R"
 	default:
 		return "", false
 	}
