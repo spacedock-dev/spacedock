@@ -248,6 +248,27 @@ func channelPluginID(devBranch string) string {
 	return channelEntry(devBranch) + "@" + channelMarketplace(devBranch)
 }
 
+// channelMarketplaceSource is the marketplace add source the channel installs from:
+// a stable binary (devBranch=main) installs from the bare repo `spacedock-dev/marketplace`,
+// whose root marketplace.json is named `spacedock`; an edge binary (any other devBranch)
+// installs from `spacedock-dev/marketplace@edge`, the `edge` branch whose root
+// marketplace.json is named `spacedock-edge`. The `@edge` ref is what makes the host
+// register a marketplace NAMED `spacedock-edge`, so the channel id `spacedock@spacedock-edge`
+// then resolves — a bare-source add registers `spacedock` and the edge id lookup fails.
+// An explicit SPACEDOCK_MARKETPLACE_SOURCE override (marketplaceSource != the production
+// default) replaces the source verbatim on every channel: the operator's chosen
+// local/alternate marketplace is already the complete marketplace they want, so no
+// channel ref is appended.
+func channelMarketplaceSource(devBranch string) string {
+	if marketplaceSource != defaultMarketplaceSource {
+		return marketplaceSource
+	}
+	if devBranch == "main" {
+		return marketplaceSource
+	}
+	return marketplaceSource + "@edge"
+}
+
 // Launch replaces the current process with argv via execve, so the host CLI
 // owns the terminal (interactive `claude --agent …`). It returns only when exec
 // itself fails.
@@ -275,12 +296,15 @@ type installStep struct {
 // tracks an installed plugin via its marketplace record, so the marketplace
 // remove later would orphan a live uninstall), drop the existing marketplace
 // declaration for the channel marketplace name (so the next add re-pins the
-// source instead of no-op'ing on "already on disk"), add the marketplace-repo
-// source, then install the channel id the devBranch selects (`spacedock@spacedock`
-// stable / `spacedock@spacedock-edge` edge — the entry is always `spacedock`, the
-// channel is the marketplace name). The marketplace add carries the BARE
-// marketplace-repo source — the channel and version pin live in the marketplace
-// manifest, not an @ref shorthand. The tolerance asymmetry: BOTH cleanup steps
+// source instead of no-op'ing on "already on disk"), add the channel-resolved
+// marketplace source, then install the channel id the devBranch selects
+// (`spacedock@spacedock` stable / `spacedock@spacedock-edge` edge — the entry is
+// always `spacedock`, the channel is the marketplace name). The marketplace add
+// carries the source channelMarketplaceSource resolved: the bare repo for stable
+// (root marketplace.json named `spacedock`), `<repo>@edge` for edge (the `edge`
+// branch whose root marketplace.json is named `spacedock-edge`, so the add
+// registers `spacedock-edge` and the edge id resolves). The version pin lives in
+// the marketplace manifest. The tolerance asymmetry: BOTH cleanup steps
 // (plugin uninstall + marketplace remove) are tolerated as best-effort, because
 // claude exits 1 on the fresh-box cases ("Plugin not found in installed plugins"
 // for uninstall, "Marketplace not found" for remove) with no way to distinguish
@@ -301,10 +325,13 @@ func installArgvSequence(source, devBranch string) []installStep {
 // codexInstallArgvSequence is the codex analog of installArgvSequence: the same
 // 4-command cleanup-then-pin shape, but in codex's verb vocabulary (`plugin
 // remove` / `plugin add`, not claude's `uninstall` / `install`). The marketplace
-// add carries the BARE marketplace-repo source with NO `--ref` — the channel is
-// the marketplace name (`spacedock` stable / `spacedock-edge` edge) the devBranch
-// selects, the entry is always `spacedock`, and the version pin lives in the
-// marketplace manifest, not a branch ref. The tolerance asymmetry matches claude:
+// add carries the source channelMarketplaceSource resolved (no `--ref` flag — any
+// channel ref is part of the source string): the bare repo for stable (root
+// marketplace.json named `spacedock`), `<repo>@edge` for edge (the `edge` branch
+// whose root marketplace.json is named `spacedock-edge`, so the add registers
+// `spacedock-edge` and the channel id `spacedock@spacedock-edge` resolves). The
+// entry is always `spacedock`, and the version pin lives in the marketplace
+// manifest. The tolerance asymmetry matches claude:
 // BOTH cleanup steps (plugin remove + marketplace remove) are tolerated — on a
 // fresh box `plugin remove` exits 0 (idempotent) but `marketplace remove` exits 1
 // ("marketplace is not configured or installed"), and neither is a real failure.

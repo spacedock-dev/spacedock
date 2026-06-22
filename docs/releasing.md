@@ -17,10 +17,14 @@ marketplace source.
 - stamps the plugin manifests' `version` on `main`.
 
 The marketplace manifest no longer lives in the plugin branch. It is the
-standalone `spacedock-dev/marketplace` repo, whose entries pin each channel by
-ref — `spacedock` (stable, repointed to the released tag) and `spacedock-edge`
-(edge, tracking `next`). Repointing the stable entry is a commit in that repo,
-not a manifest stamp on `main`.
+standalone `spacedock-dev/marketplace` repo, where each channel is a branch with
+its own root `marketplace.json`: the repo root (a marketplace named `spacedock`,
+stable entry repointed to the released tag) and the `edge` branch (a marketplace
+named `spacedock-edge`, entry tracking `next`). The channel lives in the
+marketplace NAME, so a binary adds the channel's branch source —
+`spacedock-dev/marketplace` for stable, `spacedock-dev/marketplace@edge` for edge —
+and the marketplace it registers carries the matching name. Repointing the stable
+entry is a commit on the repo root, not a manifest stamp on `main`.
 
 The tag triggers the release, but goreleaser publishes only after the `e2e-gate`
 job confirms the tagged commit has a green Runtime Live E2E run (or a recorded

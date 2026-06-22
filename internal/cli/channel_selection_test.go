@@ -152,8 +152,9 @@ func TestClaudeNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 			if got := fake.installCmds[0]; got != "claude" {
 				t.Fatalf("install host = %q, want claude", got)
 			}
-			if got := fake.installCmds[1]; got != marketplaceSource {
-				t.Fatalf("install source = %q, want %q (the marketplace repo)", got, marketplaceSource)
+			wantSource := channelMarketplaceSource(tc.devBranch)
+			if got := fake.installCmds[1]; got != wantSource {
+				t.Fatalf("install source = %q, want %q (the channel-resolved marketplace repo)", got, wantSource)
 			}
 			if got := fake.installCmds[2]; got != tc.devBranch {
 				t.Fatalf("%s channel install devBranch = %q, want %q", tc.channel, got, tc.devBranch)
@@ -217,8 +218,9 @@ func TestCodexNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 			if got := fake.installCmds[0]; got != "codex" {
 				t.Fatalf("install host = %q, want codex", got)
 			}
-			if got := fake.installCmds[1]; got != marketplaceSource {
-				t.Fatalf("install source = %q, want %q (the marketplace repo)", got, marketplaceSource)
+			wantSource := channelMarketplaceSource(tc.devBranch)
+			if got := fake.installCmds[1]; got != wantSource {
+				t.Fatalf("install source = %q, want %q (the channel-resolved marketplace repo)", got, wantSource)
 			}
 			if got := fake.installCmds[2]; got != tc.devBranch {
 				t.Fatalf("%s channel install devBranch = %q, want %q (devBranch is the sole codex channel knob)", tc.channel, got, tc.devBranch)

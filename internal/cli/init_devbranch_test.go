@@ -42,12 +42,13 @@ func TestInitTargetsNextWhenDevBranchPinned(t *testing.T) {
 // marketplace remove later would orphan a live uninstall; tolerated, fresh-box
 // exit 1 with "Plugin not found in installed plugins"), then `plugin marketplace
 // remove <marketplace>` (tolerated, fresh-box exit 1 with "not found"), then
-// `plugin marketplace add` with the BARE marketplace-repo source (no @ref — the
-// channel is the marketplace name and the version pin lives in the manifest), then
-// `plugin install <id>`. The id is the channel the devBranch selects, with the
-// channel in the marketplace name: `spacedock@spacedock-edge` for the edge binary
-// (marketplace remove targets `spacedock-edge`), `spacedock@spacedock` for stable.
-// The marketplace-remove step is what defeats the "already on disk" no-op in
+// `plugin marketplace add <source>` with whatever source it is handed (the builder
+// is source-agnostic — channelMarketplaceSource upstream resolves the channel
+// source: bare repo for stable, `<repo>@edge` for edge), then `plugin install
+// <id>`. The id is the channel the devBranch selects, with the channel in the
+// marketplace name: `spacedock@spacedock-edge` for the edge binary (marketplace
+// remove targets `spacedock-edge`), `spacedock@spacedock` for stable. The
+// marketplace-remove step is what defeats the "already on disk" no-op in
 // marketplace add when a stale source is declared. The asymmetry: BOTH cleanup
 // steps (uninstall + remove) are tolerated; BOTH pinning steps (add + install) are
 // fail-fast.

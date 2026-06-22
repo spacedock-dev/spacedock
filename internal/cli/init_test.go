@@ -39,12 +39,14 @@ func TestInitClaudeIssuesHostPluginCommands(t *testing.T) {
 
 // TestInitMarketplaceSourceIsMarketplaceRepo guards the Model B decouple: the
 // marketplace-add target is the standalone marketplace repo
-// `spacedock-dev/marketplace`, NOT the plugin repo `spacedock-dev/spacedock` (the
-// manifest moved out of the plugin branch). Without this, a silent revert of the
-// marketplaceSource back to the plugin repo would not fail `go test` — both hosts'
-// install seams carry the source, so both paths are asserted.
+// `spacedock-dev/marketplace` (channel-resolved by channelMarketplaceSource — the
+// edge binary adds the `@edge` branch ref), NOT the plugin repo
+// `spacedock-dev/spacedock` (the manifest moved out of the plugin branch). Without
+// this, a silent revert of the marketplaceSource back to the plugin repo would not
+// fail `go test` — both hosts' install seams carry the source, so both paths are
+// asserted.
 func TestInitMarketplaceSourceIsMarketplaceRepo(t *testing.T) {
-	const wantSource = "spacedock-dev/marketplace"
+	wantSource := channelMarketplaceSource(devBranch)
 
 	t.Run("claude-install-seam", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -117,7 +119,7 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		wantInstall := []string{"codex", marketplaceSource, devBranch}
+		wantInstall := []string{"codex", channelMarketplaceSource(devBranch), devBranch}
 		if !equalArgv(fake.installCmds, wantInstall) {
 			t.Fatalf("install seam = %v, want %v — codex init on a present plugin must refresh, not no-op", fake.installCmds, wantInstall)
 		}
@@ -189,7 +191,7 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		wantInstall := []string{"codex", marketplaceSource, "next"}
+		wantInstall := []string{"codex", channelMarketplaceSource("next"), "next"}
 		if !equalArgv(fake.installCmds, wantInstall) {
 			t.Fatalf("edge codex install seam = %v, want %v", fake.installCmds, wantInstall)
 		}

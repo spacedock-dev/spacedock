@@ -718,7 +718,7 @@ func TestCodexFrontDoorNoPluginAutoInstalls(t *testing.T) {
 			if code != 0 {
 				t.Fatalf("exit = %d, want 0 when codex has no plugin → auto-install + launch (stderr=%q)", code, stderr.String())
 			}
-			wantInstall := []string{"codex", marketplaceSource, devBranch}
+			wantInstall := []string{"codex", channelMarketplaceSource(devBranch), devBranch}
 			if !equalArgv(fake.installCmds, wantInstall) {
 				t.Fatalf("install seam = %v, want %v (the {host, source, branch} seam)", fake.installCmds, wantInstall)
 			}
