@@ -31,6 +31,7 @@ ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # Normalize to a stable line. Only generic, non-sensitive fields are emitted (no tool inputs
 # or outputs, no prompt text) — liveness, not content.
+events="$dir/events.jsonl"
 printf '%s' "$payload" | jq -c \
   --arg ts "$ts" \
   '{
@@ -43,6 +44,24 @@ printf '%s' "$payload" | jq -c \
        tool: (.tool_name // ""),
        source: (.source // "")
      }
-   }' >> "$dir/events.jsonl" 2>/dev/null || exit 0
+   }' >> "$events" 2>/dev/null || exit 0
+
+# Best-effort size cap: a liveness side-channel must not grow without bound (PostToolUse
+# fires on every tool call). When the log passes max_lines, keep only the most recent
+# keep_lines. Lock-free and best-effort by design — this is liveness, not a ledger, so
+# losing a few lines to a concurrent append during the rare trim is acceptable, and every
+# step degrades to a no-op ($$ keeps the temp unique across concurrent async hooks; any
+# failure leaves the existing log untouched). Never block or break the FO.
+max_lines=2000
+keep_lines=1000
+n="$(wc -l < "$events" 2>/dev/null || echo 0)"
+if [ "${n:-0}" -gt "$max_lines" ] 2>/dev/null; then
+  tmp="$events.tmp.$$"
+  if tail -n "$keep_lines" "$events" > "$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$events" 2>/dev/null || rm -f "$tmp" 2>/dev/null
+  else
+    rm -f "$tmp" 2>/dev/null
+  fi
+fi
 
 exit 0

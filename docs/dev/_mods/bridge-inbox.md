@@ -7,14 +7,16 @@ fo-realm: "FO realm — the FO maintains this file directly; it is FO process (t
 
 # Bridge Inbox
 
-[Bridge](https://github.com/spacedock-dev/bridge) is a read-only command-center UI over this fleet. It cannot push into a running FO session (a Claude Code session has no inbound API), so it writes captain intent to a durable, **append-only** inbox at `_bridge/inbox.jsonl` (relative to the FO's working directory — the repo root where `spacedock claude` was launched, the same root Bridge resolves). This mod drains that inbox on the FO's own loop ticks, acting only on intent **addressed to this workflow**, and writes a per-workflow liveness heartbeat Bridge reads.
+[Bridge](https://github.com/spacedock-dev/bridge) is a read-only command-center UI over this fleet. It cannot push into a running FO session (a Claude Code session has no inbound API), so it writes captain intent to a durable, **append-only** inbox at `_bridge/inbox.jsonl` (relative to the FO's working directory — the repo root where `spacedock claude` was launched). This mod drains that inbox on the FO's own loop ticks, acting only on intent **addressed to this workflow**, and writes a per-workflow liveness heartbeat Bridge reads.
+
+**Path alignment (load-bearing).** Bridge anchors the inbox, heartbeat, and feed on its `--repo-root` flag, falling back to `--fleet` only when `--repo-root` is unset. So intent reaches this FO **only when the captain launches Bridge with `--repo-root` pointing at this FO's cwd** (the repo root). Under a multi-workflow layout (`--fleet <repo>/docs/spacedock` with no `--repo-root`), Bridge would write to `<repo>/docs/spacedock/_bridge/` while the FO reads `<repo>/_bridge/` — and intent silently never arrives. The dir is the same `_bridge/` Bridge resolves *iff* the two roots agree.
 
 **This is a pull, not a push.** Delivery latency is one FO loop cadence: the captain's intent is read whenever the FO next idles or boots, never instantly. Bridge's UI says as much ("queued — read on the FO's next tick"); do not promise synchronous delivery.
 
 **Your workflow slug.** Several FOs (one per commissioned workflow) can share one repo root and one `_bridge/` dir; everything below is scoped to THIS FO's workflow by its slug. Derive the slug once and validate it — it names the per-workflow cursor and heartbeat files, and an unsafe value must never escape `_bridge/`:
 
 ```
-SLUG=$(basename "{workflow_dir}")
+SLUG=$(basename "{dir}")
 case "$SLUG" in
   ""|.|..)            echo "bridge-inbox: empty/relative slug — skipping" >&2; exit 0 ;;
   *[!A-Za-z0-9._-]*)  echo "bridge-inbox: unsafe slug '$SLUG' — skipping" >&2; exit 0 ;;
@@ -31,14 +33,17 @@ esac
 
 **Consume by a per-workflow cursor, never by rewrite.** Bridge only appends to the one shared `inbox.jsonl`; this mod advances only `_bridge/.inbox-cursor.$SLUG` (the count of inbox lines this workflow's FO has processed). Each workflow's FO owns its own cursor, so several FOs draining the same inbox never clobber each other, and re-firing with no new lines is a no-op.
 
+**Run each hook's steps in one shell.** Every Bash invocation is a fresh shell, so `$SLUG` (and `$CURSOR`) only persist within a single invocation. Begin each hook below by deriving and validating `$SLUG` (the block above), then run that hook's heartbeat and drain steps in the **same** shell — do not split the heartbeat and drain into separate invocations that each expect `$SLUG` to already be set, or the second runs with an empty slug and writes a stray `_bridge/fo..json` Bridge never reads.
+
 ## Hook: startup
 
-1. Write the heartbeat (see **Heartbeat** below) so Bridge shows this workflow attached as soon as the FO boots.
-2. Drain any intent the captain queued while no FO was attached, so a freshly-booted FO picks up standing instructions before its first dispatch — run the **Drain** procedure below.
+1. Derive and validate `$SLUG` (above), in the shell you run the rest of this tick in.
+2. Write the heartbeat (see **Heartbeat** below) so Bridge shows this workflow attached as soon as the FO boots.
+3. Drain any intent the captain queued while no FO was attached, so a freshly-booted FO picks up standing instructions before its first dispatch — run the **Drain** procedure below.
 
 ## Hook: idle
 
-Refresh the heartbeat, then drain.
+Derive and validate `$SLUG` (above) in this tick's shell, then refresh the heartbeat and drain — all in the same shell.
 
 ### Heartbeat
 
@@ -77,3 +82,5 @@ Drain newly-queued captain intent addressed to this workflow, if any:
 6. Report to the captain: how many intents you drained (for this workflow) and what you did with each.
 
 If a record is malformed (not valid JSON, or an unknown `kind`), skip it but still advance the cursor past it, and note the skip to the captain — never block the loop on a bad record.
+
+**Delivery is at-least-once, not exactly-once.** The cursor advances only *after* you act (step 5 follows step 4), so nothing is lost if the loop dies mid-drain. The trade-off: a crash between acting and writing the cursor re-delivers that batch on the next tick. Treat `conn`/`tell` handling as idempotent — re-adopting a `conn` you already hold (or re-relinquishing one you already gave back) is a no-op, and a repeated `tell` is at worst a duplicate acknowledgement. (This is distinct from the first-run migration seed above, which guards against re-applying the *entire* pre-versioning history.)
