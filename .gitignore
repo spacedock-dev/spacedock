@@ -22,3 +22,8 @@ dist/
 # profile; .claude holds Claude Code's agent worktrees (full repo checkouts).
 .safehouse
 .claude/
+
+# Bridge seam runtime state — the captain-intent inbox + cursor (drained by the
+# bridge-inbox mod) and the normalized FO event log (emitted by the plugin hook).
+# Transient per-session signals, never repo content.
+_bridge/
