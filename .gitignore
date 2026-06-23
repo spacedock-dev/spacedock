@@ -6,6 +6,10 @@ __pycache__/
 # goreleaser build output (binaries, tarballs, checksums, generated cask).
 dist/
 
+# Local from-source build of the launcher (`go build -o ./spacedock ./cmd/spacedock`,
+# the build-and-run path in CONTRIBUTING.md). A dev artifact, never committed.
+/spacedock
+
 # MkDocs build output. The docs Pages workflow rebuilds `site/` from `docs/site/`
 # + mkdocs.yml on every run; it is a generated artifact, never committed.
 /site/
