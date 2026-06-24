@@ -6,6 +6,8 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 
 **Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call (it forwards each returned spawn spec to the spawn call with the same verbatim discipline as `«dispatch.build»` output). Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
 
+In fleet mode (shared core `## Fleet Mode`) the session team accumulates the UNION of every member workflow's declared standing teammates, each injected at that member's first dispatch. Injection stays idempotent, so members declaring the same teammate name share ONE live instance; read each such teammate's routing usage from the owning member's mod.
+
 For each entity reported by `status --next`:
 
 1. Read the entity file and the target stage definition.
@@ -144,3 +146,5 @@ These are FO-internal scheduling reads — consume them as `--json` (compact, by
 - → **prose**, becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet; the FO hand-follows the skeleton above.
 
 Repeat from step 1 after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.
+
+**Fleet mode — round-robin across member workflows.** When the session adopted a member set (shared core `## Fleet Mode`), wrap `«dispatch.next-action»()` in an outer round-robin over members: run one iteration scoped to each member's `{workflow_dir}` (every `status` / `dispatch` / `--set` call already carries `--workflow-dir`, so no command changes), dispatching whichever members have ready work. The fleet iteration ends only when NO member is dispatchable; the idle-hook + `«roster-reconcile»` step-0 sweep (when PRESENT) fires once across the shared roster — the roster spans every member's workers, so one reconcile covers the fleet. A single-member set is byte-identical to single-workflow mode. A per-member halt (rebase-conflict, unmet clarification, a gate awaiting the captain) suspends only that member's slot; the round-robin keeps advancing the others.
