@@ -6,6 +6,24 @@ How the shared ensign core executes on Claude Code.
 
 The ensign is dispatched by the first officer via the Agent tool. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
 
+## Bridge Session Link
+
+As your FIRST action after reading your assignment (before stage work), record this session→entity link so the Bridge command-center UI shows the entity you are driving as **running** in real time. Bridge joins the `_bridge/events.jsonl` activity stream — which carries your `session_id` but not the entity — against this file, so without it your live work cannot be tied to a ship. Run it once, in one shell:
+
+```
+SID="${CLAUDE_CODE_SESSION_ID:-}"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+case "$SID" in ""|*[!A-Za-z0-9._-]*) SID="" ;; esac   # skip on an unset/unsafe id
+if [ -n "$SID" ] && [ -n "$ROOT" ]; then
+  mkdir -p "$ROOT/_bridge/sessions" 2>/dev/null &&
+  printf '{"session_id":"%s","entity":"%s","stage":"%s"}\n' \
+    "$SID" "ENTITY_SLUG" "STAGE_NAME" > "$ROOT/_bridge/sessions/$SID.json" 2>/dev/null
+fi
+true
+```
+
+Substitute `ENTITY_SLUG` with your entity's slug (the entity file's basename without `.md`, or its parent directory name for an `index.md` entity) and `STAGE_NAME` with your assigned stage. This is observe-only liveness: every step degrades to a no-op, so never let it block or fail your assignment, and you do not need to update or remove it — a finished session simply stops appearing in the live stream, and Bridge derives liveness from the event stream, not this file's age.
+
 ## Clarification
 
 If requirements are unclear or ambiguous, ask for clarification via `SendMessage(to="team-lead")` rather than guessing. Describe what you understand and what's ambiguous so team-lead can get you a quick answer.
