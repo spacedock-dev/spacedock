@@ -26,7 +26,7 @@ esac
 **Inbox record schema** (one JSON object per line, written by Bridge):
 
 ```
-{"ts": "<rfc3339>", "kind": "tell" | "conn", "text": "<string>", "granted": <bool, conn only>, "target": "<workflow-slug>" | "all"}
+{"ts": "<rfc3339>", "kind": "tell" | "conn" | "decision", "text": "<string>", "granted": <bool, conn only>, "target": "<workflow-slug>" | "all", "entity": "<slug, decision only>", "field": "<frontmatter field, decision only>", "value": "<value, decision only>"}
 ```
 
 `target` routes the intent. Act on a record only when `target == "$SLUG"` **or** `target == "all"`; a **missing/empty `target` means `all`** (backward-compatible with older Bridge records, which carried no target). A record targeted at another workflow is skipped — but still counts as processed, so this workflow's cursor advances past it.
@@ -75,9 +75,10 @@ Drain newly-queued captain intent addressed to this workflow, if any:
    sed -n "$((CURSOR + 1)),${NEW}p" _bridge/inbox.jsonl
    ```
    If `NEW` is not greater than `CURSOR`, there is nothing new — skip (idempotent).
-4. For each new record, in order, parse `kind` / `text` / `granted` / `target`. **Check the target first:** if `target` is present and is neither `"$SLUG"` nor `"all"`, this record is for another workflow's FO — skip it (it is not yours to act on); it still counts as processed (the cursor advances past it in step 5). Otherwise (target is `"$SLUG"`, `"all"`, or absent) act:
+4. For each new record, in order, parse `kind` / `text` / `granted` / `target` (and `entity` / `field` / `value` on a `decision` record). **Check the target first:** if `target` is present and is neither `"$SLUG"` nor `"all"`, this record is for another workflow's FO — skip it (it is not yours to act on); it still counts as processed (the cursor advances past it in step 5). Otherwise (target is `"$SLUG"`, `"all"`, or absent) act:
    - **`kind == "tell"`** — the captain sent you a message. Treat `text` as a directive or clarification for this tick: act on it as you would a captain instruction (commission or clear work, answer the implied question, adjust course), and acknowledge it to the captain.
    - **`kind == "conn"`** — a conn-handover change. `granted: true` → adopt the conn within the stated goal `text`: drive the entities the conn covers to done without stopping at their gates, per the conn rules in `first-officer-shared-core` (escalations remain non-delegable and still surface to the captain). `granted: false` → take the conn back: stop at every gate for the captain's call again.
+   - **`kind == "decision"`** — the captain resolved a self-described decision gate from Bridge (Bridge cannot perform the gate's external side-effects — a Linear write, a label — so it queues the decision here instead of advancing the entity). Resolve `entity` (its slug) in THIS workflow, then treat `field`/`value` as the captain's gate verdict: set the field with `${SPACEDOCK_BIN:-spacedock} status --set --workflow-dir {dir} <entity> <field>=<value>`, then drive that entity through its current gate exactly as if the captain had decided it at the gate — your normal gate-resolution runs the workflow's own stage actions (including any external writes the stage prose defines) and advances it. Idempotent: if the entity is already resolved/terminal with that value, it is a no-op. If `entity` does not resolve in this workflow (it belongs to another member's slug), skip it like a mismatched target. Acknowledge to the captain which entity you resolved and how.
 5. Advance this workflow's cursor to the snapshot you read: `echo "$NEW" > _bridge/.inbox-cursor.$SLUG`.
 6. Report to the captain: how many intents you drained (for this workflow) and what you did with each.
 
