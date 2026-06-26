@@ -85,10 +85,35 @@ func TestEventHookWritesSessionMarker(t *testing.T) {
 		}
 	}
 
-	// 4. _archive entity Reads are skipped (workflow dir starting with _ is rejected).
+	// 4. _archive entity Reads are skipped.
 	arch := filepath.Join(root, "docs", "spacedock", "linear-drc-review", "_archive", "drc-1.md")
 	runEventHook(t, readPayload(root, "ses-arch", "spacedock:ensign", arch))
 	if _, err := os.Stat(filepath.Join(root, "_bridge", "sessions", "ses-arch.json")); err == nil {
 		t.Errorf("_archive Read should not produce a session marker")
+	}
+
+	// 5. SPLIT-ROOT entity path: the entity now lives at <wf>/.spacedock-state/<slug>.md,
+	// so the workflow must be derived from the segment after docs/spacedock/ — NOT the
+	// entity's parent dir (which would wrongly be ".spacedock-state").
+	sr := filepath.Join(root, "docs", "spacedock", "linear-drc-review", ".spacedock-state", "drc-8000.md")
+	runEventHook(t, readPayload(root, "ses-sr", "spacedock:ensign", sr))
+	srData, err := os.ReadFile(filepath.Join(root, "_bridge", "sessions", "ses-sr.json"))
+	if err != nil {
+		t.Fatalf("split-root Read produced no marker: %v", err)
+	}
+	for _, want := range []string{`"entity":"drc-8000"`, `"workflow":"linear-drc-review"`} {
+		if !strings.Contains(string(srData), want) {
+			t.Errorf("split-root marker missing %s (workflow must be the dir above .spacedock-state)\ngot: %s", want, srData)
+		}
+	}
+	if strings.Contains(string(srData), `.spacedock-state`) {
+		t.Errorf("split-root marker wrongly recorded the state dir as the workflow: %s", srData)
+	}
+
+	// 6. SPLIT-ROOT _archive: an archived entity in the state checkout is still skipped.
+	srArch := filepath.Join(root, "docs", "spacedock", "linear-drc-review", ".spacedock-state", "_archive", "drc-9.md")
+	runEventHook(t, readPayload(root, "ses-srarch", "spacedock:ensign", srArch))
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "sessions", "ses-srarch.json")); err == nil {
+		t.Errorf("split-root _archive Read should not produce a session marker")
 	}
 }

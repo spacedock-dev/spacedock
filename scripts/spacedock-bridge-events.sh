@@ -66,12 +66,19 @@ if [ -n "$m_sid" ] && [ "$m_type" = "spacedock:ensign" ] && [ "$m_evt" = "PostTo
     fp="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
     case "$fp" in
       */docs/spacedock/*/*.md|docs/spacedock/*/*.md)   # absolute OR repo-relative (the FO passes a relative {entity_file_path})
-        if [ "$(basename "$fp")" = "index.md" ]; then   # folder entity: <wf>/<slug>/index.md
-          slug="$(basename "$(dirname "$fp")")"; wf="$(basename "$(dirname "$(dirname "$fp")")")"
-        else                                            # flat entity: <wf>/<slug>.md
-          slug="$(basename "$fp" .md)"; wf="$(basename "$(dirname "$fp")")"
+        # Workflow = the path segment right AFTER docs/spacedock/ — robust to a
+        # split-root entity nested under <wf>/.spacedock-state/<slug>.md (taking the
+        # entity's parent dir would wrongly yield ".spacedock-state").
+        rest="${fp##*/docs/spacedock/}"   # absolute / nested: strip through the last /docs/spacedock/
+        rest="${rest#docs/spacedock/}"    # repo-relative: strip the leading docs/spacedock/
+        wf="${rest%%/*}"                  # first segment after docs/spacedock/ = the workflow dir
+        if [ "$(basename "$fp")" = "index.md" ]; then   # folder entity: .../<slug>/index.md
+          slug="$(basename "$(dirname "$fp")")"
+        else                                            # flat entity: .../<slug>.md
+          slug="$(basename "$fp" .md)"
         fi
-        case "$wf"   in ""|_*|*[!A-Za-z0-9._-]*) wf="" ;; esac        # skip _archive/_mods, unsafe
+        case "$fp"   in */_archive/*) wf="" ;; esac                  # never mark an archived (terminal) entity
+        case "$wf"   in ""|_*|*[!A-Za-z0-9._-]*) wf="" ;; esac        # skip _-dirs, unsafe
         case "$slug" in ""|README|*[!A-Za-z0-9._-]*) slug="" ;; esac
         if [ -n "$slug" ] && [ -n "$wf" ]; then
           mkdir -p "$dir/sessions" 2>/dev/null &&
