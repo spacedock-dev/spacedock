@@ -46,6 +46,42 @@ printf '%s' "$payload" | jq -c \
      }
    }' >> "$events" 2>/dev/null || exit 0
 
+# ── Session→entity marker (DETERMINISTIC running-badge source) ───────────────────────
+# Bridge maps a live working session to its ship via «cwd»/_bridge/sessions/<session_id>.json.
+# Derive it HERE — from the hook, which fires on every tool call — instead of relying on the
+# ensign to run a first-action shell (it skips that ~3/4 of the time). On an ENSIGN's first
+# Read of its entity file (.../docs/spacedock/<workflow>/<slug>.md, flat or <slug>/index.md),
+# record {session_id, entity, workflow}: the path carries BOTH the workflow (so Bridge's join
+# is collision-free across workflows that reuse a ticket id) and the full slug. First-write-
+# wins per session, so the ensign's OWN entity — read before any duplicate-check sibling reads
+# — is what gets recorded. Observe-only and best-effort: every step degrades to a no-op.
+m_sid="$(printf '%s' "$payload" | jq -r '.session_id // empty' 2>/dev/null)"
+m_type="$(printf '%s' "$payload" | jq -r '.agent_type // empty' 2>/dev/null)"
+m_evt="$(printf '%s' "$payload" | jq -r '.hook_event_name // empty' 2>/dev/null)"
+m_tool="$(printf '%s' "$payload" | jq -r '.tool_name // empty' 2>/dev/null)"
+case "$m_sid" in *[!A-Za-z0-9._-]*) m_sid="" ;; esac   # unsafe id → skip (never escape _bridge/)
+if [ -n "$m_sid" ] && [ "$m_type" = "spacedock:ensign" ] && [ "$m_evt" = "PostToolUse" ] && [ "$m_tool" = "Read" ]; then
+  marker="$dir/sessions/$m_sid.json"
+  if [ ! -f "$marker" ]; then   # first-write-wins → the ensign's own entity (read first)
+    fp="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
+    case "$fp" in
+      */docs/spacedock/*/*.md)
+        if [ "$(basename "$fp")" = "index.md" ]; then   # folder entity: <wf>/<slug>/index.md
+          slug="$(basename "$(dirname "$fp")")"; wf="$(basename "$(dirname "$(dirname "$fp")")")"
+        else                                            # flat entity: <wf>/<slug>.md
+          slug="$(basename "$fp" .md)"; wf="$(basename "$(dirname "$fp")")"
+        fi
+        case "$wf"   in ""|_*|*[!A-Za-z0-9._-]*) wf="" ;; esac        # skip _archive/_mods, unsafe
+        case "$slug" in ""|README|*[!A-Za-z0-9._-]*) slug="" ;; esac
+        if [ -n "$slug" ] && [ -n "$wf" ]; then
+          mkdir -p "$dir/sessions" 2>/dev/null &&
+          printf '{"session_id":"%s","entity":"%s","workflow":"%s"}\n' "$m_sid" "$slug" "$wf" > "$marker" 2>/dev/null || :
+        fi
+        ;;
+    esac
+  fi
+fi
+
 # Best-effort size cap: a liveness side-channel must not grow without bound (PostToolUse
 # fires on every tool call). When the log passes max_lines, keep only the most recent
 # keep_lines. Lock-free and best-effort by design — this is liveness, not a ledger, so

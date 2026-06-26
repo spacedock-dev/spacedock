@@ -1,7 +1,7 @@
-// ABOUTME: Bridge session-link smoke — runs the EXACT shell the Claude ensign
-// ABOUTME: runtime documents (extracted from the doc, no drift) and asserts it
-// ABOUTME: writes the _bridge/sessions/<session_id>.json map Bridge joins against
-// ABOUTME: events.jsonl to show the ensign's entity as RUNNING in real time.
+// ABOUTME: Bridge session-marker smoke — the event hook deterministically records
+// ABOUTME: a dispatched ensign's session→entity(+workflow) link from its entity-file
+// ABOUTME: Read, so Bridge's "running" badge no longer depends on the ensign running
+// ABOUTME: a first-action shell (which it skipped ~3/4 of the time). DRC running-badge.
 package integration
 
 import (
@@ -12,100 +12,67 @@ import (
 	"testing"
 )
 
-// firstFencedBlock returns the first ``` ... ``` block that follows the given
-// heading line in a markdown file. Running the doc's own snippet (rather than a
-// copy) keeps this test honest: if the documented shell is removed or its contract
-// changes, the extraction fails or the assertions break.
-func firstFencedBlock(t *testing.T, path, heading string) string {
+// runEventHook feeds one hook payload (the JSON Claude Code pipes to the hook) to
+// scripts/spacedock-bridge-events.sh and returns once it exits. cwd anchors the
+// _bridge/ dir the hook writes to.
+func runEventHook(t *testing.T, payload string) {
 	t.Helper()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
+	hook := filepath.Join("..", "..", "scripts", "spacedock-bridge-events.sh")
+	if _, err := os.Stat(hook); err != nil {
+		t.Fatalf("hook script not found at %s: %v", hook, err)
 	}
-	lines := strings.Split(string(data), "\n")
-	i := 0
-	for ; i < len(lines); i++ {
-		if strings.TrimSpace(lines[i]) == heading {
-			break
-		}
+	cmd := exec.Command("bash", hook)
+	cmd.Stdin = strings.NewReader(payload)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("event hook failed: %v\n%s", err, out)
 	}
-	if i == len(lines) {
-		t.Fatalf("heading %q not found in %s", heading, path)
-	}
-	// Find the opening fence after the heading.
-	for ; i < len(lines); i++ {
-		if strings.HasPrefix(strings.TrimSpace(lines[i]), "```") {
-			break
-		}
-	}
-	if i == len(lines) {
-		t.Fatalf("no fenced block after %q in %s", heading, path)
-	}
-	var body []string
-	for j := i + 1; j < len(lines); j++ {
-		if strings.HasPrefix(strings.TrimSpace(lines[j]), "```") {
-			return strings.Join(body, "\n")
-		}
-		body = append(body, lines[j])
-	}
-	t.Fatalf("unterminated fenced block after %q in %s", heading, path)
-	return ""
 }
 
-// gitInitBare returns a fresh temp dir initialized as a git repo (no commit needed)
-// so the documented snippet's `git rev-parse --show-toplevel` resolves to it.
-func gitInitBare(t *testing.T) string {
-	t.Helper()
-	dir := t.TempDir()
-	cmd := exec.Command("git", "init", "-q")
-	cmd.Dir = dir
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, out)
-	}
-	return dir
+func readPayload(cwd, sid, agentType, filePath string) string {
+	return `{"cwd":"` + cwd + `","session_id":"` + sid + `","agent_type":"` + agentType +
+		`","hook_event_name":"PostToolUse","tool_name":"Read","tool_input":{"file_path":"` + filePath + `"}}`
 }
 
-// TestEnsignBridgeSessionLink runs the documented session-link shell and proves it
-// writes the session→entity map keyed by CLAUDE_CODE_SESSION_ID at the repo root —
-// the producer half of Bridge's live "running" badge.
-func TestEnsignBridgeSessionLink(t *testing.T) {
-	doc := filepath.Join("..", "ensign", "references", "claude-ensign-runtime.md")
-	snippet := firstFencedBlock(t, doc, "## Bridge Session Link")
-	// Substitute the placeholders an ensign fills from its assignment.
-	snippet = strings.ReplaceAll(snippet, "ENTITY_SLUG", "drc-3339")
-	snippet = strings.ReplaceAll(snippet, "STAGE_NAME", "review")
+// TestEventHookWritesSessionMarker locks the deterministic producer: an ensign's
+// Read of its entity file records {session_id, entity, workflow} — carrying the
+// workflow so Bridge's join is collision-free — and it is first-write-wins (a later
+// sibling Read does not overwrite), while a non-ensign (FO) Read writes nothing.
+func TestEventHookWritesSessionMarker(t *testing.T) {
+	root := t.TempDir()
+	ent := filepath.Join(root, "docs", "spacedock", "linear-drc-review", "drc-3467.md")
 
-	root := gitInitBare(t) // so `git rev-parse --show-toplevel` resolves to root
-	const sid = "ses-abc-123"
-
-	cmd := exec.Command("bash", "-c", snippet)
-	cmd.Dir = root
-	cmd.Env = append(os.Environ(), "CLAUDE_CODE_SESSION_ID="+sid)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("documented session-link shell failed: %v\n%s", err, out)
-	}
-
-	marker := filepath.Join(root, "_bridge", "sessions", sid+".json")
+	// 1. Ensign reads its own entity file → marker written with entity + workflow.
+	runEventHook(t, readPayload(root, "ses-1", "spacedock:ensign", ent))
+	marker := filepath.Join(root, "_bridge", "sessions", "ses-1.json")
 	data, err := os.ReadFile(marker)
 	if err != nil {
-		t.Fatalf("session→entity marker not written at %s: %v", marker, err)
+		t.Fatalf("marker not written: %v", err)
 	}
 	got := string(data)
-	for _, want := range []string{`"session_id":"ses-abc-123"`, `"entity":"drc-3339"`, `"stage":"review"`} {
+	for _, want := range []string{`"session_id":"ses-1"`, `"entity":"drc-3467"`, `"workflow":"linear-drc-review"`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("marker missing %s\ngot: %s", want, got)
 		}
 	}
 
-	// Safety contract: an unset session id must be a clean no-op (no stray file).
-	root2 := gitInitBare(t)
-	cmd2 := exec.Command("bash", "-c", snippet)
-	cmd2.Dir = root2
-	cmd2.Env = append(os.Environ(), "CLAUDE_CODE_SESSION_ID=")
-	if out, err := cmd2.CombinedOutput(); err != nil {
-		t.Fatalf("snippet must no-op (exit 0) on unset id, got: %v\n%s", err, out)
+	// 2. First-write-wins: a later sibling Read in the same session must NOT overwrite.
+	sibling := filepath.Join(root, "docs", "spacedock", "linear-drc-review", "drc-9999.md")
+	runEventHook(t, readPayload(root, "ses-1", "spacedock:ensign", sibling))
+	data2, _ := os.ReadFile(marker)
+	if !strings.Contains(string(data2), `"entity":"drc-3467"`) {
+		t.Errorf("sibling Read overwrote the marker (lost first-write-wins):\n%s", data2)
 	}
-	if entries, _ := os.ReadDir(filepath.Join(root2, "_bridge", "sessions")); len(entries) != 0 {
-		t.Errorf("unset session id should write nothing, found %d files", len(entries))
+
+	// 3. A non-ensign (FO) Read of an entity file writes no marker.
+	runEventHook(t, readPayload(root, "fo-sess", "spacedock:first-officer", ent))
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "sessions", "fo-sess.json")); err == nil {
+		t.Errorf("FO Read should not produce a session marker")
+	}
+
+	// 4. _archive entity Reads are skipped (workflow dir starting with _ is rejected).
+	arch := filepath.Join(root, "docs", "spacedock", "linear-drc-review", "_archive", "drc-1.md")
+	runEventHook(t, readPayload(root, "ses-arch", "spacedock:ensign", arch))
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "sessions", "ses-arch.json")); err == nil {
+		t.Errorf("_archive Read should not produce a session marker")
 	}
 }
