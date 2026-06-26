@@ -85,3 +85,19 @@ Drain newly-queued captain intent addressed to this workflow, if any:
 If a record is malformed (not valid JSON, or an unknown `kind`), skip it but still advance the cursor past it, and note the skip to the captain — never block the loop on a bad record.
 
 **Delivery is at-least-once, not exactly-once.** The cursor advances only *after* you act (step 5 follows step 4), so nothing is lost if the loop dies mid-drain. The trade-off: a crash between acting and writing the cursor re-delivers that batch on the next tick. Treat `conn`/`tell` handling as idempotent — re-adopting a `conn` you already hold (or re-relinquishing one you already gave back) is a no-op, and a repeated `tell` is at worst a duplicate acknowledgement. (This is distinct from the first-run migration seed above, which guards against re-applying the *entire* pre-versioning history.)
+
+## Feed
+
+Bridge's fleet-history rail shows the FO's narration. For a workflow whose entities are committed it can read the `dispatch:`/`advance:` git narration — but a local-only workflow (entities gitignored; no such commits) leaves that history empty even while you drive. So append a narration line to `_bridge/fo-feed.jsonl` (relative to the repo root, the same `_bridge/` the heartbeat and inbox use) each time you **dispatch**, **advance**, or **complete** an entity:
+
+```
+mkdir -p _bridge
+printf '{"ts":"%s","verb":"%s","entity":"%s","workflow":"%s","stage":"%s","text":"%s"}\n' \
+  "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "dispatch" "{slug}" "$SLUG" "{stage}" "{short note}" \
+  >> _bridge/fo-feed.jsonl
+```
+
+- `verb` is `dispatch` (you sent an ensign to a stage), `advance` (you moved an entity to its next stage), or `complete` (an entity reached terminal).
+- `entity` is the entity slug; `workflow` is `$SLUG` (this member's workflow); `stage` is the stage entered.
+- `text` is a one-line human summary (≤120 chars, no newlines or `"`). Keep it factual — the captain reads this stream to follow the drive.
+- Append-only and best-effort, exactly like the event stream: never let it block or fail the loop, and never rewrite the file (Bridge tails it; a concurrent append is fine). It is gitignored session runtime, like `events.jsonl`.
