@@ -65,7 +65,7 @@ if [ -n "$m_sid" ] && [ "$m_type" = "spacedock:ensign" ] && [ "$m_evt" = "PostTo
   if [ ! -f "$marker" ]; then   # first-write-wins → the ensign's own entity (read first)
     fp="$(printf '%s' "$payload" | jq -r '.tool_input.file_path // empty' 2>/dev/null)"
     case "$fp" in
-      */docs/spacedock/*/*.md)
+      */docs/spacedock/*/*.md|docs/spacedock/*/*.md)   # absolute OR repo-relative (the FO passes a relative {entity_file_path})
         if [ "$(basename "$fp")" = "index.md" ]; then   # folder entity: <wf>/<slug>/index.md
           slug="$(basename "$(dirname "$fp")")"; wf="$(basename "$(dirname "$(dirname "$fp")")")"
         else                                            # flat entity: <wf>/<slug>.md

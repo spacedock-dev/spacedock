@@ -69,6 +69,22 @@ func TestEventHookWritesSessionMarker(t *testing.T) {
 		t.Errorf("FO Read should not produce a session marker")
 	}
 
+	// 3b. RELATIVE entity path — the FO passes a repo-relative {entity_file_path}, so
+	// the ensign's scoped Read carries "docs/spacedock/<wf>/<slug>.md" (no leading
+	// slash). The hook must still record it (regression: the absolute-only pattern
+	// missed every live ensign).
+	runEventHook(t, readPayload(root, "ses-rel", "spacedock:ensign",
+		"docs/spacedock/linear-drc-review/drc-7000.md"))
+	relData, err := os.ReadFile(filepath.Join(root, "_bridge", "sessions", "ses-rel.json"))
+	if err != nil {
+		t.Fatalf("relative-path Read produced no marker (the live-ensign regression): %v", err)
+	}
+	for _, want := range []string{`"entity":"drc-7000"`, `"workflow":"linear-drc-review"`} {
+		if !strings.Contains(string(relData), want) {
+			t.Errorf("relative-path marker missing %s\ngot: %s", want, relData)
+		}
+	}
+
 	// 4. _archive entity Reads are skipped (workflow dir starting with _ is rejected).
 	arch := filepath.Join(root, "docs", "spacedock", "linear-drc-review", "_archive", "drc-1.md")
 	runEventHook(t, readPayload(root, "ses-arch", "spacedock:ensign", arch))
