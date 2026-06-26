@@ -19,7 +19,7 @@ Read the assignment context provided by the first officer. It defines:
 2. If you were given a worktree path, keep all reads, writes, and commits under that worktree.
 3. Perform the work described in the stage definition.
 4. Update the entity file body, not the frontmatter.
-5. Commit your work before signaling completion.
+5. Commit your work before signaling completion — but ONLY to your isolated commit target: a worktree (commit there) or, for a split-root workflow, the state checkout (path-scoped, below). **NEVER `git add` / `git commit` at the bare repo root.** A single-root, non-worktree stage has no ensign commit target (see **Single-Root, No Commit Target** below) — write the entity in place and signal; do not commit.
 
 ## Proving your work
 
@@ -43,12 +43,20 @@ When the workflow is split-root (README declares `state:` checkout, e.g. `state:
 
 **Rebase-conflict halt.** If `pull --rebase` CONFLICTS (two writers editing the SAME entity's frontmatter), HALT, `git -C {state_checkout} rebase --abort`, surface the conflicting entity path(s) and peer commit to the first officer, and stop. Do NOT `--force` / `--force-with-lease` push; do NOT auto-resolve (`-X ours/theirs` or discarding either side silently loses a peer's edit). This is manual intervention — the escalate-rather-than-guess discipline below.
 
+### Single-Root, No Commit Target
+
+A workflow that is single-root (no `state:` checkout declared) AND gives you no worktree path has **no ensign commit target**. Its entity files live alongside the code at the repo root and are typically local-only (gitignored; the durable record is the entity write plus whatever external system the stage writes to — e.g. a Linear update). For such a stage:
+
+- Write the entity file (and perform the stage's external write, e.g. the Linear change) — **that is your deliverable**. There is nothing for you to git-commit.
+- **NEVER run `git add` / `git commit` (or `git -f add`) at the repo root.** You share that working tree with the first officer and every other non-worktree agent, and it can be on any branch a concurrent actor switched it to. A bare-root commit lands your entity on whatever branch happens to be checked out — polluting an unrelated branch, and (on a branch whose `.gitignore` lacks this workflow's rule) committing a file that is meant to stay local. Trunk/state-transition commits are the **first officer's** scope (it owns them), not yours.
+- Do not `git checkout` / switch branches, and do not assume any particular branch — your work does not depend on it.
+
 ## Rules
 
 - Do NOT modify YAML frontmatter in entity files.
 - Do NOT modify files under `agents/` or `references/` — plugin scaffolding.
 - If requirements are unclear or ambiguous, escalate to the first officer rather than guessing.
-- **MUST commit before signaling completion.** Signaling done without committing forces the FO to re-dispatch just to get a commit — the most common cause of nudge loops. If unsure whether work is complete, commit what you have and signal with concerns rather than going idle uncommitted.
+- **MUST commit before signaling completion — to your commit target, never the bare repo root.** When you have a worktree or split-root state checkout, commit there before signaling; skipping it forces the FO to re-dispatch just to get a commit (the most common nudge-loop cause). When you have neither (a single-root, non-worktree stage — see **Single-Root, No Commit Target**), there is nothing to commit: leave the entity written in place and signal. Either way, **never `git add` / `git commit` at the bare repo root.** If unsure whether work is complete, commit what you have to your target (or, with no target, leave it written) and signal with concerns rather than going idle.
 - **Do not idle between steps.** If you are mid-task with remaining work, the next action is the next step — not waiting for external input. The stage definition is your complete specification.
 
 ## Background Bash Discipline
