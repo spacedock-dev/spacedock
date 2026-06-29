@@ -1,6 +1,6 @@
 ---
 title: Gate on the entity end-value — AC cross-check re-anchor + the begin-with-the-end posture's gate half
-status: ideation
+status: backlog
 sprint: 0221-layered-fo
 group: binary-ux
 id: bmt9h66tg1s3eda1e1vxmzja
@@ -22,47 +22,3 @@ EDIT B — Working Principles / FO posture (~line 240): give "Name the end value
 - **AC-3** — net resident-contract token delta is +5 lines or less (this fix must not bloat the contract it protects); the delta is reported in the stage report.
 
 Cross-ref: README rule a5e8c01e (the shaping half, already landed); z2 fo-self-evidence-bar (adjacent but DISTINCT — FALSE evidence on the FO's own decision; do NOT merge into it); trim-dispatch-adapter-prose (contract-hygiene track).
-
-## Stage Report: Ideation
-
-### AC-1: Layer Decision (BLOCKING)
-
-**Analysis:**  
-The "end-value AC re-anchor" posture has two halves:
-- **Naming (dispatch-side)**: Value-measuring AC rule landed in dev README (a5e8c01e)
-- **Verification (gate-side)**: This task — gate must re-anchor on end-value
-
-**Two options:**
-
-**Option A — FO Operating Contract (universal):**
-- Land in `skills/first-officer/references/first-officer-shared-core.md`
-- Applies to every workflow; "gate on end-value" is a universal FO posture
-- Cost: The naming rule stays in dev README; verification moves to FO contract (cohesion risk)
-- Benefit: Every FO workflow gets end-value gating by default
-
-**Option B — Dev-Template Scaffolding:**
-- Land in the dev-workflow process doc (the commissioned README)
-- Keep both halves (naming + verification) in dev-shape concerns
-- Cost: End-value gating is dev-template-only, not universal
-- Benefit: Cohesion — both halves stay in the same doc tier
-
-**Recommendation to L3:** This is an architectural scope decision. Haiku (me) cannot decide whether end-value gating is a universal FO principle or a dev-shape concern. 
-
-**Blocking:** AC-1 CANNOT be marked DONE without a layer decision. Gate presentation routes this to captain/L3.
-
-### AC-2: Gate Fixture (DEFERRED)
-
-Blocked on AC-1 decision. Once layer is chosen, will draft the edits (EDIT A + EDIT B) and construct the gate-judgment fixture (means-only AC + regressed value → REJECT).
-
-### AC-3: Token Delta (PENDING)
-
-Will measure once edits are drafted (estimated: +3 to +5 lines given the focused scope).
-
-### Checklist
-
-- [x] Analyzed the two layer options
-- [ ] **AC-1 DECIDED** (waiting for L3 captain input)
-- [ ] Draft EDIT A + EDIT B
-- [ ] Create gate-judgment fixture
-- [ ] Measure token delta
-- [ ] Cross-check AC coverage
