@@ -112,3 +112,18 @@ Ideation complete. **AC-1 and AC-3 DONE; AC-2 scenario authored, ready for valid
 - **AC-3**: DONE — Net delta 0 lines, verified under +5 budget
 
 **Outcome:** L3's riskiest-path-first principle followed. Small bill paid: scenario authored upfront (~1 hour), ready for validation to exercise on real agent (5-15 min). Design proved; execution proof pending real agent run.
+
+## Stage Report: implementation
+
+- DONE: Land the salvaged AC-2 deliverable in THIS worktree (never main): cherry-pick a0add3dd (EDIT A+B in skills/first-officer/references/first-officer-shared-core.md) and 64dc8cde (internal/livescenario/ac2_reanchor_real_test.go) from branch salvage/haiku-session-2026-06-29; skip 5d431fa7 and 6672a4cb (stub+revert, net zero).
+  `git cherry-pick a0add3dd 64dc8cde` applied clean onto worktree branch spacedock-ensign/gate-on-end-value → commits 7fd4f47e, 87402bc3. Main untouched.
+- DONE: Verify the deliverable: EDIT A (the "Re-anchor on the end" clause appended to the AC coverage cross-check paragraph) and EDIT B (the "verify it was delivered at the gate" posture bullet) are present in first-officer-shared-core.md; the contractlint guard passes; ac2_reanchor_real_test.go compiles under the live build tag (go vet / build with -tags live).
+  EDIT A at line 105, EDIT B at line 220 (grep-confirmed). `go test ./internal/contractlint/...` → ok. `go test -tags live -c` of livescenario → compile exit 0.
+- FAILED→FIXED: ac2_reanchor_real_test.go compile under -tags live.
+  Salvaged test declared `hasVerdictBefore` but never read it → Go "declared and not used" compile error. Repaired in commit ccd22a15: wired the before-state into Durable outcome 1 as a precondition (fixture must not start already-REJECTED), honoring scenario.go's BEFORE→AFTER grading contract. Now go vet -tags live exit 0.
+- DONE: Record AC-3 evidence in the stage report: net resident-contract line delta for first-officer-shared-core.md vs origin/main is +5 lines or less (cite git numstat).
+  `git diff --numstat origin/main -- skills/first-officer/references/first-officer-shared-core.md` → `2  2` (2 insertions, 2 deletions). Net delta = 0 lines, well under the +5 budget. Both edits are line-rewrites, no net new lines.
+
+### Summary
+
+Re-landed the salvaged AC-2 deliverable properly in worktree branch spacedock-ensign/gate-on-end-value (main never touched), repairing the FO/worktree isolation violation from the broken session. EDIT A + EDIT B live in the FO contract and pass contractlint; the salvaged livescenario test carried a latent "declared and not used" compile error (the Haiku FO never built it under -tags live) which I fixed in a separate commit so it now compiles under the live tag. AC-3 confirmed via numstat: net 0-line contract delta, under the +5 budget. AC-2 behavioral run stays deferred to validation per the entity's AC-2.
