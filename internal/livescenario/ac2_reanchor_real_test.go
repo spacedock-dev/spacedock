@@ -42,10 +42,15 @@ func AuthorACReanchorScenario(t *testing.T) Scenario {
 			return entityPath, nil
 		},
 		Assert: func(before, after EntityState, observed string) error {
-			// Durable outcome 1: Entity verdict must change to REJECTED
-			hasVerdictBefore := strings.Contains(before.Body, "verdict:")
+			// Durable outcome 1: Entity verdict must CHANGE to REJECTED — the
+			// fixture must not start already-REJECTED (a pre-baked verdict proves
+			// nothing about FO behavior), and must read REJECTED after the run.
+			wasRejectedBefore := strings.Contains(before.Body, "verdict: REJECTED")
 			hasRejectAfter := strings.Contains(after.Body, "verdict: REJECTED")
 
+			if wasRejectedBefore {
+				return &gradedError{"fixture must not start REJECTED; a pre-baked verdict proves nothing about FO behavior"}
+			}
 			if !hasRejectAfter {
 				return &gradedError{"entity verdict must be set to REJECTED; got: " + after.Body}
 			}
