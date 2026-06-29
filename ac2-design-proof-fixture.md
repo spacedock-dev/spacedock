@@ -1,5 +1,5 @@
 ---
-id: bmt9h66tg1s3eda1e1vxmz0a
+id: 0qe93g614cam9g0d819jb8hq
 title: AC-2 Design Proof Fixture — Means-Only AC + Regressed End-Value
 status: ideation
 started: 2026-06-29T00:00:00Z
