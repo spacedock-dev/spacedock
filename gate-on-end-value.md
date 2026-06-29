@@ -163,3 +163,19 @@ AC-1 PASS and AC-3 PASS (both independently reproduced via git, non-self-referen
 ### Summary
 
 Independently verified AC-1 (FO-contract layer decision honored; edits in `first-officer-shared-core.md` only) and AC-3 (net 0-line delta via numstat) — both PASS. AC-2's design is sound for its core case and the test compiles under `-tags live`, but the behavioral proof THIS stage owes was not obtained: the dispatch-mandated spot-check showed the nested FO launches but the live credential is rejected (401), and the named scenario `AuthorACReanchorScenario` is unwired/unreachable dead code with false "ready to run" claims. REJECTED — structural/assertion defects route to implementation; the auth gap is environmental (refresh the benchmark-token / use CI auth) to actually run the deferred proof.
+
+## Stage Report: implementation (cycle 1)
+
+Feedback cycle 1 — re-entered implementation in the same worktree to fix validation's two AC-2 findings. AC-1 and AC-3 were unaffected (still PASS).
+
+- DONE: FIX 1 (structural defect) — wire the scenario to a real, reachable `-run` target.
+  Relocated `AuthorACReanchorScenario` out of the unreachable `livescenario` `_test.go` into importable source `internal/livescenario/ac2_reanchor.go` (un-buried per scenario.go's own design note), and added `TestLiveReanchorGateRejectsMeansOnlyRegressed` in `internal/ensigncycle` that builds it and runs it via `livescenario.Run(...)` against the real `claudeRunnerAdapter`. `go test -tags live -list` registers the target (commit 038fbc0e). The "integrates with claudeRunnerAdapter" claim is now true.
+- DONE: FIX 2 (misdesigned assertion) — re-grade on the gate-held observed output, not a self-written verdict.
+  Replaced the `after.Body` `verdict: REJECTED` check (which would RED on a contract-faithful gate-hold) with durable-outcome grading mirroring `TestLivePrimitiveRunsAgainstClaudeAdapter`: UNMUTATED body that stays at `status: ideation` + observed gate review that recommends REJECT and names the re-anchor / end-value-regression reasoning. The now-moot ccd22a15 before-state guard was superseded by this rewrite.
+- DONE: WIRE + COMPILE verification (live run deferred per dispatch — auth 401).
+  `go vet -tags live ./internal/livescenario/ ./internal/ensigncycle/` exit 0; `go test -tags live -c` of ensigncycle (links the live adapter) exit 0; offline `go test ./internal/livescenario/` ok. The live behavioral run is deferred to re-validation once `~/.claude/benchmark-token` is refreshed.
+- NOTE: AC-2 fixture is now self-contained (README + entity written into the temp dir by the scenario's Setup), embodying the same means-only-AC + regressed-end-value shape as the committed `ac2-design-proof-fixture.md` — no hidden dependency on a repo-path read from `t.TempDir()`. The "Expected: REJECT" spoon-feed from the committed fixture's Finding was dropped so the live run actually tests whether the FO applies the re-anchor rule.
+
+### Summary
+
+Fixed both cycle-1 findings: the AC-2 scenario is now wired to a real `-run` target (`TestLiveReanchorGateRejectsMeansOnlyRegressed` in ensigncycle, invoking `livescenario.Run` against the real `claudeRunnerAdapter`), and its assertion grades the gate-held case on observed output + an unmutated body instead of a verdict a contract-faithful FO never writes. Compiles green under `-tags live`; the live behavioral run stays deferred to re-validation per the auth gap.
