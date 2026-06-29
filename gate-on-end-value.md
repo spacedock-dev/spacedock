@@ -127,3 +127,39 @@ Ideation complete. **AC-1 and AC-3 DONE; AC-2 scenario authored, ready for valid
 ### Summary
 
 Re-landed the salvaged AC-2 deliverable properly in worktree branch spacedock-ensign/gate-on-end-value (main never touched), repairing the FO/worktree isolation violation from the broken session. EDIT A + EDIT B live in the FO contract and pass contractlint; the salvaged livescenario test carried a latent "declared and not used" compile error (the Haiku FO never built it under -tags live) which I fixed in a separate commit so it now compiles under the live tag. AC-3 confirmed via numstat: net 0-line contract delta, under the +5 budget. AC-2 behavioral run stays deferred to validation per the entity's AC-2.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 — fo-vs-dev-template layer decision recorded in the ideation report.
+  Decision recorded at the "AC-1 Decision and Rationale" block (FO operating contract). Independently confirmed the edits landed ONLY in `skills/first-officer/references/first-officer-shared-core.md` with NO competing dev-template edit (`git diff --stat origin/main` shows the contract file as the sole deliverable .md). Decision was executed, not just asserted. PASS.
+- DONE: Independently reproduce AC-3 — net first-officer-shared-core.md line delta vs origin/main is +5 or less.
+  `git diff --numstat origin/main -- skills/first-officer/references/first-officer-shared-core.md` → `2 2` = net 0 lines ≤ +5. Objective git measure, not self-referential. PASS.
+- DONE: Reproduce AC-2 design+compile half — re-anchor design sound AND the test compiles under -tags live.
+  `go vet -tags live ./internal/livescenario/` exit 0 and `go test -tags live -c` exit 0 — test COMPILES. Design is sound for its core case (means-only AC + regressed numeric value AC → REJECT); the scrutinized ccd22a15 before-state guard honors scenario.go's BEFORE→AFTER contract and does not weaken the after-assertion. Edge-coverage caveats recorded in Feedback Cycles.
+- FAILED: AC-2 behavioral proof — real FO agent behavior validated in validation stage (the AC-2 requirement THIS stage owes).
+  Not obtained. Two distinct gaps below; one is a deliverable defect, one is environmental. The entity's "ready to run" / "integrates with real claudeRunnerAdapter" claims are FALSE.
+- DONE: Cheap spot-check of the live harness FIRST, then report honestly.
+  Ran `TestLivePrimitiveRunsAgainstClaudeAdapter` (trivial gate-held scenario via claudeRunnerAdapter, fresh worktree binary, worktree plugin root). Nested FO LAUNCHED — booted, loaded the spacedock plugin, reached the API — then hard-failed with HTTP 401 `authentication_failed`. The `~/.claude/benchmark-token` (dated Jun 21) is rejected; `ANTHROPIC_API_KEY` unset. So nested agents *can spawn* here, but no live credential is valid — no live run can complete. (Note: a wrapper `echo` masked this as exit 0; the real `go test` exited 1. Verdict read from the log, not the wrapper.)
+- DONE: Detached adversarial audit of EDIT A/B on a THROWAWAY checkout.
+  Audited on a detached worktree at ccd22a15 (never the implementation worktree). Material findings recorded in Feedback Cycles.
+
+### Feedback Cycles
+
+**Cycle 1 — validation REJECTED (2026-06-29).** Two findings against AC-2; route the structural one to implementation.
+
+1. STRUCTURAL DEFECT (load-bearing, → implementation): `AuthorACReanchorScenario` is UNWIRED and UNREACHABLE. Repo-wide it is referenced only inside its own file — no `Test*` invokes it and no `livescenario.Run(...)` reaches it. It lives in `package livescenario`'s `_test.go`, so it is invisible to `internal/ensigncycle`, the only package holding a real `Runner` (`claudeRunnerAdapter`/`claudeLiveRunner`). There is NO runnable `-run` target; the entity's "Ready to run: go test -tags live -run ... internal/livescenario" and "Integrates with real claudeRunnerAdapter" are false. It is authored dead code that only compiles. The fix is a `TestLive…` in `ensigncycle` that builds the scenario against the adapter and calls `livescenario.Run`.
+2. LIKELY-MISDESIGNED ASSERTION (analysis only — could not be observed under the auth gap): durable-outcome-1 requires `after.Body` to contain `verdict: REJECTED`. A contract-faithful FO PRESENTS-and-STOPS at a gate (writes no verdict) unless given the conn, which the runbook does not grant. The working trivial scenario grades the gate-held case on the OBSERVED output with an UNMUTATED body — the opposite expectation. So even wired+authed, this assertion would likely RED on correct FO behavior. The real proof belongs in the observed gate-review output (re-anchor reasoning + REJECT recommendation), not a self-written verdict.
+
+**Adversarial audit of EDIT A/B prose (NOT clean — material edge findings, mostly mitigated by design):**
+- EDIT A bites only when a *paired* value-measuring AC EXISTS and regressed. A means-only AC with NO value AC at all is not caught here — it leans entirely on the upstream README shaping rule (a5e8c01e, cross-ref'd) to guarantee a value AC exists.
+- The mechanism→value "serves" pairing is left to FO inference; with several ACs, a mechanism AC could be checked against the wrong (satisfied) value AC.
+- The deterministic trigger is the namable mechanism-verb shape (README banned-form list); qualitative/non-numeric end values are not gate-deterministic and rely on captain escalation (by design per the entity's own EDIT A rationale).
+These are coverage edges, not a break of the core case; surfaced for the gate, not blocking on their own.
+
+### Recommendation: REJECTED
+
+AC-1 PASS and AC-3 PASS (both independently reproduced via git, non-self-referential). AC-2's design+compile half holds. But AC-2's stage-owed deliverable — *real FO behavior validated in validation* — is UNMET: the named proof mechanism is unwired/unreachable with false "ready to run" claims (Cycle-1 finding 1, → implementation), compounded by a likely contract-contradictory durable assertion (finding 2) and an environmental 401 auth gap. The auth gap alone would be an acceptable honest deferral; the unwired scenario is a deliverable defect this stage exists to catch. Route findings 1–2 to the kept-alive implementation ensign; the auth gap is for CL to refresh `~/.claude/benchmark-token` (or run in CI with `ANTHROPIC_API_KEY`).
+
+### Summary
+
+Independently verified AC-1 (FO-contract layer decision honored; edits in `first-officer-shared-core.md` only) and AC-3 (net 0-line delta via numstat) — both PASS. AC-2's design is sound for its core case and the test compiles under `-tags live`, but the behavioral proof THIS stage owes was not obtained: the dispatch-mandated spot-check showed the nested FO launches but the live credential is rejected (401), and the named scenario `AuthorACReanchorScenario` is unwired/unreachable dead code with false "ready to run" claims. REJECTED — structural/assertion defects route to implementation; the auth gap is environmental (refresh the benchmark-token / use CI auth) to actually run the deferred proof.
