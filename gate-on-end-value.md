@@ -1,6 +1,6 @@
 ---
 title: Gate on the entity end-value — AC cross-check re-anchor + the begin-with-the-end posture's gate half
-status: backlog
+status: ideation
 sprint: 0221-layered-fo
 group: binary-ux
 id: bmt9h66tg1s3eda1e1vxmzja
