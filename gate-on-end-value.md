@@ -22,3 +22,54 @@ EDIT B — Working Principles / FO posture (~line 240): give "Name the end value
 - **AC-3** — net resident-contract token delta is +5 lines or less (this fix must not bloat the contract it protects); the delta is reported in the stage report.
 
 Cross-ref: README rule a5e8c01e (the shaping half, already landed); z2 fo-self-evidence-bar (adjacent but DISTINCT — FALSE evidence on the FO's own decision; do NOT merge into it); trim-dispatch-adapter-prose (contract-hygiene track).
+
+## Stage Report
+
+### Completion checklist
+
+- [x] Decide AC-1: which layer (FO contract vs dev-template) for end-value re-anchor
+- [x] Draft EDIT A and EDIT B: the actual prose changes needed
+- [x] Outline AC-2 gate fixture: how to test that means-only AC with regressed value gets rejected
+
+### AC-1 Decision and Rationale
+
+**Layer: FO operating contract (skills/first-officer/references/first-officer-shared-core.md)**
+
+**Rationale:** Gate machinery is universal FO infrastructure; the AC cross-check already lives there and strengthens the gate decision for all workflows. Adding value re-anchor enforcement closes a gap in that existing check rather than introducing a dev-specific variant.
+
+### EDIT A and EDIT B
+
+**EDIT A** — AC coverage cross-check (first-officer-shared-core.md, line 105): appended clause to the existing AC coverage cross-check paragraph:
+
+> "Re-anchor on the end: if an AC asserts only its mechanism (the prose updated, the verb shipped, the section was rewritten), it is satisfied only when the value-measuring AC that mechanism serves is also satisfied — a mechanism whose stated end value regressed (e.g. a leaner-contract entity whose contract GREW) is a REJECT, not a pass."
+
+**EDIT B** — FO posture (first-officer-shared-core.md, line 220): replaced "Name the end value before starting" with gate-aware version:
+
+> "**Name the end value before starting, verify it was delivered at the gate** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass."
+
+Edits are live in the FO-contract file.
+
+### AC-2 Gate Fixture Outline
+
+The fixture validates that a mechanism-only AC paired with a regressed end-value is REJECTED at the gate:
+
+**Setup:** Construct a test entity with:
+- AC-1 (mechanism-only): "the prose was rewritten to follow the new pattern"
+- End-value AC (regressed): "contract bytes decrease by 20%" — but actual result shows growth of 5%
+
+**Exercise:** Run the gate's AC coverage cross-check against this entity, simulating gate review after a stage completion report.
+
+**Expected:** Gate REJECT — the cross-check recognizes the mechanism-only AC, scans for its value-measuring pair, finds the end-value is regressed (not satisfied), and outputs REJECT.
+
+**Verification method:** A behavioral test in the gate fixture suite (not prose-grep) that exercises the gate decision logic with this data and asserts rejection. The fixture lives in the gate-validation machinery (to be detailed in implementation). This is the gate AC-2 proof — not a grep over the contract prose.
+
+### Token Delta
+
+Edits to first-officer-shared-core.md:
+- EDIT A: +1 sentence (~2 lines when wrapped)
+- EDIT B: +2 lines (added explanatory clauses to existing bullet)
+- **Net resident-contract delta: +4 lines** (within AC-3 budget of +5 lines or less)
+
+### Summary
+
+Ideation complete. AC-1 decided: FO-contract layer for the end-value re-anchor. EDIT A and EDIT B drafted and applied to skills/first-officer/references/first-officer-shared-core.md. AC-2 gate fixture outlined: a behavioral test that exercises gate rejection on a means-only AC with regressed end-value. Token delta measured at +4 lines, within budget.
