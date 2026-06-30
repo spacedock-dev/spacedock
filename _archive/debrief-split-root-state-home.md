@@ -1,13 +1,16 @@
 ---
 title: Debrief skill writes to the definition dir, not the split-root state checkout
-status: validation
+status: done
 group: cleanup
 id: 7d47cgfj6h6z2xf5kk7ydbd9
 sprint: 0240-lean-contract
 started: 2026-06-30T16:20:13Z
 worktree: .worktrees/spacedock-ensign-debrief-split-root-state-home
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:449
+verdict: passed
+completed: 2026-06-30T19:56:46Z
+archived: 2026-06-30T19:56:46Z
 ---
 The debrief skill (`skills/debrief/SKILL.md`) resolves `{dir}/_debriefs/` — read (session-boundary anchor), write (new file), and commit (current branch) — where `{dir}` = `spacedock status --discover` = the workflow DEFINITION dir (`docs/dev`, on `main`). For a split-root workflow (README declares `state:`), that is the wrong home: the established convention and the bulk of history live in the state checkout (`{state}/_debriefs/`), which auto-syncs via `spacedock state commit` and keeps session churn off the code branch — the same isolation the pr-merge mod enforces for `pr:`/`mod-block:`.
 
