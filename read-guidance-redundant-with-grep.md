@@ -18,5 +18,100 @@ The `status --read` section-read guidance spans FO `first-officer-shared-core.md
 - Keep the `status --read` TOOL (correctness-by-construction is a thin but real rationale); trim the INSTRUCTION, not the binary.
 - Gate the trim on measured adoption (hf's metric, ensign-transcript-aware per f5): prove --read+scoped-Read usage does not regress after the trim, so this is evidence-driven rather than another assertion.
 
+## Scope: the redundant sites vs. the load-bearing ones
+The `status --read --json` TOOL has two genuinely irreplaceable uses that grep CANNOT cover — these STAY untouched:
+- **Structured frontmatter / stages extraction** (`first-officer-shared-core.md:17`, the README taxonomy read): `--json` yields the parsed `stages` array and flat `frontmatter` object. grep cannot parse YAML into a stages array.
+- **Structured roll-up modes** (`first-officer-shared-core.md:121`): `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. grep cannot produce a checklist/AC roll-up.
+
+The REDUNDANT instruction — the only thing this task trims — is narrowly *"use `--read --json` to get a HEADING's `offset`/`lines` for a section-scoped `Read`"*, because grep's heading list already yields that. Four sites carry it; the checklist names three, and inspection found a fourth (FO `:100`, the gate-verdict read of the last `## Stage Report`) carrying the identical redundancy with NO grep alternative — see **Open decisions for the gate**.
+
 ## Acceptance criteria
-- **AC-1** — The --read adoption guidance across the FO + ensign contracts is reduced to its residue and grep is named as the primary section-locator consistently in both, with the dispatch goldens regenerated to the trimmed prompt and a journeymetrics before/after (hf's metric) showing --read+scoped-Read adoption does not regress. Verified behaviorally — golden diff + measured counts — not by a prose-grep over the instruction files.
+- **AC-1 (end value — measured against a baseline that can move the wrong way)** — After the trim, a journeymetrics before/after over REAL FO+ensign transcripts shows `--read`+scoped-`Read` adoption does NOT regress: post-trim per-journey `status_read_calls`+`scoped_read_calls` ≥ the pre-trim baseline. The baseline can move the wrong way — if the trim removed load-bearing guidance, the ensign would fall back to whole-file Reads and the counts would DROP. Measured, not asserted. **Hard dependency:** the metric must be ensign-transcript-aware (f5, `f53zr0ehhzekzbgydpybaq5g`) — `ParseClaudeJSONL` today parses only the FO front-door stream, so without f5 the comparison is the vacuous `0==0` hf already hit (see **Riskiest-mechanism spike**). f5 is backlog in sprint 0204 and must land (or be pulled into 0240) before AC-1 is satisfiable.
+- **AC-2 (means — counts only paired with AC-1)** — The redundant section-read instruction is reduced to its residue (fence-safe heading detection where grep over-counts; structured-mode convenience as a non-mandate) and grep is named the primary section-locator consistently across all trimmed sites (FO Probe/Read bullet, ensign `:18`, ensign `:92`, and — pending the gate — FO `:100`). Verified BEHAVIORALLY: (a) `go test ./internal/dispatch/ -run TestBuild` goldens stay BYTE-IDENTICAL — a negative control proving the trim is runtime-loaded skill prose, not dispatch-prompt text (the actual dispatch hint, "site-6", was already removed in #392 `9458a636`); (b) `go test ./internal/contractlint/ ./internal/ensigncycle/` stays green. NOT verified by a prose-grep over the core files — the `instruction_read_detector`/boundary guard forbids a test that reads an instruction file to assert a phrase. Per the ideation rule, this means-AC counts only paired with AC-1's value measurement.
+
+## Before/after wording
+Three mandated sites + one recommended (D). Each AFTER names grep primary and keeps `--read --json` only as the fence-safe residue (A, C) or drops it where `wc -l`/grep fully covers (B, D). Line numbers are as-found 2026-06-30; implementation anchors on bullet TEXT (the sibling shifts ensign-core line numbers — see Collision map).
+
+**Site A — `skills/ensign/references/ensign-shared-core.md:18` (`## Working`, list item 1)**
+
+BEFORE:
+```text
+1. Read the entity file before making changes — when you need only specific sections (the relevant stage-def section, your prior report), `status --read <entity-path> --json` returns each section's `offset`/`lines` for a scoped `Read`, rather than the whole body.
+```
+AFTER:
+```text
+1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
+```
+
+**Site B — `skills/ensign/references/ensign-shared-core.md:92` (`## Stage Report Protocol`, append bullet)**
+
+BEFORE:
+```text
+- Append the report at the end of the entity file — get the file's `total_lines` from `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.
+```
+AFTER:
+```text
+- Append the report at the end of the entity file — get the append point from `wc -l <entity-path>` and append after the last line; do not read the entire entity body to find an insertion point.
+```
+
+**Site C — `skills/first-officer/references/first-officer-shared-core.md:229` (`## Probe and Ideation Discipline`, "Prefer Grep over Read" bullet)**
+
+BEFORE:
+```text
+- Prefer Grep over Read for targeted entity-body inspection. Anchor on heading or field name (`## Stage Report`, `### Feedback Cycles`, a specific frontmatter field). Read only when you need the full text. To pull a whole named section, `status --read <ref> --json` returns its `offset`/`lines` so the follow-up `Read(offset, limit)` is section-scoped, not whole-file.
+```
+AFTER:
+```text
+- Prefer Grep over Read for targeted entity-body inspection; Read whole only when you need the full text. Anchor on a heading or field name (`## Stage Report`, `### Feedback Cycles`, a frontmatter field): `grep -n` gives the heading line (the section offset) and the next heading bounds its span, so the follow-up `Read(offset, limit)` is section-scoped. `status --read <ref> --json` is the fence-safe fallback when markdown-like fenced content makes grep over-count headings.
+```
+
+**Site D — `skills/first-officer/references/first-officer-shared-core.md:100` (`## Completion and Gates`, step 1) — RECOMMENDED, pending gate**
+
+BEFORE:
+```text
+1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.
+```
+AFTER:
+```text
+1. Read the entity file's last `## Stage Report` section — `grep -n '## Stage Report' <ref>` gives every heading line; scoped-`Read(offset, limit)` from the last one to EOF, instead of loading the whole body.
+```
+
+Net line/token impact: A and C are length-neutral; B and D shorten. The trim is net slightly-negative, but this item's GATE is adoption (AC-1), not a byte delta (unlike the boot-core deferral siblings).
+
+## Test plan
+- **AC-1 (adoption-not-regress) — live workflow, ensign-transcript-aware.** Cost: high (live FO+ensign runs) and BLOCKED on f5. Once f5 folds `subagents/agent-*.jsonl` into `ParseClaudeJSONL`'s counts: capture a pre-trim baseline (run the journey on `origin/main`'s cores; record per-journey `status_read_calls`+`scoped_read_calls`), apply the trim, re-run the same journey, assert post-trim ≥ baseline. The detector primitives (`commandInvokesStatusRead`, `readInputIsScoped`) are already unit-proven (see spike) — what's new and untested is the ensign-transcript fold, which is f5's own AC-1 test. This task consumes f5's mechanism; it does not re-implement it.
+- **AC-2 (residue trim + grep-primary consistency) — Go fixture/CLI, fast (<5s).** `go test ./internal/dispatch/ -run TestBuild` must stay GREEN with goldens byte-identical (negative control: trimming runtime-loaded skill prose must NOT move the dispatch prompt). `go test ./internal/contractlint/ ./internal/ensigncycle/` must stay green (the cores feed both). No new prose-grep test is added — the boundary guard forbids reading a contract file to assert a phrase; the behavioral surfaces above ARE the proof.
+- **Estimated complexity:** the EDIT is trivial (4 bullets); the RISK and cost are entirely in AC-1's dependency on f5. If f5 cannot land in 0240, AC-1 degrades to a forward-looking gate (ship the trim; the ensign-aware metric confirms no regression in a later live run) — a captain decision (see Open decisions).
+
+## Riskiest-mechanism spike
+**Question:** can the journeymetrics `--read` adoption metric actually produce a real before/after from transcripts?
+
+**Spiked end-to-end by source-trace + running the existing suite (2026-06-30):**
+1. **Detector primitives PROVEN.** `go test ./internal/journeymetrics/ -run 'StatusRead|ReadAdoption|CommandInvokesStatusRead|CodexCharacterization|DedupAcross'` → all green (incl. multi-delta dedup + codex). `ParseClaudeJSONL` counts `status --read` Bash calls (`StatusReadCalls`) and scoped `Read` calls carrying offset/limit (`ScopedReadCalls`) from a stream, launcher-agnostic and flag-order-independent. So "detect `--read`+scoped-`Read` in a transcript" = YES, proven.
+2. **But the ENSIGN surface is NOT yet measured.** `ParseClaudeJSONL` parses ONE stream — the FO front-door `claude -p` stream (`internal/ensigncycle/journey_metrics_live_test.go:19`, `result.stream`). It never opens `subagents/agent-*.jsonl`. The trimmed sites steer principally the ENSIGN's reads; the ensign runs as a separate team-agent session. Empirically (hf) four real FO captures all read `0/0`. So a real before/after of the ENSIGN's adoption is `0==0` until the sub-agent transcript is folded in.
+3. **The fold is f5** (`journeymetrics-ensign-read-adoption.md`, `f53zr0ehhzekzbgydpybaq5g`) — backlog, sprint 0204, NOT landed.
+
+**Conclusion:** the metric CAN produce read-adoption counts from a transcript (mechanism proven), but a *meaningful* ENSIGN before/after is GATED on f5. This is recorded as the hard dependency on AC-1, not "no spike needed." **Recommendation:** sequence f5 before this task's implementation (pull it into 0240 as a predecessor), or accept the AC-1 degradation in Open decisions.
+
+## Collision map with sibling `ensign-contract-dev-leakage` (scr, `scr2rx4589p7j6mpgh50hdct`)
+Both edit `skills/ensign/references/ensign-shared-core.md`. The sprint sequences Wave 1 STRICTLY SEQUENTIAL (never parallel), so the second implementer rebases on the first's committed core. Anchoring (2026-06-30 line numbers):
+- **MY ensign-core sites:** `## Working` list item 1 (`:18`); `## Stage Report Protocol` append bullet (`:92`). My FO-core sites (`:229`, and `:100` if approved) are in `first-officer-shared-core.md`, which the sibling does NOT touch.
+- **SIBLING's ensign-core targets (dev-only discipline):** the worktree/deliverable prose — currently surfacing at `## Working` item 2 (`:19`, "keep all reads, writes, and commits under that worktree"), `## Worktree Ownership` (`:30`–`:44`, esp. `:36` "the worktree isolates the deliverable work product only"), and `## Split-Root State Contract` (`:34`–`:44`). The sibling is un-ideated backlog, so its exact removals aren't fixed.
+- **Disjoint by section** — EXCEPT one adjacency: my `:18` (Working item 1) sits directly above the sibling's likely `:19` (Working item 2). Same ordered list. No paragraph-level overlap, but a naive line-based merge could touch adjacent lines. Mitigation: sequential Wave-1 execution + anchor edits on bullet TEXT, not line number; the second worker re-reads `## Working` fresh. The FO core is mine alone — zero overlap there.
+
+## Open decisions for the gate
+1. **FO `:100` in scope?** The checklist enumerates only the FO Probe/Read bullet (`:229`) + ensign `:18`/`:92`. Inspection found FO `:100` (gate-verdict read of the last `## Stage Report`) carrying the IDENTICAL redundancy with NO grep alternative — leaving it would keep the FO core internally inconsistent, defeating the task's "grep primary consistently across both" thesis. RECOMMEND including Site D. Flagged rather than silently expanding scope.
+2. **f5 dependency.** AC-1 is unsatisfiable until f5 makes the metric ensign-transcript-aware. RECOMMEND pulling f5 into 0240 as this task's predecessor. Fallback (captain call): degrade AC-1 to a forward-looking gate.
+3. **Stale dispatch-golden clause.** The original AC-1's "dispatch goldens regenerated to the trimmed prompt" was correct when the dispatch prompt carried a `--read` hint (site-6), but #392 already removed it. Reframed in AC-2 as a byte-identity negative control. No golden bytes change from this trim.
+
+## Stage Report: ideation
+
+- DONE: Concrete before/after wording for the redundant `status --read` section-read guidance at the FO core (the Probe/Read bullet) and the ensign core (`:18` and `:92`), naming grep as primary consistently, keeping only the fence-safe-heading residue
+  `## Before/after wording` Sites A (ensign `:18`), B (ensign `:92`), C (FO `:229`) — each AFTER names grep primary, keeps `--read --json` only as the fence-safe fallback (A, C) or drops it for `wc -l` (B); FO `:100` added as recommended Site D for consistency.
+- DONE: An end-value AC measuring `--read`+scoped-`Read` adoption before/after (ensign-transcript-aware per f5) against a baseline that can move the wrong way, plus the dispatch-golden treatment, with the riskiest mechanism spiked end-to-end
+  AC-1 (adoption-not-regress, baseline can drop) + AC-2 (means, paired); spike ran the detector suite green AND source-traced the FO-only stream — metric mechanism PROVEN, ensign before/after GATED on f5; dispatch-golden clause found stale (site-6 removed in #392) and reframed as byte-identity negative control.
+- DONE: A recorded note of exactly which ensign-core sections this trim edits, so the design composes with sibling `ensign-contract-dev-leakage` with no implementation-time collision
+  `## Collision map` — my ensign sites (`## Working` item 1 `:18`; `## Stage Report Protocol` append bullet `:92`) are disjoint-by-section from the sibling's worktree/deliverable targets; one adjacency flagged (`:18` above the sibling's likely `:19`), mitigated by sequential Wave-1 + text-anchored edits; FO core is mine alone.
+
+### Summary
+Refined the design with verbatim before/after wording for four trim sites (three mandated + one recommended), splitting the lone AC into a measured end-value AC (adoption-not-regress) and its paired means-AC (residue trim + grep-primary consistency), both verified behaviorally per the boundary guard's prose-grep ban. The riskiest-mechanism spike is the load-bearing finding: the journeymetrics detector primitives are proven (suite green), but a real ENSIGN before/after is a vacuous `0==0` until f5 folds the dispatched sub-agent transcript in — so AC-1 has a hard, surfaced dependency on f5 (backlog, sprint 0204). Two further findings for the gate: FO `:100` carries the same redundancy the checklist didn't enumerate (recommend including), and the original AC's "dispatch-golden regeneration" is stale (the real dispatch hint, site-6, was removed in #392) so the goldens stay byte-identical as a negative control. No product/contract files were edited (ideation is design-only).
