@@ -23,6 +23,7 @@ type fakeHost struct {
 	resolveErr  error
 	launchedArg []string // argv captured by Launch
 	launchedEnv []string // env captured by Launch
+	launchCode  int      // host exit code Launch returns (default 0)
 	launchErr   error
 	installCmds []string // host commands captured by Install
 	installOut  string
@@ -32,10 +33,10 @@ func (f *fakeHost) ResolveManifest(host string) (string, error) {
 	return f.manifest, f.resolveErr
 }
 
-func (f *fakeHost) Launch(argv []string, env []string) error {
+func (f *fakeHost) Launch(argv []string, env []string) (int, error) {
 	f.launchedArg = argv
 	f.launchedEnv = env
-	return f.launchErr
+	return f.launchCode, f.launchErr
 }
 
 func (f *fakeHost) Install(host, source, branch string) (string, error) {

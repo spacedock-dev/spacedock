@@ -562,7 +562,7 @@ func parseInboxDoneSender(text string) string {
 
 // streamEntry is the parsed shape of one stream-json JSONL line — only the
 // fields the watcher reads. claude's stream-json is standard Claude Code output
-// (spacedock claude syscall.Exec-forwards --output-format stream-json verbatim),
+// (spacedock claude forwards --output-format stream-json to the host verbatim),
 // so these shapes match what the upstream Python watcher parses.
 type streamEntry struct {
 	Type      string         `json:"type"`

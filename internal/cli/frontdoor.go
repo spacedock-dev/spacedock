@@ -33,9 +33,11 @@ type hostOps interface {
 	// when no plugin is installed (a distinct, non-error state). A non-nil error
 	// means the host CLI itself failed.
 	ResolveManifest(host string) (string, error)
-	// Launch execs argv with env, replacing the current process on success
-	// (production) or recording it (test). It returns only on failure to launch.
-	Launch(argv []string, env []string) error
+	// Launch spawns argv with env as a resident child and waits (production) or
+	// records it (test), returning the host's propagated exit code. The error is
+	// reserved for a launch failure (host binary not found, fork failure), not a
+	// non-zero host exit.
+	Launch(argv []string, env []string) (int, error)
 	// Install issues the host plugin commands to install/update the plugin from
 	// source, returning combined output. devBranch selects the marketplace channel
 	// entry the install targets (see channelEntry).
@@ -374,11 +376,12 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
-	if err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ()))); err != nil {
+	code, err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ())))
+	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
 	}
-	return 0
+	return code
 }
 
 // warnStrayPromptAfterDash emits an advisory stderr warning when a bare positional
@@ -556,11 +559,12 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
 	}
 
-	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
+	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: launch failed: %v\n", err)
 		return 1
 	}
-	return 0
+	return code
 }
 
 // codexResume reports whether the codex passthrough begins with the `resume`

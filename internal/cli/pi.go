@@ -29,7 +29,7 @@ const piSpacedockPackageSource = "git:github.com/spacedock-dev/spacedock"
 type piRuntimeOps interface {
 	LookPath(name string) (string, error)
 	Stat(path string) error
-	Launch(argv []string, env []string) error
+	Launch(argv []string, env []string) (int, error)
 	// PiInstall runs `pi install <source>` and returns its combined output. The
 	// real implementation execs `pi`; tests record the source and return canned
 	// output. This is the install seam that retires Pi's check-only status.
@@ -57,7 +57,7 @@ type execPiRuntimeOps struct{}
 
 func (execPiRuntimeOps) LookPath(name string) (string, error) { return exec.LookPath(name) }
 func (execPiRuntimeOps) Stat(path string) error               { _, err := os.Stat(path); return err }
-func (execPiRuntimeOps) Launch(argv []string, env []string) error {
+func (execPiRuntimeOps) Launch(argv []string, env []string) (int, error) {
 	return execHost{}.Launch(argv, env)
 }
 
@@ -317,11 +317,12 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 		}
 		argv = safehouse.Wrap(argv, piExtra)
 	}
-	if err := ops.Launch(argv, launchEnv(os.Environ())); err != nil {
+	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
 		return 1
 	}
-	return 0
+	return code
 }
 
 func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps piRuntimeOps, env []string, stdout, stderr io.Writer) int {
