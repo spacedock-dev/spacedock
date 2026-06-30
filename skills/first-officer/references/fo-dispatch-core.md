@@ -35,15 +35,21 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. When `«addressable-worker»` is ABSENT, this condition fails and the FO dispatches fresh.
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
-4. The reused worker's stamped model (recorded by `«worker-identity»`) matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model` using the host canonical model space `«worker-identity»` declares. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker; the host's `«worker-identity»` model-resolution stamps the null case). A member stamped with a captain-session fallback value — one outside the host's canonical model space — never matches and forces a one-time fresh dispatch that re-stamps a canonical value. The host's canonical model space and its fallback shapes are `«worker-identity»`'s per-host realization.
-
-When the comparator forces fresh dispatch due to model mismatch, the FO MUST emit a captain-visible diagnostic of the form `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. The anchor phrase `does not match next stage effective_model` must appear verbatim.
+4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
 
 **If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the next assignment through the runtime adapter's reuse-advance handle (its live-worker messaging call) — carrying the next stage name, the full `### Stage definition` subsection copied from the README verbatim, the `### Completion checklist` from Dispatch step 2, and an instruction to keep working on the entity at its path and commit before signaling. The reuse path does NOT route through `«dispatch.build»` — assemble the advancement message directly.
 
 **If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 
 **Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, invoke `«worker.shutdown»` for the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
+
+## «reuse.model-match»: reuse-condition-4 — stamped model matches the next stage's declared model
+
+- **guard:** skip when `next_stage.effective_model` is null; `«worker-identity»` stamps the null case and null-declared stages accept any reused worker.
+- **effect:** resolve the worker's `«worker-identity»`-stamped model via the runtime's model-for-member lookup and compare it to `next_stage.effective_model` in `«worker-identity»`'s canonical model space.
+- **block:** a captain-session fallback value — outside that canonical space — never matches; it forces a one-time fresh dispatch that re-stamps a canonical value.
+- **done-when:** the models match (or the declared model is null); a mismatch-forced fresh dispatch emits the captain-visible diagnostic `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching` verbatim.
+- → **prose** — deterministic comparator, no binary; the per-host model space and fallback shapes are `«worker-identity»`'s realization.
 
 ## Worktree Ownership
 
@@ -69,6 +75,8 @@ Runtime adapters bind the capability `«fn»`s below in their `## Runtime implem
 
 The runtime adapter binds the spawn call, helper-field mapping, model/null handling, and host transport metadata.
 
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
+
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
 - **block:** ABSENT → reuse-condition-1 fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle, event-loop step 0.5 omitted). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
@@ -91,6 +99,8 @@ Records worker label, substrate, run/session handle, worker address, entity slug
 ## «worker.shutdown»: cooperatively close a terminal or superseded worker
 
 Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any required preservation message. If ABSENT, record the worker closed in FO memory only after completion or explicit supersede state makes that safe. The runtime adapter owns the concrete shutdown / no-op / in-memory-closure binding and any host-specific preservation channel.
+
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
 
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
@@ -141,6 +151,6 @@ These are FO-internal scheduling reads — consume them as `--json` (compact, by
 3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the `«roster-reconcile»` step-0 sweep when PRESENT on the host, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
-- → **prose**, becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet; the FO hand-follows the skeleton above.
+- → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
 
 Repeat from step 1 after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.

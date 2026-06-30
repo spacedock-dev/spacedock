@@ -4,6 +4,7 @@
 package contractlint
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -142,6 +143,33 @@ func TestCapabilityBinding(t *testing.T) {
 	}
 }
 
+// workerLifecycleArrowViolations applies the host-neutral arrow policy to one worker-lifecycle
+// capability block: every `- → ` arrow MUST be the kind-only `→ **runtime-binding**` pointer (any
+// other arrow — a per-host `→ **Claude:**`, a `→ **shipped**` — reds), and the block MUST carry no
+// concrete per-host `**Host:**` token. The kind-only runtime-binding arrow is permitted so a cold
+// FO has an in-file signal that the capability is host-bound and which adapter section binds it,
+// without naming a host in the core. It returns one message per violation; the real guard and its
+// discriminator both drive it, so a regression that re-bans the kind-only arrow or stops banning a
+// per-host token reds the control.
+func workerLifecycleArrowViolations(block, name string) []string {
+	var out []string
+	for _, line := range strings.Split(block, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(trimmed, "- → ") {
+			continue
+		}
+		if !strings.HasPrefix(trimmed, "- → **runtime-binding**") {
+			out = append(out, fmt.Sprintf("capability «%s» core block carries a non-runtime-binding arrow %q; the only arrow permitted host-neutral is a kind-only `→ **runtime-binding**` pointer", name, trimmed))
+		}
+	}
+	for _, host := range capabilityHosts {
+		if strings.Contains(block, "**"+host+":**") {
+			out = append(out, fmt.Sprintf("capability «%s» core block contains concrete host binding for %s", name, host))
+		}
+	}
+	return out
+}
+
 func TestDispatchCoreDefinesWorkerLifecycleCapabilities(t *testing.T) {
 	raw, err := os.ReadFile(dispatchCorePath(t))
 	if err != nil {
@@ -150,13 +178,41 @@ func TestDispatchCoreDefinesWorkerLifecycleCapabilities(t *testing.T) {
 	data := string(raw)
 	for _, name := range []string{"worker.spawn", "worker.shutdown"} {
 		block := fnBlock(t, data, name)
-		if strings.Contains(block, "\n- → ") {
-			t.Errorf("capability «%s» must stay host-neutral in fo-dispatch-core.md; bind concrete host realization in runtime adapters instead", name)
+		for _, msg := range workerLifecycleArrowViolations(block, name) {
+			t.Error(msg)
 		}
-		for _, host := range capabilityHosts {
-			if strings.Contains(block, "**"+host+":**") {
-				t.Errorf("capability «%s» core block contains concrete host binding for %s", name, host)
-			}
+	}
+}
+
+// TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates is the non-vacuity control for the
+// loosened arrow policy. It drives the same workerLifecycleArrowViolations the real guard uses
+// against five planted blocks: the legitimate kind-only runtime-binding arrow PASSES, a no-arrow
+// block PASSES, a per-host arrow REDS, a `→ **shipped**` arrow REDS, and the over-loosening case —
+// a runtime-binding arrow that SMUGGLES a `**Claude:**` host token in its prose — REDS on the
+// unchanged per-host ban. A loosening that over-permits (drops the per-host ban) or over-restricts
+// (re-bans the kind-only arrow) fails here.
+func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
+	pass := []struct {
+		why, block string
+	}{
+		{"kind-only runtime-binding arrow", "body\n\n- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`\n"},
+		{"no arrow at all", "body only, no arrow\n"},
+	}
+	for _, c := range pass {
+		if v := workerLifecycleArrowViolations(c.block, "worker.spawn"); len(v) != 0 {
+			t.Fatalf("control: the %s block was wrongly flagged: %v", c.why, v)
+		}
+	}
+	red := []struct {
+		why, block string
+	}{
+		{"per-host arrow", "body\n- → **Claude:** Agent()\n"},
+		{"`→ **shipped**` arrow", "body\n- → **shipped**: `spacedock spawn`\n"},
+		{"runtime-binding arrow smuggling a `**Claude:**` token", "body\n- → **runtime-binding**: bound in **Claude:** Agent()\n"},
+	}
+	for _, c := range red {
+		if v := workerLifecycleArrowViolations(c.block, "worker.spawn"); len(v) == 0 {
+			t.Fatalf("control: the %s was not flagged — the loosening lost a guard", c.why)
 		}
 	}
 }
