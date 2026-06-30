@@ -6,6 +6,8 @@ source: "v0.23.0 cut FO session, 2026-06-30. FO reflexively passed --team-name (
 id: 0qt2r4n577gtwq707abgcfed
 started: 2026-06-30T16:54:21Z
 worktree: .worktrees/spacedock-ensign-dispatch-build-team-name-advisory
+mod-block: merge:pr-merge
+pr: "#446"
 ---
 
 `spacedock dispatch build` IS Claude-team-mode-aware (`internal/dispatch/build.go:292`: `mergedMode := !bareMode && host == "claude" && teamName == ""`): omitting `--team-name` yields the auto-team shape (`run_in_background:true`, no `team_name`); passing `--team-name` selects the legacy TeamCreate-registry shape. The foot-gun is ergonomic, not correctness.
