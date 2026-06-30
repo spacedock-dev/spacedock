@@ -1,6 +1,6 @@
 ---
 title: Debrief skill writes to the definition dir, not the split-root state checkout
-status: implementation
+status: validation
 group: cleanup
 id: 7d47cgfj6h6z2xf5kk7ydbd9
 sprint: 0240-lean-contract
