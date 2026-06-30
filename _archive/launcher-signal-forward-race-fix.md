@@ -1,14 +1,17 @@
 ---
 title: Fix the #442 launcher signal-forwarding data race — start forwardHostSignals after cmd.Start()
-status: validation
+status: done
 sprint: 0230-stable-finalization
 score: 0.75
 source: "pre-tag spot-audit of #441/#442 (the Haiku-shipped parallel members), 2026-06-30. Confirmed real + reproduced under -race; verified non-ship-blocker (benign on shipped arches) but a known -race defect on the front door. Gates the v0.23.0 stable cut per the captain (ship this, then tag)."
 id: 3p0ccnj99jbjf6h938fsgvk8
 started: 2026-06-30T06:33:25Z
 worktree: .worktrees/spacedock-ensign-launcher-signal-forward-race-fix
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:444
+verdict: passed
+completed: 2026-06-30T07:58:58Z
+archived: 2026-06-30T07:58:58Z
 ---
 
 `internal/cli/host_exec.go:294` spawns the `forwardHostSignals` goroutine BEFORE `cmd.Start()` at `host_exec.go:296`. The goroutine reads `cmd.Process` (`host_launch_unix.go:43`) while `cmd.Start()` writes it — no happens-before edge, so a SIGTERM/SIGHUP delivered to the launcher during the fork/exec startup window is an unsynchronized read/write (UB per the Go memory model). Reproduced under `-race`. This is net-new in #442 (the prior `syscall.Exec` model had no resident goroutine).
