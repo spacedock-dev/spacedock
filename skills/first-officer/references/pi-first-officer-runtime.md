@@ -20,3 +20,10 @@ The build artifact carries the entity slug/name, entity path, workflow directory
 Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.
 
 The durable proof for Pi support is not transcript phrasing. A valid live proof dispatches a Pi ensign against a temp split-root workflow and verifies process exit, state checkout file changes, git log, and stage report content.
+
+## Bridge egress (FO liveness/activity → Bridge)
+
+Bridge reads FO liveness and activity from `_bridge/events.jsonl` and `_bridge/sessions/<session_id>.json`. The events.jsonl line schema is the Spacedock-owned contract `{"ts","event","session_id","agent_id","agent_type","detail":{"tool","source"}}` (full surface: `docs/dev/bridge-egress-contract.md`); each host binds its own producer for it. On Pi this producer is not yet established.
+
+- **FO event emission** — ABSENT/TODO on Pi: there is no established producer (a Pi event API for emitting the events.jsonl contract line is unconfirmed). Consequence: Bridge gets no `events.jsonl` and no `_bridge/sessions/` markers on a Pi host, so it shows neither live tool activity nor FO-vs-ensign attribution; liveness falls back to the bridge-inbox heartbeat (`_bridge/fo.$SLUG.json`) the FO writes each tick. Binding a Pi producer that emits the contract line is the open work.
+- **«session-id» binding** — the bridge-inbox heartbeat resolves the neutral `SD_SESSION_ID`; on Pi this stays empty (no stable per-session id is exposed), so the heartbeat carries an empty session id — still a valid liveness tick (Bridge reads freshness from `ts`). Bind it once Pi exposes a stable per-session id.

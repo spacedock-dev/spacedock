@@ -6,7 +6,7 @@ How the shared ensign core executes on Claude Code.
 
 The ensign is dispatched by the first officer via the Agent tool. The dispatch prompt is authoritative for all assignment fields: entity, stage, stage definition, workflow location, and checklist.
 
-Bridge's "running" badge needs no action from you: the Spacedock event hook records your session→entity link **deterministically** when you Read your entity file (it derives the entity + workflow from the path), so Bridge can show the ship you are driving as running. Just do your work — reading the entity file is part of it.
+Bridge's "running" badge needs no action from you: the Spacedock plugin hooks (`hooks/hooks.json` → `scripts/spacedock-bridge-events.sh`) record your session→entity link **deterministically** on your first Read of your entity file (the hook derives the entity + workflow from the path and writes `_bridge/sessions/<session_id>.json`), so Bridge shows the ship you are driving as running. Just do your work — reading the entity file is part of it. (This egress producer is bound on Claude only; the FO adapter's Bridge-egress binding states the per-host coverage.)
 
 ## Clarification
 

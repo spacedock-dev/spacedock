@@ -52,8 +52,10 @@ Bridge shows per-workflow FO liveness by reading `_bridge/fo.$SLUG.json`; it tre
 ```
 mkdir -p _bridge
 printf '{"session_id":"%s","ts":"%s","state":"idle"}\n' \
-  "${CLAUDE_CODE_SESSION_ID:-}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > _bridge/fo.$SLUG.json
+  "${SD_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-${CODEX_THREAD_ID:-}}}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > _bridge/fo.$SLUG.json
 ```
+
+`SD_SESSION_ID` is the host-neutral session-id token owned by your runtime adapter's **Bridge egress** binding; the snippet reads it first and falls back to the host's own session var (`$CLAUDE_CODE_SESSION_ID` on Claude, `$CODEX_THREAD_ID` on Codex) so the heartbeat never silently blanks, with no per-tick `export` needed. An empty value (a host that exposes none) is still a valid liveness tick — Bridge reads freshness from `ts`. The full egress-surface contract — `events.jsonl`, this heartbeat, `fo-feed.jsonl`, the session→entity marker, and which host produces each — is `docs/dev/bridge-egress-contract.md`.
 
 `state` is `idle`: this mod runs at startup/idle boundaries (you are between dispatches when it fires), so it cannot honestly claim `working` — the finer working/idle signal already lives in `_bridge/events.jsonl`. Writing the heartbeat is observe-only; never let it block the loop. (A session left idle with no captain interaction for over 30 minutes stops ticking and goes honestly not-attached in Bridge — that is intended, not a bug.)
 

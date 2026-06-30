@@ -6,6 +6,11 @@
 # in hooks/hooks.json (all async). It writes a stable, Spacedock-owned event contract so
 # Bridge does not have to couple to Claude Code's internal transcript JSONL format.
 #
+# This script is the CLAUDE producer-binding for the egress surface; the harness-neutral
+# schema for events.jsonl + the _bridge/sessions/<sid>.json marker (and where Codex/Pi are
+# ABSENT/TODO) is docs/dev/bridge-egress-contract.md. Keep the emitted line shapes in sync
+# with that contract.
+#
 # Events land in «session-cwd»/_bridge/events.jsonl — the same _bridge/ dir the bridge-inbox
 # mod drains and that Bridge resolves from the repo root. agent_id/agent_type are empty for
 # the main FO session and set for ensign subagents, so Bridge can tell FO vs ensign activity.

@@ -50,3 +50,10 @@ Feedback rejection is the load-bearing exception to casual fresh dispatch. When 
 ## Captain Interaction
 
 The captain is the user of the Codex session. Communicate gate results, clarifications, and status directly in the conversation.
+
+## Bridge egress (FO liveness/activity → Bridge)
+
+Bridge reads FO liveness and activity from `_bridge/events.jsonl` and `_bridge/sessions/<session_id>.json`. The events.jsonl line schema is the Spacedock-owned contract `{"ts","event","session_id","agent_id","agent_type","detail":{"tool","source"}}` (full surface: `docs/dev/bridge-egress-contract.md`); each host binds its own producer for it. On Codex this producer is not yet established.
+
+- **FO event emission** — ABSENT/TODO on Codex: there is no established producer (the Codex app-server lifecycle event API for emitting the events.jsonl contract line is unconfirmed). Consequence: Bridge gets no `events.jsonl` and no `_bridge/sessions/` markers on a Codex host, so it shows neither live tool activity nor FO-vs-ensign attribution; liveness falls back to the bridge-inbox heartbeat (`_bridge/fo.$SLUG.json`) the FO writes each tick. Binding a Codex producer that emits the contract line is the open work.
+- **«session-id» binding** — the bridge-inbox heartbeat resolves the neutral `SD_SESSION_ID`, falling back to `$CODEX_THREAD_ID` on Codex when the harness exposes it; when no thread id is exposed it stays empty and the heartbeat carries an empty session id (still a valid liveness tick — Bridge reads freshness from `ts`).
