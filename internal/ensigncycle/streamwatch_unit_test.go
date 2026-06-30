@@ -640,7 +640,7 @@ func TestExpectConditionFinalDrainCheckWinsOverExit(t *testing.T) {
 // --- synthetic stream-json line builders ---------------------------------
 //
 // These emit the standard Claude Code stream-json shapes the watcher parses.
-// `spacedock claude` syscall.Exec-replaces itself with `claude`, forwarding
+// `spacedock claude` spawns `claude` as a resident child, forwarding
 // --output-format stream-json verbatim, so the live pipe carries exactly these
 // shapes (Spike in the entity body). Each builder returns one JSONL line.
 

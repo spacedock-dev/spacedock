@@ -18,6 +18,7 @@ type fakePiRuntimeOps struct {
 	statOK        map[string]bool
 	launched      []string
 	launchedEnv   []string
+	launchCode    int // host exit code Launch returns (default 0)
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error
@@ -38,10 +39,10 @@ func (f *fakePiRuntimeOps) Stat(path string) error {
 	return errors.New("missing")
 }
 
-func (f *fakePiRuntimeOps) Launch(argv []string, env []string) error {
+func (f *fakePiRuntimeOps) Launch(argv []string, env []string) (int, error) {
 	f.launched = append([]string(nil), argv...)
 	f.launchedEnv = append([]string(nil), env...)
-	return nil
+	return f.launchCode, nil
 }
 
 func (f *fakePiRuntimeOps) PiInstall(source string) (string, error) {
@@ -698,7 +699,7 @@ func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 		home := t.TempDir()
 		var stdout, stderr bytes.Buffer
 		code := runPi(context.Background(), []string{"do work", "--plugin-dir", repo, "--", "--print"}, "/non-repo-cwd",
-			append(piTestEnv(pkg, home)), &fakePiRuntimeOps{
+			piTestEnv(pkg, home), &fakePiRuntimeOps{
 				lookPath:      piHealthyPathFixtures(),
 				statOK:        statOKForPiResources(repo, pkg),
 				packageStatus: piPackageStatus{}, // not installed

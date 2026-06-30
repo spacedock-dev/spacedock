@@ -1,5 +1,5 @@
 // ABOUTME: Production hostOps — resolves the installed plugin manifest via
-// ABOUTME: `claude/codex plugin list --json`, execs the host, and shells installs.
+// ABOUTME: `claude/codex plugin list --json`, spawns the host, and shells installs.
 package cli
 
 import (
@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 )
 
 // execHost backs hostOps with the real host CLIs and process exec.
@@ -269,15 +268,41 @@ func channelMarketplaceSource(devBranch string) string {
 	return marketplaceSource + "@edge"
 }
 
-// Launch replaces the current process with argv via execve, so the host CLI
-// owns the terminal (interactive `claude --agent …`). It returns only when exec
-// itself fails.
-func (execHost) Launch(argv []string, env []string) error {
+// Launch spawns argv as a child and stays resident as its parent: the launcher
+// inherits the real terminal (interactive `claude --agent …`), forwards
+// externally-targeted signals while letting terminal signals reach the host
+// through the shared foreground process group, waits, and returns the host's
+// propagated exit code. The host is NOT placed in its own process group (no
+// Setpgid), so it owns the controlling TTY and the kernel delivers
+// terminal-generated signals to it directly. The returned int is the host's exit
+// code (signal-death rendered as 128+signum on unix); a non-nil error is a
+// *launch* failure (host binary not found, fork failure), never a non-zero host
+// exit.
+func (execHost) Launch(argv []string, env []string) (int, error) {
 	bin, err := exec.LookPath(argv[0])
 	if err != nil {
-		return err
+		return 1, err
 	}
-	return syscall.Exec(bin, argv, env)
+	cmd := exec.Command(bin, argv[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = env
+	// Arm signal handling BEFORE Start so no terminal signal races the launcher's
+	// default disposition (a default SIGINT would kill the launcher before the
+	// host is even up); a signal arriving during fork/exec queues on the buffered
+	// channel. Begin forwarding only AFTER Start returns, so the go-statement that
+	// spawns the pump carries a happens-before edge from Start's write of
+	// cmd.Process to the goroutine's read of it (forwarding before that edge would
+	// race Start's write). Unix-only; both are no-ops on other platforms.
+	forward, stop := forwardHostSignals(cmd)
+	defer stop()
+	if err := cmd.Start(); err != nil {
+		return 1, err
+	}
+	forward()
+	waitErr := cmd.Wait()
+	return hostExitCode(cmd.ProcessState, waitErr), nil
 }
 
 // installStep is one entry in the install upgrade sequence: an argv to pass to
