@@ -15,8 +15,55 @@ started: 2026-06-30T16:55:24Z
 The README ideation policy explicitly encourages a `(VALUE)`-tagged AC ("At least one AC must MEASURE the end-value"), and the contract's AC cross-check re-anchors on exactly that value AC. So the convention the workflow recommends (`**AC-1 (VALUE)**`) is the convention `--ac-scan` cannot see — the deterministic extraction drops the single most important AC. Live evidence: on `3p`, `--ac-scan` returned only AC-2 and AC-3; AC-1 (VALUE) was absent, even though it was present and evidenced. The gate held only because the FO cross-checked AC-1 by hand.
 
 ## Proposed approach
-Broaden the `--ac-scan` AC matcher to recognize `**AC-{id}` as a prefix within the bold span (allowing a trailing annotation before the closing `**`), so `**AC-1 (VALUE)**` and `**AC-1**` both enumerate as AC-1. Keep the id capture exact (AC-1, AC-2, ...) and treat anything after it inside the bold as a label.
+Broaden the `--ac-scan` AC heading matcher so the closing `**` need not immediately follow the id: allow an asterisk-free trailing label inside the bold span, so `**AC-1 (VALUE)**` and `**AC-1**` both enumerate as `AC-1`. The id capture stays exact (`AC-1`, `AC-2`, …); anything after it inside the bold is consumed as a label and discarded — the scan reports id + line only, so no new capture group is needed.
+
+Exact change — `internal/status/gate_extract.go:52`:
+
+    // before
+    var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)\*\*`)
+    // after
+    var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*`)
+
+`[^*]*` matches the label up to the closing `**`; because it excludes `*` it can never span a `**` boundary, so two headers on one line (`**AC-1** … **AC-2**`) still enumerate separately and never merge. The heading-doc comment (lines 49–52) updates to describe the trailing-label allowance. Only `acHeadingRe` (the heading enumerator) changes; `acTokenRe` (the in-checklist citation scanner, `\bAC-[0-9A-Za-z]+\b`) already matches annotated ACs via its word boundaries and stays as-is.
 
 ## Acceptance criteria
-- **AC-1 (the value)** — an AC written `**AC-1 (VALUE)**` (annotation inside the bold) is enumerated by `status --ac-scan` with id `AC-1` and its evidence/unevidenced status reported, exactly as a bare `**AC-1**` would be. Verified by: a fixture-driven test feeding an entity body whose AC section uses `**AC-1 (VALUE)**`, asserting the `--ac-scan` output lists `ac=AC-1` — RED on the current matcher, GREEN after the fix.
-- **AC-2** — no over-match regression: a bare `**AC-2**` and an inline prose mention like "see AC-3 above" are still handled correctly (AC-2 enumerated once; the prose mention not treated as a new AC item).
+- **AC-1 (the value)** — an AC written with the annotation INSIDE the bold (`**AC-1 (VALUE)**`) is enumerated by `status --ac-scan` with id `AC-1` and its evidence/unevidenced status reported, exactly as a bare `**AC-1**` would be — so the value AC the README ideation policy recommends is no longer dropped from the gate cross-check. Verified by: (a) a fixture-driven Go test feeding an entity body whose `## Acceptance criteria` uses `**AC-1 (VALUE)**`, asserting `--ac-scan --json` lists `id=AC-1` — RED on the current matcher (AC-1 absent), GREEN after the fix; AND (b) the independent on-disk baseline that moved the wrong way — the real 0240 body `fn-binding-refinements.md`, whose `--ac-scan` today enumerates 7 ACs and SILENTLY DROPS `**AC-4 (value guardrail)**` (confirmed live, see Spike record), enumerates all 8 (AC-4 present) after the fix.
+- **AC-2 (no over-match)** — the broadened matcher does not over-capture: in the same fixture a bare `**AC-2**` enumerates exactly once, and a bare-prose mention in the AC section ("see AC-3 above") is NOT treated as an AC heading (AC-3 absent from the scan). Verified by: the same fixture-driven test asserting the enumerated id set is exactly {AC-1, AC-2} — AC-2 once, no AC-3 — proving the `**…**` delimiter requirement survived the broadening.
+
+## Test plan
+- **Fixture:** a new committed fixture `internal/status/testdata/section-reader/annotated-ac-fixture.md` — minimal frontmatter, a `## Acceptance criteria` section with `- **AC-1 (VALUE)** …` (plus a "see AC-3 above" prose mention) and a bare `- **AC-2** …`, and a `## Stage Report: ideation` section whose DONE evidence cites AC-1 (so AC-1's unevidenced flag is exercised). Modeled on `interleaved-fixture.md` and the `cycle3_extract_test.go` harness (`runNative` + `acScanEnvelope`).
+- **Test (covers both ACs):** `TestACScanEnumeratesAnnotatedAC` in `internal/status/cycle3_extract_test.go` (or a sibling `*_test.go`) drives `--read <fixture> --stage ideation --ac-scan --json` and asserts the enumerated id set is exactly {AC-1, AC-2}: AC-1 present (value AC → AC-1), AC-2 present exactly once, AC-3 absent (no over-match → AC-2). RED on the bare matcher, GREEN after broadening `acHeadingRe`.
+- **Cost/complexity:** trivial — one fixture + one Go unit test, pure binary-exercise, no live host. Reuses the existing `runNative`/`acScanEnvelope` harness.
+- **No live workflow / no CLI golden needed:** the `--ac-scan` JSON envelope schema is unchanged (same `id`/`line`/`unevidenced`/`citations` fields); only WHICH ACs appear changes, which the fixture test covers directly.
+
+## Documentation changes
+The dev README's validation-stage cross-check prose describes the same "pull every AC" behavior the matcher implements, and currently names only the bare form — the same doc-vs-convention gap this entity exists to close. Concrete diff — `docs/dev/README.md:131`:
+
+    - Pull every `**AC-N**` item from the entity body's `## Acceptance criteria` section; reproduce the evidence cited in each "Verified by" clause; flag any AC without evidence.
+    + Pull every `**AC-N**` item (including a value annotation inside the bold, e.g. `**AC-1 (VALUE)**`) from the entity body's `## Acceptance criteria` section; reproduce the evidence cited in each "Verified by" clause; flag any AC without evidence.
+
+`docs/site/reference/command-reference.md:46` describes `--ac-scan` as "per-AC evidence citations" with no header-format detail, so it stays accurate — no change.
+
+## Spike record
+Spiked the riskiest path (does the broadened regex catch annotated headers AND not over-capture?) against REAL 0240 bodies and discriminators, before any product edit:
+
+- **Bug confirmed live.** `spacedock status --read fn-binding-refinements.md --stage ideation --ac-scan` enumerates AC-1/2/3/5/6/7/8 but DROPS `**AC-4 (value guardrail)**` — the value AC absent from the deterministic gate cross-check, exactly the reported defect.
+- **Broadening confirmed.** A throwaway Go program applied the current (`\*\*(AC-[0-9A-Za-z]+)\*\*`) vs broadened (`\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*`) regex to the real annotated headers (`**AC-4 (value guardrail)**`, `**AC-2 (end value — measured…)**`, an `**AC-2d (calendar)**` trailing-letter id): current captures NONE; broadened captures all with the exact id (AC-4, AC-2, AC-2d). Bare `**AC-1**` still matches under both. Since `scanACs` is unchanged, AC-4's line is the only previously-unmatched AC line in `fn-binding-refinements.md`, so the enumerated set deterministically grows 7→8 with AC-4 added — confirmed end-to-end by AC-1(b)'s RED-then-GREEN test at implementation.
+- **No over-match confirmed.** Discriminators: `**AC-2** … see AC-3 above` → broadened captures only `[AC-2]`; `**AC-1** and **AC-2**` on one line → `[AC-1 AC-2]` (no merge across the `**` boundary); `**AC-1 (VALUE)** … plain prose AC-9` → only `[AC-1]`.
+
+This is a localized matcher broadening (one regex literal + its doc comment); the mechanism is fully exercised. Known boundary, out of scope: an annotation containing a literal `*` (e.g. `**AC-1 (*x*)**`) is not a real AC convention and is not matched by `[^*]*`.
+
+## Stage Report: ideation
+
+- DONE: REFINE and COMPLETE the body — the exact matcher change + the test plan
+  Proposed approach now pins the one-line change at `gate_extract.go:52` (`\*\*(AC-[0-9A-Za-z]+)\*\*` → `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*`); Test plan names the fixture + RED-then-GREEN test reusing the `runNative`/`acScanEnvelope` harness.
+- DONE: The value AC (AC-1) is a RED-then-GREEN fixture test (`**AC-1 (VALUE)**` enumerated as `AC-1`, exactly as bare `**AC-1**`)
+  AC-1 rewritten as the value AC with the fixture RED/GREEN proof plus an independent on-disk baseline (real `fn-binding-refinements.md` 7→8 ACs, AC-4 surfaces).
+- DONE: The no-over-match control (AC-2) — bare `**AC-2**` once AND prose "see AC-3 above" not a new AC item
+  AC-2 rewritten as the discriminator: enumerated id set is exactly {AC-1, AC-2}; the prose AC-3 mention is not enumerated, proving the `**…**` delimiter requirement survived.
+- DONE: Locate the `--ac-scan` matcher and confirm the broadening on the REAL 0240 entity bodies; record this as the spike
+  Located `acHeadingRe` at `gate_extract.go:52` (sole definition, no Node twin). Spike record: live bug confirmed on `fn-binding-refinements.md` (AC-4 dropped) + throwaway regex spike over the real annotated headers and discriminators (`scratchpad/acscan_spike.go`).
+
+### Summary
+
+Refined the ideation design for the `--ac-scan` annotated-AC fix to implementation-ready. The matcher is a single regex at `internal/status/gate_extract.go:52`; broadening it to `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*` allows an asterisk-free trailing label inside the bold so `**AC-1 (VALUE)**` enumerates as `AC-1`, with `[^*]*` guaranteeing no over-match across a `**` boundary. Confirmed the bug live (real `fn-binding-refinements.md` silently drops `**AC-4 (value guardrail)**`) and exercised the broadened regex against the real annotated headers + discriminators before any product edit. Added a value-measuring AC-1 (real-entity 7→8 baseline), a no-over-match AC-2, a fixture-backed test plan, and a one-line `docs/dev/README.md:131` doc diff. No Node twin and the `--ac-scan` JSON schema is unchanged.
