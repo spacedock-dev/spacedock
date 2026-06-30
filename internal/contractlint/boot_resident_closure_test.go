@@ -3,6 +3,7 @@
 package contractlint
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,6 +40,9 @@ var foReferenceCores = map[string][]string{
 	},
 	filepath.Join("skills", "first-officer", "references", "fo-status-viewer.md"): {
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
+	},
+	filepath.Join("skills", "first-officer", "references", "fo-write-core.md"): {
+		"## FO Write Scope", "## ID Styles",
 	},
 }
 
@@ -218,5 +222,130 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 				t.Errorf("%s is missing ceremony anchor %q — the named core resolves but does not carry the ceremony, so reachability reaches an empty file", corePath, anchor)
 			}
 		}
+	}
+}
+
+// deferredReferenceFiles are the host-neutral *reference* files the boot-resident core
+// defers to — the status-viewer surface and the write/id-style surface — as distinct from
+// the dispatch/merge *module* cores. TestDeferredReferenceProsePointersResolve walks these
+// for dangling prose section-name pointers, a check neither bootResidentBodies (it walks
+// the boot bodies, not these reference files) nor bodyReferenceRe (it matches only
+// references/*.md path tokens, never a bare prose section name) can perform.
+var deferredReferenceFiles = []string{
+	filepath.Join("skills", "first-officer", "references", "fo-write-core.md"),
+	filepath.Join("skills", "first-officer", "references", "fo-status-viewer.md"),
+}
+
+// watchedSectionNames are the section names a prose pointer inside a deferred reference
+// file may name: the foReferenceCores anchors of the deferred reference files with their
+// `## `/`### ` heading markers stripped ("FO Write Scope", "ID Styles", "Status Viewer",
+// "Captain-Facing State Display", "Issue Filing"). Derived from foReferenceCores so a
+// newly-registered anchor is watched without a second edit here.
+func watchedSectionNames() []string {
+	var names []string
+	seen := map[string]bool{}
+	for _, ref := range deferredReferenceFiles {
+		for _, anchor := range foReferenceCores[ref] {
+			name := strings.TrimLeft(anchor, "# ")
+			if !seen[name] {
+				seen[name] = true
+				names = append(names, name)
+			}
+		}
+	}
+	return names
+}
+
+// referenceProsePointerDanglers scans one reference file's body for non-heading lines that
+// NAME a watched section yet resolve NEITHER intra-file (the body carries that section's
+// heading at any level) NOR via a references/*.md path token on the same line. Each such
+// line is a dangling prose pointer — the M5 shape, where a bare "(see FO Write Scope)"
+// survives a move into a file that no longer carries that section. It returns one
+// description per dangling line. The real guard and its control both drive this single
+// scanner, so defeating it reds both.
+func referenceProsePointerDanglers(body string, watched []string) []string {
+	lines := strings.Split(body, "\n")
+	defined := map[string]bool{}
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "#") {
+			continue
+		}
+		heading := strings.TrimLeft(line, "# ")
+		for _, name := range watched {
+			if heading == name {
+				defined[name] = true
+			}
+		}
+	}
+	var danglers []string
+	for i, line := range lines {
+		if strings.HasPrefix(line, "#") {
+			continue // a heading DEFINES a section, it does not point at one
+		}
+		hasPath := bodyReferenceRe.MatchString(line)
+		for _, name := range watched {
+			if !strings.Contains(line, name) || defined[name] || hasPath {
+				continue
+			}
+			danglers = append(danglers, fmt.Sprintf("line %d names section %q but resolves neither intra-file (no `## %s` heading here) nor via a references/*.md token: %q", i+1, name, name, strings.TrimSpace(line)))
+		}
+	}
+	return danglers
+}
+
+// TestDeferredReferenceProsePointersResolve is the AC-3c reachability gate the os.Stat
+// closure structurally cannot be: for each deferred reference file it walks every
+// non-heading line and FAILS on any that names a watched section without resolving it
+// (an intra-file heading OR a references/*.md path token). The expected value comes from
+// the filesystem + the resolution rule, not the file's own prose, so a section moved into
+// a different file leaves its old bare-name pointers dangling and reds here. The companion
+// control proves the scanner can fail; the empty-walk guards keep this non-vacuous.
+func TestDeferredReferenceProsePointersResolve(t *testing.T) {
+	root := repoRoot(t)
+	watched := watchedSectionNames()
+	if len(watched) == 0 {
+		t.Fatal("no watched section names derived from foReferenceCores — the prose-pointer check would pass vacuously")
+	}
+	walked := 0
+	for _, ref := range deferredReferenceFiles {
+		data, err := os.ReadFile(filepath.Join(root, ref))
+		if err != nil {
+			t.Errorf("read deferred reference file %s: %v", ref, err)
+			continue
+		}
+		walked++
+		for _, d := range referenceProsePointerDanglers(string(data), watched) {
+			t.Errorf("%s: %s", ref, d)
+		}
+	}
+	if walked == 0 {
+		t.Fatal("walked zero deferred reference files — the prose-pointer check would pass vacuously")
+	}
+}
+
+// TestDeferredReferenceProsePointerGuardFailsOnDanglingTarget is the AC-3c control: it
+// drives referenceProsePointerDanglers against planted bodies so the gate is shown able to
+// fail (RED on the M5 bare-name shape) without false-positiving the two legitimate
+// resolutions — an intra-file heading and a references/*.md path token.
+func TestDeferredReferenceProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
+	watched := watchedSectionNames()
+	if len(watched) == 0 {
+		t.Fatal("no watched section names derived from foReferenceCores — the control has nothing to test")
+	}
+	// RED — the exact M5 shape: a bare prose pointer to a section the body neither defines
+	// nor reaches by path. It MUST dangle.
+	dangling := "Some prose.\nUse `spacedock new` (see FO Write Scope), which mints the id.\n"
+	if got := referenceProsePointerDanglers(dangling, watched); len(got) == 0 {
+		t.Fatal("control: a bare prose pointer to FO Write Scope (no intra-file heading, no references/*.md token) did not dangle — the guard cannot fail")
+	}
+	// GREEN — intra-file heading present: the pointer resolves, must NOT dangle.
+	intraFile := "## FO Write Scope\n\nThe scope.\n\nSee FO Write Scope above for the full contract.\n"
+	if got := referenceProsePointerDanglers(intraFile, watched); len(got) != 0 {
+		t.Fatalf("control: a prose pointer resolved intra-file (## FO Write Scope present) was wrongly flagged as dangling: %v", got)
+	}
+	// GREEN — a references/*.md path token present: the pointer resolves, must NOT dangle.
+	pathForm := "Use `spacedock new` (see `references/fo-write-core.md`), which mints the id.\n"
+	if got := referenceProsePointerDanglers(pathForm, watched); len(got) != 0 {
+		t.Fatalf("control: a prose pointer carrying a references/*.md path token was wrongly flagged as dangling: %v", got)
 	}
 }

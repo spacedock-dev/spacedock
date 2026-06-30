@@ -38,16 +38,6 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
 - **done-when:** the FO answers an ad-hoc status question, mutates frontmatter via `--set`, previews/resolves an id, or files a GitHub issue — the `status` query/mutate command surface (flag docs, the canonical captain-facing invocations, the Captain-Facing State Display rendering) and the issue-filing approval gate are resident.
 - **guard:** a greet-and-stop boot reads neither — the greet composes its summary from `«state.boot»` JSON + README frontmatter (Startup step 8) and presents any ready gate via `present-gate`; no boot-resident path reaches the Status-Viewer display rules.
 
-## ID Styles
-
-README frontmatter `id-style` defines how new entities are addressed:
-
-- `sequential` — `id` is a numeric ID counting active plus archived. `spacedock new <slug>` mints it; `status --next-id` previews the same candidate.
-- `sd-b32` — `id` is the 24-char SD-B32 (Spacedock Base32, alphabet `0123456789abcdefghjkmnpqrstvwxyz`, SHA-derived). `spacedock new <slug> --id-seed "{slug-or-title}"` mints it; `status --next-id --id-seed "{slug-or-title}"` previews the candidate. Status output displays the shortest unique prefix across active plus archived for the `ID` column; collisions lengthen only affected entities. Duplicate full stored ID is a validation failure.
-- `slug` — identity derives from the entity slug. `spacedock new <slug>` files it with a blank `id`; `--next-id` is n/a.
-
-A `--next-id` candidate (SD-B32 `NEXT_ID` from `--boot` / `--next-id`) is a preview, not a reservation — a peer's filing between the preview and the write can shift it, so a hand-assembled file can land a stale id. `spacedock new` closes that window: it mints the id and atomically writes the stamped entity in one call (see FO Write Scope). Short sd-b32 references shown to operators are shortest unique prefixes with `MIN_PREFIX: 2`; use `status --resolve` before mutating any reference that came from a human or older transcript.
-
 ## Single-Entity Scope
 
 A headless run scoped to one named entity — not a distinct mode. Startup step 8's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 8 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
@@ -108,7 +98,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch (see FO Write Scope below).
+- The FO owns YAML frontmatter on the main branch (full write-authority scope in the deferred write reference; see the FO Write Scope and ID Styles pointer below).
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
@@ -146,20 +136,11 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 - **block:** exit 3 means a same-entity rebase conflict was aborted by `spacedock state commit`; HALT, surface the named conflicting path(s) to the captain, and do not force-push or auto-resolve.
 - → **shipped**: `` `spacedock state commit <slug>` ``.
 
-## FO Write Scope
+## FO Write Scope and ID Styles (deferred module)
 
-The FO may write these on main — nothing else:
-
-- **Entity frontmatter** — via `${SPACEDOCK_BIN:-spacedock} status --set` for all field updates
-- **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path (runs from the project root; `new` discovers the single commissioned workflow automatically — if the repo holds more than one, `new` reports the candidates and you pass `--workflow-dir {workflow_dir}`). Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into the frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts, the FO runs `«state.commit»(slug)` after `new` to commit and sync it.
-- **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
-- **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
-- **State-transition commits** — dispatch, advance, merge boundary commits
-- **Workflow process docs** — the workflow `README.md` it runs (stage definitions, gates, proof policy, task template). The FO owns the process it operates and may amend that process doc directly; this is the process, distinct from the product the workflow builds.
-
-Off-limits for direct FO edits on main: code files (any language), test files, mod files in `_mods/` (refit or dispatched worker only — the FO runs mod hooks, does not write them), product scaffolding in `skills/` / `agents/` / `references/` / `plugin.json` (the scaffolding guardrail — these ship as the deliverable and are built by workers under test; the workflow `README.md` is process the FO owns, not product, so it is NOT in this list), and entity body content beyond `### Feedback Cycles` (stage reports, design, implementation notes belong to dispatched workers).
-
-Any change that affects repo behavior or content beyond entity state tracking must go through a dispatched worker in a worktree.
+- → **runtime-binding**: `references/fo-write-core.md` (host-neutral) — the FO's main-branch write-authority boundary, the `spacedock new` atomic-create procedure, and id-style minting — loaded at the FIRST write to main (first `status --set`, `spacedock new`, archive move, or `### Feedback Cycles` write). The host `spacedock new` invocation form is the runtime adapter's already-resident new-entity binding.
+- **done-when:** the FO is about to write entity state or file a new entity on main — the write-authority boundary and the id-style minting detail are resident.
+- **guard:** a greet-and-stop boot does not read it; the boot's own `«state.sweep-merged»` write is binary-executed (`spacedock state sweep` detect + the pr-merge hook's `status --set`/`status --archive` finalize) and depends on no part of this reference.
 
 ## Mod Hook Convention
 

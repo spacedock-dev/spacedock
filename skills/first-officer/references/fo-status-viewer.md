@@ -14,7 +14,7 @@ ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--ne
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
 - `--validate` — run before trusting manually edited workflow state.
 - `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
-- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see FO Write Scope), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
+- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see `references/fo-write-core.md`), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
 - `--next` / `--where "pr !="` — targeted event-loop queries.
 
 The `--set` flag updates entity frontmatter fields:
