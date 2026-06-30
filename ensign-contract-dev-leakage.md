@@ -1,9 +1,10 @@
 ---
 title: Re-home dev-only discipline out of the universal ensign core (per-dispatch occupancy)
-status: backlog
+status: ideation
 sprint: 0240-lean-contract
 group: cleanup
 id: scr2rx4589p7j6mpgh50hdct
+started: 2026-06-30T15:51:56Z
 ---
 The ensign shared core (`skills/ensign/references/ensign-shared-core.md`) loads on EVERY worker dispatch (per-dispatch tier — a token here recurs every spawn). It bakes dev-workflow-specific discipline — TDD framing, "code-only deliverables," the "CODE only" worktree rule — into the UNIVERSAL ensign contract, even though the ensign also runs non-dev workflows (ticket, experiment, survey). Re-home that dev-only prose into the dev-shape scaffolding (loaded only by dev workflows), leaving the universal core host-/stage-neutral. Saves per-dispatch tokens (the leakage rides every ensign spawn) AND is a contract-correctness fix (the universal core shouldn't assert dev assumptions).
 
