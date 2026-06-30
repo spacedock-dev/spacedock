@@ -1,6 +1,6 @@
 ---
 title: «fn» binding refinements — promote reuse-condition-4 / «gate.ac-cross-check» / «halt.rebase-conflict» «fn»s; fix →prose + spawn/shutdown arrows; consolidate Dispatch/Merge pointers
-status: implementation
+status: validation
 score: 0.35
 group: cleanup
 issue:
@@ -171,3 +171,9 @@ Surgically folded staff-review finding M3 (contradictory #6 registry scope) per 
 ### Summary
 
 All six prose→«fn» refinements landed and every named test is green offline plus the one live re-anchor re-run (REJECT reproduced). Three new/changed contractlint guards (loosened arrow policy + over-loosening control; AC-7 halt consolidation; AC-8 registry survival) and both moved-pin mutation cycles pass RED-then-GREEN. **One finding for the gate:** AC-4's per-file guardrail cannot be met for `fo-dispatch-core.md` — three additive refinements (#1's structured «fn» promotion, #2's disambiguation, #3's two arrow lines) land on a file with only 24 B of headroom, and a faithful «fn» (heading + four labeled fields + arrow) is LARGER than the flat prose it replaces, so promotion ADDS structure rather than net-trimming. Even with #1 net-zero, #2+#3 alone (~+220 B floor) exceed the headroom; the ideation premise that "#1's promotion must net-trim ≥ (#2+#3)" rests on the false assumption that promotion trims. Final residual +429 B (a) / +405 B (b) is the tightest faithful version. **Recommended ruling:** scope AC-4's fo-dispatch-core (a)/(b) exactly as ideation scoped claude-fo-dispatch's (b) — accept the legibility win (heaviest comparator as a «fn», cold-FO arrows on the two highest-stakes capabilities, disambiguated `→ prose`) against its byte cost, or descope one of #1/#2/#3. The captain rules.
+
+## Feedback Cycles
+
+### Captain ruling — AC-4 scoped to accept the fo-dispatch-core.md overage (2026-06-30)
+
+The FO (Commander, 0240 drive) presented the flagged AC-4 finding to the captain (CL) at the gate. **Captain ruling: ACCEPT the overage.** AC-4's per-file ceiling — both (a) z4-own delta ≤ 0 and (b) absolute ≤ v0.22.0 — is scoped to **exempt `fo-dispatch-core.md`**, exactly as ideation exempted `claude-fo-dispatch.md`'s (b). Rationale recorded: the boot-resident core (`first-officer-shared-core.md`, the greet-occupancy target the sprint exists for) is **−4402 B vs v0.22.0**, so the lean goal is decisively met where it matters; `fo-dispatch-core.md` is a **deferred** dispatch reference loaded only at first dispatch (off the greet hot path); and the **+429 B is the irreducible cost of faithful `«fn»` structure** (heading + four labeled fields + arrow > the flat prose it replaces) — a legibility win the 0230 `«fn»`-binding audit recommended, not bloat. The implementer proved even the tightest faithful version is +429 B. All six refinements stand; no descope. Validation measures AC-4 for the other touched files (which pass) and confirms the fo-dispatch-core delta is the tightest faithful version; the fo-dispatch-core ceiling is captain-accepted, not a blocking failure.
