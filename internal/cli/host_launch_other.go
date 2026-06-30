@@ -13,9 +13,9 @@ import (
 // (terminal-generated delivery through a shared foreground process group) is a
 // unix contract. `spacedock <host>` is not a supported launch path on Windows
 // (syscall.Exec returned EWINDOWS even before this change); only compile-safety
-// is in scope.
-func forwardHostSignals(cmd *exec.Cmd) func() {
-	return func() {}
+// is in scope. Both returned functions are no-ops.
+func forwardHostSignals(cmd *exec.Cmd) (forward func(), stop func()) {
+	return func() {}, func() {}
 }
 
 // hostExitCode returns the portable exit code for a finished host process. A nil
