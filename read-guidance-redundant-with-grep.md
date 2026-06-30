@@ -9,7 +9,7 @@ id: 82kzghcy3j3cet3hynwa4165
 started: 2026-06-30T09:09:18Z
 worktree: .worktrees/spacedock-ensign-read-guidance-redundant-with-grep
 mod-block: merge:pr-merge
-pr: "#450"
+pr: pr-merge:450
 ---
 
 ## Problem
