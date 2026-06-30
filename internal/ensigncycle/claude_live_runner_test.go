@@ -98,6 +98,14 @@ type liveResult struct {
 	stream       string
 	artifactDir  string
 	duration     time.Duration
+	// configDir and cwd locate the dispatched-ensign sub-agent transcripts on disk
+	// (under {configDir}/projects/{encode(cwd)}/{FO-session-id}/subagents), so the
+	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
+	// EvalSymlinks-resolved FO working dir — the form Claude Code encodes into the
+	// projects path. Empty on transports that do not record them (the pty driver),
+	// so the fold no-ops to FO-front-door counts.
+	configDir string
+	cwd       string
 }
 
 type claudeLiveScenario struct {
@@ -382,8 +390,18 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	// fresh slice (never a mutation of the shared r.env) keeps the parallel
 	// invocations race-free.
 	cmd.Env = r.env
+	configDir, _ := envValue(r.env, "CLAUDE_CONFIG_DIR")
 	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
-		cmd.Env = withClaudeConfigDir(r.env, filepath.Join(base, scenario.name))
+		configDir = filepath.Join(base, scenario.name)
+		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	}
+
+	// The resolved cwd is what Claude Code encodes into its projects path; the FO
+	// subprocess runs in workflowRoot, so resolve its symlinks (macOS t.TempDir is
+	// under /var -> /private/var) to match the on-disk subagents dir.
+	resolvedCwd := workflowRoot
+	if resolved, err := filepath.EvalSymlinks(workflowRoot); err == nil {
+		resolvedCwd = resolved
 	}
 
 	// stdout carries the stream-json transcript the watcher drains for liveness;
@@ -447,6 +465,8 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		stream:       stream,
 		artifactDir:  artifactDir,
 		duration:     duration,
+		configDir:    configDir,
+		cwd:          resolvedCwd,
 	}
 }
 
