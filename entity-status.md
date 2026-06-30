@@ -7,7 +7,7 @@ sprint: 0240-lean-contract
 started: 2026-06-30T16:20:13Z
 worktree: .worktrees/spacedock-ensign-entity-status
 mod-block: merge:pr-merge
-pr: "#452"
+pr: pr-merge:452
 ---
 The boot-resident FO core (`skills/first-officer/references/first-officer-shared-core.md`) loads ~675 tokens of phase-specific reference at greet that isn't needed until a specific phase: the **Status Viewer** section (~657 tok — `status --set` field docs, the canonical invocations, the Captain-Facing State Display rendering — needed only when answering an ad-hoc status question or mutating state) and **Issue Filing** (~18 tok — rare). Defer both into one lazily-loaded `entity-status` reference, loaded on first status-query / mutate / issue-file, using the same name-a-pointer / defer-the-body pattern the dispatch and merge modules already use. Sibling to z4's Dispatch/Merge pointer consolidation, which provides the registry index.
 
