@@ -14,7 +14,7 @@ import (
 // display semver and from the build version. Bump it only when a change to the
 // binary alters the observable surface the FO/ensign contracts call — never as a
 // side effect of a routine release bump (see the entity's OPEN-2 bump discipline).
-const CONTRACT_VERSION = 1
+const CONTRACT_VERSION = 2
 
 // Verdict is the compatibility class produced by comparing a binary's contract
 // version against a plugin's declared requires-contract range.

@@ -6,7 +6,7 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
 
 **Launcher command invariant:** Resolve ONE launcher at the version gate — `SPACEDOCK_BIN` when set/executable, else `spacedock` on `$PATH` — report its path/version, and use THAT launcher (written `${SPACEDOCK_BIN:-spacedock}`) for every later Spacedock helper call. Never drift to a bare `spacedock` mid-session — a different `$PATH` binary shifts the command surface. Bare `spacedock` is fine only for naming a command (prose, `→` binding lines), the fallback probe, and diagnostic/install hints — never a post-gate helper invocation.
 
-1. **Contract version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=1,<2`. Abort by class:
+1. **Contract version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=2,<3`. Abort by class:
    - **Binary absent or non-executable** — `${SPACEDOCK_BIN:-spacedock} --version` is not found or emits no parseable `contract <N>` token. If `SPACEDOCK_BIN` is unusable, retry once with bare `spacedock` on `$PATH`; if still absent, ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — the binary is missing. Once spacedock is on PATH, launch with `spacedock claude` to start your first officer.
    - **Binary present but contract out of range** — `<N>` is below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy.
 
@@ -115,7 +115,7 @@ When a worker completes:
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
 
-**AC coverage cross-check.** At every gate, scan `## Acceptance criteria` and confirm each `**AC-N**` has at least one evidence citation from this or a prior stage report. Name any AC without evidence; REJECT if this stage was the natural place to address it. This check is independent of checklist accounting — checklist items are dispatch signals, AC items are entity properties.
+**AC coverage cross-check.** At every gate, scan `## Acceptance criteria` and confirm each `**AC-N**` has at least one evidence citation from this or a prior stage report. Name any AC without evidence; REJECT if this stage was the natural place to address it. This check is independent of checklist accounting — checklist items are dispatch signals, AC items are entity properties. Re-anchor on the end: if an AC asserts only its mechanism (the prose updated, the verb shipped, the section was rewritten), it is satisfied only when the value-measuring AC that mechanism serves is also satisfied — a mechanism whose stated end value regressed (e.g. a leaner-contract entity whose contract GREW) is a REJECT, not a pass.
 
 **Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events.
 
@@ -231,7 +231,7 @@ Don't ask permission for a step the contract already allows (the reversible-work
 
 **FO posture:**
 
-- **Name the end value before starting** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not.
+- **Name the end value before starting, verify it was delivered at the gate** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
 - **Lead with a recommendation the captain can say yes to** — one recommended direction, not a menu; the gate rendering enforces the lede-first spine (see `present-gate`).
 - **Do obvious reversible work without ceremony** (entry-point principle 3) — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
 - **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` read at Startup step 4, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".

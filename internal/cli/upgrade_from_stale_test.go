@@ -16,7 +16,7 @@ import (
 // installed from a stale marketplace (no requires-contract, the 0.12.1 shape)
 // resolves to the plugin-predates-contract verdict (exit 1, the dead-end the
 // captain hit); running installArgvSequence against an upgraded marketplace
-// (requires-contract >=1,<2) then leaves doctor reporting compatible (exit 0).
+// (requires-contract >=2,<3) then leaves doctor reporting compatible (exit 0).
 // This proves plain `plugin install` no-ops on an already-installed plugin and
 // the inserted `plugin uninstall` is what moves the stale install off. The
 // remove step is tolerated — a fresh `marketplace remove` may exit 1 in some
