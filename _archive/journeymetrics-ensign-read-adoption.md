@@ -1,6 +1,6 @@
 ---
 title: Fold the dispatched-ensign sub-agent transcript into the journeymetrics --read adoption metric
-status: validation
+status: done
 source: "hf validation (2026-06-16) — the journeymetrics --read adoption metric (status_read_calls/scoped_read_calls) parses the FO front-door `claude -p` stream only. The site-6 dispatch-prompt hint hf trimmed targets the DISPATCHED ENSIGN's reads, and the ensign runs as a separate team-agent session whose transcript the metric does not capture — four real FO captures all measure 0/0. The standing monitor does not yet observe the agent it was built to watch."
 sprint: 0240-lean-contract
 sprint-readiness: ready
@@ -9,8 +9,11 @@ id: f53zr0ehhzekzbgydpybaq5g
 group: measurement
 started: 2026-06-30T15:51:56Z
 worktree: .worktrees/spacedock-ensign-journeymetrics-ensign-read-adoption
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:448
+verdict: passed
+completed: 2026-06-30T19:41:03Z
+archived: 2026-06-30T19:41:03Z
 ---
 
 ## Problem
