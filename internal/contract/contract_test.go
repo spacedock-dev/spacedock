@@ -106,7 +106,7 @@ func TestCompare(t *testing.T) {
 func TestCompatibleUpgradeHint(t *testing.T) {
 	t.Run("behind-plugin-hints", func(t *testing.T) {
 		for _, host := range []string{"claude", "codex"} {
-			res := Compare(CONTRACT_VERSION, ">=1,<2", host, "0.19.8", "0.20.0")
+			res := Compare(CONTRACT_VERSION, ">=2,<3", host, "0.19.8", "0.20.0")
 			if res.Verdict != Compatible {
 				t.Fatalf("host %s: verdict = %v, want Compatible (the hint must not change the verdict)", host, res.Verdict)
 			}
@@ -124,7 +124,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 
 	// Negative: equal versions carry no hint — there is nothing to upgrade to.
 	t.Run("equal-version-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.20.0", "0.20.0")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.20.0", "0.20.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -136,7 +136,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// Negative: an unstamped `dev` binary version is not valid semver — the hint
 	// must not fire (no false "you must upgrade" against a dev build).
 	t.Run("dev-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.19.8", "dev")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.19.8", "dev")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -148,7 +148,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// Negative: a binary OLDER than the plugin (but still contract-compatible)
 	// carries no hint — the hint is for a behind plugin, not a behind binary.
 	t.Run("older-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.21.0", "0.20.0")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.21.0", "0.20.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -162,7 +162,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// sorts BEFORE "0.9.0" ("1" < "9"), so a lexical-compare regression of
 	// semverCompare would wrongly suppress the hint here. Pins the integer compare.
 	t.Run("behind-plugin-double-digit-minor-hints", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.9.0", "0.10.0")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.9.0", "0.10.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -176,7 +176,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// so a lexical-compare regression would wrongly FIRE the hint on this older
 	// binary. The two boundary cases together RED any lexical compare.
 	t.Run("older-binary-double-digit-minor-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.10.0", "0.9.0")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.10.0", "0.9.0")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}
@@ -189,7 +189,7 @@ func TestCompatibleUpgradeHint(t *testing.T) {
 	// dotted-int semver — the conservative gate emits no hint. Pins that
 	// parseDottedInts rejects a `-rc1` suffix rather than stripping it.
 	t.Run("prerelease-binary-no-hint", func(t *testing.T) {
-		res := Compare(CONTRACT_VERSION, ">=1,<2", "claude", "0.19.8", "0.20.0-rc1")
+		res := Compare(CONTRACT_VERSION, ">=2,<3", "claude", "0.19.8", "0.20.0-rc1")
 		if res.Verdict != Compatible {
 			t.Fatalf("verdict = %v, want Compatible", res.Verdict)
 		}

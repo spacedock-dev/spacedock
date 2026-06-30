@@ -78,7 +78,7 @@ func TestClaudePluginInstallIsHostNative(t *testing.T) {
 
 // buildLocalMarketplace writes a minimal valid local-path marketplace under root
 // and returns the marketplace directory. The plugin manifest carries a
-// requires-contract bracketing CONTRACT_VERSION (>=1,<2).
+// requires-contract bracketing CONTRACT_VERSION (>=2,<3).
 func buildLocalMarketplace(t *testing.T, root string) string {
 	t.Helper()
 	marketplace := filepath.Join(root, "marketplace")
@@ -95,7 +95,7 @@ func buildLocalMarketplace(t *testing.T, root string) string {
   ]
 }
 `)
-	mustWrite(t, filepath.Join(plugin, ".claude-plugin", "plugin.json"), `{ "name": "spacedock", "version": "0.0.0", "requires-contract": ">=1,<2", "skills": "./skills/" }
+	mustWrite(t, filepath.Join(plugin, ".claude-plugin", "plugin.json"), `{ "name": "spacedock", "version": "0.0.0", "requires-contract": ">=2,<3", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
