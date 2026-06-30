@@ -287,6 +287,9 @@ Build an ensign dispatch artifact from stdin JSON and write the JSON envelope to
 
 Flags:
   --workflow-dir DIR   Workflow definition directory containing README.md.
+  --host HOST          Override the runtime host (claude|codex|pi). Defaults to the detected runtime.
+  --team-name NAME     Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
+  --bare-mode          Emit the bare sequential shape (no name, no team_name, no run_in_background).
 
 Stdin JSON fields:
   schema_version  Dispatch schema version. The current supported value is 2.
