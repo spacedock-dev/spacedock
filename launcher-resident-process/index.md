@@ -1,13 +1,13 @@
 ---
 id: vva363ty3afdgvxcacrfx6mc
 title: Keep the spacedock launcher resident — spawn the host instead of exec'ing away
-status: ideation
+status: implementation
 source: captain (2026-06-10) — zellij restart legibility today, sidecar launches later
 started: 2026-06-29T22:28:07Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-launcher-resident-process
 issue:
 ---
 
