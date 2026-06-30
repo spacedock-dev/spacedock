@@ -81,3 +81,18 @@ Refined the ideation design for the `--ac-scan` annotated-AC fix to implementati
 ### Summary
 
 Broadened the sole `--ac-scan` heading matcher (`acHeadingRe`, gate_extract.go) to `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*` so an annotation inside the bold (`**AC-1 (VALUE)**`) enumerates as `AC-1`; `[^*]*` excludes `*` so it never spans a `**` boundary (no over-match). Drove the change RED→GREEN with `TestACScanEnumeratesAnnotatedAC` + `annotated-ac-fixture.md` (id set exactly {AC-1, AC-2}, prose "see AC-3" not enumerated) and confirmed the real 0240 `fn-binding-refinements.md` goes 7→8 ACs with the previously-dropped `**AC-4 (value guardrail)**` surfacing. README:131 validation cross-check prose updated; `go vet`/`go build ./...`/full status suite all green.
+
+## Stage Report: validation
+
+**Recommendation: PASSED.**
+
+- DONE: MEASURE AC-1 (the value): reproduce live on a rebuilt binary that real fn-binding-refinements.md --stage ideation --ac-scan enumerates 7 ACs on origin/main's matcher and 8 (AC-4 surfaces) after the fix, AND the fixture is RED on the bare matcher (AC-1 dropped) / GREEN after (AC-1 enumerated) — measured by running the binary, not asserted from prose.
+  Built two binaries (fixed=worktree HEAD 3fff9062; baseline=`origin/main` 2ef249e9 throwaway checkout, confirmed bare matcher at gate_extract.go:52). On real `fn-binding-refinements.md`: baseline=7 `[AC-1,2,3,5,6,7,8]` (AC-4 dropped, 36→38), fixed=8 `[AC-1,2,3,4@37,5,6,7,8]` — AC-4 surfaces, no other id moved. Fixture RED/GREEN: baseline emits only `[AC-2]` (AC-1 absent → RED); fixed emits `[AC-1,AC-2]`, AC-1 unevidenced=false (GREEN).
+- DONE: MEASURE AC-2 (no over-match): the fixture's enumerated id set is exactly {AC-1, AC-2} — AC-2 once, prose "see AC-3 above" NOT enumerated, and two headers on one line do not merge across the ** boundary (the [^*]* guarantee).
+  Fixed binary on `annotated-ac-fixture.md`: id set exactly {AC-1, AC-2}, no dupes, AC-3 absent. Crafted a separate discriminator and ran the fixed binary: `**AC-1** and **AC-2**` on one line → both enumerate separately (AC-1@9, AC-2@9, no merge — the `[^*]*` guarantee holds); `**AC-3 (VALUE)** … plain prose AC-9` → only AC-3 (AC-9 not enumerated); bare prose `see AC-7 above` → not enumerated.
+- DONE: Reproduce each AC's "Verified by" clause; run go test ./internal/status/... green; confirm the docs/dev/README.md:131 doc diff is present. Deliver a PASSED/REJECTED recommendation with evidence.
+  AC-1 (a) fixture RED→GREEN + (b) real-body 7→8 both reproduced by binary exercise above (proof is command/state, not self-referential). `go test ./internal/status/...` → `ok` (69.4s); `TestACScanEnumeratesAnnotatedAC` PASS. README:131 now carries "(including a value annotation inside the bold, e.g. `**AC-1 (VALUE)**`)" — diff present in commit 3fff9062. Worktree clean; commit touches exactly gate_extract.go + test + fixture + README.
+
+### Summary
+
+PASSED. Every AC was MEASURED by running rebuilt binaries, not by prose-grep. The reported defect reproduces on the baseline matcher (real `fn-binding-refinements.md` silently drops `**AC-4 (value guardrail)**`, 7 ACs; the fixture drops `**AC-1 (VALUE)**` entirely) and is fixed by the broadening (AC-4 surfaces → 8; fixture → exactly {AC-1, AC-2}). The `[^*]*` no-over-match guarantee was verified directly: two headers on one line enumerate separately and prose/annotation `*`-free mentions never become headings. The committed test is non-tautological (genuinely RED on the baseline binary). README:131 doc sync present, suite green, change is localized and low-blast-radius (one regex literal + doc comment + test + fixture).
