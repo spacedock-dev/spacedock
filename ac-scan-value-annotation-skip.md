@@ -9,7 +9,7 @@ group: tooling
 started: 2026-06-30T16:55:24Z
 worktree: .worktrees/spacedock-ensign-ac-scan-value-annotation-skip
 mod-block: merge:pr-merge
-pr: pr-merge:#447
+pr: pr-merge:447
 ---
 
 `spacedock status --read <ref> --stage <stage> --ac-scan` enumerates `**AC-N**` items and reports each one's evidence/unevidenced status, feeding the gate AC cross-check. Its matcher only recognizes a bare `**AC-N**` token, so an AC whose bold span carries an annotation — `**AC-1 (VALUE)**`, `**AC-2 (no-regression)**`, etc. — is NOT enumerated and is silently dropped from the scan.
