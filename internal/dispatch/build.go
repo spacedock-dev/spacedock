@@ -690,6 +690,18 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		out.RunInBackground = &runInBackground
 	}
 
+	// Foot-gun guard: a non-bare claude dispatch that passes team_name selects the
+	// legacy TeamCreate-registry envelope just assembled above (team_name present,
+	// run_in_background absent) rather than the auto-team default — the teamName != ""
+	// complement of mergedMode, the same three signals, no new detection and no
+	// probe. The advisory fires here, after every error guard, so it warns only when
+	// the legacy envelope is actually being emitted; a build that errors out (no
+	// envelope) stays advisory-free. Stderr-only: the envelope above is untouched.
+	// The text lives in the Claude seam beside BareModeAdvisory.
+	if !bareMode && host == "claude" && teamName != "" {
+		claudeteam.LegacyTeamNameAdvisory(stderr)
+	}
+
 	return emitBuildJSON(stdout, out)
 }
 
