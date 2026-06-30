@@ -1,6 +1,6 @@
 ---
 title: Stage-neutralize the ensign core + add a regression guard
-status: validation
+status: implementation
 sprint: 0240-lean-contract
 group: cleanup
 id: scr2rx4589p7j6mpgh50hdct
@@ -124,3 +124,12 @@ Removed the one residual stage-neutrality leak from the universal ensign core (t
 ### Summary
 
 PASSED. All three ACs measured by exercising, not asserting. AC-1's guard is non-vacuous: a detached-worktree audit confirmed defeating the scanner REDs both paired controls, re-inserting either parenthetical into the real core REDs the absence check, and incidental English is not over-flagged. AC-2 is exactly −49 B vs current origin/main with a clean two-parenthetical-only diff. AC-3 proves dev stage discipline rides the show-stage-def fetch, not the neutralized core, so the edit loses no discipline; full suite green.
+
+## Feedback Cycles
+
+### Cycle 1 — detached audit: AC-1 guard under-flags non-comma stage enumerations (2026-06-30)
+
+- **Reviewer:** `audit-scr-contract`, a detached adversarial audit on a throwaway checkout (`@ ca73544d`), binary-built and exercised against the real scanner — not a prose read.
+- **Neutralization itself: CLEAN.** Probe 1 confirmed the worktree signal is carried explicitly by the dispatch assignment (the CODE-path block is present for worktree stages, entirely absent otherwise; a worktree stage with no stamped `worktree:` fails the build at `build.go:424`). The removed `(implementation, validation)` / `(ideation, backlog)` parentheticals were pure illustration — no worker reaches wrong behavior. Probe 3 confirmed the AC-3 dispatch delivery test genuinely exercises behavior (test-minted sentinel + perturbation control; non-tautological).
+- **MATERIAL (Probe 2): the AC-1 guard under-delivers on its stated claim.** AC-1 says the test "fails on any parenthetical enumerating workflow stage names," but `lineEnumeratesStageNames` only matches a COMMA-separated list of ≥2 dev stage names. Exercised against the real scanner: `(implementation/validation)` (slash), `(implementation; validation)` (semicolon), `(implementation validation)` (space) all pass UNFLAGGED — a future editor re-illustrating with a slash re-leaks dev-stage vocab into the universal core with CI green. Tellingly, the re-insertion control's own case names use the slash form (`implementation/validation`) while only splicing the comma form.
+- **Fix routed to implementation (this cycle):** widen the parenthetical-stage-enumeration scanner to treat `,` `/` `;` and whitespace as equivalent separators inside the parenthetical (≥2 dev stage names joined by any of them is flagged); add the slash + semicolon (+ space) cases to the discriminator control's mustFlag set to prove the widening; keep the legitimate "Signaling done" line passing (no over-flag). Add a test comment documenting the by-design tradeoffs: single-name parentheticals and non-dev (ticket/experiment/survey) stage vocab are intentionally NOT caught, to avoid over-flagging incidental English. Re-audit after the fix before re-gating.
