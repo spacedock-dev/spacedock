@@ -1,16 +1,17 @@
 ---
 id: vva363ty3afdgvxcacrfx6mc
 title: Keep the spacedock launcher resident — spawn the host instead of exec'ing away
-status: validation
+status: done
 source: captain (2026-06-10) — zellij restart legibility today, sidecar launches later
 started: 2026-06-29T22:28:07Z
-completed:
-verdict:
+completed: 2026-06-30T05:18:25Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-launcher-resident-process
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:442
+archived: 2026-06-30T05:18:25Z
 ---
 
 `spacedock claude` currently replaces itself with the host process via `syscall.Exec` (`internal/cli/host_exec.go:275`), so the launcher vanishes from the process tree the moment the host starts. The captain wants the launcher to stay resident as the parent process for two reasons:
