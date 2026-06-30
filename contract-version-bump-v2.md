@@ -1,6 +1,6 @@
 ---
 title: Bump skill↔binary contract version to 2 — 0.23.0 skills cleanly reject a contract-1 (v0.22.0) binary
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 score: 0.8
 id: 7h3qb1atbvp8x2pd597kw802
