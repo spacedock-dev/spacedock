@@ -1,6 +1,6 @@
 ---
 title: Trim the redundant status --read section-read guidance — grep already covers it
-status: implementation
+status: validation
 source: "FO+captain analysis (2026-06-16), measured on real files: for entity bodies (the actual read target) `status --read --json` and `grep -nE '^#{1,4} '` produce IDENTICAL heading maps (m4 entity 19=19; FO shared-core 18=18). grep over-counts ONLY on fenced markdown-like content (dev README 23 vs 18 — the task-template block). The contract's FO line `first-officer-shared-core.md:214` pairs 'prefer grep, anchor on the heading' WITH 'status --read for offset/lines' — but grep's heading list already yields a section's offset AND its span (the next heading's line); `wc -l` yields the append-point total_lines (ensign `ensign-shared-core.md:92`); `status --resolve`/`--where --json` yield frontmatter. The ensign sites (`:18`, `:92`) name ONLY --read, dropping the grep alternative entirely. So the --read adoption guidance largely re-states the grep-anchor rule the contract already mandates; the sole non-redundant residue is fence-safe heading detection (situational). hf's four FO captures read 0/0 — consistent with re-selling a tool grep already covers, and explains why the trimmed site-6 (4x) was the wrong lever (instruct harder)."
 sprint: 0240-lean-contract
 sprint-readiness: ready
