@@ -55,7 +55,7 @@ func TestLaunchPTYTerminalSignals(t *testing.T) {
 		if _, err := ptmx.Write([]byte{0x03}); err != nil {
 			t.Fatalf("write Ctrl-C: %v", err)
 		}
-		if !waitForLog(t, log, "SIGNAL interrupt") {
+		if !waitForLog(t, log, "SIGNAL SIGINT") {
 			t.Fatalf("host never saw SIGINT after Ctrl-C; log=%q", readLog(t, log))
 		}
 		_ = cmd.Wait()
@@ -73,8 +73,11 @@ func TestLaunchPTYTerminalSignals(t *testing.T) {
 		if err := pty.Setsize(ptmx, &pty.Winsize{Rows: 40, Cols: 120}); err != nil {
 			t.Fatalf("pty.Setsize: %v", err)
 		}
-		if !waitForLog(t, log, "SIGNAL window size changes") {
-			t.Fatalf("host never saw SIGWINCH after resize; log=%q", readLog(t, log))
+		// Match the resize-triggered SIGWINCH specifically (its new dimensions),
+		// via a platform-stable marker — syscall.Signal.String() renders SIGWINCH
+		// differently on Linux ("window changed") vs darwin ("window size changes").
+		if !waitForLog(t, log, "SIGNAL SIGWINCH winsize=40x120") {
+			t.Fatalf("host never saw the resize SIGWINCH (40x120); log=%q", readLog(t, log))
 		}
 		_ = cmd.Process.Signal(syscall.SIGTERM)
 		_ = cmd.Wait()
@@ -90,7 +93,7 @@ func TestLaunchPTYTerminalSignals(t *testing.T) {
 		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 			t.Fatalf("signal launcher: %v", err)
 		}
-		if !waitForLog(t, log, "SIGNAL terminated") {
+		if !waitForLog(t, log, "SIGNAL SIGTERM") {
 			t.Fatalf("host never saw the forwarded SIGTERM; log=%q", readLog(t, log))
 		}
 		_ = cmd.Wait()

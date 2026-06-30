@@ -137,22 +137,33 @@ func stubHostRole() {
 	ch := make(chan os.Signal, 8)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGWINCH, syscall.SIGHUP)
 	logf("%s", started)
-	deadline := time.After(10 * time.Second)
+	deadline := time.After(30 * time.Second)
 	for {
 		select {
 		case sig := <-ch:
-			logf("SIGNAL %v", sig)
+			// Log a STABLE, platform-independent marker per signal — NOT
+			// syscall.Signal.String(), whose rendering diverges across OSes
+			// (SIGWINCH is "window size changes" on darwin/BSD but "window
+			// changed" on Linux, which silently broke the cross-platform match).
 			switch sig {
 			case syscall.SIGINT:
+				logf("SIGNAL SIGINT")
 				logf("EXIT 130 (saw SIGINT)")
 				os.Exit(130)
 			case syscall.SIGTERM:
+				logf("SIGNAL SIGTERM")
 				logf("EXIT 143 (saw SIGTERM)")
 				os.Exit(143)
 			case syscall.SIGHUP:
+				logf("SIGNAL SIGHUP")
 				logf("EXIT 129 (saw SIGHUP)")
 				os.Exit(129)
-				// SIGWINCH: keep running, just record it.
+			case syscall.SIGWINCH:
+				// Re-read the size so the marker proves the RESIZE reached the
+				// host (its new dimensions), not an incidental startup SIGWINCH.
+				// Keep running.
+				_, ws := stubIsattyAndSize(os.Stdin.Fd())
+				logf("SIGNAL SIGWINCH winsize=%dx%d", ws.Row, ws.Col)
 			}
 		case <-deadline:
 			logf("EXIT 124 (timeout, no signal)")
@@ -214,10 +225,12 @@ func readLog(t *testing.T, path string) string {
 	return string(b)
 }
 
-// waitForLog polls the logfile until needle appears or the timeout elapses.
+// waitForLog polls the logfile until needle appears or the timeout elapses. The
+// budget is generous (well under the stub's own 30s self-exit) so a loaded CI
+// runner has headroom; the happy path returns as soon as the marker appears.
 func waitForLog(t *testing.T, path, needle string) bool {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
+	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
 		if strings.Contains(readLog(t, path), needle) {
 			return true
