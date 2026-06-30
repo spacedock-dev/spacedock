@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-launcher-resident-process
 issue:
 ---
 
-`spacedock claude` currently replaces itself with the host process via `syscall.Exec` (`internal/cli/host_exec.go:227`), so the launcher vanishes from the process tree the moment the host starts. The captain wants the launcher to stay resident as the parent process for two reasons:
+`spacedock claude` currently replaces itself with the host process via `syscall.Exec` (`internal/cli/host_exec.go:275`), so the launcher vanishes from the process tree the moment the host starts. The captain wants the launcher to stay resident as the parent process for two reasons:
 
 1. **Future sidecars** — a resident launcher can spawn companion processes (sidecar services, watchers) alongside the host later; an exec'd-away launcher cannot.
 2. **Zellij legibility now** — with exec, zellij's restart view shows the raw underlying command (`Waiting to run: bash …/safehouse --trust-workdir-config -- claude --dangerously-skip-permissions --agent spacedock:first-officer --plugin-dir … --resume <session-id>`) instead of a legible `spacedock claude …` line, making session restarts hard to read.
@@ -110,3 +110,16 @@ The only published doc describing the launch process model is `docs/runtime-supp
 ### Summary
 
 Replaced the placeholder body with a firmed design: a resident-parent, shared-foreground-group spawn-wait replacement for `syscall.Exec`, with `Launch` returning `(int, error)` for exit-code propagation. The riskiest path was spiked first against a real controlling terminal (11/11), which also surfaced two findings the seed missed: the Windows premise is false (`syscall.Exec` → `EWINDOWS`, launch already non-functional there), and `signal.Notify` (not `signal.Ignore`) is load-bearing because `SIG_IGN` is inherited across exec and would silently break Ctrl-C for default-disposition hosts. Scope: all three hosts, unix-only, Windows kept compiling. Doc diff targets the one published doc that describes the launch process model.
+
+## Stage Report: implementation
+
+- DONE: Implement the resident-parent spawn-wait — replace syscall.Exec in execHost.Launch with exec.Command+Wait, NO Setpgid, signal.Notify (absorb SIGINT/SIGQUIT, forward SIGTERM/SIGHUP, leave SIGTSTP/SIGCONT/SIGWINCH at default), interface error→(int,error) at ALL implementors/call sites INCLUDING fakePiRuntimeOps.Launch (M1); unix //go:build helper + !unix no-op.
+  Commit ca47dfe7: host_exec.go Launch rewritten; signal model + 128+signum exit mapping in host_launch_unix.go (//go:build unix) with host_launch_other.go (//go:build !unix) no-op; hostOps/piRuntimeOps + execHost/execPiRuntimeOps/fakeHost/fakePiRuntimeOps + runClaude/runCodex/runPi all updated.
+- DONE: Write the AC tests — AC-1 (host.ppid==launcher.pid) via a stub host PLUS the exec-launcher baseline fixture (P5) contrasting host.pid==launcher.pid; AC-2 (0, nonzero N, signal-death→128+signum); AC-3 PTY-backed via github.com/creack/pty as a TEST-ONLY dep.
+  host_launch_test.go (re-exec helper-process harness: launcher/execlauncher/stub roles) covers AC-1+AC-2; host_launch_pty_test.go covers AC-3. AC-2 signal-death kills the stub with no handler (genuine WIFSIGNALED → 143/130/137), exercising the launcher's signal branch. creack/pty absent from `go list -deps ./cmd/...`.
+- DONE: Apply the doc diff to docs/runtime-support.md AND fix the stale artifacts (in-code "execs/replaces" comments, the syscall.Exec line cite, a by-analogy note); confirm GOOS=windows build/vet passes.
+  runtime-support.md resident-parent paragraph + phrase fix; frontdoor.go:38 + host_exec.go Launch comment + ABOUTME updated; two internal/ensigncycle stream-watch comments de-stale'd; entity cite host_exec.go:227→:275; SIGHUP-forward/SIGQUIT-absorb by-analogy + harmless group-SIGHUP double-fire noted in host_launch_unix.go. GOOS=windows build + vet both exit 0.
+
+### Summary
+
+Translated the gate-approved design into Go: execHost.Launch is now a resident-parent spawn-wait (no Setpgid, shared foreground group), returning the host's exit code via a `(int, error)` signature threaded through both interfaces, all four implementors, and three call sites. The riskiest paths are proven by a re-exec helper-process harness — AC-1 resident parent vs the syscall.Exec baseline, AC-2 exit-code propagation (incl. real signal death), AC-3 PTY-backed terminal-signal delivery — all green under the full suite, with the unix signal model build-tagged so GOOS=windows still compiles. One race found and fixed during validation: the stub must register signal handlers before announcing STARTED, or an injected terminal signal can beat the listener.
