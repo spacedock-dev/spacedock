@@ -1,6 +1,6 @@
 ---
 title: Defer the Status Viewer + Issue Filing reference out of the boot-resident core (entity-status)
-status: implementation
+status: validation
 group: cleanup
 id: 84521x23qhnvy0xy6st4qwmh
 sprint: 0240-lean-contract
