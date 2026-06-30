@@ -8,7 +8,7 @@ id: 3p0ccnj99jbjf6h938fsgvk8
 started: 2026-06-30T06:33:25Z
 worktree: .worktrees/spacedock-ensign-launcher-signal-forward-race-fix
 mod-block: merge:pr-merge
-pr: "#444"
+pr: pr-merge:444
 ---
 
 `internal/cli/host_exec.go:294` spawns the `forwardHostSignals` goroutine BEFORE `cmd.Start()` at `host_exec.go:296`. The goroutine reads `cmd.Process` (`host_launch_unix.go:43`) while `cmd.Start()` writes it — no happens-before edge, so a SIGTERM/SIGHUP delivered to the launcher during the fork/exec startup window is an unsynchronized read/write (UB per the Go memory model). Reproduced under `-race`. This is net-new in #442 (the prior `syscall.Exec` model had no resident goroutine).
