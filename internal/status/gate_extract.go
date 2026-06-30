@@ -48,8 +48,13 @@ var checklistBulletRe = regexp.MustCompile(`^-\s+(DONE|SKIPPED|FAILED):\s*(.*)$`
 
 // acHeadingRe matches an `**AC-N**` acceptance-criteria heading and captures the
 // AC id. The id is tokenized on the heading boundary (AC- followed by an
-// alphanumeric run), never split on `-` (the spike's AC-id boundary finding).
-var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)\*\*`)
+// alphanumeric run), never split on `-` (the spike's AC-id boundary finding). An
+// asterisk-free trailing label inside the bold span is allowed and discarded, so
+// `**AC-1 (VALUE)**` enumerates as `AC-1` exactly as bare `**AC-1**` — the value
+// AC the README ideation policy recommends is no longer dropped. The `[^*]*`
+// label excludes `*`, so it cannot span a `**` boundary: two headings on one line
+// (`**AC-1** … **AC-2**`) still enumerate separately and never merge.
+var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*`)
 
 // acTokenRe matches an AC-N token anywhere in a line, for citation scanning.
 var acTokenRe = regexp.MustCompile(`\bAC-[0-9A-Za-z]+\b`)

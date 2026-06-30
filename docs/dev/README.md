@@ -128,7 +128,7 @@ A task moves to validation after implementation is complete. The work here is to
 - **Outputs:**
   - Run applicable tests from the Testing Resources section and report results.
   - Verify each acceptance criterion with evidence.
-  - Pull every `**AC-N**` item from the entity body's `## Acceptance criteria` section; reproduce the evidence cited in each "Verified by" clause; flag any AC without evidence.
+  - Pull every `**AC-N**` item (including a value annotation inside the bold, e.g. `**AC-1 (VALUE)**`) from the entity body's `## Acceptance criteria` section; reproduce the evidence cited in each "Verified by" clause; flag any AC without evidence.
   - Reproduce each AC's cited evidence; reject any AC whose evidence is self-referential, or whose only deliverable is a decision with nothing shipped (that belongs in the roadmap, not a terminal dev task). Dev-workflow policy: an AC's proof is code, command, or state. A non-development workflow's AC proof may legitimately be a published artifact, a metric, or a human review.
   - Check that the task body, acceptance criteria, implementation, and tests reflect the latest captain feedback.
   - Reject when tests pass but prove an obsolete, over-specified, or wrong target behavior.
