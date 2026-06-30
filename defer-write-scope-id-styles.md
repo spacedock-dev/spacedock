@@ -1,6 +1,6 @@
 ---
 title: Defer FO Write Scope + ID Styles out of the boot-resident core (sibling to entity-status)
-status: implementation
+status: validation
 sprint: 0240-lean-contract
 group: cleanup
 id: k408d2ydgj7s3s9yg7csyw81
