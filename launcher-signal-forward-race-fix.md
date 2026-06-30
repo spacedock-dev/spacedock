@@ -1,6 +1,6 @@
 ---
 title: Fix the #442 launcher signal-forwarding data race — start forwardHostSignals after cmd.Start()
-status: implementation
+status: validation
 sprint: 0230-stable-finalization
 score: 0.75
 source: "pre-tag spot-audit of #441/#442 (the Haiku-shipped parallel members), 2026-06-30. Confirmed real + reproduced under -race; verified non-ship-blocker (benign on shipped arches) but a known -race defect on the front door. Gates the v0.23.0 stable cut per the captain (ship this, then tag)."
