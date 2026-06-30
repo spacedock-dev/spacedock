@@ -6,6 +6,8 @@ group: cleanup
 id: k408d2ydgj7s3s9yg7csyw81
 started: 2026-06-30T16:20:13Z
 worktree: .worktrees/spacedock-ensign-defer-write-scope-id-styles
+mod-block: merge:pr-merge
+pr: "#453"
 ---
 Sibling to `entity-status`. The boot-resident FO core (`skills/first-officer/references/first-officer-shared-core.md`) loads ~1,027 tokens of write/filing-phase reference at greet that isn't needed until the FO writes or files: **FO Write Scope** (~696 tok — what the FO may write on main + the `spacedock new` atomic-create procedure, needed at write-time) and **ID Styles** (~331 tok — sd-b32/sequential/slug minting detail, needed at new-entity filing). Defer both into a lazily-loaded reference, loaded on first write / `--set` / `spacedock new`, using the same pointer/defer pattern as the dispatch/merge modules and entity-status.
 
