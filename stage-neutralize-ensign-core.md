@@ -1,6 +1,6 @@
 ---
 title: Stage-neutralize the ensign core + add a regression guard
-status: implementation
+status: validation
 sprint: 0240-lean-contract
 group: cleanup
 id: scr2rx4589p7j6mpgh50hdct
