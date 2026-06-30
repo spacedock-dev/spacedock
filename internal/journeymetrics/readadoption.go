@@ -113,6 +113,36 @@ func readInputIsScoped(input json.RawMessage) bool {
 	return scope.Offset != 0 || scope.Limit != 0
 }
 
+// readToolTarget returns the file path or command a read-like tool_use names, so a
+// caller can detect whether a turn touched a specific file before some boundary
+// turn. Read names file_path, Grep names path, and Bash (a `cat`/`grep` of a file
+// included) names command. A non-read tool, or a tool whose input lacks the field,
+// returns "".
+func readToolTarget(name string, input json.RawMessage) string {
+	switch name {
+	case "Read":
+		return jsonStringField(input, "file_path")
+	case "Grep":
+		return jsonStringField(input, "path")
+	case "Bash":
+		return bashCommand(input)
+	}
+	return ""
+}
+
+// jsonStringField decodes one named string field from a tool_use input object,
+// returning "" when the input is empty, malformed, or lacks the field.
+func jsonStringField(input json.RawMessage, field string) string {
+	if len(input) == 0 {
+		return ""
+	}
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(input, &obj); err != nil {
+		return ""
+	}
+	return rawString(obj[field])
+}
+
 // bashCommand extracts the command string from a Bash tool_use input.
 func bashCommand(input json.RawMessage) string {
 	if len(input) == 0 {

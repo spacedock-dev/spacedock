@@ -2,9 +2,16 @@ package ensigncycle
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
+
+// deferredStatusReference is the lazily-loaded FO reference the Status Viewer +
+// Issue Filing sections moved into. A greet-and-stop boot composes its summary from
+// «state.boot» JSON + README frontmatter and must NOT read this reference — it loads
+// only at the FIRST status query, --set mutation, id lookup, or issue filing.
+const deferredStatusReference = "fo-status-viewer.md"
 
 // AC-6 boot-window measurement thresholds. The ceiling is the milestone's ~60k
 // greet-turn context ceiling; the spike threshold is set below the ~89k team-mode
@@ -79,6 +86,37 @@ func assertNoTeamCreateBeforeGreet(stream string) error {
 		for _, name := range turns[i].ToolNames {
 			if teamToolNames[name] {
 				return fmt.Errorf("pre-greet turn %d emitted a %s tool call — a team was created before the greet (lazy-TeamCreate violated)", i, name)
+			}
+		}
+	}
+	return nil
+}
+
+// assertGreetReadsNoDeferredStatusReference is the AC-2 behavioral oracle over the
+// captured stream's tool-call sequence: no pre-greet turn reads the deferred
+// Status-Viewer reference (a Read/Grep/Bash-cat naming fo-status-viewer.md in the
+// turns up to and including the greet turn). It is a behavioral observation over the
+// real run's tool ordering, NOT a contract grep — the sibling of
+// assertNoTeamCreateBeforeGreet. The greet must compose its summary from
+// status --boot + README frontmatter; a regression that re-inlined the Status-Viewer
+// display rules into the greet path, or a boot that eagerly loaded the deferred
+// reference, surfaces a pre-greet read of fo-status-viewer.md and fails this.
+func assertGreetReadsNoDeferredStatusReference(stream string) error {
+	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
+	if err != nil {
+		return fmt.Errorf("parse stream for AC-2 deferred-reference check: %w", err)
+	}
+	if len(turns) == 0 {
+		return fmt.Errorf("stream carried no assistant turns — nothing to check")
+	}
+	greet := greetTurnIndex(turns)
+	if greet < 0 {
+		return fmt.Errorf("every assistant turn dispatched — no greet turn produced")
+	}
+	for i := 0; i <= greet; i++ {
+		for _, target := range turns[i].ReadTargets {
+			if strings.Contains(target, deferredStatusReference) {
+				return fmt.Errorf("pre-greet turn %d read the deferred Status-Viewer reference (%s) via %q — the greet must render from status --boot, not the deferred display rules", i, deferredStatusReference, target)
 			}
 		}
 	}

@@ -140,6 +140,10 @@ type ClaudeTurn struct {
 	// turn that dispatches a worker carries an "Agent" (or "TeamCreate") name, so a
 	// caller can split the transcript at the first dispatch turn.
 	ToolNames []string
+	// ReadTargets is the file paths / commands of this turn's read-like tool_use
+	// blocks (Read's file_path, Grep's path, Bash's command), so a caller can detect
+	// whether a turn read a specific file before some boundary turn.
+	ReadTargets []string
 }
 
 // Context returns this turn's context-window size as the boot analysis defines it:
@@ -191,6 +195,7 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 			id = fmt.Sprintf("line-%d", lineNo)
 		}
 		var names []string
+		var readTargets []string
 		for _, block := range msg.Content {
 			if block.Type != "tool_use" {
 				continue
@@ -201,16 +206,20 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 			}
 			seenTool[toolKey] = true
 			names = append(names, block.Name)
+			if target := readToolTarget(block.Name, block.Input); target != "" {
+				readTargets = append(readTargets, target)
+			}
 		}
 		if pos, ok := index[id]; ok {
 			// A later delta of a message already seen: merge its NEW tool_use names
 			// (the per-block dedup above keeps a repeated delta from double-counting).
 			// Usage is identical across deltas, so the first-delta usage is kept.
 			turns[pos].ToolNames = append(turns[pos].ToolNames, names...)
+			turns[pos].ReadTargets = append(turns[pos].ReadTargets, readTargets...)
 			continue
 		}
 		index[id] = len(turns)
-		turns = append(turns, ClaudeTurn{ID: id, Usage: msg.Usage, ToolNames: names})
+		turns = append(turns, ClaudeTurn{ID: id, Usage: msg.Usage, ToolNames: names, ReadTargets: readTargets})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err

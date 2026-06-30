@@ -32,42 +32,11 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
    - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored `Gate review:` … `Decision:` content. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
    - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. The grant must be a phrase you can QUOTE from the prompt ("auto-approve gates" / "drive to done" / "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is NOT a grant — present and stop.
 
-## Status Viewer
+## Status Viewer and Issue Filing (deferred module)
 
-The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutation guards; skill instructions stay declarative and never reference a plugin-private script path.
-
-Invoke it as:
-```
-${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
-```
-
-- `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
-- `--validate` — run before trusting manually edited workflow state.
-- `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
-- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see FO Write Scope), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
-- `--next` / `--where "pr !="` — targeted event-loop queries.
-
-The `--set` flag updates entity frontmatter fields:
-- `--set {slug} field=value` sets a field
-- `--set {slug} field=` clears a field
-- `--set {slug} started` or `completed` auto-fills a UTC ISO 8601 timestamp (skipped if already set)
-
-### Captain-Facing State Display
-
-The commissioned README directs the captain to dispatch the FO to inspect workflow state. Invoke `status` for captain-facing display on questions like:
-
-- "what's the workflow state?" / "show me the workflow" / "what's going on?"
-- "what's dispatchable?" / "what's ready?" / "what's next?"
-- "what's archived?" / "show me the done entities"
-- any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
-
-**Canonical invocations** (all start with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir}`):
-- Overview: no extra flags.
-- Dispatchables: `--next`.
-- Archive view: `--archived`.
-- Single-entity: `--resolve {ref}` then `--where slug={resolved-slug}`.
-
-**Output rendering guidance.** Forward `status` stdout verbatim inside a fenced code block, with a one-line preface naming the request ("Workflow overview:", "Dispatchable entities:", "Archived entities:"). On empty results, render a literal note ("No dispatchable entities right now.") instead of an empty fence. Do not paraphrase rows, omit columns, invent fields, summarize counts, or editorialize.
+- → **reference**: `references/fo-status-viewer.md` (host-neutral; no per-host adapter), loaded at the FIRST status query, `--set` mutation, `--next-id`/`--resolve` lookup, or GitHub-issue filing.
+- **done-when:** the FO answers an ad-hoc status question, mutates frontmatter via `--set`, previews/resolves an id, or files a GitHub issue — the `status` query/mutate command surface (flag docs, the canonical captain-facing invocations, the Captain-Facing State Display rendering) and the issue-filing approval gate are resident.
+- **guard:** a greet-and-stop boot reads neither — the greet composes its summary from `«state.boot»` JSON + README frontmatter (Startup step 8) and presents any ready gate via `present-gate`; no boot-resident path reaches the Status-Viewer display rules.
 
 ## ID Styles
 
@@ -228,7 +197,3 @@ Don't ask permission for a step the contract already allows (the reversible-work
 - When checking whether tool X supports Y, read X's schema via ToolSearch before grepping for callers — usage presence is not existence evidence.
 - Prefer Grep over Read for targeted entity-body inspection; Read whole only when you need the full text. Anchor on a heading or field name (`## Stage Report`, `### Feedback Cycles`, a frontmatter field): `grep -n` gives the heading line (the section offset) and the next heading bounds its span, so the follow-up `Read(offset, limit)` is section-scoped. `status --read <ref> --json` is the fence-safe fallback when markdown-like fenced content makes grep over-count headings.
 - On Claude Code, a `Read` followed by a Bash mutation of the same file (including `status --set`) triggers the file-staleness safety net, echoing the file back as cache-write tokens. Grep does not participate. Trust `status --set` stdout (`field: old -> new`, `field: old -> ` for clear-to-empty, `field:  -> {timestamp}` for bare-timestamp auto-fill) to narrate mutations without re-reading.
-
-## Issue Filing
-
-Do not file GitHub issues without explicit human approval.
