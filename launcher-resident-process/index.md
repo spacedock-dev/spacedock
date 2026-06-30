@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-launcher-resident-process
 issue:
 mod-block: merge:pr-merge
-pr: "#442"
+pr: pr-merge:442
 ---
 
 `spacedock claude` currently replaces itself with the host process via `syscall.Exec` (`internal/cli/host_exec.go:275`), so the launcher vanishes from the process tree the moment the host starts. The captain wants the launcher to stay resident as the parent process for two reasons:
