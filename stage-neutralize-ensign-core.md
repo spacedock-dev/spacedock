@@ -1,5 +1,5 @@
 ---
-title: Re-home dev-only discipline out of the universal ensign core (per-dispatch occupancy)
+title: Stage-neutralize the ensign core + add a regression guard
 status: ideation
 sprint: 0240-lean-contract
 group: cleanup
