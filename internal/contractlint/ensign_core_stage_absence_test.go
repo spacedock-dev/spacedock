@@ -19,18 +19,30 @@ import (
 var ensignSharedCore = filepath.Join("ensign", "references", "ensign-shared-core.md")
 
 // stageNameAlt is the dev workflow's concrete stage vocabulary. A parenthetical that
-// comma-enumerates two or more of these names is a stage-neutrality leak.
+// enumerates two or more of these names — joined by a comma, slash, semicolon, or
+// whitespace — is a stage-neutrality leak.
 const stageNameAlt = `(?:backlog|ideation|implementation|validation|done)`
 
 // stageEnumParenRe matches a parenthetical ENUMERATING workflow stage names — an open
-// paren wrapping a comma-separated list of two or more stage-name tokens, e.g.
-// `(implementation, validation)` or `(ideation, backlog)`. The expected value comes
-// from the EXTERNAL rule (the universal core is stage-neutral), not the file's own
-// prose, so a stage-neutral paraphrase carries no match and a re-introduced stage-name
+// paren wrapping a list of two or more stage-name tokens joined by any of the common
+// separators `,` `/` `;` or whitespace, e.g. `(implementation, validation)`,
+// `(implementation/validation)`, `(implementation; validation)`, or
+// `(implementation validation)`. The separator class is widened past the comma so the
+// natural shorthands cannot re-leak the vocab unflagged. The expected value comes from
+// the EXTERNAL rule (the universal core is stage-neutral), not the file's own prose, so
+// a stage-neutral paraphrase carries no match and a re-introduced stage-name
 // parenthetical does — same structural-absence family as
-// TestFOContractCoresHaveNoDeferredTierToken. A bare-word match is deliberately NOT
-// used: it would wrongly flag incidental English like "Signaling done" (core line 51).
-var stageEnumParenRe = regexp.MustCompile(`\(\s*` + stageNameAlt + `\b(?:\s*,\s*` + stageNameAlt + `\b)+\s*\)`)
+// TestFOContractCoresHaveNoDeferredTierToken.
+//
+// By-design tradeoffs (kept narrow to avoid over-flagging incidental English):
+//   - A bare word is NOT matched — it would wrongly flag "Signaling done" (core line 51).
+//   - A single-name parenthetical (e.g. `(implementation)` alone) is NOT matched; the
+//     leak shape this guards is a multi-name ENUMERATION, and the `+` requires ≥2 names.
+//   - Non-dev stage vocab (a ticket/experiment/survey workflow's own stage names) is NOT
+//     matched — stageNameAlt lists only the dev stages, the host whose names leaked here.
+//   - The parenthetical must START with a stage name and be a pure stage-name list, so an
+//     incidental "done" buried in English prose inside parens does not engage the scanner.
+var stageEnumParenRe = regexp.MustCompile(`\(\s*` + stageNameAlt + `\b(?:[,/;\s]+` + stageNameAlt + `\b)+\s*\)`)
 
 // lineEnumeratesStageNames reports whether a line carries a workflow-stage-enumeration
 // parenthetical. This is the single scanner the absence check, its discriminator
@@ -75,10 +87,15 @@ func TestEnsignCoreEnumeratesNoStageNames(t *testing.T) {
 // TestEnsignCoreEnumeratesNoStageNames can never pass vacuously (e.g. by a typo'd regex
 // that never matches anything).
 func TestStageEnumerationScannerDiscriminates(t *testing.T) {
-	// Genuine pre-strip leak lines — each MUST flag.
+	// Genuine pre-strip leak lines — each MUST flag. The comma form is the original
+	// leak; the slash, semicolon, and bare-whitespace forms are the natural shorthands
+	// an author would reach for, and the widened separator class must bite on each.
 	mustFlag := []string{
 		"With a worktree (implementation, validation), the worktree isolates the deliverable work product only.",
 		"Without one (ideation, backlog), you run from the repo root; entity/report still go to the state checkout.",
+		"With a worktree (implementation/validation), the worktree isolates the deliverable work product only.",
+		"With a worktree (implementation; validation), the worktree isolates the deliverable work product only.",
+		"With a worktree (implementation validation), the worktree isolates the deliverable work product only.",
 	}
 	for _, line := range mustFlag {
 		if !lineEnumeratesStageNames(line) {
