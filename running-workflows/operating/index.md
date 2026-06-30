@@ -2,7 +2,7 @@
 title: "Operate a workflow"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-30 20:13:52"
+last_updated: "2026-06-30 20:49:47"
 ---
 
 # Operate a workflow
