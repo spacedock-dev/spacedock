@@ -97,7 +97,7 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 When a worker completes:
 
-1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.
+1. Read the entity file's last `## Stage Report` section — `grep -n '## Stage Report' <ref>` gives every heading line; scoped-`Read(offset, limit)` from the last one to EOF, instead of loading the whole body.
 2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
@@ -226,7 +226,7 @@ Don't ask permission for a step the contract already allows (the reversible-work
 
 - When a dispatched-ideation design rests on an unverified mechanism (format round-trip, runtime handoff, a tool actually supporting a flag), exercise the riskiest path end-to-end first — the smallest run that would invalidate the work if it broke. Evidence goes in the entity body; "no spike needed" is recorded with proven mechanisms. The integration-level analog of the AC rule: arrive at the gate with the riskiest claim demonstrated, not asserted.
 - When checking whether tool X supports Y, read X's schema via ToolSearch before grepping for callers — usage presence is not existence evidence.
-- Prefer Grep over Read for targeted entity-body inspection. Anchor on heading or field name (`## Stage Report`, `### Feedback Cycles`, a specific frontmatter field). Read only when you need the full text. To pull a whole named section, `status --read <ref> --json` returns its `offset`/`lines` so the follow-up `Read(offset, limit)` is section-scoped, not whole-file.
+- Prefer Grep over Read for targeted entity-body inspection; Read whole only when you need the full text. Anchor on a heading or field name (`## Stage Report`, `### Feedback Cycles`, a frontmatter field): `grep -n` gives the heading line (the section offset) and the next heading bounds its span, so the follow-up `Read(offset, limit)` is section-scoped. `status --read <ref> --json` is the fence-safe fallback when markdown-like fenced content makes grep over-count headings.
 - On Claude Code, a `Read` followed by a Bash mutation of the same file (including `status --set`) triggers the file-staleness safety net, echoing the file back as cache-write tokens. Grep does not participate. Trust `status --set` stdout (`field: old -> new`, `field: old -> ` for clear-to-empty, `field:  -> {timestamp}` for bare-timestamp auto-fill) to narrate mutations without re-reading.
 
 ## Issue Filing

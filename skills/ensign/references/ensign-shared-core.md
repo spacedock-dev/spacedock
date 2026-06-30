@@ -15,7 +15,7 @@ Read the assignment context provided by the first officer. It defines:
 
 ## Working
 
-1. Read the entity file before making changes — when you need only specific sections (the relevant stage-def section, your prior report), `status --read <entity-path> --json` returns each section's `offset`/`lines` for a scoped `Read`, rather than the whole body.
+1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
 2. If you were given a worktree path, keep all reads, writes, and commits under that worktree.
 3. Perform the work described in the stage definition.
 4. Update the entity file body, not the frontmatter.
@@ -89,7 +89,7 @@ Rules:
 - Every checklist item must appear.
 - Use the checklist item text verbatim for `{item text}` when possible (copy/paste).
 - Do not use markdown checkbox markers.
-- Append the report at the end of the entity file — get the file's `total_lines` from `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.
+- Append the report at the end of the entity file — get the append point from `wc -l <entity-path>` and append after the last line; do not read the entire entity body to find an insertion point.
 - If redoing a stage after rejection, append a new `## Stage Report: {stage_name} (cycle N)` section at the end rather than locating and overwriting the prior report.
 
 ## Completion
