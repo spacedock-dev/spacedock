@@ -312,9 +312,10 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 // reports MERGED) with a per-run isolated team root, and grades the durable
 // end-state: the FO greets and presents the gate, S7b advances+archives the merged
 // PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
-// then asserts the AC-2 behavioral signal (no TeamCreate before the greet) and the
-// AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
-// ~89k cache_creation spike) over the captured stream.
+// then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
+// pre-greet Read of the deferred fo-status-viewer.md reference) and the AC-6 measured
+// signal (greet-turn context below the ~60k ceiling, no pre-greet ~89k
+// cache_creation spike) over the captured stream.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -336,6 +337,13 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	}
 	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
 	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	// AC-2: the greet reads no deferred Status-Viewer reference. The staged plugin
+	// ships the real fo-status-viewer.md (livePluginDir copies skills/), so the FO
+	// COULD read it — this asserts the greet-and-stop boot renders from status --boot
+	// without loading the deferred display rules.
+	if err := assertGreetReadsNoDeferredStatusReference(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// AC-6: the greet-turn context is below the ceiling and no pre-greet 89k

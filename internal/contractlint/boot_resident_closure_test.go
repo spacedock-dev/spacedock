@@ -37,6 +37,9 @@ var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
 		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
 	},
+	filepath.Join("skills", "first-officer", "references", "fo-status-viewer.md"): {
+		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
+	},
 }
 
 // bodyReferenceRe matches a sibling reference read-path named in a contract body
