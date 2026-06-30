@@ -1,6 +1,6 @@
 ---
 title: "status --ac-scan skips ACs annotated inside the bold (e.g. **AC-1 (VALUE)**), hiding the value AC from the gate cross-check"
-status: implementation
+status: validation
 score: 0.45
 source: "v0.23.0 cut FO session, 2026-06-30. During the 3p validation gate, `status --read <ref> --stage validation --ac-scan` reported only AC-2 and AC-3 — it silently SKIPPED AC-1 because `**AC-1 (VALUE)**` carries the (VALUE) annotation INSIDE the bold markers, which the scan's `**AC-N**` matcher does not catch. The value AC (the most important one) was invisible to the deterministic gate AC cross-check; the FO confirmed AC-1 evidence manually, so 3p was unaffected, but the automated cross-check is weakened for ANY annotated AC."
 id: 48gz5715kc4d2j687jbags7v
