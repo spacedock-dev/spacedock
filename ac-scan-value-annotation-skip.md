@@ -68,3 +68,16 @@ This is a localized matcher broadening (one regex literal + its doc comment); th
 ### Summary
 
 Refined the ideation design for the `--ac-scan` annotated-AC fix to implementation-ready. The matcher is a single regex at `internal/status/gate_extract.go:52`; broadening it to `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*` allows an asterisk-free trailing label inside the bold so `**AC-1 (VALUE)**` enumerates as `AC-1`, with `[^*]*` guaranteeing no over-match across a `**` boundary. Confirmed the bug live (real `fn-binding-refinements.md` silently drops `**AC-4 (value guardrail)**`) and exercised the broadened regex against the real annotated headers + discriminators before any product edit. Added a value-measuring AC-1 (real-entity 7→8 baseline), a no-over-match AC-2, a fixture-backed test plan, and a one-line `docs/dev/README.md:131` doc diff. No Node twin and the `--ac-scan` JSON schema is unchanged.
+
+## Stage Report: implementation
+
+- DONE: acHeadingRe at internal/status/gate_extract.go:52 broadened to allow an asterisk-free trailing label inside the bold (the [^*]* form) + its heading-doc comment updated, so **AC-1 (VALUE)** enumerates as AC-1.
+  `\*\*(AC-[0-9A-Za-z]+)\*\*` → `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*` (now at gate_extract.go:57, comment lines 49-56 describe the trailing-label allowance + the no-`**`-boundary-span guarantee); commit 3fff9062.
+- DONE: TestACScanEnumeratesAnnotatedAC + annotated-ac-fixture.md added: RED on the bare matcher, GREEN after; enumerated id set is exactly {AC-1, AC-2} (no over-match, prose "see AC-3" not enumerated) AND the real fn-binding-refinements body goes 7->8 ACs (AC-4 surfaces).
+  RED: bare matcher emits only `{AC-2:1}` (AC-1 dropped); GREEN: exactly {AC-1, AC-2}, AC-1 unevidenced=false. Real `fn-binding-refinements.md --stage ideation --ac-scan`: 7 ACs (AC-1/2/3/5/6/7/8) → 8 with AC-4 at line 37, no other id changed — confirmed via rebuilt binary (state checkout absent from worktree, so a binary exercise per AC-1(b)/Spike, not a brittle committed test). Full `internal/status` suite green.
+- DONE: docs/dev/README.md:131 doc diff applied (the validation cross-check line gains the "including a value annotation inside the bold" clause).
+  Line 131 now reads "Pull every `**AC-N**` item (including a value annotation inside the bold, e.g. `**AC-1 (VALUE)**`) …"; commit 3fff9062.
+
+### Summary
+
+Broadened the sole `--ac-scan` heading matcher (`acHeadingRe`, gate_extract.go) to `\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*` so an annotation inside the bold (`**AC-1 (VALUE)**`) enumerates as `AC-1`; `[^*]*` excludes `*` so it never spans a `**` boundary (no over-match). Drove the change RED→GREEN with `TestACScanEnumeratesAnnotatedAC` + `annotated-ac-fixture.md` (id set exactly {AC-1, AC-2}, prose "see AC-3" not enumerated) and confirmed the real 0240 `fn-binding-refinements.md` goes 7→8 ACs with the previously-dropped `**AC-4 (value guardrail)**` surfacing. README:131 validation cross-check prose updated; `go vet`/`go build ./...`/full status suite all green.
