@@ -82,7 +82,9 @@ Add support in small layers. Each layer should have its own proof.
 
 ## Launcher binary propagation through wrappers
 
-`spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the process they exec, including the outer `safehouse -- ...` process when safehouse wrapping is active. Spacedock does not modify safehouse internals or assume a private passthrough mechanism; if a wrapper or runtime strips `SPACEDOCK_BIN` before the agent session observes it, the skill contract's `${SPACEDOCK_BIN:-spacedock}` convention degrades to the existing `$PATH` lookup.
+`spacedock claude` and `spacedock codex` attach `SPACEDOCK_BIN` to the host process they spawn, including the outer `safehouse -- ...` process when safehouse wrapping is active. Spacedock does not modify safehouse internals or assume a private passthrough mechanism; if a wrapper or runtime strips `SPACEDOCK_BIN` before the agent session observes it, the skill contract's `${SPACEDOCK_BIN:-spacedock}` convention degrades to the existing `$PATH` lookup.
+
+The launcher stays resident as the host's parent: it spawns the host as a child, inherits the terminal, forwards externally-targeted signals (`SIGTERM`/`SIGHUP`) while letting terminal signals (Ctrl-C, resize) reach the host through the shared foreground process group, and exits with the host's exit code — rather than replacing itself with the host. This keeps the `spacedock <host> …` command legible in process listings and session managers (for example zellij's restart view) and lets the launcher supervise companion processes alongside the session in future. (Unix launch lane; `spacedock <host>` is not a supported launch path on Windows.)
 
 ## Acceptance checklist
 
