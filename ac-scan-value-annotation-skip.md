@@ -1,12 +1,13 @@
 ---
 title: "status --ac-scan skips ACs annotated inside the bold (e.g. **AC-1 (VALUE)**), hiding the value AC from the gate cross-check"
-status: ideation
+status: implementation
 score: 0.45
 source: "v0.23.0 cut FO session, 2026-06-30. During the 3p validation gate, `status --read <ref> --stage validation --ac-scan` reported only AC-2 and AC-3 — it silently SKIPPED AC-1 because `**AC-1 (VALUE)**` carries the (VALUE) annotation INSIDE the bold markers, which the scan's `**AC-N**` matcher does not catch. The value AC (the most important one) was invisible to the deterministic gate AC cross-check; the FO confirmed AC-1 evidence manually, so 3p was unaffected, but the automated cross-check is weakened for ANY annotated AC."
 id: 48gz5715kc4d2j687jbags7v
 sprint: 0240-lean-contract
 group: tooling
 started: 2026-06-30T16:55:24Z
+worktree: .worktrees/spacedock-ensign-ac-scan-value-annotation-skip
 ---
 
 `spacedock status --read <ref> --stage <stage> --ac-scan` enumerates `**AC-N**` items and reports each one's evidence/unevidenced status, feeding the gate AC cross-check. Its matcher only recognizes a bare `**AC-N**` token, so an AC whose bold span carries an annotation — `**AC-1 (VALUE)**`, `**AC-2 (no-regression)**`, etc. — is NOT enumerated and is silently dropped from the scan.
