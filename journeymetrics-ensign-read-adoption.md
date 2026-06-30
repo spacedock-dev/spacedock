@@ -10,7 +10,7 @@ group: measurement
 started: 2026-06-30T15:51:56Z
 worktree: .worktrees/spacedock-ensign-journeymetrics-ensign-read-adoption
 mod-block: merge:pr-merge
-pr: "#448"
+pr: pr-merge:448
 ---
 
 ## Problem
