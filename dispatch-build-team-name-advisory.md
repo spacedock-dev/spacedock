@@ -1,6 +1,6 @@
 ---
 title: "dispatch build — warn + document --team-name on claude (auto-team is default; legacy shape is silent)"
-status: implementation
+status: validation
 score: 0.3
 source: "v0.23.0 cut FO session, 2026-06-30. FO reflexively passed --team-name (from the boot team_state hint) to dispatch build on Claude, which silently emitted the LEGACY team-registry shape (team_name present, run_in_background absent) instead of the auto-team merged-mode shape. Self-corrected by rebuilding without --team-name; no bad dispatch shipped."
 id: 0qt2r4n577gtwq707abgcfed
