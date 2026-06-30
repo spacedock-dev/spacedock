@@ -337,6 +337,45 @@ func TestLaunchResidentParent(t *testing.T) {
 	})
 }
 
+// TestLaunchSignalForwardNoDataRace drives the real execHost.Launch in-process so
+// the forwarding goroutine runs under the testing harness' race detector. A
+// STARTED-gated self-SIGTERM forces that goroutine to read cmd.Process: when the
+// goroutine is spawned BEFORE cmd.Start() writes cmd.Process (no happens-before
+// edge) the read races the write and -race fails the test; spawning it AFTER Start
+// makes the go-statement edge order write → read, so the read is race-free. The
+// forwarded SIGTERM also tears the stub down (exit 143), confirming the forward
+// still works (AC-2). The self-signal is gated on STARTED so the launcher's
+// handler is provably armed and catches it — never the test's default SIGTERM
+// disposition.
+func TestLaunchSignalForwardNoDataRace(t *testing.T) {
+	self, err := os.Executable()
+	if err != nil {
+		t.Fatalf("os.Executable: %v", err)
+	}
+	log := newStubLog(t)
+	argv := []string{self, log, "wait"}
+	env := append(withoutEnv(os.Environ(), launchTestRoleEnv), launchTestRoleEnv+"=stub")
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if !waitForLog(t, log, "STARTED") {
+			t.Errorf("stub never started; log=%q", readLog(t, log))
+			return
+		}
+		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
+	}()
+
+	code, err := execHost{}.Launch(argv, env)
+	<-done
+	if err != nil {
+		t.Fatalf("Launch returned error: %v (stub log=%q)", err, readLog(t, log))
+	}
+	if code != 143 {
+		t.Fatalf("launcher exit=%d, want 143 (forwarded SIGTERM must tear the stub down; stub log=%q)", code, readLog(t, log))
+	}
+}
+
 // TestLaunchExitCodePropagation is AC-2: the launcher exits with the host's exit
 // code — clean 0, a nonzero N, and a genuine signal death rendered 128+signum.
 // The signal-death cases kill the host with no handler (true WIFSIGNALED), so the

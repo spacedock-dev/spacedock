@@ -288,14 +288,19 @@ func (execHost) Launch(argv []string, env []string) (int, error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = env
-	// Install signal handling BEFORE Start so no terminal signal races the
-	// launcher's default disposition (a default SIGINT would kill the launcher
-	// before the host is even up). Unix-only; a no-op on other platforms.
-	stop := forwardHostSignals(cmd)
+	// Arm signal handling BEFORE Start so no terminal signal races the launcher's
+	// default disposition (a default SIGINT would kill the launcher before the
+	// host is even up); a signal arriving during fork/exec queues on the buffered
+	// channel. Begin forwarding only AFTER Start returns, so the go-statement that
+	// spawns the pump carries a happens-before edge from Start's write of
+	// cmd.Process to the goroutine's read of it (forwarding before that edge would
+	// race Start's write). Unix-only; both are no-ops on other platforms.
+	forward, stop := forwardHostSignals(cmd)
 	defer stop()
 	if err := cmd.Start(); err != nil {
 		return 1, err
 	}
+	forward()
 	waitErr := cmd.Wait()
 	return hostExitCode(cmd.ProcessState, waitErr), nil
 }

@@ -11,8 +11,16 @@ import (
 	"syscall"
 )
 
-// forwardHostSignals wires the launcher's signal disposition for the
-// shared-foreground-group model and returns a stop function the caller defers.
+// forwardHostSignals arms the launcher's signal disposition for the
+// shared-foreground-group model and returns a forward function and a stop
+// function the caller defers. Arming (signal.Notify) runs here, before the
+// caller's cmd.Start(), so a signal delivered during the fork/exec window queues
+// on the buffered channel rather than hitting the launcher's default disposition.
+// The caller invokes forward AFTER cmd.Start() returns: the go-statement that
+// spawns the pump then carries a happens-before edge from Start's write of
+// cmd.Process to the goroutine's read of it, so the read is synchronized (and any
+// queued early signal drains from the buffered channel once the pump runs).
+//
 // The host shares the launcher's process group (no Setpgid), which the shell
 // already made the terminal's foreground group, so the kernel delivers
 // terminal-generated signals to the host directly. The launcher therefore:
@@ -33,27 +41,30 @@ import (
 // suspends the whole foreground group and the shell's fg/bg resumes it (correct
 // shared-group job control), and SIGWINCH's default is ignore so the launcher
 // survives while the host gets its own copy from the foreground group.
-func forwardHostSignals(cmd *exec.Cmd) func() {
+func forwardHostSignals(cmd *exec.Cmd) (forward func(), stop func()) {
 	ch := make(chan os.Signal, 16)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGHUP)
-	go func() {
-		for sig := range ch {
-			switch sig {
-			case syscall.SIGTERM, syscall.SIGHUP:
-				if cmd.Process != nil {
-					_ = cmd.Process.Signal(sig)
+	forward = func() {
+		go func() {
+			for sig := range ch {
+				switch sig {
+				case syscall.SIGTERM, syscall.SIGHUP:
+					if cmd.Process != nil {
+						_ = cmd.Process.Signal(sig)
+					}
+				default:
+					// SIGINT/SIGQUIT: the kernel already delivered this to the host
+					// via the shared foreground group. Absorb it here so the launcher
+					// stays resident; do NOT re-forward.
 				}
-			default:
-				// SIGINT/SIGQUIT: the kernel already delivered this to the host
-				// via the shared foreground group. Absorb it here so the launcher
-				// stays resident; do NOT re-forward.
 			}
-		}
-	}()
-	return func() {
+		}()
+	}
+	stop = func() {
 		signal.Stop(ch)
 		close(ch)
 	}
+	return forward, stop
 }
 
 // hostExitCode maps a finished host process to the exit code the launcher
