@@ -1,9 +1,10 @@
 ---
 title: "dispatch build — warn + document --team-name on claude (auto-team is default; legacy shape is silent)"
-status: backlog
+status: ideation
 score: 0.3
 source: "v0.23.0 cut FO session, 2026-06-30. FO reflexively passed --team-name (from the boot team_state hint) to dispatch build on Claude, which silently emitted the LEGACY team-registry shape (team_name present, run_in_background absent) instead of the auto-team merged-mode shape. Self-corrected by rebuilding without --team-name; no bad dispatch shipped."
 id: 0qt2r4n577gtwq707abgcfed
+started: 2026-06-30T16:54:21Z
 ---
 
 `spacedock dispatch build` IS Claude-team-mode-aware (`internal/dispatch/build.go:292`: `mergedMode := !bareMode && host == "claude" && teamName == ""`): omitting `--team-name` yields the auto-team shape (`run_in_background:true`, no `team_name`); passing `--team-name` selects the legacy TeamCreate-registry shape. The foot-gun is ergonomic, not correctness.
