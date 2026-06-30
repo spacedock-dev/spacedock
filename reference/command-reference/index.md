@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-06-30 06:05:05"
+last_updated: "2026-06-30 07:58:28"
 ---
 
 # Command reference
