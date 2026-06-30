@@ -25,11 +25,23 @@ The user may provide a workflow directory path as an argument. If they didn't, s
 
 Store the confirmed path as `{dir}`.
 
+### Step 1b — Resolve the debrief home
+
+The debrief home is not always `{dir}`. For a split-root workflow (its README declares a `state:` checkout) the established `_debriefs/` history and the auto-syncing convention live in the state checkout, not the definition dir on the code branch. Let the binary tell you which it is rather than re-parsing `state:` yourself:
+
+1. Run `${SPACEDOCK_BIN:-spacedock} status --boot --json --workflow-dir {dir}` once and read three fields the binary already resolves: `state_backend` (`single-root` | `split-root`), `entity_dir` (the absolute resolved debrief home), and `entity_dir_present`.
+2. Set `{debrief_root} = entity_dir`. Use `{debrief_root}/_debriefs/` everywhere `_debriefs/` appears below.
+
+- `state_backend == single-root` → `entity_dir` is `{dir}`; debriefs read, write, and commit under `{debrief_root}/_debriefs/` on the current branch (unchanged behavior).
+- `state_backend == split-root` → set `{state_checkout} = entity_dir` (`= {debrief_root}`). **Halt-gate:** if `entity_dir_present` is `false` the declared checkout is NOT materialized (an orphan state branch with no linked worktree — a fresh clone or a removed worktree). HALT, report "state not initialized," and stop. Do NOT fall back to writing into `{dir}` on the code branch. Tell the captain to run `spacedock state init` (manual fallback: `git fetch origin {state_branch} && git worktree add {state_checkout} {state_branch}`), then re-run the debrief. Otherwise the reads, the new-file write, and the commit all run in the state checkout on its own branch — never in `{dir}` on the code branch. Resolve the state branch from the checkout itself: `git -C {state_checkout} rev-parse --abbrev-ref HEAD`.
+
+The debrief skill is user-invocable independent of a first-officer boot, so it cannot assume the checkout has converged — hence the explicit `entity_dir_present` gate before any `git -C {state_checkout}` operation.
+
 ### Step 2 — Determine session boundaries
 
 Check for an existing debrief to anchor the session start:
 
-1. Look for `{dir}/_debriefs/*.md` files. Sort by filename (lexicographic = chronological).
+1. Look for `{debrief_root}/_debriefs/*.md` files. Sort by filename (lexicographic = chronological).
 2. If a prior debrief exists, read the most recent one's YAML frontmatter and extract the `last-commit` field. The current session starts from the next commit after that hash.
 3. If no prior debrief exists, fall back: use `git log --oneline --reverse -- {dir} | head -1` to find the first-ever commit in the workflow directory, or use commits from the last 24 hours if the history is large.
 
@@ -270,7 +282,7 @@ If `gh` is not authenticated or fails, report the error and suggest the captain 
 
 ### Step 1 — Determine sequence number
 
-Look at existing files in `{dir}/_debriefs/` matching today's date pattern `{YYYY-MM-DD}-*.md`. The sequence number is one more than the highest existing sequence for today, or `1` if none exist.
+Look at existing files in `{debrief_root}/_debriefs/` matching today's date pattern `{YYYY-MM-DD}-*.md`. The sequence number is one more than the highest existing sequence for today, or `1` if none exist. For split-root this counts the state-checkout debriefs only — never `{dir}/_debriefs/` — so numbering continues the established history and a same-named orphan left in the definition dir cannot perturb the sequence.
 
 ### Step 2 — Calculate duration
 
@@ -286,10 +298,10 @@ Calculate the difference as a human-readable duration (e.g., `~2h30m`).
 ### Step 3 — Write the file
 
 ```bash
-mkdir -p {dir}/_debriefs
+mkdir -p {debrief_root}/_debriefs
 ```
 
-Write the debrief to `{dir}/_debriefs/{date}-{sequence:02d}.md`:
+Write the debrief to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md`:
 
 ```markdown
 ---
@@ -348,13 +360,32 @@ next session", "Other backlog", "Ideation"}
 
 ### Step 4 — Commit the debrief
 
+**Single-root** — commit on the current branch:
+
 ```bash
 git add {dir}/_debriefs/{date}-{sequence:02d}.md
 git commit -m "debrief: session {date} #{sequence} — {summary}"
 ```
 
+**Split-root** — commit path-scoped in the state checkout on its own branch, then push so peers see it (the state checkout is one shared, non-branched index; a bare `git add -A` / `git commit` would sweep up a sibling writer's staged entity, so name the path):
+
+```bash
+git -C {state_checkout} add -- _debriefs/{date}-{sequence:02d}.md
+git -C {state_checkout} commit -m "debrief: session {date} #{sequence} — {summary}" -- _debriefs/{date}-{sequence:02d}.md
+git -C {state_checkout} push origin {state_branch}
+```
+
+On a non-fast-forward push rejection, integrate peers and re-push (the single-file commit replays atop the peer's; disjoint paths → no conflict):
+
+```bash
+git -C {state_checkout} pull --rebase origin {state_branch}
+git -C {state_checkout} push origin {state_branch}
+```
+
+If the `pull --rebase` CONFLICTS, HALT: `git -C {state_checkout} rebase --abort`, report the conflicting path(s), and stop — never force-push or auto-resolve. If the checkout has no `origin` remote, commit locally and skip the push.
+
 Where `{summary}` is a brief count like "8 tasks completed, 3 new filed".
 
 Report the file path to the captain:
 
-> Debrief written to `{dir}/_debriefs/{date}-{sequence:02d}.md` and committed.
+> Debrief written to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md` and committed.
