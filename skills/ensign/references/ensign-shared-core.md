@@ -15,7 +15,7 @@ Read the assignment context provided by the first officer. It defines:
 
 ## Working
 
-1. Read the entity file before making changes — when you need only specific sections (the relevant stage-def section, your prior report), `status --read <entity-path> --json` returns each section's `offset`/`lines` for a scoped `Read`, rather than the whole body.
+1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
 2. If you were given a worktree path, keep all reads, writes, and commits under that worktree.
 3. Perform the work described in the stage definition.
 4. Update the entity file body, not the frontmatter.
