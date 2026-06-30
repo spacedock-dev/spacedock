@@ -89,7 +89,7 @@ Rules:
 - Every checklist item must appear.
 - Use the checklist item text verbatim for `{item text}` when possible (copy/paste).
 - Do not use markdown checkbox markers.
-- Append the report at the end of the entity file — get the append point from `wc -l <entity-path>` and append after the last line; do not read the entire entity body to find an insertion point.
+- Append the report at the end of the entity file — get the file's `total_lines` from `status --read <entity-path> --json` and append after it; do not read the entire entity body to find an insertion point.
 - If redoing a stage after rejection, append a new `## Stage Report: {stage_name} (cycle N)` section at the end rather than locating and overwriting the prior report.
 
 ## Completion

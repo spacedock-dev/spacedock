@@ -97,7 +97,7 @@ Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for op
 
 When a worker completes:
 
-1. Read the entity file's last `## Stage Report` section — `grep -n '## Stage Report' <ref>` gives every heading line; scoped-`Read(offset, limit)` from the last one to EOF, instead of loading the whole body.
+1. Read the entity file's last `## Stage Report` section — `status --read <ref> --json`, take the last `## Stage Report` heading's `offset`/`lines`, then `Read(offset, limit)` that range, instead of loading the whole body.
 2. Review it against the checklist — every dispatched item must appear as DONE, SKIPPED, or FAILED — and produce the explicit count summary `{N} done, {N} skipped, {N} failed`.
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
