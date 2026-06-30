@@ -57,3 +57,16 @@ Bumped the skill↔binary contract version 1->2 so 0.23.0 skills cleanly reject 
 |------|------------------|-------------|------|
 | first-officer-shared-core.md | 28586 | 28583 | byte-neutral range swap, unchanged from HEAD |
 | (all other FO/ensign reference files) | — | unchanged from HEAD | not touched |
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 against the REAL published v0.22.0 binary (contract 1) and confirm contract_skew_test is non-vacuous.
+  Downloaded spacedock_0.22.0_darwin_arm64 (reports `contract 1`). `doctor --plugin-manifest`: vs bumped `>=2,<3` → "Upgrade the binary to continue." exit 1; vs pre-bump `>=1,<2` → "OK ... compatible" exit 0. Worktree-built contract-2 binary vs `>=2,<3` → OK exit 0 (and vs `>=1,<2` → "Update the plugin" exit 1, the symmetric skew). Skew test RED in full pre-bump state (Audit C), GREEN post-bump.
+- DONE: Reproduce AC-2/AC-3 — contract 2, both manifests `>=2,<3`, bracketing tests divergeable, range text consistent, suite green, single source line.
+  Worktree binary reports `contract 2`. Both `.claude-plugin`/`.codex-plugin` declare `>=2,<3`; TestVendoredManifestBracketsContractVersion + TestCodexManifestBracketsContractVersion hold (2 ∈ [2,3)) and RED if binary→1 or range→`>=1,<2` (Audits A/B). shared-core Startup step 1 reads `>=2,<3`; no stale `>=1,<2` in any FO/ensign contract doc (remaining hits are abstract parser/Compare math + the StampVersion preserved-field fixture + historical roadmap narratives). `go test ./...` exit 0, 15 packages. Only non-test source change is the single `CONTRACT_VERSION` line (git stat).
+- DONE: Value-gate byte recheck AND detached adversarial audit on a throwaway checkout.
+  All 10 tracked FO/ensign reference files ≤ v0.22.0 baseline; shared-core 28583 (= parent and tip → edit is byte-neutral). Detached audit on `git worktree --detach c113a368` (removed after): Audit A (CONTRACT_VERSION→1) REDs skew + both bracketing + contract pkg; Audit B (live `.claude-plugin`→`>=1,<2`) REDs skew (`contract-1 verdict=compatible, want too-old-binary`) + bracketing; Audit C (full pre-bump) REDs skew = non-vacuous; vacuity probe (hardcode the live reads) stays GREEN under the pre-bump source → the divergeable reads are load-bearing. Clean audit, no material findings.
+
+### Summary
+
+PASSED. AC-1/AC-2/AC-3 all verified with real-binary evidence: the published v0.22.0 (contract 1) binary now gets the clean "Upgrade the binary to continue." exit-1 abort against the bumped `>=2,<3` manifest where it passed pre-bump, and a contract-2 binary stays compatible. The deliverable's guards (skew test + both bracketing tests + contract/doctor pkg) all have teeth — proven by a detached adversarial audit where every claim-breaking revert (CONTRACT_VERSION→1, live manifest→`>=1,<2`, full pre-bump) REDs and a hardcoded vacuous test masks the regression. Value gate intact (byte-neutral edit, shared-core 28583), only non-test source change is the single CONTRACT_VERSION line. Non-blocking advisory (out of AC scope): `docs/site/reference/command-reference.md:10` shows an example `spacedock 0.20.1 (contract 1)` — already stale on version; after this bump a v0.23.0 `--version` reports `contract 2`, so a future docs pass may want to refresh that example.
