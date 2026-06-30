@@ -1,10 +1,11 @@
 ---
 title: Stage-neutralize the ensign core + add a regression guard
-status: ideation
+status: implementation
 sprint: 0240-lean-contract
 group: cleanup
 id: scr2rx4589p7j6mpgh50hdct
 started: 2026-06-30T15:51:56Z
+worktree: .worktrees/spacedock-ensign-stage-neutralize-ensign-core
 ---
 The ensign shared core (`skills/ensign/references/ensign-shared-core.md`) loads on EVERY worker dispatch via the `Skill(skill="spacedock:ensign")` first-action (per-dispatch tier — a token here recurs every spawn). The universal core must be host-/stage-neutral because the ensign also runs non-dev workflows (ticket, experiment, survey). This task removes the remaining dev-/stage-specific leakage from the universal core, locks it against regression, and proves dev workflows lose no discipline — the dev discipline rides the dev-shape scaffolding a dev ensign loads per-dispatch.
 
