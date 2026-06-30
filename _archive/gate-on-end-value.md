@@ -1,13 +1,16 @@
 ---
 title: Gate on the entity end-value — AC cross-check re-anchor + the begin-with-the-end posture's gate half
-status: validation
+status: done
 sprint: 0221-layered-fo
 group: binary-ux
 id: bmt9h66tg1s3eda1e1vxmzja
 worktree: .worktrees/spacedock-ensign-gate-on-end-value
 started: 2026-06-29T21:34:13Z
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:441
+verdict: passed
+completed: 2026-06-30T05:18:25Z
+archived: 2026-06-30T05:18:25Z
 ---
 
 Follow-up to the README value-measuring-AC rule (landed a5e8c01e in docs/dev/README.md). That edit forces SHAPING to produce a value-measuring AC; these two edits make the FO GATE re-anchor on it — closing the begin-with-the-end loop (named at dispatch, never verified at the gate). The merge-guard miss: a well-formed but means-framed AC-3 ("the prose updates to the one-verb flow") passed the gate while the entity's end-value — a leaner contract — went unmet (+8 lines).
