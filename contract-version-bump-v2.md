@@ -7,6 +7,7 @@ id: 7h3qb1atbvp8x2pd597kw802
 worktree: .worktrees/spacedock-ensign-contract-version-bump-v2
 started: 2026-06-22T13:41:50Z
 mod-block: merge:pr-merge
+pr: "#443"
 ---
 
 The 0.23.0 skills hard-require binary verbs absent from a contract-1 (v0.22.0) binary — `spacedock state ready/commit/sweep` and `spacedock merge guard` — but the binary contract version stayed `1` and both plugin manifests declare `requires-contract: >=1,<2`. A user who upgrades skills to 0.23.0 without upgrading the binary therefore PASSES the boot contract-version gate (1 ∈ [1,2)) and then breaks cryptically (`unknown subcommand (want: init or new)` / `unknown command: merge`) instead of getting the gate's clean "binary too old — upgrade" abort. Confirmed against the published v0.22.0 binary.
