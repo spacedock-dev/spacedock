@@ -557,6 +557,69 @@ func TestACScanScopeIsLoadBearing(t *testing.T) {
 	}
 }
 
+// annotatedACFixturePath returns the committed fixture whose ## Acceptance
+// criteria section annotates the value AC inside the bold (**AC-1 (VALUE)**),
+// alongside a bare **AC-2** and a prose-only "see AC-3 above" mention — the
+// over-match discriminator for the broadened heading matcher.
+func annotatedACFixturePath(t *testing.T) string {
+	t.Helper()
+	p, err := filepath.Abs(filepath.Join("testdata", "section-reader", "annotated-ac-fixture.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+// TestACScanEnumeratesAnnotatedAC (AC-1 + AC-2) asserts --ac-scan enumerates an
+// AC whose bold span carries an annotation: **AC-1 (VALUE)** lists with id AC-1,
+// exactly as the bare **AC-2** does, so the value AC the README ideation policy
+// recommends is no longer silently dropped from the gate cross-check. The
+// enumerated id set is EXACTLY {AC-1, AC-2}: AC-1 once, AC-2 once (no
+// over-match), AC-3 absent (the prose "see AC-3 above" is not a heading, proving
+// the **…** delimiter requirement survived the broadening). RED on the bare
+// matcher (AC-1 absent), GREEN after acHeadingRe gains the trailing-label form.
+func TestACScanEnumeratesAnnotatedAC(t *testing.T) {
+	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	env := pinnedEnv(t)
+	fixture := annotatedACFixturePath(t)
+
+	out, stderr, code := runNative(t, root, env, "--workflow-dir", root, "--read", fixture, "--stage", "ideation", "--ac-scan", "--json")
+	if code != 0 {
+		t.Fatalf("exit=%d stderr=%q", code, stderr)
+	}
+	var doc acScanEnvelope
+	if err := json.Unmarshal([]byte(out), &doc); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, out)
+	}
+	// Count each enumerated id's occurrences: the set must be exactly {AC-1, AC-2}.
+	counts := map[string]int{}
+	for _, ac := range doc.ACs {
+		counts[ac.ID]++
+	}
+	if counts["AC-1"] != 1 {
+		t.Errorf("AC-1 enumerated %d time(s), want exactly 1 (the annotated value AC must list as AC-1)", counts["AC-1"])
+	}
+	if counts["AC-2"] != 1 {
+		t.Errorf("AC-2 enumerated %d time(s), want exactly 1 (bare AC, no over-match)", counts["AC-2"])
+	}
+	if counts["AC-3"] != 0 {
+		t.Errorf("AC-3 enumerated %d time(s), want 0 (the prose 'see AC-3 above' is not a heading)", counts["AC-3"])
+	}
+	if len(doc.ACs) != 2 {
+		t.Fatalf("enumerated %d ACs, want exactly 2 ({AC-1, AC-2}): %v\n%s", len(doc.ACs), counts, out)
+	}
+	// AC-1's evidence flag is exercised: its DONE evidence line cites AC-1, so a
+	// correctly-enumerated AC-1 reports unevidenced=false (not merely "present").
+	for _, ac := range doc.ACs {
+		if ac.ID == "AC-1" && ac.Unevidenced != "false" {
+			t.Errorf("AC-1 unevidenced = %q, want \"false\" (cited in the ideation DONE evidence)", ac.Unevidenced)
+		}
+	}
+}
+
 // TestGateModeLoudFailures (AC-5) asserts the gate modes fail loudly with a
 // non-zero exit and a named diagnostic, never a partial/silent emit: missing
 // --stage, a --stage matching no report (no silent positional-last fallback),
