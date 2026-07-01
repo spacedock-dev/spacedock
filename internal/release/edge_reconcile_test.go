@@ -30,12 +30,14 @@ type edgeReconcileResult struct {
 }
 
 // runEdgeReconcileFixture builds a temp repo shaped like the real incident —
-// `next` diverged behind `main` with some `next`-exclusive commits — then runs
-// the exact reconcile sequence release.yml's edge-advance job runs for `tag`
-// (`git merge -X theirs <release-commit>`, then, on a stable tag, a dev-preversion
-// stamp, then a calendar bump). The stamp/bump steps call the SAME production
-// functions release.yml's `spacedock-release` subcommands wrap, so this exercises
-// the real reconcile mechanism, not a re-implementation.
+// `next` diverged behind `main` with some `next`-exclusive commits — then
+// reconstructs, in local git plumbing, the reconcile sequence release.yml's
+// edge-advance job runs for `tag`: a `git merge` whose strategy option is read
+// from the on-disk workflow step (so a drift to `-X ours` reds this fixture
+// directly), then, on a stable tag, a dev-preversion stamp, then a calendar bump.
+// The stamp/bump/dev-preversion steps call the SAME production functions
+// release.yml's `spacedock-release` subcommands wrap; the surrounding git
+// plumbing mirrors the workflow's shell rather than shelling out to it.
 func runEdgeReconcileFixture(t *testing.T, tag string) edgeReconcileResult {
 	t.Helper()
 	dir := t.TempDir()
@@ -125,9 +127,19 @@ func runEdgeReconcileFixture(t *testing.T, tag string) edgeReconcileResult {
 	}
 
 	// The reconcile: merge the release commit into `next`, favoring the release.
-	// Run from `next`, so the merge commit's FIRST parent is the pre-merge next
-	// tip — the property that makes `git push edge-advance:next` a fast-forward.
-	mergeCmd := exec.Command("git", "merge", "-X", "theirs", "--no-edit", releaseCommit,
+	// The `-X <strategy>` option is read from the on-disk release.yml edge-advance
+	// reconcile step for this tag's path, so this fixture merges with EXACTLY the
+	// strategy CI uses — a workflow drift to `-X ours` (the 0.24.0-pre1 incident)
+	// reds the tree-match assertion below rather than passing against a stale
+	// hardcoded `theirs`. Run from `next`, so the merge commit's FIRST parent is
+	// the pre-merge next tip — the property that makes the push a fast-forward.
+	workflow := readWorkflow(t, "release.yml")
+	reconcileStep := edgeAdvanceReconcileStep(t, workflow, strings.Contains(tag, "-"))
+	strategy := mergeStrategyOption(mergeCommand(reconcileStep))
+	if strategy == "" {
+		t.Fatalf("edge-advance reconcile step %q has no `-X <strategy>` merge option to mirror", reconcileStep.name)
+	}
+	mergeCmd := exec.Command("git", "merge", "-X", strategy, "--no-edit", releaseCommit,
 		"-m", "next: reconcile edge line to "+tag)
 	mergeCmd.Dir = dir
 	mergeOut, err := mergeCmd.CombinedOutput()
@@ -387,14 +399,7 @@ func TestReleaseWorkflowEdgeAdvanceNeverForces(t *testing.T) {
 // edge-advance job must exist, `needs:` the goreleaser job, and carry no step
 // that force-pushes or resets `next`.
 func assertEdgeAdvanceIsForceFreeSibling(workflow string) error {
-	var edge *workflowJob
-	for _, job := range parseWorkflowJobs(workflow) {
-		if job.name == "edge-advance" {
-			j := job
-			edge = &j
-			break
-		}
-	}
+	edge := edgeAdvanceJob(workflow)
 	if edge == nil {
 		return fmt.Errorf("release.yml has no edge-advance job")
 	}
@@ -413,6 +418,220 @@ func assertEdgeAdvanceIsForceFreeSibling(workflow string) error {
 				return fmt.Errorf("edge-advance step force-pushes or resets next: %q", command)
 			}
 		}
+	}
+	return nil
+}
+
+// edgeAdvanceJob returns the parsed edge-advance job, or nil when the workflow
+// has none — the single lookup every edge-advance guard and the fixture share.
+func edgeAdvanceJob(workflow string) *workflowJob {
+	for _, job := range parseWorkflowJobs(workflow) {
+		if job.name == "edge-advance" {
+			j := job
+			return &j
+		}
+	}
+	return nil
+}
+
+// edgeAdvanceReconcileSteps returns the edge-advance job's reconcile steps — the
+// ones whose run block carries a `git merge`. Callers distinguish the two by
+// their `if:` guard, not by order.
+func edgeAdvanceReconcileSteps(job workflowJob) []workflowStep {
+	var steps []workflowStep
+	for _, step := range job.steps {
+		if mergeCommand(step) != "" {
+			steps = append(steps, step)
+		}
+	}
+	return steps
+}
+
+// edgeAdvanceReconcileStep returns the reconcile step guarding the given tag path
+// — prerelease selects the `contains(github.ref, '-')` step, stable the
+// `!contains(...)` step — from the parsed workflow, so the fixture can mirror the
+// exact merge strategy CI runs for that path.
+func edgeAdvanceReconcileStep(t *testing.T, workflow string, prerelease bool) workflowStep {
+	t.Helper()
+	job := edgeAdvanceJob(workflow)
+	if job == nil {
+		t.Fatal("release.yml has no edge-advance job")
+	}
+	for _, step := range edgeAdvanceReconcileSteps(*job) {
+		if prerelease && ifSelectsPrerelease(step.ifCond) {
+			return step
+		}
+		if !prerelease && ifSelectsStable(step.ifCond) {
+			return step
+		}
+	}
+	t.Fatalf("edge-advance has no reconcile step guarding the prerelease=%v path", prerelease)
+	return workflowStep{}
+}
+
+// edgeAdvanceBumpCalendarStep returns the edge-advance step that bumps the
+// marketplace calendar key (and pushes the edge line), or nil when none does.
+func edgeAdvanceBumpCalendarStep(job workflowJob) *workflowStep {
+	for i := range job.steps {
+		for _, command := range executableShellCommands(job.steps[i].run) {
+			if strings.Contains(command, "bump-calendar .claude-plugin/marketplace.json") {
+				return &job.steps[i]
+			}
+		}
+	}
+	return nil
+}
+
+// mergeCommand returns the first normalized `git merge …` command in a step's
+// run block, or "" when the step runs none.
+func mergeCommand(step workflowStep) string {
+	for _, command := range executableShellCommands(step.run) {
+		if strings.HasPrefix(command, "git merge ") {
+			return command
+		}
+	}
+	return ""
+}
+
+// mergeStrategyOption returns the `-X <strategy>` argument of a `git merge`
+// command (e.g. "theirs"), or "" when the command carries none.
+func mergeStrategyOption(command string) string {
+	fields := strings.Fields(command)
+	for i, f := range fields {
+		switch {
+		case f == "-X" && i+1 < len(fields):
+			return fields[i+1]
+		case strings.HasPrefix(f, "-X") && len(f) > len("-X"):
+			return f[len("-X"):]
+		case strings.HasPrefix(f, "--strategy-option="):
+			return strings.TrimPrefix(f, "--strategy-option=")
+		}
+	}
+	return ""
+}
+
+// ifSelectsPrerelease reports whether an `if:` guard fires on a prerelease
+// (hyphenated) tag and not a stable one — the un-negated `contains(github.ref,
+// '-')` form.
+func ifSelectsPrerelease(ifCond string) bool {
+	return strings.ReplaceAll(ifCond, " ", "") == "contains(github.ref,'-')"
+}
+
+// ifSelectsStable reports whether an `if:` guard fires on a stable tag and not a
+// prerelease — the negated `!contains(github.ref, '-')` form. It is the exact
+// logical complement of ifSelectsPrerelease, so a step pair carrying both fires
+// on exactly one tag shape each.
+func ifSelectsStable(ifCond string) bool {
+	return strings.ReplaceAll(ifCond, " ", "") == "!contains(github.ref,'-')"
+}
+
+// TestReleaseWorkflowEdgeAdvanceWiring locks the edge-advance job's step-level
+// wiring against the on-disk release.yml, closing the coupling gaps the detached
+// audit found: both reconcile steps must merge with `-X theirs` (favor the
+// release — the `-X ours` flip is the exact 0.24.0-pre1 divergence incident),
+// their `if:` guards must be complementary so EXACTLY one fires per tag
+// (prerelease `contains(github.ref, '-')`, stable `!contains(...)`), and the
+// calendar-bump step must carry no `if:` so it always runs. The adversarial twins
+// flip the strategy to `-X ours`, widen the stable guard to `always()`, copy the
+// prerelease guard onto the stable step, and gate the bump-calendar step; each
+// must red, so a green result is not vacuous.
+func TestReleaseWorkflowEdgeAdvanceWiring(t *testing.T) {
+	workflow := readWorkflow(t, "release.yml")
+	if err := assertEdgeAdvanceWiring(workflow); err != nil {
+		t.Fatalf("real release.yml edge-advance wiring guard failed: %v", err)
+	}
+
+	// -X ours on BOTH reconcile steps — the 0.24.0-pre1 incident reintroduction.
+	ours := strings.ReplaceAll(workflow, "git merge -X theirs", "git merge -X ours")
+	if ours == workflow {
+		t.Fatal("fixture workflow missing `git merge -X theirs` to mutate")
+	}
+	if err := assertEdgeAdvanceWiring(ours); err == nil {
+		t.Fatal("wiring guard accepted edge-advance reconcile steps using -X ours")
+	}
+
+	// always() on the stable step — both branches fire on a prerelease, so the
+	// stable dev-preversion stamp wrongly runs on a `-pre` cut. Anchored to the
+	// stable step's name so it does not mutate the other `!contains(...)` guards.
+	always := strings.Replace(workflow,
+		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-')\"\n",
+		"      - name: Reconcile the edge line past the stable release\n        if: \"always()\"\n",
+		1)
+	if always == workflow {
+		t.Fatal("fixture workflow missing the stable reconcile step guard to widen to always()")
+	}
+	if err := assertEdgeAdvanceWiring(always); err == nil {
+		t.Fatal("wiring guard accepted a stable reconcile step guarded by always()")
+	}
+
+	// Copy-paste: the stable step reuses the prerelease `contains(...)` guard, so
+	// the stable dev-preversion path would never fire on any tag.
+	copyPaste := strings.Replace(workflow,
+		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-')\"\n",
+		"      - name: Reconcile the edge line past the stable release\n        if: \"contains(github.ref, '-')\"\n",
+		1)
+	if copyPaste == workflow {
+		t.Fatal("fixture workflow missing the stable reconcile step guard to copy-paste")
+	}
+	if err := assertEdgeAdvanceWiring(copyPaste); err == nil {
+		t.Fatal("wiring guard accepted two reconcile steps with the same non-complementary if: guard")
+	}
+
+	// A conditional bump-calendar step — it must run unconditionally on both paths.
+	gatedBump := strings.Replace(workflow,
+		"      - name: Bump the marketplace calendar key and push the edge line\n",
+		"      - name: Bump the marketplace calendar key and push the edge line\n        if: \"!contains(github.ref, '-')\"\n",
+		1)
+	if gatedBump == workflow {
+		t.Fatal("fixture workflow missing the bump-calendar step name to gate")
+	}
+	if err := assertEdgeAdvanceWiring(gatedBump); err == nil {
+		t.Fatal("wiring guard accepted a conditional bump-calendar step")
+	}
+}
+
+// assertEdgeAdvanceWiring consolidates the edge-advance job's step-level wiring
+// invariants against the parsed workflow: it is a force-free `needs: goreleaser`
+// sibling (assertEdgeAdvanceIsForceFreeSibling), both reconcile steps merge with
+// `-X theirs`, their `if:` guards are complementary (exactly one fires per tag),
+// and the calendar-bump step runs unconditionally.
+func assertEdgeAdvanceWiring(workflow string) error {
+	if err := assertEdgeAdvanceIsForceFreeSibling(workflow); err != nil {
+		return err
+	}
+	job := edgeAdvanceJob(workflow)
+	if job == nil {
+		return fmt.Errorf("release.yml has no edge-advance job")
+	}
+
+	reconcile := edgeAdvanceReconcileSteps(*job)
+	if len(reconcile) != 2 {
+		return fmt.Errorf("edge-advance has %d reconcile (git merge) steps, want 2", len(reconcile))
+	}
+	prereleaseGuarded, stableGuarded := false, false
+	for _, step := range reconcile {
+		if strat := mergeStrategyOption(mergeCommand(step)); strat != "theirs" {
+			return fmt.Errorf("edge-advance reconcile step %q merges with -X %q, want theirs (favor the release)", step.name, strat)
+		}
+		switch {
+		case ifSelectsPrerelease(step.ifCond):
+			prereleaseGuarded = true
+		case ifSelectsStable(step.ifCond):
+			stableGuarded = true
+		default:
+			return fmt.Errorf("edge-advance reconcile step %q has if: %q, want contains/!contains(github.ref, '-')", step.name, step.ifCond)
+		}
+	}
+	if !prereleaseGuarded || !stableGuarded {
+		return fmt.Errorf("edge-advance reconcile steps are not complementary (prerelease-guarded=%v stable-guarded=%v); exactly one must fire per tag", prereleaseGuarded, stableGuarded)
+	}
+
+	bump := edgeAdvanceBumpCalendarStep(*job)
+	if bump == nil {
+		return fmt.Errorf("edge-advance has no bump-calendar step")
+	}
+	if strings.TrimSpace(bump.ifCond) != "" {
+		return fmt.Errorf("edge-advance bump-calendar step carries if: %q, want unconditional (no if:)", bump.ifCond)
 	}
 	return nil
 }
