@@ -8,7 +8,7 @@ sprint: 0240-lean-contract
 started: 2026-07-01T02:38:47Z
 worktree: .worktrees/spacedock-ensign-release-advances-edge-next-line
 mod-block: merge:pr-merge
-pr: "#455"
+pr: pr-merge:455
 ---
 
 ## Problem
