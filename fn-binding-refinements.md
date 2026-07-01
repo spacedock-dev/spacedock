@@ -8,6 +8,8 @@ id: z4qnbcsv0ffty4njszg214wd
 sprint: 0240-lean-contract
 started: 2026-06-30T16:20:13Z
 worktree: .worktrees/spacedock-ensign-fn-binding-refinements
+mod-block: merge:pr-merge
+pr: "#454"
 ---
 
 Post-v0.23.0 refinement from the 0230 «fn»-binding effectiveness audit (5-lens, verdict "mostly-effective-with-fixes"). The binding program is sound and ship-safe — every load-bearing guarantee is machine-pinned and the arrow trichotomy is the standout legibility win — so these are quality refinements, NOT correctness fixes, and were deliberately deferred past the v0.23.0 cut. (The audit's scariest finding, a claimed worker.spawn/shutdown over-collapse in the M2 trim, was VERIFIED a false alarm: worker.shutdown content is preserved and worker.spawn is a legitimate DRY relocation into the heading + the promoted «dispatch.build» «fn».)
