@@ -244,3 +244,31 @@ Independently reproduced (not asserted) all five ACs against the db015360 delive
 - **Root cause (from the live transcripts, sonnet vs opus, same seeded merged-PR #42):** BOTH FOs performed the boot pr-merge startup-hook advancement of the merged PR (a `status --set`/archive write — expected boot behavior; `state sweep` returning 0 for a bare `#42` ref is by design, the mod hook does the gh detection). The ONLY divergence: the opus FO, per its own words *"First loading the write-authority contract since this is my first write to main,"* loaded `Skill(fo-write-core)` to verify authority before the advancement write; the sonnet FO ran the identical write directly without loading it. This is exactly the audit's **P-2 polish note** made real — nt condensed the old per-module greet-guard rationale (the registry row that stated *"the boot's own «state.sweep-merged» write is binary-executed"*) into one generic "a greet-and-stop boot loads NONE of these," so a cautious opus FO re-derives write authority the only way it can: by loading the skill. NOT a `state sweep` bug (that CI sweep behavior is correct); NOT a sweep `--workflow-dir` issue (that is the separate `82e`, seen in another session).
 
 - **Fix (captain-directed, refinement #2):** scope the `## Deferred load points` `fo-write-core` trigger so the boot advancement write is explicitly exempt from the load — restoring, at the trigger's own definition, the specific "this boot write needs no write-scope load" hint the collapse dropped. Concretely: `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write); **NOT** the boot `«state.sweep-merged»`/pr-merge advancement, whose `status --set`/`archive` are pre-authorized and need no write-scope load. Contract-prose only; offline suites (AC-1 byte delta, contractlint AC-3, offline AC-2 oracle) must stay green, then re-run claude-live — the real test of whether opus now respects the exemption. If opus still loads it despite an explicit "do not load" at the decision point, that is the `5xs` fo-opus-behavioral-robustness issue, not nt.
+
+## Stage Report: implementation (feedback cycle 1)
+
+- DONE: Apply refinement #2: scope the `## Deferred load points` fo-write-core trigger in first-officer-shared-core.md to exempt the boot «state.sweep-merged»/pr-merge advancement — restoring the "this boot write needs no write-scope load" hint at the trigger's own definition, preserving the single shared greet-guard
+  Trigger line scoped (only line touched in the block; other three load-point lines + the shared greet-guard sentence untouched). Commit 6043bb8d.
+- DONE: Keep ALL offline suites green + AC-1 still NEGATIVE: re-measure the signed cumulative wc -c delta vs origin/main over the affected set (it loosens slightly from -1924 B by the added clause but must stay < 0); go build ./... and go test ./internal/contractlint/ ./internal/ensigncycle/ ./internal/journeymetrics/ green
+  AC-1 cumulative = **-1768 B** (still NEGATIVE; shared-core -1124 → -968, +156 B for the clause — in line with the ~-1740 estimate; all other 7 files unchanged from the prior table). `go build ./...` clean; the three packages GREEN (`-count=1`).
+- DONE: Commit in the worktree; record the new AC-1 figure + the exact before/after of the trigger line in the stage report
+  Committed 6043bb8d in the worktree branch (NOT pushed — FO handles push + live re-run). Before/after of BOTH edited lines below.
+
+### Trigger prose — exact before/after (first-officer-shared-core.md, `## Deferred load points`)
+
+BEFORE: `` - `Skill(skill="spacedock:fo-write-core")` — first write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write). ``
+AFTER: `` - `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write). NOT the boot `«state.sweep-merged»`/pr-merge advancement, whose `status --set`/`archive` are pre-authorized and need no write-scope load. ``
+
+### Fold-test token sync — exact before/after (fn_consolidation_structure_test.go:103) [FO-approved granularity correction of nt's OWN AC-3 fold-test]
+
+BEFORE: `"first write to main",   // write/new-entity load-point`
+AFTER: `"write to main",         // write/new-entity load-point`
+Rationale: the mandated prose splits the literal `first write to main` with `**FO-authored** `; the over-specified token was policing the `first` qualifier, not the write-trigger invariant. `"write to main"` still names the fo-write-core write trigger and keeps the captain-approved prose verbatim.
+
+### RED-capable proof (token change is non-weakening, not weakening-to-pass)
+
+Adversarial: deleted the fo-write-core load-point line from `## Deferred load points` → `TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard` went RED on BOTH `spacedock:fo-write-core` (token) AND `"write to main"` (trigger) checks; reverted via `git checkout`, GREEN restored. `"write to main"` is unique to the fo-write-core line within the block (grep count = 1), so the assertion cannot pass by matching a different line.
+
+### Summary
+
+Applied captain-directed refinement #2 in isolation: scoped the `## Deferred load points` fo-write-core trigger to first **FO-authored** writes and explicitly exempted the boot `«state.sweep-merged»`/pr-merge advancement, restoring the dropped "this boot write needs no write-scope load" hint at the trigger's own definition without touching the single shared greet-guard or the other three load-point lines. The mandated verbatim prose split the literal `first write to main` that nt's own AC-3 fold-test hard-asserted (the assignment's "no test change" note reasoned only about the AC-2 parser oracle and missed this coupling) — I halted and escalated rather than guess; per the FO's GO, synced the over-specified token to `"write to main"` (a granularity correction, proven RED-capable: dropping the write trigger still bites). AC-1 re-measured at -1768 B (still NEGATIVE); `go build ./...` + contractlint/ensigncycle/journeymetrics all GREEN. Committed 6043bb8d in the worktree; not pushed — the FO owns the push + the claude-live re-run that is the real test of whether opus now respects the exemption.
