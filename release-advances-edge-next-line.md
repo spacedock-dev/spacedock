@@ -1,6 +1,6 @@
 ---
 title: Release process must advance the `next` edge line (reconcile + calendar bump) on every release, not just `stable`
-status: implementation
+status: validation
 source: "0.24.0-pre1 prerelease cut, 2026-07-01 (Commander). Cutting v0.24.0-pre1 advanced the binary + stamped main to 0.24.0-pre1, but left the `next` edge line stale — it had diverged 40 commits during the 0240 sprint, and release.yml's hyphenated-tag carve-out advances NEITHER `stable` (correctly skipped) NOR `next`. So `spacedock install --host codex` (the spacedock-edge marketplace serves the plugin from `next`) kept serving the old 0.23.0-pre plugin, and the binary(0.24.0-pre1)/plugin(0.23.0-pre) version-compat check hard-blocked `spacedock codex`. Manually reconciled next -> main@0.24.0-pre1 (merge favoring main) + bumped the marketplace calendar key (origin/next now 1bb3da06), which unblocked the edge install. The release process should do this automatically."
 group: tooling
 id: s20pdb1pzexwkbp5b4cz30av
