@@ -32,6 +32,11 @@ var (
 	fnRefRe     = regexp.MustCompile(`«(` + fnNameRe + `)»`)
 	arrowRe     = regexp.MustCompile(`(?m)^- → (.*)$`)
 	metaTokens  = map[string]bool{"fn": true}
+	// hostWordRe matches a host name (Claude/Codex/Pi) as a whole word, case-insensitive, so a
+	// PROSE host binding on a runtime-binding arrow line ("on Claude, call Agent() directly") reds
+	// even though it carries no `**Host:**` bold token. Derived from capabilityHosts so a new host
+	// is covered without a second edit; word boundaries keep it from firing on "capital"/"spinning".
+	hostWordRe = regexp.MustCompile(`(?i)\b(` + strings.Join(capabilityHosts, "|") + `)\b`)
 )
 
 func isRuntimeBoundLifecycleCapability(name string) bool {
@@ -145,11 +150,13 @@ func TestCapabilityBinding(t *testing.T) {
 
 // workerLifecycleArrowViolations applies the host-neutral arrow policy to one worker-lifecycle
 // capability block: every `- → ` arrow MUST be the kind-only `→ **runtime-binding**` pointer (any
-// other arrow — a per-host `→ **Claude:**`, a `→ **shipped**` — reds), and the block MUST carry no
-// concrete per-host `**Host:**` token. The kind-only runtime-binding arrow is permitted so a cold
-// FO has an in-file signal that the capability is host-bound and which adapter section binds it,
-// without naming a host in the core. It returns one message per violation; the real guard and its
-// discriminator both drive it, so a regression that re-bans the kind-only arrow or stops banning a
+// other arrow — a per-host `→ **Claude:**`, a `→ **shipped**` — reds), the runtime-binding arrow
+// MUST name no host in ANY form (neither a `**Host:**` bold token NOR a prose host name like "on
+// Claude, call Agent()"), and the block MUST carry no `**Host:**` token in its body either. The
+// kind-only runtime-binding arrow is permitted so a cold FO has an in-file signal that the
+// capability is host-bound and which adapter section binds it, without naming a host in the core.
+// It returns one message per violation; the real guard and its discriminator both drive it, so a
+// regression that re-bans the kind-only arrow, admits a prose host name, or stops banning a
 // per-host token reds the control.
 func workerLifecycleArrowViolations(block, name string) []string {
 	var out []string
@@ -160,6 +167,13 @@ func workerLifecycleArrowViolations(block, name string) []string {
 		}
 		if !strings.HasPrefix(trimmed, "- → **runtime-binding**") {
 			out = append(out, fmt.Sprintf("capability «%s» core block carries a non-runtime-binding arrow %q; the only arrow permitted host-neutral is a kind-only `→ **runtime-binding**` pointer", name, trimmed))
+			continue
+		}
+		// The kind-only runtime-binding arrow must not name a host in ANY form — a `**Host:**` bold
+		// token OR a bare prose host word ("on Claude, ..."). A host word anywhere on the arrow
+		// line reds, keeping the core body host-neutral (the bold-token-only check missed prose).
+		if m := hostWordRe.FindString(trimmed); m != "" {
+			out = append(out, fmt.Sprintf("capability «%s» runtime-binding arrow names host %q in %q; the kind-only pointer must not name a host in any form", name, m, trimmed))
 		}
 	}
 	for _, host := range capabilityHosts {
@@ -186,11 +200,12 @@ func TestDispatchCoreDefinesWorkerLifecycleCapabilities(t *testing.T) {
 
 // TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates is the non-vacuity control for the
 // loosened arrow policy. It drives the same workerLifecycleArrowViolations the real guard uses
-// against five planted blocks: the legitimate kind-only runtime-binding arrow PASSES, a no-arrow
-// block PASSES, a per-host arrow REDS, a `→ **shipped**` arrow REDS, and the over-loosening case —
-// a runtime-binding arrow that SMUGGLES a `**Claude:**` host token in its prose — REDS on the
-// unchanged per-host ban. A loosening that over-permits (drops the per-host ban) or over-restricts
-// (re-bans the kind-only arrow) fails here.
+// against planted blocks: the legitimate kind-only runtime-binding arrow PASSES and a no-arrow
+// block PASSES, while a per-host arrow, a `→ **shipped**` arrow, the `**Claude:**`-token smuggle,
+// and — the audit-driven addition — a runtime-binding arrow that names a host in PROSE ("on
+// Claude/Codex/Pi, ...") each RED. The prose-host cases prove the strengthened guard bites the
+// hole the bold-token-only check left open; a loosening that over-permits (admits a prose host
+// name or drops the per-host ban) or over-restricts (re-bans the kind-only arrow) fails here.
 func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
 	pass := []struct {
 		why, block string
@@ -209,6 +224,9 @@ func TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates(t *testing.T) {
 		{"per-host arrow", "body\n- → **Claude:** Agent()\n"},
 		{"`→ **shipped**` arrow", "body\n- → **shipped**: `spacedock spawn`\n"},
 		{"runtime-binding arrow smuggling a `**Claude:**` token", "body\n- → **runtime-binding**: bound in **Claude:** Agent()\n"},
+		{"runtime-binding arrow naming a host in prose (Claude)", "body\n- → **runtime-binding**: on Claude, call Agent() directly\n"},
+		{"runtime-binding arrow naming a host in prose (Codex)", "body\n- → **runtime-binding**: on Codex, use spawn_agent\n"},
+		{"runtime-binding arrow naming a host in prose (Pi)", "body\n- → **runtime-binding**: on Pi, use subagent()\n"},
 	}
 	for _, c := range red {
 		if v := workerLifecycleArrowViolations(c.block, "worker.spawn"); len(v) == 0 {
