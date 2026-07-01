@@ -104,7 +104,7 @@ func Emit(data []byte, opts Options) {
 		return
 	}
 
-	host := firstNonEmpty(opts.Host, p.Host)
+	host := normalizeHost(firstNonEmpty(opts.Host, p.Host))
 	eventName := canonicalEventName(host, firstNonEmpty(p.Event, p.HookEventName))
 	cwd := firstNonEmpty(p.CWD, opts.CWD)
 	if host == "" || eventName == "" || cwd == "" {
@@ -300,6 +300,10 @@ func canonicalEventName(host, raw string) string {
 	default:
 		return raw
 	}
+}
+
+func normalizeHost(host string) string {
+	return strings.ToLower(strings.TrimSpace(host))
 }
 
 func canonicalPiEventName(raw string) string {

@@ -76,12 +76,12 @@ One JSON object per line, appended after the FO has interpreted, accepted, or ap
 - Append-only and best-effort: write one complete newline-terminated JSON object in one append operation, and never rewrite `fo-replies.jsonl`.
 - → **All hosts (host-neutral producer):** the `bridge-inbox` mod appends replies/acks while draining `_bridge/inbox.jsonl`.
 
-## `_bridge/sessions/<session_id>.json` — session→entity marker (RUNNING-badge source)
+## `_bridge/sessions/<actor_id>.json` — session→entity marker (RUNNING-badge source)
 
-Last-write (first-write-wins per session), one file per live working session. Maps a session id to the ship it is driving, so Bridge can render the deterministic live FO-vs-ensign RUNNING badge.
+Last-write (first-write-wins per host actor), one file per live working actor. The filename is the normalized `actor_id`: Claude main/ensign markers currently use the session id, while hosts that provide child ids can use a host-scoped composite such as `session_id.agent_id`. The marker maps that actor to the ship it is driving, so Bridge can render the deterministic live FO-vs-ensign RUNNING badge.
 
 ```
-{"session_id":"<«session-id»>","entity":"<slug>","workflow":"<workflow dir name>"}
+{"host":"<claude|codex|pi>","session_id":"<«session-id»>","agent_id":"<child id, when present>","actor_id":"<host-scoped actor id>","entity":"<slug>","workflow":"<workflow dir name>"}
 ```
 
 - The `entity`/`workflow` pair is derived from the ensign's first Read of its entity file under `docs/spacedock/<workflow>/<slug>.md` (flat or `<slug>/index.md`); the path carries both the workflow (so Bridge's join is collision-free across workflows reusing a ticket id) and the slug. First-write-wins records the ensign's own entity, read before any duplicate-check sibling read. Archived (`_archive/`) entities are never marked.

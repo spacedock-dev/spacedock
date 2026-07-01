@@ -50,6 +50,41 @@ func TestEmitWritesEventSchemaAndClaudeMarker(t *testing.T) {
 	}
 }
 
+func TestEmitNormalizesHostName(t *testing.T) {
+	root := t.TempDir()
+	entityPath := filepath.Join(root, "docs", "spacedock", "dev", "task.md")
+	Emit([]byte(`{
+		"cwd":`+quote(root)+`,
+		"hook_event_name":"PostToolUse",
+		"session_id":"ses-1",
+		"agent_type":"spacedock:ensign",
+		"tool_name":"Read",
+		"tool_input":{"file_path":`+quote(entityPath)+`}
+	}`), fixedOptions("Claude"))
+
+	var event Event
+	readLastEvent(t, root, &event)
+	if event.Host != "claude" || event.ActorID != "ses-1" {
+		t.Fatalf("event identity = %+v, want normalized claude host and Claude actor id", event)
+	}
+	var marker Marker
+	readMarker(t, root, "ses-1", &marker)
+	if marker.Host != "claude" || marker.ActorID != "ses-1" {
+		t.Fatalf("marker identity = %+v, want normalized claude host and marker", marker)
+	}
+}
+
+func TestEmitNormalizesPayloadHostName(t *testing.T) {
+	root := t.TempDir()
+	Emit([]byte(`{"cwd":`+quote(root)+`,"host":"Pi","event":"turn_end","session_id":"pi-ses"}`), fixedOptions(""))
+
+	var event Event
+	readLastEvent(t, root, &event)
+	if event.Host != "pi" || event.Event != "Stop" {
+		t.Fatalf("event = %+v, want normalized pi/Stop", event)
+	}
+}
+
 func TestEmitMalformedOrIncompletePayloadNoops(t *testing.T) {
 	root := t.TempDir()
 	for _, input := range [][]byte{
