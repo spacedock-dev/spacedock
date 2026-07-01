@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/cli"
 )
 
 // The Codex runner adapter: it turns a host-neutral sharedRuntimeScenario into a
@@ -106,7 +108,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	install, err := writeCodexLocalMarketplace(t.TempDir(), repo)
+	install, err := cli.WriteCodexLocalMarketplace(t.TempDir(), repo, "spacedock")
 	if err != nil {
 		t.Fatalf("write local Codex marketplace: %v", err)
 	}
@@ -116,17 +118,17 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	case codexAuthLocal:
 		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
-	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.marketplaceRoot)
+	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.MarketplaceRoot)
 	runCodexLiveCommand(t, setupDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
 	listing := runCodexLiveCommand(t, setupDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
-	if !strings.Contains(listing, install.pluginPath) {
-		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.pluginPath, listing)
+	if !strings.Contains(listing, install.PluginPath) {
+		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.PluginPath, listing)
 	}
 	if strings.Contains(listing, "github.com") || strings.Contains(listing, "ref `next`") {
 		t.Fatalf("codex plugin list points at remote next, not the local checkout:\n%s", listing)
 	}
 
-	adapterPath := filepath.Join(install.pluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	adapterPath := filepath.Join(install.PluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	if _, err := os.Stat(adapterPath); err != nil {
 		t.Fatalf("current-checkout plugin cache is missing r0 Codex adapter %s: %v", adapterPath, err)
 	}

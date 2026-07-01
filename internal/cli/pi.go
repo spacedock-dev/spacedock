@@ -331,10 +331,19 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return code
 	}
 	if host != "pi" {
-		// --plugin-dir is the pi dev-override install source; it is not supported
-		// for claude/codex install (which use the host plugin marketplace).
 		if pluginDir != "" {
-			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
+			// codex's `--plugin-dir` builds a local marketplace from the checkout and
+			// installs it under the binary's own channel, through the same shared helper
+			// `spacedock codex --plugin-dir` calls. claude has no such install path — its
+			// --plugin-dir is an ephemeral launch override, not an install.
+			if host == "codex" {
+				if err := installCodexLocalPluginDir(hostOps, pluginDir, stderr); err != nil {
+					fmt.Fprintf(stderr, "spacedock install: %v\n", err)
+					return 1
+				}
+				return 0
+			}
+			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported for claude; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
 			return 2
 		}
 		return runInit(ctx, args, hostOps, stdout, stderr)
