@@ -186,3 +186,32 @@ Folded the 2 MATERIAL + 4 polish findings from the independent opus adversarial 
 
 ### Summary
 Cycle-3 folded both material findings and all four polish notes into the existing design without altering the approach. M-A's fix replaces a discriminator clause that was factually false for merge on Claude with a clean boot-resident-vs-deferred binding-location rule that classifies all four modules with no edge case. M-B concretely enumerates the ensigncycle edit surface and requires the new `SkillNames` field be wired parallel to `ReadTargets` (per-block extract + per-delta merge + fresh-turn init) with a dedicated later-delta RED control, closing a coverage regression on the riskiest path. Each correction was verified against the cited code before writing. Design remains SOUND; ready for the ideation gate.
+
+## Stage Report: implementation
+
+- DONE: Build the two skills (skills/fo-status-viewer/SKILL.md + skills/fo-write-core/SKILL.md, user-invocable:false + description carrying when-to-load, section bodies verbatim), DELETE the two reference files, apply the Part B rhetoric cuts + the "## Deferred load points" collapse, and re-point the three internal cross-refs (feedback-rejection-flow/SKILL.md, claude-runtime, migrated status-viewer body)
+  Both skills added mirroring present-gate; both references deleted; registry collapsed to `## Deferred load points` (2 `Skill(...)` + 2 `references/*.md`, one shared greet-guard, arrow-taxonomy gone); host-neutral/named-by/lazily-loaded rhetoric cut across shared-core, claude-runtime, fo-dispatch-core, fo-merge-core; all 3 cross-refs re-pointed off the dead paths. Commit db015360.
+- DONE: Wire ClaudeTurn.SkillNames PARALLEL to ReadTargets in journeymetrics/claude.go (per-block extract + later-delta merge + fresh-turn init), swap the AC-2 greet oracle to assertGreetInvokesNoDeferredFOSkill with a DEDICATED later-delta Skill(fo-status-viewer) RED control, rewrite BOTH registry-coupled contractlint tests (boot_resident_closure_test.go deferredSkillCores + spacedock:<name> skill-anchor check; fn_consolidation_structure_test.go new shape), and add the unguarded-re-point grep gate
+  SkillNames extracted via `jsonStringField(input,"skill")` parallel to ReadTargets; oracle keys on the skill ARGUMENT (present-gate allowed pre-greet) with an augmented GREEN fixture + dedicated later-delta RED control + new negative fixture; both contractlint tests rewritten; grep gate `TestNoSurvivingContractFileNamesDeadDeferredReferencePath` added. New gates proven RED-then-GREEN (planted dead path; removed anchor). Commit db015360.
+- DONE: Prove AC-1 net-NEGATIVE: record per-file wc -c figures + signed cumulative delta vs origin/main in the stage report; go build ./... and go test ./internal/contractlint/ ./internal/ensigncycle/ green
+  Signed cumulative delta = -1924 B (table below). `go build ./...` clean; `go test ./internal/contractlint/ ./internal/ensigncycle/ ./internal/journeymetrics/` green; full `go test ./...` green.
+- DONE: AC-5 authority-doc alignment (docs/runtime-support.md) — not in the 3-item checklist, but an ideation AC the gate cross-check will look for
+  Added the refined reference-vs-skill discriminator (keys on WHERE the host binding lives, not "loads an adapter section alongside") to the `→`-line paragraph in `docs/runtime-support.md`. Commit db015360.
+
+### AC-1 byte delta (vs origin/main 6aa200e3; git show origin/main:<path> | wc -c per baseline vs working-tree wc -c)
+
+| file | baseline | working | delta |
+|---|---|---|---|
+| first-officer-shared-core.md | 24184 | 23060 | -1124 |
+| claude-first-officer-runtime.md | 4378 | 4117 | -261 |
+| fo-dispatch-core.md | 17893 | 17762 | -131 |
+| fo-merge-core.md | 7454 | 7299 | -155 |
+| fo-status-viewer.md (deleted) | 3391 | 0 | -3391 |
+| fo-write-core.md (deleted) | 4626 | 0 | -4626 |
+| skills/fo-status-viewer/SKILL.md (new) | 0 | 3222 | +3222 |
+| skills/fo-write-core/SKILL.md (new) | 0 | 4542 | +4542 |
+| **cumulative** | | | **-1924** |
+
+### Summary
+
+Converted the two adapter-less deferred FO modules (fo-status-viewer, fo-write-core) into non-user-invocable skills whose SKILL.md `description` carries the when-to-load the pointer prose duplicated, deleted the reference files, collapsed the four-entry deferred-modules registry into a terse `## Deferred load points` block (two `Skill(...)` + two `references/*.md`, one shared greet-guard, arrow-taxonomy dissolved), and cut the self-referential rhetoric (host-neutral labels, self-describing headers, named-by parentheticals) across the shared core and the four adapters/references. Wired `ClaudeTurn.SkillNames` parallel to `ReadTargets` and re-pointed the AC-2 greet oracle from a Read-of-a-path check to a Skill-argument check (present-gate allowed pre-greet), with the later-delta RED control and augmented-GREEN discrimination the design's riskiest path required. Both registry-coupled contractlint tests rewritten for the new shape plus the unguarded-re-point grep gate; all new gates proven RED-then-GREEN. AC-1 is net-NEGATIVE at -1924 B (the rhetoric cut exceeds the ~450-500 B/skill frontmatter overhead), matching the ideation feasibility estimate. `go build ./...` and the full `go test ./...` are green. One scope note beyond the checklist: the codex/pi FO adapters' borderline opener was left untouched (not in the AC-1 file set, flagged BORDERLINE in ideation, out of the rhetoric hit-list).
