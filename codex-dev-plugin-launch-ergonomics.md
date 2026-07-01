@@ -7,6 +7,7 @@ id: 4q01qqyx4g2z3rctts1400av
 sprint: 0240-lean-contract
 started: 2026-07-01T02:38:48Z
 worktree: .worktrees/spacedock-ensign-codex-dev-plugin-launch-ergonomics
+mod-block: merge:pr-merge
 ---
 
 ## Problem
