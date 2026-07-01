@@ -69,6 +69,7 @@ func TestBridgeConversationReplyContract(t *testing.T) {
 	for _, r := range []string{
 		`"id":"<opaque unique string>"`,
 		`"target_set":["<workflow-slug>", "..."]`,
+		`If Bridge cannot resolve any current member slugs for a broadcast, it omits ` + "`target_set`",
 		`If ` + "`target_set`" + ` is present, act only when ` + "`\"$SLUG\"`" + ` is in ` + "`target_set`",
 		`Ignore ` + "`target`" + ` entirely for routing in that case, including ` + "`target == \"all\"`",
 		`If ` + "`target_set`" + ` is absent, preserve old target behavior`,
@@ -99,7 +100,8 @@ func TestBridgeConversationReplyContract(t *testing.T) {
 	contract := string(contractData)
 	for _, r := range []string{
 		`Bridge writes every new intent with an opaque ` + "`id`",
-		`frozen ` + "`target_set`" + ` array of workflow slugs`,
+		`writes a frozen ` + "`target_set`" + ` array when it can resolve the workflow slugs`,
+		`unknown-recipient broadcasts`,
 		`When ` + "`target_set`" + ` is present it is authoritative`,
 		`## ` + "`_bridge/fo-replies.jsonl`" + ` — captain-intent acknowledgements`,
 		`"schema":1`,

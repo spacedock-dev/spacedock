@@ -29,7 +29,7 @@ esac
 {"id":"<opaque unique string>","ts":"<rfc3339>","kind":"tell"|"conn"|"decision","text":"<string>","granted":<bool, conn only>,"target":"<workflow-slug>"|"all","target_set":["<workflow-slug>", "..."],"entity":"<slug, decision only>","field":"<frontmatter field, decision only>","value":"<value, decision only>"}
 ```
 
-`id` is Bridge's opaque unique id for this intent. Current Bridge records carry `target_set`, a frozen array of workflow slugs expected to drain and acknowledge this intent. For `target == "all"`, Bridge writes the current fleet member slugs into `target_set`; for a specific target, Bridge writes `[slug]`. `target` remains for backward compatibility with older records.
+`id` is Bridge's opaque unique id for this intent. Current Bridge records carry `target_set` when Bridge can freeze a recipient set: for `target == "all"` with known fleet members, Bridge writes the current fleet member slugs into `target_set`; for a specific target, Bridge writes `[slug]`. If Bridge cannot resolve any current member slugs for a broadcast, it omits `target_set` so the FO preserves legacy `target == "all"` routing. `target` remains for backward compatibility with older records and unknown-recipient broadcasts.
 
 Routing is:
 
