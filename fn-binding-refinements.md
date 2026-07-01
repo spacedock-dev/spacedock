@@ -1,6 +1,6 @@
 ---
 title: «fn» binding refinements — promote reuse-condition-4 / «gate.ac-cross-check» / «halt.rebase-conflict» «fn»s; fix →prose + spawn/shutdown arrows; consolidate Dispatch/Merge pointers
-status: validation
+status: implementation
 score: 0.35
 group: cleanup
 issue:
@@ -177,6 +177,12 @@ All six prose→«fn» refinements landed and every named test is green offline 
 ### Captain ruling — AC-4 scoped to accept the fo-dispatch-core.md overage (2026-06-30)
 
 The FO (Commander, 0240 drive) presented the flagged AC-4 finding to the captain (CL) at the gate. **Captain ruling: ACCEPT the overage.** AC-4's per-file ceiling — both (a) z4-own delta ≤ 0 and (b) absolute ≤ v0.22.0 — is scoped to **exempt `fo-dispatch-core.md`**, exactly as ideation exempted `claude-fo-dispatch.md`'s (b). Rationale recorded: the boot-resident core (`first-officer-shared-core.md`, the greet-occupancy target the sprint exists for) is **−4402 B vs v0.22.0**, so the lean goal is decisively met where it matters; `fo-dispatch-core.md` is a **deferred** dispatch reference loaded only at first dispatch (off the greet hot path); and the **+429 B is the irreducible cost of faithful `«fn»` structure** (heading + four labeled fields + arrow > the flat prose it replaces) — a legibility win the 0230 `«fn»`-binding audit recommended, not bloat. The implementer proved even the tightest faithful version is +429 B. All six refinements stand; no descope. Validation measures AC-4 for the other touched files (which pass) and confirms the fo-dispatch-core delta is the tightest faithful version; the fo-dispatch-core ceiling is captain-accepted, not a blocking failure.
+
+### Cycle 1 — detached audit: AC-3 arrow guard admits a prose-form per-host binding (2026-06-30)
+
+- **Reviewer:** `audit-z4-contract`, a detached adversarial audit on a throwaway checkout (`@ 5d66da90`), binary-built and exercised against the LIVE guard. Everything else CLEAN and verified by running (behavior-preservation of #1/#4/#5/#6, both moved pins verbatim, registry survival, no unexpected boot-resident growth; `docs/runtime-support.md` +333 is the intended #2 doc edit, non-boot-resident).
+- **MATERIAL (Probe 3): the loosened AC-3 arrow guard under-delivers on its stated purpose.** #3 loosened `TestDispatchCoreDefinesWorkerLifecycleCapabilities` (`workerLifecycleArrowViolations`) to permit the kind-only `→ **runtime-binding**` arrow, but it only rejects the `**Host:**` bold-token form. Exercised on the real `«worker.spawn»` block: `- → **runtime-binding**: on Claude, call Agent() directly` names a host AND a concrete host call inside the boot-resident host-neutral core, yet the whole `internal/contractlint` suite stays GREEN. Genuine z4 regression: the pre-z4 guard banned ANY arrow line (`strings.Contains(block, "\n- → ")`) and WOULD have caught it; the new `TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates` only exercises the `**Host:**`-token smuggle → false confidence. Severity low–moderate (shipped blocks carry only the legit kind-only arrow; behavior-preserving holds), but it's a strict weakening of the regression coverage on the two blocks whose whole job is host-neutrality.
+- **Fix routed to implementation (this cycle):** strengthen `workerLifecycleArrowViolations` so a `- → **runtime-binding**` line in the worker.spawn/shutdown blocks is rejected when it names a host in ANY form — reject the host words (Claude/Codex/Pi, case-insensitive) on the arrow line, not just the `**Host:**` token (or, equivalently, pin the exact allowed arrow text). Add the prose-host-name case (`- → **runtime-binding**: on Claude, call Agent() directly`) to `TestDispatchCoreWorkerLifecycleArrowGuardDiscriminates`'s mustFlag/RED set; keep the legit kind-only arrow passing and the existing `**Host:**`-token / `→ shipped` / second-arrow cases still red. `go test ./internal/contractlint/` green. Re-audit after the fix before re-gating. (Guard-only fix — no shipped-contract prose changes; the real blocks already carry only the legit arrow.)
 
 ## Stage Report: validation
 
