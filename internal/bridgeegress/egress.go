@@ -105,7 +105,7 @@ func Emit(data []byte, opts Options) {
 	}
 
 	host := firstNonEmpty(opts.Host, p.Host)
-	eventName := firstNonEmpty(p.Event, p.HookEventName)
+	eventName := canonicalEventName(host, firstNonEmpty(p.Event, p.HookEventName))
 	cwd := firstNonEmpty(p.CWD, opts.CWD)
 	if host == "" || eventName == "" || cwd == "" {
 		return
@@ -288,6 +288,37 @@ func timestampFor(p payload, opts Options) string {
 		now = opts.Now
 	}
 	return now().UTC().Format(time.RFC3339)
+}
+
+func canonicalEventName(host, raw string) string {
+	if raw == "" {
+		return ""
+	}
+	switch strings.ToLower(host) {
+	case "pi":
+		return canonicalPiEventName(raw)
+	default:
+		return raw
+	}
+}
+
+func canonicalPiEventName(raw string) string {
+	switch strings.ToLower(raw) {
+	case "session_start":
+		return "SessionStart"
+	case "session_shutdown", "turn_end":
+		return "Stop"
+	case "agent_start":
+		return "SubagentStart"
+	case "agent_end":
+		return "SubagentStop"
+	case "turn_start":
+		return "UserPromptSubmit"
+	case "tool_execution_start", "tool_execution_end", "tool_call", "tool_result":
+		return "PostToolUse"
+	default:
+		return raw
+	}
 }
 
 func actorIDFor(host, sessionID, agentID, explicit string) string {

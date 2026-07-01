@@ -189,6 +189,36 @@ func TestEmitExplicitEntityPathCombinesSessionAndAgent(t *testing.T) {
 	}
 }
 
+func TestEmitNormalizesPiLifecycleEvents(t *testing.T) {
+	root := t.TempDir()
+	cases := []struct {
+		raw  string
+		want string
+	}{
+		{raw: "session_start", want: "SessionStart"},
+		{raw: "session_shutdown", want: "Stop"},
+		{raw: "agent_start", want: "SubagentStart"},
+		{raw: "agent_end", want: "SubagentStop"},
+		{raw: "turn_start", want: "UserPromptSubmit"},
+		{raw: "turn_end", want: "Stop"},
+		{raw: "tool_execution_start", want: "PostToolUse"},
+		{raw: "tool_execution_end", want: "PostToolUse"},
+		{raw: "tool_call", want: "PostToolUse"},
+		{raw: "tool_result", want: "PostToolUse"},
+		{raw: "future_pi_event", want: "future_pi_event"},
+	}
+
+	for _, tc := range cases {
+		Emit([]byte(`{"cwd":`+quote(root)+`,"event":`+quote(tc.raw)+`,"session_id":"pi-ses"}`), fixedOptions("pi"))
+
+		var event Event
+		readLastEvent(t, root, &event)
+		if event.Host != "pi" || event.Event != tc.want {
+			t.Fatalf("Pi event %q normalized to host=%q event=%q, want pi/%q", tc.raw, event.Host, event.Event, tc.want)
+		}
+	}
+}
+
 func TestEmitAppendsAndTruncatesEvents(t *testing.T) {
 	root := t.TempDir()
 	opts := fixedOptions("claude")
