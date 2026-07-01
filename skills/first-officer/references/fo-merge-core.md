@@ -1,6 +1,6 @@
-# First Officer Merge Core (host-neutral)
+# First Officer Merge Core
 
-The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, and step 10's boundary obligation. Lazily loaded at the terminal boundary (named by the boot-resident core); a boot, dispatch, or gate that never terminalizes never reads it. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.
+The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, and step 10's boundary obligation. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.
 
 ## Merge and Cleanup
 

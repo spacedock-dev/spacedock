@@ -144,6 +144,10 @@ type ClaudeTurn struct {
 	// blocks (Read's file_path, Grep's path, Bash's command), so a caller can detect
 	// whether a turn read a specific file before some boundary turn.
 	ReadTargets []string
+	// SkillNames is the skill arguments of this turn's Skill tool_use blocks
+	// (Skill's input.skill, e.g. "spacedock:present-gate"), so a caller can detect
+	// whether a turn invoked a specific skill before some boundary turn.
+	SkillNames []string
 }
 
 // Context returns this turn's context-window size as the boot analysis defines it:
@@ -196,6 +200,7 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 		}
 		var names []string
 		var readTargets []string
+		var skillNames []string
 		for _, block := range msg.Content {
 			if block.Type != "tool_use" {
 				continue
@@ -209,6 +214,11 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 			if target := readToolTarget(block.Name, block.Input); target != "" {
 				readTargets = append(readTargets, target)
 			}
+			if block.Name == "Skill" {
+				if skill := jsonStringField(block.Input, "skill"); skill != "" {
+					skillNames = append(skillNames, skill)
+				}
+			}
 		}
 		if pos, ok := index[id]; ok {
 			// A later delta of a message already seen: merge its NEW tool_use names
@@ -216,10 +226,11 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 			// Usage is identical across deltas, so the first-delta usage is kept.
 			turns[pos].ToolNames = append(turns[pos].ToolNames, names...)
 			turns[pos].ReadTargets = append(turns[pos].ReadTargets, readTargets...)
+			turns[pos].SkillNames = append(turns[pos].SkillNames, skillNames...)
 			continue
 		}
 		index[id] = len(turns)
-		turns = append(turns, ClaudeTurn{ID: id, Usage: msg.Usage, ToolNames: names, ReadTargets: readTargets})
+		turns = append(turns, ClaudeTurn{ID: id, Usage: msg.Usage, ToolNames: names, ReadTargets: readTargets, SkillNames: skillNames})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err

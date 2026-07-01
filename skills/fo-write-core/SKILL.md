@@ -1,10 +1,10 @@
-# First Officer Write Core (host-neutral)
+---
+name: fo-write-core
+description: "First-officer main-branch write-authority boundary — what the FO may write on main, the `spacedock new` atomic-create procedure, and new-entity id-style minting. Invoke at the first write to main (`status --set`, `spacedock new`, archive move, or `### Feedback Cycles` write)."
+user-invocable: false
+---
 
-The FO's main-branch write-authority boundary, the `spacedock new` atomic-create
-procedure, and new-entity id-style minting. Lazily loaded at the first write to main
-(named by the boot-resident core's `## FO Write Scope and ID Styles (deferred module)`
-pointer); a greet-and-stop boot never reads it. The host `spacedock new` invocation form
-is the runtime adapter's new-entity binding, read alongside this file.
+# First Officer Write Core
 
 ## FO Write Scope
 

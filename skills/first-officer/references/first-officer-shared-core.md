@@ -1,6 +1,6 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. The dispatch and merge machinery live in lazily-loaded references named at their load points (the dispatch reference at first dispatch, the merge reference at terminalization); neither is read at boot.
+Shared first-officer semantics — the boot-resident core. The deferred status, write, dispatch, and merge load points are named at their triggers below.
 
 ## Startup
 
@@ -32,16 +32,14 @@ Shared first-officer semantics — the boot-resident core. The dispatch and merg
    - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored `Gate review:` … `Decision:` content. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
    - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. The grant must be a phrase you can QUOTE from the prompt ("auto-approve gates" / "drive to done" / "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is NOT a grant — present and stop.
 
-## Deferred Modules (registry)
+## Deferred load points
 
-The boot core defers four host-neutral references, each lazily loaded at its trigger and never at boot. **Greet-guard:** a greet-and-stop boot reads NONE of the four — the greet composes its summary from `«state.boot»` JSON + README frontmatter (Startup step 8) and presents any ready gate via `present-gate`. Each row is module → realization → core file → load-point → per-module greet-guard.
+A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»` JSON + README frontmatter (Startup step 8) and presents any ready gate via `present-gate`. Each loads only at its trigger:
 
-- **Status Viewer and Issue Filing** → host-neutral (no per-host adapter) → `references/fo-status-viewer.md` → loaded at the FIRST status query (`--set`/`--next-id`/`--resolve`/issue filing) → greet-guard: no boot-resident path reaches the Status-Viewer display rules.
-- **Dispatch** → runtime-binding (core + adapter dispatch section) → `references/fo-dispatch-core.md` → loaded at the FIRST worker dispatch → greet-guard: a greet-and-stop boot never reaches a dispatch.
-- **FO Write Scope and ID Styles** → host-neutral (host `spacedock new` is the adapter's resident new-entity binding) → `references/fo-write-core.md` → loaded at the FIRST write to main (`status --set`, `spacedock new`, archive move, or `### Feedback Cycles` write) → greet-guard: the boot's own `«state.sweep-merged»` write is binary-executed, needing no part of it.
-- **Merge and Cleanup** → runtime-binding (core + adapter terminal-teardown section) → `references/fo-merge-core.md` → loaded at the terminal boundary → greet-guard: a boot, dispatch, or gate that never terminalizes never reaches it.
-
-Doubles as the navigation index for the four deferred references.
+- `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
+- `Skill(skill="spacedock:fo-write-core")` — first write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write).
+- `references/fo-dispatch-core.md` — first worker dispatch.
+- `references/fo-merge-core.md` — terminal boundary.
 
 ## Single-Entity Scope
 
@@ -99,7 +97,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch (full write-authority scope in the deferred write reference `references/fo-write-core.md`, indexed in the Deferred Modules registry).
+- The FO owns YAML frontmatter on the main branch (full write-authority scope in `Skill(skill="spacedock:fo-write-core")`, loaded at first write to main).
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
