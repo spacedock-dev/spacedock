@@ -2,7 +2,7 @@
 title: "Install"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-01 04:47:45"
+last_updated: "2026-07-01 06:06:49"
 ---
 
 # Install Spacedock
@@ -60,7 +60,9 @@ Set `SPACEDOCK_MARKETPLACE_SOURCE` to install from a local or alternate marketpl
 SPACEDOCK_MARKETPLACE_SOURCE=/path/to/local/marketplace spacedock install --host codex
 ```
 
-Launching with `--plugin-dir` loads a local plugin checkout directly and bypasses installed-plugin resolution, but it does not wrap the launch in the safehouse sandbox — use it for plugin development, not as an install substitute.
+Launching with `--plugin-dir` loads a local plugin checkout directly. On Claude and Pi this is an ephemeral, install-free override — it bypasses installed-plugin resolution for that one launch and does not wrap the launch in the safehouse sandbox; use it for plugin development, not as an install substitute.
+
+Codex has no such flag on its own CLI, so `spacedock codex --plugin-dir <checkout>` and `spacedock install --host codex --plugin-dir <checkout>` build a local marketplace from the checkout and install it under the binary's own channel (`spacedock` stable / `spacedock-edge` edge — matching whatever `spacedock codex` would otherwise install), then launch. This IS a persistent install, replacing whatever Codex plugin was previously configured, and it is a point-in-time snapshot: editing the checkout afterward has no effect until the command is re-run. The command prints an advisory that the reported version reflects the checkout's checked-in manifest, not necessarily its current HEAD.
 
 ## Sandboxing
 
