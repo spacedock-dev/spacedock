@@ -302,3 +302,28 @@ Append a sentence to "## Dev-Only `next` Publishing":
 ### Summary
 
 Reproduced the manual reconcile mechanism empirically (`git merge -X theirs`) in a throwaway worktree before designing around it, confirming it is deterministic, conflict-free even on genuinely divergent history, and never requires `--force`. Designed a single new `edge-advance` CI job covering both the prerelease (reconcile + calendar bump) and stable (reconcile + dev-preversion stamp + calendar bump) paths, adding one new pure function (`DevPreVersion`) while reusing existing `stamp-version`/`bump-calendar`. Tightened the AC sketch into 5 measured ACs each naming a specific new or existing test (fixture git-repo tests following `notes_extract_test.go`'s pattern, a workflow-guard adversarial test following `manifest_tag_gate_workflow_test.go`, and a table-driven unit test), and wrote the concrete docs/releasing.md diff.
+
+## Stage Report: implementation
+
+- DONE: Add the edge-advance job to release.yml (needs: goreleaser; prerelease -pre branch: reconcile via git merge -X theirs + calendar bump; stable branch: reconcile + dev-preversion stamp + calendar bump), force-free (fast-forward push only, never --force/reset)
+  `edge-advance` sibling job added after goreleaser (commit 978aed89); both mutually-exclusive `if:` branches present, calendar bump + `git push origin edge-advance:next` (fast-forward) run unconditionally last.
+- DONE: Add release.DevPreVersion (X.Y.Z -> X.(Y+1).0-pre1, error on hyphenated/malformed) + the cmd/spacedock-release dev-preversion subcommand, reusing stamp-version/bump-calendar unchanged
+  `DevPreVersion` in internal/release/release.go (regexp-guarded); `dev-preversion` case + `devPreversion()` in cmd/spacedock-release/main.go print the value to stdout; stamp-version/bump-calendar untouched.
+- DONE: Land the 4 tests (edge divergence-closes fixture, never-forces workflow guard, DevPreVersion table, dev-preversion CLI) + apply the docs/releasing.md diff; go build ./... and go test ./internal/release/ green
+  `TestEdgeLineReconcileClosesDivergence` (both paths) + `TestReleaseWorkflowEdgeAdvanceNeverForces` (2 adversarial twins) in edge_reconcile_test.go; `TestDevPreVersion` in release_test.go; CLI tests in dev_preversion_test.go; docs/releasing.md diff applied. `go build ./...` exit 0; `go test ./internal/release/ ./cmd/spacedock-release/` green; gofmt/vet clean.
+
+### Summary
+
+Added an `edge-advance` sibling job (`needs: goreleaser`) that reconciles `next`
+to the tagged commit via `git merge -X theirs` on every tag — prerelease paths
+reconcile + bump calendar, stable paths also stamp `next` past the release to
+the dev pre-version — with the push always a fast-forward, never a force. The
+only new logic is the pure `DevPreVersion` (X.Y.Z -> X.(Y+1).0-pre1) plus its
+`dev-preversion` CLI wrapper; `stamp-version`/`bump-calendar` are reused
+unchanged. The temp-repo fixture exercises the real reconcile mechanism on both
+paths (genuinely-diverged `next`, clean zero-conflict merge, tree byte-matching
+the release, divergence closing to zero, pre-merge tip staying a first-parent
+ancestor), and the workflow guard reds if any edge-advance step force-pushes or
+resets. Notable decision: the never-forces guard also asserts `needs:
+goreleaser` (the sibling-isolation invariant), and the fixture exercises both
+`if:` branches end-to-end rather than text-grepping the conditions.
