@@ -18,7 +18,7 @@ Treat probes as the source of runtime truth. Do not file a `v2` or host-variant 
 
 Prefer pseudo-code contracts over narrative instructions. Shared and runtime contracts should look like callable bodies keyed by capability names, with compact fields such as `guard`, `effect`, `done-when`, `block`, and `→` binding/status lines. Use prose only for fuzzy judgment, host quirks proven by probes, or rationale that cannot be encoded as an executable-shaped obligation.
 
-A `→` line states where the capability is realized: `→ shipped` names the binary that already implements it (invoke it directly); `→ runtime-binding` defers to the host adapter (and, for a deferred-module section, names the host-neutral core file the boot core loads at that load point); `→ prose` marks an obligation that stays judgment-owned with no binary backing. A deferred-module section (the boot core's dispatch/merge load points) may itself take this compact shape — a `→ runtime-binding` line naming the core file plus `done-when`/`guard` lines — rather than a narrative paragraph.
+A `→` line states where the capability is realized: `→ shipped` names the binary that already implements it (invoke it directly); `→ runtime-binding` defers to the host adapter (and, for a deferred-module section, names the host-neutral core file the boot core loads at that load point); `→ prose` marks an obligation with no binary backing — judgment-owned when it names no verb, or a deterministic mechanism still hand-followed when it names a `becomes` verb a binary will later ship (e.g. `«dispatch.next-action»` → `spacedock dispatch next-action`, descoped to roadmap 0222). A deferred-module section (the boot core's dispatch/merge load points) may itself take this compact shape — a `→ runtime-binding` line naming the core file plus `done-when`/`guard` lines — rather than a narrative paragraph.
 
 ### Runtime binding-block shape
 
@@ -26,7 +26,7 @@ A first-officer runtime adapter should default to a bindings block, not lifecycl
 
 Preferred shape:
 
-- `«worker.spawn»` -> host-native spawn call and dispatch-build mapping.
+- `«worker.spawn»` -> host-native spawn call, mapping the shipped `«dispatch.build»` artifact's fields onto it (dispatch-build is its own host-neutral «fn», not part of this binding).
 - `«addressable-worker»` -> PRESENT/ABSENT plus worker-to-FO and FO-to-worker message routes.
 - `«async-dispatch»` -> async/blocking behavior and wait/poll mechanism.
 - `«worker-identity»` -> handle, address, model stamp, and canonical model space.
