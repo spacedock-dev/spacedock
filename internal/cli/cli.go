@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
@@ -150,6 +151,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, stdin, stdout, stderr),
+		newBridgeCommand(dir, stdin),
 	)
 	return root
 }
@@ -456,6 +458,38 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 			return nil
 		},
 	}
+}
+
+// newBridgeCommand is a hidden hook-facing surface. It is intentionally silent
+// and no-op-safe because Bridge egress is observe-only telemetry.
+func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
+	return &cobra.Command{
+		Use:                "bridge egress emit --host <host>",
+		Hidden:             true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 || args[0] != "egress" || args[1] != "emit" {
+				return nil
+			}
+			bridgeegress.EmitFromReader(stdin, bridgeegress.Options{
+				Host: parseBridgeHost(args[2:]),
+				CWD:  dir,
+			})
+			return nil
+		},
+	}
+}
+
+func parseBridgeHost(args []string) string {
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--host" && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(args[i], "--host=") {
+			return strings.TrimPrefix(args[i], "--host=")
+		}
+	}
+	return ""
 }
 
 // wantsHelp reports whether the operator asked for command help. Commands with

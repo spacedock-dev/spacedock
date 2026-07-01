@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+          }
+        ]
+      }
+    ]
+  }
+}

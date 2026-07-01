@@ -18,7 +18,7 @@ type fakePiRuntimeOps struct {
 	statOK        map[string]bool
 	launched      []string
 	launchedEnv   []string
-	launchCode    int // host exit code Launch returns (default 0)
+	launchCode    int      // host exit code Launch returns (default 0)
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error
@@ -61,6 +61,7 @@ func healthyPiPackageStatus() piPackageStatus {
 		registered:               true,
 		ensignDiscoverable:       true,
 		firstOfficerDiscoverable: true,
+		extensionDiscoverable:    true,
 		source:                   "git:github.com/spacedock-dev/spacedock",
 		packageRoot:              "/pkg-store/spacedock",
 	}
@@ -153,9 +154,11 @@ func TestRunPi_DevOverridePassesSpacedockExtensionAndSkills(t *testing.T) {
 	writeFileWithDirs(t, filepath.Join(repo, ".pi", "extensions", "spacedock.ts"), "export default function(){}\n")
 	pkg := t.TempDir()
 	writePiSubagentsFixtures(t, pkg)
+	statOK := statOKForPiResources(repo, pkg)
+	markSpacedockPiExtension(statOK, repo)
 	ops := &fakePiRuntimeOps{
 		lookPath:      piHealthyPathFixtures(),
-		statOK:        statOKForPiResources(repo, pkg),
+		statOK:        statOK,
 		packageStatus: healthyPiPackageStatus(),
 	}
 	var stdout, stderr bytes.Buffer
@@ -660,9 +663,10 @@ func TestPiDoctorReportsMissingAndHealthyRuntime(t *testing.T) {
 // TestPiRuntimeDevOverrideSatisfiesPackageGate verifies the regression fix for
 // the --plugin-dir / SPACEDOCK_REPO_ROOT dev-override launch path: when the
 // Spacedock package is NOT registered in settings.json (fresh pi-home), a
-// dev-override repoRoot that contains skills/ensign/SKILL.md satisfies the
-// package gate so the launch path reaches the ensign. The inverse (no
-// repoRoot, no package) still fails the gate — the install-managed contract.
+// dev-override repoRoot that contains the Spacedock Pi extension and
+// skills/ensign/SKILL.md satisfies the package gate so the launch path reaches
+// the ensign. The inverse (no repoRoot, no package) still fails the gate — the
+// install-managed contract.
 func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
@@ -677,7 +681,11 @@ func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 		}
 		check := checkPiRuntime(&fakePiRuntimeOps{
 			lookPath: piHealthyPathFixtures(),
-			statOK:   statOKForPiResources(repo, pkg),
+			statOK: func() map[string]bool {
+				statOK := statOKForPiResources(repo, pkg)
+				markSpacedockPiExtension(statOK, repo)
+				return statOK
+			}(),
 			// No package registered in settings.json.
 			packageStatus: piPackageStatus{},
 		}, cfg)
@@ -697,11 +705,16 @@ func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 
 	t.Run("runPi launches with dev override and no installed package", func(t *testing.T) {
 		home := t.TempDir()
+		writeFileWithDirs(t, filepath.Join(repo, ".pi", "extensions", "spacedock.ts"), "export default function(){}\n")
 		var stdout, stderr bytes.Buffer
 		code := runPi(context.Background(), []string{"do work", "--plugin-dir", repo, "--", "--print"}, "/non-repo-cwd",
 			piTestEnv(pkg, home), &fakePiRuntimeOps{
-				lookPath:      piHealthyPathFixtures(),
-				statOK:        statOKForPiResources(repo, pkg),
+				lookPath: piHealthyPathFixtures(),
+				statOK: func() map[string]bool {
+					statOK := statOKForPiResources(repo, pkg)
+					markSpacedockPiExtension(statOK, repo)
+					return statOK
+				}(),
 				packageStatus: piPackageStatus{}, // not installed
 			}, &stdout, &stderr)
 		if code != 0 {
@@ -751,6 +764,22 @@ func TestPiRuntimeDevOverrideSatisfiesPackageGate(t *testing.T) {
 			t.Fatalf("dev override without ensign skill must not satisfy spacedockPackageOK")
 		}
 	})
+
+	t.Run("dev override without Spacedock extension does not satisfy gate", func(t *testing.T) {
+		repoWithoutExtension := t.TempDir()
+		writePiSkillFixtures(t, repoWithoutExtension)
+		home := t.TempDir()
+		statOK := statOKForPiResources(repoWithoutExtension, pkg)
+		cfg := piRuntimeConfigFromEnv(append(piTestEnv(pkg, home), "SPACEDOCK_REPO_ROOT="+repoWithoutExtension), "/non-repo-cwd", "")
+		check := checkPiRuntime(&fakePiRuntimeOps{
+			lookPath:      piHealthyPathFixtures(),
+			statOK:        statOK,
+			packageStatus: piPackageStatus{},
+		}, cfg)
+		if check.spacedockPackageOK {
+			t.Fatalf("dev override without Spacedock extension must not satisfy spacedockPackageOK")
+		}
+	})
 }
 
 func assertEqual(t *testing.T, got, want string) {
@@ -790,6 +819,10 @@ func statOKForPiResources(repo, pkg string) map[string]bool {
 		pkg + "-intercom": true,
 		filepath.Join(pkg+"-intercom", "skills", "pi-intercom", "SKILL.md"): true,
 	}
+}
+
+func markSpacedockPiExtension(statOK map[string]bool, repo string) {
+	statOK[filepath.Join(repo, ".pi", "extensions", "spacedock.ts")] = true
 }
 
 func piHealthyPathFixtures() map[string]string {

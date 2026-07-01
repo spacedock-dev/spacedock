@@ -49,6 +49,7 @@ type piPackageStatus struct {
 	registered               bool
 	ensignDiscoverable       bool
 	firstOfficerDiscoverable bool
+	extensionDiscoverable    bool
 	source                   string // the settings.json packages entry for spacedock
 	packageRoot              string // the resolved package root
 }
@@ -251,13 +252,13 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// empirically). Pass the extension + the checkout's skills explicitly so the
 	// parent session loads the Spacedock first-officer/ensign skills via the
 	// extension's resources_discover. This is the dev-override equivalent of what
-	// `pi install` registers for the installed path. The os.Stat guard makes the
+	// `pi install` registers for the installed path. The Stat guard makes the
 	// addition graceful: if the extension is absent at the resolved path, the
 	// flags are not added (no crash, falls back to the installed-path mechanism).
 	if cfg.repoRoot != "" {
 		spacedockExt := filepath.Join(cfg.repoRoot, ".pi", "extensions", "spacedock.ts")
 		spacedockSkills := filepath.Join(cfg.repoRoot, "skills")
-		if _, err := os.Stat(spacedockExt); err == nil {
+		if err := ops.Stat(spacedockExt); err == nil {
 			argv = append(argv, "--extension", spacedockExt, "--skill", spacedockSkills)
 		}
 	}
@@ -555,26 +556,30 @@ func checkPiRuntime(ops piRuntimeOps, cfg piRuntimeConfig) piCheckResult {
 	res.intercomPackageOK = ops.Stat(cfg.intercomPackageRoot) == nil
 	res.intercomSkillOK = ops.Stat(filepath.Join(cfg.intercomPackageRoot, "skills", "pi-intercom", "SKILL.md")) == nil
 	// The retired repo-path Stat checks (firstOfficerOK/ensignOK) are replaced by
-	// spacedockPackageOK: the package is registered AND ensign is discoverable via
-	// the package-root skill scan — the real discovery contract, not a filesystem
-	// coincidence at a cwd-derived path.
+	// spacedockPackageOK: the package is registered, its Pi extension is
+	// discoverable, and ensign is discoverable via the package-root skill scan —
+	// the real discovery contract, not a filesystem coincidence at a cwd-derived
+	// path.
 	status := ops.SpacedockPackageStatus(cfg.agentDir, cfg.home)
 	res.packageStatus = status
-	res.spacedockPackageOK = status.registered && status.ensignDiscoverable
+	res.spacedockPackageOK = status.registered && status.extensionDiscoverable && status.ensignDiscoverable
 	// Dev override: --plugin-dir / SPACEDOCK_REPO_ROOT points at a local
 	// Spacedock checkout. When the package is not registered in settings.json
 	// (e.g. a fresh pi-home), the dev-override checkout satisfies the gate if
-	// it contains the ensign skill (skills/ensign/SKILL.md). This restores the
-	// documented dev-override launch path that the package-OK gate
+	// it contains both the Spacedock Pi extension and the ensign skill
+	// (skills/ensign/SKILL.md). This restores the documented dev-override launch path that the package-OK gate
 	// inadvertently broke. When repoRoot is empty, spacedockPackageOK still
 	// requires the registered package (the install-managed contract).
+	devOverrideExtensionOK := cfg.repoRoot != "" && ops.Stat(filepath.Join(cfg.repoRoot, ".pi", "extensions", "spacedock.ts")) == nil
 	if !res.spacedockPackageOK && cfg.repoRoot != "" &&
+		devOverrideExtensionOK &&
 		ops.Stat(filepath.Join(cfg.repoRoot, "skills", "ensign", "SKILL.md")) == nil {
 		res.spacedockPackageOK = true
 		res.packageStatus = piPackageStatus{
 			registered:               true,
 			ensignDiscoverable:       true,
 			firstOfficerDiscoverable: ops.Stat(filepath.Join(cfg.repoRoot, "skills", "first-officer", "SKILL.md")) == nil,
+			extensionDiscoverable:    true,
 			source:                   cfg.repoRoot + " (dev override)",
 			packageRoot:              cfg.repoRoot,
 		}
@@ -690,11 +695,19 @@ func piSpacedockPackageStatus(agentDir, home string) piPackageStatus {
 		if root == "" {
 			continue
 		}
-		name, skillPaths := readPackagePiSkills(root)
+		name, extensions, skillPaths := readPackagePiManifest(root)
 		if name != "spacedock" {
 			continue
 		}
 		st := piPackageStatus{registered: true, source: src, packageRoot: root}
+		for _, ext := range extensions {
+			clean := cleanRelativePath(ext)
+			if clean == filepath.Join(".pi", "extensions", "spacedock.ts") {
+				if _, err := os.Stat(filepath.Join(root, clean)); err == nil {
+					st.extensionDiscoverable = true
+				}
+			}
+		}
 		for _, sp := range skillPaths {
 			dir := filepath.Join(root, sp)
 			if piSkillFileExists(dir, "ensign") {
@@ -723,21 +736,26 @@ func piPackageSourceFromEntry(raw json.RawMessage) string {
 	return ""
 }
 
-func readPackagePiSkills(root string) (name string, skills []string) {
+func readPackagePiManifest(root string) (name string, extensions, skills []string) {
 	data, err := os.ReadFile(filepath.Join(root, "package.json"))
 	if err != nil {
-		return "", nil
+		return "", nil, nil
 	}
 	var pkg struct {
 		Name string `json:"name"`
 		Pi   struct {
-			Skills []string `json:"skills"`
+			Extensions []string `json:"extensions"`
+			Skills     []string `json:"skills"`
 		} `json:"pi"`
 	}
 	if json.Unmarshal(data, &pkg) != nil {
-		return "", nil
+		return "", nil, nil
 	}
-	return pkg.Name, pkg.Pi.Skills
+	return pkg.Name, pkg.Pi.Extensions, pkg.Pi.Skills
+}
+
+func cleanRelativePath(p string) string {
+	return filepath.Clean(strings.TrimPrefix(p, "./"))
 }
 
 func piSkillFileExists(dir, skill string) bool {

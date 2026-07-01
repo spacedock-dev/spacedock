@@ -10,7 +10,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+)
+
+var (
+	bridgeAdapterBin     string
+	bridgeAdapterBinErr  error
+	bridgeAdapterBinOnce sync.Once
 )
 
 // runClaudeAdapter feeds ONE Claude-Code-shaped hook payload — the Claude adapter's input —
@@ -24,9 +31,34 @@ func runClaudeAdapter(t *testing.T, payload string) {
 	}
 	cmd := exec.Command("bash", hook)
 	cmd.Stdin = strings.NewReader(payload)
+	cmd.Env = append(os.Environ(), "SPACEDOCK_BIN="+bridgeAdapterBinary(t))
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Claude adapter failed: %v\n%s", err, out)
 	}
+}
+
+func bridgeAdapterBinary(t *testing.T) string {
+	t.Helper()
+	bridgeAdapterBinOnce.Do(func() {
+		dir, err := os.MkdirTemp("", "spacedock-bridge-adapter-bin-*")
+		if err != nil {
+			bridgeAdapterBinErr = err
+			return
+		}
+		bridgeAdapterBin = filepath.Join(dir, "spacedock")
+		cmd := exec.Command("go", "build", "-o", bridgeAdapterBin, "./cmd/spacedock")
+		cmd.Dir = repoRoot(t)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			bridgeAdapterBinErr = err
+			_ = os.RemoveAll(dir)
+			bridgeAdapterBin = ""
+			t.Logf("build output:\n%s", out)
+		}
+	})
+	if bridgeAdapterBinErr != nil {
+		t.Fatalf("build spacedock bridge adapter binary: %v", bridgeAdapterBinErr)
+	}
+	return bridgeAdapterBin
 }
 
 // claudeAdapterRead builds the Claude-Code-shaped PostToolUse/Read payload that Claude Code
