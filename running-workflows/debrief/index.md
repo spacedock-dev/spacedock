@@ -2,7 +2,7 @@
 title: "Debrief a session"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-01 00:34:08"
+last_updated: "2026-07-01 04:47:45"
 ---
 
 # Debrief a session
