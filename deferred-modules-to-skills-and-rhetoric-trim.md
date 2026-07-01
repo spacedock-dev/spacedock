@@ -5,6 +5,7 @@ source: "Captain critique 2026-06-30/07-01 (0240 Commander session, post-lean-co
 group: tooling
 id: nt982bbkf04r0ypbsc8er74s
 started: 2026-07-01T00:28:25Z
+sprint: 0240-lean-contract
 ---
 
 ## Problem — two intertwined issues, one fix
