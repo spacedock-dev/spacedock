@@ -1,9 +1,11 @@
 ---
 title: Codex dev/local-plugin launch ergonomics — a `--plugin-dir`-equivalent for the local-marketplace dance
-status: backlog
+status: ideation
 source: "Captain request 2026-06-30 (0240 Commander session). Testing a local/dev build with Codex is far more cumbersome than Claude. Claude: `spacedock claude --plugin-dir <checkout>` — one flag, loads the local plugin checkout directly, bypasses installed-plugin resolution. Codex has no equivalent: you hand-build a local marketplace (`.agents/plugins/marketplace.json` with `source: local` + a `plugins/spacedock` symlink to the checkout), export `SPACEDOCK_MARKETPLACE_SOURCE`, run `spacedock install --host codex`, AND get the channel-in-the-name right (a plain `go build` edge binary needs the marketplace named `spacedock-edge`; the entry stays `spacedock`), plus the `.codex-plugin/plugin.json` version-masquerade gotcha."
 group: tooling
 id: 4q01qqyx4g2z3rctts1400av
+sprint: 0240-lean-contract
+started: 2026-07-01T02:38:48Z
 ---
 
 ## Problem
