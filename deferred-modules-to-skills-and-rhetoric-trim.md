@@ -1,13 +1,13 @@
 ---
 title: Turn adapter-less deferred modules into non-user-invocable skills + cut self-referential contract rhetoric
-status: validation
+status: implementation
 source: "Captain critique 2026-06-30/07-01 (0240 Commander session, post-lean-contract). The lean-contract deferrals delivered the real win (boot core -4402 B vs v0.22.0) but wrapped it in self-referential ceremony: every deferred reference announces itself as a `## X (deferred module)` with a arrow/done-when/guard triplet, re-explains itself in a file header, and both are labelled `(host-neutral)` — a label about the contract's own architecture, meaningless to FO behavior. Separately: the adapter-less deferred modules (fo-status-viewer, fo-write-core) are `references/*.md` the FO must recall-a-path-and-Read at a trigger, when they are architecturally identical to `present-gate`/`feedback-rejection-flow` (host-neutral, FO-invoked, not user-typed) — they should be non-user-invocable SKILLS, whose SKILL.md metadata carries the when-to-load the pointer prose duplicates."
 group: tooling
 id: nt982bbkf04r0ypbsc8er74s
 started: 2026-07-01T00:28:25Z
 sprint: 0240-lean-contract
 worktree: .worktrees/spacedock-ensign-deferred-modules-to-skills-and-rhetoric-trim
-mod-block: merge:pr-merge
+mod-block:
 pr: "#457"
 ---
 
@@ -236,3 +236,11 @@ Converted the two adapter-less deferred FO modules (fo-status-viewer, fo-write-c
 ### Summary
 
 Independently reproduced (not asserted) all five ACs against the db015360 deliverable. AC-1 byte delta is -1924 B (NEGATIVE), matching every per-file figure. AC-3's contractlint suite is GREEN and all six real gates were adversarially proven RED-capable in a throwaway checkout — the cross-file naming check (P3) and os.Stat closure (P2) key on independent sources (the filesystem, a different file's text), not tautological spelling checks over the file under test. AC-2's oracle correctly keys on the skill argument (allows present-gate, forbids the two FO skills), with the augmented GREEN fixture and the dedicated later-delta RED control both behaving as designed. AC-4 (build + three packages + full `./...`) is green; AC-5's doc discriminator is factually accurate against all four modules' shipped bindings. Recommendation: **PASSED**.
+
+### Feedback Cycles
+
+**Cycle 1 (2026-07-01) — merge-gate REJECTED by the required claude-live lane (opus); routed to implementation for a greet-guard hint.** PR #457's offline lanes + codex-live + pi-live were green, but the `claude-live` shallow-boot lane failed on **opus** (sonnet passed): AC-2's own `assertGreetInvokesNoDeferredFOSkill` fired — *"pre-greet turn 14 invoked the deferred FO skill fo-write-core via Skill(skill=spacedock:fo-write-core)"*. The live lane caught a real behavior the offline fixtures + detached audit could not; the assertion is correct.
+
+- **Root cause (from the live transcripts, sonnet vs opus, same seeded merged-PR #42):** BOTH FOs performed the boot pr-merge startup-hook advancement of the merged PR (a `status --set`/archive write — expected boot behavior; `state sweep` returning 0 for a bare `#42` ref is by design, the mod hook does the gh detection). The ONLY divergence: the opus FO, per its own words *"First loading the write-authority contract since this is my first write to main,"* loaded `Skill(fo-write-core)` to verify authority before the advancement write; the sonnet FO ran the identical write directly without loading it. This is exactly the audit's **P-2 polish note** made real — nt condensed the old per-module greet-guard rationale (the registry row that stated *"the boot's own «state.sweep-merged» write is binary-executed"*) into one generic "a greet-and-stop boot loads NONE of these," so a cautious opus FO re-derives write authority the only way it can: by loading the skill. NOT a `state sweep` bug (that CI sweep behavior is correct); NOT a sweep `--workflow-dir` issue (that is the separate `82e`, seen in another session).
+
+- **Fix (captain-directed, refinement #2):** scope the `## Deferred load points` `fo-write-core` trigger so the boot advancement write is explicitly exempt from the load — restoring, at the trigger's own definition, the specific "this boot write needs no write-scope load" hint the collapse dropped. Concretely: `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write); **NOT** the boot `«state.sweep-merged»`/pr-merge advancement, whose `status --set`/`archive` are pre-authorized and need no write-scope load. Contract-prose only; offline suites (AC-1 byte delta, contractlint AC-3, offline AC-2 oracle) must stay green, then re-run claude-live — the real test of whether opus now respects the exemption. If opus still loads it despite an explicit "do not load" at the decision point, that is the `5xs` fo-opus-behavioral-robustness issue, not nt.
