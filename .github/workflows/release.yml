@@ -247,3 +247,77 @@ jobs:
           # push, so the default GITHUB_TOKEN suffices (no cross-repo PAT, unlike the
           # homebrew-tap push).
           git push origin "$RELEASE_COMMIT:refs/heads/stable"
+
+  # Advances `next` — the branch `spacedock-edge` resolves — on EVERY tag, not
+  # just stable. A SIBLING of goreleaser (`needs: goreleaser`, mirroring the
+  # journey-ledger job's isolation): a rare conflict here must not block or unwind
+  # a release that already published. See docs/releasing.md "Advancing the Edge
+  # Line". The reconcile is a merge favoring the release, never a reset or force —
+  # the pre-merge `next` tip stays a first-parent ancestor of the pushed commit,
+  # so `git push edge-advance:next` is a plain fast-forward.
+  edge-advance:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Full history + tags so `git rev-list -1 "$GITHUB_REF_NAME"` resolves
+          # the tagged commit the reconcile merges into `next`.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      # Prerelease (`-pre`) tag: reconcile `next` to the tagged commit's content,
+      # favoring the release over whatever `next` drifted to. The manifests inherit
+      # the tag's version; the calendar bump below makes installers re-pull.
+      - name: Reconcile the edge line to the prerelease commit
+        if: "contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+
+      # Stable (`vX.Y.Z`) tag: reconcile the same way, then stamp the manifests
+      # PAST the release to the post-release dev pre-version (X.(Y+1).0-pre1), so
+      # the edge line never masquerades as the stable version it just shipped.
+      - name: Reconcile the edge line past the stable release
+        if: "!contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          DEV_VERSION="$(go run ./cmd/spacedock-release dev-preversion "$RELEASE_VERSION")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+          go run ./cmd/spacedock-release stamp-version "$DEV_VERSION" \
+            .claude-plugin/plugin.json .codex-plugin/plugin.json
+          git commit -m "next: bump dev pre-version to $DEV_VERSION" \
+            -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+
+      # Both paths end here: bump the marketplace calendar key (the moving-branch
+      # re-pull key `claude plugin update` / `codex` read) and fast-forward `next`.
+      # Exactly one reconcile step above ran, so `edge-advance` already carries the
+      # merge (plus, on a stable tag, the dev-preversion stamp).
+      - name: Bump the marketplace calendar key and push the edge line
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
+          git commit -m "next: bump marketplace calendar version" \
+            -- .claude-plugin/marketplace.json
+          git push origin edge-advance:next

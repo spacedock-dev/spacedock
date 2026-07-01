@@ -16,6 +16,9 @@ marketplace source.
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
 - stamps the plugin manifests' `version` on `main`, then advances the stable
   channel ref (see below).
+- advances the `next` edge line to match the release — reconciled on a
+  prerelease tag, reconciled plus bumped to the post-release dev pre-version on
+  a stable tag (see "Advancing the Edge Line" below).
 
 The marketplace manifest no longer lives in the plugin branch. It is the
 standalone `spacedock-dev/marketplace` repo, where each channel is a branch with
@@ -148,12 +151,42 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    git branch -d release/X.Y.Z
    ```
 
+## Advancing the Edge Line (`next`)
+
+Every tag push also advances `next` — the branch the `spacedock-edge`
+marketplace resolves — in a job that `needs: goreleaser` (a sibling job, so a
+rare conflict here cannot unwind or block the release that already published):
+
+- **Prerelease (`-pre`) tag:** `next` is reconciled to the tagged commit's
+  content — `git merge -X theirs "$RELEASE_COMMIT"`, favoring the release over
+  whatever `next` had drifted to — then the marketplace calendar key is bumped
+  (`spacedock-release bump-calendar`) so `claude plugin update` / `codex`
+  re-pull. This is the automated form of the manual reconcile the 0.24.0-pre1
+  cut required (`next` had drifted 40 commits behind `main`, hard-blocking
+  `spacedock codex` on a binary/plugin version-compat check).
+- **Stable (`vX.Y.Z`) tag:** `next` is reconciled the same way, then stamped
+  PAST the release to the post-release dev pre-version
+  (`spacedock-release dev-preversion X.Y.Z` → `X.(Y+1).0-pre1`), so the edge
+  line never masquerades as the stable version it just shipped, then the
+  calendar key is bumped.
+
+The reconcile is a merge, never a reset or force-push: the previous `next` tip
+is always a first-parent ancestor of the new commit, so `git push origin
+<sha>:next` is a plain fast-forward. A real conflict (two sides changing the
+same file in incompatible, non-superseded ways) fails the step loudly instead
+of guessing — the same manual reconciliation this replaces remains the escape
+hatch.
+
 ## Dev-Only `next` Publishing
 
 Keep `next` for development. Source builds may use
 `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
 checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
 bump the marketplace calendar key for dev testers.
+
+Every release tag now advances `next` and bumps its calendar key automatically
+(see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band
+re-pull between releases (e.g. a `next`-only fix that isn't worth a full cut).
 
 Do not send stable users to `next`. If a command or manifest uses `@next`, it is
 a dev-only path.

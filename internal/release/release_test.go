@@ -350,6 +350,47 @@ func TestConfirmAndTagConfirmCutsEditedBody(t *testing.T) {
 	}
 }
 
+// TestDevPreVersion locks AC-4's computation: the post-release dev pre-version
+// for the `next` edge line is X.(Y+1).0-pre1 for a stable X.Y.Z, so `next` never
+// masquerades as the stable version the stable tag just shipped. A hyphenated or
+// malformed input (a pre-release tag, or a non-semver) errors rather than
+// silently producing a bogus version — release.yml only calls this on the
+// `!contains(github.ref, '-')` stable branch, and a stray call must fail loud.
+func TestDevPreVersion(t *testing.T) {
+	good := []struct {
+		stable string
+		want   string
+	}{
+		{"0.24.0", "0.25.0-pre1"},
+		{"0.9.6", "0.10.0-pre1"},
+		{"1.2.3", "1.3.0-pre1"},
+	}
+	for _, c := range good {
+		got, err := DevPreVersion(c.stable)
+		if err != nil {
+			t.Errorf("DevPreVersion(%q): unexpected error %v", c.stable, err)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("DevPreVersion(%q) = %q, want %q", c.stable, got, c.want)
+		}
+	}
+
+	bad := []string{
+		"0.24.0-pre1", // already a pre-release
+		"v0.24.0",     // carries the tag `v` prefix, not a bare semver
+		"0.24",        // missing patch
+		"0.24.0.1",    // extra segment
+		"",            // empty
+		"latest",      // not a semver at all
+	}
+	for _, in := range bad {
+		if got, err := DevPreVersion(in); err == nil {
+			t.Errorf("DevPreVersion(%q) = %q, want an error on a hyphenated/malformed input", in, got)
+		}
+	}
+}
+
 // entryVersion extracts plugins[0].version from a marketplace.json blob.
 func entryVersion(t *testing.T, blob []byte) string {
 	t.Helper()
