@@ -37,7 +37,7 @@ Shared first-officer semantics — the boot-resident core. The deferred status, 
 A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»` JSON + README frontmatter (Startup step 8) and presents any ready gate via `present-gate`. Each loads only at its trigger:
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `Skill(skill="spacedock:fo-write-core")` — first write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write).
+- `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write). NOT the boot `«state.sweep-merged»`/pr-merge advancement, whose `status --set`/`archive` are pre-authorized and need no write-scope load.
 - `references/fo-dispatch-core.md` — first worker dispatch.
 - `references/fo-merge-core.md` — terminal boundary.
 
