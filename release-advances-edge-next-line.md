@@ -11,19 +11,293 @@ started: 2026-07-01T02:38:47Z
 ## Problem
 `release.yml` advances the `stable` ref only on a stable (non-hyphenated) `vX.Y.Z` tag; on a prerelease (hyphenated `-pre`) tag it advances NEITHER `stable` (correctly, per the carve-out) NOR the `next` edge line. So the edge channel (the `spacedock-edge` marketplace, which serves the plugin from `next`) does not advance with a prerelease cut — it drifts behind `main` until someone manually reconciles it. The 0240 sprint left `next` 40 commits behind main; the 0.24.0-pre1 cut then produced a binary(0.24.0-pre1)/edge-plugin(0.23.0-pre) skew that the strict version-compat check hard-blocked `spacedock codex`.
 
-## Desired direction (ideation to refine)
-The release process keeps the `next` edge line advanced on every release:
-- On a PRERELEASE (`-pre`) tag: release.yml's existing hyphenated-tag carve-out ALSO advances `next` to the tagged commit (reconcile the edge line to the release SHA) AND bumps the marketplace calendar key (`spacedock-release bump-calendar .claude-plugin/marketplace.json`), so the edge marketplace serves the prerelease and codex/claude re-pull.
-- On a STABLE (`vX.Y.Z`) tag: advance `next` to the post-release dev pre-version (couples with `next-post-release-preversion-bump`) so the edge line does not masquerade as the just-released stable.
-- Document the edge-line advance in `docs/releasing.md` alongside the `stable`-advance step.
+## Spike: proving the reconcile mechanism (riskiest path, exercised first)
 
-## Rough acceptance sketch (ideation tightens into measured ACs + a test plan)
-- Cutting a prerelease tag leaves `origin/next` reconciled to the tagged commit's content, with the plugin version == the tag and a bumped calendar key — verified by a release-machinery test/fixture (or a `spacedock-release` gate), NOT a manual step.
-- The edge marketplace serves the prerelease version after the cut (a codex/fixture install smoke resolving the edge/local marketplace to the prerelease version).
-- `docs/releasing.md` documents the edge-line advance for both prerelease and stable cuts.
+The riskiest assumption is whether release.yml can advance `next` to the release
+content in CI, deterministically, with no manual conflict resolution and no
+`--force`. This was exercised directly rather than assumed.
+
+**Precedent (this session's manual fix):** `96bf2243` reconciled `next`'s
+40-commit-stale tip (`36bcd692`) to `main@0.24.0-pre1` (`6aa200e3`) via a merge
+favoring main; `1bb3da06` then bumped the marketplace calendar key. `git diff
+96bf2243 6aa200e3 --stat` is empty — the merge commit's tree is byte-for-byte
+`main`'s tree, and `96bf2243`'s first parent is `36bcd692`, so pushing it was a
+plain fast-forward (no force).
+
+**Reproduction (this ideation pass):** in a disposable worktree, checked out
+`36bcd692` (the pre-reconcile `next` tip, which carries 15 commits `main` never
+saw, including real content changes to `plugin.json`/`codex-plugin/plugin.json`)
+and ran the exact mechanism the design below automates:
+
+```
+git merge -X theirs origin/main -m "spike: reconcile edge line to main (favor main)"
+```
+
+Result: **clean, zero-conflict merge** (`Auto-merging .claude-plugin/plugin.json`,
+`Auto-merging .codex-plugin/plugin.json`, `Merge made by the 'ort' strategy`,
+exit 0 — no manual intervention). Verified after the merge:
+- `git diff origin/main HEAD --stat` → empty (tree matches `main` exactly, same
+  as the real precedent).
+- `git merge-base --is-ancestor 36bcd692 HEAD` → true (the pre-merge `next` tip
+  is a first-parent ancestor of the new commit), so `git push origin
+  <sha>:next` is a **plain fast-forward — never `--force`**.
+
+This confirms: `git merge -X theirs <release-commit>` run from `next`'s current
+tip is a deterministic, non-interactive, force-free mechanism that reproduces
+the manual precedent exactly, including on genuinely divergent history (not
+just a fast-forward case). It is the mechanism the design below wires into CI.
+Worktree and throwaway branch were removed after the spike; no repo state
+changed.
+
+## Design
+
+### Prerelease (`-pre`) tag path
+
+New sibling job in `release.yml`, `needs: goreleaser` (mirrors the
+`journey-ledger` job's isolation rationale already in the file: a failure here
+must not block or unwind a release that already published):
+
+```yaml
+  # Advances `next` — the branch `spacedock-edge` resolves — on every tag, not
+  # just stable. See docs/releasing.md "Advancing the Edge Line".
+  edge-advance:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      - name: Reconcile the edge line to the prerelease commit
+        if: "contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+
+      - name: Reconcile the edge line past the stable release
+        if: "!contains(github.ref, '-')"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          DEV_VERSION="$(go run ./cmd/spacedock-release dev-preversion "$RELEASE_VERSION")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+          go run ./cmd/spacedock-release stamp-version "$DEV_VERSION" \
+            .claude-plugin/plugin.json .codex-plugin/plugin.json
+          git commit -m "next: bump dev pre-version to $DEV_VERSION" \
+            -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+
+      - name: Bump the marketplace calendar key and push the edge line
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
+          git commit -m "next: bump marketplace calendar version" \
+            -- .claude-plugin/marketplace.json
+          git push origin edge-advance:next
+```
+
+The two `if:` branches are the same mutually-exclusive condition the existing
+"Stamp plugin manifests" step already uses (`contains`/`!contains(github.ref,
+'-')`), so exactly one runs per tag. `bump-calendar` runs unconditionally last
+(both paths need it; the stable path also needs the extra `stamp-version`
+commit first). `bump-calendar` and `stamp-version` are unchanged, existing
+`spacedock-release` subcommands. The only NEW piece of logic is `dev-preversion`.
+
+### `spacedock-release dev-preversion` (new subcommand)
+
+`internal/release/release.go` — new pure function alongside `StampVersion` /
+`BumpCalendarVersion`:
+
+```go
+var stableVersionRe = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
+
+// DevPreVersion computes the post-release dev pre-version for the `next` edge
+// line from a just-released stable version: X.Y.Z -> X.(Y+1).0-pre1. Input must
+// be a bare stable semver (no hyphen) — release.yml only calls this on the
+// `!contains(github.ref, '-')` branch, which already guarantees that shape.
+func DevPreVersion(stableVersion string) (string, error) {
+	m := stableVersionRe.FindStringSubmatch(stableVersion)
+	if m == nil {
+		return "", fmt.Errorf("stable version %q is not X.Y.Z", stableVersion)
+	}
+	minor, _ := strconv.Atoi(m[2])
+	return fmt.Sprintf("%s.%d.0-pre1", m[1], minor+1), nil
+}
+```
+
+`cmd/spacedock-release/main.go` — new `case "dev-preversion":` dispatching to a
+`devPreversion(args []string) int` that takes exactly one `<stable-version>` arg,
+calls `release.DevPreVersion`, and prints the result to stdout (mirrors
+`stampVersion`/`bumpCalendar`'s arg-count-then-call-then-print shape).
+
+**Version-format note:** existing `-pre` tags are inconsistent — `v0.23.0-pre.1`
+(dotted) vs the current `v0.24.0-pre1` (no dot, live in production today,
+`.claude-plugin/plugin.json` currently reads `0.24.0-pre1`). `dev-preversion`
+standardizes on the no-dot form (`-pre1`) to match current live practice; it
+does not attempt to fix the historical dotted tags.
+
+**Scope boundary with `next-post-release-preversion-bump`:** that backlog task's
+concerns (Codex accepting a prerelease manifest version, binary-reported dev
+version parity) are broader than this entity. This entity implements only the
+mechanical half — computing and stamping the dev pre-version onto `next` as part
+of the automated advance. `0.24.0-pre1` already installs live today, so "no
+spike needed: prerelease manifest version strings are already proven in
+production" for the Codex-acceptance half.
+
+## Acceptance criteria
+
+**AC-1 (VALUE)** — after a release cut, `next`'s commit divergence from the
+release closes to zero (`git rev-list --count <release-commit>..next` counts
+only the expected calendar/dev-preversion commits; `git rev-list --count
+next..<release-commit>` is 0), replacing the 40-commit drift baseline that
+hard-blocked `spacedock codex` this session.
+Verified by: `TestEdgeLineReconcileClosesDivergence` (new,
+`internal/release/`, `t.TempDir()` + `exec.Command("git", ...)`, following the
+`TestAnnotatedTagBodyRoundTrips` pattern in `notes_extract_test.go`) — builds a
+temp repo shaped like the real incident (`next` diverged N commits behind
+`main` with some `next`-exclusive commits), runs the literal command sequence
+above, and asserts the divergence count drops from N>0 to 0 and the tree
+matches the release commit's tree.
+
+**AC-2** — the reconcile never force-pushes or resets `next`, on either path.
+Verified by: (a) the same fixture test asserting `git merge` exits 0 with no
+`CONFLICT` markers and the pre-merge `next` tip remains a first-parent ancestor
+of the pushed commit; (b) `TestReleaseWorkflowEdgeAdvanceNeverForces` (new,
+`internal/release/`, following `manifest_tag_gate_workflow_test.go`'s
+adversarial-mutation pattern) — greps the `edge-advance` job's `run:` blocks for
+`--force`/`-f`/`reset --hard` and reds if found; the adversarial twin injects one
+and asserts the guard catches it.
+
+**AC-3** — on a prerelease tag, `next`'s plugin manifests read exactly the tag's
+version and the marketplace calendar key advances past its pre-cut value.
+Verified by: the AC-1 fixture test's post-merge manifest-content assertion, plus
+existing `bump-calendar` unit coverage (monotonic-advance case already tested).
+
+**AC-4** — on a stable tag, `next`'s plugin manifests read the computed
+post-release dev pre-version, never the just-released stable version.
+Verified by: `TestDevPreVersion` (new, table-driven, `internal/release/`):
+`"0.24.0"→"0.25.0-pre1"`, `"0.9.6"→"0.10.0-pre1"`, `"1.2.3"→"1.3.0-pre1"`, error
+on a hyphenated/malformed input; plus the AC-1 fixture test's stable-path
+manifest-content assertion.
+
+**AC-5** — `docs/releasing.md` documents the edge-line advance for both
+prerelease and stable cuts, naming the merge-favoring-release mechanism and the
+never-force invariant. Verified by: the doc diff below, reviewed at the ideation
+gate (per stage-def: proposed here, applied in implementation).
+
+## Test plan
+
+Cost/complexity: low-to-medium. All new coverage is `go test`-speed (temp-repo
+git fixtures + table-driven unit tests + text-parsing workflow guards) — no live
+CI dry-run or GitHub Actions dispatch needed, matching this file's existing
+`manifest-tag-gate`/`e2e-gate` test precedents. No install-smoke test is planned:
+the real edge marketplace (`spacedock-dev/marketplace@edge`) is a standalone
+repo already documented as "unreachable from here" (docs/releasing.md's existing
+Notes section) — install-path behavior for a repointed marketplace source is
+already covered by `internal/cli/marketplace_source_override_test.go` /
+`channel_marketplace_source_test.go` and is not re-proven here.
+
+1. `internal/release/edge_reconcile_test.go` (new) — `TestEdgeLineReconcileClosesDivergence`, `TestReleaseWorkflowEdgeAdvanceNeverForces` (AC-1, AC-2).
+2. `internal/release/release_test.go` (extend) — `TestDevPreVersion` table test (AC-4).
+3. `internal/release/edge_advance_workflow_test.go` (new) — wiring guard: `edge-advance` job exists, `needs: goreleaser`, both `if:` branches present and mutually exclusive, `bump-calendar` invoked unconditionally (AC-3, AC-4 wiring half).
+4. `cmd/spacedock-release/main_test.go` or a new `dev_preversion_test.go` — CLI arg-count/usage coverage for `dev-preversion`, mirroring existing subcommand tests.
+
+## Documentation diff (docs/releasing.md)
+
+Append a bullet to "## What the Tag Push Does":
+
+```diff
+ - stamps the plugin manifests' `version` on `main`, then advances the stable
+   channel ref (see below).
++- advances the `next` edge line to match the release — reconciled on a
++  prerelease tag, reconciled plus bumped to the post-release dev pre-version on
++  a stable tag (see "Advancing the Edge Line" below).
+```
+
+New section, inserted after step 9 of "## Cutting a Stable Release" and before
+"## Dev-Only `next` Publishing":
+
+```diff
++## Advancing the Edge Line (`next`)
++
++Every tag push also advances `next` — the branch the `spacedock-edge`
++marketplace resolves — in a job that `needs: goreleaser` (a sibling job, so a
++rare conflict here cannot unwind or block the release that already published):
++
++- **Prerelease (`-pre`) tag:** `next` is reconciled to the tagged commit's
++  content — `git merge -X theirs "$RELEASE_COMMIT"`, favoring the release over
++  whatever `next` had drifted to — then the marketplace calendar key is bumped
++  (`spacedock-release bump-calendar`) so `claude plugin update` / `codex`
++  re-pull. This is the automated form of the manual reconcile the 0.24.0-pre1
++  cut required (`next` had drifted 40 commits behind `main`, hard-blocking
++  `spacedock codex` on a binary/plugin version-compat check).
++- **Stable (`vX.Y.Z`) tag:** `next` is reconciled the same way, then stamped
++  PAST the release to the post-release dev pre-version
++  (`spacedock-release dev-preversion X.Y.Z` → `X.(Y+1).0-pre1`), so the edge
++  line never masquerades as the stable version it just shipped, then the
++  calendar key is bumped.
++
++The reconcile is a merge, never a reset or force-push: the previous `next` tip
++is always a first-parent ancestor of the new commit, so `git push origin
++<sha>:next` is a plain fast-forward. A real conflict (two sides changing the
++same file in incompatible, non-superseded ways) fails the step loudly instead
++of guessing — the same manual reconciliation this replaces remains the escape
++hatch.
++
+ ## Dev-Only `next` Publishing
+```
+
+Append a sentence to "## Dev-Only `next` Publishing":
+
+```diff
+ Keep `next` for development. Source builds may use
+ `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
+ checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
+ bump the marketplace calendar key for dev testers.
++
++Every release tag now advances `next` and bumps its calendar key automatically
++(see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band
++re-pull between releases (e.g. a `next`-only fix that isn't worth a full cut).
+```
 
 ## Related
-- `next-post-release-preversion-bump` — the version-stamp masquerade half of the dev/edge line advance.
-- `minor-version-compat-coupling` — why the skew hard-blocks; a laxer contract-compatible check softens the failure mode.
-- The 0.24.0-pre1 cut (this session) that exposed it; the manual reconcile (`origin/next` @ 1bb3da06).
-- `release.yml` prerelease carve-out (`if: "!contains(github.ref, '-')"`), `next-publish.yml` (calendar bump).
+- `next-post-release-preversion-bump` — broader dev/edge line coherence (Codex
+  acceptance, binary-reported dev version); this entity implements only the
+  mechanical dev-preversion stamp + edge-ref advance (see Scope boundary above).
+- `minor-version-compat-coupling` — why the skew hard-blocks; a laxer
+  contract-compatible check softens the failure mode.
+- The 0.24.0-pre1 cut (this session) that exposed it; the manual reconcile
+  (`96bf2243` merge + `1bb3da06` calendar bump, `origin/next` @ 1bb3da06) is the
+  proof precedent the Spike section reproduces.
+- `release.yml` prerelease carve-out (`if: "!contains(github.ref, '-')"`),
+  `next-publish.yml` (calendar bump, stays for out-of-band re-pulls).
+
+## Stage Report: ideation
+
+- DONE: Flesh the next-line-advance design for both prerelease and stable-tag paths, with concrete release.yml / spacedock-release before/after
+  New `edge-advance` sibling job (both `if:` branches) plus a new `spacedock-release dev-preversion` subcommand + `release.DevPreVersion` function, spec'd in the "Design" section.
+- DONE: Tighten the rough acceptance sketch into measured ACs each naming its test, plus the docs/releasing.md diff
+  AC-1..AC-5 in "Acceptance criteria" (AC-1 is the VALUE ac: divergence count N>0 -> 0); concrete diff hunks in "Documentation diff".
+- DONE: Spike the riskiest mechanism first — can release.yml advance next in CI safely without a force-push footgun
+  Reproduced in a disposable worktree (`36bcd692` + `git merge -X theirs origin/main`): clean 0-conflict merge, resulting tree byte-identical to main's tree, old `next` tip stays a first-parent ancestor of the new commit (fast-forward push, no `--force`) — matches the real `96bf2243`/`1bb3da06` precedent exactly. Worktree and throwaway branch removed after.
+
+### Summary
+
+Reproduced the manual reconcile mechanism empirically (`git merge -X theirs`) in a throwaway worktree before designing around it, confirming it is deterministic, conflict-free even on genuinely divergent history, and never requires `--force`. Designed a single new `edge-advance` CI job covering both the prerelease (reconcile + calendar bump) and stable (reconcile + dev-preversion stamp + calendar bump) paths, adding one new pure function (`DevPreVersion`) while reusing existing `stamp-version`/`bump-calendar`. Tightened the AC sketch into 5 measured ACs each naming a specific new or existing test (fixture git-repo tests following `notes_extract_test.go`'s pattern, a workflow-guard adversarial test following `manifest_tag_gate_workflow_test.go`, and a table-driven unit test), and wrote the concrete docs/releasing.md diff.
