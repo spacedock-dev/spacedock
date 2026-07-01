@@ -21,11 +21,14 @@ import (
 //
 //	spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
 //	spacedock-release bump-calendar <marketplace.json>
+//	spacedock-release dev-preversion <stable-version>
 //	spacedock-release e2e-gate <release-commit-sha>
 //
 // stamp-version rewrites each manifest's top-level `version` to the release
 // version (AC-4). bump-calendar advances the marketplace plugin entry's calendar
-// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. e2e-gate is the
+// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. dev-preversion
+// prints the post-release dev pre-version (X.(Y+1).0-pre1) the stable-tag edge
+// advance stamps onto `next`. e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
@@ -44,6 +47,8 @@ func main() {
 		os.Exit(stampVersion(os.Args[2:]))
 	case "bump-calendar":
 		os.Exit(bumpCalendar(os.Args[2:]))
+	case "dev-preversion":
+		os.Exit(devPreversion(os.Args[2:]))
 	case "journey-costs":
 		os.Exit(journeyCosts(os.Args[2:]))
 	case "e2e-gate":
@@ -170,6 +175,26 @@ func bumpCalendar(args []string) int {
 		return 1
 	}
 	fmt.Printf("bumped %s\n", path)
+	return 0
+}
+
+// devPreversion prints the post-release dev pre-version for the `next` edge line
+// (X.(Y+1).0-pre1) computed from a just-released stable version. release.yml's
+// stable-tag path captures this stdout to stamp `next` PAST the released stable
+// version. It takes exactly one <stable-version> arg and errors on a hyphenated
+// or malformed input, since it runs only on the `!contains(github.ref, '-')`
+// branch that already guarantees a bare X.Y.Z.
+func devPreversion(args []string) int {
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "spacedock-release dev-preversion: need exactly one <stable-version> (e.g. 0.24.0)")
+		return 2
+	}
+	version, err := release.DevPreVersion(args[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "dev-preversion: %v\n", err)
+		return 1
+	}
+	fmt.Println(version)
 	return 0
 }
 
@@ -323,6 +348,7 @@ func usage() {
 Usage:
   spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
   spacedock-release bump-calendar <marketplace.json>
+  spacedock-release dev-preversion <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release e2e-gate <release-commit-sha>
   spacedock-release manifest-tag-gate <tag> <plugin.json> [<plugin.json> ...]
