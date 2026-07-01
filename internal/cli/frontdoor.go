@@ -425,6 +425,34 @@ func hasPluginDir(passthrough []string) bool {
 	return false
 }
 
+// takeCodexPluginDir splits a `--plugin-dir <dir>` (or `--plugin-dir=<dir>`) out of
+// the codex passthrough, returning the checkout dir, the passthrough with EVERY
+// --plugin-dir token removed, and whether any was found. codex's own CLI has no
+// --plugin-dir flag — it hard-rejects the token — so spacedock must consume it here
+// and turn it into a local-marketplace install rather than forward it. When
+// repeated, the last dir wins.
+func takeCodexPluginDir(passthrough []string) (dir string, rest []string, found bool) {
+	rest = make([]string, 0, len(passthrough))
+	for i := 0; i < len(passthrough); i++ {
+		a := passthrough[i]
+		if a == "--plugin-dir" {
+			found = true
+			if i+1 < len(passthrough) {
+				dir = passthrough[i+1]
+				i++ // consume the value token too
+			}
+			continue
+		}
+		if strings.HasPrefix(a, "--plugin-dir=") {
+			found = true
+			dir = strings.TrimPrefix(a, "--plugin-dir=")
+			continue
+		}
+		rest = append(rest, a)
+	}
+	return dir, rest, found
+}
+
 // passthroughHasFlag reports whether the operator already supplied any of the
 // named host flags in the passthrough, in either `--flag value` or `--flag=value`
 // form. The unsandboxed launchers consult it before injecting their default
@@ -490,6 +518,25 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
+	}
+	// `spacedock codex --plugin-dir <checkout>` has no codex-native flag to forward
+	// — codex's CLI hard-rejects `--plugin-dir` — so consume it here: strip it from
+	// the passthrough so the real codex never sees it, build a local marketplace
+	// from the checkout, and install it under the binary's own channel. With the
+	// flag stripped, hasPluginDir reads false below and the normal gate runs against
+	// the just-installed plugin. Unlike claude's ephemeral --plugin-dir bypass, a
+	// codex --plugin-dir is a real on-disk install, so gate-checking it is
+	// meaningful rather than redundant.
+	if dir, rest, found := takeCodexPluginDir(fd.passthrough); found {
+		fd.passthrough = rest
+		if dir == "" {
+			fmt.Fprintln(stderr, "spacedock codex: --plugin-dir requires a checkout path")
+			return 1
+		}
+		if err := installCodexLocalPluginDir(ops, dir, stderr); err != nil {
+			fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
+			return 1
+		}
 	}
 	// The gate fails fast on a contract mismatch, but a missing plugin
 	// (NoPluginFound) auto-installs the codex plugin and proceeds to launch so the

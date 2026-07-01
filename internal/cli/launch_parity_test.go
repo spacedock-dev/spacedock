@@ -273,8 +273,11 @@ func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
 	})
 }
 
-// LP-AC-3: --plugin-dir passes through (multiplicity, order) AND relaxes the
-// gate (launches even on a failing manifest); without it the gate still fails.
+// LP-AC-3: for claude, --plugin-dir passes through (multiplicity, order) AND
+// relaxes the gate (launches even on a failing manifest); without it the gate
+// still fails. Codex is the exception: its CLI has no --plugin-dir flag, so the
+// flag is consumed into a real local-marketplace install and the gate then runs
+// against that install rather than being relaxed (the codex sub-case below).
 func TestPluginDirRelaxesGate(t *testing.T) {
 	t.Run("claude-relaxes-on-failing-manifest", func(t *testing.T) {
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
@@ -288,12 +291,24 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}
 	})
-	t.Run("codex-relaxes-on-failing-manifest", func(t *testing.T) {
+	t.Run("codex-plugin-dir-installs-then-gates-not-relaxed", func(t *testing.T) {
+		// Unlike claude's ephemeral --plugin-dir bypass, codex's --plugin-dir is a real
+		// install: the flag is consumed (never forwarded to codex) and the gate then
+		// runs against the installed plugin. With a fake still reporting a mismatched
+		// manifest, the gate FAILS — proving codex --plugin-dir installs then gates
+		// rather than relaxing.
+		t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 		var stdout, stderr bytes.Buffer
-		code := runCodex(context.Background(), []string{"--", "--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
-		if code != 0 {
-			t.Fatalf("exit = %d, want 0 (--plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
+		code := runCodex(context.Background(), []string{"--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		if code == 0 {
+			t.Fatalf("exit = 0, want non-zero (codex --plugin-dir gate-checks the install, not relaxes); stderr=%q", stderr.String())
+		}
+		if len(fake.installCmds) == 0 {
+			t.Fatalf("codex --plugin-dir did not install before gating: installCmds empty")
+		}
+		if fake.launchedArg != nil {
+			t.Fatalf("launch reached despite the post-install gate mismatch: %v", fake.launchedArg)
 		}
 	})
 	t.Run("claude-before-dash-forwards-and-relaxes", func(t *testing.T) {
@@ -304,18 +319,6 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
 		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
-		if !equalArgv(fake.launchedArg, want) {
-			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
-		}
-	})
-	t.Run("codex-before-dash-forwards-and-relaxes", func(t *testing.T) {
-		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
-		var stdout, stderr bytes.Buffer
-		code := runCodex(context.Background(), []string{"--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
-		if code != 0 {
-			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
-		}
-		want := []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/a", wantCodexBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}

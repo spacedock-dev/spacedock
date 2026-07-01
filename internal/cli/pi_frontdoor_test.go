@@ -351,13 +351,6 @@ func TestNonPiSetupRejectsPluginDir(t *testing.T) {
 			wantStderr: "--plugin-dir is not supported",
 		},
 		{
-			name: "install codex",
-			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
-				return runInitWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
-			},
-			wantStderr: "--plugin-dir is not supported",
-		},
-		{
 			name: "doctor claude",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runDoctorWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)

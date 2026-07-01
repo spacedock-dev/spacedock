@@ -153,33 +153,33 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 			want: []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--some-new-flag", "the-value", wantBootstrapPrompt},
 		},
 		{
-			// The spacedock-injected `--plugin-dir <dir>` prefix lands the `exec`
-			// subcommand at index 2; the leading-subcommand exemption must see it
-			// THROUGH the prefix and stay silent. This case REDS if skipInjectedPrefix
-			// is removed (the bare index-0 check then names `exec` as stray), so it
-			// pins the structural skip as the load-bearing mechanism.
-			name: "codex --plugin-dir then exec subcommand behind injected prefix",
+			// codex consumes `--plugin-dir <dir>` into a local install (its CLI has no
+			// such flag), so the flag never reaches the launch argv; the `exec`
+			// subcommand that follows still exempts its args from the stray guard.
+			name: "codex --plugin-dir then exec subcommand",
 			run: func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "exec", "do the thing"},
-			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "exec", "do the thing", wantCodexBootstrapPrompt},
+			want: []string{"codex", "--ask-for-approval", "on-request", "exec", "do the thing", wantCodexBootstrapPrompt},
 		},
 		{
-			// Same structural skip for the codex `resume` subcommand behind the
-			// injected prefix — no stray warning, argv unchanged.
-			name: "codex --plugin-dir then resume subcommand behind injected prefix",
+			// Same consumption for the codex `resume` subcommand: --plugin-dir is
+			// stripped and installed, resume leads the passthrough (so no approval flag
+			// or bootstrap prompt), and the guard stays silent.
+			name: "codex --plugin-dir then resume subcommand",
 			run: func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "resume", "abc123"},
-			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "resume", "abc123", wantCodexBootstrapPrompt},
+			want: []string{"codex", "resume", "abc123"},
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("CODEX_HOME", t.TempDir()) // isolate any codex --plugin-dir local marketplace
 			fake := &fakeHost{manifest: compatibleManifest(t)}
 			var stderr bytes.Buffer
 			code := tc.run(tc.args, t.TempDir(), fake, &stderr)
