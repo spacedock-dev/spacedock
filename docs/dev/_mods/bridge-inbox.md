@@ -1,15 +1,15 @@
 ---
 name: bridge-inbox
-description: Drain captain intent queued by the Bridge command-center UI (_bridge/inbox.jsonl), routing per-workflow, and write the FO liveness heartbeat each tick
-version: 0.2.0
+description: Drain captain intent queued by the Bridge command-center UI (_bridge/inbox.jsonl), route per-workflow, acknowledge in _bridge/fo-replies.jsonl, and write the FO liveness heartbeat each tick
+version: 0.3.0
 fo-realm: "FO realm — the FO maintains this file directly; it is FO process (the seam to the Bridge UI), not product built under the dev workflow."
 ---
 
 # Bridge Inbox
 
-[Bridge](https://github.com/spacedock-dev/bridge) is a read-only command-center UI over this fleet. It cannot push into a running FO session (a Claude Code session has no inbound API), so it writes captain intent to a durable, **append-only** inbox at `_bridge/inbox.jsonl` (relative to the FO's working directory — the repo root where `spacedock claude` was launched). This mod drains that inbox on the FO's own loop ticks, acting only on intent **addressed to this workflow**, and writes a per-workflow liveness heartbeat Bridge reads.
+[Bridge](https://github.com/spacedock-dev/bridge) is a read-only command-center UI over this fleet. It cannot push into a running FO session (a Claude Code session has no inbound API), so it writes captain intent to a durable, **append-only** inbox at `_bridge/inbox.jsonl` (relative to the FO's working directory — the repo root where `spacedock claude` was launched). This mod drains that inbox on the FO's own loop ticks, acting only on intent **addressed to this workflow**, writes a per-workflow liveness heartbeat Bridge reads, and appends best-effort explanatory replies/acks to `_bridge/fo-replies.jsonl`.
 
-**Path alignment (load-bearing).** Bridge anchors the inbox, heartbeat, and feed on its `--repo-root` flag, falling back to `--fleet` only when `--repo-root` is unset. So intent reaches this FO **only when the captain launches Bridge with `--repo-root` pointing at this FO's cwd** (the repo root). Under a multi-workflow layout (`--fleet <repo>/docs/spacedock` with no `--repo-root`), Bridge would write to `<repo>/docs/spacedock/_bridge/` while the FO reads `<repo>/_bridge/` — and intent silently never arrives. The dir is the same `_bridge/` Bridge resolves *iff* the two roots agree.
+**Path alignment (load-bearing).** Bridge anchors the inbox, heartbeat, feed, and reply stream on its `--repo-root` flag, falling back to `--fleet` only when `--repo-root` is unset. So intent reaches this FO **only when the captain launches Bridge with `--repo-root` pointing at this FO's cwd** (the repo root). Under a multi-workflow layout (`--fleet <repo>/docs/spacedock` with no `--repo-root`), Bridge would write to `<repo>/docs/spacedock/_bridge/` while the FO reads `<repo>/_bridge/` — and intent silently never arrives. The dir is the same `_bridge/` Bridge resolves *iff* the two roots agree.
 
 **This is a pull, not a push.** Delivery latency is one FO loop cadence: the captain's intent is read whenever the FO next idles or boots, never instantly. Bridge's UI says as much ("queued — read on the FO's next tick"); do not promise synchronous delivery.
 
@@ -26,10 +26,16 @@ esac
 **Inbox record schema** (one JSON object per line, written by Bridge):
 
 ```
-{"ts": "<rfc3339>", "kind": "tell" | "conn" | "decision", "text": "<string>", "granted": <bool, conn only>, "target": "<workflow-slug>" | "all", "entity": "<slug, decision only>", "field": "<frontmatter field, decision only>", "value": "<value, decision only>"}
+{"id":"<opaque unique string>","ts":"<rfc3339>","kind":"tell"|"conn"|"decision","text":"<string>","granted":<bool, conn only>,"target":"<workflow-slug>"|"all","target_set":["<workflow-slug>", "..."],"entity":"<slug, decision only>","field":"<frontmatter field, decision only>","value":"<value, decision only>"}
 ```
 
-`target` routes the intent. Act on a record only when `target == "$SLUG"` **or** `target == "all"`; a **missing/empty `target` means `all`** (backward-compatible with older Bridge records, which carried no target). A record targeted at another workflow is skipped — but still counts as processed, so this workflow's cursor advances past it.
+`id` is Bridge's opaque unique id for this intent. Current Bridge records carry `target_set`, a frozen array of workflow slugs expected to drain and acknowledge this intent. For `target == "all"`, Bridge writes the current fleet member slugs into `target_set`; for a specific target, Bridge writes `[slug]`. `target` remains for backward compatibility with older records.
+
+Routing is:
+
+- If `target_set` is present, act only when `"$SLUG"` is in `target_set`. Ignore `target` entirely for routing in that case, including `target == "all"`; the frozen `target_set` is authoritative.
+- If `target_set` is absent, preserve old target behavior: act when `target == "$SLUG"`, `target == "all"`, or `target` is missing/empty.
+- A record not addressed to this workflow is skipped — but still counts as processed, so this workflow's cursor advances past it.
 
 **Consume by a per-workflow cursor, never by rewrite.** Bridge only appends to the one shared `inbox.jsonl`; this mod advances only `_bridge/.inbox-cursor.$SLUG` (the count of inbox lines this workflow's FO has processed). Each workflow's FO owns its own cursor, so several FOs draining the same inbox never clobber each other, and re-firing with no new lines is a no-op.
 
@@ -55,7 +61,7 @@ printf '{"session_id":"%s","ts":"%s","state":"idle"}\n' \
   "${SD_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-${CODEX_THREAD_ID:-}}}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > _bridge/fo.$SLUG.json
 ```
 
-`SD_SESSION_ID` is the host-neutral session-id token owned by your runtime adapter's **Bridge egress** binding; the snippet reads it first and falls back to the host's own session var (`$CLAUDE_CODE_SESSION_ID` on Claude, `$CODEX_THREAD_ID` on Codex) so the heartbeat never silently blanks, with no per-tick `export` needed. An empty value (a host that exposes none) is still a valid liveness tick — Bridge reads freshness from `ts`. The full egress-surface contract — `events.jsonl`, this heartbeat, `fo-feed.jsonl`, the session→entity marker, and which host produces each — is `docs/dev/bridge-egress-contract.md`.
+`SD_SESSION_ID` is the host-neutral session-id token owned by your runtime adapter's **Bridge egress** binding; the snippet reads it first and falls back to the host's own session var (`$CLAUDE_CODE_SESSION_ID` on Claude, `$CODEX_THREAD_ID` on Codex) so the heartbeat never silently blanks, with no per-tick `export` needed. An empty value (a host that exposes none) is still a valid liveness tick — Bridge reads freshness from `ts`. The full egress-surface contract — `events.jsonl`, this heartbeat, `fo-feed.jsonl`, `fo-replies.jsonl`, the session→entity marker, and which host produces each — is `docs/dev/bridge-egress-contract.md`.
 
 `state` is `idle`: this mod runs at startup/idle boundaries (you are between dispatches when it fires), so it cannot honestly claim `working` — the finer working/idle signal already lives in `_bridge/events.jsonl`. Writing the heartbeat is observe-only; never let it block the loop. (A session left idle with no captain interaction for over 30 minutes stops ticking and goes honestly not-attached in Bridge — that is intended, not a bug.)
 
@@ -71,20 +77,41 @@ Drain newly-queued captain intent addressed to this workflow, if any:
    fi
    CURSOR=$(cat _bridge/.inbox-cursor.$SLUG 2>/dev/null || echo 0)
    ```
-3. Snapshot the current line count and read exactly the new records (bounding the read so a concurrent Bridge append can't make the cursor skip a line):
+3. Snapshot the current line count and read exactly the new records by physical line number (bounding the read so a concurrent Bridge append can't make the cursor skip a line):
    ```
    NEW=$(wc -l < _bridge/inbox.jsonl | tr -d ' ')
    sed -n "$((CURSOR + 1)),${NEW}p" _bridge/inbox.jsonl
    ```
    If `NEW` is not greater than `CURSOR`, there is nothing new — skip (idempotent).
-4. For each new record, in order, parse `kind` / `text` / `granted` / `target` (and `entity` / `field` / `value` on a `decision` record). **Check the target first:** if `target` is present and is neither `"$SLUG"` nor `"all"`, this record is for another workflow's FO — skip it (it is not yours to act on); it still counts as processed (the cursor advances past it in step 5). Otherwise (target is `"$SLUG"`, `"all"`, or absent) act:
-   - **`kind == "tell"`** — the captain sent you a message. Treat `text` as a directive or clarification for this tick: act on it as you would a captain instruction (commission or clear work, answer the implied question, adjust course), and acknowledge it to the captain.
-   - **`kind == "conn"`** — a conn-handover change. `granted: true` → adopt the conn within the stated goal `text`: drive the entities the conn covers to done without stopping at their gates, per the conn rules in `first-officer-shared-core` (escalations remain non-delegable and still surface to the captain). `granted: false` → take the conn back: stop at every gate for the captain's call again.
-   - **`kind == "decision"`** — the captain resolved a self-described decision gate from Bridge (Bridge cannot perform the gate's external side-effects — a Linear write, a label — so it queues the decision here instead of advancing the entity). Resolve `entity` (its slug) in THIS workflow, then treat `field`/`value` as the captain's gate verdict: set the field with `${SPACEDOCK_BIN:-spacedock} status --set --workflow-dir {dir} <entity> <field>=<value>`, then drive that entity through its current gate exactly as if the captain had decided it at the gate — your normal gate-resolution runs the workflow's own stage actions (including any external writes the stage prose defines) and advances it. Idempotent: if the entity is already resolved/terminal with that value, it is a no-op. If `entity` does not resolve in this workflow (it belongs to another member's slug), skip it like a mismatched target. Acknowledge to the captain which entity you resolved and how.
+4. For each new record, in order, keep its physical `LINE` number (`CURSOR + 1`, `CURSOR + 2`, ...), then parse `id` / `ts` / `kind` / `text` / `granted` / `target` / `target_set` (and `entity` / `field` / `value` on a `decision` record). Use a real JSON parser; do not parse these records with grep/sed/regex. **Check routing first:** when `target_set` is present, act only if `"$SLUG"` is a member of that array; ignore `target` entirely, including `target == "all"`, because `target_set` is the authoritative frozen recipient set. When `target_set` is absent, act only if `target` is `"$SLUG"`, `"all"`, or missing/empty. If the record is for another workflow's FO, skip it (it is not yours to act on); it still counts as processed (the cursor advances past it in step 5). Otherwise act, then append the corresponding reply/ack after the FO has interpreted, accepted, or applied the intent — not merely after shell-reading the line:
+   - **`kind == "tell"`** — the captain sent you a message. Treat `text` as a directive or clarification for this tick: act on it as you would a captain instruction (commission or clear work, answer the implied question, adjust course), and append a `reply` record with `status:"answered"`.
+   - **`kind == "conn"`** — a conn-handover change. `granted: true` → adopt the conn within the stated goal `text`: drive the entities the conn covers to done without stopping at their gates, per the conn rules in `first-officer-shared-core` (escalations remain non-delegable and still surface to the captain). Then append a `conn-ack` record with `status:"accepted"`. `granted: false` → take the conn back: stop at every gate for the captain's call again. Then append a `conn-ack` record with `status:"released"`.
+   - **`kind == "decision"`** — the captain resolved a self-described decision gate from Bridge (Bridge cannot perform the gate's external side-effects — a Linear write, a label — so it queues the decision here instead of advancing the entity). Resolve `entity` (its slug) in THIS workflow, then treat `field`/`value` as the captain's gate verdict: set the field with `${SPACEDOCK_BIN:-spacedock} status --set --workflow-dir {dir} <entity> <field>=<value>`, then drive that entity through its current gate exactly as if the captain had decided it at the gate — your normal gate-resolution runs the workflow's own stage actions (including any external writes the stage prose defines) and advances it. Idempotent: if the entity is already resolved/terminal with that value, it is a no-op. Append a `decision-ack` record with `status:"applied"` when the field value is present and gate resolution finished or was already satisfied; append `status:"blocked"` when the intent is valid but execution could not finish; append `status:"rejected"` when the intent is invalid or unresolvable. If `entity` does not resolve in this workflow, acknowledge it as `rejected` rather than silently treating it like a mismatched target; this record was addressed to this workflow and Bridge needs to close the loop.
 5. Advance this workflow's cursor to the snapshot you read: `echo "$NEW" > _bridge/.inbox-cursor.$SLUG`.
 6. Report to the captain: how many intents you drained (for this workflow) and what you did with each.
 
-If a record is malformed (not valid JSON, or an unknown `kind`), skip it but still advance the cursor past it, and note the skip to the captain — never block the loop on a bad record.
+If a record is malformed (not valid JSON, missing required fields for its `kind`, or an unknown `kind`), skip it but still advance the cursor past it, and note the skip to the captain — never block the loop on a bad record. Append a rejected ack only when the record is addressed to `"$SLUG"` and has enough valid metadata to produce a valid reply shape: an `id`, `ts`, and a known `kind` that determines `reply`/`conn-ack`/`decision-ack` plus `intent_kind`. Unknown-kind or unrouteable records cannot be represented by the reply schema; report the skip to the captain, advance the cursor, and do not invent an id or invalid ack kind.
+
+### Replies / acks
+
+Append one reply/ack to `_bridge/fo-replies.jsonl` for each addressed inbox record you handled or rejected:
+
+```
+{"schema":1,"ts":"<rfc3339 UTC>","kind":"reply"|"conn-ack"|"decision-ack","target":"<actual $SLUG>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"tell"|"conn"|"decision","status":"answered"|"accepted"|"released"|"applied"|"rejected"|"blocked","text":"optional one-line note","granted":true|false,"entity":"...","field":"...","value":"...","session_id":"optional","host":"optional"}
+```
+
+Rules:
+
+- `target` is the actual acknowledging workflow slug (`$SLUG`), never `"all"`.
+- `in_reply_to_line` is the physical inbox line number you processed, not the count of addressed records.
+- `in_reply_to_id` and `in_reply_to_ts` echo the original inbox `id` and `ts`.
+- `intent_kind` echoes the inbox `kind`.
+- `text` is optional but, when present, must be a single line.
+- Echo `granted`, `entity`, `field`, and `value` when present and relevant.
+- `session_id` should be `"${SD_SESSION_ID:-${CLAUDE_CODE_SESSION_ID:-${CODEX_THREAD_ID:-}}}"` when non-empty; `host` is optional.
+- Write one complete newline-terminated JSON object in one append operation, e.g. build the full JSON line with a structured encoder and append it with a single `>> _bridge/fo-replies.jsonl` write. Do not rewrite, truncate, sort, or compact `fo-replies.jsonl`.
+- Cursor remains the delivery/read source of truth; `fo-replies.jsonl` is best-effort explanatory ack content. A failed reply append must never block the FO from completing the drained intent or advancing the cursor after action.
+- Duplicate replies are allowed under at-least-once replay; Bridge folds them by intent id (or legacy line fallback), acknowledging target, and reply kind. Still prefer idempotent behavior.
 
 **Delivery is at-least-once, not exactly-once.** The cursor advances only *after* you act (step 5 follows step 4), so nothing is lost if the loop dies mid-drain. The trade-off: a crash between acting and writing the cursor re-delivers that batch on the next tick. Treat `conn`/`tell` handling as idempotent — re-adopting a `conn` you already hold (or re-relinquishing one you already gave back) is a no-op, and a repeated `tell` is at worst a duplicate acknowledgement. (This is distinct from the first-run migration seed above, which guards against re-applying the *entire* pre-versioning history.)
 

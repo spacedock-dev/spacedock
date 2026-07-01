@@ -1,13 +1,13 @@
-# Bridge egress contract (FO liveness → Bridge)
+# Bridge egress contract (FO liveness/replies → Bridge)
 
 The Bridge seam is two flows over the shared `_bridge/` dir (resolved from the repo root where the FO launched). They run in opposite directions and are documented apart:
 
-- **Ingress** — captain intent → FO — is the `bridge-inbox` mod (`docs/dev/_mods/bridge-inbox.md`). It drains `_bridge/inbox.jsonl` on the FO's own loop ticks; it rides the portable Spacedock mod-hook loop and is already host-neutral.
-- **Egress** — FO liveness/activity → Bridge — is *this* contract: the four `_bridge/` files a running FO (and its ensigns) write for the external Bridge command-center UI to tail. Bridge reads what already exists; it is not a source of truth.
+- **Ingress** — captain intent → FO — is the `bridge-inbox` mod (`docs/dev/_mods/bridge-inbox.md`). It drains `_bridge/inbox.jsonl` on the FO's own loop ticks; it rides the portable Spacedock mod-hook loop and is already host-neutral. Bridge writes every new intent with an opaque `id` and, on current records, a frozen `target_set` array of workflow slugs expected to drain and acknowledge the intent. For `target == "all"`, Bridge expands the current fleet member slugs into `target_set`; for a specific target, Bridge writes `[slug]`. When `target_set` is present it is authoritative, and the legacy `target` field is ignored for routing; `target` remains only for backward compatibility with records that predate `target_set`.
+- **Egress** — FO liveness/activity/replies → Bridge — is *this* contract: the `_bridge/` files a running FO (and its ensigns) write for the external Bridge command-center UI to tail. Bridge reads what already exists; it is not a source of truth.
 
-**The schema is Spacedock-owned and harness-neutral. The *producer* of the host-event files (`events.jsonl` + the session marker) is per-host** — the heartbeat and feed are written host-neutrally by the `bridge-inbox` mod. The per-host producers are bound the same way runtime lifecycle capabilities are (see `fo-dispatch-core.md`'s "Claude: PRESENT / Codex: ABSENT / Pi: …" idiom): the shared contract names the file shape; the host adapter (`skills/first-officer/references/{claude,codex,pi}-first-officer-runtime.md`, under their `## Bridge egress` section) owns the concrete mechanism that emits it. The current implementation uses the shared `spacedock bridge egress emit --host <host>` command for host normalization. Claude, Codex, and Pi have packaged event producers; deterministic session→entity marker parity is proven only for Claude so far.
+**The schema is Spacedock-owned and harness-neutral. The *producer* of the host-event files (`events.jsonl` + the session marker) is per-host** — the heartbeat, feed, and FO reply stream are written host-neutrally by the `bridge-inbox` mod. The per-host producers are bound the same way runtime lifecycle capabilities are (see `fo-dispatch-core.md`'s "Claude: PRESENT / Codex: ABSENT / Pi: …" idiom): the shared contract names the file shape; the host adapter (`skills/first-officer/references/{claude,codex,pi}-first-officer-runtime.md`, under their `## Bridge egress` section) owns the concrete mechanism that emits it. The current implementation uses the shared `spacedock bridge egress emit --host <host>` command for host normalization. Claude, Codex, and Pi have packaged event producers; deterministic session→entity marker parity is proven only for Claude so far.
 
-All four files are gitignored session runtime (`.gitignore` carries `_bridge/`), append-only or last-write where noted, and strictly observe-only: a telemetry side-channel must never block, fail, or alter the FO.
+All files are gitignored session runtime (`.gitignore` carries `_bridge/`), append-only or last-write where noted, and strictly observe-only: a telemetry side-channel must never block, fail, or alter the FO.
 
 ## Session-id binding `«session-id»`
 
@@ -59,6 +59,22 @@ One JSON object per line, appended when the FO dispatches, advances, or complete
 
 - `verb`: `dispatch` (sent an ensign to a stage), `advance` (moved an entity to its next stage), `complete` (entity reached terminal).
 - → **All hosts (host-neutral producer):** the `bridge-inbox` mod's feed step appends it. No per-host binding — it is FO-loop narration, not a host event.
+
+## `_bridge/fo-replies.jsonl` — captain-intent acknowledgements
+
+One JSON object per line, appended after the FO has interpreted, accepted, or applied an inbox intent. This is the explanatory reply/ack stream for Bridge's conversation loop; the per-workflow inbox cursor remains the delivery/read source of truth. Duplicate replies are allowed under at-least-once replay; Bridge folds them by intent id (or legacy line fallback), acknowledging target, and reply kind. The stream is best-effort explanatory content, not an exactly-once delivery ledger.
+
+```
+{"schema":1,"ts":"<rfc3339 UTC>","kind":"<reply|conn-ack|decision-ack>","target":"<acknowledging workflow slug>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"<tell|conn|decision>","status":"<answered|accepted|released|applied|rejected|blocked>","text":"optional one-line note","granted":true,"entity":"...","field":"...","value":"...","session_id":"optional","host":"optional"}
+```
+
+- `target` is the actual acknowledging workflow slug, never `all`.
+- `in_reply_to_line` is the physical line number in `_bridge/inbox.jsonl` that produced the ack.
+- `kind`: `reply` for `tell`, `conn-ack` for `conn`, `decision-ack` for `decision`.
+- `status`: `answered` for a handled `tell`; `accepted` when the FO adopts a conn grant; `released` when the FO gives the conn back; `applied` when a decision field value is present and gate resolution finished or was already satisfied; `blocked` when a valid intent could not finish; `rejected` when an intent is invalid or unresolvable.
+- Echo `granted`, `entity`, `field`, and `value` when present and relevant to the intent. Keep `text` one line.
+- Append-only and best-effort: write one complete newline-terminated JSON object in one append operation, and never rewrite `fo-replies.jsonl`.
+- → **All hosts (host-neutral producer):** the `bridge-inbox` mod appends replies/acks while draining `_bridge/inbox.jsonl`.
 
 ## `_bridge/sessions/<session_id>.json` — session→entity marker (RUNNING-badge source)
 
