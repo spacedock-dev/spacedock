@@ -7,7 +7,7 @@ id: acy7gdv88md7jgzsfea85zx6
 started: 2026-07-02T01:37:54Z
 worktree: .worktrees/spacedock-ensign-codex-plugin-dir-advisory-internal-ref
 mod-block: merge:pr-merge
-pr: "#458"
+pr: pr-merge:458
 ---
 
 ## Problem
