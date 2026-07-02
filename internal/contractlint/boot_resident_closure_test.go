@@ -53,6 +53,22 @@ var deferredSkillCores = map[string][]string{
 	filepath.Join("skills", "fo-write-core", "SKILL.md"): {
 		"## FO Write Scope", "## ID Styles",
 	},
+	filepath.Join("skills", "fo-dispatch-recovery", "SKILL.md"): {
+		"## Degraded Mode", "## Break-Glass Manual Dispatch", "## Context Budget Failure and Dead Ensign Handling",
+	},
+}
+
+// deferredModuleBodies are contract bodies that are NOT boot-resident (the FO loader
+// does not read them at boot) but that themselves carry in-module `spacedock:` lazy
+// skill triggers whose targets must resolve on disk, and whose prose pointers at a
+// moved section must not dangle. claude-fo-dispatch.md is read at first dispatch
+// (not boot) and carries both the legacy-team probe token and the three
+// fo-dispatch-recovery failure-trigger lines (Degraded Mode, Break-Glass, Context
+// Budget). Walking it with the same extraction+os.Stat oracle retroactively
+// closure-checks the existing using-legacy-claude-team token there, uncovered by
+// bootResidentBodies today because this file is not itself boot-resident.
+var deferredModuleBodies = []string{
+	filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md"),
 }
 
 // bodyReferenceRe matches a sibling reference read-path named in a contract body
@@ -84,6 +100,7 @@ var lazyLoadSkills = map[string]bool{
 	"feedback-rejection-flow":  true,
 	"fo-status-viewer":         true,
 	"fo-write-core":            true,
+	"fo-dispatch-recovery":     true,
 }
 
 // deferredLoadPoint is one extracted load-point: the on-disk path the body names
@@ -143,7 +160,8 @@ func extractDeferredLoadPoints(body string) []deferredLoadPoint {
 func TestBootResidentDeferredLoadPointsResolve(t *testing.T) {
 	root := repoRoot(t)
 	total := 0
-	for _, rel := range bootResidentBodies {
+	walked := append(append([]string{}, bootResidentBodies...), deferredModuleBodies...)
+	for _, rel := range walked {
 		data, err := os.ReadFile(filepath.Join(root, rel))
 		if err != nil {
 			t.Fatalf("read boot-resident body %s: %v", rel, err)
@@ -360,10 +378,21 @@ func TestDeferredSkillProsePointersResolve(t *testing.T) {
 		t.Fatal("no section owners derived from deferredSkillCores — the prose-pointer check would pass vacuously")
 	}
 	walked := 0
+	targets := make([]string, 0, len(deferredSkillCores)+len(deferredModuleBodies))
 	for ref := range deferredSkillCores {
+		targets = append(targets, ref)
+	}
+	// deferredModuleBodies joins the walk so a resident trigger line inside a
+	// non-boot-resident contract body (e.g. claude-fo-dispatch.md's Degraded
+	// Mode/Break-Glass/Context Budget trigger lines) is scanned for a dangling
+	// bare-name pointer at a moved section too — today it walks only
+	// deferredSkillCores files, so without this extension those trigger lines
+	// would go unscanned.
+	targets = append(targets, deferredModuleBodies...)
+	for _, ref := range targets {
 		data, err := os.ReadFile(filepath.Join(root, ref))
 		if err != nil {
-			t.Errorf("read deferred skill file %s: %v", ref, err)
+			t.Errorf("read deferred module body %s: %v", ref, err)
 			continue
 		}
 		walked++
@@ -372,7 +401,7 @@ func TestDeferredSkillProsePointersResolve(t *testing.T) {
 		}
 	}
 	if walked == 0 {
-		t.Fatal("walked zero deferred skill files — the prose-pointer check would pass vacuously")
+		t.Fatal("walked zero deferred module bodies — the prose-pointer check would pass vacuously")
 	}
 }
 

@@ -8,12 +8,14 @@ import (
 )
 
 // deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
-// must NOT invoke before the greet: the status-viewer surface and the write/id-style
-// surface. Each loads only at its trigger (the FIRST status query / --set / id lookup
-// / issue filing, or the FIRST write to main). present-gate is deliberately NOT here —
-// the greet legitimately presents a ready gate via Skill(skill="spacedock:present-gate")
-// (Startup step 8), so the oracle keys on the skill ARGUMENT, not on any Skill call.
-var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core"}
+// must NOT invoke before the greet: the status-viewer surface, the write/id-style
+// surface, and the dispatch-failure-recovery surface. Each loads only at its trigger
+// (the FIRST status query / --set / id lookup / issue filing, the FIRST write to
+// main, or a dispatch failure — never at boot). present-gate is deliberately NOT
+// here — the greet legitimately presents a ready gate via
+// Skill(skill="spacedock:present-gate") (Startup step 8), so the oracle keys on the
+// skill ARGUMENT, not on any Skill call.
+var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
 
 // AC-6 boot-window measurement thresholds. The ceiling is the milestone's ~60k
 // greet-turn context ceiling; the spike threshold is set below the ~89k team-mode

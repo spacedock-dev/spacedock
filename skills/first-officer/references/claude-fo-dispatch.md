@@ -1,6 +1,6 @@
 # First Officer Dispatch Module (Claude)
 
-The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first worker dispatch: the worker back-channel, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the idle and degraded-mode guardrails, the context-budget probe, and the event-loop reconcile sweep.
+The Claude dispatch parts (fo-dispatch-core.md defers them to the runtime adapter), read alongside the core at the first worker dispatch: the worker back-channel, the `Agent()` spawn call, the `SendMessage` reuse-advance handle, the idle guardrail and the failure-recovery trigger lines, the context-budget probe, and the event-loop reconcile sweep.
 
 ## Worker Back-Channel
 
@@ -45,17 +45,7 @@ SendMessage(to="{live worker handle from session roster}", message=output.prompt
 
 SendMessage(to="{agent}-{slug}-{completed_stage}", message="Advancing to next stage: {next_stage_name}\n\n### Stage definition:\n\n[STAGE_DEFINITION — copy the full ### stage subsection from the README verbatim]\n\n### Completion checklist\n\n[CHECKLIST — assemble from Dispatch step 2]\n\nContinue working on {entity title} at {entity_file_path}. Commit before sending your completion message.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {next_stage_name}. Report written to {entity_file_path}.\")")
 
-**Break-Glass Manual Dispatch (fallback ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** Do NOT use this template while the helper is working. Report the helper failure to the captain before proceeding. Use this minimal template as a degraded fallback:
-```
-Agent(
-    subagent_type="{dispatch_agent_id}",
-    name="{worker_key}-{slug}-{stage}",  // if this exceeds 64 chars, cap it the way `spacedock dispatch build` does: keep the {worker_key} prefix and -{stage} suffix and, on id-style: sd-b32, replace the slug with a fixed-length prefix of the entity id (id-less slug workflows truncate the slug head instead)
-    run_in_background=true,              // named background worker, no team_name
-    model="{effective_model}",
-    prompt="## First action\n\nBefore anything else, invoke your operating contract:\n\n    Skill(skill=\"spacedock:ensign\")\n\nThis loads the shared ensign discipline (stage-report format, BashOutput polling, worktree ownership, completion signal protocol). Do not paraphrase; call the tool.\n\nYou are working on: {entity title}\n\nStage: {stage}\n\n### Stage definition:\n\n{copy stage subsection from README verbatim}\n\nRead the entity file at {entity_file_path}.\n\n### Completion checklist\n\n{numbered checklist}\n\n### Summary\n{brief description of what was accomplished}\n\n### Stage report\n\nAppend a Stage Report section at the end of the entity file (per the shared-core Stage Report Protocol). Use the title `Stage Report: {stage}`. Account for every checklist item above with a `- DONE:` / `- SKIPPED:` / `- FAILED:` entry. Use the checklist item text verbatim when possible.\n\n### Completion Signal\n\nSendMessage(to=\"team-lead\", message=\"Done: {entity title} completed {stage}. Report written to {entity_file_path}.\")"
-)
-```
-This is the concrete Claude form of fo-dispatch-core.md's Break-Glass template; the contract (what it omits, the conditional `model=` slot, "use only when the helper is unavailable") is stated there. The canonical enum the conditional slot draws from is `sonnet | opus | haiku | fable`.
+**Break-Glass Manual Dispatch (ONLY when `spacedock dispatch build` exits non-zero or is unavailable):** never hand-assemble a dispatch while the helper works. First action: report the helper failure (command, exit code, stderr) to the captain. Then `Skill(skill="spacedock:fo-dispatch-recovery")` and fill its `## Break-Glass Manual Dispatch` template; the conditional `model=` slot draws from the canonical enum in `## Context Budget` below.
 
 ## Standing-Teammate Injection (Claude)
 
@@ -90,37 +80,9 @@ Just emit `end_turn` with empty content. The runtime will wake you up again when
 
 **DISPATCH IDLE GUARDRAIL.** After dispatching an agent, wait for an explicit completion message. Idle notifications are normal between-turn state for background workers — they are not a reason to tear a worker down, and they usually mean the agent is waiting for input. Only shut down when: (1) the agent sends a completion message, (2) the captain explicitly requests shutdown, or (3) you are transitioning the entity to a new stage (AFTER you have observed the prior stage's completion signal per the list above). Never interpret idle notifications as "stuck" or "unresponsive."
 
-## Degraded Mode
+## Degraded Mode (trigger)
 
-Degraded Mode is an explicit, session-wide mid-session transition to sequential bare dispatch. Once entered, it persists until the session ends — there is no recovery back to background dispatch in the same session.
-
-### Triggers
-
-Any one of the following trips Degraded Mode:
-
-- Any SECOND dispatch failure within the session — no time window, no durable counter. The counter-free rule is deliberate: the FO cannot reliably track failure timestamps across context pressure and idle notifications, so "second failure anywhere in the session" is the fail-early trigger.
-- The captain command `/spacedock bare` — the explicit operator-initiated degrade.
-- `Agent` or `SendMessage` themselves are unavailable (a genuinely degraded runtime with no concurrent-dispatch substrate).
-
-### Effects
-
-Once Degraded Mode is active, the following invariants hold for the remainder of the session:
-
-- No `team_name` parameter on any subsequent `Agent()` dispatch. The dispatch is built in bare mode (`team_name: null`, `bare_mode: true`) so the emitted Agent call has `name` and `team_name` absent. (This is the Claude realization of fo-dispatch-core.md `## Dispatch Adapter`'s "no `team_name` on subsequent dispatch" effect.)
-- Every stage dispatches fresh and blocks until completion — the bare-mode `Agent()` call blocks until the subagent completes, so concurrent dispatch is not possible (the Claude realization of fo-dispatch-core.md `## Dispatch Adapter`'s "when the adapter's dispatch is blocking" clause); dispatch one entity through one stage at a time and process completions inline.
-- No SendMessage reuse of prior agent names. Stage advancement is always a fresh `Agent()` dispatch seeded from entity frontmatter. `SendMessage(to="{ensign_name}")` against any pre-degrade name is forbidden.
-
-### Captain Report Template
-
-On Degraded Mode entry, the FO emits the following sentence verbatim to the captain (direct text output, not SendMessage):
-
-> Falling back to bare mode for the remainder of this session due to infrastructure failure. Prior background agents are presumed-zombified; I will not route work to them or through the team registry. If you want to escalate: restart the session to retry concurrent dispatch, or let me continue — every stage will still complete, just without concurrent dispatch.
-
-### Cooperative Shutdown Sweep
-
-On Degraded Mode entry, perform a single-pass cooperative shutdown sweep of every known agent name from session memory: one `SendMessage(to="{ensign_name}", message="shutdown_request")` per name. Ignore failures — best-effort, not transactional. Do not retry, track responses, or block on the outcome; proceed immediately to the first fresh bare-mode dispatch.
-
-Exempt any agent whose entity is in an active feedback-cycle state (tracked via a `### Feedback Cycles` subsection in the entity body; read from the worktree copy when `worktree:` is set on the entity, otherwise from main). Those reviewers may hold load-bearing context from the prior cycle that re-dispatch cannot reconstruct. Sweep feedback-cycle reviewers only on explicit captain confirmation.
+Any ONE of these trips Degraded Mode — a session-wide, irreversible fallback to sequential bare dispatch: (1) any SECOND dispatch failure within the session (no time window, no counter — deliberate: the FO cannot reliably track failure timestamps); (2) the captain command `/spacedock bare`; (3) `Agent` or `SendMessage` themselves unavailable. On trip, FIRST ACTION: stop all named/background dispatch for the remainder of the session and do not route `SendMessage` to any pre-trip worker name. Then `Skill(skill="spacedock:fo-dispatch-recovery")` and follow its `## Degraded Mode` section: the bare-dispatch invariants, the verbatim captain report, and the cooperative shutdown sweep.
 
 ## Terminal Worker Teardown
 
@@ -131,28 +93,13 @@ There is no bulk team-delete. Tear down per-roster-member:
 1. Send the cooperative `SendMessage({"type":"shutdown_request"})` to every roster member in the entity's cohort. This is cooperative — the member emits `shutdown_response`/`shutdown_approved` and leaves the roster asynchronously.
 2. The auto-team `members[]` prunes the terminated member (the live roster is pruned; the member's `inboxes/*.json` may linger). There is no `active member(s)` race and no bounded settle-and-cap apparatus on this path — there is no team-wide delete to race a settling member against. The FO tracks its own ensign roster (it already does).
 
-## Context Budget and Dead Ensign Handling
+## Context Budget
 
 This is the Claude realization of reuse-condition-0's budget probe (and the feedback-rejection budget check); Codex declares none.
 
-**Context budget check:** Run `${SPACEDOCK_BIN:-spacedock} dispatch context-budget --name {ensign-name}`. Parse the JSON output. If `reuse_ok` is `false`, log to captain and fresh-dispatch with a recovery clause. The probe reads the named member's most recent `~/.claude/.../subagents/agent-*.jsonl` transcript and its team-`config.json` model.
-
-**Budget-unavailable is fail-safe (never silent-reuse).** The probe exits non-zero with no `reuse_ok` field in three conditions; the FO treats every one identically — fresh-dispatch:
-- **missing jsonl** — no `agent-*.jsonl` exists for the named member (stderr: `no subagent jsonl found for '{name}'`).
-- **unreadable/empty jsonl** — the jsonl exists but carries no assistant entry with non-zero `usage` (stderr: `no assistant entries with usage in {path}`).
-- **agent-not-in-team-config** — no team `config.json` lists a member with that name (stderr: `no team config found for member '{name}'`).
-A non-zero exit with no `reuse_ok: true` means the FO never silent-reuses on an absent reading.
+**Context budget check:** Run `${SPACEDOCK_BIN:-spacedock} dispatch context-budget --name {ensign-name}`. Parse the JSON output. `reuse_ok: true` → reuse may proceed. `reuse_ok: false`, or ANY non-zero exit with no reading, is fail-safe — never silent-reuse: log to captain and fresh-dispatch. Before the replacement dispatch (budget-fail, zombie, or dead ensign), `Skill(skill="spacedock:fo-dispatch-recovery")` — its `## Context Budget Failure and Dead Ensign Handling` section carries the recovery clause for the prior worktree and the dead-ensign rules.
 
 **Model-to-context mapping:** Resolved by `spacedock dispatch context-budget` from the member's runtime/config model. The context window follows forward family rules (`claude-opus-4-{minor}` with minor ≥ 7 → 1M; `claude-{sonnet|fable|opus}-{major}` with major ≥ 5 → 1M; the `[1m]` suffix → 1M; else 200k), so a new release in these families stays correct without an edit. This is also the model-for-member lookup reuse-condition-4 references: the same team-`config.json` member-model read. The canonical model enum reuse-condition-4 compares against is `sonnet`, `opus`, `haiku`, `fable` (the `dispatch build` effective_model values). A member stamped with a captain-session fallback value (e.g. `"opus[1m]"`) is outside this enum, so it never matches and forces the one-time fresh re-stamp.
-
-**Recovery clause** (only when replacing a prior ensign): The prior ensign was shut down due to context budget limits. Its worktree may hold uncommitted changes. Run `git status` and `git diff` first; commit legitimate WIP or reset broken changes.
-
-**Dead ensign handling:**
-
-- `SendMessage(shutdown_request)` is cooperative — do NOT send to dead or unresponsive ensigns.
-- Track dead ensigns in session memory; do not route work to dead names.
-- Fresh-dispatch under a `-cycleN` suffix when replacing a zombie ensign.
-- The post-dispatch config check does NOT detect zombies — zombies pass it. Session memory is the authoritative dead-vs-alive tracker.
 
 ## Feedback Rejection Flow (bare mode)
 
