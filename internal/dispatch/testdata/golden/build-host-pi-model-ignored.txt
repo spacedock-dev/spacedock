@@ -1,0 +1,19 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "subagent_type": "spacedock:ensign",
+  "description": "Thing: stagemodel",
+  "fetch_commands": [
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage stagemodel"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-pi-team-spacedock-ensign-thing-stagemodel.md",
+  "prompt": "Read /tmp/spacedock-dispatch/fixture-pi-team-spacedock-ensign-thing-stagemodel.md and treat its content as your assignment.",
+  "model": null,
+  "name": "spacedock-ensign-thing-stagemodel",
+  "team_name": "fixture-pi-team"
+}
+
+===== stderr =====
+[build] declared model 'fable' ignored on host pi: outside pi's dispatch-settable model space; emitting model=null

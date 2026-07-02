@@ -20,7 +20,7 @@ import (
 const (
 	schemaVersion   = 2
 	nameMaxLen      = 200
-	modelEnumList   = "must be one of: sonnet, opus, haiku"
+	modelEnumList   = "must be one of: sonnet, opus, haiku, fable"
 	dispatchFileDir = "/tmp/spacedock-dispatch"
 	// dispatchFileNameMaxLen caps the dispatch filename stem (team_name +
 	// derived name) so the on-disk file with its .md suffix stays under the
@@ -55,8 +55,10 @@ var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
 // names are always multi-char, so namePattern never needed the single-char case.
 var teamNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 
-// modelEnum is the Agent-schema model enum declared values are validated against.
-var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true}
+// modelEnum is the Agent-schema model enum declared values are validated
+// against — shared by dispatch build (host=claude) and spawn-standing, the
+// two sites that render Claude Agent envelopes.
+var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true, "fable": true}
 
 // buildOutput is the stdout JSON envelope. Field order is the emission order
 // (insertion order in the oracle): schema_version, subagent_type, description,
@@ -372,36 +374,55 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	}
 	stageMeta := stages[stageIdx]
 
-	// Resolve effective_model with precedence stage > defaults > null. Validate
-	// any declared value against the enum loudly, stage before defaults.
+	// Resolve effective_model with precedence stage > defaults > null. The
+	// declared model's value space is host-scoped: on host=claude it validates
+	// against the Agent-schema enum loudly (stage before defaults) and becomes
+	// the effective model; on host=codex/pi it is outside that host's
+	// dispatch-settable model space, so it is ignored-with-note rather than
+	// validated, and the effective model is always null.
 	stageModel, stageModelSet := stageMeta.Model()
 	defaultsModel, defaultsModelSet := stageDefaults["model"]
-	if stageModelSet && !modelEnum[stageModel] {
-		return buildError(stderr, 1,
-			"invalid model for stages.states[%d].model: '%s' — %s",
-			stageIdx, stageModel, modelEnumList)
-	}
-	if defaultsModelSet && !modelEnum[defaultsModel] {
-		return buildError(stderr, 1,
-			"invalid model for stages.defaults.model: '%s' — %s",
-			defaultsModel, modelEnumList)
-	}
 
 	var effectiveModel *string
 	modelSource := "null"
-	if stageModelSet {
-		m := stageModel
-		effectiveModel = &m
-		modelSource = "stage"
-	} else if defaultsModelSet {
-		m := defaultsModel
-		effectiveModel = &m
-		modelSource = "defaults"
-	}
-	if effectiveModel != nil {
-		fmt.Fprintf(stderr,
-			"[build] effective_model=%s (from %s) → Agent model=%s\n",
-			*effectiveModel, modelSource, *effectiveModel)
+
+	if host == "claude" {
+		if stageModelSet && !modelEnum[stageModel] {
+			return buildError(stderr, 1,
+				"invalid model for stages.states[%d].model: '%s' — %s",
+				stageIdx, stageModel, modelEnumList)
+		}
+		if defaultsModelSet && !modelEnum[defaultsModel] {
+			return buildError(stderr, 1,
+				"invalid model for stages.defaults.model: '%s' — %s",
+				defaultsModel, modelEnumList)
+		}
+		if stageModelSet {
+			m := stageModel
+			effectiveModel = &m
+			modelSource = "stage"
+		} else if defaultsModelSet {
+			m := defaultsModel
+			effectiveModel = &m
+			modelSource = "defaults"
+		}
+		if effectiveModel != nil {
+			fmt.Fprintf(stderr,
+				"[build] effective_model=%s (from %s) → Agent model=%s\n",
+				*effectiveModel, modelSource, *effectiveModel)
+		}
+	} else {
+		declaredModel, declared := "", false
+		if stageModelSet {
+			declaredModel, declared = stageModel, true
+		} else if defaultsModelSet {
+			declaredModel, declared = defaultsModel, true
+		}
+		if declared {
+			fmt.Fprintf(stderr,
+				"[build] declared model '%s' ignored on host %s: outside %s's dispatch-settable model space; emitting model=null\n",
+				declaredModel, host, host)
+		}
 	}
 
 	// Rule 4: Stickiness — route on the entity's stamped worktree: field, not the

@@ -25,16 +25,30 @@ const (
 	// team-config/jsonl model field, so a forward family rule never goes stale on
 	// the next release; 4-6 stays 200k (it still needs the explicit suffix).
 	opus1MMinMinor = 7
+	// familyMinMajor is the generation number at and above which a
+	// claude-{sonnet|fable|opus}-{major} model runs the 1M context window by
+	// default. Haiku is deliberately excluded from this family: haiku-4-5 is
+	// 200k and a future haiku-5's window is unverified, so under-granting (the
+	// safe failure mode) stays the default for it.
+	familyMinMajor = 5
 )
 
 // opusFamily matches claude-opus-4-{minor}, capturing the minor version. The
 // family rule reads the minor to decide the default context window.
 var opusFamily = regexp.MustCompile(`^claude-opus-4-(\d+)`)
 
+// modelFamily matches claude-{sonnet|fable|opus}-{major}, capturing the major
+// generation number, to decide the 5-generation-and-up 1M default. It excludes
+// haiku by construction.
+var modelFamily = regexp.MustCompile(`^claude-(?:sonnet|fable|opus)-(\d+)`)
+
 // contextLimitForModel infers the context window size from the model name. The
-// [1m] suffix always means 1M; otherwise an opus 4-{minor} with minor >=
-// opus1MMinMinor runs the 1M window by default (spawned ensigns drop the suffix).
-// Everything else — opus 4-6 without the suffix, sonnet, haiku, unknown models —
+// [1m] suffix always means 1M. Otherwise the opus 4-{minor} rule (minor >=
+// opus1MMinMinor) is checked first — it must win over the generic family rule
+// below for opus-4-x ids, including the dated claude-opus-4-{date} shape whose
+// "minor" parses as a large date-like number — before falling through to the
+// claude-{sonnet|fable|opus}-{major} rule (major >= familyMinMajor). Everything
+// else — opus 4-6 without the suffix, pre-5 sonnet, haiku, unknown models —
 // defaults to 200k. Mirrors the vendored claude-team context_limit_for_model.
 func contextLimitForModel(model string) int {
 	if strings.Contains(model, "[1m]") {
@@ -46,6 +60,11 @@ func contextLimitForModel(model string) int {
 	}
 	if m := opusFamily.FindStringSubmatch(base); m != nil {
 		if minor, err := strconv.Atoi(m[1]); err == nil && minor >= opus1MMinMinor {
+			return extendedContextLimit
+		}
+	}
+	if m := modelFamily.FindStringSubmatch(base); m != nil {
+		if major, err := strconv.Atoi(m[1]); err == nil && major >= familyMinMajor {
 			return extendedContextLimit
 		}
 	}

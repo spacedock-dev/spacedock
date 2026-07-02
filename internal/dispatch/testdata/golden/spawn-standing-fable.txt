@@ -1,0 +1,13 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "subagent_type": "general-purpose",
+  "description": "standing teammate: fable-officer",
+  "name": "fable-officer",
+  "team_name": "fixture-team",
+  "model": "fable",
+  "prompt": "You are fable-officer.\n"
+}
+
+===== stderr =====
