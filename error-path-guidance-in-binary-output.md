@@ -1,10 +1,11 @@
 ---
 title: "State/merge error-path remediation moves from resident contract prose into the binary's own failure output"
-status: ideation
+status: implementation
 group: tooling
 source: "fable-token-trim-scout analysis 2026-07-02: the five state «fn» bodies (first-officer-shared-core.md:106-144, ~1,015 tok boot-resident) and much of fo-merge-core.md (~1,824 tok at terminal) re-describe shipped commands plus failure remedies the binary could emit at fire time — e.g. state commit exit 3 already means 'same-entity rebase conflict aborted' and its stderr can carry the halt/surface/never-force instructions; merge guard phases can name the FO's next step in their output. Est. ~600-700 off boot, ~700-900 off terminal. Fresh angle: instruction-space -> tool-output placement, not prose relocation."
 id: s058nyrecqwtegn36rx6yew1
 started: 2026-07-02T03:02:55Z
+worktree: .worktrees/spacedock-ensign-error-path-guidance-in-binary-output
 ---
 
 ## Problem
