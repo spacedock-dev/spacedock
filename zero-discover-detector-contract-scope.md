@@ -10,10 +10,58 @@ started: 2026-07-02T12:25:07Z
 ## Problem
 The live zero-discover scenario's detector is stricter than the contract it enforces: the contract bans recursive/broad filesystem hunts after a zero `status --discover`; the detector reds on any `ls` touching the project root, including a flat `ls -la` of the FO's own cwd — plausible harmless orientation before report-and-stop. Correct FO behavior (report no workflow, stop) plus one innocuous listing = lane failure.
 
-## Desired direction (for ideation to refine)
-Reconcile detector and contract deliberately — either narrow the detector to the contract's enumerated shapes (find / grep -r / ls -R / recursive glob over the root, plus obvious equivalents like `ls **/`), with the real PR #466 stream as a must-NOT-match fixture; or, if the intent is genuinely zero post-discover filesystem ops, tighten the CONTRACT prose to say so and keep the detector — but then the contract change is the deliverable and the live lane proves it. The determination of intent (is a flat cwd listing acceptable FO behavior at zero-discover?) is the ideation's first question; align both artifacts to whichever answer, never leave them disagreeing.
+Recorded false-red instances of this class: the original PR #466 flat-`ls` filing (3rd over-broad live-heuristic instance of 2026-07-02), and PR #467 run 28587056405 sonnet zero-discover leg (4th instance, same day) — the FO ran `ls -la {fixture root}`, reported no-workflow, and stopped (stream `result` event `subtype=success`), yet the lane fataled. The family pattern (unscoped token/shape matching over model output false-positiving on correct behavior) already produced the wrong-root cd fix (#462).
 
-## Rough acceptance sketch (ideation tightens into measured ACs + a test plan)
-- The captured PR #466 sonnet stream replays through the detector with the chosen semantics (must-NOT-match if narrowed; must-match if the contract tightens and the scenario prompt/oracle changes accordingly).
-- Genuine broad-search shapes (find, grep -r, ls -R, recursive glob) still red — RED/GREEN fixture pair.
-- Contract prose and detector agree verbatim on the banned set; contractlint or a fixture binds them if feasible per the read-quarantine rules.
+## Decision (captain, 2026-07-02)
+Plain/flat `ls` — including `ls -la` of the cwd or a single directory — after a zero `status --discover` is ALLOWED. Recursive/hunting shapes stay banned: `find` over the project root (recursive by nature, as are its equivalents `rg`/`fd`), `grep -r` over the root, `ls -R`, recursive Glob (`**`), repo-wide Grep. The detector aligns DOWN to the contract; the banned axis is recursion/hunting, not the `ls` binary or the root path.
+
+Determinations on the record:
+- **No contract prose change.** The block clause (first-officer-shared-core.md Startup step 3, its only occurrence) enumerates exactly the banned recursive shapes and never banned flat `ls`; the PR #467 FO was prose-compliant. The failure was purely detector-side, so alignment is a detector narrowing, and the boot contract pays zero extra tokens. (An explicit "flat ls is fine" parenthetical was considered and rejected: lean-boot token cost for a clause the prose already implies by enumeration.)
+- **No corroboration gate (the #462 structure) needed.** The wrong-root bare-`cd` was ambiguous without same-command context; `ls -R` vs `ls -la` is self-describing syntax. Shape-narrowing suffices; corroboration would be machinery without a discriminating signal to corroborate.
+- **No contractlint prose↔detector binder.** A prose-grep is not behavior proof (the #374 lesson). The binding is behavioral: the RED/GREEN real-stream fixture pair plus the unit boundary table below express the same enumerated boundary the prose does.
+
+## Proposed approach
+Narrow `broadSweepCommand` (internal/ensigncycle/broad_search_detect_impl_test.go) to the contract's enumerated shapes:
+1. Drop `ls` from `broadSweepTools` (which keeps `find`/`rg`/`fd` — recursive-by-default hunters, banned when root-targeted or path-arg-less).
+2. `ls` reds only when recursive: `-R` flag or `--recursive`, or a path argument containing `**` (globstar recursion, the `ls **/` equivalent of the banned recursive Glob).
+3. Split `hasRecursiveFlag` per tool: grep recursion accepts `-r`/`-R`; ls only `-R` — for ls, `-r` is reverse-sort, so today's shared `ContainsAny("rR")` is a second latent false red (`ls -ltr {root}` would flag). Fix it as part of the same boundary.
+4. Everything else unchanged: root/cwd-default targeting rule, scoped-under-resolved-workflow pass, `grep -r` rule, Glob `**` rule, repo-wide Grep rule.
+5. Update the detector doc comment and the `broadSweepTools` comment (its "the zero branch forbids ANY root-scoped find/ls" claim is disproved by the captain decision) plus the live test's comment; flip the two inverted unit cases (`ls_non_recursive_repo_root_reds`, `bare_ls_default_cwd_reds`) to pass expectations.
+6. Check in the two real streams as `internal/ensigncycle/testdata/*.stream.jsonl` with a replay test, the #462 pattern (`TestDetectWrongRootBootRealPR446Streams`): PR #467 must return nil; PR #398 must red naming `find`.
+
+No user-facing docs surface: the change is a test-package detector plus its fixtures; the docs site does not describe the zero-discover block. Contract prose is deliberately byte-unchanged (see Decision).
+
+## Acceptance criteria
+1. **(Measures the end value)** False-red count over the checked-in correct-behavior real stream drops 1 → 0 while banned-shape detections hold at 1: replaying `testdata/claude_live_zero_discover_pr467_sonnet.stream.jsonl` (correct report-and-stop run, `result subtype=success`) through `detectBroadSearchAtBoot` returns nil, and `testdata/claude_live_zero_discover_pr398_sonnet.stream.jsonl` (`find {root} -type f | head -30`, tq0's genuine-deviation class) returns an error naming `find`. Divergeable baseline: the pre-change detector scores 2 reds on this pair (ideation spike reproduced the PR #467 CI failure byte-identically); a detector narrowed too far scores 0 on the PR #398 leg. Test: offline replay test over the checked-in fixtures.
+2. The allowed/banned boundary is the captain's decision expressed as one unit boundary table: `ls {root}`, `ls -la` (no path arg → cwd default), `ls -la {root}`, `ls -ltr {root}` pass; `ls -R {root}`, `find {root} …` (and path-arg-less `find`), `grep -r … {root}`, Glob `**/README.md`, Grep with path unset/root red; scoped `find`/`grep -r`/Grep under a resolved workflow dir still pass. Test: `TestDetectBroadSearchAtBoot` table extended/flipped to exactly this boundary.
+3. The contract side of the alignment is byte-unchanged and single-sourced: `git diff` for `skills/first-officer/references/first-officer-shared-core.md` is empty, and the block clause remains the prose's only banned-set enumeration. Test: git diff in review; grep count of `block (zero discover)` occurrences stays 1.
+
+## Test plan
+- **TDD order (red-first on real streams):** commit-1 checks in both fixtures plus the replay test asserting the TARGET semantics — it fails on the current detector (PR #467 leg reds, reproducing CI failure text) while the PR #398 leg already passes red. Commit-2 narrows the detector; replay test and flipped unit table go green. `go test ./internal/ensigncycle/` offline, no live tag.
+- **Live lane:** `TestLiveZeroDiscoverReportsAndStops` shape is untouched (still asserts detector-nil + no TeamCreate); no new live run is required to prove alignment — the replay fixtures are the lane's exact input replayed. Subsequent scheduled live runs measure the residual false-red rate (expected: this class stops appearing; genuine `find` sweeps still red as tq0 flake records).
+- Cost: small — pure-function detector edit, ~50KB testdata, offline tests only.
+
+## Spike record (ideation, 2026-07-02)
+The riskiest mechanism — can the retention-limited CI streams be reconstructed and do they replay through the detector reproducing the exact failures — was exercised first:
+- Reconstructed both streams from CI artifacts by extracting `zero_discover_live_test.go:82:`-prefixed t.Log lines from `live-e2e-detail.jsonl` (`jq -r 'select(.Test=="TestLiveZeroDiscoverReportsAndStops" and .Action=="output") | .Output' | sed -n 's/^    zero_discover_live_test\.go:82: //p'`). Both end in `result subtype=success`.
+- Replayed through the CURRENT `detectBroadSearchAtBoot`: PR #467 stream reds on `ls -la {root}` with error text byte-identical to the CI failure (job 84761267830); PR #398 stream reds on `find {root} -type f | head -30`. Mechanism validated; the replay test is seeded.
+- Fixture provenance (for implementation to reproduce byte-identically while retention lasts):
+  - PR #467: run 28587056405, artifact `runtime-live-e2e-claude-live-sonnet` id 8037986947 → `spacedock/spacedock/live-e2e-detail.jsonl`; 27 lines, 18275 bytes, sha256 `40a4f45baee1909f3f1a7729cd926b1808dbbd6f5cb5055b8d9b1a2b607f0a67`.
+  - PR #398: run 27835552853 attempt 1, artifact `runtime-live-e2e-claude-live-sonnet` id 7755173878 (created 2026-06-19T17:16:00Z; the earlier of the run's two sonnet artifacts) → same extraction; 72 lines, 32973 bytes, sha256 `562c87a9c23bc03a9d9228a4da1f524d5fa680af0075f93fef5bdec410402a9f`.
+  - `gh api repos/spacedock-dev/spacedock/actions/artifacts/{id}/zip` fetches each.
+
+## Scope split (vs tq0)
+`tq0` (`zero-discover-broad-search-hardening`) owns reducing GENUINE deviations (the PR #398 `find` class — model-stochastic sweeps the contract does ban). This task owns detector/contract ALIGNMENT (false reds on compliant behavior). The PR #398 fixture here is the non-regression guard proving alignment did not loosen genuine detection — it is not a hardening deliverable, and this task changes no lever tq0 might pull (output text, prose hardening, flake policy).
+
+## Stage Report: ideation
+
+- DONE: The allowed/banned boundary is recorded as a DECISION, not options: captain direction (2026-07-02) — plain/flat `ls` (including `ls -la` of cwd or a single directory) after zero-discover is ALLOWED; recursive/hunting shapes (`find` over the root, `grep -r`, `ls -R`, recursive Glob/Grep) stay banned — and `detectBroadSearchAtBoot` plus the contract's zero-discover block prose are aligned to that one boundary.
+  `## Decision` section records it with three on-the-record determinations (prose byte-unchanged, no corroboration gate, no lint binder); AC-2/AC-3 bind detector and prose to the single boundary.
+- DONE: Red-first on real streams: the PR #467 run 28587056405 sonnet zero-discover leg (correct FO behavior, flat `ls -la`, flagged today) is the checked-in must-pass fixture that the CURRENT detector fails and the aligned detector passes — while genuinely banned shapes (e.g. the PR #398 `find {root} -type f` stream, tq0's byte-verified record) remain RED.
+  Both streams reconstructed from CI artifacts and replayed through the current detector in the ideation spike: PR #467 reds byte-identically to the CI failure, PR #398 reds naming `find`; provenance (artifact ids, extraction command, sha256) recorded so implementation checks in byte-identical fixtures; test plan commit-1 is the red-first check-in.
+- DONE: At least one AC MEASURES the end value against a divergeable baseline: false-red count over the captured correct-behavior streams drops to 0 while every banned-shape stream still detects — not just "the detector prose/regex changed".
+  AC-1 measures 1 → 0 false reds with the banned-shape detection held at 1, against the pre-change detector's spike-verified 2-reds baseline (and names the over-narrowing failure direction).
+
+### Summary
+
+Ideation settled the boundary per the captain's decision (flat `ls` allowed; recursion/hunting banned) and chose detector-down alignment with the contract prose byte-unchanged — the PR #467 FO was prose-compliant, so the false red was purely detector-side. The riskiest mechanism was spiked first: both retention-limited CI streams (PR #467 flat-ls false red, PR #398 genuine find sweep) were reconstructed from artifacts and replayed through the current detector, reproducing the exact CI failure. The approach also fixes a second latent false red found during design (`ls -ltr` flagged via the shared `ContainsAny("rR")` recursive-flag check, though `-r` is reverse-sort for ls).
