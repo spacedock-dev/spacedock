@@ -91,3 +91,16 @@ PASSED. AC-1 reproduced independently: T1 drives the real ghRunListForCommit via
 ### Feedback Cycles
 
 **Cycle 1 (2026-07-02, detached adversarial audit, pre-gate).** Audit `audit-e2e-gate-rerun-status-filter` on a throwaway clone at 52fa0823: against the branch's own claims it refuted nothing material (adversarial edits 1-3 — reintroduced `--status success`, empty-conclusion acceptance, skipped headSha comparison — all caught by the suite). Material pre-existing finding routed to implementation: the adversarial edit removing `--workflow "Runtime Live E2E"` from ghRunListForCommit's argv stays GREEN everywhere — fail-open, since workflowName is not among the fetched `--json` fields, so that argv token (cmd/spacedock-release/e2e_gate.go:30) is the only binding to the live matrix; without it any green run on the release commit satisfies the gate. Fix: shim pins the `--workflow` token (returns [] unless argv carries it) so its removal goes RED. Lower-severity pre-existing test gaps recorded, not routed (candidate follow-up seed): untested fail-closed exits on query/predicate error (e2e_gate.go:63,72) and untested `-c <commit>` binding (fail-closed exposure only).
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Cycle-1 audit fix — pin `--workflow "Runtime Live E2E"` as ghRunListForCommit's only live-matrix binding, so its removal fails the gate closed in tests instead of leaving the suite green.
+  `writeGhStatusLagShim` (cmd/spacedock-release/e2e_gate_test.go) now tracks the previous argv token and returns `[]` unless it sees the exact `--workflow` / `Runtime Live E2E` pair, in addition to the existing bare-`--status` check.
+- DONE: RED/GREEN proof reproduced behaviorally, not asserted — the exact adversarial edit (drop `"--workflow", "Runtime Live E2E",` from ghRunListForCommit) was applied locally, observed to flip TestE2EGateCommandPassesOnRerunToGreenLiveRun RED (exit 1, "no conclusion:success..."), then reverted; full suite confirmed GREEN again.
+  Commit 1c1e84b9 on branch spacedock-ensign/e2e-gate-rerun-status-filter; `go test ./internal/release/... ./cmd/spacedock-release/...` both ok after revert; gofmt -l and go vet clean.
+- SKIPPED: The two lower-severity pre-existing test gaps from the cycle-1 note (untested fail-closed exits at e2e_gate.go:63,72; untested `-c <commit>` binding).
+  Explicitly out of scope for this branch per the routed feedback — recorded as a candidate follow-up seed, not fixed here.
+
+### Summary
+
+Cycle-1 fix is a test-only change: the gh shim now requires the exact `--workflow "Runtime Live E2E"` argv pair (not just no bare `--status`) before returning its fixture, closing the fail-open gap where dropping that token left the whole suite green. Verified with the actual adversarial edit locally (RED), then reverted (GREEN) — no production code changed in this cycle.
