@@ -8,7 +8,7 @@ started: 2026-07-01T00:28:25Z
 sprint: 0240-lean-contract
 worktree: .worktrees/spacedock-ensign-deferred-modules-to-skills-and-rhetoric-trim
 mod-block:
-pr: "#457"
+pr: pr-merge:457
 ---
 
 ## Problem — two intertwined issues, one fix
