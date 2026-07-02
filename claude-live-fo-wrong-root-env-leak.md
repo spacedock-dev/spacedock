@@ -71,3 +71,16 @@ No doc diff needed: the change is harness-internal (live-test detector precision
 ### Summary
 
 Ideation reframed the task: the filed "CI env leak" premise is disproved by the archived PR #446 artifacts — both failures were detector false positives on sonnet's speculative version-probe cd (fallback held / cd non-persistent; both runs finished the scenario correctly with result=success). Proposed fix is precision inside detectWrongRootBoot (same-command corroboration for bare cd, operative signatures unchanged, reworded error text), proven by a spike replaying the real streams. Cheap deterministic proof is the testdata replay; the live sonnet lane is confirmation only.
+
+## Stage Report: implementation
+
+- DONE: AC-1 lands RED then GREEN — the two archived PR #446 sonnet streams checked in as testdata, replaying through detectWrongRootBoot returns nil, while all 4 corroborated-wander fixtures still return an error (4/4).
+  Fetched artifacts 7990484876/7991648615 via `gh api .../actions/artifacts/{id}/zip`; checked in as `internal/ensigncycle/testdata/claude_live_wrong_root_pr446_attempt{1,2}.stream.jsonl`. Manually reverted the impl to pre-fix and reran `TestDetectWrongRootBootRealPR446Streams` — reproduced both exact byte-identical CI failures (old "CI env leak" text) — then restored the fix and reran green. Commit 62d8c6d6.
+- DONE: The detector change matches the approved design — bare cd reds only with same-command corroboration; standalone operative signatures (--workflow-dir, README read) stay first-and-fatal; failure text reworded off the disproved env-leak cause with unit assertions on the error string.
+  `hasWorkflowOperativeSignature` in wrong_root_detect_impl_test.go checks --workflow-dir/--boot/--discover/status --read/state commit/new/README-or-.md-token; `wanderTarget` gates only `cd`-origin path args on it via a new `bootPathArg{path,cd}` tag, leaving `--workflow-dir` args ungated. Both error strings reworded to "the FO's boot operated outside its launch cwd"; `!strings.Contains(err.Error(), "CI env leak")` assertions added to 3 red subtests (AC-3/AC-4).
+- DONE: Tier 1 and Tier 2 offline suites are green — extended wrong_root_detect_test.go (real-stream replays, the two real boot commands verbatim as must-pass cases, error-text assertions) and go test ./internal/ensigncycle/ — no live run this stage.
+  `go test ./internal/ensigncycle/ -run TestDetectWrongRootBoot -v`: 11/11 + 2/2 + 2/2 subtests pass. `go test ./internal/ensigncycle/...`: full package green (7.2s). `go vet ./internal/ensigncycle/...` and `go build ./...` clean; gofmt clean. Confirmed no other caller references the changed `bootPathArgs`/`wanderTarget` signatures (grep, single file).
+
+### Summary
+
+Fixed detectWrongRootBoot to gate its bare-`cd`-escapes-fixture signature on same-command workflow-operative corroboration, leaving the standalone `--workflow-dir`/README-read signatures first-and-fatal. Checked in the two archived PR #446 sonnet streams as testdata and added replay tests (verified RED on the pre-fix detector by manual revert, byte-identical to the real CI failures, then GREEN restored) alongside command-level verbatim cases and the 4 corroborated-wander fixtures (still 4/4 red). Full offline package suite (Tier 1 + Tier 2) is green; no live run performed this stage per the stage boundary (AC-2 belongs to validation).
