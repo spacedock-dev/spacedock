@@ -99,3 +99,16 @@ The amendment narrows duplicate-work risk without dropping the PR #465 shallow-b
 ### Summary
 
 Repaired the acceptance-criteria marker format so scanners can recognize AC-1 through AC-6. The repair is intentionally formatting-only and leaves the combined false-red scope intact.
+
+## Stage Report: implementation
+
+- DONE: fix Codex reuse characterization so captured affirmative reuse narration with unrelated negation no longer enters the ABSENT branch, while true absence controls still fail/pass as intended.
+  Commit 063a8b9a adds PR #464/#465 JSONL reuse rows; `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse'` went RED on false-absence failures, then GREEN with 26 passed.
+- DONE: account for `s0`/commit `868fd10f` shallow-boot gh probe parity work by reusing/verifying it if present, or coordinating before importing the same minimal fix.
+  Verified `868fd10f` exists on `spacedock-ensign/error-path-guidance-in-binary-output` but is not an ancestor of this branch; ported the minimal `GhRunnerExec --jq .state` parity patch and two regressions in 063a8b9a.
+- DONE: add/update focused offline tests for the PR #464/#465 reduced failures and run the relevant Go test gates before writing the stage report.
+  Focused red/green covered Codex reuse and dispatch gh parity; broader gates passed: `go test ./internal/ensigncycle` 252, `go test ./internal/dispatch ./internal/status ./internal/cli` 1291, `go test ./...` and `go test ./... -race` 1906.
+
+### Summary
+
+Implemented the Codex reuse narration classifier as explicit absence-declaration matching, so affirmative reuse messages with unrelated negation no longer force the ABSENT oracle while genuine absence rows still exercise the fresh-dispatch contradiction checks. Also aligned `state sweep`'s production gh probe with boot's `--jq .state` shape by porting the known `s0` parity fix because that commit was not reachable from this worktree branch.
