@@ -1,5 +1,5 @@
-// ABOUTME: AC-1 bracketing test over the vendored repo plugin manifest —
-// ABOUTME: requires-contract parses via contract.ParseRange and brackets CONTRACT_VERSION.
+// ABOUTME: Structural test over the vendored repo plugin manifest — the manifest
+// ABOUTME: version parses as major.minor and the D4 tombstone stays frozen.
 package integration
 
 import (
@@ -22,13 +22,14 @@ func repoRoot(t *testing.T) string {
 	return p
 }
 
-// TestVendoredManifestBracketsContractVersion locks AC-1's manifest<->binary
-// drift check: the vendored .claude-plugin/plugin.json declares a
-// requires-contract that parses via the real contract.ParseRange and brackets
-// the binary's CONTRACT_VERSION. The manifest fed to --plugin-dir and the binary
-// gate must agree in one go test — a future range edit that excludes the binary
-// fails here.
-func TestVendoredManifestBracketsContractVersion(t *testing.T) {
+// TestVendoredManifestVersionParses locks the manifest<->binary drift check
+// under minor-version coupling: the vendored .claude-plugin/plugin.json's
+// `version` field (the compatibility declaration itself — D2, no separate
+// requires-contract range is read by this binary) parses as a well-formed
+// major.minor semver, and the D4 cross-era tombstone (requires-contract
+// ">=3,<4") stays present and frozen so an integer-era binary still aborts with
+// the correct "upgrade the binary" remedy.
+func TestVendoredManifestVersionParses(t *testing.T) {
 	manifestPath := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
@@ -36,6 +37,7 @@ func TestVendoredManifestBracketsContractVersion(t *testing.T) {
 	}
 	var m struct {
 		Name             string `json:"name"`
+		Version          string `json:"version"`
 		RequiresContract string `json:"requires-contract"`
 		Skills           string `json:"skills"`
 	}
@@ -48,14 +50,11 @@ func TestVendoredManifestBracketsContractVersion(t *testing.T) {
 	if m.Skills != "./skills/" {
 		t.Errorf("manifest skills = %q, want ./skills/", m.Skills)
 	}
-	if m.RequiresContract == "" {
-		t.Fatalf("manifest has no requires-contract field (the bootstrap-cliff before-state)")
+	if _, _, ok := contract.ParseMajorMinor(m.Version); !ok {
+		t.Fatalf("manifest version %q does not parse as major.minor", m.Version)
 	}
-	lo, hi, err := contract.ParseRange(m.RequiresContract)
-	if err != nil {
-		t.Fatalf("requires-contract %q does not parse: %v", m.RequiresContract, err)
-	}
-	if !(lo <= contract.CONTRACT_VERSION && contract.CONTRACT_VERSION < hi) {
-		t.Fatalf("requires-contract %s does not bracket CONTRACT_VERSION=%d", m.RequiresContract, contract.CONTRACT_VERSION)
+	const frozenTombstone = ">=3,<4"
+	if m.RequiresContract != frozenTombstone {
+		t.Fatalf("manifest requires-contract = %q, want the frozen D4 tombstone %q (never edited again)", m.RequiresContract, frozenTombstone)
 	}
 }

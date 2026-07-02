@@ -10,7 +10,7 @@ import (
 // TestParseFrontDoorArgs pins the Option-2 front-door grammar (AC-3 + AC-6). The
 // task is the joined non-flag positionals BEFORE `--`; host value-taking flags
 // ride AFTER `--` and forward verbatim as passthrough; the spacedock-owned flags
-// (--skip-contract-check, --safehouse, the three repeatable --safehouse-* knobs)
+// (--skip-compat-check, --safehouse, the three repeatable --safehouse-* knobs)
 // are consumed wherever they appear before `--` in BOTH space and equals form and
 // are never forwarded.
 func TestParseFrontDoorArgs(t *testing.T) {
@@ -51,7 +51,7 @@ func TestParseFrontDoorArgs(t *testing.T) {
 		},
 		{
 			name:      "skip-contract-check-consumed",
-			args:      []string{"--skip-contract-check"},
+			args:      []string{"--skip-compat-check"},
 			skipCheck: true,
 		},
 		{
@@ -101,7 +101,7 @@ func TestParseFrontDoorArgs(t *testing.T) {
 		},
 		{
 			name:        "plugin-dir-before-dash-with-skip-and-task",
-			args:        []string{"--plugin-dir", "/p", "--skip-contract-check", "do it"},
+			args:        []string{"--plugin-dir", "/p", "--skip-compat-check", "do it"},
 			passthrough: []string{"--plugin-dir", "/p"},
 			skipCheck:   true,
 			task:        "do it",

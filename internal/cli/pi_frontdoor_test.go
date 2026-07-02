@@ -18,7 +18,7 @@ type fakePiRuntimeOps struct {
 	statOK        map[string]bool
 	launched      []string
 	launchedEnv   []string
-	launchCode    int // host exit code Launch returns (default 0)
+	launchCode    int      // host exit code Launch returns (default 0)
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error

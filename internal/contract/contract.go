@@ -1,5 +1,5 @@
-// ABOUTME: The contract-version axis — CONTRACT_VERSION, the half-open
-// ABOUTME: requires-contract range grammar, and the five-verdict compatibility compare.
+// ABOUTME: The version-compatibility axis — major.minor extraction and the
+// ABOUTME: minor-exact binary<->plugin compatibility compare.
 package contract
 
 import (
@@ -8,41 +8,29 @@ import (
 	"strings"
 )
 
-// CONTRACT_VERSION is the monotonic integer naming the binary's observable
-// contract the vendored skill surface depends on (the set of `spacedock`
-// subcommands, flags, and output sections). It is distinct from the plugin's
-// display semver and from the build version. Bump it only when a change to the
-// binary alters the observable surface the FO/ensign contracts call — never as a
-// side effect of a routine release bump (see the entity's OPEN-2 bump discipline).
-const CONTRACT_VERSION = 2
-
-// Verdict is the compatibility class produced by comparing a binary's contract
-// version against a plugin's declared requires-contract range.
+// Verdict is the compatibility class produced by comparing a binary's display
+// version against a plugin's declared display version.
 type Verdict int
 
 const (
-	// Compatible means lo <= C < hi: the binary's contract sits inside the
-	// plugin's declared half-open range.
+	// Compatible means the binary and plugin share the same (major, minor).
+	// Patch and prerelease skew within that minor are interchangeable.
 	Compatible Verdict = iota
-	// TooOldBinary means C < lo: the installed binary predates the contract the
-	// plugin needs. Remedy: rebuild/upgrade the binary.
+	// TooOldBinary means the binary's (major, minor) is behind the plugin's, or
+	// the binary's version carries no parseable major.minor at all (the shape of
+	// an integer-era `dev` source build). Remedy: rebuild/upgrade the binary.
 	TooOldBinary
-	// TooOldPlugin means C >= hi: the installed plugin predates the binary's
-	// contract. Remedy: update/reinstall the plugin.
+	// TooOldPlugin means the binary's (major, minor) is ahead of the plugin's.
+	// Remedy: update/reinstall the plugin.
 	TooOldPlugin
-	// MalformedRange means the manifest's requires-contract does not parse as
-	// ">=N,<M". A packaging bug, not a too-old install; no upgrade remedy.
-	MalformedRange
+	// MalformedVersion means the manifest's version field is missing or does not
+	// parse as a dotted major.minor(.patch) semver. A packaging bug, not a
+	// too-old install; no upgrade remedy.
+	MalformedVersion
 	// NoPluginFound means no installed plugin manifest could be resolved for the
 	// host. Distinct, non-fatal-by-default; reported rather than asserting
 	// compatibility.
 	NoPluginFound
-	// PluginPredatesContract means the manifest has no requires-contract field at
-	// all: the installed plugin predates the contract mechanism. Kin to
-	// too-old-plugin, but with no range to name; remedy reinstalls via
-	// `spacedock install` and omits the `plugin update` fallback (which no-ops on a
-	// stale install).
-	PluginPredatesContract
 )
 
 // String renders the verdict's stable kebab-case token (the oracle string AC-1
@@ -55,12 +43,10 @@ func (v Verdict) String() string {
 		return "too-old-binary"
 	case TooOldPlugin:
 		return "too-old-plugin"
-	case MalformedRange:
-		return "malformed-range"
+	case MalformedVersion:
+		return "malformed-version"
 	case NoPluginFound:
 		return "no-plugin-found"
-	case PluginPredatesContract:
-		return "plugin-predates-contract"
 	default:
 		return "unknown"
 	}
@@ -78,75 +64,71 @@ type Result struct {
 	Hint    string
 }
 
-// ParseRange parses a requires-contract value of the form ">=N,<M" into its
-// half-open integer bounds [lo, hi). Surrounding whitespace is tolerated. Any
-// other shape — missing a bound, the wrong operator, non-integer bounds, an
-// empty or inverted interval, or extra clauses — is a parse error.
-func ParseRange(raw string) (lo int, hi int, err error) {
-	parts := strings.Split(raw, ",")
-	if len(parts) != 2 {
-		return 0, 0, fmt.Errorf("expected exactly two clauses %q: %q", ">=N,<M", raw)
+// ParseMajorMinor extracts the (major, minor) pair from a dotted version string,
+// cutting any prerelease/build suffix at the first "-" or "+" before parsing — so
+// both published suffix styles (`0.24.0-pre1`, `0.23.0-pre.4`) and a build tag
+// (`0.24.0+dev`) parse identically. It reports ok=false when fewer than two
+// dotted integer components remain after the cut: the shape of the integer-era
+// `dev` sentinel and any other non-semver token.
+func ParseMajorMinor(v string) (major, minor int, ok bool) {
+	v = strings.TrimSpace(v)
+	if i := strings.IndexAny(v, "-+"); i >= 0 {
+		v = v[:i]
 	}
-	loStr := strings.TrimSpace(parts[0])
-	hiStr := strings.TrimSpace(parts[1])
-	if !strings.HasPrefix(loStr, ">=") {
-		return 0, 0, fmt.Errorf("lower bound must use >=: %q", loStr)
+	parts := strings.SplitN(v, ".", 3)
+	if len(parts) < 2 {
+		return 0, 0, false
 	}
-	if !strings.HasPrefix(hiStr, "<") || strings.HasPrefix(hiStr, "<=") {
-		return 0, 0, fmt.Errorf("upper bound must use <: %q", hiStr)
+	major, err := strconv.Atoi(parts[0])
+	if err != nil || major < 0 {
+		return 0, 0, false
 	}
-	lo, err = strconv.Atoi(strings.TrimSpace(loStr[2:]))
-	if err != nil {
-		return 0, 0, fmt.Errorf("lower bound is not an integer: %q", loStr)
+	minor, err = strconv.Atoi(parts[1])
+	if err != nil || minor < 0 {
+		return 0, 0, false
 	}
-	hi, err = strconv.Atoi(strings.TrimSpace(hiStr[1:]))
-	if err != nil {
-		return 0, 0, fmt.Errorf("upper bound is not an integer: %q", hiStr)
-	}
-	if lo >= hi {
-		return 0, 0, fmt.Errorf("empty interval: lower bound %d not below upper bound %d", lo, hi)
-	}
-	return lo, hi, nil
+	return major, minor, true
 }
 
-// Compare classifies a binary at contract version c against a plugin's raw
-// requires-contract range, for the named host. It returns the verdict and the
-// operator-facing message. pluginVersion and binaryVersion are the display semvers
-// woven into the user-facing mismatch/OK lines. NoPluginFound is produced by the
-// caller (when the manifest is absent), not here — Compare always has a raw range
-// string to evaluate.
-func Compare(c int, raw, host, pluginVersion, binaryVersion string) Result {
-	manifestNote := ""
-	return compareWithManifest(c, raw, host, manifestNote, pluginVersion, binaryVersion)
+// Compare classifies a binary at binaryVersion against a plugin at
+// pluginVersion, for the named host, by comparing their (major, minor) pairs
+// (D1: minor-exact, both directions). Patch and prerelease skew within the same
+// minor are interchangeable. NoPluginFound is produced by the caller (when the
+// manifest is absent), not here — Compare always has a raw plugin version to
+// evaluate.
+func Compare(host, pluginVersion, binaryVersion string) Result {
+	return compareNamed(host, "", pluginVersion, binaryVersion)
 }
 
-// compareWithManifest is Compare with an optional manifest path woven into the
-// malformed-range message so a packaging bug names the offending file.
-func compareWithManifest(c int, raw, host, manifestPath, pluginVersion, binaryVersion string) Result {
-	if strings.TrimSpace(raw) == "" {
-		return Result{
-			Verdict: PluginPredatesContract,
-			Message: pluginPredatesContractRemedy(host),
-		}
+// compareNamed is Compare with an optional manifest path woven into the
+// malformed-version message so a packaging bug names the offending file.
+func compareNamed(host, manifestPath, pluginVersion, binaryVersion string) Result {
+	bMajor, bMinor, bOk := ParseMajorMinor(binaryVersion)
+	if !bOk {
+		// A binary version with no parseable major.minor can only be an
+		// integer-era source build (`dev`, pre-D3 embed) — treated as too-old,
+		// with the existing remedy's "build from source" arm doubling as the
+		// rebuild hint.
+		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
 	}
-	lo, hi, err := ParseRange(raw)
-	if err != nil {
+	pMajor, pMinor, pOk := ParseMajorMinor(pluginVersion)
+	if !pOk {
 		loc := manifestPath
 		if loc == "" {
 			loc = "the plugin manifest"
 		}
 		return Result{
-			Verdict: MalformedRange,
+			Verdict: MalformedVersion,
 			Message: fmt.Sprintf(
-				"malformed contract range %q in %s: expected \">=N,<M\". "+
+				"malformed plugin version %q in %s: expected a dotted major.minor(.patch) semver. "+
 					"This is a packaging bug — the plugin manifest is wrong, not your install.",
-				strings.TrimSpace(raw), loc),
+				strings.TrimSpace(pluginVersion), loc),
 		}
 	}
 	switch {
-	case c < lo:
+	case bMajor < pMajor || (bMajor == pMajor && bMinor < pMinor):
 		return Result{Verdict: TooOldBinary, Message: mismatchMessage(binaryVersion, pluginVersion, "Upgrade the binary to continue.", tooOldBinaryRemedy())}
-	case c >= hi:
+	case bMajor > pMajor || (bMajor == pMajor && bMinor > pMinor):
 		return Result{Verdict: TooOldPlugin, Message: mismatchMessage(binaryVersion, pluginVersion, "Update the plugin to continue.", tooOldPluginRemedy(host))}
 	default:
 		msg := fmt.Sprintf("OK: spacedock binary %s and plugin %s are compatible.", binaryVersion, pluginVersion)
@@ -177,9 +159,9 @@ func upgradeHint(host, pluginVersion, binaryVersion string) string {
 // semverCompare orders two dotted-int versions (e.g. `0.20.0`), returning -1, 0,
 // or 1. It returns 0 (treat as not-greater, so no hint) when EITHER side is not
 // a valid dotted-int version — the defensive gate that keeps a non-semver (`dev`)
-// or empty value from triggering the upgrade hint. Unlike the cli resolver's
-// lexical fallback, a non-integer component here is a parse failure, not a
-// lexical tiebreak: the hint must not fire on anything but a clean semver skew.
+// or empty value from triggering the upgrade hint. Unlike Compare's major.minor
+// gate, a non-integer component here is a parse failure, not a truncation point:
+// the hint must not fire on anything but a clean full-version semver skew.
 func semverCompare(a, b string) int {
 	an, aok := parseDottedInts(a)
 	bn, bok := parseDottedInts(b)
@@ -252,23 +234,9 @@ func tooOldPluginRemedy(host string) string {
 	return fmt.Sprintf("  Update the plugin: spacedock install --host %s", host)
 }
 
-// pluginPredatesContractRemedy is the pinned remedy for an installed plugin that
-// predates the contract mechanism (no requires-contract field). It names the
-// `spacedock install` one-liner — never raw `<host> plugin` commands — and omits the
-// `plugin update` fallback, which no-ops on a stale already-installed plugin. The
-// host is parameterized. No reinstall-source parenthetical: `spacedock install`
-// auto-selects the channel from the binary's own devBranch stamp (the marketplace
-// entry name), so the remedy names neither a source repo nor an @branch suffix.
-func pluginPredatesContractRemedy(host string) string {
-	return fmt.Sprintf(
-		"plugin-predates-contract: your installed Spacedock plugin is out of date "+
-			"(predates this binary's contract). Upgrade it: spacedock install --host %s.",
-		host)
-}
-
 // noPluginMessage is the pinned no-plugin-found report for a host. Not a
-// mismatch — there is no range to compare — so it stands alone, exit non-fatal
-// by the caller's policy.
+// mismatch — there is no plugin to compare against — so it stands alone, exit
+// non-fatal by the caller's policy.
 func noPluginMessage(host string) string {
 	return fmt.Sprintf(
 		"no installed Spacedock plugin found for host %s. Install it: spacedock install --host %s.",

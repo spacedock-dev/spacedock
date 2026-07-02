@@ -1,6 +1,5 @@
 {
   "name": "spacedock",
-  "version": "0.12.1",
-  "requires-contract": ">=2,<3",
+  "version": "0.19.8",
   "skills": "./skills/"
 }
