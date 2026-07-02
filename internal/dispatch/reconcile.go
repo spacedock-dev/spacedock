@@ -666,6 +666,8 @@ type sweepResult struct {
 	StateBranch string        `json:"state_branch,omitempty"`
 	Swept       []sweptEntity `json:"swept"`
 	Reason      string        `json:"reason"`
+	Gh          string        `json:"gh,omitempty"`
+	Next        string        `json:"next,omitempty"`
 }
 
 // Sweep is the read-only `state sweep` computation: the entities whose code PR has
@@ -675,6 +677,12 @@ type sweepResult struct {
 // injected so tests pin a deterministic merged-state; production passes
 // GhRunnerExec. An inline (single-root) workflow sweeps its own dir. Exit 0 the
 // sweep ran (set may be empty or populated); 1 setup failure (no README/state).
+//
+// classC itself stays best-effort — a gh error silently skips that entity, so the
+// idle hook never blows up on a transient failure. Sweep wraps the injected probe
+// to COUNT calls and errors around that unchanged behavior: when every PR-pending
+// entity's probe errored, "0 entity(ies)" would be indistinguishable from a real
+// empty sweep, so Sweep reports merge state UNKNOWN instead (D2).
 func Sweep(workflowDir string, gh GhRunner, jsonOut bool, stdout, stderr io.Writer) int {
 	if info, err := os.Stat(workflowDir); err != nil || !info.IsDir() {
 		fmt.Fprintf(stderr, "spacedock state sweep: workflow directory not found: %s\n", workflowDir)
@@ -685,28 +693,72 @@ func Sweep(workflowDir string, gh GhRunner, jsonOut bool, stdout, stderr io.Writ
 		stateRoot = workflowDir
 	}
 	active := loadEntityFrontmatter(activeEntityDir(stateRoot))
-	drift := classC(active, gh)
+
+	probeTotal, probeErrs := 0, 0
+	counting := func(prRef string) (string, error) {
+		probeTotal++
+		state, err := gh(prRef)
+		if err != nil {
+			probeErrs++
+		}
+		return state, err
+	}
+	drift := classC(active, counting)
 
 	swept := make([]sweptEntity, 0, len(drift))
 	for _, d := range drift {
 		swept = append(swept, sweptEntity{Slug: d.Slug, PR: d.PR, Reason: d.Reason})
 	}
 	branch, _ := status.StateBranch(workflowDir)
-	reason := fmt.Sprintf("%d entity(ies) merged but not yet terminalized.", len(swept))
+
+	var reason, ghField, next string
+	switch {
+	case probeTotal > 0 && probeErrs == probeTotal:
+		reason = "merge state UNKNOWN — gh unavailable; sweep skipped, not empty."
+		ghField = "unavailable"
+	case len(swept) > 0:
+		reason = fmt.Sprintf("%d entity(ies) merged but not yet terminalized.", len(swept))
+		next = sweepNextStep(workflowDir)
+	default:
+		reason = fmt.Sprintf("%d entity(ies) merged but not yet terminalized.", len(swept))
+	}
 
 	if jsonOut {
 		enc := json.NewEncoder(stdout)
 		enc.SetIndent("", "  ")
 		enc.Encode(sweepResult{
-			Command: "state sweep", StateBranch: branch, Swept: swept, Reason: reason,
+			Command: "state sweep", StateBranch: branch, Swept: swept, Reason: reason, Gh: ghField, Next: next,
 		})
 		return 0
 	}
 	fmt.Fprintln(stdout, reason)
+	if next != "" {
+		fmt.Fprintln(stdout, next)
+	}
 	for _, s := range swept {
 		fmt.Fprintf(stdout, "  %s (PR %s): %s\n", s.Slug, s.PR, s.Reason)
 	}
 	return 0
+}
+
+// sweepNextStep names the FO's next action for a non-empty sweep: the registered
+// startup-hook mod file(s) to advance each entity per, from the same hookPoint ->
+// mod-name scan the boot MODS-REPORT uses (status.ScanMods). It points at the mod
+// FILE, never a procedure — the shipped mods/pr-merge.md advances an entity
+// directly while a local per-workflow pr-merge mod can delegate to sentinel +
+// merge guard, and the binary has no way to know which one applies without
+// picking a side. No startup mod registered falls back to a generic _mods/
+// pointer.
+func sweepNextStep(workflowDir string) string {
+	hooks := status.ScanMods(workflowDir)["startup"]
+	if len(hooks) == 0 {
+		return "next: advance each per the workflow's startup-hook advancement (_mods/)."
+	}
+	paths := make([]string, len(hooks))
+	for i, h := range hooks {
+		paths[i] = fmt.Sprintf("_mods/%s.md", h)
+	}
+	return fmt.Sprintf("next: advance each per the workflow's startup-hook advancement (%s).", strings.Join(paths, ", "))
 }
 
 // classD flags worktrees whose branch HEAD is behind origin/{trunk}. The remedy

@@ -428,6 +428,11 @@ func PyJoin(parts ...string) string {
 	return result
 }
 
+// ScanMods is the exported alias of scanMods for callers outside this package
+// (`dispatch.Sweep`'s startup-hook mod-pointer) that need the same hookPoint ->
+// mod-name scan the boot MODS-REPORT and the merge-hook guard already use.
+func ScanMods(definitionDir string) map[string][]string { return scanMods(definitionDir) }
+
 // scanMods scans definitionDir/_mods/*.md for `## Hook:` headings, returning
 // hookPoint -> sorted mod names. Mods are workflow definition (lifecycle hooks
 // declared for the workflow, kin to the README stages), so they live next to the
