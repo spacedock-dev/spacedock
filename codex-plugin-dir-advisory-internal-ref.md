@@ -83,3 +83,15 @@ Each AC names the test that proves it.
 
 ### Summary
 Fleshed the ideation for the version-masquerade advisory internal-branch leak. Chose to end the reworded advisory with nothing (not a docs pointer) since the advisory is purely informational and no docs page describes it, and recorded concrete before/after diffs for both the shipped string and the twin docstring reference. ACs are pinned to the real shipped stderr bytes (AC-1 measures absence of the branch token against a baseline that fails on current main), and "no spike needed" is backed by a green run of the existing advisory presence/absence test. Open decision for the gate: whether the non-gated docstring companion cleanup stays in scope.
+
+## Stage Report: implementation
+
+- DONE: Apply the reworded advisory string + the companion docstring cleanup in internal/cli/codex_marketplace.go — drop "— see next-post-release-preversion-bump" (advisory) and "(the full stamping fix lives in next-post-release-preversion-bump)" -> "(the full stamping fix is deferred)" (docstring), per the ideation before/after; no other behavior change
+  Both edits applied exactly as the ideation diff specifies; commit caf1f54e (worktree branch spacedock-ensign/codex-plugin-dir-advisory-internal-ref). `version-masquerade advisory:` prefix and `not necessarily its current HEAD` clause retained.
+- DONE: Update TestCodexPluginDirAdvisoryPresenceAndAbsence: add AC-1's no-internal-branch-token guard (strings.Contains stderr, "next-post-release-preversion-bump") and AC-2's surviving-meaning assertion ("not necessarily its current HEAD"); keep the present-on-install / absent-on-plain-launch pair green
+  Both assertions added to the "present on --plugin-dir" subtest; present/absent pair still green. AC-1 baseline exercised: reintroducing the token made the guard FAIL at codex_plugin_dir_test.go:100 ("advisory leaks the internal branch identifier"), then restored to green.
+- DONE: go build ./... and go test ./internal/cli/ green from the worktree root; commit in the worktree
+  `go build ./...` exit 0; `go test ./internal/cli/` -> ok. Committed on the worktree branch (caf1f54e). Only residual `next-post-release-preversion-bump` in source is the test guard string itself.
+
+### Summary
+Removed the internal branch identifier `next-post-release-preversion-bump` from the `--plugin-dir` version-masquerade advisory's shipped stderr and from the twin reference in the function docstring, per the ideation before/after; no other behavior changed. Guarded the shipped bytes in TestCodexPluginDirAdvisoryPresenceAndAbsence (absence of the token + survival of the "not necessarily its current HEAD" clause) with the present/absent pair kept green. The AC-1 baseline was exercised by temporarily reintroducing the token and confirming the guard fails, then reverting; build and package tests are green in the worktree.
