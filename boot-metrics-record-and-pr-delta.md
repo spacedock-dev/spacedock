@@ -75,3 +75,36 @@ Verified by: reproducing the ideation-stage backfill spike's determination as an
 ### Summary
 
 Firmed up the three original ACs with concrete, independently-checkable Verified-by evidence, then investigated the captain-directed retroactive backfill by reconstructing which live-e2e run fed each of the 9 named releases (validated via byte-identical published ledger payloads, not just timestamp correlation) and checking real GitHub artifact retention. The key finding: retention isn't the blocker for anything in scope — the blocker is that 6 of 9 releases share a source run whose commit predates the PR that introduced the `shallow-boot` scenario, so the scenario never ran for them. Only v0.23.0-pre.4, v0.23.0, and v0.24.0-pre1 are backfillable; this is recorded plainly in the task body along with real extracted turns/cache-creation numbers proving the extraction mechanism works end-to-end against archived data. Also surfaced and documented a filename-collision risk in step 1 (the new boot-window record needs its own `ScenarioID`, distinct from the existing whole-run `shallow-boot` record, or it will silently overwrite it).
+
+### Feedback Cycles
+
+#### Cycle 1: Independent fable-model ideation gate review (2026-07-02)
+
+**Verdict:** REJECT (captain-ratified)
+
+**Findings:**
+
+Independent fable-model advisory review (dispatched by the FO in place of a staff review) found four material gaps blocking the ideation gate, plus four polish items. Captain decision: send back for a spec-tightening pass, not a full restart — the advisor's own assessment is that "the ideation work itself is unusually well-evidenced."
+
+**1. AC-2's widened aggregation is silently defeated by `release.yml`'s existing flat-copy step**
+- `release.yml` line 63 copies every downloaded run's `journey-metrics/*.json` into ONE flat directory (`find ... -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;`)
+- `journeymetrics.recordFilename` (`internal/journeymetrics/record.go`) derives the on-disk filename from `ScenarioID--Runtime--Executor--Host--Mode--Model--MetricsState` — no run-distinguishing component
+- Widening discovery from 1 run to N runs and flat-copying collapses back to one file per scenario/model — the exact overwrite hazard the entity already caught and fixed for step 1's emission side (the `shallow-boot` vs `shallow-boot-window` ScenarioID fix), but missed on the ledger-aggregation side
+- **Action:** name the fix in the approach — download each run into its own subdirectory and drop the flatten (`journeymetrics.ReadRecordsDir` already walks recursively, so `journey-costs` needs no change)
+
+**2. `Record` schema cannot satisfy AC-2's own "traceable to more than one run" clause, and AC-3's delta math has no defined baseline once multi-observation ledgers exist**
+- `internal/journeymetrics/types.go`'s `Record` has no run id / run URL / timestamp field; `Source` is a static string
+- Once AC-2 ships, a published ledger holds N indistinguishable observations per scenario/model; AC-3's delta is defined as "(PR value − published value)," which presumes exactly one published value
+- **Action:** add run provenance to the record or ledger entry; pin the delta's baseline reduction (latest? mean? max?) over multi-observation scenarios in the entity text
+
+**3. AC-4's rebuild-and-republish has no backup of the original release assets and no check that pre-existing ledger entries survive unchanged**
+- Rebuilding via `go run ./cmd/spacedock-release journey-costs` re-normalizes every archived record (`normalizeRecord` stamps current `SchemaVersion`, recomputes token totals — `record.go:107`, `ledger.go:49`)
+- A rebuild quirk could silently alter already-published historical data on 3 real GitHub releases (`v0.23.0-pre.4`, `v0.23.0`, `v0.24.0-pre1`) and AC-4 as currently written would still pass
+- **Action:** download and preserve the 3 original release assets before `gh release upload --clobber`; extend AC-4's Verified-by to assert the republished `scenarios` array equals the original plus exactly the added `shallow-boot-window` entry
+
+**4. The "6 of 9 unrecoverable" determination conflates "no stream in that release's specific source run" with "no stream anywhere," without surfacing the alternative to the captain**
+- All 6 non-recoverable releases were cut AFTER the PR that introduced the `shallow-boot` scenario landed; `runtime-live-e2e.yml` runs on every PR into main, so same-window PR-run streams plausibly exist and are within the ~90-day retention
+- Refusing to splice those in is defensible (preserves the source-run fidelity the byte-identity proof rests on) but is a policy choice, not an inevitability
+- **Action:** state the choice and its rationale explicitly in step 4 so the captain ratifies the provenance policy knowingly, rather than reading it as forced
+
+**Polish (non-blocking, address if convenient):** record the greet turn's full `TokenTotals` (not just `CacheCreation`) so the pre-greet spike signal isn't lost from the replacement telemetry; AC-1's mechanics description conflates the `fmt.Errorf` return branches with the caller's `t.Fatalf`, and doesn't name that `shallow_boot_measure_unit_test.go` depends on the constants being removed; the PR sticky-comment step needs `pull-requests: write` added to its job permissions; pin whether prerelease tags and unmerged-PR runs count toward the aggregation window, and clarify the Out-of-scope "no new tracked scenarios" line against `shallow-boot-window` becoming a 7th `scenario_id`.
