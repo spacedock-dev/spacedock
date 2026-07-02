@@ -7,6 +7,7 @@ id: 82edd88rq11q2f05z5nhfhj8
 started: 2026-07-02T01:23:59Z
 worktree: .worktrees/spacedock-ensign-state-subcommand-workflow-autodiscovery
 mod-block: merge:pr-merge
+pr: "#461"
 ---
 
 ## Problem
