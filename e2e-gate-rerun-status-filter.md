@@ -61,3 +61,16 @@ After:
 ### Summary
 
 Fleshed out problem, approach, ACs with tests, test plan, doc diff, and spike determination. The live re-exercise materially corrected the mechanism story: `--status success` does NOT permanently exclude attempt>=2 runs — the v0.23.0 miss was a filter-consistency lag right after re-run-to-green (the filtered query was still empty ~10 minutes after green while the unfiltered one saw the success), which is exactly the retry window; the fix is unchanged and valid under either explanation. Also surfaced two adjacent touch points: the stale query-shape comment in e2egate_workflow_test.go, and the same `--status success` shape in release.yml's journey-ledger step (different semantics, recorded as out of scope for a separate seed).
+
+## Stage Report: implementation
+
+- DONE: T1 lands RED then GREEN: the fake gh shim test drives the REAL ghRunListForCommit (not the fakeRunLister seam), pinning the gate-time observation (shim returns [] when argv carries --status, the attempt-2 success run otherwise); the fix drops --status success from the query (AC-1).
+  cmd/spacedock-release/e2e_gate_test.go: TestE2EGateCommandPassesOnRerunToGreenLiveRun, confirmed RED (exit=1, "no conclusion:success...") before the fix, GREEN (exit=0, matched run 28429490220) after dropping --status success in e2e_gate.go.
+- DONE: T2 (parked-only fixture, runE2EGate exits 1) plus T3 (go test ./internal/release/... ./cmd/spacedock-release/...) are green under the new query shape (AC-2).
+  TestE2EGateCommandBlocksParkedOnlyRunViaLiveQuery passes (exit 1); `go test ./internal/release/... ./cmd/spacedock-release/...` — both packages ok.
+- DONE: The three prose touch points from the approach ship together: ghRunListForCommit's doc comment rewritten (parked-run defense lives in EvaluateE2EGate), the stale query-shape comment at internal/release/e2egate_workflow_test.go:16 updated, and the docs/releasing.md before/after sentence applied as specified in the task body's Documentation diff.
+  Commit 52fa0823 on branch spacedock-ensign/e2e-gate-rerun-status-filter touches all four files: cmd/spacedock-release/e2e_gate.go, cmd/spacedock-release/e2e_gate_test.go, internal/release/e2egate_workflow_test.go, docs/releasing.md.
+
+### Summary
+
+Dropped `--status success` from `ghRunListForCommit` per the approved approach; the query now relies solely on `-c <commit>` plus `EvaluateE2EGate`'s `conclusion == "success"` predicate for the parked-run defense. The gh-shim test (`writeGhStatusLagShim`) drives the real subprocess call end-to-end rather than the `fakeRunLister` seam, so it actually observes the argv-dependent bug; the shim had to use `echo` instead of `cat` for the fixture body since the stub PATH contains no other binaries. All prose touch points (doc comment, stale test comment, releasing.md) updated as specified.
