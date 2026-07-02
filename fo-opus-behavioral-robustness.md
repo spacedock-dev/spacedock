@@ -11,7 +11,7 @@ worktree: .worktrees/spacedock-ensign-fo-opus-behavioral-robustness
 issue:
 group: cleanup
 mod-block: merge:pr-merge
-pr: "#467"
+pr: pr-merge:467
 ---
 
 The live opus-4-8 first officer intermittently fails to follow contract guidance precisely — surfaced by the live-e2e lanes doing their job — making the opus claude-live lane unreliable on every PR. This is the strong-model echo of the weak-model concern the layered-FO sprint targets: even opus deviates, so the deferred tier/delegation mechanism (72) and report-and-stop hardening matter.
