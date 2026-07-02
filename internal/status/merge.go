@@ -72,13 +72,11 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 
 	pipelineDir := workflowDir
 	if pipelineDir == "" {
-		if discovered, ok := DiscoverWorkflowDir(dir); ok {
-			pipelineDir = discovered
-		} else if resolved, rc := discoverWorkflowDownward(dir, stderr); rc != 0 {
+		resolved, rc := ResolveWorkflowDir(dir, stderr)
+		if rc != 0 {
 			return rc
-		} else {
-			pipelineDir = resolved
 		}
+		pipelineDir = resolved
 	}
 
 	roots, err := resolveRoots(pipelineDir, dir)

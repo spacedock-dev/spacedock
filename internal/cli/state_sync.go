@@ -383,7 +383,7 @@ func parseStateCommitArgs(args []string, dir string, stderr io.Writer) (slug, wo
 		fmt.Fprintln(stderr, "spacedock state commit: missing required <slug> argument")
 		return "", "", "", false, 2
 	}
-	workflowDir, code = resolveWorkflowDir("state commit", workflowDir, dir, stderr)
+	workflowDir, code = resolveWorkflowDir(workflowDir, dir, stderr)
 	return slug, workflowDir, msg, jsonOut, code
 }
 
@@ -407,21 +407,17 @@ func parseWorkflowJSONArgs(command string, args []string, dir string, stderr io.
 			return "", false, 2
 		}
 	}
-	workflowDir, code = resolveWorkflowDir(command, workflowDir, dir, stderr)
+	workflowDir, code = resolveWorkflowDir(workflowDir, dir, stderr)
 	return workflowDir, jsonOut, code
 }
 
 // resolveWorkflowDir resolves the workflow dir: an explicit relative --workflow-dir
-// is joined against dir; an empty one is discovered from dir. Mirrors the
-// init/new arg handling so all four state verbs agree on workflow discovery.
-func resolveWorkflowDir(command, workflowDir, dir string, stderr io.Writer) (string, int) {
+// is joined against dir; an empty one is discovered from dir via the shared
+// walk-up + downward-fallback resolver, the same one status/new/merge guard use —
+// so all five state verbs agree on workflow discovery.
+func resolveWorkflowDir(workflowDir, dir string, stderr io.Writer) (string, int) {
 	if workflowDir == "" {
-		discovered, ok := status.DiscoverWorkflowDir(dir)
-		if !ok {
-			fmt.Fprintf(stderr, "spacedock %s: no workflow here — pass --workflow-dir or run inside a workflow\n", command)
-			return "", 1
-		}
-		return discovered, 0
+		return status.ResolveWorkflowDir(dir, stderr)
 	}
 	if !filepath.IsAbs(workflowDir) {
 		return filepath.Join(dir, workflowDir), 0

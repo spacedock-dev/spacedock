@@ -73,13 +73,11 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		pipelineDir = e.get("PIPELINE_DIR")
 	}
 	if pipelineDir == "" && rootPath == "" {
-		if discovered, ok := DiscoverWorkflowDir(dir); ok {
-			pipelineDir = discovered
-		} else if resolved, rc := discoverWorkflowDownward(dir, stderr); rc != 0 {
+		resolved, rc := ResolveWorkflowDir(dir, stderr)
+		if rc != 0 {
 			return rc
-		} else {
-			pipelineDir = resolved
 		}
+		pipelineDir = resolved
 	}
 
 	setResult, err := parseSetArgs(args)
