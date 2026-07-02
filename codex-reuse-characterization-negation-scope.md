@@ -1,10 +1,11 @@
 ---
 title: "codex-live CI false reds: reuse characterization and shallow-boot gh probe shape"
-status: ideation
+status: implementation
 group: tooling
 source: "PR #464 codex-live (2026-07-02, run 28568410914): TestLiveCodexSharedScenarios/rejection-flow failed 'addressable-worker was characterized ABSENT, but transcript contains turn-starting reuse tool send_input' — while the scenario's behavior was CORRECT (two-cycle rejection flow, kept-alive reviewer, clean tree). Root cause read from the artifact: codexNarrationNegatesReuseRoute (internal/ensigncycle/shared_reviewer_reuse_test.go:391) flags any single FO message containing a reuse concept AND any negation token; both tripping messages AFFIRM reuse with unrelated negations ('does not close or redispatch the worker', 'the host has no dedicated shutdown tool ... the two reusable workers'). Same over-broad live-heuristic family as the 2w wrong-root detector fixed in #462. Narration-dependent: can red any branch."
 id: mq42796928asq686vxs74mpm
 started: 2026-07-02T07:41:51Z
+worktree: .worktrees/spacedock-ensign-codex-reuse-characterization-negation-scope
 ---
 
 ## Problem
