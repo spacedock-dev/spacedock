@@ -93,7 +93,9 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
 4. Green that exact commit. Capture the release SHA, then dispatch Runtime Live
    E2E on it and wait for a `conclusion: success` run — the `e2e-gate` matches a
    green run to the tagged SHA, and the workflow is `workflow_dispatch`-only, so
-   nothing greens the commit unless you dispatch it:
+   nothing greens the commit unless you dispatch it. A lane that flakes can be
+   re-run to green (`gh run rerun <run-id> --failed`); the re-run-to-green run
+   satisfies the gate — no fresh dispatch needed:
 
    ```bash
    REL_SHA=$(git rev-parse HEAD)

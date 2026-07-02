@@ -15,14 +15,19 @@ import (
 // without a live gh.
 type runListFunc func(commit string) ([]byte, error)
 
-// ghRunListForCommit queries the green Runtime Live E2E runs whose head commit is
-// the release commit. `--status success` excludes parked/waiting runs (the spike
-// proved a parked run is never success), and `-c <commit>` binds the query to the
-// exact tagged commit so a green run on some other line cannot satisfy the gate.
+// ghRunListForCommit queries the Runtime Live E2E runs whose head commit is the
+// release commit; `-c <commit>` binds the query to the exact tagged commit so a
+// green run on some other line cannot satisfy the gate. The query deliberately
+// omits `--status success`: gh's `--status` filter can lag a run's `conclusion`
+// right after a re-run flips it to green (observed at the v0.23.0 cut — the
+// filtered query returned `[]` while the same query without `--status` already
+// saw the success), so the pre-filter costs genuine re-run-to-green cuts and
+// buys nothing. Excluding parked/waiting runs is EvaluateE2EGate's job: its
+// predicate requires conclusion == "success", so an empty-conclusion parked run
+// never qualifies regardless of what this query returns.
 func ghRunListForCommit(commit string) ([]byte, error) {
 	cmd := exec.Command("gh", "run", "list",
 		"--workflow", "Runtime Live E2E",
-		"--status", "success",
 		"-c", commit,
 		"--json", "databaseId,headSha,conclusion,status",
 	)
