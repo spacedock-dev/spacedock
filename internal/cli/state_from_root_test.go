@@ -1,9 +1,11 @@
 // ABOUTME: Real-git e2e — bare `state ready/sweep/commit/init/new` (no --workflow-dir)
-// ABOUTME: auto-discover the lone nested workflow from the repo toplevel (AC-1, AC-2).
+// ABOUTME: auto-discover the lone nested workflow from the repo toplevel (AC-1, AC-2),
+// ABOUTME: and an explicit --workflow-dir always wins over auto-discovery.
 package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,9 +42,12 @@ func TestStateReadyFromRootResolves(t *testing.T) {
 
 // TestStateSweepFromRootResolves pins AC-1: bare `state sweep` from the repo
 // toplevel resolves the nested workflow and stays read-only (HEAD unchanged),
-// mirroring TestStateSweepIsReadOnly with no --workflow-dir.
+// mirroring TestStateSweepIsReadOnly with no --workflow-dir. The state_branch
+// assertion is load-bearing: sweep exits 0 with a valid-looking empty envelope
+// even when resolution lands on the wrong (but existing) directory, so only
+// the presence of the real workflow's branch name proves the right dir resolved.
 func TestStateSweepFromRootResolves(t *testing.T) {
-	_, workflowA, _, _ := twoHostStateWorkflow(t)
+	_, workflowA, _, stateBranch := twoHostStateWorkflow(t)
 	checkoutA := filepath.Join(workflowA, ".spacedock-state")
 	hostA := filepath.Dir(filepath.Dir(workflowA))
 
@@ -56,6 +61,9 @@ func TestStateSweepFromRootResolves(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"command": "state sweep"`) {
 		t.Fatalf("sweep --json should carry the command envelope; json:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), fmt.Sprintf(`"state_branch": %q`, stateBranch)) {
+		t.Fatalf("sweep --json should carry the resolved workflow's state_branch %q (proves the nested workflow, not the toplevel, resolved); json:\n%s", stateBranch, out.String())
 	}
 	headAfter := strings.TrimSpace(git(t, checkoutA, "rev-parse", "HEAD"))
 	if headAfter != headBefore {
@@ -189,5 +197,63 @@ func TestStateVerbsFromRootRefuseAmbiguousWorkflows(t *testing.T) {
 		if !strings.Contains(errOut, "--workflow-dir") {
 			t.Fatalf("bare %v ambiguity error must instruct --workflow-dir, got: %q", args, errOut)
 		}
+	}
+}
+
+// setupStandaloneSplitWorkflow creates a minimal split-root workflow at
+// root/relPath: a commissioned README declaring `state: .spacedock-state`, and
+// a standalone git repo (no origin, no linked worktree) at the state checkout
+// seeded with one entity file named slug+".md". This is enough to observe which
+// checkout directory a state-verb mutation lands in, without the orphan-branch
+// machinery TestCommissionOrphanBranchScaffolding etc. already pin elsewhere.
+func setupStandaloneSplitWorkflow(t *testing.T, root, relPath, slug string) (workflowDir string) {
+	t.Helper()
+	workflowDir = filepath.Join(root, relPath)
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(workflowDir, "README.md"), []byte(splitWorkflowReadme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	checkout := filepath.Join(workflowDir, ".spacedock-state")
+	if err := os.MkdirAll(checkout, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	git(t, checkout, "init", "-q")
+	if err := os.WriteFile(filepath.Join(checkout, slug+".md"),
+		[]byte("---\nstatus: ideation\n---\n# "+slug+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return workflowDir
+}
+
+// TestStateCommitExplicitWorkflowDirOverridesDiscovery pins M1: an explicit
+// --workflow-dir always wins over auto-discovery, even when discovery would
+// otherwise succeed. Workflow A and B are both real, live candidates; the verb
+// runs with cwd inside A (whose walk-up immediately resolves A) but names B via
+// --workflow-dir. A resolver that lets a successful discovery silently override
+// the explicit flag would mutate A instead of B.
+func TestStateCommitExplicitWorkflowDirOverridesDiscovery(t *testing.T) {
+	root := t.TempDir()
+	workflowA := setupStandaloneSplitWorkflow(t, root, "docs/dev", "task-a")
+	workflowB := setupStandaloneSplitWorkflow(t, root, "docs/ops", "task-b")
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	checkoutB := filepath.Join(workflowB, ".spacedock-state")
+
+	var out, errBuf strings.Builder
+	code := run(context.Background(), []string{"state", "commit", "task-b", "-m", "explicit-B", "--workflow-dir", workflowB},
+		os.Environ(), workflowA, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("state commit with explicit --workflow-dir should exit 0; got exit=%d stderr=%q", code, errBuf.String())
+	}
+
+	namesB := git(t, checkoutB, "log", "--name-only", "--pretty=format:", "-1")
+	if !strings.Contains(namesB, "task-b.md") {
+		t.Fatalf("explicit --workflow-dir=B commit should land in B's checkout; B log:\n%s", namesB)
+	}
+	// A's checkout must have zero commits — an explicit flag naming B must never
+	// let A's cwd-driven discovery redirect the mutation there instead.
+	if _, ok := gitOK(t, checkoutA, "log", "-1"); ok {
+		t.Fatalf("explicit --workflow-dir=B must NOT touch A's checkout, but A has a commit")
 	}
 }
