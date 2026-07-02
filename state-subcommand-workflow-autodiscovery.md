@@ -1,10 +1,11 @@
 ---
 title: "state ready/sweep/commit auto-discover the lone workflow (drop the --workflow-dir requirement)"
-status: ideation
+status: implementation
 source: "FO boot-ergonomics friction 2026-07-01 (Claude Commander session hit it twice; Pi FO Stage B report shows the '(x2 with --workflow-dir)' annotation). `spacedock state ready`/`sweep`/`commit` fail with 'no workflow here — pass --workflow-dir' when run from the repo root, while `status --boot`/`status --discover`/`spacedock new` already auto-discover the lone commissioned workflow. The inconsistency costs a failed-then-retried call at boot (doubling Stage-B state-read tokens) and is a recurring papercut."
 group: tooling
 id: 82edd88rq11q2f05z5nhfhj8
 started: 2026-07-02T01:23:59Z
+worktree: .worktrees/spacedock-ensign-state-subcommand-workflow-autodiscovery
 ---
 
 ## Problem
