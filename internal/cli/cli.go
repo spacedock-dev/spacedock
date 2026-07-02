@@ -4,6 +4,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
+	"github.com/spacedock-dev/spacedock/internal/bridgeingress"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
@@ -460,21 +462,32 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 	}
 }
 
-// newBridgeCommand is a hidden hook-facing surface. It is intentionally silent
-// and no-op-safe because Bridge egress is observe-only telemetry.
+// newBridgeCommand is a hidden Bridge-facing surface. Egress stays silent and
+// no-op-safe because it is observe-only telemetry; ingress wake prints a compact
+// JSON result that Bridge can surface without knowing Codex internals.
 func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 	return &cobra.Command{
-		Use:                "bridge egress emit --host <host>",
+		Use:                "bridge egress emit --host <host> | ingress wake --host codex",
 		Hidden:             true,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 2 || args[0] != "egress" || args[1] != "emit" {
+			if len(args) >= 2 && args[0] == "egress" && args[1] == "emit" {
+				bridgeegress.EmitFromReader(stdin, bridgeegress.Options{
+					Host: parseBridgeHost(args[2:]),
+					CWD:  dir,
+				})
 				return nil
 			}
-			bridgeegress.EmitFromReader(stdin, bridgeegress.Options{
-				Host: parseBridgeHost(args[2:]),
-				CWD:  dir,
-			})
+			if len(args) >= 2 && args[0] == "ingress" && args[1] == "wake" {
+				result := bridgeingress.Wake(cmd.Context(), bridgeingress.Options{
+					Host:     parseBridgeHost(args[2:]),
+					Root:     parseBridgeStringFlag(args[2:], "--repo-root", dir),
+					Members:  parseBridgeCSVFlag(args[2:], "--members"),
+					CodexBin: parseBridgeStringFlag(args[2:], "--codex-bin", ""),
+				})
+				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+				return nil
+			}
 			return nil
 		},
 	}
@@ -490,6 +503,34 @@ func parseBridgeHost(args []string) string {
 		}
 	}
 	return ""
+}
+
+func parseBridgeStringFlag(args []string, name string, fallback string) string {
+	for i := 0; i < len(args); i++ {
+		if args[i] == name && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(args[i], name+"=") {
+			return strings.TrimPrefix(args[i], name+"=")
+		}
+	}
+	return fallback
+}
+
+func parseBridgeCSVFlag(args []string, name string) []string {
+	raw := parseBridgeStringFlag(args, name, "")
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 // wantsHelp reports whether the operator asked for command help. Commands with
