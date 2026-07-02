@@ -112,3 +112,21 @@ Repaired the acceptance-criteria marker format so scanners can recognize AC-1 th
 ### Summary
 
 Implemented the Codex reuse narration classifier as explicit absence-declaration matching, so affirmative reuse messages with unrelated negation no longer force the ABSENT oracle while genuine absence rows still exercise the fresh-dispatch contradiction checks. Also aligned `state sweep`'s production gh probe with boot's `--jq .state` shape by porting the known `s0` parity fix because that commit was not reachable from this worktree branch.
+
+## Stage Report: validation
+
+- DONE: inspected implementation commit `063a8b9a` for scope and regression risk.
+  The diff is limited to `internal/ensigncycle/shared_reviewer_reuse_test.go`, `internal/ensigncycle/shared_reviewer_reuse_table_test.go`, `internal/dispatch/reconcile.go`, and `internal/dispatch/sweep_test.go`. The reuse change replaces broad concept-plus-negation matching with explicit absence-declaration regexes; the dispatch change makes `GhRunnerExec` call the same `gh pr view PR --json state --jq .state` shape used by boot.
+- DONE: verified AC-1 through AC-3 for Codex reuse characterization.
+  `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse'` passed with 26 cases. The table includes the two PR #464 affirmative-reuse narrations, the PR #465 "being reused ... is not doing validation" narration, live true-absence wordings, absence contradiction controls, a fresh-cycle-2 validation spawn control, and an uncorrelated `send_input` control.
+- DONE: verified AC-4 and AC-5 for gh probe parity and shallow-boot archive coverage.
+  `go test ./internal/dispatch -run 'TestGhRunnerExecParsesJqExtractedState|TestSweepWithRealGhStubDoesNotReportUnknown'` passed with 2 cases. `internal/status/boot.go` and `internal/dispatch/reconcile.go` now use the same `--jq .state` command shape, `internal/ensigncycle/shallow_boot_fixture_live_test.go` uses the bare `MERGED` stub, and `go test ./internal/ensigncycle -run 'TestShallowBootNegativeBrokenEndStates'` passed, preserving the durable archive assertion that requires the merged entity to be archived, terminal, `verdict: PASSED`, and `mod-block:` cleared while the gate entity stays unchanged.
+- DONE: ran broader gates for shared-risk coverage.
+  `go test ./internal/ensigncycle` passed with 252 cases; `go test ./internal/dispatch ./internal/status ./internal/cli` passed with 1291 cases; `go test ./...` passed with 1906 cases; `go test ./... -race` passed with 1906 cases. `git diff --check` was clean. A read-only `gofmt -l ./cmd ./internal` reported pre-existing formatting drift in `internal/cli/pi_frontdoor_test.go`, which is outside this task's diff; validation did not rewrite unrelated code.
+- GAP: AC-6 live Codex confirmation was not reproduced in this validation environment.
+  `OPENAI_API_KEY` is unset here, so I did not run `go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v`. The assigned validation checklist covered AC-1 through AC-5; AC-6 still needs CI/live-run artifact evidence before anyone claims the live lane itself is confirmed.
+- Recommendation: PASSED for the assigned offline validation scope, with AC-6 explicitly left as a live-confirmation gap.
+
+### Summary
+
+Validation found commit `063a8b9a` scoped to the requested false-red fixes and reproduced the focused and broad offline evidence for AC-1 through AC-5. The implementation is ready for the offline gate; the remaining unverified item is the codex-live confirmation run required by AC-6.
