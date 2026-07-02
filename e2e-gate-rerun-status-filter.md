@@ -104,3 +104,7 @@ PASSED. AC-1 reproduced independently: T1 drives the real ghRunListForCommit via
 ### Summary
 
 Cycle-1 fix is a test-only change: the gh shim now requires the exact `--workflow "Runtime Live E2E"` argv pair (not just no bare `--status`) before returning its fixture, closing the fail-open gap where dropping that token left the whole suite green. Verified with the actual adversarial edit locally (RED), then reverted (GREEN) — no production code changed in this cycle.
+
+## Stage Report: validation (cycle 1)
+
+Cycle-1 re-verification of the shim `--workflow` pin (commit 1c1e84b9): the commit is test-only — `git show --stat` touches only cmd/spacedock-release/e2e_gate_test.go (19 insertions), no production code. Suite green as shipped (`go test ./internal/release/... ./cmd/spacedock-release/...` both ok). The adversarial edit reproduced independently: removing the `"--workflow", "Runtime Live E2E",` pair from ghRunListForCommit flips TestE2EGateCommandPassesOnRerunToGreenLiveRun RED (exit 1, "e2e-gate exit = 1, want 0 for a re-run-to-green Runtime Live E2E run (AC-1)") while every other gate test stays green — the token's removal now fails closed instead of leaving the suite green; reverting restores full GREEN and a clean worktree. Recommendation stands: PASSED.
