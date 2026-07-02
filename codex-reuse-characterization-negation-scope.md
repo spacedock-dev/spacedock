@@ -34,22 +34,22 @@ Riskiest path spike: before implementation chooses the mechanism, add or sketch 
 Documentation impact: none expected. This is harness/internal command-surface behavior, not a user-facing CLI output change. If implementation changes `state sweep` JSON/text output or documented `gh` expectations, update this task before coding the docs.
 
 ## Acceptance criteria
-- AC-1: Codex reuse characterization no longer false-ABSENTs on captured affirmative reuse narration with unrelated negation.
+- **AC-1**: Codex reuse characterization no longer false-ABSENTs on captured affirmative reuse narration with unrelated negation.
   Test: table fixtures in `internal/ensigncycle/shared_reviewer_reuse_table_test.go` replay the two PR #464 tripping messages and the PR #465 "being reused ... is not doing validation" message in transcripts that include one validation `spawn_agent` plus a turn-starting `send_input`/`followup_task` to that validation thread. All three return success from `assertCodexReviewerReuse`; on the current code at least one returns `Codex addressable-worker was characterized ABSENT`.
 
-- AC-2: Genuine Codex absence declarations still choose the ABSENT oracle and require fresh validation dispatch.
+- **AC-2**: Genuine Codex absence declarations still choose the ABSENT oracle and require fresh validation dispatch.
   Test: the current live-absence wording fixtures remain present and green, including at least one "no follow-up/send binding", one "not addressable", one "not supported", and one "cannot address" phrasing. A transcript with an absence declaration plus only one validation spawn still fails, and an absence declaration plus a real reuse tool still fails, so the fix does not weaken the contradiction checks.
 
-- AC-3: The net false-red count for the reduced PR #464/#465 reuse corpus is zero while true-red controls stay nonzero.
+- **AC-3**: The net false-red count for the reduced PR #464/#465 reuse corpus is zero while true-red controls stay nonzero.
   Test: a focused offline test reports three captured false-positive transcripts accepted and at least two negative controls rejected: fresh cycle-2 validation spawn masquerading as reuse, and uncorrelated `send_input` to a non-validation thread. This is the measured value for the task: the false-red corpus moves from >0 failures to 0 without moving the true-red controls to 0.
 
-- AC-4: `status --boot` and `state sweep` agree on the same stubbed merged PR state.
+- **AC-4**: `status --boot` and `state sweep` agree on the same stubbed merged PR state.
   Test: an offline parity test builds a split-root shallow-boot-style workflow with a PR-bearing non-terminal entity and one `gh` stub. With the stub reporting `MERGED`, `status --boot --json` exposes `pr_state.status=="ok"` and an entry state of `MERGED`; `state sweep --json` reports exactly one swept entity for the same PR. The test must fail on the observed split where boot reads plain `MERGED` but sweep expects JSON. If `s0`/commit `868fd10f` is already merged into the target branch, this AC is satisfied by verifying its two `internal/dispatch/sweep_test.go` regressions rather than adding duplicate tests.
 
-- AC-5: The shallow-boot durable archive assertion covers the PR-state parity path.
+- **AC-5**: The shallow-boot durable archive assertion covers the PR-state parity path.
   Test: the codex/host-neutral shallow-boot fixture uses the parity-safe stub and `assertShallowBoot` observes the merged-PR entity terminalized, `verdict: PASSED`, `mod-block:` cleared, and archived before the greet. The gate entity remains unchanged and unarchived, with no worktree created.
 
-- AC-6: One codex-live confirmation run passes both affected scenarios after the offline fixtures are green.
+- **AC-6**: One codex-live confirmation run passes both affected scenarios after the offline fixtures are green.
   Test: run the codex-live shared scenario lane, or a targeted equivalent that includes `rejection-flow` and `shallow-boot`, and attach the artifact/run ID. The confirmation must show the validation reviewer reuse is accepted and the shallow-boot merged PR is archived before greet; transcript prose alone is not sufficient.
 
 ## Test plan
@@ -85,3 +85,16 @@ The task body now treats PR #464's reuse-characterization failure and PR #465's 
 ### Summary
 
 The amendment narrows duplicate-work risk without dropping the PR #465 shallow-boot requirement from the task. `mq` remains the combined false-red task, but the recommended path is now reuse-characterization code plus integration verification of `s0`'s shallow-boot `GhRunnerExec` fix when that branch is available.
+
+## Stage Report: ideation (format repair)
+
+- DONE: Update acceptance criteria to scanner-recognized bold `**AC-N**` form.
+  Rewrote AC-1 through AC-6 prefixes only; behavior and test text are unchanged.
+- DONE: Preserve the intended task scope.
+  No problem statement, approach, AC semantics, or test-plan content was changed beyond AC marker formatting.
+- DONE: Commit the state change path-scoped.
+  State commit records this format repair for the `mq` entity only.
+
+### Summary
+
+Repaired the acceptance-criteria marker format so scanners can recognize AC-1 through AC-6. The repair is intentionally formatting-only and leaves the combined false-red scope intact.
