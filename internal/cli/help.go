@@ -57,8 +57,9 @@ Start `+hostTitle(host)+` as your Spacedock first officer. The optional task is 
 launch prompt; everything after -- forwards verbatim to `+host+`.
 
 A --plugin-dir launch loads a local plugin checkout and relaxes the contract gate,
-so it does not require a prior "spacedock install". --plugin-dir is accepted both
-before -- (as a spacedock-parsed flag, repeatable) and after -- (forwarded verbatim).
+so it does not require a prior "spacedock install". Before -- it is a
+spacedock-parsed flag; Claude also receives it at launch, while Codex does not
+because Codex has no launch-time --plugin-dir flag.
 
 Flags:
 `)
@@ -66,13 +67,13 @@ Flags:
 		fmt.Fprint(w, `
 Forwarding:
   Tokens before -- are spacedock's (the task + the flags above). Tokens after --
-  forward verbatim to `+host+`, e.g. `+host+` model/session flags and --plugin-dir.
+  forward verbatim to `+host+`, e.g. `+host+` model/session flags.
 
 Examples:
   spacedock `+host+`
   spacedock `+host+` "review the open PRs"
   spacedock `+host+` --plugin-dir ./checkout
-  spacedock `+host+` --safehouse-add-dirs ~/scratch -- --plugin-dir ./checkout
+  spacedock `+host+` --safehouse-add-dirs ~/scratch -- --model gpt-x
 `)
 	})
 }

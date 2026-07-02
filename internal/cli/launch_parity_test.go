@@ -273,8 +273,9 @@ func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
 	})
 }
 
-// LP-AC-3: --plugin-dir passes through (multiplicity, order) AND relaxes the
-// gate (launches even on a failing manifest); without it the gate still fails.
+// LP-AC-3: --plugin-dir relaxes the gate (launches even on a failing manifest).
+// Claude supports launch-time --plugin-dir and receives the parsed values; Codex
+// does not, so before-`--` values stay Spacedock-only there.
 func TestPluginDirRelaxesGate(t *testing.T) {
 	t.Run("claude-relaxes-on-failing-manifest", func(t *testing.T) {
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
@@ -315,7 +316,7 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
 		}
-		want := []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/a", wantCodexBootstrapPrompt}
+		want := []string{"codex", "--ask-for-approval", "on-request", wantCodexBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {
 			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 		}

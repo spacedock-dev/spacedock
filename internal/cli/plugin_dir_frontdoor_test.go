@@ -77,6 +77,29 @@ func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
 	}
 }
 
+// TestCodexDevLanePluginDirDoesNotReachHostArgv pins the live Codex contract:
+// Codex has plugin marketplace/add commands, but no launch-time --plugin-dir
+// flag. The before-`--` flag is still a Spacedock dev-lane override and still
+// relaxes the gate, but it must not be forwarded into the Codex argv.
+func TestCodexDevLanePluginDirDoesNotReachHostArgv(t *testing.T) {
+	repo := vendoredRepoRoot(t)
+	host := &resolveErrHost{}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), []string{"--plugin-dir", repo, "do the thing"}, t.TempDir(), host, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (--plugin-dir <repo> must relax the gate); stderr=%q", code, stderr.String())
+	}
+	want := []string{
+		"codex", "--ask-for-approval", "on-request",
+		wantCodexBootstrapPrompt + " do the thing",
+	}
+	if !equalArgv(host.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
+	}
+}
+
 // TestDanglingValueTakingHostFlagStillSwallows pins the ACCURATE AC-3 property and
 // its honest limitation. The invariant the Option-2 grammar guarantees is narrow:
 // the spacedock prompt is ALWAYS the last assembled host-argv token and ALWAYS

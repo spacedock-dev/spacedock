@@ -310,7 +310,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	// A `--plugin-dir` launch loads the LOCAL plugin checkout, so the installed
 	// plugin's contract verdict is irrelevant — it relaxes the gate exactly like
 	// an explicit `--skip-contract-check`.
-	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
+	if !fd.skipCheck && !hasFrontDoorPluginDir(fd) {
 		switch gateHost(ops, "claude", stderr) {
 		case contract.Compatible:
 			// proceed to launch
@@ -357,6 +357,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--permission-mode") {
 		inner = append(inner, "--permission-mode", "auto")
 	}
+	inner = append(inner, pluginDirArgs(fd.pluginDirs)...)
 	inner = append(inner, fd.passthrough...)
 	if !resume {
 		inner = append(inner, launchPrompt(bootstrapPrompt, fd))
@@ -416,6 +417,10 @@ func launchPrompt(base string, fd frontDoorArgs) string {
 // hasPluginDir reports whether the host passthrough carries a `--plugin-dir`
 // flag (either `--plugin-dir P` or `--plugin-dir=P`). Its presence relaxes the
 // contract gate (the local checkout supersedes the installed plugin).
+func hasFrontDoorPluginDir(fd frontDoorArgs) bool {
+	return len(fd.pluginDirs) > 0 || hasPluginDir(fd.passthrough)
+}
+
 func hasPluginDir(passthrough []string) bool {
 	for _, a := range passthrough {
 		if a == "--plugin-dir" || strings.HasPrefix(a, "--plugin-dir=") {
@@ -423,6 +428,17 @@ func hasPluginDir(passthrough []string) bool {
 		}
 	}
 	return false
+}
+
+func pluginDirArgs(dirs []string) []string {
+	if len(dirs) == 0 {
+		return nil
+	}
+	args := make([]string, 0, len(dirs)*2)
+	for _, d := range dirs {
+		args = append(args, "--plugin-dir", d)
+	}
+	return args
 }
 
 // passthroughHasFlag reports whether the operator already supplied any of the
@@ -495,7 +511,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	// (NoPluginFound) auto-installs the codex plugin and proceeds to launch so the
 	// single command the user typed yields a working session — `--no-install` opts
 	// out, preserving the refuse-and-instruct behavior. This mirrors runClaude.
-	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
+	if !fd.skipCheck && !hasFrontDoorPluginDir(fd) {
 		switch gateHost(ops, "codex", stderr) {
 		case contract.Compatible:
 			// proceed to launch
@@ -540,6 +556,9 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--ask-for-approval", "-a") {
 		inner = append(inner, "--ask-for-approval", "on-request")
 	}
+	// Codex does not expose a launch-time --plugin-dir flag. Before-`--`
+	// plugin dirs are Spacedock dev overrides only; explicit after-`--` tokens
+	// still forward as operator-owned Codex argv.
 	inner = append(inner, fd.passthrough...)
 	if !resume {
 		inner = append(inner, launchPrompt(codexBootstrapPrompt, fd))
@@ -578,9 +597,8 @@ func codexResume(passthrough []string) bool {
 // valueTakingHostFlags is the per-host set of host flags whose successor token is
 // the flag's value (space form), so that successor is NOT a stray positional. The
 // assembled argv is unchanged regardless of membership; the set only tunes the
-// advisory's accuracy. The spacedock-injected `--plugin-dir <dir>` prefix is NOT
-// handled here — skipInjectedPrefix strips it structurally before any scan — so
-// the prefix interaction stays in one place rather than threaded through this set.
+// advisory's accuracy. Explicit after-`--` `--plugin-dir <dir>` tokens are handled
+// structurally by skipPluginDirPrefix rather than threaded through this set.
 var valueTakingHostFlags = map[string]map[string]bool{
 	"claude": {
 		"-p": true, "--print": true,
@@ -614,17 +632,11 @@ var leadingHostSubcommands = map[string]map[string]bool{
 	"codex": {"exec": true, "resume": true},
 }
 
-// skipInjectedPrefix returns the passthrough slice past the spacedock-injected
-// leading `--plugin-dir <dir>` pairs. parseFrontDoorArgs re-prepends each
-// before-`--` `--plugin-dir` as a `--plugin-dir <dir>` pair at the FRONT of
-// fd.passthrough; that prefix is spacedock-owned, not operator after-`--` tokens,
-// so the classifier's subcommand and value-flag checks must run against the real
-// after-`--` tokens BEHIND it. `--plugin-dir` is the only flag parseFrontDoorArgs
-// re-prepends (the safehouse knobs live in fd.safehouseFlags, the booleans are
-// consumed), so it is the complete injected-prefix set. Skipping a leading
-// `--plugin-dir <dir>` pair is correct regardless of origin: the dir is the flag's
-// value, never a stray prompt.
-func skipInjectedPrefix(passthrough []string) []string {
+// skipPluginDirPrefix returns the passthrough slice past leading explicit
+// `--plugin-dir <dir>` pairs. Those pairs are host flag/value tokens, so the
+// classifier's subcommand and value-flag checks should run against the tokens
+// behind them; the dir itself is the flag's value, never a stray prompt.
+func skipPluginDirPrefix(passthrough []string) []string {
 	for len(passthrough) >= 2 && passthrough[0] == "--plugin-dir" {
 		passthrough = passthrough[2:]
 	}
@@ -639,11 +651,9 @@ func skipInjectedPrefix(passthrough []string) []string {
 //
 // It fires only when the operator gave no task before `--` (hasTask == false): a
 // task before `--` means the operator already placed their prompt, so a positional
-// after `--` is a deliberate host positional. The classifier first skips the
-// spacedock-injected leading `--plugin-dir <dir>` prefix, then runs every check
-// against the real after-`--` tokens — so the subcommand exemption, the value-flag
-// scan, and any future per-token rule all see the operator's actual grammar
-// regardless of the injected prefix. A token is a candidate when it is non-flag
+// after `--` is a deliberate host positional. The classifier first skips leading
+// explicit `--plugin-dir <dir>` pairs, then runs every check against the remaining
+// after-`--` tokens. A token is a candidate when it is non-flag
 // (does not start with `-`, and is not the bare `--` separator) AND the real tokens
 // do not lead with a known host subcommand whose arguments are legitimate. A
 // candidate is reported as stray only when we can be confident it is NOT a host
@@ -660,7 +670,7 @@ func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok 
 	if fd.hasTask {
 		return "", false
 	}
-	tokens := skipInjectedPrefix(fd.passthrough)
+	tokens := skipPluginDirPrefix(fd.passthrough)
 	subcommands := leadingHostSubcommands[host]
 	if len(tokens) > 0 && subcommands[tokens[0]] {
 		return "", false
@@ -693,6 +703,8 @@ func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok 
 type frontDoorArgs struct {
 	// passthrough is the host-only argv (claude/codex flags), in operator order.
 	passthrough []string
+	// pluginDirs are Spacedock-owned dev override checkouts parsed before `--`.
+	pluginDirs []string
 	// task is the launch-prompt override (the bare text after the `--` fence);
 	// hasTask distinguishes an explicit empty task from "no fence given".
 	task    string
@@ -795,18 +807,14 @@ func parseFrontDoorArgs(args []string) (fd frontDoorArgs, err error) {
 		fd.hasTask = true
 	}
 
-	// --plugin-dir is the one host flag spacedock parses before `--`: pflag knows
-	// its arity (one value, repeatable), so the dirs are captured correctly in
-	// space/equals/repeated forms. Re-inject each as a `--plugin-dir <dir>` pair at
-	// the FRONT of passthrough so it forwards to the host and hasPluginDir sees it,
-	// ahead of any after-`--` tokens. This keeps the spacedock prompt the always-last
-	// assembled token and hasPluginDir the single gate-relax reader (D4).
+	// --plugin-dir is the one host-adjacent flag Spacedock parses before `--`.
+	// pflag knows its arity (one value, repeatable), so the dirs are captured
+	// correctly in space/equals/repeated forms. Keep them separate from host
+	// passthrough: Claude accepts a launch-time --plugin-dir and receives them
+	// when assembling its argv; Codex does not, so forwarding them there breaks
+	// launch before the first officer starts.
 	if dirs := *flags.pluginDir; len(dirs) > 0 {
-		front := make([]string, 0, len(dirs)*2+len(fd.passthrough))
-		for _, d := range dirs {
-			front = append(front, "--plugin-dir", d)
-		}
-		fd.passthrough = append(front, fd.passthrough...)
+		fd.pluginDirs = append(fd.pluginDirs, dirs...)
 	}
 	return fd, nil
 }

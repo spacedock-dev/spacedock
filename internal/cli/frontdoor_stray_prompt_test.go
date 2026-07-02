@@ -44,10 +44,9 @@ func TestClaudeStrayPromptAfterDashWarns(t *testing.T) {
 
 // TestClaudeStrayPromptSession12Shape (AC-1, the captain's actual session-12
 // case): `--plugin-dir "$(pwd)" -- --model gpt-x '@/tmp/handoff.md'`. The
-// spacedock-injected `--plugin-dir <dir>` prefix (re-prepended to fd.passthrough
-// by parseFrontDoorArgs) must NOT shadow the operator's real stray prompt — the
-// warning names `@/tmp/handoff.md`, never the injected dir, and the inner argv is
-// unchanged.
+// Spacedock-owned `--plugin-dir <dir>` must NOT shadow the operator's real stray
+// prompt — the warning names `@/tmp/handoff.md`, never the plugin dir, and the
+// inner argv is unchanged.
 func TestClaudeStrayPromptSession12Shape(t *testing.T) {
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
@@ -65,7 +64,7 @@ func TestClaudeStrayPromptSession12Shape(t *testing.T) {
 		t.Fatalf("warning does not name the operator's stray positional: %q", warn)
 	}
 	if strings.Contains(warn, "/co") {
-		t.Fatalf("warning names the spacedock-injected --plugin-dir value (shadows the real prompt): %q", warn)
+		t.Fatalf("warning names the Spacedock-owned --plugin-dir value (shadows the real prompt): %q", warn)
 	}
 	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
@@ -153,29 +152,26 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 			want: []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--some-new-flag", "the-value", wantBootstrapPrompt},
 		},
 		{
-			// The spacedock-injected `--plugin-dir <dir>` prefix lands the `exec`
-			// subcommand at index 2; the leading-subcommand exemption must see it
-			// THROUGH the prefix and stay silent. This case REDS if skipInjectedPrefix
-			// is removed (the bare index-0 check then names `exec` as stray), so it
-			// pins the structural skip as the load-bearing mechanism.
-			name: "codex --plugin-dir then exec subcommand behind injected prefix",
+			// Before-`--` plugin-dir is Spacedock-owned and must not reach Codex.
+			// The leading-subcommand exemption still sees `exec` and stays silent.
+			name: "codex --plugin-dir then exec subcommand",
 			run: func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "exec", "do the thing"},
-			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "exec", "do the thing", wantCodexBootstrapPrompt},
+			want: []string{"codex", "--ask-for-approval", "on-request", "exec", "do the thing", wantCodexBootstrapPrompt},
 		},
 		{
-			// Same structural skip for the codex `resume` subcommand behind the
-			// injected prefix — no stray warning, argv unchanged.
-			name: "codex --plugin-dir then resume subcommand behind injected prefix",
+			// Same for the codex `resume` subcommand — no stray warning, no
+			// launch-time plugin-dir in the Codex argv.
+			name: "codex --plugin-dir then resume subcommand",
 			run: func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
 			args: []string{"--plugin-dir", "/co", "--", "resume", "abc123"},
-			want: []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", "/co", "resume", "abc123", wantCodexBootstrapPrompt},
+			want: []string{"codex", "resume", "abc123"},
 		},
 	}
 	for _, tc := range cases {
@@ -240,25 +236,25 @@ func TestStrayPromptAfterDashClassifier(t *testing.T) {
 			host:        "claude",
 		},
 		{
-			// skipInjectedPrefix strips the leading `--plugin-dir <dir>` pair so the
+			// skipPluginDirPrefix strips the leading `--plugin-dir <dir>` pair so the
 			// dir is NOT named and the operator's real prompt after it IS.
-			name:           "spacedock-injected --plugin-dir prefix does not shadow the real prompt",
+			name:           "explicit --plugin-dir prefix does not shadow the real prompt",
 			passthrough:    []string{"--plugin-dir", "/co", "--model", "gpt-x", "@/tmp/handoff.md"},
 			host:           "claude",
 			wantPositional: "@/tmp/handoff.md",
 			wantOK:         true,
 		},
 		{
-			// A leading subcommand BEHIND the injected `--plugin-dir <dir>` prefix must
+			// A leading subcommand BEHIND the explicit `--plugin-dir <dir>` prefix must
 			// still be recognized as a subcommand (its args legitimate). This reds if
-			// skipInjectedPrefix is removed — the bare index-0 check then names `exec`.
-			name:        "subcommand behind injected --plugin-dir prefix is not stray",
+			// skipPluginDirPrefix is removed — the bare index-0 check then names `exec`.
+			name:        "subcommand behind explicit --plugin-dir prefix is not stray",
 			passthrough: []string{"--plugin-dir", "/co", "exec", "do the thing"},
 			host:        "codex",
 		},
 		{
-			// Multiple injected `--plugin-dir <dir>` pairs are all skipped.
-			name:        "multiple injected --plugin-dir pairs all skipped before subcommand",
+			// Multiple explicit `--plugin-dir <dir>` pairs are all skipped.
+			name:        "multiple explicit --plugin-dir pairs all skipped before subcommand",
 			passthrough: []string{"--plugin-dir", "/a", "--plugin-dir", "/b", "exec", "p"},
 			host:        "codex",
 		},
