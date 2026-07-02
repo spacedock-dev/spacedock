@@ -137,3 +137,20 @@ Validation found commit `063a8b9a` scoped to the requested false-red fixes and r
 Cycle 1 — 2026-07-02T10:46:40Z — Captain rejected validation; no reframe needed yet.
 
 Return to implementation to close the remaining AC-6 gap. Keep the existing task scope: mq must not be called done on the offline classifier fix alone or on a live `rejection-flow` pass that silently takes the fresh-reviewer path. Implementation should either make the isolated Codex live lane expose and prove the intended multi-agent-v2/addressable reviewer reuse path, or coordinate this task behind `codex-launcher-multi-agent-v2` and leave AC-6 explicitly pending until that launcher path is green. Required evidence for the next validation pass is one preserved combined live run covering both `rejection-flow` and `shallow-boot`, with artifacts showing reviewer reuse accepted and shallow-boot archived before greet.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: make the isolated Codex live lane expose the intended multi-agent-v2 route.
+  Commit `65110905` changes the Codex live runner argv to pass `codex exec --enable multi_agent_v2` explicitly because the harness creates an isolated `CODEX_HOME` and does not inherit the user's `~/.codex/config.toml`. `TestCodexLiveRunnerExecArgvEnablesMultiAgentV2` pins that flag.
+- DONE: accept the current Codex 0.142 reviewer-reuse proof shape without weakening fresh-dispatch controls.
+  The live `multi_agent_v2` JSONL redacts worker spawn/followup tool calls but records the command-stream proof: one completed initial validation `dispatch build`, an implementation `--feedback-reflow --advance`, a validation `--advance`, wait calls, and FO-authored narration routing the cycle-2 re-review to the kept-alive validation reviewer. Added offline fixtures cover that completed-command shape, duplicate started/completed command events, and the negative control where validation `--advance` is missing.
+- DONE: preserve one combined Codex live run covering both affected scenarios.
+  `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/mq-codex-live-both-v2-fc4 go test -tags live -count=1 -timeout 40m -run 'TestLiveCodexSharedScenarios/(rejection-flow|shallow-boot)$' ./internal/ensigncycle -v` passed: `rejection-flow` 452.25s, `shallow-boot` 128.84s, total 583.678s. Artifacts: `/tmp/mq-codex-live-both-v2-fc4/codex-shared-scenarios/rejection-flow/attempt-1/codex-exec.jsonl` and `/tmp/mq-codex-live-both-v2-fc4/codex-shared-scenarios/shallow-boot/codex-exec.jsonl`.
+- DONE: verify AC-6 evidence inside the preserved artifacts.
+  Rejection-flow artifact line 2 shows `multi_agent_v2` enabled; lines 93-94 show implementation `--feedback-reflow --advance`; lines 107-108 show validation `--advance`; line 109 says the second validation prompt is sent to the kept-alive validation reviewer; line 131 records cycle 1 rejected, cycle 2 passed, the fix marker present, and status left at `validation`. Shallow-boot artifact line 69 archives `./_archive/merged-pr.md`; `codex-final-message.txt` reports the merged PR advanced to `done` with `verdict: PASSED`, archived before the gate review, no team, no workers dispatched, plus `Gate review:` and `Decision:` lines.
+- DONE: run the required verification gates after the final diff.
+  Focused reuse tests passed with 28 cases; live argv test passed with 1 case; `go test ./internal/ensigncycle` passed with 254 cases; `go test ./...` passed with 1908 cases in 17 packages; `go test ./... -race` passed with 1908 cases in 17 packages; `gofmt -w ./cmd ./internal` was run and unrelated formatter churn was removed from the final diff.
+
+### Summary
+
+Cycle 2 closes the AC-6 gap. The live harness now explicitly enables Codex `multi_agent_v2` inside the isolated test home, and the reviewer-reuse oracle accepts Codex 0.142's redacted worker-tool stream only when completed `dispatch build --advance` commands and kept-alive validation reviewer narration together prove reuse. The preserved combined live run at `/tmp/mq-codex-live-both-v2-fc4` passes both `rejection-flow` and `shallow-boot` with durable artifacts for reviewer reuse and before-greet merged-PR archival.
