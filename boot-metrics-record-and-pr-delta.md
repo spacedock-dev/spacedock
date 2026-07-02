@@ -203,3 +203,18 @@ Reproduced all of implementation's evidence independently (build/vet/test across
 ### Summary
 
 Closed the one material validation finding: `release.yml`'s actual shell script for the AC-2 per-run-subdirectory fix had no test exercising its positive multi-run path, so a reintroduction of the flat-copy overwrite bug passed the full suite undetected. Extended the existing `extractStepRun` + stubbed-`gh` harness with a positive test (proves the fix) and an adversarial twin (proves the positive test would have caught the exact regression the audit found). No other changes — the rest of the implementation (AC-1, AC-3, AC-4, and AC-2's Go-side aggregation) stands as validated.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Confirm `TestReleaseDownloadStepProducesPerRunSubdirectories` exercises the real `release.yml` script via `extractStepRun`, not a reimplementation
+  Read `d019ca60`'s diff to `internal/release/journey_workflow_test.go` directly: `script := extractStepRun(t, release, "Download latest journey metrics artifacts")` pulls from `readWorkflow(t, "release.yml")`, the same helper the file's pre-existing skip-branch tests already use — no hand-copied shell logic. `runDownloadStep` executes it with `exec.Command("bash", "-c", script)` against a stubbed `gh` (`ghDownloadStepStub`) returning two run ids with same-filename/different-content records. Ran it directly: `go test ./internal/release/... -run 'TestReleaseDownloadStepProducesPerRunSubdirectories|TestReleaseDownloadStepGuardRejectsFlatCopyRegression' -v` — both PASS.
+- DONE: Confirm the adversarial-twin test genuinely reproduces the audit's original mutation and fails the way expected
+  The twin's own internal mutation (narrowing the `cp` target from `"$run_dir/"` to `"$RUNNER_TEMP/journey-metrics/"`, leaving the `mkdir -p "$run_dir"` line in place so the per-run subdirectory exists but stays empty) is a narrower edit than my original hand mutation (which also dropped the `run_dir`/`mkdir` lines) — the commit message's "byte-for-byte" is not literal, but functionally equivalent (same flat-copy collision). Verified this isn't cosmetic: re-applied my ORIGINAL hand mutation directly to the worktree's `.github/workflows/release.yml` and re-ran the new positive test — `TestReleaseDownloadStepProducesPerRunSubdirectories` FAILS (`run 1001's record missing from its own subdirectory`), confirming it catches my exact original finding, not just the narrower twin's version. Restored the file afterward (`git status --short` clean).
+- DONE: Re-run the full suite to confirm no regression beyond the targeted fix
+  `go build ./...`, `go vet ./...`, `go test -count=1 ./...` all clean across all 15 packages in the implementation worktree, post-fix.
+
+### Summary
+
+Re-reviewed the cycle-2 implementation fix rather than re-running the full detached adversarial audit, per instruction. Confirmed the new positive-path test exercises the real extracted `release.yml` script (not a reimplementation) and independently reproduced the audit's original finding by hand-mutating the real workflow file directly — the new test correctly goes red, closing the one material gap from Cycle 1. Full suite is clean. No new findings.
+
+**Recommendation: PASSED.**
