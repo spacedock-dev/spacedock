@@ -6,6 +6,7 @@ source: "fable-token-trim-scout analysis 2026-07-02: the five state «fn» bodie
 id: s058nyrecqwtegn36rx6yew1
 started: 2026-07-02T03:02:55Z
 worktree: .worktrees/spacedock-ensign-error-path-guidance-in-binary-output
+mod-block: merge:pr-merge
 ---
 
 ## Problem
