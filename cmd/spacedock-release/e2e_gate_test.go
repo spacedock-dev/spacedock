@@ -90,6 +90,15 @@ func TestE2EGateCommandRejectsMissingCommit(t *testing.T) {
 // which already saw the success). This drives the REAL ghRunListForCommit
 // end-to-end — the fakeRunLister seam above bypasses the args entirely and
 // cannot see the bug.
+//
+// It also pins the query's ONLY binding to the live matrix: `--workflow
+// "Runtime Live E2E"` is not among the fetched `--json` fields, so nothing else
+// in the predicate distinguishes a Runtime Live E2E run from an unrelated green
+// run on the release commit (e.g. ordinary push CI). The shim prints `[]`
+// unless argv carries that exact `--workflow "Runtime Live E2E"` pair, so
+// dropping the token from ghRunListForCommit fails the gate closed here — a
+// regression that dropped it would otherwise fail OPEN (any green run on the
+// commit would satisfy the gate).
 func writeGhStatusLagShim(t *testing.T, fixtureJSON string) string {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -99,12 +108,22 @@ func writeGhStatusLagShim(t *testing.T, fixtureJSON string) string {
 	// echo, not cat: the stub PATH contains only this shim, so an external `cat`
 	// would itself fail to resolve. echo is a shell builtin.
 	script := `#!/bin/sh
+have_workflow=0
+prev=""
 for arg in "$@"; do
+  if [ "$prev" = "--workflow" ] && [ "$arg" = "Runtime Live E2E" ]; then
+    have_workflow=1
+  fi
   if [ "$arg" = "--status" ]; then
     echo '[]'
     exit 0
   fi
+  prev="$arg"
 done
+if [ "$have_workflow" != "1" ]; then
+  echo '[]'
+  exit 0
+fi
 echo '` + fixtureJSON + `'
 `
 	path := filepath.Join(dir, "gh")
