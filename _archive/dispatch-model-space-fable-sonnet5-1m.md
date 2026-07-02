@@ -1,13 +1,16 @@
 ---
 title: "Dispatch model space: fable joins the model enum; sonnet-5 recognized as a 1M-context model"
-status: validation
+status: done
 group: tooling
 source: "Captain request 2026-07-02 (Claude Commander session), while probing per-stage model routing (fable ideation ensigns, sonnet-5 implementers): dispatch build validates declared models against {sonnet, opus, haiku} (internal/dispatch/build.go:59), so 'model: fable' on a stage errors; and the context-budget probe's window mapping (internal/claudeteam/contextbudget.go) knows the [1m] suffix and the claude-opus-4-{minor>=7} forward family but not sonnet-5, so a sonnet-5 member resolves to the 200k default."
 id: wcex4yjx4mvecybxjb43gwtw
 started: 2026-07-02T01:45:25Z
 worktree: .worktrees/spacedock-ensign-dispatch-model-space-fable-sonnet5-1m
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:463
+verdict: passed
+completed: 2026-07-02T05:08:46Z
+archived: 2026-07-02T05:08:46Z
 ---
 
 ## Problem
