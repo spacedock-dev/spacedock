@@ -507,6 +507,23 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
+	if len(fd.pluginDirs) > 0 {
+		if fd.noInstall {
+			fmt.Fprintln(stderr, "spacedock codex: --no-install cannot be combined with --plugin-dir; Codex requires a marketplace install to load a dev plugin checkout")
+			return 1
+		}
+		pluginDir := lastString(fd.pluginDirs)
+		source, err := codexLocalMarketplaceSource(pluginDir)
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock codex: prepare local Codex marketplace: %v\n", err)
+			return 1
+		}
+		fmt.Fprintf(stderr, "Installing the %s plugin from %s…\n", "codex", pluginDir)
+		if _, err := ops.Install("codex", source, devBranch); err != nil {
+			fmt.Fprintf(stderr, "spacedock codex: dev plugin install failed: %v\n", err)
+			return 1
+		}
+	}
 	// The gate fails fast on a contract mismatch, but a missing plugin
 	// (NoPluginFound) auto-installs the codex plugin and proceeds to launch so the
 	// single command the user typed yields a working session — `--no-install` opts
@@ -584,6 +601,40 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		return 1
 	}
 	return code
+}
+
+func codexLocalMarketplaceSource(pluginDir string) (string, error) {
+	pluginDir, err := filepath.Abs(pluginDir)
+	if err != nil {
+		return "", fmt.Errorf("resolve plugin dir: %w", err)
+	}
+	if _, err := os.Stat(filepath.Join(pluginDir, manifestSubpath("codex"))); err != nil {
+		return "", fmt.Errorf("codex manifest not found under %s: %w", pluginDir, err)
+	}
+
+	root := filepath.Join(codexHome(), "spacedock-local-marketplaces", channelMarketplace(devBranch))
+	if err := os.MkdirAll(filepath.Join(root, ".claude-plugin"), 0o755); err != nil {
+		return "", fmt.Errorf("create marketplace manifest dir: %w", err)
+	}
+	link := filepath.Join(root, "spacedock")
+	if err := os.RemoveAll(link); err != nil {
+		return "", fmt.Errorf("replace local plugin link: %w", err)
+	}
+	if err := os.Symlink(pluginDir, link); err != nil {
+		return "", fmt.Errorf("link local plugin checkout: %w", err)
+	}
+	manifest := fmt.Sprintf(`{
+  "name": "%s",
+  "owner": { "name": "Spacedock" },
+  "plugins": [
+    { "name": "spacedock", "source": "./spacedock", "description": "local Spacedock checkout", "category": "workflow" }
+  ]
+}
+`, channelMarketplace(devBranch))
+	if err := os.WriteFile(filepath.Join(root, ".claude-plugin", "marketplace.json"), []byte(manifest), 0o644); err != nil {
+		return "", fmt.Errorf("write marketplace manifest: %w", err)
+	}
+	return root, nil
 }
 
 // codexResume reports whether the codex passthrough begins with the `resume`

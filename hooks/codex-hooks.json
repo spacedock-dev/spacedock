@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -45,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }
@@ -55,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c 'root=${PLUGIN_ROOT:-}; [ -n \"$root\" ] || exit 0; \"$root/scripts/codex-bridge-events.sh\" >/dev/null 2>&1 || true'"
+            "command": "sh -c 'if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then bin=\"$SPACEDOCK_BIN\"; elif command -v spacedock >/dev/null 2>&1; then bin=spacedock; else exit 0; fi; \"$bin\" bridge egress emit --host codex >/dev/null 2>&1 || true'"
           }
         ]
       }

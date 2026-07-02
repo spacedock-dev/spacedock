@@ -77,12 +77,15 @@ func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
 	}
 }
 
-// TestCodexDevLanePluginDirDoesNotReachHostArgv pins the live Codex contract:
-// Codex has plugin marketplace/add commands, but no launch-time --plugin-dir
-// flag. The before-`--` flag is still a Spacedock dev-lane override and still
-// relaxes the gate, but it must not be forwarded into the Codex argv.
-func TestCodexDevLanePluginDirDoesNotReachHostArgv(t *testing.T) {
+// TestCodexDevLanePluginDirInstallsLocalMarketplaceThenLaunches pins the live
+// Codex contract: Codex has plugin marketplace/add commands, but no launch-time
+// --plugin-dir flag. The before-`--` flag is a Spacedock dev-lane override: it
+// installs the checkout through a local Codex marketplace, relaxes the gate, and
+// still must not be forwarded into the Codex argv.
+func TestCodexDevLanePluginDirInstallsLocalMarketplaceThenLaunches(t *testing.T) {
 	repo := vendoredRepoRoot(t)
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", home)
 	host := &resolveErrHost{}
 	var stdout, stderr bytes.Buffer
 
@@ -90,6 +93,17 @@ func TestCodexDevLanePluginDirDoesNotReachHostArgv(t *testing.T) {
 
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (--plugin-dir <repo> must relax the gate); stderr=%q", code, stderr.String())
+	}
+	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" || host.installCmds[2] != devBranch {
+		t.Fatalf("install cmds = %v, want codex <local-marketplace> %s", host.installCmds, devBranch)
+	}
+	source := host.installCmds[1]
+	wantSource := filepath.Join(home, "spacedock-local-marketplaces", channelMarketplace(devBranch))
+	if source != wantSource {
+		t.Fatalf("install source = %q, want %q", source, wantSource)
+	}
+	if _, err := os.Stat(filepath.Join(source, ".claude-plugin", "marketplace.json")); err != nil {
+		t.Fatalf("local codex marketplace manifest missing: %v", err)
 	}
 	want := []string{
 		"codex", "--ask-for-approval", "on-request",

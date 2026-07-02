@@ -106,6 +106,8 @@ func TestCodexStrayPromptAfterDashWarns(t *testing.T) {
 // negatives are the value of a value-taking flag (`-p <prompt>`), the argument of
 // a known leading subcommand (`exec <prompt>`), and the hasTask short-circuit.
 func TestStrayPromptGuardNegatives(t *testing.T) {
+	repo := vendoredRepoRoot(t)
+	t.Setenv("CODEX_HOME", t.TempDir())
 	cases := []struct {
 		name string
 		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
@@ -159,7 +161,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
-			args: []string{"--plugin-dir", "/co", "--", "exec", "do the thing"},
+			args: []string{"--plugin-dir", repo, "--", "exec", "do the thing"},
 			want: []string{"codex", "--ask-for-approval", "on-request", "exec", "do the thing", wantCodexBootstrapPrompt},
 		},
 		{
@@ -170,7 +172,7 @@ func TestStrayPromptGuardNegatives(t *testing.T) {
 				var stdout bytes.Buffer
 				return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
 			},
-			args: []string{"--plugin-dir", "/co", "--", "resume", "abc123"},
+			args: []string{"--plugin-dir", repo, "--", "resume", "abc123"},
 			want: []string{"codex", "resume", "abc123"},
 		},
 	}

@@ -310,11 +310,16 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		}
 	})
 	t.Run("codex-before-dash-forwards-and-relaxes", func(t *testing.T) {
+		repo := vendoredRepoRoot(t)
+		t.Setenv("CODEX_HOME", t.TempDir())
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
 		var stdout, stderr bytes.Buffer
-		code := runCodex(context.Background(), []string{"--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		code := runCodex(context.Background(), []string{"--plugin-dir", repo}, t.TempDir(), fake, lookFound, &stdout, &stderr)
 		if code != 0 {
 			t.Fatalf("exit = %d, want 0 (before-`--` --plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
+		}
+		if len(fake.installCmds) != 3 || fake.installCmds[0] != "codex" {
+			t.Fatalf("install cmds = %v, want codex local marketplace install", fake.installCmds)
 		}
 		want := []string{"codex", "--ask-for-approval", "on-request", wantCodexBootstrapPrompt}
 		if !equalArgv(fake.launchedArg, want) {

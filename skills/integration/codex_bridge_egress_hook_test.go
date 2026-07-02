@@ -1,5 +1,5 @@
 // ABOUTME: Codex Bridge egress packaging tests — Codex must use its own non-async
-// ABOUTME: hooks and a silent wrapper around the shared Spacedock egress command.
+// ABOUTME: hooks and call the shared Spacedock egress command without plugin-root state.
 package integration
 
 import (
@@ -36,7 +36,7 @@ func TestCodexManifestPointsAtCodexBridgeHooks(t *testing.T) {
 	}
 }
 
-func TestCodexBridgeHooksAreNonAsyncAndCallPluginRootWrapper(t *testing.T) {
+func TestCodexBridgeHooksAreNonAsyncAndCallEgressDirectly(t *testing.T) {
 	path := filepath.Join(repoRoot(t), "hooks", "codex-hooks.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -78,7 +78,12 @@ func TestCodexBridgeHooksAreNonAsyncAndCallPluginRootWrapper(t *testing.T) {
 				if strings.Contains(cmd, "CLAUDE_PLUGIN_ROOT") {
 					t.Fatalf("codex hook %s command must not depend on Claude env: %q", event, cmd)
 				}
-				for _, want := range []string{"PLUGIN_ROOT", "scripts/codex-bridge-events.sh"} {
+				for _, forbidden := range []string{"PLUGIN_ROOT", "scripts/codex-bridge-events.sh"} {
+					if strings.Contains(cmd, forbidden) {
+						t.Fatalf("codex hook %s command must not depend on plugin checkout paths (%q): %q", event, forbidden, cmd)
+					}
+				}
+				for _, want := range []string{"SPACEDOCK_BIN", "bridge egress emit --host codex"} {
 					if !strings.Contains(cmd, want) {
 						t.Fatalf("codex hook %s command %q missing %q", event, cmd, want)
 					}
