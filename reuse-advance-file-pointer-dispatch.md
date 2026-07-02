@@ -1,10 +1,11 @@
 ---
 title: "Reuse-advance messages go through a dispatch-built file pointer instead of FO-hand-assembled verbatim stage sections"
-status: ideation
+status: implementation
 group: tooling
 source: "fable-token-trim-scout analysis 2026-07-02 (captain-ordered fresh-angle token review): the reuse path explicitly does NOT route through dispatch build (fo-dispatch-core.md:40) — the FO hand-assembles a SendMessage embedding the full README stage subsection verbatim (claude-fo-dispatch.md:40), costing a README section read PLUS a verbatim echo per advance, ~400-800 tok x ~10 advances in a 5-entity/3-stage session = 4-8k tok. The biggest recurring dispatch-path cost found; fresh dispatch already proves the file-pointer mechanism (~175-char prompt pointing at a written dispatch file)."
 id: jhe1244c8cjdymfbnnpnsvsw
 started: 2026-07-02T03:02:47Z
+worktree: .worktrees/spacedock-ensign-reuse-advance-file-pointer-dispatch
 ---
 
 ## Problem
