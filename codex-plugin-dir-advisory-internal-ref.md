@@ -1,9 +1,10 @@
 ---
 title: "codex --plugin-dir version-masquerade advisory leaks the internal branch name into shipped CLI output"
-status: backlog
+status: ideation
 source: "0240 pre-cut antipattern audit (2026-07-01, lens 1). internal/cli/codex_marketplace.go installCodexLocalPluginDir prints a version-masquerade advisory on every --plugin-dir codex/pi install ending '...see next-post-release-preversion-bump' — an internal roadmap/branch identifier an end user cannot act on. The advisory itself is legitimate (version stamping is deferred); the dangling internal-branch pointer is the issue. Non-blocking; captain fast-tracked."
 group: tooling
 id: acy7gdv88md7jgzsfea85zx6
+started: 2026-07-02T01:37:54Z
 ---
 
 ## Problem
