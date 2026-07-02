@@ -236,6 +236,16 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		decl := `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(w) + `}}`
 		liveAbsentTwoFresh[i] = decl + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
 	}
+	falseAbsentNarrations := []string{
+		"The validation reviewer stays alive for the rejection-flow re-review; this does not close or redispatch the worker.",
+		"The host has no dedicated shutdown tool, so I will keep the two reusable workers and route validation back to the kept-alive reviewer.",
+		"The validation reviewer is being reused for re-review only; the implementation worker that applied the fix is not doing validation.",
+	}
+	falseAbsentReuse := make([]string, len(falseAbsentNarrations))
+	for i, w := range falseAbsentNarrations {
+		decl := `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(w) + `}}`
+		falseAbsentReuse[i] = decl + "\n" + realReuseV2
+	}
 
 	cases := []struct {
 		name    string
@@ -259,6 +269,9 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		{"live FO absence wording 7 + two fresh validation spawns", liveAbsentTwoFresh[7], false},
 		{"live FO absence wording 8 + two fresh validation spawns", liveAbsentTwoFresh[8], false},
 		{"live FO absence wording 9 + two fresh validation spawns", liveAbsentTwoFresh[9], false},
+		{"PR #464 affirmative reuse with redispatch negation must not classify absent", falseAbsentReuse[0], false},
+		{"PR #464 reusable-workers narration with shutdown negation must not classify absent", falseAbsentReuse[1], false},
+		{"PR #465 validation reviewer reused while implementation worker is not validating", falseAbsentReuse[2], false},
 		{
 			"loose narration only",
 			`{"type":"item.completed","item":{"type":"agent_message","text":"I will send_input to the validation worker."}}`,

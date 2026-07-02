@@ -382,31 +382,28 @@ func codexAddressableWorkerAbsent(jsonl string) bool {
 }
 
 // codexNarrationNegatesReuseRoute reports whether a single FO narration message
-// states that the reuse/follow-up route is absent — a reuse-route concept
-// ("follow-up", "followup_task", "addressable", "reuse") negated within the same
-// message ("no", "not", "cannot", "n't", "without"). Scoping the negation and the
-// concept to one message keeps an affirmative reuse message ("the reviewer can be
-// kept addressable and reused") from matching on an unrelated negation elsewhere.
+// states that the reuse/follow-up route is absent. The negation must bind to the
+// route, binding, tool, support, or addressability claim; affirmative reuse
+// narration can contain unrelated negation ("not doing validation") without
+// choosing the addressable-worker-ABSENT branch.
 func codexNarrationNegatesReuseRoute(text string) bool {
 	lower := strings.ToLower(text)
-	concepts := []string{"follow-up", "follow up", "followup", "addressable", "reuse", "reusable"}
-	hasConcept := false
-	for _, c := range concepts {
-		if strings.Contains(lower, c) {
-			hasConcept = true
-			break
-		}
-	}
-	if !hasConcept {
-		return false
-	}
-	negations := []string{"no ", "not ", "cannot", "n't", "without ", "never "}
-	for _, n := range negations {
-		if strings.Contains(lower, n) {
+	for _, pattern := range codexReuseRouteAbsencePatterns {
+		if pattern.MatchString(lower) {
 			return true
 		}
 	}
 	return false
+}
+
+var codexReuseRouteAbsencePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`\bno\s+(?:turn-starting\s+|completed-worker\s+|addressable[- ]worker\s+|addressable\s+)?(?:follow[- ]?up(?:_task)?|followup_task|send[-_ ]?(?:message|input)|reuse|addressable)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)(?:\s+exposed)?\b`),
+	regexp.MustCompile(`\b(?:do|does|did)\s+not\s+have\s+(?:a\s+|an\s+)?(?:follow[- ]?up(?:_task)?|followup_task|addressable|reuse)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)\b`),
+	regexp.MustCompile(`\b(?:do|does|did)\s+not\s+expose\s+(?:a\s+|an\s+)?(?:turn-starting\s+)?(?:addressable[- ]worker|addressable\s+reviewer|follow[- ]?up(?:_task)?|followup_task|reuse)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)\b`),
+	regexp.MustCompile(`\breviewer\s+reuse\s+is\s+not\s+supported\b`),
+	regexp.MustCompile(`\breuse\s+is\s+not\s+supported\b`),
+	regexp.MustCompile(`\b(?:reviewer|cycle-1 reviewer|worker)\s+is\s+not\s+addressable\b`),
+	regexp.MustCompile(`\bcannot\s+address\s+(?:the\s+)?(?:kept-alive\s+)?reviewer\b`),
 }
 
 func assertCodexFreshValidationWhenAddressableAbsent(jsonl string) error {
