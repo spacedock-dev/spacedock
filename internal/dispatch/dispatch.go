@@ -37,6 +37,10 @@ func Run(probe claudeteam.TeamStateProbe, args []string, stdin io.Reader, stdout
 			fmt.Fprintln(stderr, "error: dispatch build requires --workflow-dir")
 			return 2
 		}
+		if opts.Advance && opts.BareMode {
+			fmt.Fprintln(stderr, "error: dispatch build --advance is incompatible with --bare-mode (a reuse advance presupposes an addressable worker; bare mode has none)")
+			return 2
+		}
 		return runBuild(probe, opts, stdin, stdout, stderr)
 	case "show-stage-def":
 		if wantsHelp(args[1:]) {
@@ -114,6 +118,7 @@ type buildOptions struct {
 	TeamName            string
 	BareMode            bool
 	FeedbackReflow      bool
+	Advance             bool
 	PrintSchema         bool
 	ValidateOnly        string
 	requestFlagProvided bool
@@ -166,6 +171,9 @@ func parseBuildOptions(args []string, stderr io.Writer) (buildOptions, int) {
 			opts.requestFlagProvided = true
 		case "--feedback-reflow":
 			opts.FeedbackReflow = true
+			opts.requestFlagProvided = true
+		case "--advance":
+			opts.Advance = true
 			opts.requestFlagProvided = true
 		case "--print-schema":
 			opts.PrintSchema = true
@@ -290,6 +298,7 @@ Flags:
   --host HOST          Override the runtime host (claude|codex|pi). Defaults to the detected runtime.
   --team-name NAME     Select the legacy TeamCreate-registry dispatch shape. On host=claude, auto-team is the default — omit this unless you mean legacy team mode.
   --bare-mode          Emit the bare sequential shape (no name, no team_name, no run_in_background).
+  --advance            Emit a reuse-advance pointer message for a live worker instead of a spawn envelope. Incompatible with --bare-mode.
 
 Stdin JSON fields:
   schema_version  Dispatch schema version. The current supported value is 2.

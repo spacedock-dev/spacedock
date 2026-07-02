@@ -106,6 +106,8 @@ When your initial prompt matches this pattern (the `Skill(...)` invocation follo
 
 If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop.
 
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop — the same failure shape as the initial bootstrap.
+
 ## Fetch-on-Demand Bootstrap
 
 The FO's dispatch may carry a `### Fetch commands` section near the top of your prompt. If present:
