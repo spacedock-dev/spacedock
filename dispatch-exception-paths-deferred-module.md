@@ -1,6 +1,6 @@
 ---
 title: "Exception paths (Degraded Mode, Break-Glass, dead-ensign detail) split out of claude-fo-dispatch.md into failure-triggered deferred modules"
-status: implementation
+status: validation
 group: tooling
 source: "fable-token-trim-scout analysis 2026-07-02: Degraded Mode (claude-fo-dispatch.md:87-117, ~780 tok), the Break-Glass manual-dispatch template (:42-52, ~520), and Context-Budget/Dead-Ensign detail (:128-149, ~650) load at first dispatch but fire only on failure (second dispatch failure, helper non-zero exit, budget-fail) — ~1.6-1.9k tok on every dispatching session's happy path. #457 just shipped the same non-user-invocable-skill pattern for adapter-less deferred modules."
 id: 41cfak9bgwtpa01m1z4qkprq
