@@ -69,6 +69,7 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 
 func EmitRecord(dir string, record Record) error {
 	record = normalizeRecord(record)
+	record = stampProvenance(record)
 	if strings.TrimSpace(record.ScenarioID) == "" {
 		return fmt.Errorf("scenario id is required")
 	}
@@ -81,6 +82,32 @@ func EmitRecord(dir string, record Record) error {
 	}
 	data = append(data, '\n')
 	return os.WriteFile(filepath.Join(dir, recordFilename(record)), data, 0o644)
+}
+
+// stampProvenance fills in the run-provenance fields a caller left unset.
+// CapturedAt defaults to the current time, so every freshly emitted record can be
+// ordered chronologically once it lands in a published ledger. RunID/RunURL
+// default from the GitHub Actions run environment ($GITHUB_RUN_ID /
+// $GITHUB_SERVER_URL / $GITHUB_REPOSITORY) when present; outside CI they stay
+// empty and the omitempty tags drop them from the JSON. It deliberately runs ONLY
+// at emission time, never inside normalizeRecord — normalizeRecord also runs when
+// re-reading an already-emitted record (ReadRecordsDir, AggregateLedger), and
+// re-stamping CapturedAt there would silently overwrite a historical record's real
+// capture time with "now" on every rebuild.
+func stampProvenance(record Record) Record {
+	if record.CapturedAt == "" {
+		record.CapturedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+	if record.RunID == "" {
+		record.RunID = os.Getenv("GITHUB_RUN_ID")
+	}
+	if record.RunURL == "" && record.RunID != "" {
+		serverURL, repo := os.Getenv("GITHUB_SERVER_URL"), os.Getenv("GITHUB_REPOSITORY")
+		if serverURL != "" && repo != "" {
+			record.RunURL = strings.TrimSuffix(serverURL, "/") + "/" + repo + "/actions/runs/" + record.RunID
+		}
+	}
+	return record
 }
 
 func EvaluateBudget(record Record, budget Budget) BudgetResult {

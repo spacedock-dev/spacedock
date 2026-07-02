@@ -7,6 +7,14 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
 
+// shallowBootWindowScenarioID is the journeymetrics ScenarioID the boot-window
+// observation (see buildShallowBootWindowRecord) publishes under. It MUST differ
+// from the whole-run "shallow-boot" scenario ID the same run already publishes
+// (see emitClaudeScenarioMetrics) — journeymetrics.recordFilename has no
+// run-distinguishing component, so reusing "shallow-boot" here would silently
+// overwrite that record instead of adding a sibling observation.
+const shallowBootWindowScenarioID = "shallow-boot-window"
+
 // deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
 // must NOT invoke before the greet: the status-viewer surface, the write/id-style
 // surface, and the dispatch-failure-recovery surface. Each loads only at its trigger
@@ -16,16 +24,6 @@ import (
 // Skill(skill="spacedock:present-gate") (Startup step 8), so the oracle keys on the
 // skill ARGUMENT, not on any Skill call.
 var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
-
-// AC-6 boot-window measurement thresholds. The ceiling is the milestone's ~60k
-// greet-turn context ceiling; the spike threshold is set below the ~89k team-mode
-// prefix re-cache (TeamCreate re-caching the whole conversation prefix to the 1h
-// cache) so any cache_creation on that order is caught, while the small
-// per-turn cache_creation a healthy boot writes (a few thousand tokens) is not.
-const (
-	greetContextCeiling   = 60000
-	teamRecacheSpikeFloor = 60000
-)
 
 // dispatchToolNames are the tool_use names that mark a worker dispatch / team
 // creation — the boundary AC-6 uses to bound the pre-greet window. A turn that
@@ -131,19 +129,14 @@ func assertGreetInvokesNoDeferredFOSkill(stream string) error {
 	return nil
 }
 
-// assertShallowBootMeasured is the AC-6 measured-saving oracle over a captured
-// claude-stream.jsonl: it parses the stream per turn, identifies the greet turn and
-// the pre-greet window (turns up to and including the greet turn), and asserts
-//
-//	(1) the greet-turn context (input + cache_read + cache_creation) is below the
-//	    ~60k ceiling, and
-//	(2) no pre-greet turn shows a cache_creation spike on the order of the ~89k
-//	    team-mode prefix re-cache.
-//
-// It grades the host's emitted usage numbers — an independent source the contract
-// cannot fake — never a prose match. A regression that re-introduced an eager team
-// create or a heavy boot read pushes the greet context over the ceiling or surfaces
-// the spike, failing this oracle.
+// assertShallowBootMeasured is the AC-6 structural oracle over a captured
+// claude-stream.jsonl: it parses the stream per turn and asserts a greet turn was
+// produced. It no longer gates on the ~60k greet-context ceiling or the ~89k
+// pre-greet cache_creation spike — those were absolute constants calibrated once
+// against a since-superseded baseline (task j9, v0.20.3) that carried no
+// information about whether a given boot got better or worse. The greet turn's
+// full token usage rides instead as a recorded (not gated) shallow-boot-window
+// journeymetrics observation — see buildShallowBootWindowRecord.
 func assertShallowBootMeasured(stream string) error {
 	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
 	if err != nil {
@@ -152,24 +145,45 @@ func assertShallowBootMeasured(stream string) error {
 	return assertShallowBootMeasuredTurns(turns)
 }
 
-// assertShallowBootMeasuredTurns is the turn-level half of the AC-6 oracle, split
-// out so the offline unit cases can drive the ceiling and spike checks directly
-// without a stream fixture.
+// assertShallowBootMeasuredTurns is the turn-level half of the boot oracle, split
+// out so the offline unit cases can drive it directly without a stream fixture.
+// Only the structural checks remain a hard failure — the two former threshold
+// branches (greet-context ceiling, pre-greet cache_creation spike) were removed
+// here, at their actual location, not merely skipped by the caller.
 func assertShallowBootMeasuredTurns(turns []journeymetrics.ClaudeTurn) error {
 	if len(turns) == 0 {
 		return fmt.Errorf("stream carried no assistant turns — nothing to measure")
 	}
-	greet := greetTurnIndex(turns)
-	if greet < 0 {
+	if greetTurnIndex(turns) < 0 {
 		return fmt.Errorf("every assistant turn dispatched — no greet turn produced")
 	}
-	if ctx := turns[greet].Context(); ctx >= greetContextCeiling {
-		return fmt.Errorf("greet-turn context %d is not below the ~%dk ceiling — a heavy boot read or eager team create regressed the saving", ctx, greetContextCeiling/1000)
-	}
-	for i := 0; i <= greet; i++ {
-		if cc := turns[i].Usage.CacheCreation; cc >= teamRecacheSpikeFloor {
-			return fmt.Errorf("pre-greet turn %d shows a cache_creation spike of %d (>= %d) — the ~89k team-mode prefix re-cache fired before the greet", i, cc, teamRecacheSpikeFloor)
-		}
-	}
 	return nil
+}
+
+// buildShallowBootWindowRecord builds the shallow-boot-window journeymetrics.Record
+// from a parsed turn list: Turns is greetIndex+1, and Tokens is the greet turn's
+// FULL TokenTotals (input, output, cache_read, and cache_creation — not
+// cache_creation alone), so a future reader can reconstruct both the former
+// ceiling signal (Context() = input+cache_read+cache_creation) and the former
+// pre-greet-spike signal (cache_creation) from this one recorded observation.
+func buildShallowBootWindowRecord(turns []journeymetrics.ClaudeTurn, model string) (journeymetrics.Record, error) {
+	if len(turns) == 0 {
+		return journeymetrics.Record{}, fmt.Errorf("stream carried no assistant turns — nothing to record")
+	}
+	greet := greetTurnIndex(turns)
+	if greet < 0 {
+		return journeymetrics.Record{}, fmt.Errorf("every assistant turn dispatched — no greet turn produced")
+	}
+	return journeymetrics.BuildRecord(journeymetrics.JourneySpec{
+		ScenarioID: shallowBootWindowScenarioID,
+		Source:     "live-harness",
+		Mode:       journeymetrics.ModeLLMLive,
+		Runtime:    "claude",
+		Executor:   "llm",
+		Host:       "claude",
+		Model:      model,
+	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{
+		Turns:  greet + 1,
+		Tokens: turns[greet].Usage,
+	}), nil
 }

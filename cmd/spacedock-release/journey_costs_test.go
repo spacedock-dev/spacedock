@@ -101,10 +101,144 @@ func TestJourneyCostsCommandRejectsMismatchedOutputFilename(t *testing.T) {
 	}
 }
 
+// TestJourneyCostsCommandFlatCopyCollapsesToOneObservation is the AC-2 regression
+// test pinning the OLD release.yml behavior: downloading N runs' journey-metrics
+// and flat-copying every file into ONE directory. journeymetrics.recordFilename has
+// no run-distinguishing component, so two runs of the SAME scenario/model produce
+// the SAME on-disk filename in that one directory, and the second cp silently
+// overwrites the first — the aggregation collapses back to exactly one observation
+// regardless of how many runs were actually discovered. This test proves the old
+// shape's collapse is real (not a hypothetical), so the per-run-subdirectory test
+// below is provably what closes the gap, not an incidental side effect.
+func TestJourneyCostsCommandFlatCopyCollapsesToOneObservation(t *testing.T) {
+	metricsDir := t.TempDir() // one flat directory — the OLD release.yml `cp` target
+	base := journeymetrics.Record{
+		SchemaVersion: journeymetrics.RecordSchemaVersion,
+		ScenarioID:    "shallow-boot-window",
+		Source:        "live-harness",
+		Mode:          journeymetrics.ModeLLMLive,
+		Runtime:       "claude",
+		Executor:      "llm",
+		Host:          "claude",
+		Model:         "claude-sonnet-4-6",
+		MetricsState:  journeymetrics.StateMeasured,
+		Outcome:       journeymetrics.Outcome{Status: "passed"},
+	}
+	runA := base
+	runA.Turns, runA.Tokens = 18, journeymetrics.TokenTotals{CacheCreation: 1562}
+	runA.RunID, runA.CapturedAt = "27931963802", "2026-06-20T00:00:00Z"
+	runB := base
+	runB.Turns, runB.Tokens = 20, journeymetrics.TokenTotals{CacheCreation: 1576}
+	runB.RunID, runB.CapturedAt = "28432388663", "2026-06-27T00:00:00Z"
+
+	// Both records share ScenarioID/Runtime/Model, so writeMetricRecord's filename
+	// (mirroring journeymetrics.recordFilename's lack of a run-distinguishing
+	// component) collides — runB's write overwrites runA's file in place, exactly
+	// as the flat `cp` step would.
+	writeMetricRecord(t, metricsDir, runA)
+	writeMetricRecord(t, metricsDir, runB)
+
+	out := filepath.Join(t.TempDir(), "journey-costs-v1.2.3.json")
+	if code := journeyCosts([]string{"1.2.3", "--metrics-dir", metricsDir, "--out", out}); code != 0 {
+		t.Fatalf("journeyCosts exit = %d, want 0", code)
+	}
+	ledger := readLedger(t, out)
+	entry := findScenario(t, ledger, "shallow-boot-window")
+	if len(entry.Observations) != 1 {
+		t.Fatalf("flat-copy shape must still collapse to 1 observation for shallow-boot-window, got %d: %+v", len(entry.Observations), entry.Observations)
+	}
+}
+
+// TestJourneyCostsCommandAggregatesPerRunSubdirectories proves the AC-2 fix: once
+// release.yml downloads each discovered run into its OWN subdirectory instead of
+// flat-copying, journeymetrics.ReadRecordsDir's existing recursive walk aggregates
+// both runs' observations for the SAME scenario/model without collision, and each
+// observation carries the distinct, non-empty run_id/run_url of the source run that
+// produced it — proving "traceable to more than one run" against actual
+// provenance data, not just a count.
+func TestJourneyCostsCommandAggregatesPerRunSubdirectories(t *testing.T) {
+	metricsDir := t.TempDir()
+	runADir := filepath.Join(metricsDir, "27931963802")
+	runBDir := filepath.Join(metricsDir, "28432388663")
+
+	base := journeymetrics.Record{
+		SchemaVersion: journeymetrics.RecordSchemaVersion,
+		ScenarioID:    "shallow-boot-window",
+		Source:        "live-harness",
+		Mode:          journeymetrics.ModeLLMLive,
+		Runtime:       "claude",
+		Executor:      "llm",
+		Host:          "claude",
+		Model:         "claude-sonnet-4-6",
+		MetricsState:  journeymetrics.StateMeasured,
+		Outcome:       journeymetrics.Outcome{Status: "passed"},
+	}
+	runA := base
+	runA.Turns, runA.Tokens = 18, journeymetrics.TokenTotals{CacheCreation: 1562}
+	runA.RunID = "27931963802"
+	runA.RunURL = "https://github.com/spacedock-dev/spacedock/actions/runs/27931963802"
+	runA.CapturedAt = "2026-06-20T00:00:00Z"
+	runB := base
+	runB.Turns, runB.Tokens = 20, journeymetrics.TokenTotals{CacheCreation: 1576}
+	runB.RunID = "28432388663"
+	runB.RunURL = "https://github.com/spacedock-dev/spacedock/actions/runs/28432388663"
+	runB.CapturedAt = "2026-06-27T00:00:00Z"
+
+	writeMetricRecord(t, runADir, runA)
+	writeMetricRecord(t, runBDir, runB)
+
+	out := filepath.Join(t.TempDir(), "journey-costs-v1.2.3.json")
+	if code := journeyCosts([]string{"1.2.3", "--metrics-dir", metricsDir, "--out", out}); code != 0 {
+		t.Fatalf("journeyCosts exit = %d, want 0", code)
+	}
+	ledger := readLedger(t, out)
+	entry := findScenario(t, ledger, "shallow-boot-window")
+	if len(entry.Observations) != 2 {
+		t.Fatalf("per-run-subdirectory shape must yield 2 observations for shallow-boot-window, got %d: %+v", len(entry.Observations), entry.Observations)
+	}
+	seenRunIDs := map[string]bool{}
+	for _, obs := range entry.Observations {
+		if obs.RunID == "" || obs.RunURL == "" {
+			t.Fatalf("observation missing run provenance: %+v", obs)
+		}
+		seenRunIDs[obs.RunID] = true
+	}
+	if !seenRunIDs["27931963802"] || !seenRunIDs["28432388663"] {
+		t.Fatalf("observations did not carry the two distinct source run ids, got %+v", seenRunIDs)
+	}
+}
+
+func readLedger(t *testing.T, path string) journeymetrics.Ledger {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ledger journeymetrics.Ledger
+	if err := json.Unmarshal(data, &ledger); err != nil {
+		t.Fatalf("parse ledger %s: %v\n%s", path, err, data)
+	}
+	return ledger
+}
+
+func findScenario(t *testing.T, ledger journeymetrics.Ledger, scenarioID string) journeymetrics.ScenarioLedgerEntry {
+	t.Helper()
+	for _, entry := range ledger.Scenarios {
+		if entry.ScenarioID == scenarioID {
+			return entry
+		}
+	}
+	t.Fatalf("ledger has no scenario %q; scenarios: %+v", scenarioID, ledger.Scenarios)
+	return journeymetrics.ScenarioLedgerEntry{}
+}
+
 func writeMetricRecord(t *testing.T, dir string, record journeymetrics.Record) {
 	t.Helper()
 	data, err := json.Marshal(record)
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	name := strings.Join([]string{record.ScenarioID, record.Runtime, record.Model}, "--") + ".json"

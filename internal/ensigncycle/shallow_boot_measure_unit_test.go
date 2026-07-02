@@ -22,19 +22,21 @@ func readMeasureFixture(t *testing.T, name string) string {
 	return string(data)
 }
 
-// TestAssertShallowBootMeasuredOffline is the AC-6 de-risk: it validates the
-// measured-saving oracle against committed real-shape streams BEFORE the live
-// shallow-boot run spends a model on it. The positive fixture (a greet-and-stop
-// boot, no TeamCreate, greet context under the ceiling) passes; the negative
-// fixture (an eager-team boot with the ~89k cache_creation spike before the greet
-// and a greet context over the ceiling) fails — proving the measurement
-// distinguishes the realized saving from its absence, the AC-6 negative control.
+// TestAssertShallowBootMeasuredOffline validates that assertShallowBootMeasured's
+// only remaining checks are structural (the stream produced a greet turn) now that
+// the former ~60k ceiling/spike thresholds are removed at their actual location
+// (assertShallowBootMeasuredTurns), not merely skipped by the caller. Both the
+// shallow-boot positive fixture and the eager-team-boot fixture — whose ~89k
+// pre-greet spike and over-ceiling greet used to FAIL this oracle — now pass,
+// since neither fixture violates the remaining structural checks. The
+// ceiling/spike signal itself now rides the shallow-boot-window journeymetrics
+// observation instead of a pass/fail gate — see TestBuildShallowBootWindowRecord.
 func TestAssertShallowBootMeasuredOffline(t *testing.T) {
 	if err := assertShallowBootMeasured(readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")); err != nil {
-		t.Fatalf("shallow-boot positive fixture must pass the measured-saving oracle: %v", err)
+		t.Fatalf("shallow-boot positive fixture must pass the structural boot oracle: %v", err)
 	}
-	if err := assertShallowBootMeasured(readMeasureFixture(t, "eager-team-boot.stream.jsonl")); err == nil {
-		t.Fatal("eager-team negative fixture must FAIL the measured-saving oracle (89k spike before greet + greet context over ceiling) — else the measurement does not distinguish the realized saving from its absence")
+	if err := assertShallowBootMeasured(readMeasureFixture(t, "eager-team-boot.stream.jsonl")); err != nil {
+		t.Fatalf("eager-team fixture must pass now that the ceiling/spike thresholds are removed (it still produces a valid greet turn): %v", err)
 	}
 }
 
@@ -137,28 +139,113 @@ func TestParserExtractsTeamCallsFromRealHangCapture(t *testing.T) {
 	}
 }
 
-// TestShallowBootMeasureSignalsAreIndependent isolates the two AC-6 signals so
-// neither can be silently dropped: a stream that fails ONLY the ceiling check (a
-// heavy greet, no spike) and a stream that fails ONLY the spike check (a pre-greet
-// 89k cache_creation, but a light greet) must each go red.
-func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
-	// Only the ceiling fails: a single text greet turn whose context exceeds the
-	// ceiling, with no cache_creation spike anywhere.
-	heavyGreet := []journeymetrics.ClaudeTurn{
-		{ID: "greet", Usage: journeymetrics.TokenTotals{Input: 100, CacheRead: greetContextCeiling, CacheCreation: 0}},
+// TestBuildShallowBootWindowRecord is AC-1's primary offline fixture unit test: it
+// proves EmitRecord writes a shallow-boot-window--claude--llm--llm-live--<model>--
+// measured.json file DISTINCT from the pre-existing whole-run
+// shallow-boot--...--measured.json record (both present after one scenario run,
+// neither overwriting the other), carrying Turns == greetIndex+1 and Tokens equal
+// to the greet turn's full actual TokenTotals (input, output, cache_read,
+// cache_creation) from the fixture stream — not CacheCreation alone.
+func TestBuildShallowBootWindowRecord(t *testing.T) {
+	stream := readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")
+	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
+	if err != nil {
+		t.Fatalf("ParseClaudeTurns: %v", err)
 	}
-	if err := assertShallowBootMeasuredTurns(heavyGreet); err == nil {
-		t.Fatal("a greet turn whose context exceeds the ceiling (no spike) must fail on the ceiling check")
+	greet := greetTurnIndex(turns)
+	if greet < 0 {
+		t.Fatal("fixture must produce a greet turn")
 	}
 
-	// Only the spike fails: a pre-greet dispatch turn carrying the ~89k spike, then
-	// a light text greet under the ceiling.
+	const model = "claude-test-model"
+	record, err := buildShallowBootWindowRecord(turns, model)
+	if err != nil {
+		t.Fatalf("buildShallowBootWindowRecord: %v", err)
+	}
+	if record.ScenarioID != "shallow-boot-window" {
+		t.Fatalf("ScenarioID = %q, want shallow-boot-window", record.ScenarioID)
+	}
+	if record.Turns != greet+1 {
+		t.Fatalf("Turns = %d, want %d (greetIndex+1)", record.Turns, greet+1)
+	}
+	want := turns[greet].Usage
+	if record.Tokens.Input != want.Input || record.Tokens.Output != want.Output ||
+		record.Tokens.CacheCreation != want.CacheCreation || record.Tokens.CacheRead != want.CacheRead {
+		t.Fatalf("Tokens = %+v, want the greet turn's full TokenTotals %+v (not CacheCreation alone)", record.Tokens, want)
+	}
+
+	// The whole-run "shallow-boot" record the same scenario run already publishes
+	// (see emitClaudeScenarioMetrics) must survive untouched as a sibling file.
+	dir := t.TempDir()
+	wholeRun := journeymetrics.BuildRecord(journeymetrics.JourneySpec{
+		ScenarioID: "shallow-boot",
+		Source:     "live-harness",
+		Mode:       journeymetrics.ModeLLMLive,
+		Runtime:    "claude",
+		Executor:   "llm",
+		Host:       "claude",
+		Model:      model,
+	}, journeymetrics.BehaviorResult{Passed: true}, journeymetrics.Observation{})
+	if err := journeymetrics.EmitRecord(dir, wholeRun); err != nil {
+		t.Fatalf("emit whole-run shallow-boot record: %v", err)
+	}
+	if err := journeymetrics.EmitRecord(dir, record); err != nil {
+		t.Fatalf("emit shallow-boot-window record: %v", err)
+	}
+
+	windowPath := filepath.Join(dir, "shallow-boot-window--claude--llm--llm-live--"+model+"--measured.json")
+	if _, err := os.Stat(windowPath); err != nil {
+		t.Fatalf("expected shallow-boot-window record file at %s: %v", windowPath, err)
+	}
+	wholeRunPath := filepath.Join(dir, "shallow-boot--claude--llm--llm-live--"+model+"--measured.json")
+	if _, err := os.Stat(wholeRunPath); err != nil {
+		t.Fatalf("the pre-existing shallow-boot record must survive unmodified at %s: %v", wholeRunPath, err)
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("expected exactly 2 record files (shallow-boot and shallow-boot-window), got %d", len(entries))
+	}
+}
+
+// TestShallowBootMeasureSignalsAreIndependent previously proved the ceiling and
+// spike checks could each fail independently. Now that both threshold branches are
+// removed from assertShallowBootMeasuredTurns (not merely bypassed by the caller),
+// it proves the gate is gone at its actual location — none of the three cases that
+// used to trip a threshold return an error — while buildShallowBootWindowRecord
+// still captures each case's full greet-turn TokenTotals, so the former
+// ceiling/spike signal stays reconstructable from the recorded telemetry even
+// though it no longer gates CI.
+func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
+	// Formerly failed only the ceiling check: a single text greet turn whose
+	// context exceeds the old ~60k ceiling, with no cache_creation spike anywhere.
+	heavyGreet := []journeymetrics.ClaudeTurn{
+		{ID: "greet", Usage: journeymetrics.TokenTotals{Input: 100, CacheRead: 60000, CacheCreation: 0}},
+	}
+	if err := assertShallowBootMeasuredTurns(heavyGreet); err != nil {
+		t.Fatalf("a greet turn over the former ceiling must no longer fail now that the threshold gate is removed: %v", err)
+	}
+	if record, err := buildShallowBootWindowRecord(heavyGreet, "test-model"); err != nil {
+		t.Fatalf("buildShallowBootWindowRecord(heavyGreet): %v", err)
+	} else if record.Tokens.CacheRead != 60000 {
+		t.Fatalf("recorded Tokens must preserve the full greet-turn usage that used to trip the ceiling check, got %+v", record.Tokens)
+	}
+
+	// Formerly failed only the spike check: a pre-greet dispatch turn carrying the
+	// ~89k spike, then a light text greet under the old ceiling.
 	spikeThenLightGreet := []journeymetrics.ClaudeTurn{
 		{ID: "team", Usage: journeymetrics.TokenTotals{Input: 8, CacheCreation: 89000, CacheRead: 16000}, ToolNames: []string{"TeamCreate"}},
 		{ID: "greet", Usage: journeymetrics.TokenTotals{Input: 100, CacheRead: 5000, CacheCreation: 0}},
 	}
-	if err := assertShallowBootMeasuredTurns(spikeThenLightGreet); err == nil {
-		t.Fatal("a pre-greet ~89k cache_creation spike (with a light greet) must fail on the spike check")
+	if err := assertShallowBootMeasuredTurns(spikeThenLightGreet); err != nil {
+		t.Fatalf("a pre-greet ~89k cache_creation spike (light greet) must no longer fail now that the threshold gate is removed: %v", err)
+	}
+	if record, err := buildShallowBootWindowRecord(spikeThenLightGreet, "test-model"); err != nil {
+		t.Fatalf("buildShallowBootWindowRecord(spikeThenLightGreet): %v", err)
+	} else if record.Turns != 2 {
+		t.Fatalf("Turns = %d, want 2 (greetIndex+1, greet is turns[1])", record.Turns)
 	}
 
 	// Both clean: a light greet, no pre-greet spike — the realized-saving end-state.

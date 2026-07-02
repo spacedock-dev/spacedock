@@ -35,13 +35,17 @@ jobs:
         with:
           go-version: "1.22"
 
-      # Find the latest successful Runtime Live E2E run on next and pull its
-      # journey-metrics artifacts. When no such run exists this is a NON-FATAL
-      # skip (`exit 0`, found=false) — runtime-live-e2e.yml has no push:next
-      # trigger, so a fresh cut routinely has no producer run, and blocking the
-      # ledger here must not fail anything. The emitted `found` output gates the
-      # downstream Build/Publish steps so they SKIP (job green) rather than run
-      # `journey-costs` over an empty dir and RED the job.
+      # Pull journey-metrics from EVERY successful Runtime Live E2E run (PR or
+      # main) since the immediately-prior release tag of any kind (stable or
+      # -pre) — an incremental window, so a -pre release does not re-fold runs an
+      # earlier -pre in the same cycle already covered. A run's inclusion does
+      # not depend on its triggering PR's eventual merge state: the observation
+      # is about boot behavior on that commit at that time. When no run exists in
+      # the window this is a NON-FATAL skip (`exit 0`, found=false) — a fresh cut
+      # routinely has no producer run, and blocking the ledger here must not fail
+      # anything. The emitted `found` output gates the downstream Build/Publish
+      # steps so they SKIP (job green) rather than run `journey-costs` over an
+      # empty dir and RED the job.
       - name: Download latest journey metrics artifacts
         id: download_metrics
         env:
@@ -49,18 +53,40 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/runtime-live-artifacts" "$RUNNER_TEMP/journey-metrics"
-          # `|| true` degrades a gh error (or a missing gh) to an empty run_id so
+          # `|| true` degrades a gh error (or a missing gh) to the epoch fallback
+          # so a query failure never aborts the best-effort ledger under set -e.
+          # jq reads the tag via $ENV (not bash interpolation) so this survives
+          # set -u even when GITHUB_REF_NAME is unset.
+          since="$(gh release list --limit 100 --json tagName,createdAt --jq \
+            '[sort_by(.createdAt)[]] as $r | ($r | map(.tagName) | index($ENV.GITHUB_REF_NAME)) as $i | if $i == null or $i == 0 then "" else $r[$i-1].createdAt end' \
+            || true)"
+          if [ -z "$since" ]; then
+            since="1970-01-01T00:00:00Z"
+          fi
+          echo "journey ledger aggregation window: runs created after $since" >&2
+          # `|| true` degrades a gh error (or a missing gh) to an empty run list so
           # the no-run skip branch below fires (found=false, exit 0) instead of
           # aborting under set -e. The journey ledger is best-effort; a query
-          # failure must never RED the cut.
-          run_id="$(gh run list --workflow "Runtime Live E2E" --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
-          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "::warning::no successful Runtime Live E2E run found on main; skipping journey ledger" >&2
+          # failure must never RED the cut. No --branch filter: PR-triggered runs
+          # count in the window exactly like main runs.
+          run_ids="$(gh run list --workflow "Runtime Live E2E" --status success --created ">$since" --limit 100 --json databaseId --jq '.[].databaseId' || true)"
+          if [ -z "$run_ids" ]; then
+            echo "::warning::no successful Runtime Live E2E run found since $since; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          gh run download "$run_id" --dir "$RUNNER_TEMP/runtime-live-artifacts"
-          find "$RUNNER_TEMP/runtime-live-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;
+          # Each run's metrics land in their OWN subdirectory, never flat-copied
+          # into one: journeymetrics.recordFilename has no run-distinguishing
+          # component, so flattening N runs' same-named scenario/model files into
+          # one directory silently collapses them back to one observation via
+          # overwrite. journeymetrics.ReadRecordsDir already walks metrics-dir
+          # recursively, so no Go-side change is needed to consume this layout.
+          for run_id in $run_ids; do
+            run_dir="$RUNNER_TEMP/journey-metrics/$run_id"
+            mkdir -p "$run_dir"
+            gh run download "$run_id" --dir "$RUNNER_TEMP/runtime-live-artifacts/$run_id"
+            find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$run_dir/" \;
+          done
           if [ -z "$(find "$RUNNER_TEMP/journey-metrics" -name '*.json' -type f -print -quit)" ]; then
             echo "::warning::downloaded Runtime Live E2E artifacts contained no journey metrics JSON; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"

@@ -75,6 +75,29 @@ func ensignTranscripts(result liveResult) [][]byte {
 	return transcripts
 }
 
+// emitShallowBootWindowMetrics emits the shallow-boot-window observation (AC-1)
+// alongside the whole-run "shallow-boot" record emitClaudeScenarioMetrics already
+// publishes, into the same SPACEDOCK_JOURNEY_METRICS_DIR/shared-scenarios dir, so
+// the two sibling records land together without either overwriting the other.
+func emitShallowBootWindowMetrics(t *testing.T, stream string, model string) {
+	t.Helper()
+	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")
+	if dir == "" {
+		return
+	}
+	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
+	if err != nil {
+		t.Fatalf("parse Claude turns for shallow-boot-window: %v", err)
+	}
+	record, err := buildShallowBootWindowRecord(turns, model)
+	if err != nil {
+		t.Fatalf("build shallow-boot-window record: %v", err)
+	}
+	if err := journeymetrics.EmitRecord(filepath.Join(dir, "shared-scenarios"), record); err != nil {
+		t.Fatalf("emit shallow-boot-window record: %v", err)
+	}
+}
+
 func emitCodexScenarioMetrics(t *testing.T, scenario sharedRuntimeScenario, result codexScenarioResult) {
 	t.Helper()
 	dir := os.Getenv("SPACEDOCK_JOURNEY_METRICS_DIR")

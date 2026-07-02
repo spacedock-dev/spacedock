@@ -122,6 +122,14 @@ type Record struct {
 	Budget          Budget                 `json:"budget,omitempty"`
 	BudgetResult    *BudgetResult          `json:"budget_result,omitempty"`
 	CodexCharacter  *CodexCharacterization `json:"codex_characterization,omitempty"`
+	// RunID, RunURL, and CapturedAt are run-provenance fields stamped at emission
+	// time (see EmitRecord's stampProvenance) so a scenario/model that accumulates
+	// multiple observations in a published ledger can be traced back to the run
+	// that produced each one, and ordered chronologically. A record emitted outside
+	// CI (no GITHUB_RUN_ID) simply omits RunID/RunURL.
+	RunID      string `json:"run_id,omitempty"`
+	RunURL     string `json:"run_url,omitempty"`
+	CapturedAt string `json:"captured_at,omitempty"`
 }
 
 type recordJSON struct {
@@ -147,6 +155,9 @@ type recordJSON struct {
 	Budget          *Budget                `json:"budget,omitempty"`
 	BudgetResult    *BudgetResult          `json:"budget_result,omitempty"`
 	CodexCharacter  *CodexCharacterization `json:"codex_characterization,omitempty"`
+	RunID           string                 `json:"run_id,omitempty"`
+	RunURL          string                 `json:"run_url,omitempty"`
+	CapturedAt      string                 `json:"captured_at,omitempty"`
 }
 
 func (r Record) MarshalJSON() ([]byte, error) {
@@ -183,5 +194,8 @@ func (r Record) MarshalJSON() ([]byte, error) {
 		Budget:          budget,
 		BudgetResult:    r.BudgetResult,
 		CodexCharacter:  r.CodexCharacter,
+		RunID:           r.RunID,
+		RunURL:          r.RunURL,
+		CapturedAt:      r.CapturedAt,
 	})
 }
