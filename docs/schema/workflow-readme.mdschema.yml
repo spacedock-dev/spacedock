@@ -72,7 +72,8 @@
                 "enum": [
                   "sonnet",
                   "opus",
-                  "haiku"
+                  "haiku",
+                  "fable"
                 ]
               }
             }
@@ -120,7 +121,8 @@
                   "enum": [
                     "sonnet",
                     "opus",
-                    "haiku"
+                    "haiku",
+                    "fable"
                   ]
                 }
               }
