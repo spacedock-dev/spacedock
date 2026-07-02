@@ -111,37 +111,24 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 - **done-when:** the boot record is in hand for the greet.
 - → **shipped**: `` `spacedock status --boot --json` ``.
 
-## «state.ensure-ready»(): the split-root checkout is linked and integrated with peers before any dispatch
+## «state.ensure-ready»(): split-root checkout linked & integrated pre-dispatch
 
-- **guard:** `state_backend == split-root` (a single-root workflow is a no-op).
-- **effect — halt-gate.** If `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree); the boot table renders EMPTY yet `--validate` VALID, a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-invoke `«state.boot»()` and proceed only after `entity_dir_present == true`.
-- **effect — pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read).
-- **done-when:** `entity_dir_present == true` and the boot rebase is clean.
-- **block:** on `pull --rebase` CONFLICT, `«halt.rebase-conflict»(paths)` — do not dispatch against an unmerged state tree.
-- → **shipped**: `` `spacedock state ready` ``.
+- **guard:** `state_backend == split-root` (single-root is a no-op).
+- → **shipped**: `` `spacedock state ready` `` — one pull at boot, not per-read; resumes an absent checkout; stderr/exit carry the halt remediation + resume sequencing; on exit 3 → `«halt.rebase-conflict»(paths)`.
 
-## «state.sweep-merged»(): merged PRs reach their terminal stage at boot, before the greet
+## «state.sweep-merged»(): merged PRs reach terminal at boot
 
-- **guard:** `pr_state` has an entry whose `state == "MERGED"` and whose entity status is non-terminal.
-- **effect:** for each such entry, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip when no such entry exists — the common boot reads zero mod files. A greet-and-stop boot never enters the event loop, so a merged PR is advanced here or not at all.
-- **done-when:** no `MERGED` + non-terminal entity remains.
-- **block:** when `pr_state.status == "gh not available"`, the merge state is unknowable — skip the sweep (per the pr-merge mod's "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as stale or absent.
-- → **shipped**: `` `spacedock state sweep` ``.
+- **guard:** an entry `state == "MERGED"` and non-terminal; skip otherwise (zero mod files read).
+- → **shipped**: `` `spacedock state sweep` `` — advanced here or never (greet-and-stop skips the event loop); output distinguishes real-empty from gh-unavailable UNKNOWN, names the startup-hook mod to advance per.
 
-## «state.commit»(slug): record one entity's change durably and concurrency-safe
+## «state.commit»(slug): record an entity's change durably
 
-- **effect:** invoke `spacedock state commit <slug>` after each state mutation. The command resolves the split-root entity, commits only that entity path, syncs with `origin` when present, and reports local-only/no-op as needed.
-- **done-when:** the command exits 0 with the entity committed, and pushed when an origin exists.
-- **block:** exit 3 means a same-entity rebase conflict was aborted by `spacedock state commit`; `«halt.rebase-conflict»(paths)`.
-- → **shipped**: `` `spacedock state commit <slug>` ``.
+- → **shipped**: `` `spacedock state commit <slug>` `` — on exit 3 → `«halt.rebase-conflict»(paths)`.
 
-## «halt.rebase-conflict»(paths): a two-writer state conflict halts dispatch — abort, surface, stop
+## «halt.rebase-conflict»(paths): abort, surface, stop
 
-Invoked on a `pull --rebase` CONFLICT on the split-root state checkout — from `«state.ensure-ready»`'s manual pull or a `«state.commit»` exit 3.
-
-- **block:** HALT; ensure the rebase is aborted (`git rebase --abort` when the FO holds the conflict; already done on a `«state.commit»` exit 3); surface the named conflicting `paths` and the peer commit to the captain; stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never silently discard either side — do not force-push or auto-resolve.
-- **done-when:** the conflict is surfaced to the captain and dispatch is halted against the unmerged state tree.
-- → **prose** — no binary resolves a two-writer frontmatter conflict; the FO halts and the captain reconciles.
+- **block:** a `«state.ensure-ready»`/`«state.commit»` exit 3 already carries the remediation in its stderr — HALT per that output. A manual FO-held `pull --rebase` CONFLICT (code worktree, `claude-fo-dispatch.md:162`): run `git rebase --abort`, surface `paths` + peer commit to the captain, stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never discard either side — do not force-push or auto-resolve.
+- → **prose** — no binary resolves a two-writer conflict; the FO halts and the captain reconciles.
 
 ## Mod Hook Convention
 
