@@ -2,7 +2,7 @@
 title: "Glossary"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-02 01:54:38"
+last_updated: "2026-07-02 01:58:14"
 ---
 
 # Glossary
