@@ -154,3 +154,18 @@ Return to implementation to close the remaining AC-6 gap. Keep the existing task
 ### Summary
 
 Cycle 2 closes the AC-6 gap. The live harness now explicitly enables Codex `multi_agent_v2` inside the isolated test home, and the reviewer-reuse oracle accepts Codex 0.142's redacted worker-tool stream only when completed `dispatch build --advance` commands and kept-alive validation reviewer narration together prove reuse. The preserved combined live run at `/tmp/mq-codex-live-both-v2-fc4` passes both `rejection-flow` and `shallow-boot` with durable artifacts for reviewer reuse and before-greet merged-PR archival.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Verify AC-1 through AC-5 still pass against the cycle-2 diff, not only the prior 063a8b9a commit.
+  Evidence: branch tip is `65110905 Fix Codex live multi-agent reuse proof`; focused tests passed after that commit: `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2' -count=1`, `go test ./internal/dispatch -run 'TestGhRunnerExecParsesJqExtractedState|TestSweepWithRealGhStubDoesNotReportUnknown' -count=1`, and `go test ./internal/ensigncycle -run 'TestShallowBootNegativeBrokenEndStates' -count=1`.
+- DONE: Verify AC-6 with the preserved combined live artifacts at /tmp/mq-codex-live-both-v2-fc4, including explicit multi_agent_v2 and kept-alive reviewer reuse proof.
+  Evidence: rejection-flow artifact line 2 enables `multi_agent_v2`; lines 93-94 build implementation `--feedback-reflow --advance`; lines 107-109 build validation `--advance` and send it to the kept-alive validation reviewer; lines 126-131 show final `status: validation`, Cycle 1 REJECTED, Cycle 2 PASSED, and fix marker present. Shallow-boot artifact line 2 enables `multi_agent_v2`; lines 64-69 read PR `MERGED`, terminalize `merged-pr`, and archive `./_archive/merged-pr.md`; final-message lines 1-13 show the before-greet sweep summary and gate presentation with no workers dispatched.
+- DONE: Run the required Go gates and produce a PASSED or REJECTED recommendation grounded in command/artifact evidence.
+  Evidence: `go test ./internal/ensigncycle` passed; `go test ./...` passed; `go test ./... -race` passed; `gofmt -w ./cmd ./internal` was run, then the unrelated pre-existing `internal/cli/pi_frontdoor_test.go` formatting drift was restored to keep the cycle-2 diff clean. `git diff --check` passed and code `git status --short` was clean; `gofmt -l ./cmd ./internal` still reports that pre-existing file.
+
+### Summary
+
+Validation cycle 2 PASSED. AC-1 through AC-5 remain green on top of cycle-2 commit `65110905`, and AC-6 is now satisfied by the preserved combined live run at `/tmp/mq-codex-live-both-v2-fc4` with explicit `multi_agent_v2`, kept-alive validation reviewer reuse, and before-greet shallow-boot archival evidence.
+
+Recommendation: PASSED.
