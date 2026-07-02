@@ -74,3 +74,36 @@ func TestManifestTagGateBlocksEmptyManifest(t *testing.T) {
 		t.Fatalf("gate passed an empty manifest version")
 	}
 }
+
+// TestProseMinorTagGatePassesOnMatchingMinor locks the D5 prose half: a stable
+// tag whose major.minor equals the prose-stamped minor passes, `v` prefix
+// normalized like the JSON gate.
+func TestProseMinorTagGatePassesOnMatchingMinor(t *testing.T) {
+	if dec := EvaluateProseMinorTagGate("v0.24.0", "0.24"); !dec.Pass {
+		t.Fatalf("gate blocked a matching tag/prose minor pair: %s", dec.Reason)
+	}
+	if dec := EvaluateProseMinorTagGate("0.24.3", "0.24"); !dec.Pass {
+		t.Fatalf("gate blocked a matching bare tag/prose minor pair (patch skew must not matter): %s", dec.Reason)
+	}
+}
+
+// TestProseMinorTagGateBlocksMismatchedMinor locks the block case: a stable tag
+// one minor ahead of the prose-stamped literal (a forgotten prose stamp) blocks.
+func TestProseMinorTagGateBlocksMismatchedMinor(t *testing.T) {
+	dec := EvaluateProseMinorTagGate("v0.24.0", "0.23")
+	if dec.Pass {
+		t.Fatalf("gate passed a tag/prose minor mismatch (v0.24.0 vs 0.23)")
+	}
+	if !strings.Contains(dec.Reason, "0.24") || !strings.Contains(dec.Reason, "0.23") {
+		t.Errorf("block reason does not cite both diverging minors; got: %s", dec.Reason)
+	}
+}
+
+// TestProseMinorTagGateBlocksEmptyProse proves an unstamped/unreadable prose
+// minor (an empty string, e.g. from a read error upstream) blocks rather than
+// silently passing.
+func TestProseMinorTagGateBlocksEmptyProse(t *testing.T) {
+	if dec := EvaluateProseMinorTagGate("v0.24.0", ""); dec.Pass {
+		t.Fatalf("gate passed an empty prose minor")
+	}
+}

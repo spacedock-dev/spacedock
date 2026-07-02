@@ -19,21 +19,25 @@ import (
 //
 // Usage:
 //
-//	spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
+//	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
 //	spacedock-release bump-calendar <marketplace.json>
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release e2e-gate <release-commit-sha>
 //
-// stamp-version rewrites each manifest's top-level `version` to the release
-// version (AC-4). bump-calendar advances the marketplace plugin entry's calendar
-// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. dev-preversion
-// prints the post-release dev pre-version (X.(Y+1).0-pre1) the stable-tag edge
-// advance stamps onto `next`. e2e-gate is the
+// stamp-version rewrites each argument to the release version: a `.json`
+// plugin.json gets its top-level `version` field rewritten (AC-4); a `.md`
+// argument is the FO shared-core prose, whose single release-stamped "required
+// binary minor" literal is rewritten to the release's major.minor (D5) —
+// erroring unless the literal appears exactly once. bump-calendar advances the
+// marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
+// All rewrite in place. dev-preversion prints the post-release dev pre-version
+// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`. e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
-// unless every tagged plugin.json's version equals the tag semver (the stamp-then-tag
-// ordering). notes summarizes the commit log
+// unless every tagged `.json` manifest's version equals the tag semver AND every
+// tagged `.md` prose's stamped minor equals the tag's major.minor (the
+// stamp-then-tag ordering). notes summarizes the commit log
 // since the last tag into clean release notes and, on confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
 // goreleaser via --release-notes).
@@ -140,7 +144,16 @@ func stampVersion(args []string) int {
 			fmt.Fprintf(os.Stderr, "read %s: %v\n", path, err)
 			return 1
 		}
-		out, err := release.StampVersion(data, version)
+		// D5: a `.md` argument is the FO shared-core prose — one release-stamped
+		// "required binary minor" literal, rewritten by StampProseVersion. Every
+		// other extension (the plugin.json manifests) keeps the existing JSON
+		// full-version stamp. One invocation, one atomic multi-file rewrite.
+		var out []byte
+		if strings.HasSuffix(path, ".md") {
+			out, err = release.StampProseVersion(data, version)
+		} else {
+			out, err = release.StampVersion(data, version)
+		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "stamp %s: %v\n", path, err)
 			return 1
@@ -346,12 +359,12 @@ func usage() {
 	fmt.Fprint(os.Stderr, `spacedock-release is the release-pipeline version tool.
 
 Usage:
-  spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
+  spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release bump-calendar <marketplace.json>
   spacedock-release dev-preversion <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release e2e-gate <release-commit-sha>
-  spacedock-release manifest-tag-gate <tag> <plugin.json> [<plugin.json> ...]
+  spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release notes <release-version>
 `)
 }
