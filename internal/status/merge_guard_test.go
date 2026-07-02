@@ -407,6 +407,12 @@ func TestMergeGuardRefusesMissingMergeModNoSentinel(t *testing.T) {
 	if !strings.Contains(errOut, "is missing") {
 		t.Fatalf("stderr should say the mod is missing, got %q", errOut)
 	}
+	// Feedback cycle 1, T2: pin the full remediation tail, not just the mod-name +
+	// "is missing" fragment — a change that drops the restore/--force remedy must
+	// fail this test.
+	if !strings.Contains(errOut, "Restore the mod file, or have the operator clear the block with --force.") {
+		t.Fatalf("stderr should carry the full remediation tail, got %q", errOut)
+	}
 	if strings.Contains(out, "finalized") {
 		t.Fatalf("stdout must not claim finalized on the missing-mod refusal, got %q", out)
 	}
@@ -418,6 +424,40 @@ func TestMergeGuardRefusesMissingMergeModNoSentinel(t *testing.T) {
 		t.Fatalf("refused entity must keep its mod-block intact, got %q", got)
 	}
 	if fileExists(filepath.Join(root, "_archive", "120-missing-mod-no-sentinel.md")) {
+		t.Fatal("refused entity must NOT archive")
+	}
+}
+
+// TestMergeGuardRefusesMissingMergeModWhenNoHookRegisteredAtAll (feedback cycle 1,
+// T1): the likeliest real-world D5 trigger — the deleted mod file WAS the
+// workflow's only registered merge hook, so `mergeHooks` is EMPTY, not merely
+// missing the named entry. This is a distinct shape from
+// TestMergeGuardRefusesMissingMergeModNoSentinel (which fixtures a workflow with
+// a DIFFERENT hook still registered): a mutant that special-cases
+// modBlockNamesMissingMergeMod on `len(mergeHooks)==0` (treating "no hooks at
+// all" as vacuously not-missing) passes every other D5 test but must fail here.
+func TestMergeGuardRefusesMissingMergeModWhenNoHookRegisteredAtAll(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "030-missing-mod-no-hooks-registered", "--verdict", "passed")
+	if code != 1 {
+		t.Fatalf("missing-mod refusal must fire even with zero hooks registered (exit 1), got %d (stdout=%q)", code, out)
+	}
+	if !strings.Contains(errOut, "ghost-merge") {
+		t.Fatalf("stderr should name the missing mod, got %q", errOut)
+	}
+	if !strings.Contains(errOut, "is missing") {
+		t.Fatalf("stderr should say the mod is missing, got %q", errOut)
+	}
+	if strings.Contains(out, "finalized") {
+		t.Fatalf("stdout must not claim finalized — this is the exact silent-finalize shape D5 fixes, got %q", out)
+	}
+	entity := filepath.Join(root, "030-missing-mod-no-hooks-registered.md")
+	if got := frontmatterField(t, entity, "status"); got != "implementation" {
+		t.Fatalf("refused entity must not terminalize, status=%q", got)
+	}
+	if got := frontmatterField(t, entity, "mod-block"); got != "merge:ghost-merge" {
+		t.Fatalf("refused entity must keep its mod-block intact, got %q", got)
+	}
+	if fileExists(filepath.Join(root, "_archive", "030-missing-mod-no-hooks-registered.md")) {
 		t.Fatal("refused entity must NOT archive")
 	}
 }
