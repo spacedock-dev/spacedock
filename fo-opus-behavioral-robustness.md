@@ -1,7 +1,7 @@
 ---
 id: 5xst4dae1m2acx76czpe857v
 title: FO behavioral-robustness — live opus-4-8 FO intermittently deviates from contract guidance
-status: implementation
+status: validation
 source: '0221 cut (2026-06-19): the live claude-live OPUS lane flaked on essentially every PR with DIFFERENT non-deterministic FO-behavior deviations, while SONNET stayed compliant. Diagnosed diff-unrelated across 3e #398 (sonnet broad-search) and rgq #399 (two reruns: no spacedock-new, then merged-team-mode exit-before-terminalize) and accepted non-blocking under the ci-env conn to land 0.22.1. This is the recorded root-cause follow-up.'
 started: 2026-07-02T09:55:07Z
 completed:
