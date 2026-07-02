@@ -6,6 +6,7 @@ source: "fable-token-trim-scout analysis 2026-07-02: Degraded Mode (claude-fo-di
 id: 41cfak9bgwtpa01m1z4qkprq
 started: 2026-07-02T03:02:51Z
 worktree: .worktrees/spacedock-ensign-41cfak9bgw
+mod-block: merge:pr-merge
 ---
 
 ## Problem
