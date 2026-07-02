@@ -132,3 +132,17 @@ Added a finalize-status gate to `runSet` and its `--archive` mirror in `runArchi
 ### Summary
 
 AC-2 and AC-3 fully reproduce: the finalize-status gate red-first on pre-gate main, all sanctioned paths green on 66750ea9, the fixture byte-identical to the GitHub-archived opus stream and falsifiable against pre-#433 logic, and a 4-edit detached adversarial audit that refuted nothing material. AC-1 is flagged: the live opus spot-check 401'd on an invalid local benchmark-token before any model spend, so the 5-rep measurement never started. Verdict recommendation is REJECTED on the narrow AC-1-evidence-missing ground only — the code deliverable itself surfaced no defects and needs no rework; re-running AC-1 under valid credentials is the sole outstanding step.
+
+## Stage Report: validation (cycle 2)
+
+Cycle 1's sole blocker (invalid benchmark-token, API 401) was resolved by the captain rotating the token (2026-07-02), with revised direction: run only the sanctioned-path spot-check locally; the AC-1 5-rep measurement is delegated to the PR's runtime-live-e2e opus-leg runs.
+
+- DONE: AC-1 per the body's own ordering — offline suites first, the single sanctioned-path live opus spot-check (~$2) before committing to the 5-rep measurement
+  Spot-check GREEN with the rotated token: `SPACEDOCK_LIVE_MODEL=claude-opus-4-8 go test -tags live ./internal/ensigncycle -run 'TestLiveClaudeSharedScenarios/filing|TestLiveMergedTeamModeDispatch'` — filing PASS 54.4s ($0.55), merged-team-mode PASS 161.6s, exit 0. The merged test's PASS is the on-disk proof (its terminal condition is `status: done` frontmatter + a path-scoped commit — the exact durable end-state attempt 2 failed to produce); both streams carry ZERO occurrences of the new refusal texts ("cannot be finalized"/"cannot be archived") and the FO drove the `merge guard` path (4 stream mentions), so the sanctioned path never trips the AC-3 gate live. Artifacts attached at `_reviews/fo-opus-behavioral-robustness-validation-spotcheck/` (both streams, filing final message, full test log).
+  AC-1 5-rep measurement: delegated to the PR's runtime-live-e2e opus-leg runs by captain direction (2026-07-02); N-rep count to be accumulated and attached at the merge gate — flagged as pending-CI, not excused and not silently dropped.
+- DONE: A PASSED/REJECTED recommendation with honest accounting
+  Recommendation: PASSED, explicitly CONDITIONAL on the AC-1 CI evidence landing before merge (the runtime-live-e2e opus-leg repetitions with zero recurrences of the two opus classes, triaging any zero-discover red per 4t8 semantics). Basis: AC-2/AC-3 fully reproduced (cycle 1), adversarial audit refuted nothing material (cycle 1), and the live sanctioned-path spot-check is green against the gated binary. If the accumulated opus-leg runs show any recurrence of the filing-path false-red or incomplete-finalize classes, AC-1 fails and this PASSED does not stand.
+
+### Summary
+
+With the rotated token the sanctioned-path live opus spot-check is green: filing passes the current assertion and merged-team-mode reaches `status: done` on disk with the finalize-status gate in the binary and no refusal triggered — the gate does not obstruct a compliant opus FO. Combined with cycle 1's fully reproduced AC-2/AC-3 and clean adversarial audit, the recommendation moves from REJECTED-pending-AC-1 to PASSED conditional on the CI-delegated AC-1 repetitions (runtime-live-e2e opus leg) accumulating with zero class recurrences and being attached at the merge gate.

@@ -1,0 +1,7 @@
+Seed task filed. ✅
+
+- **Entity:** `wire-the-thing` — "Wire The Thing", id `001`
+- **Stage:** `backlog` (the workflow's initial stage — not advanced)
+- **How:** filed through the blessed atomic-create path (`spacedock new wire-the-thing` with a complete stub piped on stdin), so the sequential id was minted and stamped atomically — no hand-assembled frontmatter, no `--next-id` preview-then-write drift. It landed as flat `wire-the-thing.md` with a one-line description body.
+
+No workers were dispatched and the entity remains in `backlog`. No team was ever created, so there's nothing to shut down. Work complete.
