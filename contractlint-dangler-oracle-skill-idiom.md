@@ -174,3 +174,16 @@ No user-visible behavior change — this is an internal contractlint test-guard;
 ### Summary
 
 Fleshed the latent-dangler fix into a concrete additive resolution path: a watched-section pointer resolves if the same line names the section's owning skill via the `spacedock:<owner>` token, with owner-specificity as the non-weakening property. Key decision: replace the scanner's `watched []string` param with `owners map[string]string` (keys = watched set) for one source of truth, keeping the single-scanner-drives-control property. Spike proved the mechanism needs no new regex/parser — `bodySkillRe` and `deferredSkillCores` already supply both halves — so no unverified round-trip risk remains; the change is monotonic (can only reduce danglers), making real-file greenness safe by construction.
+
+## Stage Report: implementation
+
+- DONE: Add the resolver branch in referenceProsePointerDanglers — build a section->owner reverse map from deferredSkillCores, key on the existing bodySkillRe token; ADDITIVE, owner-specific (a wrong-owner token must NOT suppress)
+  `sectionOwners()` replaces `watchedSectionNames()` (`filepath.Base(filepath.Dir(skillPath))` reverse map); resolver skips a dangler only when `skillsNamed[owner]` matches the same-line `spacedock:<owner>` token. Worktree commit da111ffc.
+- DONE: Extend TestDeferredSkillProsePointerGuardFailsOnDanglingTarget into the table-driven battery: row 4 (Skill-form owner-matched -> 0) and row 5 (wrong-owner -> >=1); RED-then-GREEN — row 4 FAIL pre-fix, pass post-fix; row 5 STAYS passing
+  5-row battery; pre-fix run showed only row 4 failing (`got 1, expected 0`) with rows 1-3+5 passing (RED confirmed the latent false-fail); post-fix all 5 green, row 5 owner-specific.
+- DONE: go test ./internal/contractlint/ green — including TestDeferredSkillProsePointersResolve, TestDeferredSkillCoresResolveAndCarryCeremony, TestNoSurvivingContractFileNamesDeadDeferredReferencePath; commit in the worktree
+  Full package `ok` (0.338s); the three named tests + the battery all PASS; `go vet` clean; committed da111ffc on branch spacedock-ensign/contractlint-dangler-oracle-skill-idiom.
+
+### Summary
+
+Added a third, owner-specific resolution path to `referenceProsePointerDanglers`: a watched-section prose pointer now resolves when the same line names its owning skill via the `Skill(skill="spacedock:<owner>")` token nt introduced, closing the latent false-fail. Replaced `watchedSectionNames() []string` with `sectionOwners() map[string]string` as the single source of truth (keys = watched set, values = owner), keeping the single-scanner-drives-control property; both callers updated. The change is additive and monotonic, so it can only reduce danglers — real deferred-skill bodies stay green — while owner-specificity (verified by the wrong-owner row 5) prevents any `spacedock:` token from blanket-silencing a genuine dangler.
