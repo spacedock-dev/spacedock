@@ -93,7 +93,7 @@ One JSON object per line, appended when the FO is blocked by a captain-owned hos
 
 ## `_bridge/sessions/<actor_id>.json` — session→entity marker (RUNNING-badge source)
 
-Last-write (first-write-wins per host actor), one file per live working actor. The filename is the normalized `actor_id`: Claude main/ensign markers currently use the session id, while hosts that provide child ids can use a host-scoped composite such as `session_id.agent_id`. The marker maps that actor to the ship it is driving, so Bridge can render the deterministic live FO-vs-ensign RUNNING badge.
+First-write-wins per host actor, one file per live working actor. The filename is the normalized `actor_id`: Claude main/ensign markers currently use the session id, while hosts that provide child ids can use a host-scoped composite such as `session_id.agent_id`. The marker maps that actor to the ship it is driving, so Bridge can render the deterministic live FO-vs-ensign RUNNING badge.
 
 ```
 {"host":"<claude|codex|pi>","session_id":"<«session-id»>","agent_id":"<child id, when present>","actor_id":"<host-scoped actor id>","entity":"<slug>","workflow":"<workflow dir name>"}

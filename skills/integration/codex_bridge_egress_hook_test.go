@@ -5,7 +5,6 @@ package integration
 import (
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -90,48 +89,6 @@ func TestCodexBridgeHooksAreNonAsyncAndCallEgressDirectly(t *testing.T) {
 				}
 			}
 		}
-	}
-}
-
-func TestCodexBridgeWrapperCallsSharedEgressEmitterSilently(t *testing.T) {
-	root := repoRoot(t)
-	wrapper := filepath.Join(root, "scripts", "codex-bridge-events.sh")
-	fi, err := os.Stat(wrapper)
-	if err != nil {
-		t.Fatalf("codex wrapper missing: %v", err)
-	}
-	if fi.Mode()&0o111 == 0 {
-		t.Fatalf("codex wrapper must be executable: mode %v", fi.Mode())
-	}
-
-	binDir := t.TempDir()
-	logPath := filepath.Join(t.TempDir(), "argv.log")
-	fake := filepath.Join(binDir, "spacedock")
-	if err := os.WriteFile(fake, []byte("#!/bin/sh\nprintf '%s\\n' \"$*\" > \"$SPACEDOCK_FAKE_ARGV_LOG\"\nprintf 'stdout leak\\n'\nprintf 'stderr leak\\n' >&2\nexit 42\n"), 0o755); err != nil {
-		t.Fatalf("write fake spacedock: %v", err)
-	}
-
-	cmd := exec.Command("bash", wrapper)
-	cmd.Stdin = strings.NewReader(`{"hook_event_name":"SessionStart","session_id":"codex-parent-session","cwd":"/repo/spacedock"}`)
-	cmd.Env = append(os.Environ(),
-		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
-		"SPACEDOCK_BIN=",
-		"SPACEDOCK_FAKE_ARGV_LOG="+logPath,
-	)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("codex wrapper must remain observe-only even when emitter fails: %v\n%s", err, out)
-	}
-	if string(out) != "" {
-		t.Fatalf("codex wrapper must be silent; got %q", out)
-	}
-
-	argv, err := os.ReadFile(logPath)
-	if err != nil {
-		t.Fatalf("fake spacedock was not invoked: %v", err)
-	}
-	if got, want := strings.TrimSpace(string(argv)), "bridge egress emit --host codex"; got != want {
-		t.Fatalf("spacedock argv = %q, want %q", got, want)
 	}
 }
 

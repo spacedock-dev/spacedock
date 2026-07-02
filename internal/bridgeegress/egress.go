@@ -18,6 +18,9 @@ import (
 const (
 	defaultMaxLines  = 2000
 	defaultKeepLines = 1000
+	// maxScanLine raises bufio's 64KB default so a single oversized line can't
+	// make the size-cap trim bail (leaving events.jsonl to grow unbounded).
+	maxScanLine = 1 << 20
 )
 
 var safeIDPattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
@@ -246,6 +249,7 @@ func truncateEvents(path string, opts Options) {
 	}
 	var lines []string
 	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxScanLine)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}

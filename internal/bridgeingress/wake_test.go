@@ -264,6 +264,72 @@ func TestWakeMultipleTargetsCoalesceOneSession(t *testing.T) {
 	}
 }
 
+func TestWakeReclaimsStaleLock(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 7, 2, 12, 0, 0, 0, time.UTC)
+	writeInbox(t, root,
+		`{"id":"i1","ts":"2026-07-02T11:59:00Z","kind":"tell","target":"a"}`,
+	)
+	writeHeartbeat(t, root, "a", "session-a", now.Add(-time.Minute))
+
+	// A crashed wake left a lock behind; its mtime is far older than staleLockTTL.
+	lock := filepath.Join(root, "_bridge", ".wake-lock.codex")
+	if err := os.WriteFile(lock, []byte("999999\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-staleLockTTL - time.Minute)
+	if err := os.Chtimes(lock, old, old); err != nil {
+		t.Fatal(err)
+	}
+
+	var gotSession string
+	res := Wake(context.Background(), Options{
+		Host: "codex",
+		Root: root,
+		Now:  func() time.Time { return now },
+		Resume: func(_ context.Context, sessionID, _ string) error {
+			gotSession = sessionID
+			return nil
+		},
+	})
+
+	if res.Status != "woke" || gotSession != "session-a" {
+		t.Fatalf("result=%+v session=%q, want stale lock reclaimed and session woken", res, gotSession)
+	}
+}
+
+func TestWakeSkipsWhenFreshLockHeld(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 7, 2, 12, 0, 0, 0, time.UTC)
+	writeInbox(t, root,
+		`{"id":"i1","ts":"2026-07-02T11:59:00Z","kind":"tell","target":"a"}`,
+	)
+	writeHeartbeat(t, root, "a", "session-a", now.Add(-time.Minute))
+
+	// A live wake holds the lock (default mtime is now — well within the TTL).
+	dir := filepath.Join(root, "_bridge")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".wake-lock.codex"), []byte("12345\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	res := Wake(context.Background(), Options{
+		Host: "codex",
+		Root: root,
+		Now:  func() time.Time { return now },
+		Resume: func(context.Context, string, string) error {
+			t.Fatal("resume must not run while a fresh lock is held")
+			return nil
+		},
+	})
+
+	if res.Status != "locked" {
+		t.Fatalf("result = %+v, want locked", res)
+	}
+}
+
 func writeInbox(t *testing.T, root string, lines ...string) {
 	t.Helper()
 	dir := filepath.Join(root, "_bridge")

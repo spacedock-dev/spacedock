@@ -19,6 +19,17 @@ import (
 
 const liveWindow = 30 * time.Minute
 
+// maxScanLine raises the per-line scan limit above bufio's 64KB default. Bridge
+// control records are small, but a large captain intent must not make the scan
+// hard-fail (inbox) or silently stop short (replies/events).
+const maxScanLine = 1 << 20
+
+func lineScanner(f *os.File) *bufio.Scanner {
+	s := bufio.NewScanner(f)
+	s.Buffer(make([]byte, 0, 64*1024), maxScanLine)
+	return s
+}
+
 var safeSlugPattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 
 // ResumeFunc resumes a host session with the supplied prompt.
@@ -305,12 +316,33 @@ Run the Bridge inbox idle drain now for only those workflow slugs. Honor target_
 `, root, filepath.Join(root, "_bridge", "inbox.jsonl"), joinInts(w.Lines), strings.Join(w.Targets(), ","))
 }
 
+// staleLockTTL bounds how long a wake lock may persist before another wake may
+// reclaim it. A wake pass only starts resume processes and returns — it never
+// blocks on Codex — so it holds the lock for well under a second. A lock older
+// than this TTL was left by a crashed or killed wake that never ran its deferred
+// unlock; reclaiming it keeps a single failure from wedging durable delivery
+// permanently.
+const staleLockTTL = 5 * time.Minute
+
 func acquireLock(root string) (func(), bool) {
 	dir := filepath.Join(root, "_bridge")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return func() {}, false
 	}
 	path := filepath.Join(dir, ".wake-lock.codex")
+	if unlock, ok := takeLock(path); ok {
+		return unlock, true
+	}
+	// The lock exists. Reclaim it only if it is stale; otherwise another wake is
+	// genuinely running.
+	if info, err := os.Stat(path); err != nil || time.Since(info.ModTime()) <= staleLockTTL {
+		return func() {}, false
+	}
+	_ = os.Remove(path)
+	return takeLock(path)
+}
+
+func takeLock(path string) (func(), bool) {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		return func() {}, false
@@ -332,7 +364,7 @@ func readInbox(root string) ([]inboxRecord, error) {
 
 	var out []inboxRecord
 	lineNo := 0
-	scanner := bufio.NewScanner(f)
+	scanner := lineScanner(f)
 	for scanner.Scan() {
 		lineNo++
 		if strings.TrimSpace(scanner.Text()) == "" {
@@ -387,7 +419,7 @@ func loadReplies(root string) map[string]bool {
 		return out
 	}
 	defer f.Close()
-	scanner := bufio.NewScanner(f)
+	scanner := lineScanner(f)
 	for scanner.Scan() {
 		if strings.TrimSpace(scanner.Text()) == "" {
 			continue
@@ -484,16 +516,25 @@ func loadHeartbeatAnyAge(root, slug string) (heartbeat, bool) {
 }
 
 func resumableSessionID(root, slug string) (string, bool) {
-	if hb, ok := loadHeartbeatAnyAge(root, slug); ok && strings.TrimSpace(hb.SessionID) != "" {
-		return strings.TrimSpace(hb.SessionID), true
+	if hb, ok := loadHeartbeatAnyAge(root, slug); ok {
+		if id := strings.TrimSpace(hb.SessionID); safeSessionID(id) {
+			return id, true
+		}
 	}
-	if sessionID, ok := sessionIDFromMarkers(root, slug); ok {
+	if sessionID, ok := sessionIDFromMarkers(root, slug); ok && safeSessionID(sessionID) {
 		return sessionID, true
 	}
-	if sessionID, ok := latestCodexEventSession(root); ok {
+	if sessionID, ok := latestCodexEventSession(root); ok && safeSessionID(sessionID) {
 		return sessionID, true
 	}
 	return "", false
+}
+
+// safeSessionID guards a session id read from _bridge/ state before it becomes a
+// codex argv positional, so a poisoned marker/heartbeat/event line cannot inject
+// a leading-dash token that codex would parse as a flag.
+func safeSessionID(s string) bool {
+	return s != "" && s != "." && s != ".." && safeSlugPattern.MatchString(s)
 }
 
 func sessionIDFromMarkers(root, slug string) (string, bool) {
@@ -535,7 +576,7 @@ func latestCodexEventSession(root string) (string, bool) {
 	}
 	defer f.Close()
 	var best eventRecord
-	scanner := bufio.NewScanner(f)
+	scanner := lineScanner(f)
 	for scanner.Scan() {
 		var rec eventRecord
 		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
