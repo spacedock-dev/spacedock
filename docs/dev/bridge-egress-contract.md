@@ -89,7 +89,7 @@ One JSON object per line, appended when the FO is blocked by a captain-owned hos
 - `command` is a concise command summary, not a secret-bearing shell transcript.
 - `prefix_rule` is optional and present only when the FO has a narrowly scoped reusable approval to propose.
 - Bridge overlays a later inbox `permission-decision` record for the same `request_id` to show approved/denied state; the alert file itself remains append-only.
-- → **All hosts (host-neutral producer):** the FO writes this through `spacedock bridge alert permission ...`. The helper returns `{"id":"...","queued":true}` and appends one line to `_bridge/fo-alerts.jsonl`.
+- → **All hosts (host-neutral producer):** the FO writes this through `spacedock bridge alert permission ...`. The helper returns `{"id":"...","request_id":"...","queued":true}` and appends one line to `_bridge/fo-alerts.jsonl`. If the helper cannot queue the alert, it still exits without blocking the FO command and returns `{"queued":false,"error":"..."}`.
 
 ## `_bridge/sessions/<actor_id>.json` — session→entity marker (RUNNING-badge source)
 

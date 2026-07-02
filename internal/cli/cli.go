@@ -490,17 +490,12 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 				return nil
 			}
 			if len(args) >= 2 && args[0] == "alert" && args[1] == "permission" {
-				result, err := bridgealert.AppendPermission(bridgealert.PermissionOptions{
-					Root:       parseBridgeStringFlag(args[2:], "--repo-root", dir),
-					ID:         parseBridgeStringFlag(args[2:], "--id", ""),
-					Workflow:   parseBridgeStringFlag(args[2:], "--workflow", ""),
-					Entity:     parseBridgeStringFlag(args[2:], "--entity", ""),
-					Host:       parseBridgeHost(args[2:]),
-					SessionID:  parseBridgeStringFlag(args[2:], "--session-id", ""),
-					Reason:     parseBridgeStringFlag(args[2:], "--reason", ""),
-					Command:    parseBridgeStringFlag(args[2:], "--command", ""),
-					PrefixRule: parseBridgeCSVFlag(args[2:], "--prefix-rule"),
-				})
+				opts, parseErr := parseBridgeAlertPermission(args[2:], dir)
+				if parseErr != "" {
+					_ = json.NewEncoder(cmd.OutOrStdout()).Encode(bridgealert.Result{Queued: false, Error: parseErr})
+					return nil
+				}
+				result, err := bridgealert.AppendPermission(opts)
 				if err != nil {
 					return err
 				}
@@ -510,6 +505,46 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func parseBridgeAlertPermission(args []string, fallbackRoot string) (bridgealert.PermissionOptions, string) {
+	opts := bridgealert.PermissionOptions{Root: fallbackRoot}
+	for i := 0; i < len(args); i++ {
+		key, value, inline := strings.Cut(args[i], "=")
+		if !strings.HasPrefix(key, "--") {
+			return opts, "unexpected positional argument: " + args[i]
+		}
+		if !inline {
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "--") {
+				return opts, "missing value for " + key
+			}
+			i++
+			value = args[i]
+		}
+		switch key {
+		case "--repo-root":
+			opts.Root = value
+		case "--id":
+			opts.ID = value
+		case "--workflow":
+			opts.Workflow = value
+		case "--entity":
+			opts.Entity = value
+		case "--host":
+			opts.Host = value
+		case "--session-id":
+			opts.SessionID = value
+		case "--reason":
+			opts.Reason = value
+		case "--command":
+			opts.Command = value
+		case "--prefix-rule":
+			opts.PrefixRule = csvParts(value)
+		default:
+			return opts, "unknown flag: " + key
+		}
+	}
+	return opts, ""
 }
 
 func parseBridgeHost(args []string) string {
@@ -541,6 +576,10 @@ func parseBridgeCSVFlag(args []string, name string) []string {
 	if raw == "" {
 		return nil
 	}
+	return csvParts(raw)
+}
+
+func csvParts(raw string) []string {
 	parts := strings.Split(raw, ",")
 	out := make([]string, 0, len(parts))
 	for _, part := range parts {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -29,6 +30,9 @@ func TestAppendPermissionWritesAlert(t *testing.T) {
 	if got.ID != "perm-1" || !got.Queued {
 		t.Fatalf("result = %+v", got)
 	}
+	if got.RequestID != "perm-1" {
+		t.Fatalf("request id = %q, want alias", got.RequestID)
+	}
 	data, err := os.ReadFile(filepath.Join(root, "_bridge", "fo-alerts.jsonl"))
 	if err != nil {
 		t.Fatal(err)
@@ -48,8 +52,56 @@ func TestAppendPermissionWritesAlert(t *testing.T) {
 	}
 }
 
-func TestAppendPermissionRequiresReason(t *testing.T) {
-	if _, err := AppendPermission(PermissionOptions{Root: t.TempDir()}); err == nil {
-		t.Fatal("expected missing reason to fail")
+func TestAppendPermissionMissingReasonIsNonBlocking(t *testing.T) {
+	got, err := AppendPermission(PermissionOptions{Root: t.TempDir(), ID: "perm-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Queued || got.Error == "" {
+		t.Fatalf("result = %+v, want non-queued error result", got)
+	}
+}
+
+func TestAppendPermissionWriteFailureIsNonBlocking(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "_bridge"), []byte("not a dir"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := AppendPermission(PermissionOptions{Root: root, ID: "perm-1", Reason: "sandbox blocked"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Queued || got.Error == "" {
+		t.Fatalf("result = %+v, want non-queued error result", got)
+	}
+}
+
+func TestAppendPermissionNormalizesOneLineSummaries(t *testing.T) {
+	root := t.TempDir()
+	got, err := AppendPermission(PermissionOptions{
+		Root:    root,
+		ID:      "perm-1",
+		Reason:  "sandbox\nblocked\tstate gitdir",
+		Command: "git status\n" + strings.Repeat("x", 800),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Queued {
+		t.Fatalf("result = %+v, want queued", got)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "_bridge", "fo-alerts.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var alert PermissionAlert
+	if err := json.Unmarshal(bytes.TrimSpace(data), &alert); err != nil {
+		t.Fatal(err)
+	}
+	if alert.Reason != "sandbox blocked state gitdir" {
+		t.Fatalf("reason = %q", alert.Reason)
+	}
+	if strings.ContainsAny(alert.Command, "\n\t") || len(alert.Command) > maxCommandLen {
+		t.Fatalf("command = %q len=%d", alert.Command, len(alert.Command))
 	}
 }

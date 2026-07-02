@@ -36,13 +36,14 @@ func TestBridgeAlertPermissionHiddenCLIWritesAlert(t *testing.T) {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 	var result struct {
-		ID     string `json:"id"`
-		Queued bool   `json:"queued"`
+		ID        string `json:"id"`
+		RequestID string `json:"request_id"`
+		Queued    bool   `json:"queued"`
 	}
 	if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &result); err != nil {
 		t.Fatalf("stdout JSON: %v\n%s", err, stdout.String())
 	}
-	if result.ID != "perm-1" || !result.Queued {
+	if result.ID != "perm-1" || result.RequestID != "perm-1" || !result.Queued {
 		t.Fatalf("result = %+v", result)
 	}
 	data, err := os.ReadFile(filepath.Join(root, "_bridge", "fo-alerts.jsonl"))
@@ -52,5 +53,40 @@ func TestBridgeAlertPermissionHiddenCLIWritesAlert(t *testing.T) {
 	if !strings.Contains(string(data), `"reason":"sandbox blocked state gitdir"`) ||
 		!strings.Contains(string(data), `"prefix_rule":["git","-C"]`) {
 		t.Fatalf("alert file missing fields:\n%s", data)
+	}
+}
+
+func TestBridgeAlertPermissionHiddenCLIRejectsMissingFlagValueWithoutFailing(t *testing.T) {
+	root := t.TempDir()
+	var stdout, stderr bytes.Buffer
+
+	code := run(context.Background(),
+		[]string{
+			"bridge", "alert", "permission",
+			"--repo-root", root,
+			"--id", "perm-1",
+			"--reason",
+			"--command", "git status",
+		},
+		nil, filepath.Join(root, "elsewhere"), strings.NewReader(""), &stdout, &stderr, &fakeRunner{}, nil)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, stderr=%q", code, stderr.String())
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	var result struct {
+		Queued bool   `json:"queued"`
+		Error  string `json:"error"`
+	}
+	if err := json.Unmarshal(bytes.TrimSpace(stdout.Bytes()), &result); err != nil {
+		t.Fatalf("stdout JSON: %v\n%s", err, stdout.String())
+	}
+	if result.Queued || !strings.Contains(result.Error, "missing value for --reason") {
+		t.Fatalf("result = %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "fo-alerts.jsonl")); !os.IsNotExist(err) {
+		t.Fatalf("alert file err = %v, want not exist", err)
 	}
 }
