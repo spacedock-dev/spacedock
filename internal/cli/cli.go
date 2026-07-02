@@ -14,6 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/spacedock-dev/spacedock/internal/bridgealert"
 	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
 	"github.com/spacedock-dev/spacedock/internal/bridgeingress"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
@@ -463,11 +464,11 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 }
 
 // newBridgeCommand is a hidden Bridge-facing surface. Egress stays silent and
-// no-op-safe because it is observe-only telemetry; ingress wake prints a compact
-// JSON result that Bridge can surface without knowing Codex internals.
+// no-op-safe because it is observe-only telemetry; ingress wake and alert writes
+// print compact JSON results that Bridge can surface without knowing host internals.
 func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 	return &cobra.Command{
-		Use:                "bridge egress emit --host <host> | ingress wake --host codex",
+		Use:                "bridge egress emit --host <host> | ingress wake --host codex | alert permission",
 		Hidden:             true,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -485,6 +486,24 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 					Members:  parseBridgeCSVFlag(args[2:], "--members"),
 					CodexBin: parseBridgeStringFlag(args[2:], "--codex-bin", ""),
 				})
+				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+				return nil
+			}
+			if len(args) >= 2 && args[0] == "alert" && args[1] == "permission" {
+				result, err := bridgealert.AppendPermission(bridgealert.PermissionOptions{
+					Root:       parseBridgeStringFlag(args[2:], "--repo-root", dir),
+					ID:         parseBridgeStringFlag(args[2:], "--id", ""),
+					Workflow:   parseBridgeStringFlag(args[2:], "--workflow", ""),
+					Entity:     parseBridgeStringFlag(args[2:], "--entity", ""),
+					Host:       parseBridgeHost(args[2:]),
+					SessionID:  parseBridgeStringFlag(args[2:], "--session-id", ""),
+					Reason:     parseBridgeStringFlag(args[2:], "--reason", ""),
+					Command:    parseBridgeStringFlag(args[2:], "--command", ""),
+					PrefixRule: parseBridgeCSVFlag(args[2:], "--prefix-rule"),
+				})
+				if err != nil {
+					return err
+				}
 				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
 				return nil
 			}

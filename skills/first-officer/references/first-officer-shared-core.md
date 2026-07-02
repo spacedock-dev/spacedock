@@ -225,6 +225,16 @@ Ask the human before dispatch when requirements are materially ambiguous, a desi
 
 Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. Report state once on idle or at a gate, not repeatedly while waiting.
 
+## Permission Blocks and Bridge Alerts
+
+When a host sandbox or permission boundary blocks a workflow action that would otherwise be valid to attempt, surface it as a top-level Bridge alert before parking the loop. Use the hidden helper from the repo root:
+
+```
+spacedock bridge alert permission --host <host> --workflow <workflow-slug> --entity <entity-slug> --reason "<one-line reason>" --command "<command summary>" [--prefix-rule "git,-C"]
+```
+
+The helper appends `_bridge/fo-alerts.jsonl`, which Bridge renders as an Approve/Deny alert. A Bridge `permission-decision` inbox record with the returned `request_id` is the typed captain response: `deny` leaves the action blocked, `approve-once` retries the exact blocked action once through the runtime's escalation path, and `approve-rule` retries with the proposed reusable prefix rule when one was present. This is an FO intent signal, not a bypass of host-native security; if the host still presents its own approval prompt, honor that prompt normally.
+
 ## Working Principles
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.

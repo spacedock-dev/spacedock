@@ -65,16 +65,31 @@ One JSON object per line, appended when the FO dispatches, advances, or complete
 One JSON object per line, appended after the FO has interpreted, accepted, or applied an inbox intent. This is the explanatory reply/ack stream for Bridge's conversation loop; the per-workflow inbox cursor remains the delivery/read source of truth. Duplicate replies are allowed under at-least-once replay; Bridge folds them by intent id (or legacy line fallback), acknowledging target, and reply kind. The stream is best-effort explanatory content, not an exactly-once delivery ledger.
 
 ```
-{"schema":1,"ts":"<rfc3339 UTC>","kind":"<reply|conn-ack|decision-ack>","target":"<acknowledging workflow slug>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"<tell|conn|decision>","status":"<answered|accepted|released|applied|rejected|blocked>","text":"optional one-line note","granted":true,"entity":"...","field":"...","value":"...","session_id":"optional","host":"optional"}
+{"schema":1,"ts":"<rfc3339 UTC>","kind":"<reply|conn-ack|decision-ack|permission-ack>","target":"<acknowledging workflow slug>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"<tell|conn|decision|permission-decision>","status":"<answered|accepted|released|applied|denied|rejected|blocked>","text":"optional one-line note","granted":true,"entity":"...","field":"...","value":"...","request_id":"...","session_id":"optional","host":"optional"}
 ```
 
 - `target` is the actual acknowledging workflow slug, never `all`.
 - `in_reply_to_line` is the physical line number in `_bridge/inbox.jsonl` that produced the ack.
-- `kind`: `reply` for `tell`, `conn-ack` for `conn`, `decision-ack` for `decision`.
-- `status`: `answered` for a handled `tell`; `accepted` when the FO adopts a conn grant; `released` when the FO gives the conn back; `applied` when a decision field value is present and gate resolution finished or was already satisfied; `blocked` when a valid intent could not finish; `rejected` when an intent is invalid or unresolvable.
-- Echo `granted`, `entity`, `field`, and `value` when present and relevant to the intent. Keep `text` one line.
+- `kind`: `reply` for `tell`, `conn-ack` for `conn`, `decision-ack` for `decision`, `permission-ack` for `permission-decision`.
+- `status`: `answered` for a handled `tell`; `accepted` when the FO adopts a conn grant or accepts a permission retry; `released` when the FO gives the conn back; `applied` when a decision field value is present and gate resolution finished or was already satisfied; `denied` when the captain rejects a permission request; `blocked` when a valid intent could not finish; `rejected` when an intent is invalid or unresolvable.
+- Echo `granted`, `entity`, `field`, `value`, and `request_id` when present and relevant to the intent. Keep `text` one line.
 - Append-only and best-effort: write one complete newline-terminated JSON object in one append operation, and never rewrite `fo-replies.jsonl`.
 - → **All hosts (host-neutral producer):** the `bridge-inbox` mod appends replies/acks while draining `_bridge/inbox.jsonl`.
+
+## `_bridge/fo-alerts.jsonl` — top-level FO alerts
+
+One JSON object per line, appended when the FO is blocked by a captain-owned host decision that should surface above ordinary chat replies. The first producer is the sandbox permission path: when a command cannot proceed because the host needs approval, the FO writes an open permission request before waiting for a decision.
+
+```
+{"schema":1,"id":"perm_<opaque>","ts":"<rfc3339 UTC>","kind":"permission-request","severity":"blocked","workflow":"<workflow slug>","entity":"<entity slug>","host":"<claude|codex|pi>","session_id":"<«session-id»>","reason":"<one-line reason>","command":"<command summary>","prefix_rule":["git","-C"],"status":"open"}
+```
+
+- `id` is the stable join key for the captain's response.
+- `workflow` and `entity` scope the alert for fleet UI routing; `entity` may be empty when the block happens before an entity is selected.
+- `command` is a concise command summary, not a secret-bearing shell transcript.
+- `prefix_rule` is optional and present only when the FO has a narrowly scoped reusable approval to propose.
+- Bridge overlays a later inbox `permission-decision` record for the same `request_id` to show approved/denied state; the alert file itself remains append-only.
+- → **All hosts (host-neutral producer):** the FO writes this through `spacedock bridge alert permission ...`. The helper returns `{"id":"...","queued":true}` and appends one line to `_bridge/fo-alerts.jsonl`.
 
 ## `_bridge/sessions/<actor_id>.json` — session→entity marker (RUNNING-badge source)
 
