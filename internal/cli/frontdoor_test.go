@@ -541,6 +541,136 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	}
 }
 
+// TestGateHostStaysSilentForTooOldPlugin mirrors the existing NoPluginFound
+// silence test for D6's second healable verdict: gateHost must NOT print the
+// mismatch remedy for too-old-plugin (the caller decides between the auto-heal
+// announcement and the --no-install remedy; a print here would show the
+// operator a scary message right before the silent heal).
+func TestGateHostStaysSilentForTooOldPlugin(t *testing.T) {
+	var stderr bytes.Buffer
+	res := gateHost(&fakeHost{manifest: tooOldPluginManifest(t)}, "claude", &stderr)
+	if res.Verdict != contract.TooOldPlugin {
+		t.Fatalf("gateHost verdict = %v, want TooOldPlugin", res.Verdict)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("gateHost printed for TooOldPlugin (the caller owns the message, D6): %q", stderr.String())
+	}
+}
+
+// TestFrontDoorTooOldPluginAutoRefreshes is D6's default-arm proof for both
+// front doors: a too-old-plugin verdict announces "Refreshing the {host}
+// plugin…" (not "Installing…" — no plugin was missing, one is just behind),
+// installs, re-gates ONCE, and on success proceeds to launch — mirroring the
+// NoPluginFound auto-install arm but for the SECOND healable verdict.
+func TestFrontDoorTooOldPluginAutoRefreshes(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tooOldPluginManifest(t), manifestAfterInstall: compatibleManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run(nil, t.TempDir(), fake, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (auto-refresh + re-gate + launch) (stderr=%q)", code, stderr.String())
+			}
+			want := "Refreshing the " + tc.host + " plugin"
+			if !strings.Contains(stderr.String(), want) {
+				t.Fatalf("stderr missing %q announcement: %q", want, stderr.String())
+			}
+			if strings.Contains(stderr.String(), "Spacedock version mismatch") {
+				t.Fatalf("stderr shows the scary mismatch remedy before the silent heal (D6 forbids it): %q", stderr.String())
+			}
+			if len(fake.installCmds) == 0 {
+				t.Fatalf("install seam not invoked: auto-refresh did not run")
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked after auto-refresh")
+			}
+		})
+	}
+}
+
+// TestFrontDoorTooOldPluginNoInstallRefuses is D6's --no-install refuse arm:
+// with a too-old-plugin verdict and --no-install, the launcher refuses with the
+// gate's own mismatch remedy (not the no-plugin remedy — a stale plugin is a
+// different situation), installs nothing, and never launches.
+func TestFrontDoorTooOldPluginNoInstallRefuses(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tooOldPluginManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run([]string{"--no-install"}, t.TempDir(), fake, &stderr)
+
+			if code == 0 {
+				t.Fatalf("exit = 0, want non-zero with --no-install on a too-old-plugin verdict")
+			}
+			if !strings.Contains(stderr.String(), "Update the plugin to continue.") {
+				t.Fatalf("stderr missing the too-old-plugin remedy: %q", stderr.String())
+			}
+			if len(fake.installCmds) != 0 {
+				t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
+			}
+			if fake.launchedArg != nil {
+				t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
+			}
+		})
+	}
+}
+
+// TestFrontDoorTooOldPluginSecondMissRefuses is D6's "one retry, no loop"
+// guarantee: when the auto-refresh install does NOT fix the resolution (a
+// release-window race, a stale channel — modeled here by a fakeHost whose
+// manifest never changes after Install), the launcher refuses rather than
+// launching blind, and Install is called exactly ONCE (no retry loop).
+func TestFrontDoorTooOldPluginSecondMissRefuses(t *testing.T) {
+	fake := &fakeHost{manifest: tooOldPluginManifest(t)} // manifestAfterInstall unset: install does not fix it
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code == 0 {
+		t.Fatalf("exit = 0, want non-zero when the refresh does not fix the mismatch")
+	}
+	if len(fake.installCmds) != 3 { // one Install call records {host, source, branch}
+		t.Fatalf("install seam called %v, want exactly one Install invocation (no retry loop)", fake.installCmds)
+	}
+	if fake.launchedArg != nil {
+		t.Fatalf("launch seam invoked despite the persisted mismatch: %v", fake.launchedArg)
+	}
+	if !strings.Contains(stderr.String(), "Update the plugin to continue.") {
+		t.Fatalf("stderr missing the second-miss remedy: %q", stderr.String())
+	}
+}
+
 // TestNoPluginAutoInstallAnnouncesHostCorrectly (AC-A, auto-install arm): with
 // no installed plugin the launcher announces `Installing the {host} plugin…` on
 // stderr before installing, and a codex run never names `claude` (the old
