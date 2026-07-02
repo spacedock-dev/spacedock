@@ -1,10 +1,11 @@
 ---
 title: Replace the contract-integer compatibility gate with minor-version coupling (self-maintaining skill↔binary compat)
-status: ideation
+status: implementation
 score: 0.6
 source: "captain proposal during the 0.23.0 cut (2026-06-22). The contract integer stayed dead at 1 across 0.20/0.22/0.23 and was never bumped when the interface broke (the v0.23.0 skill-skew bug). contract-version-bump-v2 (7h3) is the tactical integer bump this would replace."
 id: kr7s9efxas4fqhtcj94fs4br
 started: 2026-07-02T09:55:07Z
+worktree: .worktrees/spacedock-ensign-minor-version-compat-coupling
 ---
 
 Replace the manual contract-integer gate (binary reports `contract <N>`; plugin declares `requires-contract: >=X,<Y`) with minor-version coupling: 0.X.* skills require a >=0.X.0 binary (same-minor compatible; patches interchangeable). The integer is a hand-maintained value that got forgotten across three minors — minor-coupling moves the floor automatically each release, so the skill-skew class (old binary + new skills booting clean, then breaking on missing verbs) cannot recur across minors (within-minor prerelease skew is an accepted residual — see D1).
