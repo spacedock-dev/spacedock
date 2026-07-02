@@ -27,6 +27,8 @@ Recommended reuse fix: replace broad concept-plus-negation matching with an expl
 
 Recommended PR-state fix: make boot and sweep consume the same effective `gh pr view` contract in tests and production. The smallest durable option is to share a helper or teach `GhRunnerExec` to request the same `--jq .state` plain state that `status --boot` already uses, because then the existing shallow-boot stub models one real command shape. If changing `GhRunnerExec` is risky for other callers, the fallback is a dual-shape stub plus a parity test proving boot and sweep agree under both plain and JSON outputs. The task is not complete if it only changes the live fixture without an offline parity test; that would leave the next probe-shape drift unpinned.
 
+Coordination update: checked `s0`/`s05`, the active task `error-path-guidance-in-binary-output` on PR #465. Its branch `spacedock-ensign/error-path-guidance-in-binary-output` already contains the shallow-boot probe-shape fix in commit `868fd10f` ("Feedback cycle 2: fix ghRunnerExec to parse the --jq .state shape, not a JSON envelope"). In that worktree, `GhRunnerExec` calls `gh pr view PR --json state --jq .state`, returns trimmed uppercase text, and `internal/dispatch/sweep_test.go` includes `TestGhRunnerExecParsesJqExtractedState` plus `TestSweepWithRealGhStubDoesNotReportUnknown`. The same branch still has the old `codexNarrationNegatesReuseRoute` broad concept-plus-negation detector, so it does not cover the reuse-characterization false red. If `s0` lands first, `mq` should not re-implement the PR-state fix; it should verify/reuse those tests and focus new code on the Codex reuse narration classifier. If `s0` is not yet on the target branch, `mq` should either depend on/rebase over `s0` or explicitly import the same small `GhRunnerExec` parity patch after coordination.
+
 Riskiest path spike: before implementation chooses the mechanism, add or sketch a tiny local harness that runs the same workflow with a stub `gh` that emits plain `MERGED`, then exercises both `status --boot --json` and `state sweep --json`. Record the current failing observation (boot entry state `MERGED`, sweep `swept=[]` or UNKNOWN reason) and make that the first red test. No external GitHub access is needed.
 
 Documentation impact: none expected. This is harness/internal command-surface behavior, not a user-facing CLI output change. If implementation changes `state sweep` JSON/text output or documented `gh` expectations, update this task before coding the docs.
@@ -42,7 +44,7 @@ Documentation impact: none expected. This is harness/internal command-surface be
   Test: a focused offline test reports three captured false-positive transcripts accepted and at least two negative controls rejected: fresh cycle-2 validation spawn masquerading as reuse, and uncorrelated `send_input` to a non-validation thread. This is the measured value for the task: the false-red corpus moves from >0 failures to 0 without moving the true-red controls to 0.
 
 - AC-4: `status --boot` and `state sweep` agree on the same stubbed merged PR state.
-  Test: an offline parity test builds a split-root shallow-boot-style workflow with a PR-bearing non-terminal entity and one `gh` stub. With the stub reporting `MERGED`, `status --boot --json` exposes `pr_state.status=="ok"` and an entry state of `MERGED`; `state sweep --json` reports exactly one swept entity for the same PR. The test must fail on the observed split where boot reads plain `MERGED` but sweep expects JSON.
+  Test: an offline parity test builds a split-root shallow-boot-style workflow with a PR-bearing non-terminal entity and one `gh` stub. With the stub reporting `MERGED`, `status --boot --json` exposes `pr_state.status=="ok"` and an entry state of `MERGED`; `state sweep --json` reports exactly one swept entity for the same PR. The test must fail on the observed split where boot reads plain `MERGED` but sweep expects JSON. If `s0`/commit `868fd10f` is already merged into the target branch, this AC is satisfied by verifying its two `internal/dispatch/sweep_test.go` regressions rather than adding duplicate tests.
 
 - AC-5: The shallow-boot durable archive assertion covers the PR-state parity path.
   Test: the codex/host-neutral shallow-boot fixture uses the parity-safe stub and `assertShallowBoot` observes the merged-PR entity terminalized, `verdict: PASSED`, `mod-block:` cleared, and archived before the greet. The gate entity remains unchanged and unarchived, with no worktree created.
@@ -54,7 +56,7 @@ Documentation impact: none expected. This is harness/internal command-surface be
 1. Add focused red fixtures for `codexNarrationNegatesReuseRoute`/`assertCodexReviewerReuse` before changing the detector. Keep the fixtures as complete JSONL snippets, not prose-only string searches, so they exercise the branch that failed live.
 2. Update the detector with the smallest explicit-absence matcher that preserves all current true-absence rows. Run `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse'`.
 3. Add a boot/sweep parity test near `internal/status/live_prstate_pin_test.go`, `internal/dispatch/sweep_test.go`, or a small cross-package CLI-level test if needed. Prefer a CLI-level test because the failure is between two command surfaces, not inside only one package.
-4. Choose the PR-state mechanism: shared `gh` helper / `GhRunnerExec` using `--jq .state` is preferred; dual-shape fixture support is acceptable only with a parity test that would fail if either command drifts again. Run the focused parity test and `go test ./internal/status ./internal/dispatch ./internal/cli`.
+4. Check whether `s0`/PR #465's commit `868fd10f` is already present. If present, run its `GhRunnerExec`/sweep regression tests and treat AC-4/AC-5 as dependency verification; if absent, coordinate with `s0` before copying the same `--jq .state` parity patch into `mq`. Run the focused parity test and `go test ./internal/status ./internal/dispatch ./internal/cli`.
 5. Run `go test ./internal/ensigncycle` for shared assertion coverage, then `go test ./...` as the implementation gate.
 6. Run one codex-live confirmation for `rejection-flow` and `shallow-boot` after offline tests pass. Preserve durable evidence: process exit, artifact path/run ID, entity/archive state for shallow-boot, and the reuse assertion result for rejection-flow.
 
@@ -70,3 +72,16 @@ Documentation impact: none expected. This is harness/internal command-surface be
 ### Summary
 
 The task body now treats PR #464's reuse-characterization failure and PR #465's reuse plus shallow-boot failures as one harness-stability scope. The proposed approach favors offline fixtures first, pins the exact false-positive narrations and PR-state probe-shape split, and leaves one codex-live run as field confirmation rather than primary proof.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Check whether task `s0` or its branch/artifacts already contain a relevant fix.
+  `s0` resolves to `s05` / `error-path-guidance-in-binary-output`; branch `spacedock-ensign/error-path-guidance-in-binary-output` is clean at `868fd10f` and contains the `GhRunnerExec --jq .state` fix plus two sweep regressions.
+- DONE: Keep the original `mq` ideation scope while accounting for `s0`.
+  Added the coordination update: shallow-boot parity is dependency/verification work if `s0` lands first; the remaining new implementation is the Codex reuse narration classifier, which `s0` still leaves unchanged.
+- DONE: Preserve behavior-first ACs without proposing duplicate implementation work.
+  AC-4 and Test plan step 4 now direct implementers to verify/reuse `s0`'s regressions when present, or coordinate before importing the same patch.
+
+### Summary
+
+The amendment narrows duplicate-work risk without dropping the PR #465 shallow-boot requirement from the task. `mq` remains the combined false-red task, but the recommended path is now reuse-characterization code plus integration verification of `s0`'s shallow-boot `GhRunnerExec` fix when that branch is available.
