@@ -123,6 +123,14 @@ func TestMergePrDefaultNoSentinelStillRefuses(t *testing.T) {
 	if !strings.Contains(errOut, "cannot advance to terminal") {
 		t.Fatalf("stderr should name the merge-hook refusal, got %q", errOut)
 	}
+	// D4: the refusal tail warns instead of inviting --force, and names the re-run
+	// remedy; the "cannot advance to terminal" HEAD (asserted above) is unchanged.
+	if !strings.Contains(errOut, "(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard 020-no-sentinel instead.)") {
+		t.Fatalf("stderr should carry the D4 reworded tail, got %q", errOut)
+	}
+	if strings.Contains(errOut, "or use --force to bypass") {
+		t.Fatalf("stderr must not invite bare --force anymore, got %q", errOut)
+	}
 	if out != "" {
 		t.Fatalf("stdout must be empty on rejection, got %q", out)
 	}

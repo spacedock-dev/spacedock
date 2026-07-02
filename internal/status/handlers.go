@@ -164,8 +164,9 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 				reason = "mod-block transition"
 			}
 			return errExit(stderr, fmt.Sprintf(
-				"entity %s has %s. Clear mod-block in a separate --set call, or use --force.",
-				slug, reason))
+				"entity %s has %s. Clear mod-block in a separate --set call. "+
+					"(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard %s instead.)",
+				slug, reason, slug))
 		}
 	}
 
@@ -205,8 +206,9 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 		if len(mergeHooks) > 0 {
 			return errExit(stderr, fmt.Sprintf(
 				"entity %s cannot advance to terminal — workflow has merge hook(s) [%s] that have not run "+
-					"(pr field is empty and mod-block is empty). Set mod-block=merge:%s and invoke the hook, or use --force to bypass.",
-				slug, strings.Join(mergeHooks, ", "), mergeHooks[0]))
+					"(pr field is empty and mod-block is empty). Set mod-block=merge:%s and invoke the hook. "+
+					"(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard %s instead.)",
+				slug, strings.Join(mergeHooks, ", "), mergeHooks[0], slug))
 		}
 	}
 
