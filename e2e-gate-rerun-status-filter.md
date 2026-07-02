@@ -6,6 +6,7 @@ source: "v0.23.0 stable cut, 2026-06-30. The release e2e-gate blocked the cut: g
 id: q3v95nmwkwh656p5m6rhher1
 started: 2026-07-02T01:23:59Z
 worktree: .worktrees/spacedock-ensign-e2e-gate-rerun-status-filter
+mod-block: merge:pr-merge
 ---
 
 The release e2e-gate's `gh run list` query uses `--status success`. At the v0.23.0 cut this filter returned `[]` for a run that had been re-run to green minutes earlier (run_attempt 2, overall `conclusion: success` on the tagged SHA), while the same query WITHOUT `--status` returned that run with conclusion=success — so the gate blocked a genuinely green matrix and goreleaser was skipped. This directly contradicts the proof-policy / handoff guidance to "re-run the failed lane to green, never block the tag". A 2026-07-02 re-exercise (see Spike determination) shows the filter later catches up, so the trap is a consistency window right after a re-run flips a run to green — exactly the window in which a blocked cut gets retried.
