@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // Offline table tests for the host-specific reviewer-reuse assertions. They prove
 // each assertion requires a REAL reuse tool call targeting the validation reviewer
@@ -310,4 +313,66 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsAdvanceModeValidationReroute(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("The Codex runtime has a reusable worker route (`followup_task`), so I will keep the cycle-1 validation reviewer addressable."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file rework.checklist --feedback-context-file rework.feedback --feedback-reflow --advance`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --advance`),
+		codexAgentMessageLine("The validation re-review assignment is ready. I am routing it to the kept-alive cycle-1 validation reviewer now."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("Codex 0.142 live transcript with --advance validation re-review should pass: %v", err)
+	}
+
+	noValidationAdvance := strings.Replace(jsonl, " --stage validation --checklist-file validation-cycle2.checklist --advance", " --stage validation --checklist-file validation-cycle2.checklist", 1)
+	if err := assertCodexReviewerReuse(noValidationAdvance); err == nil {
+		t.Fatal("expected transcript without validation --advance re-review to fail")
+	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsLiveAdvanceModeReuseNarration(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("The Codex runtime has `followup_task`, so the cycle-1 validation reviewer is reusable if it remains addressable."),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle1.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle1.checklist`),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle2.checklist --feedback-context-file cycle1-feedback.txt --feedback-reflow --advance`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle2.checklist --feedback-context-file cycle1-feedback.txt --feedback-reflow --advance`),
+		codexWaitLine(),
+		codexAgentMessageLine("The rework satisfies its checklist: 1 done, 0 skipped, 0 failed, and the standalone fix marker is present. I'm advancing back to validation and reusing the kept-alive cycle-1 validation reviewer for the second-cycle re-review."),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --feedback-context-file cycle2-review.txt --advance`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --feedback-context-file cycle2-review.txt --advance`),
+		codexAgentMessageLine("The second-cycle validation transition is committed. I'm sending the re-review to the kept-alive validation reviewer, which keeps the fix worker separate from the reviewer."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("Codex live advance-mode reuse narration should pass: %v", err)
+	}
+}
+
+func codexAgentMessageLine(text string) string {
+	return `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(text) + `}}`
+}
+
+func codexCommandLine(command string) string {
+	return `{"type":"item.completed","item":{"type":"command_execution","command":` + mustJSONString(command) + `,"status":"completed","exit_code":0}}`
+}
+
+func codexCommandStartedLine(command string) string {
+	return `{"type":"item.started","item":{"type":"command_execution","command":` + mustJSONString(command) + `,"status":"in_progress"}}`
+}
+
+func codexWaitLine() string {
+	return `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait","receiver_thread_ids":[],"status":"completed"}}`
 }

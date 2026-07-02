@@ -314,6 +314,9 @@ func assertCodexReviewerReuse(jsonl string) error {
 	}
 
 	if validationSpawnCount == 0 {
+		if codexReviewerReuseViaAdvanceCommands(jsonl) {
+			return nil
+		}
 		return fmt.Errorf("no validation spawn_agent found — the FO never created a cycle-1 reviewer to reuse")
 	}
 	if validationSpawnCount > 1 {
@@ -343,6 +346,85 @@ func assertCodexReviewerReuse(jsonl string) error {
 	}
 	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no followup_task/send_input for the cycle-2 re-review")
 }
+
+func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
+	initialValidationBuilds := 0
+	validationAdvanceBuilds := 0
+	implementationFeedbackAdvances := 0
+	keptAliveValidationNarration := false
+	waitCalls := 0
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev struct {
+			Type string `json:"type"`
+			Item struct {
+				Type    string `json:"type"`
+				Tool    string `json:"tool"`
+				Command string `json:"command"`
+				Text    string `json:"text"`
+			} `json:"item"`
+		}
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		switch ev.Item.Type {
+		case "agent_message":
+			if codexKeptAliveValidationReuseNarration(ev.Item.Text) {
+				keptAliveValidationNarration = true
+			}
+		case "collab_tool_call":
+			if ev.Item.Tool == "wait" || ev.Item.Tool == "wait_agent" || ev.Item.Tool == "collab:wait" {
+				waitCalls++
+			}
+		case "command_execution":
+			if ev.Type != "item.completed" {
+				continue
+			}
+			cmd := strings.ToLower(ev.Item.Command)
+			if !strings.Contains(cmd, "dispatch build") {
+				continue
+			}
+			if strings.Contains(cmd, "--stage validation") {
+				if strings.Contains(cmd, "--advance") {
+					validationAdvanceBuilds++
+				} else {
+					initialValidationBuilds++
+				}
+			}
+			if strings.Contains(cmd, "--stage implementation") &&
+				strings.Contains(cmd, "--feedback-reflow") &&
+				strings.Contains(cmd, "--advance") {
+				implementationFeedbackAdvances++
+			}
+		}
+	}
+	return initialValidationBuilds == 1 &&
+		validationAdvanceBuilds >= 1 &&
+		implementationFeedbackAdvances >= 1 &&
+		keptAliveValidationNarration &&
+		waitCalls >= 2
+}
+
+func codexKeptAliveValidationReuseNarration(text string) bool {
+	lower := strings.ToLower(text)
+	if !strings.Contains(lower, "kept-alive") || !strings.Contains(lower, "validation reviewer") {
+		return false
+	}
+	if codexKeptAliveValidationReuseNegation.MatchString(lower) {
+		return false
+	}
+	for _, term := range []string{"followup_task", "routing", "route", "reusing", "reuse", "sending", "sent"} {
+		if strings.Contains(lower, term) {
+			return true
+		}
+	}
+	return false
+}
+
+var codexKeptAliveValidationReuseNegation = regexp.MustCompile(`\b(?:not|never|no)\b[^.]{0,80}\b(?:followup_task|rout|reus|send|sent)\b`)
 
 func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
