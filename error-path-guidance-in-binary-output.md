@@ -130,3 +130,26 @@ Fleshed out the instruction-space→tool-output design: five binary output delta
 ### Summary
 
 Applied the staff review's five material findings as task-body reconciliations — no architectural change. The one directional choice (M1) picks the workflow-agnostic mod-pointer output over editing the shipped pr-merge template, keeping this task's blast radius at the two contract files plus the named Go surfaces.
+
+## Stage Report: implementation
+
+- DONE: D1 — state commit/ready HALT stderr carries the peer commit + FO remediation; ready's absent-checkout resume prints the re-boot line
+  `internal/cli/state_sync.go` `haltOnConflict`/`peerCommitSHA`/`runStateReady`; TDD red confirmed then green: `TestStateCommitHaltStderrCarriesRemediationAndPeerCommit`, `TestStateCommitHaltJSONCarriesPeerCommit`, `TestStateReadyHaltStderrCarriesRemediationAndPeerCommit`, `TestStateReadyResumesAbsentCheckout` (resume-line assertion added).
+- DONE: D2 — state sweep distinguishes gh-unavailable UNKNOWN from a truly empty sweep; non-empty sweep names the startup-hook mod-pointer next step
+  `internal/dispatch/reconcile.go` `Sweep`/`sweepNextStep`, `internal/status/mutate.go` `ScanMods` export; `internal/dispatch/sweep_test.go` `TestSweepGhUnavailableReportsUnknown`, `TestSweepGhPartiallyAvailableStillReportsNormally`, `TestSweepNonEmptyNamesRegisteredStartupModNextStep`, `TestSweepNonEmptyNamesGenericModPointerWhenNoneRegistered`.
+- DONE: D3 — merge guard armed/blocked/finalized default prose names the FO's next step (hook path, sentinel format, worktree/branch/worker cleanup, no-hook manual `--no-ff` merge)
+  `internal/status/merge.go` `signalArmed`/`signalBlocked`/`signalFinalized`/`resolveMergeTrunk`/`abbrevRefHead`; new fixture `merge-no-hook-workflow` + `merge-pr-workflow/150-worktree-finalize.md`; 6 new tests in `merge_guard_test.go` pinning exact phase-line content, including finalized with/without `worktree:` and with/without a registered hook.
+- DONE: D4 — mod-block/merge-hook `--set` refusal tails reworded, tail-only (HEAD "cannot advance to terminal" unchanged, live-asserted)
+  `internal/status/handlers.go:167,208`; golden fixtures regenerated (`-update`); `TestMergePrDefaultNoSentinelStillRefuses` pins the new tail and the absence of "or use --force to bypass".
+- DONE: D5 — merge guard refuses (exit 1, mutates nothing) a mod-block naming a merge mod missing from `_mods/`, in the no-sentinel case only; TDD failing test landed first, pinning today's silent finalize before the fix
+  `internal/status/merge.go` `modBlockNamesMissingMergeMod`/`refuseMissingMergeMod`, new switch case ahead of both the blocked and default cases; fixtures `120/130/140-*.md` in `merge-pr-workflow`; `TestMergeGuardRefusesMissingMergeModNoSentinel` (row a), `TestMergeGuardFinalizesMissingMergeModWithSentinel` (row b), `TestMergeGuardFinalizesMissingMergeModRejected` (row c).
+- DONE: Two contract files shrink per the coverage map with every guard intact
+  `first-officer-shared-core.md` 23216 B → 21215 B (delta 2001 B, ≥2000 required); `fo-merge-core.md` 7299 B → 3226 B (delta 4073 B, ≥2800 required), both measured via `git show origin/main:<file> | wc -c` vs current. `go test ./internal/contractlint/...` green: all 4 fo-merge-core heading anchors survive, `«halt.rebase-conflict»` has exactly 1 definition + 3 by-name refs, `git rebase --abort` appears exactly once, `do not force-push or auto-resolve` survives verbatim, `--no-ff merge` phrase present (never the full `git merge --no-ff` command).
+- DONE: Full suites green
+  `go build ./...`, `go vet ./...`, `gofmt -l` clean on every file I touched (one pre-existing unrelated gofmt finding in `internal/cli/pi_frontdoor_test.go`, untouched by this task), `go test ./...` all packages green including `internal/cli`, `internal/dispatch`, `internal/status`, `internal/contractlint`.
+- SKIPPED: AC-8 claude-live lane
+  Requires a live PR/CI run, out of reach for the implementation stage in this environment; the diff touches `skills/first-officer/references/**` so the lane is REQUIRED at the PR boundary per `docs/dev/README.md:77` — flagged for validation/merge to drive.
+
+### Summary
+
+Shipped all five binary output deltas (D1 state-sync HALT remediation + peer commit, D2 sweep gh-unavailable UNKNOWN + mod-pointer, D3 merge-guard phase next-steps, D4 tail-only refusal reword, D5 missing-mod refusal) with TDD red-then-green for each, then shrank the two contract prose files per the guidance-coverage map — shared-core by 2001 B and fo-merge-core by 4073 B, both clearing their AC-1 minimums with contractlint's pinned anchors (heading survival, by-name ref counts, the verbatim `do not force-push or auto-resolve` clause, the `--no-ff merge` phrasing constraint) all green. D3's phase-line work needed a new no-merge-hook fixture and a worktree-recorded fixture to pin the four independent output shapes (with/without worktree × with/without a registered hook); D5's fix is scoped to fire before any `--set` mutation runs, so the refusal case is provably zero-mutation. The full `go test ./...` suite is green; the one open item is the claude-live PR gate (AC-8), which this stage cannot drive locally and is flagged for validation.
