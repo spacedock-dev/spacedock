@@ -1,17 +1,18 @@
 ---
 id: 5xst4dae1m2acx76czpe857v
 title: FO behavioral-robustness — live opus-4-8 FO intermittently deviates from contract guidance
-status: validation
+status: done
 source: '0221 cut (2026-06-19): the live claude-live OPUS lane flaked on essentially every PR with DIFFERENT non-deterministic FO-behavior deviations, while SONNET stayed compliant. Diagnosed diff-unrelated across 3e #398 (sonnet broad-search) and rgq #399 (two reruns: no spacedock-new, then merged-team-mode exit-before-terminalize) and accepted non-blocking under the ci-env conn to land 0.22.1. This is the recorded root-cause follow-up.'
 started: 2026-07-02T09:55:07Z
-completed:
-verdict:
+completed: 2026-07-02T21:43:58Z
+verdict: passed
 score: 0.6
 worktree: .worktrees/spacedock-ensign-fo-opus-behavioral-robustness
 issue:
 group: cleanup
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:467
+archived: 2026-07-02T21:43:58Z
 ---
 
 The live opus-4-8 first officer intermittently fails to follow contract guidance precisely — surfaced by the live-e2e lanes doing their job — making the opus claude-live lane unreliable on every PR. This is the strong-model echo of the weak-model concern the layered-FO sprint targets: even opus deviates, so the deferred tier/delegation mechanism (72) and report-and-stop hardening matter.
