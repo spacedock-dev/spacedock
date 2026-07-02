@@ -93,3 +93,15 @@ Refined the debrief testimonial idea into a concrete skill/template change: add 
 
 ### Residual risk
 The exact mechanism for deriving host/runtime, model, worker count, and PR count may need small implementation judgment from available session context. The acceptance criteria require explicit `unknown` rather than fabricated values when a field cannot be determined.
+
+### Feedback Cycles
+
+**Cycle 1 (pre-gate, captain-derived from live testimonial drafting, 2026-07-02):** The captain asked the FO to draft the proposed testimonial from its own session perspective, then revised the draft across three passes. The learnings below are guidance for the implementation stage — they constrain *how the prompt and section should read*, not the ACs (which stand).
+
+1. **Length and register.** A good testimonial reads like a person, not a report: roughly 4–8 sentences, no internal workflow jargon ("ensign", "gate", "AC cross-check", run ids, literal commands, tool names). The reader is an operator running multiple agents who is not yet using spacedock; internal terms are uninformative to them.
+2. **The honesty clause is load-bearing in practice, not just in spec.** Once the prompt forced naming friction, the genuine costs surfaced (a flat boot tax paid every cold session; a hard stop at approval that adds latency) instead of defaulting to praise. The prompt must keep the "not a request for praise" framing verbatim-or-near; a softer phrasing degrades the corpus.
+3. **What the machinery caught that mattered.** The single load-bearing catch was *not letting the driving agent self-approve the stage transition* — the asymmetry between "the agent thought it was fine" and "an operator signed off" is where drift enters. Implementation/test plan should treat the testimonial as evidence of that asymmetry, not generic satisfaction.
+4. **Provenance format that read cleanly** at the end of the drafts: `date · runtime host · model · {N} task(s), {N} worker(s), {N} gate(s), {N} PR(s)`. Plain nouns ("task"/"worker"/"gate"), not workflow-internal ones ("entity"/"ensign"). AC-3's field list is correct; the label naming in the produced section should follow this plain-noun form.
+5. **A genuine runtime-adapter gap surfaced during this session** (not part of qd's scope, recorded for awareness): the FO contract assumes an `ensign` agent type the Pi adapter binds, but Pi exposes `worker`/`delegate`/`oracle`; the FO fell back to `worker` and hand-assembled assignment prose that `dispatch build` is meant to own. This does not change qd's ACs but is worth not fabricating away if the testimonial mechanism ever asks the driving agent about dispatch friction.
+
+These do not change the five ACs or the test plan; they tighten how implementation renders the prompt, the section labels, and the provenance nouns.
