@@ -6,6 +6,7 @@ source: "Captain request 2026-07-02 (Claude Commander session), while probing pe
 id: wcex4yjx4mvecybxjb43gwtw
 started: 2026-07-02T01:45:25Z
 worktree: .worktrees/spacedock-ensign-dispatch-model-space-fable-sonnet5-1m
+mod-block: merge:pr-merge
 ---
 
 ## Problem
