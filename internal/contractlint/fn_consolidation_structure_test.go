@@ -1,5 +1,5 @@
 // ABOUTME: AC-7/AC-8 structural guards for the «fn»-binding consolidation — the rebase-conflict
-// ABOUTME: halt is one «fn» referenced by name, and the deferred registry keeps all four load-points + greet-guards.
+// ABOUTME: halt is one «fn» referenced by name, and the deferred load points keep all four modules + the shared greet-guard.
 package contractlint
 
 import (
@@ -51,59 +51,66 @@ func TestRebaseConflictHaltConsolidatedToFn(t *testing.T) {
 	}
 }
 
-// deferredRegistryBlock returns the `## Deferred Modules (registry)` section body (heading to
+// deferredLoadPointsBlock returns the `## Deferred load points` section body (heading to
 // next `## `). The block is the unit AC-8 checks, so the survival assertions cannot be satisfied
 // by a load-point or greet-guard that survives ELSEWHERE in the core after a row was dropped.
-func deferredRegistryBlock(t *testing.T, body string) string {
+func deferredLoadPointsBlock(t *testing.T, body string) string {
 	t.Helper()
-	const heading = "## Deferred Modules (registry)"
-	start := strings.Index(body, heading)
-	if start < 0 {
-		t.Fatal("shared core has no `## Deferred Modules (registry)` block — the four-fold consolidation is missing")
+	// Anchor the heading at start-of-line so a prose MENTION of `## Deferred load points`
+	// elsewhere in the core (e.g. an intro forward-reference) cannot be mistaken for the block.
+	loc := regexp.MustCompile(`(?m)^## Deferred load points$`).FindStringIndex(body)
+	if loc == nil {
+		t.Fatal("shared core has no `## Deferred load points` block — the four-fold collapse is missing")
 	}
-	rest := body[start+len(heading):]
+	rest := body[loc[1]:]
 	if end := regexp.MustCompile(`(?m)^## `).FindStringIndex(rest); end != nil {
 		rest = rest[:end[0]]
 	}
 	return rest
 }
 
-// TestDeferredRegistryFoldsFourModulesWithLoadPointsAndGreetGuards (AC-8) closes the gap the
-// closure walk leaves open: TestBootResidentDeferredLoadPointsResolve / ...CarryCeremony assert
-// only that the four reference FILENAMES resolve on disk, never that a folded row kept its
-// load-point trigger or its greet-guard. This walks the single registry block and asserts all
-// four module reference paths, all four load-point triggers, and a per-row greet-guard for each
-// of the four modules survive by name — so dropping a row (or its trigger/guard) reds here while
-// the closure tests stay green.
-func TestDeferredRegistryFoldsFourModulesWithLoadPointsAndGreetGuards(t *testing.T) {
+// TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard (AC-8) closes the gap the
+// closure walk leaves open: TestBootResidentDeferredLoadPointsResolve / ...CarryCeremony /
+// ...SkillCoresResolveAndCarryCeremony assert only that the four module targets resolve on disk,
+// never that a folded row kept its load-point trigger or the shared greet-guard. This walks the
+// single load-points block and asserts all four module tokens (the two skills via
+// `spacedock:<name>`, the two references via `references/*.md`), all four load-point triggers,
+// and the single shared greet-guard survive by name — so dropping a row (or its trigger, or the
+// guard) reds here while the closure tests stay green. The four-load-points invariant is
+// preserved; the collapse deliberately replaces the old >=4-per-row greet-guard with the single
+// shared clause, so this asserts >=1, not >=4.
+func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T) {
 	root := repoRoot(t)
 	data, err := os.ReadFile(filepath.Join(root, sharedCorePath()))
 	if err != nil {
 		t.Fatalf("read shared core: %v", err)
 	}
-	block := deferredRegistryBlock(t, string(data))
+	block := deferredLoadPointsBlock(t, string(data))
 
-	for _, ref := range []string{
-		"references/fo-status-viewer.md",
-		"references/fo-dispatch-core.md",
-		"references/fo-write-core.md",
-		"references/fo-merge-core.md",
+	for _, tok := range []string{
+		"spacedock:fo-status-viewer",     // status-viewer skill
+		"spacedock:fo-write-core",        // write/id-style skill
+		"references/fo-dispatch-core.md", // dispatch reference
+		"references/fo-merge-core.md",    // merge reference
 	} {
-		if !strings.Contains(block, ref) {
-			t.Errorf("deferred registry does not fold %s — a module reference path is missing", ref)
+		if !strings.Contains(block, tok) {
+			t.Errorf("deferred load points do not fold %s — a module load-point token is missing", tok)
 		}
 	}
 	for _, lp := range []string{
-		"FIRST status query",    // status-query load-point
-		"FIRST worker dispatch", // dispatch load-point
-		"FIRST write to main",   // write/new-entity load-point
+		"first status query",    // status-query load-point
+		"first worker dispatch", // dispatch load-point
+		"write to main",         // write/new-entity load-point
 		"terminal boundary",     // merge load-point
 	} {
 		if !strings.Contains(block, lp) {
-			t.Errorf("deferred registry lost load-point trigger %q — a folded row's done-when vanished", lp)
+			t.Errorf("deferred load points lost load-point trigger %q — a folded row's trigger vanished", lp)
 		}
 	}
-	if n := strings.Count(block, "greet-guard:"); n < 4 {
-		t.Errorf("deferred registry has %d per-row `greet-guard:` clauses, want >=4 (one per folded module) — a folded row's greet-guard vanished", n)
+	// The collapse replaces the four per-row greet-guards with ONE shared clause. Its survival
+	// is the invariant; a block that dropped it reads as if a greet-and-stop boot could load a
+	// deferred module.
+	if !strings.Contains(block, "greet-and-stop boot loads NONE") {
+		t.Error("deferred load points lost the shared greet-guard clause (\"a greet-and-stop boot loads NONE of these\") — the single-shared-guard the four-fold collapse produces vanished")
 	}
 }

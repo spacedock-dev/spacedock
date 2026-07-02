@@ -38,10 +38,19 @@ var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
 		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
 	},
-	filepath.Join("skills", "first-officer", "references", "fo-status-viewer.md"): {
+}
+
+// deferredSkillCores are the two adapter-less deferred modules the boot-resident shared
+// core names as non-user-invocable skills (via `spacedock:<name>`), NOT as references/*.md
+// read-paths: the status-viewer surface and the write/id-style surface. Each must exist
+// on disk AND carry its section anchors. Keyed on the skill path so a newly-registered
+// anchor is both watched (watchedSectionNames) and stat-checked (the skill-anchor test)
+// from one place.
+var deferredSkillCores = map[string][]string{
+	filepath.Join("skills", "fo-status-viewer", "SKILL.md"): {
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
 	},
-	filepath.Join("skills", "first-officer", "references", "fo-write-core.md"): {
+	filepath.Join("skills", "fo-write-core", "SKILL.md"): {
 		"## FO Write Scope", "## ID Styles",
 	},
 }
@@ -65,11 +74,16 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 
 // lazyLoadSkills are the skill names a boot-resident body may name as deferred
 // load points. The ensign skill is the dispatched-worker contract, not a boot-core
-// load point, so it is excluded; the FO-self reference would be a self-load.
+// load point, so it is excluded; the FO-self reference would be a self-load. The two
+// adapter-less deferred modules (fo-status-viewer, fo-write-core) are here because the
+// shared core names them via `spacedock:<name>`, so the closure walk resolves each to
+// skills/<name>/SKILL.md, the same as the gate skills.
 var lazyLoadSkills = map[string]bool{
 	"using-legacy-claude-team": true,
 	"present-gate":             true,
 	"feedback-rejection-flow":  true,
+	"fo-status-viewer":         true,
+	"fo-write-core":            true,
 }
 
 // deferredLoadPoint is one extracted load-point: the on-disk path the body names
@@ -225,27 +239,16 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	}
 }
 
-// deferredReferenceFiles are the host-neutral *reference* files the boot-resident core
-// defers to — the status-viewer surface and the write/id-style surface — as distinct from
-// the dispatch/merge *module* cores. TestDeferredReferenceProsePointersResolve walks these
-// for dangling prose section-name pointers, a check neither bootResidentBodies (it walks
-// the boot bodies, not these reference files) nor bodyReferenceRe (it matches only
-// references/*.md path tokens, never a bare prose section name) can perform.
-var deferredReferenceFiles = []string{
-	filepath.Join("skills", "first-officer", "references", "fo-write-core.md"),
-	filepath.Join("skills", "first-officer", "references", "fo-status-viewer.md"),
-}
-
-// watchedSectionNames are the section names a prose pointer inside a deferred reference
-// file may name: the foReferenceCores anchors of the deferred reference files with their
-// `## `/`### ` heading markers stripped ("FO Write Scope", "ID Styles", "Status Viewer",
-// "Captain-Facing State Display", "Issue Filing"). Derived from foReferenceCores so a
-// newly-registered anchor is watched without a second edit here.
+// watchedSectionNames are the section names a prose pointer inside a deferred skill
+// body may name: the deferredSkillCores anchors with their `## `/`### ` heading markers
+// stripped ("Status Viewer", "Captain-Facing State Display", "Issue Filing", "FO Write
+// Scope", "ID Styles"). Derived from deferredSkillCores so a newly-registered anchor is
+// watched without a second edit here.
 func watchedSectionNames() []string {
 	var names []string
 	seen := map[string]bool{}
-	for _, ref := range deferredReferenceFiles {
-		for _, anchor := range foReferenceCores[ref] {
+	for _, anchors := range deferredSkillCores {
+		for _, anchor := range anchors {
 			name := strings.TrimLeft(anchor, "# ")
 			if !seen[name] {
 				seen[name] = true
@@ -256,7 +259,7 @@ func watchedSectionNames() []string {
 	return names
 }
 
-// referenceProsePointerDanglers scans one reference file's body for non-heading lines that
+// referenceProsePointerDanglers scans one deferred module's body for non-heading lines that
 // NAME a watched section yet resolve NEITHER intra-file (the body carries that section's
 // heading at any level) NOR via a references/*.md path token on the same line. Each such
 // line is a dangling prose pointer — the M5 shape, where a bare "(see FO Write Scope)"
@@ -293,24 +296,66 @@ func referenceProsePointerDanglers(body string, watched []string) []string {
 	return danglers
 }
 
-// TestDeferredReferenceProsePointersResolve is the AC-3c reachability gate the os.Stat
-// closure structurally cannot be: for each deferred reference file it walks every
-// non-heading line and FAILS on any that names a watched section without resolving it
-// (an intra-file heading OR a references/*.md path token). The expected value comes from
-// the filesystem + the resolution rule, not the file's own prose, so a section moved into
-// a different file leaves its old bare-name pointers dangling and reds here. The companion
-// control proves the scanner can fail; the empty-walk guards keep this non-vacuous.
-func TestDeferredReferenceProsePointersResolve(t *testing.T) {
+// TestDeferredSkillCoresResolveAndCarryCeremony is the AC-3 reachability guard for the two
+// adapter-less deferred modules realized as skills: the boot-resident shared core names each
+// via its `spacedock:<name>` token (the SAME closure token bodySkillRe /
+// TestBootResidentDeferredLoadPointsResolve resolve to skills/<name>/SKILL.md), each skill
+// file resolves on disk, AND it carries its section anchors — so "reachable" means "reaches a
+// real ceremony," not an empty file. It CANNOT be folded into
+// TestHostNeutralCoresResolveAndCarryCeremony, whose naming check is
+// strings.Contains(sharedBody, "SKILL.md") — always false here, since the shared core names a
+// skill by `spacedock:fo-status-viewer`, never a literal "SKILL.md". The independent source is
+// the filesystem + the anchor set; a skill renamed/emptied/dropped or un-named by the shared
+// core fails.
+func TestDeferredSkillCoresResolveAndCarryCeremony(t *testing.T) {
+	root := repoRoot(t)
+	if len(deferredSkillCores) == 0 {
+		t.Fatal("no deferred skill cores declared — the reachability check would pass vacuously")
+	}
+	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
+	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
+	if err != nil {
+		t.Fatalf("read shared core %s: %v", sharedCore, err)
+	}
+	sharedBody := string(sharedData)
+	for skillPath, anchors := range deferredSkillCores {
+		name := filepath.Base(filepath.Dir(skillPath)) // skills/<name>/SKILL.md -> <name>
+		token := "spacedock:" + name
+		if !strings.Contains(sharedBody, token) {
+			t.Errorf("%s does not name %q — the boot-resident shared core is the sole namer, so an un-named deferred skill is unreachable on every host", sharedCore, token)
+		}
+		data, err := os.ReadFile(filepath.Join(root, skillPath))
+		if err != nil {
+			t.Errorf("deferred skill core %s does not resolve on disk: %v", skillPath, err)
+			continue
+		}
+		body := string(data)
+		for _, anchor := range anchors {
+			if !strings.Contains(body, anchor) {
+				t.Errorf("%s is missing section anchor %q — the named skill resolves but does not carry the moved section, so reachability reaches an empty file", skillPath, anchor)
+			}
+		}
+	}
+}
+
+// TestDeferredSkillProsePointersResolve is the AC-3c reachability gate the os.Stat closure
+// structurally cannot be: for each deferred skill body it walks every non-heading line and
+// FAILS on any that names a watched section without resolving it (an intra-file heading OR a
+// references/*.md path token). The expected value comes from the filesystem + the resolution
+// rule, not the file's own prose, so a section moved into a different file leaves its old
+// bare-name pointers dangling and reds here. The companion control proves the scanner can
+// fail; the empty-walk guards keep this non-vacuous.
+func TestDeferredSkillProsePointersResolve(t *testing.T) {
 	root := repoRoot(t)
 	watched := watchedSectionNames()
 	if len(watched) == 0 {
-		t.Fatal("no watched section names derived from foReferenceCores — the prose-pointer check would pass vacuously")
+		t.Fatal("no watched section names derived from deferredSkillCores — the prose-pointer check would pass vacuously")
 	}
 	walked := 0
-	for _, ref := range deferredReferenceFiles {
+	for ref := range deferredSkillCores {
 		data, err := os.ReadFile(filepath.Join(root, ref))
 		if err != nil {
-			t.Errorf("read deferred reference file %s: %v", ref, err)
+			t.Errorf("read deferred skill file %s: %v", ref, err)
 			continue
 		}
 		walked++
@@ -319,18 +364,18 @@ func TestDeferredReferenceProsePointersResolve(t *testing.T) {
 		}
 	}
 	if walked == 0 {
-		t.Fatal("walked zero deferred reference files — the prose-pointer check would pass vacuously")
+		t.Fatal("walked zero deferred skill files — the prose-pointer check would pass vacuously")
 	}
 }
 
-// TestDeferredReferenceProsePointerGuardFailsOnDanglingTarget is the AC-3c control: it
-// drives referenceProsePointerDanglers against planted bodies so the gate is shown able to
-// fail (RED on the M5 bare-name shape) without false-positiving the two legitimate
-// resolutions — an intra-file heading and a references/*.md path token.
-func TestDeferredReferenceProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
+// TestDeferredSkillProsePointerGuardFailsOnDanglingTarget is the AC-3c control: it drives
+// referenceProsePointerDanglers against planted bodies so the gate is shown able to fail (RED
+// on the M5 bare-name shape) without false-positiving the two legitimate resolutions — an
+// intra-file heading and a references/*.md path token.
+func TestDeferredSkillProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
 	watched := watchedSectionNames()
 	if len(watched) == 0 {
-		t.Fatal("no watched section names derived from foReferenceCores — the control has nothing to test")
+		t.Fatal("no watched section names derived from deferredSkillCores — the control has nothing to test")
 	}
 	// RED — the exact M5 shape: a bare prose pointer to a section the body neither defines
 	// nor reaches by path. It MUST dangle.
@@ -344,8 +389,58 @@ func TestDeferredReferenceProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
 		t.Fatalf("control: a prose pointer resolved intra-file (## FO Write Scope present) was wrongly flagged as dangling: %v", got)
 	}
 	// GREEN — a references/*.md path token present: the pointer resolves, must NOT dangle.
-	pathForm := "Use `spacedock new` (see `references/fo-write-core.md`), which mints the id.\n"
+	pathForm := "Use `spacedock new` (see `references/fo-dispatch-core.md`), which mints the id.\n"
 	if got := referenceProsePointerDanglers(pathForm, watched); len(got) != 0 {
 		t.Fatalf("control: a prose pointer carrying a references/*.md path token was wrongly flagged as dangling: %v", got)
+	}
+}
+
+// deadDeferredReferencePaths are the references/*.md read-paths that no longer exist after the
+// two adapter-less modules became skills. Any surviving contract file that still names one is a
+// dangling pointer the os.Stat closure over bootResidentBodies does NOT catch —
+// feedback-rejection-flow/SKILL.md (not a boot-resident body) and the migrated fo-status-viewer
+// skill body (a prose "(see references/fo-write-core.md)" referenceProsePointerDanglers treats
+// as resolved on the bare path token) both escape it.
+var deadDeferredReferencePaths = []string{
+	"references/fo-status-viewer.md",
+	"references/fo-write-core.md",
+}
+
+// TestNoSurvivingContractFileNamesDeadDeferredReferencePath is the AC-3 unguarded-re-point gate:
+// it walks every .md under skills/ and FAILS on any that still names a deleted
+// references/fo-{status-viewer,write-core}.md path. The two modules moved to skills, so a
+// leftover references/*.md pointer is dead. The independent source is the filesystem (the files
+// are gone); a re-point the migration missed — including the two sites that escape every other
+// closure check — reds here.
+func TestNoSurvivingContractFileNamesDeadDeferredReferencePath(t *testing.T) {
+	root := repoRoot(t)
+	skillsDir := filepath.Join(root, "skills")
+	walked := 0
+	err := filepath.Walk(skillsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() || filepath.Ext(path) != ".md" {
+			return nil
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		walked++
+		body := string(data)
+		rel, _ := filepath.Rel(root, path)
+		for _, dead := range deadDeferredReferencePaths {
+			if strings.Contains(body, dead) {
+				t.Errorf("%s still names the deleted deferred reference path %q — re-point it to Skill(skill=\"spacedock:<name>\") after the skill conversion", rel, dead)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("walk skills/: %v", err)
+	}
+	if walked == 0 {
+		t.Fatal("walked zero .md files under skills/ — the unguarded-re-point gate would pass vacuously")
 	}
 }

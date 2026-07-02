@@ -1,6 +1,6 @@
-# First Officer Dispatch Core (host-neutral)
+# First Officer Dispatch Core
 
-The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. Host-specific parts ride the `→` lines of the capability `«fn»`s below.
+The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Host-specific parts ride the `→` lines of the capability `«fn»`s below.
 
 ## Dispatch
 

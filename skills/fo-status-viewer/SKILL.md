@@ -1,6 +1,10 @@
-# First Officer Status Viewer (host-neutral)
+---
+name: fo-status-viewer
+description: "First-officer status query/mutate/display surface — the `status` command flag docs, `--set` field docs, canonical captain-facing invocations, the Captain-Facing State Display rendering, and the GitHub-issue-filing approval gate. Invoke at the first ad-hoc status question, `--set` mutation, `--next-id`/`--resolve` lookup, or issue filing."
+user-invocable: false
+---
 
-The `status` query/mutate command surface — the launcher invocation, the full query/mutate flag docs, the `--set` field docs, the canonical captain-facing invocations, and the Captain-Facing State Display rendering — plus the GitHub-issue-filing approval gate. Lazily loaded (named by the boot-resident core) at the FIRST ad-hoc status question, `--set` mutation, `--next-id`/`--resolve` lookup, or issue filing; a greet-and-stop boot never reads it. Host-neutral: pure `status`-command and filing reference, identical on Claude, Codex, and Pi, with no per-host adapter.
+# First Officer Status Viewer
 
 ## Status Viewer
 
@@ -14,7 +18,7 @@ ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--ne
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
 - `--validate` — run before trusting manually edited workflow state.
 - `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
-- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see `references/fo-write-core.md`), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
+- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see `Skill(skill="spacedock:fo-write-core")`), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
 - `--next` / `--where "pr !="` — targeted event-loop queries.
 
 The `--set` flag updates entity frontmatter fields:

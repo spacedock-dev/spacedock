@@ -156,6 +156,32 @@ func TestParseClaudeTurnsMergesToolUseAcrossDeltas(t *testing.T) {
 	}
 }
 
+func TestParseClaudeTurnsExtractsSkillNamesAcrossDeltas(t *testing.T) {
+	// A Skill tool_use carries the invoked skill in input.skill (e.g. the FO's
+	// `Skill(skill="spacedock:present-gate")`). Like ToolNames and ReadTargets, the
+	// block can land on a LATER delta of a multi-delta message, so ParseClaudeTurns
+	// must MERGE it — a first-delta-only parse would make the skill invocation
+	// invisible to a caller asserting on the greet's Skill sequence.
+	stream := `{"type":"assistant","message":{"id":"msg_s","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":5000},"content":[{"type":"thinking","thinking":"present the ready gate"}]}}
+{"type":"assistant","message":{"id":"msg_s","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":5000},"content":[{"type":"tool_use","id":"toolu_skill","name":"Skill","input":{"skill":"spacedock:present-gate"}}]}}`
+
+	turns, err := ParseClaudeTurns([]byte(stream))
+	if err != nil {
+		t.Fatalf("ParseClaudeTurns: %v", err)
+	}
+	if len(turns) != 1 {
+		t.Fatalf("turns = %d, want 1 (the two deltas are one message)", len(turns))
+	}
+	// The Skill lands on the SECOND delta — its skill argument must be surfaced.
+	if len(turns[0].SkillNames) != 1 || turns[0].SkillNames[0] != "spacedock:present-gate" {
+		t.Fatalf("turn[0].SkillNames = %v, want [spacedock:present-gate] (merged from the later delta) — taking only the first delta loses it", turns[0].SkillNames)
+	}
+	// A Skill block is not a read; it must not pollute ReadTargets.
+	if len(turns[0].ReadTargets) != 0 {
+		t.Errorf("turn[0].ReadTargets = %v, want none (a Skill invocation is not a read)", turns[0].ReadTargets)
+	}
+}
+
 func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))

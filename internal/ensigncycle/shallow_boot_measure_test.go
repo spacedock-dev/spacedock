@@ -7,11 +7,13 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
 
-// deferredStatusReference is the lazily-loaded FO reference the Status Viewer +
-// Issue Filing sections moved into. A greet-and-stop boot composes its summary from
-// «state.boot» JSON + README frontmatter and must NOT read this reference — it loads
-// only at the FIRST status query, --set mutation, id lookup, or issue filing.
-const deferredStatusReference = "fo-status-viewer.md"
+// deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
+// must NOT invoke before the greet: the status-viewer surface and the write/id-style
+// surface. Each loads only at its trigger (the FIRST status query / --set / id lookup
+// / issue filing, or the FIRST write to main). present-gate is deliberately NOT here —
+// the greet legitimately presents a ready gate via Skill(skill="spacedock:present-gate")
+// (Startup step 8), so the oracle keys on the skill ARGUMENT, not on any Skill call.
+var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core"}
 
 // AC-6 boot-window measurement thresholds. The ceiling is the milestone's ~60k
 // greet-turn context ceiling; the spike threshold is set below the ~89k team-mode
@@ -92,19 +94,21 @@ func assertNoTeamCreateBeforeGreet(stream string) error {
 	return nil
 }
 
-// assertGreetReadsNoDeferredStatusReference is the AC-2 behavioral oracle over the
-// captured stream's tool-call sequence: no pre-greet turn reads the deferred
-// Status-Viewer reference (a Read/Grep/Bash-cat naming fo-status-viewer.md in the
-// turns up to and including the greet turn). It is a behavioral observation over the
-// real run's tool ordering, NOT a contract grep — the sibling of
-// assertNoTeamCreateBeforeGreet. The greet must compose its summary from
-// status --boot + README frontmatter; a regression that re-inlined the Status-Viewer
-// display rules into the greet path, or a boot that eagerly loaded the deferred
-// reference, surfaces a pre-greet read of fo-status-viewer.md and fails this.
-func assertGreetReadsNoDeferredStatusReference(stream string) error {
+// assertGreetInvokesNoDeferredFOSkill is the AC-2 behavioral oracle over the captured
+// stream's tool-call sequence: no pre-greet turn invokes a deferred FO skill (a Skill
+// tool_use whose skill argument names fo-status-viewer or fo-write-core, in the turns
+// up to and including the greet turn). It is a behavioral observation over the real
+// run's tool ordering, NOT a contract grep — the sibling of
+// assertNoTeamCreateBeforeGreet. The greet must compose its summary from status --boot
+// + README frontmatter; a regression that eagerly loaded the deferred status-viewer or
+// write skill surfaces a pre-greet Skill(spacedock:fo-status-viewer|fo-write-core) and
+// fails this. It keys on the skill ARGUMENT, not on any Skill call — the greet
+// legitimately invokes Skill(skill="spacedock:present-gate") to present a ready gate,
+// so a blanket "no pre-greet Skill" oracle would false-fail that.
+func assertGreetInvokesNoDeferredFOSkill(stream string) error {
 	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
 	if err != nil {
-		return fmt.Errorf("parse stream for AC-2 deferred-reference check: %w", err)
+		return fmt.Errorf("parse stream for AC-2 deferred-skill check: %w", err)
 	}
 	if len(turns) == 0 {
 		return fmt.Errorf("stream carried no assistant turns — nothing to check")
@@ -114,9 +118,11 @@ func assertGreetReadsNoDeferredStatusReference(stream string) error {
 		return fmt.Errorf("every assistant turn dispatched — no greet turn produced")
 	}
 	for i := 0; i <= greet; i++ {
-		for _, target := range turns[i].ReadTargets {
-			if strings.Contains(target, deferredStatusReference) {
-				return fmt.Errorf("pre-greet turn %d read the deferred Status-Viewer reference (%s) via %q — the greet must render from status --boot, not the deferred display rules", i, deferredStatusReference, target)
+		for _, skill := range turns[i].SkillNames {
+			for _, forbidden := range deferredFOSkillNames {
+				if strings.Contains(skill, forbidden) {
+					return fmt.Errorf("pre-greet turn %d invoked the deferred FO skill %q via Skill(skill=%q) — the greet must render from status --boot, not load a deferred FO skill (present-gate is allowed pre-greet)", i, forbidden, skill)
+				}
 			}
 		}
 	}
