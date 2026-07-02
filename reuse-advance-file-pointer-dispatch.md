@@ -7,6 +7,7 @@ id: jhe1244c8cjdymfbnnpnsvsw
 started: 2026-07-02T03:02:47Z
 worktree: .worktrees/spacedock-ensign-reuse-advance-file-pointer-dispatch
 mod-block: merge:pr-merge
+pr: "#464"
 ---
 
 ## Problem
