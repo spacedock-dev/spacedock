@@ -1,10 +1,11 @@
 ---
 title: "zero-discover broad-search detector flags shapes the contract does not ban (flat ls of cwd)"
-status: ideation
+status: implementation
 group: tooling
 source: "PR #466 claude-live sonnet (2026-07-02, run 28576842676): TestLiveZeroDiscoverReportsAndStops failed because the FO ran `ls -la {project root}` after a zero discover — the detector (detectBroadSearchAtBoot, asserted at zero_discover_live_test.go:113) flags ANY ls over the project root, while the contract's block clause (first-officer-shared-core.md Startup step 3) enumerates only `find` / `grep -r` / `ls -R` / recursive Glob/Grep. A flat, non-recursive listing of the launch cwd is not on the banned list and does not hunt a workflow. Third over-broad live-heuristic instance of the day (after the wrong-root cd detector, #462, and the codex narration negation scope, task mq) — the class is now a recurring merge-blocker."
 id: 4t8ej1rmpmk2hzzpshtrty0s
 started: 2026-07-02T12:25:07Z
+worktree: .worktrees/spacedock-ensign-zero-discover-detector-contract-scope
 ---
 
 ## Problem
