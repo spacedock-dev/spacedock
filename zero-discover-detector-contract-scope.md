@@ -6,6 +6,8 @@ source: "PR #466 claude-live sonnet (2026-07-02, run 28576842676): TestLiveZeroD
 id: 4t8ej1rmpmk2hzzpshtrty0s
 started: 2026-07-02T12:25:07Z
 worktree: .worktrees/spacedock-ensign-zero-discover-detector-contract-scope
+mod-block: merge:pr-merge
+pr: "#469"
 ---
 
 ## Problem
