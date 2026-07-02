@@ -583,6 +583,154 @@ func TestReleaseDownloadSkipBranchToleratesGhError(t *testing.T) {
 	}
 }
 
+// ghDownloadStepStub is the stubbed `gh` binary for the download step's
+// positive multi-run path: `gh release list` returns a since-tag anchor (not
+// the epoch fallback), `gh run list` returns two run ids, and `gh run
+// download` populates each run's own artifacts directory with a SAME-filename,
+// DIFFERENT-content journey-metrics record — the exact collision shape
+// journeymetrics.recordFilename produces for two runs of the same
+// scenario/model (no run-distinguishing component), so the download step's own
+// per-run-subdirectory copy is what has to keep them apart, not an accidental
+// filename difference.
+const ghDownloadStepStub = `#!/bin/sh
+case "$1" in
+  release)
+    echo "2026-06-01T00:00:00Z"
+    ;;
+  run)
+    case "$2" in
+      list)
+        echo "1001"
+        echo "1002"
+        ;;
+      download)
+        run_id="$3"
+        shift 3
+        dir=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --dir) dir="$2"; shift 2 ;;
+            *) shift ;;
+          esac
+        done
+        mkdir -p "$dir/journey-metrics"
+        printf '{"scenario_id":"shallow-boot-window","run_id":"%s"}' "$run_id" > "$dir/journey-metrics/shallow-boot-window--claude--llm--llm-live--claude-sonnet-4-6--measured.json"
+        ;;
+    esac
+    ;;
+esac
+exit 0
+`
+
+// runDownloadStep EXECUTES script (the extracted, possibly mutated, "Download
+// latest journey metrics artifacts" run block) against ghDownloadStepStub's two
+// stubbed runs and returns the RUNNER_TEMP directory the script populated, so
+// callers can inspect the resulting $RUNNER_TEMP/journey-metrics/ layout.
+func runDownloadStep(t *testing.T, script string) string {
+	t.Helper()
+	dir := t.TempDir()
+	binDir := filepath.Join(dir, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatalf("mkdir bin: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(binDir, "gh"), []byte(ghDownloadStepStub), 0o755); err != nil {
+		t.Fatalf("write gh stub: %v", err)
+	}
+	outPath := filepath.Join(dir, "github_output")
+	if err := os.WriteFile(outPath, nil, 0o644); err != nil {
+		t.Fatalf("seed github_output: %v", err)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"RUNNER_TEMP="+dir,
+		"GITHUB_OUTPUT="+outPath,
+		"GH_TOKEN=stub",
+		"GITHUB_REF_NAME=v0.99.0",
+	)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("download step exited non-zero with two stubbed runs: %v\n%s", err, out)
+	}
+
+	gotOutput, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read github_output: %v", err)
+	}
+	if !strings.Contains(string(gotOutput), "found=true") {
+		t.Fatalf("download step did not emit found=true with two stubbed runs; got:\n%s", gotOutput)
+	}
+	return dir
+}
+
+// TestReleaseDownloadStepProducesPerRunSubdirectories EXERCISES the real
+// download script's positive multi-run path (the AC-2 headline mechanism this
+// task exists to ship): two stubbed runs, each carrying a journey-metrics
+// record with the SAME on-disk filename but different content. It asserts the
+// script's OWN per-run-subdirectory copy — not merely its Go-side consumer
+// (journeymetrics.AggregateLedger) — keeps both runs' records intact and
+// separate, so a positive multi-run cut actually aggregates N observations
+// instead of collapsing to one via silent overwrite.
+func TestReleaseDownloadStepProducesPerRunSubdirectories(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	script := extractStepRun(t, release, "Download latest journey metrics artifacts")
+
+	runnerTemp := runDownloadStep(t, script)
+
+	for _, tc := range []struct{ runID, wantContains string }{
+		{"1001", `"run_id":"1001"`},
+		{"1002", `"run_id":"1002"`},
+	} {
+		path := filepath.Join(runnerTemp, "journey-metrics", tc.runID, "shallow-boot-window--claude--llm--llm-live--claude-sonnet-4-6--measured.json")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("run %s's record missing from its own subdirectory: %v", tc.runID, err)
+		}
+		if !strings.Contains(string(data), tc.wantContains) {
+			t.Fatalf("run %s's record does not carry its own run id (overwritten by another run's content) — %s:\n%s", tc.runID, path, data)
+		}
+	}
+}
+
+// TestReleaseDownloadStepGuardRejectsFlatCopyRegression is the adversarial
+// twin: reverting the per-run cp target back to the flat "$RUNNER_TEMP/journey-
+// metrics/" directory (the exact bug AC-2 fixes, and the mutation the
+// validation-stage adversarial audit applied by hand) must collapse the two
+// stubbed runs' same-named records into ONE file. This proves
+// TestReleaseDownloadStepProducesPerRunSubdirectories actually discriminates a
+// fixed script from a broken one, rather than passing vacuously.
+func TestReleaseDownloadStepGuardRejectsFlatCopyRegression(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	const fixedCopy = `find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$run_dir/" \;`
+	const flatCopy = `find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;`
+	adversarial := strings.Replace(release, fixedCopy, flatCopy, 1)
+	if adversarial == release {
+		t.Fatal("fixture workflow missing the per-run cp target to mutate")
+	}
+	script := extractStepRun(t, adversarial, "Download latest journey metrics artifacts")
+
+	runnerTemp := runDownloadStep(t, script)
+
+	matches, err := filepath.Glob(filepath.Join(runnerTemp, "journey-metrics", "*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("flat-copy regression should collapse both runs' same-named records into exactly one flat file, got %d: %v", len(matches), matches)
+	}
+	for _, runID := range []string{"1001", "1002"} {
+		subdirMatches, err := filepath.Glob(filepath.Join(runnerTemp, "journey-metrics", runID, "*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(subdirMatches) != 0 {
+			t.Fatalf("run %s's subdirectory unexpectedly has records under the flat-copy regression: %v", runID, subdirMatches)
+		}
+	}
+}
+
 // extractStepRun pulls a named step's `run: |` block out of a workflow document,
 // dedented to a runnable shell script, so tests exercise the EXACT script CI
 // runs rather than a hand-copied duplicate.
