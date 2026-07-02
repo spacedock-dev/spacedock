@@ -7,7 +7,7 @@ id: wcex4yjx4mvecybxjb43gwtw
 started: 2026-07-02T01:45:25Z
 worktree: .worktrees/spacedock-ensign-dispatch-model-space-fable-sonnet5-1m
 mod-block: merge:pr-merge
-pr: "#463"
+pr: pr-merge:463
 ---
 
 ## Problem
