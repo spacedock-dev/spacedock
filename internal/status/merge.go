@@ -105,6 +105,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	fields := ParseFrontmatter(entityPath)
 	modBlock := strings.TrimSpace(fields["mod-block"])
 	pr := strings.TrimSpace(fields["pr"])
+	worktree := strings.TrimSpace(fields["worktree"])
 	mergeHooks := scanMods(roots.definitionDir)["merge"]
 	hookRegistered := len(mergeHooks) > 0
 
@@ -115,7 +116,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 	case verdict == "rejected":
 		// A rejected entity never merged, so the pr-requirement is vacuous: finalize
 		// straight through, clearing an in-flight mod-block standalone first (AC-6).
-		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 
 	case prIndicatesMerged(pr):
 		// FINALIZE from a detected-MERGED state. The `pr` field carries a merge
@@ -125,7 +126,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// (empty mod-block) state — the stranded case a re-validation bounce leaves
 		// behind (AC-2). The merge-hook guard is satisfied because the sentinel is a
 		// non-empty pr that honestly records the landed merge.
-		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 
 	case modBlockNamesMissingMergeMod(modBlock, mergeHooks):
 		// A mod-block naming a merge mod that no longer exists under _mods/, with no
@@ -161,7 +162,7 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// the terminalize --set is unguarded and succeeds. A merge: pr with a hook
 		// registered never reaches here with an empty mod-block — auto-arm above claims
 		// that state — so the merge-hook guard cannot strand a finalize.
-		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
+		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 	}
 }
 
@@ -243,7 +244,7 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 	if rc := emitSet(roots, slug, []fieldUpdate{{field: "mod-block", value: modValue, hasValue: true}}, stderr); rc != 0 {
 		return rc
 	}
-	return signalArmed(slug, hook, quiet, asJSON, stdout)
+	return signalArmed(roots.definitionDir, slug, hook, quiet, asJSON, stdout)
 }
 
 // finalize performs Phase C: clear an in-flight mod-block in a STANDALONE --set,
@@ -259,7 +260,7 @@ func arm(roots roots, slug, hook string, quiet, asJSON bool, stdout, stderr io.W
 // find it on a re-run. So finalize snapshots the entity's pre-finalize bytes and live
 // location before mutating, and on commit failure reverses the move and restores the
 // original content, returning the entity to its exact pre-finalize state.
-func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, stdout, stderr io.Writer) int {
+func finalize(roots roots, slug, modBlock, pr, verdict, worktree string, hookRegistered bool, quiet, asJSON bool, stdout, stderr io.Writer) int {
 	// Snapshot the pre-finalize state up front — before any mutation — so a failed
 	// archive commit can be rolled back to exactly the state the FO would re-run
 	// against. The live path and form resolve here while the file still sits at its
@@ -302,7 +303,7 @@ func finalize(roots roots, slug, modBlock, verdict string, quiet, asJSON bool, s
 		}
 		return rc
 	}
-	return signalFinalized(slug, terminal, verdict, quiet, asJSON, stdout)
+	return signalFinalized(roots.definitionDir, slug, terminal, verdict, worktree, hookRegistered, prIndicatesMerged(pr), quiet, asJSON, stdout)
 }
 
 // archiveSnapshot captures an entity's pre-archive state so finalize can reverse a
@@ -481,8 +482,10 @@ func terminalStageName(definitionDir string) string {
 }
 
 // signalArmed reports the arm outcome: the mod-block is set and the FO must now
-// invoke the named merge hook.
-func signalArmed(slug, hook string, quiet, asJSON bool, stdout io.Writer) int {
+// invoke the named merge hook. The default prose names the hook's file path and
+// the re-run command — the FO's next action, carried at fire time instead of
+// resident prose (D3).
+func signalArmed(definitionDir, slug, hook string, quiet, asJSON bool, stdout io.Writer) int {
 	switch {
 	case asJSON:
 		emitJSON(stdout, newJSONObj().
@@ -491,13 +494,16 @@ func signalArmed(slug, hook string, quiet, asJSON bool, stdout io.Writer) int {
 	case quiet:
 		fmt.Fprintf(stdout, "merge-guard slug=%s signal=armed action=invoke-hook hook=%s\n", slug, hook)
 	default:
-		fmt.Fprintf(stdout, "armed: mod-block set to merge:%s — invoke the %s merge hook, then re-run `merge guard %s`.\n", hook, hook, slug)
+		fmt.Fprintf(stdout, "armed: mod-block set to merge:%s — invoke the %s merge hook (%s/_mods/%s.md; merge guard never invokes it), then re-run `merge guard %s`.\n",
+			hook, hook, definitionDir, hook, slug)
 	}
 	return 0
 }
 
 // signalBlocked reports the blocked outcome: the hook opened a PR, so the verb
-// leaves the mod-block intact and waits.
+// leaves the mod-block intact and waits. The default prose names the never-
+// finalize-on-open-PR invariant and the sentinel format that unlocks finalize
+// (D3), carried at fire time instead of resident prose.
 func signalBlocked(slug, pr string, quiet, asJSON bool, stdout io.Writer) int {
 	switch {
 	case asJSON:
@@ -507,14 +513,37 @@ func signalBlocked(slug, pr string, quiet, asJSON bool, stdout io.Writer) int {
 	case quiet:
 		fmt.Fprintf(stdout, "merge-guard slug=%s signal=blocked action=await-pr pr=%s\n", slug, pr)
 	default:
-		fmt.Fprintf(stdout, "blocked: PR %s is pending — mod-block left intact. Re-run `merge guard %s` after it lands.\n", pr, slug)
+		fmt.Fprintf(stdout, "blocked: PR %s is pending — mod-block left intact, never finalize on an open PR. "+
+			"When gh reports it MERGED, record the sentinel (pr=pr-merge:{number}) and re-run `merge guard %s`.\n", pr, slug)
 	}
 	return 0
 }
 
 // signalFinalized reports the finalize outcome: the entity is terminal, verdict
-// recorded, archived.
-func signalFinalized(slug, terminal, verdict string, quiet, asJSON bool, stdout io.Writer) int {
+// recorded, archived. The default prose appends the FO's next-step lines (D3),
+// built from the pre-terminalize frontmatter: a recorded worktree names its own
+// removal/branch-cleanup/teardown sequence; an entity finalizing with no merge
+// hook registered and no merge sentinel (the default-local-merge path) also
+// names the manual `--no-ff` merge onto trunk that nothing automated.
+func signalFinalized(definitionDir, slug, terminal, verdict, worktree string, hookRegistered, hasSentinel bool, quiet, asJSON bool, stdout io.Writer) int {
+	base := fmt.Sprintf("finalized: %s -> %s (verdict %s), archived.", slug, terminal, verdict)
+	var next []string
+	if worktree != "" {
+		next = append(next, fmt.Sprintf(
+			"Next: push; remove the worktree (`git worktree remove %s`, no --force — if it refuses on untracked files, audit them with the operator before any --force); "+
+				"delete the local branch (`git branch -d`); keep the remote branch while a PR references it; tear down the entity's workers per your runtime adapter.",
+			worktree))
+	}
+	if !hookRegistered && !hasSentinel && verdict != "rejected" {
+		branch := "the stage branch"
+		if worktree != "" {
+			if ref, ok := abbrevRefHead(worktree); ok && ref != "" {
+				branch = ref
+			}
+		}
+		next = append(next, fmt.Sprintf(
+			"no merge hook registered — merge %s onto %s with --no-ff if not already merged.", branch, resolveMergeTrunk(definitionDir)))
+	}
 	switch {
 	case asJSON:
 		emitJSON(stdout, newJSONObj().
@@ -523,7 +552,34 @@ func signalFinalized(slug, terminal, verdict string, quiet, asJSON bool, stdout 
 	case quiet:
 		fmt.Fprintf(stdout, "merge-guard slug=%s signal=finalized status=%s verdict=%s\n", slug, terminal, verdict)
 	default:
-		fmt.Fprintf(stdout, "finalized: %s -> %s (verdict %s), archived.\n", slug, terminal, verdict)
+		fmt.Fprintln(stdout, base)
+		for _, line := range next {
+			fmt.Fprintln(stdout, line)
+		}
 	}
 	return 0
+}
+
+// resolveMergeTrunk mirrors dispatch.resolveTrunk's resolution (the top-level
+// README `trunk:` key, falling back to "main"). Duplicated rather than imported —
+// internal/dispatch already imports internal/status, so the reverse import would
+// cycle.
+func resolveMergeTrunk(definitionDir string) string {
+	if t := strings.TrimSpace(ParseFrontmatter(filepath.Join(definitionDir, "README.md"))["trunk"]); t != "" {
+		return t
+	}
+	return "main"
+}
+
+// abbrevRefHead best-effort resolves worktree's current branch name via
+// `git -C {worktree} rev-parse --abbrev-ref HEAD`. ok is false on any git failure
+// (detached HEAD, a removed worktree) — the caller falls back to a branch-
+// agnostic phrase rather than surfacing an error for a purely cosmetic name.
+func abbrevRefHead(worktree string) (ref string, ok bool) {
+	out, err := runGitCmd(worktree, "rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		return "", false
+	}
+	ref = strings.TrimSpace(out)
+	return ref, ref != ""
 }

@@ -4,6 +4,7 @@ package status
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -457,6 +458,113 @@ func TestMergeGuardFinalizesMissingMergeModRejected(t *testing.T) {
 	archived := filepath.Join(root, "_archive", "140-missing-mod-rejected.md")
 	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
 		t.Fatalf("archived verdict=%q, want rejected", got)
+	}
+}
+
+// TestMergeGuardArmedLineNamesNextStep (AC-3, D3): the armed phase's default
+// prose names the hook's file path and the never-invoked-by-the-verb caveat, plus
+// the re-run command — the FO's next action, carried at fire time.
+func TestMergeGuardArmedLineNamesNextStep(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-local-workflow", "020-no-sentinel", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("arm should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := fmt.Sprintf(
+		"armed: mod-block set to merge:local-merge — invoke the local-merge merge hook (%s/_mods/local-merge.md; merge guard never invokes it), then re-run `merge guard 020-no-sentinel`.\n",
+		root)
+	if out != want {
+		t.Fatalf("armed line = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardBlockedLineNamesNextStep (AC-3, D3): the blocked phase's default
+// prose names the never-finalize-on-open-PR invariant and the sentinel format
+// that unlocks finalize, plus the re-run command.
+func TestMergeGuardBlockedLineNamesNextStep(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "070-pr-pending", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("blocked should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "blocked: PR #42 is pending — mod-block left intact, never finalize on an open PR. " +
+		"When gh reports it MERGED, record the sentinel (pr=pr-merge:{number}) and re-run `merge guard 070-pr-pending`.\n"
+	if out != want {
+		t.Fatalf("blocked line = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoWorktreeNoHookClause (AC-3, D3): an entity
+// finalizing via a merged sentinel with NO worktree recorded gets the base
+// finalized line only — no worktree-removal clause (nothing to remove) and no
+// no-merge-hook clause (a hook IS registered and a sentinel IS recorded).
+func TestMergeGuardFinalizedLineNoWorktreeNoHookClause(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "080-pr-merged", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "finalized: 080-pr-merged -> done (verdict passed), archived.\n"
+	if out != want {
+		t.Fatalf("finalized line = %q, want %q (no worktree/no-hook clauses)", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineWithWorktree (AC-3, D3): an entity finalizing via a
+// merged sentinel WITH a recorded worktree gets the worktree-removal/branch-
+// cleanup/teardown next-step clause, and — since a hook IS registered and a
+// sentinel IS recorded — no no-merge-hook clause.
+func TestMergeGuardFinalizedLineWithWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "150-worktree-finalize", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized: 150-worktree-finalize -> done (verdict passed), archived.") {
+		t.Fatalf("stdout should carry the base finalized line, got %q", out)
+	}
+	if !strings.Contains(out, "Next: push; remove the worktree (`git worktree remove .worktrees/150-worktree-finalize`") {
+		t.Fatalf("stdout should carry the worktree-removal next-step clause, got %q", out)
+	}
+	if !strings.Contains(out, "delete the local branch (`git branch -d`)") {
+		t.Fatalf("stdout should carry the branch-cleanup clause, got %q", out)
+	}
+	if !strings.Contains(out, "keep the remote branch while a PR references it") {
+		t.Fatalf("stdout should carry the remote-branch-retention clause, got %q", out)
+	}
+	if !strings.Contains(out, "tear down the entity's workers per your runtime adapter") {
+		t.Fatalf("stdout should carry the worker-teardown clause, got %q", out)
+	}
+	if strings.Contains(out, "no merge hook registered") {
+		t.Fatalf("stdout must NOT carry the no-merge-hook clause (a hook IS registered and a sentinel IS recorded), got %q", out)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoHookRegisteredNoWorktree (AC-3, D3): under a
+// workflow with NO merge hook registered at all, a Phase-C default finalize (no
+// pr, no mod-block, no worktree) names the manual `--no-ff` merge onto trunk —
+// nothing automated it — with no worktree-removal clause.
+func TestMergeGuardFinalizedLineNoHookRegisteredNoWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "010-no-hook-no-worktree", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "finalized: 010-no-hook-no-worktree -> done (verdict passed), archived.\n" +
+		"no merge hook registered — merge the stage branch onto main with --no-ff if not already merged.\n"
+	if out != want {
+		t.Fatalf("finalized output = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoHookRegisteredWithWorktree (AC-3, D3): the same
+// no-hook-registered path but WITH a recorded worktree carries BOTH next-step
+// clauses — the two conditions are independent.
+func TestMergeGuardFinalizedLineNoHookRegisteredWithWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "020-no-hook-with-worktree", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "Next: push; remove the worktree (`git worktree remove .worktrees/020-no-hook-with-worktree`") {
+		t.Fatalf("stdout should carry the worktree-removal clause, got %q", out)
+	}
+	if !strings.Contains(out, "no merge hook registered — merge the stage branch onto main with --no-ff if not already merged.") {
+		t.Fatalf("stdout should carry the no-merge-hook clause, got %q", out)
 	}
 }
 
