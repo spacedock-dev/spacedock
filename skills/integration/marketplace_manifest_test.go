@@ -34,8 +34,10 @@ func TestMainCarriesMarketplaceBridgeManifest(t *testing.T) {
 // TestCodexManifestVersionParses is the Codex half of the manifest structural
 // check: .codex-plugin/plugin.json's `version` field parses as a well-formed
 // major.minor semver (so `spacedock doctor --host codex` resolves a compatible
-// manifest under minor-version coupling), names the plugin `spacedock`, points
-// skills at ./skills/, and keeps the D4 cross-era tombstone frozen.
+// manifest under minor-version coupling), names the plugin `spacedock`, and
+// points skills at ./skills/. The D4 cross-era tombstone and its binding to the
+// FO shared-core's stamped minor are pinned by the internal/contractlint sync
+// test.
 func TestCodexManifestVersionParses(t *testing.T) {
 	path := filepath.Join(repoRoot(t), ".codex-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
@@ -43,10 +45,9 @@ func TestCodexManifestVersionParses(t *testing.T) {
 		t.Fatalf("read codex manifest %s: %v", path, err)
 	}
 	var m struct {
-		Name             string `json:"name"`
-		Version          string `json:"version"`
-		RequiresContract string `json:"requires-contract"`
-		Skills           string `json:"skills"`
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		Skills  string `json:"skills"`
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("parse codex manifest: %v", err)
@@ -59,9 +60,5 @@ func TestCodexManifestVersionParses(t *testing.T) {
 	}
 	if _, _, ok := contract.ParseMajorMinor(m.Version); !ok {
 		t.Fatalf("codex manifest version %q does not parse as major.minor", m.Version)
-	}
-	const frozenTombstone = ">=3,<4"
-	if m.RequiresContract != frozenTombstone {
-		t.Fatalf("codex manifest requires-contract = %q, want the frozen D4 tombstone %q (never edited again)", m.RequiresContract, frozenTombstone)
 	}
 }

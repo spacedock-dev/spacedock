@@ -1,5 +1,5 @@
-// ABOUTME: Structural test over the vendored repo plugin manifest — the manifest
-// ABOUTME: version parses as major.minor and the D4 tombstone stays frozen.
+// ABOUTME: Structural test over the vendored repo plugin manifest — name, skills
+// ABOUTME: path, and a version that parses as major.minor under minor coupling.
 package integration
 
 import (
@@ -26,9 +26,10 @@ func repoRoot(t *testing.T) string {
 // under minor-version coupling: the vendored .claude-plugin/plugin.json's
 // `version` field (the compatibility declaration itself — D2, no separate
 // requires-contract range is read by this binary) parses as a well-formed
-// major.minor semver, and the D4 cross-era tombstone (requires-contract
-// ">=3,<4") stays present and frozen so an integer-era binary still aborts with
-// the correct "upgrade the binary" remedy.
+// major.minor semver. The D4 cross-era tombstone (requires-contract ">=3,<4")
+// and its binding to the FO shared-core's stamped minor are pinned by the
+// internal/contractlint sync test — the sanctioned home for a check that reads
+// the prose file this manifest binds against.
 func TestVendoredManifestVersionParses(t *testing.T) {
 	manifestPath := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(manifestPath)
@@ -36,10 +37,9 @@ func TestVendoredManifestVersionParses(t *testing.T) {
 		t.Fatalf("read vendored manifest %s: %v", manifestPath, err)
 	}
 	var m struct {
-		Name             string `json:"name"`
-		Version          string `json:"version"`
-		RequiresContract string `json:"requires-contract"`
-		Skills           string `json:"skills"`
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		Skills  string `json:"skills"`
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("parse vendored manifest %s: %v", manifestPath, err)
@@ -52,9 +52,5 @@ func TestVendoredManifestVersionParses(t *testing.T) {
 	}
 	if _, _, ok := contract.ParseMajorMinor(m.Version); !ok {
 		t.Fatalf("manifest version %q does not parse as major.minor", m.Version)
-	}
-	const frozenTombstone = ">=3,<4"
-	if m.RequiresContract != frozenTombstone {
-		t.Fatalf("manifest requires-contract = %q, want the frozen D4 tombstone %q (never edited again)", m.RequiresContract, frozenTombstone)
 	}
 }
