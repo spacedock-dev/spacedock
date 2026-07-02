@@ -8,18 +8,65 @@ started: 2026-07-02T07:41:51Z
 ---
 
 ## Problem
-The codex runner characterizes the addressable-worker capability from FO narration: one message containing a reuse-route concept ("follow-up", "followup", "addressable", "reuse", "reusable") plus any negation token ("no ", "not ", "cannot", "n't", "without ", "never ") anywhere in the message flips the harness to its ABSENT assertion branch. An affirmative-reuse sentence with an unrelated negation ("waiting for the reused worker; interruption does not close it") mischaracterizes the runtime, and the harness then flags the FO's legitimate reuse as a contradiction. The function's own doc comment claims message-scoping prevents exactly this; it does not.
+Two unrelated codex-live failures share the same user-visible symptom: the live lane goes red even though the run made the behavior Spacedock wanted to prove. Keep them in one task because both are harness/bootstrap characterization bugs, both can red any unrelated branch, and both should be closed with offline fixtures before spending another codex-live confirmation run.
 
-A second codex-live false red from PR #465 (run 28570801721, 2026-07-02) belongs in the same harness-stability slice: `TestLiveCodexSharedScenarios/shallow-boot` booted with PR #42 reported as MERGED, but `state sweep` reported `merge state UNKNOWN -- gh unavailable; sweep skipped, not empty.` Root cause from the artifact/repro: the shallow-boot fixture `gh` stub returns plain `MERGED`, matching `status --boot`'s `gh pr view ... --json state --jq .state` path, while `dispatch.GhRunnerExec` used by `state sweep` calls `gh pr view ... --json state` and JSON-unmarshals the output. PR #465's new "all gh probes errored => UNKNOWN" behavior exposed the fixture/probe-shape split, after which the FO hand-set terminal frontmatter instead of running the startup-hook archive path.
+First, the Codex rejection-flow runner characterizes the addressable-worker capability from FO narration. `assertCodexReviewerReuse` first asks `codexAddressableWorkerAbsent`; when that returns true it runs the fresh-dispatch oracle and treats any `followup_task`/`send_input` reuse tool as a contradiction. The current detector (`codexNarrationNegatesReuseRoute`) returns true when one FO `agent_message` contains any reuse-route concept ("follow-up", "followup", "addressable", "reuse", "reusable") and any negation token ("no ", "not ", "cannot", "n't", "without ", "never ") anywhere in the same message. PR #464 and PR #465 both produced affirmative reuse narrations with unrelated negations, so the harness chose the ABSENT path and then failed on the real reuse tool it should have accepted.
 
-## Desired direction (for ideation to refine)
-Treat this as one codex-live harness false-red pass. For reuse characterization, the negation must bind to the reuse-route concept, not co-occur: candidates (ideation picks the simplest that kills both observed false positives while keeping the true-positive fixtures red) — a bounded window between negation and concept, explicit characterization phrases ("followup_task is not available", "no reuse route", "send_input is unavailable"), or keying on the FO's capability-probe output rather than free narration. The two real tripping messages from run 28568410914 and the PR #465 message ("being reused ... is not doing validation") become checked-in must-NOT-match fixtures; the existing true-positive shapes stay matched. Consider whether claude/pi runners share the pattern.
+Observed false-positive messages to preserve as must-NOT-match fixtures:
 
-For shallow-boot, align the PR-state probe contract so boot and sweep agree under the fixture and in production. Ideation should decide whether the right mechanism is to make `GhRunnerExec` use the same `--jq .state` plain-output shape as boot, to share one helper, or to update the fixture stub to support both output shapes. The proof must show `status --boot` and `state sweep` both see the same stubbed MERGED state and the shallow-boot durable archive assertion passes.
+- PR #464: "does not close or redispatch the worker" in an otherwise affirmative kept-alive reviewer message.
+- PR #464: "the host has no dedicated shutdown tool ... the two reusable workers" in a message about reusable workers, not absent reviewer reuse.
+- PR #465: "The validation reviewer is being reused for re-review only; the implementation worker that applied the fix is not doing validation."
 
-## Rough acceptance sketch (ideation tightens into measured ACs + a test plan)
-- Both captured PR #464 tripping messages replay through the characterization returning PRESENT-compatible (no ABSENT flip); genuine absence narrations still flip it (RED/GREEN fixture pair).
-- The captured PR #465 reuse narration ("the validation reviewer is being reused ... the implementation worker ... is not doing validation") also returns PRESENT-compatible, and a transcript replay with actual `send_input` to the validation reviewer cannot enter the ABSENT branch.
-- The rejection-flow scenario passes on a transcript replaying the full #464 artifact (behavioral proof, not prose assertion).
-- The shallow-boot fixture proves boot/sweep `gh` shape parity: the same stubbed MERGED PR that appears in `pr_state.entries[].state` also produces a non-empty `state sweep` result, and the merged-PR entity is terminalized and archived before the greet in the live shallow-boot assertion.
-- Harness/internal command-surface change only; no product UX surface. Offline fixtures are the gating proof; one codex-live run as field confirmation.
+Second, PR #465's codex-live `shallow-boot` run booted with PR #42 reported as `MERGED`, but `state sweep --workflow-dir .` reported `merge state UNKNOWN -- gh unavailable; sweep skipped, not empty.` The fixture `gh` stub emits plain `MERGED`, matching `status --boot`'s `gh pr view ... --json state --jq .state` call. `state sweep` uses `dispatch.GhRunnerExec`, which calls `gh pr view ... --json state` and JSON-unmarshals `{"state":"MERGED"}`. A local reproduction showed the split exactly: plain stub => boot sees `MERGED` while sweep sees `UNKNOWN`; JSON stub => sweep finds the merged PR. The harness needs one PR-state probe contract, or at minimum one fixture stub that supports both contracts, so the before-greet startup archive path is tested instead of bypassed by manual frontmatter edits.
+
+## Proposed approach
+Use one implementation scope: "codex-live harness false-red hardening." Do not split shallow-boot out unless implementation discovers the PR-state probe parity change is larger than a small helper/fixture fix. The two changes are independent in code, but they share the same validation goal: offline replay of PR #464/#465 failures must fail before the fix and pass after it, then one codex-live run confirms the live lane.
+
+Recommended reuse fix: replace broad concept-plus-negation matching with an explicit "absence declaration" detector. It should match the existing live true-absence wordings in `TestAssertCodexReviewerReuse` ("no follow-up/send binding", "not addressable", "no followup_task or equivalent turn-starting reuse route", "reuse is not supported", "cannot address the kept-alive reviewer") while rejecting affirmative reuse sentences that contain unrelated negations. A bounded-window regex is acceptable only if the PR #464/#465 false-positive phrases are checked in as negatives and all current live-absence positives remain green. Do not key the whole branch on generic words like "no", "not", or "without" unless they bind to an absent route/tool/capability phrase.
+
+Recommended PR-state fix: make boot and sweep consume the same effective `gh pr view` contract in tests and production. The smallest durable option is to share a helper or teach `GhRunnerExec` to request the same `--jq .state` plain state that `status --boot` already uses, because then the existing shallow-boot stub models one real command shape. If changing `GhRunnerExec` is risky for other callers, the fallback is a dual-shape stub plus a parity test proving boot and sweep agree under both plain and JSON outputs. The task is not complete if it only changes the live fixture without an offline parity test; that would leave the next probe-shape drift unpinned.
+
+Riskiest path spike: before implementation chooses the mechanism, add or sketch a tiny local harness that runs the same workflow with a stub `gh` that emits plain `MERGED`, then exercises both `status --boot --json` and `state sweep --json`. Record the current failing observation (boot entry state `MERGED`, sweep `swept=[]` or UNKNOWN reason) and make that the first red test. No external GitHub access is needed.
+
+Documentation impact: none expected. This is harness/internal command-surface behavior, not a user-facing CLI output change. If implementation changes `state sweep` JSON/text output or documented `gh` expectations, update this task before coding the docs.
+
+## Acceptance criteria
+- AC-1: Codex reuse characterization no longer false-ABSENTs on captured affirmative reuse narration with unrelated negation.
+  Test: table fixtures in `internal/ensigncycle/shared_reviewer_reuse_table_test.go` replay the two PR #464 tripping messages and the PR #465 "being reused ... is not doing validation" message in transcripts that include one validation `spawn_agent` plus a turn-starting `send_input`/`followup_task` to that validation thread. All three return success from `assertCodexReviewerReuse`; on the current code at least one returns `Codex addressable-worker was characterized ABSENT`.
+
+- AC-2: Genuine Codex absence declarations still choose the ABSENT oracle and require fresh validation dispatch.
+  Test: the current live-absence wording fixtures remain present and green, including at least one "no follow-up/send binding", one "not addressable", one "not supported", and one "cannot address" phrasing. A transcript with an absence declaration plus only one validation spawn still fails, and an absence declaration plus a real reuse tool still fails, so the fix does not weaken the contradiction checks.
+
+- AC-3: The net false-red count for the reduced PR #464/#465 reuse corpus is zero while true-red controls stay nonzero.
+  Test: a focused offline test reports three captured false-positive transcripts accepted and at least two negative controls rejected: fresh cycle-2 validation spawn masquerading as reuse, and uncorrelated `send_input` to a non-validation thread. This is the measured value for the task: the false-red corpus moves from >0 failures to 0 without moving the true-red controls to 0.
+
+- AC-4: `status --boot` and `state sweep` agree on the same stubbed merged PR state.
+  Test: an offline parity test builds a split-root shallow-boot-style workflow with a PR-bearing non-terminal entity and one `gh` stub. With the stub reporting `MERGED`, `status --boot --json` exposes `pr_state.status=="ok"` and an entry state of `MERGED`; `state sweep --json` reports exactly one swept entity for the same PR. The test must fail on the observed split where boot reads plain `MERGED` but sweep expects JSON.
+
+- AC-5: The shallow-boot durable archive assertion covers the PR-state parity path.
+  Test: the codex/host-neutral shallow-boot fixture uses the parity-safe stub and `assertShallowBoot` observes the merged-PR entity terminalized, `verdict: PASSED`, `mod-block:` cleared, and archived before the greet. The gate entity remains unchanged and unarchived, with no worktree created.
+
+- AC-6: One codex-live confirmation run passes both affected scenarios after the offline fixtures are green.
+  Test: run the codex-live shared scenario lane, or a targeted equivalent that includes `rejection-flow` and `shallow-boot`, and attach the artifact/run ID. The confirmation must show the validation reviewer reuse is accepted and the shallow-boot merged PR is archived before greet; transcript prose alone is not sufficient.
+
+## Test plan
+1. Add focused red fixtures for `codexNarrationNegatesReuseRoute`/`assertCodexReviewerReuse` before changing the detector. Keep the fixtures as complete JSONL snippets, not prose-only string searches, so they exercise the branch that failed live.
+2. Update the detector with the smallest explicit-absence matcher that preserves all current true-absence rows. Run `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse'`.
+3. Add a boot/sweep parity test near `internal/status/live_prstate_pin_test.go`, `internal/dispatch/sweep_test.go`, or a small cross-package CLI-level test if needed. Prefer a CLI-level test because the failure is between two command surfaces, not inside only one package.
+4. Choose the PR-state mechanism: shared `gh` helper / `GhRunnerExec` using `--jq .state` is preferred; dual-shape fixture support is acceptable only with a parity test that would fail if either command drifts again. Run the focused parity test and `go test ./internal/status ./internal/dispatch ./internal/cli`.
+5. Run `go test ./internal/ensigncycle` for shared assertion coverage, then `go test ./...` as the implementation gate.
+6. Run one codex-live confirmation for `rejection-flow` and `shallow-boot` after offline tests pass. Preserve durable evidence: process exit, artifact path/run ID, entity/archive state for shallow-boot, and the reuse assertion result for rejection-flow.
+
+## Stage Report: ideation
+
+- DONE: firm one coherent task scope for both codex-live false reds, or explicitly justify splitting one out.
+  Scoped both failures as one codex-live harness/bootstrap false-red hardening task; split only if PR-state parity proves larger than a small helper/fixture fix.
+- DONE: write behavior-first ACs and tests that replay/reduce PR #464 and PR #465 failures and fail on the observed false-reds.
+  Added AC-1 through AC-6 with JSONL reuse fixtures, boot/sweep parity proof, shallow-boot durable archive proof, and one codex-live confirmation.
+- DONE: exercise or specify the riskiest boot/sweep gh parity path before choosing the implementation mechanism.
+  Specified the first red test: one plain-MERGED `gh` stub drives both `status --boot --json` and `state sweep --json`, reproducing boot MERGED plus sweep empty/UNKNOWN before the mechanism is chosen.
+
+### Summary
+
+The task body now treats PR #464's reuse-characterization failure and PR #465's reuse plus shallow-boot failures as one harness-stability scope. The proposed approach favors offline fixtures first, pins the exact false-positive narrations and PR-state probe-shape split, and leaves one codex-live run as field confirmation rather than primary proof.
