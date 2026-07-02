@@ -95,3 +95,15 @@ Fleshed the ideation for the version-masquerade advisory internal-branch leak. C
 
 ### Summary
 Removed the internal branch identifier `next-post-release-preversion-bump` from the `--plugin-dir` version-masquerade advisory's shipped stderr and from the twin reference in the function docstring, per the ideation before/after; no other behavior changed. Guarded the shipped bytes in TestCodexPluginDirAdvisoryPresenceAndAbsence (absence of the token + survival of the "not necessarily its current HEAD" clause) with the present/absent pair kept green. The AC-1 baseline was exercised by temporarily reintroducing the token and confirming the guard fails, then reverting; build and package tests are green in the worktree.
+
+## Stage Report: validation
+
+- DONE: MEASURE AC-1: the shipped advisory (real stderr on a --plugin-dir install) contains NO "next-post-release-preversion-bump" — reproduce the new guard test; confirm it is baseline-fails-on-main (the token IS present on origin/main), so the assertion can move the wrong way
+  Guard at codex_plugin_dir_test.go:100 passes on branch over real runCodex stderr. Composing origin/main's codex_marketplace.go with the branch guard FAILS at :101 ("advisory leaks the internal branch identifier"; emitted bytes carry "…current HEAD — see next-post-release-preversion-bump"). The assertion moves the wrong way on main and is not self-referential — it tests live emitted output, an independent source that diverged.
+- DONE: AC-2: the presence/absence pair still passes (present on --plugin-dir incl. "not necessarily its current HEAD"; absent on plain launch); AC-3: go build ./... + go test ./internal/cli/ green from the worktree root
+  TestCodexPluginDirAdvisoryPresenceAndAbsence PASS, both subtests (-count=1): present asserts "version-masquerade advisory" + "not necessarily its current HEAD"; absent-on-plain-launch has neither. AC-3: `go build ./...` exit 0; `go test ./internal/cli/ -count=1` → ok 21.951s exit 0.
+- DONE: Confirm the ONLY change is the advisory string + its docstring (no install/launch behavior change)
+  `git diff <merge-base 59251f18>..HEAD` touches only codex_marketplace.go (advisory string + docstring, both dropping the branch token) and codex_plugin_dir_test.go (added assertions). No MkdirAll / WriteCodexLocalMarketplace / Install / launch-argv lines touched. Only `next-post-release-preversion-bump` residual in any .go source is the guard string itself (test:100).
+
+### Summary
+PASSED. All three ACs verified against real behavior on branch caf1f54e. AC-1's absence guard is proven able to fail: main's source composed with the branch guard fails over emitted stderr, so the assertion tracks shipped output and flips on regression rather than matching static source. AC-2's presence/absence pair stays green with the surviving-meaning clause asserted; AC-3 build + package suite are green uncached; the diff confirms the change is confined to the advisory string + its docstring with no install/launch behavior change.
