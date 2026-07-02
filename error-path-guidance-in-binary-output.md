@@ -8,12 +8,106 @@ started: 2026-07-02T03:02:55Z
 ---
 
 ## Problem
-Contract prose pays resident tokens to restate what shipped commands do and how to recover when they fail, even though that guidance is only needed at the moment the command actually fails or signals — when the binary is already talking to the FO through stdout/stderr.
+Contract prose pays resident tokens to restate what shipped commands do and how to recover when they fail, even though that guidance is only needed at the moment the command actually fails or signals — when the binary is already talking to the FO through stdout/stderr. The five state «fn» bodies (`first-officer-shared-core.md:106-144`, 4,059 B ≈ 1,015 tok, boot-resident every session) and most of `fo-merge-core.md` (7,299 B ≈ 1,824 tok, loaded at the terminal boundary) re-describe what `state ready/commit/sweep` and `merge guard` already do and how to recover when they fail — remediation the binary can emit at fire time instead.
 
-## Desired direction (for ideation to refine)
-`state ready/sweep/commit` failure modes and `merge guard` phase signals emit their own next-action guidance (e.g. exit-3 stderr carries the halt-and-surface instructions; `armed`/`blocked`/`finalized` lines name the FO's next step). The contract keeps guard one-liners and pre-invocation prohibitions (never-force stays resident AND stays a binary refusal — belt and suspenders is the current state; ideation decides what prose is safe to drop given the binary refusal already exists). Shared-core «fn» bodies and fo-merge-core shrink accordingly.
+## Proposed approach
 
-## Rough acceptance sketch (ideation tightens into measured ACs + a test plan)
-- Binary failure/phase output carries the remediation text, pinned by tests on exit codes + stderr/stdout content.
-- Boot-resident shared-core and terminal fo-merge-core shrink by a measured token delta; the dropped prose is provably covered by binary output (no guidance lost).
-- Pre-invocation prohibitions remain resident; contractlint stays green (touches skills/**, so claude-live gates the merge).
+Two coupled halves, shipped together so no guidance is ever absent from both places:
+
+1. **Binary output gains the FO's next action** at each failure/phase point (deltas D1–D5 below).
+2. **Resident prose shrinks to compact bindings plus the pre-invocation prohibitions** that structurally cannot fire post-invocation (a warning printed after the command runs cannot stop the FO from running the wrong command first).
+
+### Binary output deltas
+
+**D1 — `state ready`/`state commit` exit-3 stderr carries the full halt remediation.** `haltOnConflict` (`internal/cli/state_sync.go:201`) today prints the HALT line, the conflicting paths, and the aborted/nothing-force-pushed line. It gains (a) the peer commit — one network-free `git rev-parse --short origin/{branch}` (the pull's fetch phase already updated the ref; spiked, see Spike record) — in stderr and as a `peer_commit` JSON field; and (b) the FO next-action lines the prose currently owns:
+
+    spacedock state commit: HALT — same-entity rebase conflict on {branch}.
+    Conflicting path(s): {paths}
+    Peer commit: {sha} (origin/{branch})
+    The rebase was aborted (checkout left clean) and nothing was force-pushed; a peer's edit is preserved on origin.
+    Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.
+    Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.
+
+**D2 — `state sweep` distinguishes gh-unavailable from truly-empty.** Today `classC` swallows every gh error (`internal/dispatch/reconcile.go:638`), so a missing `gh` renders `0 entity(ies) merged but not yet terminalized.` — indistinguishable from a real empty sweep; the «state.sweep-merged» block clause is the only thing telling the FO to treat that as UNKNOWN. `Sweep` wraps the injected GhRunner to count probe errors (classC itself stays best-effort for the idle hook): when ≥1 PR-pending entity exists and every probe errored, the reason becomes `merge state UNKNOWN — gh unavailable; sweep skipped, not empty.` (JSON: `"gh": "unavailable"`). A non-empty sweep appends the next step: `next: record the merge sentinel per _mods/{mod}.md, then run merge guard <slug>.`
+
+**D3 — `merge guard` phase lines name the FO's next step.** The default prose signals (`internal/status/merge.go:449-493`) become:
+
+- armed: `armed: mod-block set to merge:{hook} — invoke the {hook} merge hook ({workflow_dir}/_mods/{hook}.md; merge guard never invokes it), then re-run merge guard {slug}.`
+- blocked: `blocked: PR {pr} is pending — mod-block left intact, never finalize on an open PR. When gh reports it MERGED, record the sentinel (pr=pr-merge:{number}) and re-run merge guard {slug}.`
+- finalized: `finalized: {slug} -> {terminal} (verdict {verdict}), archived.` plus next-step clauses built from the pre-terminalize frontmatter: with a `worktree:` recorded — `Next: push; remove the worktree (git worktree remove {worktree}, no --force — if it refuses on untracked files, audit them with the operator before any --force); delete the local branch (git branch -d); keep the remote branch while a PR references it; tear down the entity's workers per your runtime adapter.` With no merge hook registered and no sentinel (the default-local-merge path) it also names: `no merge hook registered — merge the stage branch onto {trunk} with --no-ff if not already merged.` (trunk via the same resolution `dispatch trunk` uses; branch name best-effort via `git -C {worktree} rev-parse --abbrev-ref HEAD`, omitted on failure). The `--json`/`--quiet` envelopes keep their stable fields; guidance rides the default prose the FO reads.
+
+**D4 — `--set` guard refusals warn instead of inviting `--force`.** The mod-block and merge-hook refusal tails (`internal/status/handlers.go:167,208`) currently end "or use `--force`" — the binary's own text undermines the prose prohibition. Reword the tails to: `(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard {slug} instead.)`
+
+**D5 — a mid-flight mod-block naming a missing merge mod refuses.** Code-read finding: with `mod-block=merge:X` where `_mods/X.md` no longer exists (`hookRegistered=false`), a non-rejected `merge guard` run falls into the default case and silently finalizes — clearing the block without the hook ever running — where the prose demands captain escalation (`fo-merge-core.md:45`). New classifier case: when `mod-block` names a merge mod not among the registered hooks and the verdict is not `rejected`, exit 1 with: `blocking mod {mod} is missing from {workflow_dir}/_mods/ — the entity is stuck. Restore the mod file, or have the operator clear the block with --force.` This converts the escalation prose into a code gate (per shared-core Working Principles: prefer a code gate over a prose-only rule).
+
+### Guidance-coverage map
+
+For each prose passage proposed for removal or shrink: the binary output that replaces it, and what stays resident. Byte figures are the current spans.
+
+| Passage (current bytes) | Replaced by | Stays resident |
+|---|---|---|
+| `«state.boot»` body, shared-core:108-112 (309 B) | nothing — kept as-is (already a minimal binding; no remediation prose to move) | whole body |
+| `«state.ensure-ready»` body, shared-core:114-121 (1,164 B) | `spacedock state ready` already implements the halt-gate (absent checkout → auto-resume via the `state init` path, whose failure stderr carries the manual `git fetch`+`worktree add` fallback, `state.go:65-67`) and the pull-on-boot; conflict → exit 3 + D1 stderr | compact body: guard (split-root only), `→ spacedock state ready` binding, one-pull-at-boot-not-per-read clause, `block: exit 3 → «halt.rebase-conflict»` |
+| `«state.sweep-merged»` body, shared-core:123-129 (906 B) | D2 sweep output: gh-absent prints UNKNOWN explicitly; non-empty sweep names the pr-merge advancement + `merge guard` next step | compact body: guard, `→ spacedock state sweep` binding, boot-before-greet timing clause ("a greet-and-stop boot never enters the event loop, so a merged PR is advanced here or not at all" — sequencing the output cannot carry) |
+| `«state.commit»` body, shared-core:131-136 (601 B) | command's own outcome lines (no-op / local-only / pushed) + D1 exit-3 stderr | compact body: `→ spacedock state commit <slug>` binding + `block: exit 3 → «halt.rebase-conflict»`; the line-106 routing rule "Every state write is one call: «state.commit»(slug)" stays verbatim (pre-invocation — it is what keeps the FO off raw git) |
+| `«halt.rebase-conflict»` body, shared-core:138-144 (854 B) | for the binary-owned cases (state ready/commit exit 3) the D1 stderr carries abort-done/surface/never-force; prose shrinks to the FO-held-conflict case (a manual `pull --rebase` on a code worktree, `claude-fo-dispatch.md:162`, where the FO must run `git rebase --abort` itself) | the «fn» definition heading + the FO-held case + the contractlint-pinned anchor "do not force-push or auto-resolve" (verbatim, `prose_function_backstop_test.go:34`); by-name refs at shared-core:67,120,135 kept (fn-consolidation requires ≥3) |
+| fo-merge-core `## Merge and Cleanup` prose, :5-12 (1,437 B) | phase mechanics re-description → D3 signal lines | launcher invariant paragraph (~590 B — a stale `$PATH` binary lacks `merge guard`; nothing at fire time can warn, the stale binary does not know); "«merge.guard» never invokes the hook and never local-merges" one-liner |
+| `«merge.guard»` effect block + FO-owned steps 1-4, :13-26 (3,670 B) | classifier internals → the binary owns them (fail-closed `prIndicatesMerged` is code); step 1 (invoke hook, record sentinel) → armed/blocked lines; step 2 (default local merge) → finalized no-hook clause; step 3 (worktree/branch removal, remote-branch retention) → finalized next-step clauses; step 4 pointer → finalized "tear down workers per your runtime adapter" | compact «fn»: one-liner binding + invoke-once-per-phase + "--force is never part of the happy path — if the guard refuses, a step was skipped" prohibition; step 4's cohort-derivation stays with the runtime adapter (unchanged) |
+| `### Worktree removal safety`, :27-38 (627 B) | the refusal itself is git's own dirty-worktree refusal (the code backstop); the audit next step rides the finalized line's no---force clause | one resident line: "`--force` is never default; audit untracked files with the operator first" |
+| `## Mod-Block Guard`, :39-46 (1,297 B) | "guard refuses, does not auto-fix" mechanics → the existing runSet refusals with D4 reworded stderr; missing-mod escalation → D5 refusal | one resident resume line: "a non-empty `mod-block=merge:{mod}` on boot means a merge is mid-flight — check what the hook left and re-run `merge guard`" |
+
+Nothing else in either file is touched.
+
+### Prose that must stay resident (pre-invocation prohibitions), with backstops
+
+The riskiest mechanism in this design: post-invocation output cannot carry a pre-invocation prohibition — by the time the binary prints, the FO already chose which command to run. Per dropped passage, the binary-refusal backstop that holds the line anyway:
+
+- **Never-force on state conflict:** the verbs themselves never emit a force-push (`state_commit_test.go:114` pins that a plain push stays rejected after HALT). Residual risk is the FO bypassing the verb with raw git — held by the resident routing rule (`«state.commit»` is the one write path) plus the resident "do not force-push or auto-resolve" anchor, and re-stated at fire time by D1.
+- **Do-not-dispatch-on-unmerged-tree:** exit 3 is itself the enforcement (a caller gating on exit 0 cannot proceed); D1 stderr says HALT dispatch; the compact «halt.rebase-conflict» block clause stays resident.
+- **Never-finalize-on-open-PR:** the blocked classifier + fail-closed sentinel validation (`prIndicatesMerged`, merge.go:170) is code, tested; the blocked line restates it.
+- **Hook-skip terminalize:** the runSet mod-block/merge-hook guards refuse it (code, shipped); D4 makes their stderr carry the remediation instead of inviting `--force`.
+- **`--force`-to-clear temptation:** cannot be a hard refusal (`--force` is the operator's legitimate escape hatch) — this is the one prohibition that genuinely cannot move; it stays resident as the compact "never part of the happy path" clause, with D4's reworded refusal as the fire-time echo.
+- **Worktree `remove --force`:** git's own dirty-worktree refusal is the code backstop; the resident one-liner + the finalized-line audit clause carry the spacedock-specific ritual.
+- **Missing blocking mod:** D5 turns the prose escalation into a refusal (code gate replaces prose outright).
+- **Stale-binary fallback (launcher invariant):** no fire-time backstop is possible — a stale binary cannot warn about a subcommand it does not have. Stays resident verbatim.
+
+## Acceptance criteria
+
+- **AC-1 (VALUE — measured token delta).** Against the origin/main baselines (`git show origin/main:<file> | wc -c`): `skills/first-officer/references/first-officer-shared-core.md` shrinks by ≥2,000 bytes (≈500 tok at bytes/4; baseline 23,216 B) and `skills/first-officer/references/fo-merge-core.md` by ≥2,800 bytes (≈700 tok; baseline 7,299 B). Both deltas NEGATIVE; the guidance-coverage map above names the replacing output for every dropped passage, audited at validation so no guidance is silently lost. Tested by: `wc -c` comparison recorded in the implementation/validation stage reports.
+- **AC-2.** `state commit` and `state ready` exit-3 stderr carries the remediation block: HALT-dispatch next-action line, the never-force/never-auto-resolve line, conflicting path(s), and the peer commit; `--json` carries `peer_commit`. Tested by: extending the existing real-git conflict e2e in `internal/cli/state_commit_test.go` / `state_ready_test.go` to pin the new stderr lines and JSON field.
+- **AC-3.** `merge guard` default prose for armed/blocked/finalized each names the FO's next step per D3 (armed: mod path + re-run; blocked: sentinel recording + never-finalize-open-PR; finalized: worktree removal with no---force audit clause, branch cleanup, remote-branch retention, worker teardown; no-hook path: `--no-ff` merge onto trunk). Tested by: `internal/status/merge_guard_test.go` cases pinning each phase's line content, including the finalized line with and without a recorded `worktree:`.
+- **AC-4.** With ≥1 PR-pending entity and `gh` probes all failing, `state sweep` output (prose + JSON) declares merge state UNKNOWN/gh unavailable rather than `0 entity(ies)`; a non-empty sweep names the advancement next step. Tested by: injected GhRunner stub (existing seam) in `internal/cli/state_sweep_test.go`.
+- **AC-5.** `merge guard` on `mod-block=merge:X` with `X` unregistered and verdict `passed` exits 1 with the missing-mod escalation text and mutates nothing; verdict `rejected` still finalizes. Tested by: new `merge_guard_test.go` cases — TDD, the failing test first pins today's silent finalize.
+- **AC-6.** The mod-block and merge-hook `--set` refusal stderr ends with the D4 warning wording, not a bare "or use `--force`". Tested by: the existing guard-refusal unit tests updated to pin the new tails.
+- **AC-7.** Pre-invocation prohibitions stay resident and contractlint stays green: `prose_function_backstop_test.go` ("do not force-push or auto-resolve" anchor), `fn_consolidation_structure_test.go` (exactly 1 `«halt.rebase-conflict»` definition, ≥3 by-name refs, `git rebase --abort` exactly once — the trimmed bodies keep their by-name block clauses), `boot_resident_closure_test.go` (fo-merge-core load point resolves). Tested by: `go test ./internal/contractlint/`.
+- **AC-8.** Live behavior preserved: the claude-live lane green on the PR (see Test plan — the diff touches `skills/**/references/**`, so the lane is REQUIRED, not optional).
+
+## Test plan
+
+- **Go unit/e2e (cheap, existing harnesses):** AC-2 via the real-git two-writer conflict repos already built in `state_commit_test.go`/`state_ready_test.go`; AC-3/AC-5 via the merge-guard fixture workflows in `internal/status/merge_guard_test.go`; AC-4 via the injected `GhRunner` seam; AC-6 via the runSet guard tests. No golden fixtures pin any of this output today (checked `fixtures/`), so no fixture churn.
+- **contractlint:** full `./internal/contractlint/` suite; the trims are designed to keep the pinned counts satisfied without test edits (the abort verb stays exactly once in the «halt.rebase-conflict» body — the FO-held code-worktree case still needs it; the by-name refs at shared-core:67,120,135 survive the compaction). If a count legitimately changes, the test updates ship in the same PR with the rationale in the commit.
+- **Live merge gate (recorded per the ideation checklist):** the diff touches `skills/first-officer/references/**`, which the claude-live lane loads — per `docs/dev/README.md:77` the path→lane mapping makes `claude-live` REQUIRED green before merge; a flake is re-run to green, never skipped. The `merge-hook-guardrail` live scenario is the behavior-preservation oracle for the ceremony trims; a boot smoke confirms the greet still composes from the compacted «fn» bodies.
+- **Estimated cost:** implementation is localized (one stderr block, three signal lines, one sweep wrapper, one classifier case, two refusal tails, two prose files); Go tests run in the offline lane; one claude-live approval cycle.
+
+## Spike record
+
+- **Peer-commit capture (riskiest unverified mechanism, exercised first):** PASSED 2026-07-02. Two-clone/shared-bare-origin repro in scratchpad: after writer B's `pull --rebase` conflicts and after `git rebase --abort`, `git rev-parse --short origin/<branch>` still resolves to writer A's pushed commit (verified equal to A's HEAD SHA). The pull's fetch phase updates the remote ref before the rebase fails, and abort does not touch it — so D1's peer-commit line costs one network-free git call.
+- **Silent-finalize gap (D5):** established by code read (`merge.go:150-157` default case reached when `mod-block=merge:X`, X unregistered, pr empty, verdict passed); the implementation's first failing test reproduces it before the fix, per TDD.
+- **No spike needed for:** multi-line stderr from these verbs (shipped `haltOnConflict` already emits three pinned lines), frontmatter `worktree:` availability inside `MergeGuard` pre-terminalize (`ParseFrontmatter` already called at merge.go:107), the injected GhRunner test seam (exported for exactly this purpose, reconcile.go:79-85).
+
+## Docs impact
+
+Checked the docs site: `docs/site/reference/command-reference.md` covers `spacedock state` as a one-line table row and documents no output text; `docs/site/advanced/split-root-state.md:9` says same-entity conflicts "halt for your call rather than auto-resolving" — which remains true and is strengthened by D1. No doc file describes the changed failure/phase output lines, so no doc diff is required; this determination is the ideation-stage record.
+
+## Stage Report: ideation
+
+- DONE: The guidance-coverage map is explicit: for each prose passage proposed for removal (the five state «fn» bodies, fo-merge-core sections), name the binary output (exit code + stderr/stdout text) that replaces it, and mark what must STAY resident (pre-invocation prohibitions like never-force) — no guidance silently lost.
+  `### Guidance-coverage map` table: 9 passages with current byte spans, each mapped to a D1-D5 output (exit code + concrete text) and a stays-resident column; «state.boot» explicitly kept as-is.
+- DONE: ACs include a VALUE measure (boot-resident and terminal token deltas against the current byte counts) plus behavioral tests pinning the new failure/phase output (exit-3 stderr remediation text, merge guard armed/blocked/finalized next-step lines).
+  AC-1 measures ≥2,000 B off shared-core (baseline 23,216 B) and ≥2,800 B off fo-merge-core (baseline 7,299 B) vs `git show origin/main`; AC-2/AC-3 pin exit-3 stderr and the three phase lines via existing real-git and merge-guard test harnesses.
+- DONE: The riskiest mechanism — post-invocation guidance cannot carry pre-invocation prohibitions — is addressed in the design with the binary-refusal backstop named per dropped passage, and the claude-live merge-gate consequence of touching skills/** is recorded in the test plan.
+  `### Prose that must stay resident` names the backstop for all 8 prohibition classes (incl. the two that cannot move: --force-to-clear, stale-binary launcher invariant); test plan cites docs/dev/README.md:77 making claude-live REQUIRED.
+
+### Summary
+
+Fleshed out the instruction-space→tool-output design: five binary output deltas (D1 exit-3 halt remediation + peer commit, D2 sweep gh-absent UNKNOWN, D3 merge-guard phase next-steps, D4 refusal rewording, D5 missing-mod refusal) paired with a per-passage coverage map trimming the five state «fn» bodies and fo-merge-core. Spiked the riskiest mechanism first (peer-commit ref survives rebase abort — PASSED) and found a real bug en route: a mod-block naming a deleted merge mod silently finalizes today (D5 converts the prose escalation into a code gate). Docs impact checked: none required.
