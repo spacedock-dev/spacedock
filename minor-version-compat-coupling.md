@@ -152,3 +152,50 @@ All five material findings verified against the code and repaired in the body; t
   Verified release.go:74-84 is JSON-only; D5 now specifies an extension-selected `.md` handler rewriting a single pinned-pattern literal (error unless exactly one match), the after-text was rewritten to carry the `0.24` literal exactly once with other clauses saying "the required minor", and the tooling tests cover zero/multi-match errors.
 - DONE: Minor findings folded in.
   Full `--skip-compat-check` consumer list in D6 (frontdoor.go:780/:296/:312/:508/:162, help.go:42/:83, pi.go:408, live_test.go:280, runtime-live-ci.md); gateHost no-remedy-print-on-heal + re-gate-once-then-refuse in D6/AC-4; proof-policy worked-example rewording (proof-policy.md:13, docs/dev/README.md:78) and the `go install` `+dev` cosmetic in the doc diff; go:embed dot-path closure cited in D3.
+
+## Stage Report: implementation
+
+- DONE: AC-1 red-first and divergeable stamp-then-gate fixture test.
+  `internal/release/stamp_then_gate_test.go` (`TestStampVersionFlipsCompatibilityFloor`, commit f346816e): stamps manifest+prose fixture copies to the binary's own minor (Compatible), restamps ONLY the release version to one minor ahead (no other edit), and the SAME fixed binary flips to TooOldBinary on both the manifest and prose gate — no hand-maintained integer anywhere in the path.
+- DONE: The two cross-era sentinels ship frozen and pinned.
+  `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` carry `"requires-contract": ">=3,<4"` (commit d6f24a45); `internal/cli/cli.go`'s `frozenContractToken = "(contract 3)"` is a comment-documented frozen literal, not derived from any constant. Pinned by `internal/contractlint/prose_manifest_minor_sync_test.go` (commit 8b44d393): `TestVendoredManifestTombstoneFrozen` locks the tombstone on both manifests; `TestProseMinorMatchesVendoredManifestMinor` binds the FO shared-core's stamped minor to each manifest's own minor. `TestVersionContractToken` (internal/cli/cli_test.go) locks the frozen token on real `--version` output.
+- DONE: The contract-integer mechanism is fully removed.
+  `CONTRACT_VERSION`, `ParseRange`, `MalformedRange`, and `PluginPredatesContract` deleted from `internal/contract`; the new `Compare(host, pluginVersion, binaryVersion)` does a minor-exact major.minor compare (`ParseMajorMinor`). Grep-verified zero remaining references to any of `CONTRACT_VERSION` / `ParseRange` / `MalformedRange` / `PluginPredatesContract` / `--skip-contract-check` outside `docs/roadmap/**` (frozen historical debriefs, left untouched by design).
+- DONE: All three stamp-version call sites carry the prose file, with the exactly-one-match `.md` handler.
+  `internal/release/prose_stamp.go`'s `StampProseVersion`/`ProseMinor` (commit f346816e) rewrite/read the single `These skills require binary minor X.Y` literal, erroring on zero or multiple matches. `cmd/spacedock-release`'s `stamp-version` and `manifest-tag-gate` dispatch by file extension. `.github/workflows/release.yml` carries the prose file at all three sites (commit 8130e2b7): the tag-gate arg list (:141), the main-reconcile stamp + its `git diff`/`git commit` path lists (:225-241), and the `next` edge-bump stamp + its commit path list (:311-314). `docs/releasing.md`'s manual step 3 mirrors the same three-arg invocation.
+- DONE: BOTH front doors auto-heal `too-old-plugin` with re-gate-once.
+  `internal/cli/frontdoor.go`'s `resolveHealableGate` (commit d6f24a45) shares the no-plugin-found and too-old-plugin healable arms: announce ("Installing…" / "Refreshing…"), install, re-gate ONCE, refuse with the remedy on a second miss — no loop. `gateHost` stays silent for both healable verdicts (no scary remedy print before the silent heal). Test coverage for `too-old-plugin` specifically (announce text, silent gateHost, --no-install refusal, second-miss-no-loop) was missing after the initial pass and added in commit ad26ea00 (`TestGateHostStaysSilentForTooOldPlugin`, `TestFrontDoorTooOldPluginAutoRefreshes`, `TestFrontDoorTooOldPluginNoInstallRefuses`, `TestFrontDoorTooOldPluginSecondMissRefuses`, both hosts).
+- DONE: The real-binary cross-era check (published v0.22.0/v0.23.0) executed and recorded.
+  Downloaded the published `darwin_arm64` release tarballs for v0.22.0 and v0.23.0 and built the new binary from this worktree. Commands and observed output:
+  ```
+  $ ./v0.22.0/spacedock --version
+  spacedock 0.22.0 (contract 1)
+  $ ./v0.23.0/spacedock --version
+  spacedock 0.23.0 (contract 2)
+  $ ./spacedock-new --version
+  spacedock 0.24.0-pre1+dev (contract 3)
+
+  $ ./v0.22.0/spacedock doctor --plugin-manifest tombstone-manifest.json   # requires-contract ">=3,<4", version 0.24.0
+  Spacedock version mismatch: binary 0.22.0, plugin 0.24.0. Upgrade the binary to continue.
+  exit=1
+  $ ./v0.23.0/spacedock doctor --plugin-manifest tombstone-manifest.json
+  Spacedock version mismatch: binary 0.23.0, plugin 0.24.0. Upgrade the binary to continue.
+  exit=1
+
+  $ ./spacedock-new doctor --plugin-manifest real-v0.23.0-manifest.json   # fetched live from the v0.23.0 tag
+  Spacedock version mismatch: binary 0.24.0-pre1+dev, plugin 0.23.0. Update the plugin to continue.
+  exit=1
+  $ ./spacedock-new doctor --plugin-manifest real-v0.22.0-manifest.json
+  Spacedock version mismatch: binary 0.24.0-pre1+dev, plugin 0.22.0. Update the plugin to continue.
+  exit=1
+  $ ./spacedock-new doctor --plugin-manifest .claude-plugin/plugin.json   # this checkout's own manifest
+  OK: spacedock binary 0.24.0-pre1+dev and plugin 0.24.0-pre1 are compatible.
+  exit=0
+  ```
+  Every cell of the compatibility matrix (D4's compatibility-matrix table) is proven against real shipped artifacts, not stubs: integer-era binaries reject the tombstone with "upgrade the binary"; the new binary rejects both real old-era manifests as too-old-plugin and accepts its own checkout's manifest.
+- DONE: Full `go test ./...` green, including the `live` build tag.
+  `go build ./...`, `go vet ./...`, `gofmt -l .`, and `go test ./... -count=1` are clean; `go build -tags live ./...` and `go vet -tags live ./...` are clean (the (build-tag `live`) runtime-live fixtures in `internal/ensigncycle` got the same `--skip-compat-check` rename, commit 67b76be2, for consistency even though they don't run in the default suite). One `internal/ensigncycle` test (`TestSonnetTeamDeleteHangReplay`, an unrelated stream-replay regression test last touched in an unrelated historical commit) flaked once during a full-suite run and passed on every retry in isolation and in the full package — a pre-existing flake, not caused by this change.
+
+### Summary
+
+Replaced the hand-maintained contract-integer gate with minor-version coupling end to end: `internal/contract`'s new major.minor `Compare` (with the D3 dev-build embed and D4's two frozen cross-era sentinels), the D5 FO prose gate and its `.md` stamp/read tooling in `internal/release` and `cmd/spacedock-release`, the D6 front-door auto-heal extended to `too-old-plugin`, the `--skip-compat-check` rename, the `internal/contractlint` sync test binding the prose minor to the manifests, and the release.yml/docs wiring so the prose file rides every stamp call site. The riskiest mechanism (the compare) was proven first via the AC-1 divergeable fixture test and then against real published v0.22.0/v0.23.0 binaries. Two gaps surfaced only after the initial implementation pass — missing test coverage for the too-old-plugin auto-heal arm and for the AC-5 dev-build embed/fixture — and were closed with dedicated tests before this report. All work is committed on `spacedock-ensign/minor-version-compat-coupling`; no code was committed to `main`.
