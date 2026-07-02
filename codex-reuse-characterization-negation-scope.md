@@ -1,6 +1,6 @@
 ---
 title: "codex-live CI false reds: reuse characterization and shallow-boot gh probe shape"
-status: validation
+status: implementation
 group: tooling
 source: "PR #464 codex-live (2026-07-02, run 28568410914): TestLiveCodexSharedScenarios/rejection-flow failed 'addressable-worker was characterized ABSENT, but transcript contains turn-starting reuse tool send_input' — while the scenario's behavior was CORRECT (two-cycle rejection flow, kept-alive reviewer, clean tree). Root cause read from the artifact: codexNarrationNegatesReuseRoute (internal/ensigncycle/shared_reviewer_reuse_test.go:391) flags any single FO message containing a reuse concept AND any negation token; both tripping messages AFFIRM reuse with unrelated negations ('does not close or redispatch the worker', 'the host has no dedicated shutdown tool ... the two reusable workers'). Same over-broad live-heuristic family as the 2w wrong-root detector fixed in #462. Narration-dependent: can red any branch."
 id: mq42796928asq686vxs74mpm
@@ -131,3 +131,9 @@ Implemented the Codex reuse narration classifier as explicit absence-declaration
 ### Summary
 
 Validation found commit `063a8b9a` scoped to the requested false-red fixes and reproduced the focused and broad offline evidence for AC-1 through AC-5. The auth blocker for AC-6 is gone, and live artifacts now exist, but the combined `rejection-flow` plus `shallow-boot` confirmation is not green and the isolated Codex config still does not prove v2 addressable reviewer reuse.
+
+### Feedback Cycles
+
+Cycle 1 — 2026-07-02T10:46:40Z — Captain rejected validation; no reframe needed yet.
+
+Return to implementation to close the remaining AC-6 gap. Keep the existing task scope: mq must not be called done on the offline classifier fix alone or on a live `rejection-flow` pass that silently takes the fresh-reviewer path. Implementation should either make the isolated Codex live lane expose and prove the intended multi-agent-v2/addressable reviewer reuse path, or coordinate this task behind `codex-launcher-multi-agent-v2` and leave AC-6 explicitly pending until that launcher path is green. Required evidence for the next validation pass is one preserved combined live run covering both `rejection-flow` and `shallow-boot`, with artifacts showing reviewer reuse accepted and shallow-boot archived before greet.
