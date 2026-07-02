@@ -109,7 +109,7 @@ func TestBridgeConversationReplyContract(t *testing.T) {
 		`"intent_kind":"<tell|conn|decision|permission-decision>"`,
 		`"status":"<answered|accepted|released|applied|denied|rejected|blocked>"`,
 		`target` + "` is the actual acknowledging workflow slug, never " + "`all`",
-		`applied` + "` when a decision field value is present and gate resolution finished or was already satisfied",
+		`applied` + "` when a decision is present and gate resolution finished or was already satisfied",
 		`blocked` + "` when a valid intent could not finish",
 		`rejected` + "` when an intent is invalid or unresolvable",
 		`not an exactly-once delivery ledger`,

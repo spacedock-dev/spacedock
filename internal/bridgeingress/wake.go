@@ -53,10 +53,32 @@ type inboxRecord struct {
 	Line      int       `json:"-"`
 }
 
+type replyRecord struct {
+	Schema        int       `json:"schema"`
+	Kind          string    `json:"kind"`
+	Target        string    `json:"target"`
+	InReplyToID   string    `json:"in_reply_to_id"`
+	InReplyToLine int       `json:"in_reply_to_line"`
+	InReplyToTS   time.Time `json:"in_reply_to_ts"`
+	IntentKind    string    `json:"intent_kind"`
+	Status        string    `json:"status"`
+}
+
 type heartbeat struct {
 	SessionID string    `json:"session_id"`
 	TS        time.Time `json:"ts"`
 	State     string    `json:"state"`
+}
+
+type sessionMarker struct {
+	SessionID string `json:"session_id"`
+	Workflow  string `json:"workflow"`
+}
+
+type eventRecord struct {
+	Host      string    `json:"host"`
+	TS        time.Time `json:"ts"`
+	SessionID string    `json:"session_id"`
 }
 
 type wakeEvent struct {
@@ -74,9 +96,9 @@ type wakeEvent struct {
 	Error     string   `json:"error,omitempty"`
 }
 
-// Wake resumes live Codex FO sessions that are addressed by inbox records after
-// the successful-wake cursor. It advances the cursor only after at least one
-// resume succeeds; no-session records remain eligible for a future wake.
+// Wake resumes Codex FO sessions for inbox records that are not yet delivered by
+// the addressed workflow cursors or an FO reply/ack. Starting a resume process is
+// only a wake attempt; delivery is confirmed later by cursor advancement or ack.
 func Wake(ctx context.Context, opts Options) Result {
 	host := normalizeHost(opts.Host)
 	if host == "" {
@@ -104,35 +126,38 @@ func Wake(ctx context.Context, opts Options) Result {
 	}
 	defer unlock()
 
-	cursor := readCursor(absRoot)
-	records, lastLine, err := readPendingInbox(absRoot, cursor)
+	allRecords, err := readInbox(absRoot)
 	if err != nil {
 		return Result{Status: "failed", Error: err.Error()}
 	}
-	if len(records) == 0 {
-		if lastLine > cursor {
-			_ = writeCursor(absRoot, lastLine)
+	replies := loadReplies(absRoot)
+	var records []inboxRecord
+	for _, rec := range allRecords {
+		if len(pendingTargetsFor(absRoot, rec, opts.Members, replies)) > 0 {
+			records = append(records, rec)
 		}
+	}
+	if len(records) == 0 {
 		return Result{Status: "noop", Message: "no pending inbox records"}
 	}
 
 	sessions := map[string]*sessionWake{}
 	targetsMissingSession := map[string]bool{}
 	for _, rec := range records {
-		targets := targetsFor(absRoot, rec, opts.Members)
+		targets := pendingTargetsFor(absRoot, rec, opts.Members, replies)
 		if len(targets) == 0 {
 			continue
 		}
 		for _, target := range targets {
-			hb, ok := loadHeartbeat(absRoot, target, now())
-			if !ok || hb.SessionID == "" {
+			sessionID, ok := resumableSessionID(absRoot, target)
+			if !ok {
 				targetsMissingSession[target] = true
 				continue
 			}
-			w := sessions[hb.SessionID]
+			w := sessions[sessionID]
 			if w == nil {
-				w = &sessionWake{SessionID: hb.SessionID, TargetSet: map[string]bool{}}
-				sessions[hb.SessionID] = w
+				w = &sessionWake{SessionID: sessionID, TargetSet: map[string]bool{}}
+				sessions[sessionID] = w
 			}
 			w.TargetSet[target] = true
 			w.Lines = appendUniqueInt(w.Lines, rec.Line)
@@ -152,9 +177,9 @@ func Wake(ctx context.Context, opts Options) Result {
 			Status:    "skipped-no-session",
 			Lines:     recordLines(records),
 			Targets:   targets,
-			Message:   "no fresh FO heartbeat with a Codex session id",
+			Message:   "no resumable Codex session id",
 		})
-		return Result{Status: "skipped-no-session", Lines: recordLines(records), Targets: targets, Message: "no fresh FO heartbeat with a Codex session id"}
+		return Result{Status: "skipped-no-session", Lines: recordLines(records), Targets: targets, Message: "no resumable Codex session id"}
 	}
 
 	resume := opts.Resume
@@ -197,9 +222,6 @@ func Wake(ctx context.Context, opts Options) Result {
 		})
 	}
 
-	if successes > 0 {
-		_ = writeCursor(absRoot, lastLine)
-	}
 	result := Result{
 		Status:   "woke",
 		Lines:    recordLines(records),
@@ -265,6 +287,9 @@ func execCodexResume(ctx context.Context, bin, sessionID, prompt string) error {
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("codex exec resume: %w", err)
 	}
+	go func() {
+		_ = cmd.Wait()
+	}()
 	return nil
 }
 
@@ -295,30 +320,13 @@ func acquireLock(root string) (func(), bool) {
 	return func() { _ = os.Remove(path) }, true
 }
 
-func readCursor(root string) int {
-	data, err := os.ReadFile(filepath.Join(root, "_bridge", ".wake-cursor.codex"))
-	if err != nil {
-		return 0
-	}
-	n, _ := strconv.Atoi(strings.TrimSpace(string(data)))
-	return n
-}
-
-func writeCursor(root string, line int) error {
-	dir := filepath.Join(root, "_bridge")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(dir, ".wake-cursor.codex"), []byte(strconv.Itoa(line)+"\n"), 0o600)
-}
-
-func readPendingInbox(root string, cursor int) ([]inboxRecord, int, error) {
+func readInbox(root string) ([]inboxRecord, error) {
 	f, err := os.Open(filepath.Join(root, "_bridge", "inbox.jsonl"))
 	if os.IsNotExist(err) {
-		return nil, cursor, nil
+		return nil, nil
 	}
 	if err != nil {
-		return nil, cursor, err
+		return nil, err
 	}
 	defer f.Close()
 
@@ -327,7 +335,7 @@ func readPendingInbox(root string, cursor int) ([]inboxRecord, int, error) {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		lineNo++
-		if lineNo <= cursor || strings.TrimSpace(scanner.Text()) == "" {
+		if strings.TrimSpace(scanner.Text()) == "" {
 			continue
 		}
 		var rec inboxRecord
@@ -338,9 +346,73 @@ func readPendingInbox(root string, cursor int) ([]inboxRecord, int, error) {
 		out = append(out, rec)
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, lineNo, err
+		return nil, err
 	}
-	return out, lineNo, nil
+	return out, nil
+}
+
+func pendingTargetsFor(root string, rec inboxRecord, members []string, replies map[string]bool) []string {
+	var pending []string
+	for _, target := range targetsFor(root, rec, members) {
+		if inboxCursor(root, target) >= rec.Line {
+			continue
+		}
+		if replies[replyKey(rec, target)] {
+			continue
+		}
+		pending = append(pending, target)
+	}
+	return pending
+}
+
+func inboxCursor(root, slug string) int {
+	if !safeSlugPattern.MatchString(slug) || slug == "." || slug == ".." {
+		return 0
+	}
+	data, err := os.ReadFile(filepath.Join(root, "_bridge", ".inbox-cursor."+slug))
+	if err != nil {
+		return 0
+	}
+	n, _ := strconv.Atoi(strings.TrimSpace(string(data)))
+	if n < 0 {
+		return 0
+	}
+	return n
+}
+
+func loadReplies(root string) map[string]bool {
+	out := map[string]bool{}
+	f, err := os.Open(filepath.Join(root, "_bridge", "fo-replies.jsonl"))
+	if err != nil {
+		return out
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.TrimSpace(scanner.Text()) == "" {
+			continue
+		}
+		var rec replyRecord
+		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
+			continue
+		}
+		if rec.Schema != 1 || rec.Target == "" || rec.InReplyToLine <= 0 || rec.IntentKind == "" {
+			continue
+		}
+		if !safeSlugPattern.MatchString(rec.Target) || rec.Target == "." || rec.Target == ".." {
+			continue
+		}
+		out[replyKey(inboxRecord{ID: rec.InReplyToID, TS: rec.InReplyToTS, Kind: rec.IntentKind, Line: rec.InReplyToLine}, rec.Target)] = true
+	}
+	return out
+}
+
+func replyKey(rec inboxRecord, target string) string {
+	id := rec.ID
+	if id == "" {
+		id = rec.TS.Format(time.RFC3339Nano)
+	}
+	return strconv.Itoa(rec.Line) + "\x00" + id + "\x00" + rec.Kind + "\x00" + target
 }
 
 func targetsFor(root string, rec inboxRecord, members []string) []string {
@@ -388,15 +460,98 @@ func loadHeartbeat(root, slug string, now time.Time) (heartbeat, bool) {
 	if !safeSlugPattern.MatchString(slug) || slug == "." || slug == ".." {
 		return hb, false
 	}
-	data, err := os.ReadFile(filepath.Join(root, "_bridge", "fo."+slug+".json"))
-	if err != nil {
-		return hb, false
-	}
-	if err := json.Unmarshal(data, &hb); err != nil || hb.TS.IsZero() {
+	hb, ok := loadHeartbeatAnyAge(root, slug)
+	if !ok || hb.TS.IsZero() {
 		return hb, false
 	}
 	age := now.Sub(hb.TS)
 	return hb, age >= 0 && age <= liveWindow
+}
+
+func loadHeartbeatAnyAge(root, slug string) (heartbeat, bool) {
+	var hb heartbeat
+	if !safeSlugPattern.MatchString(slug) || slug == "." || slug == ".." {
+		return hb, false
+	}
+	data, err := os.ReadFile(filepath.Join(root, "_bridge", "fo."+slug+".json"))
+	if err != nil {
+		return hb, false
+	}
+	if err := json.Unmarshal(data, &hb); err != nil {
+		return hb, false
+	}
+	return hb, true
+}
+
+func resumableSessionID(root, slug string) (string, bool) {
+	if hb, ok := loadHeartbeatAnyAge(root, slug); ok && strings.TrimSpace(hb.SessionID) != "" {
+		return strings.TrimSpace(hb.SessionID), true
+	}
+	if sessionID, ok := sessionIDFromMarkers(root, slug); ok {
+		return sessionID, true
+	}
+	if sessionID, ok := latestCodexEventSession(root); ok {
+		return sessionID, true
+	}
+	return "", false
+}
+
+func sessionIDFromMarkers(root, slug string) (string, bool) {
+	matches, _ := filepath.Glob(filepath.Join(root, "_bridge", "sessions", "*.json"))
+	sort.Strings(matches)
+	var bestPath string
+	var bestMod time.Time
+	var bestSession string
+	for _, path := range matches {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var rec sessionMarker
+		if err := json.Unmarshal(data, &rec); err != nil {
+			continue
+		}
+		if rec.Workflow != slug || strings.TrimSpace(rec.SessionID) == "" {
+			continue
+		}
+		info, err := os.Stat(path)
+		mod := time.Time{}
+		if err == nil {
+			mod = info.ModTime()
+		}
+		if bestSession == "" || mod.After(bestMod) || (mod.Equal(bestMod) && path > bestPath) {
+			bestPath = path
+			bestMod = mod
+			bestSession = strings.TrimSpace(rec.SessionID)
+		}
+	}
+	return bestSession, bestSession != ""
+}
+
+func latestCodexEventSession(root string) (string, bool) {
+	f, err := os.Open(filepath.Join(root, "_bridge", "events.jsonl"))
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+	var best eventRecord
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		var rec eventRecord
+		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
+			continue
+		}
+		if normalizeHost(rec.Host) != "codex" || strings.TrimSpace(rec.SessionID) == "" {
+			continue
+		}
+		if best.SessionID == "" || rec.TS.After(best.TS) {
+			best = rec
+		}
+	}
+	if best.SessionID == "" {
+		return "", false
+	}
+	return strings.TrimSpace(best.SessionID), true
 }
 
 func appendWakeEvent(root string, event wakeEvent) {

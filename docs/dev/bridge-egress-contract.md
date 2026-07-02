@@ -65,14 +65,14 @@ One JSON object per line, appended when the FO dispatches, advances, or complete
 One JSON object per line, appended after the FO has interpreted, accepted, or applied an inbox intent. This is the explanatory reply/ack stream for Bridge's conversation loop; the per-workflow inbox cursor remains the delivery/read source of truth. Duplicate replies are allowed under at-least-once replay; Bridge folds them by intent id (or legacy line fallback), acknowledging target, and reply kind. The stream is best-effort explanatory content, not an exactly-once delivery ledger.
 
 ```
-{"schema":1,"ts":"<rfc3339 UTC>","kind":"<reply|conn-ack|decision-ack|permission-ack>","target":"<acknowledging workflow slug>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"<tell|conn|decision|permission-decision>","status":"<answered|accepted|released|applied|denied|rejected|blocked>","text":"optional one-line note","granted":true,"entity":"...","field":"...","value":"...","request_id":"...","session_id":"optional","host":"optional"}
+{"schema":1,"ts":"<rfc3339 UTC>","kind":"<reply|conn-ack|decision-ack|permission-ack>","target":"<acknowledging workflow slug>","in_reply_to_id":"<Bridge intent id>","in_reply_to_line":123,"in_reply_to_ts":"<original intent ts>","intent_kind":"<tell|conn|decision|permission-decision>","status":"<answered|accepted|released|applied|denied|rejected|blocked>","text":"optional one-line note","granted":true,"entity":"...","field":"...","value":"...","verdict":"...","request_id":"...","session_id":"optional","host":"optional"}
 ```
 
 - `target` is the actual acknowledging workflow slug, never `all`.
 - `in_reply_to_line` is the physical line number in `_bridge/inbox.jsonl` that produced the ack.
 - `kind`: `reply` for `tell`, `conn-ack` for `conn`, `decision-ack` for `decision`, `permission-ack` for `permission-decision`.
-- `status`: `answered` for a handled `tell`; `accepted` when the FO adopts a conn grant or accepts a permission retry; `released` when the FO gives the conn back; `applied` when a decision field value is present and gate resolution finished or was already satisfied; `denied` when the captain rejects a permission request; `blocked` when a valid intent could not finish; `rejected` when an intent is invalid or unresolvable.
-- Echo `granted`, `entity`, `field`, `value`, and `request_id` when present and relevant to the intent. Keep `text` one line.
+- `status`: `answered` for a handled `tell`; `accepted` when the FO adopts a conn grant or accepts a permission retry; `released` when the FO gives the conn back; `applied` when a decision is present and gate resolution finished or was already satisfied; `denied` when the captain rejects a permission request; `blocked` when a valid intent could not finish; `rejected` when an intent is invalid or unresolvable.
+- Echo `granted`, `entity`, `field`, `value`, `verdict`, and `request_id` when present and relevant to the intent. Keep `text` one line.
 - Append-only and best-effort: write one complete newline-terminated JSON object in one append operation, and never rewrite `fo-replies.jsonl`.
 - → **All hosts (host-neutral producer):** the `bridge-inbox` mod appends replies/acks while draining `_bridge/inbox.jsonl`.
 

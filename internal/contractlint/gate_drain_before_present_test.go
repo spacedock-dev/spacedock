@@ -13,9 +13,9 @@ import (
 // TestGateAssembleVerdictDrainsBeforePresenting locks the drain-before-present
 // fix: when the FO reaches a gate, it must first fire that entity's idle hooks
 // (draining a Bridge-queued `decision` record) and skip the presentation if the
-// decision already resolved the gate. Bridge cannot wake a parked FO, so without
-// this a queued captain decision sits unprocessed while the FO redundantly
-// presents — the gate-vs-inbox race observed on DRC-3354.
+// decision already resolved the gate. Bridge wake is best-effort, while delivery
+// is confirmed only by the FO-owned drain and ack; without this a queued captain
+// decision can still collide with a redundant terminal prompt.
 func TestGateAssembleVerdictDrainsBeforePresenting(t *testing.T) {
 	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "first-officer-shared-core.md")
 	data, err := os.ReadFile(path)
@@ -26,7 +26,8 @@ func TestGateAssembleVerdictDrainsBeforePresenting(t *testing.T) {
 
 	for _, r := range []string{
 		"drain before presenting",
-		"Bridge cannot wake a parked FO",
+		"Bridge wake is best-effort",
+		"FO-owned drain and ack",
 		"do NOT present",
 	} {
 		if !strings.Contains(content, r) {
