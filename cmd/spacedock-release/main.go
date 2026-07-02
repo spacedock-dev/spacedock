@@ -23,6 +23,8 @@ import (
 //	spacedock-release bump-calendar <marketplace.json>
 //	spacedock-release dev-preversion <stable-version>
 //	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
+//	spacedock-release shallow-boot-window-record <claude-stream.jsonl> --model <model> --out <metrics-dir>
+//	spacedock-release ledger-diff <original.json> <rebuilt.json> --added <scenario-id>[,<scenario-id>...]
 //	spacedock-release e2e-gate <release-commit-sha>
 //
 // stamp-version rewrites each manifest's top-level `version` to the release
@@ -32,7 +34,10 @@ import (
 // advance stamps onto `next`. journey-delta renders and posts (via a sticky
 // `gh pr comment --edit-last`) the per-PR journey-cost delta against the
 // previously published release ledger's latest-by-captured_at baseline per
-// scenario/model. e2e-gate is the
+// scenario/model. shallow-boot-window-record and ledger-diff are the AC-4
+// release-ledger backfill's extraction and pre-upload safeguard steps, invoked
+// standalone against archived data by whoever performs the backfill (a
+// captain-flagged manual procedure, not a CI step). e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
@@ -57,6 +62,10 @@ func main() {
 		os.Exit(journeyCosts(os.Args[2:]))
 	case "journey-delta":
 		os.Exit(journeyDelta(os.Args[2:], ghPostComment))
+	case "shallow-boot-window-record":
+		os.Exit(shallowBootWindowRecord(os.Args[2:]))
+	case "ledger-diff":
+		os.Exit(ledgerDiff(os.Args[2:]))
 	case "e2e-gate":
 		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
 	case "manifest-tag-gate":
@@ -357,6 +366,8 @@ Usage:
   spacedock-release dev-preversion <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
+  spacedock-release shallow-boot-window-record <claude-stream.jsonl> --model <model> --out <metrics-dir>
+  spacedock-release ledger-diff <original.json> <rebuilt.json> --added <scenario-id>[,<scenario-id>...]
   spacedock-release e2e-gate <release-commit-sha>
   spacedock-release manifest-tag-gate <tag> <plugin.json> [<plugin.json> ...]
   spacedock-release notes <release-version>

@@ -158,9 +158,9 @@ func TestBuildShallowBootWindowRecord(t *testing.T) {
 	}
 
 	const model = "claude-test-model"
-	record, err := buildShallowBootWindowRecord(turns, model)
+	record, err := BuildShallowBootWindowRecord(turns, model)
 	if err != nil {
-		t.Fatalf("buildShallowBootWindowRecord: %v", err)
+		t.Fatalf("BuildShallowBootWindowRecord: %v", err)
 	}
 	if record.ScenarioID != "shallow-boot-window" {
 		t.Fatalf("ScenarioID = %q, want shallow-boot-window", record.ScenarioID)
@@ -214,7 +214,7 @@ func TestBuildShallowBootWindowRecord(t *testing.T) {
 // spike checks could each fail independently. Now that both threshold branches are
 // removed from assertShallowBootMeasuredTurns (not merely bypassed by the caller),
 // it proves the gate is gone at its actual location — none of the three cases that
-// used to trip a threshold return an error — while buildShallowBootWindowRecord
+// used to trip a threshold return an error — while BuildShallowBootWindowRecord
 // still captures each case's full greet-turn TokenTotals, so the former
 // ceiling/spike signal stays reconstructable from the recorded telemetry even
 // though it no longer gates CI.
@@ -227,8 +227,8 @@ func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
 	if err := assertShallowBootMeasuredTurns(heavyGreet); err != nil {
 		t.Fatalf("a greet turn over the former ceiling must no longer fail now that the threshold gate is removed: %v", err)
 	}
-	if record, err := buildShallowBootWindowRecord(heavyGreet, "test-model"); err != nil {
-		t.Fatalf("buildShallowBootWindowRecord(heavyGreet): %v", err)
+	if record, err := BuildShallowBootWindowRecord(heavyGreet, "test-model"); err != nil {
+		t.Fatalf("BuildShallowBootWindowRecord(heavyGreet): %v", err)
 	} else if record.Tokens.CacheRead != 60000 {
 		t.Fatalf("recorded Tokens must preserve the full greet-turn usage that used to trip the ceiling check, got %+v", record.Tokens)
 	}
@@ -242,8 +242,8 @@ func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
 	if err := assertShallowBootMeasuredTurns(spikeThenLightGreet); err != nil {
 		t.Fatalf("a pre-greet ~89k cache_creation spike (light greet) must no longer fail now that the threshold gate is removed: %v", err)
 	}
-	if record, err := buildShallowBootWindowRecord(spikeThenLightGreet, "test-model"); err != nil {
-		t.Fatalf("buildShallowBootWindowRecord(spikeThenLightGreet): %v", err)
+	if record, err := BuildShallowBootWindowRecord(spikeThenLightGreet, "test-model"); err != nil {
+		t.Fatalf("BuildShallowBootWindowRecord(spikeThenLightGreet): %v", err)
 	} else if record.Turns != 2 {
 		t.Fatalf("Turns = %d, want 2 (greetIndex+1, greet is turns[1])", record.Turns)
 	}
