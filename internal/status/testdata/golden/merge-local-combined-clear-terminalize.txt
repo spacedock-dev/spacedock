@@ -3,4 +3,4 @@
 ===== stdout =====
 
 ===== stderr =====
-Error: entity 030-pending has combined mod-block clear with terminal transition (current mod-block='merge:local-merge'). Clear mod-block in a separate --set call, or use --force.
+Error: entity 030-pending has combined mod-block clear with terminal transition (current mod-block='merge:local-merge'). Clear mod-block in a separate --set call. (--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard 030-pending instead.)

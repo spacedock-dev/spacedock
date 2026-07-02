@@ -26,6 +26,7 @@ type syncResult struct {
 	Result           string   `json:"result"`
 	StateBranch      string   `json:"state_branch,omitempty"`
 	ConflictingPaths []string `json:"conflicting_paths,omitempty"`
+	PeerCommit       string   `json:"peer_commit,omitempty"`
 	Reason           string   `json:"reason"`
 }
 
@@ -156,6 +157,13 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		if code := runStateInit(ctx, []string{"--workflow-dir", workflowDir}, env, dir, stdout, stderr); code != 0 {
 			return code
 		}
+		// The re-boot-after-resume sequencing the «state.ensure-ready» prose used to
+		// own: a just-linked checkout means the boot read the FO already did (if any)
+		// predates the entity dir existing, so it must re-read before greeting.
+		// Prose-only (not --json) — it is FO guidance, not part of the result envelope.
+		if !jsonOut {
+			fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
+		}
 	}
 
 	// No origin → ready, local-only (no network integration to do).
@@ -200,6 +208,10 @@ func runStateSweep(ctx context.Context, args []string, env []string, dir string,
 // code is the enforcement: a caller cannot proceed on an unmerged tree.
 func haltOnConflict(stdout, stderr io.Writer, jsonOut bool, command, slug, branch, checkout, entityPath, rebaseOut string) int {
 	conflicting := conflictingPaths(checkout)
+	// The peer commit that survived: the pull's fetch phase already updated
+	// origin/{branch} before the rebase conflicted, and --abort does not touch
+	// that ref, so this resolves network-free (spiked in ideation).
+	peerCommit := peerCommitSHA(checkout, branch)
 	// Restore a clean tree so the next operation starts fresh. abort failure is
 	// surfaced but the exit is still the halt.
 	runGit(checkout, "rebase", "--abort")
@@ -209,12 +221,34 @@ func haltOnConflict(stdout, stderr io.Writer, jsonOut bool, command, slug, branc
 	}
 	fmt.Fprintf(stderr, "spacedock %s: HALT — same-entity rebase conflict on %s.\n", command, branch)
 	fmt.Fprintf(stderr, "Conflicting path(s): %s\n", strings.Join(conflicting, ", "))
-	fmt.Fprintf(stderr, "The rebase was aborted (checkout left clean) and nothing was force-pushed; a peer's edit is preserved on origin. Manual intervention is required.\n")
+	if peerCommit != "" {
+		fmt.Fprintf(stderr, "Peer commit: %s (origin/%s)\n", peerCommit, branch)
+	}
+	fmt.Fprintf(stderr, "The rebase was aborted (checkout left clean) and nothing was force-pushed; a peer's edit is preserved on origin.\n")
+	fmt.Fprintf(stderr, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.\n")
+	fmt.Fprintf(stderr, "Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.\n")
 	return emitSync(stdout, jsonOut, syncResult{
 		Command: command, Slug: slug, Result: "halted", StateBranch: branch,
 		ConflictingPaths: conflicting,
+		PeerCommit:       peerCommit,
 		Reason:           fmt.Sprintf("HALT: same-entity rebase conflict on %s — rebase aborted, nothing force-pushed, manual intervention required.", strings.Join(conflicting, ", ")),
 	}, 3)
+}
+
+// peerCommitSHA resolves the peer's pushed commit on origin/{branch} — the edit
+// preserved when this side's rebase conflicted. Runs BEFORE `rebase --abort`
+// clears the conflict, though the ref itself does not depend on abort timing (the
+// pull's fetch phase already updated it). Returns "" on any git failure rather
+// than surfacing an error for what is purely diagnostic context.
+func peerCommitSHA(checkout, branch string) string {
+	if branch == "" {
+		return ""
+	}
+	ok, out := runGit(checkout, "rev-parse", "--short", "origin/"+branch)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSpace(out)
 }
 
 // commitEntityPathScoped stages and commits exactly entityPath (never `add -A`),

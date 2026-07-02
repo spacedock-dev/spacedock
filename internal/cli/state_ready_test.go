@@ -85,6 +85,41 @@ func TestStateReadyHaltsOnBootConflict(t *testing.T) {
 	}
 }
 
+// TestStateReadyHaltStderrCarriesRemediationAndPeerCommit pins AC-2 (D1) for the
+// boot-conflict HALT path: identical remediation to `state commit`'s exit-3 halt
+// — the peer commit, the FO's next-action line, and the never-force line.
+func TestStateReadyHaltStderrCarriesRemediationAndPeerCommit(t *testing.T) {
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	checkoutB := filepath.Join(workflowB, ".spacedock-state")
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+
+	writeEntity(t, workflowA, "first-task", "---\nstatus: implementation\n---\n# First Task (A)\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "-m", "A: -> implementation"); code != 0 {
+		t.Fatalf("A's commit should succeed; exit=%d stderr=%q", code, errOut)
+	}
+	peerSHA := strings.TrimSpace(git(t, checkoutA, "rev-parse", "--short", "HEAD"))
+
+	writeEntity(t, workflowB, "first-task", "---\nstatus: review\n---\n# First Task (B)\n")
+	git(t, checkoutB, "add", "first-task.md")
+	git(t, checkoutB, "commit", "-q", "-m", "B: -> review", "--", "first-task.md")
+
+	code, _, errOut := runStateReadyCmd(t, hostB, workflowB)
+	if code != 3 {
+		t.Fatalf("same-entity boot conflict must HALT with exit 3; got exit=%d stderr=%q", code, errOut)
+	}
+	if !strings.Contains(errOut, "Peer commit: "+peerSHA) {
+		t.Fatalf("ready HALT stderr should name the peer commit %q, got:\n%s", peerSHA, errOut)
+	}
+	if !strings.Contains(errOut, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.") {
+		t.Fatalf("ready HALT stderr should name the FO's next action, got:\n%s", errOut)
+	}
+	if !strings.Contains(errOut, "Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.") {
+		t.Fatalf("ready HALT stderr should carry the never-force/never-auto-resolve line, got:\n%s", errOut)
+	}
+}
+
 // TestStateReadyInlineNoOp pins AC-6 inline case: an inline workflow is a clean
 // no-op (exit 0, nothing to sync, no git network op).
 func TestStateReadyInlineNoOp(t *testing.T) {
@@ -136,11 +171,17 @@ func TestStateReadyResumesAbsentCheckout(t *testing.T) {
 	if _, err := os.Stat(freshState); !os.IsNotExist(err) {
 		t.Fatalf("precondition: fresh clone should NOT yet have the state checkout (err=%v)", err)
 	}
-	code, _, errOut := runStateReadyCmd(t, fresh, freshWorkflow)
+	code, stdout, errOut := runStateReadyCmd(t, fresh, freshWorkflow)
 	if code != 0 {
 		t.Fatalf("state ready on an absent checkout should resume it (exit 0); got exit=%d stderr=%q", code, errOut)
 	}
 	if _, err := os.Stat(freshState); err != nil {
 		t.Fatalf("state ready should have resumed the absent checkout: %v", err)
+	}
+	// D1(c): the resume path carries the re-boot-after-resume sequencing the
+	// «state.ensure-ready» prose used to own — the FO must re-invoke the boot read
+	// before the greet since the checkout was just linked.
+	if !strings.Contains(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.") {
+		t.Fatalf("resumed checkout should print the re-boot-before-greet line; stdout:\n%s", stdout)
 	}
 }
