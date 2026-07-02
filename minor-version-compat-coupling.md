@@ -1,6 +1,6 @@
 ---
 title: Replace the contract-integer compatibility gate with minor-version coupling (self-maintaining skill↔binary compat)
-status: implementation
+status: validation
 score: 0.6
 source: "captain proposal during the 0.23.0 cut (2026-06-22). The contract integer stayed dead at 1 across 0.20/0.22/0.23 and was never bumped when the interface broke (the v0.23.0 skill-skew bug). contract-version-bump-v2 (7h3) is the tactical integer bump this would replace."
 id: kr7s9efxas4fqhtcj94fs4br
