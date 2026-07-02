@@ -127,6 +127,16 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// non-empty pr that honestly records the landed merge.
 		return finalize(roots, slug, modBlock, verdict, quiet, asJSON, stdout, stderr)
 
+	case modBlockNamesMissingMergeMod(modBlock, mergeHooks):
+		// A mod-block naming a merge mod that no longer exists under _mods/, with no
+		// merge sentinel recorded and a non-rejected verdict — the mid-flight state a
+		// deleted mod file leaves behind. The default case below would otherwise clear
+		// the block (standalone --set) and terminalize unguarded once no OTHER merge
+		// hook happens to be registered, silently finalizing without the hook ever
+		// having run. Refuse BEFORE any mutation — this case is checked ahead of both
+		// the blocked and default cases so no --set runs.
+		return refuseMissingMergeMod(roots.definitionDir, slug, modBlock, stderr)
+
 	case pr != "":
 		// Phase B blocked: a bare/open PR reference (e.g. #42) — the hook opened a PR
 		// that has NOT merged. NEVER finalize on pr-presence alone; archiving here
@@ -197,6 +207,34 @@ func isSHALike(s string) bool {
 // detection (`pr=pr-merge:{number}`) so the local state honestly records that the
 // PR landed. It mirrors localMergeSentinelPrefix for the no-PR fallback.
 const mergedPRSentinelPrefix = "pr-merge:"
+
+// modBlockNamesMissingMergeMod reports whether modBlock is a merge-ceremony block
+// (`merge:{name}`) naming a mod that is NOT among the currently registered merge
+// hooks — a mod file deleted while its block was still in flight. An empty
+// mod-block, or one naming a mod still present in mergeHooks, returns false.
+func modBlockNamesMissingMergeMod(modBlock string, mergeHooks []string) bool {
+	name, ok := strings.CutPrefix(modBlock, "merge:")
+	if !ok || name == "" {
+		return false
+	}
+	for _, hook := range mergeHooks {
+		if hook == name {
+			return false
+		}
+	}
+	return true
+}
+
+// refuseMissingMergeMod signals D5: the mod-block names a merge mod missing from
+// definitionDir/_mods/, with no merge sentinel recorded — the ceremony cannot
+// resolve without the mod's guidance, and clearing the block would finalize
+// without the hook ever having run. Exits 1, mutating nothing.
+func refuseMissingMergeMod(definitionDir, slug, modBlock string, stderr io.Writer) int {
+	name := strings.TrimPrefix(modBlock, "merge:")
+	return errExit(stderr, fmt.Sprintf(
+		"blocking mod %s is missing from %s/_mods/ — the entity %s is stuck. Restore the mod file, or have the operator clear the block with --force.",
+		name, definitionDir, slug))
+}
 
 // arm performs Phase A: set mod-block=merge:{hook} in its own --set and signal the
 // FO to invoke the hook. The underlying runSet is the proven mutation path.

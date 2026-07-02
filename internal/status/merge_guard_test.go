@@ -388,6 +388,78 @@ func TestMergeGuardRejectedClearsModBlockFirst(t *testing.T) {
 	}
 }
 
+// TestMergeGuardRefusesMissingMergeModNoSentinel (AC-5 row a, D5): a mod-block
+// naming a merge mod that is no longer registered under `_mods/`, with no merge
+// sentinel and a non-rejected verdict, must REFUSE — not silently finalize. This
+// pins the bug found by code read (merge.go's pre-D5 default case): clearing the
+// block here would archive the entity without its hook ever having run. The
+// refusal exits 1, names the missing mod, and mutates nothing (status, mod-block,
+// and pr all survive byte-identical).
+func TestMergeGuardRefusesMissingMergeModNoSentinel(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "120-missing-mod-no-sentinel", "--verdict", "passed")
+	if code != 1 {
+		t.Fatalf("missing-mod no-sentinel must refuse (exit 1), got %d (stdout=%q)", code, out)
+	}
+	if !strings.Contains(errOut, "ghost-merge") {
+		t.Fatalf("stderr should name the missing mod, got %q", errOut)
+	}
+	if !strings.Contains(errOut, "is missing") {
+		t.Fatalf("stderr should say the mod is missing, got %q", errOut)
+	}
+	if strings.Contains(out, "finalized") {
+		t.Fatalf("stdout must not claim finalized on the missing-mod refusal, got %q", out)
+	}
+	entity := filepath.Join(root, "120-missing-mod-no-sentinel.md")
+	if got := frontmatterField(t, entity, "status"); got != "implementation" {
+		t.Fatalf("refused entity must not terminalize, status=%q", got)
+	}
+	if got := frontmatterField(t, entity, "mod-block"); got != "merge:ghost-merge" {
+		t.Fatalf("refused entity must keep its mod-block intact, got %q", got)
+	}
+	if fileExists(filepath.Join(root, "_archive", "120-missing-mod-no-sentinel.md")) {
+		t.Fatal("refused entity must NOT archive")
+	}
+}
+
+// TestMergeGuardFinalizesMissingMergeModWithSentinel (AC-5 row b): a mod-block
+// naming a missing merge mod does NOT refuse when a well-formed merge sentinel is
+// already recorded — the sentinel honestly proves the ceremony ran before the mod
+// file was deleted, so finalize proceeds exactly as it does today.
+func TestMergeGuardFinalizesMissingMergeModWithSentinel(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "130-missing-mod-with-sentinel", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("missing-mod WITH sentinel should still finalize (exit 0), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized") {
+		t.Fatalf("stdout should signal finalized, got %q", out)
+	}
+	archived := filepath.Join(root, "_archive", "130-missing-mod-with-sentinel.md")
+	if !fileExists(archived) {
+		t.Fatal("finalize should archive the entity")
+	}
+	if got := frontmatterField(t, archived, "status"); got != "done" {
+		t.Fatalf("archived status=%q, want done", got)
+	}
+}
+
+// TestMergeGuardFinalizesMissingMergeModRejected (AC-5 row c): a rejected verdict
+// finalizes even when the mod-block names a missing merge mod — the entity never
+// merged, so the rejected-verdict escape takes priority over the missing-mod
+// refusal, exactly as it does today.
+func TestMergeGuardFinalizesMissingMergeModRejected(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "140-missing-mod-rejected", "--verdict", "rejected")
+	if code != 0 {
+		t.Fatalf("missing-mod rejected should still finalize (exit 0), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized") {
+		t.Fatalf("stdout should signal finalized, got %q", out)
+	}
+	archived := filepath.Join(root, "_archive", "140-missing-mod-rejected.md")
+	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
+		t.Fatalf("archived verdict=%q, want rejected", got)
+	}
+}
+
 // TestMergeGuardRequiresSlug (usage): a guard call with no slug is a usage error.
 func TestMergeGuardRequiresSlug(t *testing.T) {
 	root := stageFixture(t, "merge-local-workflow")
