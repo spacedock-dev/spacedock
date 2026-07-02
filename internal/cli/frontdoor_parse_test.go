@@ -50,7 +50,7 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			passthrough: []string{"--model", "gpt-x"},
 		},
 		{
-			name:      "skip-contract-check-consumed",
+			name:      "skip-compat-check-consumed",
 			args:      []string{"--skip-compat-check"},
 			skipCheck: true,
 		},

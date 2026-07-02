@@ -479,7 +479,7 @@ func TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls(t *testing.T) {
 // the binary actually recognizes. After the init->install rename a user who hits
 // the gate and is told to "run spacedock init --host …" runs a command that now
 // exits 2 (unknown command). gateHost owns only the always-fail-fast remedies
-// (resolve error → MalformedRange); the NoPluginFound message is the caller's
+// (resolve error → MalformedVersion); the NoPluginFound message is the caller's
 // (it auto-installs by default, refuses under --no-install), so the no-plugin /
 // missing-manifest remedies are asserted on the launcher's --no-install output.
 // Each remedy must name `spacedock install` and never `spacedock init`.
