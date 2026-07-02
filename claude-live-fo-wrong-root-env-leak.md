@@ -1,6 +1,6 @@
 ---
 title: "Live claude-live FO boots the wrong root — a CI env leak lures the FO off its launch cwd"
-status: implementation
+status: validation
 source: "0240/0qt PR #446 CI (2026-06-30): claude-live (sonnet) failed TestLiveClaudeSharedScenarios twice at claude_live_runner_test.go:122 — 'FO booted the wrong root: expected the fixture root .../001, but the boot command targets /home/user/spacedock-workflow (run 1) / /tmp (run 2) — a CI env leak likely lured the FO off its launch cwd.' claude-live OPUS PASSED the identical suite both runs, so it is sonnet-lane env/model behavior, not the scenarios or a product bug. Recurred 2/2; forced an admin-override merge of 0qt."
 id: 2wbxv8hdq5m754h45ehfd75j
 started: 2026-07-02T01:23:59Z
