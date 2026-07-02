@@ -21,9 +21,15 @@ import (
 // phrasing) and pure (stream + fixtureRoot in, error out), with its own offline
 // test. The wander signatures it keys on, all observable in the boot stream:
 //
-//   - a `cd <abspath>` whose target escapes the fixture root,
-//   - a `spacedock status --boot --workflow-dir <PATH>` whose PATH escapes it, and
-//   - a `Read <dir>/README.md` (the boot's workflow-README read) outside it.
+//   - a `spacedock status --boot --workflow-dir <PATH>` whose PATH escapes the
+//     fixture root, standalone and fatal,
+//   - a `Read <dir>/README.md` (the boot's workflow-README read) outside it,
+//     standalone and fatal, and
+//   - a `cd <abspath>` whose target escapes the fixture root, but ONLY when the
+//     SAME command also carries a workflow-operative token (see
+//     hasWorkflowOperativeSignature) — a bare `cd <outside>` alone is sonnet's
+//     speculative repo-root sniff, a harmless version-probe that neither
+//     persists past the command nor drives any workflow operation.
 //
 // It deliberately does NOT flag the legitimate real-repo paths a correct boot
 // touches: the FO Reads its contract skills from the --plugin-dir checkout (the
@@ -55,7 +61,7 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 		switch b.Name {
 		case "Bash":
 			if target, ok := wanderTarget(b.Input.Command, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — a CI env leak likely lured the FO off its launch cwd",
+				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — the FO's boot operated outside its launch cwd",
 					clean, strings.TrimSpace(b.Input.Command), target)
 			}
 		case "Read":
@@ -64,7 +70,7 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 			// workflow. Contract skills live under {plugin_dir}/skills/...references/,
 			// never a bare <root>/README.md, so this does not flag a contract read.
 			if target, ok := wanderWorkflowReadme(b.Input.FilePath, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — a CI env leak likely lured the FO off its launch cwd",
+				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — the FO's boot operated outside its launch cwd",
 					clean, target)
 			}
 		}
@@ -90,19 +96,74 @@ func wanderWorkflowReadme(filePath, fixtureRoot string) (string, bool) {
 // wanderTarget returns the off-fixture absolute path a boot command targets, when
 // the command is a `cd <abspath>` or a `--workflow-dir <abspath>` resolving outside
 // fixtureRoot. ok is false when the command names no such escaping path (it stays
-// under the fixture, uses a relative path, or is an ordinary command).
+// under the fixture, uses a relative path, or is an ordinary command) — or when
+// the only escaping path is an uncorroborated bare `cd` (see
+// hasWorkflowOperativeSignature).
 func wanderTarget(command, fixtureRoot string) (string, bool) {
-	for _, tok := range bootPathArgs(command) {
-		if !filepath.IsAbs(tok) {
+	corroborated := hasWorkflowOperativeSignature(command)
+	for _, arg := range bootPathArgs(command) {
+		if !filepath.IsAbs(arg.path) {
 			continue
 		}
-		p := filepath.Clean(tok)
+		p := filepath.Clean(arg.path)
 		if p == fixtureRoot || isUnder(p, fixtureRoot) {
+			continue
+		}
+		if arg.cd && !corroborated {
+			// A bare cd escaping the fixture, alone, is sonnet's speculative
+			// repo-root sniff — a harmless version-probe that does not persist
+			// (the FO's very next command runs from the fixture root again) and
+			// drives no workflow operation. Standalone --workflow-dir escapes
+			// (arg.cd == false) are unaffected: they stay first-and-fatal.
 			continue
 		}
 		return p, true
 	}
 	return "", false
+}
+
+// workflowOperativeSubstrings are same-command tokens that turn a bare `cd
+// <outside-fixture>` into a genuine wander: the command goes on to operate the
+// workflow, rather than merely probing a version or toplevel from wherever the
+// cd landed.
+var workflowOperativeSubstrings = []string{
+	"--workflow-dir",
+	"--boot",
+	"--discover",
+	"status --read",
+	"state commit",
+}
+
+// hasWorkflowOperativeSignature reports whether command carries a
+// workflow-operative token: a spacedock workflow flag, a state-checkout commit,
+// `spacedock new`, or a README/entity-path reference. Paired with a same-command
+// `cd <outside-fixture>`, this distinguishes an actual attempt to operate the
+// workflow from outside the fixture from sonnet's harmless speculative
+// repo-root sniff.
+func hasWorkflowOperativeSignature(command string) bool {
+	for _, s := range workflowOperativeSubstrings {
+		if strings.Contains(command, s) {
+			return true
+		}
+	}
+	for _, f := range strings.Fields(command) {
+		f = trimBootSeparator(f)
+		if f == "new" {
+			return true
+		}
+		if strings.Contains(f, "README") || strings.HasSuffix(strings.ToLower(f), ".md") {
+			return true
+		}
+	}
+	return false
+}
+
+// bootPathArg is one path argument a boot command supplies, tagged with
+// whether it came from a `cd` (subject to the corroboration gate) or a
+// `--workflow-dir` (standalone-fatal, ungated).
+type bootPathArg struct {
+	path string
+	cd   bool
 }
 
 // bootPathArgs pulls the path arguments a boot command supplies: the target of a
@@ -112,17 +173,17 @@ func wanderTarget(command, fixtureRoot string) (string, bool) {
 // the path token straight into a shell separator with no preceding space —
 // `cd <root>; ls`, `cd <root>&& ls` — so each extracted token has any trailing
 // `;`/`&&`/`|` trimmed before it reaches the isUnder check.
-func bootPathArgs(command string) []string {
+func bootPathArgs(command string) []bootPathArg {
 	fields := strings.Fields(command)
-	var paths []string
+	var paths []bootPathArg
 	for i, f := range fields {
 		switch {
 		case f == "cd" && i+1 < len(fields):
-			paths = append(paths, trimBootSeparator(fields[i+1]))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(fields[i+1]), cd: true})
 		case f == "--workflow-dir" && i+1 < len(fields):
-			paths = append(paths, trimBootSeparator(fields[i+1]))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(fields[i+1])})
 		case strings.HasPrefix(f, "--workflow-dir="):
-			paths = append(paths, trimBootSeparator(strings.TrimPrefix(f, "--workflow-dir=")))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(strings.TrimPrefix(f, "--workflow-dir="))})
 		}
 	}
 	return paths
