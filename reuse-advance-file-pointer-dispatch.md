@@ -6,6 +6,7 @@ source: "fable-token-trim-scout analysis 2026-07-02 (captain-ordered fresh-angle
 id: jhe1244c8cjdymfbnnpnsvsw
 started: 2026-07-02T03:02:47Z
 worktree: .worktrees/spacedock-ensign-reuse-advance-file-pointer-dispatch
+mod-block: merge:pr-merge
 ---
 
 ## Problem
