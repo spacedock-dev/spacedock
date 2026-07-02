@@ -74,3 +74,16 @@ No spike needed: the design relies only on proven mechanisms. (a) The gap was re
 ### Summary
 
 Root-caused the gap: state verbs resolve an empty --workflow-dir with only the walk-up half of discovery, while status/new/merge guard add the downward-scan fallback; reproduced live at 59251f18 (bare `state sweep` from repo root exits 1 while `status --discover` resolves docs/dev from the same cwd). The approach extracts the existing walk-up+downward combo into one exported resolver reused by all callers, fixing all five state verbs and deduplicating two inline copies. No spike needed (mechanisms shipping and test-pinned) and no doc diff needed (docs already show bare invocations).
+
+## Stage Report: implementation
+
+- DONE: One exported resolver in internal/status carries the walk-up + downward-fallback combo, with status dispatch (native_runner.go), MergeGuard, and the CLI's resolveWorkflowDir empty-flag branch as callers, and the inline copies in parseStateInitArgs/parseStateNewArgs removed — all five state verbs resolve identically (AC-4).
+  `status.ResolveWorkflowDir` added at internal/status/discover_walkup.go:38; native_runner.go:75-79 and merge.go:73-79 now call it; cli/state_sync.go:417-424 `resolveWorkflowDir` calls `status.ResolveWorkflowDir` on empty workflowDir; cli/state.go's `parseStateInitArgs`/`parseStateNewArgs` now end with `return resolveWorkflowDir(workflowDir, dir, stderr)`, no inline copy. Commit c2635be4 on branch spacedock-ensign/state-subcommand-workflow-autodiscovery.
+- DONE: New from-root CLI tests land per the task's Test plan: bare state ready/sweep/commit/init/new each exit 0 with the operation observably performed on the single-nested-workflow fixture, and the two-workflow fixture gets the candidate-listing refusal (AC-1, AC-2).
+  New file internal/cli/state_from_root_test.go (6 tests): TestStateReadyFromRootResolves, TestStateSweepFromRootResolves, TestStateCommitFromRootResolves, TestStateInitFromRootResolves, TestStateNewFromRootResolves, TestStateVerbsFromRootRefuseAmbiguousWorkflows (drives ready/sweep/commit against a two-workflow fixture). All pass (`go test ./internal/cli/... -run FromRoot`: 6/6 passed).
+- DONE: The existing state-verb and discovery suites pass unmodified (state_ready/sweep/commit/init/new/sync tests, native_new_from_root, merge-guard) — the explicit --workflow-dir path and existing callers do not regress (AC-3).
+  Full repo test suite green: `go test ./...` all packages ok, including internal/cli and internal/status.
+
+### Summary
+
+Extracted the shared walk-up + downward-fallback discovery block (previously duplicated in native_runner.go's dispatch and merge.go's MergeGuard) into one exported `status.ResolveWorkflowDir`, and routed the CLI's `resolveWorkflowDir` plus `parseStateInitArgs`/`parseStateNewArgs` through it, removing their inline walk-up-only copies. All five state verbs now auto-discover the lone commissioned workflow with the same zero/ambiguity diagnostics as `spacedock new`. Live-verified: bare `spacedock state sweep` from this repo's toplevel now exits 0 (previously exited 1 requiring `--workflow-dir`). Added internal/cli/state_from_root_test.go covering the from-root success and ambiguity-refusal paths; all existing suites pass unmodified.
