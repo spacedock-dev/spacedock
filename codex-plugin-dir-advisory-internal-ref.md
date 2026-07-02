@@ -10,10 +10,75 @@ started: 2026-07-02T01:37:54Z
 ## Problem
 `installCodexLocalPluginDir` (internal/cli/codex_marketplace.go, ~L132-142) prints a version-masquerade advisory to stderr on every `--plugin-dir` codex/pi install, ending with "...see next-post-release-preversion-bump" — an internal roadmap/branch name an end user cannot act on.
 
-## Desired fix
-Reword the advisory to drop the internal branch identifier. Keep the legitimate meaning ("the reported version reflects the checkout's checked-in manifest, not necessarily its current HEAD") but end it with something user-actionable — a public docs pointer or nothing — never an internal branch/roadmap name.
+## Proposed approach
+Drop the trailing `— see next-post-release-preversion-bump` clause from the advisory and end the sentence after `not necessarily its current HEAD`. End with **nothing**, not a docs pointer: the advisory is purely informational (there is no user action — the version shown is the checked-in manifest's, and the stamping fix that would change it is deferred), and no public docs page describes it, so a pointer would promise a destination that does not exist. The `version-masquerade advisory:` prefix is retained so the existing presence/absence test keys off unchanged text.
 
-## Rough acceptance sketch (ideation tightens into measured ACs + test)
-- The shipped advisory string no longer contains "next-post-release-preversion-bump" (or any internal branch/roadmap identifier), verified by a test asserting its absence; the user-facing meaning is preserved.
-- The AC-3 advisory presence/absence test (internal/cli/codex_plugin_dir_test.go) still passes (present on --plugin-dir, absent on plain install), updated to the reworded string.
-- go build ./... + go test ./internal/cli/ green.
+The internal branch token also appears in the same function's docstring (`codex_marketplace.go:124`, "the full stamping fix lives in next-post-release-preversion-bump"). This is not shipped output, but it is the identical dangling internal-branch reference 18 lines above the string being cleaned, and a roadmap/branch identifier in a comment is exactly the temporal-context naming we avoid. It is folded into this change as a companion edit — reworded to "the full stamping fix is deferred", preserving the deferred-fix meaning without the branch pointer. It is deliberately NOT covered by a measured AC (a comment cannot be exercised); the gate reviewer may pare it back if they prefer to scope strictly to shipped bytes.
+
+### Reworded advisory string — before/after
+
+Shipped advisory (`internal/cli/codex_marketplace.go`, `installCodexLocalPluginDir`):
+
+```diff
+ 	fmt.Fprintf(stderr,
+ 		"Installed codex plugin from %s.\n"+
+ 			"version-masquerade advisory: the reported version reflects the checkout's "+
+-			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD — "+
+-			"see next-post-release-preversion-bump.\n",
++			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.\n",
+ 		checkout)
+```
+
+Rendered stderr, before → after:
+
+```
+Installed codex plugin from <checkout>.
+version-masquerade advisory: the reported version reflects the checkout's checked-in .codex-plugin/plugin.json, not necessarily its current HEAD — see next-post-release-preversion-bump.
+```
+```
+Installed codex plugin from <checkout>.
+version-masquerade advisory: the reported version reflects the checkout's checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.
+```
+
+Companion docstring cleanup (same function, `codex_marketplace.go:121-124`):
+
+```diff
+ // invocation. It prints the version-masquerade advisory on every call: a
+ // `--plugin-dir` install reports the checkout's checked-in .codex-plugin/plugin.json
+-// version, not necessarily its current HEAD (the full stamping fix lives in
+-// next-post-release-preversion-bump).
++// version, not necessarily its current HEAD (the full stamping fix is deferred).
+```
+
+## Acceptance criteria
+Each AC names the test that proves it.
+
+- **AC-1 (value, measured against a baseline that can move the wrong way):** Running a `--plugin-dir` codex install and capturing its stderr, the emitted advisory contains **no** occurrence of the internal branch token `next-post-release-preversion-bump`. This measures the entity's reason-for-existing (shipped output does not leak the internal branch name) against a baseline that moves the wrong way: on current `main` the assertion FAILS (the string emits the token today — confirmed at `codex_marketplace.go:142`, and the presence test proves stderr is produced on `--plugin-dir`); after the reword it passes; a regression re-introducing the token flips it back to failing.
+  - **Test:** a new `strings.Contains` guard added to `TestCodexPluginDirAdvisoryPresenceAndAbsence`'s "present on --plugin-dir" subtest — `if strings.Contains(stderr.String(), "next-post-release-preversion-bump") { t.Fatalf(...) }` — asserted over the real stderr bytes `runCodex` writes, not static prose. `next-post-release-preversion-bump` is the concrete, auditable form of "no internal branch identifier"; it is the specific token the source note flags.
+- **AC-2 (meaning preserved; presence/absence contract intact):** On a `--plugin-dir` install, stderr still contains both `version-masquerade advisory` and the meaning-bearing clause `not necessarily its current HEAD`; on a plain (non---plugin-dir) launch it contains neither. The reword shortens the advisory without gutting what it communicates or breaking the present-on-install / absent-on-plain-launch pair.
+  - **Test:** the existing `TestCodexPluginDirAdvisoryPresenceAndAbsence` present/absent pair, still green on the reworded string (present subtest keys off `version-masquerade advisory`, which the reword retains), plus a strengthening assertion added to the present subtest that stderr contains `not necessarily its current HEAD` (so the test guards the surviving meaning, not just the label).
+- **AC-3 (build + suite green):** `go build ./...` and `go test ./internal/cli/` both succeed on the reworded string and updated test.
+  - **Test:** the two commands themselves.
+
+## Test plan
+- **Scope/kind:** Go unit tests only, in `internal/cli/codex_plugin_dir_test.go`, driving the command through `runCodex` with a `fakeHost` and capturing `stderr`. No new fixtures; no live codex host required for the wording change. The unrelated live edge-channel resolve test (`TestInstallCodexLocalPluginDirResolvesOnEdgeChannel`, skips when `codex` is absent) is untouched.
+- **What verifies it:** AC-1's absence guard and AC-2's presence/meaning assertions run in-process over real emitted bytes; AC-3 is the build + package test run.
+- **Cost/complexity:** trivial — sub-second unit tests, a two-line string edit plus a one-line docstring edit and ~2 added test assertions. No CLI/live/workflow tests needed.
+
+## Spike
+**No spike needed.** Proven mechanisms this rests on: the advisory is emitted by a plain `fmt.Fprintf(stderr, …)` in `installCodexLocalPluginDir`, and its presence/absence is already exercised by `TestCodexPluginDirAdvisoryPresenceAndAbsence` driving `runCodex` over captured stderr. Both were run green during ideation (`present on --plugin-dir`, `absent on plain launch`, and `TestInstallCodexPluginDirInstallsViaSharedHelper` all PASS), so the print-and-assert path is verified — no unverified parser round-trip, runtime handoff, or on-disk format is involved.
+
+## Documentation
+**No doc diff needed.** A repo-wide grep for `version-masquerade` hits only `.go` files (source string + test); no docs-site page describes this advisory string, so there is nothing to update. The change removes an internal reference from user-facing output and adds no new user-facing surface — output becomes strictly less internal-leaky.
+
+## Stage Report: ideation
+
+- DONE: Flesh the exact reworded advisory string (drop "next-post-release-preversion-bump" / any internal branch identifier; preserve the version-masquerade meaning; end user-actionable — a public docs pointer or nothing), with concrete before/after
+  "## Proposed approach" + "### Reworded advisory string — before/after": ends after "…not necessarily its current HEAD." (chose nothing over a docs pointer, rationale recorded); before/after diff + rendered stderr shown; companion docstring cleanup at codex_marketplace.go:124 folded in and flagged as non-gated.
+- DONE: Tighten into measured ACs each naming its test: (a) shipped advisory contains no internal branch/roadmap identifier (asserted), (b) the AC-3 presence/absence pair in codex_plugin_dir_test.go still passes on the new wording
+  AC-1 measures the shipped stderr bytes contain no `next-post-release-preversion-bump` (baseline fails on current main, flips on regression) via a new `strings.Contains` guard; AC-2 keeps the present/absence pair green (prefix retained) + adds a "not necessarily its current HEAD" meaning assertion; AC-3 is build + `go test ./internal/cli/`.
+- DONE: Spike: none needed for a wording change — record "no spike needed" with the proven mechanism (the existing advisory print + its presence/absence test)
+  "## Spike" records no spike needed; ran the existing `fmt.Fprintf` + presence/absence mechanism green during ideation (present/absent + shared-helper all PASS), so the print-and-assert path is verified.
+
+### Summary
+Fleshed the ideation for the version-masquerade advisory internal-branch leak. Chose to end the reworded advisory with nothing (not a docs pointer) since the advisory is purely informational and no docs page describes it, and recorded concrete before/after diffs for both the shipped string and the twin docstring reference. ACs are pinned to the real shipped stderr bytes (AC-1 measures absence of the branch token against a baseline that fails on current main), and "no spike needed" is backed by a green run of the existing advisory presence/absence test. Open decision for the gate: whether the non-gated docstring companion cleanup stays in scope.
