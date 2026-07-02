@@ -120,8 +120,7 @@ func WriteCodexLocalMarketplace(marketplaceRoot, repoRoot, marketplaceName strin
 // so a throwaway dir removed after install would hard-fail every subsequent codex
 // invocation. It prints the version-masquerade advisory on every call: a
 // `--plugin-dir` install reports the checkout's checked-in .codex-plugin/plugin.json
-// version, not necessarily its current HEAD (the full stamping fix lives in
-// next-post-release-preversion-bump).
+// version, not necessarily its current HEAD (the full stamping fix is deferred).
 func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) error {
 	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir", channelMarketplace(devBranch))
 	if err := os.MkdirAll(marketplaceRoot, 0o755); err != nil {
@@ -138,8 +137,7 @@ func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) 
 	fmt.Fprintf(stderr,
 		"Installed codex plugin from %s.\n"+
 			"version-masquerade advisory: the reported version reflects the checkout's "+
-			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD — "+
-			"see next-post-release-preversion-bump.\n",
+			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.\n",
 		checkout)
 	return nil
 }

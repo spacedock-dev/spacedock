@@ -76,7 +76,9 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 // TestCodexPluginDirAdvisoryPresenceAndAbsence is AC-3: every --plugin-dir codex
 // install prints the version-masquerade advisory; a plain (non---plugin-dir) launch
 // prints none. The pair (not a presence-only check) means the test cannot pass by
-// printing the advisory unconditionally.
+// printing the advisory unconditionally. The present subtest also guards that the
+// advisory carries its meaning-bearing clause (not necessarily its current HEAD) and
+// leaks no internal branch identifier.
 func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 	const advisory = "version-masquerade advisory"
 
@@ -91,6 +93,12 @@ func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 		}
 		if !strings.Contains(stderr.String(), advisory) {
 			t.Fatalf("stderr missing the version-masquerade advisory: %q", stderr.String())
+		}
+		if !strings.Contains(stderr.String(), "not necessarily its current HEAD") {
+			t.Fatalf("advisory lost its meaning-bearing clause: %q", stderr.String())
+		}
+		if strings.Contains(stderr.String(), "next-post-release-preversion-bump") {
+			t.Fatalf("advisory leaks the internal branch identifier: %q", stderr.String())
 		}
 	})
 
