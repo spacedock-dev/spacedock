@@ -66,3 +66,20 @@ The riskiest mechanism — can the retention-limited CI streams be reconstructed
 ### Summary
 
 Ideation settled the boundary per the captain's decision (flat `ls` allowed; recursion/hunting banned) and chose detector-down alignment with the contract prose byte-unchanged — the PR #467 FO was prose-compliant, so the false red was purely detector-side. The riskiest mechanism was spiked first: both retention-limited CI streams (PR #467 flat-ls false red, PR #398 genuine find sweep) were reconstructed from artifacts and replayed through the current detector, reproducing the exact CI failure. The approach also fixes a second latent false red found during design (`ls -ltr` flagged via the shared `ContainsAny("rR")` recursive-flag check, though `-r` is reverse-sort for ls).
+
+## Stage Report: implementation
+
+- DONE: commit-1 checks in both reconstructed fixtures plus a RED-first replay test asserting TARGET semantics
+  Re-downloaded both artifacts via `gh api .../actions/artifacts/{id}/zip` and re-ran the ideation spike's extraction command; both fixtures reproduced byte-identically (line/byte counts and sha256 match the Spike record: PR #467 27 lines/18275B/`40a4f45b…`, PR #398 72 lines/32973B/`562c87a9…`). `TestDetectBroadSearchAtBootRealZeroDiscoverStreams` (`internal/ensigncycle/zero_discover_replay_test.go`) failed on the PR #467 leg pre-narrowing, reproducing the CI failure text, while the PR #398 leg already passed red — confirmed via `go test -run TestDetectBroadSearchAtBootRealZeroDiscoverStreams -v`. Commit `3410d3ad`.
+- DONE: commit-2 narrows `detectBroadSearchAtBoot` and everything goes green
+  Dropped `ls` from `broadSweepTools`; `ls` now reds only via `hasRecursiveFlag(fields, "R")` or a globstar path arg (`hasGlobstarPathArg`). Split `hasRecursiveFlag` to take a per-tool flag alphabet (`"rR"` for grep, `"R"` for ls), fixing the latent `ls -ltr` false red. Updated the detector doc comment and `broadSweepTools` comment (removed the disproved "forbids ANY root-scoped find/ls" claim). Commit `22382304`.
+- DONE: `TestDetectBroadSearchAtBoot` flipped/extended to the AC-2 boundary table exactly
+  Flipped `ls_non_recursive_repo_root_reds`→`_passes` and `bare_ls_default_cwd_reds`→`_passes`; added `ls_la_repo_root_passes`, `ls_ltr_repo_root_passes`, `find_path_arg_less_reds`, `find_scoped_under_resolved_workflow_passes`. `ls -R {root}`, `find`/`grep -r`/Glob `**`/Grep-unset-path reds and the existing scoped-pass cases are unchanged. `go test ./internal/ensigncycle/ -run TestDetectBroadSearchAtBoot -v`: 15/15 passed.
+- DONE: AC-3 — contract prose byte-unchanged, single-sourced
+  `git diff skills/first-officer/references/first-officer-shared-core.md` is empty; `grep -c "block (zero discover)"` on the file returns 1. No file under `skills/` or `docs/` was touched.
+- DONE: full `go test ./...` green offline, no live tag
+  All 15 packages pass (`internal/ensigncycle` 10.3s including the new replay/table tests); `go build ./...` and `go vet ./...` clean. No live-tagged run performed, per the test plan's live-lane note (the replay fixtures are the lane's exact input replayed).
+
+### Summary
+
+Both TDD commits landed on the ensign worktree branch `spacedock-ensign/zero-discover-detector-contract-scope`: commit `3410d3ad` checked in the byte-identical PR #467/PR #398 fixtures with a red-first replay test (confirmed RED on the PR #467 leg, reproducing the CI failure), then commit `22382304` narrowed `detectBroadSearchAtBoot` so flat `ls` (including `ls -la`/`ls -ltr` of a root or cwd) passes while recursive/hunting shapes stay banned, flipping the replay test and two inverted unit cases to green. The contract prose (`first-officer-shared-core.md`) is untouched — `git diff` confirms empty — and `go test ./...` is fully green offline.
