@@ -1,6 +1,6 @@
 ---
 title: "e2e-gate --status success filter hides re-run-to-green Runtime Live E2E runs from the release gate"
-status: implementation
+status: validation
 score: 0.7
 source: "v0.23.0 stable cut, 2026-06-30. The release e2e-gate blocked the cut: gh run list --workflow 'Runtime Live E2E' --status success -c <commit> returned [] for a run that was re-run to green (run_attempt 2), because GitHub's --status success filter only matches first-attempt successes. The genuine green matrix (run 28429490220, all 5 lanes success on the tagged SHA e3f85ec3) was invisible to the gate. Worked around the cut by dispatching a fresh run_attempt-1 green run; this fix removes the trap."
 id: q3v95nmwkwh656p5m6rhher1
