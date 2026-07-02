@@ -6,7 +6,7 @@ id: 2wbxv8hdq5m754h45ehfd75j
 started: 2026-07-02T01:23:59Z
 worktree: .worktrees/spacedock-ensign-claude-live-fo-wrong-root-env-leak
 mod-block: merge:pr-merge
-pr: "#462"
+pr: pr-merge:462
 ---
 The live `claude-live` shared-scenarios harness (`internal/ensigncycle`, `claude_live_runner_test.go`) expects the dispatched FO to boot in the per-scenario fixture root (`/tmp/TestLiveClaudeSharedScenarios…/001`). On the sonnet lane the FO's first boot command instead `cd`s to a leaked path OUTSIDE the fixture — `/home/user/spacedock-workflow` (run 1), `/tmp` (run 2) — and `claude_live_runner_test.go:122` flags "a CI env leak likely lured the FO off its launch cwd."
 
