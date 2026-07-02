@@ -286,3 +286,93 @@ stages:
 		t.Fatalf("empty sweep should emit an empty array, not null; json:\n%s", out.String())
 	}
 }
+
+// stubGhScript is the shared-fixture `gh` shim's exact shape (ensigncycle's
+// writeStubMergedGh): `gh pr view {n} --json state --jq .state` answers bare,
+// jq-extracted text ("MERGED"); every other gh invocation prints an empty line.
+// It does NOT emit a `{"state":...}` JSON envelope — mirroring the flags-agnostic
+// case match the live stub uses (it dispatches on $1 $2 only).
+const stubGhScript = "#!/bin/sh\n" +
+	"case \"$1 $2\" in\n" +
+	"  \"pr view\") echo MERGED ;;\n" +
+	"  *) echo \"\" ;;\n" +
+	"esac\n"
+
+// writeStubGh writes stubGhScript to dir/gh and prepends dir to PATH for the
+// test's duration via t.Setenv, so exec.Command("gh", ...) resolves to it.
+func writeStubGh(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "gh"), []byte(stubGhScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+// TestGhRunnerExecParsesJqExtractedState (feedback cycle 2 regression): the
+// production `GhRunnerExec` probe must parse the SAME `--jq .state`
+// bare-text shape boot.go's already-proven PR_STATE probe uses — a working `gh`
+// answering that way must not be treated as a probe error. Before the fix,
+// GhRunnerExec called `gh pr view PR --json state` (no --jq) and JSON-unmarshaled
+// the result expecting a `{"state":...}` envelope; against this stub's bare
+// "MERGED" text that unmarshal fails, so a genuinely-working `gh` was
+// misclassified as an error probe.
+func TestGhRunnerExecParsesJqExtractedState(t *testing.T) {
+	writeStubGh(t)
+
+	state, err := GhRunnerExec("#42")
+	if err != nil {
+		t.Fatalf("GhRunnerExec should not error against a working stub gh, got %v", err)
+	}
+	if state != "MERGED" {
+		t.Fatalf("GhRunnerExec state = %q, want MERGED", state)
+	}
+}
+
+// TestSweepWithRealGhStubDoesNotReportUnknown (feedback cycle 2 regression): this
+// is the exact live shallow-boot failure reproduced offline — Sweep driven with
+// the REAL production GhRunnerExec (not an injected fake) against a working `gh`
+// on PATH must NOT report gh-unavailable UNKNOWN for a PR-pending entity. Caught
+// by PR #465's codex-live shallow-boot scenario: the boot's before-greet sweep
+// reported UNKNOWN despite a working stub gh, so the FO skipped the mod's
+// advancement and hand-advanced without archiving.
+func TestSweepWithRealGhStubDoesNotReportUnknown(t *testing.T) {
+	writeStubGh(t)
+
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	// pr is quoted ("#42") to match the shared shallow-boot fixture's entity
+	// exactly (shared_fixtures_test.go's shallowBootMergedEntity) — an unquoted
+	// `pr: #42` would parse as a YAML comment (empty value), which reconcileEntityFM
+	// writes unquoted, so this entity is hand-written here instead.
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "merged-pr", "index.md"), "---\n"+
+		"id: id-m\ntitle: merged\nslug: merged-pr\nstatus: implementation\npr: \"#42\"\n---\n\nEntity body.\n")
+
+	var out, errBuf strings.Builder
+	code := Sweep(workflowDir, GhRunnerExec, true, &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("Sweep should exit 0; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if res.Gh == "unavailable" {
+		t.Fatalf("a working gh must NOT report unavailable, got reason=%q", res.Reason)
+	}
+	if len(res.Swept) != 1 || res.Swept[0].Slug != "merged-pr" {
+		t.Fatalf("sweep should report the merged entity via the real GhRunnerExec, got %v", res.Swept)
+	}
+}

@@ -89,20 +89,19 @@ func GhRunnerExec(prRef string) (string, error) { return ghRunnerExec(prRef) }
 // passes gitRunnerExec.
 type gitRunner func(dir string, args ...string) (string, error)
 
-// ghRunnerExec calls `gh pr view PR --json state` and extracts the state field.
+// ghRunnerExec calls `gh pr view PR --json state --jq .state` and returns the
+// trimmed, uppercased state. This mirrors boot.go's PR_STATE probe invocation
+// exactly (same flags, same leading-"#" trim, same --jq extraction) rather than
+// parsing the `--json state` envelope as a second JSON layer — the two probes
+// must agree on what "gh can answer" means, since they run against the same `gh`
+// and the FO trusts both.
 func ghRunnerExec(prRef string) (string, error) {
-	cmd := exec.Command("gh", "pr", "view", prRef, "--json", "state")
-	out, err := cmd.Output()
+	pr := strings.TrimPrefix(prRef, "#")
+	out, err := exec.Command("gh", "pr", "view", pr, "--json", "state", "--jq", ".state").Output()
 	if err != nil {
 		return "", err
 	}
-	var obj struct {
-		State string `json:"state"`
-	}
-	if err := json.Unmarshal(out, &obj); err != nil {
-		return "", err
-	}
-	return obj.State, nil
+	return strings.ToUpper(strings.TrimSpace(string(out))), nil
 }
 
 // gitRunnerExec runs git with the given args under -C dir and returns trimmed
