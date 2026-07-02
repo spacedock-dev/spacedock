@@ -1,10 +1,11 @@
 ---
 title: "contractlint dangler-oracle does not resolve the Skill() cross-file pointer idiom (referenceProsePointerDanglers lags the nt ref->skill move)"
 source: "0240 pre-cut antipattern audit (2026-07-01, lens 2). internal/contractlint/boot_resident_closure_test.go referenceProsePointerDanglers resolves a cross-file prose pointer to a watched section ONLY via an intra-file heading or a references/*.md path token (bodyReferenceRe). nt made the correct cross-file idiom for fo-write-core/fo-status-viewer the Skill(skill=spacedock:...) form and deleted the references/*.md paths (now dead per deadDeferredReferencePaths). A future contract line pointing at one of these sections via the Skill() form while naming the section phrase would FALSE-FAIL as dangling. Latent (no such line today); the guard's resolution model lags the idiom it introduced. Non-blocking; captain fast-tracked."
-status: ideation
+status: implementation
 group: tooling
 id: fezpp9ddsaz6bhek6ra2se69
 started: 2026-07-02T01:37:56Z
+worktree: .worktrees/spacedock-ensign-contractlint-dangler-oracle-skill-idiom
 ---
 
 ## Problem
