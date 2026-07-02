@@ -122,6 +122,64 @@ func TestStateCommitHaltsOnSameEntityConflict(t *testing.T) {
 	}
 }
 
+// TestStateCommitHaltStderrCarriesRemediationAndPeerCommit pins AC-2 (D1): the
+// exit-3 HALT stderr carries the FO's next-action line, the never-force/never-
+// auto-resolve line, and the peer commit that survived the aborted rebase — the
+// remediation the resident prose used to own, now emitted at fire time. The peer
+// commit is A's pushed HEAD sha (the pull's fetch phase updates origin/{branch}
+// before the rebase conflicts; abort does not touch it).
+func TestStateCommitHaltStderrCarriesRemediationAndPeerCommit(t *testing.T) {
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+
+	writeEntity(t, workflowA, "first-task", "---\nstatus: implementation\n---\n# First Task (A)\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "-m", "A: -> implementation"); code != 0 {
+		t.Fatalf("A's commit should succeed (exit 0); got exit=%d stderr=%q", code, errOut)
+	}
+	peerSHA := strings.TrimSpace(git(t, checkoutA, "rev-parse", "--short", "HEAD"))
+
+	writeEntity(t, workflowB, "first-task", "---\nstatus: review\n---\n# First Task (B)\n")
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+	code, _, errOut := runStateCommitCmd(t, hostB, workflowB, "first-task", "-m", "B: -> review")
+	if code != 3 {
+		t.Fatalf("same-entity conflict must HALT with exit 3; got exit=%d stderr=%q", code, errOut)
+	}
+	if !strings.Contains(errOut, "Peer commit: "+peerSHA) {
+		t.Fatalf("HALT stderr should name the peer commit %q, got:\n%s", peerSHA, errOut)
+	}
+	if !strings.Contains(errOut, "Next: HALT dispatch — do not dispatch against this state tree. Surface the conflicting path(s) and peer commit to the operator and stop.") {
+		t.Fatalf("HALT stderr should name the FO's next action, got:\n%s", errOut)
+	}
+	if !strings.Contains(errOut, "Never `git push --force`/`--force-with-lease`; never re-run with `-X ours`/`-X theirs`; never discard either side.") {
+		t.Fatalf("HALT stderr should carry the never-force/never-auto-resolve line, got:\n%s", errOut)
+	}
+}
+
+// TestStateCommitHaltJSONCarriesPeerCommit pins AC-2's --json requirement: the
+// halt envelope carries peer_commit alongside the existing conflicting_paths.
+func TestStateCommitHaltJSONCarriesPeerCommit(t *testing.T) {
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	checkoutA := filepath.Join(workflowA, ".spacedock-state")
+	hostA := filepath.Dir(filepath.Dir(workflowA))
+
+	writeEntity(t, workflowA, "first-task", "---\nstatus: implementation\n---\n# First Task (A)\n")
+	if code, _, errOut := runStateCommitCmd(t, hostA, workflowA, "first-task", "-m", "A: -> implementation"); code != 0 {
+		t.Fatalf("A's commit should succeed (exit 0); got exit=%d stderr=%q", code, errOut)
+	}
+	peerSHA := strings.TrimSpace(git(t, checkoutA, "rev-parse", "--short", "HEAD"))
+
+	writeEntity(t, workflowB, "first-task", "---\nstatus: review\n---\n# First Task (B)\n")
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+	code, stdout, errOut := runStateCommitCmd(t, hostB, workflowB, "first-task", "-m", "B: -> review", "--json")
+	if code != 3 {
+		t.Fatalf("same-entity conflict must HALT with exit 3; got exit=%d stderr=%q", code, errOut)
+	}
+	if !strings.Contains(stdout, `"peer_commit": "`+peerSHA+`"`) {
+		t.Fatalf("--json halt envelope should carry peer_commit=%q, got:\n%s", peerSHA, stdout)
+	}
+}
+
 // TestStateCommitIsPathScoped pins AC-2: a sibling dirty/untracked file in the
 // state checkout is NOT swept into the commit (the verb stages exactly the entity,
 // never `add -A`). This is the w4 2/3 `cd && git add -A` drift the verb deletes.
