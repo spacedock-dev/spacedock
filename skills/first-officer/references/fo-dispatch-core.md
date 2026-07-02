@@ -37,7 +37,7 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
 4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
 
-**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the next assignment through the runtime adapter's reuse-advance handle (its live-worker messaging call) — carrying the next stage name, the full `### Stage definition` subsection copied from the README verbatim, the `### Completion checklist` from Dispatch step 2, and an instruction to keep working on the entity at its path and commit before signaling. The reuse path does NOT route through `«dispatch.build»` — assemble the advancement message directly.
+**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build»` in advance mode (`--advance`, same checklist-file discipline; `--feedback-context-file` when routing rejection findings) and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
 
 **If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 
@@ -126,14 +126,15 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
     [--scope-notes-file {scope_notes_file}] \
     [--feedback-context-file {feedback_context_file}] \
     [--team-name {team_name} | --bare-mode] \
-    [--feedback-reflow]
+    [--feedback-reflow] \
+    [--advance]
   ```
-  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage.
+  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no `subagent_type`/`name`/`team_name`/`run_in_background` (nothing is spawned) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`.
 - **done-when:** on exit 0, `«worker.spawn»` is called with `subagent_type`/`name`/`description`/`model`/`prompt` (plus any host-scoped fields the adapter declares) forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
 - **block:** on non-zero exit (or missing binary) ONLY — read stderr, report the helper failure to the captain, then use the adapter's Break-Glass Manual Dispatch template (stage definition inlined verbatim; conditional `model` slot per `«worker-identity»`'s canonical model space). A zero-exit run is never a break-glass trigger.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 
-`«dispatch.build»` serves initial dispatch only; the reuse-advance path assembles its message directly (`## Reuse and Fresh Dispatch`). When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
+`«dispatch.build»` serves initial dispatch (spawn envelope) and reuse advance (`--advance`: a pointer message for the reuse-advance handle, no spawn fields). When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
 
 ## Event Loop
 

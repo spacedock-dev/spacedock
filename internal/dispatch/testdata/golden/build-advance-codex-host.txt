@@ -1,0 +1,47 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "description": "Thing: validation",
+  "fetch_commands": [
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md",
+  "prompt": "Advancing to next stage: validation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-validation-advance.md and treat its content as your next-stage assignment.",
+  "model": null
+}
+
+===== stderr =====
+
+===== body =====
+## Advancing to next stage: validation
+
+You are continuing work on: Thing
+
+Your working directory is <ROOT>/.worktrees/spacedock-ensign-thing
+All file reads and writes MUST use paths under <ROOT>/.worktrees/spacedock-ensign-thing.
+Your git branch is spacedock-ensign/thing. All commits MUST be on this branch. Do NOT switch branches or commit to main.
+
+Continue working on the entity at <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.
+
+### Completion checklist
+
+- a
+- b
+
+### Summary
+{brief description of what was accomplished}
+
+### Fetch commands
+
+    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage validation
+
+
+### Completion Signal
+
+When you finish (after all commits and stage report writes are done), send one concise final message in this Codex worker thread:
+
+    Done: Thing completed validation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.
+
+The first officer observes completion through the Codex final-status notification in the FO mailbox. Do not emit a Claude `SendMessage` call; the Codex mailbox notification is the completion signal.
