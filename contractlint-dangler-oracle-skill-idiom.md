@@ -6,6 +6,7 @@ group: tooling
 id: fezpp9ddsaz6bhek6ra2se69
 started: 2026-07-02T01:37:56Z
 worktree: .worktrees/spacedock-ensign-contractlint-dangler-oracle-skill-idiom
+mod-block: merge:pr-merge
 ---
 
 ## Problem
