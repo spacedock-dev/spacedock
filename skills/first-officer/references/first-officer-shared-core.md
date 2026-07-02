@@ -40,6 +40,7 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 - `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write). NOT the boot `«state.sweep-merged»`/pr-merge advancement, whose `status --set`/`archive` are pre-authorized and need no write-scope load.
 - `references/fo-dispatch-core.md` — first worker dispatch.
 - `references/fo-merge-core.md` — terminal boundary.
+- `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
 ## Single-Entity Scope
 
