@@ -31,9 +31,11 @@ Prefer default-on semantics where Spacedock's injected overrides come before use
 
 The Codex live runner should use the same launcher path or pass the same overrides directly, so local `spacedock codex` sessions and isolated-CODEX_HOME CI runs do not diverge.
 
+Also use this task to retire the old foreground-wait "resume/interruption" hint if `multi_agent_v2` proves the newer mailbox behavior. Keep the `codex resume` launch-subcommand guard separate: resumed sessions still should not receive a fresh bootstrap prompt, but that is unrelated to whether the first officer must keep warning the operator that an interrupted `wait_agent` will be reinstalled.
+
 ## Out of scope
 
-Do not redesign Codex runtime reuse semantics in this task. Do not add new Spacedock workflow stages. Do not depend on a public `multi_agent_v2` documentation guarantee; treat it as a current host knob that may need a compatibility guard.
+Do not redesign Codex runtime reuse semantics in this task beyond binding the v2 follow-up surface already exposed by Codex. Do not add new Spacedock workflow stages. Do not depend on a public `multi_agent_v2` documentation guarantee; treat it as a current host knob that may need a compatibility guard.
 
 ## Acceptance criteria
 
@@ -43,7 +45,7 @@ Verified by: a focused `runCodex` unit test with a fake host asserts the launche
 **AC-2 - operator override semantics are intentional and tested.**
 Verified by: a front-door test covers passthrough that disables or changes the multi-agent feature. The test documents whether user passthrough wins or Spacedock fails fast, and the implementation behaves accordingly.
 
-**AC-3 - resume and safehouse launch paths keep their existing behavior.**
+**AC-3 - launch-session resume and safehouse paths keep their existing behavior.**
 Verified by: existing resume/safehouse front-door tests still pass, plus at least one assertion that the new config override does not reintroduce the bootstrap prompt on `codex resume` or break safehouse wrapping.
 
 **AC-4 - isolated-CODEX_HOME live runs receive the same multi-agent setting.**
@@ -52,6 +54,9 @@ Verified by: the Codex live runner either calls the same launcher path or assert
 **AC-5 - runtime capability is proven by behavior, not argv alone.**
 Verified by: a live or fixture-backed test records that a Spacedock-launched Codex session exposes the expected collaboration tools for the v2 surface, including spawn, wait, and turn-starting follow-up when available. The evidence should be a tool-surface or transcript artifact, not a prose claim in this task.
 
+**AC-6 - the old foreground-wait resume hint is retired or justified.**
+Verified by: running the Codex idle-notification probe, or an equivalent live v2 probe, and then updating `codex-first-officer-runtime.md` plus tests to remove/demote the mandatory "interruption returns control; reinstall wait" operator cue when v2 no longer needs it. If the probe shows the hint is still needed, the stage report must cite the evidence and keep the hint intentionally.
+
 ## Test plan
 
-Start with unit tests around `runCodex` argument assembly. Add the minimal launcher change. Then run the focused front-door tests for Codex, followed by the Codex live runner or a targeted live probe that proves the actual collaboration surface under an isolated Codex home.
+Start with unit tests around `runCodex` argument assembly. Add the minimal launcher change. Then run the focused front-door tests for Codex, followed by the Codex live runner or a targeted live probe that proves the actual collaboration surface under an isolated Codex home. Finally, run the idle-notification probe to decide whether the foreground-wait resume hint can be removed from the Codex first-officer runtime.
