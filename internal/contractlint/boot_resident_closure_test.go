@@ -44,8 +44,8 @@ var foReferenceCores = map[string][]string{
 // core names as non-user-invocable skills (via `spacedock:<name>`), NOT as references/*.md
 // read-paths: the status-viewer surface and the write/id-style surface. Each must exist
 // on disk AND carry its section anchors. Keyed on the skill path so a newly-registered
-// anchor is both watched (watchedSectionNames) and stat-checked (the skill-anchor test)
-// from one place.
+// anchor is both watched + owner-resolved (sectionOwners) and stat-checked (the skill-anchor
+// test) from one place.
 var deferredSkillCores = map[string][]string{
 	filepath.Join("skills", "fo-status-viewer", "SKILL.md"): {
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
@@ -239,34 +239,36 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	}
 }
 
-// watchedSectionNames are the section names a prose pointer inside a deferred skill
-// body may name: the deferredSkillCores anchors with their `## `/`### ` heading markers
-// stripped ("Status Viewer", "Captain-Facing State Display", "Issue Filing", "FO Write
-// Scope", "ID Styles"). Derived from deferredSkillCores so a newly-registered anchor is
-// watched without a second edit here.
-func watchedSectionNames() []string {
-	var names []string
-	seen := map[string]bool{}
-	for _, anchors := range deferredSkillCores {
+// sectionOwners maps each watched section name (the deferredSkillCores anchors with their
+// `## `/`### ` heading markers stripped — "Status Viewer", "Captain-Facing State Display",
+// "Issue Filing", "FO Write Scope", "ID Styles") to the skill that owns it
+// (skills/<owner>/SKILL.md, via filepath.Base(filepath.Dir(skillPath))). Derived from
+// deferredSkillCores so a newly-registered anchor is both watched AND owner-resolved from
+// one place. The section-name set the prose-pointer scanner watches is exactly this map's
+// keys; the owner drives the Skill(skill="spacedock:<owner>") cross-file resolution.
+func sectionOwners() map[string]string {
+	owners := map[string]string{}
+	for skillPath, anchors := range deferredSkillCores {
+		owner := filepath.Base(filepath.Dir(skillPath)) // skills/<owner>/SKILL.md -> <owner>
 		for _, anchor := range anchors {
-			name := strings.TrimLeft(anchor, "# ")
-			if !seen[name] {
-				seen[name] = true
-				names = append(names, name)
-			}
+			owners[strings.TrimLeft(anchor, "# ")] = owner
 		}
 	}
-	return names
+	return owners
 }
 
 // referenceProsePointerDanglers scans one deferred module's body for non-heading lines that
-// NAME a watched section yet resolve NEITHER intra-file (the body carries that section's
-// heading at any level) NOR via a references/*.md path token on the same line. Each such
-// line is a dangling prose pointer — the M5 shape, where a bare "(see FO Write Scope)"
-// survives a move into a file that no longer carries that section. It returns one
-// description per dangling line. The real guard and its control both drive this single
-// scanner, so defeating it reds both.
-func referenceProsePointerDanglers(body string, watched []string) []string {
+// NAME a watched section yet resolve by NONE of the three honored paths: intra-file (the body
+// carries that section's heading at any level), a references/*.md path token on the same line,
+// or the cross-file Skill(skill="spacedock:<owner>") idiom — the same line names the section's
+// owning skill via the spacedock:<owner> token (captured by bodySkillRe). Each unresolved line
+// is a dangling prose pointer — the M5 shape, where a bare "(see FO Write Scope)" survives a
+// move into a file that no longer carries that section. The Skill-form resolution is
+// owner-specific: a spacedock: token for a DIFFERENT skill does NOT suppress the dangler, so
+// the scanner cannot degrade into silencing on any spacedock: token. It returns one description
+// per dangling line. The real guard and its control both drive this single scanner, so defeating
+// it reds both.
+func referenceProsePointerDanglers(body string, owners map[string]string) []string {
 	lines := strings.Split(body, "\n")
 	defined := map[string]bool{}
 	for _, line := range lines {
@@ -274,10 +276,8 @@ func referenceProsePointerDanglers(body string, watched []string) []string {
 			continue
 		}
 		heading := strings.TrimLeft(line, "# ")
-		for _, name := range watched {
-			if heading == name {
-				defined[name] = true
-			}
+		if _, watched := owners[heading]; watched {
+			defined[heading] = true
 		}
 	}
 	var danglers []string
@@ -286,11 +286,19 @@ func referenceProsePointerDanglers(body string, watched []string) []string {
 			continue // a heading DEFINES a section, it does not point at one
 		}
 		hasPath := bodyReferenceRe.MatchString(line)
-		for _, name := range watched {
+		// skills named on this line via the spacedock:<name> token (the Skill(skill="…") idiom)
+		skillsNamed := map[string]bool{}
+		for _, m := range bodySkillRe.FindAllStringSubmatch(line, -1) {
+			skillsNamed[m[1]] = true
+		}
+		for name, owner := range owners {
 			if !strings.Contains(line, name) || defined[name] || hasPath {
 				continue
 			}
-			danglers = append(danglers, fmt.Sprintf("line %d names section %q but resolves neither intra-file (no `## %s` heading here) nor via a references/*.md token: %q", i+1, name, name, strings.TrimSpace(line)))
+			if skillsNamed[owner] {
+				continue // resolves cross-file via Skill(skill="spacedock:<owner>")
+			}
+			danglers = append(danglers, fmt.Sprintf("line %d names section %q but resolves neither intra-file (no `## %s` heading here), via a references/*.md token, nor via Skill(skill=\"spacedock:%s\"): %q", i+1, name, name, owner, strings.TrimSpace(line)))
 		}
 	}
 	return danglers
@@ -347,9 +355,9 @@ func TestDeferredSkillCoresResolveAndCarryCeremony(t *testing.T) {
 // fail; the empty-walk guards keep this non-vacuous.
 func TestDeferredSkillProsePointersResolve(t *testing.T) {
 	root := repoRoot(t)
-	watched := watchedSectionNames()
-	if len(watched) == 0 {
-		t.Fatal("no watched section names derived from deferredSkillCores — the prose-pointer check would pass vacuously")
+	owners := sectionOwners()
+	if len(owners) == 0 {
+		t.Fatal("no section owners derived from deferredSkillCores — the prose-pointer check would pass vacuously")
 	}
 	walked := 0
 	for ref := range deferredSkillCores {
@@ -359,7 +367,7 @@ func TestDeferredSkillProsePointersResolve(t *testing.T) {
 			continue
 		}
 		walked++
-		for _, d := range referenceProsePointerDanglers(string(data), watched) {
+		for _, d := range referenceProsePointerDanglers(string(data), owners) {
 			t.Errorf("%s: %s", ref, d)
 		}
 	}
@@ -368,30 +376,65 @@ func TestDeferredSkillProsePointersResolve(t *testing.T) {
 	}
 }
 
-// TestDeferredSkillProsePointerGuardFailsOnDanglingTarget is the AC-3c control: it drives
-// referenceProsePointerDanglers against planted bodies so the gate is shown able to fail (RED
-// on the M5 bare-name shape) without false-positiving the two legitimate resolutions — an
-// intra-file heading and a references/*.md path token.
+// TestDeferredSkillProsePointerGuardFailsOnDanglingTarget is the AC-3c control battery: it
+// drives referenceProsePointerDanglers against planted bodies so the gate is shown able to
+// fail (RED on the M5 bare-name shape) without false-positiving the three legitimate
+// resolutions — an intra-file heading, a references/*.md path token, and the cross-file
+// Skill(skill="spacedock:<owner>") idiom. The wrong-owner row is the non-weakening guard:
+// a Skill token for a DIFFERENT skill must NOT suppress the dangler, so the resolver cannot
+// degrade into "any spacedock: token silences danglers."
 func TestDeferredSkillProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
-	watched := watchedSectionNames()
-	if len(watched) == 0 {
-		t.Fatal("no watched section names derived from deferredSkillCores — the control has nothing to test")
+	owners := sectionOwners()
+	if len(owners) == 0 {
+		t.Fatal("no section owners derived from deferredSkillCores — the control has nothing to test")
 	}
-	// RED — the exact M5 shape: a bare prose pointer to a section the body neither defines
-	// nor reaches by path. It MUST dangle.
-	dangling := "Some prose.\nUse `spacedock new` (see FO Write Scope), which mints the id.\n"
-	if got := referenceProsePointerDanglers(dangling, watched); len(got) == 0 {
-		t.Fatal("control: a bare prose pointer to FO Write Scope (no intra-file heading, no references/*.md token) did not dangle — the guard cannot fail")
+	cases := []struct {
+		name        string
+		body        string
+		wantDangler bool // true: the pointer must dangle (>=1); false: it must resolve (0)
+	}{
+		{
+			// The exact M5 shape: a bare prose pointer to a section the body neither
+			// defines nor reaches by path. It MUST dangle.
+			name:        "bare-name pointer dangles",
+			body:        "Some prose.\nUse `spacedock new` (see FO Write Scope), which mints the id.\n",
+			wantDangler: true,
+		},
+		{
+			// Intra-file heading present: the pointer resolves, must NOT dangle.
+			name:        "intra-file heading resolves",
+			body:        "## FO Write Scope\n\nThe scope.\n\nSee FO Write Scope above for the full contract.\n",
+			wantDangler: false,
+		},
+		{
+			// A references/*.md path token present: the pointer resolves, must NOT dangle.
+			name:        "references/*.md path token resolves",
+			body:        "Use `spacedock new` (see `references/fo-dispatch-core.md`), which mints the id.\n",
+			wantDangler: false,
+		},
+		{
+			// The Skill(skill="spacedock:<owner>") idiom nt introduced: the line names the
+			// watched section AND its owning skill, so the pointer resolves cross-file.
+			name:        "Skill-form owner-matched pointer resolves",
+			body:        "Use `spacedock new` (see FO Write Scope via `Skill(skill=\"spacedock:fo-write-core\")`), which mints the id.\n",
+			wantDangler: false,
+		},
+		{
+			// Wrong-owner Skill token: fo-status-viewer does not own FO Write Scope, so the
+			// pointer still dangles. This is the non-weakening property.
+			name:        "wrong-owner Skill token still dangles",
+			body:        "Use `spacedock new` (see FO Write Scope via `Skill(skill=\"spacedock:fo-status-viewer\")`), which mints the id.\n",
+			wantDangler: true,
+		},
 	}
-	// GREEN — intra-file heading present: the pointer resolves, must NOT dangle.
-	intraFile := "## FO Write Scope\n\nThe scope.\n\nSee FO Write Scope above for the full contract.\n"
-	if got := referenceProsePointerDanglers(intraFile, watched); len(got) != 0 {
-		t.Fatalf("control: a prose pointer resolved intra-file (## FO Write Scope present) was wrongly flagged as dangling: %v", got)
-	}
-	// GREEN — a references/*.md path token present: the pointer resolves, must NOT dangle.
-	pathForm := "Use `spacedock new` (see `references/fo-dispatch-core.md`), which mints the id.\n"
-	if got := referenceProsePointerDanglers(pathForm, watched); len(got) != 0 {
-		t.Fatalf("control: a prose pointer carrying a references/*.md path token was wrongly flagged as dangling: %v", got)
+	for _, tc := range cases {
+		got := referenceProsePointerDanglers(tc.body, owners)
+		if tc.wantDangler && len(got) == 0 {
+			t.Errorf("%s: expected >=1 dangler, got 0: body=%q", tc.name, tc.body)
+		}
+		if !tc.wantDangler && len(got) != 0 {
+			t.Errorf("%s: expected 0 danglers, got %d: %v", tc.name, len(got), got)
+		}
 	}
 }
 
