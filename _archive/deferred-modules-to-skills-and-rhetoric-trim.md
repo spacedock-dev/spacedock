@@ -1,6 +1,6 @@
 ---
 title: Turn adapter-less deferred modules into non-user-invocable skills + cut self-referential contract rhetoric
-status: validation
+status: done
 source: "Captain critique 2026-06-30/07-01 (0240 Commander session, post-lean-contract). The lean-contract deferrals delivered the real win (boot core -4402 B vs v0.22.0) but wrapped it in self-referential ceremony: every deferred reference announces itself as a `## X (deferred module)` with a arrow/done-when/guard triplet, re-explains itself in a file header, and both are labelled `(host-neutral)` — a label about the contract's own architecture, meaningless to FO behavior. Separately: the adapter-less deferred modules (fo-status-viewer, fo-write-core) are `references/*.md` the FO must recall-a-path-and-Read at a trigger, when they are architecturally identical to `present-gate`/`feedback-rejection-flow` (host-neutral, FO-invoked, not user-typed) — they should be non-user-invocable SKILLS, whose SKILL.md metadata carries the when-to-load the pointer prose duplicates."
 group: tooling
 id: nt982bbkf04r0ypbsc8er74s
@@ -9,6 +9,9 @@ sprint: 0240-lean-contract
 worktree: .worktrees/spacedock-ensign-deferred-modules-to-skills-and-rhetoric-trim
 mod-block:
 pr: pr-merge:457
+verdict: passed
+completed: 2026-07-02T01:06:18Z
+archived: 2026-07-02T01:06:18Z
 ---
 
 ## Problem — two intertwined issues, one fix
