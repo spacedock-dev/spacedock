@@ -8,12 +8,88 @@ started: 2026-07-02T07:35:57Z
 ---
 
 ## Problem
-The debrief skill records commits, task state changes, decisions, and issues — but nothing captures the driving agent's own experience of operating the workflow. That first-person signal (what the machinery caught, where it cost, what would have been dropped without it) is both product feedback and marketing raw material, and it evaporates at session end unless prompted.
+The debrief skill records commits, task state changes, decisions, issues, observations, and next-session routing, but it does not capture the driving agent's first-person experience of operating Spacedock. The missing signal is not a generic satisfaction quote: the value is in what the workflow caught under context pressure, what would likely have been lost without it, and where the machinery added friction. Without an explicit end-of-session prompt, that evidence evaporates at session end and Spacedock loses both product feedback and honest testimonial raw material.
 
-## Desired direction (for ideation to refine)
-The debrief skill poses the reflective prompt to the session's driving agent — approximately: "Setting the project's subject matter aside: as the agent driving this session, how would you describe the experience using spacedock, versus driving the same work without it? Be honest about friction." — and the debrief record gains a testimonial section storing the answer with provenance (date, host/model, session scale: entities/workers/PRs touched). Honesty framing is load-bearing: the prompt must ask for friction, not praise, or the collected corpus is worthless.
+The load-bearing constraint is that the prompt must ask for friction, not praise. A praise-seeking prompt would produce marketing-colored prose and make the corpus less useful; the desired record is an agent-authored comparison between using Spacedock and driving the same work without it, including costs.
 
-## Rough acceptance sketch (ideation tightens into measured ACs + a test plan)
-- The debrief skill's flow includes the testimonial prompt verbatim-or-near, with the honesty/friction clause.
-- The debrief output template carries a testimonial section with provenance fields; a produced debrief record demonstrates it end-to-end.
-- Touches skills/**, so the applicable live lane gates the merge (per the path→lane rule).
+## Proposed approach
+Update `skills/debrief/SKILL.md` so the debrief flow collects a first-person testimonial before writing the debrief file and includes it in the produced debrief template.
+
+Implementation should add a new extraction/draft step near Phase 3, before the final markdown is written, using wording near this prompt:
+
+> Setting the project's subject matter aside: as the agent driving this session, how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
+
+The answer should be stored in a new `## Agent Testimonial` section in the debrief file, together with provenance fields:
+
+- `Date`: the debrief `session-date`.
+- `Host/runtime`: the runtime host in use when known (for example Claude Code, Codex, Pi); if unknown, record `unknown` rather than inventing.
+- `Model`: the driving model when known; if unknown, record `unknown`.
+- `Session scale`: counts for entities touched, workers dispatched, and PRs touched/merged, derived from the debrief's session data where possible and marked `unknown` only when the data is not available.
+- `Testimonial`: the first-person answer, preserving the agent's voice.
+
+The template change should be concrete rather than a loose instruction. The intended before/after for `skills/debrief/SKILL.md` is:
+
+```diff
+@@ Phase 3: Draft and Review
+-### Step 1 — Present the draft
++### Step 1 — Collect the agent testimonial
++
++Ask the driving agent:
++
++> Setting the project's subject matter aside: as the agent driving this session, how would you describe the experience using Spacedock versus driving the same work without it? Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.
++
++Record the answer as `{agent_testimonial}`. Also record `{host_runtime}`, `{model}`, and `{session_scale}` (`entities touched`, `workers dispatched`, `PRs touched/merged`) from the current session context when known; use `unknown` only for fields that cannot be determined.
++
++### Step 2 — Present the draft
+@@ Write the debrief to `{debrief_root}/_debriefs/{date}-{sequence:02d}.md`:
+ ## Observations
+ {captain-contributed content, or "_(none recorded)_" if none provided}
++
++## Agent Testimonial
++- Date: {YYYY-MM-DD}
++- Host/runtime: {host_runtime}
++- Model: {model}
++- Session scale: {entities_touched} entities touched; {workers_dispatched} workers dispatched; {prs_touched_or_merged} PRs touched/merged
++
++{agent_testimonial}
+ 
+ ## What's Next
+```
+
+No separate docs-site change is proposed for the first pass: this is a user-invocable skill behavior/template change, and the changed user-visible text lives in `skills/debrief/SKILL.md` itself. If a later docs page describes the debrief schema, that page should be updated in the same implementation, but ideation found no existing docs page that duplicates this template.
+
+No spike needed: the task relies on already-proven mechanisms in the debrief skill — asking the captain/agent for content during the debrief flow, writing markdown sections into `{debrief_root}/_debriefs/`, and committing the generated debrief file in the appropriate single-root or split-root checkout. The only risky part is behavioral compliance by the driving model, which is covered by a live debrief smoke rather than a static prose grep.
+
+Path-to-lane rule: the implementation touches `skills/debrief/SKILL.md` under `skills/**`, a shipped skill surface loaded by live runtime sessions. The merge gate is the Runtime Live E2E skill/contract lane for the affected host(s), with the first-pass required lane named `claude-live` when the change is validated through Claude Code. If the implementation or validation also exercises Codex or Pi-specific skill loading, the corresponding host live lane must be green too; deterministic tests alone are not sufficient for merge.
+
+## Acceptance criteria
+- **AC-1 (VALUE)** A real debrief run produces an on-disk debrief record containing exactly one `## Agent Testimonial` section with a first-person comparison of using Spacedock versus not using it, and the answer includes at least one explicit friction/cost/negative observation rather than only praise. Verified by running the debrief flow in a live or fixture-backed workflow and inspecting the generated `_debriefs/{date}-{sequence}.md` file; the check must read the produced debrief artifact, not just `skills/debrief/SKILL.md`.
+- **AC-2** The debrief flow asks the testimonial prompt before writing the final debrief and the prompt carries the near-verbatim honesty clause: `Be honest about friction, costs, or places where the workflow got in your way; this is not a request for praise.` Verified by observing a debrief run transcript or live-run artifact where the driving agent is asked the prompt; a static string check over the skill file is not sufficient evidence.
+- **AC-3** The produced debrief's `## Agent Testimonial` section includes provenance fields for date, host/runtime, model, and session scale (`entities touched`, `workers dispatched`, `PRs touched/merged`), with unknown values explicitly written as `unknown` instead of omitted or fabricated. Verified by inspecting the generated debrief artifact from the same run used for AC-1.
+- **AC-4** The implementation remains compatible with split-root debrief storage: when the workflow uses a state checkout, the testimonial-bearing debrief is written and committed under `{state_checkout}/_debriefs/`, not the definition worktree. Verified with a split-root fixture or live dev workflow run by checking the resulting file path and `git -C {state_checkout} status/log`.
+- **AC-5** The implementation's merge evidence names and runs the live lane required by the path-to-lane rule for `skills/**`; for the first pass this is `claude-live`, because the changed debrief skill behavior must be observed through a real runtime lane before merge. Verified by the validation report citing the live lane run URL or local live command, result, and artifact path.
+
+## Test plan
+1. **Focused skill smoke (medium cost, fixture-backed or local live):** Run the debrief skill against a small workflow fixture or the dev workflow with a bounded session range, answer the new testimonial prompt with a first-person response that includes both value and friction, and confirm the generated debrief contains one `## Agent Testimonial` section with the preserved answer.
+2. **Provenance artifact check (low cost, artifact inspection):** Inspect the generated debrief file from the smoke run and verify date, host/runtime, model, and session-scale fields are present. Use `unknown` only where the run truly cannot provide the value.
+3. **Split-root path check (low cost if using `docs/dev`, otherwise fixture):** For a split-root workflow, verify the debrief lands under the state checkout `_debriefs/` directory and the state checkout git log/status reflect the new debrief commit path, not a write in the definition dir.
+4. **Regression gate (standard cost):** Run `go test ./...` to catch unrelated integration or contract regressions. If code paths under `internal/` are changed, also run the repo's normal `go test ./... -race` gate.
+5. **Required live lane (high cost, merge-gating):** Run the Runtime Live E2E lane that loads the changed skill surface. First-pass lane: `claude-live`. Evidence must include the lane result and the produced debrief artifact or transcript showing the prompt and generated testimonial section.
+
+## Stage Report
+
+### Summary
+Refined the debrief testimonial idea into a concrete skill/template change: add an honesty-framed first-person prompt, store the answer in a new debrief section with provenance, require a produced debrief artifact as proof, and name the `claude-live` lane as the first-pass merge gate for the `skills/**` change.
+
+### Completion checklist
+- DONE — Prompt lands verbatim-or-near in the debrief skill flow WITH the honesty/friction clause (not praise) — captured as AC-2 and the proposed `skills/debrief/SKILL.md` diff.
+- DONE — Debrief output template gains a testimonial section + provenance fields (date, host/model, session scale: entities/workers/PRs touched); a produced debrief record demonstrates it end-to-end — captured as AC-1, AC-3, and the test plan artifact checks.
+- DONE — A concrete first-pass path-to-lane rule is identified (touches skills/**, so the live lane gates the merge) — named `claude-live` as the first-pass required live lane in Proposed approach and AC-5.
+
+### Validation performed
+- Ran `${SPACEDOCK_BIN:-spacedock} dispatch show-stage-def --workflow-dir /Users/clkao/git/spacedock-research/spacedock-v1/docs/dev --stage ideation` and used it as the stage contract.
+- Read the entity file and `skills/debrief/SKILL.md` to anchor the proposal in the current debrief flow/template.
+- Read the dev workflow proof policy/path-to-lane rule in `docs/dev/README.md` to identify the live lane requirement.
+
+### Residual risk
+The exact mechanism for deriving host/runtime, model, worker count, and PR count may need small implementation judgment from available session context. The acceptance criteria require explicit `unknown` rather than fabricated values when a field cannot be determined.
