@@ -164,7 +164,12 @@ func (r Result) withError(msg string) Result {
 
 // truncateInitiate mirrors bridgeegress.truncateEvents (temp-file + rename tail
 // retention) but NEVER drops the latest record of a still-open gate-review id,
-// so an open gate can't be truncated out of the read window.
+// so an open gate can't be truncated out of the read window. Resolution is
+// determined the way the reader determines it — a captain decision intent in the
+// sibling inbox.jsonl keyed by request_id — because the writer ALWAYS stamps
+// on-disk status "open", so a resolved gate's line still reads "open" here.
+// Without the inbox overlay every gate would be protected forever and the file
+// would grow unbounded in historical (already-decided) gate-reviews.
 func truncateInitiate(path string) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -187,8 +192,11 @@ func truncateInitiate(path string) {
 	}
 	tailStart := len(lines) - keepLines
 
+	resolved := loadResolvedGateRequestIDs(filepath.Dir(path))
+
 	// Latest record per id wins; retain the latest line of every still-open
-	// gate-review id even when it falls before the tail window.
+	// gate-review id even when it falls before the tail window. A gate whose
+	// request_id has a captain decision in the inbox is resolved and evictable.
 	latestLine := make(map[string]int)
 	for i, line := range lines {
 		rec, ok := parseRecord(line)
@@ -203,7 +211,7 @@ func truncateInitiate(path string) {
 		if !ok {
 			continue
 		}
-		if rec.Kind == "gate-review" && rec.Status == "open" && i < tailStart {
+		if rec.Kind == "gate-review" && rec.Status == "open" && !resolved[gateResolutionKey(rec)] && i < tailStart {
 			protected[i] = true
 		}
 	}
@@ -246,6 +254,48 @@ func parseRecord(line string) (InitiationRecord, bool) {
 		return InitiationRecord{}, false
 	}
 	return rec, true
+}
+
+// gateResolutionKey is the request_id a decision intent correlates against,
+// falling back to the id (the writer defaults request_id to id for gate-review).
+func gateResolutionKey(rec InitiationRecord) string {
+	if rec.RequestID != "" {
+		return rec.RequestID
+	}
+	return rec.ID
+}
+
+// loadResolvedGateRequestIDs reads the sibling inbox.jsonl and returns the set
+// of request_ids carried by captain "decision" intents — the same overlay the
+// Bridge reader uses to flip a gate-review to resolved. Best-effort: a missing
+// or unreadable inbox yields an empty set, so every open gate stays protected
+// (the safe fallback — never evict a gate that might still be open).
+func loadResolvedGateRequestIDs(dir string) map[string]bool {
+	resolved := make(map[string]bool)
+	f, err := os.Open(filepath.Join(dir, "inbox.jsonl"))
+	if err != nil {
+		return resolved
+	}
+	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 0, 64*1024), maxScanLine)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		var rec struct {
+			Kind      string `json:"kind"`
+			RequestID string `json:"request_id"`
+		}
+		if err := json.Unmarshal([]byte(line), &rec); err != nil {
+			continue
+		}
+		if rec.Kind == "decision" && rec.RequestID != "" {
+			resolved[rec.RequestID] = true
+		}
+	}
+	return resolved
 }
 
 // oneLineSummary collapses control chars/whitespace to single spaces and bounds

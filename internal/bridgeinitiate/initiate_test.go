@@ -236,6 +236,65 @@ func TestTruncateInitiate_KeepsOpenGate(t *testing.T) {
 	}
 }
 
+func TestTruncateInitiate_EvictsGateResolvedViaInbox(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fo-initiate.jsonl")
+
+	var lines []string
+	// Both gates are written status "open" — the production writer NEVER stamps
+	// "resolved" on disk. Resolution is signalled only by an inbox decision intent.
+	undecidedGate := InitiationRecord{
+		Schema: 1, ID: "gate-open", TS: "2026-07-03T00:00:00Z",
+		Kind: "gate-review", Headline: "undecided gate", RequestID: "gate-open", Status: "open",
+	}
+	decidedGate := InitiationRecord{
+		Schema: 1, ID: "gate-decided", TS: "2026-07-03T00:00:01Z",
+		Kind: "gate-review", Headline: "captain decided this", RequestID: "gate-decided", Status: "open",
+	}
+	lines = append(lines, mustJSON(t, undecidedGate), mustJSON(t, decidedGate))
+	for i := 0; i < defaultMaxLines+200; i++ {
+		lines = append(lines, mustJSON(t, InitiationRecord{
+			Schema: 1, ID: fmt.Sprintf("status-%d", i), TS: "2026-07-03T01:00:00Z",
+			Kind: "status", Headline: fmt.Sprintf("noise %d", i), Status: "open",
+		}))
+	}
+	if err := os.WriteFile(path, []byte(strings.Join(lines, "\n")+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// A captain decision intent for gate-decided lands in the sibling inbox.
+	inbox := `{"schema":1,"kind":"decision","request_id":"gate-decided","verdict":"approve"}` + "\n"
+	if err := os.WriteFile(filepath.Join(dir, "inbox.jsonl"), []byte(inbox), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	truncateInitiate(path)
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var foundUndecided, foundDecided bool
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		rec, ok := parseRecord(line)
+		if !ok {
+			t.Fatalf("unparseable kept line: %s", line)
+		}
+		switch rec.ID {
+		case "gate-open":
+			foundUndecided = true
+		case "gate-decided":
+			foundDecided = true
+		}
+	}
+	if !foundUndecided {
+		t.Fatal("undecided open gate-review was evicted by truncation")
+	}
+	if foundDecided {
+		t.Fatal("gate-review resolved by an inbox decision should be evicted past the cap")
+	}
+}
+
 func mustJSON(t *testing.T, rec InitiationRecord) string {
 	t.Helper()
 	data, err := json.Marshal(rec)

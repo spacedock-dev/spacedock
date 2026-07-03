@@ -56,12 +56,15 @@ spacedock bridge initiate \
   --workflow <slug> \
   --entity <entity-slug> \
   --ship-id <slug>/<entity-slug> \
-  --request-id <stable f(entity,stage)> \
+  --id <stable f(entity,stage)> \
+  --host <claude|codex|pi> \
+  --session-id <this session's id> \
   --headline <the gate lede — same one-liner the captain sees> \
   [--body <optional supporting prose>]
 ```
 
-- `--id` defaults to `--request-id` for a gate-review; pass `--request-id` and let the id follow. Both MUST be a STABLE function of `(entity, stage)` so re-emitting the same gate on each drain tick folds to ONE card in Bridge instead of stacking duplicates. Derive it deterministically (e.g. `gate-<entity>-<stage>`), not from a timestamp or random value.
+- `--id` is REQUIRED and is the fold key. For a gate-review the writer defaults `request_id` to `--id`, so pass `--id` alone and let the request_id follow (pass `--request-id` explicitly only when it must differ from the id). The id MUST be a STABLE function of `(entity, stage)` so re-emitting the same gate on each drain tick folds to ONE card in Bridge instead of stacking duplicates. Derive it deterministically (e.g. `gate-<entity>-<stage>`), not from a timestamp or random value. Omitting `--id` is a loud error and writes nothing.
+- `--host` and `--session-id` carry host attribution so the Bridge card shows which host raised the gate. Both are optional, but omit them and the card carries no attribution — always pass the current host and session id.
 - `--headline` is the gate lede (bounded to 240 chars). Keep `--body` to a short supporting line; it is bounded to 2000 chars.
 - Pass `--repo-root` only if the FO's cwd is not the repo root; the writer anchors at `filepath.Abs(--repo-root or cwd)/_bridge`, the same path Bridge resolves from.
 
