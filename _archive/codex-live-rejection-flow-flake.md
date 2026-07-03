@@ -6,6 +6,7 @@ id: tt4sh23s0j8rxe74tx2r14xv
 verdict: rejected
 completed: 2026-07-03T02:16:57Z
 archived: 2026-07-03T02:16:57Z
+superseded-by: codex-reuse-characterization-negation-scope
 ---
 `TestLiveCodexSharedScenarios/rejection-flow` (`internal/ensigncycle`, `codex_live_runner_test.go:40`) characterizes the Codex addressable-worker capability from the run transcript. It intermittently asserts the worker was characterized ABSENT while the transcript contains a turn-starting reuse tool (`send_input`) — a characterization mismatch — even though the scenario itself completes correctly (cycle-1 REJECTED, rework applies the `shared-rejection-fix: applied` marker, cycle-2 PASSED, both workers closed).
 
