@@ -14,7 +14,7 @@ For each entity reported by `status --next`:
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
 5. Update main-branch frontmatter for dispatch:
    ```
-   spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
+   ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
    ```
    Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
@@ -118,7 +118,7 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
 - **guard:** write fragile inputs (checklist, scope notes, feedback context) to files first — one checklist item per non-empty line — so Markdown/backticks/shell-vars survive shell quoting.
 - **effect:** run the helper, then forward its stdout fields to `«worker.spawn»` unchanged:
   ```
-  spacedock dispatch build \
+  ${SPACEDOCK_BIN:-spacedock} dispatch build \
     --workflow-dir {workflow_dir} \
     --entity-path {entity_file_path} \
     --stage {target_stage_name} \
