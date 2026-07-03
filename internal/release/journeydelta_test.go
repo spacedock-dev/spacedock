@@ -200,9 +200,9 @@ func TestRenderJourneyDeltaCommentShowsTokenClassBreakdown(t *testing.T) {
 		t.Fatalf("comment body missing the data row:\n%s", body)
 	}
 	cells := strings.Split(row, "|")
-	// | (empty) | Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Baseline | (empty) |
-	if len(cells) != 11 {
-		t.Fatalf("data row has %d cells, want 11 (header shape changed?): %q", len(cells), row)
+	// | (empty) | Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Duration Δ (ms) | Baseline | (empty) |
+	if len(cells) != 12 {
+		t.Fatalf("data row has %d cells, want 12 (header shape changed?): %q", len(cells), row)
 	}
 	cacheReadCell := strings.TrimSpace(cells[5])
 	cacheCreationCell := strings.TrimSpace(cells[6])
@@ -215,6 +215,57 @@ func TestRenderJourneyDeltaCommentShowsTokenClassBreakdown(t *testing.T) {
 	}
 	if tokensTotalCell != "+1034" {
 		t.Fatalf("Tokens Δ (total) cell = %q, want +1034", tokensTotalCell)
+	}
+}
+
+// TestJourneyDeltaCommentShowsDurationDelta is the TDD proof for the
+// wallclock/duration delta: computes deltas from a baseline ledger and a
+// current PR run with distinct DurationMS values, then asserts both the
+// computed struct field and the rendered comment's Duration Δ column show the
+// exact millisecond delta (current - baseline), not a total or a placeholder.
+func TestJourneyDeltaCommentShowsDurationDelta(t *testing.T) {
+	baseline := journeymetrics.Ledger{
+		Scenarios: []journeymetrics.ScenarioLedgerEntry{
+			{
+				ScenarioID: "shallow-boot-window",
+				Observations: []journeymetrics.Record{
+					{
+						ScenarioID: "shallow-boot-window", Runtime: "claude", Model: "claude-sonnet-4-6",
+						DurationMS: 12000, CapturedAt: "2026-06-20T00:00:00Z",
+						RunURL: "https://github.com/spacedock-dev/spacedock/actions/runs/27931963802",
+					},
+				},
+			},
+		},
+	}
+	current := []journeymetrics.Record{
+		{
+			ScenarioID: "shallow-boot-window", Runtime: "claude", Model: "claude-sonnet-4-6",
+			DurationMS: 15500,
+		},
+	}
+
+	deltas := ComputeJourneyDeltas(baseline, current)
+	if len(deltas) != 1 {
+		t.Fatalf("deltas = %d, want 1", len(deltas))
+	}
+	if deltas[0].DurationMSDelta != 3500 {
+		t.Fatalf("DurationMSDelta = %d, want 3500 (15500-12000)", deltas[0].DurationMSDelta)
+	}
+
+	body := RenderJourneyDeltaComment(deltas)
+	var row string
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "| shallow-boot-window") {
+			row = line
+			break
+		}
+	}
+	if row == "" {
+		t.Fatalf("comment body missing the data row:\n%s", body)
+	}
+	if !strings.Contains(row, "+3500") {
+		t.Fatalf("data row missing Duration Δ +3500(ms): %q", row)
 	}
 }
 

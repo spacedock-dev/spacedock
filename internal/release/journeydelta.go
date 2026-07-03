@@ -62,11 +62,12 @@ type JourneyDelta struct {
 	ScenarioID     string
 	Runtime        string
 	Model          string
-	HasBaseline    bool
-	BaselineRunURL string
-	TurnsDelta     int
-	TokensDelta    journeymetrics.TokenTotals
-	CostDeltaUSD   float64
+	HasBaseline     bool
+	BaselineRunURL  string
+	TurnsDelta      int
+	DurationMSDelta int64
+	TokensDelta     journeymetrics.TokenTotals
+	CostDeltaUSD    float64
 }
 
 // ComputeJourneyDeltas computes, for every scenario/runtime/model the current
@@ -94,6 +95,7 @@ func ComputeJourneyDeltas(baseline journeymetrics.Ledger, current []journeymetri
 			d.BaselineRunURL = base.RunURL
 		}
 		d.TurnsDelta = cur.Turns - base.Turns
+		d.DurationMSDelta = cur.DurationMS - base.DurationMS
 		d.TokensDelta = journeymetrics.TokenTotals{
 			Input:         cur.Tokens.Input - base.Tokens.Input,
 			Output:        cur.Tokens.Output - base.Tokens.Output,
@@ -138,11 +140,11 @@ func RenderJourneyDeltaComment(deltas []JourneyDelta) string {
 		b.WriteString("No journey metrics observations were produced by this run.\n")
 		return b.String()
 	}
-	b.WriteString("| Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Baseline |\n")
-	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+	b.WriteString("| Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Duration Δ (ms) | Baseline |\n")
+	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	for _, d := range deltas {
 		if !d.HasBaseline {
-			fmt.Fprintf(&b, "| %s | %s | %s | n/a (new) | n/a (new) | n/a (new) | n/a (new) | n/a (new) | none (new observation) |\n",
+			fmt.Fprintf(&b, "| %s | %s | %s | n/a (new) | n/a (new) | n/a (new) | n/a (new) | n/a (new) | n/a (new) | none (new observation) |\n",
 				d.ScenarioID, d.Runtime, d.Model)
 			continue
 		}
@@ -150,8 +152,8 @@ func RenderJourneyDeltaComment(deltas []JourneyDelta) string {
 		if d.BaselineRunURL != "" {
 			baseline = fmt.Sprintf("[latest published](%s)", d.BaselineRunURL)
 		}
-		fmt.Fprintf(&b, "| %s | %s | %s | %+d | %+d | %+d | %+d | %+.4f | %s |\n",
-			d.ScenarioID, d.Runtime, d.Model, d.TurnsDelta, d.TokensDelta.CacheRead, d.TokensDelta.CacheCreation, d.TokensDelta.Total, d.CostDeltaUSD, baseline)
+		fmt.Fprintf(&b, "| %s | %s | %s | %+d | %+d | %+d | %+d | %+.4f | %+d | %s |\n",
+			d.ScenarioID, d.Runtime, d.Model, d.TurnsDelta, d.TokensDelta.CacheRead, d.TokensDelta.CacheCreation, d.TokensDelta.Total, d.CostDeltaUSD, d.DurationMSDelta, baseline)
 	}
 	return b.String()
 }
