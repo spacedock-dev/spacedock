@@ -216,3 +216,14 @@ The PR red was another Codex stream-shape false red, not a failed rejection-flow
 ### Summary
 
 Validation cycle 3 PASSED for the PR #471 Codex CI red fix. The change is narrowly scoped to the Codex reviewer-reuse oracle and one CI-shaped fixture.
+
+## Stage Report: validation (cycle 3 CI)
+
+- DONE: push the PR #471 fix and approve Codex CI only.
+  Code branch `spacedock-ensign/codex-reuse-characterization-negation-scope` is pushed at `c3da14bf`. The protected `CI-E2E-CODEX` environment was approved for Runtime Live E2E run `28635807246`; the Claude and Pi environments were left waiting.
+- DONE: confirm the fresh Codex live job is green.
+  PR #471 check `codex-live` passed in 7m31s on run `28635807246`, job `84921833353`. The same PR check set shows `offline`, `build`, and both install jobs passing; Claude/Pi live checks remain pending because their protected environments were not approved.
+
+### Summary
+
+Fresh PR Codex CI is green after commit `c3da14bf`. This closes the PR #471 Codex red that triggered cycle 3.
