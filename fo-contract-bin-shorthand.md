@@ -6,8 +6,8 @@ score: 0.5
 id: 13f8b12x9f7ba25ywm5wt2x7
 started: 2026-07-03T03:03:12Z
 worktree: .worktrees/spacedock-ensign-fo-contract-bin-shorthand
-mod-block:
-pr:
+mod-block: merge:pr-merge
+pr: "#473"
 verdict:
 completed:
 archived:
