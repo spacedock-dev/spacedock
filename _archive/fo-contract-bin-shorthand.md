@@ -7,10 +7,10 @@ id: 13f8b12x9f7ba25ywm5wt2x7
 started: 2026-07-03T03:03:12Z
 worktree: .worktrees/spacedock-ensign-fo-contract-bin-shorthand
 mod-block:
-pr: pr-merge:471
+pr: pr-merge:473
 verdict: passed
-completed: 2026-07-03T04:31:52Z
-archived: 2026-07-03T04:31:52Z
+completed: 2026-07-03T13:30:33Z
+archived: 2026-07-03T13:30:33Z
 ---
 
 ## Problem statement
