@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -468,7 +469,7 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 // print compact JSON results that Bridge can surface without knowing host internals.
 func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 	return &cobra.Command{
-		Use:                "bridge egress emit --host <host> | ingress wake --host codex | alert permission",
+		Use:                "bridge egress emit --host <host> | ingress wake --host codex | inbox drain|ack|commit|check | alert permission",
 		Hidden:             true,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -489,6 +490,9 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
 				return nil
 			}
+			if len(args) >= 2 && args[0] == "inbox" {
+				return runBridgeInbox(cmd, args[1:], dir, stdin)
+			}
 			if len(args) >= 2 && args[0] == "alert" && args[1] == "permission" {
 				opts, parseErr := parseBridgeAlertPermission(args[2:], dir)
 				if parseErr != "" {
@@ -504,6 +508,62 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 			}
 			return nil
 		},
+	}
+}
+
+// runBridgeInbox dispatches the deterministic drain/ack/commit/check verbs the
+// FO uses in place of hand-written shell. Each prints a compact JSON result.
+func runBridgeInbox(cmd *cobra.Command, args []string, dir string, stdin io.Reader) error {
+	if len(args) == 0 {
+		_ = json.NewEncoder(cmd.OutOrStdout()).Encode(map[string]string{"error": "missing inbox subcommand (drain|ack|commit|check)"})
+		return nil
+	}
+	sub := args[0]
+	rest := args[1:]
+	enc := json.NewEncoder(cmd.OutOrStdout())
+	switch sub {
+	case "drain":
+		return enc.Encode(bridgeingress.Drain(bridgeingress.DrainOptions{
+			Host:      parseBridgeHost(rest),
+			Root:      parseBridgeStringFlag(rest, "--repo-root", dir),
+			Slug:      parseBridgeStringFlag(rest, "--slug", ""),
+			SessionID: parseBridgeStringFlag(rest, "--session-id", ""),
+			Members:   parseBridgeCSVFlag(rest, "--members"),
+		}))
+	case "ack":
+		return enc.Encode(bridgeingress.Ack(bridgeingress.AckOptions{
+			Host:       parseBridgeHost(rest),
+			Root:       parseBridgeStringFlag(rest, "--repo-root", dir),
+			Slug:       parseBridgeStringFlag(rest, "--slug", ""),
+			Line:       parseBridgeIntFlag(rest, "--line", 0),
+			ID:         parseBridgeStringFlag(rest, "--id", ""),
+			TS:         parseBridgeStringFlag(rest, "--ts", ""),
+			IntentKind: parseBridgeStringFlag(rest, "--kind", ""),
+			Status:     parseBridgeStringFlag(rest, "--status", ""),
+			Text:       parseBridgeStringFlag(rest, "--text", ""),
+			Granted:    parseBridgeBoolFlag(rest, "--granted"),
+			Entity:     parseBridgeStringFlag(rest, "--entity", ""),
+			Field:      parseBridgeStringFlag(rest, "--field", ""),
+			Value:      parseBridgeStringFlag(rest, "--value", ""),
+			Verdict:    parseBridgeStringFlag(rest, "--verdict", ""),
+			RequestID:  parseBridgeStringFlag(rest, "--request-id", ""),
+			SessionID:  parseBridgeStringFlag(rest, "--session-id", ""),
+		}))
+	case "commit":
+		return enc.Encode(bridgeingress.Commit(bridgeingress.CommitOptions{
+			Root:   parseBridgeStringFlag(rest, "--repo-root", dir),
+			Slug:   parseBridgeStringFlag(rest, "--slug", ""),
+			Cursor: parseBridgeIntFlag(rest, "--cursor", -1),
+		}))
+	case "check":
+		return enc.Encode(bridgeingress.CheckFromReader(stdin, bridgeingress.CheckOptions{
+			Host:      parseBridgeHost(rest),
+			Root:      parseBridgeStringFlag(rest, "--repo-root", ""),
+			Slug:      parseBridgeStringFlag(rest, "--slug", ""),
+			SessionID: parseBridgeStringFlag(rest, "--session-id", ""),
+		}))
+	default:
+		return enc.Encode(map[string]string{"error": "unknown inbox subcommand: " + sub})
 	}
 }
 
@@ -577,6 +637,39 @@ func parseBridgeCSVFlag(args []string, name string) []string {
 		return nil
 	}
 	return csvParts(raw)
+}
+
+func parseBridgeIntFlag(args []string, name string, fallback int) int {
+	raw := parseBridgeStringFlag(args, name, "")
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil {
+		return fallback
+	}
+	return n
+}
+
+// parseBridgeBoolFlag returns a tri-state pointer: nil when the flag is absent,
+// so an omitted --granted is not serialized as false into the ack record.
+func parseBridgeBoolFlag(args []string, name string) *bool {
+	for i := 0; i < len(args); i++ {
+		if args[i] == name {
+			// bare flag or followed by a value
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "--") {
+				v := strings.EqualFold(strings.TrimSpace(args[i+1]), "true")
+				return &v
+			}
+			v := true
+			return &v
+		}
+		if strings.HasPrefix(args[i], name+"=") {
+			v := strings.EqualFold(strings.TrimPrefix(args[i], name+"="), "true")
+			return &v
+		}
+	}
+	return nil
 }
 
 func csvParts(raw string) []string {

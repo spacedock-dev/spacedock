@@ -57,3 +57,9 @@ Bridge reads FO liveness and activity from `_bridge/events.jsonl` and `_bridge/s
 
 - **FO event emission** — PACKAGED/FIXTURE-COVERED on Codex: `.codex-plugin/plugin.json` points at `hooks/codex-hooks.json`, whose non-async command hooks call `spacedock bridge egress emit --host codex` directly via `SPACEDOCK_BIN` or `PATH`. This covers packaging and minimal lifecycle payload normalization without reusing Claude's async hook file, `CLAUDE_PLUGIN_ROOT`, or Codex plugin-root state. It does not prove `_bridge/sessions/` marker parity: Codex marker support requires durable live evidence for child identity plus entity path.
 - **«session-id» binding** — the bridge-inbox heartbeat resolves the neutral `SD_SESSION_ID`, falling back to `$CODEX_THREAD_ID` on Codex when the harness exposes it; when no thread id is exposed it stays empty and the heartbeat carries an empty session id (still a valid liveness tick — Bridge reads freshness from `ts`).
+
+## Bridge ingress (captain intent → FO)
+
+Captain intent Bridge queues in `_bridge/inbox.jsonl` is drained through the same host-neutral packaged verbs Claude uses, bound `«host» = codex`: `spacedock bridge inbox drain --host codex --slug $SLUG` (stamps the heartbeat with `host`, returns addressed records), `... ack ...` (appends the compact reply/ack), `... commit --cursor «high_water»` (advances the per-workflow cursor). The FO never hand-writes cursor/JSONL shell.
+
+- **`«inbox.wake»`** — Codex supports a durable **external** wake (unlike Claude): Bridge runs `spacedock bridge ingress wake --host codex`, which resumes a parked Codex session via `codex exec resume` and prompts it to drain. A wake is only an attempt; delivery is confirmed by the FO-owned drain + ack, so it is safe against the gate-vs-inbox race.
