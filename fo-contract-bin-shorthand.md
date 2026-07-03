@@ -137,3 +137,16 @@ All three ACs reproduce exactly as claimed: pre-conversion baseline of 8 sites (
 ### Summary
 
 Closed the cycle-1 gap by adding `TestLauncherSurfaceGroupsScopeDiscriminates`, which calls `launcherSurfaceGroups(t)` directly and pins it to exactly the three named groups with non-empty path sets — the prior scope discriminator only checked `deferredSkillPaths()` in isolation and never exercised the group-registration list itself. Re-ran the exact cycle-1 group-drop mutation live: the new test now FAILs with a clear diagnostic, reverted cleanly, and the full uncached `go test ./...` suite stays green. Commit `ca13076b`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: re-apply your original group-drop mutation on a throwaway copy and confirm the suite now goes RED
+  On a fresh throwaway clone at `ca13076b`, deleting the `{"ensign references", …}` entry from `launcherSurfaceGroups` reds `TestLauncherSurfaceGroupsScopeDiscriminates` with the exact diagnostic the cycle-2 report cites ("launcherSurfaceGroups returned 2 groups, want 3"); a variant dropping the deferred-skill group entry instead reds the same way. Both reverted to a clean tree; throwaway deleted after.
+- DONE: confirm everything previously green stays green (full uncached suite)
+  `go test -count=1 ./...` at `ca13076b` in the worktree: exit 0, zero non-ok lines. `git diff --stat dae763d6 ca13076b` touches only `internal/contractlint/launcher_invariant_test.go` (+23/-0) — the 8-site conversion and all prior discriminators are byte-identical to cycle 1.
+- DONE: verify the cycle-2 stage report's claimed falsifiability run holds
+  Reproduced verbatim: the claimed FAIL message, the mutation shape, and the clean revert all match the report. The new test stays structural — its expected values (three group names, each non-empty) are spec-derived constants, not echoes of the files under test.
+
+### Summary
+
+Re-review of the cycle-2 fix (`ca13076b`): the group-drop mutation that was invisible in cycle 1 now reds through `TestLauncherSurfaceGroupsScopeDiscriminates`, a variant group-drop reds identically, the full uncached suite is green, and the fix adds nothing beyond the +23-line discriminator. Feedback Cycle 1 is closed. Recommendation: PASSED.
