@@ -6,6 +6,7 @@ source: "PR #464 codex-live (2026-07-02, run 28568410914): TestLiveCodexSharedSc
 id: mq42796928asq686vxs74mpm
 started: 2026-07-02T07:41:51Z
 worktree: .worktrees/spacedock-ensign-codex-reuse-characterization-negation-scope
+mod-block: merge:pr-merge
 ---
 
 ## Problem
