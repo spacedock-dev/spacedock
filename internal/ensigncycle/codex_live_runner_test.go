@@ -276,6 +276,18 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
+func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
+	return []string{
+		"exec",
+		"--json",
+		"--enable", "multi_agent_v2",
+		"--dangerously-bypass-approvals-and-sandbox",
+		"--cd", workflowRoot,
+		"--output-last-message", finalPath,
+		prompt,
+	}
+}
+
 // run launches `codex exec --json` for one shared scenario. Liveness still uses
 // the shared streamWatcher for the 60s stream-silence guard, with a Codex-specific
 // foreground-wait watchdog layered beside it so repeated wait-loop JSONL does not
@@ -292,14 +304,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	jsonlPath := filepath.Join(artifactDir, "codex-exec.jsonl")
 	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
 
-	cmd := exec.Command(r.codexBin,
-		"exec",
-		"--json",
-		"--dangerously-bypass-approvals-and-sandbox",
-		"--cd", workflowRoot,
-		"--output-last-message", finalPath,
-		prompt,
-	)
+	cmd := exec.Command(r.codexBin, codexExecArgv(workflowRoot, finalPath, prompt)...)
 	cmd.Env = r.env
 	// stdout (the --json event stream) flows through the watcher's pipe for the
 	// no-progress liveness guard; stderr goes to its own artifact file. The
@@ -378,4 +383,20 @@ func runCodexLiveCommand(t *testing.T, artifactDir, artifactName, stdin string, 
 		t.Fatalf("%s failed: %v\n%s", strings.Join(argv, " "), err, out)
 	}
 	return string(out)
+}
+
+func argvHasAdjacent(args []string, left, right string) bool {
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == left && args[i+1] == right {
+			return true
+		}
+	}
+	return false
+}
+
+func TestCodexLiveRunnerExecArgvEnablesMultiAgentV2(t *testing.T) {
+	args := codexExecArgv("/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	if !argvHasAdjacent(args, "--enable", "multi_agent_v2") {
+		t.Fatalf("codex live exec argv must explicitly enable multi_agent_v2 because CODEX_HOME is isolated; args=%v", args)
+	}
 }
