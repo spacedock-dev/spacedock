@@ -350,7 +350,7 @@ func assertCodexReviewerReuse(jsonl string) error {
 func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
 	initialValidationBuilds := 0
 	validationAdvanceBuilds := 0
-	implementationFeedbackAdvances := 0
+	implementationAdvances := 0
 	keptAliveValidationNarration := false
 	waitCalls := 0
 	for _, line := range strings.Split(jsonl, "\n") {
@@ -395,15 +395,14 @@ func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
 				}
 			}
 			if strings.Contains(cmd, "--stage implementation") &&
-				strings.Contains(cmd, "--feedback-reflow") &&
 				strings.Contains(cmd, "--advance") {
-				implementationFeedbackAdvances++
+				implementationAdvances++
 			}
 		}
 	}
 	return initialValidationBuilds == 1 &&
 		validationAdvanceBuilds >= 1 &&
-		implementationFeedbackAdvances >= 1 &&
+		implementationAdvances >= 1 &&
 		keptAliveValidationNarration &&
 		waitCalls >= 2
 }

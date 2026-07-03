@@ -338,6 +338,25 @@ func TestAssertCodexReviewerReuseAcceptsAdvanceModeValidationReroute(t *testing.
 	}
 }
 
+func TestAssertCodexReviewerReuseAcceptsCIAdvanceModeWithoutImplementationFeedbackReflow(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("Because Codex has an addressable worker route, I am routing the rework back to the existing implementation worker rather than spawning the reviewer to do fix work."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file rework.checklist --advance`),
+		codexWaitLine(),
+		codexAgentMessageLine("I am advancing back to validation and reusing the kept-alive cycle-1 validation reviewer for the re-review, keeping it separate from the worker that applied the fix."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --advance`),
+		codexAgentMessageLine("The cycle-2 validation assignment is built. I am routing it to the original validation reviewer through the addressable worker handle, not to the implementation rework worker."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("CI advance-mode transcript without implementation --feedback-reflow should still prove validation reviewer reuse: %v", err)
+	}
+}
+
 func TestAssertCodexReviewerReuseAcceptsLiveAdvanceModeReuseNarration(t *testing.T) {
 	jsonl := strings.Join([]string{
 		codexAgentMessageLine("The Codex runtime has `followup_task`, so the cycle-1 validation reviewer is reusable if it remains addressable."),
