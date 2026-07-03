@@ -1,9 +1,10 @@
 ---
 title: 'FO contract: replace bare `spacedock` command examples with `${SPACEDOCK_BIN:-spacedock}`'
-status: backlog
+status: ideation
 source: 'boot-forensics (2026-06-16) — FO used homebrew cask (0.20.2) instead of $SPACEDOCK_BIN (dev) throughout a session because contract command blocks model the bare-spacedock shorthand. SPACEDOCK_BIN was set and correct but never used; cap divergence cost ~16k tok in failed --read calls. Fix: find-and-replace executable command positions in first-officer-shared-core.md and claude-first-officer-runtime.md.'
 score: 0.5
 id: 13f8b12x9f7ba25ywm5wt2x7
+started: 2026-07-03T03:03:12Z
 ---
 
 Contract command examples in `first-officer-shared-core.md` and `claude-first-officer-runtime.md` use bare `spacedock` in all executable command positions. The preamble explains the `${SPACEDOCK_BIN:-spacedock}` invariant but the examples undermine it by modeling the shorthand form. When the FO writes Bash calls by copying those examples, it silently uses the wrong binary when `SPACEDOCK_BIN` differs from the PATH `spacedock`.
