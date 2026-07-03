@@ -1,9 +1,9 @@
 ---
 id: e3g7s1jtr05fp6n1w0z89w4v
 title: Per-stage model declaration must support divergent per-host values (and Codex's effort axis), not just ignore-elsewhere
-status: backlog
+status: ideation
 source: Captain conversation 2026-07-03, following dispatch-model-space-fable-sonnet5-1m (archived, id wcex4yjx4mvecybxjb43gwtw, PR #463) — that task's "host overlay" design deliberately rejected per-host keys ("no workflow needs it yet") in favor of validate-on-claude / ignore-with-note-and-null-elsewhere. A concrete need surfaced immediately after: declaring `fable` for the `ideation` stage on Claude while wanting a different, specific model (e.g. a Codex model id) plus a reasoning-effort tier (e.g. "xhigh") when the same workflow runs under Codex. The current mechanism cannot express this — Codex/Pi dispatch unconditionally gets `model: null`, with zero per-host substitution capability.
-started:
+started: 2026-07-03T04:12:53Z
 completed:
 verdict:
 score:
