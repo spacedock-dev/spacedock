@@ -7,6 +7,7 @@ id: mq42796928asq686vxs74mpm
 started: 2026-07-02T07:41:51Z
 worktree: .worktrees/spacedock-ensign-codex-reuse-characterization-negation-scope
 mod-block: merge:pr-merge
+pr: "#471"
 ---
 
 ## Problem
