@@ -39,7 +39,7 @@ func printHelp(w io.Writer) {
 }
 
 // setFrontDoorHelp installs a per-command help renderer for claude/codex (AC-4):
-// the sandbox knobs, --skip-contract-check, --plugin-dir, the `--` host-flag
+// the sandbox knobs, --skip-compat-check, --plugin-dir, the `--` host-flag
 // forwarding explanation, and an Examples block. The flags are declared on the
 // command (declareFrontDoorHelpFlags) only so FlagUsages renders them — the real
 // parsing is parseFrontDoorArgs's. A per-command HelpFunc is set so the root's
@@ -56,7 +56,7 @@ Usage:
 Start `+hostTitle(host)+` as your Spacedock first officer. The optional task is the
 launch prompt; everything after -- forwards verbatim to `+host+`.
 
-A --plugin-dir launch loads a local plugin checkout and relaxes the contract gate,
+A --plugin-dir launch loads a local plugin checkout and relaxes the version gate,
 so it does not require a prior "spacedock install". --plugin-dir is accepted both
 before -- (as a spacedock-parsed flag, repeatable) and after -- (forwarded verbatim).
 
@@ -80,8 +80,8 @@ Examples:
 // setPiHelp installs the Pi-specific launch help. Pi loads explicit skills and
 // extensions instead of a Claude/Codex plugin manifest. The safehouse subset
 // mirrors the claude/codex help (same flag names) so operator muscle memory
-// transfers across hosts; --skip-contract-check / --no-install are NOT declared
-// because pi has no contract gate. The flags are declared on the command only so
+// transfers across hosts; --skip-compat-check / --no-install are NOT declared
+// because pi has no version gate. The flags are declared on the command only so
 // FlagUsages renders them (the pi command is DisableFlagParsing, exactly like
 // claude/codex); parsePiFrontDoorArgs owns the real parsing.
 func setPiHelp(cmd *cobra.Command, w io.Writer) {

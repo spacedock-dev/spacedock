@@ -10,7 +10,7 @@ A string, substring, or regex match over an instruction file the model reads (th
 
 So "the contract says to run the command" never proves the agent runs it. "The skill renders the gate" is proven by invoking the skill and observing the rendered gate, never by finding the clause that asks for it.
 
-The one test that settles it: **does the expected value come from somewhere other than the file under test?** If no (the clause is its own expectation), the check is a tautology and is banned as proof. If yes (the file is bound to an independent source that can diverge from it), it may be a legitimate invariant. The legitimate case parses real artifacts in code and tests a relationship between independent values; for example, that the plugin manifest's contract range brackets the binary's contract version. The binary parses that manifest, so it is already outside "files the model reads," and the two versions can disagree. That divergence is exactly what lets the check fail.
+The one test that settles it: **does the expected value come from somewhere other than the file under test?** If no (the clause is its own expectation), the check is a tautology and is banned as proof. If yes (the file is bound to an independent source that can diverge from it), it may be a legitimate invariant. The legitimate case parses real artifacts in code and tests a relationship between independent values; for example, that the plugin manifest's version shares a major.minor with the binary's version. The binary parses that manifest, so it is already outside "files the model reads," and the two versions can disagree. That divergence is exactly what lets the check fail.
 
 ## Acceptance criteria are end-state properties
 

@@ -72,8 +72,9 @@ type reconcileOpts struct {
 // satisfies it; tests pass an in-memory stub.
 type rosterLoader func(home, teamName, sessionID string) (claudeteam.ReconcileTeamState, error)
 
-// ghRunner runs `gh pr view {N} --json state` returning the state string (e.g.
-// "MERGED", "OPEN"). Tests inject a stub; production passes ghRunnerExec.
+// ghRunner runs `gh pr view {N} --json state --jq .state` returning the state
+// string (e.g. "MERGED", "OPEN"). Tests inject a stub; production passes
+// ghRunnerExec.
 type ghRunner func(prRef string) (string, error)
 
 // GhRunner is the exported alias of ghRunner so callers outside this package (the

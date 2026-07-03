@@ -13,10 +13,11 @@ import (
 )
 
 // TestUpgradeFromStaleMovesToGreen is the load-bearing AC-3 proof: a plugin
-// installed from a stale marketplace (no requires-contract, the 0.12.1 shape)
-// resolves to the plugin-predates-contract verdict (exit 1, the dead-end the
-// captain hit); running installArgvSequence against an upgraded marketplace
-// (requires-contract >=2,<3) then leaves doctor reporting compatible (exit 0).
+// installed from a stale marketplace (the 0.12.1 shape, an ancient minor)
+// resolves to the too-old-plugin verdict (exit 1, the dead-end the captain hit —
+// D2: every manifest since 0.x has a version, so an ancient plugin classifies as
+// too-old-plugin with the same install remedy); running installArgvSequence
+// against an upgraded marketplace then leaves doctor reporting compatible (exit 0).
 // This proves plain `plugin install` no-ops on an already-installed plugin and
 // the inserted `plugin uninstall` is what moves the stale install off. The
 // remove step is tolerated — a fresh `marketplace remove` may exit 1 in some
@@ -47,12 +48,12 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 	runHost(t, claudeBin, env, "plugin", "marketplace", "add", staleMarketplace)
 	runHost(t, claudeBin, env, "plugin", "install", "spacedock@spacedock")
 
-	// The stale install resolves to the predates-contract verdict (exit 1) — the
+	// The stale install resolves to the too-old-plugin verdict (exit 1) — the
 	// dead-end this entity fixes.
 	staleManifest := resolveClaudeManifestEnv(t, claudeBin, env)
-	staleVerdict := contract.ManifestVerdict(staleManifest, "claude", Version)
-	if staleVerdict.Verdict != contract.PluginPredatesContract {
-		t.Fatalf("stale install verdict = %v, want plugin-predates-contract (message=%q)", staleVerdict.Verdict, staleVerdict.Message)
+	staleVerdict := contract.ManifestVerdict(staleManifest, "claude", displayVersion())
+	if staleVerdict.Verdict != contract.TooOldPlugin {
+		t.Fatalf("stale install verdict = %v, want too-old-plugin (message=%q)", staleVerdict.Verdict, staleVerdict.Message)
 	}
 
 	// Upgrade via the committed argv shape. Plain `plugin install` would no-op
@@ -71,7 +72,7 @@ func TestUpgradeFromStaleMovesToGreen(t *testing.T) {
 
 	// Doctor now reports compatible (exit 0) — the install moved off the stale plugin.
 	upgradedManifest := resolveClaudeManifestEnv(t, claudeBin, env)
-	upgradedVerdict := contract.ManifestVerdict(upgradedManifest, "claude", Version)
+	upgradedVerdict := contract.ManifestVerdict(upgradedManifest, "claude", displayVersion())
 	if upgradedVerdict.Verdict != contract.Compatible {
 		t.Fatalf("after upgrade, verdict = %v, want compatible (message=%q)", upgradedVerdict.Verdict, upgradedVerdict.Message)
 	}

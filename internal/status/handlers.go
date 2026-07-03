@@ -201,6 +201,30 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 				"Set verdict in the same --set call, or use --force.",
 			slug))
 	}
+
+	// Finalize-status gate: the finalize action (setting `completed`) requires the
+	// resulting status to be a declared terminal stage — either already terminal or
+	// set terminal in THIS SAME --set call. This closes the residual hole behind the
+	// verdict gate above: `--set completed verdict=X worktree=` alone (no
+	// status={terminal}) satisfies the verdict gate yet still finalizes an entity
+	// that never advanced past a non-terminal stage — Spike C's exact reproduction
+	// of the incomplete-finalize deviation the merge guard's atomic terminalize
+	// (status+verdict+completed in one call) exists to prevent. No-op when the
+	// workflow declares no stages block (membership cannot be checked). --force
+	// bypasses, same idiom as the guards above.
+	postUpdateStatus := strings.TrimSpace(currentFields["status"])
+	for _, u := range set.updates {
+		if u.field == "status" && u.hasValue {
+			postUpdateStatus = u.value
+		}
+	}
+	if !force && finalizing && len(stages) > 0 && !terminalNames[postUpdateStatus] {
+		return errExit(stderr, fmt.Sprintf(
+			"entity %s cannot be finalized ('completed') while status '%s' is not the terminal stage. "+
+				"Set status=%s in the same --set (or run 'spacedock merge guard %s'), or use --force.",
+			slug, postUpdateStatus, terminalStageName(roots.definitionDir), slug))
+	}
+
 	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]
 		if len(mergeHooks) > 0 {

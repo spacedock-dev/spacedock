@@ -43,11 +43,11 @@ func TestDoctorVerdicts(t *testing.T) {
 			wantStderr: "Update the plugin to continue.",
 		},
 		{
-			name:       "malformed-range",
-			manifest:   "malformed-range.json",
+			name:       "malformed-version",
+			manifest:   "malformed-version.json",
 			host:       "claude",
 			wantExit:   1,
-			wantStderr: "malformed contract range",
+			wantStderr: "malformed plugin version",
 		},
 		{
 			name:       "no-plugin-found",
@@ -75,38 +75,20 @@ func TestDoctorVerdicts(t *testing.T) {
 	}
 }
 
-// TestDoctorMalformedNamesManifest locks that the malformed-range message names
+// TestDoctorMalformedNamesManifest locks that the malformed-version message names
 // the offending manifest path (the packaging-bug verdict points at the file).
 func TestDoctorMalformedNamesManifest(t *testing.T) {
 	var stdout, stderr bytes.Buffer
-	manifestPath := filepath.Join("testdata", "malformed-range.json")
+	manifestPath := filepath.Join("testdata", "malformed-version.json")
 	code := RunDoctor(manifestPath, "claude", binaryVersionForTest, &stdout, &stderr)
 	if code != 1 {
 		t.Fatalf("exit = %d, want 1", code)
 	}
 	if !strings.Contains(stderr.String(), manifestPath) {
-		t.Fatalf("malformed-range message must name the manifest path %q: %q", manifestPath, stderr.String())
+		t.Fatalf("malformed-version message must name the manifest path %q: %q", manifestPath, stderr.String())
 	}
-	// A malformed range carries NO upgrade remedy (neither side is too old).
+	// A malformed version carries NO upgrade remedy (neither side is too old).
 	if strings.Contains(stderr.String(), "too-old") {
-		t.Fatalf("malformed-range must not offer a too-old remedy: %q", stderr.String())
-	}
-}
-
-// TestVendoredFixtureBracketsContractVersion is the AC-5a Go half: the vendored
-// manifest fixture (a checked-in copy of the authoritative .codex-plugin
-// manifest) declares a well-formed requires-contract that brackets
-// CONTRACT_VERSION. Closes fixture-vs-binary drift with a single go test.
-func TestVendoredFixtureBracketsContractVersion(t *testing.T) {
-	raw, err := readRequiresContract(filepath.Join("testdata", "plugin.json"))
-	if err != nil {
-		t.Fatalf("read vendored fixture requires-contract: %v", err)
-	}
-	lo, hi, err := ParseRange(raw)
-	if err != nil {
-		t.Fatalf("vendored fixture requires-contract %q does not parse: %v", raw, err)
-	}
-	if !(lo <= CONTRACT_VERSION && CONTRACT_VERSION < hi) {
-		t.Fatalf("vendored fixture range %s does not bracket CONTRACT_VERSION=%d", raw, CONTRACT_VERSION)
+		t.Fatalf("malformed-version must not offer a too-old remedy: %q", stderr.String())
 	}
 }

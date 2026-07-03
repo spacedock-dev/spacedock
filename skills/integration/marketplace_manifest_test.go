@@ -1,5 +1,5 @@
 // ABOUTME: Manifest tests — main carries a transitional bridge marketplace.json
-// ABOUTME: (Model B removal deferred), and .codex-plugin/plugin.json brackets binary.
+// ABOUTME: (Model B removal deferred), and .codex-plugin/plugin.json's version parses.
 package integration
 
 import (
@@ -31,21 +31,23 @@ func TestMainCarriesMarketplaceBridgeManifest(t *testing.T) {
 	}
 }
 
-// TestCodexManifestBracketsContractVersion locks AC-2's Codex half: the new
-// .codex-plugin/plugin.json carries a requires-contract that parses via the real
-// ParseRange and brackets the binary's CONTRACT_VERSION (so `spacedock doctor
-// --host codex` resolves a compatible manifest), names the plugin `spacedock`,
-// and points skills at ./skills/.
-func TestCodexManifestBracketsContractVersion(t *testing.T) {
+// TestCodexManifestVersionParses is the Codex half of the manifest structural
+// check: .codex-plugin/plugin.json's `version` field parses as a well-formed
+// major.minor semver (so `spacedock doctor --host codex` resolves a compatible
+// manifest under minor-version coupling), names the plugin `spacedock`, and
+// points skills at ./skills/. The D4 cross-era tombstone and its binding to the
+// FO shared-core's stamped minor are pinned by the internal/contractlint sync
+// test.
+func TestCodexManifestVersionParses(t *testing.T) {
 	path := filepath.Join(repoRoot(t), ".codex-plugin", "plugin.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read codex manifest %s: %v", path, err)
 	}
 	var m struct {
-		Name             string `json:"name"`
-		RequiresContract string `json:"requires-contract"`
-		Skills           string `json:"skills"`
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		Skills  string `json:"skills"`
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("parse codex manifest: %v", err)
@@ -56,14 +58,7 @@ func TestCodexManifestBracketsContractVersion(t *testing.T) {
 	if m.Skills != "./skills/" {
 		t.Errorf("codex manifest skills = %q, want ./skills/", m.Skills)
 	}
-	if m.RequiresContract == "" {
-		t.Fatalf("codex manifest has no requires-contract (AC-2 requires it for doctor --host codex)")
-	}
-	lo, hi, err := contract.ParseRange(m.RequiresContract)
-	if err != nil {
-		t.Fatalf("codex requires-contract %q does not parse: %v", m.RequiresContract, err)
-	}
-	if !(lo <= contract.CONTRACT_VERSION && contract.CONTRACT_VERSION < hi) {
-		t.Fatalf("codex requires-contract %s does not bracket CONTRACT_VERSION=%d", m.RequiresContract, contract.CONTRACT_VERSION)
+	if _, _, ok := contract.ParseMajorMinor(m.Version); !ok {
+		t.Fatalf("codex manifest version %q does not parse as major.minor", m.Version)
 	}
 }

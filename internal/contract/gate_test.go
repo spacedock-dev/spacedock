@@ -1,41 +1,41 @@
 // ABOUTME: AC-2 oracle (3) behavior fixture — a real spacedock stub whose
-// ABOUTME: --version prints an out-of-range contract drives the startup gate.
+// ABOUTME: --version prints a chosen binary version drives the startup gate.
 package contract
 
 import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 )
 
 // TestStartupGateAbortsBeforeDiscover builds a real `spacedock` stub whose
-// `--version` prints a chosen `contract N`, runs the stub for its version
-// output, drives the startup gate against an embedded range, and observes: an
-// out-of-range contract aborts with the pinned message and the stub's
-// `status --discover` / `--boot` subcommands are NEVER invoked; an in-range
-// contract proceeds and the discover call fires exactly once.
+// `--version` prints a chosen version on line 1, runs the stub for its version
+// output, drives the startup gate against a required minor literal, and
+// observes: an out-of-range minor aborts with the pinned message and the stub's
+// `status --discover` / `--boot` subcommands are NEVER invoked; a same-minor
+// version proceeds and the discover call fires exactly once.
 func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 	stub, marker := buildVersionStub(t)
 
 	cases := []struct {
 		name          string
-		stubContract  string // value the stub prints in its contract token
-		embeddedRange string
+		stubVersion   string // value the stub prints as its version token
+		requiredMinor string // the FO prose's stamped major.minor literal
 		wantProceed   bool
 		wantPinned    string // abort-message substring (empty when proceeding)
 	}{
-		{"too-old-binary-aborts", "1", ">=2,<3", false, "Upgrade the binary to continue."},
-		{"too-old-plugin-aborts", "5", ">=2,<3", false, "Update the plugin to continue."},
-		{"compatible-proceeds", "2", ">=2,<3", true, ""},
+		{"too-old-binary-aborts", "0.23.0", "0.24", false, "Upgrade the binary to continue."},
+		{"too-old-plugin-aborts", "0.25.0", "0.24", false, "Update the plugin to continue."},
+		{"compatible-proceeds", "0.24.3", "0.24", true, ""},
+		{"compatible-prerelease-proceeds", "0.24.0-pre1", "0.24", true, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			discoverCalls := 0
 			stubEnv := append(os.Environ(),
-				"SD_STUB_CONTRACT="+c.stubContract,
+				"SD_STUB_VERSION="+c.stubVersion,
 				"SD_STUB_MARKER="+marker,
 			)
 
@@ -54,7 +54,7 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 				return cmd.Run()
 			}
 
-			proceed, msg := gateAndMaybeDiscover(runVersion, c.embeddedRange, "claude", runDiscover)
+			proceed, msg := gateAndMaybeDiscover(runVersion, c.requiredMinor, "claude", runDiscover)
 
 			if proceed != c.wantProceed {
 				t.Fatalf("proceed = %v, want %v (msg=%q)", proceed, c.wantProceed, msg)
@@ -86,21 +86,25 @@ func TestStartupGateAbortsBeforeDiscover(t *testing.T) {
 	}
 }
 
-// gateAndMaybeDiscover realizes the FO Startup step-0 gate as a callable
-// mechanism: run the version probe, parse the `contract N` token, compare
-// against the embedded range, and only call discover when compatible. This is
-// the Go realization of the prose the FO follows — driven here by a real stub
-// process, not a mock.
-func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host string, runDiscover func() error) (proceed bool, message string) {
+// gateAndMaybeDiscover realizes the FO Startup step-1 gate as a callable
+// mechanism: run the version probe, parse the `spacedock <version>` line-1
+// token, compare its major.minor against the release-stamped required minor,
+// and only call discover when compatible. This is the Go realization of the
+// prose the FO follows — driven here by a real stub process, not a mock.
+func gateAndMaybeDiscover(runVersion func() (string, error), requiredMinor, host string, runDiscover func() error) (proceed bool, message string) {
 	out, err := runVersion()
 	if err != nil {
 		return false, "spacedock --version unavailable: " + err.Error()
 	}
-	c, ok := parseContractToken(out)
+	binaryVersion, ok := parseVersionLine(out)
 	if !ok {
-		return false, "could not parse contract token from `spacedock --version`: " + strings.TrimSpace(out)
+		return false, "could not parse `spacedock <version>` from `spacedock --version`: " + strings.TrimSpace(out)
 	}
-	res := Compare(c, embeddedRange, host, "0.18.0", "0.19.4")
+	// requiredMinor (e.g. "0.24") stands in for the plugin's declared version —
+	// synthesized to major.minor.0 so Compare's ordinary major.minor comparison
+	// realizes the FO prose gate exactly as the manifest-based doctor/front-door
+	// gates do.
+	res := Compare(host, requiredMinor+".0", binaryVersion)
 	if res.Verdict != Compatible {
 		return false, res.Message
 	}
@@ -108,8 +112,8 @@ func gateAndMaybeDiscover(runVersion func() (string, error), embeddedRange, host
 	return true, res.Message
 }
 
-// buildVersionStub compiles a tiny stub binary that prints a contract token from
-// the SD_STUB_CONTRACT env var on `--version` and records every subcommand it is
+// buildVersionStub compiles a tiny stub binary that prints a version token from
+// the SD_STUB_VERSION env var on `--version` and records every subcommand it is
 // invoked with into the file named by SD_STUB_MARKER. Returns the binary path
 // and the marker path.
 func buildVersionStub(t *testing.T) (binPath, markerPath string) {
@@ -132,7 +136,7 @@ func main() {
 		f.Close()
 	}
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "version") {
-		fmt.Printf("spacedock 0.0.0-stub (contract %s)\n", os.Getenv("SD_STUB_CONTRACT"))
+		fmt.Printf("spacedock %s (contract 3)\n", os.Getenv("SD_STUB_VERSION"))
 	}
 }
 `
@@ -156,22 +160,26 @@ func readMarker(t *testing.T, path string) string {
 	return string(b)
 }
 
-// parseContractToken extracts the integer N from a `contract N` token in a
-// `spacedock --version` line, the same parse the FO Startup step-0 prose does.
-func parseContractToken(versionOut string) (int, bool) {
-	const marker = "contract "
-	idx := strings.Index(versionOut, marker)
-	if idx < 0 {
-		return 0, false
+// parseVersionLine extracts the <version> token from a `spacedock --version`
+// line 1 of the shape `spacedock <version> (contract <N>)`, the same parse the
+// FO Startup step-1 prose does.
+func parseVersionLine(versionOut string) (string, bool) {
+	line := versionOut
+	if i := strings.IndexByte(line, '\n'); i >= 0 {
+		line = line[:i]
 	}
-	rest := versionOut[idx+len(marker):]
-	end := strings.IndexAny(rest, ")\n ")
+	const prefix = "spacedock "
+	if !strings.HasPrefix(line, prefix) {
+		return "", false
+	}
+	rest := strings.TrimPrefix(line, prefix)
+	end := strings.IndexByte(rest, ' ')
 	if end < 0 {
 		end = len(rest)
 	}
-	n, err := strconv.Atoi(strings.TrimSpace(rest[:end]))
-	if err != nil {
-		return 0, false
+	version := strings.TrimSpace(rest[:end])
+	if version == "" {
+		return "", false
 	}
-	return n, true
+	return version, true
 }

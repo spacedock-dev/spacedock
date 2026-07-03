@@ -72,18 +72,20 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    SHA and the `e2e-gate` would block the cut.
 
    ```bash
-   go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
-   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+   go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
+   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
    git push origin release/X.Y.Z:main
    ```
 
-   The stamped commit's manifest version now equals `X.Y.Z`. Guard that before
-   tagging — a tag whose semver disagrees with the tagged commit's manifest is the
-   pre-stamp inversion the gate has historically caught (v0.20.0 tagged a commit
-   whose `plugin.json` still read 0.19.9):
+   The stamped commit's manifest version now equals `X.Y.Z`, and the FO
+   shared-core's release-stamped minor literal now equals `X.Y` (D5). Guard
+   both before tagging — a tag whose semver disagrees with the tagged commit's
+   manifest, or whose major.minor disagrees with the tagged commit's
+   prose-stamped minor, is the pre-stamp inversion the gate has historically
+   caught (v0.20.0 tagged a commit whose `plugin.json` still read 0.19.9):
 
    ```bash
-   go run ./cmd/spacedock-release manifest-tag-gate vX.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
+   go run ./cmd/spacedock-release manifest-tag-gate vX.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
    ```
 
    The marketplace entry is not stamped or repointed here: release.yml advances
@@ -184,7 +186,11 @@ hatch.
 Keep `next` for development. Source builds may use
 `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
 checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
-bump the marketplace calendar key for dev testers.
+bump the marketplace calendar key for dev testers. A `go install …@vX.Y.Z`
+proxy build carries no ldflags, so it self-reports `X.Y.Z+dev` (the tagged
+manifest at the module-proxy commit equals the tag) — gates correctly under
+minor-version coupling; the `+dev` suffix on an otherwise-tagged build is a
+cosmetic oddity, not a compatibility issue.
 
 Every release tag now advances `next` and bumps its calendar key automatically
 (see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band

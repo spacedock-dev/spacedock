@@ -361,7 +361,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 
 // run launches the real `spacedock claude` front door for one shared scenario and
 // returns the (finalMessage, full stream) the shared assertions consume. The
-// launch shape is the spike WINNER: --plugin-dir + --skip-contract-check are the
+// launch shape is the spike WINNER: --plugin-dir + --skip-compat-check are the
 // spacedock-owned flags BEFORE `--`; every host flag (-p with the scenario prompt,
 // --permission-mode, --output-format stream-json, --verbose, --model) rides AFTER
 // `--` and forwards verbatim to claude. The observed source is the stream's
@@ -387,7 +387,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 
 	cmd := exec.Command(r.binary, "claude",
 		"--plugin-dir", r.pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"-p", prompt+" "+antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",

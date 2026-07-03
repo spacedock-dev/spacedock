@@ -159,7 +159,7 @@ func executableFile(path string) bool {
 func noPluginRemedy(host string) string {
 	return fmt.Sprintf(
 		"Spacedock: no installed %s plugin found. "+
-			"Run `spacedock install --host %s` (or `spacedock %s --skip-contract-check` to bootstrap).",
+			"Run `spacedock install --host %s` (or `spacedock %s --skip-compat-check` to bootstrap).",
 		host, host, host)
 }
 
@@ -173,7 +173,7 @@ func noPluginRemedy(host string) string {
 func launchBanner(host, dir string, selected bool, lookPath func(string) (string, error), w io.Writer) {
 	label, value := detectedWorkflow(dir)
 	available, _ := safehouse.Available(lookPath)
-	fmt.Fprintf(w, "spacedock %s · launching %s as your first officer\n", Version, host)
+	fmt.Fprintf(w, "spacedock %s · launching %s as your first officer\n", displayVersion(), host)
 	fmt.Fprintf(w, "%s: %s\n", label, value)
 	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(selected, available))
 	fmt.Fprintf(w, "%s is your first officer — ask it for the queue and next steps.\n", host)
@@ -237,54 +237,114 @@ func realpath(path string) string {
 	return path
 }
 
-// gateHost resolves the installed manifest for host and compares it against
-// CONTRACT_VERSION, returning the verdict so the caller can distinguish a
-// missing plugin (NoPluginFound — recoverable by installing) from an
-// incompatibility (a mismatch — auto-installing would just fail again). Both
-// no-plugin states (an empty manifestPath AND a resolved-but-missing manifest)
-// collapse to NoPluginFound; a host-CLI resolve error maps to MalformedRange so
-// it stays a hard fail (a broken host CLI is not a missing plugin). The gate
-// inspects the VERDICT, not a doctor exit code: RunDoctor maps no-plugin-found to
-// exit 0 (a non-fatal report), so a non-empty installPath to a missing manifest
-// would otherwise slip through as "compatible". gateHost prints the actionable
-// remedy for every non-Compatible verdict EXCEPT NoPluginFound, whose message the
-// caller owns (it auto-installs by default and only refuses under --no-install,
-// so the right wording depends on the caller's choice). On Compatible it stays
-// silent on the bare OK line but surfaces the opt-in upgrade hint when the plugin
-// is contract-compatible yet behind a strictly-newer binary; the hint never
-// blocks — the caller still proceeds to launch.
-func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
+// gateHost resolves the installed manifest for host and compares its version
+// against the binary's, returning the full Result so the caller can distinguish
+// a missing plugin (NoPluginFound — recoverable by installing) from a version
+// mismatch (too-old-binary fails fast; too-old-plugin is ALSO recoverable by
+// installing, D6). Both no-plugin states (an empty manifestPath AND a
+// resolved-but-missing manifest) collapse to NoPluginFound; a host-CLI resolve
+// error maps to MalformedVersion so it stays a hard fail (a broken host CLI is
+// not a missing plugin). The gate inspects the VERDICT, not a doctor exit code:
+// RunDoctor maps no-plugin-found to exit 0 (a non-fatal report), so a non-empty
+// installPath to a missing manifest would otherwise slip through as
+// "compatible". gateHost prints the actionable remedy for too-old-binary and
+// malformed-version (the two verdicts with exactly one caller response: fail
+// fast) but stays SILENT for NoPluginFound and TooOldPlugin, whose message the
+// caller owns — both auto-install by default and only refuse under --no-install,
+// so the right wording (and whether to print at all before a silent heal, D6)
+// depends on the caller's choice. On Compatible it stays silent on the bare OK
+// line but surfaces the opt-in upgrade hint when the plugin is compatible yet
+// behind a strictly-newer binary; the hint never blocks — the caller still
+// proceeds to launch.
+func gateHost(ops hostOps, host string, stderr io.Writer) contract.Result {
 	manifestPath, err := ops.ResolveManifest(host)
 	if err != nil {
-		fmt.Fprintf(stderr,
+		msg := fmt.Sprintf(
 			"Spacedock: could not resolve the installed %s plugin (%v). "+
-				"Run `spacedock doctor` or `spacedock install --host %s`.\n", host, err, host)
-		return contract.MalformedRange
+				"Run `spacedock doctor` or `spacedock install --host %s`.", host, err, host)
+		fmt.Fprintln(stderr, msg)
+		return contract.Result{Verdict: contract.MalformedVersion, Message: msg}
 	}
 	if manifestPath == "" {
-		return contract.NoPluginFound
+		return contract.Result{Verdict: contract.NoPluginFound}
 	}
-	res := contract.ManifestVerdict(manifestPath, host, Version)
-	if res.Verdict == contract.NoPluginFound {
-		return contract.NoPluginFound
-	}
-	if res.Verdict != contract.Compatible {
+	res := contract.ManifestVerdict(manifestPath, host, displayVersion())
+	switch res.Verdict {
+	case contract.NoPluginFound, contract.TooOldPlugin:
+		return res
+	case contract.Compatible:
+		// Compatible but behind: surface the opt-in upgrade hint (the front door
+		// stays silent on the bare OK line). The hint never blocks — the caller
+		// still proceeds to launch on Compatible.
+		if res.Hint != "" {
+			fmt.Fprintln(stderr, res.Hint)
+		}
+		return res
+	default:
 		fmt.Fprintln(stderr, res.Message)
-		return res.Verdict
+		return res
 	}
-	// Compatible but behind: surface the opt-in upgrade hint (the front door
-	// stays silent on the bare OK line). The hint never blocks — the caller still
-	// proceeds to launch on Compatible.
-	if res.Hint != "" {
-		fmt.Fprintln(stderr, res.Hint)
+}
+
+// resolveHealableGate runs the version gate for host and, for its two healable
+// verdicts (NoPluginFound, TooOldPlugin), either auto-installs the plugin and
+// re-gates ONCE (the default) or refuses with the host-correct remedy
+// (--no-install) — D6's shared "a single command yields a working session"
+// contract for both front doors. A too-old-plugin heal announces "Refreshing"
+// rather than "Installing" (gateHost prints no scary mismatch remedy before the
+// silent heal). A second miss after the re-gate refuses rather than launching
+// blind — one retry, no loop. It returns true when the caller should proceed to
+// launch; false means the caller must return 1 (the refusal/failure message is
+// already on stderr).
+func resolveHealableGate(ops hostOps, host string, noInstall bool, stderr io.Writer) bool {
+	res := gateHost(ops, host, stderr)
+	switch res.Verdict {
+	case contract.Compatible:
+		return true
+	case contract.NoPluginFound, contract.TooOldPlugin:
+		if noInstall {
+			printHealableRemedy(host, res, stderr)
+			return false
+		}
+		announce := "Installing the " + host + " plugin…"
+		if res.Verdict == contract.TooOldPlugin {
+			announce = "Refreshing the " + host + " plugin…"
+		}
+		fmt.Fprintln(stderr, announce)
+		if _, err := ops.Install(host, channelMarketplaceSource(devBranch), devBranch); err != nil {
+			fmt.Fprintf(stderr, "spacedock %s: auto-install failed: %v\n", host, err)
+			return false
+		}
+		regate := gateHost(ops, host, stderr)
+		if regate.Verdict != contract.Compatible {
+			printHealableRemedy(host, regate, stderr)
+			return false
+		}
+		return true
+	default:
+		// too-old-binary / malformed-version: gateHost already printed the
+		// remedy. Fail fast — auto-installing would not fix an incompatibility.
+		return false
 	}
-	return res.Verdict
+}
+
+// printHealableRemedy prints the caller-owned remedy for a NoPluginFound or
+// TooOldPlugin verdict: the host-correct install/bootstrap message for
+// NoPluginFound (gateHost carries no message for it), or the gate's own
+// mismatch message for TooOldPlugin.
+func printHealableRemedy(host string, res contract.Result, stderr io.Writer) {
+	if res.Verdict == contract.NoPluginFound {
+		fmt.Fprintln(stderr, noPluginRemedy(host))
+		return
+	}
+	fmt.Fprintln(stderr, res.Message)
 }
 
 // runClaude is the `spacedock claude` front door: version-gate, then launch the
-// first officer. The gate fails fast on a contract mismatch, but a missing plugin
-// (NoPluginFound) auto-installs the plugin and proceeds to launch so the single
-// command the user typed yields a working session — `--no-install` opts out,
+// first officer. The gate fails fast on a too-old-binary mismatch, but the two
+// healable verdicts (NoPluginFound, TooOldPlugin) auto-install the plugin and
+// proceed to launch so the single command the user typed yields a working session
+// (D6) — `--no-install` opts out,
 // preserving the refuse-and-instruct behavior. The launch is interposed through
 // `safehouse --trust-workdir-config [extra] -- claude --dangerously-skip-permissions …`
 // when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
@@ -293,7 +353,7 @@ func gateHost(ops hostOps, host string, stderr io.Writer) contract.Verdict {
 // `--safehouse-*` knobs translate into the safehouse `extra` slot. The bootstrap
 // prompt is appended last (base, or base + " " + task when a task is fenced after
 // `--`) unless a resume is forwarded. The gate is bypassed by an explicit
-// `--skip-contract-check` or by any `--plugin-dir` (the local checkout supersedes
+// `--skip-compat-check` or by any `--plugin-dir` (the local checkout supersedes
 // the installed plugin). `lookPath` resolves the safehouse binary (default
 // exec.LookPath; injected so tests pin not-found).
 func runClaude(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
@@ -308,31 +368,10 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		return 1
 	}
 	// A `--plugin-dir` launch loads the LOCAL plugin checkout, so the installed
-	// plugin's contract verdict is irrelevant — it relaxes the gate exactly like
-	// an explicit `--skip-contract-check`.
+	// plugin's version verdict is irrelevant — it relaxes the gate exactly like
+	// an explicit `--skip-compat-check`.
 	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
-		switch gateHost(ops, "claude", stderr) {
-		case contract.Compatible:
-			// proceed to launch
-		case contract.NoPluginFound:
-			// No plugin on disk: the single command the user typed should yield a
-			// working session. Auto-install the plugin then launch, unless the
-			// operator opted out with --no-install. The caller owns the NoPluginFound
-			// message (gateHost stays silent for it): announce the install on the
-			// default arm, print the host-correct manual remedy on the refuse arm.
-			if fd.noInstall {
-				fmt.Fprintln(stderr, noPluginRemedy("claude"))
-				return 1
-			}
-			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "claude")
-			if _, err := ops.Install("claude", channelMarketplaceSource(devBranch), devBranch); err != nil {
-				fmt.Fprintf(stderr, "spacedock claude: auto-install failed: %v\n", err)
-				return 1
-			}
-		default:
-			// A mismatch / malformed range / host-CLI resolve error: auto-installing
-			// would not fix an incompatibility, so fail fast (gateHost already
-			// printed the message).
+		if !resolveHealableGate(ops, "claude", fd.noInstall, stderr) {
 			return 1
 		}
 	}
@@ -415,7 +454,7 @@ func launchPrompt(base string, fd frontDoorArgs) string {
 
 // hasPluginDir reports whether the host passthrough carries a `--plugin-dir`
 // flag (either `--plugin-dir P` or `--plugin-dir=P`). Its presence relaxes the
-// contract gate (the local checkout supersedes the installed plugin).
+// version gate (the local checkout supersedes the installed plugin).
 func hasPluginDir(passthrough []string) bool {
 	for _, a := range passthrough {
 		if a == "--plugin-dir" || strings.HasPrefix(a, "--plugin-dir=") {
@@ -494,9 +533,10 @@ func containsResume(args []string) bool {
 const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
 
 // runCodex is the `spacedock codex` front door: version-gate, then launch the
-// first officer. The gate fails fast on a contract mismatch, but a missing plugin
-// (NoPluginFound) auto-installs the plugin and proceeds to launch so the single
-// command the user typed yields a working session — `--no-install` opts out,
+// first officer. The gate fails fast on a too-old-binary mismatch, but the two
+// healable verdicts (NoPluginFound, TooOldPlugin) auto-install the plugin and
+// proceed to launch so the single command the user typed yields a working session
+// (D6) — `--no-install` opts out,
 // preserving the refuse-and-instruct behavior. The launch is interposed through
 // `safehouse --trust-workdir-config [extra] -- codex --dangerously-bypass-approvals-and-sandbox …`
 // when ANY of {a `.safehouse` profile in dir, the bare `--safehouse` flag, a
@@ -505,7 +545,7 @@ const codexBootstrapPrompt = "You totally got this. Take your time. I love you. 
 // sandbox (the bypass flag is omitted: it is safe only when safehouse provides the
 // sandbox). The FO-skill bootstrap prompt is appended last (base, or base + " " +
 // task when a task is fenced after `--`) unless the passthrough begins with the
-// `resume` subcommand. The gate is bypassed by `--skip-contract-check` or by any
+// `resume` subcommand. The gate is bypassed by `--skip-compat-check` or by any
 // `--plugin-dir`. `lookPath` resolves the safehouse binary (default exec.LookPath;
 // injected so tests pin not-found).
 func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
@@ -538,32 +578,13 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			return 1
 		}
 	}
-	// The gate fails fast on a contract mismatch, but a missing plugin
-	// (NoPluginFound) auto-installs the codex plugin and proceeds to launch so the
-	// single command the user typed yields a working session — `--no-install` opts
-	// out, preserving the refuse-and-instruct behavior. This mirrors runClaude.
+	// The gate fails fast on too-old-binary, but the two healable verdicts
+	// (NoPluginFound, TooOldPlugin) auto-install the codex plugin and proceed to
+	// launch so the single command the user typed yields a working session —
+	// `--no-install` opts out, preserving the refuse-and-instruct behavior. This
+	// mirrors runClaude.
 	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
-		switch gateHost(ops, "codex", stderr) {
-		case contract.Compatible:
-			// proceed to launch
-		case contract.NoPluginFound:
-			// No plugin on disk: auto-install then launch, unless the operator opted
-			// out with --no-install. The caller owns the NoPluginFound message
-			// (gateHost stays silent for it): announce the install on the default arm,
-			// print the host-correct manual remedy on the refuse arm.
-			if fd.noInstall {
-				fmt.Fprintln(stderr, noPluginRemedy("codex"))
-				return 1
-			}
-			fmt.Fprintf(stderr, "Installing the %s plugin…\n", "codex")
-			if _, err := ops.Install("codex", channelMarketplaceSource(devBranch), devBranch); err != nil {
-				fmt.Fprintf(stderr, "spacedock codex: auto-install failed: %v\n", err)
-				return 1
-			}
-		default:
-			// A mismatch / malformed range / host-CLI resolve error: auto-installing
-			// would not fix an incompatibility, so fail fast (gateHost already
-			// printed the message).
+		if !resolveHealableGate(ops, "codex", fd.noInstall, stderr) {
 			return 1
 		}
 	}
@@ -749,7 +770,7 @@ type frontDoorArgs struct {
 	// safehouseFlags are the de-prefixed `--safehouse-<key>=…` knob tokens, fed to
 	// safehouse.TranslateFlags. Their presence also implies sandbox-on.
 	safehouseFlags []string
-	// skipCheck is set by `--skip-contract-check` (bypasses the contract gate).
+	// skipCheck is set by `--skip-compat-check` (bypasses the version gate).
 	skipCheck bool
 	// noInstall is set by `--no-install` (opt out of the no-plugin auto-install,
 	// preserving the refuse-and-instruct behavior).
@@ -759,7 +780,7 @@ type frontDoorArgs struct {
 // frontDoorFlags binds the spacedock-owned front-door flags onto a pflag.FlagSet
 // so cobra owns their vocabulary natively: the three value-taking safehouse knobs
 // are StringArray (accept both `--flag value` and `--flag=value`, accumulate on
-// repeat), and the bare `--safehouse`/`--skip-contract-check` are Bool. The
+// repeat), and the bare `--safehouse`/`--skip-compat-check` are Bool. The
 // returned pointers are read back by parseFrontDoorArgs after Parse. The same
 // binding feeds the per-command cobra help (AC-4), so the help and the parser
 // never drift.
@@ -777,8 +798,8 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 	return frontDoorFlags{
 		safehouse: fs.Bool("safehouse", false,
 			"Force the safehouse sandbox wrap even without a .safehouse profile in the directory"),
-		skipCheck: fs.Bool("skip-contract-check", false,
-			"Bypass the contract gate and launch without resolving the installed plugin (bootstrap)"),
+		skipCheck: fs.Bool("skip-compat-check", false,
+			"Bypass the version gate and launch without resolving the installed plugin (bootstrap)"),
 		noInstall: fs.Bool("no-install", false,
 			"Do not auto-install the plugin when none is found; refuse and print install instructions instead"),
 		enable: fs.StringArray("safehouse-enable", nil,
@@ -788,7 +809,7 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 		addDirsRO: fs.StringArray("safehouse-add-dirs-ro", nil,
 			"Grant safehouse read-only access to a directory; repeatable"),
 		pluginDir: fs.StringArray("plugin-dir", nil,
-			"Load a local plugin checkout (relaxes the contract gate); repeatable"),
+			"Load a local plugin checkout (relaxes the version gate); repeatable"),
 	}
 }
 

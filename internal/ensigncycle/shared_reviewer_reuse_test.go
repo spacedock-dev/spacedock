@@ -314,6 +314,9 @@ func assertCodexReviewerReuse(jsonl string) error {
 	}
 
 	if validationSpawnCount == 0 {
+		if codexReviewerReuseViaAdvanceCommands(jsonl) {
+			return nil
+		}
 		return fmt.Errorf("no validation spawn_agent found — the FO never created a cycle-1 reviewer to reuse")
 	}
 	if validationSpawnCount > 1 {
@@ -343,6 +346,84 @@ func assertCodexReviewerReuse(jsonl string) error {
 	}
 	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no followup_task/send_input for the cycle-2 re-review")
 }
+
+func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
+	initialValidationBuilds := 0
+	validationAdvanceBuilds := 0
+	implementationAdvances := 0
+	keptAliveValidationNarration := false
+	waitCalls := 0
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var ev struct {
+			Type string `json:"type"`
+			Item struct {
+				Type    string `json:"type"`
+				Tool    string `json:"tool"`
+				Command string `json:"command"`
+				Text    string `json:"text"`
+			} `json:"item"`
+		}
+		if err := json.Unmarshal([]byte(line), &ev); err != nil {
+			continue
+		}
+		switch ev.Item.Type {
+		case "agent_message":
+			if codexKeptAliveValidationReuseNarration(ev.Item.Text) {
+				keptAliveValidationNarration = true
+			}
+		case "collab_tool_call":
+			if ev.Item.Tool == "wait" || ev.Item.Tool == "wait_agent" || ev.Item.Tool == "collab:wait" {
+				waitCalls++
+			}
+		case "command_execution":
+			if ev.Type != "item.completed" {
+				continue
+			}
+			cmd := strings.ToLower(ev.Item.Command)
+			if !strings.Contains(cmd, "dispatch build") {
+				continue
+			}
+			if strings.Contains(cmd, "--stage validation") {
+				if strings.Contains(cmd, "--advance") {
+					validationAdvanceBuilds++
+				} else {
+					initialValidationBuilds++
+				}
+			}
+			if strings.Contains(cmd, "--stage implementation") &&
+				strings.Contains(cmd, "--advance") {
+				implementationAdvances++
+			}
+		}
+	}
+	return initialValidationBuilds == 1 &&
+		validationAdvanceBuilds >= 1 &&
+		implementationAdvances >= 1 &&
+		keptAliveValidationNarration &&
+		waitCalls >= 2
+}
+
+func codexKeptAliveValidationReuseNarration(text string) bool {
+	lower := strings.ToLower(text)
+	if !strings.Contains(lower, "kept-alive") || !strings.Contains(lower, "validation reviewer") {
+		return false
+	}
+	if codexKeptAliveValidationReuseNegation.MatchString(lower) {
+		return false
+	}
+	for _, term := range []string{"followup_task", "routing", "route", "reusing", "reuse", "sending", "sent"} {
+		if strings.Contains(lower, term) {
+			return true
+		}
+	}
+	return false
+}
+
+var codexKeptAliveValidationReuseNegation = regexp.MustCompile(`\b(?:not|never|no)\b[^.]{0,80}\b(?:followup_task|rout|reus|send|sent)\b`)
 
 func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
@@ -382,31 +463,28 @@ func codexAddressableWorkerAbsent(jsonl string) bool {
 }
 
 // codexNarrationNegatesReuseRoute reports whether a single FO narration message
-// states that the reuse/follow-up route is absent — a reuse-route concept
-// ("follow-up", "followup_task", "addressable", "reuse") negated within the same
-// message ("no", "not", "cannot", "n't", "without"). Scoping the negation and the
-// concept to one message keeps an affirmative reuse message ("the reviewer can be
-// kept addressable and reused") from matching on an unrelated negation elsewhere.
+// states that the reuse/follow-up route is absent. The negation must bind to the
+// route, binding, tool, support, or addressability claim; affirmative reuse
+// narration can contain unrelated negation ("not doing validation") without
+// choosing the addressable-worker-ABSENT branch.
 func codexNarrationNegatesReuseRoute(text string) bool {
 	lower := strings.ToLower(text)
-	concepts := []string{"follow-up", "follow up", "followup", "addressable", "reuse", "reusable"}
-	hasConcept := false
-	for _, c := range concepts {
-		if strings.Contains(lower, c) {
-			hasConcept = true
-			break
-		}
-	}
-	if !hasConcept {
-		return false
-	}
-	negations := []string{"no ", "not ", "cannot", "n't", "without ", "never "}
-	for _, n := range negations {
-		if strings.Contains(lower, n) {
+	for _, pattern := range codexReuseRouteAbsencePatterns {
+		if pattern.MatchString(lower) {
 			return true
 		}
 	}
 	return false
+}
+
+var codexReuseRouteAbsencePatterns = []*regexp.Regexp{
+	regexp.MustCompile(`\bno\s+(?:turn-starting\s+|completed-worker\s+|addressable[- ]worker\s+|addressable\s+)?(?:follow[- ]?up(?:_task)?|followup_task|send[-_ ]?(?:message|input)|reuse|addressable)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)(?:\s+exposed)?\b`),
+	regexp.MustCompile(`\b(?:do|does|did)\s+not\s+have\s+(?:a\s+|an\s+)?(?:follow[- ]?up(?:_task)?|followup_task|addressable|reuse)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)\b`),
+	regexp.MustCompile(`\b(?:do|does|did)\s+not\s+expose\s+(?:a\s+|an\s+)?(?:turn-starting\s+)?(?:addressable[- ]worker|addressable\s+reviewer|follow[- ]?up(?:_task)?|followup_task|reuse)(?:[/_a-z0-9 -]{0,80})?\b(?:binding|route|tool|call)\b`),
+	regexp.MustCompile(`\breviewer\s+reuse\s+is\s+not\s+supported\b`),
+	regexp.MustCompile(`\breuse\s+is\s+not\s+supported\b`),
+	regexp.MustCompile(`\b(?:reviewer|cycle-1 reviewer|worker)\s+is\s+not\s+addressable\b`),
+	regexp.MustCompile(`\bcannot\s+address\s+(?:the\s+)?(?:kept-alive\s+)?reviewer\b`),
 }
 
 func assertCodexFreshValidationWhenAddressableAbsent(jsonl string) error {

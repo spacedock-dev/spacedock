@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // Offline table tests for the host-specific reviewer-reuse assertions. They prove
 // each assertion requires a REAL reuse tool call targeting the validation reviewer
@@ -236,6 +239,16 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		decl := `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(w) + `}}`
 		liveAbsentTwoFresh[i] = decl + "\n" + spawnValidation + "\n" + spawnImpl + "\n" + freshCycle2Spawn
 	}
+	falseAbsentNarrations := []string{
+		"The validation reviewer stays alive for the rejection-flow re-review; this does not close or redispatch the worker.",
+		"The host has no dedicated shutdown tool, so I will keep the two reusable workers and route validation back to the kept-alive reviewer.",
+		"The validation reviewer is being reused for re-review only; the implementation worker that applied the fix is not doing validation.",
+	}
+	falseAbsentReuse := make([]string, len(falseAbsentNarrations))
+	for i, w := range falseAbsentNarrations {
+		decl := `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(w) + `}}`
+		falseAbsentReuse[i] = decl + "\n" + realReuseV2
+	}
 
 	cases := []struct {
 		name    string
@@ -259,6 +272,9 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 		{"live FO absence wording 7 + two fresh validation spawns", liveAbsentTwoFresh[7], false},
 		{"live FO absence wording 8 + two fresh validation spawns", liveAbsentTwoFresh[8], false},
 		{"live FO absence wording 9 + two fresh validation spawns", liveAbsentTwoFresh[9], false},
+		{"PR #464 affirmative reuse with redispatch negation must not classify absent", falseAbsentReuse[0], false},
+		{"PR #464 reusable-workers narration with shutdown negation must not classify absent", falseAbsentReuse[1], false},
+		{"PR #465 validation reviewer reused while implementation worker is not validating", falseAbsentReuse[2], false},
 		{
 			"loose narration only",
 			`{"type":"item.completed","item":{"type":"agent_message","text":"I will send_input to the validation worker."}}`,
@@ -297,4 +313,85 @@ func TestAssertCodexReviewerReuse(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsAdvanceModeValidationReroute(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("The Codex runtime has a reusable worker route (`followup_task`), so I will keep the cycle-1 validation reviewer addressable."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file rework.checklist --feedback-context-file rework.feedback --feedback-reflow --advance`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --advance`),
+		codexAgentMessageLine("The validation re-review assignment is ready. I am routing it to the kept-alive cycle-1 validation reviewer now."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("Codex 0.142 live transcript with --advance validation re-review should pass: %v", err)
+	}
+
+	noValidationAdvance := strings.Replace(jsonl, " --stage validation --checklist-file validation-cycle2.checklist --advance", " --stage validation --checklist-file validation-cycle2.checklist", 1)
+	if err := assertCodexReviewerReuse(noValidationAdvance); err == nil {
+		t.Fatal("expected transcript without validation --advance re-review to fail")
+	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsCIAdvanceModeWithoutImplementationFeedbackReflow(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("Because Codex has an addressable worker route, I am routing the rework back to the existing implementation worker rather than spawning the reviewer to do fix work."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file rework.checklist --advance`),
+		codexWaitLine(),
+		codexAgentMessageLine("I am advancing back to validation and reusing the kept-alive cycle-1 validation reviewer for the re-review, keeping it separate from the worker that applied the fix."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --advance`),
+		codexAgentMessageLine("The cycle-2 validation assignment is built. I am routing it to the original validation reviewer through the addressable worker handle, not to the implementation rework worker."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("CI advance-mode transcript without implementation --feedback-reflow should still prove validation reviewer reuse: %v", err)
+	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsLiveAdvanceModeReuseNarration(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("The Codex runtime has `followup_task`, so the cycle-1 validation reviewer is reusable if it remains addressable."),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle1.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle1.checklist`),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle1.checklist`),
+		codexWaitLine(),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle2.checklist --feedback-context-file cycle1-feedback.txt --feedback-reflow --advance`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation --checklist-file impl-cycle2.checklist --feedback-context-file cycle1-feedback.txt --feedback-reflow --advance`),
+		codexWaitLine(),
+		codexAgentMessageLine("The rework satisfies its checklist: 1 done, 0 skipped, 0 failed, and the standalone fix marker is present. I'm advancing back to validation and reusing the kept-alive cycle-1 validation reviewer for the second-cycle re-review."),
+		codexCommandStartedLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --feedback-context-file cycle2-review.txt --advance`),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage validation --checklist-file validation-cycle2.checklist --feedback-context-file cycle2-review.txt --advance`),
+		codexAgentMessageLine("The second-cycle validation transition is committed. I'm sending the re-review to the kept-alive validation reviewer, which keeps the fix worker separate from the reviewer."),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("Codex live advance-mode reuse narration should pass: %v", err)
+	}
+}
+
+func codexAgentMessageLine(text string) string {
+	return `{"type":"item.completed","item":{"type":"agent_message","text":` + mustJSONString(text) + `}}`
+}
+
+func codexCommandLine(command string) string {
+	return `{"type":"item.completed","item":{"type":"command_execution","command":` + mustJSONString(command) + `,"status":"completed","exit_code":0}}`
+}
+
+func codexCommandStartedLine(command string) string {
+	return `{"type":"item.started","item":{"type":"command_execution","command":` + mustJSONString(command) + `,"status":"in_progress"}}`
+}
+
+func codexWaitLine() string {
+	return `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"wait","receiver_thread_ids":[],"status":"completed"}}`
 }
