@@ -2,11 +2,8 @@ package cli
 
 import (
 	"bytes"
-	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
 // TestTopLevelHelpGroupedJargonFree pins AC-1: `--help` renders the tagline, the
@@ -90,7 +87,7 @@ func TestVersion(t *testing.T) {
 	}
 	// The FIRST line is the load-bearing, FO-parsed version+contract line; the
 	// sandbox + per-runtime block follows it (asserted in version_runtime_test.go).
-	want := "spacedock " + Version + " (contract " + strconv.Itoa(contract.CONTRACT_VERSION) + ")"
+	want := "spacedock " + displayVersion() + " " + frozenContractToken
 	if got := strings.SplitN(stdout.String(), "\n", 2)[0]; got != want {
 		t.Fatalf("version first line = %q, want %q", got, want)
 	}
@@ -99,29 +96,16 @@ func TestVersion(t *testing.T) {
 	}
 }
 
-// TestVersionContractToken locks the AC-1 contract token: --version emits a
-// `contract <N>` token where <N> equals CONTRACT_VERSION and parses as an integer.
+// TestVersionContractToken locks D4's frozen cross-era sentinel: --version line 1
+// always carries the literal `(contract 3)` token, regardless of the binary's
+// display version — it is a frozen string, not derived from any compare math.
 func TestVersionContractToken(t *testing.T) {
 	var stdout bytes.Buffer
 	Run([]string{"--version"}, &stdout, &bytes.Buffer{})
 
 	got := stdout.String()
-	marker := "(contract "
-	idx := strings.Index(got, marker)
-	if idx < 0 {
-		t.Fatalf("version output %q missing %q token", got, marker)
-	}
-	rest := got[idx+len(marker):]
-	end := strings.IndexByte(rest, ')')
-	if end < 0 {
-		t.Fatalf("version contract token not closed by ')': %q", got)
-	}
-	n, err := strconv.Atoi(strings.TrimSpace(rest[:end]))
-	if err != nil {
-		t.Fatalf("contract token %q does not parse as integer: %v", rest[:end], err)
-	}
-	if n != contract.CONTRACT_VERSION {
-		t.Fatalf("contract token = %d, want CONTRACT_VERSION = %d", n, contract.CONTRACT_VERSION)
+	if !strings.Contains(got, frozenContractToken) {
+		t.Fatalf("version output %q missing frozen token %q", got, frozenContractToken)
 	}
 }
 

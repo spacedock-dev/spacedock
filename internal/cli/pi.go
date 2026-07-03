@@ -405,8 +405,8 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	fs.SetOutput(io.Discard)
 	pluginDir := fs.StringArray("plugin-dir", nil, "Load local Spacedock skill checkout")
 	// The safehouse subset mirrors bindFrontDoorFlags' safehouse flags (same names
-	// for operator muscle-memory transfer across hosts). --skip-contract-check / --no-install
-	// are NOT registered: pi has no contract gate, so advertising them would mislead.
+	// for operator muscle-memory transfer across hosts). --skip-compat-check / --no-install
+	// are NOT registered: pi has no version gate, so advertising them would mislead.
 	forceSafehouse := fs.Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
 	enable := fs.StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	addDirs := fs.StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")

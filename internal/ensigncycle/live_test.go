@@ -246,11 +246,11 @@ func startRealisticLifecycleDrive(t *testing.T, drivePrompt string) (*streamWatc
 	// terminal state).
 	task := "Use $spacedock:first-officer for this whole run."
 
-	// The real front door: `spacedock claude --plugin-dir <repo> --skip-contract-check
-	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-contract-check are
+	// The real front door: `spacedock claude --plugin-dir <repo> --skip-compat-check
+	// -- -p <bootstrap> ... <task>`. --plugin-dir and --skip-compat-check are
 	// spacedock-owned flags BEFORE `--`: --plugin-dir loads the local v1 plugin
 	// checkout (and relaxes the contract gate, the keystone this entity fixes);
-	// --skip-contract-check is belt-and-braces. Every host flag (-p, --permission-mode,
+	// --skip-compat-check is belt-and-braces. Every host flag (-p, --permission-mode,
 	// --output-format, --verbose, --model) rides AFTER `--` and forwards verbatim to
 	// claude, ahead of the fenced task — only --plugin-dir is promoted before `--`
 	// (the spike WINNER: every other host flag stays after `--`). stream-json +
@@ -277,7 +277,7 @@ func startRealisticLifecycleDrive(t *testing.T, drivePrompt string) (*streamWatc
 	// does not coach workflow mechanics.
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"-p", drivePrompt,
 		"--permission-mode", "bypassPermissions",

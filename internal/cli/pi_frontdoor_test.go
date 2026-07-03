@@ -18,7 +18,7 @@ type fakePiRuntimeOps struct {
 	statOK        map[string]bool
 	launched      []string
 	launchedEnv   []string
-	launchCode    int // host exit code Launch returns (default 0)
+	launchCode    int      // host exit code Launch returns (default 0)
 	piInstalls    []string // sources captured by PiInstall
 	piInstallOut  string
 	piInstallErr  error
@@ -1037,8 +1037,8 @@ func TestPiFrontDoorWrapInnerEqualsUnwrapped(t *testing.T) {
 
 // TestPiHelpCarriesSafehouseDetail pins AC-4: `spacedock pi --help` (exit 0)
 // carries the four --safehouse-* usages + the --safehouse-add-dirs ~/scratch
-// example + the -- forwarding note, and does NOT declare --skip-contract-check / --no-install
-// (pi has no contract gate).
+// example + the -- forwarding note, and does NOT declare --skip-compat-check / --no-install
+// (pi has no version gate).
 func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"pi", "--help"}, &stdout, &stderr)
@@ -1060,7 +1060,7 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 			t.Errorf("pi --help missing %q:\n%s", want, out)
 		}
 	}
-	for _, notWant := range []string{"--skip-contract-check", "--no-install"} {
+	for _, notWant := range []string{"--skip-compat-check", "--no-install"} {
 		if strings.Contains(out, notWant) {
 			t.Errorf("pi --help should not declare %q:\n%s", notWant, out)
 		}

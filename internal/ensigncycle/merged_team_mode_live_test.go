@@ -110,7 +110,7 @@ func TestLiveMergedTeamModeDispatch(t *testing.T) {
 	// watcher drains line-by-line.
 	launchArgs := unsetNestedSessionArgs(binary, "claude",
 		"--plugin-dir", pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"-p", drivePrompt,
 		"--permission-mode", "bypassPermissions",

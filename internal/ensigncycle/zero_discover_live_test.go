@@ -59,7 +59,7 @@ func TestLiveZeroDiscoverReportsAndStops(t *testing.T) {
 	drivePrompt := "Drive the workflow. " + antiShutdownOverride
 	cmd := exec.Command(binary, "claude",
 		"--plugin-dir", pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"-p", drivePrompt,
 		"--permission-mode", "bypassPermissions",

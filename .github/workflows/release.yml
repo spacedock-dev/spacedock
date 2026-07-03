@@ -124,18 +124,20 @@ jobs:
           echo "release commit for $GITHUB_REF_NAME: $RELEASE_COMMIT"
           go run ./cmd/spacedock-release e2e-gate "$RELEASE_COMMIT"
 
-      # Assert the tagged commit's plugin manifests already carry the tag's semver
-      # — the stamp-then-tag ordering docs/releasing.md documents. The checkout
-      # above is at the tagged commit, so these are the tagged commit's manifests.
-      # A mismatch (the v0.20.0 pre-stamp inversion: tag 0.20.0, manifest 0.19.9)
-      # exits non-zero and blocks the cut, since goreleaser needs: this job. The
-      # `if` skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
-      # X.Y.Z manifest), matching the stamp step's pre-release carve-out below.
-      - name: Gate the cut on the tagged manifest matching the tag semver
+      # Assert the tagged commit's plugin manifests AND the FO shared-core prose
+      # already carry the tag's semver/minor — the stamp-then-tag ordering
+      # docs/releasing.md documents. The checkout above is at the tagged commit,
+      # so these are the tagged commit's files. A mismatch (the v0.20.0 pre-stamp
+      # inversion: tag 0.20.0, manifest 0.19.9; or a forgotten prose stamp) exits
+      # non-zero and blocks the cut, since goreleaser needs: this job. The `if`
+      # skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
+      # X.Y.Z manifest/prose), matching the stamp step's pre-release carve-out
+      # below.
+      - name: Gate the cut on the tagged manifest/prose matching the tag semver
         if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
-          go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json
+          go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
 
   goreleaser:
     needs: e2e-gate
@@ -218,6 +220,7 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
           # The tagged commit is the SHA the e2e-gate greened and the manifest-tag
           # gate matched. Resolve it BEFORE switching to main, so the stable ref
           # below advances to exactly THIS commit, not whatever main HEAD happens to
@@ -226,14 +229,14 @@ jobs:
           git fetch origin main
           git switch main
           go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json
-          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
-            echo "plugin manifests already at $RELEASE_VERSION; nothing to commit"
+            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
+            echo "plugin manifests and FO prose already at $RELEASE_VERSION; nothing to commit"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "release: stamp plugin manifests to $RELEASE_VERSION" \
-              -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+            git commit -m "release: stamp plugin manifests and FO prose to $RELEASE_VERSION" \
+              -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
             git push origin main
           fi
           # Advance the stable channel ref to the TAGGED commit. The
@@ -303,10 +306,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git merge -X theirs --no-edit "$RELEASE_COMMIT" \
             -m "next: reconcile edge line to $GITHUB_REF_NAME"
+          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
           go run ./cmd/spacedock-release stamp-version "$DEV_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json
+            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
           git commit -m "next: bump dev pre-version to $DEV_VERSION" \
-            -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+            -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
 
       # Both paths end here: bump the marketplace calendar key (the moving-branch
       # re-pull key `claude plugin update` / `codex` read) and fast-forward `next`.

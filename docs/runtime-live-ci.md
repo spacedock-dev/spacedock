@@ -22,7 +22,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 | Concern | Codex runner | Claude runner |
 |---------|--------------|---------------|
 | Auth / HOME isolation | isolated `CODEX_HOME` + copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
-| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-contract-check` |
+| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-compat-check` |
 | Launch | `codex exec --json --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
 | `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |

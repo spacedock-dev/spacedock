@@ -1,5 +1,5 @@
-// ABOUTME: AC-1 bracketing test over the vendored repo plugin manifest —
-// ABOUTME: requires-contract parses via contract.ParseRange and brackets CONTRACT_VERSION.
+// ABOUTME: Structural test over the vendored repo plugin manifest — name, skills
+// ABOUTME: path, and a version that parses as major.minor under minor coupling.
 package integration
 
 import (
@@ -22,22 +22,24 @@ func repoRoot(t *testing.T) string {
 	return p
 }
 
-// TestVendoredManifestBracketsContractVersion locks AC-1's manifest<->binary
-// drift check: the vendored .claude-plugin/plugin.json declares a
-// requires-contract that parses via the real contract.ParseRange and brackets
-// the binary's CONTRACT_VERSION. The manifest fed to --plugin-dir and the binary
-// gate must agree in one go test — a future range edit that excludes the binary
-// fails here.
-func TestVendoredManifestBracketsContractVersion(t *testing.T) {
+// TestVendoredManifestVersionParses locks the manifest<->binary drift check
+// under minor-version coupling: the vendored .claude-plugin/plugin.json's
+// `version` field (the compatibility declaration itself — D2, no separate
+// requires-contract range is read by this binary) parses as a well-formed
+// major.minor semver. The D4 cross-era tombstone (requires-contract ">=3,<4")
+// and its binding to the FO shared-core's stamped minor are pinned by the
+// internal/contractlint sync test — the sanctioned home for a check that reads
+// the prose file this manifest binds against.
+func TestVendoredManifestVersionParses(t *testing.T) {
 	manifestPath := filepath.Join(repoRoot(t), ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		t.Fatalf("read vendored manifest %s: %v", manifestPath, err)
 	}
 	var m struct {
-		Name             string `json:"name"`
-		RequiresContract string `json:"requires-contract"`
-		Skills           string `json:"skills"`
+		Name    string `json:"name"`
+		Version string `json:"version"`
+		Skills  string `json:"skills"`
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("parse vendored manifest %s: %v", manifestPath, err)
@@ -48,14 +50,7 @@ func TestVendoredManifestBracketsContractVersion(t *testing.T) {
 	if m.Skills != "./skills/" {
 		t.Errorf("manifest skills = %q, want ./skills/", m.Skills)
 	}
-	if m.RequiresContract == "" {
-		t.Fatalf("manifest has no requires-contract field (the bootstrap-cliff before-state)")
-	}
-	lo, hi, err := contract.ParseRange(m.RequiresContract)
-	if err != nil {
-		t.Fatalf("requires-contract %q does not parse: %v", m.RequiresContract, err)
-	}
-	if !(lo <= contract.CONTRACT_VERSION && contract.CONTRACT_VERSION < hi) {
-		t.Fatalf("requires-contract %s does not bracket CONTRACT_VERSION=%d", m.RequiresContract, contract.CONTRACT_VERSION)
+	if _, _, ok := contract.ParseMajorMinor(m.Version); !ok {
+		t.Fatalf("manifest version %q does not parse as major.minor", m.Version)
 	}
 }

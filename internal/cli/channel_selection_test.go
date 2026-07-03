@@ -139,7 +139,7 @@ func TestClaudeNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 		t.Run(tc.channel, func(t *testing.T) {
 			devBranch = tc.devBranch
 
-			fake := &fakeHost{manifest: ""} // fresh HOME: no claude plugin installed
+			fake := &fakeHost{manifest: "", manifestAfterInstall: compatibleManifest(t)} // fresh HOME: no claude plugin installed; install lands a compatible one
 			var stdout, stderr bytes.Buffer
 			code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
 			if code != 0 {
@@ -205,7 +205,7 @@ func TestCodexNoPluginAutoInstallSelectsChannelEntry(t *testing.T) {
 		t.Run(tc.channel, func(t *testing.T) {
 			devBranch = tc.devBranch
 
-			fake := &fakeHost{manifest: ""} // fresh HOME: no codex plugin installed
+			fake := &fakeHost{manifest: "", manifestAfterInstall: compatibleManifest(t)} // fresh HOME: no codex plugin installed; install lands a compatible one
 			var stdout, stderr bytes.Buffer
 			code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
 			if code != 0 {

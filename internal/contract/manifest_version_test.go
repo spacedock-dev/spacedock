@@ -10,7 +10,7 @@ import (
 )
 
 // TestManifestVersion drives ManifestVersion against a real fixture manifest and
-// asserts the EXACT version string the file declares (0.12.1), so a hardcoded
+// asserts the EXACT version string the file declares (0.19.8), so a hardcoded
 // return would not pass — the test reads the manifest's own version. The
 // missing-file case is errNoManifest (a distinct no-plugin state); an unparseable
 // manifest is a parse error so the caller renders the bare version rather than a
@@ -20,8 +20,8 @@ func TestManifestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ManifestVersion(compatible.json) err = %v, want nil", err)
 	}
-	if got != "0.12.1" {
-		t.Fatalf("ManifestVersion(compatible.json) = %q, want %q", got, "0.12.1")
+	if got != "0.19.8" {
+		t.Fatalf("ManifestVersion(compatible.json) = %q, want %q", got, "0.19.8")
 	}
 }
 
