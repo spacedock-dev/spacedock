@@ -1,5 +1,5 @@
 // ABOUTME: Boot-window telemetry extraction shared by the live shallow-boot
-// ABOUTME: scenario test and the release-ledger backfill CLI (AC-1/AC-4).
+// ABOUTME: scenario test and the release-ledger backfill runbook (AC-1/AC-4).
 package ensigncycle
 
 import (
@@ -95,8 +95,8 @@ func preGreetPeakCacheCreation(turns []journeymetrics.ClaudeTurn, greet int) int
 // silent alias-resolution change (e.g. "sonnet" moving to a new snapshot)
 // rather than the FO's own contract.
 // Exported (unlike the live-scenario test glue around it) so the AC-4 release-
-// ledger backfill CLI can apply the SAME extraction logic to archived streams,
-// standalone, rather than duplicating it.
+// ledger backfill runbook's throwaway `go run` script can apply the SAME
+// extraction logic to archived streams, standalone, rather than duplicating it.
 func BuildShallowBootWindowRecord(turns []journeymetrics.ClaudeTurn, model string, claudeCodeVersion string, resolvedModel string) (journeymetrics.Record, error) {
 	if len(turns) == 0 {
 		return journeymetrics.Record{}, fmt.Errorf("stream carried no assistant turns — nothing to record")

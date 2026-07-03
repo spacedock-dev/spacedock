@@ -170,6 +170,54 @@ func TestRenderJourneyDeltaCommentIncludesExactDeltasAndMarker(t *testing.T) {
 	}
 }
 
+// TestRenderJourneyDeltaCommentShowsTokenClassBreakdown proves the comment
+// renders Cache Read Δ and Cache Creation Δ as their OWN columns, in the
+// correct (non-swapped) position — not collapsed into the Tokens Δ (total)
+// figure. cache_read and cache_creation differ ~12x in cost and meaning for a
+// boot metric, so folding them into one number hides the signal this Minor
+// exists to surface. Uses distinguishable, easily-confused-if-swapped values
+// (CacheRead=111, CacheCreation=222) and checks the actual table row's cell
+// positions, not just substring presence anywhere in the body (which would
+// not catch a column swap).
+func TestRenderJourneyDeltaCommentShowsTokenClassBreakdown(t *testing.T) {
+	deltas := []JourneyDelta{
+		{
+			ScenarioID: "shallow-boot-window", Runtime: "claude", Model: "claude-sonnet-4-6",
+			HasBaseline: true, BaselineRunURL: "https://github.com/spacedock-dev/spacedock/actions/runs/27931963802",
+			TurnsDelta: 2, TokensDelta: journeymetrics.TokenTotals{CacheRead: 111, CacheCreation: 222, Total: 1034}, CostDeltaUSD: 0.15,
+		},
+	}
+	body := RenderJourneyDeltaComment(deltas)
+
+	var row string
+	for _, line := range strings.Split(body, "\n") {
+		if strings.HasPrefix(line, "| shallow-boot-window") {
+			row = line
+			break
+		}
+	}
+	if row == "" {
+		t.Fatalf("comment body missing the data row:\n%s", body)
+	}
+	cells := strings.Split(row, "|")
+	// | (empty) | Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Baseline | (empty) |
+	if len(cells) != 11 {
+		t.Fatalf("data row has %d cells, want 11 (header shape changed?): %q", len(cells), row)
+	}
+	cacheReadCell := strings.TrimSpace(cells[5])
+	cacheCreationCell := strings.TrimSpace(cells[6])
+	tokensTotalCell := strings.TrimSpace(cells[7])
+	if cacheReadCell != "+111" {
+		t.Fatalf("Cache Read Δ cell = %q, want +111 (got %q for Cache Creation Δ) — columns may be swapped", cacheReadCell, cacheCreationCell)
+	}
+	if cacheCreationCell != "+222" {
+		t.Fatalf("Cache Creation Δ cell = %q, want +222 (got %q for Cache Read Δ) — columns may be swapped", cacheCreationCell, cacheReadCell)
+	}
+	if tokensTotalCell != "+1034" {
+		t.Fatalf("Tokens Δ (total) cell = %q, want +1034", tokensTotalCell)
+	}
+}
+
 // TestRenderJourneyDeltaCommentRendersNoBaselineAsNewNotSelfDelta proves a
 // scenario/model with no matching baseline observation renders "n/a (new)" in
 // its delta cells rather than a self-delta against an implicit zero baseline

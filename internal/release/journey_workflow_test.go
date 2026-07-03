@@ -782,6 +782,45 @@ func TestJourneyDeltaLocateMetricsStepFindsNestedJourneyMetricsFiles(t *testing.
 	}
 }
 
+// TestJourneyDeltaLocateAndPostStepsShareMetricsDir closes the cross-step
+// wiring gap validation's cycle-3 adversarial audit found: the "Locate this
+// run's journey metrics" step's own mechanism is tested in isolation above,
+// but nothing previously verified that the "Post the journey-cost delta PR
+// comment" step's --metrics-dir argument stays wired to the Locate step's
+// actual output directory. A one-line regression reverting ONLY the Post
+// step's --metrics-dir back to the old hardcoded broken path left the full
+// suite green, because each step's script was only ever checked in isolation.
+// This derives BOTH directories from the REAL extracted step scripts (not a
+// hardcoded assumption on either side) and asserts they're the same value.
+func TestJourneyDeltaLocateAndPostStepsShareMetricsDir(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	locateScript := extractStepRun(t, live, "Locate this run's journey metrics")
+	postScript := extractStepRun(t, live, "Post the journey-cost delta PR comment")
+
+	locateDir := firstQuotedArg(t, locateScript, `mkdir -p "`)
+	postDir := firstQuotedArg(t, postScript, `--metrics-dir "`)
+	if locateDir != postDir {
+		t.Fatalf("Locate step writes to %q but Post step's --metrics-dir reads from %q — the two steps are no longer wired together", locateDir, postDir)
+	}
+}
+
+// firstQuotedArg extracts the double-quoted value immediately following the
+// given prefix (e.g. `mkdir -p "`) in script, failing the test if the prefix
+// or its closing quote is not found.
+func firstQuotedArg(t *testing.T, script, prefix string) string {
+	t.Helper()
+	start := strings.Index(script, prefix)
+	if start < 0 {
+		t.Fatalf("script does not contain %q:\n%s", prefix, script)
+	}
+	start += len(prefix)
+	end := strings.Index(script[start:], `"`)
+	if end < 0 {
+		t.Fatalf("unterminated quoted argument after %q:\n%s", prefix, script)
+	}
+	return script[start : start+end]
+}
+
 // extractStepRun pulls a named step's `run: |` block out of a workflow document,
 // dedented to a runnable shell script, so tests exercise the EXACT script CI
 // runs rather than a hand-copied duplicate.
