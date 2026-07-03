@@ -1,13 +1,16 @@
 ---
 title: 'FO contract: replace bare `spacedock` command examples with `${SPACEDOCK_BIN:-spacedock}`'
-status: validation
+status: done
 source: 'boot-forensics (2026-06-16) — FO used homebrew cask (0.20.2) instead of $SPACEDOCK_BIN (dev) throughout a session because contract command blocks model the bare-spacedock shorthand. SPACEDOCK_BIN was set and correct but never used; cap divergence cost ~16k tok in failed --read calls. Fix: find-and-replace executable command positions in first-officer-shared-core.md and claude-first-officer-runtime.md.'
 score: 0.5
 id: 13f8b12x9f7ba25ywm5wt2x7
 started: 2026-07-03T03:03:12Z
 worktree: .worktrees/spacedock-ensign-fo-contract-bin-shorthand
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:471
+verdict: passed
+completed: 2026-07-03T04:31:52Z
+archived: 2026-07-03T04:31:52Z
 ---
 
 ## Problem statement
