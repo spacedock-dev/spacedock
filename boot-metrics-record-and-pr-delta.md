@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-boot-metrics-record-and-pr-delta
 issue:
 mod-block: merge:pr-merge
-pr: "#470"
+pr: pr-merge:470
 ---
 
 AC-6's shallow-boot measured-saving oracle (`internal/ensigncycle/shallow_boot_measure_test.go`, `assertShallowBootMeasured`) hard-fails CI on two absolute constants — `greetContextCeiling = 60000` and `teamRecacheSpikeFloor = 60000` — calibrated once against the pre-optimization ~160k/~89k baseline in task j9 (`0203-fo-efficiency`, shipped v0.20.3) and never revisited since. They no longer mean anything as a pass/fail gate. Replace them with recorded telemetry (turns-to-greet, greet-turn `cache_creation` tokens) that rides the existing `journeymetrics` ledger pipe, and close the per-PR visibility gap identified in the same conversation: the published `journey-costs-vX.json` ledger is release-cadence only and currently sourced from whichever manual `workflow_dispatch` run on `main` happened to run last (see `release.yml`'s `journey-ledger` job, `gh run list --branch main --limit 1`) — it never reflects the PR runs that already execute continuously (`runtime-live-e2e.yml` triggers on every PR into main once the live jobs' environment is approved) and already upload the exact raw stream needed (`live-artifacts/claude/<model>/claude-shared-scenarios/shallow-boot/claude-stream.jsonl`, ~90-day artifact retention).
