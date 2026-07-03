@@ -387,8 +387,9 @@ func Check(opts CheckOptions) HookDecision {
 	pendingBySlug := map[string]int{}
 	for _, slug := range slugs {
 		members := []string{slug}
+		cursor := inboxCursor(root, slug)
 		for _, rec := range records {
-			if rec.Line <= inboxCursor(root, slug) {
+			if rec.Line <= cursor {
 				continue
 			}
 			if !addressedTo(root, rec.routing(), slug, members) {
@@ -544,6 +545,14 @@ func readInboxFull(path string) ([]fullInboxRecord, int, error) {
 		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
 			continue
 		}
+		// Preserve the exact on-disk ts string so drain→ack round-trips it verbatim;
+		// reformatting to UTC would break wake's ts-based replyKey fallback for an
+		// id-less record.
+		var raw struct {
+			TS string `json:"ts"`
+		}
+		_ = json.Unmarshal(scanner.Bytes(), &raw)
+		rec.RawTS = raw.TS
 		rec.Line = lineNo
 		out = append(out, rec)
 	}
@@ -554,8 +563,10 @@ func readInboxFull(path string) ([]fullInboxRecord, int, error) {
 }
 
 func toDrainRecord(r fullInboxRecord) DrainRecord {
-	ts := ""
-	if !r.TS.IsZero() {
+	// Prefer the exact on-disk ts string; fall back to the parsed form only if the
+	// raw field is somehow empty.
+	ts := r.RawTS
+	if ts == "" && !r.TS.IsZero() {
 		ts = r.TS.UTC().Format(time.RFC3339)
 	}
 	return DrainRecord{

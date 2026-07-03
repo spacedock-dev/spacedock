@@ -59,6 +59,21 @@ func TestDrainReturnsAddressedRecordsAndStampsHostHeartbeat(t *testing.T) {
 	}
 }
 
+func TestDrainPreservesRawTimestamp(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 7, 3, 12, 0, 0, 0, time.UTC)
+	// A non-UTC offset ts: drain must round-trip it verbatim, not reformat to UTC,
+	// or wake's ts-based replyKey fallback (id-less records) would mismatch.
+	writeInbox(t, root, `{"id":"i1","ts":"2026-07-03T20:00:00+08:00","kind":"tell","text":"hi","target":"alpha"}`)
+	res := Drain(DrainOptions{Host: "claude", Root: root, Slug: "alpha", Now: func() time.Time { return now }})
+	if res.Count != 1 {
+		t.Fatalf("want 1 record, got %+v", res.Records)
+	}
+	if res.Records[0].TS != "2026-07-03T20:00:00+08:00" {
+		t.Fatalf("ts = %q, want the verbatim on-disk offset ts", res.Records[0].TS)
+	}
+}
+
 func TestDrainRespectsCursorAndAckIdempotency(t *testing.T) {
 	root := t.TempDir()
 	now := time.Date(2026, 7, 3, 12, 0, 0, 0, time.UTC)
