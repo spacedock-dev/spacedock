@@ -91,6 +91,24 @@ One JSON object per line, appended when the FO is blocked by a captain-owned hos
 - Bridge overlays a later inbox `permission-decision` record for the same `request_id` to show approved/denied state; the alert file itself remains append-only.
 - → **All hosts (host-neutral producer):** the FO writes this through `spacedock bridge alert permission ...`. The helper returns `{"id":"...","request_id":"...","queued":true}` and appends one line to `_bridge/fo-alerts.jsonl`. If the helper cannot queue the alert, it still exits without blocking the FO command and returns `{"queued":false,"error":"..."}`.
 
+## `_bridge/fo-initiate.jsonl` — FO-authored feed lines and decidable gates
+
+One JSON object per line, appended when the FO originates a message to the captain that is not a reply to a captain intent: a status note, a recommendation, or a decidable `gate-review`. Bridge reads it, folds records by `id` (keeping the latest per id), and renders each as an FO-authored feed line — a `gate-review` gets an inline Approve/Reject affordance.
+
+```
+{"schema":1,"id":"<stable fold key>","ts":"<rfc3339 UTC>","kind":"<status|reco|gate-review>","workflow":"<slug>","entity":"<slug>","ship_id":"<slug>/<entity>","host":"<claude|codex|pi>","session_id":"<«session-id»>","headline":"<one-line lede>","body":"optional supporting prose","request_id":"<gate loop-closure correlator>","status":"open"}
+```
+
+- `id` is REQUIRED and is the fold key. Unlike `fo-alerts.jsonl` there is NO random fallback: idempotency depends on a stable caller-supplied id. The FO re-emits the same record each drain tick; Bridge collapses them to one card by `id`. For `gate-review`, `present-gate` derives `id`/`request_id` deterministically from `(entity, stage)` so re-emit is byte-stable.
+- `kind` ∈ `status | reco | gate-review`. `status`/`reco` are plain FO-authored lines; `gate-review` is a decidable card.
+- `headline` is REQUIRED, bounded to 240 chars; `body` is optional, bounded to 2000 chars. Both are collapsed to one line (control chars and whitespace runs become single spaces).
+- `request_id` is the gate loop-closure correlator; it defaults to `id` for `gate-review` and is omitted for `status`/`reco`. Approve/Reject write a decision intent to `inbox.jsonl` carrying this `request_id`; Bridge's fo-initiate reader overlays that decision to flip the card's status.
+- `status`: the writer ALWAYS writes `open`. The READER overlays `resolved`/`approved`/`rejected` from decision intents — never trust a written non-open status.
+- **Path anchoring:** the writer resolves `filepath.Abs(--repo-root or cwd)/_bridge` — EXACTLY like `bridgealert.AppendPermission`, NOT `bridgeegress.canonicalBridgeRoot`. It MUST be passed the same repo root Bridge resolves from, or the write lands in a divergent `_bridge/`.
+- **Bounded, but open gates never evicted:** the file is capped (the writer truncates to a recent-tail window on each append), but it NEVER drops the latest record of a still-open `gate-review` id, so an open gate cannot scroll out of the read window.
+- **Channel boundary:** a decidable gate lives in `fo-initiate.jsonl` ONLY — never `fo-feed.jsonl` (ambient git narration) and never `fo-replies.jsonl` (which requires an `in_reply_to` correlator and would silently drop an uncorrelated FO-originated push).
+- → **All hosts (host-neutral producer):** the FO writes this through `spacedock bridge initiate --kind <kind> ...`. The helper returns `{"id":"...","request_id":"...","queued":true}` and appends one line. If it cannot queue, it exits without blocking the FO and returns `{"queued":false,"error":"..."}`. Gate emission is wired in the `present-gate` skill (loaded by every host), not in a per-host hook.
+
 ## `_bridge/sessions/<actor_id>.json` — session→entity marker (RUNNING-badge source)
 
 First-write-wins per host actor, one file per live working actor. The filename is the normalized `actor_id`: Claude main/ensign markers currently use the session id, while hosts that provide child ids can use a host-scoped composite such as `session_id.agent_id`. The marker maps that actor to the ship it is driving, so Bridge can render the deterministic live FO-vs-ensign RUNNING badge.

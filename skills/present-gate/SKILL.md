@@ -43,3 +43,33 @@ The template is the floor, not the ceiling. The FO MUST hold to the following di
 8. **One sentence of worktree heads-up when approval changes worktree state.** When approving opens or closes a worktree, the Decision line names it: "approve to enter implementation in worktree `.worktrees/{worker_key}-{slug}`". One sentence, not a section.
 9. **Target length: 15-25 lines of FO-authored prose.** The full gate message should fit in 15-25 lines. If it exceeds 25, the FO is over-narrating; cut.
 10. **FO-authored prose speaks the workflow's declared label.** Where the gate-summary prose the FO writes — the `Chosen direction:` line, the `Checklist:` gist roll-up, the `Decision:` line — names the kind of thing under review, use the workflow's declared `entity-label` / `entity-label-plural` (read at Startup step 4), not the generic "entity". A `ticket` workflow's Decision line says "approve to enter implementation on this ticket"; an `experiment` workflow says "experiment". The `{entity title}` placeholder and the structural headings (`Gate review:`, `Checklist:`, `Decision:`) stay generic — only the FO-authored noun localizes.
+
+## Emit the gate to Bridge (host-neutral)
+
+After rendering the gate-review to the captain in-session, the FO ALSO pushes the same gate to Bridge so a remote captain can decide it from the command-center UI. This is host-neutral — it lives here in `present-gate` (loaded by every host), never in a Claude-only hook.
+
+Emit it with:
+
+```
+spacedock bridge initiate \
+  --kind gate-review \
+  --workflow <slug> \
+  --entity <entity-slug> \
+  --ship-id <slug>/<entity-slug> \
+  --request-id <stable f(entity,stage)> \
+  --headline <the gate lede — same one-liner the captain sees> \
+  [--body <optional supporting prose>]
+```
+
+- `--id` defaults to `--request-id` for a gate-review; pass `--request-id` and let the id follow. Both MUST be a STABLE function of `(entity, stage)` so re-emitting the same gate on each drain tick folds to ONE card in Bridge instead of stacking duplicates. Derive it deterministically (e.g. `gate-<entity>-<stage>`), not from a timestamp or random value.
+- `--headline` is the gate lede (bounded to 240 chars). Keep `--body` to a short supporting line; it is bounded to 2000 chars.
+- Pass `--repo-root` only if the FO's cwd is not the repo root; the writer anchors at `filepath.Abs(--repo-root or cwd)/_bridge`, the same path Bridge resolves from.
+
+### Channel boundary — a gate goes to fo-initiate ONLY
+
+A gate-review is a decidable interrupt. It goes to `_bridge/fo-initiate.jsonl` and NOWHERE ELSE:
+
+- NEVER `fo-feed.jsonl` — that stream is ambient git narration (dispatch/advance/complete), not a decidable ask; a gate rendered there has no Approve/Reject affordance.
+- NEVER `fo-replies.jsonl` — that stream requires an `in_reply_to` correlator to a captain intent; an FO-initiated gate has no such parent and would be silently dropped.
+
+Approve/Reject on the fo-initiate card close the loop back through the inbox by `request_id`; that is why the `request_id` must be stable and shared with the gate the captain sees.

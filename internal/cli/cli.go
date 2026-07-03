@@ -18,6 +18,7 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/bridgealert"
 	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
 	"github.com/spacedock-dev/spacedock/internal/bridgeingress"
+	"github.com/spacedock-dev/spacedock/internal/bridgeinitiate"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
@@ -469,7 +470,7 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 // print compact JSON results that Bridge can surface without knowing host internals.
 func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 	return &cobra.Command{
-		Use:                "bridge egress emit --host <host> | ingress wake --host codex | inbox drain|ack|commit|check | alert permission",
+		Use:                "bridge egress emit --host <host> | ingress wake --host codex | inbox drain|ack|commit|check | alert permission | initiate --kind status|reco|gate-review",
 		Hidden:             true,
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -500,6 +501,19 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 					return nil
 				}
 				result, err := bridgealert.AppendPermission(opts)
+				if err != nil {
+					return err
+				}
+				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+				return nil
+			}
+			if len(args) >= 1 && args[0] == "initiate" {
+				opts, parseErr := parseBridgeInitiate(args[1:], dir)
+				if parseErr != "" {
+					_ = json.NewEncoder(cmd.OutOrStdout()).Encode(bridgeinitiate.Result{Queued: false, Error: parseErr})
+					return nil
+				}
+				result, err := bridgeinitiate.AppendInitiation(opts)
 				if err != nil {
 					return err
 				}
@@ -600,6 +614,50 @@ func parseBridgeAlertPermission(args []string, fallbackRoot string) (bridgealert
 			opts.Command = value
 		case "--prefix-rule":
 			opts.PrefixRule = csvParts(value)
+		default:
+			return opts, "unknown flag: " + key
+		}
+	}
+	return opts, ""
+}
+
+func parseBridgeInitiate(args []string, fallbackRoot string) (bridgeinitiate.InitiationOptions, string) {
+	opts := bridgeinitiate.InitiationOptions{Root: fallbackRoot}
+	for i := 0; i < len(args); i++ {
+		key, value, inline := strings.Cut(args[i], "=")
+		if !strings.HasPrefix(key, "--") {
+			return opts, "unexpected positional argument: " + args[i]
+		}
+		if !inline {
+			if i+1 >= len(args) || strings.HasPrefix(args[i+1], "--") {
+				return opts, "missing value for " + key
+			}
+			i++
+			value = args[i]
+		}
+		switch key {
+		case "--repo-root":
+			opts.Root = value
+		case "--id":
+			opts.ID = value
+		case "--kind":
+			opts.Kind = value
+		case "--workflow":
+			opts.Workflow = value
+		case "--entity":
+			opts.Entity = value
+		case "--ship-id":
+			opts.ShipID = value
+		case "--host":
+			opts.Host = value
+		case "--session-id":
+			opts.SessionID = value
+		case "--headline":
+			opts.Headline = value
+		case "--body":
+			opts.Body = value
+		case "--request-id":
+			opts.RequestID = value
 		default:
 			return opts, "unknown flag: " + key
 		}
