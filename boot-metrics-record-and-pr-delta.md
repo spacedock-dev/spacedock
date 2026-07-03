@@ -231,6 +231,16 @@ Reproduced all of implementation's evidence independently (build/vet/test across
 
 **Action:** route back to implementation on the existing worktree; re-review against this cycle before the PR merges.
 
+#### Cycle 3: Detached adversarial audit (validation, 2026-07-03)
+
+**Verdict:** REJECTED, narrowly.
+
+**Finding:** C1's fix (the "Locate this run's journey metrics" step) is itself correctly tested in isolation, but nothing verifies the DOWNSTREAM "Post the journey-cost delta PR comment" step's `--metrics-dir` argument stays wired to the Locate step's actual output directory. Adversarial edit: reverted only the Post step's `--metrics-dir` back to the old broken hardcoded path, leaving the Locate step (and its passing test) untouched. Result: the full `go test ./...` suite stayed green — no cross-step consistency check exists. This is the same class of gap Cycle 1 found (a step's own mechanism tested in isolation; the wiring between two steps that must agree is not) — recurring on C1, a REQUIRED fix for a bug that already reached production once. C2, the TRIM, AC-5, and the Minors' actual behavior were all independently re-verified via adversarial mutation and hold up cleanly; the previously-PASSED Cycle-2 AC-2 fix (`release.yml`) is confirmed byte-untouched and not undermined by this round.
+
+**Action:** one targeted test asserting the Post step's `--metrics-dir` equals the Locate step's output directory — closing the exact class of gap C1 exists to prevent. Two low-severity minors optionally folded into the same pass: a stale "backfill CLI" doc-comment reference left over from the TRIM, and a missing render-test for the Cache Read/Cache Creation comment columns (manually confirmed correct behavior, just untested).
+
+**This is the third recorded Feedback Cycle on this entity.** Per the feedback-rejection-flow contract, cycle 3 triggers escalation to the captain instead of another automatic route-back — regardless of how narrow this finding is. Escalating now rather than redispatching implementation.
+
 ## Stage Report: implementation (cycle 2)
 
 - DONE: Extend `internal/release/journey_workflow_test.go` with a positive-path test executing the real "Download latest journey metrics artifacts" script against a stubbed `gh` returning 2+ run ids, asserting the resulting `$RUNNER_TEMP/journey-metrics/` layout has genuinely separate per-run subdirectories with each run's files intact
