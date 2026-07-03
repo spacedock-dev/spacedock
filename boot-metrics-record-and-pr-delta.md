@@ -194,6 +194,22 @@ Reproduced all of implementation's evidence independently (build/vet/test across
 
 **Action:** Implementation adds a positive-path test using the existing `extractStepRun` pattern, feeding a stubbed `gh` 2+ run ids and asserting the download step's real script produces genuinely separate per-run subdirectories (not a collapsed flat copy).
 
+#### Cycle 2: Detached fable review at captain request (2026-07-03) — captain rulings attached
+
+**Verdict:** REJECTED — rework required before PR #470 merges (captain decision, 2026-07-03).
+
+**C1 (REQUIRED) — AC-3 delta job broken as shipped.** `runtime-live-e2e.yml:713` hardcodes `--metrics-dir "$RUNNER_TEMP/current-run-artifacts/live-artifacts/journey-metrics"`, but the uploaded artifact roots at the workspace/`$RUNNER_TEMP` least-common-ancestor — the real layout is `spacedock/spacedock/live-artifacts/journey-metrics/...` (verified against run 28432388663's artifact zip). `ReadRecordsDir` errors on the missing root and the `set -euo pipefail` step reds every PR live run; the delta comment never posts. Fix: layout-agnostic `find -path '*/journey-metrics/*.json'` (release.yml's own pattern) or degrade missing-dir to skip — and add the end-to-end exercise the test plan waived (the cycle-1 audit caught this class on AC-2; point the same instrument at AC-3).
+
+**C2 (REQUIRED) — boot-window record drops the pre-greet cache_creation spike.** `BuildShallowBootWindowRecord` records only the greet turn's usage; the spike scenario's ~89k lands on the pre-greet TeamCreate turn and is absent from the record, while `shallow_boot_window_record.go:55-58` claims the signal "stays reconstructable" — false for this record (the fixture's own greet turn has CacheCreation:0). Fix: one field — max (or sum of) pre-greet cache_creation in the boot-window observation — and correct both the code comment and the task-body step-1 claim it inherited (the confusion originates in the spec, not the implementation).
+
+**C4 (REQUIRED, but LEANER — captain).** The uncommitted worktree expansion (BaselineTokens, ClaudeCodeVersion, modified real-capture fixture) is wanted — keep it — but it must not balloon: minimal code, and BaselineTokens' "net cost = Tokens − BaselineTokens" needs a defensible semantic definition (subtracting two single-request usages is not one) before it ships.
+
+**TRIM (captain-ordered de-scope, ~900 lines):** (B1) the AC-4 one-time backfill tooling — two shipped subcommands + `internal/release/ledgerdiff.go` + ~300 test lines — becomes a documented runbook step (`jq -S .scenarios | diff`) plus a throwaway `go run` script over the exported `BuildShallowBootWindowRecord`; amend AC-4's Verified-by accordingly. (B2) delete the meta-tests that verify no product behavior (`TestRuntimeLiveWorkflowJourneyDeltaJobRejectsMissingPermission`, `TestJourneyDeltaCommandReusesStickyCommentOnRepeatedRuns`, `TestJourneyCostsCommandFlatCopyCollapsesToOneObservation`). (B3) drop the CLI-layer test mirrors of package-layer tests. B4 (flag.FlagSet) optional.
+
+**Minors for the same pass:** PR comment renders only `TokensDelta.Total` — show the token-class breakdown (cache_read vs cache_creation differ ~12× in cost and meaning for a boot metric); replace `--edit-last` sticky-comment targeting with find-by-marker/update-by-id; render no-baseline rows as "n/a (new)" not a self-delta.
+
+**Action:** route back to implementation on the existing worktree; re-review against this cycle before the PR merges.
+
 ## Stage Report: implementation (cycle 2)
 
 - DONE: Extend `internal/release/journey_workflow_test.go` with a positive-path test executing the real "Download latest journey metrics artifacts" script against a stubbed `gh` returning 2+ run ids, asserting the resulting `$RUNNER_TEMP/journey-metrics/` layout has genuinely separate per-run subdirectories with each run's files intact
