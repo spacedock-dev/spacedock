@@ -190,3 +190,29 @@ Recommendation: PASSED.
 ### Summary
 
 Evidence repair only. The prior cycle-2 recommendation remains PASSED; AC-1 through AC-6 now have explicit scanner-visible command or artifact evidence in this latest validation section.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: root-cause the PR #471 Codex CI red from run 28634857696.
+  The live `rejection-flow` behavior passed durably: Cycle 1 was REJECTED, implementation applied `shared-rejection-fix: applied`, Cycle 2 was PASSED, and status stayed at `validation`. The red came from the reuse oracle requiring the implementation rework `dispatch build --advance` to also include `--feedback-reflow`; the CI stream built implementation rework with plain `--advance`, then built validation `--advance` and routed it to the original kept-alive validation reviewer.
+- DONE: add a reduced CI-shaped regression fixture before changing the oracle.
+  `TestAssertCodexReviewerReuseAcceptsCIAdvanceModeWithoutImplementationFeedbackReflow` failed before the parser change, proving the new fixture covered the observed red.
+- DONE: keep the reviewer-reuse proof focused on validation reuse.
+  Commit `c3da14b` now requires one initial validation build, an implementation `--advance`, a validation `--advance`, kept-alive validation reviewer narration, and wait calls; it no longer makes implementation-side `--feedback-reflow` part of the reviewer-reuse proof.
+
+### Summary
+
+The PR red was another Codex stream-shape false red, not a failed rejection-flow behavior. The oracle now accepts the CI proof shape without dropping the validation `--advance`, kept-alive reviewer narration, or wait-call requirements.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: verify the focused CI regression and existing true-red controls.
+  `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuseAcceptsCIAdvanceModeWithoutImplementationFeedbackReflow' -count=1` passed with 1 case. `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse' -count=1` passed with 29 cases, including the existing absence and fresh-dispatch controls.
+- DONE: re-run the affected mq focused gates.
+  `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse|TestCodexLiveRunnerExecArgvEnablesMultiAgentV2|TestShallowBootNegativeBrokenEndStates' -count=1` passed with 30 cases. `go test ./internal/dispatch -run 'TestGhRunnerExecParsesJqExtractedState|TestSweepWithRealGhStubDoesNotReportUnknown' -count=1` passed with 2 cases.
+- DONE: run the required project gates.
+  `gofmt -w ./cmd ./internal` completed cleanly. `git diff --check` passed. `go test ./...` passed with 1977 tests in 17 packages, and `go test ./... -race` passed with 1977 tests in 17 packages.
+
+### Summary
+
+Validation cycle 3 PASSED for the PR #471 Codex CI red fix. The change is narrowly scoped to the Codex reviewer-reuse oracle and one CI-shaped fixture.
