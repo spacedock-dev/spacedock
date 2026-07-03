@@ -1,7 +1,7 @@
 ---
 id: e7fx68wkhhrs8tsvpv0j8s6x
 title: Boot-window metrics — record turns/cache-creation instead of gating on magic thresholds, surface per-PR delta
-status: validation
+status: implementation
 source: captain conversation 2026-07-02, journey-costs ledger review (see docs/roadmap/0203-fo-efficiency/index.md task j9 / AC-6 for the constants' origin)
 started: 2026-07-02T10:50:47Z
 completed:
