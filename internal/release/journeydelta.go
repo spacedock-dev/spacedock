@@ -116,44 +116,56 @@ func ComputeJourneyDeltas(baseline journeymetrics.Ledger, current []journeymetri
 	return deltas
 }
 
-// journeyDeltaCommentMarker is stamped into every rendered comment. It has no
-// behavioral role in THIS process — the sticky-update behavior comes from `gh
-// pr comment --edit-last` editing the poster's own last comment — but it lets a
-// human (or a future automated check) identify the comment's origin at a
-// glance.
-const journeyDeltaCommentMarker = "<!-- spacedock:journey-delta -->"
+// JourneyDeltaCommentMarker is stamped into every rendered comment. A caller
+// finds its own prior comment by searching the PR's comments for one whose
+// body starts with this marker (JourneyDeltaUpdateCommentArgs), rather than by
+// editing "the poster's last comment" (`--edit-last`) — --edit-last targets the
+// wrong comment if any OTHER automated comment from the same bot account lands
+// on the PR in between.
+const JourneyDeltaCommentMarker = "<!-- spacedock:journey-delta -->"
 
 // RenderJourneyDeltaComment renders the AC-3 PR comment body: one table row per
-// scenario/runtime/model, each cell an exact (PR value - baseline value) delta.
+// scenario/runtime/model. A row with a baseline shows the exact (PR value -
+// baseline value) delta for turns, each token class, and cost; a row with NO
+// baseline (a brand-new scenario/model this ledger has never seen) renders
+// "n/a (new)" in every delta cell instead of a self-delta against an implicit
+// zero baseline, which would otherwise read as a huge, meaningless "increase."
 func RenderJourneyDeltaComment(deltas []JourneyDelta) string {
 	var b strings.Builder
-	b.WriteString(journeyDeltaCommentMarker)
+	b.WriteString(JourneyDeltaCommentMarker)
 	b.WriteString("\n### Journey cost delta\n\n")
 	if len(deltas) == 0 {
 		b.WriteString("No journey metrics observations were produced by this run.\n")
 		return b.String()
 	}
-	b.WriteString("| Scenario | Runtime | Model | Turns Δ | Tokens Δ | Cost Δ (USD) | Baseline |\n")
-	b.WriteString("| --- | --- | --- | --- | --- | --- | --- |\n")
+	b.WriteString("| Scenario | Runtime | Model | Turns Δ | Cache Read Δ | Cache Creation Δ | Tokens Δ (total) | Cost Δ (USD) | Baseline |\n")
+	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	for _, d := range deltas {
-		baseline := "none (new observation)"
-		switch {
-		case d.HasBaseline && d.BaselineRunURL != "":
-			baseline = fmt.Sprintf("[latest published](%s)", d.BaselineRunURL)
-		case d.HasBaseline:
-			baseline = "latest published"
+		if !d.HasBaseline {
+			fmt.Fprintf(&b, "| %s | %s | %s | n/a (new) | n/a (new) | n/a (new) | n/a (new) | n/a (new) | none (new observation) |\n",
+				d.ScenarioID, d.Runtime, d.Model)
+			continue
 		}
-		fmt.Fprintf(&b, "| %s | %s | %s | %+d | %+d | %+.4f | %s |\n",
-			d.ScenarioID, d.Runtime, d.Model, d.TurnsDelta, d.TokensDelta.Total, d.CostDeltaUSD, baseline)
+		baseline := "latest published"
+		if d.BaselineRunURL != "" {
+			baseline = fmt.Sprintf("[latest published](%s)", d.BaselineRunURL)
+		}
+		fmt.Fprintf(&b, "| %s | %s | %s | %+d | %+d | %+d | %+d | %+.4f | %s |\n",
+			d.ScenarioID, d.Runtime, d.Model, d.TurnsDelta, d.TokensDelta.CacheRead, d.TokensDelta.CacheCreation, d.TokensDelta.Total, d.CostDeltaUSD, baseline)
 	}
 	return b.String()
 }
 
-// JourneyDeltaCommentArgs returns the `gh pr comment` argv the AC-3 step
-// invokes to post (or update) the PR delta comment. --edit-last edits the
-// poster's own last comment on the PR instead of appending a new one on every
-// push; --create-if-none falls back to creating the first comment when none
-// exists yet, so the FIRST post on a PR still lands.
-func JourneyDeltaCommentArgs(prNumber, bodyFile string) []string {
-	return []string{"pr", "comment", prNumber, "--body-file", bodyFile, "--edit-last", "--create-if-none"}
+// JourneyDeltaCreateCommentArgs returns the `gh pr comment` argv that posts a
+// NEW comment — used when no prior journey-delta comment exists on the PR yet.
+func JourneyDeltaCreateCommentArgs(prNumber, bodyFile string) []string {
+	return []string{"pr", "comment", prNumber, "--body-file", bodyFile}
+}
+
+// JourneyDeltaUpdateCommentArgs returns the `gh api` argv that PATCHes the
+// EXACT existing comment by id — the find-by-marker replacement for
+// `--edit-last` (which targets "the poster's last comment on the PR," not
+// necessarily this job's own prior comment).
+func JourneyDeltaUpdateCommentArgs(commentID, bodyFile string) []string {
+	return []string{"api", "repos/{owner}/{repo}/issues/comments/" + commentID, "-X", "PATCH", "-f", "body=@" + bodyFile}
 }

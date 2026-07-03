@@ -703,6 +703,21 @@ jobs:
           fi
           echo "found=true" >> "$GITHUB_OUTPUT"
 
+      # download-artifact's merge-multiple flat-copies every matched artifact's
+      # files into current-run-artifacts, but PRESERVES each artifact's own
+      # internal path prefix (verified against a real run's downloaded zip:
+      # the journey-metrics JSON lands several directories deep, not directly
+      # under "live-artifacts/journey-metrics/"). A hardcoded exact subpath is
+      # brittle to that prefix; find + cp (release.yml's own pattern for the
+      # same class of problem) is layout-agnostic — it locates the metrics
+      # files wherever they actually landed.
+      - name: Locate this run's journey metrics
+        if: steps.download_previous_ledger.outputs.found == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/current-run-metrics"
+          find "$RUNNER_TEMP/current-run-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/current-run-metrics/" \;
+
       - name: Post the journey-cost delta PR comment
         if: steps.download_previous_ledger.outputs.found == 'true'
         env:
@@ -710,5 +725,5 @@ jobs:
         run: |
           set -euo pipefail
           go run ./cmd/spacedock-release journey-delta "$RUNNER_TEMP/previous-journey-costs.json" \
-            --metrics-dir "$RUNNER_TEMP/current-run-artifacts/live-artifacts/journey-metrics" \
+            --metrics-dir "$RUNNER_TEMP/current-run-metrics" \
             --pr "${{ github.event.pull_request.number }}"

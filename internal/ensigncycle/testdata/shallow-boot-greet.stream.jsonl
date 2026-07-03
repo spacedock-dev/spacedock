@@ -1,4 +1,4 @@
-{"type":"system","subtype":"init","model":"claude-opus-4-8"}
+{"type":"system","subtype":"init","model":"claude-opus-4-8","claude_code_version":"2.1.196"}
 {"type":"assistant","message":{"id":"msg_boot1","model":"claude-opus-4-8","usage":{"input_tokens":4,"output_tokens":12,"cache_creation_input_tokens":1200,"cache_read_input_tokens":8000},"content":[{"type":"thinking","thinking":"check the version"}]}}
 {"type":"assistant","message":{"id":"msg_boot1","model":"claude-opus-4-8","usage":{"input_tokens":4,"output_tokens":12,"cache_creation_input_tokens":1200,"cache_read_input_tokens":8000},"content":[{"type":"tool_use","id":"toolu_ver","name":"Bash","input":{"command":"spacedock --version"}}]}}
 {"type":"assistant","message":{"id":"msg_boot2","model":"claude-opus-4-8","usage":{"input_tokens":6,"output_tokens":40,"cache_creation_input_tokens":900,"cache_read_input_tokens":18000},"content":[{"type":"thinking","thinking":"read the boot state"}]}}

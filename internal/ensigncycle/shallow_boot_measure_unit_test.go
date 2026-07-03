@@ -145,7 +145,14 @@ func TestParserExtractsTeamCallsFromRealHangCapture(t *testing.T) {
 // shallow-boot--...--measured.json record (both present after one scenario run,
 // neither overwriting the other), carrying Turns == greetIndex+1 and Tokens equal
 // to the greet turn's full actual TokenTotals (input, output, cache_read,
-// cache_creation) from the fixture stream — not CacheCreation alone.
+// cache_creation) from the fixture stream — not CacheCreation alone. It also
+// proves the follow-on fields the fixture now carries: BaselineTokens equals
+// the FIRST turn's full TokenTotals (so a reader can compute net boot cost
+// without re-parsing the stream), ClaudeCodeVersion is threaded through from
+// the fixture's system/init event's claude_code_version field, and ResolvedModel
+// (the fixture's actual "claude-opus-4-8") differs from the caller-supplied
+// Model alias ("claude-test-model") — proving the two fields serve distinct
+// purposes rather than duplicating each other.
 func TestBuildShallowBootWindowRecord(t *testing.T) {
 	stream := readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")
 	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
@@ -156,9 +163,17 @@ func TestBuildShallowBootWindowRecord(t *testing.T) {
 	if greet < 0 {
 		t.Fatal("fixture must produce a greet turn")
 	}
+	claudeCodeVersion := journeymetrics.ParseClaudeCodeVersion([]byte(stream))
+	if claudeCodeVersion == "" {
+		t.Fatal("fixture must carry a claude_code_version on its system/init event")
+	}
+	resolvedModel := journeymetrics.ParseClaudeInitModel([]byte(stream))
+	if resolvedModel == "" {
+		t.Fatal("fixture must carry a model on its system/init event")
+	}
 
 	const model = "claude-test-model"
-	record, err := BuildShallowBootWindowRecord(turns, model)
+	record, err := BuildShallowBootWindowRecord(turns, model, claudeCodeVersion, resolvedModel)
 	if err != nil {
 		t.Fatalf("BuildShallowBootWindowRecord: %v", err)
 	}
@@ -172,6 +187,20 @@ func TestBuildShallowBootWindowRecord(t *testing.T) {
 	if record.Tokens.Input != want.Input || record.Tokens.Output != want.Output ||
 		record.Tokens.CacheCreation != want.CacheCreation || record.Tokens.CacheRead != want.CacheRead {
 		t.Fatalf("Tokens = %+v, want the greet turn's full TokenTotals %+v (not CacheCreation alone)", record.Tokens, want)
+	}
+	wantBaseline := turns[0].Usage
+	if record.BaselineTokens.Input != wantBaseline.Input || record.BaselineTokens.Output != wantBaseline.Output ||
+		record.BaselineTokens.CacheCreation != wantBaseline.CacheCreation || record.BaselineTokens.CacheRead != wantBaseline.CacheRead {
+		t.Fatalf("BaselineTokens = %+v, want the FIRST turn's full TokenTotals %+v", record.BaselineTokens, wantBaseline)
+	}
+	if record.ClaudeCodeVersion != claudeCodeVersion {
+		t.Fatalf("ClaudeCodeVersion = %q, want %q from the fixture's system/init event", record.ClaudeCodeVersion, claudeCodeVersion)
+	}
+	if record.Model != model {
+		t.Fatalf("Model = %q, want the caller-supplied alias %q unchanged", record.Model, model)
+	}
+	if record.ResolvedModel != resolvedModel || record.ResolvedModel == record.Model {
+		t.Fatalf("ResolvedModel = %q, want the fixture's actual model %q, distinct from Model %q", record.ResolvedModel, resolvedModel, record.Model)
 	}
 
 	// The whole-run "shallow-boot" record the same scenario run already publishes
@@ -227,10 +256,14 @@ func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
 	if err := assertShallowBootMeasuredTurns(heavyGreet); err != nil {
 		t.Fatalf("a greet turn over the former ceiling must no longer fail now that the threshold gate is removed: %v", err)
 	}
-	if record, err := BuildShallowBootWindowRecord(heavyGreet, "test-model"); err != nil {
+	if record, err := BuildShallowBootWindowRecord(heavyGreet, "test-model", "2.1.196", "claude-sonnet-4-6"); err != nil {
 		t.Fatalf("BuildShallowBootWindowRecord(heavyGreet): %v", err)
 	} else if record.Tokens.CacheRead != 60000 {
 		t.Fatalf("recorded Tokens must preserve the full greet-turn usage that used to trip the ceiling check, got %+v", record.Tokens)
+	} else if record.ClaudeCodeVersion != "2.1.196" {
+		t.Fatalf("ClaudeCodeVersion = %q, want the passed-through version 2.1.196", record.ClaudeCodeVersion)
+	} else if record.ResolvedModel != "claude-sonnet-4-6" {
+		t.Fatalf("ResolvedModel = %q, want the passed-through resolved model claude-sonnet-4-6", record.ResolvedModel)
 	}
 
 	// Formerly failed only the spike check: a pre-greet dispatch turn carrying the
@@ -242,10 +275,14 @@ func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
 	if err := assertShallowBootMeasuredTurns(spikeThenLightGreet); err != nil {
 		t.Fatalf("a pre-greet ~89k cache_creation spike (light greet) must no longer fail now that the threshold gate is removed: %v", err)
 	}
-	if record, err := BuildShallowBootWindowRecord(spikeThenLightGreet, "test-model"); err != nil {
+	if record, err := BuildShallowBootWindowRecord(spikeThenLightGreet, "test-model", "", ""); err != nil {
 		t.Fatalf("BuildShallowBootWindowRecord(spikeThenLightGreet): %v", err)
 	} else if record.Turns != 2 {
 		t.Fatalf("Turns = %d, want 2 (greetIndex+1, greet is turns[1])", record.Turns)
+	} else if record.BaselineTokens.CacheCreation != 89000 {
+		t.Fatalf("BaselineTokens must preserve the pre-greet ~89k spike turn's full usage (turns[0]), got %+v", record.BaselineTokens)
+	} else if record.PreGreetPeakCacheCreation != 89000 {
+		t.Fatalf("PreGreetPeakCacheCreation = %d, want 89000 (the former teamRecacheSpikeFloor signal)", record.PreGreetPeakCacheCreation)
 	}
 
 	// Both clean: a light greet, no pre-greet spike — the realized-saving end-state.
@@ -255,5 +292,30 @@ func TestShallowBootMeasureSignalsAreIndependent(t *testing.T) {
 	}
 	if err := assertShallowBootMeasuredTurns(clean); err != nil {
 		t.Fatalf("a clean shallow boot (light greet, no spike) must pass: %v", err)
+	}
+}
+
+// TestPreGreetPeakCacheCreationFindsSpikeNotOnFirstTurn is the regression proof
+// for the captain-review finding that BaselineTokens (turns[0].Usage alone)
+// does NOT reconstruct the former teamRecacheSpikeFloor signal for a REALISTIC
+// multi-turn pre-greet window where the spike lands on a LATER pre-greet turn,
+// not the first one. The original teamRecacheSpikeFloor check looped EVERY
+// pre-greet turn (assertShallowBootMeasuredTurns's removed `for i := 0; i <=
+// greet; i++` branch) — a max over the whole window, not just turns[0].
+func TestPreGreetPeakCacheCreationFindsSpikeNotOnFirstTurn(t *testing.T) {
+	turns := []journeymetrics.ClaudeTurn{
+		{ID: "boot", Usage: journeymetrics.TokenTotals{Input: 4, CacheCreation: 500, CacheRead: 8000}, ToolNames: []string{"Bash"}},
+		{ID: "team", Usage: journeymetrics.TokenTotals{Input: 8, CacheCreation: 89000, CacheRead: 16000}, ToolNames: []string{"TeamCreate"}},
+		{ID: "greet", Usage: journeymetrics.TokenTotals{Input: 100, CacheRead: 5000, CacheCreation: 0}},
+	}
+	record, err := BuildShallowBootWindowRecord(turns, "test-model", "", "")
+	if err != nil {
+		t.Fatalf("BuildShallowBootWindowRecord: %v", err)
+	}
+	if record.BaselineTokens.CacheCreation != 500 {
+		t.Fatalf("BaselineTokens (turns[0]) = %+v, want CacheCreation 500 — it is NOT the spike turn here, proving it alone cannot reconstruct the spike signal", record.BaselineTokens)
+	}
+	if record.PreGreetPeakCacheCreation != 89000 {
+		t.Fatalf("PreGreetPeakCacheCreation = %d, want 89000 — the spike on turns[1] (NOT turns[0]) must still be found", record.PreGreetPeakCacheCreation)
 	}
 }

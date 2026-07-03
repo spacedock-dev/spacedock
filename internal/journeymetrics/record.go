@@ -39,26 +39,30 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 		outcome = Outcome{Status: "passed"}
 	}
 	record := Record{
-		SchemaVersion:   RecordSchemaVersion,
-		ScenarioID:      firstNonEmpty(spec.ScenarioID, spec.ID),
-		Source:          spec.Source,
-		Mode:            spec.Mode,
-		Runtime:         firstNonEmpty(spec.Runtime, spec.Host),
-		Executor:        spec.Executor,
-		Host:            spec.Host,
-		Model:           spec.Model,
-		MetricsState:    state,
-		Outcome:         outcome,
-		DurationMS:      observation.Duration.Milliseconds(),
-		Turns:           observation.Turns,
-		ToolCalls:       observation.ToolCalls,
-		ToolCallsByName: observation.ToolCallsByName,
-		StatusReadCalls: observation.StatusReadCalls,
-		ScopedReadCalls: observation.ScopedReadCalls,
-		Tokens:          observation.Tokens.withTotal(),
-		TotalCostUSD:    observation.TotalCostUSD,
-		ModelUsage:      normalizeModelUsage(observation.ModelUsage),
-		Budget:          spec.Budget,
+		SchemaVersion:             RecordSchemaVersion,
+		ScenarioID:                firstNonEmpty(spec.ScenarioID, spec.ID),
+		Source:                    spec.Source,
+		Mode:                      spec.Mode,
+		Runtime:                   firstNonEmpty(spec.Runtime, spec.Host),
+		Executor:                  spec.Executor,
+		Host:                      spec.Host,
+		Model:                     spec.Model,
+		MetricsState:              state,
+		Outcome:                   outcome,
+		DurationMS:                observation.Duration.Milliseconds(),
+		Turns:                     observation.Turns,
+		ToolCalls:                 observation.ToolCalls,
+		ToolCallsByName:           observation.ToolCallsByName,
+		StatusReadCalls:           observation.StatusReadCalls,
+		ScopedReadCalls:           observation.ScopedReadCalls,
+		Tokens:                    observation.Tokens.withTotal(),
+		BaselineTokens:            observation.BaselineTokens.withTotal(),
+		PreGreetPeakCacheCreation: observation.PreGreetPeakCacheCreation,
+		TotalCostUSD:              observation.TotalCostUSD,
+		ModelUsage:                normalizeModelUsage(observation.ModelUsage),
+		Budget:                    spec.Budget,
+		ClaudeCodeVersion:         observation.ClaudeCodeVersion,
+		ResolvedModel:             observation.ResolvedModel,
 	}
 	if hasBudget(spec.Budget) {
 		result := EvaluateBudget(record, spec.Budget)
@@ -137,6 +141,7 @@ func normalizeRecord(record Record) Record {
 	record.JourneyID = ""
 	record.Runtime = firstNonEmpty(record.Runtime, record.Host)
 	record.Tokens = record.Tokens.withTotal()
+	record.BaselineTokens = record.BaselineTokens.withTotal()
 	record.ModelUsage = normalizeModelUsage(record.ModelUsage)
 	return record
 }

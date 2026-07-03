@@ -160,7 +160,7 @@ func TestRenderJourneyDeltaCommentIncludesExactDeltasAndMarker(t *testing.T) {
 		},
 	}
 	body := RenderJourneyDeltaComment(deltas)
-	if !strings.HasPrefix(body, journeyDeltaCommentMarker) {
+	if !strings.HasPrefix(body, JourneyDeltaCommentMarker) {
 		t.Fatalf("comment body does not start with the sticky marker:\n%s", body)
 	}
 	for _, want := range []string{"shallow-boot-window", "+2", "+1034", "+0.1500", "27931963802"} {
@@ -170,14 +170,51 @@ func TestRenderJourneyDeltaCommentIncludesExactDeltasAndMarker(t *testing.T) {
 	}
 }
 
-// TestJourneyDeltaCommentArgsUseStickyEditLast proves the gh argv this AC-3 step
-// invokes always carries --edit-last --create-if-none, on every call — the
-// mechanism that makes repeated pushes update ONE comment instead of appending
-// a new one each time.
-func TestJourneyDeltaCommentArgsUseStickyEditLast(t *testing.T) {
-	args := JourneyDeltaCommentArgs("42", "/tmp/comment.md")
+// TestRenderJourneyDeltaCommentRendersNoBaselineAsNewNotSelfDelta proves a
+// scenario/model with no matching baseline observation renders "n/a (new)" in
+// its delta cells rather than a self-delta against an implicit zero baseline
+// (which would otherwise print the observation's own full value as if it were
+// a huge, meaningless increase).
+func TestRenderJourneyDeltaCommentRendersNoBaselineAsNewNotSelfDelta(t *testing.T) {
+	deltas := []JourneyDelta{
+		{
+			ScenarioID: "brand-new-scenario", Runtime: "claude", Model: "claude-sonnet-4-6",
+			HasBaseline: false, TurnsDelta: 20, TokensDelta: journeymetrics.TokenTotals{Total: 5000}, CostDeltaUSD: 2.5,
+		},
+	}
+	body := RenderJourneyDeltaComment(deltas)
+	if !strings.Contains(body, "brand-new-scenario") {
+		t.Fatalf("comment body missing the scenario row:\n%s", body)
+	}
+	if strings.Contains(body, "+20") || strings.Contains(body, "+5000") || strings.Contains(body, "+2.5000") {
+		t.Fatalf("comment body rendered a self-delta for a no-baseline row instead of n/a (new):\n%s", body)
+	}
+	if !strings.Contains(body, "n/a (new)") {
+		t.Fatalf("comment body missing n/a (new) for the no-baseline row:\n%s", body)
+	}
+}
+
+// TestJourneyDeltaCreateCommentArgs proves the gh argv used to post a brand new
+// comment (no prior journey-delta comment found on the PR).
+func TestJourneyDeltaCreateCommentArgs(t *testing.T) {
+	args := JourneyDeltaCreateCommentArgs("42", "/tmp/comment.md")
 	joined := strings.Join(args, " ")
-	for _, want := range []string{"pr comment", "42", "--body-file /tmp/comment.md", "--edit-last", "--create-if-none"} {
+	for _, want := range []string{"pr comment", "42", "--body-file /tmp/comment.md"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("gh argv %v missing %q", args, want)
+		}
+	}
+	if strings.Contains(joined, "--edit-last") {
+		t.Fatalf("gh argv %v must not carry --edit-last (marker-based lookup already decided this is a fresh comment)", args)
+	}
+}
+
+// TestJourneyDeltaUpdateCommentArgs proves the gh argv used to PATCH the exact
+// existing comment found by marker — the --edit-last replacement.
+func TestJourneyDeltaUpdateCommentArgs(t *testing.T) {
+	args := JourneyDeltaUpdateCommentArgs("987654321", "/tmp/comment.md")
+	joined := strings.Join(args, " ")
+	for _, want := range []string{"api", "issues/comments/987654321", "-X PATCH", "body=@/tmp/comment.md"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("gh argv %v missing %q", args, want)
 		}

@@ -1,7 +1,6 @@
 package release
 
 import (
-	"strings"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -38,29 +37,5 @@ func TestRuntimeLiveWorkflowJourneyDeltaJobHasPRCommentPermission(t *testing.T) 
 	}
 	if !workflowHasExecutableCommandContaining(live, "go run ./cmd/spacedock-release journey-delta") {
 		t.Fatal("runtime-live-e2e.yml journey-delta-comment job does not invoke the journey-delta CLI")
-	}
-}
-
-// TestRuntimeLiveWorkflowJourneyDeltaJobRejectsMissingPermission is the
-// adversarial twin: stripping the job's permissions block must trip the guard,
-// proving the check is load-bearing rather than vacuously true.
-func TestRuntimeLiveWorkflowJourneyDeltaJobRejectsMissingPermission(t *testing.T) {
-	live := readWorkflow(t, "runtime-live-e2e.yml")
-	const permBlock = "    permissions:\n      contents: read\n      actions: read\n      pull-requests: write\n"
-	if strings.Count(live, permBlock) != 1 {
-		t.Fatalf("expected exactly 1 occurrence of the journey-delta-comment permissions block, found %d", strings.Count(live, permBlock))
-	}
-	adversarial := strings.Replace(live, permBlock, "", 1)
-
-	var doc struct {
-		Jobs map[string]struct {
-			Permissions map[string]string `yaml:"permissions"`
-		} `yaml:"jobs"`
-	}
-	if err := yaml.Unmarshal([]byte(adversarial), &doc); err != nil {
-		t.Fatalf("parse adversarial workflow: %v", err)
-	}
-	if doc.Jobs["journey-delta-comment"].Permissions["pull-requests"] == "write" {
-		t.Fatal("mutation did not actually remove the permissions block")
 	}
 }

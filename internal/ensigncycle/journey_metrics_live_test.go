@@ -89,7 +89,7 @@ func emitShallowBootWindowMetrics(t *testing.T, stream string, model string) {
 	if err != nil {
 		t.Fatalf("parse Claude turns for shallow-boot-window: %v", err)
 	}
-	record, err := BuildShallowBootWindowRecord(turns, model)
+	record, err := BuildShallowBootWindowRecord(turns, model, journeymetrics.ParseClaudeCodeVersion([]byte(stream)), journeymetrics.ParseClaudeInitModel([]byte(stream)))
 	if err != nil {
 		t.Fatalf("build shallow-boot-window record: %v", err)
 	}

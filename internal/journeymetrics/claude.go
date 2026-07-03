@@ -238,6 +238,56 @@ func ParseClaudeTurns(data []byte) ([]ClaudeTurn, error) {
 	return turns, nil
 }
 
+// claudeInitEvent scans a stream-json transcript for the "system"/"init" event's
+// raw fields and returns nil if none is found. Shared by ParseClaudeCodeVersion
+// and ParseClaudeInitModel so both read off the SAME line without a duplicate
+// scan of the (potentially large) stream.
+func claudeInitEvent(data []byte) map[string]json.RawMessage {
+	scanner := bufio.NewScanner(bytes.NewReader(data))
+	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || !strings.HasPrefix(line, "{") {
+			continue
+		}
+		var row map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(line), &row); err != nil {
+			continue
+		}
+		if rawString(row["type"]) == "system" && rawString(row["subtype"]) == "init" {
+			return row
+		}
+	}
+	return nil
+}
+
+// ParseClaudeCodeVersion scans a stream-json transcript for the "system"/"init"
+// event's claude_code_version field — the Claude Code CLI client version that
+// produced the stream, distinct from the model identifier. Returns "" if no
+// init event carries the field, e.g. a trimmed fixture stream or a stream
+// captured before the field existed.
+func ParseClaudeCodeVersion(data []byte) string {
+	row := claudeInitEvent(data)
+	if row == nil {
+		return ""
+	}
+	return rawString(row["claude_code_version"])
+}
+
+// ParseClaudeInitModel scans a stream-json transcript for the "system"/"init"
+// event's model field — the model identifier the runtime actually resolved at
+// boot. This can be MORE PRECISE than a CI-matrix alias recorded as
+// Record.Model: e.g. real CI-captured streams launched with the "sonnet" alias
+// report "claude-sonnet-4-6" here, while Record.Model stays "sonnet" (the
+// stable per-leg grouping key CI passes). Returns "" if no init event is found.
+func ParseClaudeInitModel(data []byte) string {
+	row := claudeInitEvent(data)
+	if row == nil {
+		return ""
+	}
+	return rawString(row["model"])
+}
+
 type claudeAssistant struct {
 	ID      string
 	Model   string

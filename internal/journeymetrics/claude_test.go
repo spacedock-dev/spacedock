@@ -182,6 +182,63 @@ func TestParseClaudeTurnsExtractsSkillNamesAcrossDeltas(t *testing.T) {
 	}
 }
 
+// TestParseClaudeCodeVersionExtractsFromInitEvent proves the Claude Code CLI
+// client version is read from the system/init event's claude_code_version
+// field, distinct from the per-turn model identifier.
+func TestParseClaudeCodeVersionExtractsFromInitEvent(t *testing.T) {
+	stream := `{"type":"system","subtype":"init","model":"claude-opus-4-8","claude_code_version":"2.1.197"}
+{"type":"assistant","message":{"id":"msg_1","model":"claude-opus-4-8","usage":{"input_tokens":1,"output_tokens":1}}}`
+
+	if got := ParseClaudeCodeVersion([]byte(stream)); got != "2.1.197" {
+		t.Fatalf("ParseClaudeCodeVersion = %q, want 2.1.197", got)
+	}
+}
+
+// TestParseClaudeCodeVersionEmptyWhenAbsent proves a stream with no system/init
+// event at all (a trimmed fixture, or a stream captured before the field
+// existed) returns "" rather than erroring.
+func TestParseClaudeCodeVersionEmptyWhenAbsent(t *testing.T) {
+	data := readTestdata(t, "claude_no_terminal.stream.jsonl")
+	if got := ParseClaudeCodeVersion(data); got != "" {
+		t.Fatalf("ParseClaudeCodeVersion = %q, want empty for a stream with no system/init event", got)
+	}
+}
+
+// TestParseClaudeCodeVersionSkipsNonInitSystemEvents proves a non-init system
+// event (e.g. a thinking_tokens progress event) is not mistaken for the init
+// event that carries claude_code_version.
+func TestParseClaudeCodeVersionSkipsNonInitSystemEvents(t *testing.T) {
+	stream := `{"type":"system","subtype":"thinking_tokens","estimated_tokens":50}
+{"type":"system","subtype":"init","model":"claude-opus-4-8","claude_code_version":"2.1.197"}`
+
+	if got := ParseClaudeCodeVersion([]byte(stream)); got != "2.1.197" {
+		t.Fatalf("ParseClaudeCodeVersion = %q, want 2.1.197 (ignoring the non-init system event)", got)
+	}
+}
+
+// TestParseClaudeInitModelExtractsResolvedIdentifier proves the model field is
+// read from the system/init event — the identifier the runtime actually
+// resolved, which real CI-captured streams show can be MORE PRECISE than a
+// CI-matrix alias (e.g. "sonnet" resolves to "claude-sonnet-4-6").
+func TestParseClaudeInitModelExtractsResolvedIdentifier(t *testing.T) {
+	stream := `{"type":"system","subtype":"init","model":"claude-sonnet-4-6","claude_code_version":"2.1.161"}
+{"type":"assistant","message":{"id":"msg_1","model":"claude-sonnet-4-6","usage":{"input_tokens":1,"output_tokens":1}}}`
+
+	if got := ParseClaudeInitModel([]byte(stream)); got != "claude-sonnet-4-6" {
+		t.Fatalf("ParseClaudeInitModel = %q, want claude-sonnet-4-6", got)
+	}
+}
+
+// TestParseClaudeInitModelEmptyWhenAbsent mirrors
+// TestParseClaudeCodeVersionEmptyWhenAbsent: a stream with no system/init event
+// returns "" rather than erroring.
+func TestParseClaudeInitModelEmptyWhenAbsent(t *testing.T) {
+	data := readTestdata(t, "claude_no_terminal.stream.jsonl")
+	if got := ParseClaudeInitModel(data); got != "" {
+		t.Fatalf("ParseClaudeInitModel = %q, want empty for a stream with no system/init event", got)
+	}
+}
+
 func readTestdata(t *testing.T, name string) []byte {
 	t.Helper()
 	data, err := os.ReadFile(filepath.Join("testdata", name))

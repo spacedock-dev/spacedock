@@ -731,6 +731,57 @@ func TestReleaseDownloadStepGuardRejectsFlatCopyRegression(t *testing.T) {
 	}
 }
 
+// TestJourneyDeltaLocateMetricsStepFindsNestedJourneyMetricsFiles is the AC-3
+// production-bug proof: runtime-live-e2e.yml's journey-delta-comment job used to
+// hardcode --metrics-dir to an exact subpath under the download-artifact
+// destination, but a real run's downloaded artifact zip nests the journey-metrics
+// JSON several directories deeper (verified against run 28432388663) — the exact
+// hardcoded path is EMPTY, so journeymetrics.ReadRecordsDir errored and REDed
+// every PR's delta-comment job under set -euo pipefail. This exercises the REAL
+// "Locate this run's journey metrics" step (extracted from the live workflow,
+// not a reimplementation) against that realistic nested layout and proves it
+// finds the file regardless of the exact nesting depth.
+func TestJourneyDeltaLocateMetricsStepFindsNestedJourneyMetricsFiles(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	script := extractStepRun(t, live, "Locate this run's journey metrics")
+
+	dir := t.TempDir()
+	// The verified real nesting: several directories deeper than the
+	// "live-artifacts/journey-metrics/" subpath the removed hardcoded
+	// --metrics-dir assumed.
+	nested := filepath.Join(dir, "current-run-artifacts", "spacedock", "spacedock", "live-artifacts", "journey-metrics", "claude", "claude-opus-4-8")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	metricsFile := filepath.Join(nested, "shallow-boot--claude--llm--llm-live--claude-opus-4-8--measured.json")
+	if err := os.WriteFile(metricsFile, []byte(`{"scenario_id":"shallow-boot"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Prove the bug was real: the OLD hardcoded path finds nothing in this
+	// realistic layout.
+	oldHardcodedPath := filepath.Join(dir, "current-run-artifacts", "live-artifacts", "journey-metrics")
+	if _, err := os.Stat(oldHardcodedPath); err == nil {
+		t.Fatalf("test fixture is unrealistic: the OLD hardcoded path %s must NOT exist", oldHardcodedPath)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "RUNNER_TEMP="+dir)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("locate-metrics step exited non-zero: %v\n%s", err, out)
+	}
+
+	matches, err := filepath.Glob(filepath.Join(dir, "current-run-metrics", "*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected the nested journey-metrics JSON to be located and copied into current-run-metrics, got %d matches: %v", len(matches), matches)
+	}
+}
+
 // extractStepRun pulls a named step's `run: |` block out of a workflow document,
 // dedented to a runnable shell script, so tests exercise the EXACT script CI
 // runs rather than a hand-copied duplicate.

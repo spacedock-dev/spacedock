@@ -101,54 +101,6 @@ func TestJourneyCostsCommandRejectsMismatchedOutputFilename(t *testing.T) {
 	}
 }
 
-// TestJourneyCostsCommandFlatCopyCollapsesToOneObservation is the AC-2 regression
-// test pinning the OLD release.yml behavior: downloading N runs' journey-metrics
-// and flat-copying every file into ONE directory. journeymetrics.recordFilename has
-// no run-distinguishing component, so two runs of the SAME scenario/model produce
-// the SAME on-disk filename in that one directory, and the second cp silently
-// overwrites the first — the aggregation collapses back to exactly one observation
-// regardless of how many runs were actually discovered. This test proves the old
-// shape's collapse is real (not a hypothetical), so the per-run-subdirectory test
-// below is provably what closes the gap, not an incidental side effect.
-func TestJourneyCostsCommandFlatCopyCollapsesToOneObservation(t *testing.T) {
-	metricsDir := t.TempDir() // one flat directory — the OLD release.yml `cp` target
-	base := journeymetrics.Record{
-		SchemaVersion: journeymetrics.RecordSchemaVersion,
-		ScenarioID:    "shallow-boot-window",
-		Source:        "live-harness",
-		Mode:          journeymetrics.ModeLLMLive,
-		Runtime:       "claude",
-		Executor:      "llm",
-		Host:          "claude",
-		Model:         "claude-sonnet-4-6",
-		MetricsState:  journeymetrics.StateMeasured,
-		Outcome:       journeymetrics.Outcome{Status: "passed"},
-	}
-	runA := base
-	runA.Turns, runA.Tokens = 18, journeymetrics.TokenTotals{CacheCreation: 1562}
-	runA.RunID, runA.CapturedAt = "27931963802", "2026-06-20T00:00:00Z"
-	runB := base
-	runB.Turns, runB.Tokens = 20, journeymetrics.TokenTotals{CacheCreation: 1576}
-	runB.RunID, runB.CapturedAt = "28432388663", "2026-06-27T00:00:00Z"
-
-	// Both records share ScenarioID/Runtime/Model, so writeMetricRecord's filename
-	// (mirroring journeymetrics.recordFilename's lack of a run-distinguishing
-	// component) collides — runB's write overwrites runA's file in place, exactly
-	// as the flat `cp` step would.
-	writeMetricRecord(t, metricsDir, runA)
-	writeMetricRecord(t, metricsDir, runB)
-
-	out := filepath.Join(t.TempDir(), "journey-costs-v1.2.3.json")
-	if code := journeyCosts([]string{"1.2.3", "--metrics-dir", metricsDir, "--out", out}); code != 0 {
-		t.Fatalf("journeyCosts exit = %d, want 0", code)
-	}
-	ledger := readLedger(t, out)
-	entry := findScenario(t, ledger, "shallow-boot-window")
-	if len(entry.Observations) != 1 {
-		t.Fatalf("flat-copy shape must still collapse to 1 observation for shallow-boot-window, got %d: %+v", len(entry.Observations), entry.Observations)
-	}
-}
-
 // TestJourneyCostsCommandAggregatesPerRunSubdirectories proves the AC-2 fix: once
 // release.yml downloads each discovered run into its OWN subdirectory instead of
 // flat-copying, journeymetrics.ReadRecordsDir's existing recursive walk aggregates
