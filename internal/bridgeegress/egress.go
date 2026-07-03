@@ -135,7 +135,7 @@ func Emit(data []byte, opts Options) {
 		},
 	}
 
-	bridgeDir := filepath.Join(cwdAbs, "_bridge")
+	bridgeDir := filepath.Join(canonicalBridgeRoot(cwdAbs), "_bridge")
 	if err := os.MkdirAll(bridgeDir, 0o755); err != nil {
 		return
 	}
@@ -162,6 +162,35 @@ func Emit(data []byte, opts Options) {
 		Entity:    entity,
 		Workflow:  workflow,
 	})
+}
+
+// canonicalBridgeRoot resolves the worktree/checkout root that owns the shared
+// _bridge/ directory Bridge reads. Egress fires from whatever cwd the emitting
+// session happens to hold — a workflow subdir, a nested package — but Bridge
+// reads exactly one _bridge/ at the root the FO launched in. Anchoring events
+// and session markers there (instead of filepath.Join(cwd, "_bridge")) keeps
+// them in that one canonical location rather than scattering stray _bridge/
+// dirs wherever a session ran.
+//
+// It walks up to the nearest enclosing git root — the first ancestor containing
+// a ".git" entry, whether a directory (a normal checkout) or a file (a linked
+// worktree). It STOPS there and does NOT resolve a linked worktree back to its
+// main checkout: an FO (and its Bridge) commonly run from a worktree, and Bridge
+// reads that worktree's own _bridge, not the main checkout's. When no git root
+// is found it falls back to the input, so a non-repo cwd is unchanged and this
+// stays observe-only (never fails the caller).
+func canonicalBridgeRoot(start string) string {
+	dir := start
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return start
+		}
+		dir = parent
+	}
 }
 
 // DeriveEntity maps a read entity file path to (workflow, entity). It supports

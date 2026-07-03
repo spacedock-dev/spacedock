@@ -283,6 +283,67 @@ func TestEmitAppendsAndTruncatesEvents(t *testing.T) {
 	}
 }
 
+func TestEmitAnchorsBridgeDirAtRepoRootFromNestedCWD(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".git"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	nested := filepath.Join(root, "docs", "spacedock", "pr-review-queue")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	Emit([]byte(`{"cwd":`+quote(nested)+`,"event":"PostToolUse","session_id":"ses-nested"}`), fixedOptions("claude"))
+
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "events.jsonl")); err != nil {
+		t.Fatalf("event not anchored at repo root: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(nested, "_bridge")); !os.IsNotExist(err) {
+		t.Fatalf("stray _bridge scattered under nested cwd: %v", err)
+	}
+}
+
+func TestEmitAnchorsBridgeDirAtWorktreeRootNotMainCheckout(t *testing.T) {
+	// A linked worktree (its ".git" is a file, not a dir). An FO and its Bridge
+	// commonly run FROM a worktree, and Bridge reads that worktree's own
+	// _bridge/ — NOT the main checkout's. So egress from a subdir of the
+	// worktree must anchor at the worktree root, and must NOT resolve upward to
+	// the main checkout.
+	main := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(main, ".git", "worktrees", "wt1"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	worktree := filepath.Join(t.TempDir(), "feature-wt")
+	nested := filepath.Join(worktree, "docs", "spacedock", "pr-review-queue")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gitdir := filepath.Join(main, ".git", "worktrees", "wt1")
+	if err := os.WriteFile(filepath.Join(worktree, ".git"), []byte("gitdir: "+gitdir+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	Emit([]byte(`{"cwd":`+quote(nested)+`,"event":"PostToolUse","session_id":"ses-wt"}`), fixedOptions("claude"))
+
+	if _, err := os.Stat(filepath.Join(worktree, "_bridge", "events.jsonl")); err != nil {
+		t.Fatalf("event not anchored at the worktree root Bridge reads: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(main, "_bridge")); !os.IsNotExist(err) {
+		t.Fatalf("egress leaked to the main checkout, which the worktree's Bridge does not read")
+	}
+	if _, err := os.Stat(filepath.Join(nested, "_bridge")); !os.IsNotExist(err) {
+		t.Fatalf("stray _bridge scattered under nested cwd: %v", err)
+	}
+}
+
+func TestEmitFallsBackToCWDWhenNoGitRoot(t *testing.T) {
+	root := t.TempDir()
+	Emit([]byte(`{"cwd":`+quote(root)+`,"event":"PostToolUse","session_id":"ses-nogit"}`), fixedOptions("claude"))
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "events.jsonl")); err != nil {
+		t.Fatalf("non-repo cwd should still write _bridge at cwd: %v", err)
+	}
+}
+
 func fixedOptions(host string) Options {
 	return Options{
 		Host: host,
