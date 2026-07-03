@@ -155,6 +155,81 @@ func TestAckOmitsGrantedWhenAbsent(t *testing.T) {
 	}
 }
 
+func TestAck_NoCorrelatorFailsLoudly(t *testing.T) {
+	root := t.TempDir()
+	// No id AND no ts: the reply has no strong correlator, so it must fail loudly at
+	// write time rather than append an orphan the Bridge reader would silently drop.
+	ar := Ack(AckOptions{Host: "claude", Root: root, Slug: "alpha", Line: 1, IntentKind: "tell", Status: "answered"})
+	if ar.Appended {
+		t.Fatalf("no-correlator ack must not append, got %+v", ar)
+	}
+	if ar.Error == "" {
+		t.Fatalf("no-correlator ack must return an error, got %+v", ar)
+	}
+	// fo-replies.jsonl must not exist / must be untouched.
+	if _, err := os.Stat(filepath.Join(root, "_bridge", "fo-replies.jsonl")); !os.IsNotExist(err) {
+		t.Fatalf("no-correlator ack must not write fo-replies.jsonl: %v", err)
+	}
+}
+
+func TestAck_IdOnlyReplyIsCorrelatable(t *testing.T) {
+	root := t.TempDir()
+	// id present, ts empty: id alone is a strong correlator, so the ack appends.
+	ar := Ack(AckOptions{Host: "claude", Root: root, Slug: "alpha", Line: 2, ID: "i2", IntentKind: "tell", Status: "answered"})
+	if !ar.Appended || ar.Error != "" {
+		t.Fatalf("id-only ack must append, got %+v", ar)
+	}
+	raw, err := os.ReadFile(filepath.Join(root, "_bridge", "fo-replies.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rec replyOut
+	if err := json.Unmarshal([]byte(strings.TrimSpace(string(raw))), &rec); err != nil {
+		t.Fatalf("reply line not valid JSON: %q (%v)", raw, err)
+	}
+	if rec.InReplyToID != "i2" {
+		t.Fatalf("in_reply_to_id = %q, want i2", rec.InReplyToID)
+	}
+	if rec.InReplyToTS != "" {
+		t.Fatalf("empty --ts must echo as empty in_reply_to_ts, got %q", rec.InReplyToTS)
+	}
+}
+
+func TestDrain_EmitsActingAck(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 7, 3, 12, 0, 0, 0, time.UTC)
+	writeInbox(t, root, `{"id":"i1","ts":"2026-07-03T11:00:00Z","kind":"tell","text":"do it","target":"alpha"}`)
+
+	res := Drain(DrainOptions{Host: "claude", Root: root, Slug: "alpha", SessionID: "sess-1", Now: func() time.Time { return now }})
+	if res.Count != 1 {
+		t.Fatalf("want 1 drained record, got %+v", res.Records)
+	}
+	dr := res.Records[0]
+
+	raw, err := os.ReadFile(filepath.Join(root, "_bridge", "fo-replies.jsonl"))
+	if err != nil {
+		t.Fatalf("drain must auto-write an acting ack: %v", err)
+	}
+	lines := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("want exactly one acting ack, got %d:\n%s", len(lines), raw)
+	}
+	var rec replyOut
+	if err := json.Unmarshal([]byte(lines[0]), &rec); err != nil {
+		t.Fatalf("acting ack not valid JSON: %q (%v)", lines[0], err)
+	}
+	if rec.Status != "acting" {
+		t.Fatalf("status = %q, want acting", rec.Status)
+	}
+	// The acting ack matches the drained record's id/line/ts/kind.
+	if rec.InReplyToID != dr.ID || rec.InReplyToLine != dr.Line || rec.InReplyToTS != dr.TS {
+		t.Fatalf("acting ack correlators = %q/%d/%q, want %q/%d/%q", rec.InReplyToID, rec.InReplyToLine, rec.InReplyToTS, dr.ID, dr.Line, dr.TS)
+	}
+	if rec.IntentKind != dr.Kind || rec.Kind != "reply" {
+		t.Fatalf("acting ack kinds = intent %q / reply %q, want %q / reply", rec.IntentKind, rec.Kind, dr.Kind)
+	}
+}
+
 func TestCommitAdvancesCursorMonotonically(t *testing.T) {
 	root := t.TempDir()
 	if r := Commit(CommitOptions{Root: root, Slug: "alpha", Cursor: 5}); r.Cursor != 5 {

@@ -134,8 +134,39 @@ func Drain(opts DrainOptions) DrainResult {
 		res.Records = append(res.Records, toDrainRecord(rec))
 	}
 	res.Count = len(res.Records)
+
+	// Auto-emit the interim "acting" ack for each freshly-drained addressed record
+	// so the command-ack lifecycle advances received->acting mechanically, owned by
+	// the binary rather than FO prose. Each record here has no prior reply (loadReplies
+	// already filtered acked records out above), so no duplicate acting ack can stack.
+	// Best-effort: a failure to write the interim ack must not fail the drain itself.
+	sessionID := resolveSessionID(host, opts.SessionID)
+	for _, dr := range res.Records {
+		ackKind, ok := ackKindFor(dr.Kind)
+		if !ok {
+			continue
+		}
+		_ = appendReply(root, replyOut{
+			Schema:        1,
+			TS:            now().UTC().Format(time.RFC3339),
+			Kind:          ackKind,
+			Target:        slug,
+			InReplyToID:   dr.ID,
+			InReplyToLine: dr.Line,
+			InReplyToTS:   dr.TS,
+			IntentKind:    dr.Kind,
+			Status:        ackStatusActing,
+			RequestID:     dr.RequestID,
+			SessionID:     sessionID,
+			Host:          host,
+		})
+	}
 	return res
 }
+
+// ackStatusActing is the interim command-ack lifecycle status the drain verb
+// auto-appends on receipt (received->acting). Terminal statuses are FO-authored.
+const ackStatusActing = "acting"
 
 // addressedTo reports whether an inbox record routes to this workflow slug,
 // honoring an authoritative frozen target_set over the legacy target field.
@@ -233,6 +264,13 @@ func Ack(opts AckOptions) AckResult {
 	if strings.TrimSpace(opts.Status) == "" {
 		return AckResult{Error: "missing --status"}
 	}
+	// LOUD correlator guard: a reply with neither an id nor a ts has no strong
+	// correlator, so the Bridge reader can never fold it onto its intent and would
+	// silently drop it. Fail at write time instead of appending an orphan. The
+	// common path always carries an id from the drained record, so it is unaffected.
+	if opts.ID == "" && strings.TrimSpace(opts.TS) == "" {
+		return AckResult{Error: "ack has no correlator: pass --id (from the drained record) or --ts"}
+	}
 	host := normalizeHost(opts.Host)
 	root := absRootOr(opts.Root)
 	now := nowFunc(opts.Now)
@@ -257,23 +295,33 @@ func Ack(opts AckOptions) AckResult {
 		SessionID:     resolveSessionID(host, opts.SessionID),
 		Host:          host,
 	}
-	dir := filepath.Join(root, "_bridge")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return AckResult{Error: err.Error()}
-	}
-	data, err := json.Marshal(rec)
-	if err != nil {
-		return AckResult{Error: err.Error()}
-	}
-	f, err := os.OpenFile(filepath.Join(dir, "fo-replies.jsonl"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return AckResult{Error: err.Error()}
-	}
-	defer f.Close()
-	if _, err := f.Write(append(data, '\n')); err != nil {
+	if err := appendReply(root, rec); err != nil {
 		return AckResult{Error: err.Error()}
 	}
 	return AckResult{Appended: true, Kind: kind, Target: slug, Line: opts.Line}
+}
+
+// appendReply marshals one reply/ack record to a compact single line and appends
+// it to fo-replies.jsonl. Serialization is owned here so the FO (Ack) and the
+// mechanical drain auto-ack share one byte-exact JSONL write path.
+func appendReply(root string, rec replyOut) error {
+	dir := filepath.Join(root, "_bridge")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	data, err := json.Marshal(rec)
+	if err != nil {
+		return err
+	}
+	f, err := os.OpenFile(filepath.Join(dir, "fo-replies.jsonl"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Write(append(data, '\n')); err != nil {
+		return err
+	}
+	return nil
 }
 
 // CommitOptions controls one cursor advance.
