@@ -169,3 +169,22 @@ Cycle 2 closes the AC-6 gap. The live harness now explicitly enables Codex `mult
 Validation cycle 2 PASSED. AC-1 through AC-5 remain green on top of cycle-2 commit `65110905`, and AC-6 is now satisfied by the preserved combined live run at `/tmp/mq-codex-live-both-v2-fc4` with explicit `multi_agent_v2`, kept-alive validation reviewer reuse, and before-greet shallow-boot archival evidence.
 
 Recommendation: PASSED.
+
+## Stage Report: validation (cycle 2 evidence repair)
+
+- DONE: AC-1 explicit evidence citation.
+  AC-1 Verified by: `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse' -count=1` passed at cycle-2 tip `65110905`; the table covers the PR #464 affirmative reuse narrations and the PR #465 `being reused ... is not doing validation` narration without entering the false ABSENT branch.
+- DONE: AC-2 explicit evidence citation.
+  AC-2 Verified by: `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse' -count=1` passed at cycle-2 tip `65110905`; the table includes true-absence rows for `no follow-up/send binding`, `not addressable`, `not supported`, and `cannot address`, plus contradiction controls where absence narration with reuse still fails.
+- DONE: AC-3 explicit evidence citation.
+  AC-3 Verified by: the same `TestAssertCodexReviewerReuse` run passed the reduced PR #464/#465 corpus: three captured affirmative-reuse false-positive transcripts are accepted, while the fresh cycle-2 validation spawn and uncorrelated `send_input` controls remain rejected.
+- DONE: AC-4 explicit evidence citation.
+  AC-4 Verified by: `go test ./internal/dispatch -run 'TestGhRunnerExecParsesJqExtractedState|TestSweepWithRealGhStubDoesNotReportUnknown' -count=1` passed at cycle-2 tip `65110905`; this pins `GhRunnerExec` to the same `--jq .state` plain `MERGED` shape used by boot and proves sweep no longer reports UNKNOWN for the real stub.
+- DONE: AC-5 explicit evidence citation.
+  AC-5 Verified by: `go test ./internal/ensigncycle -run 'TestShallowBootNegativeBrokenEndStates' -count=1` passed at cycle-2 tip `65110905`; the shallow-boot artifact also shows PR `MERGED` on lines 64-65, terminalization on lines 66-67, and archive to `./_archive/merged-pr.md` on lines 68-69 before the final gate presentation.
+- DONE: AC-6 explicit evidence citation.
+  AC-6 Verified by: preserved combined live run `/tmp/mq-codex-live-both-v2-fc4`; rejection-flow artifact line 2 enables `multi_agent_v2`, lines 107-109 build and send validation `--advance` to the kept-alive validation reviewer, lines 126-131 record Cycle 1 REJECTED and Cycle 2 PASSED, and shallow-boot final-message lines 1-13 report the before-greet archive and gate review.
+
+### Summary
+
+Evidence repair only. The prior cycle-2 recommendation remains PASSED; AC-1 through AC-6 now have explicit scanner-visible command or artifact evidence in this latest validation section.
