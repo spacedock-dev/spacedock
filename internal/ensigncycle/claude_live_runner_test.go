@@ -346,11 +346,16 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertGreetInvokesNoDeferredFOSkill(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	// AC-6: the greet-turn context is below the ceiling and no pre-greet 89k
-	// cache_creation spike (measured, over the captured token stream).
+	// The boot-window oracle: a greet turn was produced (structural only — the
+	// former ~60k ceiling/spike thresholds no longer gate CI, see
+	// assertShallowBootMeasuredTurns).
 	if err := assertShallowBootMeasured(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
+	// Record (don't gate on) the greet turn's full token usage as a distinct
+	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
+	// emitClaudeScenarioMetrics below already uses.
+	emitShallowBootWindowMetrics(t, result.stream, runner.model())
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 

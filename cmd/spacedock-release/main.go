@@ -22,6 +22,7 @@ import (
 //	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
 //	spacedock-release bump-calendar <marketplace.json>
 //	spacedock-release dev-preversion <stable-version>
+//	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
 //
 // stamp-version rewrites each argument to the release version: a `.json`
@@ -31,7 +32,16 @@ import (
 // erroring unless the literal appears exactly once. bump-calendar advances the
 // marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
 // All rewrite in place. dev-preversion prints the post-release dev pre-version
-// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`. e2e-gate is the
+// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`. journey-delta
+// renders and posts the per-PR journey-cost delta against the previously
+// published release ledger's latest-by-captured_at baseline per scenario/model,
+// updating a single sticky PR comment found by its HTML marker. The AC-4
+// release-ledger backfill (a captain-flagged one-time manual procedure, never a
+// CI step) is a documented runbook, not a shipped subcommand: extraction reuses
+// the exported ensigncycle.BuildShallowBootWindowRecord via a throwaway `go run`
+// script against each archived stream, and the pre-upload safeguard is
+// `jq -S .scenarios <original> | diff - <(jq -S .scenarios <rebuilt>)` —
+// any diff output means STOP, do not upload. e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
@@ -55,6 +65,8 @@ func main() {
 		os.Exit(devPreversion(os.Args[2:]))
 	case "journey-costs":
 		os.Exit(journeyCosts(os.Args[2:]))
+	case "journey-delta":
+		os.Exit(journeyDelta(os.Args[2:], ghFindComment, ghPostComment))
 	case "e2e-gate":
 		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
 	case "manifest-tag-gate":
@@ -363,6 +375,7 @@ Usage:
   spacedock-release bump-calendar <marketplace.json>
   spacedock-release dev-preversion <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
+  spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
   spacedock-release e2e-gate <release-commit-sha>
   spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release notes <release-version>
