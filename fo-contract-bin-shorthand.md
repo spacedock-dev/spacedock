@@ -126,3 +126,14 @@ Converted the 8 audited bare-`spacedock` executable-position sites to `${SPACEDO
 ### Summary
 
 All three ACs reproduce exactly as claimed: pre-conversion baseline of 8 sites (1:1 with the audit table), 0 at head, three live seeded REDs reverting clean, and a diff containing only the 8 one-token conversions with the full uncached suite green. The detached adversarial audit refuted one thing: dropping a surface-group registration from `launcherSurfaceGroups` is invisible to the suite (per-group vacuity guards cannot defend a deregistered group). Recommending REJECTED with a small, concrete ask — a discriminator pinning the three walked groups — after which this is a PASS.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: The scope discriminator pins `launcherSurfaceGroups(t)` to exactly the three named groups, each with a non-empty path set — and the cycle-1 group-drop mutation (deleting the ensign-references entry) now demonstrably turns the suite RED (mutation applied → FAIL output cited → reverted clean).
+  Added `TestLauncherSurfaceGroupsScopeDiscriminates` (commit `ca13076b`): calls `launcherSurfaceGroups(t)` directly, asserts exactly 3 groups named `"first-officer references"`, `"ensign references"`, `"deferred-skill SKILL.md files"` in that order, each with `len(paths) > 0`. Re-applied the exact cycle-1 mutation (deleted the `{"ensign references", mdFilesIn(t, ensignReferenceDir(t))}` line) and ran `go test ./internal/contractlint -run Launcher -v`: `TestLauncherSurfaceGroupsScopeDiscriminates` FAILed — `launcherSurfaceGroups returned 2 groups, want 3 (a deregistered group would silently stop being scanned)` — while every other test (including the old `TestDeferredSkillLauncherScopeDiscriminates`) stayed green, confirming this new test is what closes the gap. Reverted; `git diff --stat` afterward showed only the net +23 lines of the new test, no residue from the mutation.
+- DONE: Everything already green stays green: full `go test ./...` uncached, the 8-site conversion and all discriminator cases untouched.
+  `go test ./... -count=1`: 15 packages, all `ok` (`internal/contractlint` 1.7s). `git diff dae763d6 ca13076b` touches only `internal/contractlint/launcher_invariant_test.go` (+23/-0); the 8-site doc conversion and every prior discriminator case are byte-identical to cycle 1.
+
+### Summary
+
+Closed the cycle-1 gap by adding `TestLauncherSurfaceGroupsScopeDiscriminates`, which calls `launcherSurfaceGroups(t)` directly and pins it to exactly the three named groups with non-empty path sets — the prior scope discriminator only checked `deferredSkillPaths()` in isolation and never exercised the group-registration list itself. Re-ran the exact cycle-1 group-drop mutation live: the new test now FAILs with a clear diagnostic, reverted cleanly, and the full uncached `go test ./...` suite stays green. Commit `ca13076b`.
