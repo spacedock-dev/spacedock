@@ -305,6 +305,29 @@ func TestFencedLauncherBlockScannerDiscriminates(t *testing.T) {
 	}
 }
 
+// TestLauncherSurfaceGroupsScopeDiscriminates is the DISCRIMINATOR control for the
+// walked-group list itself: `launcherSurfaceGroups` MUST return exactly the three named
+// groups, each with a non-empty path set. Pinning `deferredSkillPaths` alone (below)
+// does not catch a group deregistered from `launcherSurfaceGroups` — a per-group
+// scanned>0 guard cannot fire for a group that was never returned, so deleting a group
+// entry there is invisible to every other test in this file. This test calls
+// `launcherSurfaceGroups` directly to close that gap.
+func TestLauncherSurfaceGroupsScopeDiscriminates(t *testing.T) {
+	wantNames := []string{"first-officer references", "ensign references", "deferred-skill SKILL.md files"}
+	groups := launcherSurfaceGroups(t)
+	if len(groups) != len(wantNames) {
+		t.Fatalf("launcherSurfaceGroups returned %d groups, want %d (a deregistered group would silently stop being scanned): %v", len(groups), len(wantNames), groups)
+	}
+	for i, wantName := range wantNames {
+		if groups[i].name != wantName {
+			t.Errorf("launcherSurfaceGroups[%d].name = %q, want %q", i, groups[i].name, wantName)
+		}
+		if len(groups[i].paths) == 0 {
+			t.Errorf("launcherSurfaceGroups[%d] (%q) has zero paths — a moved or renamed directory would make the lint pass vacuously", i, groups[i].name)
+		}
+	}
+}
+
 // TestDeferredSkillLauncherScopeDiscriminates is the DISCRIMINATOR control for the
 // scope-extension escape class: the six deferred-skill SKILL.md files that were
 // previously unscanned MUST be present in the walked set, by exact name.
