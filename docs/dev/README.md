@@ -16,6 +16,7 @@ stages:
       gate: true
     - name: ideation
       gate: true
+      model: opus
     - name: implementation
       worktree: true
     - name: validation
