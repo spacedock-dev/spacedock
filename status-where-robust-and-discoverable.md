@@ -3,7 +3,7 @@ title: Make `spacedock status --where` robust, complete, and discoverable (so th
 status: backlog
 sprint: 0203-fo-efficiency
 score: ""
-source: "GitHub #314 (status --where silently matches-all on an unknown field) + an FO repeatedly falling back to find/grep over the state dir. Three gaps on one surface push the FO/Commander off the native query onto raw shell."
+source: "GitHub #314 (status --where silently matches-all on an unknown field) + an FO repeatedly falling back to find/grep over the state dir. Three gaps on one surface push the FO/Commander off the native query onto raw shell. FO session 2026-07-04: a live example of gap 3 — the FO pulled the full ~50-row board (no --where filter) to locate 2 rows (one in-flight, one gated) instead of a filtered query. Added as a motivating example for AC-3's discoverability case."
 priority: medium
 id: 3t9r36n9tbj116jp9g1k01tz
 ---
