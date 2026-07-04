@@ -8,7 +8,7 @@ completed:
 verdict:
 worktree:
 issue:
-sprint:
+sprint: 0250-fo-behavioral-discipline
 sprint-readiness:
 id: vcmbpj2dxq8bpkys2t0vkvq7
 ---
