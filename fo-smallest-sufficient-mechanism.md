@@ -1,11 +1,12 @@
 ---
 title: FO smallest-sufficient-mechanism gate — stop spurious orchestration / busywork
-status: backlog
+status: ideation
 sprint: 0250-fo-behavioral-discipline
 score: ""
 source: "Captain (2026-06-21): the FO repeatedly climbed to a heavier mechanism than the task needed — a dynamic workflow + a dispatched worker to edit ~7 markdown entities it already held the verbatim content for, and a PR (with CI lanes) for a roadmap strategy doc the convention commits directly. The existing 'simplest approach' principle is rationalizable, so the FO finds escape hatches and does busywork. FO session 2026-07-04 identified the companion failure mode on the OTHER side of the ladder (under-delegation, not over-delegation): re-running stage-owned verification (worktree + go build + full go test ./...) inline at gate time instead of trusting a fresh validation stage's report plus a cheap spot-check. This broadens the gate from over-orchestration-only to both directions — flag this at ideation before locking AC-1's scope; a candidate Approach-point-3 bullet and AC-1 case are recorded in that session's transcript."
 priority: high
 id: zma49twsacm5bfzady4ss2qr
+started: 2026-07-04T10:38:15Z
 ---
 
 ## Problem
