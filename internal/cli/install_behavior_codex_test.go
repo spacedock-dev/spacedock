@@ -46,27 +46,12 @@ func TestCodexPluginInstallIsHostNative(t *testing.T) {
 		t.Fatalf("execHost.Install(codex) failed: %v\nout=%q", err, out)
 	}
 
-	// (a) The real codex CLI reports the plugin installed. The --json schema is
-	// {"installed":[{"pluginId":…,"installed":true}]}; the installed flag is the
-	// independent source of truth, not a substring of our source.
-	listOut := runHost(t, mustLookPath(t, "codex"), os.Environ(), "plugin", "list", "--json")
-	var listing struct {
-		Installed []struct {
-			PluginID  string `json:"pluginId"`
-			Installed bool   `json:"installed"`
-		} `json:"installed"`
-	}
-	if err := json.Unmarshal([]byte(listOut), &listing); err != nil {
-		t.Fatalf("parse codex plugin list --json: %v\n%s", err, listOut)
-	}
-	found := false
-	for _, e := range listing.Installed {
-		if e.PluginID == "spacedock@spacedock" && e.Installed {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatalf("codex plugin list --json did not report spacedock@spacedock installed:true:\n%s", listOut)
+	// (a) The real codex CLI reports the plugin installed. Codex no longer
+	// supports `plugin list --json`; use the same text parser the production
+	// resolver uses so the live smoke follows the supported host surface.
+	listOut := runHost(t, mustLookPath(t, "codex"), os.Environ(), "plugin", "list")
+	if !codexEntryInstalled(listOut, "spacedock@spacedock") {
+		t.Fatalf("codex plugin list did not report spacedock@spacedock installed:\n%s", listOut)
 	}
 
 	// (b) The cache manifest exists at exactly the resolver's path

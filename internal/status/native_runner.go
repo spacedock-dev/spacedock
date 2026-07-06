@@ -84,6 +84,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	if err != nil {
 		return errExit(stderr, err.Error())
 	}
+	applyGate, err := parseApplyGateArgs(args)
+	if err != nil {
+		return errExit(stderr, err.Error())
+	}
 	archiveSlug, err := parseArchiveArg(args)
 	if err != nil {
 		return errExit(stderr, err.Error())
@@ -155,6 +159,61 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	}
 	if showBoot && len(whereFilters) > 0 {
 		return errExit(stderr, "--boot is incompatible with --where")
+	}
+
+	if applyGate != nil {
+		var incompatible []string
+		if showNext {
+			incompatible = append(incompatible, "--next")
+		}
+		if includeArchive {
+			incompatible = append(incompatible, "--archived")
+		}
+		if showBoot {
+			incompatible = append(incompatible, "--boot")
+		}
+		if showNextID {
+			incompatible = append(incompatible, "--next-id")
+		}
+		if len(whereFilters) > 0 {
+			incompatible = append(incompatible, "--where")
+		}
+		if hasFieldsFlag {
+			incompatible = append(incompatible, "--fields/--all-fields")
+		}
+		if archiveSlug != "" {
+			incompatible = append(incompatible, "--archive")
+		}
+		if setResult != nil {
+			incompatible = append(incompatible, "--set")
+		}
+		if resolveRef != "" {
+			incompatible = append(incompatible, "--resolve")
+		}
+		if shortIDRef != "" {
+			incompatible = append(incompatible, "--short-id")
+		}
+		if readRef != "" {
+			incompatible = append(incompatible, "--read")
+		}
+		if gateStage != "" {
+			incompatible = append(incompatible, "--stage")
+		}
+		if showChecklist {
+			incompatible = append(incompatible, "--checklist")
+		}
+		if showACScan {
+			incompatible = append(incompatible, "--ac-scan")
+		}
+		if showValidate {
+			incompatible = append(incompatible, "--validate")
+		}
+		if rootPath != "" {
+			incompatible = append(incompatible, "--root")
+		}
+		if len(incompatible) > 0 {
+			return errExit(stderr, "--apply-gate cannot be combined with "+strings.Join(incompatible, ", "))
+		}
 	}
 
 	roots, err := resolveRoots(pipelineDir, dir)
@@ -407,6 +466,10 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 			return rc
 		}
 		return runArchive(roots.definitionDir, roots.entityDir, roots.entityDirSpelling, resolved.slug, contains(args, "--force"), quiet, asJSON, stdout, stderr)
+	}
+
+	if applyGate != nil {
+		return runApplyGate(roots, applyGate, quiet, asJSON, stdout, stderr)
 	}
 
 	if setResult != nil {

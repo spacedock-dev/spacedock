@@ -255,6 +255,49 @@ type setUpdate struct {
 	updates []fieldUpdate
 }
 
+// applyGateRequest is a parsed --apply-gate invocation. The gate verdict uses
+// the caller/UI vocabulary; runApplyGate maps it onto workflow stage movement.
+type applyGateRequest struct {
+	gateID  string
+	entity  string
+	verdict string
+}
+
+// parseApplyGateArgs parses --apply-gate --gate <id> --entity <ref> --verdict
+// <approve|revise|reject>. It returns nil when --apply-gate is absent.
+func parseApplyGateArgs(args []string) (*applyGateRequest, error) {
+	if !contains(args, "--apply-gate") {
+		return nil, nil
+	}
+	gateID, err := parseSingleArg(args, "--gate", "gate-id")
+	if err != nil {
+		return nil, err
+	}
+	if gateID == "" {
+		return nil, fmt.Errorf("--apply-gate requires --gate <gate-id>")
+	}
+	entity, err := parseSingleArg(args, "--entity", "entity-ref")
+	if err != nil {
+		return nil, err
+	}
+	if entity == "" {
+		return nil, fmt.Errorf("--apply-gate requires --entity <entity-ref>")
+	}
+	verdict, err := parseSingleArg(args, "--verdict", "verdict")
+	if err != nil {
+		return nil, err
+	}
+	if verdict == "" {
+		return nil, fmt.Errorf("--apply-gate requires --verdict approve|revise|reject")
+	}
+	switch verdict {
+	case "approve", "revise", "reject":
+	default:
+		return nil, fmt.Errorf("--verdict must be approve, revise, or reject")
+	}
+	return &applyGateRequest{gateID: gateID, entity: entity, verdict: verdict}, nil
+}
+
 // parseSetArgs parses --set <slug> field=value... Matches parse_set_args. A
 // token starting with -- terminates the field list (truncation).
 func parseSetArgs(args []string) (*setUpdate, error) {

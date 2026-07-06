@@ -19,8 +19,8 @@ import (
 
 // writeCodexSession writes a minimal agentsview-ingestible Codex rollout jsonl under
 // codexDir for a session whose source cwd is repoCwd. agentsview derives `project` from
-// the git-root basename of that cwd and blanks the stored cwd, so the session lands with
-// project = basename(repoCwd-normalized) and a blanked cwd.
+// the git-root basename of that cwd; older agentsview builds blanked the stored cwd,
+// while newer builds preserve it.
 func writeCodexSession(t *testing.T, codexDir, id, repoCwd string) {
 	t.Helper()
 	day := filepath.Join(codexDir, "2026", "06", "02")
@@ -47,8 +47,9 @@ func writeCodexSession(t *testing.T, codexDir, id, repoCwd string) {
 // synthesized Codex source (one session in the repo-project, one in a same-basename
 // sibling root), then runs the codex-presence query from queries.sql against the synced
 // DB. The sync is the real `agentsview` binary — the artifact under test end-to-end. It
-// asserts codex-presence counts BOTH same-basename sessions (the documented collision)
-// with blank_cwd > 0. A sync that fails to ingest Codex reds the count assertion.
+// asserts codex-presence counts BOTH same-basename sessions (the documented collision).
+// A sync that fails to ingest Codex reds the count assertion. The blank_cwd value is
+// reported but not fixed: agentsview versions differ on whether Codex cwd is persisted.
 func TestSurveyCodexPresenceThroughSync(t *testing.T) {
 	agentsview, err := exec.LookPath("agentsview")
 	if err != nil {
@@ -73,8 +74,8 @@ func TestSurveyCodexPresenceThroughSync(t *testing.T) {
 	}
 
 	// Two Codex sessions whose source cwds are DIFFERENT roots sharing the basename `proj`.
-	// agentsview keys both to project='proj', blanks both cwds — so codex-presence by
-	// project name counts both (the same-basename collision the skill warns about).
+	// agentsview keys both to project='proj', so codex-presence by project name counts
+	// both (the same-basename collision the skill warns about).
 	writeCodexSession(t, codexDir, "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", filepath.Join(root, "repoA", "proj"))
 	writeCodexSession(t, codexDir, "bbbbbbbb-cccc-dddd-eeee-ffffffffffff", filepath.Join(root, "repoB", "proj"))
 
@@ -118,7 +119,7 @@ func TestSurveyCodexPresenceThroughSync(t *testing.T) {
 	if fields[0] != "2" {
 		t.Errorf("codex-presence should count both same-basename Codex sessions ingested by the sync, got %q (a Codex-blind sync would yield 0)", fields[0])
 	}
-	if fields[1] == "0" {
-		t.Errorf("agentsview blanks Codex cwd, so blank_cwd must be > 0, got %q", fields[1])
+	if fields[1] != "0" && fields[1] != "2" {
+		t.Errorf("codex-presence blank_cwd should reflect either cwd-preserving or cwd-blanking agentsview behavior, got %q", fields[1])
 	}
 }

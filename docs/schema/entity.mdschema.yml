@@ -21,6 +21,8 @@
       "started",
       "completed",
       "verdict",
+      "gate-id",
+      "gate-verdict",
       "mod-block",
       "archived",
       "issue"
@@ -90,6 +92,20 @@
           "REJECTED"
         ],
         "invalid_severity": "warn"
+      },
+      "gate-id": {
+        "type": "string",
+        "semantics": "last externally-applied gate decision id"
+      },
+      "gate-verdict": {
+        "type": "string",
+        "conventional": [
+          "approve",
+          "revise",
+          "reject"
+        ],
+        "invalid_severity": "warn",
+        "semantics": "last externally-applied gate decision verdict; separate from terminal verdict"
       },
       "mod-block": {
         "type": "string",
