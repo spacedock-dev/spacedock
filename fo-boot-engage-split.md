@@ -1,7 +1,7 @@
 ---
 id: k74gt0qv3j4b86knvy2rhsta
 title: Lighten the interactive boot greet — managed-workflow list + an explicit "engage" verb; no forced workflow pick, no gate render at the greet
-status: implementation
+status: validation
 source: "FO session 2026-07-04: interactive boot ran ~5 minutes; original framing was Startup step 8 rendering a full present-gate review per ready gate before stopping. Captain's subspace-tui review (2026-07-04) redirected the scope wider: the launcher bootstrap prompt (frontdoor.go bootstrapPrompt/codexBootstrapPrompt, both literally ending '...Engage.') should drop that flourish since 'engage' becomes a real captain-invoked verb; Startup step 3's multi-workflow pick goes away in favor of just listing managed workflows; gate assembly moves behind the engage verb. RESOLVED (captain, 2026-07-04): engage is an FO interaction verb, not a new binary command; scope is the current/named workflow only for now, with the «engage»(workflow) signature deliberately left open to a future multi-workflow extension; frontdoor.go referent confirmed. Remaining coordination note (not a blocker): 7v (pi-bootstrap-prompt-parity) hardcodes the CURRENT codexBootstrapPrompt text including 'Engage.' as pi's target — sequence this entity before 7v. Flagship member of the 0.25.0 fo-behavioral-discipline sprint alongside z25/zm/vcm."
 started: 2026-07-04T10:38:11Z
 completed:
