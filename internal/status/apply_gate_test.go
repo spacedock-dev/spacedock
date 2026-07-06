@@ -3,6 +3,7 @@
 package status
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -187,6 +188,60 @@ func TestApplyGateRejectsConflictingActions(t *testing.T) {
 				t.Fatalf("conflicting action mutated entity:\n%s", fm)
 			}
 		})
+	}
+}
+
+func TestApplyGateRejectsGateFlagsWithoutApplyGate(t *testing.T) {
+	env := pinnedEnv(t)
+	root := stageFixture(t, "seq-workflow")
+
+	cases := []string{"--gate", "--entity", "--verdict"}
+	for _, flag := range cases {
+		flag := flag
+		t.Run(flag, func(t *testing.T) {
+			out, errOut, code := runNative(t, root, env,
+				"--workflow-dir", root,
+				flag, "partial-value",
+			)
+
+			if code != 1 {
+				t.Fatalf("%s without --apply-gate exit=%d, want 1 stdout=%q stderr=%q", flag, code, out, errOut)
+			}
+			if !strings.Contains(errOut, flag+" requires --apply-gate") {
+				t.Fatalf("stderr should explain partial apply-gate flag, got %q", errOut)
+			}
+			if out != "" {
+				t.Fatalf("partial apply-gate flag should not fall through to read output, got %q", out)
+			}
+		})
+	}
+}
+
+func TestApplyGateJSONUsesGateIDKey(t *testing.T) {
+	env := pinnedEnv(t)
+	root := stageFixture(t, "seq-workflow")
+
+	out, errOut, code := runNative(t, root, env,
+		"--workflow-dir", root,
+		"--apply-gate",
+		"--gate", "helm-gate-123",
+		"--entity", "002-vendor-script",
+		"--verdict", "approve",
+		"--json",
+	)
+
+	if code != 0 {
+		t.Fatalf("apply-gate --json exit=%d stderr=%q", code, errOut)
+	}
+	var payload map[string]string
+	if err := json.Unmarshal([]byte(out), &payload); err != nil {
+		t.Fatalf("parse apply-gate --json: %v\n%s", err, out)
+	}
+	if payload["gate_id"] != "helm-gate-123" {
+		t.Fatalf("gate_id = %q, want helm-gate-123; payload=%v", payload["gate_id"], payload)
+	}
+	if _, ok := payload["gate"]; ok {
+		t.Fatalf("apply-gate --json should not emit ambiguous gate key: %v", payload)
 	}
 }
 

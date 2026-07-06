@@ -267,6 +267,11 @@ type applyGateRequest struct {
 // <approve|revise|reject>. It returns nil when --apply-gate is absent.
 func parseApplyGateArgs(args []string) (*applyGateRequest, error) {
 	if !contains(args, "--apply-gate") {
+		for _, flag := range []string{"--gate", "--entity", "--verdict"} {
+			if contains(args, flag) {
+				return nil, fmt.Errorf("%s requires --apply-gate", flag)
+			}
+		}
 		return nil, nil
 	}
 	gateID, err := parseSingleArg(args, "--gate", "gate-id")

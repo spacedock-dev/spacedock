@@ -62,7 +62,7 @@ func runApplyGate(roots roots, req *applyGateRequest, quiet, asJSON bool, stdout
 		emitJSON(stdout, newJSONObj().
 			set("command", "apply-gate").
 			set("slug", resolved.slug).
-			set("gate", req.gateID).
+			set("gate_id", req.gateID).
 			set("verdict", req.verdict).
 			set("status_old", currentStatus).
 			set("status_new", nextStatus))
