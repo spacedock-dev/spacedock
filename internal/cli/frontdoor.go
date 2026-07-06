@@ -22,7 +22,7 @@ import (
 // argv token so a fresh `spacedock claude` session starts the first officer
 // rather than opening an idle agent. It is omitted when `--resume` is forwarded
 // (a resume already carries its own session intent).
-const bootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage."
+const bootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too."
 
 // hostOps is the injectable seam the front-door, init, and doctor paths depend
 // on. Production backs it with real `claude`/`codex` plugin commands and exec;
@@ -530,7 +530,7 @@ func containsResume(args []string) bool {
 // flag on the top-level, `exec`, or `plugin` surfaces), so the only FO-selection
 // injection point is the positional prompt — this prompt names the
 // `spacedock:first-officer` skill explicitly.
-const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
+const codexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Assume $spacedock:first-officer for the entire session."
 
 // runCodex is the `spacedock codex` front door: version-gate, then launch the
 // first officer. The gate fails fast on a too-old-binary mismatch, but the two
