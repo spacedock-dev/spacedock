@@ -10,6 +10,7 @@ verdict:
 score: 0.3
 worktree: .worktrees/spacedock-ensign-status-checklist-acscan-default-stage
 issue:
+mod-block: merge:pr-merge
 ---
 
 `status --read <entity> --checklist` and `--read <entity> --ac-scan` hard-require an explicit `--stage` even though the entity's own `status` frontmatter field already names its current stage, forcing a two-call sequence at gate assembly — one of the hottest FO read paths.
