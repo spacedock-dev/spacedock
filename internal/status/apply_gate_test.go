@@ -16,7 +16,7 @@ func TestApplyGateApproveAdvancesFromGatedStage(t *testing.T) {
 	out, errOut, code := runNative(t, root, env,
 		"--workflow-dir", root,
 		"--apply-gate",
-		"--gate", "helm-gate-123",
+		"--gate", "review-gate-123",
 		"--entity", "002-vendor-script",
 		"--verdict", "approve",
 	)
@@ -26,7 +26,7 @@ func TestApplyGateApproveAdvancesFromGatedStage(t *testing.T) {
 	}
 	for _, want := range []string{
 		"apply-gate slug=002-vendor-script",
-		"gate=helm-gate-123",
+		"gate=review-gate-123",
 		"verdict=approve",
 		"status=ideation->implementation",
 	} {
@@ -37,7 +37,7 @@ func TestApplyGateApproveAdvancesFromGatedStage(t *testing.T) {
 	fm := readFrontmatter(t, filepath.Join(root, "002-vendor-script.md"))
 	for _, want := range []string{
 		"status: implementation",
-		"gate-id: helm-gate-123",
+		"gate-id: review-gate-123",
 		"gate-verdict: approve",
 	} {
 		if !strings.Contains(fm, want) {
@@ -224,7 +224,7 @@ func TestApplyGateJSONUsesGateIDKey(t *testing.T) {
 	out, errOut, code := runNative(t, root, env,
 		"--workflow-dir", root,
 		"--apply-gate",
-		"--gate", "helm-gate-123",
+		"--gate", "review-gate-123",
 		"--entity", "002-vendor-script",
 		"--verdict", "approve",
 		"--json",
@@ -237,8 +237,8 @@ func TestApplyGateJSONUsesGateIDKey(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &payload); err != nil {
 		t.Fatalf("parse apply-gate --json: %v\n%s", err, out)
 	}
-	if payload["gate_id"] != "helm-gate-123" {
-		t.Fatalf("gate_id = %q, want helm-gate-123; payload=%v", payload["gate_id"], payload)
+	if payload["gate_id"] != "review-gate-123" {
+		t.Fatalf("gate_id = %q, want review-gate-123; payload=%v", payload["gate_id"], payload)
 	}
 	if _, ok := payload["gate"]; ok {
 		t.Fatalf("apply-gate --json should not emit ambiguous gate key: %v", payload)
