@@ -1,6 +1,6 @@
 ---
 title: Bind the FO's own gate and triage decisions to the evidence bar in the runtime-neutral Working Principles
-status: implementation
+status: validation
 source: "ezf/hf merge incident (2026-06-16): the FO merged a Claude-adapter change (ezf, claude-fo-dispatch.md) on deterministic lanes while leaving claude-live unapproved, and labeled a live-CI red 'the known flake' without reading the actual failing test (it was TestLiveZeroDiscover, not TestLiveEnsignCycle). Root cause: the FO contract aims its proof discipline (code-gate-over-prose, observe-the-behavior, the AC cross-check) at the ensign's DELIVERABLE and the gate review, but does not bind the FO's OWN dispatcher decisions — what verification a change requires, whether a result is green, what a failure means. The dev-workflow README now encodes the dev-specific path->lane realization; the generic principle belongs in the runtime-neutral FO Working Principles so it is intrinsic to every FO on every host, not a per-workflow override."
 sprint: 0250-fo-behavioral-discipline
 sprint-readiness: ready
