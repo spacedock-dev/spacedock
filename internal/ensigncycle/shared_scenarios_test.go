@@ -53,5 +53,13 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "0203-fo-efficiency (net-new; no Python ancestor)",
 			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
 		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence
+			// bar); no Python ancestor — it reconstructs the ezf/hf merge/triage
+			// incident (2026-06-16), a recorded real failure, as a live decision.
+			name:          "self-evidence-merge-triage",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf/hf 2026-06-16 incident)",
+			intent:        "FO holds its OWN merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited \"known flake\" label.",
+		},
 	}
 }

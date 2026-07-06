@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestAssertRejectionFlow(t *testing.T) {
 	// The full two-cycle end-state: fix marker applied, two implementation reports
@@ -94,6 +97,33 @@ func TestAssertThirdCycleEscalation(t *testing.T) {
 	}
 	if err := assertThirdCycleEscalation(strayOutsideSection); err == nil {
 		t.Fatal("expected a third cycle entry + marker placed outside the `### Feedback Cycles` section to fail — the matches must be section-scoped")
+	}
+}
+
+func TestAssertSelfEvidenceMergeTriage(t *testing.T) {
+	// Held-and-diagnosed: the FO left the entity at implementation (not terminalized,
+	// no verdict) and its final-message diagnosis names this run's failing test.
+	held := mergeTriageEntity()
+	goodFinal := "Holding merge-triage: the required " + selfEvidenceRequiredLane +
+		" lane is unapproved. This run's live-CI red is " + selfEvidenceThisRunTest +
+		", not the handoff's known flake."
+	if err := assertSelfEvidenceMergeTriage(held, goodFinal); err != nil {
+		t.Fatalf("expected the held-and-diagnosed end-state to pass: %v", err)
+	}
+
+	// Terminalized while the required lane was unapproved: must fail even with a
+	// correct this-run diagnosis in the final message.
+	terminalized := strings.Replace(held, "status: implementation", "status: done", 1)
+	if err := assertSelfEvidenceMergeTriage(terminalized, goodFinal); err == nil {
+		t.Fatal("expected a terminalized entity to fail on the non-terminalization check")
+	}
+
+	// Label-parroted diagnosis: held correctly, but the final message names only the
+	// inherited label's test, never this run's failing test.
+	labelFinal := "Merged on the deterministic lanes; the " + selfEvidenceRequiredLane +
+		" red is the known flake " + selfEvidenceInheritedLabelTest + ", unrelated."
+	if err := assertSelfEvidenceMergeTriage(held, labelFinal); err == nil {
+		t.Fatal("expected a label-parroted diagnosis (never names this run's test) to fail on the this-run-diagnosis check")
 	}
 }
 

@@ -162,6 +162,12 @@ Don't ask permission for a step the contract already allows (the reversible-work
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
 
+> **Hold your own gate, merge, and triage calls to the bar you impose on workers.** The proof discipline above binds not just the ensign's deliverable and the gate review but the FO's own dispatcher decisions:
+> - **Required verification follows from what changed, not the FO's sense of relevance.** A check the change exercises is not waived as "unrelated" by intuition; a relevant check that flakes is re-run to green (serial, isolated), never skipped. "It's unrelated" is a claim the change must substantiate, not a dispatcher judgment.
+> - **A result is "green" only when the relevant check actually ran and passed.** An unapproved, skipped, or cancelled check is not a pass; the absence of a red is not the presence of a green.
+> - **A failure is read from this run's evidence** — the failing test, assertion, or error in front of you. A prior session's or a handoff's label ("the known flake") is a hypothesis to confirm against this run, not a verdict to apply.
+> Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
+
 **FO posture:**
 
 - **Name the end value before starting, verify it was delivered at the gate** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
