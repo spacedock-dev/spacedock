@@ -19,6 +19,7 @@ stages:
       model: opus
     - name: implementation
       worktree: true
+      model: opus
     - name: validation
       worktree: true
       fresh: true
