@@ -1,17 +1,18 @@
 ---
 id: k74gt0qv3j4b86knvy2rhsta
 title: Lighten the interactive boot greet — managed-workflow list + an explicit "engage" verb; no forced workflow pick, no gate render at the greet
-status: validation
+status: done
 source: "FO session 2026-07-04: interactive boot ran ~5 minutes; original framing was Startup step 8 rendering a full present-gate review per ready gate before stopping. Captain's subspace-tui review (2026-07-04) redirected the scope wider: the launcher bootstrap prompt (frontdoor.go bootstrapPrompt/codexBootstrapPrompt, both literally ending '...Engage.') should drop that flourish since 'engage' becomes a real captain-invoked verb; Startup step 3's multi-workflow pick goes away in favor of just listing managed workflows; gate assembly moves behind the engage verb. RESOLVED (captain, 2026-07-04): engage is an FO interaction verb, not a new binary command; scope is the current/named workflow only for now, with the «engage»(workflow) signature deliberately left open to a future multi-workflow extension; frontdoor.go referent confirmed. Remaining coordination note (not a blocker): 7v (pi-bootstrap-prompt-parity) hardcodes the CURRENT codexBootstrapPrompt text including 'Engage.' as pi's target — sequence this entity before 7v. Flagship member of the 0.25.0 fo-behavioral-discipline sprint alongside z25/zm/vcm."
 started: 2026-07-04T10:38:11Z
-completed:
-verdict:
+completed: 2026-07-06T23:18:28Z
+verdict: passed
 score: 0.35
 worktree: .worktrees/spacedock-ensign-fo-boot-engage-split
 issue:
 sprint: 0250-fo-behavioral-discipline
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:475
+archived: 2026-07-06T23:18:28Z
 ---
 
 The interactive FO boot is too heavy: the launcher bootstrap prompt (`internal/cli/frontdoor.go`) ends with a flourish "Engage.", Startup step 8 renders a full `present-gate` review for every ready gate before stopping, and step 3 asks the captain to pick when multiple workflows are discovered. Redirect (captain, 2026-07-04 — RESOLVED): make the greet light — list the managed workflow(s), hint "Use engage", no forced workflow pick, no gate render at the greet. Define a new prose-function `«engage»(workflow)`: run the existing `«dispatch.next-action»()` event-loop skeleton (dispatch any ready entity, present any ready gate, advance any completed non-gated stage) to its stopping condition for the NAMED workflow — no new binary command, no new dispatch mechanism, just a captain-invoked entry point into logic the contract already defines. Scope for THIS entity is the current/named workflow only, not all managed workflows at once — no boot-sequencing restructure needed; headless/single-entity mode is unaffected (the no-pick change is interactive-only). Forward-compatible by construction: `«engage»(workflow)` takes a workflow argument now so a later multi-workflow call (`«engage»(workflow1, workflow2, …)` or an all-managed default) extends the same signature rather than requiring a redesign — sweeping multiple workflows at once is explicitly a future extension, not in scope here, and must not be precluded by this entity's design. Coordinate with `7v` (pi-bootstrap-prompt-parity): 7v's Approach hardcodes the CURRENT `codexBootstrapPrompt` text (including "Engage.") as pi's target — sequence this entity's bootstrap-prompt edit BEFORE 7v, or have 7v's implementer re-derive the target from the live constant rather than 7v's written quote. This is the flagship member of the 0.25.0 behavioral-discipline sprint (captain, 2026-07-04) alongside z25/zm/vcm.
