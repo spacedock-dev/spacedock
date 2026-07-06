@@ -83,8 +83,8 @@ Measurement command for the implementing Commander: `wc -c skills/first-officer/
 - [x] **Carve** — stamp `sprint: 0250-fo-behavioral-discipline` on the four members; this `index.md` created (this doc)
 - [x] **Ideate** each member (k74g contract-prose + `«engage»` definition; z25/zm/vcm), riskiest mechanism first — for k74g, the live-boot/engage observability spike; check banked ideation first (z25/zm/vcm carry substantial bodies already)
 - [x] **⚠️ Preflight staff review (sprint-wide, independent)** — the Working-Principles composition/coherence + leanness-ceiling review above *(2026-07-05: NEEDS MINOR REWORK → READY as a set once zm's one clause lands; see Leanness baseline section)*
-- [ ] **Present ideation gates** — per member; never self-approve *(captain decides)* — *(captain approved k74g/z25/vcm 2026-07-06; zm approved pending its one-clause rework, in flight)*
-- [ ] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander recipe)
+- [x] **Present ideation gates** — per member; never self-approve *(captain decides)* — *(captain approved all four 2026-07-06; zm's blocking rework landed and was verified before this checkbox closed)*
+- [x] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander recipe)
 
 **Drive — Commander (separate cold-booted session)**
 - [ ] Implementation → validation → done per member; detached adversarial audit at validation for the shipped-contract surface
