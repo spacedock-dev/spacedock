@@ -621,9 +621,12 @@ func TestACScanEnumeratesAnnotatedAC(t *testing.T) {
 }
 
 // TestGateModeLoudFailures (AC-5) asserts the gate modes fail loudly with a
-// non-zero exit and a named diagnostic, never a partial/silent emit: missing
-// --stage, a --stage matching no report (no silent positional-last fallback),
-// and --ac-scan over a file with no ## Acceptance criteria section.
+// non-zero exit and a named diagnostic, never a partial/silent emit: an explicit
+// --stage matching no report (no silent positional-last fallback), and --ac-scan
+// over a file with no ## Acceptance criteria section. The omitted-flag fail-loud
+// cases (no matching report for the defaulted current status; no status field
+// to default from) live in gate_default_stage_test.go alongside the defaulting
+// behavior they belong to.
 func TestGateModeLoudFailures(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "seq-workflow"))
 	if err != nil {
@@ -638,8 +641,6 @@ func TestGateModeLoudFailures(t *testing.T) {
 		args     []string
 		wantWord string
 	}{
-		{"checklist without --stage", []string{"--read", fixture, "--checklist", "--json"}, "--stage"},
-		{"ac-scan without --stage", []string{"--read", fixture, "--ac-scan", "--json"}, "--stage"},
 		{"stage matches no report", []string{"--read", fixture, "--stage", "done", "--checklist", "--json"}, "done"},
 		{"ac-scan no acceptance criteria", []string{"--read", plain, "--stage", "ideation", "--ac-scan", "--json"}, "acceptance criteria"},
 	}
