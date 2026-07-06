@@ -56,6 +56,18 @@ Two waves, because the code half and the contract-prose half have different coll
   4. **`vcm`** (the four keep-moving strengthenings across Working Principles + Clarification). LAST because it is the counterweight that must be reconciled AGAINST z25's "verify what's required" and zm's "justify before climbing" — the composition tension (keep-moving vs justify-before-climbing vs verify-what-changed) resolves in vcm's final wording, so it lands into the shape the other two established.
 - **Cross-member coherence pass (the sprint preflight staff review — independent, never a self-review).** Before the Wave-1 gates lock, one independent reviewer reconciles the COMBINED Working-Principles section: do z25 + zm + vcm compose without contradiction, and is the union within the leanness ceiling? This is the sprint's reason for being a sprint — driven individually, the three are colliding, potentially contradictory edits to the same paragraphs. The order above is provisional; the coherence pass may re-order.
 
+## Leanness baseline (pinned at preflight, 2026-07-06)
+
+Baseline (`v0.24.0` tag, confirmed byte-identical to HEAD for both files — `git diff v0.24.0..HEAD` touches neither):
+- `skills/first-officer/references/first-officer-shared-core.md`: 21,663 bytes
+- `skills/present-gate/SKILL.md`: 5,337 bytes
+
+Measured resident additions as ideated (independent staff review, 2026-07-05): k74g engage block 1,433 · z25 S1 bullet 1,192 (+~350 to present-gate) · zm 733 · vcm S1–S4 2,242 → sum ≈ 5,600 bytes, +25.8% of the shared-core baseline.
+
+**Ceiling: resident additions to `first-officer-shared-core.md` + `present-gate/SKILL.md` combined MUST NOT exceed the as-ideated total above (≈5,600 bytes / +25.8%).** This is a not-to-exceed cap, not a target to spend up to. Three trims were requested of the respective entities post-preflight as recoverable margin (not required to hit the cap, which already includes them unapplied): z25's duplicated closing sentence (~230 bytes, folds into its own lazy-loaded S2 rule), k74g's `scope:` bullet rationale (~150 bytes), and a wording-economy pass on vcm's S1–S4 (heaviest single addition at 2,242 bytes) that preserves its guard clauses — those clauses are the substance that resolved the z25/zm/vcm composition seams, not filler to cut.
+
+Measurement command for the implementing Commander: `wc -c skills/first-officer/references/first-officer-shared-core.md skills/present-gate/SKILL.md` post-implementation; delta = post − the baseline above. Lazy-reference files (e.g. `references/fo-smallest-sufficient-mechanism.md`) are excluded from the resident count by design (zm AC-5).
+
 ## Out of scope
 
 - **Multi-workflow `«engage»` sweep** (engaging all managed workflows at once). The `«engage»(workflow)` signature is forward-compatible by construction — a later `«engage»(w1, w2, …)` or all-managed default extends the signature — but sweeping multiple workflows is a NAMED future extension, not designed here; this entity's design must not preclude it.
@@ -68,10 +80,10 @@ Two waves, because the code half and the contract-prose half have different coll
 
 **Shape — Shaping FO**
 - [x] **Scope-lock** with the captain — k74g flagship + z25/zm/vcm; native-tooling cluster driven separately *(captain, 2026-07-04)*
-- [ ] **Carve** — stamp `sprint: 0250-fo-behavioral-discipline` on the four members; this `index.md` created (this doc)
-- [ ] **Ideate** each member (k74g contract-prose + `«engage»` definition; z25/zm/vcm), riskiest mechanism first — for k74g, the live-boot/engage observability spike; check banked ideation first (z25/zm/vcm carry substantial bodies already)
-- [ ] **⚠️ Preflight staff review (sprint-wide, independent)** — the Working-Principles composition/coherence + leanness-ceiling review above
-- [ ] **Present ideation gates** — per member; never self-approve *(captain decides)*
+- [x] **Carve** — stamp `sprint: 0250-fo-behavioral-discipline` on the four members; this `index.md` created (this doc)
+- [x] **Ideate** each member (k74g contract-prose + `«engage»` definition; z25/zm/vcm), riskiest mechanism first — for k74g, the live-boot/engage observability spike; check banked ideation first (z25/zm/vcm carry substantial bodies already)
+- [x] **⚠️ Preflight staff review (sprint-wide, independent)** — the Working-Principles composition/coherence + leanness-ceiling review above *(2026-07-05: NEEDS MINOR REWORK → READY as a set once zm's one clause lands; see Leanness baseline section)*
+- [ ] **Present ideation gates** — per member; never self-approve *(captain decides)* — *(captain approved k74g/z25/vcm 2026-07-06; zm approved pending its one-clause rework, in flight)*
 - [ ] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander recipe)
 
 **Drive — Commander (separate cold-booted session)**
