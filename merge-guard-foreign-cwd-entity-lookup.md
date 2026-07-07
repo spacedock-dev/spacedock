@@ -1,9 +1,9 @@
 ---
 id: bmexmw5bdjffr8n67gdp6vra
 title: "spacedock merge guard: entity not found from a foreign cwd even with --workflow-dir"
-status: backlog
+status: ideation
 source: "GitHub issue #485 (spacedock-dev/spacedock#485), filed by clkao 2026-07-07, from the same live split-root dogfooding session as #484 (5 stages, ~6 entities, sd-b32 ids) — may share a root cause."
-started:
+started: 2026-07-07T22:59:51Z
 completed:
 verdict:
 score:
