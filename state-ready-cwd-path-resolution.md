@@ -12,3 +12,82 @@ issue: spacedock-dev/spacedock#484
 ---
 
 `spacedock state ready` has two cwd/remote-sensitivity defects observed while recovering a deleted split-root state checkout. (1) When invoked from inside an agent worktree (`.worktrees/<worker>-<entity>/`), its manual-fallback hint proposes re-adding the state checkout at a path nested UNDER that worktree instead of the project root — the command should resolve paths against the project root (or the workflow dir's declared location) independent of cwd, since hooks/scripts may invoke it from anywhere. (2) When the repo has no `origin` remote (deliberate local-only project), the command hard-fails on `git fetch origin <state-branch>` even though the state branch exists locally and a plain `git worktree add` from it succeeds — it should fall back to the local branch when the fetch fails or no remote is configured, matching `state commit`'s documented local-only behavior. Full repro, expected behavior, and the manual workaround used are in the linked issue.
+
+## Problem statement
+
+`spacedock state ready` is the boot gate that must converge a split-root state checkout from wherever it is invoked. Issue #484 (live dogfooding on 0.24.0-pre2) showed it failing to recover a deleted state checkout for three compounding reasons:
+
+1. **cwd-relative anchoring.** State-checkout paths are computed as `filepath.Join(workflowDir, relPath)` (`internal/cli/state.go:50`, `internal/cli/state_sync.go:380`), and with no `--workflow-dir` the workflow dir is discovered from cwd. Invoked from inside an agent worktree, discovery lands on the worktree's copy of the workflow README (`git rev-parse --show-toplevel` inside a linked worktree is the worktree root, so the downward-scan fallback anchors there), and the resume path — plus the manual-fallback hint — targets `.worktrees/<w>/docs/<wf>/.spacedock-state`. That path is never correct: the split-root checkout is a singleton anchored at the main worktree, and the dir is gitignored so it never exists in worktree copies.
+2. **Hard origin requirement.** The fresh-resume path fatals when `git fetch origin <state-branch>` fails (`state.go:64`), even when the orphan branch exists locally and `git worktree add` from it succeeds. A deliberately local-only repo (no `origin`) can never resume, contradicting `state commit`'s local-only carve-out and `state new`'s best-effort push.
+3. **Stale registration blocks re-add.** In the reported repro the checkout directory was deleted but its worktree registration survived; `git worktree add` then fatals exit 128 ("missing but already registered worktree"), so fixes 1+2 alone still leave the reported scenario unrecoverable.
+
+## Proposed approach
+
+1. **Main-worktree anchoring for split-root checkouts.** One shared resolver maps (workflowDir, README `state:` relPath) → checkout path, used by every split-root state verb (`ready`/`commit`/`sweep` via `resolveStateCheckout`, plus the two statePath joins in `state init`/`state new`). When workflowDir sits inside a linked worktree (`git rev-parse --git-dir` ≠ `--git-common-dir`), the checkout resolves to `<main-worktree-root>/<repo-relative-prefix>/<relPath>` (prefix via `git rev-parse --show-prefix`; main root via the absolute common dir or the first `git worktree list --porcelain` entry — both spiked below). Otherwise — main worktree, or workflowDir not in a git repo at all (the standalone test fixtures) — today's join is unchanged. The re-anchor applies regardless of whether workflowDir came from discovery or an explicit `--workflow-dir`: the flag picks WHICH workflow, not where the singleton checkout lives; registration-path comparisons are realpath-normalized (macOS `/var` → `/private/var`).
+2. **Resume fallback ladder** in `state init` (inherited by `state ready`'s absent-checkout resume): origin present → fetch; fetch OK → `git worktree add` (unchanged). No origin, or fetch failed → if the local state branch exists, `worktree add` from it and exit 0 — the message says local-only (no origin case) or warns the fetch failed and peers' state may be missing (stdout warning, matching `state new`'s push-warning style). Neither fetchable nor local → exit 1; the manual-fallback hint names the main-anchored path, and when the branch exists neither locally nor on origin, points at `spacedock state new` instead.
+3. **Targeted stale-registration repair**, in the absent-checkout resume path only: if `git worktree list --porcelain` carries a registration for the (main-anchored, realpath-normalized) state path — necessarily stale, since the directory is absent — run `git worktree remove --force <statePath>` before the add and report the repair on stdout. Never `git worktree prune` (would touch unrelated registrations); never touch a registration whose directory exists (that remains the present-checkout no-op/refresh path).
+4. **Doc diff** (below) recording cwd-independence and local-only resume in the split-root docs.
+
+## Out of scope
+
+- `status --boot` STATE_BACKEND / dispatch-build state resolution from inside a worktree (`internal/status/roots.go`, `internal/dispatch/helpers.go`) — different surfaces, not part of the #484 repro; candidate follow-up if observed.
+- The present-checkout `state ready` pull failure with origin configured stays exit 1 (`state_sync.go:183`); only the absent-checkout resume gains the local fallback.
+- README `state:`/`state-branch:` divergence between an agent branch and main: the resolved README's declared values are used as-is; editing those fields on a worktree branch is unsupported.
+- General workflow-discovery semantics (walk-up / downward scan) are unchanged; only split-root checkout anchoring changes.
+
+**Scope note for the gate:** fix 3 (stale-registration repair) is not one of the issue title's two defects, but the reported repro cannot converge without it — the issue's own workaround was exactly `worktree remove --force` + re-add. If struck at the gate, AC-1's setup must drop the stale registration.
+
+## Acceptance criteria
+
+- **AC-1 (value measure, independent baseline).** The issue-484 repro converges: in a repo whose split-root state checkout directory was deleted (orphan state branch and stale worktree registration intact) and which has no `origin` remote, `spacedock state ready` invoked with cwd inside an agent worktree exits 0 and restores the checkout at the main-root state path with its entity files present — where 0.24.0-pre2 exits non-zero and proposes a worktree-nested path. *Verified by:* a real-git e2e test reproducing the full setup, asserting exit code 0, entity file readable at the main-anchored path, and no `.spacedock-state` anywhere under `.worktrees/`.
+- **AC-2.** Split-root state-checkout resolution is cwd-independent: the same main-worktree-anchored checkout resolves from the repo root, the workflow dir, an agent-worktree root, and the agent-worktree's workflow-dir copy; failure-path hints name the main-anchored path. *Verified by:* e2e tests running `state ready` (and one `state commit`) from each cwd, asserting the main checkout is the one read/mutated and no nested checkout appears; one test forces the manual-fallback hint from a worktree cwd and asserts the hinted path.
+- **AC-3.** A repo with no `origin` remote resumes an absent state checkout from the local state branch: `state ready`/`state init` exit 0, the checkout exists with its entities, and the output states local-only — the same carve-out family as `state commit`. *Verified by:* a no-origin e2e test asserting exit 0, on-disk entities, and the local-only wording.
+- **AC-4.** With `origin` configured but unreachable, resume falls back to the local state branch (exit 0) and warns that the fetch failed; when neither a fetchable origin branch nor a local branch exists, the command exits non-zero with the main-anchored hint (and names `spacedock state new` when the branch was never birthed). *Verified by:* e2e tests with origin pointed at a nonexistent path, with and without the local branch.
+- **AC-5.** A stale worktree registration for the state path (registered, directory missing) is repaired automatically during resume; a registration whose directory exists is never removed or re-added. *Verified by:* the AC-1 repro test plus a regression test asserting a present checkout keeps its worktree registration and HEAD across `state ready`.
+- **AC-6.** The split-root docs state that the checkout resolves against the repository's main worktree regardless of invocation directory and that a no-origin repo resumes from the local state branch. *Verified by:* the doc diff below applied verbatim; static grep in review.
+
+## Test plan
+
+New real-git e2e tests in `internal/cli` beside `state_from_root_test.go` / `state_ready_test.go`, reusing the existing helpers (`twoHostStateWorkflow`, `commissionSplitWorkflow`, `writeSplitReadmeRepo`, `git(t, ...)`); the `run(...)` entry takes cwd explicitly, so worktree-cwd cases need no chdir:
+
+1. `state ready` from an agent-worktree cwd with the main checkout present → resolves the main checkout, no nested dir (AC-2).
+2. `state ready` from an agent-worktree cwd with the checkout absent → resumes at the main-anchored path (AC-2).
+3. Full #484 repro: no origin + stale registration + worktree cwd → exit 0, checkout restored, entity present (AC-1, AC-5).
+4. No-origin resume from repo root → exit 0, local-only message (AC-3).
+5. Unreachable-origin fallback with local branch → exit 0 + warning; without local branch → exit non-zero, main-anchored hint (AC-4).
+6. Never-birthed branch → hint names `spacedock state new` (AC-4).
+7. Present-checkout regression: registration + HEAD untouched by `state ready` (AC-5).
+8. `state commit` from a worktree cwd lands in the main checkout (AC-2, shared-resolver coverage).
+
+Cost: each test is an in-process real-git fixture like the existing suite (sub-second); no live workflow tests needed — every claim is command-level. Regression: full `go test ./...` must stay green, notably `TestStateCommitExplicitWorkflowDirOverridesDiscovery` (explicit flag still picks the workflow) and the standalone non-git-root fixtures (no re-anchor outside a repo).
+
+## Spike record
+
+Riskiest mechanisms exercised first in a throwaway repo (this session, git 2.39.5 / Apple Git-154); these seed tests 1-3:
+
+- `git worktree add <path> <local-branch>` with **no origin remote** succeeds; checkout carries the branch's files.
+- Deleted checkout dir with registration intact: `git worktree list --porcelain` marks it `prunable (gitdir file points to non-existent location)`; `git worktree add` at that path fatals exit 128 "missing but already registered worktree"; `git worktree remove --force <path>` exits 0 and a re-add converges.
+- From `<main>/.worktrees/w-e/docs/dev`: `--git-dir` = `<main>/.git/worktrees/w-e` ≠ `--git-common-dir` = `<main>/.git` (both print `.git` from the main worktree — the linked-worktree discriminator); `--show-prefix` = `docs/dev/`; `git worktree list --porcelain` lists the main worktree first even from inside the linked worktree; `--show-toplevel` is the worktree root (confirming the defect's anchor). Caveat: bare `--git-common-dir` prints relative `.git` in the main worktree but absolute in a linked one — normalize via `--path-format=absolute` (supported on 2.39.5) or join before use.
+
+## Documentation diff
+
+`docs/site/advanced/split-root-state.md`, second paragraph — before:
+
+> On a fresh clone the state checkout is absent; run `spacedock state init` to restore it.
+
+After:
+
+> On a fresh clone the state checkout is absent; run `spacedock state init` to restore it. The checkout always lands at the workflow's declared path under the repository's main worktree, wherever the command runs from; a repo with no `origin` remote resumes from the local state branch.
+
+## Stage Report: ideation
+
+- DONE: Problem statement, proposed approach, and out-of-scope boundary written into the entity body
+  Three-part root-cause analysis (cwd anchoring at state.go:50/state_sync.go:380, hard fetch at state.go:64, stale registration), four-part approach, four out-of-scope items plus an explicit gate note on the third fix's scope.
+- DONE: Entity-level acceptance criteria (each with how it's verified) plus a test plan added
+  Six ACs, each with a verification clause; AC-1 measures the end-value (the #484 repro converges, exit 0 + on-disk state) against the 0.24.0-pre2 baseline that exits non-zero. Test plan names 8 real-git e2e tests beside the existing state suite with cost and regression scope.
+- DONE: If the design rests on an unverified mechanism, the riskiest path is spiked first and recorded (or "no spike needed" with the proven mechanisms)
+  Spiked in a throwaway repo before writing ACs: no-origin `worktree add`, stale-registration fatal/repair/re-add, and linked-worktree main-root detection (`--git-dir` vs `--git-common-dir`, `--show-prefix`, porcelain main-first) — recorded under "Spike record" with the relative-vs-absolute `--git-common-dir` caveat.
+
+### Summary
+
+Fleshed out issue #484 into a three-fix design: a shared main-worktree-anchored resolver for split-root checkout paths, a local-branch fallback ladder for resume, and targeted stale-registration repair — the third being required for the reported repro to converge (flagged for the gate since it exceeds the issue title's two defects). All risky git mechanisms were spiked first on git 2.39.5; a concrete doc diff for split-root-state.md is included per the user-visible-behavior rule.
