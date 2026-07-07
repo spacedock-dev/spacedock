@@ -118,3 +118,16 @@ The riskiest-path spike (green-vs-red evidence diff) invalidated the seed premis
 ### Summary
 
 Implemented and committed the Codex live oracle repair on `spacedock-ensign/codex-live-spawn-oracle-v2-family` at `eb3b0a77` (`harden codex live oracle surfaces`). Verification passed: `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and targeted live smoke `go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow' -count=1` (2 passed).
+
+## Stage Report: validation
+
+- DONE: Reproduce the Codex oracle tests, including replay/negative fixtures and keep-moving merge-guard coverage.
+  Focused `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse|TestAssertCodexKeepMoving' -count=1 -v` passed 32 tests; `go test ./...` and `go test ./... -race` each passed 2042 tests across 17 packages.
+- DONE: Inspect the assertion diff for anti-tautology: durable-state/assignment surfaces pass while no-validation-assignment and forward-drive negatives still fail.
+  Offline positives and negatives pass, including the no-validation-assignment exact-error check and the keep-moving corrected-forward-drive negative; the source-comment presence check covers the Codex exec observability boundary.
+- FAILED: Run or explicitly account for the targeted live Codex rejection-flow smoke, then append a PASSED/REJECTED validation report.
+  `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-validation-codex-live go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow' -count=1 -v` failed after 450s at `assertCodexReviewerReuse`: durable state reached validation/PASSED with both feedback cycles, but no validation dispatch-build assignment surface was observed.
+
+### Summary
+
+Recommendation: REJECTED. The offline oracle tests are green and preserve the intended negative cases, but the live Codex rejection-flow lane is still red on the repaired assertion. The preserved live artifact shows Codex produced the durable two-cycle end state, yet the only top-level `dispatch build` command was a failed implementation build (`missing required field 'checklist'`), with no validation assignment surface for the new oracle to accept.
