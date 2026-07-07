@@ -105,3 +105,16 @@ The riskiest-path spike (green-vs-red evidence diff) invalidated the seed premis
 ### Feedback Cycles
 
 - Family tracking note (FO, 2026-07-07, pre-cut audit NB#2 — for the codex-side resumer): two further surface-variance instances joined this family after the pause, recorded in PR comments: VARIANT 2 (PR #478 comment) — shallow-boot red from an FO call-shape fumble on `state sweep` flag placement, plus the earlier keep-moving grader blind spot fixed in-sprint by crediting the `status --set status=done` dispatch surface (zm cycle-1/2); VARIANT 3 (PR #480 comment) — keep-moving "did not dispatch ready-one" false-negative because that run's FO terminalized via `merge guard`, so the status-set-done surface never appeared as an FO command; transcript proved the parallel batch dispatch happened. The unifying lesson for the resumption: codex FOs reach the same durable end-state through MULTIPLE legitimate command surfaces (direct status --set, merge guard, collab threads) — oracles must key on durable state or the full surface family, never one command shape. See also seed sc (live-runner-boot-preamble-hardening) for the adjacent boot-preamble flake class.
+
+## Stage Report: implementation
+
+- DONE: Reworked the Codex live rejection-flow oracle around durable state plus observable assignment/command surfaces instead of spawn_agent-only evidence.
+  `assertCodexReviewerReuse` now keeps the real spawn/thread path when present, but when Codex exec emits no spawn metadata it parses `dispatch build` assignment surfaces from both `--stage ...` flags and stdin JSON payloads. The fallback requires a validation-stage assignment before the first review, a validation-stage assignment for the re-review, and an implementation rework assignment, while `assertRejectionFlow` continues to grade the durable two-cycle entity body.
+- DONE: Taught keep-moving Codex assertions to credit the merge-guard terminalization surface while preserving false-negative/false-positive negative fixtures.
+  `codexKeepMovingTrace` now treats `spacedock merge guard <slug>` as terminal dispatch evidence for the approved and independent entities, and as a forward-drive violation for the corrected entity. Existing permission-question, silent-park, missing-dispatch, and corrected-forward-drive negatives remain in the same table, and the new PR #480 merge-guard positive is covered there.
+- DONE: Added replay/fixture tests from the current red run and documented the honest Codex exec multi_agent_v2 observability boundary.
+  Added an offline stdin-JSON multi_agent_v2 assignment-surface fixture, a no-validation-assignment anti-tautology negative with an exact error assertion, and a source-comment presence check documenting that Codex exec does not prove a distinct reviewer process. The code comment records the boundary: Codex grades assignment-separation plus durable end-state; Claude remains the process-level separation oracle.
+
+### Summary
+
+Implemented and committed the Codex live oracle repair on `spacedock-ensign/codex-live-spawn-oracle-v2-family` at `eb3b0a77` (`harden codex live oracle surfaces`). Verification passed: `go test ./...`, `go test ./... -race`, `gofmt -w ./cmd ./internal`, and targeted live smoke `go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow' -count=1` (2 passed).
