@@ -108,3 +108,16 @@ Run `go test ./internal/cli` while developing, then the repo gate `go test ./...
 ### Summary
 
 Codex provider resolution is unsafe when stable and edge Spacedock channels are both enabled because Codex exposes duplicate same-named skills in one prompt input. The recommended fix is to make Codex Spacedock installs exclusive across stable/edge channels and prove the local `--plugin-dir` path with a hermetic `codex debug prompt-input` smoke.
+
+## Stage Report: implementation
+
+- DONE: Make Codex Spacedock installs exclusive across stable and edge channels before adding the selected plugin source.
+  Evidence: code commit `e1147c09` changes `codexInstallArgvSequence` to tolerate-removal of both Spacedock channel ids before the selected add.
+- DONE: Add unit coverage and a hermetic Codex prompt-input smoke proving --plugin-dir resolves exactly one authoritative spacedock:first-officer provider.
+  Evidence: `e1147c09` adds install-sequence/tolerance tests plus `TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider`; focused red failed 11 cases, then 12 passed.
+- DONE: Update Codex --plugin-dir diagnostics and docs so the selected checkout/channel and exclusivity cleanup are visible to operators.
+  Evidence: `e1147c09` updates the `--plugin-dir` advisory and `docs/site/get-started/install.md` Codex install text.
+
+### Summary
+
+Codex Spacedock installs now clear both stable and edge channel providers before pinning the selected channel, so a local `--plugin-dir` install leaves one authoritative `spacedock:first-officer` provider in Codex prompt input. Verification passed on the final tree with `go test ./internal/cli` (462 passed), `go test ./...` (2041 passed), `go test ./... -race` (2041 passed), and `gofmt -w ./cmd ./internal`; incidental gofmt changes outside scope were reverted per FO coordination.
