@@ -10,11 +10,11 @@ import (
 )
 
 // TestCodexInstallIssuesSequenceInOrder locks AC-1a: a stub codex that exits 0 on
-// every step → Install("codex", "spacedock-dev/marketplace", "next") returns nil
-// and the combined output carries all four step markers, including the bare
-// marketplace-repo `plugin marketplace add spacedock-dev/marketplace` (no --ref)
-// and the edge channel's `plugin add spacedock@spacedock-edge`. The stub's echoed
-// argv is the independent source of truth.
+// every step -> Install("codex", "spacedock-dev/marketplace", "next") returns nil
+// and the combined output carries all six step markers. Both Spacedock channels
+// are removed before the selected marketplace source is re-added, so Codex cannot
+// keep a stale sibling `spacedock:*` provider enabled beside the selected install.
+// The stub's echoed argv is the independent source of truth.
 func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -27,6 +27,8 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 		t.Fatalf("Install returned error on all-zero codex stub: %v\nout=%q", err, out)
 	}
 	wantOrder := []string{
+		"stub:plugin remove spacedock@spacedock:exit=0",
+		"stub:plugin marketplace remove spacedock:exit=0",
 		"stub:plugin remove spacedock@spacedock-edge:exit=0",
 		"stub:plugin marketplace remove spacedock-edge:exit=0",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
@@ -49,8 +51,8 @@ func TestCodexInstallIssuesSequenceInOrder(t *testing.T) {
 // TestCodexInstallToleratesMarketplaceRemoveFailure locks AC-1b: the fresh-box
 // path where `codex plugin marketplace remove <marketplace>` exits 1 ("is not
 // configured or installed") and every other step exits 0. Install MUST return a
-// nil error and the combined output MUST carry all four step markers — the
-// marketplace remove is a tolerated cleanup step.
+// nil error and the combined output MUST carry both channel cleanup markers before
+// the add markers — marketplace remove is a tolerated cleanup step.
 func TestCodexInstallToleratesMarketplaceRemoveFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -63,6 +65,8 @@ func TestCodexInstallToleratesMarketplaceRemoveFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated marketplace-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
+		"stub:plugin remove spacedock@spacedock:exit=0",
+		"stub:plugin marketplace remove spacedock:exit=1",
 		"stub:plugin remove spacedock@spacedock-edge:exit=0",
 		"stub:plugin marketplace remove spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
@@ -75,10 +79,10 @@ func TestCodexInstallToleratesMarketplaceRemoveFailure(t *testing.T) {
 }
 
 // TestCodexInstallToleratesPluginRemoveFailure locks the cleanup half of AC-1b:
-// when `codex plugin remove spacedock@spacedock` exits 1 and every other step
-// exits 0, Install MUST still return nil — the plugin remove is a tolerated
-// cleanup step (idempotent on a fresh box per the spike, exit 0; tolerated here
-// so a future codex that exits 1 on a fresh box does not break the install).
+// when `codex plugin remove <spacedock channel id>` exits 1 and every other step
+// exits 0, Install MUST still return nil — plugin remove is a tolerated cleanup
+// step (idempotent on a fresh box per the spike, exit 0; tolerated here so a
+// future codex that exits 1 on a fresh box does not break the install).
 func TestCodexInstallToleratesPluginRemoveFailure(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("stub script uses /bin/sh; not portable to Windows")
@@ -91,6 +95,7 @@ func TestCodexInstallToleratesPluginRemoveFailure(t *testing.T) {
 		t.Fatalf("Install returned error on tolerated plugin-remove failure: %v\nout=%q", err, out)
 	}
 	for _, want := range []string{
+		"stub:plugin remove spacedock@spacedock:exit=1",
 		"stub:plugin remove spacedock@spacedock-edge:exit=1",
 		"stub:plugin marketplace add spacedock-dev/marketplace:exit=0",
 		"stub:plugin add spacedock@spacedock-edge:exit=0",
@@ -164,6 +169,9 @@ func TestCodexInstallStableEntryOmitsRef(t *testing.T) {
 	}
 	if !strings.Contains(out, "stub:plugin marketplace add spacedock-dev/marketplace:exit=0") {
 		t.Errorf("combined output missing bare-source add marker; out=%q", out)
+	}
+	if !strings.Contains(out, "stub:plugin remove spacedock@spacedock-edge:exit=0") {
+		t.Errorf("stable install must still remove the edge sibling; out=%q", out)
 	}
 	if !strings.Contains(out, "stub:plugin add spacedock@spacedock:exit=0") {
 		t.Errorf("combined output missing stable-channel plugin add marker; out=%q", out)

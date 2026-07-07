@@ -78,10 +78,13 @@ Codex has no such flag on its own CLI, so `spacedock codex --plugin-dir
 local marketplace from the checkout and install it under the binary's own
 channel (`spacedock` stable / `spacedock-edge` edge — matching whatever
 `spacedock codex` would otherwise install), then launch. This IS a persistent
-install, replacing whatever Codex plugin was previously configured, and it is a
+install and Spacedock makes it exclusive across Codex channels: the selected
+channel replaces any existing stable or edge Spacedock Codex plugin so
+`$spacedock:*` skills resolve from the selected install. It is also a
 point-in-time snapshot: editing the checkout afterward has no effect until the
-command is re-run. The command prints an advisory that the reported version
-reflects the checkout's checked-in manifest, not necessarily its current HEAD.
+command is re-run. The command prints an advisory that names the selected channel
+and notes that the reported version reflects the checkout's checked-in manifest,
+not necessarily its current HEAD.
 
 ## Sandboxing
 

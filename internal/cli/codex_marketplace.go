@@ -135,9 +135,10 @@ func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) 
 		return fmt.Errorf("install from local marketplace: %w", err)
 	}
 	fmt.Fprintf(stderr,
-		"Installed codex plugin from %s.\n"+
+		"Installed codex plugin from %s as %s.\n"+
+			"Removed other Spacedock Codex channels so $spacedock:* resolves from this install.\n"+
 			"version-masquerade advisory: the reported version reflects the checkout's "+
 			"checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.\n",
-		checkout)
+		checkout, channelPluginID(devBranch))
 	return nil
 }

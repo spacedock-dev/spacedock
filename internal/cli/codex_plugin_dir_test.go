@@ -94,6 +94,12 @@ func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 		if !strings.Contains(stderr.String(), advisory) {
 			t.Fatalf("stderr missing the version-masquerade advisory: %q", stderr.String())
 		}
+		if !strings.Contains(stderr.String(), "as "+channelPluginID(devBranch)) {
+			t.Fatalf("advisory must name the selected codex plugin id: %q", stderr.String())
+		}
+		if !strings.Contains(stderr.String(), "Removed other Spacedock Codex channels") {
+			t.Fatalf("advisory must name the sibling-provider cleanup: %q", stderr.String())
+		}
 		if !strings.Contains(stderr.String(), "not necessarily its current HEAD") {
 			t.Fatalf("advisory lost its meaning-bearing clause: %q", stderr.String())
 		}
@@ -138,6 +144,73 @@ func TestInstallCodexPluginDirInstallsViaSharedHelper(t *testing.T) {
 	}
 	if !strings.Contains(stderr.String(), "version-masquerade advisory") {
 		t.Fatalf("install --host codex --plugin-dir missing the advisory: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "as "+channelPluginID(devBranch)) {
+		t.Fatalf("install --host codex --plugin-dir must name the selected plugin id: %q", stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "Removed other Spacedock Codex channels") {
+		t.Fatalf("install --host codex --plugin-dir must name the sibling-provider cleanup: %q", stderr.String())
+	}
+}
+
+// TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider is AC-1's hermetic
+// host smoke. It seeds a fresh CODEX_HOME with BOTH Spacedock channels using raw
+// codex commands, then runs the production --plugin-dir install helper for the
+// selected edge checkout. `codex debug prompt-input` is Codex's own model-visible
+// skill list renderer, so the assertion observes provider resolution without an
+// LLM call: exactly one `spacedock:first-officer` entry remains, and it is the
+// selected checkout's provider.
+func TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider(t *testing.T) {
+	codexBin, err := exec.LookPath("codex")
+	if err != nil {
+		t.Skip("codex not on PATH; prompt-input provider smoke requires the host CLI")
+	}
+	saved := devBranch
+	devBranch = "next"
+	defer func() { devBranch = saved }()
+
+	tmp := t.TempDir()
+	codexHomeDir := filepath.Join(tmp, "codexhome")
+	mustMkdir(t, codexHomeDir)
+	t.Setenv("CODEX_HOME", codexHomeDir)
+
+	stableCheckout := buildCodexFirstOfficerCheckout(t, filepath.Join(tmp, "stable-checkout"), "1.0.0", "STABLE_PROVIDER_SPIKE")
+	oldEdgeCheckout := buildCodexFirstOfficerCheckout(t, filepath.Join(tmp, "old-edge-checkout"), "2.0.0", "OLD_EDGE_PROVIDER_SPIKE")
+	selectedCheckout := buildCodexFirstOfficerCheckout(t, filepath.Join(tmp, "selected-checkout"), "2.0.1", "SELECTED_PROVIDER_SPIKE")
+
+	stableInstall, err := WriteCodexLocalMarketplace(filepath.Join(tmp, "stable-marketplace"), stableCheckout, "spacedock")
+	if err != nil {
+		t.Fatalf("build stable local marketplace: %v", err)
+	}
+	oldEdgeInstall, err := WriteCodexLocalMarketplace(filepath.Join(tmp, "old-edge-marketplace"), oldEdgeCheckout, "spacedock-edge")
+	if err != nil {
+		t.Fatalf("build old edge local marketplace: %v", err)
+	}
+
+	runHost(t, codexBin, os.Environ(), "plugin", "marketplace", "add", stableInstall.MarketplaceRoot)
+	runHost(t, codexBin, os.Environ(), "plugin", "add", "spacedock@spacedock")
+	runHost(t, codexBin, os.Environ(), "plugin", "marketplace", "add", oldEdgeInstall.MarketplaceRoot)
+	runHost(t, codexBin, os.Environ(), "plugin", "add", "spacedock@spacedock-edge")
+
+	if err := installCodexLocalPluginDir(execHost{}, selectedCheckout, io.Discard); err != nil {
+		t.Fatalf("install selected --plugin-dir checkout: %v", err)
+	}
+
+	cmd := exec.Command(codexBin, "debug", "prompt-input", "probe")
+	cmd.Env = os.Environ()
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("codex debug prompt-input failed: %v\n%s", err, out)
+	}
+	rendered := string(out)
+	if got := strings.Count(rendered, "spacedock:first-officer:"); got != 1 {
+		t.Fatalf("prompt input has %d spacedock:first-officer providers, want exactly 1\n%s", got, rendered)
+	}
+	if strings.Contains(rendered, "STABLE_PROVIDER_SPIKE") || strings.Contains(rendered, "OLD_EDGE_PROVIDER_SPIKE") {
+		t.Fatalf("prompt input still exposes stale Spacedock providers:\n%s", rendered)
+	}
+	if !strings.Contains(rendered, "SELECTED_PROVIDER_SPIKE") {
+		t.Fatalf("prompt input missing the selected checkout provider:\n%s", rendered)
 	}
 }
 
@@ -190,5 +263,16 @@ func buildCodexPluginCheckout(t *testing.T, root, version string) string {
 		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=2,<3", "skills": "./skills/" }
 `)
 	mustWrite(t, filepath.Join(root, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
+	return root
+}
+
+func buildCodexFirstOfficerCheckout(t *testing.T, root, version, description string) string {
+	t.Helper()
+	mustMkdir(t, filepath.Join(root, ".codex-plugin"))
+	mustMkdir(t, filepath.Join(root, "skills", "first-officer"))
+	mustWrite(t, filepath.Join(root, ".codex-plugin", "plugin.json"),
+		`{ "name": "spacedock", "version": "`+version+`", "requires-contract": ">=3,<4", "skills": "./skills/" }
+`)
+	mustWrite(t, filepath.Join(root, "skills", "first-officer", "SKILL.md"), "---\nname: first-officer\ndescription: "+description+"\n---\n"+description+"\n")
 	return root
 }
