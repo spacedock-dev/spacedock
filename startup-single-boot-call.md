@@ -11,6 +11,7 @@ issue:
 id: 1y4ynffdxcgxn5eqcgw1mps3
 sprint: 0250-fo-behavioral-discipline
 mod-block: merge:pr-merge
+pr: "#480"
 ---
 
 # Boot identifies, engage converges — collapse the FO Startup recipe to ≤4 prose steps on the existing verbs
