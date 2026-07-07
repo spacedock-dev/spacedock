@@ -61,5 +61,14 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf/hf 2026-06-16 incident)",
 			intent:        "FO holds its OWN merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited \"known flake\" label.",
 		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (zm
+			// smallest-sufficient-mechanism); no Python ancestor — it reconstructs the
+			// ezf over-orchestration incident (a workflow + worker for edits the FO
+			// already held, a PR for a convention-direct doc) as a live mechanism choice.
+			name:          "smallest-sufficient-mechanism",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf over-orchestration incident)",
+			intent:        "FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop WITHOUT a per-entity justification (the gate stays silent through engage).",
+		},
 	}
 }

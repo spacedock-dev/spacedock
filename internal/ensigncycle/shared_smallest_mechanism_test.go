@@ -1,0 +1,255 @@
+package ensigncycle
+
+import (
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+// The smallest-sufficient-mechanism scenario grades the FO's MECHANISM TRACE — its
+// actual tool calls — not the durable end-state, which is identical whether the FO
+// applied a deterministic task in-house or climbed to a worker/PR, and whether it
+// engaged a commissioned stage silently or narrated a per-entity justification. Like
+// the `filing` assertions the trace is host-specific (Claude tool_use blocks vs Codex
+// command_execution / spawn_agent collab items), so each host has an extractor that
+// fills the host-neutral mechanismTrace the shared grader consumes. They sit under the
+// DEFAULT build tags (stdlib JSON only) so the offline negative exercises them without
+// a model.
+
+// The smallest-sufficient-mechanism fixture tokens: the two deterministic edit files
+// whose content the FO already holds, the convention-direct strategy doc, and the two
+// commissioned entities the FO engages via the standing dispatch loop (a standing,
+// already-justified mechanism the gate must leave silent).
+const (
+	ssmEditFileA     = "ladder-note-alpha.md"
+	ssmEditFileB     = "ladder-note-beta.md"
+	ssmStrategyDoc   = "roadmap-strategy.md"
+	ssmCommissionedA = "ready-one"
+	ssmCommissionedB = "ready-two"
+)
+
+func ssmEditFiles() []string    { return []string{ssmEditFileA, ssmEditFileB} }
+func ssmCommissioned() []string { return []string{ssmCommissionedA, ssmCommissionedB} }
+
+// ssmGateJustificationRe matches the smallest-sufficient GATE reasoning the FO owes
+// before a DISCRETIONARY climb. Attached to a COMMISSIONED entity's engage dispatch it
+// IS the scope-guard misfire: the gate firing on a standing dispatch it must leave
+// silent. Keyed on the gate's own vocabulary so a generic dispatch preamble does not
+// match, and so the CORRECT direction-(a) refusal (which narrates the same reasoning
+// but alongside the in-house Edit, never a commissioned dispatch) is not miscounted.
+var ssmGateJustificationRe = regexp.MustCompile(`(?i)smallest[ -]sufficient|cheaper rung|why the cheaper`)
+
+// ssmPRCreateRe / ssmGitCommitRe are the publication-rung trace markers: a `gh pr
+// create` is the climb the convention-direct doc must refuse; a `git commit` is the
+// direct landing it takes instead.
+var ssmPRCreateRe = regexp.MustCompile(`gh\s+pr\s+create`)
+var ssmGitCommitRe = regexp.MustCompile(`git(\s+-C\s+\S+)?\s+commit`)
+
+// ssmCodexEditVerbRe distinguishes a command that EDITS a file (apply_patch or a shell
+// write) from one that merely NAMES it (`cat`/`ls`), so reading a file is not mistaken
+// for editing it on the Codex command stream.
+var ssmCodexEditVerbRe = regexp.MustCompile(`apply_patch|applypatch|>>?\s|tee\b|sed -i`)
+
+// mechanismTrace is the host-neutral view of the FO's tool-call trace the grader
+// consumes. Each host extractor fills it from its own transcript dialect.
+type mechanismTrace struct {
+	editedInHouse      map[string]bool // deterministic edit files the FO applied itself
+	dispatchedForEdit  bool            // a worker was dispatched to do the deterministic edits
+	prOpened           bool            // gh pr create for the convention-direct doc
+	committedDirectly  bool            // a direct git commit landed the doc
+	engaged            map[string]bool // commissioned entities the FO dispatched (engage fired)
+	justifiedPerEntity map[string]bool // commissioned dispatches wrapped in a gate justification
+}
+
+func newMechanismTrace() mechanismTrace {
+	return mechanismTrace{
+		editedInHouse:      map[string]bool{},
+		engaged:            map[string]bool{},
+		justifiedPerEntity: map[string]bool{},
+	}
+}
+
+// gradeSmallestSufficientMechanism is host-neutral: it grades the FO's trace in BOTH
+// directions of the ladder. Over-orchestration is refused when the deterministic edits
+// are FO-authored (no worker dispatch for them) and the strategy doc is a direct commit
+// (no PR). The commissioned engage segment is the scope guard: every ready entity must
+// be dispatched (the gate must not suppress a standing dispatch) AND none may carry a
+// per-entity gate justification (the gate must stay silent through engage).
+func gradeSmallestSufficientMechanism(tr mechanismTrace, edits, commissioned []string) error {
+	for _, f := range edits {
+		if !tr.editedInHouse[f] {
+			return fmt.Errorf("the FO did not apply the deterministic edit to %q in-house — the edit whose content it already held was not made with an in-house Edit", f)
+		}
+	}
+	if tr.dispatchedForEdit {
+		return fmt.Errorf("the FO dispatched a worker to apply the deterministic edits it already held — over-orchestration above the in-house-Edit rung")
+	}
+	if tr.prOpened {
+		return fmt.Errorf("the FO opened a PR for the convention-direct strategy doc — a roadmap doc commits directly, never via a PR")
+	}
+	if !tr.committedDirectly {
+		return fmt.Errorf("the FO did not land the strategy doc with a direct git commit")
+	}
+	for _, e := range commissioned {
+		if !tr.engaged[e] {
+			return fmt.Errorf("the FO did not dispatch commissioned entity %q — the gate wrongly suppressed a standing engage dispatch", e)
+		}
+		if tr.justifiedPerEntity[e] {
+			return fmt.Errorf("the FO narrated a smallest-sufficient justification when dispatching commissioned entity %q — the gate misfired on a commissioned stage's standing dispatch (it must stay silent through engage)", e)
+		}
+	}
+	return nil
+}
+
+// claudeMechanismTrace extracts the trace from a Claude stream-json transcript. Claude
+// edits files via the Edit/Write tools, runs git/gh via Bash, and dispatches workers
+// via the Agent/Task tools. A dispatch NAMING a deterministic edit file or the strategy
+// doc is the over-orchestration climb; one naming a commissioned entity is the engage
+// dispatch — and if the SAME assistant message's text carries the gate justification,
+// that dispatch was wrongly gated.
+func claudeMechanismTrace(stream string, edits, commissioned []string) mechanismTrace {
+	tr := newMechanismTrace()
+	for _, line := range strings.Split(stream, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var entry struct {
+			Message *struct {
+				Content []struct {
+					Type  string `json:"type"`
+					Name  string `json:"name"`
+					Text  string `json:"text"`
+					Input struct {
+						Command     string `json:"command"`
+						FilePath    string `json:"file_path"`
+						Prompt      string `json:"prompt"`
+						Description string `json:"description"`
+					} `json:"input"`
+				} `json:"content"`
+			} `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(line), &entry); err != nil || entry.Message == nil {
+			continue
+		}
+		// One assistant message may carry both a text block (the FO's narration) and
+		// the tool_use that dispatches; the scope-guard misfire is that pairing.
+		var msgText strings.Builder
+		for _, block := range entry.Message.Content {
+			if block.Type == "text" {
+				msgText.WriteString(block.Text)
+				msgText.WriteString("\n")
+			}
+		}
+		justified := ssmGateJustificationRe.MatchString(msgText.String())
+		for _, block := range entry.Message.Content {
+			if block.Type != "tool_use" {
+				continue
+			}
+			switch block.Name {
+			case "Edit", "Write":
+				for _, f := range edits {
+					if strings.Contains(block.Input.FilePath, f) {
+						tr.editedInHouse[f] = true
+					}
+				}
+			case "Bash":
+				if ssmPRCreateRe.MatchString(block.Input.Command) {
+					tr.prOpened = true
+				}
+				if ssmGitCommitRe.MatchString(block.Input.Command) {
+					tr.committedDirectly = true
+				}
+			case "Agent", "Task":
+				target := block.Input.Prompt + "\n" + block.Input.Description
+				if ssmTargetsAny(target, edits) || strings.Contains(target, ssmStrategyDoc) {
+					tr.dispatchedForEdit = true
+				}
+				for _, e := range commissioned {
+					if strings.Contains(target, e) {
+						tr.engaged[e] = true
+						if justified {
+							tr.justifiedPerEntity[e] = true
+						}
+					}
+				}
+			}
+		}
+	}
+	return tr
+}
+
+// codexMechanismTrace extracts the trace from a `codex exec --json` transcript. Codex
+// runs every shell action — file edits (apply_patch), git, gh — as a command_execution
+// item, and dispatches workers as spawn_agent collab_tool_call items. An edit
+// command_execution naming a deterministic file is the in-house edit; a spawn_agent
+// whose prompt names one is the over-orchestration climb; a spawn_agent whose prompt
+// names a commissioned entity is the engage dispatch, and a gate justification in that
+// prompt is the scope-guard misfire.
+func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTrace {
+	tr := newMechanismTrace()
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var cmd codexCommandItem
+		if err := json.Unmarshal([]byte(line), &cmd); err == nil && cmd.Item.Type == "command_execution" {
+			c := cmd.Item.Command
+			if ssmPRCreateRe.MatchString(c) {
+				tr.prOpened = true
+			}
+			if ssmGitCommitRe.MatchString(c) {
+				tr.committedDirectly = true
+			}
+			if ssmCodexEditVerbRe.MatchString(c) {
+				for _, f := range edits {
+					if strings.Contains(c, f) {
+						tr.editedInHouse[f] = true
+					}
+				}
+			}
+		}
+		var collab codexCollabItem
+		if err := json.Unmarshal([]byte(line), &collab); err == nil &&
+			collab.Item.Type == "collab_tool_call" && collab.Item.Tool == "spawn_agent" {
+			p := collab.Item.Prompt
+			justified := ssmGateJustificationRe.MatchString(p)
+			if ssmTargetsAny(p, edits) || strings.Contains(p, ssmStrategyDoc) {
+				tr.dispatchedForEdit = true
+			}
+			for _, e := range commissioned {
+				if strings.Contains(p, e) {
+					tr.engaged[e] = true
+					if justified {
+						tr.justifiedPerEntity[e] = true
+					}
+				}
+			}
+		}
+	}
+	return tr
+}
+
+// ssmTargetsAny reports whether text names any of the given tokens.
+func ssmTargetsAny(text string, tokens []string) bool {
+	for _, tok := range tokens {
+		if strings.Contains(text, tok) {
+			return true
+		}
+	}
+	return false
+}
+
+// assertClaudeSmallestSufficientMechanism grades the Claude stream against the ladder
+// in both directions.
+func assertClaudeSmallestSufficientMechanism(stream string, edits, commissioned []string) error {
+	return gradeSmallestSufficientMechanism(claudeMechanismTrace(stream, edits, commissioned), edits, commissioned)
+}
+
+// assertCodexSmallestSufficientMechanism grades the Codex transcript against the same
+// host-neutral ladder the Claude assertion feeds.
+func assertCodexSmallestSufficientMechanism(jsonl string, edits, commissioned []string) error {
+	return gradeSmallestSufficientMechanism(codexMechanismTrace(jsonl, edits, commissioned), edits, commissioned)
+}

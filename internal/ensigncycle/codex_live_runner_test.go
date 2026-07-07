@@ -67,13 +67,14 @@ func codexLiveScenarios(t *testing.T) []codexLiveScenario {
 // lacks a runner for any sharedRuntimeScenarios() ID.
 func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario){
-		"gate-guardrail":              runCodexGateGuardrailScenario,
-		"rejection-flow":              runCodexRejectionFlowScenario,
-		"feedback-3-cycle-escalation": runCodexFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":        runCodexMergeHookGuardrailScenario,
-		"filing":                      runCodexFilingScenario,
-		"shallow-boot":                runCodexShallowBootScenario,
-		"self-evidence-merge-triage":  runCodexSelfEvidenceMergeTriageScenario,
+		"gate-guardrail":                runCodexGateGuardrailScenario,
+		"rejection-flow":                runCodexRejectionFlowScenario,
+		"feedback-3-cycle-escalation":   runCodexFeedback3CycleEscalationScenario,
+		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
+		"filing":                        runCodexFilingScenario,
+		"shallow-boot":                  runCodexShallowBootScenario,
+		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
+		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
 	}
 }
 
@@ -241,6 +242,27 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 	}
 	after := readMergeTriageAfter(t, workflowRoot, entityPath)
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexSmallestSufficientMechanismScenario drives the real FO against the
+// smallest-sufficient-mechanism fixture and grades the SAME host-neutral ladder
+// assertCodexSmallestSufficientMechanism the Claude runner feeds, over the Codex
+// command/collab transcript: the deterministic edits are FO-authored (in-house
+// apply_patch) with a direct commit and NO worker/PR climb, and the commissioned ready
+// entities are engaged via the standing dispatch loop without a per-entity justification.
+func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeSmallestMechanismWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertCodexSmallestSufficientMechanism(result.jsonl, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
