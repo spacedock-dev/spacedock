@@ -121,3 +121,16 @@ Codex provider resolution is unsafe when stable and edge Spacedock channels are 
 ### Summary
 
 Codex Spacedock installs now clear both stable and edge channel providers before pinning the selected channel, so a local `--plugin-dir` install leaves one authoritative `spacedock:first-officer` provider in Codex prompt input. Verification passed on the final tree with `go test ./internal/cli` (462 passed), `go test ./...` (2041 passed), `go test ./... -race` (2041 passed), and `gofmt -w ./cmd ./internal`; incidental gofmt changes outside scope were reverted per FO coordination.
+
+## Stage Report: validation
+
+- DONE: Reproduce CLI tests and the hermetic Codex prompt-input/provider smoke for exclusive stable/edge installs.
+  Evidence: focused `go test ./internal/cli -run ... -count=1 -v` passed 14 targeted Codex tests including `TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider`; `go test ./internal/cli` passed 462; `go test ./...` passed 2040; `go test ./... -race` passed 2040.
+- DONE: Inspect diagnostics/docs and branch diff for scope: selected --plugin-dir source is authoritative without unrelated behavior changes.
+  Evidence: `e1147c09` changes only Codex install routing/tests plus `docs/site/get-started/install.md`; `codexInstallArgvSequence` removes stable and edge before selected add, diagnostics name checkout/plugin id/cleanup, docs describe Codex channel exclusivity, and the code worktree is clean.
+- DONE: Append a validation report with a PASSED/REJECTED recommendation and exact evidence for any test or Codex-smoke gaps.
+  Evidence: recommendation PASSED; no Codex smoke or test gaps found. `gofmt -w ./cmd ./internal` exited 0 but reformatted two unrelated pre-existing files outside the feature diff, so those validator-created edits were restored before this report.
+
+### Summary
+
+Recommendation: PASSED. The implementation satisfies AC-1 through AC-4 with behavior-level tests and live Codex prompt-input evidence; the only validation note is pre-existing formatter drift outside the submitted feature diff, not a stale-provider implementation defect.
