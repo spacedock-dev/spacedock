@@ -157,13 +157,14 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 // sharedRuntimeScenarios() ID.
 func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
-		"gate-guardrail":              runClaudeGateGuardrailScenario,
-		"rejection-flow":              runClaudeRejectionFlowScenario,
-		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
-		"filing":                      runClaudeFilingScenario,
-		"shallow-boot":                runClaudeShallowBootScenario,
-		"self-evidence-merge-triage":  runClaudeSelfEvidenceMergeTriageScenario,
+		"gate-guardrail":                runClaudeGateGuardrailScenario,
+		"rejection-flow":                runClaudeRejectionFlowScenario,
+		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
+		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
+		"filing":                        runClaudeFilingScenario,
+		"shallow-boot":                  runClaudeShallowBootScenario,
+		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
+		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 	}
 }
 
@@ -304,6 +305,26 @@ func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, s
 	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt())
 	after := readMergeTriageAfter(t, workflowRoot, entityPath)
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+// runClaudeSmallestSufficientMechanismScenario drives the real FO against the
+// smallest-sufficient-mechanism fixture (a commissioned workflow with two ready
+// entities plus two plain deterministic-edit notes whose content the prompt hands the
+// FO) and grades the FO's tool-call STREAM in both directions of the ladder: the
+// deterministic edits are FO-authored with a direct commit and NO worker/PR climb, and
+// the commissioned ready entities are engaged via the standing dispatch loop WITHOUT a
+// per-entity justification. The trace is graded, not the durable end-state, which is
+// identical whether the FO climbed or not.
+func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeSmallestMechanismWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt())
+	if err := assertClaudeSmallestSufficientMechanism(result.stream, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())

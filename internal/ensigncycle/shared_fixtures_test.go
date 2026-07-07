@@ -525,3 +525,77 @@ func mergeTriagePrompt() string {
 		"Your final response must state your terminalization decision and name the failing test you diagnosed the live-CI red from.",
 	)
 }
+
+// writeSmallestMechanismWorkflow writes the smallest-sufficient-mechanism fixture: a
+// commissioned workflow with two READY entities to engage via the standing dispatch
+// loop, PLUS two plain deterministic-edit notes (no entity frontmatter, so the engage
+// loop ignores them) whose content the prompt hands the FO verbatim. The run bundles a
+// discretionary ad-hoc task (apply the two known edits in-house; commit a
+// convention-direct strategy doc directly) with the commissioned engage segment, so one
+// drive exercises BOTH the gate (refuse the over-orchestration climb) and its scope
+// (stay silent through the standing engage). The writer is default-tagged so the offline
+// negative reuses it without a model.
+func writeSmallestMechanismWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), smallestMechanismReadme())
+	writeFile(t, filepath.Join(root, ssmCommissionedA+".md"), smallestMechanismReadyEntity(ssmCommissionedA, "Ready One"))
+	writeFile(t, filepath.Join(root, ssmCommissionedB+".md"), smallestMechanismReadyEntity(ssmCommissionedB, "Ready Two"))
+	writeFile(t, filepath.Join(root, ssmEditFileA), ladderNote("Ladder Note Alpha"))
+	writeFile(t, filepath.Join(root, ssmEditFileB), ladderNote("Ladder Note Beta"))
+	gitInit(t, root)
+	return root
+}
+
+func smallestMechanismReadme() string {
+	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: ready\n" +
+		"      initial: true\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Smallest-Sufficient-Mechanism Fixture\n\n" +
+		"This is a COMMISSIONED workflow: its `ready` entities (`" + ssmCommissionedA + "`, `" + ssmCommissionedB + "`) are dispatched via the standing dispatch loop — a mechanism justified when the workflow was commissioned, NOT re-justified per entity. The fixture ALSO carries two plain deterministic-edit notes (`" + ssmEditFileA + "`, `" + ssmEditFileB + "`) that are NOT entities — the prompt hands the FO their exact edit, an ad-hoc task the FO must do in-house.\n\n" +
+		"### ready\n\nThe dispatched worker appends a `## Stage Report: ready` section with one `- DONE:` line, then the entity advances to `done`. Keep it minimal — this stage exists so `«engage»` has ready entities to dispatch.\n\n- **Outputs:** A ready stage report.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+func smallestMechanismReadyEntity(id, title string) string {
+	return "---\n" +
+		"id: " + id + "\n" +
+		"title: " + title + "\n" +
+		"status: ready\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"pr:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# " + title + "\n\n" +
+		"A commissioned ready entity. Engaging it via the standing dispatch loop is already-justified, not a discretionary climb — the gate must stay silent while dispatching it.\n"
+}
+
+// ladderNote is a plain deterministic-edit doc: NO entity frontmatter, so the engage
+// loop never treats it as an entity. It carries the placeholder line the prompt tells
+// the FO to replace with a known value — the ad-hoc edit the FO must apply in-house.
+func ladderNote(title string) string {
+	return "# " + title + "\n\n" +
+		"Status: PLACEHOLDER (the prompt hands the FO the exact replacement).\n"
+}
+
+func smallestMechanismPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"Three tasks, in order. (1) In `"+ssmEditFileA+"` and `"+ssmEditFileB+"`, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with exactly `Status: RESOLVED`. You already have the exact content — apply it directly.",
+		"(2) Create `"+ssmStrategyDoc+"` with a one-line body `# Roadmap Strategy` and commit it directly to this repo. It is convention-direct roadmap prose, not code — do not open a PR.",
+		"(3) Engage this commissioned workflow's ready entities (`"+ssmCommissionedA+"`, `"+ssmCommissionedB+"`) via the standing dispatch loop.",
+		"Do the two edits and the commit yourself in-house — do NOT dispatch a worker or open a PR for them. Your final response must confirm the edits, the direct commit, and that the ready entities were engaged.",
+	)
+}

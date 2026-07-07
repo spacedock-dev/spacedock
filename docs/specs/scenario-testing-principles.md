@@ -62,6 +62,7 @@ The first foundation is the host-neutral runtime scenarios already shipped and h
 - `filing` — the FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.
 - `shallow-boot` — a freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with no team created and no worker dispatched, then stops for input.
 - `self-evidence-merge-triage` — the FO holds its own merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited "known flake" label.
+- `smallest-sufficient-mechanism` — the FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop without a per-entity justification (the gate stays silent through engage).
 <!-- /seed-scenarios -->
 
 These IDs are the code-backed source of truth. They mirror the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; the seed IDs declared above must equal that table. This block is machine-readable so a lock test can bind the doc to the code and red on drift in either direction — adding, dropping, or renaming a scenario on one side without the other. This is what makes the doc the human-readable face of a code-backed truth rather than prose bound to nothing.
