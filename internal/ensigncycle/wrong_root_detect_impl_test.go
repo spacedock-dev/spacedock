@@ -65,7 +65,7 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 					clean, strings.TrimSpace(b.Input.Command), target)
 			}
 		case "Read":
-			// The FO reads {workflow_dir}/README.md at boot (Startup step 4). A
+			// The FO reads {workflow_dir}/README.md at boot (the Startup boot read). A
 			// workflow README read OUTSIDE the fixture means it booted the wrong
 			// workflow. Contract skills live under {plugin_dir}/skills/...references/,
 			// never a bare <root>/README.md, so this does not flag a contract read.

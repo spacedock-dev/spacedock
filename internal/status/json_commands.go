@@ -207,6 +207,14 @@ func bootJSON(d *bootData) *jsonObj {
 	// so every existing key's relative order is preserved for the FO's key-order parse.
 	out.set("sandbox", d.sandbox)
 
+	// Identify mode folds the workflow discovery result and the stage taxonomy into
+	// the record, appended AFTER every existing key so the un-flagged --boot key set
+	// and its pinned order are byte-for-byte unchanged. Absent otherwise.
+	if d.identify {
+		out.setValue("discovery", jsonStrArr(d.discovery))
+		out.setValue("stages", stagesJSONArr(d.stages))
+	}
+
 	return out
 }
 

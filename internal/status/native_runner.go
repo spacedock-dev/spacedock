@@ -73,11 +73,23 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 		pipelineDir = e.get("PIPELINE_DIR")
 	}
 	if pipelineDir == "" && rootPath == "" {
-		resolved, rc := ResolveWorkflowDir(dir, stderr)
-		if rc != 0 {
-			return rc
+		// Identify boot folds the old separate discover step into --boot: it
+		// discovers from the git root itself. Zero halts (report-and-stop, no broad
+		// search); many lists the workflows and proceeds (the captain engages one);
+		// exactly one resolves to a deep boot below.
+		if contains(args, "--boot") && contains(args, "--identify") {
+			resolved, handled, rc := resolveIdentifyBootDir(dir, contains(args, "--json"), stdout, stderr)
+			if handled {
+				return rc
+			}
+			pipelineDir = resolved
+		} else {
+			resolved, rc := ResolveWorkflowDir(dir, stderr)
+			if rc != 0 {
+				return rc
+			}
+			pipelineDir = resolved
 		}
-		pipelineDir = resolved
 	}
 
 	setResult, err := parseSetArgs(args)
@@ -121,6 +133,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	showNext := contains(args, "--next")
 	showNextID := contains(args, "--next-id")
 	showBoot := contains(args, "--boot")
+	identify := contains(args, "--identify")
 	showValidate := contains(args, "--validate")
 	asJSON := contains(args, "--json")
 	quiet := contains(args, "--quiet")
@@ -414,7 +427,7 @@ func dispatch(probe claudeteam.TeamStateProbe, args []string, dir string, e env,
 	}
 
 	// Read paths (table / next / boot / validate).
-	return runRead(probe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", stdout, stderr)
+	return runRead(probe, roots, args, e, whereFilters, includeArchive, showNext, showBoot, showNextID, showValidate, identify, explicitFields, allFieldsFlag, asJSON, quiet, archiveSlug != "", setResult != nil, resolveRef != "", stdout, stderr)
 }
 
 // failOnValidationErrors prints validation errors to stderr and returns 1 when
@@ -580,6 +593,39 @@ func discoverWorkflowDownward(dir string, stderr io.Writer) (string, int) {
 			msg += "\n  " + w
 		}
 		return "", errExit(stderr, msg)
+	}
+}
+
+// resolveIdentifyBootDir folds the old separate discover step into --boot
+// --identify: it discovers workflows from the request dir's git root and either
+// resolves the single workflow (returns it, handled=false) or terminally handles
+// the zero/many cases (emits + returns handled=true with the exit code). Zero halts
+// with the report-and-stop no-broad-search message (uniform with
+// discoverWorkflowDownward's zero branch); many lists the discovered workflows and
+// PROCEEDS with exit 0 — no eager convergence, the captain engages one via «engage».
+func resolveIdentifyBootDir(dir string, asJSON bool, stdout, stderr io.Writer) (string, bool, int) {
+	root := dir
+	if out, err := runGitCmd(dir, "rev-parse", "--show-toplevel"); err == nil {
+		root = strings.TrimSpace(out)
+	}
+	workflows := discoverWorkflows(root)
+	switch len(workflows) {
+	case 0:
+		return "", true, errExit(stderr, "no commissioned Spacedock workflow found in "+dir+
+			" — report this and stop; do NOT search the filesystem for one. "+
+			"If a workflow exists elsewhere, point at it with --workflow-dir <dir>.")
+	case 1:
+		return workflows[0], false, 0
+	default:
+		if asJSON {
+			emitJSON(stdout, newJSONObj().set("command", "boot").setValue("discovery", jsonStrArr(workflows)))
+		} else {
+			fmt.Fprintln(stdout, "DISCOVERY")
+			for _, w := range workflows {
+				fmt.Fprintln(stdout, w)
+			}
+		}
+		return "", true, 0
 	}
 }
 

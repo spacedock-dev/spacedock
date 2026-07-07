@@ -338,7 +338,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 // runRead handles the table / --next / --boot / --validate read flows. Matches
 // the tail of main() after the mutation branches.
 func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env, whereFilters []whereFilter,
-	includeArchive, showNext, showBoot, showNextID, showValidate bool,
+	includeArchive, showNext, showBoot, showNextID, showValidate, identify bool,
 	explicitFields []string, allFieldsFlag, asJSON, quiet bool,
 	hasArchiveSlug, hasSet, hasResolve bool,
 	stdout, stderr io.Writer) int {
@@ -435,14 +435,14 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	switch {
 	case showBoot:
 		if asJSON {
-			data, err := gatherBoot(probe, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr)
+			data, err := gatherBoot(probe, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr, identify)
 			if err != nil {
 				return 1
 			}
 			emitJSON(stdout, bootJSON(data))
 			return 0
 		}
-		if err := printBoot(probe, stdout, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr); err != nil {
+		if err := printBoot(probe, stdout, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr, identify); err != nil {
 			return 1
 		}
 	case showNext:
