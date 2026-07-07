@@ -9,6 +9,7 @@ id: zma49twsacm5bfzady4ss2qr
 started: 2026-07-04T10:38:15Z
 worktree: .worktrees/spacedock-ensign-fo-smallest-sufficient-mechanism
 mod-block: merge:pr-merge
+pr: "#478"
 ---
 
 ## Problem
