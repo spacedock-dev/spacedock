@@ -1,13 +1,13 @@
 ---
 id: 1796bakv26hyd6nc4zxv4sh7
 title: FO product-edit guard loads write-core before any mutation
-status: ideation
+status: implementation
 source: captain request 2026-07-07 after FO direct-edit boundary violation
 started: 2026-07-07T12:49:53Z
 completed:
 verdict:
 score: 0.6
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-write-core-product-edit-guard
 issue:
 ---
 
