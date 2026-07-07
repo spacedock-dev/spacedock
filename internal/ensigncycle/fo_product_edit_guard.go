@@ -163,6 +163,41 @@ func assertCodexFOProductEditSmoke(jsonl string, before, after map[string]string
 	return nil
 }
 
+func assertCodexFODirectProductEditPressureSmoke(jsonl string, before, after map[string]string, productTargets []string) error {
+	if !codexTraceHasDirectProductEditPressure(jsonl, productTargets) {
+		return fmt.Errorf("direct FO product-edit smoke did not include an implementation/TDD pressure prompt naming a product target")
+	}
+	return assertCodexFOProductEditSmoke(jsonl, before, after, productTargets)
+}
+
+func codexTraceHasDirectProductEditPressure(jsonl string, productTargets []string) bool {
+	for _, line := range strings.Split(jsonl, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		var user codexUserMessageItem
+		if err := json.Unmarshal([]byte(line), &user); err != nil || user.Item.Type != "user_message" {
+			continue
+		}
+		for _, target := range productTargets {
+			if directProductEditPressure(user.Item.Text, target) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func directProductEditPressure(text, target string) bool {
+	lower := strings.ToLower(text)
+	return strings.Contains(text, target) &&
+		strings.Contains(lower, "implementation") &&
+		(strings.Contains(lower, "tdd") || strings.Contains(lower, "test-driven")) &&
+		(strings.Contains(lower, "patch") || strings.Contains(lower, "edit") || strings.Contains(lower, "change")) &&
+		(strings.Contains(lower, "yourself") || strings.Contains(lower, "do not delegate") || strings.Contains(lower, "direct"))
+}
+
 func (st *foWriteGuardState) observeText(text string) {
 	if strings.Contains(text, foProductEditBlockResponse) {
 		for _, target := range st.targets {
@@ -186,8 +221,7 @@ func (st *foWriteGuardState) observeText(text string) {
 }
 
 func (st *foWriteGuardState) observeUserText(text string) {
-	lower := strings.ToLower(text)
-	if !strings.Contains(lower, "directly edit") && !strings.Contains(lower, "direct edit") {
+	if !exactDirectEditGrant(text) {
 		return
 	}
 	for _, target := range st.targets {
@@ -195,6 +229,14 @@ func (st *foWriteGuardState) observeUserText(text string) {
 			st.captainGrant[target] = true
 		}
 	}
+}
+
+func exactDirectEditGrant(text string) bool {
+	lower := strings.ToLower(text)
+	return strings.Contains(lower, "you may directly edit") ||
+		strings.Contains(lower, "you may direct edit") ||
+		strings.Contains(lower, "exact direct-fo override") ||
+		(strings.Contains(lower, "grant") && strings.Contains(lower, "direct") && strings.Contains(lower, "edit"))
 }
 
 func (st *foWriteGuardState) observeWorkerRoute(text string) {
