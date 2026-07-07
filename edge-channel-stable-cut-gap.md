@@ -1,12 +1,12 @@
 ---
 title: "Edge channel survives the stable-cut window (no binary/skills minor skew between a stable tag and the first prerelease)"
-status: ideation
+status: implementation
 source: "Captain report, 0250 Commander session 2026-07-07: edge tap installs the 0.24.0 binary while the spacedock-edge marketplace serves next-branch skills stamped 0.25.0-pre1. Verified: spacedock@next cask version 0.24.0 (updates only on tag push); origin/next .claude-plugin/plugin.json version 0.25.0-pre1; origin/next shared-core gate line 'require binary minor 0.25'. Result: every edge boot since the 0.24.0 stable cut (Jul 4) aborts at the FO version gate (binary too old, minor 0.24 < required 0.25). Broken by the release flow's own design — 'Advancing the Edge Line' bumps next to the post-release dev pre-version at the stable tag, but the edge BINARY only updates on the next tag push — not by any interim merge. Immediate remediation (separate from this task): push the first prerelease tag to realign."
 started: 2026-07-07T08:22:09Z
 completed:
 verdict:
 score: 0.5
-worktree:
+worktree: .worktrees/spacedock-ensign-edge-channel-stable-cut-gap
 issue:
 id: zr2rbsjsak7xx6tetr3n37hc
 ---
