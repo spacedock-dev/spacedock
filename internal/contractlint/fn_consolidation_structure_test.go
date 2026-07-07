@@ -100,7 +100,7 @@ func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T
 	for _, lp := range []string{
 		"first status query",    // status-query load-point
 		"first worker dispatch", // dispatch load-point
-		"write to main",         // write/new-entity load-point
+		"file-write intent",     // write/new-entity load-point
 		"terminal boundary",     // merge load-point
 	} {
 		if !strings.Contains(block, lp) {

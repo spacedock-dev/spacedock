@@ -51,7 +51,7 @@ var deferredSkillCores = map[string][]string{
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
 	},
 	filepath.Join("skills", "fo-write-core", "SKILL.md"): {
-		"## FO Write Scope", "## ID Styles",
+		"## Mutation Gate", "## FO Write Scope", "## ID Styles",
 	},
 	filepath.Join("skills", "fo-dispatch-recovery", "SKILL.md"): {
 		"## Degraded Mode", "## Break-Glass Manual Dispatch", "## Context Budget Failure and Dead Ensign Handling",
