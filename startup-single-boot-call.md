@@ -1,5 +1,5 @@
 ---
-title: "Collapse the FO Startup recipe to <=4 prose steps behind one shipped boot call"
+title: Boot identifies, engage converges — collapse the FO Startup recipe to ≤4 prose steps on the existing verbs
 status: ideation
 source: "Captain, 0250 Commander session 2026-07-07, post k7 fo-boot-engage-split merge: 'i am allergic to the > 4 steps recipes. can we now further clean it up?' Startup in first-officer-shared-core.md is an 8-step prose recipe (version gate, project root, discovery, taxonomy read, state.boot, state.ensure-ready, state.sweep-merged, greet/headless). Steps 2-7 are deterministic orchestration the binary can own — the workflow's own prefer-code-gate-over-prose principle applied to its boot."
 started: 2026-07-06T23:40:08Z
