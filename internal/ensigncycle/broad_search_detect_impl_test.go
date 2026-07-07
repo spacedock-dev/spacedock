@@ -13,7 +13,7 @@ import (
 // violation the captain observed (2026-06-14): after `spacedock status --discover`
 // returned zero workflows, an FO ran a broad `find`/`grep -r`/`ls -R` filesystem
 // sweep to hunt a workflow down instead of obeying the contract's terminal zero
-// branch (Startup step 3: zero → report no workflow found and STOP). A broad sweep
+// branch (Startup step 2: zero → report no workflow found and STOP). A broad sweep
 // at boot is both a discipline violation (the zero branch is report-and-stop) and a
 // cost/latency regression — the opposite of lean boot.
 //

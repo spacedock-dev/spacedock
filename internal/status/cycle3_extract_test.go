@@ -674,11 +674,11 @@ func atoiT(t *testing.T, s string) int {
 	return n
 }
 
-// TestBootTaxonomySourceSufficient (AC-4 source-sufficiency) proves the rewritten
-// FO Startup step 4 has a real source: a boot-shaped status --read docs/dev/README.md
-// --json yields, in its stages array, every per-stage flag step 4 enumerates
-// (initial/terminal/gate/worktree/feedback-to) for the five real stages — so the
-// contract sentence that points step 4 at status --read is sufficient, proven by
+// TestBootTaxonomySourceSufficient (AC-4 source-sufficiency) proves the FO Startup
+// boot taxonomy has a real source: a status --read docs/dev/README.md --json yields,
+// in its stages array, every per-stage flag the taxonomy carries
+// (initial/terminal/gate/worktree/feedback-to) for the five real stages — the same
+// stages source status --boot --identify folds into the boot record — proven by
 // EXERCISING the real output, not a prose-grep over the contract.
 //
 // This AC proves only source-sufficiency. The behavioral adoption — a booting FO

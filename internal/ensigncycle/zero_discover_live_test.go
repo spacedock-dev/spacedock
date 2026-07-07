@@ -20,7 +20,7 @@ import (
 // `commissioned-by: spacedock@` README), driven through the front door exactly like
 // TestLiveEnsignCycle. The captain observed (2026-06-14) an FO, after a zero
 // `status --discover`, run a broad find/grep filesystem sweep to hunt a workflow
-// instead of obeying the contract's terminal zero branch (Startup step 3: zero →
+// instead of obeying the contract's terminal zero branch (Startup step 2: zero →
 // report no workflow found and STOP). This test proves the real boot:
 //
 //	(a) reaches its greet/no-workflow report WITHOUT a TeamCreate (no workflow to

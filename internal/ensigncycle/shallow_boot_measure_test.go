@@ -13,7 +13,7 @@ import (
 // (the FIRST status query / --set / id lookup / issue filing, the FIRST write to
 // main, or a dispatch failure — never at boot). present-gate is deliberately NOT
 // here — the greet legitimately presents a ready gate via
-// Skill(skill="spacedock:present-gate") (Startup step 8), so the oracle keys on the
+// Skill(skill="spacedock:present-gate") (Startup step 3), so the oracle keys on the
 // skill ARGUMENT, not on any Skill call.
 var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
 
