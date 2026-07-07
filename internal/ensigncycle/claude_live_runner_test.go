@@ -163,6 +163,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
 		"filing":                      runClaudeFilingScenario,
 		"shallow-boot":                runClaudeShallowBootScenario,
+		"self-evidence-merge-triage":  runClaudeSelfEvidenceMergeTriageScenario,
 	}
 }
 
@@ -282,6 +283,28 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+// runClaudeSelfEvidenceMergeTriageScenario drives the real FO against the
+// merge/triage fixture (a diff touching a live-lane-exercised path, the required lane
+// unapproved, a prior-session handoff mislabelling this run's live-CI red) and grades
+// the FO's OWN decision against the INCIDENT class only (Cycle-3): it must NOT wave the
+// change through — terminalize-as-PASSED or merge-without-evidence — while the required
+// lane is unapproved; a hold or a reject-without-merge both pass. Its final-message
+// diagnosis must name THIS run's failing test, not the inherited "known flake" label.
+// The this-run token is graded in the FINAL MESSAGE only — the fixture body carries it
+// so the FO can read it, so grading the transcript would pass on the entity-read echo.
+func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt())
+	after := readMergeTriageAfter(t, workflowRoot, entityPath)
+	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }

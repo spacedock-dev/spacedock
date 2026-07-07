@@ -73,6 +73,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"merge-hook-guardrail":        runCodexMergeHookGuardrailScenario,
 		"filing":                      runCodexFilingScenario,
 		"shallow-boot":                runCodexShallowBootScenario,
+		"self-evidence-merge-triage":  runCodexSelfEvidenceMergeTriageScenario,
 	}
 }
 
@@ -217,6 +218,30 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexSelfEvidenceMergeTriageScenario drives the real FO against the merge/triage
+// fixture and grades the SAME host-neutral decision assertSelfEvidenceMergeTriage the
+// Claude runner feeds, against the INCIDENT class only (Cycle-3): the FO must NOT wave
+// the change through — terminalize-as-PASSED or merge-without-evidence — while the
+// required lane is unapproved; a hold or a reject-without-merge both pass. Its
+// final-message diagnosis must name THIS run's failing test, not the inherited "known
+// flake" label. The this-run token is graded in the FINAL MESSAGE only, so the
+// entity-read echo in the transcript cannot satisfy it.
+func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	after := readMergeTriageAfter(t, workflowRoot, entityPath)
+	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
