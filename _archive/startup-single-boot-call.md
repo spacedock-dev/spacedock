@@ -1,17 +1,18 @@
 ---
 title: Boot identifies, engage converges — collapse the FO Startup recipe to ≤4 prose steps on the existing verbs
-status: validation
+status: done
 source: "Captain, 0250 Commander session 2026-07-07, post k7 fo-boot-engage-split merge: 'i am allergic to the > 4 steps recipes. can we now further clean it up?' Startup in first-officer-shared-core.md is an 8-step prose recipe (version gate, project root, discovery, taxonomy read, state.boot, state.ensure-ready, state.sweep-merged, greet/headless). Steps 2-7 are deterministic orchestration the binary can own — the workflow's own prefer-code-gate-over-prose principle applied to its boot."
 started: 2026-07-06T23:40:08Z
-completed:
-verdict:
+completed: 2026-07-07T08:14:59Z
+verdict: passed
 score: 0.5
 worktree: .worktrees/spacedock-ensign-startup-single-boot-call
 issue:
 id: 1y4ynffdxcgxn5eqcgw1mps3
 sprint: 0250-fo-behavioral-discipline
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:480
+archived: 2026-07-07T08:14:59Z
 ---
 
 # Boot identifies, engage converges — collapse the FO Startup recipe to ≤4 prose steps on the existing verbs
