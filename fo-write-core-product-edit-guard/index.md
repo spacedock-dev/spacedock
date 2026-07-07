@@ -126,3 +126,16 @@ The design keeps the guard small: add a boot-resident pre-edit trigger, make `fo
 ### Summary
 
 Implemented the contract-plus-test guard from ideation without adding a launcher interceptor. Verification passed: `go test ./internal/contractlint ./internal/ensigncycle`, `go test ./...`, and `go test ./... -race`; `gofmt -w ./cmd ./internal` was run, and incidental formatting in another worker's keep-moving scope was restored before commit.
+
+## Stage Report: validation
+
+- DONE: Reproduce the implementation-reported tests and verify each acceptance criterion has non-tautological evidence.
+  `go test ./internal/contractlint ./internal/ensigncycle` passed 375 tests; `go test ./...` and `go test ./... -race` each passed 2043 tests; focused AC runs passed 5 contractlint and 4 ensigncycle tests.
+- DONE: Inspect the branch diff for scope: the guard blocks FO product edits while preserving allowed FO state writes and worker routing.
+  Diff scope is 7 files in `internal/contractlint`, `internal/ensigncycle`, and `skills/...`; detached mutation audits went red for a weakened pre-classification guard and weakened `internal/**` classifier.
+- DONE: Append a validation report with a PASSED/REJECTED recommendation and exact evidence for any live/test gaps.
+  Recommendation: REJECTED. Gaps: no live/shared product-edit smoke, missing redirection/`tee`/`sed -i` negatives, trace override is self-labeled, and worker routing is not parsed beyond route text.
+
+### Summary
+
+Recommendation: REJECTED. The offline tests and mutation controls prove the new trace and classifier guards catch the main planted failures, and the implementation branch is clean after validation. AC-1 still lacks the required direct FO product-edit smoke, AC-2 does not include all required command-shape negatives, and AC-4/worker-routing proof is partly tautological because the trace grader trusts the FO's own `override` label and route narration.
