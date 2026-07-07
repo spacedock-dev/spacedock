@@ -1,18 +1,19 @@
 ---
 title: FO contract keep-moving posture — approval is a trigger, parallel async when independent, no turn-end on async launch with work remaining, captain correction narrows not halts
-status: validation
+status: done
 source: "Shaping FO (2026-06-20, 0223 retrospective): repeatedly violated the contract's existing 'do obvious reversible work without ceremony' + 'keep dispatching other ready entities when one blocks' on pi. Patterns: (1) post-approval pause — asked 'want me to advance + dispatch?' after a gate approval (a reversible step the contract already permits); (2) sequential filing of independent followups instead of parallel; (3) turn-end on async launch with independent work remaining (the pi-subagents skill already forbids this; lift into the FO contract so it's host-neutral); (4) captain-question = full stop — conflated 'this member needs rework' with 'stop the session.' The async substrate exists to keep work moving while the FO coordinates; the contract should say so explicitly."
 score:
 started: 2026-07-04T10:38:18Z
-completed:
-verdict:
+completed: 2026-07-07T06:53:29Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-fo-contract-keep-moving-posture
 issue:
 sprint: 0250-fo-behavioral-discipline
 sprint-readiness:
 id: vcmbpj2dxq8bpkys2t0vkvq7
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:479
+archived: 2026-07-07T06:53:29Z
 ---
 
 # FO contract keep-moving posture
