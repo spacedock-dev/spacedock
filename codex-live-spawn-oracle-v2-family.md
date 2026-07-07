@@ -148,3 +148,16 @@ Recommendation: REJECTED. The offline oracle tests are green and preserve the in
 ### Summary
 
 Cycle 2 repaired the live-only gap by letting the Codex live rejection-flow oracle consume durable validation-stage worker output when Codex exec emits no spawn or validation-assignment surface. The anti-tautology boundary remains: transcript-only tests still reject narration without a validation assignment, and the durable fallback rejects inline validation when no validation stage report exists.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the cycle-2 focused durable-fallback/retry tests, full suite, race suite, and targeted live Codex rejection-flow smoke.
+  Focused `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse|TestRunCodexRejectionFlowRetry|TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle' -count=1 -v` passed 39 tests; final-tree `go test ./...` and `go test ./... -race` each passed 2043 tests across 17 packages; live `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-validation-codex-live-cycle2 go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow' -count=1 -v` passed in 515.017s.
+- DONE: Verify the durable fallback only applies when JSONL lacks usable spawn/assignment evidence and still rejects inline/narration-only validation.
+  Focused tests exercised the no-assignment durable positive, inline-without-validation-report negative, narration-without-validation-assignment negative, and retry narrowness cases; live artifact JSONL also showed validation dispatch-build surfaces at lines 70-71 and 107-108, so the live pass did not require narration-only acceptance.
+- DONE: Append a cycle-2 validation report with PASSED/REJECTED recommendation and exact evidence.
+  Recommendation: PASSED. Oracle implementation commit `4e9cd995` remains intact; required `gofmt -w ./cmd ./internal` produced formatter-only code commit `70697e9b` in `internal/release/journeydelta.go`.
+
+### Summary
+
+Recommendation: PASSED. Cycle-2 validation reproduced the focused durable-fallback and retry coverage, the full and race baselines, and a live Codex rejection-flow smoke that completed successfully with preserved artifacts. The anti-tautology boundary is still covered by executable tests: durable fallback accepts missing JSONL assignment evidence only when durable validation-stage worker output exists, and inline or narration-only validation remains red.
