@@ -1,6 +1,6 @@
 ---
 name: fo-status-viewer
-description: "First-officer status query/mutate/display surface — the `status` command flag docs, `--set` field docs, canonical captain-facing invocations, the Captain-Facing State Display rendering, and the GitHub-issue-filing approval gate. Invoke at the first ad-hoc status question, `--set` mutation, `--next-id`/`--resolve` lookup, or issue filing."
+description: "First-officer status query/display surface — the `status` command read flag docs, canonical captain-facing invocations, the Captain-Facing State Display rendering, and the GitHub-issue-filing approval gate. Invoke at the first ad-hoc status question, `--next-id`/`--resolve` lookup, or issue filing."
 user-invocable: false
 ---
 
@@ -12,7 +12,7 @@ The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutat
 
 Invoke it as:
 ```
-${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF|--apply-gate ...]
+${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
 ```
 
 - `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
@@ -20,12 +20,8 @@ ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--ne
 - `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
 - `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see `Skill(skill="spacedock:fo-write-core")`), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
 - `--next` / `--where "pr !="` — targeted event-loop queries.
-- `--apply-gate --gate {gate_id} --entity {ref} --verdict approve|revise|reject` — apply an externally captured gate decision. Use it when a gate UI, chat approval recovery path, or handoff packet already carries an explicit gate id and verdict. It resolves the entity, verifies it is currently at a declared `gate: true` stage, advances `approve` to the next stage, routes `revise`/`reject` to the stage's `feedback-to` target when present, and records `gate-id` / `gate-verdict` separately from terminal `verdict`.
 
-The `--set` flag updates entity frontmatter fields:
-- `--set {slug} field=value` sets a field
-- `--set {slug} field=` clears a field
-- `--set {slug} started` or `completed` auto-fills a UTC ISO 8601 timestamp (skipped if already set)
+State-changing `status --set` and `status --apply-gate` invocations are write authority; use `Skill(skill="spacedock:fo-write-core")` before applying them.
 
 ### Captain-Facing State Display
 

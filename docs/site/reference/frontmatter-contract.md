@@ -10,4 +10,4 @@ The workflow `README.md` frontmatter declares the entity type, the id style, and
 
 Each entity's frontmatter carries its id, current stage, outcome, and worktree state. The contract is [`entity.mdschema.yml`](https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/entity.mdschema.yml), which defines the fields, the custom-field policy, the recognized body headings, and the invariants.
 
-External gate apply paths may also write `gate-id` and `gate-verdict`. These record the last gate decision handed to `spacedock status --apply-gate`; they do not replace the terminal `verdict` field used when an entity closes.
+External gate apply paths may also write `gate-id` and `gate-verdict`. `gate-id` is caller-supplied by the surface that captured the human gate decision, such as a gate UI packet, chat approval recovery event, handoff packet, or other harness id; `spacedock status --apply-gate` records it but does not mint it. These fields record the last gate decision handed to `spacedock status --apply-gate`; they do not replace the terminal `verdict` field used when an entity closes.
