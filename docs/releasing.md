@@ -168,11 +168,38 @@ rare conflict here cannot unwind or block the release that already published):
   re-pull. This is the automated form of the manual reconcile the 0.24.0-pre1
   cut required (`next` had drifted 40 commits behind `main`, hard-blocking
   `spacedock codex` on a binary/plugin version-compat check).
-- **Stable (`vX.Y.Z`) tag:** `next` is reconciled the same way, then stamped
-  PAST the release to the post-release dev pre-version
-  (`spacedock-release dev-preversion X.Y.Z` → `X.(Y+1).0-pre1`), so the edge
-  line never masquerades as the stable version it just shipped, then the
-  calendar key is bumped.
+- **Stable (`vX.Y.Z`) tag, latest line:** `next` is reconciled the same way,
+  stamped PAST the release to `X.(Y+1).0-pre1`
+  (`spacedock-release dev-preversion X.Y.Z`) so the edge line never masquerades
+  as the stable version it just shipped, and the calendar key is bumped — then an
+  ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened release commit**
+  and pushed (via the re-triggering tap PAT). That prerelease tag's own release
+  run reuses the greened commit's e2e-gate pass, builds+publishes the `X.(Y+1)`-minor
+  edge binary, and bumps the `spacedock@next` cask — so the edge binary's minor
+  catches up to the skills' gate line within minutes instead of waiting for the
+  next hand-cut prerelease. The auto-tag MUST be annotated with a non-empty body
+  (the release-notes extraction step rejects a lightweight tag), and MUST be
+  pushed with the PAT (a `GITHUB_TOKEN` push does not fire the pre0 build). Expect
+  two GitHub releases per stable cut.
+- **Old-line / patch (`vX.Y.1`, or any tag whose target edge version is not
+  strictly greater than `next`'s current manifest version):** the whole
+  `edge-advance` job SKIPS (`spacedock-release edge-advance-decision` prints
+  `skip`, logged as a `::notice::`; every downstream step is gated on the
+  decision). `next`'s tip — content, manifests, gate line, and the marketplace
+  calendar key — is left untouched, so no edge installer re-pulls. The patch
+  updates only the stable cask; its fix reaches edge through the normal
+  `main`→`next` flow, never through a `-X theirs` reconcile that would clobber
+  `next`'s newer `(Y+1)`-line content or rewind its manifest/gate line. The
+  auto-pre0 step is stable-latest-line-only and decision-gated, so a patch never
+  attempts a colliding pre0 tag.
+
+The `vX.(Y+1).0-pre0` release run does not recurse: its `-pre0` tag routes to the
+prerelease path, whose `edge-advance-decision` skips (`pre0 < next`'s `pre1`), and
+the auto-pre0 step runs only on the stable path — so it neither re-tags nor
+rewinds `next`. goreleaser stamps the edge binary from the highest tag pointing at
+the commit (`git tag --points-at HEAD --sort -version:refname`), which is the
+`-pre0` tag, so the `X.(Y+1)` binary version is correct without an override; a
+`GORELEASER_CURRENT_TAG` pin is set on the goreleaser step as belt-and-suspenders.
 
 The reconcile is a merge, never a reset or force-push: the previous `next` tip
 is always a first-parent ancestor of the new commit, so `git push origin
