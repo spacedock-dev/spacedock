@@ -1,6 +1,6 @@
 ---
 title: "codex-live rejection-flow oracle accepts the current multi_agent_v2 spawn-evidence family (lane red on unchanged main)"
-status: validation
+status: implementation
 sprint:
 source: "0250 Commander session 2026-07-06/07. Timeline: Jul-4 main run green; 2026-07-06 k7 branch run, branch rerun, AND a baseline rerun of the Jul-4 green main run (same code) all red at codex_live_runner_test.go:42 'no validation spawn_agent found — the FO never created a cycle-1 reviewer to reuse'. codex-cli 0.142.5 identical across green and red runs, so not a CLI version change: service-side behavior drift under --enable multi_agent_v2 (the harness opts in deliberately and asserts the flag, codex_live_runner_test.go:283,399-400). Transcript evidence (artifacts, run 28806717191 + run 28693890413 attempt 2): the FO ran a REAL two-worker flow — separate implementation worker and validation reviewer, followup_task cycle-2 reuse, populated agents_states on collab wait calls, correct end-state markers — but zero spawn_agent-shaped events; its spawn mechanism now emits evidence the oracle does not recognize. Blocks every 0250 member's merge (all-lanes-green is the DoD's proof policy)."
 started: 2026-07-06T23:10:29Z
@@ -131,3 +131,7 @@ Implemented and committed the Codex live oracle repair on `spacedock-ensign/code
 ### Summary
 
 Recommendation: REJECTED. The offline oracle tests are green and preserve the intended negative cases, but the live Codex rejection-flow lane is still red on the repaired assertion. The preserved live artifact shows Codex produced the durable two-cycle end state, yet the only top-level `dispatch build` command was a failed implementation build (`missing required field 'checklist'`), with no validation assignment surface for the new oracle to accept.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — targeted live Codex rejection-flow still reds after 450s: durable state reached validation/PASSED with both feedback cycles, but the repaired oracle found no validation dispatch-build assignment surface to accept.
