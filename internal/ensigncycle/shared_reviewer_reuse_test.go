@@ -256,6 +256,9 @@ type codexCollabItem struct {
 	} `json:"item"`
 }
 
+const codexReviewerAssignmentMissing = "Codex reviewer assignment-separation evidence missing validation-stage dispatch assignment"
+const codexReviewerDurableOutputMissing = "Codex reviewer evidence missing validation-stage worker output"
+
 // assertCodexReviewerReuse scans the `codex exec --json` transcript for the FO's
 // rejection-flow reviewer routing. When the transcript proves a turn-starting
 // `«addressable-worker»` route exists, the FO must reuse the kept-alive cycle-1
@@ -266,8 +269,9 @@ type codexCollabItem struct {
 // characterized as addressable-worker ABSENT and the cycle-2 reviewer is fresh.
 // Codex exec does not surface enough current multi_agent_v2 metadata to prove a distinct reviewer process.
 // When spawn/thread evidence is absent, the Codex lane
-// grades assignment-separation plus durable end-state: this assertion requires
-// distinct implementation and validation dispatch-build surfaces, and
+// grades assignment-separation plus durable end-state: this assertion accepts
+// distinct implementation and validation dispatch-build surfaces; the live-runner
+// wrapper can also accept durable validation-stage worker output after
 // assertRejectionFlow grades the two-cycle entity body. The Claude runner remains
 // the process-level separation oracle because its stream exposes Agent/SendMessage
 // evidence.
@@ -324,7 +328,7 @@ func assertCodexReviewerReuse(jsonl string) error {
 		if codexReviewerReuseViaAssignmentSurfaces(jsonl) {
 			return nil
 		}
-		return fmt.Errorf("Codex reviewer assignment-separation evidence missing validation-stage dispatch assignment")
+		return fmt.Errorf(codexReviewerAssignmentMissing)
 	}
 	if validationSpawnCount > 1 {
 		return fmt.Errorf("the FO emitted %d validation spawn_agents — it FRESH-dispatched the cycle-2 validator instead of reusing the kept-alive cycle-1 reviewer (the #141 keepalive contract violation)", validationSpawnCount)
@@ -352,6 +356,29 @@ func assertCodexReviewerReuse(jsonl string) error {
 		}
 	}
 	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no followup_task/send_input for the cycle-2 re-review")
+}
+
+func assertCodexReviewerReuseWithDurableState(jsonl, entity string) error {
+	err := assertCodexReviewerReuse(jsonl)
+	if err == nil {
+		return nil
+	}
+	if err.Error() != codexReviewerAssignmentMissing {
+		return err
+	}
+	if codexReviewerDurableValidationOutput(entity) {
+		return nil
+	}
+	return fmt.Errorf(codexReviewerDurableOutputMissing)
+}
+
+func codexReviewerDurableValidationOutput(entity string) bool {
+	if !validationReport.MatchString(entity) {
+		return false
+	}
+	lower := strings.ToLower(entity)
+	return strings.Contains(lower, "cycle 1: rejected") &&
+		strings.Contains(lower, "cycle 2: passed")
 }
 
 func codexReviewerReuseViaAssignmentSurfaces(jsonl string) bool {

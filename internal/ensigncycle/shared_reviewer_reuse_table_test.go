@@ -419,6 +419,36 @@ func TestAssertCodexReviewerReuseRejectsNarratedReviewerWithoutValidationAssignm
 	}
 }
 
+func TestAssertCodexReviewerReuseWithDurableStateAcceptsValidationReportsWhenExecSurfaceHasNoAssignments(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation`),
+		codexWaitLine(),
+	}, "\n")
+	entity := passingRejectionEntityWithValidationReports()
+
+	if err := assertCodexReviewerReuseWithDurableState(jsonl, entity); err != nil {
+		t.Fatalf("durable validation reports should satisfy Codex reviewer evidence when exec emits no spawn/assignment surface: %v", err)
+	}
+}
+
+func TestAssertCodexReviewerReuseWithDurableStateRejectsInlineValidationWithoutReport(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("I validated inline and the separate reviewer passed."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation`),
+		codexWaitLine(),
+	}, "\n")
+	entity := passingRejectionEntity()
+
+	err := assertCodexReviewerReuseWithDurableState(jsonl, entity)
+	if err == nil {
+		t.Fatal("expected missing validation-stage report to fail durable Codex reviewer evidence")
+	}
+	const want = "Codex reviewer evidence missing validation-stage worker output"
+	if err.Error() != want {
+		t.Fatalf("error = %q, want %q", err.Error(), want)
+	}
+}
+
 func TestCodexReviewerReuseDocumentsExecObservabilityBoundary(t *testing.T) {
 	source, err := os.ReadFile("shared_reviewer_reuse_test.go")
 	if err != nil {
