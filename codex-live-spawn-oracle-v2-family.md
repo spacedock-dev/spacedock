@@ -11,6 +11,7 @@ worktree: .worktrees/spacedock-ensign-codex-live-spawn-oracle-v2-family
 issue:
 id: 3v5cd2fcx8y5bk1dcxt7swzf
 mod-block: merge:pr-merge
+pr: "#483"
 ---
 
 The codex-live shared-scenario runner proves worker separation by grepping the exec stream for spawn_agent-shaped events; under current multi_agent_v2 service behavior a genuinely-separated flow emits a different spawn/collab evidence family, so the lane is red on unchanged main and cannot go green for any diff. Direction: harden the spawn-evidence detection (internal/ensigncycle codex runner, with internal/dispatch/codex_v2_adapter.go's v2 modeling) to accept the current v2 family as reviewer-existence proof while REMAINING a real separation oracle — it must still go red when no separate reviewer existed (its whole point is catching an FO that validates inline; narration must never satisfy it). Evidence anchors for ideation: green-run artifacts (run 28693890413 attempt 1, Jul-4) vs red-run artifacts (attempt 2 + run 28806717191 attempts 1-2) — diff what spawn evidence looked like green vs red before writing the new oracle. High-stakes surface (a live lane's own tests → CI machinery): detached adversarial audit required, including a constructed no-separate-reviewer transcript the hardened oracle must reject. Acceptance sketch: value — codex-live returns green on unchanged main scenarios with the hardened oracle (baseline: red today), and 0250 members' merges unblock; mechanism — the oracle change ships with the anti-tautology negative case.
