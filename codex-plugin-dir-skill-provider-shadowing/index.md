@@ -9,6 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-codex-plugin-dir-skill-provider-shadowing
 issue:
+mod-block: merge:pr-merge
 ---
 
 A Codex session launched for local Spacedock development was expected to use `--plugin-dir .`, but the session skill registry surfaced a cached `spacedock:first-officer` path first. Live inspection on Codex CLI `0.142.5` showed both stable `spacedock@spacedock` and edge `spacedock@spacedock-edge` installed/enabled, while `spacedock codex --plugin-dir .` only refreshes the selected channel.
