@@ -138,6 +138,7 @@ Recommendation: REJECTED. The offline oracle tests are green and preserve the in
 
 - Cycle 1: REJECTED — targeted live Codex rejection-flow still reds after 450s: durable state reached validation/PASSED with both feedback cycles, but the repaired oracle found no validation dispatch-build assignment surface to accept.
 - Cycle 2: REJECTED at PR #483 CI — failed-jobs-only retry still red on codex-live `TestLiveCodexSharedScenarios/rejection-flow` with `Codex foreground-wait watchdog typed stall` (`arm=silent-after-wait`, `durable_progress=false`) and Claude opus `TestLiveClaudeSharedScenarios/{filing,feedback-3-cycle-escalation}` with wrong-root boot outside fixture cwd. Captain directed: send back, diagnose root cause, and get local green before retrying CI.
+- Cycle 3: REJECTED at PR #483 CI run 28906653062 on repaired head `749b7db6`. Deterministic lanes, offline, and `pi-live` passed, but `codex-live` failed before scenarios: `codex plugin add spacedock@spacedock` returned `failed to create plugin target directory: Filename too long (os error 36)`. `claude-live (sonnet, CI-E2E)` also failed `Run live ensign cycle` while continuing into shared scenarios; `claude-live (opus)` was still running shared scenarios at escalation time. Per the feedback-rejection-flow cycle-3 rule, FO escalated to captain instead of auto-dispatching another implementation round.
 
 ## Stage Report: implementation
 
