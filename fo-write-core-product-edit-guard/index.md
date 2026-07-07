@@ -156,3 +156,16 @@ Recommendation: REJECTED. The offline tests and mutation controls prove the new 
 ### Summary
 
 Cycle 2 keeps the compatibility-first guard but makes its proof independent: FO narration no longer proves worker routing, and an FO-authored `override` label no longer authorizes product writes. Direct product edits now require an exact user/captain grant plus a product/override classification, while blocked routes require the block response and an actual worker dispatch event.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the cycle-2 focused guard tests, full suite, and race suite, including product-edit smoke and redirection/tee/sed-i negatives.
+  Clean-state runs passed: focused `ensigncycle` 5 tests, focused `contractlint` 4 tests, package pair 376 tests, `go test ./...` 2043 tests, and `go test ./... -race` 2043 tests.
+- DONE: Verify the cycle-1 validation gaps are closed without scope creep or relying on self-labeled override/route narration.
+  Partially closed: mutation audits went red for unclassified product writes, self-labeled override/no grant, narration without worker dispatch, and redirection/`tee`/`sed -i` detector removals; AC-1 still lacks the specified direct-edit prompt/workflow smoke shape.
+- DONE: Append a cycle-2 validation report with PASSED/REJECTED recommendation and exact evidence.
+  Recommendation: REJECTED. The shipped smoke checks unchanged files and blocked-route response, but does not fixture the adversarial direct FO edit request with generic implementation/TDD pressure required by AC-1.
+
+### Summary
+
+Recommendation: REJECTED. Cycle 2 closes the command-shape, self-labeled override, and route-narration gaps, and the code worktree is clean after validation. The remaining material gap is AC-1: `TestAssertCodexFOProductEditSmoke` is a helper-level fixture with before/after maps and route text, not the specified direct FO product-edit smoke where the prompt asks for a product patch under implementation pressure.
