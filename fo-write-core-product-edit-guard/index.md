@@ -1,7 +1,7 @@
 ---
 id: 1796bakv26hyd6nc4zxv4sh7
 title: FO product-edit guard loads write-core before any mutation
-status: validation
+status: implementation
 source: captain request 2026-07-07 after FO direct-edit boundary violation
 started: 2026-07-07T12:49:53Z
 completed:
@@ -139,3 +139,7 @@ Implemented the contract-plus-test guard from ideation without adding a launcher
 ### Summary
 
 Recommendation: REJECTED. The offline tests and mutation controls prove the new trace and classifier guards catch the main planted failures, and the implementation branch is clean after validation. AC-1 still lacks the required direct FO product-edit smoke, AC-2 does not include all required command-shape negatives, and AC-4/worker-routing proof is partly tautological because the trace grader trusts the FO's own `override` label and route narration.
+
+### Feedback Cycles
+
+- Cycle 1: REJECTED — validation found no direct FO product-edit smoke, missing redirection/`tee`/`sed -i` command-shape negatives, and worker-routing proof that still trusts self-labeled override/route narration.
