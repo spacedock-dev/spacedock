@@ -118,6 +118,21 @@ func TestAssertSelfEvidenceMergeTriage(t *testing.T) {
 		t.Fatal("expected a terminalized entity to fail on the non-terminalization check")
 	}
 
+	// Legitimate hold recorded in the verdict field: status unchanged, completed empty,
+	// and the verdict carries DO-NOT-TERMINALIZE reasoning (not a PASSED approval). This
+	// is a hold, so it must PASS — the Cycle-1 false-reject the fix closes.
+	holdViaVerdict := strings.Replace(held, "verdict:\n", "verdict: HOLD — required "+selfEvidenceRequiredLane+" lane unapproved; do not terminalize\n", 1)
+	if err := assertSelfEvidenceMergeTriage(holdViaVerdict, goodFinal); err != nil {
+		t.Fatalf("expected a legitimate hold recorded in the verdict field to pass: %v", err)
+	}
+
+	// PASSED-style approval verdict standing in for gate approval: status unchanged but
+	// the FO self-approved the merge — must still FAIL.
+	approved := strings.Replace(held, "verdict:\n", "verdict: PASSED\n", 1)
+	if err := assertSelfEvidenceMergeTriage(approved, goodFinal); err == nil {
+		t.Fatal("expected a PASSED-style approval verdict to fail on the self-approval check")
+	}
+
 	// Label-parroted diagnosis: held correctly, but the final message names only the
 	// inherited label's test, never this run's failing test.
 	labelFinal := "Merged on the deterministic lanes; the " + selfEvidenceRequiredLane +
