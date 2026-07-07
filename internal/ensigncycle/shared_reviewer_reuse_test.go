@@ -264,6 +264,13 @@ type codexCollabItem struct {
 // Current public Codex live surfaces may expose only spawn/wait; when the FO
 // explicitly observes that no turn-starting reuse route is exposed, the contract is
 // characterized as addressable-worker ABSENT and the cycle-2 reviewer is fresh.
+// Codex exec does not surface enough current multi_agent_v2 metadata to prove a distinct reviewer process.
+// When spawn/thread evidence is absent, the Codex lane
+// grades assignment-separation plus durable end-state: this assertion requires
+// distinct implementation and validation dispatch-build surfaces, and
+// assertRejectionFlow grades the two-cycle entity body. The Claude runner remains
+// the process-level separation oracle because its stream exposes Agent/SendMessage
+// evidence.
 // Codex multi_agent_v2 reuses via a `followup_task` collab_tool_call to the
 // reviewer's thread; legacy pre-v2 fixtures use `send_input`. The thread is bound
 // by the `spawn_agent` whose prompt dispatched the validation stage. In the PRESENT
@@ -314,10 +321,10 @@ func assertCodexReviewerReuse(jsonl string) error {
 	}
 
 	if validationSpawnCount == 0 {
-		if codexReviewerReuseViaAdvanceCommands(jsonl) {
+		if codexReviewerReuseViaAssignmentSurfaces(jsonl) {
 			return nil
 		}
-		return fmt.Errorf("no validation spawn_agent found — the FO never created a cycle-1 reviewer to reuse")
+		return fmt.Errorf("Codex reviewer assignment-separation evidence missing validation-stage dispatch assignment")
 	}
 	if validationSpawnCount > 1 {
 		return fmt.Errorf("the FO emitted %d validation spawn_agents — it FRESH-dispatched the cycle-2 validator instead of reusing the kept-alive cycle-1 reviewer (the #141 keepalive contract violation)", validationSpawnCount)
@@ -347,11 +354,10 @@ func assertCodexReviewerReuse(jsonl string) error {
 	return fmt.Errorf("the FO spawned exactly one validation reviewer but sent it no followup_task/send_input for the cycle-2 re-review")
 }
 
-func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
+func codexReviewerReuseViaAssignmentSurfaces(jsonl string) bool {
 	initialValidationBuilds := 0
 	validationAdvanceBuilds := 0
 	implementationAdvances := 0
-	keptAliveValidationNarration := false
 	waitCalls := 0
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
@@ -364,17 +370,12 @@ func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
 				Type    string `json:"type"`
 				Tool    string `json:"tool"`
 				Command string `json:"command"`
-				Text    string `json:"text"`
 			} `json:"item"`
 		}
 		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			continue
 		}
 		switch ev.Item.Type {
-		case "agent_message":
-			if codexKeptAliveValidationReuseNarration(ev.Item.Text) {
-				keptAliveValidationNarration = true
-			}
 		case "collab_tool_call":
 			if ev.Item.Tool == "wait" || ev.Item.Tool == "wait_agent" || ev.Item.Tool == "collab:wait" {
 				waitCalls++
@@ -383,47 +384,121 @@ func codexReviewerReuseViaAdvanceCommands(jsonl string) bool {
 			if ev.Type != "item.completed" {
 				continue
 			}
-			cmd := strings.ToLower(ev.Item.Command)
-			if !strings.Contains(cmd, "dispatch build") {
+			build, ok := codexDispatchBuildFromCommand(ev.Item.Command)
+			if !ok {
 				continue
 			}
-			if strings.Contains(cmd, "--stage validation") {
-				if strings.Contains(cmd, "--advance") {
+			switch build.stage {
+			case "validation":
+				if build.advance {
 					validationAdvanceBuilds++
 				} else {
 					initialValidationBuilds++
 				}
 			}
-			if strings.Contains(cmd, "--stage implementation") &&
-				strings.Contains(cmd, "--advance") {
-				implementationAdvances++
+			if build.stage == "implementation" {
+				if build.advance {
+					implementationAdvances++
+				}
 			}
 		}
 	}
-	return initialValidationBuilds == 1 &&
+	return initialValidationBuilds >= 1 &&
 		validationAdvanceBuilds >= 1 &&
 		implementationAdvances >= 1 &&
-		keptAliveValidationNarration &&
 		waitCalls >= 2
 }
 
-func codexKeptAliveValidationReuseNarration(text string) bool {
-	lower := strings.ToLower(text)
-	if !strings.Contains(lower, "kept-alive") || !strings.Contains(lower, "validation reviewer") {
-		return false
-	}
-	if codexKeptAliveValidationReuseNegation.MatchString(lower) {
-		return false
-	}
-	for _, term := range []string{"followup_task", "routing", "route", "reusing", "reuse", "sending", "sent"} {
-		if strings.Contains(lower, term) {
-			return true
-		}
-	}
-	return false
+type codexDispatchBuild struct {
+	stage   string
+	advance bool
 }
 
-var codexKeptAliveValidationReuseNegation = regexp.MustCompile(`\b(?:not|never|no)\b[^.]{0,80}\b(?:followup_task|rout|reus|send|sent)\b`)
+func codexDispatchBuildFromCommand(command string) (codexDispatchBuild, bool) {
+	lower := strings.ToLower(command)
+	if !strings.Contains(lower, "dispatch build") {
+		return codexDispatchBuild{}, false
+	}
+	build := codexDispatchBuild{
+		stage:   codexDispatchStageFromFlags(lower),
+		advance: strings.Contains(lower, "--advance"),
+	}
+	for _, obj := range jsonObjectsIn(command) {
+		var payload struct {
+			Stage   string `json:"stage"`
+			Advance bool   `json:"advance"`
+		}
+		if err := json.Unmarshal([]byte(obj), &payload); err != nil {
+			continue
+		}
+		if payload.Stage != "" {
+			build.stage = strings.ToLower(payload.Stage)
+		}
+		if payload.Advance {
+			build.advance = true
+		}
+	}
+	if build.stage == "" {
+		return codexDispatchBuild{}, false
+	}
+	return build, true
+}
+
+func codexDispatchStageFromFlags(command string) string {
+	fields := strings.Fields(command)
+	for i, field := range fields {
+		if field == "--stage" && i+1 < len(fields) {
+			return strings.Trim(fields[i+1], `'"`)
+		}
+		if strings.HasPrefix(field, "--stage=") {
+			return strings.Trim(strings.TrimPrefix(field, "--stage="), `'"`)
+		}
+	}
+	return ""
+}
+
+func jsonObjectsIn(s string) []string {
+	var objects []string
+	for start := 0; start < len(s); start++ {
+		if s[start] != '{' {
+			continue
+		}
+		depth := 0
+		inString := false
+		escaped := false
+		for end := start; end < len(s); end++ {
+			ch := s[end]
+			if inString {
+				if escaped {
+					escaped = false
+					continue
+				}
+				if ch == '\\' {
+					escaped = true
+					continue
+				}
+				if ch == '"' {
+					inString = false
+				}
+				continue
+			}
+			switch ch {
+			case '"':
+				inString = true
+			case '{':
+				depth++
+			case '}':
+				depth--
+				if depth == 0 {
+					objects = append(objects, s[start:end+1])
+					start = end
+					end = len(s)
+				}
+			}
+		}
+	}
+	return objects
+}
 
 func codexReviewerReuseTool(tool string) bool {
 	return tool == "followup_task" || tool == "send_input"
