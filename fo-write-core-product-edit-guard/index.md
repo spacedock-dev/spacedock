@@ -11,31 +11,105 @@ worktree:
 issue:
 ---
 
-The FO direct-edit boundary failed because a first-officer session patched product code after reading the write-scope rules but before any hard mutation guard loaded.
+The FO direct-edit boundary failed because a first-officer session patched product code after reading the write-scope rules but before any hard mutation guard loaded. The fix must make "I am about to write a file" the trigger, not "I am about to mutate known state fields."
 
 ## Problem
 
-The first-officer contract says the FO owns state/frontmatter and ensigns own product code, but that boundary is currently too easy to bypass when a generic debugging or TDD skill pushes the session toward `apply_patch`. The next version should make product-file mutation impossible to miss: before any FO-initiated file write, the mutation path must load `spacedock:fo-write-core`, classify the target, and block product-code edits unless the captain explicitly grants direct-FO editing for that exact task.
+The first-officer contract says the FO owns state/frontmatter and ensigns own product code, but that boundary is currently too easy to bypass. A generic implementation skill can push the FO toward `apply_patch`, `Edit`, `Write`, shell redirection, `tee`, or `sed -i` before the existing deferred trigger for `spacedock:fo-write-core` fires. That leaves the most dangerous path, direct product edits, outside the write-scope gate.
+
+The desired behavior is observable: when the FO is asked to patch product files while acting as FO, the product tree stays unchanged, the FO loads and applies write-core classification before any file write, and the response says to route the change through a worker unless the captain grants an exact direct-FO override for the named task and path.
 
 ## Proposed approach
 
-Ideation should design the smallest enforceable mechanism. Prefer a contract plus binary/test guard if feasible. At minimum, the task should define a boot-resident pre-edit checkpoint and update `fo-write-core` so it is a mutation gate, not only a state-write helper.
+Use the smallest enforceable mechanism: a boot-resident pre-edit checkpoint plus a stronger `fo-write-core` mutation gate, backed by trace and contractlint tests. Do not add a launcher-level file-write interceptor in this task; the launcher cannot see model-native `Edit`/`Write`/`apply_patch` calls, and a partial binary guard would create false confidence.
+
+Implementation should change two instruction surfaces:
+
+1. `skills/first-officer/references/first-officer-shared-core.md` keeps `fo-write-core` deferred at boot, but broadens its trigger from first state write to first FO-authored file-write intent.
+2. `skills/fo-write-core/SKILL.md` gains an explicit `## Mutation Gate` section with a target classifier, allowed/blocked classes, exact override rules, and the operator response for blocked product edits.
+
+Recommended boot-resident wording:
+
+```markdown
+- `Skill(skill="spacedock:fo-write-core")` - first FO-authored file-write intent or state mutation. Before using Edit, Write, apply_patch, shell redirection, `tee`, `sed -i`, or any command that writes a repo file, load `fo-write-core` and run `«write.classify»(target, intent)`. `«engage»`'s sweep / pr-merge advancement remains pre-authorized and does not load this gate.
+```
+
+Recommended `fo-write-core` addition:
+
+```markdown
+## Mutation Gate
+
+Before any FO-authored file write, classify every target path:
+
+- `allowed-state` - entity frontmatter via `${SPACEDOCK_BIN:-spacedock} status --set`, `spacedock new`, archive moves, state-transition commits, and `### Feedback Cycles` under the existing worktree/state rules.
+- `allowed-process` - the workflow `README.md` the FO operates, because it defines the process rather than the product.
+- `blocked-product` - code, tests, product docs, fixtures, release/CI files, shipped skill/agent/reference scaffolding, plugin manifests, mods, and any other file whose content is the deliverable.
+- `override` - a blocked-product target with an explicit captain grant naming this exact task and target path or path class.
+
+For `blocked-product`, do not write. Say `route through worker / explicit override required` and dispatch a worker when the workflow stage calls for product work. A broad prompt such as "fix it directly" is not an override; the FO must be able to quote the captain's exact grant and match it to the target.
+```
+
+Target-class fixtures should cover at least:
+
+- Allowed: `.spacedock-state/<task>/index.md` frontmatter through `status --set`, new entity creation through `spacedock new`, `### Feedback Cycles`, archive moves, state-transition commits, and `docs/dev/README.md`.
+- Blocked: `cmd/**`, `internal/**`, `*_test.go`, `skills/**`, `agents/**`, `references/**`, `plugin.json`, `.github/**`, `docs/site/**`, `docs/specs/**`, `docs/roadmap/**` when it is product strategy, fixtures, release artifacts, and `docs/dev/_mods/**`.
+- Override: the same blocked targets only when an exact captain grant names the target and task.
+
+Mechanism options considered:
+
+- Prose-only reminder: too weak. It reproduces the failure because another skill can still move directly to an edit.
+- Binary write interceptor: too broad for this task and incomplete for model-native editing tools. It may be worth a later host-level safety project, but it is not the smallest reliable mechanism here.
+- Contract gate plus trace/fixture tests: recommended. It changes the FO's decision point and gives validation a way to fail when a product edit appears before classification, when classification is absent, or when the FO reports a vague direct-edit path.
+
+Staff review is recommended at the ideation gate because this changes shipped FO contract behavior and the proof crosses `contractlint`, `ensigncycle`, and live-runtime discipline.
 
 ## Out of scope
 
-Do not change product launcher behavior unless the design proves a code-level guard is needed. Do not loosen the FO/ensign ownership split.
+Do not change product launcher behavior unless implementation proves the contract-plus-test gate cannot catch the failure. Do not add PR or mod behavior. Do not loosen the FO/ensign ownership split. Do not make `fo-write-core` load at greet; the gate should stay deferred until the first file-write intent.
 
 ## Acceptance criteria
 
-**AC-1 - FO product-file edits are blocked by an explicit guard before mutation.**
-Verified by: a behavioral or structural guard that fails when an FO path can edit `cmd/**`, `internal/**`, `skills/**`, `.github/**`, or product docs without first loading/classifying through `fo-write-core` or receiving an explicit captain override.
+**AC-1 - A direct FO product-edit request leaves product files unchanged and produces the blocked-route response.**
+Verified by: an adversarial FO smoke where the prompt asks the FO to patch a product file directly, with generic implementation/TDD pressure. The assertion fails if any `cmd/**`, `internal/**`, `skills/**`, `agents/**`, `.github/**`, product-doc, fixture, or release file changes, or if the FO response does not include `route through worker / explicit override required`.
 
-**AC-2 - The write-core contract classifies allowed and blocked target classes.**
-Verified by: a test or contractlint check backed by independent target fixtures, not a prose-only grep over the skill text.
+**AC-2 - FO trace validation fails when a product edit happens before write-core classification.**
+Verified by: an `internal/ensigncycle` host-neutral trace grader with Claude and Codex fixtures. Negative fixtures include `Edit`/`Write`, Codex `file_change`, `apply_patch`, shell redirection, `tee`, and `sed -i` against blocked paths before a `spacedock:fo-write-core` load/classification event. Each negative must fail; allowed state/process writes and exact-override writes must pass.
 
-**AC-3 - The workflow records the intended operator ergonomics.**
-Verified by: a runtime or fixture-backed smoke showing the FO reports “route through worker / explicit override required” when asked to patch product files while operating as FO.
+**AC-3 - The write-core contract classifies allowed, blocked, and override target classes.**
+Verified by: a `contractlint` check over a machine-readable target-class block or parser-friendly table in `skills/fo-write-core/SKILL.md`, driven by independent path fixtures. The test must fail if `cmd/**`, `internal/**`, `skills/**`, `.github/**`, or product docs move from blocked to allowed without an exact override fixture.
+
+**AC-4 - Exact overrides are narrow and auditable.**
+Verified by: fixtures where a broad prompt such as "fix the code directly" still blocks, while a prompt that explicitly grants "you may directly edit `internal/example.go` for this task" permits only that target after classification. A different product path under the same prompt must fail.
+
+**AC-5 - The deferred-load contract remains lazy at greet but active before edits.**
+Verified by: existing shallow-boot deferred-skill tests remain green for greet behavior, plus the new product-edit trace test proves `fo-write-core` loads before the first FO-authored file write. This guards both regressions: eager boot bloat and late write-core loading.
 
 ## Test plan
 
-Ideation should identify whether this can be enforced by contractlint, a launcher/runtime prompt fixture, or both. Include an adversarial case where a generic implementation skill would otherwise try to call `apply_patch`.
+Implementation should add focused tests before editing the contract text:
+
+- `internal/contractlint`: parse the `fo-write-core` target-class table and classify independent fixtures. Include mutation controls for "blocked product path wrongly allowed" and "broad override wrongly accepted."
+- `internal/ensigncycle`: add `assertFOProductEditGuard` over host-neutral traces. Reuse existing patterns from `shared_smallest_mechanism_test.go`: Claude extracts `Skill`, `Edit`, `Write`, `Bash`, and `Agent`; Codex extracts `file_change`, `command_execution`, `collab_tool_call`, and `agent_message`. Include good-route, good-state, good-exact-override, and bad-product-before-classification fixtures.
+- Live or fixture-backed smoke: seed a disposable workflow where the FO is asked to patch a product file directly while a generic implementation skill would normally choose `apply_patch`. Assert no blocked product file changed and the response says `route through worker / explicit override required`.
+- Regression commands: `go test ./internal/contractlint ./internal/ensigncycle`, then `go test ./...`. Because the change touches shipped FO contract scaffolding, validation should also run the relevant live FO lane(s); at minimum run Codex live for the observed failure path, and run any other host lane that CI marks required for shared FO contract changes.
+- Detached adversarial audit: on a throwaway checkout, temporarily weaken the guard so a blocked `internal/**` edit can occur before classification. The new tests must go red. If they stay green, route back to implementation.
+
+Riskiest mechanism spike: no new live runtime spike is needed for ideation. The repo already has proven trace-parsing mechanisms for the relevant shapes: Codex `file_change`, `command_execution`, and `agent_message`; Claude multi-delta `Skill` calls; and contractlint structural controls with planted red cases. Ideation re-ran the narrow checks on 2026-07-07:
+
+- `go test ./internal/ensigncycle -run 'TestAssert(Codex|Claude)SmallestSufficientMechanism|TestAssertGreetInvokesNoDeferredFOSkill'` - 4 tests passed.
+- `go test ./internal/contractlint -run 'TestBoundaryGuard|TestDeferredSkillCoresResolveAndCarryCeremony|TestBootResidentDeferredLoadPointsResolve'` - 5 tests passed.
+
+The implementation's first new test should be the product-edit negative fixture: an FO trace with `spacedock:fo-write-core` absent and a Codex `file_change` touching `internal/status/mutate.go` must fail.
+
+## Stage Report: ideation
+
+- DONE: Clarify the write-boundary failure into a behavior-first design with enforceable FO mutation guard options.
+  Reframed the failure around observable product-tree non-mutation, pre-edit classification, exact overrides, and the worker-route response.
+- DONE: Define acceptance criteria and tests that can fail if an FO product edit bypasses write-core classification.
+  Added AC-1 through AC-5 with contractlint fixtures, host-neutral trace fixtures, live smoke, exact-override negatives, and deferred-load regression checks.
+- DONE: Record the riskiest mechanism spike or a concrete no-spike-needed rationale, then append a complete ideation stage report.
+  Ran narrow trace/contractlint precedent checks: `internal/ensigncycle` 4 passed and `internal/contractlint` 5 passed on 2026-07-07.
+
+### Summary
+
+The design keeps the guard small: add a boot-resident pre-edit trigger, make `fo-write-core` classify every FO-authored write, and prove the behavior with trace and target-class fixtures. It avoids a partial launcher interceptor and requires validation to falsify the guard with an adversarial product-edit case before the task can pass.
