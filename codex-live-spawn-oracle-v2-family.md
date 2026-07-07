@@ -135,3 +135,16 @@ Recommendation: REJECTED. The offline oracle tests are green and preserve the in
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — targeted live Codex rejection-flow still reds after 450s: durable state reached validation/PASSED with both feedback cycles, but the repaired oracle found no validation dispatch-build assignment surface to accept.
+
+## Stage Report: implementation
+
+- DONE: Root-caused the failed targeted live Codex rejection-flow artifact where durable state passes but no validation assignment surface is emitted.
+  The cycle-1 implementation still routed the live retry through `assertCodexReviewerReuse(got.result.jsonl)` after `assertRejectionFlow` had already proven the durable two-cycle state. That kept the final gate JSONL-only even when Codex exec omitted spawn/thread/assignment metadata. A preserved local repro attempt was blocked before JSONL creation by a Codex ENOSPC/cache error, but the validator's preserved artifact summary was enough to identify the missing handoff: durable validation worker output was available in `entityAfter`, yet the oracle never received it.
+- DONE: Revised the oracle and fixtures so the actual live surface passes while no-reviewer/inline-validation negatives still fail without relying on transcript narration.
+  Added `assertCodexReviewerReuseWithDurableState`, used only by the Codex rejection-flow retry wrapper. JSONL spawn/reuse and assignment surfaces still win when present; contradictory JSONL evidence still fails. Only the missing-assignment error can fall back to durable validation-stage worker output, requiring a `## Stage Report: validation` heading plus recorded `Cycle 1: REJECTED` and `Cycle 2: PASSED` feedback. Added a live-surface-style positive with no validation assignment surface and a narration-heavy inline-validation negative that lacks a validation report and stays red.
+- DONE: Reran focused offline/full/race checks and the targeted live rejection-flow smoke, then appended this cycle-2 implementation report.
+  Verification passed: focused durable fallback/retry tests, `go test ./internal/ensigncycle`, `go test ./...` (2044 passed across 17 packages), `go test ./... -race` (2044 passed across 17 packages), `gofmt -w ./cmd ./internal`, and targeted live smoke `go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow' -count=1` (2 passed). Code commit: `4e9cd99` (`accept codex durable reviewer evidence`).
+
+### Summary
+
+Cycle 2 repaired the live-only gap by letting the Codex live rejection-flow oracle consume durable validation-stage worker output when Codex exec emits no spawn or validation-assignment surface. The anti-tautology boundary remains: transcript-only tests still reject narration without a validation assignment, and the durable fallback rejects inline validation when no validation stage report exists.
