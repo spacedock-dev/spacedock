@@ -585,6 +585,7 @@ type streamBlock struct {
 	ToolUseID  string          `json:"tool_use_id"`
 	RawContent json.RawMessage `json:"content"`
 	Text       string          `json:"text"`
+	IsError    bool            `json:"is_error"`
 	Thinking   string          `json:"thinking"`
 }
 

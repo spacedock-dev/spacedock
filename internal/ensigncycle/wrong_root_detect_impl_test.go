@@ -45,6 +45,8 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
 		clean = resolved
 	}
+	var findings []wrongRootFinding
+	byToolID := make(map[string]int)
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || !strings.HasPrefix(line, "{") {
@@ -54,28 +56,94 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 		if json.Unmarshal([]byte(line), &e) != nil {
 			continue
 		}
-		b := e.toolUseBlock()
-		if b == nil {
-			continue
+		for _, b := range e.toolUseBlocks() {
+			switch b.Name {
+			case "Bash":
+				if target, ok := wanderTarget(b.Input.Command, clean); ok {
+					f := wrongRootFinding{
+						kind:    wrongRootBash,
+						clean:   clean,
+						command: strings.TrimSpace(b.Input.Command),
+						target:  target,
+					}
+					findings = append(findings, f)
+					if b.ID != "" {
+						byToolID[b.ID] = len(findings) - 1
+					}
+				}
+			case "Read":
+				// The FO reads {workflow_dir}/README.md at boot (the Startup boot
+				// read). A workflow README read OUTSIDE the fixture means it booted
+				// the wrong workflow. Contract skills live under {plugin_dir}/skills/;
+				// those reads are legitimate and excluded by wanderWorkflowReadme.
+				if target, ok := wanderWorkflowReadme(b.Input.FilePath, clean); ok {
+					f := wrongRootFinding{
+						kind:   wrongRootRead,
+						clean:  clean,
+						target: target,
+					}
+					findings = append(findings, f)
+					if b.ID != "" {
+						byToolID[b.ID] = len(findings) - 1
+					}
+				}
+			}
 		}
-		switch b.Name {
-		case "Bash":
-			if target, ok := wanderTarget(b.Input.Command, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — the FO's boot operated outside its launch cwd",
-					clean, strings.TrimSpace(b.Input.Command), target)
+		for _, b := range e.resultBlocks() {
+			idx, ok := byToolID[b.ToolUseID]
+			if !ok {
+				continue
 			}
-		case "Read":
-			// The FO reads {workflow_dir}/README.md at boot (the Startup boot read). A
-			// workflow README read OUTSIDE the fixture means it booted the wrong
-			// workflow. Contract skills live under {plugin_dir}/skills/...references/,
-			// never a bare <root>/README.md, so this does not flag a contract read.
-			if target, ok := wanderWorkflowReadme(b.Input.FilePath, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — the FO's boot operated outside its launch cwd",
-					clean, target)
+			if toolResultFailed(b) {
+				findings[idx].ignored = true
+				continue
 			}
+			return findings[idx].err()
+		}
+	}
+	for _, f := range findings {
+		if !f.ignored {
+			return f.err()
 		}
 	}
 	return nil
+}
+
+type wrongRootFindingKind int
+
+const (
+	wrongRootBash wrongRootFindingKind = iota
+	wrongRootRead
+)
+
+type wrongRootFinding struct {
+	kind    wrongRootFindingKind
+	clean   string
+	command string
+	target  string
+	ignored bool
+}
+
+func (f wrongRootFinding) err() error {
+	switch f.kind {
+	case wrongRootBash:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — the FO's boot operated outside its launch cwd",
+			f.clean, f.command, f.target)
+	case wrongRootRead:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — the FO's boot operated outside its launch cwd",
+			f.clean, f.target)
+	default:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but observed an unknown off-fixture workflow operation targeting %q",
+			f.clean, f.target)
+	}
+}
+
+func toolResultFailed(b *streamBlock) bool {
+	if b.IsError {
+		return true
+	}
+	text := strings.TrimSpace(b.flatText())
+	return strings.HasPrefix(text, "Exit code ")
 }
 
 // wanderWorkflowReadme returns the off-fixture absolute path of a workflow README
@@ -90,7 +158,15 @@ func wanderWorkflowReadme(filePath, fixtureRoot string) (string, bool) {
 	if isUnder(p, fixtureRoot) {
 		return "", false
 	}
+	if isPluginSkillRootReadme(p) {
+		return "", false
+	}
 	return p, true
+}
+
+func isPluginSkillRootReadme(path string) bool {
+	parent := filepath.Dir(path)
+	return filepath.Base(filepath.Dir(parent)) == "skills"
 }
 
 // wanderTarget returns the off-fixture absolute path a boot command targets, when
@@ -101,12 +177,28 @@ func wanderWorkflowReadme(filePath, fixtureRoot string) (string, bool) {
 // hasWorkflowOperativeSignature).
 func wanderTarget(command, fixtureRoot string) (string, bool) {
 	corroborated := hasWorkflowOperativeSignature(command)
-	for _, arg := range bootPathArgs(command) {
+	args := bootPathArgs(command)
+	explicitWorkflowDirInFixture := false
+	for _, arg := range args {
+		if arg.cd || !filepath.IsAbs(arg.path) {
+			continue
+		}
+		p := filepath.Clean(arg.path)
+		if p == fixtureRoot || isUnder(p, fixtureRoot) {
+			explicitWorkflowDirInFixture = true
+			continue
+		}
+		return p, true
+	}
+	for _, arg := range args {
 		if !filepath.IsAbs(arg.path) {
 			continue
 		}
 		p := filepath.Clean(arg.path)
 		if p == fixtureRoot || isUnder(p, fixtureRoot) {
+			continue
+		}
+		if arg.cd && explicitWorkflowDirInFixture {
 			continue
 		}
 		if arg.cd && !corroborated {

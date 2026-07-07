@@ -98,7 +98,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	binary := spacedockBinary(t)
 	repo := repoRoot(t)
 	artifactRoot := codexLiveArtifactDir(t, "codex-shared-scenarios")
-	codexHome := t.TempDir()
+	codexHome := newCodexLiveIsolatedHome(t, repo, artifactRoot)
 	cleanHome := t.TempDir()
 	if decision.mode == codexAuthLocal {
 		if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
@@ -140,6 +140,32 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 
 	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+}
+
+func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
+	t.Helper()
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		t.Fatalf("resolve user cache dir for isolated CODEX_HOME: %v", err)
+	}
+	var failures []string
+	for _, parent := range codexLiveIsolatedHomeParentCandidates(cacheDir, repo, artifactRoot) {
+		if err := os.MkdirAll(parent, 0o700); err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", parent, err))
+			continue
+		}
+		dir, err := os.MkdirTemp(parent, "codex-home-")
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", parent, err))
+			continue
+		}
+		t.Cleanup(func() {
+			_ = os.RemoveAll(dir)
+		})
+		return dir
+	}
+	t.Fatalf("create isolated CODEX_HOME outside system temp: %s", strings.Join(failures, "; "))
+	return ""
 }
 
 func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
