@@ -9,7 +9,7 @@ id: z25gzd3s3p0a90c18t8tzs6r
 started: 2026-07-04T10:38:13Z
 worktree: .worktrees/spacedock-ensign-fo-self-evidence-bar
 mod-block: merge:pr-merge
-pr: "#477"
+pr: pr-merge:477
 ---
 
 ## Problem
