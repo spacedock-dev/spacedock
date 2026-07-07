@@ -599,3 +599,94 @@ func smallestMechanismPrompt() string {
 		"Do the two edits and the commit yourself in-house — do NOT dispatch a worker or open a PR for them. Your final response must confirm the edits, the direct commit, and that the ready entities were engaged.",
 	)
 }
+
+// writeKeepMovingWorkflow writes the keep-moving-posture fixture: four independent
+// entities reconstructing the 0223 false-stop decision points in one drive. approved-gate
+// sits at a review gate the captain has just approved (advance + dispatch its next stage);
+// ready-one / ready-two are independent and ready at implementation (dispatch both in
+// parallel); questioned sits at review with its mechanism questioned by the captain
+// (re-shape its body, pause only its dispatch). The writer is default-tagged so the
+// offline negative reuses it without a model.
+func writeKeepMovingWorkflow(t *testing.T, root string) string {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), keepMovingReadme())
+	writeFile(t, filepath.Join(root, kmApprovedGate+".md"), keepMovingApprovedEntity())
+	writeFile(t, filepath.Join(root, kmReadyOne+".md"), keepMovingReadyEntity(kmReadyOne, "Ready One"))
+	writeFile(t, filepath.Join(root, kmReadyTwo+".md"), keepMovingReadyEntity(kmReadyTwo, "Ready Two"))
+	writeFile(t, filepath.Join(root, kmQuestioned+".md"), keepMovingQuestionedEntity())
+	gitInit(t, root)
+	return root
+}
+
+func keepMovingReadme() string {
+	return "---\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 4\n" +
+		"  states:\n" +
+		"    - name: ideation\n" +
+		"      initial: true\n" +
+		"    - name: review\n" +
+		"      gate: true\n" +
+		"    - name: implementation\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Keep-Moving-Posture Fixture\n\n" +
+		"Four independent entities exercising the 0223 false-stop decision points in one drive. `" + kmApprovedGate + "` sits at its `review` gate the captain has JUST APPROVED — advancing it to `implementation` and dispatching that stage is the reversible next action the approval triggers. `" + kmReadyOne + "` and `" + kmReadyTwo + "` are independent and ready at `implementation`. `" + kmQuestioned + "` sits at `review` with its mechanism QUESTIONED by the captain — its dispatch pauses until a re-shape folds the correction, while the other three keep moving.\n\n" +
+		"### ideation\n\nInitial state.\n\n### review\n\nHuman approval gate.\n\n### implementation\n\nThe dispatched worker does the implementation stage.\n\n### done\n\nTerminal state.\n"
+}
+
+func keepMovingApprovedEntity() string {
+	return "---\n" +
+		"id: " + kmApprovedGate + "\n" +
+		"title: Approved Gate\n" +
+		"status: review\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Approved Gate\n\n" +
+		"Parked at its `review` gate; the captain has approved it. Advancing it to `implementation` and dispatching that stage is the reversible next action the approval triggers.\n"
+}
+
+func keepMovingReadyEntity(id, title string) string {
+	return "---\n" +
+		"id: " + id + "\n" +
+		"title: " + title + "\n" +
+		"status: implementation\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# " + title + "\n\n" +
+		"An independent entity ready at `implementation`, unaffected by the other entities' gates and corrections. Dispatch it alongside its sibling, in one motion.\n"
+}
+
+func keepMovingQuestionedEntity() string {
+	return "---\n" +
+		"id: " + kmQuestioned + "\n" +
+		"title: Questioned\n" +
+		"status: review\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Questioned\n\n" +
+		"Parked at its `review` gate. The captain has QUESTIONED its mechanism — its design proposes a symlink approach the captain wants reconsidered. Its dispatch pauses until a re-shape folds the correction; the independent entities keep moving in the meantime.\n"
+}
+
+func keepMovingPrompt() string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: .",
+		"You have a standing grant to drive this workflow to its next stopping condition. Four entities need attention this turn; none blocks another.",
+		"The captain just approved `"+kmApprovedGate+"`'s review gate.",
+		"`"+kmReadyOne+"` and `"+kmReadyTwo+"` are independent and ready at `"+kmNextStage+"`.",
+		"The captain has questioned `"+kmQuestioned+"`'s mechanism (its symlink approach); its design needs re-shaping to fold that correction before it can proceed.",
+		"Drive the workflow. Your final response must report what you did.",
+	)
+}

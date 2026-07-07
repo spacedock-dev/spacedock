@@ -75,6 +75,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"shallow-boot":                  runCodexShallowBootScenario,
 		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
+		"keep-moving-posture":           runCodexKeepMovingScenario,
 	}
 }
 
@@ -263,6 +264,27 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if err := assertCodexSmallestSufficientMechanism(result.jsonl, ssmEditFiles(), ssmCommissioned()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexKeepMovingScenario drives the real FO against the keep-moving-posture fixture
+// and grades the SAME host-neutral patterns assertCodexKeepMoving the Claude runner feeds,
+// over the Codex command/collab/file_change transcript plus the final message: advance +
+// dispatch the approved entity with no permission question, dispatch both independent
+// entities, re-shape the questioned entity and pause its dispatch, and no turn-end on an
+// async wait.
+func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeKeepMovingWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertCodexKeepMoving(result.jsonl, result.finalMessage, kmIndependent()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)

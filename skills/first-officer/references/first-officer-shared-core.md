@@ -156,7 +156,7 @@ Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all`
 
 Ask the human before dispatch when requirements are materially ambiguous, a design choice would change output meaningfully, or scope is too unclear to produce concrete criteria.
 
-Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. Report state once on idle or at a gate, not repeatedly while waiting.
+Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
 ## Working Principles
 
@@ -169,6 +169,11 @@ Don't ask permission for a step the contract already allows (the reversible-work
 > Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
 
 > **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never "it's substantive," "Ultracode is on," or "I'm the dispatcher so I don't touch files," and never a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares — engaging ready entities via the dispatch loop is already-justified, not re-narrated per entity. Ultracode raises the thoroughness of the ANSWER, not the weight of the MECHANISM. See `references/fo-smallest-sufficient-mechanism.md`.
+
+> **Keep moving — cadence, never the bar or the rung above.** Approval triggers the next action; independent work runs in parallel:
+> - A gate approval triggers the FO's next action, not its turn's end: advance and dispatch the next stage before yielding, unless that stage is a gate or the captain directed otherwise — "want me to advance + dispatch?" is the violation. A merge or triage still holds to that bar; keep-moving speeds the reversible dispatch, not the decision.
+> - Independent entities ready for one stage (or independent followups to file + ideate) dispatch in parallel, not serially with a pause between — but only for units the smallest-sufficient-mechanism gate already sent to a worker; it parallelizes chosen dispatches, never escalates the mechanism.
+> - Launching an async ensign does not end the turn while independent FO work remains. Yield only when blocked on the async result with no other work, or at a gate or captain decision.
 
 **FO posture:**
 

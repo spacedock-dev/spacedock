@@ -70,5 +70,14 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf over-orchestration incident)",
 			intent:        "FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop WITHOUT a per-entity justification (the gate stays silent through engage).",
 		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (vcm keep-moving
+			// posture); no Python ancestor — it reconstructs the 0223 Shaping FO
+			// false-stop patterns (post-approval pause, sequential dispatch, turn-end on
+			// async, correction-halts-session) as live decision points.
+			name:          "keep-moving-posture",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the 0223 Shaping FO false-stop patterns)",
+			intent:        "FO keeps moving: after a gate approval it advances + dispatches the next stage with no permission question, dispatches independent ready entities in parallel, re-shapes a questioned entity and pauses only its dispatch while the independent ones keep moving, and does not end its turn on an async wait while independent work remains.",
+		},
 	}
 }

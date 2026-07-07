@@ -165,6 +165,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"shallow-boot":                  runClaudeShallowBootScenario,
 		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
+		"keep-moving-posture":           runClaudeKeepMovingScenario,
 	}
 }
 
@@ -325,6 +326,26 @@ func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDrive
 
 	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt())
 	if err := assertClaudeSmallestSufficientMechanism(result.stream, ssmEditFiles(), ssmCommissioned()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+// runClaudeKeepMovingScenario drives the real FO against the keep-moving-posture fixture
+// (four independent entities: a just-approved gate, two independent ready entities, and a
+// questioned entity) and grades the FO's tool-call STREAM plus its FINAL MESSAGE against
+// the four false-stop patterns: it advances + dispatches the approved entity with no
+// permission question, dispatches both independent entities, re-shapes the questioned
+// entity and pauses only its dispatch, and does not end its turn on an async wait. The
+// durable end-state cannot distinguish keep-moving from a false stop, so the motion trace
+// (actions) and the turn-ending postures (final message) are graded, not the entity files.
+func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeKeepMovingWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt())
+	if err := assertClaudeKeepMoving(result.stream, result.finalMessage, kmIndependent()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
