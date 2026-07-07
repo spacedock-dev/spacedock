@@ -1,9 +1,9 @@
 ---
 id: e6j9adxnn5hgv4hd7g5edr3t
 title: "spacedock state ready resolves init paths relative to cwd and requires an origin remote"
-status: backlog
+status: ideation
 source: "GitHub issue #484 (spacedock-dev/spacedock#484), filed by clkao 2026-07-07, from a live split-root dogfooding session on this exact workflow shape (5 stages, ~6 entities, sd-b32 ids)."
-started:
+started: 2026-07-07T22:59:51Z
 completed:
 verdict:
 score:
