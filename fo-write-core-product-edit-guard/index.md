@@ -113,3 +113,16 @@ The implementation's first new test should be the product-edit negative fixture:
 ### Summary
 
 The design keeps the guard small: add a boot-resident pre-edit trigger, make `fo-write-core` classify every FO-authored write, and prove the behavior with trace and target-class fixtures. It avoids a partial launcher interceptor and requires validation to falsify the guard with an adversarial product-edit case before the task can pass.
+
+## Stage Report: implementation
+
+- DONE: Implement a pre-edit guard that loads/classifies with fo-write-core before FO-authored mutations can touch product files.
+  Code commit `4fd23682` adds the boot-resident file-write trigger, a `fo-write-core` Mutation Gate, and host trace guards that fail product writes before exact classification.
+- DONE: Add falsifiable tests/fixtures proving product-code edits are blocked or routed to workers while allowed FO state writes still pass.
+  Added `contractlint` target-class fixtures and `ensigncycle` Claude/Codex trace fixtures covering worker routing, allowed state writes, exact overrides, broad-override failure, and product edits before classification.
+- DONE: Update the relevant runtime/contract diagnostics so future Codex/FO sessions get an ergonomic block, not a silent instruction failure.
+  `fo-write-core` now instructs the FO to say `route through worker / explicit override required` for blocked product targets; trace tests require that response for blocked routes.
+
+### Summary
+
+Implemented the contract-plus-test guard from ideation without adding a launcher interceptor. Verification passed: `go test ./internal/contractlint ./internal/ensigncycle`, `go test ./...`, and `go test ./... -race`; `gofmt -w ./cmd ./internal` was run, and incidental formatting in another worker's keep-moving scope was restored before commit.
