@@ -27,11 +27,17 @@ func TestAssertCodexFOProductEditGuard(t *testing.T) {
 	}
 
 	goodOverride := strings.Join([]string{
-		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> override; captain explicitly allowed this exact path."),
+		codexUserMessage("You may directly edit " + foGuardProductTarget + " for this task."),
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> blocked-product."),
 		codexFileChange(foGuardProductTarget),
 	}, "\n")
 	if err := assertCodexFOProductEditGuard(goodOverride, targets); err != nil {
 		t.Fatalf("exact override before product edit must pass: %v", err)
+	}
+
+	routeNarrationOnly := codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> blocked-product; route through worker / explicit override required.")
+	if err := assertCodexFOProductEditGuard(routeNarrationOnly, targets); err == nil {
+		t.Fatal("expected blocked product narration without an actual worker dispatch to fail")
 	}
 
 	noClassification := codexFileChange(foGuardProductTarget)
@@ -51,6 +57,62 @@ func TestAssertCodexFOProductEditGuard(t *testing.T) {
 	if err := assertCodexFOProductEditGuard(applyPatch, targets); err == nil {
 		t.Fatal("expected Codex apply_patch against product code before classification to fail")
 	}
+
+	redirection := codexCommand("printf 'package status' > " + foGuardProductTarget)
+	if err := assertCodexFOProductEditGuard(redirection, targets); err == nil {
+		t.Fatal("expected shell redirection against product code before classification to fail")
+	}
+
+	tee := codexCommand("printf 'package status' | tee " + foGuardProductTarget)
+	if err := assertCodexFOProductEditGuard(tee, targets); err == nil {
+		t.Fatal("expected tee against product code before classification to fail")
+	}
+
+	sedInPlace := codexCommand("sed -i '' 's/old/new/' " + foGuardProductTarget)
+	if err := assertCodexFOProductEditGuard(sedInPlace, targets); err == nil {
+		t.Fatal("expected sed -i against product code before classification to fail")
+	}
+
+	selfLabeledOverride := strings.Join([]string{
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> override; captain explicitly allowed this exact path."),
+		codexFileChange(foGuardProductTarget),
+	}, "\n")
+	if err := assertCodexFOProductEditGuard(selfLabeledOverride, targets); err == nil {
+		t.Fatal("expected FO self-labeled override without an exact user grant to fail")
+	}
+
+	misclassifiedProduct := strings.Join([]string{
+		codexUserMessage("You may directly edit " + foGuardProductTarget + " for this task."),
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> allowed-state."),
+		codexFileChange(foGuardProductTarget),
+	}, "\n")
+	if err := assertCodexFOProductEditGuard(misclassifiedProduct, targets); err == nil {
+		t.Fatal("expected exact grant with non-product classification to fail")
+	}
+}
+
+func TestAssertCodexFOProductEditSmoke(t *testing.T) {
+	targets := []string{foGuardProductTarget}
+	route := strings.Join([]string{
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> blocked-product; route through worker / explicit override required."),
+		codexSpawn("Dispatch worker to update " + foGuardProductTarget + "."),
+	}, "\n")
+
+	before := map[string]string{foGuardProductTarget: "package status\n"}
+	unchanged := map[string]string{foGuardProductTarget: "package status\n"}
+	if err := assertCodexFOProductEditSmoke(route, before, unchanged, targets); err != nil {
+		t.Fatalf("blocked product route with unchanged product file must pass smoke: %v", err)
+	}
+
+	changed := map[string]string{foGuardProductTarget: "package status\n\nfunc directEdit() {}\n"}
+	if err := assertCodexFOProductEditSmoke(route, before, changed, targets); err == nil {
+		t.Fatal("expected smoke to fail when product file content changes during blocked FO route")
+	}
+
+	beforeClassification := codexAgentMessage("I will directly patch " + foGuardProductTarget + ".")
+	if err := assertCodexFOProductEditSmoke(beforeClassification, before, changed, targets); err == nil {
+		t.Fatal("expected smoke to fail when product file content changes before fo-write-core classification")
+	}
 }
 
 func TestAssertClaudeFOProductEditGuard(t *testing.T) {
@@ -65,11 +127,17 @@ func TestAssertClaudeFOProductEditGuard(t *testing.T) {
 	}
 
 	goodOverride := strings.Join([]string{
-		claudeText("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> override; captain explicitly allowed this exact path."),
+		claudeUserText("You may directly edit " + foGuardProductTarget + " for this task."),
+		claudeText("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> blocked-product."),
 		claudeToolUse("Edit", `{"file_path":"`+foGuardProductTarget+`"}`),
 	}, "\n")
 	if err := assertClaudeFOProductEditGuard(goodOverride, targets); err != nil {
 		t.Fatalf("exact override before product edit must pass: %v", err)
+	}
+
+	routeNarrationOnly := claudeText("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> blocked-product; route through worker / explicit override required.")
+	if err := assertClaudeFOProductEditGuard(routeNarrationOnly, targets); err == nil {
+		t.Fatal("expected blocked product narration without an actual worker dispatch to fail")
 	}
 
 	noClassification := claudeToolUse("Edit", `{"file_path":"`+foGuardProductTarget+`"}`)
@@ -84,8 +152,33 @@ func TestAssertClaudeFOProductEditGuard(t *testing.T) {
 	if err := assertClaudeFOProductEditGuard(blockedThenEdit, targets); err == nil {
 		t.Fatal("expected writing a target after blocked-product classification to fail")
 	}
+
+	selfLabeledOverride := strings.Join([]string{
+		claudeText("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> override; captain explicitly allowed this exact path."),
+		claudeToolUse("Edit", `{"file_path":"`+foGuardProductTarget+`"}`),
+	}, "\n")
+	if err := assertClaudeFOProductEditGuard(selfLabeledOverride, targets); err == nil {
+		t.Fatal("expected FO self-labeled override without an exact user grant to fail")
+	}
+
+	misclassifiedProduct := strings.Join([]string{
+		claudeUserText("You may directly edit " + foGuardProductTarget + " for this task."),
+		claudeText("Using spacedock:fo-write-core: «write.classify» " + foGuardProductTarget + " -> allowed-state."),
+		claudeToolUse("Edit", `{"file_path":"`+foGuardProductTarget+`"}`),
+	}, "\n")
+	if err := assertClaudeFOProductEditGuard(misclassifiedProduct, targets); err == nil {
+		t.Fatal("expected exact grant with non-product classification to fail")
+	}
 }
 
 func claudeText(text string) string {
 	return `{"type":"assistant","message":{"content":[{"type":"text","text":` + mustJSONString(text) + `}]}}`
+}
+
+func claudeUserText(text string) string {
+	return `{"type":"user","message":{"content":[{"type":"text","text":` + mustJSONString(text) + `}]}}`
+}
+
+func codexUserMessage(text string) string {
+	return `{"type":"item.completed","item":{"type":"user_message","text":` + mustJSONString(text) + `}}`
 }
