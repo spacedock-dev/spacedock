@@ -11,31 +11,100 @@ worktree:
 issue:
 ---
 
-A Codex session launched for local Spacedock development was expected to use `--plugin-dir .`, but the session skill registry surfaced a cached `spacedock:first-officer` path first. Live inspection showed both stable `spacedock@spacedock` and edge `spacedock@spacedock-edge` installed/enabled in Codex, while `spacedock codex --plugin-dir .` only installs the selected channel.
+A Codex session launched for local Spacedock development was expected to use `--plugin-dir .`, but the session skill registry surfaced a cached `spacedock:first-officer` path first. Live inspection on Codex CLI `0.142.5` showed both stable `spacedock@spacedock` and edge `spacedock@spacedock-edge` installed/enabled, while `spacedock codex --plugin-dir .` only refreshes the selected channel.
 
 ## Problem
 
-Codex has a shared skill namespace. When both Spacedock channels are enabled, `$spacedock:first-officer` may resolve through the wrong or stale provider, undermining the local checkout guarantee that `--plugin-dir .` is supposed to give developers.
+Codex builds a single model-visible skill list from all enabled plugins. Stable and edge both expose the same plugin name (`spacedock`) and the same skill names, so Codex can show duplicate `spacedock:first-officer` providers at once. If the older sibling provider appears first, a local `--plugin-dir` launch can still load a stale cached skill even though the selected channel was just reinstalled from the checkout.
+
+Root-cause spike: an isolated `CODEX_HOME` with two local marketplaces was installed as `spacedock@spacedock` and `spacedock@spacedock-edge`. `codex debug prompt-input probe` then rendered two same-named entries:
+
+- `spacedock:first-officer: STABLE_PROVIDER_SPIKE` from `plugins/cache/spacedock/spacedock/1.0.0/...`
+- `spacedock:first-officer: EDGE_PROVIDER_SPIKE` from `plugins/cache/spacedock-edge/spacedock/2.0.0/...`
+
+Removing `spacedock@spacedock` from that isolated Codex home and re-running `codex debug prompt-input probe` left only the edge entry. That proves the failure is duplicate enabled providers in Codex prompt assembly, and that plugin removal is an effective mitigation.
 
 ## Proposed approach
 
-Ideation should root-cause the actual Codex plugin resolution behavior before selecting a fix. Candidate fixes include removing/disabling the sibling Spacedock channel during local `--plugin-dir` installs, making the launcher emit a stronger diagnostic when duplicate Spacedock providers are enabled, or changing the dev launch path to make the project-local skills authoritative without relying on provider ordering.
+Make Codex Spacedock installs exclusive across Spacedock channels. The production Codex install sequence should tolerate cleanup of both known Spacedock channel ids before adding the selected channel:
+
+1. tolerate `codex plugin remove spacedock@spacedock`
+2. tolerate `codex plugin marketplace remove spacedock`
+3. tolerate `codex plugin remove spacedock@spacedock-edge`
+4. tolerate `codex plugin marketplace remove spacedock-edge`
+5. fail fast on `codex plugin marketplace add <selected source>`
+6. fail fast on `codex plugin add <selected id>`
+
+Apply this to `spacedock install --host codex`, auto-install from `spacedock codex`, and `spacedock codex --plugin-dir <checkout>` because all three feed the same Codex skill namespace. Keep the existing channel selection rule: `devBranch=main` installs `spacedock@spacedock`; edge installs `spacedock@spacedock-edge`.
+
+The `--plugin-dir` advisory should also name the authoritative source and selected channel, for example:
+
+```text
+Installed codex plugin from /path/to/checkout as spacedock@spacedock-edge.
+Removed other Spacedock Codex channels so $spacedock:* resolves from this install.
+version-masquerade advisory: the reported version reflects the checkout's checked-in .codex-plugin/plugin.json, not necessarily its current HEAD.
+```
 
 ## Out of scope
 
-Do not change stable/edge release semantics unless the diagnosis proves channel coexistence is inherently unsafe for Codex. Do not rely on transcript wording alone as proof.
+Do not change Claude or Pi `--plugin-dir` behavior. Do not change stable/edge marketplace naming or version stamping. Do not add PR/mod behavior. Do not rely on transcript wording alone as proof; use Codex CLI output, prompt-input output, install argv fixtures, or on-disk cache state.
+
+## Documentation diff
+
+Implementation should update `docs/site/get-started/install.md` in the Codex `--plugin-dir` paragraph:
+
+```diff
+- Codex has no such flag on its own CLI, so `spacedock codex --plugin-dir
+- <checkout>` and `spacedock install --host codex --plugin-dir <checkout>` build a
+- local marketplace from the checkout and install it under the binary's own
+- channel (`spacedock` stable / `spacedock-edge` edge — matching whatever
+- `spacedock codex` would otherwise install), then launch. This IS a persistent
+- install, replacing whatever Codex plugin was previously configured, and it is a
+- point-in-time snapshot: editing the checkout afterward has no effect until the
+- command is re-run.
++ Codex has no such flag on its own CLI, so `spacedock codex --plugin-dir
++ <checkout>` and `spacedock install --host codex --plugin-dir <checkout>` build a
++ local marketplace from the checkout and install it under the binary's own
++ channel (`spacedock` stable / `spacedock-edge` edge — matching whatever
++ `spacedock codex` would otherwise install), then launch. This IS a persistent
++ install and Spacedock makes it exclusive across Codex channels: the selected
++ channel replaces any existing stable or edge Spacedock Codex plugin so
++ `$spacedock:*` skills resolve from the selected install. It is also a
++ point-in-time snapshot: editing the checkout afterward has no effect until the
++ command is re-run.
+```
 
 ## Acceptance criteria
 
 **AC-1 - A Codex `spacedock codex --plugin-dir <checkout>` launch cannot load stale Spacedock skills from a sibling channel.**
-Verified by: fixture-backed or live Codex evidence showing the effective `spacedock:first-officer` skill path resolves to the checkout or to the local-marketplace cache created from that checkout, not an older stable/edge cache.
+Verified by: a hermetic Codex CLI smoke using isolated `CODEX_HOME`, two distinguishable Spacedock channel fixtures, and `codex debug prompt-input`; after `spacedock codex --plugin-dir <checkout>` only one `spacedock:first-officer` entry remains, and its path is under the selected channel cache created from the checkout.
 
 **AC-2 - Duplicate Spacedock provider state is handled deliberately.**
-Verified by: tests over the install/resolve sequence that cover stable-only, edge-only, and both-installed states, with the chosen behavior documented by failing fixtures.
+Verified by: unit tests over `codexInstallArgvSequence` and `execHost.Install("codex", ...)` proving both stable and edge cleanup steps are tolerated and precede the selected channel add; cover stable-selected, edge-selected, fresh-box, stable-only, edge-only, and both-installed fixture states.
 
 **AC-3 - Developer diagnostics identify the authoritative plugin source.**
-Verified by: launcher or install output that names the local checkout/local marketplace source and catches a stale or duplicate-provider condition where applicable.
+Verified by: `spacedock codex --plugin-dir <checkout>` and `spacedock install --host codex --plugin-dir <checkout>` stderr naming the checkout, selected plugin id, and exclusivity cleanup. A plain non-`--plugin-dir` launch should not print the local-checkout advisory.
+
+**AC-4 - User-facing docs describe Codex channel exclusivity.**
+Verified by: the `docs/site/get-started/install.md` diff above applied, with wording that distinguishes Codex's persistent exclusive install from Claude/Pi ephemeral `--plugin-dir` behavior.
 
 ## Test plan
 
-Start with focused unit tests around `codexInstallArgvSequence`, `WriteCodexLocalMarketplace`, and `execHost.ResolveManifest("codex")`, then add a live or hermetic Codex CLI smoke only if needed to prove actual provider resolution.
+Start with focused unit tests in `internal/cli/channel_selection_test.go` and `internal/cli/install_tolerance_codex_test.go`, updating the expected Codex install sequence to remove both Spacedock channels before the add step. Add `codex_plugin_dir_test.go` coverage for the expanded advisory and no-advisory plain launch.
+
+Add a hermetic Codex CLI smoke modeled on the spike: create two temporary local marketplaces with distinguishable `skills/first-officer/SKILL.md` descriptions, install both into an isolated `CODEX_HOME`, run the production local-plugin-dir install path, and assert `codex debug prompt-input probe` renders exactly one `spacedock:first-officer` entry from the selected channel. This avoids an LLM call and directly exercises Codex prompt assembly.
+
+Run `go test ./internal/cli` while developing, then the repo gate `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+
+## Stage Report: ideation
+
+- DONE: Root-cause Codex provider resolution for local --plugin-dir sessions with stable and edge Spacedock channels installed.
+  Evidence: isolated Codex `prompt-input` spike rendered duplicate `spacedock:first-officer` entries and showed removing a sibling plugin leaves one provider.
+- DONE: Design a fix or diagnostic that makes the project-local Spacedock skill source authoritative, with falsifiable tests.
+  Evidence: proposed exclusive Codex Spacedock install sequence, `--plugin-dir` advisory wording, AC-1 through AC-4, and hermetic prompt-input smoke.
+- DONE: Record the riskiest mechanism spike or a concrete no-spike-needed rationale, then append a complete ideation stage report.
+  Evidence: root-cause spike recorded in the task body; this stage report follows the required structure.
+
+### Summary
+
+Codex provider resolution is unsafe when stable and edge Spacedock channels are both enabled because Codex exposes duplicate same-named skills in one prompt input. The recommended fix is to make Codex Spacedock installs exclusive across stable/edge channels and prove the local `--plugin-dir` path with a hermetic `codex debug prompt-input` smoke.
