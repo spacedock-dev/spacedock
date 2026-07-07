@@ -1,7 +1,7 @@
 ---
 id: 1796bakv26hyd6nc4zxv4sh7
 title: FO product-edit guard loads write-core before any mutation
-status: validation
+status: implementation
 source: captain request 2026-07-07 after FO direct-edit boundary violation
 started: 2026-07-07T12:49:53Z
 completed:
@@ -143,6 +143,7 @@ Recommendation: REJECTED. The offline tests and mutation controls prove the new 
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation found no direct FO product-edit smoke, missing redirection/`tee`/`sed -i` command-shape negatives, and worker-routing proof that still trusts self-labeled override/route narration.
+- Cycle 2: REJECTED — validation found the helper-level product-edit fixture still does not satisfy AC-1's direct FO product-edit smoke shape: the prompt must ask for a product patch under implementation/TDD pressure.
 
 ## Stage Report: implementation (cycle 2)
 
