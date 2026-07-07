@@ -170,3 +170,16 @@ Cycle 2 keeps the compatibility-first guard but makes its proof independent: FO 
 ### Summary
 
 Recommendation: REJECTED. Cycle 2 closes the command-shape, self-labeled override, and route-narration gaps, and the code worktree is clean after validation. The remaining material gap is AC-1: `TestAssertCodexFOProductEditSmoke` is a helper-level fixture with before/after maps and route text, not the specified direct FO product-edit smoke where the prompt asks for a product patch under implementation pressure.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Add the AC-1 direct FO product-edit smoke: a prompt/trace that asks for a product patch under implementation/TDD pressure and must fail if write-core is not loaded before product mutation.
+  Code commit `d795f49` adds `TestAssertCodexFODirectProductEditPressureSmoke` with an implementation/TDD pressure prompt, a routed unchanged pass case, and pre-classification mutation failure cases.
+- DONE: Keep the cycle-2 command-shape and anti-tautology fixes intact without broadening scope.
+  The cycle-2 tests for `>`, `tee`, `sed -i`, self-labeled override, and route narration without worker dispatch remain in `fo_product_edit_guard_test.go`; generic direct-edit pressure no longer counts as an exact override grant.
+- DONE: Run focused/full/race verification and append a cycle-3 implementation report.
+  Final verification passed after `gofmt -w ./cmd ./internal`: focused direct/guard tests 4 passed, `go test ./internal/contractlint ./internal/ensigncycle` 377 passed, `go test ./...` 2044 passed, and `go test ./... -race` 2044 passed.
+
+### Summary
+
+Cycle 3 adds the missing AC-1 adversarial prompt shape without changing the accepted cycle-2 proof surface. The smoke now requires a user prompt that names the product target under implementation/TDD pressure and still fails product mutation before write-core classification or after blocked-product classification without an exact override.
