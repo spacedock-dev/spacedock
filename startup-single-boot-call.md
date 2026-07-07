@@ -12,7 +12,7 @@ id: 1y4ynffdxcgxn5eqcgw1mps3
 sprint: 0250-fo-behavioral-discipline
 ---
 
-# Collapse the FO Startup recipe to <=4 prose steps behind one shipped boot call
+# Boot identifies, engage converges — collapse the FO Startup recipe to ≤4 prose steps on the existing verbs
 
 ## End value
 
@@ -37,6 +37,20 @@ Two problems, not one. First, steps 2-5 are hand-issued reads with their own res
 ## Approach — extend the existing `status --boot` for identify; `«engage»(workflow)` owns convergence
 
 Per the captain's Cycle-1 addendum: **no new `spacedock boot` verb.** The recipe collapses by folding the local reads into the EXISTING `status --boot` record and moving the convergence into `«engage»`, which invokes the EXISTING `state ready` / `state sweep` directly. The binary delta approaches zero — a modest `status --boot` extension; the deliverable is chiefly the contract follow-up. The version gate (step 1) stays a **distinct** step — an absent/too-old binary cannot self-report through any `status` verb.
+
+**Ownership at a glance — boot identifies, engage converges:**
+
+| Responsibility | Boot (`status --boot`, local reads, every session) | `«engage»(workflow)` (existing verbs, on first act) |
+|---|---|---|
+| Discover the managed workflow(s) | yes — lists zero / one / many, uniform | — |
+| Stage taxonomy + entity labels | yes — folded into the record | — |
+| MODS map / ID_STYLE / NEXT_ID / MIN_PREFIX / STATE_BACKEND | yes — local | — |
+| ORPHANS (git/fs), TEAM_STATE (`~/.claude` probe) | yes — local reads | — |
+| Dispatchable / ready-gate counts | yes — local counts, labeled possibly-stale | (refreshed as it acts) |
+| PR state | local `pr:` mirror, labeled not-gh-checked | **live** — `gh pr view` |
+| State-checkout convergence (pull / resume) | never | **yes** — `state ready` (exit 3 → halt, sweep not reached) |
+| Merged-PR sweep + advance to terminal | never | **yes** — `state sweep` + pr-merge startup-hook |
+| Network call / disk mutation | **none — provably side-effect-free** | yes, where convergence needs it |
 
 Collapsed recipe (3 numbered steps):
 
@@ -69,7 +83,7 @@ Cycle 1 combined ready+sweep into ONE boot call, which forced a merge of the two
 
 - **ORPHANS** — worktree fields cross-referenced against filesystem + git state (`scanOrphans`). Local git-read, no network, no mutation → **stays in the boot record**, per discovered workflow.
 - **TEAM_STATE** — the `~/.claude` host probe: is a team already present. Local read, no mutation → **stays in the boot record**.
-- **PR_STATE** — the one that splits. Today `status --boot` calls `gh pr view` per PR-pending entity (`checkPRStates`, `internal/status/boot.go:86`) — a network call. That **live** state moves to **engage's convergence**. At boot, PR_STATE becomes a **local mirror**: entities carrying a non-empty `pr:` field (read from frontmatter), listed by number, **labeled "local view — not gh-checked."** Dropping that one `gh` call is the single change that makes the boot record network-free.
+- **PR_STATE** — the one that splits. Today `status --boot` calls `gh pr view` per PR-pending entity (`checkPRStates`, `internal/status/boot.go:86`) — a network call, and `live_prstate_pin_test.go` deliberately PINS that `pr_state.entries[].state` reflects live gh (or explicit unknown when gh is absent). So the FO's identify-boot must be gh-free WITHOUT breaking that pin: render the local mirror behind an **opt-in identify mode** (a new `--boot` flag the FO passes), leaving the un-flagged `status --boot` — and its live-PR pin — unchanged. In identify mode, PR_STATE is a **local mirror**: entities carrying a non-empty `pr:` field (read from frontmatter), listed by number, **labeled "local view — not gh-checked."** The live OPEN/MERGED/CLOSED state is filled in at engage's convergence. This is the change that makes the FO's boot record network-free while keeping every existing `--boot` consumer green (see the blast-radius check in the test plan).
 
 ### The prose-functions consolidate
 
@@ -90,9 +104,9 @@ No deferred module (`fo-dispatch-core.md` / `fo-merge-core.md`) references these
 
 **AC-1 (value — leaner recipe AND leaner file).** After the change the `## Startup` section carries **≤4 numbered prose steps** (from 8), AND `wc -c skills/first-officer/references/first-officer-shared-core.md` is **strictly less** than the same file measured immediately before this implementation's edits (the post-vcm-merge pre-change byte count, recorded in the implementation's first commit message). *Test:* a check counting top-level `^[0-9]+\.` items under `## Startup` (≤4) and asserting `post_bytes < recorded_pre_bytes`. Both halves must hold — a shorter recipe that grew the file fails.
 
-**AC-2 (mechanism — the boot record folds in discovery + taxonomy + local PR mirror).** `status --boot --json` on a healthy split-root workflow exits 0 and emits one JSON object carrying the discovery result, the `stages` taxonomy, every local boot section (MODS/ID_STYLE/NEXT_ID/MIN_PREFIX/ORPHANS/DISPATCHABLE/TEAM_STATE/STATE_BACKEND), and the **local PR mirror** (PR-pending entities by `pr:` number, labeled local/not-gh-checked). *Test:* a behavior fixture driving the binary and asserting the record's key set. (Mechanism AC — serves AC-1's value via the AC cross-check.)
+**AC-2 (mechanism — the boot record folds in discovery + taxonomy + local PR mirror).** `status --boot --json` in identify mode on a healthy split-root workflow exits 0 and emits one JSON object carrying the discovery result, the `stages` taxonomy, every existing local boot section (MODS/ID_STYLE/NEXT_ID/MIN_PREFIX/ORPHANS/DISPATCHABLE/TEAM_STATE/STATE_BACKEND), and the **local PR mirror** (PR-pending entities by `pr:` number, labeled local/not-gh-checked). New keys are **appended** after the existing key set, preserving current order (per `json_boot_test.go`'s pinned key order). *Test:* a behavior fixture driving the binary and asserting the record's key set + order. (Mechanism AC — serves AC-1's value via the AC cross-check.)
 
-**AC-3 (the boot record is provably side-effect-free — the captain's "greet mutates nothing").** `status --boot --json` makes **no network call** (no `gh` invocation) and performs **no mutation** (no `state ready` pull, no file write or commit to the state checkout). *Test:* a fixture running the extended `--boot` with a recording/erroring `gh` probe and asserting it was never invoked, plus a before/after check that the state checkout's git HEAD and working tree are unchanged. This is the core boundary guarantee; it MUST have its own proof.
+**AC-3 (the identify-mode boot record is provably side-effect-free — the captain's "greet mutates nothing").** `status --boot --json` in identify mode makes **no network call** (no `gh` invocation) and performs **no mutation** (no `state ready` pull, no file write or commit to the state checkout). *Test:* a fixture running the identify-mode `--boot` with a recording/erroring `gh` probe and asserting it was never invoked, plus a before/after check that the state checkout's git HEAD and working tree are unchanged. This is the core boundary guarantee; it MUST have its own proof.
 
 **AC-4 (version-gate classes unchanged).** binary-absent and wrong-version remain step-1 behavior. *Test:* the existing version-gate tests stay green.
 
@@ -120,6 +134,7 @@ Conclusion: no new orchestration and no struct extraction — the deliverable is
 - **Engage convergence guards stay green on their own calls** (AC-6, AC-7): the existing `TestStateReadyHaltsOnBootConflict` (exit-3 halt) and `TestSweepGhUnavailableReportsUnknown` (exit-0 UNKNOWN) stay green — engage invokes these verbs directly, so no new test is needed beyond confirming the `«engage»` contract orders ready-before-sweep with the exit-3 short-circuit.
 - **Version gate** (AC-4): existing version-gate tests stay green (binary absent → 127 / wrong version → version-gate exit).
 - **Value check** (AC-1): Startup numbered-step count ≤4 + byte delta strictly negative vs the recorded pre-change baseline.
+- **Blast-radius check — existing `--boot` consumers provably unaffected** (the extension's diff surface is bounded): the un-flagged `status --boot` keeps its live-gh PR_STATE, so `internal/status/live_prstate_pin_test.go` stays green; new record keys (discovery/taxonomy) are **appended**, so `internal/status/json_boot_test.go`'s pinned key order + the native/text parity suites (`boot_probe_parity_test.go`, `zz_independent_parity_test.go`) stay green; the pr-merge mod does its OWN `gh pr view` over entity files and never parses `--boot` output, so its startup/idle/merge paths are untouched. The check: run the full `go test ./internal/status/... ./internal/dispatch/...` boot+sweep suites green with the extension, confirming no existing key, order, or live-PR assertion moved. Only the new identify-mode path adds tests (AC-2/AC-3/AC-5).
 - **Cost/complexity:** Go unit + behavior-fixture tests (seconds); no live-workflow smoke needed — fixtures drive the binary directly. The one new code path is the `--boot` identify extension; the convergence verbs are unchanged, so their existing suites are the regression net.
 - **CI lanes:** the shared core is host-neutral → 0250 §Required CI lanes apply: `claude-live` + `codex-live` + `pi-live` green before merge; a flake re-runs to green, never skipped.
 - **Detached adversarial audit** (0250 §3): required before merge on a throwaway checkout — the shipped FO contract is one of docs/dev's high-stakes surfaces.
@@ -205,3 +220,10 @@ Designed `spacedock boot --json` to absorb Startup steps 2-7, collapsing the rec
 ### Summary
 
 Reworked the design to the captain's Cycle-1 ADDENDUM: no new verb — the recipe collapses to 3 steps by extending the existing `status --boot` (fold in discovery + taxonomy; PR_STATE a labeled local `pr:` mirror; drop the boot-time gh call so the greet is provably side-effect-free), and the per-workflow convergence (ready + sweep + live PR) moves to `«engage»(workflow)`, which invokes `state ready` then `state sweep` DIRECTLY. Because engage keeps the two verbs on separate calls, cycle-1's combined-verb swallow point dissolves: the exit-3 halt and exit-0 gh-unavailable UNKNOWN each read straight off their own call, so the `sweepData` return-struct extraction is dropped, not relocated. Binary delta approaches zero; the deliverable is chiefly the contract follow-up. Two flags for the gate: (1) this diverges from the team-lead dispatch framing that expected the sweepData extraction to survive/relocate — I followed the addendum as the captain's latest canonical word and messaged team-lead; (2) the `status --boot` PR_STATE change (live-gh → local) touches an existing verb's output — recommend a non-breaking path (a boot-mode gh-skip vs a wholesale drop) for the implementer to pick, since boot must be gh-free.
+
+### Refinements (team-lead follow-up, addressed)
+
+Three additional notes carried from the team-lead's confirmation, all applied:
+- **Blast-radius check named in the test plan.** The PR_STATE change is now an **opt-in identify mode** (a new `--boot` flag), NOT a wholesale change — grounded by reading the consumers: `live_prstate_pin_test.go` deliberately pins un-flagged `--boot`'s live-gh PR_STATE, and `json_boot_test.go` pins the record key order/presence. So new keys append (order preserved) and the un-flagged `--boot` keeps live-gh; the pr-merge mod runs its own `gh pr view` over entity files and never parses `--boot`, so it is untouched. The test plan names the check (full `internal/status` + `internal/dispatch` suites green).
+- **Title rename** — already applied to frontmatter by the captain ("Boot identifies, engage converges — …"); synced the H1 body heading to match.
+- **Captain-legible ownership table** added at the top of Approach (boot identifies vs engage converges, row per responsibility), so the gate reads the boundary at a glance.
