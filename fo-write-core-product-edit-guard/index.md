@@ -9,6 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-fo-write-core-product-edit-guard
 issue:
+mod-block: merge:pr-merge
 ---
 
 The FO direct-edit boundary failed because a first-officer session patched product code after reading the write-scope rules but before any hard mutation guard loaded. The fix must make "I am about to write a file" the trigger, not "I am about to mutate known state fields."
