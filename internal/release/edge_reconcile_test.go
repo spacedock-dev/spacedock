@@ -512,29 +512,34 @@ func mergeStrategyOption(command string) string {
 
 // ifSelectsPrerelease reports whether an `if:` guard fires on a prerelease
 // (hyphenated) tag and not a stable one — the un-negated `contains(github.ref,
-// '-')` form.
+// '-')` form, optionally conjoined with the edge-advance decision gate
+// (`&& steps.decision.outputs.advance == 'true'`), which every reconcile step
+// now carries so an old-line tag skips the whole job.
 func ifSelectsPrerelease(ifCond string) bool {
-	return strings.ReplaceAll(ifCond, " ", "") == "contains(github.ref,'-')"
+	c := strings.ReplaceAll(ifCond, " ", "")
+	return c == "contains(github.ref,'-')" || strings.HasPrefix(c, "contains(github.ref,'-')&&")
 }
 
 // ifSelectsStable reports whether an `if:` guard fires on a stable tag and not a
-// prerelease — the negated `!contains(github.ref, '-')` form. It is the exact
-// logical complement of ifSelectsPrerelease, so a step pair carrying both fires
-// on exactly one tag shape each.
+// prerelease — the negated `!contains(github.ref, '-')` form, optionally
+// conjoined with the decision gate. It is the exact logical complement of
+// ifSelectsPrerelease on the tag-shape axis (the `!` prefix distinguishes them),
+// so a step pair carrying both fires on exactly one tag shape each.
 func ifSelectsStable(ifCond string) bool {
-	return strings.ReplaceAll(ifCond, " ", "") == "!contains(github.ref,'-')"
+	c := strings.ReplaceAll(ifCond, " ", "")
+	return c == "!contains(github.ref,'-')" || strings.HasPrefix(c, "!contains(github.ref,'-')&&")
 }
 
 // TestReleaseWorkflowEdgeAdvanceWiring locks the edge-advance job's step-level
 // wiring against the on-disk release.yml, closing the coupling gaps the detached
 // audit found: both reconcile steps must merge with `-X theirs` (favor the
-// release — the `-X ours` flip is the exact 0.24.0-pre1 divergence incident),
-// their `if:` guards must be complementary so EXACTLY one fires per tag
-// (prerelease `contains(github.ref, '-')`, stable `!contains(...)`), and the
-// calendar-bump step must carry no `if:` so it always runs. The adversarial twins
-// flip the strategy to `-X ours`, widen the stable guard to `always()`, copy the
-// prerelease guard onto the stable step, and gate the bump-calendar step; each
-// must red, so a green result is not vacuous.
+// release — the `-X ours` flip is the exact 0.24.0-pre1 divergence incident) and
+// their `if:` guards must be complementary on the tag-shape axis so EXACTLY one
+// fires per tag (prerelease `contains(github.ref, '-')`, stable `!contains(...)`,
+// each conjoined with the decision gate). The adversarial twins flip the strategy
+// to `-X ours`, widen the stable guard to `always()`, and copy the prerelease
+// guard onto the stable step; each must red, so a green result is not vacuous.
+// The decision-gate conjunct itself is guarded by TestReleaseWorkflowEdgeAdvanceDecisionGates.
 func TestReleaseWorkflowEdgeAdvanceWiring(t *testing.T) {
 	workflow := readWorkflow(t, "release.yml")
 	if err := assertEdgeAdvanceWiring(workflow); err != nil {
@@ -554,7 +559,7 @@ func TestReleaseWorkflowEdgeAdvanceWiring(t *testing.T) {
 	// stable dev-preversion stamp wrongly runs on a `-pre` cut. Anchored to the
 	// stable step's name so it does not mutate the other `!contains(...)` guards.
 	always := strings.Replace(workflow,
-		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-')\"\n",
+		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'\"\n",
 		"      - name: Reconcile the edge line past the stable release\n        if: \"always()\"\n",
 		1)
 	if always == workflow {
@@ -567,8 +572,8 @@ func TestReleaseWorkflowEdgeAdvanceWiring(t *testing.T) {
 	// Copy-paste: the stable step reuses the prerelease `contains(...)` guard, so
 	// the stable dev-preversion path would never fire on any tag.
 	copyPaste := strings.Replace(workflow,
-		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-')\"\n",
-		"      - name: Reconcile the edge line past the stable release\n        if: \"contains(github.ref, '-')\"\n",
+		"      - name: Reconcile the edge line past the stable release\n        if: \"!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'\"\n",
+		"      - name: Reconcile the edge line past the stable release\n        if: \"contains(github.ref, '-') && steps.decision.outputs.advance == 'true'\"\n",
 		1)
 	if copyPaste == workflow {
 		t.Fatal("fixture workflow missing the stable reconcile step guard to copy-paste")
@@ -576,25 +581,15 @@ func TestReleaseWorkflowEdgeAdvanceWiring(t *testing.T) {
 	if err := assertEdgeAdvanceWiring(copyPaste); err == nil {
 		t.Fatal("wiring guard accepted two reconcile steps with the same non-complementary if: guard")
 	}
-
-	// A conditional bump-calendar step — it must run unconditionally on both paths.
-	gatedBump := strings.Replace(workflow,
-		"      - name: Bump the marketplace calendar key and push the edge line\n",
-		"      - name: Bump the marketplace calendar key and push the edge line\n        if: \"!contains(github.ref, '-')\"\n",
-		1)
-	if gatedBump == workflow {
-		t.Fatal("fixture workflow missing the bump-calendar step name to gate")
-	}
-	if err := assertEdgeAdvanceWiring(gatedBump); err == nil {
-		t.Fatal("wiring guard accepted a conditional bump-calendar step")
-	}
 }
 
 // assertEdgeAdvanceWiring consolidates the edge-advance job's step-level wiring
 // invariants against the parsed workflow: it is a force-free `needs: goreleaser`
 // sibling (assertEdgeAdvanceIsForceFreeSibling), both reconcile steps merge with
-// `-X theirs`, their `if:` guards are complementary (exactly one fires per tag),
-// and the calendar-bump step runs unconditionally.
+// `-X theirs`, and their `if:` guards are complementary on the tag-shape axis
+// (exactly one fires per tag). The decision-gate conjunct each step now also
+// carries — and the calendar-bump/auto-pre0 gating — is asserted separately by
+// assertEdgeAdvanceDecisionGating.
 func assertEdgeAdvanceWiring(workflow string) error {
 	if err := assertEdgeAdvanceIsForceFreeSibling(workflow); err != nil {
 		return err
@@ -624,14 +619,6 @@ func assertEdgeAdvanceWiring(workflow string) error {
 	}
 	if !prereleaseGuarded || !stableGuarded {
 		return fmt.Errorf("edge-advance reconcile steps are not complementary (prerelease-guarded=%v stable-guarded=%v); exactly one must fire per tag", prereleaseGuarded, stableGuarded)
-	}
-
-	bump := edgeAdvanceBumpCalendarStep(*job)
-	if bump == nil {
-		return fmt.Errorf("edge-advance has no bump-calendar step")
-	}
-	if strings.TrimSpace(bump.ifCond) != "" {
-		return fmt.Errorf("edge-advance bump-calendar step carries if: %q, want unconditional (no if:)", bump.ifCond)
 	}
 	return nil
 }

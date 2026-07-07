@@ -32,7 +32,13 @@ import (
 // erroring unless the literal appears exactly once. bump-calendar advances the
 // marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
 // All rewrite in place. dev-preversion prints the post-release dev pre-version
-// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`. journey-delta
+// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
+// edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
+// whether a tag advances the edge line: it computes the tag's target edge
+// version and skips unless that is strictly greater than `next`'s current
+// manifest, so the whole edge-advance job no-ops on an old-line/patch tag.
+// edge-pre0-version prints the auto-cut edge prerelease version (X.(Y+1).0-pre0)
+// the stable path tags on the greened release commit. journey-delta
 // renders and posts the per-PR journey-cost delta against the previously
 // published release ledger's latest-by-captured_at baseline per scenario/model,
 // updating a single sticky PR comment found by its HTML marker. The AC-4
@@ -63,6 +69,10 @@ func main() {
 		os.Exit(bumpCalendar(os.Args[2:]))
 	case "dev-preversion":
 		os.Exit(devPreversion(os.Args[2:]))
+	case "edge-advance-decision":
+		os.Exit(edgeAdvanceDecision(os.Args[2:]))
+	case "edge-pre0-version":
+		os.Exit(edgePre0Version(os.Args[2:]))
 	case "journey-costs":
 		os.Exit(journeyCosts(os.Args[2:]))
 	case "journey-delta":
@@ -374,6 +384,8 @@ Usage:
   spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release bump-calendar <marketplace.json>
   spacedock-release dev-preversion <stable-version>
+  spacedock-release edge-advance-decision <tag> <next-plugin.json>
+  spacedock-release edge-pre0-version <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
   spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
   spacedock-release e2e-gate <release-commit-sha>
