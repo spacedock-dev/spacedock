@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-edge-channel-stable-cut-gap
 issue:
 id: zr2rbsjsak7xx6tetr3n37hc
 mod-block: merge:pr-merge
-pr: "#482"
+pr: pr-merge:482
 ---
 
 The release flow guarantees a broken edge channel from every stable cut until the first subsequent prerelease tag: the stable tag bumps next's manifests and contract gate line to the post-release pre-version while the spacedock@next cask keeps serving the stable-tag edge build, so the shipped version gate (same major.minor required) aborts every edge boot in the window. Direction options for ideation: (a) defer next's version bump so it rides the first prerelease tag instead of the stable tag; (b) have the stable tag's pipeline also cut a post-release pre-version edge build + cask bump in the same run, closing the window to minutes; (c) make the version gate tolerate skills exactly one minor ahead when the binary channel is edge — weakest, contract-side complexity. Acceptance sketch: value — after a stable cut, an edge-channel install boots green with zero manual steps (baseline: the 2026-07-04..07 window, every edge boot aborting); mechanism — the chosen pipeline change ships. High-stakes surface (CI and release machinery): detached adversarial audit + the release-flow dry-run treatment per docs/releasing.md.
