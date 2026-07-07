@@ -63,6 +63,17 @@ func kmAdvancesEntity(command, entity string) bool {
 		strings.Contains(command, "status=")
 }
 
+// kmAdvancesToStatus reports whether a command sets the named entity to a specific status
+// via `status --set <entity> status=<status>`. The codex 0.142.5 standing-loop dispatch
+// surface advances a dispatched entity to `done` (the `wait` collab that accompanies it
+// carries no per-entity binding), so `status=done` is the per-entity dispatch evidence on
+// that dialect — there is no spawn_agent to read.
+func kmAdvancesToStatus(command, entity, status string) bool {
+	return strings.Contains(command, "--set") &&
+		strings.Contains(command, entity) &&
+		strings.Contains(command, "status="+status)
+}
+
 // keepMovingTrace is the host-neutral view of the FO's motion the grader consumes. Each
 // host extractor fills it from its own transcript dialect plus the shared final message.
 type keepMovingTrace struct {
@@ -196,6 +207,17 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 			c := cmd.Item.Command
 			if kmAdvancesEntity(c, kmApprovedGate) {
 				tr.approvedAdvanced = true
+			}
+			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the
+			// dispatched worker advances the entity to `done`, so a `status --set <e>
+			// status=done` is the per-entity dispatch evidence.
+			if kmAdvancesToStatus(c, kmApprovedGate, "done") {
+				tr.approvedDispatched = true
+			}
+			for _, e := range independent {
+				if kmAdvancesToStatus(c, e, "done") {
+					tr.independentDispatched[e] = true
+				}
 			}
 			if kmAdvancesEntity(c, kmQuestioned) {
 				tr.correctedDriven = true

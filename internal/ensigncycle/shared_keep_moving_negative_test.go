@@ -237,6 +237,22 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 		t.Fatalf("the apply_patch re-shape dialect must pass: %v", err)
 	}
 
+	// Positive (dialect regression, cycle-1 false-negative): the codex 0.142.5 standing-loop
+	// dispatch surface the live run recorded — NO spawn_agent. The approved entity advances
+	// (status=implementation) then reaches done (its dispatched worker completed), and each
+	// independent entity reaches done. The extractor must credit approvedDispatched and
+	// independentDispatched from the `status --set … status=done` surface, not only spawn_agent.
+	doneSurface := strings.Join([]string{
+		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=APPROVED"),
+		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=done"),
+		codexCommand("spacedock status --workflow-dir . --set " + kmReadyOne + " status=done"),
+		codexCommand("spacedock status --workflow-dir . --set " + kmReadyTwo + " status=done"),
+		codexFileChange(kmQuestioned + ".md"),
+	}, "\n")
+	if err := assertCodexKeepMoving(doneSurface, kmCorrectFinal(), independent); err != nil {
+		t.Fatalf("the codex status-set-done dispatch dialect must pass (cycle-1 false-negative regression): %v", err)
+	}
+
 	// Negative (S1 pause): correct actions, a permission-question final message.
 	if err := assertCodexKeepMoving(kmCodexCorrectStream(), kmPermissionFinal(), independent); err == nil {
 		t.Fatal("expected a permission-question final message to fail the Codex assertion")
