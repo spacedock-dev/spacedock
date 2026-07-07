@@ -183,3 +183,18 @@ Removed the validation-authored formatter drift from `internal/release/journeyde
 ### Summary
 
 Implementation commit `749b7db6` repairs the live Codex worker startup environment and de-flakes the Claude wrong-root detector against the PR #483 observed stream shapes. Code is committed locally only; no code remote push was performed. The Codex live rejection-flow smoke is green locally, while Claude opus live execution is blocked here by missing/invalid local Anthropic auth before the workflow starts.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce the implementation's local-green evidence for commit `749b7db6`: focused failure-family tests, `go test ./internal/ensigncycle -count=1`, full suite, race suite, and the targeted Codex live rejection-flow smoke if local credentials/tooling permit.
+  Focused `go test ./internal/ensigncycle -run 'TestCodexLiveHomeParent|TestDetectWrongRootBoot|TestCodexCollabWaitWatchdog|TestRunCodexRejectionFlowRetry|TestAssertCodexReviewerReuse' -count=1` passed 68 tests; `go test ./internal/ensigncycle -count=1` passed 292 tests; `go test ./...` and `go test ./... -race` each passed 2072 tests across 17 packages; Codex live `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-validation-codex-live-spawn-oracle-v2-family-cycle3 go test -tags live ./internal/ensigncycle -run 'TestLiveCodexSharedScenarios/rejection-flow$' -count=1 -v` passed in 370.359s.
+- DONE: Verify root-cause coverage for both PR #483 failure families: Codex temp `CODEX_HOME`/helper alias stall and Claude opus wrong-root detector false positives.
+  Codex coverage includes `TestCodexLiveHomeParentUsesUserCacheOutsideSystemTemp`, `TestCodexLiveHomeParentCandidatesIncludeRepoFallbackWhenArtifactsAreTemp`, and the green live artifact; opus detector coverage includes `plugin_skill_readme_outside_fixture_passes`, `failed_parent_new_then_corrected_workflow_dir_passes`, and the pre-existing PR #446 stream replays in the focused detector run.
+- DONE: Check anti-tautology boundaries from the previous cycle remain covered; do not accept a fix that weakens inline/narration-only negatives.
+  `TestAssertCodexReviewerReuseRejectsNarratedReviewerWithoutValidationAssignment` and `TestAssertCodexReviewerReuseWithDurableStateRejectsInlineValidationWithoutReport` remain in the focused 68-test run alongside the current-v2 and durable-state positives.
+- DONE: Inspect the branch diff for scope, confirm code is committed locally but not pushed, and append a PASSED/REJECTED validation report with exact evidence.
+  Repair diff `06d75e51..749b7db6` is six `internal/ensigncycle` files; code status is clean at `749b7db6`, `git rev-list --left-right --count origin/spacedock-ensign/codex-live-spawn-oracle-v2-family...HEAD` reports `0 1`, and no code branch push was performed.
+
+### Summary
+
+Recommendation: PASSED. The local repair is good enough to retry PR #483 CI: the targeted Codex live rejection-flow smoke is green, the temp-home and wrong-root false-positive families have deterministic regression coverage, and the prior anti-tautology negatives remain executable. `gofmt -w ./cmd ./internal` still wants to realign `internal/release/journeydelta.go`, but that drift comes from pre-existing parent commit `06d75e51` and was restored after the check; it is not introduced by repair commit `749b7db6`.
