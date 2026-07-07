@@ -222,19 +222,14 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-// runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
-// to file one seed entity. Like the Claude runner it grades the FO's recorded
-// command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
-// preview-then-write — because the durable end-state file is indistinguishable
-// between the two paths. The file must also actually land, so the stream grade is
-// proof of HOW, not just THAT, the entity was filed.
 // runCodexSelfEvidenceMergeTriageScenario drives the real FO against the merge/triage
 // fixture and grades the SAME host-neutral decision assertSelfEvidenceMergeTriage the
-// Claude runner feeds: the FO must NOT terminalize while the required lane is
-// unapproved (durable frontmatter) and its final-message diagnosis must name THIS
-// run's failing test, not the inherited "known flake" label. The this-run token is
-// graded in the FINAL MESSAGE only, so the entity-read echo in the transcript cannot
-// satisfy it.
+// Claude runner feeds, against the INCIDENT class only (Cycle-3): the FO must NOT wave
+// the change through — terminalize-as-PASSED or merge-without-evidence — while the
+// required lane is unapproved; a hold or a reject-without-merge both pass. Its
+// final-message diagnosis must name THIS run's failing test, not the inherited "known
+// flake" label. The this-run token is graded in the FINAL MESSAGE only, so the
+// entity-read echo in the transcript cannot satisfy it.
 func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -244,16 +239,19 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	after := readFile(t, entityPath)
+	after := readMergeTriageAfter(t, workflowRoot, entityPath)
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-triage.md")); !os.IsNotExist(err) {
-		t.Fatalf("merge-triage was archived despite the hold scenario; stat err=%v", err)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
+// runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
+// to file one seed entity. Like the Claude runner it grades the FO's recorded
+// command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
+// preview-then-write — because the durable end-state file is indistinguishable
+// between the two paths. The file must also actually land, so the stream grade is
+// proof of HOW, not just THAT, the entity was filed.
 func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
