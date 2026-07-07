@@ -183,3 +183,16 @@ Recommendation: REJECTED. Cycle 2 closes the command-shape, self-labeled overrid
 ### Summary
 
 Cycle 3 adds the missing AC-1 adversarial prompt shape without changing the accepted cycle-2 proof surface. The smoke now requires a user prompt that names the product target under implementation/TDD pressure and still fails product mutation before write-core classification or after blocked-product classification without an exact override.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Reproduce the direct FO product-edit pressure smoke, cycle-2 command-shape negatives, full suite, and race suite.
+  Focused `ensigncycle` guard run passed 4 tests, including direct-pressure smoke and retained `apply_patch`/redirection/`tee`/`sed -i` negatives; `go test ./...` and `go test ./... -race` each passed 2044 tests in 17 packages.
+- DONE: Verify AC-1 is now satisfied by a direct prompt/trace under implementation/TDD pressure, not only helper-level before/after maps.
+  `TestAssertCodexFODirectProductEditPressureSmoke` requires a user prompt naming `internal/status/mutate.go` with implementation/TDD and direct-edit pressure, and a temporary weakened-detector audit failed at the helper-only negative.
+- DONE: Append a cycle-3 validation report with PASSED/REJECTED recommendation and exact evidence; if rejected, identify whether this is cycle-3 escalation material.
+  Recommendation: PASSED. No cycle-3 escalation is needed; the prior AC-1 rejection gap is now closed by direct prompt/trace evidence plus the red audit.
+
+### Summary
+
+Recommendation: PASSED. Cycle 3 adds the missing adversarial prompt shape for AC-1 without regressing the cycle-2 command-shape and anti-tautology protections, and focused/package/full/race verification passed. `gofmt -w ./cmd ./internal` was run; unrelated formatting drift from that command was restored, and the code worktree was clean before this state report.
