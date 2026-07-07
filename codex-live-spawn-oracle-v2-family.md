@@ -161,3 +161,7 @@ Cycle 2 repaired the live-only gap by letting the Codex live rejection-flow orac
 ### Summary
 
 Recommendation: PASSED. Cycle-2 validation reproduced the focused durable-fallback and retry coverage, the full and race baselines, and a live Codex rejection-flow smoke that completed successfully with preserved artifacts. The anti-tautology boundary is still covered by executable tests: durable fallback accepts missing JSONL assignment evidence only when durable validation-stage worker output exists, and inline or narration-only validation remains red.
+
+### Addendum: pre-gate cleanup
+
+Removed the validation-authored formatter drift from `internal/release/journeydelta.go` with cleanup commit `63cbf1dd`, leaving the implementation commits' `internal/ensigncycle` behavior intact. Verification: `git diff --name-only 4e9cd995..HEAD` returned no paths; `git diff --name-only origin/next..HEAD -- internal/release/journeydelta.go internal/ensigncycle` listed only `internal/ensigncycle` files and did not list `internal/release/journeydelta.go`; `go test ./internal/ensigncycle -run 'TestAssertCodexReviewerReuse|TestRunCodexRejectionFlowRetry|TestRejectionFlowRejectsWaitReuseTranscriptWithoutDurableSecondCycle' -count=1` passed 39 tests. I did not rerun the expensive live smoke because this cleanup did not change `internal/ensigncycle`.
