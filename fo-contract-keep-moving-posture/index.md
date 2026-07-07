@@ -12,6 +12,7 @@ sprint: 0250-fo-behavioral-discipline
 sprint-readiness:
 id: vcmbpj2dxq8bpkys2t0vkvq7
 mod-block: merge:pr-merge
+pr: "#479"
 ---
 
 # FO contract keep-moving posture
