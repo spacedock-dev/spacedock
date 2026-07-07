@@ -180,13 +180,48 @@ func claudeMechanismTrace(stream string, edits, commissioned []string) mechanism
 	return tr
 }
 
-// codexMechanismTrace extracts the trace from a `codex exec --json` transcript. Codex
-// runs every shell action — file edits (apply_patch), git, gh — as a command_execution
-// item, and dispatches workers as spawn_agent collab_tool_call items. An edit
-// command_execution naming a deterministic file is the in-house edit; a spawn_agent
-// whose prompt names one is the over-orchestration climb; a spawn_agent whose prompt
-// names a commissioned entity is the engage dispatch, and a gate justification in that
-// prompt is the scope-guard misfire.
+// codexFileChangeItem is a `codex exec --json` native file-edit item. codex-cli 0.142.5
+// applies edits as a `file_change` item carrying `changes[].path` — NOT an apply_patch
+// command_execution — so the edit evidence is a structured item type, read directly
+// rather than regexed out of a command string.
+type codexFileChangeItem struct {
+	Item struct {
+		Type    string `json:"type"`
+		Changes []struct {
+			Path string `json:"path"`
+			Kind string `json:"kind"`
+		} `json:"changes"`
+	} `json:"item"`
+}
+
+// codexAgentMessageItem is a `codex exec --json` FO-narration item. The FO's own reasoning
+// text lands here — the ONLY place a per-entity gate justification would surface on this
+// dialect. It must NOT be read from command_execution, whose text includes the FO READING
+// its own contract (the resident blockquote literally contains "smallest sufficient
+// mechanism"), which would false-positive the scope-guard check.
+type codexAgentMessageItem struct {
+	Item struct {
+		Type string `json:"type"`
+		Text string `json:"text"`
+	} `json:"item"`
+}
+
+// ssmAdvancesToDone reports whether a command advances an entity to done via
+// `status --set … status=done` — the standing-dispatch engage surface on codex 0.142.5
+// (the `wait` collab that accompanies it carries no per-entity binding). Keyed on the CLI
+// verb tokens because the advance is inherently a spacedock command_execution.
+func ssmAdvancesToDone(command string) bool {
+	return strings.Contains(command, "--set") && strings.Contains(command, "status=done")
+}
+
+// codexMechanismTrace extracts the trace from a `codex exec --json` transcript, reading
+// STRUCTURED item types wherever it can (the codex event shapes drift between releases):
+// in-house edits from `file_change` items (0.142.5) OR an apply_patch command_execution
+// (older/heredoc); the engage surface from a `status --set … status=done` advance (the real
+// standing-dispatch surface) OR a spawn_agent whose prompt names the entity (multi-agent
+// codex); over-orchestration from a spawn_agent naming an edit file; and the per-entity gate
+// justification from an `agent_message` (the FO's own narration) OR a spawn_agent prompt
+// naming a commissioned entity.
 func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTrace {
 	tr := newMechanismTrace()
 	for _, line := range strings.Split(jsonl, "\n") {
@@ -210,6 +245,23 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 					}
 				}
 			}
+			if ssmAdvancesToDone(c) {
+				for _, e := range commissioned {
+					if strings.Contains(c, e) {
+						tr.engaged[e] = true
+					}
+				}
+			}
+		}
+		var fc codexFileChangeItem
+		if err := json.Unmarshal([]byte(line), &fc); err == nil && fc.Item.Type == "file_change" {
+			for _, ch := range fc.Item.Changes {
+				for _, f := range edits {
+					if strings.Contains(ch.Path, f) {
+						tr.editedInHouse[f] = true
+					}
+				}
+			}
 		}
 		var collab codexCollabItem
 		if err := json.Unmarshal([]byte(line), &collab); err == nil &&
@@ -225,6 +277,15 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 					if justified {
 						tr.justifiedPerEntity[e] = true
 					}
+				}
+			}
+		}
+		var msg codexAgentMessageItem
+		if err := json.Unmarshal([]byte(line), &msg); err == nil &&
+			msg.Item.Type == "agent_message" && ssmGateJustificationRe.MatchString(msg.Item.Text) {
+			for _, e := range commissioned {
+				if strings.Contains(msg.Item.Text, e) {
+					tr.justifiedPerEntity[e] = true
 				}
 			}
 		}

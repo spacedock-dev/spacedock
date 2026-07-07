@@ -196,6 +196,52 @@ func codexSpawn(prompt string) string {
 	return `{"type":"item.completed","item":{"type":"collab_tool_call","tool":"spawn_agent","prompt":"` + prompt + `"}}`
 }
 
+// codexFileChange builds a `codex exec --json` native file_change item touching the given
+// paths — the codex 0.142.5 edit surface (structured changes[].path, not an apply_patch
+// command).
+func codexFileChange(paths ...string) string {
+	var b strings.Builder
+	b.WriteString(`{"type":"item.completed","item":{"type":"file_change","changes":[`)
+	for i, p := range paths {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		b.WriteString(`{"path":"` + p + `","kind":"update"}`)
+	}
+	b.WriteString(`]}}`)
+	return b.String()
+}
+
+// codexStatusSetDone builds the standing-dispatch advance command_execution — the real
+// engage surface on codex 0.142.5.
+func codexStatusSetDone(entity string) string {
+	return codexCommand("${SPACEDOCK_BIN:-spacedock} status --workflow-dir . --set " + entity + " status=done started")
+}
+
+// codexAgentMessage builds a `codex exec --json` agent_message narration item — where the
+// FO's own reasoning (and any per-entity gate justification) lands.
+func codexAgentMessage(text string) string {
+	return `{"type":"item.completed","item":{"type":"agent_message","text":"` + text + `"}}`
+}
+
+// ssmCodexRealDialectStream is the codex-cli 0.142.5 correct-run surface the validator
+// recorded: file_change edits, a direct git commit, and per-entity `status --set … done`
+// advances — no spawn_agent, no apply_patch. It ALSO includes a contract-read
+// command_execution that literally contains the gate vocabulary, to prove reading the
+// contract does not false-positive the scope-guard check (that text is command_execution,
+// not agent_message).
+func ssmCodexRealDialectStream() string {
+	lines := []string{
+		codexAgentMessage("Handling the in-house edits and commit, then engaging the ready workflow entities."),
+		codexCommand("sed -n '1,320p' skills/first-officer/references/first-officer-shared-core.md # Smallest sufficient mechanism (both directions)"),
+		codexFileChange("/tmp/wf/001/"+ssmEditFileA, "/tmp/wf/001/"+ssmEditFileB, "/tmp/wf/001/"+ssmStrategyDoc),
+		codexCommand("git add " + ssmStrategyDoc + " && git commit -m note"),
+		codexStatusSetDone(ssmCommissionedA),
+		codexStatusSetDone(ssmCommissionedB),
+	}
+	return strings.Join(lines, "\n")
+}
+
 func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 	edits := ssmEditFiles()
 	commissioned := ssmCommissioned()
@@ -238,5 +284,35 @@ func TestAssertCodexSmallestSufficientMechanism(t *testing.T) {
 		codexSpawn("Engage "+ssmCommissionedB+".")
 	if err := assertCodexSmallestSufficientMechanism(perEntity, edits, commissioned); err == nil {
 		t.Fatal("expected a per-entity gate justification in a spawn prompt to fail the Codex assertion")
+	}
+
+	// Positive (regression guard for the cycle-1 false negative): the codex-cli 0.142.5
+	// correct-run dialect the validator recorded — file_change edits + a direct commit +
+	// `status --set … done` advances, plus a contract-read command carrying the gate
+	// vocabulary. The extractor must grade editedInHouse=true (from file_change, not
+	// apply_patch), engage the entities (from the advances, not spawn_agent), and NOT
+	// false-positive the scope guard on the contract read.
+	if err := assertCodexSmallestSufficientMechanism(ssmCodexRealDialectStream(), edits, commissioned); err != nil {
+		t.Fatalf("the codex 0.142.5 file_change + status-set dialect must pass (cycle-1 false-negative regression): %v", err)
+	}
+
+	// Negative: engage suppressed on the advance surface — ready-two never advanced to done.
+	suppressedAdvance := codexFileChange("/tmp/wf/"+ssmEditFileA, "/tmp/wf/"+ssmEditFileB) + "\n" +
+		codexCommand("git commit -m note") + "\n" +
+		codexStatusSetDone(ssmCommissionedA)
+	if err := assertCodexSmallestSufficientMechanism(suppressedAdvance, edits, commissioned); err == nil {
+		t.Fatal("expected a suppressed advance (ready-two never set to done) to fail the Codex assertion")
+	}
+
+	// Negative: a per-entity justification narrated in an agent_message during engage — the
+	// scope-guard misfire on the 0.142.5 dialect (the FO advances the entity AND narrates a
+	// gate justification naming it).
+	perEntityMsg := codexFileChange("/tmp/wf/"+ssmEditFileA, "/tmp/wf/"+ssmEditFileB) + "\n" +
+		codexCommand("git commit -m note") + "\n" +
+		codexAgentMessage("Smallest sufficient mechanism check: dispatching "+ssmCommissionedA+" is justified.") + "\n" +
+		codexStatusSetDone(ssmCommissionedA) + "\n" +
+		codexStatusSetDone(ssmCommissionedB)
+	if err := assertCodexSmallestSufficientMechanism(perEntityMsg, edits, commissioned); err == nil {
+		t.Fatal("expected a per-entity gate justification in an agent_message to fail the Codex assertion")
 	}
 }
