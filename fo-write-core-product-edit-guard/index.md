@@ -143,3 +143,16 @@ Recommendation: REJECTED. The offline tests and mutation controls prove the new 
 ### Feedback Cycles
 
 - Cycle 1: REJECTED — validation found no direct FO product-edit smoke, missing redirection/`tee`/`sed -i` command-shape negatives, and worker-routing proof that still trusts self-labeled override/route narration.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add a direct FO product-edit smoke or fixture that fails when product files are changed before write-core classification.
+  Code commit `1fdf6bb` adds `TestAssertCodexFOProductEditSmoke`, which passes an unchanged blocked-route fixture and fails when `internal/status/mutate.go` changes before classification.
+- DONE: Add command-shape negatives for redirection, tee, and sed -i, and remove reliance on self-labeled override or route narration for proof.
+  `fo_product_edit_guard_test.go` now covers `>`, `tee`, `sed -i`, self-labeled `override`, route narration without `spawn_agent`/`Agent`, and product writes that lack an exact user grant.
+- DONE: Preserve existing guard behavior and append a cycle-2 implementation report with focused verification evidence.
+  Verification passed after `gofmt -w ./cmd ./internal`: focused guard tests 3 passed, `go test ./internal/contractlint ./internal/ensigncycle` 376 passed, `go test ./...` 2044 passed, and `go test ./... -race` 2044 passed.
+
+### Summary
+
+Cycle 2 keeps the compatibility-first guard but makes its proof independent: FO narration no longer proves worker routing, and an FO-authored `override` label no longer authorizes product writes. Direct product edits now require an exact user/captain grant plus a product/override classification, while blocked routes require the block response and an actual worker dispatch event.
