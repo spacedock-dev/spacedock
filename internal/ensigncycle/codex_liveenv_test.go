@@ -155,6 +155,24 @@ func TestCodexLiveHomeParentCandidatesKeepFallbackOutsidePluginCheckoutWhenArtif
 	}
 }
 
+func TestCodexLiveHomeParentCandidatesRejectArtifactRootInsidePluginCheckout(t *testing.T) {
+	cacheDir := filepath.Join(string(os.PathSeparator), "home", "runner", ".cache")
+	repoRoot := filepath.Join(string(os.PathSeparator), "home", "runner", "work", "spacedock", "spacedock")
+	artifactRoot := filepath.Join(repoRoot, "live-artifacts", "codex", "codex-shared-scenarios")
+
+	got := codexLiveIsolatedHomeParentCandidates(cacheDir, repoRoot, artifactRoot)
+	wantCache := filepath.Join(cacheDir, "spacedock-live-codex")
+	wantRepo := filepath.Join(filepath.Dir(repoRoot), ".spacedock-live-codex", filepath.Base(repoRoot))
+	if len(got) != 2 || got[0] != wantCache || got[1] != wantRepo {
+		t.Fatalf("candidates = %#v, want cache then repo-adjacent fallback %#v", got, []string{wantCache, wantRepo})
+	}
+	for _, parent := range got {
+		if parent == repoRoot || strings.HasPrefix(parent, repoRoot+string(os.PathSeparator)) {
+			t.Fatalf("isolated CODEX_HOME parent %q is inside plugin checkout %q; artifact-backed homes there make codex plugin add copy its own cache", parent, repoRoot)
+		}
+	}
+}
+
 func codexLiveEnv(codexHome, home, pathPrefix, openAIAPIKey string) []string {
 	env := cleanEnviron("CODEX_HOME", "HOME", "OPENAI_API_KEY", "CLAUDECODE")
 	path := os.Getenv("PATH")

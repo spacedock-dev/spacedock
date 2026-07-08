@@ -86,7 +86,7 @@ func codexLiveIsolatedHomeParent(cacheDir string) (string, error) {
 
 func codexLiveIsolatedHomeParentCandidates(cacheDir, repoRoot, artifactRoot string) []string {
 	var out []string
-	if artifactRoot != "" && !pathIsUnderSystemTemp(artifactRoot) {
+	if artifactRoot != "" && !pathIsUnderSystemTemp(artifactRoot) && !pathIsUnder(artifactRoot, repoRoot) {
 		out = append(out, filepath.Join(artifactRoot, "_codex-home"))
 	}
 	if parent, err := codexLiveIsolatedHomeParent(cacheDir); err == nil {
@@ -104,6 +104,19 @@ func codexLiveRepoAdjacentHomeParent(repoRoot string) (string, error) {
 	}
 	repoRoot = filepath.Clean(repoRoot)
 	return filepath.Join(filepath.Dir(repoRoot), ".spacedock-live-codex", filepath.Base(repoRoot)), nil
+}
+
+func pathIsUnder(path, dir string) bool {
+	if path == "" || dir == "" {
+		return false
+	}
+	dir = filepath.Clean(dir)
+	path = filepath.Clean(path)
+	if path == dir {
+		return true
+	}
+	rel, err := filepath.Rel(dir, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
 
 func pathIsUnderSystemTemp(path string) bool {
