@@ -93,3 +93,16 @@ Riskiest paths exercised first against a built binary (`go build ./cmd/spacedock
 ### Summary
 
 Ideated the fix for issue #485: keep cwd-relative --workflow-dir semantics, add a fail-closed roots guard to merge guard that names the resolved path and the missing state checkout, plus a spike-verified did-you-mean hint derived from the git common-dir parent. Spiked the riskiest mechanisms first — the repro reproduces exactly as filed, and the spike disproved the issue's own --show-toplevel suggestion, which materially changed the proposed approach.
+
+## Stage Report: implementation
+
+- DONE: Fail-closed roots guard implemented in MergeGuard (internal/status/merge.go) with the two refusal messages and the git-common-dir-derived did-you-mean hint
+  `mergeRootsGuard` + `didYouMeanHint` in internal/status/merge.go, called between `resolveRoots` and `resolveMutationEntity` in `MergeGuard`; hint reuses `validateRootsOrExit` to prove the candidate resolves before naming it.
+- DONE: Merge help text doc diff applied (internal/cli/help.go)
+  `setMergeHelp`'s `--workflow-dir` line now states the cwd-relative resolution rule verbatim per the documentation diff.
+- DONE: All named unit tests added and green (AC-1..AC-6, including the real-worktree AC-1 repro test
+  internal/status/merge_guard_foreign_cwd_test.go (4 new tests, real `git worktree add` for AC-1) + internal/cli/merge_test.go (TestMergeGuardHelpDocumentsWorkflowDirResolution for AC-6). `go test ./...` passes (all packages ok).
+
+### Summary
+
+Implemented issue #485's fix: `merge guard` now fails closed with a named, actionable diagnostic when `--workflow-dir` resolves to a nonexistent dir or a split-root definition whose state checkout is missing, instead of the misleading `entity not found: <slug>`. The refusal appends a did-you-mean hint (git-common-dir-derived main-checkout root) when the invocation dir is a linked worktree and the corrected path actually resolves. A real-worktree end-to-end test proves the suggested corrected invocation both parses and finalizes the entity. `go build ./...`, `go vet ./...`, and `go test ./...` are all green.
