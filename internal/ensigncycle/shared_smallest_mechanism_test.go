@@ -224,6 +224,7 @@ func ssmAdvancesToDone(command string) bool {
 // naming a commissioned entity.
 func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTrace {
 	tr := newMechanismTrace()
+	dispatchEvidence := codexDispatchCompletionEvidenceFromJSONL(jsonl, commissioned)
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -288,6 +289,11 @@ func codexMechanismTrace(jsonl string, edits, commissioned []string) mechanismTr
 					tr.justifiedPerEntity[e] = true
 				}
 			}
+		}
+	}
+	for _, e := range commissioned {
+		if dispatchEvidence.doneReport[e] {
+			tr.engaged[e] = true
 		}
 	}
 	return tr

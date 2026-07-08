@@ -245,6 +245,8 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 // from a spawn_agent naming the entity.
 func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keepMovingTrace {
 	tr := newKeepMovingTrace()
+	evidenceEntities := append([]string{kmApprovedGate, kmQuestioned}, independent...)
+	dispatchEvidence := codexDispatchCompletionEvidenceFromJSONL(jsonl, evidenceEntities)
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -301,6 +303,17 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 				tr.correctedReshaped = true
 			}
 		}
+	}
+	if dispatchEvidence.doneReport[kmApprovedGate] {
+		tr.approvedDispatched = true
+	}
+	for _, e := range independent {
+		if dispatchEvidence.doneReport[e] {
+			tr.independentDispatched[e] = true
+		}
+	}
+	if dispatchEvidence.stageReport[kmQuestioned] {
+		tr.correctedReshaped = true
 	}
 	tr.askedPermission = kmPermissionRe.MatchString(finalMessage)
 	tr.correctedAddressed = kmCorrectedAddressed(finalMessage, kmQuestioned)
