@@ -229,3 +229,16 @@ Recommendation: retry PR #483 after validation. The Codex cycle-3 failure was a 
 ### Summary
 
 Recommendation: PASSED. The cycle-3 Codex `Filename too long` setup failure is covered by a CI-like real `codex plugin add spacedock@spacedock` install whose cache lands outside the plugin checkout, and the targeted live Codex rejection-flow smoke is green. The only formatter drift was the known unrelated `internal/release/journeydelta.go` alignment from `gofmt -w ./cmd ./internal`, and it was restored before reporting.
+
+## Stage Report: implementation
+
+- DONE: Root-caused the remaining PR #483 Codex setup failure after `30f2fb46`.
+  PR #483 run 28912232956/job 85771905904 still failed before shared scenarios: job-level Codex plugin install from `$RUNNER_TEMP` succeeded, but the Go live harness failed `codex plugin add spacedock@spacedock` from per-test marketplace `/tmp/TestLiveCodexSharedScenarios2162801061/002` with `Filename too long`. The missed path was `artifactRoot/_codex-home`: in CI, `SPACEDOCK_LIVE_ARTIFACT_DIR=$GITHUB_WORKSPACE/live-artifacts/codex`, so `codexLiveArtifactDir(..., "codex-shared-scenarios")` is under the plugin checkout. Commit `30f2fb46` moved only the final repo fallback outside the checkout, but the candidate list still preferred a non-temp artifact root even when it was inside the checkout being copied.
+- DONE: Added the failing CI-shaped regression and implemented the minimal guard.
+  `TestCodexLiveHomeParentCandidatesRejectArtifactRootInsidePluginCheckout` failed red with candidates beginning `/home/runner/work/spacedock/spacedock/live-artifacts/codex/codex-shared-scenarios/_codex-home`. Commit `43396704` (`skip codex live homes inside checkout artifacts`) now rejects artifact-root candidates under `repoRoot`, keeping isolated Codex homes outside both system temp and the plugin checkout. The candidate order remains artifact root (only when outside temp and checkout), user cache, then repo-adjacent fallback.
+- DONE: Verified local green with a CI-like real Codex plugin add and Go gates.
+  A real `codex plugin marketplace add` / `codex plugin add spacedock@spacedock` reproduction passed with `artifactRoot=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/spacedock-ensign-codex-live-spawn-oracle-v2-family/live-artifacts/codex/codex-shared-scenarios` under the checkout, per-test marketplace `/tmp/TestLiveCodexSharedScenarios2162801061/002`, and `CODEX_HOME=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/.spacedock-live-codex/spacedock-ensign-codex-live-spawn-oracle-v2-family/repro-artifact-under-checkout-home` outside the checkout. Verification passed: focused `go test ./internal/ensigncycle -run 'TestCodexLiveHomeParent|TestDetectWrongRootBoot|TestCodexCollabWaitWatchdog|TestRunCodexRejectionFlowRetry|TestAssertCodexReviewerReuse' -count=1` (1.324s), `go test ./internal/ensigncycle -count=1` (7.159s), `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` with unrelated `internal/release/journeydelta.go` drift removed.
+
+### Summary
+
+Recommendation: retry PR #483 after validation. The remaining Codex setup failure was the artifact-root candidate under `$GITHUB_WORKSPACE`, not the repo-adjacent fallback. The repair blocks every candidate under the plugin checkout while preserving the prior non-temp and user-cache behavior.
