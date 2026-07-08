@@ -242,3 +242,16 @@ Recommendation: PASSED. The cycle-3 Codex `Filename too long` setup failure is c
 ### Summary
 
 Recommendation: retry PR #483 after validation. The remaining Codex setup failure was the artifact-root candidate under `$GITHUB_WORKSPACE`, not the repo-adjacent fallback. The repair blocks every candidate under the plugin checkout while preserving the prior non-temp and user-cache behavior.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently inspect commit 43396704 and verify the CI-shaped artifactRoot-under-checkout case is covered by a regression that would fail on 30f2fb46.
+  Inspected `43396704`; applying only the new test hunk to detached `30f2fb46` made `TestCodexLiveHomeParentCandidatesRejectArtifactRootInsidePluginCheckout` fail with the artifact-root `_codex-home` candidate still under `/home/runner/work/spacedock/spacedock`, while the same test passed at `43396704`.
+- DONE: Reproduce the Codex-focused verification: focused liveenv/oracle tests, package/full/race baselines, gofmt hygiene, and a CI-like real codex plugin add or targeted live Codex smoke.
+  Focused liveenv/oracle run passed 69 tests; `go test ./internal/ensigncycle -count=1` passed 293; `go test ./...` and `go test ./... -race` each passed 2072 across 17 packages; `gofmt -w ./cmd ./internal` produced only the known unrelated `internal/release/journeydelta.go` drift, restored before reporting; setup-only live Codex parent with checkout-contained artifact root passed and `codex plugin add` installed to `.worktrees/.spacedock-live-codex/.../plugins/cache/spacedock/spacedock/0.24.0`.
+- DONE: Check scope and gate readiness: diff stays in internal/ensigncycle, anti-tautology reviewer/oracle boundaries remain covered, and the report gives PASSED or REJECTED for retrying PR #483.
+  `git diff --name-only 30f2fb46..43396704` is limited to `internal/ensigncycle/codex_liveenv.go` and `internal/ensigncycle/codex_liveenv_test.go`; focused run includes the reviewer-reuse negatives `TestAssertCodexReviewerReuseRejectsNarratedReviewerWithoutValidationAssignment` and `TestAssertCodexReviewerReuseWithDurableStateRejectsInlineValidationWithoutReport`; recommendation: PASSED, retry PR #483.
+
+### Summary
+
+Recommendation: PASSED. Commit `43396704` closes the remaining CI-shaped Codex setup hole by rejecting artifact-root Codex homes under the plugin checkout, and the new regression is proven red on `30f2fb46` and green on the candidate. The Go baselines, formatter hygiene, real Codex plugin-add setup seam, scope check, and anti-tautology oracle boundaries are all green for retrying PR #483.
