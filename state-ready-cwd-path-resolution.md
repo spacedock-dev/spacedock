@@ -91,3 +91,9 @@ After:
 ### Summary
 
 Fleshed out issue #484 into a three-fix design: a shared main-worktree-anchored resolver for split-root checkout paths, a local-branch fallback ladder for resume, and targeted stale-registration repair — the third being required for the reported repro to converge (flagged for the gate since it exceeds the issue title's two defects). All risky git mechanisms were spiked first on git 2.39.5; a concrete doc diff for split-root-state.md is included per the user-visible-behavior rule.
+
+### Feedback Cycles
+
+**Cycle 1 (ideation gate, captain reject).** The Proposed approach's opening line claims "one shared resolver... used by every split-root state verb (`ready`/`commit`/`sweep` via `resolveStateCheckout`...)". This is factually wrong for `sweep`: `runStateSweep` (`internal/cli/state_sync.go:197-202`) never calls `resolveStateCheckout` — it delegates to `dispatch.Sweep`, which resolves its checkout path through a *third*, independent implementation, `internal/dispatch/helpers.go`'s `splitRootStateCheckout` (also used by `dispatch reconcile`). This directly contradicts the entity's own "Out of scope" line, which already excludes `internal/dispatch/helpers.go` as "a different surface, not part of the #484 repro." As scoped, the fix would leave `state sweep` cwd-broken from a worktree, so AC-2's "cwd-independent... every split-root state verb" claim would not actually hold post-implementation.
+
+Routed back to ideation: either (a) extend the fix's scope to also cover `internal/dispatch/helpers.go`'s `splitRootStateCheckout`, or (b) correct the "every split-root state verb" claim to exclude `sweep` (consistent with the existing Out-of-scope line) and adjust AC-2 / AC-5 / the Test plan so no verified-by claim overclaims `sweep` coverage. Either resolution is acceptable; the gate blocks on the self-contradiction, not on a specific choice between them.
