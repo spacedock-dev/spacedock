@@ -128,3 +128,14 @@ Routed back to implementation: add a test (real linked worktree, relative `--wor
 ### Summary
 
 Independently reproduced all six ACs against a built binary and the full test suite (`go build`/`go vet`/`go test ./...` all green, uncached where it mattered). The detached adversarial audit on a disposable worktree found one real coverage gap: `didYouMeanHint`'s validation gate — the exact mechanism that keeps the hint from ever suggesting a corrected invocation that doesn't work — has no regression test, and removing it silently passes the whole suite while a built binary visibly regresses (a bogus "did you mean" for a path that itself doesn't resolve). Recommendation: **REJECTED**, routed back to implementation for one added negative test closing that gap; no other changes needed — AC-1 through AC-6 are otherwise solidly verified.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add a real-linked-worktree test asserting didYouMeanHint's refusal omits "did you mean" when the main-root-joined candidate does not exist/validate
+  `TestMergeGuardForeignCwdSuppressesHintWhenCandidateInvalid` in internal/status/merge_guard_foreign_cwd_test.go, commit aa89cd2a; drives a real linked worktree with `--workflow-dir docs/bogus` (nonexistent in both the worktree and the main-root-joined candidate) and asserts stderr contains no "did you mean" line.
+- DONE: Re-run go test ./... and go vet ./... to confirm nothing else regressed
+  `go vet ./...` clean; `go test -count=1 ./...` all packages ok. Additionally verified the new test's discriminating power directly: temporarily reproduced cycle 1's exact adversarial mutation (removed `validateRootsOrExit(candidate, ...)` from `didYouMeanHint`) — the new test went red with the same "did you mean ... /docs/bogus" false-positive the audit found manually — then restored the file (byte-identical to the committed version, confirmed via `git diff`) and re-confirmed green.
+
+### Summary
+
+Closed the cycle-1 coverage gap: `didYouMeanHint`'s own `validateRootsOrExit` gate — which stops the hint from suggesting a corrected `--workflow-dir` that itself would not resolve — is now regression-tested by a real-linked-worktree test, verified to catch the exact adversarial edit the validation audit found manually. No production code changed; the existing `internal/status/merge.go` guard logic was already correct. Full suite (`go build`, `go vet`, `go test -count=1 ./...`) is green.
