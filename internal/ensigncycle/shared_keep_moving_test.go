@@ -107,6 +107,16 @@ func kmAdvancesForward(command, entity string) bool {
 	return kmAdvancesToStatus(command, entity, kmNextStage) || kmAdvancesToStatus(command, entity, "done")
 }
 
+func kmMergeGuardTerminalizes(command, entity string) bool {
+	fields := strings.Fields(command)
+	for i := 0; i+2 < len(fields); i++ {
+		if fields[i] == "merge" && fields[i+1] == "guard" && fields[i+2] == entity {
+			return true
+		}
+	}
+	return false
+}
+
 // keepMovingTrace is the host-neutral view of the FO's motion the grader consumes. Each host
 // extractor fills it from its own transcript dialect plus the shared final message.
 type keepMovingTrace struct {
@@ -249,15 +259,15 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 			// codex 0.142.5 dispatches via the standing loop (no spawn_agent): the dispatched
 			// worker advances the entity to `done`, so a `status --set <e> status=done` is the
 			// per-entity dispatch evidence.
-			if kmAdvancesToStatus(c, kmApprovedGate, "done") {
+			if kmAdvancesToStatus(c, kmApprovedGate, "done") || kmMergeGuardTerminalizes(c, kmApprovedGate) {
 				tr.approvedDispatched = true
 			}
 			for _, e := range independent {
-				if kmAdvancesToStatus(c, e, "done") {
+				if kmAdvancesToStatus(c, e, "done") || kmMergeGuardTerminalizes(c, e) {
 					tr.independentDispatched[e] = true
 				}
 			}
-			if kmAdvancesForward(c, kmQuestioned) {
+			if kmAdvancesForward(c, kmQuestioned) || kmMergeGuardTerminalizes(c, kmQuestioned) {
 				tr.correctedDriven = true
 			}
 			if kmAdvancesToStatus(c, kmQuestioned, kmReopenStage) {

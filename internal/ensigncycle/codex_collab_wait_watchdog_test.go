@@ -365,3 +365,13 @@ func passingRejectionEntity() string {
 		"## Stage Report: implementation\n\n- DONE: Applied rejection fix\n\n" +
 		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
 }
+
+func passingRejectionEntityWithValidationReports() string {
+	return "---\nstatus: validation\n---\n" +
+		rejectionFixMarker + "\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Initial implementation\n\n" +
+		"## Stage Report: validation\n\nRecommendation: REJECTED.\n\n" +
+		"## Stage Report: implementation\n\n- DONE: Applied rejection fix\n\n" +
+		"## Stage Report: validation\n\nRecommendation: PASSED.\n\n" +
+		"### Feedback Cycles\n\n- Cycle 1: REJECTED\n- Cycle 2: PASSED\n"
+}

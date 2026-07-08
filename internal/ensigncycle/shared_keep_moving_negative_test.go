@@ -261,6 +261,21 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 		t.Fatalf("the codex status-set-done dispatch dialect must pass (cycle-1 false-negative regression): %v", err)
 	}
 
+	// Positive (dialect regression, PR #480): merge guard is another legitimate
+	// terminalization surface. The worker reached the terminal merge-finalize
+	// ceremony, so there may be no direct `status --set … status=done` command to
+	// credit as the per-entity dispatch evidence.
+	mergeGuardSurface := strings.Join([]string{
+		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=APPROVED"),
+		codexCommand("spacedock merge guard " + kmApprovedGate + " --workflow-dir . --verdict passed"),
+		codexCommand("spacedock merge guard " + kmReadyOne + " --workflow-dir . --verdict passed"),
+		codexCommand("spacedock merge guard " + kmReadyTwo + " --workflow-dir . --verdict passed"),
+		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=" + kmReopenStage + " verdict=QUESTIONED"),
+	}, "\n")
+	if err := assertCodexKeepMoving(mergeGuardSurface, kmCorrectFinal(), independent); err != nil {
+		t.Fatalf("the codex merge-guard terminalization dialect must pass (PR #480 false-negative regression): %v", err)
+	}
+
 	// Negative (S1 pause): correct actions, a permission-question final message.
 	if err := assertCodexKeepMoving(kmCodexCorrectStream(), kmPermissionFinal(), independent); err == nil {
 		t.Fatal("expected a permission-question final message to fail the Codex assertion")
@@ -286,7 +301,7 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 	// Negative (S4 forward-drive): the FO advanced the corrected entity to done (terminal/merge)
 	// before the re-shape folded.
 	driven := kmCodexCorrectStream() + "\n" +
-		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=done")
+		codexCommand("spacedock status --workflow-dir . --set "+kmQuestioned+" status=done")
 	if err := assertCodexKeepMoving(driven, kmCorrectFinal(), independent); err == nil {
 		t.Fatal("expected driving the corrected entity forward to fail the Codex assertion")
 	}

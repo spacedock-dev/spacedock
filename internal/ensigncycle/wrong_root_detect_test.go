@@ -5,6 +5,7 @@ package ensigncycle
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -17,11 +18,22 @@ func streamLine(command string) string {
 		mustJSONString(command) + `}}]}}`
 }
 
+func bashToolLine(id, command string) string {
+	return `{"type":"assistant","message":{"content":[{"type":"tool_use","id":` + mustJSONString(id) +
+		`,"name":"Bash","input":{"command":` + mustJSONString(command) + `}}]}}`
+}
+
+func toolResultLine(id string, isError bool, content string) string {
+	errValue := "false"
+	if isError {
+		errValue = "true"
+	}
+	return `{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":` + mustJSONString(id) +
+		`,"content":` + mustJSONString(content) + `,"is_error":` + errValue + `}]}}`
+}
+
 func mustJSONString(s string) string {
-	// A minimal JSON string encoder for the test fixtures (the commands here carry
-	// no control chars), so the line is valid stream-json without importing the
-	// encoder into the test body.
-	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
+	return strconv.Quote(s)
 }
 
 // TestDetectWrongRootBoot covers the pure detector both ways: it reds on a stream
@@ -98,6 +110,31 @@ func TestDetectWrongRootBoot(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), fixtureRoot) {
 			t.Errorf("error must name the expected fixture root %q: %v", fixtureRoot, err)
+		}
+	})
+
+	t.Run("plugin_skill_readme_outside_fixture_passes", func(t *testing.T) {
+		// Claude's Skill loader may read a plugin skill root README. It is outside
+		// the fixture, but it is not the workflow README and must not be classified
+		// as a wrong-root boot.
+		stream := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/tmp/spacedock-live-plugin-1648179417/skills/first-officer/README.md"}}]}}`
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector red a plugin skill README read as a workflow wander: %v", err)
+		}
+	})
+
+	t.Run("failed_parent_new_then_corrected_workflow_dir_passes", func(t *testing.T) {
+		parent := "/tmp/TestLiveClaudeSharedScenariosfiling2421552038"
+		fixture := parent + "/001"
+		stream := strings.Join([]string{
+			bashToolLine("toolu_bad", `cd `+parent+` && printf '%s\n' '---' 'title: Wire The Thing' 'status: backlog' '---' 'Wire the thing end to end so it is connected and functional.' | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing`),
+			toolResultLine("toolu_bad", true, "Exit code 1\nError: no commissioned Spacedock workflow found in "+parent),
+			bashToolLine("toolu_good", `cd `+parent+` && printf '%s\n' '---' 'title: Wire The Thing' 'status: backlog' '---' 'Wire the thing end to end so it is connected and functional.' | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing --workflow-dir `+fixture),
+			toolResultLine("toolu_good", false, "created: "+fixture+"/wire-the-thing.md id=001"),
+		}, "\n")
+
+		if err := detectWrongRootBoot(stream, fixture); err != nil {
+			t.Errorf("detector red the PR #483 opus filing stream shape even though the off-fixture command failed and the corrected --workflow-dir command landed in the fixture: %v", err)
 		}
 	})
 

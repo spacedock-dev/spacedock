@@ -1,6 +1,7 @@
 package ensigncycle
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -377,6 +378,90 @@ func TestAssertCodexReviewerReuseAcceptsLiveAdvanceModeReuseNarration(t *testing
 
 	if err := assertCodexReviewerReuse(jsonl); err != nil {
 		t.Fatalf("Codex live advance-mode reuse narration should pass: %v", err)
+	}
+}
+
+func TestAssertCodexReviewerReuseAcceptsCurrentV2AssignmentSurfaces(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("Codex exec does not expose spawn metadata here, so I am grading the durable assignments and keeping the validation reviewer separate."),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"implementation"}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"validation"}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexWaitLine(),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"implementation","advance":true}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexWaitLine(),
+		codexAgentMessageLine("The cycle-1 reviewer stayed available; I kept validation separate for the re-review."),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"validation","advance":true}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexWaitLine(),
+	}, "\n")
+
+	if err := assertCodexReviewerReuse(jsonl); err != nil {
+		t.Fatalf("current multi_agent_v2 assignment surfaces should pass: %v", err)
+	}
+}
+
+func TestAssertCodexReviewerReuseRejectsNarratedReviewerWithoutValidationAssignment(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("I am using a separate validation reviewer and will keep it alive for the re-review."),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"implementation"}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexWaitLine(),
+		codexCommandLine(`printf '{"entity_path":"rejection-task.md","stage":"implementation","advance":true}' | ${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --json`),
+		codexWaitLine(),
+		codexAgentMessageLine("The separate validation reviewer passed the re-review."),
+	}, "\n")
+
+	err := assertCodexReviewerReuse(jsonl)
+	if err == nil {
+		t.Fatal("expected narration without a validation-stage assignment to fail")
+	}
+	const want = "Codex reviewer assignment-separation evidence missing validation-stage dispatch assignment"
+	if err.Error() != want {
+		t.Fatalf("error = %q, want %q", err.Error(), want)
+	}
+}
+
+func TestAssertCodexReviewerReuseWithDurableStateAcceptsValidationReportsWhenExecSurfaceHasNoAssignments(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation`),
+		codexWaitLine(),
+	}, "\n")
+	entity := passingRejectionEntityWithValidationReports()
+
+	if err := assertCodexReviewerReuseWithDurableState(jsonl, entity); err != nil {
+		t.Fatalf("durable validation reports should satisfy Codex reviewer evidence when exec emits no spawn/assignment surface: %v", err)
+	}
+}
+
+func TestAssertCodexReviewerReuseWithDurableStateRejectsInlineValidationWithoutReport(t *testing.T) {
+	jsonl := strings.Join([]string{
+		codexAgentMessageLine("I validated inline and the separate reviewer passed."),
+		codexCommandLine(`${SPACEDOCK_BIN:-spacedock} dispatch build --workflow-dir . --entity-path rejection-task.md --stage implementation`),
+		codexWaitLine(),
+	}, "\n")
+	entity := passingRejectionEntity()
+
+	err := assertCodexReviewerReuseWithDurableState(jsonl, entity)
+	if err == nil {
+		t.Fatal("expected missing validation-stage report to fail durable Codex reviewer evidence")
+	}
+	const want = "Codex reviewer evidence missing validation-stage worker output"
+	if err.Error() != want {
+		t.Fatalf("error = %q, want %q", err.Error(), want)
+	}
+}
+
+func TestCodexReviewerReuseDocumentsExecObservabilityBoundary(t *testing.T) {
+	source, err := os.ReadFile("shared_reviewer_reuse_test.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(source)
+	for _, want := range []string{
+		"Codex exec does not surface enough current multi_agent_v2 metadata to prove a distinct reviewer process.",
+		"assignment-separation plus durable end-state",
+	} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("shared_reviewer_reuse_test.go is missing Codex observability scope note %q", want)
+		}
 	}
 }
 
