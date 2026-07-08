@@ -19,47 +19,85 @@ func TestFOWriteCoreMutationGateClassifiesTargets(t *testing.T) {
 	classifier := parseFOWriteClassifierTable(t, table)
 
 	cases := []struct {
+		name string
+		ctx  foWriteWorkflowContext
 		path string
 		want string
 	}{
-		{".spacedock-state/task/index.md", "allowed-state"},
-		{"docs/dev/README.md", "allowed-process"},
-		{"cmd/spacedock/main.go", "blocked-product"},
-		{"internal/status/mutate.go", "blocked-product"},
-		{"internal/status/mutate_test.go", "blocked-product"},
-		{"skills/fo-write-core/SKILL.md", "blocked-product"},
-		{"agents/first-officer.md", "blocked-product"},
-		{"references/legacy.md", "blocked-product"},
-		{"plugin.json", "blocked-product"},
-		{".github/workflows/runtime-live-e2e.yml", "blocked-product"},
-		{"docs/site/reference/command-reference.md", "blocked-product"},
-		{"docs/specs/state-behavior-extension.md", "blocked-product"},
-		{"docs/roadmap/0250-fo-behavioral-discipline/index.md", "blocked-product"},
-		{"fixtures/entity-label-drive/README.md", "blocked-product"},
-		{"docs/dev/_mods/pr-merge.md", "blocked-product"},
+		{
+			name: "resolved synthetic state entity",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "/tmp/acme-flow/.state/task/index.md",
+			want: "allowed-state",
+		},
+		{
+			name: "resolved synthetic archive root",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "/tmp/acme-flow/.state/_archive/done/index.md",
+			want: "allowed-state",
+		},
+		{
+			name: "absolute workflow README",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "/tmp/acme-flow/README.md",
+			want: "allowed-process",
+		},
+		{
+			name: "relative workflow README",
+			ctx:  syntheticFOWriteContext("workflows/acme", "workflows/acme/.state"),
+			path: "workflows/acme/README.md",
+			want: "allowed-process",
+		},
+		{
+			name: "docs dev README is not special outside the discovered workflow",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "docs/dev/README.md",
+			want: "blocked-product",
+		},
+		{
+			name: "registered mods are product work",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "/tmp/acme-flow/_mods/pr-merge.md",
+			want: "blocked-product",
+		},
+		{
+			name: "unmatched code defaults to product",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "internal/status/mutate.go",
+			want: "blocked-product",
+		},
+		{
+			name: "shipped skill scaffolding defaults to product",
+			ctx:  syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state"),
+			path: "skills/fo-write-core/SKILL.md",
+			want: "blocked-product",
+		},
 	}
 	for _, tc := range cases {
-		if got := classifyFOWriteTarget(classifier, tc.path); got != tc.want {
-			t.Errorf("classify %q = %q, want %q", tc.path, got, tc.want)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			if got := classifyFOWriteTarget(classifier, tc.ctx, tc.path); got != tc.want {
+				t.Errorf("classify %q = %q, want %q", tc.path, got, tc.want)
+			}
+		})
 	}
 }
 
 func TestFOWriteCoreMutationGateRequiresExactOverride(t *testing.T) {
 	table := readFOWriteClassifierTable(t)
 	classifier := parseFOWriteClassifierTable(t, table)
+	ctx := syntheticFOWriteContext("/tmp/acme-flow", "/tmp/acme-flow/.state")
 
 	target := "internal/status/mutate.go"
 	if foWriteOverrideAllows(target, "you may fix the code directly") {
 		t.Fatalf("broad direct-edit text unexpectedly allowed %q", target)
 	}
-	if foWriteMayWrite(classifier, target, "you may fix the code directly") {
+	if foWriteMayWrite(classifier, ctx, target, "you may fix the code directly") {
 		t.Fatalf("broad direct-edit text must not allow blocked product target %q", target)
 	}
-	if !foWriteMayWrite(classifier, target, "you may directly edit internal/status/mutate.go for this task") {
+	if !foWriteMayWrite(classifier, ctx, target, "you may directly edit internal/status/mutate.go for this task") {
 		t.Fatalf("exact target grant must allow %q after blocked-product classification", target)
 	}
-	if foWriteMayWrite(classifier, "internal/status/parse.go", "you may directly edit internal/status/mutate.go for this task") {
+	if foWriteMayWrite(classifier, ctx, "internal/status/parse.go", "you may directly edit internal/status/mutate.go for this task") {
 		t.Fatalf("exact grant for mutate.go must not allow a different product path")
 	}
 }
@@ -113,31 +151,74 @@ func parseFOWriteClassifierTable(t *testing.T, table string) map[string][]string
 	return out
 }
 
-func classifyFOWriteTarget(classifier map[string][]string, target string) string {
-	for _, class := range []string{"blocked-product", "allowed-state", "allowed-process"} {
-		for _, pattern := range classifier[class] {
-			if pathPatternMatches(pattern, target) {
-				return class
-			}
-		}
+type foWriteWorkflowContext struct {
+	workflowDir   string
+	stateCheckout string
+	entityPath    string
+	archiveRoots  []string
+	modRoots      []string
+}
+
+func syntheticFOWriteContext(workflowDir, stateCheckout string) foWriteWorkflowContext {
+	return foWriteWorkflowContext{
+		workflowDir:   cleanFOWritePath(workflowDir),
+		stateCheckout: cleanFOWritePath(stateCheckout),
+		entityPath:    cleanFOWritePath(filepath.Join(stateCheckout, "task", "index.md")),
+		archiveRoots: []string{
+			cleanFOWritePath(filepath.Join(stateCheckout, "_archive")),
+		},
+		modRoots: []string{
+			cleanFOWritePath(filepath.Join(workflowDir, "_mods")),
+		},
+	}
+}
+
+func classifyFOWriteTarget(classifier map[string][]string, ctx foWriteWorkflowContext, target string) string {
+	target = cleanFOWritePath(target)
+	if classifierHasSource(classifier, "blocked-product", "registered mods plus every target not classified as state/process") &&
+		anyFOWritePathPrefix(target, ctx.modRoots) {
+		return "blocked-product"
+	}
+	if classifierHasSource(classifier, "allowed-state", "resolved state/entity/archive paths") &&
+		(target == ctx.entityPath || hasFOWritePathPrefix(target, ctx.stateCheckout) || anyFOWritePathPrefix(target, ctx.archiveRoots)) {
+		return "allowed-state"
+	}
+	if classifierHasSource(classifier, "allowed-process", "{workflow_dir}/README.md only") &&
+		target == cleanFOWritePath(filepath.Join(ctx.workflowDir, "README.md")) {
+		return "allowed-process"
 	}
 	return "blocked-product"
 }
 
-func pathPatternMatches(pattern, target string) bool {
-	pattern = strings.TrimSpace(pattern)
-	switch {
-	case strings.HasSuffix(pattern, "/**"):
-		return strings.HasPrefix(target, strings.TrimSuffix(pattern, "**"))
-	case strings.HasPrefix(pattern, "**/*"):
-		return strings.HasSuffix(target, strings.TrimPrefix(pattern, "**/*"))
-	default:
-		return target == pattern
+func classifierHasSource(classifier map[string][]string, class, want string) bool {
+	for _, source := range classifier[class] {
+		if source == want {
+			return true
+		}
 	}
+	return false
 }
 
-func foWriteMayWrite(classifier map[string][]string, target, grant string) bool {
-	switch classifyFOWriteTarget(classifier, target) {
+func cleanFOWritePath(path string) string {
+	return filepath.ToSlash(filepath.Clean(path))
+}
+
+func anyFOWritePathPrefix(target string, roots []string) bool {
+	for _, root := range roots {
+		if hasFOWritePathPrefix(target, root) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasFOWritePathPrefix(target, root string) bool {
+	root = strings.TrimSuffix(cleanFOWritePath(root), "/")
+	return target == root || strings.HasPrefix(target, root+"/")
+}
+
+func foWriteMayWrite(classifier map[string][]string, ctx foWriteWorkflowContext, target, grant string) bool {
+	switch classifyFOWriteTarget(classifier, ctx, target) {
 	case "allowed-state", "allowed-process":
 		return true
 	default:

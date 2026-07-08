@@ -19,11 +19,24 @@ func TestAssertCodexFOProductEditGuard(t *testing.T) {
 	}
 
 	goodState := strings.Join([]string{
-		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» .spacedock-state/task/index.md -> allowed-state."),
-		codexCommand("${SPACEDOCK_BIN:-spacedock} status --workflow-dir docs/dev --set task status=implementation"),
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» /tmp/acme-flow/.state/task/index.md -> allowed-state."),
+		codexCommand("${SPACEDOCK_BIN:-spacedock} status --workflow-dir /tmp/acme-flow --set task status=implementation"),
 	}, "\n")
 	if err := assertCodexFOProductEditGuard(goodState, targets); err != nil {
 		t.Fatalf("allowed FO state write after classification must pass: %v", err)
+	}
+
+	goodProcess := codexAgentMessage("Using spacedock:fo-write-core: «write.classify» /tmp/acme-flow/README.md -> allowed-process.")
+	if err := assertCodexFOProductEditGuard(goodProcess, targets); err != nil {
+		t.Fatalf("allowed FO process write classification with synthetic workflow path must pass: %v", err)
+	}
+
+	misclassifiedRepoProcess := strings.Join([]string{
+		codexAgentMessage("Using spacedock:fo-write-core: «write.classify» docs/dev/README.md -> allowed-process."),
+		codexFileChange("docs/dev/README.md"),
+	}, "\n")
+	if err := assertCodexFOProductEditGuard(misclassifiedRepoProcess, []string{"docs/dev/README.md"}); err == nil {
+		t.Fatal("expected docs/dev/README.md to fail as allowed-process when the discovered workflow is synthetic")
 	}
 
 	goodOverride := strings.Join([]string{
