@@ -215,3 +215,16 @@ Recommendation: PASSED. The local repair is good enough to retry PR #483 CI: the
 ### Summary
 
 Recommendation: retry PR #483 after validation. The Codex cycle-3 failure was a live-harness setup path bug introduced by the repo-local fallback, not a reviewer-oracle weakening. The repair keeps isolated Codex homes outside system temp and outside the checkout being installed as a plugin, with a regression test covering the CI path shape.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Reproduce or independently inspect the Codex path-length root cause and confirm the repair keeps isolated `CODEX_HOME` outside both system temp and the plugin checkout/cache self-copy path.
+  Inspected commit `30f2fb46`; `codexLiveRepoAdjacentHomeParent` now returns `<repo-parent>/.spacedock-live-codex/<repo-base>`, and the regression asserts no candidate is under the CI plugin checkout path.
+- DONE: Run the Codex-focused verification: CI-like `codex plugin marketplace add`/`codex plugin add spacedock@spacedock` reproduction, focused Codex liveenv/oracle tests, package/full/race baselines, and gofmt with unrelated drift restored if needed.
+  CI-like Codex install passed with `CODEX_HOME=/Users/clkao/git/spacedock-research/spacedock-v1/.worktrees/.spacedock-live-codex/spacedock-ensign-codex-live-spawn-oracle-v2-family/validation-codex-home-29238`; focused tests passed 68, package passed 292, `go test ./...` passed 2071 after an unrelated transient `TestSonnetTeamDeleteHangReplay` rerun, `go test ./... -race` passed 2071, and live rejection-flow passed in 461.462s.
+- DONE: Validate scope and safety: diff is limited to the Codex live home path repair, reviewer/oracle anti-tautology boundaries remain covered, and the report gives a PASSED/REJECTED recommendation for retrying PR #483.
+  `git show --stat HEAD` is limited to `internal/ensigncycle/codex_liveenv.go` and `internal/ensigncycle/codex_liveenv_test.go`; the focused run still includes `TestAssertCodexReviewerReuse` negatives; recommendation: PASSED, retry PR #483.
+
+### Summary
+
+Recommendation: PASSED. The cycle-3 Codex `Filename too long` setup failure is covered by a CI-like real `codex plugin add spacedock@spacedock` install whose cache lands outside the plugin checkout, and the targeted live Codex rejection-flow smoke is green. The only formatter drift was the known unrelated `internal/release/journeydelta.go` alignment from `gofmt -w ./cmd ./internal`, and it was restored before reporting.
