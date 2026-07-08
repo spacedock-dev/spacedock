@@ -1,7 +1,7 @@
 ---
 id: 1796bakv26hyd6nc4zxv4sh7
 title: FO product-edit guard loads write-core before any mutation
-status: implementation
+status: validation
 source: captain request 2026-07-07 after FO direct-edit boundary violation
 started: 2026-07-07T12:49:53Z
 completed:
