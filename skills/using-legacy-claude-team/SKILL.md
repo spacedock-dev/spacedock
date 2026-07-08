@@ -22,7 +22,7 @@ This skill is read in place of the current-runtime contract: where it conflicts 
 - **`spacedock dispatch build`:** emits `team_name` (the name from the prior `TeamCreate`) alongside `name`; map it to `Agent(team_name=…)` instead of the no-`team_name` shape.
 - **`spacedock dispatch spawn-standing-all`:** run it `--team {team_name}` (the `claude-fo-dispatch.md` form omits `--team`). The call is idempotent (already-alive members omitted, deduped against the team config), each spec carries `team_name`, and the standing teammate is team-scoped (dies with the team at `TeamDelete`). It MUST NOT precede a successful `TeamCreate`.
 - **`spacedock dispatch reconcile`:** pass `--team-name {team_name}` (the `claude-fo-dispatch.md` form omits it and auto-discovers by `leadSessionId`); the explicit name is the team identity here.
-- **Failure handling:** the registry-desync recovery ladder (`## Team Creation` below) governs `Agent()`/team-registry errors before `claude-fo-dispatch.md`'s `## Degraded Mode` fires.
+- **Failure handling:** the registry-desync recovery ladder (`## Team Creation` below) governs `Agent()`/team-registry errors before the Degraded Mode trigger in `claude-fo-dispatch.md` fires (body in `Skill(skill="spacedock:fo-dispatch-recovery")`).
 - **Terminal teardown:** the bounded `TeamDelete` procedure (`## Terminal Team Teardown` below) replaces the per-name `## Terminal Worker Teardown`.
 
 ## Deferred Team Tools
@@ -46,7 +46,7 @@ Once the team exists, the back-channel is the same as the current host's: lead�
 **TeamCreate failure recovery (priority-ordered ladder):** If TeamCreate or any subsequent `Agent()` dispatch surfaces "Team does not exist" or any equivalent registry-desync signal mid-session, follow this ladder in order — do NOT retry within the same tier:
 
 1. **Fresh-suffixed TeamCreate.** Attempt one new `TeamCreate` with a fresh name `{project_name}-{dir_basename}-{YYYYMMDD-HHMM}-{shortuuid}` computed at call time (new timestamp, new shortuuid, distinct from any name used earlier this session). Retry to the same team name is banned. Do NOT call `TeamDelete` on the failed team — the registry is already desynced and another `TeamDelete → TeamCreate` cycle will re-contaminate the same slot per anthropics/claude-code#36806. Store the returned `team_name`. All prior agent names are presumed zombified — do not SendMessage them; re-dispatch from entity frontmatter.
-2. **Fall back to Degraded Mode** per `## Degraded Mode` in `claude-fo-dispatch.md`. A second dispatch failure (including failure of the tier-1 fresh-suffixed TeamCreate, or a second "Team does not exist" at any point in the session) trips Degraded Mode immediately.
+2. **Fall back to Degraded Mode** per its trigger in `claude-fo-dispatch.md` — first action there, body via `Skill(skill="spacedock:fo-dispatch-recovery")`. A second dispatch failure (including failure of the tier-1 fresh-suffixed TeamCreate, or a second "Team does not exist" at any point in the session) trips Degraded Mode immediately.
 3. **Surface to captain** with an explicit recovery prompt if tiers 1 and 2 both fail (e.g., TeamCreate errors with quota or internal failure on the fresh name, AND Degraded Mode cannot be entered because `Agent` itself is unavailable). Do not silently retry. Do not block indefinitely — report the failure, name the tiers attempted, and wait for captain direction.
 
 **Block all Agent dispatch** until team setup resolves (tier-1 fresh-suffixed TeamCreate succeeds or Degraded Mode is entered). Never dispatch while team state is uncertain.

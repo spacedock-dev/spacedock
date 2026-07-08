@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
-	"github.com/spacedock-dev/spacedock/internal/contract"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 	"github.com/spacedock-dev/spacedock/internal/status"
@@ -560,16 +559,29 @@ func cwd() string {
 	return dir
 }
 
-// printVersion emits the version line with the contract token, then the sandbox
-// posture and a per-runtime plugin-version block. The FIRST line is unchanged
-// — `spacedock <ver> (contract <N>)` — and load-bearing: the FO/ensign skills read
-// `(contract N)` from it, so everything new is appended BELOW line 1 (cobra's auto
-// version-flag, a bare version string, is deliberately NOT used). The Sandbox line
-// renders the shared three-way state for dir; the per-runtime block reports each
-// host's installed spacedock plugin version (and a best-effort enabled marker)
-// from the injected probe.
+// frozenContractToken is D4's second cross-era sentinel: an integer-era FO
+// reading `--version` line 1 parses `contract <N>` and checks it against its own
+// contract range (`>=2,<3`). This binary carries no contract-integer mechanism at
+// all — no constant, no compare math — but line 1 still emits this LITERAL string
+// so that old prose sees 3, which is at/above its upper bound, and aborts with
+// "update the plugin": the correct remedy, since the skills genuinely are too old
+// for a binary this new. The value must stay 3 — bumping it would false-green old
+// skills against every future binary. Frozen; pinned by the internal/contractlint
+// sync test. Do not edit.
+const frozenContractToken = "(contract 3)"
+
+// printVersion emits the version line with the frozen cross-era contract token,
+// then the sandbox posture and a per-runtime plugin-version block. The FIRST line
+// is unchanged in shape — `spacedock <ver> (contract 3)` — and load-bearing: the
+// FO/ensign skills read the version token from it (the gate is minor-version
+// coupling now; the frozen `(contract 3)` token exists solely for D4's
+// integer-era migration path), so everything new is appended BELOW line 1
+// (cobra's auto version-flag, a bare version string, is deliberately NOT used).
+// The Sandbox line renders the shared three-way state for dir; the per-runtime
+// block reports each host's installed spacedock plugin version (and a
+// best-effort enabled marker) from the injected probe.
 func printVersion(w io.Writer, dir string, probe runtimeProbe, lookPath func(string) (string, error)) {
-	fmt.Fprintf(w, "spacedock %s (contract %d)\n", Version, contract.CONTRACT_VERSION)
+	fmt.Fprintf(w, "spacedock %s %s\n", displayVersion(), frozenContractToken)
 	available, _ := safehouse.Available(lookPath)
 	fmt.Fprintf(w, "Sandbox: %s\n", safehouse.State(safehouse.Present(dir), available))
 	for _, host := range []string{"claude", "codex", "pi"} {
@@ -608,7 +620,7 @@ _spacedock() {
   cur="${COMP_WORDS[COMP_CWORD]}"
   prev="${COMP_WORDS[COMP_CWORD-1]}"
   verbs="claude codex pi install doctor status new state merge completion dispatch --version --help"
-  status_flags="--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
+  status_flags="--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root"
   if [ "$COMP_CWORD" -eq 1 ]; then
     COMPREPLY=( $(compgen -W "$verbs" -- "$cur") )
     return 0
@@ -629,7 +641,7 @@ const zshCompletion = `#compdef spacedock
 _spacedock() {
   local -a verbs status_flags
   verbs=(claude codex pi install doctor status new state merge completion dispatch --version --help)
-  status_flags=(--workflow-dir --next --next-id --boot --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
+  status_flags=(--workflow-dir --next --next-id --boot --identify --validate --archived --json --quiet --new --folder --set --where --archive --resolve --short-id --discover --root)
   if (( CURRENT == 2 )); then
     compadd -- $verbs
     return

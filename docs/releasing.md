@@ -16,6 +16,9 @@ marketplace source.
   `spacedock@next` edge) via `HOMEBREW_TAP_TOKEN`;
 - stamps the plugin manifests' `version` on `main`, then advances the stable
   channel ref (see below).
+- advances the `next` edge line to match the release — reconciled on a
+  prerelease tag, reconciled plus bumped to the post-release dev pre-version on
+  a stable tag (see "Advancing the Edge Line" below).
 
 The marketplace manifest no longer lives in the plugin branch. It is the
 standalone `spacedock-dev/marketplace` repo, where each channel is a branch with
@@ -69,18 +72,20 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    SHA and the `e2e-gate` would block the cut.
 
    ```bash
-   go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
-   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+   go run ./cmd/spacedock-release stamp-version X.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
+   git commit -m "release: bump version to spacedock@X.Y.Z" -- .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
    git push origin release/X.Y.Z:main
    ```
 
-   The stamped commit's manifest version now equals `X.Y.Z`. Guard that before
-   tagging — a tag whose semver disagrees with the tagged commit's manifest is the
-   pre-stamp inversion the gate has historically caught (v0.20.0 tagged a commit
-   whose `plugin.json` still read 0.19.9):
+   The stamped commit's manifest version now equals `X.Y.Z`, and the FO
+   shared-core's release-stamped minor literal now equals `X.Y` (D5). Guard
+   both before tagging — a tag whose semver disagrees with the tagged commit's
+   manifest, or whose major.minor disagrees with the tagged commit's
+   prose-stamped minor, is the pre-stamp inversion the gate has historically
+   caught (v0.20.0 tagged a commit whose `plugin.json` still read 0.19.9):
 
    ```bash
-   go run ./cmd/spacedock-release manifest-tag-gate vX.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json
+   go run ./cmd/spacedock-release manifest-tag-gate vX.Y.Z .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
    ```
 
    The marketplace entry is not stamped or repointed here: release.yml advances
@@ -90,7 +95,9 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
 4. Green that exact commit. Capture the release SHA, then dispatch Runtime Live
    E2E on it and wait for a `conclusion: success` run — the `e2e-gate` matches a
    green run to the tagged SHA, and the workflow is `workflow_dispatch`-only, so
-   nothing greens the commit unless you dispatch it:
+   nothing greens the commit unless you dispatch it. A lane that flakes can be
+   re-run to green (`gh run rerun <run-id> --failed`); the re-run-to-green run
+   satisfies the gate — no fresh dispatch needed:
 
    ```bash
    REL_SHA=$(git rev-parse HEAD)
@@ -148,12 +155,73 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    git branch -d release/X.Y.Z
    ```
 
+## Advancing the Edge Line (`next`)
+
+Every tag push also advances `next` — the branch the `spacedock-edge`
+marketplace resolves — in a job that `needs: goreleaser` (a sibling job, so a
+rare conflict here cannot unwind or block the release that already published):
+
+- **Prerelease (`-pre`) tag:** `next` is reconciled to the tagged commit's
+  content — `git merge -X theirs "$RELEASE_COMMIT"`, favoring the release over
+  whatever `next` had drifted to — then the marketplace calendar key is bumped
+  (`spacedock-release bump-calendar`) so `claude plugin update` / `codex`
+  re-pull. This is the automated form of the manual reconcile the 0.24.0-pre1
+  cut required (`next` had drifted 40 commits behind `main`, hard-blocking
+  `spacedock codex` on a binary/plugin version-compat check).
+- **Stable (`vX.Y.Z`) tag, latest line:** `next` is reconciled the same way,
+  stamped PAST the release to `X.(Y+1).0-pre1`
+  (`spacedock-release dev-preversion X.Y.Z`) so the edge line never masquerades
+  as the stable version it just shipped, and the calendar key is bumped — then an
+  ANNOTATED `vX.(Y+1).0-pre0` tag is auto-created **on the greened release commit**
+  and pushed (via the re-triggering tap PAT). That prerelease tag's own release
+  run reuses the greened commit's e2e-gate pass, builds+publishes the `X.(Y+1)`-minor
+  edge binary, and bumps the `spacedock@next` cask — so the edge binary's minor
+  catches up to the skills' gate line within minutes instead of waiting for the
+  next hand-cut prerelease. The auto-tag MUST be annotated with a non-empty body
+  (the release-notes extraction step rejects a lightweight tag), and MUST be
+  pushed with the PAT (a `GITHUB_TOKEN` push does not fire the pre0 build). Expect
+  two GitHub releases per stable cut.
+- **Old-line / patch (`vX.Y.1`, or any tag whose target edge version is not
+  strictly greater than `next`'s current manifest version):** the whole
+  `edge-advance` job SKIPS (`spacedock-release edge-advance-decision` prints
+  `skip`, logged as a `::notice::`; every downstream step is gated on the
+  decision). `next`'s tip — content, manifests, gate line, and the marketplace
+  calendar key — is left untouched, so no edge installer re-pulls. The patch
+  updates only the stable cask; its fix reaches edge through the normal
+  `main`→`next` flow, never through a `-X theirs` reconcile that would clobber
+  `next`'s newer `(Y+1)`-line content or rewind its manifest/gate line. The
+  auto-pre0 step is stable-latest-line-only and decision-gated, so a patch never
+  attempts a colliding pre0 tag.
+
+The `vX.(Y+1).0-pre0` release run does not recurse: its `-pre0` tag routes to the
+prerelease path, whose `edge-advance-decision` skips (`pre0 < next`'s `pre1`), and
+the auto-pre0 step runs only on the stable path — so it neither re-tags nor
+rewinds `next`. goreleaser stamps the edge binary from the highest tag pointing at
+the commit (`git tag --points-at HEAD --sort -version:refname`), which is the
+`-pre0` tag, so the `X.(Y+1)` binary version is correct without an override; a
+`GORELEASER_CURRENT_TAG` pin is set on the goreleaser step as belt-and-suspenders.
+
+The reconcile is a merge, never a reset or force-push: the previous `next` tip
+is always a first-parent ancestor of the new commit, so `git push origin
+<sha>:next` is a plain fast-forward. A real conflict (two sides changing the
+same file in incompatible, non-superseded ways) fails the step loudly instead
+of guessing — the same manual reconciliation this replaces remains the escape
+hatch.
+
 ## Dev-Only `next` Publishing
 
 Keep `next` for development. Source builds may use
 `go install github.com/spacedock-dev/spacedock/cmd/spacedock@next`, local
 checkouts may use `--plugin-dir`, and the deliberate `next-publish` workflow may
-bump the marketplace calendar key for dev testers.
+bump the marketplace calendar key for dev testers. A `go install …@vX.Y.Z`
+proxy build carries no ldflags, so it self-reports `X.Y.Z+dev` (the tagged
+manifest at the module-proxy commit equals the tag) — gates correctly under
+minor-version coupling; the `+dev` suffix on an otherwise-tagged build is a
+cosmetic oddity, not a compatibility issue.
+
+Every release tag now advances `next` and bumps its calendar key automatically
+(see "Advancing the Edge Line" above); `next-publish` stays for an out-of-band
+re-pull between releases (e.g. a `next`-only fix that isn't worth a full cut).
 
 Do not send stable users to `next`. If a command or manifest uses `@next`, it is
 a dev-only path.

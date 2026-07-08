@@ -14,7 +14,7 @@ import (
 // TestClaudePluginInstallIsHostNative runs the real `claude plugin marketplace
 // add`/`install` pair against an isolated CLAUDE_CONFIG_DIR + plugin cache and
 // observes that (a) `claude plugin list --json` reports spacedock@spacedock with
-// an installPath whose manifest carries the fixture requires-contract, and (b)
+// an installPath whose manifest carries the fixture's stamped version, and (b)
 // no path under the isolated config's skills/ tree was written — the install is
 // the host plugin mechanism, not a skill-file copy. Skips when `claude` is not
 // on PATH; this is a real install kept hermetic by env isolation, not a mock.
@@ -57,14 +57,14 @@ func TestClaudePluginInstallIsHostNative(t *testing.T) {
 		t.Fatalf("plugin list --json did not report an installPath for spacedock@spacedock:\n%s", listOut)
 	}
 
-	// (a) The installed manifest carries the fixture requires-contract intact.
+	// (a) The installed manifest carries the fixture's stamped version intact.
 	manifestPath := filepath.Join(installPath, ".claude-plugin", "plugin.json")
 	data, err := os.ReadFile(manifestPath)
 	if err != nil {
 		t.Fatalf("read installed manifest %s: %v", manifestPath, err)
 	}
-	if !strings.Contains(string(data), `"requires-contract"`) {
-		t.Fatalf("installed manifest missing requires-contract:\n%s", data)
+	if !strings.Contains(string(data), `"version": "`+displayVersion()+`"`) {
+		t.Fatalf("installed manifest missing the fixture-stamped version %q:\n%s", displayVersion(), data)
 	}
 
 	// (b) The host install wrote nothing under the isolated config's skills/ tree
@@ -77,8 +77,11 @@ func TestClaudePluginInstallIsHostNative(t *testing.T) {
 }
 
 // buildLocalMarketplace writes a minimal valid local-path marketplace under root
-// and returns the marketplace directory. The plugin manifest carries a
-// requires-contract bracketing CONTRACT_VERSION (>=2,<3).
+// and returns the marketplace directory. The plugin manifest's version is stamped
+// to the running binary's own displayVersion() — self-consistent with whatever
+// this test binary reports (dev builds embed the live checkout's minor, D3) — so
+// a test asserting the resolved verdict is Compatible holds regardless of the
+// live repo's actual manifest minor at any point in time.
 func buildLocalMarketplace(t *testing.T, root string) string {
 	t.Helper()
 	marketplace := filepath.Join(root, "marketplace")
@@ -95,8 +98,8 @@ func buildLocalMarketplace(t *testing.T, root string) string {
   ]
 }
 `)
-	mustWrite(t, filepath.Join(plugin, ".claude-plugin", "plugin.json"), `{ "name": "spacedock", "version": "0.0.0", "requires-contract": ">=2,<3", "skills": "./skills/" }
-`)
+	mustWrite(t, filepath.Join(plugin, ".claude-plugin", "plugin.json"),
+		`{ "name": "spacedock", "version": "`+displayVersion()+`", "skills": "./skills/" }`+"\n")
 	mustWrite(t, filepath.Join(plugin, "skills", "demo", "SKILL.md"), "---\nname: demo\ndescription: demo skill\n---\ndemo\n")
 	return marketplace
 }

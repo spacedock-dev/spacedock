@@ -4,6 +4,7 @@ package status
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -385,6 +386,225 @@ func TestMergeGuardRejectedClearsModBlockFirst(t *testing.T) {
 	}
 	if got := frontmatterField(t, archived, "mod-block"); got != "" {
 		t.Fatalf("archived mod-block should be cleared, got %q", got)
+	}
+}
+
+// TestMergeGuardRefusesMissingMergeModNoSentinel (AC-5 row a, D5): a mod-block
+// naming a merge mod that is no longer registered under `_mods/`, with no merge
+// sentinel and a non-rejected verdict, must REFUSE — not silently finalize. This
+// pins the bug found by code read (merge.go's pre-D5 default case): clearing the
+// block here would archive the entity without its hook ever having run. The
+// refusal exits 1, names the missing mod, and mutates nothing (status, mod-block,
+// and pr all survive byte-identical).
+func TestMergeGuardRefusesMissingMergeModNoSentinel(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "120-missing-mod-no-sentinel", "--verdict", "passed")
+	if code != 1 {
+		t.Fatalf("missing-mod no-sentinel must refuse (exit 1), got %d (stdout=%q)", code, out)
+	}
+	if !strings.Contains(errOut, "ghost-merge") {
+		t.Fatalf("stderr should name the missing mod, got %q", errOut)
+	}
+	if !strings.Contains(errOut, "is missing") {
+		t.Fatalf("stderr should say the mod is missing, got %q", errOut)
+	}
+	// Feedback cycle 1, T2: pin the full remediation tail, not just the mod-name +
+	// "is missing" fragment — a change that drops the restore/--force remedy must
+	// fail this test.
+	if !strings.Contains(errOut, "Restore the mod file, or have the operator clear the block with --force.") {
+		t.Fatalf("stderr should carry the full remediation tail, got %q", errOut)
+	}
+	if strings.Contains(out, "finalized") {
+		t.Fatalf("stdout must not claim finalized on the missing-mod refusal, got %q", out)
+	}
+	entity := filepath.Join(root, "120-missing-mod-no-sentinel.md")
+	if got := frontmatterField(t, entity, "status"); got != "implementation" {
+		t.Fatalf("refused entity must not terminalize, status=%q", got)
+	}
+	if got := frontmatterField(t, entity, "mod-block"); got != "merge:ghost-merge" {
+		t.Fatalf("refused entity must keep its mod-block intact, got %q", got)
+	}
+	if fileExists(filepath.Join(root, "_archive", "120-missing-mod-no-sentinel.md")) {
+		t.Fatal("refused entity must NOT archive")
+	}
+}
+
+// TestMergeGuardRefusesMissingMergeModWhenNoHookRegisteredAtAll (feedback cycle 1,
+// T1): the likeliest real-world D5 trigger — the deleted mod file WAS the
+// workflow's only registered merge hook, so `mergeHooks` is EMPTY, not merely
+// missing the named entry. This is a distinct shape from
+// TestMergeGuardRefusesMissingMergeModNoSentinel (which fixtures a workflow with
+// a DIFFERENT hook still registered): a mutant that special-cases
+// modBlockNamesMissingMergeMod on `len(mergeHooks)==0` (treating "no hooks at
+// all" as vacuously not-missing) passes every other D5 test but must fail here.
+func TestMergeGuardRefusesMissingMergeModWhenNoHookRegisteredAtAll(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "030-missing-mod-no-hooks-registered", "--verdict", "passed")
+	if code != 1 {
+		t.Fatalf("missing-mod refusal must fire even with zero hooks registered (exit 1), got %d (stdout=%q)", code, out)
+	}
+	if !strings.Contains(errOut, "ghost-merge") {
+		t.Fatalf("stderr should name the missing mod, got %q", errOut)
+	}
+	if !strings.Contains(errOut, "is missing") {
+		t.Fatalf("stderr should say the mod is missing, got %q", errOut)
+	}
+	if strings.Contains(out, "finalized") {
+		t.Fatalf("stdout must not claim finalized — this is the exact silent-finalize shape D5 fixes, got %q", out)
+	}
+	entity := filepath.Join(root, "030-missing-mod-no-hooks-registered.md")
+	if got := frontmatterField(t, entity, "status"); got != "implementation" {
+		t.Fatalf("refused entity must not terminalize, status=%q", got)
+	}
+	if got := frontmatterField(t, entity, "mod-block"); got != "merge:ghost-merge" {
+		t.Fatalf("refused entity must keep its mod-block intact, got %q", got)
+	}
+	if fileExists(filepath.Join(root, "_archive", "030-missing-mod-no-hooks-registered.md")) {
+		t.Fatal("refused entity must NOT archive")
+	}
+}
+
+// TestMergeGuardFinalizesMissingMergeModWithSentinel (AC-5 row b): a mod-block
+// naming a missing merge mod does NOT refuse when a well-formed merge sentinel is
+// already recorded — the sentinel honestly proves the ceremony ran before the mod
+// file was deleted, so finalize proceeds exactly as it does today.
+func TestMergeGuardFinalizesMissingMergeModWithSentinel(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "130-missing-mod-with-sentinel", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("missing-mod WITH sentinel should still finalize (exit 0), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized") {
+		t.Fatalf("stdout should signal finalized, got %q", out)
+	}
+	archived := filepath.Join(root, "_archive", "130-missing-mod-with-sentinel.md")
+	if !fileExists(archived) {
+		t.Fatal("finalize should archive the entity")
+	}
+	if got := frontmatterField(t, archived, "status"); got != "done" {
+		t.Fatalf("archived status=%q, want done", got)
+	}
+}
+
+// TestMergeGuardFinalizesMissingMergeModRejected (AC-5 row c): a rejected verdict
+// finalizes even when the mod-block names a missing merge mod — the entity never
+// merged, so the rejected-verdict escape takes priority over the missing-mod
+// refusal, exactly as it does today.
+func TestMergeGuardFinalizesMissingMergeModRejected(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "140-missing-mod-rejected", "--verdict", "rejected")
+	if code != 0 {
+		t.Fatalf("missing-mod rejected should still finalize (exit 0), got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized") {
+		t.Fatalf("stdout should signal finalized, got %q", out)
+	}
+	archived := filepath.Join(root, "_archive", "140-missing-mod-rejected.md")
+	if got := frontmatterField(t, archived, "verdict"); got != "rejected" {
+		t.Fatalf("archived verdict=%q, want rejected", got)
+	}
+}
+
+// TestMergeGuardArmedLineNamesNextStep (AC-3, D3): the armed phase's default
+// prose names the hook's file path and the never-invoked-by-the-verb caveat, plus
+// the re-run command — the FO's next action, carried at fire time.
+func TestMergeGuardArmedLineNamesNextStep(t *testing.T) {
+	root, out, errOut, code := driveMergeGuard(t, "merge-local-workflow", "020-no-sentinel", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("arm should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := fmt.Sprintf(
+		"armed: mod-block set to merge:local-merge — invoke the local-merge merge hook (%s/_mods/local-merge.md; merge guard never invokes it), then re-run `merge guard 020-no-sentinel`.\n",
+		root)
+	if out != want {
+		t.Fatalf("armed line = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardBlockedLineNamesNextStep (AC-3, D3): the blocked phase's default
+// prose names the never-finalize-on-open-PR invariant and the sentinel format
+// that unlocks finalize, plus the re-run command.
+func TestMergeGuardBlockedLineNamesNextStep(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "070-pr-pending", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("blocked should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "blocked: PR #42 is pending — mod-block left intact, never finalize on an open PR. " +
+		"When gh reports it MERGED, record the sentinel (pr=pr-merge:{number}) and re-run `merge guard 070-pr-pending`.\n"
+	if out != want {
+		t.Fatalf("blocked line = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoWorktreeNoHookClause (AC-3, D3): an entity
+// finalizing via a merged sentinel with NO worktree recorded gets the base
+// finalized line only — no worktree-removal clause (nothing to remove) and no
+// no-merge-hook clause (a hook IS registered and a sentinel IS recorded).
+func TestMergeGuardFinalizedLineNoWorktreeNoHookClause(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "080-pr-merged", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "finalized: 080-pr-merged -> done (verdict passed), archived.\n"
+	if out != want {
+		t.Fatalf("finalized line = %q, want %q (no worktree/no-hook clauses)", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineWithWorktree (AC-3, D3): an entity finalizing via a
+// merged sentinel WITH a recorded worktree gets the worktree-removal/branch-
+// cleanup/teardown next-step clause, and — since a hook IS registered and a
+// sentinel IS recorded — no no-merge-hook clause.
+func TestMergeGuardFinalizedLineWithWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-pr-workflow", "150-worktree-finalize", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "finalized: 150-worktree-finalize -> done (verdict passed), archived.") {
+		t.Fatalf("stdout should carry the base finalized line, got %q", out)
+	}
+	if !strings.Contains(out, "Next: push; remove the worktree (`git worktree remove .worktrees/150-worktree-finalize`") {
+		t.Fatalf("stdout should carry the worktree-removal next-step clause, got %q", out)
+	}
+	if !strings.Contains(out, "delete the local branch (`git branch -d`)") {
+		t.Fatalf("stdout should carry the branch-cleanup clause, got %q", out)
+	}
+	if !strings.Contains(out, "keep the remote branch while a PR references it") {
+		t.Fatalf("stdout should carry the remote-branch-retention clause, got %q", out)
+	}
+	if !strings.Contains(out, "tear down the entity's workers per your runtime adapter") {
+		t.Fatalf("stdout should carry the worker-teardown clause, got %q", out)
+	}
+	if strings.Contains(out, "no merge hook registered") {
+		t.Fatalf("stdout must NOT carry the no-merge-hook clause (a hook IS registered and a sentinel IS recorded), got %q", out)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoHookRegisteredNoWorktree (AC-3, D3): under a
+// workflow with NO merge hook registered at all, a Phase-C default finalize (no
+// pr, no mod-block, no worktree) names the manual `--no-ff` merge onto trunk —
+// nothing automated it — with no worktree-removal clause.
+func TestMergeGuardFinalizedLineNoHookRegisteredNoWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "010-no-hook-no-worktree", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	want := "finalized: 010-no-hook-no-worktree -> done (verdict passed), archived.\n" +
+		"no merge hook registered — merge the stage branch onto main with --no-ff if not already merged.\n"
+	if out != want {
+		t.Fatalf("finalized output = %q, want %q", out, want)
+	}
+}
+
+// TestMergeGuardFinalizedLineNoHookRegisteredWithWorktree (AC-3, D3): the same
+// no-hook-registered path but WITH a recorded worktree carries BOTH next-step
+// clauses — the two conditions are independent.
+func TestMergeGuardFinalizedLineNoHookRegisteredWithWorktree(t *testing.T) {
+	_, out, errOut, code := driveMergeGuard(t, "merge-no-hook-workflow", "020-no-hook-with-worktree", "--verdict", "passed")
+	if code != 0 {
+		t.Fatalf("finalize should exit 0, got %d (stderr=%q)", code, errOut)
+	}
+	if !strings.Contains(out, "Next: push; remove the worktree (`git worktree remove .worktrees/020-no-hook-with-worktree`") {
+		t.Fatalf("stdout should carry the worktree-removal clause, got %q", out)
+	}
+	if !strings.Contains(out, "no merge hook registered — merge the stage branch onto main with --no-ff if not already merged.") {
+		t.Fatalf("stdout should carry the no-merge-hook clause, got %q", out)
 	}
 }
 

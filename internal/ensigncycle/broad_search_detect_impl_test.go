@@ -13,7 +13,7 @@ import (
 // violation the captain observed (2026-06-14): after `spacedock status --discover`
 // returned zero workflows, an FO ran a broad `find`/`grep -r`/`ls -R` filesystem
 // sweep to hunt a workflow down instead of obeying the contract's terminal zero
-// branch (Startup step 3: zero → report no workflow found and STOP). A broad sweep
+// branch (Startup step 2: zero → report no workflow found and STOP). A broad sweep
 // at boot is both a discipline violation (the zero branch is report-and-stop) and a
 // cost/latency regression — the opposite of lean boot.
 //
@@ -30,10 +30,14 @@ import (
 //
 // A correct zero-discover boot touches none of these: it runs --version,
 // git rev-parse, status --discover (zero), then reports no-workflow-found and stops.
-// The detector passes that and reds the sweep. It guards STRICTLY the zero-discover
-// branch's substituted sweep — a scoped search under an already-resolved workflow
-// dir is legitimate and must pass (keyed on the target being the root / a recursive
-// pattern, not on the tool name alone).
+// A boot MAY also run a plain, non-recursive `ls` (e.g. `ls -la` of its own cwd, or
+// `ls {root}`) while orienting before it reports — the captain's decision (2026-07-02)
+// is that flat `ls` is not a hunt, so the detector never reds it. The detector passes
+// all of that and reds only the genuine sweep. It guards STRICTLY the zero-discover
+// branch's substituted sweep — a scoped search under an already-resolved workflow dir
+// is legitimate and must pass. The banned axis is recursion/hunting, not the `ls`
+// binary or the root path (keyed on recursion for `ls`; on the target being the
+// root / an unscoped path for find/rg/fd/grep -r/Glob/Grep).
 func detectBroadSearchAtBoot(stream, fixtureRoot string) error {
 	clean := filepath.Clean(fixtureRoot)
 	for _, line := range strings.Split(stream, "\n") {
@@ -68,11 +72,13 @@ func detectBroadSearchAtBoot(stream, fixtureRoot string) error {
 	return nil
 }
 
-// broadSweepTools are the directory-listing/search shell tools a workflow-hunting
-// sweep uses, broad whenever they target the project root (the zero branch forbids
-// ANY root-scoped find/ls, not just a recursive one). `grep` still needs `-r` to be
-// a sweep — a non-recursive `grep pattern file` is a single-file read, not a hunt.
-var broadSweepTools = []string{"find", "ls", "rg", "fd"}
+// broadSweepTools are the recursive-by-default search shell tools a workflow-hunting
+// sweep uses, broad whenever they target the project root (not scoped under an
+// already-resolved workflow dir). `ls` is NOT here — a plain `ls` is a single-level
+// listing, not a hunt; it reds separately, only when its own recursive flag (`-R`)
+// or a globstar path argument is present. `grep` still needs `-r` to be a sweep — a
+// non-recursive `grep pattern file` is a single-file read, not a hunt.
+var broadSweepTools = []string{"find", "rg", "fd"}
 
 // broadSweepCommand reports whether a Bash command is a broad filesystem sweep
 // aimed at the project root or a broad ancestor (not a scoped path under a resolved
@@ -88,14 +94,14 @@ func broadSweepCommand(command, fixtureRoot string) (string, bool) {
 
 	var sig string
 	switch {
-	case tool == "ls" && hasRecursiveFlag(fields):
-		sig = "ls -R" // name the recursive form distinctly; a plain root `ls` reds as "ls"
+	case tool == "ls" && (hasRecursiveFlag(fields, "R") || hasGlobstarPathArg(fields)):
+		sig = "ls -R" // -R, or a globstar path arg — ls's recursive-descent equivalents
 	case contains(broadSweepTools, tool):
 		sig = tool
-	case tool == "grep" && hasRecursiveFlag(fields):
+	case tool == "grep" && hasRecursiveFlag(fields, "rR"):
 		sig = "grep -r"
 	default:
-		return "", false
+		return "", false // includes a plain, non-recursive `ls` — not a hunt
 	}
 
 	// A sweep is broad when it targets the project root / a broad ancestor — i.e. it
@@ -118,14 +124,28 @@ func broadSweepCommand(command, fixtureRoot string) (string, bool) {
 	return sig, true
 }
 
-// hasRecursiveFlag reports whether a grep/ls command carries its recursive flag
-// (-r/-R, possibly bundled like -rn or -Rl).
-func hasRecursiveFlag(fields []string) bool {
+// hasRecursiveFlag reports whether a command carries a short flag drawn from
+// flagChars (possibly bundled, e.g. -rn or -ltr), the command's own recursive-flag
+// alphabet: grep accepts both -r and -R, but ls accepts only -R — for ls, -r is
+// reverse-sort, not recursion, so a caller must not share one alphabet across tools.
+func hasRecursiveFlag(fields []string, flagChars string) bool {
 	for _, f := range fields[1:] {
 		if !strings.HasPrefix(f, "-") || strings.HasPrefix(f, "--") {
 			continue
 		}
-		if strings.ContainsAny(f, "rR") {
+		if strings.ContainsAny(f, flagChars) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasGlobstarPathArg reports whether any non-flag argument contains a `**`
+// globstar — ls's recursive-descent equivalent of the banned recursive Glob
+// pattern (e.g. `ls **/README.md`).
+func hasGlobstarPathArg(fields []string) bool {
+	for _, f := range fields[1:] {
+		if !strings.HasPrefix(f, "-") && strings.Contains(f, "**") {
 			return true
 		}
 	}

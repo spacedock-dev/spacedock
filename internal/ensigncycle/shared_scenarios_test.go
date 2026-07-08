@@ -53,5 +53,31 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			oldPythonTest: "0203-fo-efficiency (net-new; no Python ancestor)",
 			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
 		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence
+			// bar); no Python ancestor — it reconstructs the ezf/hf merge/triage
+			// incident (2026-06-16), a recorded real failure, as a live decision.
+			name:          "self-evidence-merge-triage",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf/hf 2026-06-16 incident)",
+			intent:        "FO holds its OWN merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited \"known flake\" label.",
+		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (zm
+			// smallest-sufficient-mechanism); no Python ancestor — it reconstructs the
+			// ezf over-orchestration incident (a workflow + worker for edits the FO
+			// already held, a PR for a convention-direct doc) as a live mechanism choice.
+			name:          "smallest-sufficient-mechanism",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the ezf over-orchestration incident)",
+			intent:        "FO chooses the smallest sufficient mechanism: it applies deterministic edits it already holds in-house and commits a convention-direct doc directly (no worker/PR climb), while engaging a commissioned stage's ready entities via the standing dispatch loop WITHOUT a per-entity justification (the gate stays silent through engage).",
+		},
+		{
+			// Net-new in the 0250 FO-behavioral-discipline sprint (vcm keep-moving
+			// posture); no Python ancestor — it reconstructs the 0223 Shaping FO
+			// false-stop patterns (post-approval pause, sequential dispatch, turn-end on
+			// async, correction-halts-session) as live decision points.
+			name:          "keep-moving-posture",
+			oldPythonTest: "0250-fo-behavioral-discipline (net-new; reconstructs the 0223 Shaping FO false-stop patterns)",
+			intent:        "FO keeps moving: after a gate approval it advances + dispatches the next stage with no permission question, dispatches independent ready entities in parallel, re-shapes a questioned entity and pauses only its dispatch while the independent ones keep moving, and does not end its turn on an async wait while independent work remains.",
+		},
 	}
 }

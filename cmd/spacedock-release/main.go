@@ -19,18 +19,41 @@ import (
 //
 // Usage:
 //
-//	spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
+//	spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
 //	spacedock-release bump-calendar <marketplace.json>
+//	spacedock-release dev-preversion <stable-version>
+//	spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
 //	spacedock-release e2e-gate <release-commit-sha>
 //
-// stamp-version rewrites each manifest's top-level `version` to the release
-// version (AC-4). bump-calendar advances the marketplace plugin entry's calendar
-// key to today's `0.0.YYYYMMDDNN` (AC-2d). Both rewrite in place. e2e-gate is the
+// stamp-version rewrites each argument to the release version: a `.json`
+// plugin.json gets its top-level `version` field rewritten (AC-4); a `.md`
+// argument is the FO shared-core prose, whose single release-stamped "required
+// binary minor" literal is rewritten to the release's major.minor (D5) —
+// erroring unless the literal appears exactly once. bump-calendar advances the
+// marketplace plugin entry's calendar key to today's `0.0.YYYYMMDDNN` (AC-2d).
+// All rewrite in place. dev-preversion prints the post-release dev pre-version
+// (X.(Y+1).0-pre1) the stable-tag edge advance stamps onto `next`.
+// edge-advance-decision prints `advance` or `skip` (exit 0 either way) deciding
+// whether a tag advances the edge line: it computes the tag's target edge
+// version and skips unless that is strictly greater than `next`'s current
+// manifest, so the whole edge-advance job no-ops on an old-line/patch tag.
+// edge-pre0-version prints the auto-cut edge prerelease version (X.(Y+1).0-pre0)
+// the stable path tags on the greened release commit. journey-delta
+// renders and posts the per-PR journey-cost delta against the previously
+// published release ledger's latest-by-captured_at baseline per scenario/model,
+// updating a single sticky PR comment found by its HTML marker. The AC-4
+// release-ledger backfill (a captain-flagged one-time manual procedure, never a
+// CI step) is a documented runbook, not a shipped subcommand: extraction reuses
+// the exported ensigncycle.BuildShallowBootWindowRecord via a throwaway `go run`
+// script against each archived stream, and the pre-upload safeguard is
+// `jq -S .scenarios <original> | diff - <(jq -S .scenarios <rebuilt>)` —
+// any diff output means STOP, do not upload. e2e-gate is the
 // release-time precondition: it passes (exit 0) only when a conclusion:success
 // Runtime Live E2E run exists for the commit, or when SPACEDOCK_E2E_GATE_WAIVER
 // is set, and blocks the cut (exit 1) otherwise. manifest-tag-gate blocks the cut
-// unless every tagged plugin.json's version equals the tag semver (the stamp-then-tag
-// ordering). notes summarizes the commit log
+// unless every tagged `.json` manifest's version equals the tag semver AND every
+// tagged `.md` prose's stamped minor equals the tag's major.minor (the
+// stamp-then-tag ordering). notes summarizes the commit log
 // since the last tag into clean release notes and, on confirmation, cuts the
 // annotated tag whose body carries them (CI extracts that body and feeds
 // goreleaser via --release-notes).
@@ -44,8 +67,16 @@ func main() {
 		os.Exit(stampVersion(os.Args[2:]))
 	case "bump-calendar":
 		os.Exit(bumpCalendar(os.Args[2:]))
+	case "dev-preversion":
+		os.Exit(devPreversion(os.Args[2:]))
+	case "edge-advance-decision":
+		os.Exit(edgeAdvanceDecision(os.Args[2:]))
+	case "edge-pre0-version":
+		os.Exit(edgePre0Version(os.Args[2:]))
 	case "journey-costs":
 		os.Exit(journeyCosts(os.Args[2:]))
+	case "journey-delta":
+		os.Exit(journeyDelta(os.Args[2:], ghFindComment, ghPostComment))
 	case "e2e-gate":
 		os.Exit(runE2EGate(os.Args[2:], ghRunListForCommit))
 	case "manifest-tag-gate":
@@ -135,7 +166,16 @@ func stampVersion(args []string) int {
 			fmt.Fprintf(os.Stderr, "read %s: %v\n", path, err)
 			return 1
 		}
-		out, err := release.StampVersion(data, version)
+		// D5: a `.md` argument is the FO shared-core prose — one release-stamped
+		// "required binary minor" literal, rewritten by StampProseVersion. Every
+		// other extension (the plugin.json manifests) keeps the existing JSON
+		// full-version stamp. One invocation, one atomic multi-file rewrite.
+		var out []byte
+		if strings.HasSuffix(path, ".md") {
+			out, err = release.StampProseVersion(data, version)
+		} else {
+			out, err = release.StampVersion(data, version)
+		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "stamp %s: %v\n", path, err)
 			return 1
@@ -170,6 +210,26 @@ func bumpCalendar(args []string) int {
 		return 1
 	}
 	fmt.Printf("bumped %s\n", path)
+	return 0
+}
+
+// devPreversion prints the post-release dev pre-version for the `next` edge line
+// (X.(Y+1).0-pre1) computed from a just-released stable version. release.yml's
+// stable-tag path captures this stdout to stamp `next` PAST the released stable
+// version. It takes exactly one <stable-version> arg and errors on a hyphenated
+// or malformed input, since it runs only on the `!contains(github.ref, '-')`
+// branch that already guarantees a bare X.Y.Z.
+func devPreversion(args []string) int {
+	if len(args) != 1 {
+		fmt.Fprintln(os.Stderr, "spacedock-release dev-preversion: need exactly one <stable-version> (e.g. 0.24.0)")
+		return 2
+	}
+	version, err := release.DevPreVersion(args[0])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "dev-preversion: %v\n", err)
+		return 1
+	}
+	fmt.Println(version)
 	return 0
 }
 
@@ -321,11 +381,15 @@ func usage() {
 	fmt.Fprint(os.Stderr, `spacedock-release is the release-pipeline version tool.
 
 Usage:
-  spacedock-release stamp-version <release-version> <plugin.json> [<plugin.json> ...]
+  spacedock-release stamp-version <release-version> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release bump-calendar <marketplace.json>
+  spacedock-release dev-preversion <stable-version>
+  spacedock-release edge-advance-decision <tag> <next-plugin.json>
+  spacedock-release edge-pre0-version <stable-version>
   spacedock-release journey-costs <release-version> --metrics-dir <dir> --out <path>
+  spacedock-release journey-delta <previous-ledger.json> --metrics-dir <dir> --pr <number>
   spacedock-release e2e-gate <release-commit-sha>
-  spacedock-release manifest-tag-gate <tag> <plugin.json> [<plugin.json> ...]
+  spacedock-release manifest-tag-gate <tag> <manifest-or-prose> [<manifest-or-prose> ...]
   spacedock-release notes <release-version>
 `)
 }

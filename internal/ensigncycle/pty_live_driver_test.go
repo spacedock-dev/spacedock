@@ -225,7 +225,7 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 	// they must reach the child for team tools + isolated transcript path.
 	launch := shellJoin(append([]string{"env"}, unsetNestedSessionArgs(d.binary, "claude",
 		"--plugin-dir", d.pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"--permission-mode", "bypassPermissions",
 		"--model", d.modelName,

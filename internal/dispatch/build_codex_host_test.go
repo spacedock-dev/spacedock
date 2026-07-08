@@ -65,3 +65,41 @@ func TestBuildCodexHostPromptShape(t *testing.T) {
 		}
 	}
 }
+
+// TestBuildCodexHostIgnoresModelWithNote is AC-5: dispatch build --host codex
+// over a fable-declaring README exits 0, emits model: null, and prints the
+// ignore-with-note stderr line in place of the effective_model line — model is
+// outside codex's dispatch-settable model space (the thread's model is what
+// runs), so a claude-enum value is dropped rather than rejected.
+func TestBuildCodexHostIgnoresModelWithNote(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "README.md"), readmeModelsFable)
+	entityPath := filepath.Join(root, "thing.md")
+	writeFile(t, entityPath, entityFM("Thing", "stagemodel", ""))
+	gitInit(t, root)
+
+	stdin := mergeStdin(map[string]any{
+		"schema_version": 2,
+		"entity_path":    entityPath,
+		"workflow_dir":   root,
+		"stage":          "stagemodel",
+		"checklist":      []string{"- a"},
+		"team_name":      "fixture-team",
+		"bare_mode":      false,
+		"host":           "codex",
+	}, nil)
+
+	native := runNative(stdin, "build", "--workflow-dir", root)
+	assertGolden(t, "build-host-codex-model-ignored", goldenEnvelope{res: normRun(native, root, home)})
+	if native.exit != 0 {
+		t.Fatalf("build exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	if !strings.Contains(native.stdout, `"model": null`) {
+		t.Errorf("stdout model must be null:\n%s", native.stdout)
+	}
+	if strings.Contains(native.stderr, "effective_model=") {
+		t.Errorf("stderr must not contain the effective_model= line on host=codex:\n%s", native.stderr)
+	}
+}

@@ -20,7 +20,7 @@ import (
 const (
 	schemaVersion   = 2
 	nameMaxLen      = 200
-	modelEnumList   = "must be one of: sonnet, opus, haiku"
+	modelEnumList   = "must be one of: sonnet, opus, haiku, fable"
 	dispatchFileDir = "/tmp/spacedock-dispatch"
 	// dispatchFileNameMaxLen caps the dispatch filename stem (team_name +
 	// derived name) so the on-disk file with its .md suffix stays under the
@@ -55,8 +55,10 @@ var namePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$`)
 // names are always multi-char, so namePattern never needed the single-char case.
 var teamNamePattern = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`)
 
-// modelEnum is the Agent-schema model enum declared values are validated against.
-var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true}
+// modelEnum is the Agent-schema model enum declared values are validated
+// against — shared by dispatch build (host=claude) and spawn-standing, the
+// two sites that render Claude Agent envelopes.
+var modelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true, "fable": true}
 
 // buildOutput is the stdout JSON envelope. Field order is the emission order
 // (insertion order in the oracle): schema_version, subagent_type, description,
@@ -79,6 +81,21 @@ type buildOutput struct {
 	Name            *string  `json:"name,omitempty"`
 	TeamName        *string  `json:"team_name,omitempty"`
 	RunInBackground *bool    `json:"run_in_background,omitempty"`
+}
+
+// buildAdvanceOutput is the stdout JSON envelope for `--advance` mode: a pointer
+// message for the reuse-advance handle, not a spawn envelope. It carries no
+// subagent_type/name/team_name/run_in_background — nothing is spawned, so those
+// spawn-only fields are absent from the type entirely (not merely omitempty).
+// model stays so the FO's reuse-condition-4 comparator can read
+// next_stage.effective_model from this output instead of a separate README read.
+type buildAdvanceOutput struct {
+	SchemaVersion int      `json:"schema_version"`
+	Description   string   `json:"description"`
+	FetchCommands []string `json:"fetch_commands"`
+	DispatchFile  string   `json:"dispatch_file_path"`
+	Prompt        string   `json:"prompt"`
+	Model         *string  `json:"model"`
 }
 
 // buildError prints `error: {msg}` to stderr and returns code (1 by default).
@@ -166,6 +183,7 @@ func fieldsFromBuildFlags(opts buildOptions, stderr io.Writer) (map[string]json.
 		"stage":          rawJSON(opts.Stage),
 		"checklist":      rawJSON(checklist),
 		"bare_mode":      rawJSON(opts.BareMode),
+		"advance":        rawJSON(opts.Advance),
 	}
 	if opts.TeamName != "" {
 		fields["team_name"] = rawJSON(opts.TeamName)
@@ -279,6 +297,13 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	}
 	bareMode := optBool(fields, "bare_mode")
 	isFeedbackReflow := optBool(fields, "is_feedback_reflow")
+	advance := optBool(fields, "advance")
+
+	// Rule 13: --advance excludes bare mode. A reuse advance presupposes an
+	// addressable live worker to message; bare mode dispatches nothing addressable.
+	if advance && bareMode {
+		return buildError(stderr, 2, "--advance is incompatible with bare_mode (a reuse advance presupposes an addressable worker; bare mode has none)")
+	}
 
 	// Merged mode is the Claude .178+ team shape: a non-bare claude dispatch with
 	// no team_name. On .178+ TeamCreate/TeamDelete are gone, so team membership is
@@ -372,36 +397,55 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	}
 	stageMeta := stages[stageIdx]
 
-	// Resolve effective_model with precedence stage > defaults > null. Validate
-	// any declared value against the enum loudly, stage before defaults.
+	// Resolve effective_model with precedence stage > defaults > null. The
+	// declared model's value space is host-scoped: on host=claude it validates
+	// against the Agent-schema enum loudly (stage before defaults) and becomes
+	// the effective model; on host=codex/pi it is outside that host's
+	// dispatch-settable model space, so it is ignored-with-note rather than
+	// validated, and the effective model is always null.
 	stageModel, stageModelSet := stageMeta.Model()
 	defaultsModel, defaultsModelSet := stageDefaults["model"]
-	if stageModelSet && !modelEnum[stageModel] {
-		return buildError(stderr, 1,
-			"invalid model for stages.states[%d].model: '%s' — %s",
-			stageIdx, stageModel, modelEnumList)
-	}
-	if defaultsModelSet && !modelEnum[defaultsModel] {
-		return buildError(stderr, 1,
-			"invalid model for stages.defaults.model: '%s' — %s",
-			defaultsModel, modelEnumList)
-	}
 
 	var effectiveModel *string
 	modelSource := "null"
-	if stageModelSet {
-		m := stageModel
-		effectiveModel = &m
-		modelSource = "stage"
-	} else if defaultsModelSet {
-		m := defaultsModel
-		effectiveModel = &m
-		modelSource = "defaults"
-	}
-	if effectiveModel != nil {
-		fmt.Fprintf(stderr,
-			"[build] effective_model=%s (from %s) → Agent model=%s\n",
-			*effectiveModel, modelSource, *effectiveModel)
+
+	if host == "claude" {
+		if stageModelSet && !modelEnum[stageModel] {
+			return buildError(stderr, 1,
+				"invalid model for stages.states[%d].model: '%s' — %s",
+				stageIdx, stageModel, modelEnumList)
+		}
+		if defaultsModelSet && !modelEnum[defaultsModel] {
+			return buildError(stderr, 1,
+				"invalid model for stages.defaults.model: '%s' — %s",
+				defaultsModel, modelEnumList)
+		}
+		if stageModelSet {
+			m := stageModel
+			effectiveModel = &m
+			modelSource = "stage"
+		} else if defaultsModelSet {
+			m := defaultsModel
+			effectiveModel = &m
+			modelSource = "defaults"
+		}
+		if effectiveModel != nil {
+			fmt.Fprintf(stderr,
+				"[build] effective_model=%s (from %s) → Agent model=%s\n",
+				*effectiveModel, modelSource, *effectiveModel)
+		}
+	} else {
+		declaredModel, declared := "", false
+		if stageModelSet {
+			declaredModel, declared = stageModel, true
+		} else if defaultsModelSet {
+			declaredModel, declared = defaultsModel, true
+		}
+		if declared {
+			fmt.Fprintf(stderr,
+				"[build] declared model '%s' ignored on host %s: outside %s's dispatch-settable model space; emitting model=null\n",
+				declaredModel, host, host)
+		}
 	}
 
 	// Rule 4: Stickiness — route on the entity's stamped worktree: field, not the
@@ -505,11 +549,16 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// --- Prompt assembly ---
 	var parts []string
 
-	// 0. Operating-contract first-action directive.
-	parts = append(parts, firstActionBlock(host))
-
-	// 1. Header.
-	parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
+	// 0-1. Operating-contract first-action directive + header. Advance mode
+	// skips both: the reused worker already holds its operating contract from
+	// initial dispatch, so the file opens with an advance header instead.
+	if advance {
+		parts = append(parts, fmt.Sprintf(
+			"## Advancing to next stage: %s\n\nYou are continuing work on: %s\n", stage, entityTitle))
+	} else {
+		parts = append(parts, firstActionBlock(host))
+		parts = append(parts, fmt.Sprintf("You are working on: %s\n\nStage: %s\n", entityTitle, stage))
+	}
 
 	// 2. Stage definition — replaced by the show-stage-def fetch line. The native
 	// fetch line targets `spacedock dispatch show-stage-def` so the dispatch path
@@ -552,14 +601,27 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 
 	// 4. Entity-read instruction. Under split root the entity lives in the state
 	// checkout; a non-split worktree stage rewrites the path into the worktree.
+	// Advance mode replaces the "Read ... for the spec" wording with a
+	// continue-on-entity instruction — the worker already knows the entity, it is
+	// resuming work on it — using the identical path resolution as fresh dispatch.
 	if worktreePath != "" && !splitRoot {
 		entityRel := pyRelpath(entityPath, gitRoot)
 		worktreeEntityPath = status.PyJoin(worktreePath, entityRel)
-		parts = append(parts, fmt.Sprintf(
-			"Read the entity file at %s for the full spec. It contains:\n", worktreeEntityPath))
+		if advance {
+			parts = append(parts, fmt.Sprintf(
+				"Continue working on the entity at %s.\n", worktreeEntityPath))
+		} else {
+			parts = append(parts, fmt.Sprintf(
+				"Read the entity file at %s for the full spec. It contains:\n", worktreeEntityPath))
+		}
 	} else {
-		parts = append(parts, fmt.Sprintf(
-			"Read the entity file at %s for the current spec.\n", entityPath))
+		if advance {
+			parts = append(parts, fmt.Sprintf(
+				"Continue working on the entity at %s.\n", entityPath))
+		} else {
+			parts = append(parts, fmt.Sprintf(
+				"Read the entity file at %s for the current spec.\n", entityPath))
+		}
 	}
 
 	// 6. Feedback context (conditional).
@@ -651,6 +713,12 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 			dispatchFileName = sessionToken + "-" + derivedName
 		}
 	}
+	if advance {
+		// -advance suffix so an advance file can never alias a fresh-dispatch file
+		// for the same slug+stage: a fresh dispatch after a failed advance would
+		// otherwise collide with the stale advance body at the bare derivedName path.
+		dispatchFileName += "-advance"
+	}
 	if len(dispatchFileName) > dispatchFileNameMaxLen {
 		return buildError(stderr, 1,
 			"dispatch filename '%s' exceeds %d characters", dispatchFileName, dispatchFileNameMaxLen)
@@ -665,7 +733,39 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 		return 1
 	}
 
-	prompt := dispatchPointerPrompt(host, dispatchFilePath)
+	var prompt string
+	if advance {
+		prompt = dispatchAdvancePointerPrompt(stage, dispatchFilePath)
+	} else {
+		prompt = dispatchPointerPrompt(host, dispatchFilePath)
+	}
+
+	// Foot-gun guard: a non-bare claude dispatch that passes team_name selects the
+	// legacy TeamCreate-registry envelope just assembled above (team_name present,
+	// run_in_background absent) rather than the auto-team default — the teamName != ""
+	// complement of mergedMode, the same three signals, no new detection and no
+	// probe. The advisory fires here, after every error guard, so it warns only when
+	// the legacy envelope is actually being emitted; a build that errors out (no
+	// envelope) stays advisory-free. Stderr-only: the envelope above is untouched.
+	// The text lives in the Claude seam beside BareModeAdvisory.
+	if !bareMode && host == "claude" && teamName != "" {
+		claudeteam.LegacyTeamNameAdvisory(stderr)
+	}
+
+	if advance {
+		// Nothing is spawned, so the envelope carries no subagent_type/name/
+		// team_name/run_in_background — only the pointer message and the fields
+		// the FO's reuse-condition-4 comparator still needs (model).
+		outAdvance := buildAdvanceOutput{
+			SchemaVersion: schemaVersion,
+			Description:   fmt.Sprintf("%s: %s", entityTitle, stage),
+			FetchCommands: fetchCommands,
+			DispatchFile:  dispatchFilePath,
+			Prompt:        prompt,
+			Model:         effectiveModel,
+		}
+		return emitBuildJSON(stdout, outAdvance)
+	}
 
 	out := buildOutput{
 		SchemaVersion: schemaVersion,
@@ -854,6 +954,18 @@ func dispatchPointerPrompt(host, dispatchFilePath string) string {
 		dispatchFilePath)
 }
 
+// dispatchAdvancePointerPrompt is the reuse-advance pointer message sent to a
+// live worker in place of the hand-assembled verbatim-stage-section template.
+// Unlike dispatchPointerPrompt, the wording is host-uniform: a reused worker
+// already holds its operating contract from initial dispatch (Claude's
+// Skill(...) invocation included), so no host branches on a skill-wrapper
+// clause here.
+func dispatchAdvancePointerPrompt(stage, dispatchFilePath string) string {
+	return fmt.Sprintf(
+		"Advancing to next stage: %s.\n\nRead %s and treat its content as your next-stage assignment.",
+		stage, dispatchFilePath)
+}
+
 // stateHasOrigin reports whether the state checkout has a named `origin` remote,
 // the named-remote question the split-root sync contract pushes/pulls against —
 // true iff `git remote get-url origin` exits 0. Network-free (unlike ls-remote)
@@ -918,7 +1030,8 @@ func stateCommitGuidance(stateCheckout, entityPath, stateBranch string, hasOrigi
 // emitBuildJSON writes out as two-space-indented JSON with a trailing newline,
 // matching Python json.dumps(indent=2) followed by print() byte-for-byte,
 // including its ensure_ascii escaping of any non-ASCII entity title / prompt.
-func emitBuildJSON(stdout io.Writer, out buildOutput) int {
+// out is buildOutput for a spawn envelope or buildAdvanceOutput for --advance.
+func emitBuildJSON(stdout io.Writer, out any) int {
 	return claudeteam.EmitPythonJSON(stdout, out)
 }
 
@@ -959,6 +1072,9 @@ func emitBuildSchema(stdout io.Writer) int {
 				"type": "boolean",
 			},
 			"is_feedback_reflow": map[string]any{
+				"type": "boolean",
+			},
+			"advance": map[string]any{
 				"type": "boolean",
 			},
 			"host": map[string]any{

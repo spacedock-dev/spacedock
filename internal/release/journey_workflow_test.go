@@ -583,6 +583,244 @@ func TestReleaseDownloadSkipBranchToleratesGhError(t *testing.T) {
 	}
 }
 
+// ghDownloadStepStub is the stubbed `gh` binary for the download step's
+// positive multi-run path: `gh release list` returns a since-tag anchor (not
+// the epoch fallback), `gh run list` returns two run ids, and `gh run
+// download` populates each run's own artifacts directory with a SAME-filename,
+// DIFFERENT-content journey-metrics record — the exact collision shape
+// journeymetrics.recordFilename produces for two runs of the same
+// scenario/model (no run-distinguishing component), so the download step's own
+// per-run-subdirectory copy is what has to keep them apart, not an accidental
+// filename difference.
+const ghDownloadStepStub = `#!/bin/sh
+case "$1" in
+  release)
+    echo "2026-06-01T00:00:00Z"
+    ;;
+  run)
+    case "$2" in
+      list)
+        echo "1001"
+        echo "1002"
+        ;;
+      download)
+        run_id="$3"
+        shift 3
+        dir=""
+        while [ $# -gt 0 ]; do
+          case "$1" in
+            --dir) dir="$2"; shift 2 ;;
+            *) shift ;;
+          esac
+        done
+        mkdir -p "$dir/journey-metrics"
+        printf '{"scenario_id":"shallow-boot-window","run_id":"%s"}' "$run_id" > "$dir/journey-metrics/shallow-boot-window--claude--llm--llm-live--claude-sonnet-4-6--measured.json"
+        ;;
+    esac
+    ;;
+esac
+exit 0
+`
+
+// runDownloadStep EXECUTES script (the extracted, possibly mutated, "Download
+// latest journey metrics artifacts" run block) against ghDownloadStepStub's two
+// stubbed runs and returns the RUNNER_TEMP directory the script populated, so
+// callers can inspect the resulting $RUNNER_TEMP/journey-metrics/ layout.
+func runDownloadStep(t *testing.T, script string) string {
+	t.Helper()
+	dir := t.TempDir()
+	binDir := filepath.Join(dir, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatalf("mkdir bin: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(binDir, "gh"), []byte(ghDownloadStepStub), 0o755); err != nil {
+		t.Fatalf("write gh stub: %v", err)
+	}
+	outPath := filepath.Join(dir, "github_output")
+	if err := os.WriteFile(outPath, nil, 0o644); err != nil {
+		t.Fatalf("seed github_output: %v", err)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(),
+		"PATH="+binDir+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"RUNNER_TEMP="+dir,
+		"GITHUB_OUTPUT="+outPath,
+		"GH_TOKEN=stub",
+		"GITHUB_REF_NAME=v0.99.0",
+	)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("download step exited non-zero with two stubbed runs: %v\n%s", err, out)
+	}
+
+	gotOutput, err := os.ReadFile(outPath)
+	if err != nil {
+		t.Fatalf("read github_output: %v", err)
+	}
+	if !strings.Contains(string(gotOutput), "found=true") {
+		t.Fatalf("download step did not emit found=true with two stubbed runs; got:\n%s", gotOutput)
+	}
+	return dir
+}
+
+// TestReleaseDownloadStepProducesPerRunSubdirectories EXERCISES the real
+// download script's positive multi-run path (the AC-2 headline mechanism this
+// task exists to ship): two stubbed runs, each carrying a journey-metrics
+// record with the SAME on-disk filename but different content. It asserts the
+// script's OWN per-run-subdirectory copy — not merely its Go-side consumer
+// (journeymetrics.AggregateLedger) — keeps both runs' records intact and
+// separate, so a positive multi-run cut actually aggregates N observations
+// instead of collapsing to one via silent overwrite.
+func TestReleaseDownloadStepProducesPerRunSubdirectories(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	script := extractStepRun(t, release, "Download latest journey metrics artifacts")
+
+	runnerTemp := runDownloadStep(t, script)
+
+	for _, tc := range []struct{ runID, wantContains string }{
+		{"1001", `"run_id":"1001"`},
+		{"1002", `"run_id":"1002"`},
+	} {
+		path := filepath.Join(runnerTemp, "journey-metrics", tc.runID, "shallow-boot-window--claude--llm--llm-live--claude-sonnet-4-6--measured.json")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("run %s's record missing from its own subdirectory: %v", tc.runID, err)
+		}
+		if !strings.Contains(string(data), tc.wantContains) {
+			t.Fatalf("run %s's record does not carry its own run id (overwritten by another run's content) — %s:\n%s", tc.runID, path, data)
+		}
+	}
+}
+
+// TestReleaseDownloadStepGuardRejectsFlatCopyRegression is the adversarial
+// twin: reverting the per-run cp target back to the flat "$RUNNER_TEMP/journey-
+// metrics/" directory (the exact bug AC-2 fixes, and the mutation the
+// validation-stage adversarial audit applied by hand) must collapse the two
+// stubbed runs' same-named records into ONE file. This proves
+// TestReleaseDownloadStepProducesPerRunSubdirectories actually discriminates a
+// fixed script from a broken one, rather than passing vacuously.
+func TestReleaseDownloadStepGuardRejectsFlatCopyRegression(t *testing.T) {
+	release := readWorkflow(t, "release.yml")
+	const fixedCopy = `find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$run_dir/" \;`
+	const flatCopy = `find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;`
+	adversarial := strings.Replace(release, fixedCopy, flatCopy, 1)
+	if adversarial == release {
+		t.Fatal("fixture workflow missing the per-run cp target to mutate")
+	}
+	script := extractStepRun(t, adversarial, "Download latest journey metrics artifacts")
+
+	runnerTemp := runDownloadStep(t, script)
+
+	matches, err := filepath.Glob(filepath.Join(runnerTemp, "journey-metrics", "*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("flat-copy regression should collapse both runs' same-named records into exactly one flat file, got %d: %v", len(matches), matches)
+	}
+	for _, runID := range []string{"1001", "1002"} {
+		subdirMatches, err := filepath.Glob(filepath.Join(runnerTemp, "journey-metrics", runID, "*.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(subdirMatches) != 0 {
+			t.Fatalf("run %s's subdirectory unexpectedly has records under the flat-copy regression: %v", runID, subdirMatches)
+		}
+	}
+}
+
+// TestJourneyDeltaLocateMetricsStepFindsNestedJourneyMetricsFiles is the AC-3
+// production-bug proof: runtime-live-e2e.yml's journey-delta-comment job used to
+// hardcode --metrics-dir to an exact subpath under the download-artifact
+// destination, but a real run's downloaded artifact zip nests the journey-metrics
+// JSON several directories deeper (verified against run 28432388663) — the exact
+// hardcoded path is EMPTY, so journeymetrics.ReadRecordsDir errored and REDed
+// every PR's delta-comment job under set -euo pipefail. This exercises the REAL
+// "Locate this run's journey metrics" step (extracted from the live workflow,
+// not a reimplementation) against that realistic nested layout and proves it
+// finds the file regardless of the exact nesting depth.
+func TestJourneyDeltaLocateMetricsStepFindsNestedJourneyMetricsFiles(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	script := extractStepRun(t, live, "Locate this run's journey metrics")
+
+	dir := t.TempDir()
+	// The verified real nesting: several directories deeper than the
+	// "live-artifacts/journey-metrics/" subpath the removed hardcoded
+	// --metrics-dir assumed.
+	nested := filepath.Join(dir, "current-run-artifacts", "spacedock", "spacedock", "live-artifacts", "journey-metrics", "claude", "claude-opus-4-8")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	metricsFile := filepath.Join(nested, "shallow-boot--claude--llm--llm-live--claude-opus-4-8--measured.json")
+	if err := os.WriteFile(metricsFile, []byte(`{"scenario_id":"shallow-boot"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Prove the bug was real: the OLD hardcoded path finds nothing in this
+	// realistic layout.
+	oldHardcodedPath := filepath.Join(dir, "current-run-artifacts", "live-artifacts", "journey-metrics")
+	if _, err := os.Stat(oldHardcodedPath); err == nil {
+		t.Fatalf("test fixture is unrealistic: the OLD hardcoded path %s must NOT exist", oldHardcodedPath)
+	}
+
+	cmd := exec.Command("bash", "-c", script)
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "RUNNER_TEMP="+dir)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("locate-metrics step exited non-zero: %v\n%s", err, out)
+	}
+
+	matches, err := filepath.Glob(filepath.Join(dir, "current-run-metrics", "*.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 1 {
+		t.Fatalf("expected the nested journey-metrics JSON to be located and copied into current-run-metrics, got %d matches: %v", len(matches), matches)
+	}
+}
+
+// TestJourneyDeltaLocateAndPostStepsShareMetricsDir closes the cross-step
+// wiring gap validation's cycle-3 adversarial audit found: the "Locate this
+// run's journey metrics" step's own mechanism is tested in isolation above,
+// but nothing previously verified that the "Post the journey-cost delta PR
+// comment" step's --metrics-dir argument stays wired to the Locate step's
+// actual output directory. A one-line regression reverting ONLY the Post
+// step's --metrics-dir back to the old hardcoded broken path left the full
+// suite green, because each step's script was only ever checked in isolation.
+// This derives BOTH directories from the REAL extracted step scripts (not a
+// hardcoded assumption on either side) and asserts they're the same value.
+func TestJourneyDeltaLocateAndPostStepsShareMetricsDir(t *testing.T) {
+	live := readWorkflow(t, "runtime-live-e2e.yml")
+	locateScript := extractStepRun(t, live, "Locate this run's journey metrics")
+	postScript := extractStepRun(t, live, "Post the journey-cost delta PR comment")
+
+	locateDir := firstQuotedArg(t, locateScript, `mkdir -p "`)
+	postDir := firstQuotedArg(t, postScript, `--metrics-dir "`)
+	if locateDir != postDir {
+		t.Fatalf("Locate step writes to %q but Post step's --metrics-dir reads from %q — the two steps are no longer wired together", locateDir, postDir)
+	}
+}
+
+// firstQuotedArg extracts the double-quoted value immediately following the
+// given prefix (e.g. `mkdir -p "`) in script, failing the test if the prefix
+// or its closing quote is not found.
+func firstQuotedArg(t *testing.T, script, prefix string) string {
+	t.Helper()
+	start := strings.Index(script, prefix)
+	if start < 0 {
+		t.Fatalf("script does not contain %q:\n%s", prefix, script)
+	}
+	start += len(prefix)
+	end := strings.Index(script[start:], `"`)
+	if end < 0 {
+		t.Fatalf("unterminated quoted argument after %q:\n%s", prefix, script)
+	}
+	return script[start : start+end]
+}
+
 // extractStepRun pulls a named step's `run: |` block out of a workflow document,
 // dedented to a runnable shell script, so tests exercise the EXACT script CI
 // runs rather than a hand-copied duplicate.

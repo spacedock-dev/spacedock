@@ -3,6 +3,7 @@
 package status
 
 import (
+	"io"
 	"path/filepath"
 	"strings"
 )
@@ -32,6 +33,20 @@ func DiscoverWorkflowDir(startDir string) (string, bool) {
 		}
 		d = parent
 	}
+}
+
+// ResolveWorkflowDir resolves the workflow directory when no --workflow-dir (or
+// PIPELINE_DIR/--root) override applies: walk up from dir to the enclosing
+// commissioned workflow via DiscoverWorkflowDir, falling back to a downward scan
+// from the git toplevel when the walk-up misses. Exactly one downward match
+// resolves; zero or multiple matches write a named diagnostic to stderr and
+// return a non-zero code. Shared by status dispatch, merge guard, and the state
+// verbs so every no-flag invocation agrees on discovery.
+func ResolveWorkflowDir(dir string, stderr io.Writer) (string, int) {
+	if discovered, ok := DiscoverWorkflowDir(dir); ok {
+		return discovered, 0
+	}
+	return discoverWorkflowDownward(dir, stderr)
 }
 
 // stateCheckoutParent reports whether pointedDir is the state checkout of an

@@ -76,3 +76,57 @@ func codexAuthPath(realHome string) string {
 	}
 	return filepath.Join(realHome, ".codex", "auth.json")
 }
+
+func codexLiveIsolatedHomeParent(cacheDir string) (string, error) {
+	if cacheDir == "" {
+		return "", fmt.Errorf("user cache dir is empty")
+	}
+	return filepath.Join(cacheDir, "spacedock-live-codex"), nil
+}
+
+func codexLiveIsolatedHomeParentCandidates(cacheDir, repoRoot, artifactRoot string) []string {
+	var out []string
+	if artifactRoot != "" && !pathIsUnderSystemTemp(artifactRoot) && !pathIsUnder(artifactRoot, repoRoot) {
+		out = append(out, filepath.Join(artifactRoot, "_codex-home"))
+	}
+	if parent, err := codexLiveIsolatedHomeParent(cacheDir); err == nil {
+		out = append(out, parent)
+	}
+	if parent, err := codexLiveRepoAdjacentHomeParent(repoRoot); err == nil {
+		out = append(out, parent)
+	}
+	return out
+}
+
+func codexLiveRepoAdjacentHomeParent(repoRoot string) (string, error) {
+	if repoRoot == "" {
+		return "", fmt.Errorf("repo root is empty")
+	}
+	repoRoot = filepath.Clean(repoRoot)
+	return filepath.Join(filepath.Dir(repoRoot), ".spacedock-live-codex", filepath.Base(repoRoot)), nil
+}
+
+func pathIsUnder(path, dir string) bool {
+	if path == "" || dir == "" {
+		return false
+	}
+	dir = filepath.Clean(dir)
+	path = filepath.Clean(path)
+	if path == dir {
+		return true
+	}
+	rel, err := filepath.Rel(dir, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+func pathIsUnderSystemTemp(path string) bool {
+	if path == "" {
+		return false
+	}
+	tmp := filepath.Clean(os.TempDir())
+	p := filepath.Clean(path)
+	if rel, err := filepath.Rel(tmp, p); err == nil {
+		return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+	}
+	return false
+}

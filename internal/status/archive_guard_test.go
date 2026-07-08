@@ -183,7 +183,8 @@ func TestTerminalSetUnderModBlockRejected(t *testing.T) {
 	if nCode != 1 {
 		t.Fatalf("native exit=%d, want 1 (guard must reject)", nCode)
 	}
-	wantErr := "Error: entity 010-blocked has pending mod-block (merge:pr-merge). Clear mod-block in a separate --set call, or use --force."
+	wantErr := "Error: entity 010-blocked has pending mod-block (merge:pr-merge). Clear mod-block in a separate --set call. " +
+		"(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard 010-blocked instead.)"
 	if !strings.Contains(nErr, wantErr) {
 		t.Fatalf("native stderr = %q, want it to contain %q", nErr, wantErr)
 	}

@@ -6,24 +6,26 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/spacedock-dev/spacedock/internal/cli"
 )
 
 func TestWriteCodexLocalMarketplacePointsAtCurrentCheckout(t *testing.T) {
 	repo := t.TempDir()
 	marketplace := t.TempDir()
 
-	install, err := writeCodexLocalMarketplace(marketplace, repo)
+	install, err := cli.WriteCodexLocalMarketplace(marketplace, repo, "spacedock")
 	if err != nil {
-		t.Fatalf("writeCodexLocalMarketplace errored: %v", err)
+		t.Fatalf("WriteCodexLocalMarketplace errored: %v", err)
 	}
 
-	if install.marketplaceRoot != marketplace {
-		t.Fatalf("marketplaceRoot = %q, want %q", install.marketplaceRoot, marketplace)
+	if install.MarketplaceRoot != marketplace {
+		t.Fatalf("MarketplaceRoot = %q, want %q", install.MarketplaceRoot, marketplace)
 	}
-	if install.pluginPath != filepath.Join(marketplace, "plugins", "spacedock") {
-		t.Fatalf("pluginPath = %q, want plugins/spacedock under marketplace", install.pluginPath)
+	if install.PluginPath != filepath.Join(marketplace, "plugins", "spacedock") {
+		t.Fatalf("PluginPath = %q, want plugins/spacedock under marketplace", install.PluginPath)
 	}
-	target, err := os.Readlink(install.pluginPath)
+	target, err := os.Readlink(install.PluginPath)
 	if err != nil {
 		t.Fatalf("plugins/spacedock must be a symlink to the current checkout: %v", err)
 	}
@@ -31,7 +33,7 @@ func TestWriteCodexLocalMarketplacePointsAtCurrentCheckout(t *testing.T) {
 		t.Fatalf("plugins/spacedock symlink target = %q, want %q", target, repo)
 	}
 
-	data, err := os.ReadFile(install.manifestPath)
+	data, err := os.ReadFile(install.ManifestPath)
 	if err != nil {
 		t.Fatalf("read marketplace manifest: %v", err)
 	}

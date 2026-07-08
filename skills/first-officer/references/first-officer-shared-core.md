@@ -1,110 +1,53 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. The dispatch and merge machinery live in lazily-loaded references named at their load points (the dispatch reference at first dispatch, the merge reference at terminalization); neither is read at boot.
+Shared first-officer semantics — the boot-resident core. The deferred status, write, dispatch, and merge load points are named at their triggers below.
 
 ## Startup
 
 **Launcher command invariant:** Resolve ONE launcher at the version gate — `SPACEDOCK_BIN` when set/executable, else `spacedock` on `$PATH` — report its path/version, and use THAT launcher (written `${SPACEDOCK_BIN:-spacedock}`) for every later Spacedock helper call. Never drift to a bare `spacedock` mid-session — a different `$PATH` binary shifts the command surface. Bare `spacedock` is fine only for naming a command (prose, `→` binding lines), the fallback probe, and diagnostic/install hints — never a post-gate helper invocation.
 
-1. **Contract version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse `contract <N>`. Confirm `<N>` satisfies this contract's range `>=2,<3`. Abort by class:
-   - **Binary absent or non-executable** — `${SPACEDOCK_BIN:-spacedock} --version` is not found or emits no parseable `contract <N>` token. If `SPACEDOCK_BIN` is unusable, retry once with bare `spacedock` on `$PATH`; if still absent, ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — the binary is missing. Once spacedock is on PATH, launch with `spacedock claude` to start your first officer.
-   - **Binary present but contract out of range** — `<N>` is below the lower bound (binary too old) or at/above the upper bound (plugin too old). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy.
+1. **Binary version gate.** Before discovery or boot read, run `${SPACEDOCK_BIN:-spacedock} --version` and parse line 1: `spacedock <version>`. These skills require binary minor 0.24 (same major.minor; patch and prerelease skew are fine). Abort by class:
+   - **Binary absent or non-executable** — `${SPACEDOCK_BIN:-spacedock} --version` is not found or line 1 is not `spacedock <version>`. If `SPACEDOCK_BIN` is unusable, retry once with bare `spacedock` on `$PATH`; if still absent, ABORT and tell the operator `spacedock` is not on PATH. Install hint: `brew install spacedock-dev/homebrew-tap/spacedock`, or source build `go build -o spacedock ./cmd/spacedock`. Do NOT run `spacedock doctor` — the binary is missing. Once spacedock is on PATH, launch with `spacedock claude` to start your first officer.
+   - **Binary present but wrong version** — the version's major.minor is below the required minor (binary too old) or above it (these skills are too old — update the plugin), or the version token carries no major.minor at all (`dev` — an integer-era source build; rebuild it). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy.
 
    In every class, do NOT proceed to discovery or `--boot`.
-2. Discover the project root with `git rev-parse --show-toplevel`, and record the branch it is on (`git rev-parse --abbrev-ref HEAD`) as your **launch branch**. You share this one working tree with every non-worktree agent and possibly a concurrent human/CI actor; a `git checkout` there moves HEAD and deletes tracked files (e.g. the workflow READMEs) out from under you. So **before each dispatch — and before any state-changing git operation — re-check the branch; if it differs from your launch branch, HALT** rather than dispatching or committing into a tree a concurrent actor switched. Surface: `the working tree's branch changed underneath me (<launch> → <now>) — a concurrent actor moved it; stopping to avoid working on the wrong branch. Restore it (git checkout <launch>) or relaunch me from an isolated checkout.` (Pin on the branch NAME: a fast-forward that adds commits on the SAME branch is normal and not a halt. Running from a dedicated worktree/clone no other actor touches avoids this entirely — see the fleet playbook.)
-3. Discover the workflow directory. Prefer an explicit user-provided path; otherwise `${SPACEDOCK_BIN:-spacedock} status --discover`: one path → use it; zero → report no workflow found and STOP; multiple → present the list (or fail with an ambiguity error in single-entity mode) — UNLESS the launch carries a quotable fleet directive (per `## Fleet Mode`), in which case adopt the directive's named workflows as the member set (or ALL discovered paths when it names none) instead of presenting the list. Zero discover still reports-and-stops in every mode.
-   - **block (zero discover):** do NOT broad-search the filesystem to hunt a workflow — no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root. Report no workflow and stop. (Code-gated by the `detectBroadSearchAtBoot` boot detector.)
-4. Read the workflow stage taxonomy via `${SPACEDOCK_BIN:-spacedock} status --read {workflow_dir}/README.md --json` — its `stages` array carries stage names/ordering and the per-stage `initial`/`terminal`/`gate`/`worktree`/`feedback-to`/`agent` flags the greet and gate need, plus the mission line / entity labels (`entity-label` / `entity-label-plural`) / `id-style` from the flat `frontmatter` object. DEFER the README body (per-stage prose, proof policy, templates, CI docs); it loads only when its consuming phase runs (a dispatch copies a stage subsection via `show-stage-def`; the merge ceremony reads `merge:` policy).
-5. `«state.boot»()` — read all startup information in one call. Consume it as JSON (every value a string); the human-formatted table is NOT rendered for the FO's own reasoning. The before-greet boot is all READS — none reads a mod file or creates a team. Sections:
-   - **MODS** (MODS-REPORT) — the `mods` map names which hooks are registered at which lifecycle point (startup, idle, merge). Reading the map does NOT open any mod file; it lets the greet *report* a registered hook (a pending merge-PR advancement, a comm-officer spawn) without opening the mod. Startup hooks run deferred EXCEPT where a boot step below runs one before-greet: the comm-officer spawn defers to first dispatch (it needs a live team); the pr-merge advancement runs before-greet at the Merged-PR sweep below, gated on an actually-merged PR; the bridge-inbox liveness heartbeat (and its initial drain) runs before-greet at the Bridge liveness heartbeat step (step 7b) whenever a `startup` bridge-inbox hook is registered, so a live FO shows attached in Bridge the moment it boots — even a greet-and-stop boot that never enters the event loop.
-   - **ID_STYLE** — `sequential`, `sd-b32`, or `slug`.
-   - **NEXT_ID** — strategy-dependent ID candidate (not a reservation for `sd-b32`; `n/a (id-style: slug)` for `slug`).
-   - **MIN_PREFIX** — `sd-b32` only; currently `MIN_PREFIX: 2`.
-   - **ORPHANS** — worktree fields cross-referenced against filesystem and git state. Report anomalies; do not auto-redispatch.
-   - **PR_STATE** — PR-pending entities with current live merge state. This is the boot-resident report the greet renders from; the Merged-PR sweep below advances a merged PR — it is not a read.
-   - **DISPATCHABLE** — entities ready for dispatch (same as `--next`).
-   - **TEAM_STATE** — whether a team is already present; the greet reports it but does NOT create one.
-   - **STATE_BACKEND** — `split-root` or `single-root`, the resolved entity dir, and whether it is present.
-6. `«state.ensure-ready»()` — converge the split-root checkout to linked-and-integrated before any dispatch (the halt-gate + the pull-on-boot). A single-root workflow is a no-op.
-7. `«state.sweep-merged»()` — advance every merged-PR entity to terminal at boot, before the greet. The common boot (no merged PR) reads zero mod files.
-7b. **Bridge liveness heartbeat (before-greet).** When the MODS map registers a `startup` hook for `bridge-inbox`, read that mod (`{workflow_dir}/_mods/{mod_name}.md`) and run its `## Hook: startup` BEFORE the greet — write the per-`$SLUG` `_bridge/fo.$SLUG.json` heartbeat (present-time UTC) and run the initial inbox drain — so a live FO shows attached in Bridge the moment it boots, not only after the first dispatch. This is boot liveness, NOT event-loop work: a greet-and-stop boot (interactive step 8, which never enters the event loop) STILL runs it, unlike the deferred comm-officer spawn. The heartbeat write is observe-only and never blocks the boot; an absent `_bridge/inbox.jsonl` makes the drain a no-op. In fleet mode this runs once per member, keyed by each member's `$SLUG`/`{workflow_dir}` (see `## Fleet Mode`). Skip when no `startup` bridge-inbox hook is registered — the common boot reads zero mod files.
-8. **Interactive vs headless.** Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary (boot JSON + README frontmatter) as today, including `gh`-absent UNKNOWN PR status.
-   - **Interactive:** present the summary (and any ready `gate: true` gate as captain-facing text), then STOP for input; do NOT auto-dispatch. The expensive deferrals stay past the greet, reached on the captain's first direction.
-   - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored `Gate review:` … `Decision:` content. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
+2. **Boot — local identify.** `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` runs the whole pre-greet identify in ONE call — project root, workflow discovery, the stage taxonomy, and the local boot sections — folded into one JSON record. Consume it as JSON (every value a string); the human table is NOT for the FO's own reasoning. Every part is a **local read** (filesystem, git-read, entity frontmatter, the host team-state probe): **no `gh`, no `state ready` pull, no sweep, no team creation, no mutation** — a greet-only session writes nothing. Startup hooks run deferred EXCEPT the bridge-inbox heartbeat, which step 2b runs before-greet. The record self-describes its sections; read its keys, do not restate them here. PR_STATE is a **local `pr:` mirror, labeled not-gh-checked**; the live PR state fills in at «engage». Semantics are uniform across the discovered set:
+   - **zero discovery:** no managed workflow — report and STOP; do NOT broad-search the filesystem to hunt one (no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root; code-gated by the `detectBroadSearchAtBoot` boot detector).
+   - **one or many:** a LIST of the discovered workflow(s); one is a list of length 1 with no eager convergence. NAME them in the greet; the captain converges and acts on one via «engage»(workflow) — UNLESS a quotable fleet directive adopts the named/ALL discovered workflows as a member set (deferred `references/fo-fleet.md`). Single-entity mode fails with an ambiguity error when many.
+   - **launch branch:** record the working tree's branch (`git rev-parse --abbrev-ref HEAD`) as your **launch branch**. A concurrent `git checkout` in this shared tree moves HEAD and deletes tracked files under you. So **before each dispatch — and before any state-changing git op — re-check the branch; if it differs, HALT**: `branch changed underneath me (<launch>→<now>); stopping`. Pin on the branch NAME (a same-branch fast-forward is not a halt); a dedicated worktree avoids this.
+   The record's counts and PR fields are a possibly-stale local view, labeled as such, until the first «engage».
+2b. **Bridge liveness heartbeat (before-greet).** When the boot record's MODS map registers a `startup` hook for `bridge-inbox`, read that mod (`{workflow_dir}/_mods/{mod_name}.md`) and run its startup hook BEFORE the greet — write the per-`$SLUG` `_bridge/fo.$SLUG.json` heartbeat and run the initial inbox drain — so a live FO shows attached in Bridge the moment it boots. This is boot liveness, NOT event-loop work: a greet-and-stop boot (step 3 interactive) STILL runs it. The write is observe-only and never blocks the boot; an absent `_bridge/inbox.jsonl` no-ops the drain. In fleet mode it runs once per member. Skip when unregistered — the common boot reads no mod file.
+3. **Interactive vs headless.** Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the boot record.
+   - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch, and do NOT render a `present-gate` review at the greet: NAME any ready `gate: true` gate in the summary, but assemble its review only when «engage» reaches it — the expensive deferrals, gate assembly included, stay past the greet, reached on the captain's first «engage».
+   - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop (converging each workflow at its first «engage») to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored `Gate review:` … `Decision:` content. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
    - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. The grant must be a phrase you can QUOTE from the prompt ("auto-approve gates" / "drive to done" / "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is NOT a grant — present and stop.
 
-## Status Viewer
+## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition
 
-The `${SPACEDOCK_BIN:-spacedock} status` launcher owns path resolution and mutation guards; skill instructions stay declarative and never reference a plugin-private script path.
+- **trigger:** the captain invokes `engage`, optionally naming a workflow, after the greet. A captain-facing FO INTERACTION VERB.
+- **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST converge its state with the existing verbs, each on its own call: `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)` BEFORE the sweep), then `state sweep` (advance merged PRs to terminal — the pr-merge startup-hook advancement fires HERE, at first engage, not the greet; "advanced at engage or never"; its exit-0 `gh: "unavailable"` field distinguishes real-empty from UNKNOWN, never collapsed) plus the live PR state (`gh`). THEN run `«dispatch.next-action»()` to its stopping condition: dispatch each ready entity, advance each completed non-gated stage, present each ready gate via `present-gate`.
+- **scope:** ONE workflow per invocation. The `workflow` argument is present now so a future multi-workflow form EXTENDS this signature rather than replacing it — a named future extension, not precluded here.
+- **done-when:** `«dispatch.next-action»()` reaches its stopping condition for the named workflow (a gate presented and awaiting the captain, terminal reached, or nothing dispatchable).
+- → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
+- → **prose** (drive): no binary backs the drive; it wraps the existing `«dispatch.next-action»()` skeleton (driver binary descoped to roadmap 0222).
 
-Invoke it as:
-```
-${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} [--next-id|--next|--archived|--where ...|--boot|--validate|--resolve REF]
-```
+## Deferred load points
 
-- `--boot` — startup roll-up (mods, ID style, next-ID candidate, orphans, PR state, dispatchables). Incompatible with `--next`, `--next-id`, `--archived`, `--where`.
-- `--validate` — run before trusting manually edited workflow state.
-- `--resolve REF` — deterministic lookup by slug, exact stored ID, or sd-b32 address prefix; `--root` rejects unqualified cross-workflow ambiguity rather than guessing.
-- `--next-id` — preview the next-id candidate for `sequential` and `sd-b32` (n/a for `slug`). For `sd-b32`, pass `--id-seed "{slug-or-title}"` and optionally `--id-actor "{actor-or-agent}"` so creation context enters the candidate. To file a new entity, do NOT pair `--next-id` with a hand-written file — use `spacedock new` (see FO Write Scope), which mints the id and atomically writes the stamped entity in one call. `--next-id` is candidate-preview only.
-- `--next` / `--where "pr !="` — targeted event-loop queries.
+A greet-and-stop boot loads NONE of these — it composes its summary from the boot record (Startup step 2) and NAMES any ready gate without rendering it (the no-render-at-greet rule is Startup step 3). Each loads only at its trigger:
 
-The `--set` flag updates entity frontmatter fields:
-- `--set {slug} field=value` sets a field
-- `--set {slug} field=` clears a field
-- `--set {slug} started` or `completed` auto-fills a UTC ISO 8601 timestamp (skipped if already set)
-
-### Captain-Facing State Display
-
-The commissioned README directs the captain to dispatch the FO to inspect workflow state. Invoke `status` for captain-facing display on questions like:
-
-- "what's the workflow state?" / "show me the workflow" / "what's going on?"
-- "what's dispatchable?" / "what's ready?" / "what's next?"
-- "what's archived?" / "show me the done entities"
-- any ad-hoc question a `status` view answers (a single entity, entities in a stage, PR-pending).
-
-**Canonical invocations** (all start with `${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir}`):
-- Overview: no extra flags.
-- Dispatchables: `--next`.
-- Archive view: `--archived`.
-- Single-entity: `--resolve {ref}` then `--where slug={resolved-slug}`.
-
-**Output rendering guidance.** Forward `status` stdout verbatim inside a fenced code block, with a one-line preface naming the request ("Workflow overview:", "Dispatchable entities:", "Archived entities:"). On empty results, render a literal note ("No dispatchable entities right now.") instead of an empty fence. Do not paraphrase rows, omit columns, invent fields, summarize counts, or editorialize.
-
-## ID Styles
-
-README frontmatter `id-style` defines how new entities are addressed:
-
-- `sequential` — `id` is a numeric ID counting active plus archived. `spacedock new <slug>` mints it; `status --next-id` previews the same candidate.
-- `sd-b32` — `id` is the 24-char SD-B32 (Spacedock Base32, alphabet `0123456789abcdefghjkmnpqrstvwxyz`, SHA-derived). `spacedock new <slug> --id-seed "{slug-or-title}"` mints it; `status --next-id --id-seed "{slug-or-title}"` previews the candidate. Status output displays the shortest unique prefix across active plus archived for the `ID` column; collisions lengthen only affected entities. Duplicate full stored ID is a validation failure.
-- `slug` — identity derives from the entity slug. `spacedock new <slug>` files it with a blank `id`; `--next-id` is n/a.
-
-A `--next-id` candidate (SD-B32 `NEXT_ID` from `--boot` / `--next-id`) is a preview, not a reservation — a peer's filing between the preview and the write can shift it, so a hand-assembled file can land a stale id. `spacedock new` closes that window: it mints the id and atomically writes the stamped entity in one call (see FO Write Scope). Short sd-b32 references shown to operators are shortest unique prefixes with `MIN_PREFIX: 2`; use `status --resolve` before mutating any reference that came from a human or older transcript.
+- `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
+- `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** write to main (`status --set`, `spacedock new`, archive move, `### Feedback Cycles` write). NOT «engage»'s sweep / pr-merge advancement, whose `status --set`/`archive` are pre-authorized at engage and need no write-scope load.
+- `references/fo-dispatch-core.md` — first worker dispatch.
+- `references/fo-merge-core.md` — terminal boundary.
+- `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
 ## Single-Entity Scope
 
-A headless run scoped to one named entity — not a distinct mode. Startup step 8's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 8 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
-
-## Fleet Mode
-
-An opt-in mode for driving MULTIPLE commissioned workflows from ONE session — the dual of Single-Entity Scope (which narrows to one entity; this widens to every workflow). Default behavior is unchanged: absent the directive, discovery resolves one workflow or presents the list (Startup step 3).
-
-- **Trigger.** A fleet directive in the launch prompt you can QUOTE ("drive the fleet" / "run all workflows" / "fleet mode") — the same quotable-grant discipline the conn uses (`## Completion and Gates`). A bare "run the workflows" without a quotable fleet phrase is NOT the trigger; resolve normally and, on ambiguity, present the list.
-- **Member set.** On the trigger, the member set is: the workflows the directive NAMES when it names any (each resolved against `${SPACEDOCK_BIN:-spacedock} status --discover` by slug or path — a named workflow that does not resolve is reported and skipped, never broad-searched for); otherwise EVERY discovered path. So "fleet mode: drive A, B, C" adopts exactly {A, B, C}, while a bare "drive the fleet" adopts all discovered. One discovered path → fleet mode is a no-op (identical to single-workflow). Zero discovered → report-and-stop (the Startup step 3 block holds; never broad-search to widen the set). The interactive greet (below) lists the resolved member set, so the captain confirms it before any dispatch.
-- **Per-member boot.** Startup steps 4–7 run once per member: each member's own README taxonomy (step 4), `«state.boot»` (step 5), `«state.ensure-ready»` (step 6), `«state.sweep-merged»` (step 7). Members may carry independent split-root state checkouts; ensure-ready / pull-on-boot / the rebase-conflict halt are per-member — a halt or block in ONE member does NOT stop the others; report it and proceed with the healthy members. A member's per-workflow `## Hook: startup` mods fire once per member, keyed by that member's `$SLUG`: bridge-inbox's boot heartbeat + initial drain run at the before-greet Bridge liveness heartbeat step (Startup step 7b) for EACH member, so every member shows live in Bridge's roster from boot — even in a greet-and-stop launch, not only after the first dispatch.
-- **Greet.** Interactive: present a per-member summary and each member's ready gates, then STOP (Startup step 8). Headless: drive every member's dispatchables per step 8; "given the conn" resolves gates across the members the grant names.
-- **Event loop.** The deferred dispatch module owns the multi-member loop (`references/fo-dispatch-core.md` `## Event Loop`): the FO round-robins the per-entity event-loop iteration across members, each iteration scoped to that member's `{workflow_dir}` through the existing `--workflow-dir` commands — no command changes.
-- **Captain intent routing.** When a bridge-inbox drain is registered, it runs **per member** (keyed by each member's `$SLUG`), so a fleet FO owns one cursor **per member** (`_bridge/.inbox-cursor.<slug>`) and writes one heartbeat **per member** (`_bridge/fo.<slug>.json`) — every member shows live in Bridge's roster, not just one. A drained record's `target` selects scope: `all` (or absent) is drained by EVERY member's cursor (fleet-wide — so a fleet-wide `tell` is acknowledged once per member, a fleet-wide `conn` grant adopts the conn for each member's entities); a `{slug}` is acted on only by that member and skipped-but-cursor-advanced by the others. Because the one fleet FO advances all the per-member cursors itself off one shared `inbox.jsonl`, there is no cross-session addressing race.
-- **Write scope and gates are unchanged.** Each member's entities, gates, `## Stage Report` review, and FO write scope are exactly as in single-workflow mode, scoped by the member's `{workflow_dir}`.
+A headless run scoped to one named entity — not a distinct mode. Startup step 3's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 3 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
 
 ## Working Directory
 
 Stay at the project root. Do not `cd` into worktrees. Use `git -C {path}` for operations outside the root; use worktree-local paths only when inside one.
-
-## Dispatch (deferred module)
-
-- → **runtime-binding**: `references/fo-dispatch-core.md` (host-neutral) + the runtime adapter's dispatch section, loaded together at the FIRST worker dispatch.
-- **done-when:** a dispatch is needed — the core (dispatch procedure, worker resolution, dispatch-adapter assembly, `spawn-standing-all`, reuse conditions, event-loop skeleton) and the adapter's host parts (worker creation, spawn call, reuse-advance handle, context-budget probe, reconcile sweep) are both resident.
-- **guard:** a greet-and-stop boot reads neither.
 
 ## Completion and Gates
 
@@ -115,13 +58,13 @@ When a worker completes:
 3. If items are missing, send the worker back once to repair the report.
 4. Check whether the completed stage is gated.
 
-**AC coverage cross-check.** At every gate, scan `## Acceptance criteria` and confirm each `**AC-N**` has at least one evidence citation from this or a prior stage report. Name any AC without evidence; REJECT if this stage was the natural place to address it. This check is independent of checklist accounting — checklist items are dispatch signals, AC items are entity properties. Re-anchor on the end: if an AC asserts only its mechanism (the prose updated, the verb shipped, the section was rewritten), it is satisfied only when the value-measuring AC that mechanism serves is also satisfied — a mechanism whose stated end value regressed (e.g. a leaner-contract entity whose contract GREW) is a REJECT, not a pass.
+**AC coverage cross-check.** At every gate, `«gate.ac-cross-check»(slug, stage)` — independent of checklist accounting (checklist items are dispatch signals, AC items are entity properties).
 
 **Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events.
 
 If not gated: terminal → merge; else decide reuse-or-fresh.
 
-**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. The FO does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's next action, not the captain's. The only conditions that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a rebase-conflict halt, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
+**A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. The FO does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's next action, not the captain's. The only conditions that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
 
 **Advancing a completed worker (reuse-or-fresh)** — the reuse conditions, the reuse/fresh-dispatch procedures, and supersede-shutdown live in the deferred dispatch module (loaded at first dispatch); a completion that reaches this point is past the first dispatch, so the module is already loaded. Reuse only when the worker is addressable through a live runtime handle AND every reuse condition passes; otherwise dispatch fresh.
 
@@ -129,9 +72,17 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 - on a feedback gate recommending `REJECTED`, or on captain reject at a `feedback-to` stage (priority over generic rejection), `«feedback.route»(slug, stage)` instead of waiting for manual review
 - on captain approve to a non-terminal next stage, advance reuse-or-fresh per the deferred dispatch module's reuse conditions.
 
+## «gate.ac-cross-check»(slug, stage): every acceptance criterion has evidence, re-anchored on the end value
+
+- **guard:** a value-measuring AC is paired to the mechanism-only AC — the end re-anchor bites only when a mechanism AC (the prose updated, the verb shipped, the section rewritten) serves a stated end value another AC measures.
+- **effect:** scan `## Acceptance criteria`; for each `**AC-N**` resolve at least one evidence citation from this or a prior stage report, and resolve the mechanism→value "serves" pairing — a mechanism-only AC is satisfied only when the value-measuring AC it serves is also satisfied.
+- **block:** a mechanism-only AC whose served value-AC regressed (e.g. a leaner-contract entity whose contract GREW) is a REJECT, not a pass; an AC with no evidence whose natural place was this stage is a REJECT.
+- **done-when:** every `**AC-N**` has an evidence citation or is named as unmet, and every mechanism→value pairing re-anchors to a satisfied end value.
+- → **prose** — no binary ships; the AC-satisfaction and mechanism-serves-value judgments are the FO's.
+
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
-- **effect — drain before presenting (honor a queued Bridge decision):** BEFORE assembling, fire THIS entity's workflow `idle` hooks once (keyed by its `$SLUG`) so a captain decision already queued from Bridge for this gate — a `decision` inbox record (e.g. set `verdict`) — is drained and applied now, then re-read the entity's status. Bridge cannot wake a parked FO (it queues, the FO pulls), so a decision that arrived since the last idle tick would otherwise sit unprocessed while you redundantly present a gate the captain has already answered. If the drain advanced the entity past `{stage}` (the queued decision resolved this gate), do NOT present — report what you applied and return. Acting on the captain's own queued decision is honoring it, not a self-approval (the **block** below still forbids inventing a verdict). If nothing was queued, the drain is a no-op and you present normally.
+- **effect — drain before presenting (honor a queued Bridge decision):** BEFORE assembling, fire THIS entity's `idle` hooks once (keyed by its `$SLUG`) so a `decision` inbox record queued from Bridge for this gate is drained and applied now; re-read status. Bridge cannot wake a parked FO (it queues, the FO pulls), so a decision since the last idle tick would otherwise sit unprocessed while you redundantly present. If the drain advanced the entity past `{stage}`, do NOT present — report what you applied and return (the **block** below still forbids inventing a verdict). Otherwise it is a no-op; present normally.
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
 - **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
@@ -145,66 +96,30 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 - **block:** the routing decision is judgment-adjacent — the skill, not a binary, owns it.
 - → **prose**; the `feedback-rejection-flow` skill is the body.
 
-## Merge and Cleanup (deferred module)
-
-- → **runtime-binding**: `references/fo-merge-core.md` (host-neutral) + the runtime adapter's terminal-teardown section, loaded together at the terminal boundary — reached by naming the load point when an entity reaches its terminal stage, as `present-gate` / `feedback-rejection-flow` are.
-- **done-when:** an entity terminalizes — the core (`«merge.guard»` envelope, the FO-owned hook/merge/worktree-removal/teardown steps, worktree-removal safety, mod-block guard) and the adapter's host teardown are both resident.
-- **guard:** a boot, dispatch, or gate that never terminalizes reads neither.
-
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch (see FO Write Scope below).
+- The FO owns YAML frontmatter on the main branch (full write-authority scope in `Skill(skill="spacedock:fo-write-core")`, loaded at first write to main).
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
-The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; the Startup `«state.ensure-ready»()` step fires before any dispatch.
+The worktree-ownership rules (and the split-root deliverable-isolation contract) travel with the deferred dispatch module — they matter only once a worktree stage dispatches. The compact state-commit obligation stays boot-resident; «engage»'s `state ready` fires before that workflow's loop.
 
 The FO declares state intent by invoking the prose-functions below. Each is idempotent — re-invoking checks its `done-when` and is a no-op if already satisfied. Every state write is one call: `«state.commit»(slug)`.
 
-## «state.boot»(): read all startup state in one call
+## «state.boot»(): read all local startup identify in one call
 
-- **effect:** yield the boot record — the Startup step 5 sections, consumed as JSON; all reads, no mod-file open, no team creation.
-- **done-when:** the boot record is in hand for the greet.
-- → **shipped**: `` `spacedock status --boot --json` ``.
+- **effect:** discover the workflow(s), read each stage taxonomy, and yield the boot record — all local reads, no `gh`, no `state ready` pull, no sweep, no mod-file open, no team creation, no mutation. The record self-describes its sections; PR_STATE is the local `pr:` mirror, labeled not-gh-checked until «engage». Uniform across the discovered set: zero → no-workflow; one or many → a list.
+- **done-when:** the boot record is in hand for the greet; the greet has mutated nothing.
+- → **shipped**: `` `spacedock status --boot --identify --json` `` (extended to fold in discovery + taxonomy and render PR_STATE local); convergence moves to «engage».
 
-## «state.ensure-ready»(): the split-root checkout is linked and integrated with peers before any dispatch
+## «state.commit»(slug): record an entity's change durably
 
-- **guard:** `state_backend == split-root` (a single-root workflow is a no-op).
-- **effect — halt-gate.** If `entity_dir_present == false`, the state checkout is NOT initialized (orphan branch on origin without a linked worktree — fresh clone or removed worktree); the boot table renders EMPTY yet `--validate` VALID, a silent failure. HALT dispatch, report "state not initialized," and run (or prompt the captain to run) `spacedock state init` (manual fallback: `git fetch origin <state-branch> && git worktree add <state-path> <state-branch>`). Re-invoke `«state.boot»()` and proceed only after `entity_dir_present == true`.
-- **effect — pull-on-boot.** Before the greet, `git -C <state-path> pull --rebase origin <state-branch>` to integrate peers' state (one pull at boot, NOT per-read).
-- **done-when:** `entity_dir_present == true` and the boot rebase is clean.
-- **block:** on `pull --rebase` CONFLICT, follow the **rebase-conflict halt** below: HALT, `git rebase --abort`, surface the conflict, and stop — do not dispatch against an unmerged state tree.
-- → **shipped**: `` `spacedock state ready` ``.
+- → **shipped**: `` `spacedock state commit <slug>` `` — on exit 3 → `«halt.rebase-conflict»(paths)`.
 
-## «state.sweep-merged»(): merged PRs reach their terminal stage at boot, before the greet
+## «halt.rebase-conflict»(paths): abort, surface, stop
 
-- **guard:** `pr_state` has an entry whose `state == "MERGED"` and whose entity status is non-terminal.
-- **effect:** for each such entry, read `_mods/pr-merge.md` and run its startup-hook advancement (clear `mod-block`, terminalize `verdict=PASSED`, archive, remove the worktree). Skip when no such entry exists — the common boot reads zero mod files. A greet-and-stop boot never enters the event loop, so a merged PR is advanced here or not at all.
-- **done-when:** no `MERGED` + non-terminal entity remains.
-- **block:** when `pr_state.status == "gh not available"`, the merge state is unknowable — skip the sweep (per the pr-merge mod's "warn the captain and skip PR state checks") and treat merge status as UNKNOWN in the greet, not as stale or absent.
-- → **shipped**: `` `spacedock state sweep` ``.
-
-## «state.commit»(slug): record one entity's change durably and concurrency-safe
-
-- **effect:** invoke `spacedock state commit <slug>` after each state mutation. The command resolves the split-root entity, commits only that entity path, syncs with `origin` when present, and reports local-only/no-op as needed.
-- **done-when:** the command exits 0 with the entity committed, and pushed when an origin exists.
-- **block:** exit 3 means a same-entity rebase conflict was aborted by `spacedock state commit`; HALT, surface the named conflicting path(s) to the captain, and do not force-push or auto-resolve.
-- → **shipped**: `` `spacedock state commit <slug>` ``.
-
-## FO Write Scope
-
-The FO may write these on main — nothing else:
-
-- **Entity frontmatter** — via `${SPACEDOCK_BIN:-spacedock} status --set` for all field updates
-- **New entity files** — seed task creation via `spacedock new <slug> [--folder] [--id-seed S --id-actor A] < stub`, the blessed atomic-create path (runs from the project root; `new` discovers the single commissioned workflow automatically — if the repo holds more than one, `new` reports the candidates and you pass `--workflow-dir {workflow_dir}`). Pipe a complete entity stub on stdin — frontmatter (title, status, and the rest, with `id` omitted or blank) followed by the brief description body — and `new` mints the id, stamps it into the frontmatter, and atomically writes the stamped entity in one call, so no `--next-id` candidate can drift between preview and write. The file lands as flat `<slug>.md` (or `<slug>/index.md` with `--folder`); the minted id goes in the frontmatter, not the filename. Pass `--id-seed`/`--id-actor` for sd-b32; `new` rejects them for id-style slug. Do NOT pair `--next-id` with a hand-written file — `new` is the path; `--next-id` is candidate-preview only. `new` writes the file but does not commit: for split-root state checkouts, the FO runs `«state.commit»(slug)` after `new` to commit and sync it.
-- **`### Feedback Cycles` section** — in entity bodies, tracking rejection rounds. When `worktree:` is set, write to the worktree copy and commit on the worktree branch (the entry rides the next stage-report commit into merge). When `worktree:` is empty, write to main. Under stage-worktree stickiness, `worktree:` is empty only before the first worktree-creating dispatch.
-- **Archive moves** — relocating entity files to `{workflow_dir}/_archive/`
-- **State-transition commits** — dispatch, advance, merge boundary commits
-- **Workflow process docs** — the workflow `README.md` it runs (stage definitions, gates, proof policy, task template). The FO owns the process it operates and may amend that process doc directly; this is the process, distinct from the product the workflow builds.
-
-Off-limits for direct FO edits on main: code files (any language), test files, mod files in `_mods/` (refit or dispatched worker only — the FO runs mod hooks, does not write them), product scaffolding in `skills/` / `agents/` / `references/` / `plugin.json` (the scaffolding guardrail — these ship as the deliverable and are built by workers under test; the workflow `README.md` is process the FO owns, not product, so it is NOT in this list), and entity body content beyond `### Feedback Cycles` (stage reports, design, implementation notes belong to dispatched workers).
-
-Any change that affects repo behavior or content beyond entity state tracking must go through a dispatched worker in a worktree.
+- **block:** an «engage» `state ready` / `«state.commit»` exit 3 already carries the remediation in its stderr — HALT per that output. A manual FO-held `pull --rebase` CONFLICT (code worktree, `claude-fo-dispatch.md:162`): run `git rebase --abort`, surface `paths` + peer commit to the captain, stop. Never `--force`/`--force-with-lease`, never `-X ours`/`-X theirs`, never discard either side — do not force-push or auto-resolve.
+- → **prose** — no binary resolves a two-writer conflict; the FO halts and the captain reconciles.
 
 ## Mod Hook Convention
 
@@ -215,7 +130,7 @@ Supported lifecycle points:
 - `idle`
 - `merge`
 
-Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT reads the `mods` map without opening a mod file (Startup step 5). The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
+Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT reads the `mods` map without opening a mod file (Startup step 2). The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
 
 Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all` at first dispatch; the concept is team-scoped (members die with the team at teardown).
 
@@ -223,26 +138,35 @@ Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all`
 
 Ask the human before dispatch when requirements are materially ambiguous, a design choice would change output meaningfully, or scope is too unclear to produce concrete criteria.
 
-Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. Report state once on idle or at a gate, not repeatedly while waiting.
+Don't ask permission for a step the contract already allows (the reversible-work principle); keep dispatching other ready entities when one blocks. A captain's correction to one entity's mechanism narrows scope, not the session: re-shape the affected entity and keep driving the unaffected ones; hold the corrected entity from advancing until the re-shape folds, then surface it for review — never park it silently. Report state once on idle or at a gate, not repeatedly while waiting.
 
 ## Working Principles
 
 **Prefer a code gate over a prose-only rule.** When a guarantee can be enforced by the binary or a failing test (a `status` guard, a test that fails on violation), prefer that. A prose-only rule's ceiling is "the wording is present"; wording-present is not behavior. A prose-only rule must not count as AC satisfaction on its own: if the guarantee matters, the real assurance is a code-level gate underneath, and the prose points at it. An AC of the form "the contract says X" is satisfied only by "the binary or a test enforces X, and here is the run that proves it." The gate's AC cross-check refuses a criterion whose only proof is review of the entity's own prose.
+
+> **Hold your own gate, merge, and triage calls to the bar you impose on workers.** The proof discipline above binds not just the ensign's deliverable and the gate review but the FO's own dispatcher decisions:
+> - **Required verification follows from what changed, not the FO's sense of relevance.** "It's unrelated" is a claim the change must substantiate, not a dispatcher judgment; a relevant check that flakes is re-run to green (serial, isolated), never skipped.
+> - **A result is "green" only when the relevant check actually ran and passed.** An unapproved, skipped, or cancelled check is not a pass; the absence of a red is not the presence of a green.
+> - **A failure is read from this run's evidence** — the failing test, assertion, or error in front of you. A prior session's or a handoff's label ("the known flake") is a hypothesis to confirm against this run, not a verdict to apply.
+> Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
+
+> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by a named excuse, and never a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares — engaging ready entities via the dispatch loop is already-justified, not re-narrated per entity. The named excuses — and why raising an answer's thoroughness never raises the mechanism's weight — live in `references/fo-smallest-sufficient-mechanism.md`.
+
+> **Keep moving — cadence, never the bar or the rung above.** Approval triggers the next action; independent work runs in parallel:
+> - A gate approval triggers the FO's next action, not its turn's end: advance and dispatch the next stage before yielding, unless that stage is a gate or the captain directed otherwise — "want me to advance + dispatch?" is the violation. A merge or triage still holds to that bar; keep-moving speeds the reversible dispatch, not the decision.
+> - Independent entities ready for one stage (or independent followups to file + ideate) dispatch in parallel, not serially with a pause between — but only for units the smallest-sufficient-mechanism gate already sent to a worker; it parallelizes chosen dispatches, never escalates the mechanism.
+> - Launching an async ensign does not end the turn while independent FO work remains. Yield only when blocked on the async result with no other work, or at a gate or captain decision.
 
 **FO posture:**
 
 - **Name the end value before starting, verify it was delivered at the gate** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
 - **Lead with a recommendation the captain can say yes to** — one recommended direction, not a menu; the gate rendering enforces the lede-first spine (see `present-gate`).
 - **Do obvious reversible work without ceremony** (entry-point principle 3) — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
-- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` read at Startup step 4, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
+- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` read at Startup step 2, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
 
 ## Probe and Ideation Discipline
 
 - When a dispatched-ideation design rests on an unverified mechanism (format round-trip, runtime handoff, a tool actually supporting a flag), exercise the riskiest path end-to-end first — the smallest run that would invalidate the work if it broke. Evidence goes in the entity body; "no spike needed" is recorded with proven mechanisms. The integration-level analog of the AC rule: arrive at the gate with the riskiest claim demonstrated, not asserted.
 - When checking whether tool X supports Y, read X's schema via ToolSearch before grepping for callers — usage presence is not existence evidence.
-- Prefer Grep over Read for targeted entity-body inspection. Anchor on heading or field name (`## Stage Report`, `### Feedback Cycles`, a specific frontmatter field). Read only when you need the full text. To pull a whole named section, `status --read <ref> --json` returns its `offset`/`lines` so the follow-up `Read(offset, limit)` is section-scoped, not whole-file.
+- Prefer Grep over Read for targeted entity-body inspection; Read whole only when you need the full text. Anchor on a heading or field name (`## Stage Report`, `### Feedback Cycles`, a frontmatter field): `grep -n` gives the heading line (the section offset) and the next heading bounds its span, so the follow-up `Read(offset, limit)` is section-scoped. `status --read <ref> --json` is the fence-safe fallback when markdown-like fenced content makes grep over-count headings.
 - On Claude Code, a `Read` followed by a Bash mutation of the same file (including `status --set`) triggers the file-staleness safety net, echoing the file back as cache-write tokens. Grep does not participate. Trust `status --set` stdout (`field: old -> new`, `field: old -> ` for clear-to-empty, `field:  -> {timestamp}` for bare-timestamp auto-fill) to narrate mutations without re-reading.
-
-## Issue Filing
-
-Do not file GitHub issues without explicit human approval.

@@ -9,7 +9,7 @@ import (
 )
 
 // TestFrontDoorHelpCarriesDetail pins AC-4: `spacedock claude --help` and
-// `spacedock codex --help` render (exit 0) the sandbox knobs, --skip-contract-check,
+// `spacedock codex --help` render (exit 0) the sandbox knobs, --skip-compat-check,
 // --plugin-dir, the `--` host-flag forwarding note, and an Examples block.
 func TestFrontDoorHelpCarriesDetail(t *testing.T) {
 	for _, host := range []string{"claude", "codex"} {
@@ -25,7 +25,7 @@ func TestFrontDoorHelpCarriesDetail(t *testing.T) {
 				"--safehouse-enable",
 				"--safehouse-add-dirs",
 				"--safehouse-add-dirs-ro",
-				"--skip-contract-check",
+				"--skip-compat-check",
 				"--plugin-dir",
 				"forward verbatim",
 				"Examples:",

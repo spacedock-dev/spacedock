@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spacedock-dev/spacedock/internal/cli"
 )
 
 // The Codex runner adapter: it turns a host-neutral sharedRuntimeScenario into a
@@ -65,12 +67,15 @@ func codexLiveScenarios(t *testing.T) []codexLiveScenario {
 // lacks a runner for any sharedRuntimeScenarios() ID.
 func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, codexLiveRunner, sharedRuntimeScenario){
-		"gate-guardrail":              runCodexGateGuardrailScenario,
-		"rejection-flow":              runCodexRejectionFlowScenario,
-		"feedback-3-cycle-escalation": runCodexFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":        runCodexMergeHookGuardrailScenario,
-		"filing":                      runCodexFilingScenario,
-		"shallow-boot":                runCodexShallowBootScenario,
+		"gate-guardrail":                runCodexGateGuardrailScenario,
+		"rejection-flow":                runCodexRejectionFlowScenario,
+		"feedback-3-cycle-escalation":   runCodexFeedback3CycleEscalationScenario,
+		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
+		"filing":                        runCodexFilingScenario,
+		"shallow-boot":                  runCodexShallowBootScenario,
+		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
+		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
+		"keep-moving-posture":           runCodexKeepMovingScenario,
 	}
 }
 
@@ -93,7 +98,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	binary := spacedockBinary(t)
 	repo := repoRoot(t)
 	artifactRoot := codexLiveArtifactDir(t, "codex-shared-scenarios")
-	codexHome := t.TempDir()
+	codexHome := newCodexLiveIsolatedHome(t, repo, artifactRoot)
 	cleanHome := t.TempDir()
 	if decision.mode == codexAuthLocal {
 		if err := seedCodexLocalAuth(codexHome, realHome); err != nil {
@@ -106,7 +111,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.MkdirAll(setupDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	install, err := writeCodexLocalMarketplace(t.TempDir(), repo)
+	install, err := cli.WriteCodexLocalMarketplace(t.TempDir(), repo, "spacedock")
 	if err != nil {
 		t.Fatalf("write local Codex marketplace: %v", err)
 	}
@@ -116,17 +121,17 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	case codexAuthLocal:
 		runCodexLiveCommand(t, setupDir, "codex-login-status.txt", "", env, codexBin, "login", "status")
 	}
-	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.marketplaceRoot)
+	runCodexLiveCommand(t, setupDir, "codex-marketplace-add.txt", "", env, codexBin, "plugin", "marketplace", "add", install.MarketplaceRoot)
 	runCodexLiveCommand(t, setupDir, "codex-plugin-add.txt", "", env, codexBin, "plugin", "add", "spacedock@spacedock")
 	listing := runCodexLiveCommand(t, setupDir, "codex-plugin-list.txt", "", env, codexBin, "plugin", "list")
-	if !strings.Contains(listing, install.pluginPath) {
-		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.pluginPath, listing)
+	if !strings.Contains(listing, install.PluginPath) {
+		t.Fatalf("codex plugin list did not point at the local checkout path %q:\n%s", install.PluginPath, listing)
 	}
 	if strings.Contains(listing, "github.com") || strings.Contains(listing, "ref `next`") {
 		t.Fatalf("codex plugin list points at remote next, not the local checkout:\n%s", listing)
 	}
 
-	adapterPath := filepath.Join(install.pluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
+	adapterPath := filepath.Join(install.PluginPath, "skills", "first-officer", "references", "codex-first-officer-runtime.md")
 	if _, err := os.Stat(adapterPath); err != nil {
 		t.Fatalf("current-checkout plugin cache is missing r0 Codex adapter %s: %v", adapterPath, err)
 	}
@@ -135,6 +140,32 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	}
 
 	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+}
+
+func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
+	t.Helper()
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		t.Fatalf("resolve user cache dir for isolated CODEX_HOME: %v", err)
+	}
+	var failures []string
+	for _, parent := range codexLiveIsolatedHomeParentCandidates(cacheDir, repo, artifactRoot) {
+		if err := os.MkdirAll(parent, 0o700); err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", parent, err))
+			continue
+		}
+		dir, err := os.MkdirTemp(parent, "codex-home-")
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %v", parent, err))
+			continue
+		}
+		t.Cleanup(func() {
+			_ = os.RemoveAll(dir)
+		})
+		return dir
+	}
+	t.Fatalf("create isolated CODEX_HOME outside system temp: %s", strings.Join(failures, "; "))
+	return ""
 }
 
 func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
@@ -219,6 +250,72 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
+// runCodexSelfEvidenceMergeTriageScenario drives the real FO against the merge/triage
+// fixture and grades the SAME host-neutral decision assertSelfEvidenceMergeTriage the
+// Claude runner feeds, against the INCIDENT class only (Cycle-3): the FO must NOT wave
+// the change through — terminalize-as-PASSED or merge-without-evidence — while the
+// required lane is unapproved; a hold or a reject-without-merge both pass. Its
+// final-message diagnosis must name THIS run's failing test, not the inherited "known
+// flake" label. The this-run token is graded in the FINAL MESSAGE only, so the
+// entity-read echo in the transcript cannot satisfy it.
+func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	after := readMergeTriageAfter(t, workflowRoot, entityPath)
+	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexSmallestSufficientMechanismScenario drives the real FO against the
+// smallest-sufficient-mechanism fixture and grades the SAME host-neutral ladder
+// assertCodexSmallestSufficientMechanism the Claude runner feeds, over the Codex
+// command/collab transcript: the deterministic edits are FO-authored (in-house
+// apply_patch) with a direct commit and NO worker/PR climb, and the commissioned ready
+// entities are engaged via the standing dispatch loop without a per-entity justification.
+func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeSmallestMechanismWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertCodexSmallestSufficientMechanism(result.jsonl, ssmEditFiles(), ssmCommissioned()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+// runCodexKeepMovingScenario drives the real FO against the keep-moving-posture fixture
+// and grades the SAME host-neutral patterns assertCodexKeepMoving the Claude runner feeds,
+// over the Codex command/collab/file_change transcript plus the final message: advance +
+// dispatch the approved entity with no permission question, dispatch both independent
+// entities, re-shape the questioned entity and pause its dispatch, and no turn-end on an
+// async wait.
+func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeKeepMovingWorkflow(t, workflowRoot)
+
+	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertCodexKeepMoving(result.jsonl, result.finalMessage, kmIndependent()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
 // runCodexFilingScenario drives the real FO against an EMPTY workflow and asks it
 // to file one seed entity. Like the Claude runner it grades the FO's recorded
 // command stream — the FO filed via `spacedock … new <slug>`, not a `--next-id`
@@ -274,6 +371,18 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
+func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
+	return []string{
+		"exec",
+		"--json",
+		"--enable", "multi_agent_v2",
+		"--dangerously-bypass-approvals-and-sandbox",
+		"--cd", workflowRoot,
+		"--output-last-message", finalPath,
+		prompt,
+	}
+}
+
 // run launches `codex exec --json` for one shared scenario. Liveness still uses
 // the shared streamWatcher for the 60s stream-silence guard, with a Codex-specific
 // foreground-wait watchdog layered beside it so repeated wait-loop JSONL does not
@@ -290,14 +399,7 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	jsonlPath := filepath.Join(artifactDir, "codex-exec.jsonl")
 	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
 
-	cmd := exec.Command(r.codexBin,
-		"exec",
-		"--json",
-		"--dangerously-bypass-approvals-and-sandbox",
-		"--cd", workflowRoot,
-		"--output-last-message", finalPath,
-		prompt,
-	)
+	cmd := exec.Command(r.codexBin, codexExecArgv(workflowRoot, finalPath, prompt)...)
 	cmd.Env = r.env
 	// stdout (the --json event stream) flows through the watcher's pipe for the
 	// no-progress liveness guard; stderr goes to its own artifact file. The
@@ -376,4 +478,20 @@ func runCodexLiveCommand(t *testing.T, artifactDir, artifactName, stdin string, 
 		t.Fatalf("%s failed: %v\n%s", strings.Join(argv, " "), err, out)
 	}
 	return string(out)
+}
+
+func argvHasAdjacent(args []string, left, right string) bool {
+	for i := 0; i+1 < len(args); i++ {
+		if args[i] == left && args[i+1] == right {
+			return true
+		}
+	}
+	return false
+}
+
+func TestCodexLiveRunnerExecArgvEnablesMultiAgentV2(t *testing.T) {
+	args := codexExecArgv("/tmp/workflow", "/tmp/final-message.txt", "run the scenario")
+	if !argvHasAdjacent(args, "--enable", "multi_agent_v2") {
+		t.Fatalf("codex live exec argv must explicitly enable multi_agent_v2 because CODEX_HOME is isolated; args=%v", args)
+	}
 }

@@ -646,3 +646,84 @@ jobs:
             live-artifacts/pi/**
             live-artifacts/journey-metrics/**
           if-no-files-found: warn
+
+  # AC-3: posts a per-PR delta of this run's journey-cost observations against
+  # the latest published release ledger, as a single sticky-updating PR comment
+  # (`gh pr comment --edit-last`, so repeated pushes update ONE comment instead
+  # of appending a new one). PR-only — a workflow_dispatch run has no PR to
+  # comment on. needs: claude-live with no explicit `if:` on that edge means
+  # this job runs only once claude-live's matrix completed successfully;
+  # shallow-boot-window (like every scenario this comments on) is Claude-only.
+  # A job-level permissions block grants pull-requests: write beyond the
+  # workflow-level contents: read default; specifying any job-level permissions
+  # replaces (not merges with) the workflow default, so contents/actions read
+  # are restated here for checkout and cross-job artifact download.
+  journey-delta-comment:
+    needs: claude-live
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      - name: Download this run's Claude journey metrics
+        uses: actions/download-artifact@v5
+        with:
+          pattern: runtime-live-e2e-claude-live-*
+          path: ${{ runner.temp }}/current-run-artifacts
+          merge-multiple: true
+
+      # Best-effort: no previously published release (or one with no
+      # journey-costs asset) means no baseline to diff against. `|| true` /
+      # explicit exit-0 branches degrade either gap to a non-fatal skip so a
+      # missing baseline never REDs the PR.
+      - name: Download the latest published release's journey-cost ledger
+        id: download_previous_ledger
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          previous_tag="$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || true)"
+          if [ -z "$previous_tag" ] || [ "$previous_tag" = "null" ]; then
+            echo "::warning::no published release found; skipping journey-cost delta comment" >&2
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! gh release download "$previous_tag" -p 'journey-costs-*.json' -O "$RUNNER_TEMP/previous-journey-costs.json"; then
+            echo "::warning::published release $previous_tag has no journey-costs asset; skipping journey-cost delta comment" >&2
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "found=true" >> "$GITHUB_OUTPUT"
+
+      # download-artifact's merge-multiple flat-copies every matched artifact's
+      # files into current-run-artifacts, but PRESERVES each artifact's own
+      # internal path prefix (verified against a real run's downloaded zip:
+      # the journey-metrics JSON lands several directories deep, not directly
+      # under "live-artifacts/journey-metrics/"). A hardcoded exact subpath is
+      # brittle to that prefix; find + cp (release.yml's own pattern for the
+      # same class of problem) is layout-agnostic — it locates the metrics
+      # files wherever they actually landed.
+      - name: Locate this run's journey metrics
+        if: steps.download_previous_ledger.outputs.found == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/current-run-metrics"
+          find "$RUNNER_TEMP/current-run-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/current-run-metrics/" \;
+
+      - name: Post the journey-cost delta PR comment
+        if: steps.download_previous_ledger.outputs.found == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          go run ./cmd/spacedock-release journey-delta "$RUNNER_TEMP/previous-journey-costs.json" \
+            --metrics-dir "$RUNNER_TEMP/current-run-metrics" \
+            --pr "${{ github.event.pull_request.number }}"

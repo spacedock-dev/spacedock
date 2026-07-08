@@ -341,7 +341,7 @@ func runCodexRejectionFlowWithRetry(runAttempt codexRejectionFlowAttemptFunc) (c
 		if err := assertRejectionFlow(got.entityAfter, got.result.finalMessage+"\n"+got.result.jsonl); err != nil {
 			return got, err
 		}
-		if err := assertCodexReviewerReuse(got.result.jsonl); err != nil {
+		if err := assertCodexReviewerReuseWithDurableState(got.result.jsonl, got.entityAfter); err != nil {
 			return got, err
 		}
 		return got, nil

@@ -35,13 +35,17 @@ jobs:
         with:
           go-version: "1.22"
 
-      # Find the latest successful Runtime Live E2E run on next and pull its
-      # journey-metrics artifacts. When no such run exists this is a NON-FATAL
-      # skip (`exit 0`, found=false) — runtime-live-e2e.yml has no push:next
-      # trigger, so a fresh cut routinely has no producer run, and blocking the
-      # ledger here must not fail anything. The emitted `found` output gates the
-      # downstream Build/Publish steps so they SKIP (job green) rather than run
-      # `journey-costs` over an empty dir and RED the job.
+      # Pull journey-metrics from EVERY successful Runtime Live E2E run (PR or
+      # main) since the immediately-prior release tag of any kind (stable or
+      # -pre) — an incremental window, so a -pre release does not re-fold runs an
+      # earlier -pre in the same cycle already covered. A run's inclusion does
+      # not depend on its triggering PR's eventual merge state: the observation
+      # is about boot behavior on that commit at that time. When no run exists in
+      # the window this is a NON-FATAL skip (`exit 0`, found=false) — a fresh cut
+      # routinely has no producer run, and blocking the ledger here must not fail
+      # anything. The emitted `found` output gates the downstream Build/Publish
+      # steps so they SKIP (job green) rather than run `journey-costs` over an
+      # empty dir and RED the job.
       - name: Download latest journey metrics artifacts
         id: download_metrics
         env:
@@ -49,18 +53,40 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/runtime-live-artifacts" "$RUNNER_TEMP/journey-metrics"
-          # `|| true` degrades a gh error (or a missing gh) to an empty run_id so
+          # `|| true` degrades a gh error (or a missing gh) to the epoch fallback
+          # so a query failure never aborts the best-effort ledger under set -e.
+          # jq reads the tag via $ENV (not bash interpolation) so this survives
+          # set -u even when GITHUB_REF_NAME is unset.
+          since="$(gh release list --limit 100 --json tagName,createdAt --jq \
+            '[sort_by(.createdAt)[]] as $r | ($r | map(.tagName) | index($ENV.GITHUB_REF_NAME)) as $i | if $i == null or $i == 0 then "" else $r[$i-1].createdAt end' \
+            || true)"
+          if [ -z "$since" ]; then
+            since="1970-01-01T00:00:00Z"
+          fi
+          echo "journey ledger aggregation window: runs created after $since" >&2
+          # `|| true` degrades a gh error (or a missing gh) to an empty run list so
           # the no-run skip branch below fires (found=false, exit 0) instead of
           # aborting under set -e. The journey ledger is best-effort; a query
-          # failure must never RED the cut.
-          run_id="$(gh run list --workflow "Runtime Live E2E" --branch main --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)"
-          if [ -z "$run_id" ] || [ "$run_id" = "null" ]; then
-            echo "::warning::no successful Runtime Live E2E run found on main; skipping journey ledger" >&2
+          # failure must never RED the cut. No --branch filter: PR-triggered runs
+          # count in the window exactly like main runs.
+          run_ids="$(gh run list --workflow "Runtime Live E2E" --status success --created ">$since" --limit 100 --json databaseId --jq '.[].databaseId' || true)"
+          if [ -z "$run_ids" ]; then
+            echo "::warning::no successful Runtime Live E2E run found since $since; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          gh run download "$run_id" --dir "$RUNNER_TEMP/runtime-live-artifacts"
-          find "$RUNNER_TEMP/runtime-live-artifacts" -path '*/journey-metrics/*.json' -type f -exec cp {} "$RUNNER_TEMP/journey-metrics/" \;
+          # Each run's metrics land in their OWN subdirectory, never flat-copied
+          # into one: journeymetrics.recordFilename has no run-distinguishing
+          # component, so flattening N runs' same-named scenario/model files into
+          # one directory silently collapses them back to one observation via
+          # overwrite. journeymetrics.ReadRecordsDir already walks metrics-dir
+          # recursively, so no Go-side change is needed to consume this layout.
+          for run_id in $run_ids; do
+            run_dir="$RUNNER_TEMP/journey-metrics/$run_id"
+            mkdir -p "$run_dir"
+            gh run download "$run_id" --dir "$RUNNER_TEMP/runtime-live-artifacts/$run_id"
+            find "$RUNNER_TEMP/runtime-live-artifacts/$run_id" -path '*/journey-metrics/*.json' -type f -exec cp {} "$run_dir/" \;
+          done
           if [ -z "$(find "$RUNNER_TEMP/journey-metrics" -name '*.json' -type f -print -quit)" ]; then
             echo "::warning::downloaded Runtime Live E2E artifacts contained no journey metrics JSON; skipping journey ledger" >&2
             echo "found=false" >> "$GITHUB_OUTPUT"
@@ -124,18 +150,20 @@ jobs:
           echo "release commit for $GITHUB_REF_NAME: $RELEASE_COMMIT"
           go run ./cmd/spacedock-release e2e-gate "$RELEASE_COMMIT"
 
-      # Assert the tagged commit's plugin manifests already carry the tag's semver
-      # — the stamp-then-tag ordering docs/releasing.md documents. The checkout
-      # above is at the tagged commit, so these are the tagged commit's manifests.
-      # A mismatch (the v0.20.0 pre-stamp inversion: tag 0.20.0, manifest 0.19.9)
-      # exits non-zero and blocks the cut, since goreleaser needs: this job. The
-      # `if` skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
-      # X.Y.Z manifest), matching the stamp step's pre-release carve-out below.
-      - name: Gate the cut on the tagged manifest matching the tag semver
+      # Assert the tagged commit's plugin manifests AND the FO shared-core prose
+      # already carry the tag's semver/minor — the stamp-then-tag ordering
+      # docs/releasing.md documents. The checkout above is at the tagged commit,
+      # so these are the tagged commit's files. A mismatch (the v0.20.0 pre-stamp
+      # inversion: tag 0.20.0, manifest 0.19.9; or a forgotten prose stamp) exits
+      # non-zero and blocks the cut, since goreleaser needs: this job. The `if`
+      # skips pre-releases (a vX.Y.Z-pre.N tag legitimately differs from its
+      # X.Y.Z manifest/prose), matching the stamp step's pre-release carve-out
+      # below.
+      - name: Gate the cut on the tagged manifest/prose matching the tag semver
         if: "!contains(github.ref, '-')"
         run: |
           set -euo pipefail
-          go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json
+          go run ./cmd/spacedock-release manifest-tag-gate "$GITHUB_REF_NAME" .claude-plugin/plugin.json .codex-plugin/plugin.json skills/first-officer/references/first-officer-shared-core.md
 
   goreleaser:
     needs: e2e-gate
@@ -196,6 +224,14 @@ jobs:
           # GITHUB_TOKEN cannot write to another repository).
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          # Defensive pin of the version goreleaser stamps into the binary. On the
+          # auto-cut vX.(Y+1).0-pre0 run the commit carries BOTH that pre0 tag and
+          # the stable vX.Y.0 tag; goreleaser 2.16 already picks the highest-semver
+          # tag pointing at HEAD (the pre0 tag) with no override, so this only makes
+          # the choice explicit — harmless on a single-tag run, deterministic on the
+          # dual-tagged one. Not load-bearing (measured with AND without in the CI
+          # dry-run spike); belt-and-suspenders against a future resolution change.
+          GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
       # AC-4: stamp the plugin manifests' `version` to the release so the host
       # plugin panel (`claude plugin list --json`) displays a version that tracks
@@ -218,6 +254,7 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
           # The tagged commit is the SHA the e2e-gate greened and the manifest-tag
           # gate matched. Resolve it BEFORE switching to main, so the stable ref
           # below advances to exactly THIS commit, not whatever main HEAD happens to
@@ -226,14 +263,14 @@ jobs:
           git fetch origin main
           git switch main
           go run ./cmd/spacedock-release stamp-version "$RELEASE_VERSION" \
-            .claude-plugin/plugin.json .codex-plugin/plugin.json
-          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json; then
-            echo "plugin manifests already at $RELEASE_VERSION; nothing to commit"
+            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+          if git diff --quiet -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"; then
+            echo "plugin manifests and FO prose already at $RELEASE_VERSION; nothing to commit"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "release: stamp plugin manifests to $RELEASE_VERSION" \
-              -- .claude-plugin/plugin.json .codex-plugin/plugin.json
+            git commit -m "release: stamp plugin manifests and FO prose to $RELEASE_VERSION" \
+              -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
             git push origin main
           fi
           # Advance the stable channel ref to the TAGGED commit. The
@@ -247,3 +284,136 @@ jobs:
           # push, so the default GITHUB_TOKEN suffices (no cross-repo PAT, unlike the
           # homebrew-tap push).
           git push origin "$RELEASE_COMMIT:refs/heads/stable"
+
+  # Advances `next` — the branch `spacedock-edge` resolves — on EVERY tag, not
+  # just stable. A SIBLING of goreleaser (`needs: goreleaser`, mirroring the
+  # journey-ledger job's isolation): a rare conflict here must not block or unwind
+  # a release that already published. See docs/releasing.md "Advancing the Edge
+  # Line". The reconcile is a merge favoring the release, never a reset or force —
+  # the pre-merge `next` tip stays a first-parent ancestor of the pushed commit,
+  # so `git push edge-advance:next` is a plain fast-forward.
+  edge-advance:
+    needs: goreleaser
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Full history + tags so `git rev-list -1 "$GITHUB_REF_NAME"` resolves
+          # the tagged commit the reconcile merges into `next`.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.22"
+
+      # Decide whether this tag advances the edge line AT ALL, gating the whole
+      # job. edge-advance-decision computes the tag's target edge version
+      # (dev-preversion for a stable tag; the tag's own version for a -pre tag)
+      # and prints `advance` only when that is STRICTLY greater than origin/next's
+      # current manifest version. An old-line / patch tag prints `skip`, and EVERY
+      # downstream step gates on this output, so the whole job no-ops: no
+      # `-X theirs` clobber of next's newer content, no manifest/gate-line rewind,
+      # no marketplace calendar re-pull, and no colliding pre0 auto-tag.
+      - name: Decide whether this tag advances the edge line
+        id: decision
+        run: |
+          set -euo pipefail
+          git fetch origin next
+          NEXT_PLUGIN="$(mktemp)"
+          git show origin/next:.claude-plugin/plugin.json > "$NEXT_PLUGIN"
+          if [ "$(go run ./cmd/spacedock-release edge-advance-decision "$GITHUB_REF_NAME" "$NEXT_PLUGIN")" = "advance" ]; then
+            echo "advance=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "advance=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::edge-advance SKIPPED for $GITHUB_REF_NAME: its target edge version is not strictly greater than next's current manifest version (an old-line/patch tag); next's tip is left untouched"
+          fi
+
+      # Prerelease (`-pre`) tag: reconcile `next` to the tagged commit's content,
+      # favoring the release over whatever `next` drifted to. The manifests inherit
+      # the tag's version; the calendar bump below makes installers re-pull.
+      - name: Reconcile the edge line to the prerelease commit
+        if: "contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+
+      # Stable (`vX.Y.Z`) tag: reconcile the same way, then stamp the manifests
+      # PAST the release to the post-release dev pre-version (X.(Y+1).0-pre1), so
+      # the edge line never masquerades as the stable version it just shipped.
+      - name: Reconcile the edge line past the stable release
+        if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          DEV_VERSION="$(go run ./cmd/spacedock-release dev-preversion "$RELEASE_VERSION")"
+          git fetch origin next
+          git switch -c edge-advance origin/next
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git merge -X theirs --no-edit "$RELEASE_COMMIT" \
+            -m "next: reconcile edge line to $GITHUB_REF_NAME"
+          FO_PROSE=skills/first-officer/references/first-officer-shared-core.md
+          go run ./cmd/spacedock-release stamp-version "$DEV_VERSION" \
+            .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+          git commit -m "next: bump dev pre-version to $DEV_VERSION" \
+            -- .claude-plugin/plugin.json .codex-plugin/plugin.json "$FO_PROSE"
+
+      # On an advancing tag both reconcile paths end here: bump the marketplace
+      # calendar key (the moving-branch re-pull key `claude plugin update` /
+      # `codex` read) and fast-forward `next`. Exactly one reconcile step above
+      # ran, so `edge-advance` already carries the merge (plus, on a stable tag,
+      # the dev-preversion stamp). Gated on the same advance decision: an old-line
+      # / patch tag skips this bump too, so the calendar key — the thing every edge
+      # installer polls — is left untouched and no re-pull is triggered (AC-2d).
+      - name: Bump the marketplace calendar key and push the edge line
+        if: "steps.decision.outputs.advance == 'true'"
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          go run ./cmd/spacedock-release bump-calendar .claude-plugin/marketplace.json
+          git commit -m "next: bump marketplace calendar version" \
+            -- .claude-plugin/marketplace.json
+          git push origin edge-advance:next
+
+      # Always-cut-pre0 (latest-line stable tag only, same advance gate): auto-cut
+      # an ANNOTATED vX.(Y+1).0-pre0 tag ON THE GREENED RELEASE COMMIT (the SHA
+      # e2e-gate already greened and the stable stamp resolved) and push it via the
+      # re-triggering PAT. That tag's own release run resolves the SAME green e2e
+      # run (same commit), builds+publishes the X.(Y+1)-minor edge binary, and
+      # bumps the spacedock@next cask — closing the post-stable-cut window in
+      # minutes instead of waiting for the next hand-cut prerelease. The tag MUST be
+      # annotated with a non-empty body: the release-notes extraction step
+      # (above, in goreleaser) hard-errors on a lightweight/empty-body tag before
+      # the binary builds. The push MUST use the PAT: a push authenticated with the
+      # default GITHUB_TOKEN deliberately does NOT trigger further workflow runs, so
+      # the pre0 build would never start. Recursion terminates at one level — the
+      # pre0 tag routes to the prerelease path, whose edge-advance-decision skips
+      # (pre0 < next's pre1), so it neither re-tags nor rewinds `next`.
+      - name: Auto-cut the edge prerelease tag on the greened release commit
+        if: "!contains(github.ref, '-') && steps.decision.outputs.advance == 'true'"
+        env:
+          # PAT (HOMEBREW_TAP_TOKEN-class) so the tag push RE-TRIGGERS release.yml;
+          # the default GITHUB_TOKEN cannot fire a workflow from within a run.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          set -euo pipefail
+          RELEASE_COMMIT="$(git rev-list -1 "$GITHUB_REF_NAME")"
+          RELEASE_VERSION="${GITHUB_REF_NAME#v}"
+          PRE0_VERSION="$(go run ./cmd/spacedock-release edge-pre0-version "$RELEASE_VERSION")"
+          PRE0_TAG="v$PRE0_VERSION"
+          PRE0_BODY="Edge prerelease auto-cut with stable $GITHUB_REF_NAME: publishes the ${PRE0_VERSION%.*}-line edge binary so spacedock@next realigns with next's post-release skills. No standalone changes."
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$PRE0_TAG" "$RELEASE_COMMIT" -m "$PRE0_BODY"
+          git push "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$PRE0_TAG"

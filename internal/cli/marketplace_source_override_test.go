@@ -79,7 +79,7 @@ func TestFrontDoorAutoInstallHonorsMarketplaceSourceOverride(t *testing.T) {
 
 	applyMarketplaceSourceOverride([]string{"SPACEDOCK_MARKETPLACE_SOURCE=/tmp/local-marketplace"})
 
-	fake := &fakeHost{manifest: ""} // fresh HOME: no codex plugin installed
+	fake := &fakeHost{manifest: "", manifestAfterInstall: compatibleManifest(t)} // fresh HOME: no codex plugin installed; install lands a compatible one
 	var stdout, stderr bytes.Buffer
 	code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
 	if code != 0 {

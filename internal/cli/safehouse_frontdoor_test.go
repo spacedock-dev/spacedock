@@ -15,7 +15,7 @@ import (
 // bootstrapPrompt is the fixed launch-and-go FO prompt the launcher appends as
 // the last inner-argv token. Pinned here so the oracles fail loudly if the
 // production constant drifts.
-const wantBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage."
+const wantBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too."
 
 // lookFound resolves any binary (safehouse Available → ok).
 func lookFound(string) (string, error) { return "/usr/bin/safehouse", nil }
@@ -231,7 +231,7 @@ func TestClaudeSafehousePresentButBinaryMissing(t *testing.T) {
 // appends as the last inner-argv token. Pinned here so the codex oracles fail
 // loudly if the production constant drifts. The load-bearing invariant is the
 // literal `spacedock:first-officer` skill-name token (codex has no --agent).
-const wantCodexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Engage. Assume $spacedock:first-officer for the entire session."
+const wantCodexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Assume $spacedock:first-officer for the entire session."
 
 // codex AC-2: .safehouse present → canonical safehouse-wrapped codex argv with
 // codex's own sandbox bypassed and the FO-skill prompt appended LAST, after the
@@ -422,5 +422,24 @@ func TestClaudeResumeFamilySuppressesBootstrapPrompt(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// AC-3: the launch flourish is gone. Now that `engage` is a real captain-invoked
+// verb, no bootstrap prompt carries the throwaway "Engage." that would collide
+// with it. All three (claude, codex, pi) are covered so a flourish regression on
+// any is caught here, not only by git-diff emptiness (pi de-risks the 7v parity).
+func TestBootstrapPromptsDropEngageFlourish(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		prompt string
+	}{
+		{"claude", bootstrapPrompt},
+		{"codex", codexBootstrapPrompt},
+		{"pi", piBootstrapPrompt},
+	} {
+		if strings.Contains(tc.prompt, "Engage.") {
+			t.Errorf("%s bootstrap prompt still carries the Engage. flourish: %q", tc.name, tc.prompt)
+		}
 	}
 }

@@ -64,28 +64,60 @@ func TestDetectBroadSearchAtBoot(t *testing.T) {
 			wantNames: "ls -R",
 		},
 		{
-			name: "ls_non_recursive_repo_root_reds",
+			name: "ls_non_recursive_repo_root_passes",
 			lines: []string{
 				streamLine(`spacedock status --discover`),
 				streamLine(`ls ` + fixtureRoot),
 			},
-			wantRed:   true,
-			wantNames: "ls",
+			wantRed: false,
 		},
 		{
-			name: "bare_ls_default_cwd_reds",
+			name: "bare_ls_default_cwd_passes",
 			lines: []string{
 				streamLine(`spacedock status --discover`),
 				streamLine(`ls -la`),
 			},
-			wantRed:   true,
-			wantNames: "ls",
+			wantRed: false,
+		},
+		{
+			name: "ls_la_repo_root_passes",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`ls -la ` + fixtureRoot),
+			},
+			wantRed: false,
+		},
+		{
+			name: "ls_ltr_repo_root_passes",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				// -r on ls is reverse-sort, not recursion -- must not be read as -R.
+				streamLine(`ls -ltr ` + fixtureRoot),
+			},
+			wantRed: false,
 		},
 		{
 			name: "ls_scoped_under_resolved_workflow_passes",
 			lines: []string{
 				streamLine(`spacedock status --discover`),
 				streamLine(`ls ` + fixtureRoot + `/docs/dev`),
+			},
+			wantRed: false,
+		},
+		{
+			name: "find_path_arg_less_reds",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`find`),
+			},
+			wantRed:   true,
+			wantNames: "find",
+		},
+		{
+			name: "find_scoped_under_resolved_workflow_passes",
+			lines: []string{
+				streamLine(`spacedock status --discover`),
+				streamLine(`find ` + fixtureRoot + `/docs/dev -name README.md`),
 			},
 			wantRed: false,
 		},

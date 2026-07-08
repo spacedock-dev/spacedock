@@ -93,17 +93,7 @@ func parseStateInitArgs(args []string, dir string, stderr io.Writer) (workflowDi
 			return "", 2
 		}
 	}
-	if workflowDir == "" {
-		discovered, ok := status.DiscoverWorkflowDir(dir)
-		if !ok {
-			fmt.Fprintln(stderr, "spacedock state init: no workflow here — pass --workflow-dir or run inside a workflow")
-			return "", 1
-		}
-		workflowDir = discovered
-	} else if !filepath.IsAbs(workflowDir) {
-		workflowDir = filepath.Join(dir, workflowDir)
-	}
-	return workflowDir, 0
+	return resolveWorkflowDir(workflowDir, dir, stderr)
 }
 
 // runStateNew implements `spacedock state new`. It is the BIRTH half of the
@@ -353,17 +343,7 @@ func parseStateNewArgs(args []string, dir string, stderr io.Writer) (workflowDir
 			return "", 2
 		}
 	}
-	if workflowDir == "" {
-		discovered, ok := status.DiscoverWorkflowDir(dir)
-		if !ok {
-			fmt.Fprintln(stderr, "spacedock state new: no workflow here — pass --workflow-dir or run inside a workflow")
-			return "", 1
-		}
-		workflowDir = discovered
-	} else if !filepath.IsAbs(workflowDir) {
-		workflowDir = filepath.Join(dir, workflowDir)
-	}
-	return workflowDir, 0
+	return resolveWorkflowDir(workflowDir, dir, stderr)
 }
 
 // runGit runs a git command in dir, returning success and combined output. On

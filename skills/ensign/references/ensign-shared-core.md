@@ -15,7 +15,7 @@ Read the assignment context provided by the first officer. It defines:
 
 ## Working
 
-1. Read the entity file before making changes — when you need only specific sections (the relevant stage-def section, your prior report), `status --read <entity-path> --json` returns each section's `offset`/`lines` for a scoped `Read`, rather than the whole body.
+1. Read the entity file before making changes — for a specific section (the relevant stage-def section, your prior report), locate its heading with `grep -nE '^#{1,4} '` and scoped-`Read(offset, limit)` the span to the next heading. `status --read <entity-path> --json` is the fence-safe fallback when the body carries fenced markdown-like content that bare grep over-counts.
 2. If you were given a worktree path, keep all reads, writes, and commits under that worktree.
 3. Perform the work described in the stage definition.
 4. Update the entity file body, not the frontmatter.
@@ -33,7 +33,7 @@ For worktree-backed entities, active stage/status/report/body state belongs in t
 
 ### Split-Root State Contract
 
-When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the entity body and your stage report live in the state checkout the dispatch hands you as the entity path, NOT alongside the code. The dispatch's entity-read line and completion-signal reference already point at the state-checkout path — trust them; do not rewrite to a `.worktrees/` copy. With a worktree (implementation, validation), the worktree isolates the deliverable work product only. Without one (ideation, backlog), you run from the repo root; entity/report still go to the state checkout.
+When the workflow is split-root (README declares `state:` checkout, e.g. `state: .spacedock-state`), the entity body and your stage report live in the state checkout the dispatch hands you as the entity path, NOT alongside the code. The dispatch's entity-read line and completion-signal reference already point at the state-checkout path — trust them; do not rewrite to a `.worktrees/` copy. With a worktree, the worktree isolates the deliverable work product only. Without one, you run from the repo root; entity/report still go to the state checkout.
 
 **Concurrency-safe state commits.** The state checkout is one shared, non-branched git index. A bare `git add -A` / `git commit` sweeps up a sibling writer's staged entity. You MUST commit path-scoped: `git -C {state_checkout} add {entity_path} && git -C {state_checkout} commit -m "…" -- {entity_path}`. Retry on `index.lock` contention after ~2s. Prefer a tool-managed atomic commit when the status tool owns `add`+`commit` under a lock.
 
@@ -113,6 +113,8 @@ The FO dispatches an ensign with a tiny ~175-char `Agent(prompt=...)` of the sha
 When your initial prompt matches this pattern (the `Skill(...)` invocation followed by `Read /tmp/spacedock-dispatch/...`), your first action MUST be `Read /tmp/spacedock-dispatch/{name}.md` and treat the file's content as your inline assignment. Then proceed with the rest of the operating contract.
 
 If the Read fails (missing, unreadable, empty), do NOT proceed with empty context. Send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop.
+
+**Advance bootstrap.** This covers the initial prompt only. When a mid-session message instead matches `Advancing to next stage: {stage}.` followed by `Read /tmp/spacedock-dispatch/{name}.md and treat its content as your next-stage assignment.`, Read that file and treat its content as your next-stage assignment (the fetch-commands bootstrap above applies to it identically). On Read failure, send `SendMessage(to="team-lead", message="DISPATCH_FILE_MISSING: {path} - {error}")` and stop — the same failure shape as the initial bootstrap.
 
 ## Fetch-on-Demand Bootstrap
 

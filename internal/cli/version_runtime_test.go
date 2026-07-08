@@ -5,11 +5,8 @@ package cli
 import (
 	"bytes"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
 // fakeRuntimeProbe pins each host's install/version/marker outcome so the
@@ -51,7 +48,7 @@ func TestVersionFirstLineUnchanged(t *testing.T) {
 	if !re.MatchString(firstLine) {
 		t.Fatalf("version first line %q does not match the FO-parsed pattern", firstLine)
 	}
-	want := "spacedock " + Version + " (contract " + strconv.Itoa(contract.CONTRACT_VERSION) + ")"
+	want := "spacedock " + displayVersion() + " " + frozenContractToken
 	if firstLine != want {
 		t.Fatalf("version first line = %q, want %q", firstLine, want)
 	}
