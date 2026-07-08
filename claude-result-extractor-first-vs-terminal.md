@@ -68,3 +68,14 @@ Riskiest unverified path: whether a fixture stream with multiple success `result
 ### Summary
 
 Formalized the already-diagnosed extractor bug into problem statement / proposed approach / out-of-scope / acceptance criteria / test plan. The riskiest mechanism was spiked first: a two-success-result fixture fails red against current HEAD (returns the first result), and a reverted fix sketch confirmed retain-last returns the terminal result while the `is_error`/401 loud-failure stays short-circuiting and unmaskable. Pure offline parsing fix; no doc changes; validation must run the detached adversarial audit per the CI/release-machinery Proof policy.
+
+## Stage Report: implementation
+
+- DONE: Extractor changed to retain the last non-error success result; is_error/401 short-circuit behavior unchanged and unmaskable
+  `internal/ensigncycle/claude_final_message_impl_test.go` (worktree commit `e42bab48`): tracks `lastResult`/`haveResult`, `continue`s past a success result instead of returning; `is_error` branch still `return`s immediately before the tracking assignment, so a later success can never mask an earlier launch failure and a later failure can never be hidden by an earlier success.
+- DONE: Regression tests added (multi-result red-on-HEAD-then-green, success-then-error still fails loud) and all 5 existing subtests stay green
+  Added `returns_last_of_multiple_success_results` and `success_then_error_still_fails_loud` to `internal/ensigncycle/claude_final_message_test.go`; confirmed red against pre-fix code (`final message = "All four ensigns are dispatched...", want ... "Gate review: names the corrected entity..."` and `expected a launch failure ... got message "An earlier success result."`), then green after the fix — `TestExtractClaudeFinalMessage` 7/7 subtests pass, full `internal/ensigncycle` package `go test` passes, `go build ./...` and `go vet ./internal/ensigncycle/...` clean.
+
+### Summary
+
+Retained the last non-error success `result` event instead of the first, matching the "terminal" doc comment. Added the two regression subtests named in the test plan (verified red-on-HEAD before the fix), kept the `is_error`/401 short-circuit unchanged and unmaskable in either direction, and confirmed the existing five subtests plus the full package suite stay green. Change is scoped to the two test-only files (`claude_final_message_impl_test.go`, `claude_final_message_test.go`); no production code or docs touched. Detached adversarial audit per the CI/release-machinery Proof policy is left for validation, as specified in the test plan.
