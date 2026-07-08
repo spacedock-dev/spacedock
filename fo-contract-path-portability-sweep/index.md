@@ -1,13 +1,13 @@
 ---
 title: FO contract path portability sweep and hardening
-status: backlog
+status: ideation
 score: 0.9
 source: captain request 2026-07-08 after PR #487 review found repo-specific paths in shipped FO contract
 issue:
 pr:
 mod-block:
 worktree:
-started:
+started: 2026-07-08T12:45:36Z
 completed:
 verdict:
 id: fafb8xb7ptn2dx5k2c423b50
