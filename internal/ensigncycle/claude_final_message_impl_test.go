@@ -54,6 +54,8 @@ type claudeAssistantEvent struct {
 // than an empty string a scenario assertion would silently accept.
 func extractClaudeFinalMessage(stream string) (string, error) {
 	var lastAssistantText string
+	var lastResult string
+	haveResult := false
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -69,7 +71,9 @@ func extractClaudeFinalMessage(stream string) (string, error) {
 				}
 				return "", fmt.Errorf("%w: result event reported is_error: %s", errClaudeLaunchFailed, result.Result)
 			}
-			return result.Result, nil
+			lastResult = result.Result
+			haveResult = true
+			continue
 		}
 
 		var assistant claudeAssistantEvent
@@ -82,6 +86,9 @@ func extractClaudeFinalMessage(stream string) (string, error) {
 		}
 	}
 
+	if haveResult {
+		return lastResult, nil
+	}
 	if lastAssistantText != "" {
 		return lastAssistantText, nil
 	}
