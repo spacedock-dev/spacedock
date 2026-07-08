@@ -1,6 +1,6 @@
 ---
 title: FO contract path portability sweep and hardening
-status: implementation
+status: validation
 score: 0.9
 source: captain request 2026-07-08 after PR #487 review found repo-specific paths in shipped FO contract
 issue:
