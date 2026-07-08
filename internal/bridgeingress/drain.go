@@ -298,6 +298,7 @@ func Ack(opts AckOptions) AckResult {
 	if err := appendReply(root, rec); err != nil {
 		return AckResult{Error: err.Error()}
 	}
+	truncateReplies(filepath.Join(root, "_bridge"))
 	return AckResult{Appended: true, Kind: kind, Target: slug, Line: opts.Line}
 }
 
@@ -322,6 +323,112 @@ func appendReply(root string, rec replyOut) error {
 		return err
 	}
 	return nil
+}
+
+const (
+	maxReplyLines  = 2000
+	keepReplyLines = 1000
+)
+
+// truncateReplies bounds fo-replies.jsonl, mirroring bridgeegress.truncateEvents
+// (size cap, recency keep-window, temp-file + atomic rename). It differs by one
+// hard safety rule: a reply is dropped only when it is BOTH outside the recency
+// window AND strictly below the retention floor. The floor is the lowest committed
+// cursor across every .inbox-cursor.<slug> file — loadReplies still needs any reply
+// whose in_reply_to_line is at or above that floor for at-least-once drain dedup, so
+// dropping one would let an already-answered intent re-drain. Replies strictly below
+// the floor are committed on every slug and safe to drop. With no committed cursor
+// (floor unknown) nothing is dropped. Observe-only: any filesystem error is a no-op.
+func truncateReplies(dir string) {
+	floor, ok := lowestCommittedCursor(dir)
+	if !ok {
+		return
+	}
+	path := filepath.Join(dir, "fo-replies.jsonl")
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	var lines []string
+	scanner := lineScanner(f)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	_ = f.Close()
+	if len(lines) <= maxReplyLines || scanner.Err() != nil {
+		return
+	}
+	keep := keepReplyLines
+	if keep > len(lines) {
+		keep = len(lines)
+	}
+	windowStart := len(lines) - keep
+	kept := make([]string, 0, len(lines))
+	for i, line := range lines {
+		if i >= windowStart || replyAtOrAboveFloor(line, floor) {
+			kept = append(kept, line)
+		}
+	}
+	if len(kept) == len(lines) {
+		return
+	}
+	body := strings.Join(kept, "\n") + "\n"
+	tmp, err := os.CreateTemp(dir, "fo-replies.jsonl.tmp.*")
+	if err != nil {
+		return
+	}
+	tmpPath := tmp.Name()
+	if _, err := tmp.WriteString(body); err != nil {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+		return
+	}
+	if err := tmp.Close(); err != nil {
+		_ = os.Remove(tmpPath)
+		return
+	}
+	if err := os.Rename(tmpPath, path); err != nil {
+		_ = os.Remove(tmpPath)
+	}
+}
+
+// lowestCommittedCursor returns the minimum committed inbox cursor across all
+// per-slug .inbox-cursor.<slug> files in dir. The legacy shared .inbox-cursor
+// (no slug suffix) is intentionally excluded — adoptCursor migrates it into a
+// per-slug file before any drain, and the floor is defined over per-slug commits.
+// The bool is false when no readable per-slug cursor exists, so the caller keeps
+// every reply rather than guessing a floor.
+func lowestCommittedCursor(dir string) (int, bool) {
+	matches, _ := filepath.Glob(filepath.Join(dir, ".inbox-cursor.*"))
+	min := -1
+	for _, path := range matches {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		n, err := strconv.Atoi(strings.TrimSpace(string(data)))
+		if err != nil || n < 0 {
+			continue
+		}
+		if min < 0 || n < min {
+			min = n
+		}
+	}
+	if min < 0 {
+		return 0, false
+	}
+	return min, true
+}
+
+// replyAtOrAboveFloor reports whether a fo-replies.jsonl line must be retained for
+// drain dedup: its in_reply_to_line is at or above the retention floor. An
+// unparseable line contributes nothing to loadReplies, so it is not retained here.
+func replyAtOrAboveFloor(line string, floor int) bool {
+	var rec replyRecord
+	if json.Unmarshal([]byte(line), &rec) != nil {
+		return false
+	}
+	return rec.InReplyToLine >= floor
 }
 
 // CommitOptions controls one cursor advance.
