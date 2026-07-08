@@ -198,3 +198,16 @@ Cycle 3 adds the missing AC-1 adversarial prompt shape without changing the acce
 ### Summary
 
 Recommendation: PASSED. Cycle 3 adds the missing adversarial prompt shape for AC-1 without regressing the cycle-2 command-shape and anti-tautology protections, and focused/package/full/race verification passed. `gofmt -w ./cmd ./internal` was run; unrelated formatting drift from that command was restored, and the code worktree was clean before this state report.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Restore production-package compilation: go build ./... must pass on #487.
+  `go build ./...` passed after code commit `44f1abe` moved the FO product-edit guard assertion helper into the test build as `fo_product_edit_guard_impl_test.go`.
+- DONE: Keep the fix scoped to the FO product-edit guard helper/type boundary; avoid unrelated formatting drift.
+  The code diff is a 100% rename of the guard helper file; incidental `gofmt` drift in `internal/release/journeydelta.go` was restored before commit.
+- DONE: Record validation evidence for go build ./..., go test ./..., go test ./... -race, and gofmt.
+  `gofmt -w ./cmd ./internal` ran; `go build ./...` passed; focused guard tests passed 4; `go test ./...` and `go test ./... -race` each passed 2082 tests in 17 packages.
+
+### Summary
+
+Fixed the CI-only compile failure by keeping the product-edit guard assertion helper in the test build, where the shared Codex trace item fixtures are defined. No guard behavior changed; the production package build no longer sees test-only helper symbols.
