@@ -184,3 +184,16 @@ Ideation converted the existing sweep notes into an implementation-ready portabi
 ### Summary
 
 The pre-gate repair exercised the riskiest contextual-scanner mechanism instead of deferring it. The recorded spike gives implementation a concrete first test that fails the known operational leaks while allowing explicitly labeled examples and install guidance.
+
+## Stage Report: implementation
+
+- DONE: Implement contextual contractlint guards with synthetic discriminator fixtures that fail the #487 write-core path leaks and #382 local-main-drift repo rebuild while allowing explicitly labeled examples/install hints.
+  Code commit `23317ad` adds `fo_contract_path_portability_test.go`; detached red audits failed on #487 write-core paths and #382 local-main-drift rebuild before restoration.
+- DONE: Update shipped FO operational contracts so write-core classification is workflow-derived and Claude local-main-drift recovery is repo-generic, with no operational docs/dev, universal .spacedock-state, or arbitrary-repo go-build leaks.
+  `skills/fo-write-core/SKILL.md` now classifies from workflow context; `claude-fo-dispatch.md` syncs local-main-drift without rebuilding from `{repo}`.
+- DONE: Update behavior fixtures/tests to use synthetic workflow/state paths, run focused plus repo gates, and include detached red-audit evidence before final implementation report.
+  `go test ./internal/contractlint ./internal/ensigncycle`, `go test ./...`, and `go test ./... -race` passed after `gofmt -w ./cmd ./internal`.
+
+### Summary
+
+Implementation hardens the shipped FO contracts against the two logged provenance leaks: #487 / entity 17 and #382 / entity pd. The non-findings from the sweep were intentionally left alone, while the new guard preserves labeled examples, discovery signals, and source-build install hints.
