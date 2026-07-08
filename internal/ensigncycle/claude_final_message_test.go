@@ -96,4 +96,42 @@ func TestExtractClaudeFinalMessage(t *testing.T) {
 			t.Fatal("expected an error when no result event and no assistant text exist")
 		}
 	})
+
+	t.Run("returns_last_of_multiple_success_results", func(t *testing.T) {
+		// A run can emit more than one non-error success result event (e.g. an
+		// intermediate status update followed by the actual terminal message).
+		// "terminal" means last: the extractor must not stop at the first match.
+		stream := strings.Join([]string{
+			`{"type":"result","subtype":"success","is_error":false,"result":"All four ensigns are dispatched..."}`,
+			`{"type":"assistant","message":{"content":[{"type":"text","text":"Reviewing the gate."}]}}`,
+			`{"type":"result","subtype":"success","is_error":false,"result":"Gate review: names the corrected entity and presents the gate."}`,
+		}, "\n")
+
+		got, err := extractClaudeFinalMessage(stream)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		want := "Gate review: names the corrected entity and presents the gate."
+		if got != want {
+			t.Fatalf("final message = %q, want the LAST success result event's result text %q", got, want)
+		}
+	})
+
+	t.Run("success_then_error_still_fails_loud", func(t *testing.T) {
+		// A launch failure must never be masked by an earlier success result: even
+		// if a success result event precedes it, a later is_error/401 event must
+		// still surface as errClaudeLaunchFailed.
+		stream := strings.Join([]string{
+			`{"type":"result","subtype":"success","is_error":false,"result":"An earlier success result."}`,
+			`{"type":"result","subtype":"error_during_execution","is_error":true,"api_error_status":401,"result":"API Error: 401 OAuth token has expired"}`,
+		}, "\n")
+
+		got, err := extractClaudeFinalMessage(stream)
+		if err == nil {
+			t.Fatalf("expected a launch failure even though a success result preceded it, got message %q", got)
+		}
+		if !errors.Is(err, errClaudeLaunchFailed) {
+			t.Fatalf("error = %v, want it to wrap errClaudeLaunchFailed so a later failure is never masked by an earlier success", err)
+		}
+	})
 }
