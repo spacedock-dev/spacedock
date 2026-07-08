@@ -1,6 +1,6 @@
 ---
 title: "codex-live rejection-flow oracle accepts the current multi_agent_v2 spawn-evidence family (lane red on unchanged main)"
-status: validation
+status: implementation
 sprint:
 source: "0250 Commander session 2026-07-06/07. Timeline: Jul-4 main run green; 2026-07-06 k7 branch run, branch rerun, AND a baseline rerun of the Jul-4 green main run (same code) all red at codex_live_runner_test.go:42 'no validation spawn_agent found — the FO never created a cycle-1 reviewer to reuse'. codex-cli 0.142.5 identical across green and red runs, so not a CLI version change: service-side behavior drift under --enable multi_agent_v2 (the harness opts in deliberately and asserts the flag, codex_live_runner_test.go:283,399-400). Transcript evidence (artifacts, run 28806717191 + run 28693890413 attempt 2): the FO ran a REAL two-worker flow — separate implementation worker and validation reviewer, followup_task cycle-2 reuse, populated agents_states on collab wait calls, correct end-state markers — but zero spawn_agent-shaped events; its spawn mechanism now emits evidence the oracle does not recognize. Blocks every 0250 member's merge (all-lanes-green is the DoD's proof policy)."
 started: 2026-07-06T23:10:29Z
@@ -139,6 +139,7 @@ Recommendation: REJECTED. The offline oracle tests are green and preserve the in
 - Cycle 1: REJECTED — targeted live Codex rejection-flow still reds after 450s: durable state reached validation/PASSED with both feedback cycles, but the repaired oracle found no validation dispatch-build assignment surface to accept.
 - Cycle 2: REJECTED at PR #483 CI — failed-jobs-only retry still red on codex-live `TestLiveCodexSharedScenarios/rejection-flow` with `Codex foreground-wait watchdog typed stall` (`arm=silent-after-wait`, `durable_progress=false`) and Claude opus `TestLiveClaudeSharedScenarios/{filing,feedback-3-cycle-escalation}` with wrong-root boot outside fixture cwd. Captain directed: send back, diagnose root cause, and get local green before retrying CI.
 - Cycle 3: REJECTED at PR #483 CI run 28906653062 on repaired head `749b7db6`. Deterministic lanes, offline, and `pi-live` passed, but `codex-live` failed before scenarios: `codex plugin add spacedock@spacedock` returned `failed to create plugin target directory: Filename too long (os error 36)`. `claude-live (sonnet, CI-E2E)` also failed `Run live ensign cycle` while continuing into shared scenarios; `claude-live (opus)` was still running shared scenarios at escalation time. Per the feedback-rejection-flow cycle-3 rule, FO escalated to captain instead of auto-dispatching another implementation round.
+- Cycle 3 override: Captain directed FO to send it back unless reframing is needed and to focus on the Codex side. Scope is the `codex-live` filename-too-long plugin-install failure first; Claude sonnet failures are context only unless the Codex root cause intersects.
 
 ## Stage Report: implementation
 
