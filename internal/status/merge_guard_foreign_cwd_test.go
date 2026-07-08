@@ -116,6 +116,32 @@ func TestMergeGuardForeignCwdRefusalNamesWorkingFix(t *testing.T) {
 	}
 }
 
+// TestMergeGuardForeignCwdSuppressesHintWhenCandidateInvalid closes the
+// negative-hint-suppression gap found by a detached adversarial audit (cycle 1):
+// removing didYouMeanHint's validateRootsOrExit check made the hint fire for a
+// syntactically-joined main-root candidate that does not actually resolve to a
+// workflow, suggesting a corrected invocation that itself would not work. From a
+// linked-worktree cwd, a relative --workflow-dir whose main-root-joined
+// candidate does not exist in either checkout must refuse WITHOUT a "did you
+// mean" line — the refusal stands on its own per the Proposed approach.
+func TestMergeGuardForeignCwdSuppressesHintWhenCandidateInvalid(t *testing.T) {
+	_, _, wtDir := buildMergeGuardForeignCwdFixture(t)
+
+	var out, errBuf bytes.Buffer
+	code := MergeGuard([]string{"010-repro", "--verdict", "passed", "--workflow-dir", "docs/bogus"}, wtDir, &out, &errBuf)
+	if code != 1 {
+		t.Fatalf("exit = %d, want 1 (out=%q stderr=%q)", code, out.String(), errBuf.String())
+	}
+	stderr := errBuf.String()
+	resolved := filepath.Join(wtDir, "docs", "bogus")
+	if !strings.Contains(stderr, resolved) {
+		t.Fatalf("refusal must still name the nonexistent resolved dir %q, got %q", resolved, stderr)
+	}
+	if strings.Contains(stderr, "did you mean") {
+		t.Fatalf("refusal must NOT suggest a did-you-mean hint when the main-root-joined candidate does not validate, got %q", stderr)
+	}
+}
+
 // TestMergeGuardRefusesNonexistentWorkflowDir is AC-2: a --workflow-dir
 // resolving to a nonexistent directory is refused with a diagnostic naming the
 // as-passed spelling and the resolved absolute path — never falling through to
