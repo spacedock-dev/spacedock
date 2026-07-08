@@ -139,3 +139,16 @@ Independently reproduced all six ACs against a built binary and the full test su
 ### Summary
 
 Closed the cycle-1 coverage gap: `didYouMeanHint`'s own `validateRootsOrExit` gate — which stops the hint from suggesting a corrected `--workflow-dir` that itself would not resolve — is now regression-tested by a real-linked-worktree test, verified to catch the exact adversarial edit the validation audit found manually. No production code changed; the existing `internal/status/merge.go` guard logic was already correct. Full suite (`go build`, `go vet`, `go test -count=1 ./...`) is green.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Confirm the new test genuinely exercises the cycle-1 gap rather than a weaker proxy
+  Read `TestMergeGuardForeignCwdSuppressesHintWhenCandidateInvalid` (internal/status/merge_guard_foreign_cwd_test.go): uses `buildMergeGuardForeignCwdFixture` (real git repo + real linked worktree + split-root state checkout), invokes `--workflow-dir docs/bogus` from the worktree cwd where the main-root-joined candidate does not exist either, and asserts stderr names the unresolved path AND contains no "did you mean" line — the same fixture shape as the AC-1 test, not a unit-level shortcut.
+- DONE: Independently reproduce the cycle-1 adversarial mutation myself to confirm the new test goes red, then restore and confirm green
+  Fresh detached throwaway worktree `.worktrees/audit-bmex-cycle2` at commit `aa89cd2a` (never the implementation worktree). Removed `validateRootsOrExit(candidate, "", io.Discard)` from `didYouMeanHint` (internal/status/merge.go) myself; `TestMergeGuardForeignCwdSuppressesHintWhenCandidateInvalid` went red with the same false-positive "did you mean --workflow-dir .../docs/bogus?" the cycle-1 audit found manually. `git checkout --` restored the file, `git diff` confirmed byte-identical, and the test (plus `TestMergeGuardForeignCwdRefusalNamesWorkingFix`) passed green. Worktree removed after.
+- DONE: Confirm go build/go vet/go test are clean and the diff is scoped to only the new test
+  In the implementation worktree: `go build ./...` and `go vet ./...` clean; `go test -count=1 ./...` green across all 15 packages. `git diff --stat b2d4b348 aa89cd2a` shows only `internal/status/merge_guard_foreign_cwd_test.go` (+26/-0) — no production code touched.
+
+### Summary
+
+Re-reviewed the cycle-2 fix independently rather than trusting the implementation report: read the new test and confirmed it drives a real linked worktree against a genuinely non-validating candidate, then reproduced cycle-1's exact adversarial edit myself on a fresh throwaway worktree to verify the test's discriminating power (red under the mutation, green restored), and confirmed the full build/vet/test suite is clean with the diff scoped to only the new test. The cycle-1 gap is closed. Recommendation: **PASSED**.
