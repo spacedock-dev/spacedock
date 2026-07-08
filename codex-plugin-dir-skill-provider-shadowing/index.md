@@ -157,3 +157,20 @@ Routed back to implementation: fix the Codex-only shared-scenario extractors/tes
 ### Summary
 
 Codex shared-scenario assertions now accept the PR #486 `multi_agent_v2` dispatch evidence shape: hidden spawn records are no longer required when `dispatch build`, foreground wait, and durable entity/report state prove the worker completed. Claude-side live failures remain out of scope and were not changed or re-run in this implementation cycle.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Reproduce the Codex #486 repair locally: inspect d80c7fc3 and run focused ensigncycle tests covering smallest-sufficient and keep-moving dispatch evidence.
+  Evidence: code worktree HEAD was `d80c7fc3`; focused `go test ./internal/ensigncycle -run 'TestCodex(SmallestSufficient|KeepMoving)CreditsDispatchBuildWaitAndDurableRead|TestAssertCodexSmallestSufficientMechanism|TestAssertCodexKeepMoving|TestKeepMovingReplayFromRecordedDrives' -count=1 -v` passed 5 tests.
+- DONE: Run the required local gates for the changed branch, including go test ./... and go test ./... -race unless a concrete blocker prevents it.
+  Evidence: `go test ./...` passed 2076 tests in 17 packages; `go test ./... -race` passed 2076 tests in 17 packages; `gofmt -w ./cmd ./internal` exited 0 and validator-created drift in pre-existing `internal/release/journeydelta.go` was restored before the code worktree-clean check.
+- DONE: Check PR #486 CI for the new d80c7fc3 run, with emphasis on codex-live; treat Claude-live reds as out of scope only if they match the separately tracked Claude extractor issue.
+  Evidence: PR #486 head was `d80c7fc3`; Runtime Live E2E run `28921185740` passed, including `codex-live` job `85798662000` at `2026-07-08T06:20:15Z` after live Codex shared scenarios; docs, install-e2e, offline, pi-live, Claude sonnet, Claude opus, and journey-delta-comment were also SUCCESS, so no Claude carve-out was needed.
+- DONE: Verify the original plugin-dir provider-shadowing ACs remain satisfied or identify any regression.
+  Evidence: focused `go test ./internal/cli -run 'TestInstallCodexLocalPluginDirLeavesOnePromptInputProvider|TestCodexInstall|TestInstallCodex|TestCodexPluginDir|TestSpacedockCodex' -count=1 -v` passed 12 targeted Codex/plugin-dir tests, including the hermetic prompt-input provider smoke; inspection found the stable+edge cleanup, advisory, and docs behavior from `4c2a82ad` intact.
+- DONE: Append a validation report with PASSED/REJECTED recommendation and exact evidence.
+  Evidence: recommendation PASSED; no Codex repair regression, provider-shadowing regression, or out-of-scope CI failure found.
+
+### Summary
+
+Recommendation: PASSED. Commit `d80c7fc3` fixes the current Codex `multi_agent_v2` evidence shape by crediting dispatches from `dispatch build`, completed wait, and durable entity/report reads, while preserving the original Codex `--plugin-dir` provider-shadowing fix. Local gates and the full current PR #486 CI run are green.
