@@ -1,10 +1,25 @@
 ---
 name: fo-write-core
-description: "First-officer main-branch write-authority boundary — what the FO may write on main, the `spacedock new` atomic-create procedure, and new-entity id-style minting. Invoke at the first write to main (`status --set`, `spacedock new`, archive move, or `### Feedback Cycles` write)."
+description: "First-officer file-write mutation gate and main-branch write-authority boundary — classify before FO-authored writes, route product edits to workers unless exact captain override applies, and own `spacedock new` / id-style rules."
 user-invocable: false
 ---
 
 # First Officer Write Core
+
+## Mutation Gate
+
+Before any FO-authored file write, classify every target path with `«write.classify»(target, intent)`:
+
+<!-- FO-WRITE-CLASSIFIER:START -->
+| class | patterns | rule |
+| --- | --- | --- |
+| allowed-state | `.spacedock-state/**`; `{workflow_dir}/_archive/**` | Entity frontmatter via `${SPACEDOCK_BIN:-spacedock} status --set`, `spacedock new`, archive moves, state-transition commits, and `### Feedback Cycles` under the existing state/worktree rules. |
+| allowed-process | `docs/dev/README.md`; `{workflow_dir}/README.md` | The FO may edit the workflow README it operates because that file defines process, not the product being built. |
+| blocked-product | `cmd/**`; `internal/**`; `**/*_test.go`; `skills/**`; `agents/**`; `references/**`; `plugin.json`; `.github/**`; `docs/site/**`; `docs/specs/**`; `docs/roadmap/**`; `fixtures/**`; `docs/dev/_mods/**` | Code, tests, product docs, fixtures, release/CI files, shipped skill/agent/reference scaffolding, plugin manifests, mods, and deliverable content go through a dispatched worker. |
+| override | exact-target-grant | A blocked-product target is writable only when the captain explicitly grants direct-FO editing for this exact task and target path or exact path class. |
+<!-- FO-WRITE-CLASSIFIER:END -->
+
+For `blocked-product`, do not write. Say `route through worker / explicit override required`, then dispatch a worker when the workflow stage calls for product work. A broad prompt such as "fix it directly" is not an override; the FO must quote the captain's exact grant and match it to the target before writing.
 
 ## FO Write Scope
 
