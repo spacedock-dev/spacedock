@@ -1,16 +1,17 @@
 ---
 id: 1796bakv26hyd6nc4zxv4sh7
 title: FO product-edit guard loads write-core before any mutation
-status: validation
+status: done
 source: captain request 2026-07-07 after FO direct-edit boundary violation
 started: 2026-07-07T12:49:53Z
-completed:
-verdict:
+completed: 2026-07-08T07:33:40Z
+verdict: passed
 score: 0.6
 worktree: .worktrees/spacedock-ensign-fo-write-core-product-edit-guard
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:487
+archived: 2026-07-08T07:33:40Z
 ---
 
 The FO direct-edit boundary failed because a first-officer session patched product code after reading the write-scope rules but before any hard mutation guard loaded. The fix must make "I am about to write a file" the trigger, not "I am about to mutate known state fields."
