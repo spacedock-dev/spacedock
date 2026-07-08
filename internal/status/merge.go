@@ -84,6 +84,10 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		return errExit(stderr, err.Error())
 	}
 
+	if rc := mergeRootsGuard(workflowDir, roots, dir, stderr); rc != 0 {
+		return rc
+	}
+
 	resolved, rc := resolveMutationEntity(roots, slug, stderr)
 	if rc != 0 {
 		return rc
@@ -164,6 +168,83 @@ func MergeGuard(args []string, dir string, stdout, stderr io.Writer) int {
 		// that state — so the merge-hook guard cannot strand a finalize.
 		return finalize(roots, slug, modBlock, pr, verdict, worktree, hookRegistered, quiet, asJSON, stdout, stderr)
 	}
+}
+
+// mergeRootsGuard fails MergeGuard closed, before entity resolution, when the
+// resolved roots cannot possibly hold entities: the resolved definition dir does
+// not exist, or a declared split-root state checkout is missing. Either shape
+// today ends at the same misleading "entity not found: <slug>" — this names the
+// real problem instead. workflowDirSpelling is the --workflow-dir value as
+// literally passed (before defaulting via ResolveWorkflowDir), used both to name
+// the as-passed spelling in the refusal and to gate the did-you-mean hint, which
+// only fires for a relative spelling. A resolvable roots pair (or an inline
+// workflow, which can never suffer the split-root shape) returns 0.
+func mergeRootsGuard(workflowDirSpelling string, roots roots, dir string, stderr io.Writer) int {
+	hint := didYouMeanHint(workflowDirSpelling, dir)
+
+	if info, statErr := os.Stat(roots.definitionDir); statErr != nil || !info.IsDir() {
+		msg := fmt.Sprintf(
+			"merge guard: --workflow-dir %s resolves to %s (a relative --workflow-dir resolves against the current directory), which does not exist",
+			workflowDirSpelling, roots.definitionDir)
+		return errExit(stderr, appendHint(msg, hint))
+	}
+
+	mode, relPath, _ := ClassifyState(ParseFrontmatter(filepath.Join(roots.definitionDir, "README.md"))["state"])
+	if mode != StateSplitRoot {
+		return 0
+	}
+	if info, statErr := os.Stat(roots.entityDir); statErr != nil || !info.IsDir() {
+		msg := fmt.Sprintf(
+			"merge guard: workflow at %s declares state: %s but the state checkout is missing at %s",
+			roots.definitionDir, relPath, roots.entityDir)
+		return errExit(stderr, appendHint(msg, hint))
+	}
+	return 0
+}
+
+// didYouMeanHint computes the merge-guard corrective hint named in the roots
+// guard's refusals: when workflowDirSpelling is a relative --workflow-dir, derive
+// the enclosing main-checkout root as the parent of `git rev-parse
+// --git-common-dir` run from dir, re-join the as-passed spelling there, and
+// return the hint sentence only if that candidate validates as a resolvable
+// workflow (via the same check --validate uses). A relative `--git-common-dir`
+// output (the main-checkout-cwd case) resolves against dir, since git prints it
+// relative to the invocation dir itself. Returns "" when the spelling is
+// absent/absolute, git fails (non-repo cwd, bare), or the candidate does not
+// validate — the refusal then stands without naming an unproven recovery path.
+func didYouMeanHint(workflowDirSpelling, dir string) string {
+	if workflowDirSpelling == "" || filepath.IsAbs(workflowDirSpelling) {
+		return ""
+	}
+	out, err := runGitCmd(dir, "rev-parse", "--git-common-dir")
+	if err != nil {
+		return ""
+	}
+	commonDir := strings.TrimSpace(out)
+	if !filepath.IsAbs(commonDir) {
+		commonDir = filepath.Join(dir, commonDir)
+	}
+	mainRoot := filepath.Dir(commonDir)
+
+	candidate, rerr := resolveRoots(workflowDirSpelling, mainRoot)
+	if rerr != nil {
+		return ""
+	}
+	if rc := validateRootsOrExit(candidate, "", io.Discard); rc != 0 {
+		return ""
+	}
+	return fmt.Sprintf(
+		"did you mean --workflow-dir %s? (the current directory is a linked git worktree; a relative --workflow-dir resolves against it)",
+		candidate.definitionDir)
+}
+
+// appendHint appends a did-you-mean hint on its own line when non-empty, else
+// returns msg unchanged.
+func appendHint(msg, hint string) string {
+	if hint == "" {
+		return msg
+	}
+	return msg + "\n" + hint
 }
 
 // prIndicatesMerged reports whether the pr field carries a WELL-FORMED merge

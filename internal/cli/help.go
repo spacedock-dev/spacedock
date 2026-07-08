@@ -187,7 +187,10 @@ Re-run guard after invoking the hook: it resumes from the entity's current state
 
 Flags:
   --verdict passed|rejected   The merge decision (required; a verdict-less finalize is refused)
-  --workflow-dir DIR          Target this workflow explicitly (skips auto-discovery)
+  --workflow-dir DIR          Target this workflow explicitly (skips auto-discovery).
+                              A relative DIR resolves against the current directory;
+                              from anywhere else (e.g. an agent worktree) pass an
+                              absolute path.
   --json                      Emit the phase signal as JSON
   --quiet                     Emit a terse machine-readable phase signal
 
