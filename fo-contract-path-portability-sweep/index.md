@@ -104,7 +104,7 @@ This keeps drift reconciliation about synchronizing the managed repo. Launcher r
 
 ### Riskiest mechanism decision
 
-The riskiest mechanism is the new contractlint guard: a naive grep for `docs/dev` or `.spacedock-state` would fail useful commission/survey examples, while an over-broad allowlist would miss the two operational leaks. Implementation should spike the scanner first against synthetic snippets before editing the shipped contracts.
+The riskiest mechanism is the new contractlint guard: a naive grep for `docs/dev` or `.spacedock-state` would fail useful commission/survey examples, while an over-broad allowlist would miss the two operational leaks. The spike below exercises the scanner split against synthetic snippets before implementation touches shipped contracts.
 
 The scanner should classify markdown by local context:
 
@@ -112,6 +112,22 @@ The scanner should classify markdown by local context:
 - Explicit examples are allowed only when the same nearby block labels them as an example, placeholder, install hint, discovery signal, or Spacedock source-build hint.
 - Red controls must prove both sides: a planted operational `docs/dev/README.md` or `docs/dev/_mods/**` rule fails, while a planted commission example saying "example: `state: .spacedock-state`" passes.
 - A planted operational `cd {repo} && go build -o spacedock ./cmd/spacedock` in local-main-drift fails, while a planted Spacedock-source install hint passes.
+
+### Riskiest mechanism spike
+
+Ran 2026-07-08 from the repo root with a throwaway `zsh` scanner over synthetic markdown snippets. No product or scaffolding files were edited. The scanner treated operational path/rebuild patterns as leaks unless the local snippet context explicitly labeled the mention as an example, placeholder, discovery signal, or source-build install hint; local-main-drift `{repo}` rebuilds stayed hard failures.
+
+Observed result:
+
+```text
+ok - operational docs/dev README rule -> fail
+ok - operational universal state checkout rule -> fail
+ok - operational local-main-drift repo rebuild -> fail
+ok - explicit state checkout example -> pass
+ok - source-build install hint -> pass
+```
+
+Conclusion: the contextual guard is feasible and should become the first implementation test. Seed it with these five snippets, then expand the real-file walk only after the discriminator passes so the guard cannot collapse into a tautological "string absent everywhere" check.
 
 ## Acceptance criteria
 
@@ -151,3 +167,20 @@ Verified by: implementation or validation report cites the two source PRs/entiti
 ### Summary
 
 Ideation converted the existing sweep notes into an implementation-ready portability plan. The plan preserves provenance for #487/entity 17 and #382/entity pd, distinguishes operational contract leaks from labeled examples, and gives implementation concrete red controls for both known regressions.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Do not edit product/scaffolding files. Entity-body updates are fine.
+  The repair changed only this state-checkout entity file.
+- DONE: Add a concise `Riskiest mechanism spike` or equivalent section to `docs/dev/.spacedock-state/fo-contract-path-portability-sweep/index.md`.
+  Added `### Riskiest mechanism spike` after the mechanism decision.
+- DONE: Prefer a lightweight throwaway spike against synthetic snippets: demonstrate that a contextual scanner can fail operational `docs/dev/README.md`, operational `.spacedock-state/**`, and local-main-drift `{repo}` rebuild snippets while passing an explicitly labeled `state: .spacedock-state` example and a source-build install hint. If you cannot run a spike, record a defensible no-spike rationale with concrete evidence from existing mechanisms.
+  Ran the throwaway scanner; all five synthetic cases produced the expected pass/fail result.
+- DONE: Update the ideation stage report with DONE/SKIPPED/FAILED accounting for this repair.
+  Appended this cycle-2 ideation report.
+- DONE: Commit the state-checkout update if required by the workflow.
+  The state update is limited to this entity path; the repair commit records it path-scoped.
+
+### Summary
+
+The pre-gate repair exercised the riskiest contextual-scanner mechanism instead of deferring it. The recorded spike gives implementation a concrete first test that fails the known operational leaks while allowing explicitly labeled examples and install guidance.
