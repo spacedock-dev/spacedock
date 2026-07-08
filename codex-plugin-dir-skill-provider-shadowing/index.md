@@ -9,7 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-codex-plugin-dir-skill-provider-shadowing
 issue:
-mod-block:
+mod-block: merge:pr-merge
 pr: "#486"
 ---
 
