@@ -1,7 +1,7 @@
 ---
 id: 6h08n9jrwa9g5kgm3b3fy8vr
 title: "Claude final-message extractor returns the first result event, not the terminal one"
-status: implementation
+status: validation
 source: "Codex-session CI investigation of PR #483's claude-live (opus) red (2026-07-08), independently re-verified file:line by the FO. Confirmed unrelated to PR #483's own commit (43396704, scoped only to codex_liveenv.go/codex_liveenv_test.go) — this is pre-existing shared test-harness infrastructure, not a regression from that change."
 started: 2026-07-08T04:10:04Z
 completed:
