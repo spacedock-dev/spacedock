@@ -1,7 +1,7 @@
 ---
 id: 81hn8vs2fv9wv34wm942r4zj
 title: Codex --plugin-dir prevents stale sibling Spacedock skill providers
-status: implementation
+status: validation
 source: captain request 2026-07-07 after local --plugin-dir session loaded a cached first-officer path
 started: 2026-07-07T12:49:53Z
 completed:
