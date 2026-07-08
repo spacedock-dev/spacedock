@@ -115,6 +115,33 @@ func TestSpawnStandingParitySpecEmit(t *testing.T) {
 	assertGolden(t, "spawn-standing-spec", goldenEnvelope{res: normRun(native, wd, home)})
 }
 
+// TestSpawnStandingParityFableModel is AC-7: a standing mod declaring
+// `model: fable` in its ## Hook: startup spawns successfully (spec-emit path),
+// the same enum fable joined for spawn-standing's shared validation.
+func TestSpawnStandingParityFableModel(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	wd := t.TempDir()
+	modPath := filepath.Join(wd, "_mods", "fable-officer.md")
+	writeFile(t, modPath, standingMod("fable-officer", "fable", "fable ensign", ""))
+	// A team config that does NOT list fable-officer, so member_exists is false.
+	claudeFixture{
+		team:    "fixture-team",
+		session: "s",
+		members: []fixtureMember{{name: "team-lead", model: "opus"}},
+		jsonls:  map[string]string{},
+	}.write(t, home)
+
+	native := runNative("", "spawn-standing", "--mod", modPath, "--team", "fixture-team")
+	assertGolden(t, "spawn-standing-fable", goldenEnvelope{res: normRun(native, wd, home)})
+	if native.exit != 0 {
+		t.Fatalf("spawn-standing exit=%d stderr=%q", native.exit, native.stderr)
+	}
+	if !strings.Contains(native.stdout, `"model": "fable"`) {
+		t.Errorf("spec JSON missing model=fable:\n%s", native.stdout)
+	}
+}
+
 // TestSpawnStandingParitySpecNonASCIIPrompt is the A-2 non-ASCII parity case for
 // the spawn-standing spec-emit path. The FO forwards spec.prompt VERBATIM, so a
 // non-ASCII Agent Prompt (em-dash U+2014 here) must serialize byte-identically

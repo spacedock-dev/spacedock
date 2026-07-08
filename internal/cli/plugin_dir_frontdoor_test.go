@@ -77,43 +77,6 @@ func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
 	}
 }
 
-// TestCodexDevLanePluginDirInstallsLocalMarketplaceThenLaunches pins the live
-// Codex contract: Codex has plugin marketplace/add commands, but no launch-time
-// --plugin-dir flag. The before-`--` flag is a Spacedock dev-lane override: it
-// installs the checkout through a local Codex marketplace, relaxes the gate, and
-// still must not be forwarded into the Codex argv.
-func TestCodexDevLanePluginDirInstallsLocalMarketplaceThenLaunches(t *testing.T) {
-	repo := vendoredRepoRoot(t)
-	home := t.TempDir()
-	t.Setenv("CODEX_HOME", home)
-	host := &resolveErrHost{}
-	var stdout, stderr bytes.Buffer
-
-	code := runCodex(context.Background(), []string{"--plugin-dir", repo, "do the thing"}, t.TempDir(), host, lookFound, &stdout, &stderr)
-
-	if code != 0 {
-		t.Fatalf("exit = %d, want 0 (--plugin-dir <repo> must relax the gate); stderr=%q", code, stderr.String())
-	}
-	if len(host.installCmds) != 3 || host.installCmds[0] != "codex" || host.installCmds[2] != devBranch {
-		t.Fatalf("install cmds = %v, want codex <local-marketplace> %s", host.installCmds, devBranch)
-	}
-	source := host.installCmds[1]
-	wantSource := filepath.Join(home, "spacedock-local-marketplaces", channelMarketplace(devBranch))
-	if source != wantSource {
-		t.Fatalf("install source = %q, want %q", source, wantSource)
-	}
-	if _, err := os.Stat(filepath.Join(source, ".claude-plugin", "marketplace.json")); err != nil {
-		t.Fatalf("local codex marketplace manifest missing: %v", err)
-	}
-	want := []string{
-		"codex", "--ask-for-approval", "on-request",
-		wantCodexBootstrapPrompt + " do the thing",
-	}
-	if !equalArgv(host.launchedArg, want) {
-		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
-	}
-}
-
 // TestDanglingValueTakingHostFlagStillSwallows pins the ACCURATE AC-3 property and
 // its honest limitation. The invariant the Option-2 grammar guarantees is narrow:
 // the spacedock prompt is ALWAYS the last assembled host-argv token and ALWAYS

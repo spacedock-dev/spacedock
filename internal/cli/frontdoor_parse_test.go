@@ -10,7 +10,7 @@ import (
 // TestParseFrontDoorArgs pins the Option-2 front-door grammar (AC-3 + AC-6). The
 // task is the joined non-flag positionals BEFORE `--`; host value-taking flags
 // ride AFTER `--` and forward verbatim as passthrough; the spacedock-owned flags
-// (--skip-contract-check, --safehouse, the three repeatable --safehouse-* knobs)
+// (--skip-compat-check, --safehouse, the three repeatable --safehouse-* knobs)
 // are consumed wherever they appear before `--` in BOTH space and equals form and
 // are never forwarded.
 func TestParseFrontDoorArgs(t *testing.T) {
@@ -18,7 +18,6 @@ func TestParseFrontDoorArgs(t *testing.T) {
 		name           string
 		args           []string
 		passthrough    []string
-		pluginDirs     []string
 		task           string
 		hasTask        bool
 		forceSafehouse bool
@@ -51,8 +50,8 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			passthrough: []string{"--model", "gpt-x"},
 		},
 		{
-			name:      "skip-contract-check-consumed",
-			args:      []string{"--skip-contract-check"},
+			name:      "skip-compat-check-consumed",
+			args:      []string{"--skip-compat-check"},
 			skipCheck: true,
 		},
 		{
@@ -79,40 +78,39 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			hasTask:        true,
 		},
 		{
-			name:       "plugin-dir-before-dash-space-form",
-			args:       []string{"--plugin-dir", "/p"},
-			pluginDirs: []string{"/p"},
+			name:        "plugin-dir-before-dash-space-form",
+			args:        []string{"--plugin-dir", "/p"},
+			passthrough: []string{"--plugin-dir", "/p"},
 		},
 		{
-			name:       "plugin-dir-before-dash-equals-form",
-			args:       []string{"--plugin-dir=/p"},
-			pluginDirs: []string{"/p"},
+			name:        "plugin-dir-before-dash-equals-form",
+			args:        []string{"--plugin-dir=/p"},
+			passthrough: []string{"--plugin-dir", "/p"},
 		},
 		{
-			name:       "plugin-dir-before-dash-repeated",
-			args:       []string{"--plugin-dir", "/a", "--plugin-dir=/b"},
-			pluginDirs: []string{"/a", "/b"},
+			name:        "plugin-dir-before-dash-repeated",
+			args:        []string{"--plugin-dir", "/a", "--plugin-dir=/b"},
+			passthrough: []string{"--plugin-dir", "/a", "--plugin-dir", "/b"},
 		},
 		{
-			name:       "plugin-dir-before-dash-then-task",
-			args:       []string{"--plugin-dir", "/p", "review the PRs"},
-			pluginDirs: []string{"/p"},
-			task:       "review the PRs",
-			hasTask:    true,
+			name:        "plugin-dir-before-dash-then-task",
+			args:        []string{"--plugin-dir", "/p", "review the PRs"},
+			passthrough: []string{"--plugin-dir", "/p"},
+			task:        "review the PRs",
+			hasTask:     true,
 		},
 		{
-			name:       "plugin-dir-before-dash-with-skip-and-task",
-			args:       []string{"--plugin-dir", "/p", "--skip-contract-check", "do it"},
-			pluginDirs: []string{"/p"},
-			skipCheck:  true,
-			task:       "do it",
-			hasTask:    true,
+			name:        "plugin-dir-before-dash-with-skip-and-task",
+			args:        []string{"--plugin-dir", "/p", "--skip-compat-check", "do it"},
+			passthrough: []string{"--plugin-dir", "/p"},
+			skipCheck:   true,
+			task:        "do it",
+			hasTask:     true,
 		},
 		{
-			name:        "plugin-dir-before-and-after-dash-separate",
+			name:        "plugin-dir-before-and-after-dash-both-forward",
 			args:        []string{"--plugin-dir", "/before", "--", "--plugin-dir", "/after"},
-			pluginDirs:  []string{"/before"},
-			passthrough: []string{"--plugin-dir", "/after"},
+			passthrough: []string{"--plugin-dir", "/before", "--plugin-dir", "/after"},
 		},
 	}
 	for _, tc := range cases {
@@ -123,9 +121,6 @@ func TestParseFrontDoorArgs(t *testing.T) {
 			}
 			if !equalArgv(fd.passthrough, tc.passthrough) {
 				t.Errorf("passthrough = %v, want %v", fd.passthrough, tc.passthrough)
-			}
-			if !equalArgv(fd.pluginDirs, tc.pluginDirs) {
-				t.Errorf("pluginDirs = %v, want %v", fd.pluginDirs, tc.pluginDirs)
 			}
 			if fd.task != tc.task || fd.hasTask != tc.hasTask {
 				t.Errorf("task = (%q,%v), want (%q,%v)", fd.task, fd.hasTask, tc.task, tc.hasTask)

@@ -356,6 +356,37 @@ func runArchive(definitionDir, entityDir, spellingDir, slug string, force, quiet
 		}
 	}
 
+	// Finalize-status gate mirror: archiving finalizes a non-`rejected`-verdict
+	// entity, so a verdict already carried (e.g. PASSED) while status has never
+	// reached a terminal stage is the archive-side half of the incomplete-finalize
+	// hole (the --set mirror lives in runSet, handlers.go) — the shape a stale
+	// binary predating that gate, or a hand-edited entity, can still produce. A
+	// verdict-less non-terminal entity (an abandoned/cancelled task) is untouched —
+	// this gate only fires on a non-empty, non-`rejected` verdict, matching the
+	// `--set` gate's carve-out for `verdict: rejected`. Layered after the
+	// merge-hook invariant so an entity that ALSO skipped the merge ceremony keeps
+	// reporting that cause first (unchanged from today). --force bypasses.
+	if verdict != "" && verdict != "rejected" && !force {
+		readme := filepath.Join(definitionDir, "README.md")
+		if fileExists(readme) {
+			status := strings.TrimSpace(fields["status"])
+			isTerminal := false
+			for _, s := range parseStagesBlock(readme) {
+				if s.terminal && s.Name == status {
+					isTerminal = true
+					break
+				}
+			}
+			if !isTerminal {
+				fmt.Fprintf(stderr,
+					"Error: entity %s cannot be archived — verdict '%s' is set but status '%s' is not the terminal stage. "+
+						"Set status to the terminal stage first (or run 'spacedock merge guard %s'), or use --force.\n",
+					slug, verdict, status, slug)
+				return 1
+			}
+		}
+	}
+
 	archiveDir := filepath.Join(entityDir, "_archive")
 	var destPath, destSpelling string
 	if isFolder {
@@ -427,6 +458,11 @@ func PyJoin(parts ...string) string {
 	}
 	return result
 }
+
+// ScanMods is the exported alias of scanMods for callers outside this package
+// (`dispatch.Sweep`'s startup-hook mod-pointer) that need the same hookPoint ->
+// mod-name scan the boot MODS-REPORT and the merge-hook guard already use.
+func ScanMods(definitionDir string) map[string][]string { return scanMods(definitionDir) }
 
 // scanMods scans definitionDir/_mods/*.md for `## Hook:` headings, returning
 // hookPoint -> sorted mod names. Mods are workflow definition (lifecycle hooks

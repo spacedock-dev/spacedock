@@ -1,12 +1,12 @@
-# First Officer Dispatch Core (host-neutral)
+# First Officer Dispatch Core
 
-The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Lazily loaded at the first worker dispatch (named by the boot-resident core); a greet-and-stop boot never reads it. Host-specific parts ride the `→` lines of the capability `«fn»`s below.
+The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Host-specific parts ride the `→` lines of the capability `«fn»`s below.
 
 ## Dispatch
 
 **Standing-teammate injection.** Before the first worker dispatch, inject the workflow's declared standing teammates via the runtime adapter's standing-injection call (it forwards each returned spawn spec to the spawn call with the same verbatim discipline as `«dispatch.build»` output). Idempotent (already-alive members omitted), a no-op when none is declared or the runtime has no shared-teammate surface. Lifetime is the adapter's. Read each teammate's routing usage from its mod.
 
-In fleet mode (shared core `## Fleet Mode`) the session team accumulates the UNION of every member workflow's declared standing teammates, each injected at that member's first dispatch. Injection stays idempotent, so members declaring the same teammate name share ONE live instance; read each such teammate's routing usage from the owning member's mod.
+In fleet mode (the deferred fleet reference `references/fo-fleet.md`) the session team accumulates the UNION of every member workflow's declared standing teammates, each injected at that member's first dispatch. Injection stays idempotent, so members declaring the same teammate name share ONE live instance; read each such teammate's routing usage from the owning member's mod.
 
 For each entity reported by `status --next`:
 
@@ -16,7 +16,7 @@ For each entity reported by `status --next`:
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
 5. Update main-branch frontmatter for dispatch:
    ```
-   spacedock status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
+   ${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage} worktree=.worktrees/{worker_key}-{slug} started
    ```
    Omit `worktree=...` for non-worktree stages. Bare `started` auto-fills a UTC ISO 8601 timestamp (skipped if already set).
 6. Commit the state transition on main: `dispatch: {slug} entering {next_stage}`.
@@ -37,15 +37,21 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 1. `«addressable-worker»` is PRESENT on the host and exposes a live, reusable handle to the completed worker (its reuse-advance handle), addressed via the `«worker-identity»` schema's worker address. When `«addressable-worker»` is ABSENT, this condition fails and the FO dispatches fresh.
 2. Next stage does NOT have `fresh: true`.
 3. Reuse-routing matches the entity's worktree state — if `worktree:` is set, route the next stage into the same worktree; if `worktree:` is empty and the next stage declares `worktree: true`, dispatch fresh so the new worktree's first agent is born inside it.
-4. The reused worker's stamped model (recorded by `«worker-identity»`) matches the next stage's declared model — resolve through the runtime's model-for-member lookup and compare against `next_stage.effective_model` using the host canonical model space `«worker-identity»` declares. Skip when `next_stage.effective_model` is null (null-declared stages accept any reused worker; the host's `«worker-identity»` model-resolution stamps the null case). A member stamped with a captain-session fallback value — one outside the host's canonical model space — never matches and forces a one-time fresh dispatch that re-stamps a canonical value. The host's canonical model space and its fallback shapes are `«worker-identity»`'s per-host realization.
+4. `«reuse.model-match»` — the reused worker's stamped model matches `next_stage.effective_model`.
 
-When the comparator forces fresh dispatch due to model mismatch, the FO MUST emit a captain-visible diagnostic of the form `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching`. The anchor phrase `does not match next stage effective_model` must appear verbatim.
-
-**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Send the next assignment through the runtime adapter's reuse-advance handle (its live-worker messaging call) — carrying the next stage name, the full `### Stage definition` subsection copied from the README verbatim, the `### Completion checklist` from Dispatch step 2, and an instruction to keep working on the entity at its path and commit before signaling. The reuse path does NOT route through `«dispatch.build»` — assemble the advancement message directly.
+**If reuse:** Keep the agent alive. Update frontmatter on main (`${SPACEDOCK_BIN:-spacedock} status --workflow-dir {workflow_dir} --set {slug} status={next_stage}`, commit: `advance: {slug} entering {next_stage}`). Build the advancement with `«dispatch.build»` in advance mode (`--advance`, same checklist-file discipline; `--feedback-context-file` when routing rejection findings) and send the emitted `prompt` through the runtime adapter's reuse-advance handle (its live-worker messaging call). On non-zero helper exit only, fall back to the adapter's manual advance template (the break-glass rule).
 
 **If fresh dispatch:** If the next stage's `feedback-to` points at the completed stage, keep that agent alive while addressable and reuse-eligible; otherwise invoke `«worker.shutdown»` when the host binds it. Then run `status --next` and dispatch the next stage.
 
 **Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, invoke `«worker.shutdown»` for the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
+
+## «reuse.model-match»: reuse-condition-4 — stamped model matches the next stage's declared model
+
+- **guard:** skip when `next_stage.effective_model` is null; `«worker-identity»` stamps the null case and null-declared stages accept any reused worker.
+- **effect:** resolve the worker's `«worker-identity»`-stamped model via the runtime's model-for-member lookup and compare it to `next_stage.effective_model` in `«worker-identity»`'s canonical model space.
+- **block:** a captain-session fallback value — outside that canonical space — never matches; it forces a one-time fresh dispatch that re-stamps a canonical value.
+- **done-when:** the models match (or the declared model is null); a mismatch-forced fresh dispatch emits the captain-visible diagnostic `reused worker {name} model {X} does not match next stage effective_model {Y} — fresh-dispatching` verbatim.
+- → **prose** — deterministic comparator, no binary; the per-host model space and fallback shapes are `«worker-identity»`'s realization.
 
 ## Worktree Ownership
 
@@ -71,6 +77,8 @@ Runtime adapters bind the capability `«fn»`s below in their `## Runtime implem
 
 The runtime adapter binds the spawn call, helper-field mapping, model/null handling, and host transport metadata.
 
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
+
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
 - **block:** ABSENT → reuse-condition-1 fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle, event-loop step 0.5 omitted). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
@@ -94,6 +102,8 @@ Records worker label, substrate, run/session handle, worker address, entity slug
 
 Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any required preservation message. If ABSENT, record the worker closed in FO memory only after completion or explicit supersede state makes that safe. The runtime adapter owns the concrete shutdown / no-op / in-memory-closure binding and any host-specific preservation channel.
 
+- → **runtime-binding**: bound in the host adapter's `## Runtime implementation`
+
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
 - **block:** an over-budget or unavailable reading forces fresh dispatch (fail-safe). ABSENT → reuse-condition-0 is satisfied.
@@ -110,7 +120,7 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
 - **guard:** write fragile inputs (checklist, scope notes, feedback context) to files first — one checklist item per non-empty line — so Markdown/backticks/shell-vars survive shell quoting.
 - **effect:** run the helper, then forward its stdout fields to `«worker.spawn»` unchanged:
   ```
-  spacedock dispatch build \
+  ${SPACEDOCK_BIN:-spacedock} dispatch build \
     --workflow-dir {workflow_dir} \
     --entity-path {entity_file_path} \
     --stage {target_stage_name} \
@@ -118,14 +128,15 @@ The ONLY initial-dispatch path: route input through `spacedock dispatch build`, 
     [--scope-notes-file {scope_notes_file}] \
     [--feedback-context-file {feedback_context_file}] \
     [--team-name {team_name} | --bare-mode] \
-    [--feedback-reflow]
+    [--feedback-reflow] \
+    [--advance]
   ```
-  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage.
+  `host` derives from the runtime (`--host` is for tests/cross-host tooling only). `--bare-mode` reads from live team state, never inferred from the stage. Add `--feedback-reflow` only when routing a rejection back to its `feedback-to` target stage. Add `--advance` when advancing a reused live worker instead of spawning one: the emitted envelope carries no `subagent_type`/`name`/`team_name`/`run_in_background` (nothing is spawned) and `prompt` is the reuse-advance pointer message, forwarded to the reuse-advance handle instead of `«worker.spawn»`; `--advance` is incompatible with `--bare-mode`.
 - **done-when:** on exit 0, `«worker.spawn»` is called with `subagent_type`/`name`/`description`/`model`/`prompt` (plus any host-scoped fields the adapter declares) forwarded unchanged. `description` is REQUIRED. `prompt` is the ~175-char file-pointer the ensign Reads on first action — do not strip or rewrite it. Null `model` is `«worker-identity»`'s per-host case, not a core omit-on-null.
 - **block:** on non-zero exit (or missing binary) ONLY — read stderr, report the helper failure to the captain, then use the adapter's Break-Glass Manual Dispatch template (stage definition inlined verbatim; conditional `model` slot per `«worker-identity»`'s canonical model space). A zero-exit run is never a break-glass trigger.
 - → **shipped**: `` `spacedock dispatch build` `` — invoke it directly per the effect above.
 
-`«dispatch.build»` serves initial dispatch only; the reuse-advance path assembles its message directly (`## Reuse and Fresh Dispatch`). When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
+`«dispatch.build»` serves initial dispatch (spawn envelope) and reuse advance (`--advance`: a pointer message for the reuse-advance handle, no spawn fields). When `«async-dispatch»` blocks, dispatch one entity at a time and process each completion inline.
 
 ## Event Loop
 
@@ -144,8 +155,8 @@ These are FO-internal scheduling reads — consume them as `--json` (compact, by
 3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the `«roster-reconcile»` step-0 sweep when PRESENT on the host, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
-- → **prose**, becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet; the FO hand-follows the skeleton above.
+- → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
 
 Repeat from step 1 after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.
 
-**Fleet mode — round-robin across member workflows.** When the session adopted a member set (shared core `## Fleet Mode`), wrap `«dispatch.next-action»()` in an outer round-robin over members: run one iteration scoped to each member's `{workflow_dir}` (every `status` / `dispatch` / `--set` call already carries `--workflow-dir`, so no command changes), dispatching whichever members have ready work. The fleet iteration ends only when NO member is dispatchable. At that boundary two things fire with DIFFERENT scope — do not conflate them: per-workflow `idle` hooks fire **once per member**, each keyed by that member's `{workflow_dir}`/`$SLUG` (so each member's bridge-inbox heartbeat + drain, intake, and pr-merge idle hooks run for its OWN slug — Bridge sees every member live, not just one, and each member's inbox is drained against its own cursor); the `«roster-reconcile»` step-0 sweep (when PRESENT) fires **once across the shared roster** — the roster spans every member's workers, so one reconcile covers the fleet. A single-member set is byte-identical to single-workflow mode. A per-member halt (rebase-conflict, unmet clarification, a gate awaiting the captain) suspends only that member's slot; the round-robin keeps advancing the others.
+**Fleet mode — round-robin across member workflows.** When the session adopted a member set (the deferred fleet reference `references/fo-fleet.md`), wrap `«dispatch.next-action»()` in an outer round-robin over members: run one iteration scoped to each member's `{workflow_dir}` (every `status` / `dispatch` / `--set` call already carries `--workflow-dir`, so no command changes), dispatching whichever members have ready work. The fleet iteration ends only when NO member is dispatchable. At that boundary two things fire with DIFFERENT scope — do not conflate them: per-workflow `idle` hooks fire **once per member**, each keyed by that member's `{workflow_dir}`/`$SLUG` (so each member's bridge-inbox heartbeat + drain, intake, and pr-merge idle hooks run for its OWN slug — Bridge sees every member live, not just one, and each member's inbox is drained against its own cursor); the `«roster-reconcile»` step-0 sweep (when PRESENT) fires **once across the shared roster** — the roster spans every member's workers, so one reconcile covers the fleet. A single-member set is byte-identical to single-workflow mode. A per-member halt (rebase-conflict, unmet clarification, a gate awaiting the captain) suspends only that member's slot; the round-robin keeps advancing the others.

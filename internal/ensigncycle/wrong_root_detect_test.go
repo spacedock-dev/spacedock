@@ -3,6 +3,9 @@
 package ensigncycle
 
 import (
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -15,11 +18,22 @@ func streamLine(command string) string {
 		mustJSONString(command) + `}}]}}`
 }
 
+func bashToolLine(id, command string) string {
+	return `{"type":"assistant","message":{"content":[{"type":"tool_use","id":` + mustJSONString(id) +
+		`,"name":"Bash","input":{"command":` + mustJSONString(command) + `}}]}}`
+}
+
+func toolResultLine(id string, isError bool, content string) string {
+	errValue := "false"
+	if isError {
+		errValue = "true"
+	}
+	return `{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":` + mustJSONString(id) +
+		`,"content":` + mustJSONString(content) + `,"is_error":` + errValue + `}]}}`
+}
+
 func mustJSONString(s string) string {
-	// A minimal JSON string encoder for the test fixtures (the commands here carry
-	// no control chars), so the line is valid stream-json without importing the
-	// encoder into the test body.
-	return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
+	return strconv.Quote(s)
 }
 
 // TestDetectWrongRootBoot covers the pure detector both ways: it reds on a stream
@@ -31,18 +45,35 @@ func TestDetectWrongRootBoot(t *testing.T) {
 	const realRepo = "/home/runner/work/spacedock/spacedock"
 
 	t.Run("cd_away_from_fixture_root_reds", func(t *testing.T) {
+		// The cd is corroborated in the SAME command by `status --discover`, so
+		// this is a genuine wander, not a probe-only cd (see
+		// cd_probe_only_away_from_fixture_root_passes below for the harmless shape).
 		stream := strings.Join([]string{
 			streamLine(`echo "CLAUDECODE=${CLAUDECODE:-unset}"`),
-			streamLine(`cd ` + realRepo + ` && spacedock --version`),
-			streamLine(`spacedock status --discover`),
+			streamLine(`cd ` + realRepo + ` && spacedock status --discover`),
 		}, "\n")
 
 		err := detectWrongRootBoot(stream, fixtureRoot)
 		if err == nil {
-			t.Fatal("detector passed a stream where the FO cd'd into the real repo — want a wrong-root error")
+			t.Fatal("detector passed a stream where the FO cd'd into the real repo and ran a workflow command — want a wrong-root error")
 		}
 		if !strings.Contains(err.Error(), fixtureRoot) || !strings.Contains(err.Error(), realRepo) {
 			t.Errorf("error must name both expected (%q) and actual (%q): %v", fixtureRoot, realRepo, err)
+		}
+		if strings.Contains(err.Error(), "CI env leak") {
+			t.Errorf("error text must not assert a CI env leak as the cause (disproved by the archived PR #446 evidence): %v", err)
+		}
+	})
+
+	t.Run("cd_probe_only_away_from_fixture_root_passes", func(t *testing.T) {
+		// The real PR #446 shape (reworded here with realRepo for readability):
+		// a bare cd escaping the fixture, corroborated by nothing but a version
+		// probe. This is sonnet's speculative repo-root sniff, not a wander — see
+		// TestDetectWrongRootBootRealPR446Streams for the verbatim captured commands.
+		stream := streamLine(`cd ` + realRepo + ` 2>/dev/null || cd .; spacedock --version; pwd; git rev-parse --show-toplevel 2>&1`)
+
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector red a probe-only cd with no workflow-operative corroboration in the same command: %v", err)
 		}
 	})
 
@@ -58,6 +89,9 @@ func TestDetectWrongRootBoot(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), fixtureRoot) {
 			t.Errorf("error must name the expected fixture root %q: %v", fixtureRoot, err)
+		}
+		if strings.Contains(err.Error(), "CI env leak") {
+			t.Errorf("error text must not assert a CI env leak as the cause: %v", err)
 		}
 	})
 
@@ -76,6 +110,31 @@ func TestDetectWrongRootBoot(t *testing.T) {
 		}
 		if !strings.Contains(err.Error(), fixtureRoot) {
 			t.Errorf("error must name the expected fixture root %q: %v", fixtureRoot, err)
+		}
+	})
+
+	t.Run("plugin_skill_readme_outside_fixture_passes", func(t *testing.T) {
+		// Claude's Skill loader may read a plugin skill root README. It is outside
+		// the fixture, but it is not the workflow README and must not be classified
+		// as a wrong-root boot.
+		stream := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/tmp/spacedock-live-plugin-1648179417/skills/first-officer/README.md"}}]}}`
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector red a plugin skill README read as a workflow wander: %v", err)
+		}
+	})
+
+	t.Run("failed_parent_new_then_corrected_workflow_dir_passes", func(t *testing.T) {
+		parent := "/tmp/TestLiveClaudeSharedScenariosfiling2421552038"
+		fixture := parent + "/001"
+		stream := strings.Join([]string{
+			bashToolLine("toolu_bad", `cd `+parent+` && printf '%s\n' '---' 'title: Wire The Thing' 'status: backlog' '---' 'Wire the thing end to end so it is connected and functional.' | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing`),
+			toolResultLine("toolu_bad", true, "Exit code 1\nError: no commissioned Spacedock workflow found in "+parent),
+			bashToolLine("toolu_good", `cd `+parent+` && printf '%s\n' '---' 'title: Wire The Thing' 'status: backlog' '---' 'Wire the thing end to end so it is connected and functional.' | ${SPACEDOCK_BIN:-spacedock} new wire-the-thing --workflow-dir `+fixture),
+			toolResultLine("toolu_good", false, "created: "+fixture+"/wire-the-thing.md id=001"),
+		}, "\n")
+
+		if err := detectWrongRootBoot(stream, fixture); err != nil {
+			t.Errorf("detector red the PR #483 opus filing stream shape even though the off-fixture command failed and the corrected --workflow-dir command landed in the fixture: %v", err)
 		}
 	})
 
@@ -146,6 +205,9 @@ func TestDetectWrongRootBoot(t *testing.T) {
 		if !strings.Contains(err.Error(), fixtureRoot) || !strings.Contains(err.Error(), realRepo) {
 			t.Errorf("error must name both expected (%q) and actual (%q): %v", fixtureRoot, realRepo, err)
 		}
+		if strings.Contains(err.Error(), "CI env leak") {
+			t.Errorf("error text must not assert a CI env leak as the cause: %v", err)
+		}
 	})
 
 	t.Run("empty_stream_does_not_false_red", func(t *testing.T) {
@@ -155,4 +217,66 @@ func TestDetectWrongRootBoot(t *testing.T) {
 			t.Errorf("detector red an empty stream: %v", err)
 		}
 	})
+}
+
+// TestDetectWrongRootBootRealPR446Commands runs the detector against the two
+// captured sonnet boot commands verbatim (PR #446, run 28466995641, attempts 1
+// and 2) — the exact strings that fatal'd `TestLiveClaudeSharedScenarios` at
+// claude_live_runner_test.go:122 both times. Both must now pass: neither
+// command carries a workflow-operative token alongside its cd, so each is
+// sonnet's harmless speculative repo-root sniff, not a wander. This is the
+// command-level half of AC-1; TestDetectWrongRootBootRealPR446Streams below is
+// the full-stream half.
+func TestDetectWrongRootBootRealPR446Commands(t *testing.T) {
+	const fixtureRoot = "/tmp/TestLiveClaudeSharedScenariosfeedback-3-cycle-escalation1752814120/001"
+
+	cases := map[string]string{
+		"attempt_1": `cd /home/user/spacedock-workflow 2>/dev/null || cd .; ${SPACEDOCK_BIN:-spacedock} --version; echo "---"; pwd; git rev-parse --show-toplevel 2>&1`,
+		"attempt_2": `cd /tmp && (echo "--version:"; ${SPACEDOCK_BIN:-spacedock} --version) 2>&1; echo "---"; git rev-parse --show-toplevel 2>&1`,
+	}
+	for name, command := range cases {
+		t.Run(name, func(t *testing.T) {
+			if err := detectWrongRootBoot(streamLine(command), fixtureRoot); err != nil {
+				t.Errorf("detector red the real PR #446 %s boot command (probe-only, no same-command corroboration): %v", name, err)
+			}
+		})
+	}
+}
+
+// TestDetectWrongRootBootRealPR446Streams replays the two full captured sonnet
+// streams from PR #446 (run 28466995641, artifact
+// runtime-live-e2e-claude-live-sonnet, `claude-shared-scenarios/feedback-3-cycle-escalation/claude-stream.jsonl`)
+// through detectWrongRootBoot end to end. This is AC-1's RED->GREEN gate: on
+// the pre-fix detector this reproduced both exact CI failures (confirmed by
+// the ideation-stage spike); with the corroboration gate, both must return
+// nil, matching the streams' actual `result` event (`subtype=success` — both
+// runs finished the scenario correctly, only the detector fataled them).
+func TestDetectWrongRootBootRealPR446Streams(t *testing.T) {
+	cases := []struct {
+		name        string
+		fixture     string
+		fixtureRoot string
+	}{
+		{
+			name:        "attempt_1",
+			fixture:     "claude_live_wrong_root_pr446_attempt1.stream.jsonl",
+			fixtureRoot: "/tmp/TestLiveClaudeSharedScenariosfeedback-3-cycle-escalation1752814120/001",
+		},
+		{
+			name:        "attempt_2",
+			fixture:     "claude_live_wrong_root_pr446_attempt2.stream.jsonl",
+			fixtureRoot: "/tmp/TestLiveClaudeSharedScenariosfeedback-3-cycle-escalation1376149796/001",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			stream, err := os.ReadFile(filepath.Join("testdata", c.fixture))
+			if err != nil {
+				t.Fatalf("open real-stream fixture %q: %v", c.fixture, err)
+			}
+			if err := detectWrongRootBoot(string(stream), c.fixtureRoot); err != nil {
+				t.Errorf("detector red the real PR #446 %s stream — want nil (the run finished the scenario correctly): %v", c.name, err)
+			}
+		})
+	}
 }

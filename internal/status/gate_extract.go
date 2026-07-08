@@ -15,6 +15,12 @@ import (
 // reads its lines, and runs --checklist or --ac-scan. The two modes are mutually
 // exclusive (each emits its own envelope). The stage-report/AC parsing reads the
 // raw file lines (1-based) so emitted ranges are Read(offset, lines)-sliceable.
+//
+// When stage is omitted, it defaults once here to the resolved file's
+// frontmatter status field — the entity's current stage — before mode dispatch,
+// so the default applies uniformly to --checklist, --ac-scan, text, and --json.
+// Explicit --stage is passed through unchanged. A target with no status field to
+// default from fails loudly rather than silently emitting.
 func runReadGate(roots roots, ref, stage string, checklist, acScan, asJSON bool, stdout, stderr io.Writer) int {
 	if checklist && acScan {
 		return errExit(stderr, "--checklist and --ac-scan are mutually exclusive")
@@ -27,11 +33,18 @@ func runReadGate(roots roots, ref, stage string, checklist, acScan, asJSON bool,
 	if err != nil {
 		return errExit(stderr, "cannot read file: "+path)
 	}
+	stageOmitted := stage == ""
+	if stageOmitted {
+		stage = parseFrontmatterContent(data)["status"]
+		if stage == "" {
+			return errExit(stderr, fmt.Sprintf("--stage omitted and %s has no status frontmatter to default from; pass --stage <stage>", path))
+		}
+	}
 	lines := splitLines(string(data))
 	if checklist {
-		return runChecklist(lines, stage, asJSON, stdout, stderr)
+		return runChecklist(lines, stage, stageOmitted, asJSON, stdout, stderr)
 	}
-	return runACScan(lines, stage, asJSON, stdout, stderr)
+	return runACScan(lines, stage, stageOmitted, asJSON, stdout, stderr)
 }
 
 // stageReportHeadingRe matches a `## Stage Report: <stage> [qualifier...]` line
@@ -48,8 +61,13 @@ var checklistBulletRe = regexp.MustCompile(`^-\s+(DONE|SKIPPED|FAILED):\s*(.*)$`
 
 // acHeadingRe matches an `**AC-N**` acceptance-criteria heading and captures the
 // AC id. The id is tokenized on the heading boundary (AC- followed by an
-// alphanumeric run), never split on `-` (the spike's AC-id boundary finding).
-var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)\*\*`)
+// alphanumeric run), never split on `-` (the spike's AC-id boundary finding). An
+// asterisk-free trailing label inside the bold span is allowed and discarded, so
+// `**AC-1 (VALUE)**` enumerates as `AC-1` exactly as bare `**AC-1**` — the value
+// AC the README ideation policy recommends is no longer dropped. The `[^*]*`
+// label excludes `*`, so it cannot span a `**` boundary: two headings on one line
+// (`**AC-1** … **AC-2**`) still enumerate separately and never merge.
+var acHeadingRe = regexp.MustCompile(`\*\*(AC-[0-9A-Za-z]+)[^*]*\*\*`)
 
 // acTokenRe matches an AC-N token anywhere in a line, for citation scanning.
 var acTokenRe = regexp.MustCompile(`\bAC-[0-9A-Za-z]+\b`)
@@ -109,6 +127,17 @@ func selectStageReport(lines []string, stage string) (start, end int, ok bool) {
 		}
 	}
 	return chosen + 1, endIdx + 1, true
+}
+
+// noStageReportDiagnostic formats the "no ## Stage Report for stage" error. When
+// stage was defaulted from the current status (--stage omitted), it names the
+// stage as the current status so the defaulting is transparent to the caller;
+// an explicit --stage keeps the plain wording.
+func noStageReportDiagnostic(stage string, stageOmitted bool) string {
+	if stageOmitted {
+		return fmt.Sprintf("no ## Stage Report for stage %q (current status; --stage omitted) in this file", stage)
+	}
+	return fmt.Sprintf("no ## Stage Report for stage %q in this file", stage)
 }
 
 // extractChecklist parses the DONE/SKIPPED/FAILED items within the stage-report
@@ -173,17 +202,17 @@ func checklistJSON(stage string, items []checklistItem) *jsonObj {
 		setValue("checklist", arr)
 }
 
-// runChecklist handles --read <entity> --stage X --checklist. It selects the
-// latest stage-report section for X across interleaved sections and emits its
-// checklist items with line ranges; a missing --stage or a stage matching no
-// report fails loudly (non-zero exit, named diagnostic), never a silent emit.
-func runChecklist(lines []string, stage string, asJSON bool, stdout, stderr io.Writer) int {
-	if stage == "" {
-		return errExit(stderr, "--checklist requires --stage <stage>")
-	}
+// runChecklist handles --read <entity> [--stage X] --checklist. It selects the
+// latest stage-report section for X (or, when --stage was omitted, the caller's
+// defaulted current-status stage) across interleaved sections and emits its
+// checklist items with line ranges; a stage matching no report fails loudly
+// (non-zero exit, named diagnostic), never a silent emit. When stage was
+// defaulted, the diagnostic names it as the current status so the defaulting is
+// transparent.
+func runChecklist(lines []string, stage string, stageOmitted, asJSON bool, stdout, stderr io.Writer) int {
 	start, end, ok := selectStageReport(lines, stage)
 	if !ok {
-		return errExit(stderr, fmt.Sprintf("no ## Stage Report for stage %q in this file", stage))
+		return errExit(stderr, noStageReportDiagnostic(stage, stageOmitted))
 	}
 	items := extractChecklist(lines, start, end)
 	if asJSON {
@@ -299,17 +328,16 @@ func acScanJSON(stage string, acs []acEvidence) *jsonObj {
 		setValue("acs", arr)
 }
 
-// runACScan handles --read <entity> --stage X --ac-scan. It cites each AC's
+// runACScan handles --read <entity> [--stage X] --ac-scan. It cites each AC's
 // evidence from the gated stage's checklist line ranges only and flags the
-// unevidenced ACs. A missing --stage, a stage matching no report, or an absent
-// ## Acceptance criteria section fails loudly, never a silent emit.
-func runACScan(lines []string, stage string, asJSON bool, stdout, stderr io.Writer) int {
-	if stage == "" {
-		return errExit(stderr, "--ac-scan requires --stage <stage>")
-	}
+// unevidenced ACs. A stage matching no report, or an absent ## Acceptance
+// criteria section, fails loudly, never a silent emit. When stage was omitted
+// and defaulted by the caller, the no-report diagnostic names it as the current
+// status.
+func runACScan(lines []string, stage string, stageOmitted, asJSON bool, stdout, stderr io.Writer) int {
 	start, end, ok := selectStageReport(lines, stage)
 	if !ok {
-		return errExit(stderr, fmt.Sprintf("no ## Stage Report for stage %q in this file", stage))
+		return errExit(stderr, noStageReportDiagnostic(stage, stageOmitted))
 	}
 	acStart, acEnd, acOK := findAcceptanceCriteria(lines)
 	if !acOK {

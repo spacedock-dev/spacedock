@@ -39,26 +39,30 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 		outcome = Outcome{Status: "passed"}
 	}
 	record := Record{
-		SchemaVersion:   RecordSchemaVersion,
-		ScenarioID:      firstNonEmpty(spec.ScenarioID, spec.ID),
-		Source:          spec.Source,
-		Mode:            spec.Mode,
-		Runtime:         firstNonEmpty(spec.Runtime, spec.Host),
-		Executor:        spec.Executor,
-		Host:            spec.Host,
-		Model:           spec.Model,
-		MetricsState:    state,
-		Outcome:         outcome,
-		DurationMS:      observation.Duration.Milliseconds(),
-		Turns:           observation.Turns,
-		ToolCalls:       observation.ToolCalls,
-		ToolCallsByName: observation.ToolCallsByName,
-		StatusReadCalls: observation.StatusReadCalls,
-		ScopedReadCalls: observation.ScopedReadCalls,
-		Tokens:          observation.Tokens.withTotal(),
-		TotalCostUSD:    observation.TotalCostUSD,
-		ModelUsage:      normalizeModelUsage(observation.ModelUsage),
-		Budget:          spec.Budget,
+		SchemaVersion:             RecordSchemaVersion,
+		ScenarioID:                firstNonEmpty(spec.ScenarioID, spec.ID),
+		Source:                    spec.Source,
+		Mode:                      spec.Mode,
+		Runtime:                   firstNonEmpty(spec.Runtime, spec.Host),
+		Executor:                  spec.Executor,
+		Host:                      spec.Host,
+		Model:                     spec.Model,
+		MetricsState:              state,
+		Outcome:                   outcome,
+		DurationMS:                observation.Duration.Milliseconds(),
+		Turns:                     observation.Turns,
+		ToolCalls:                 observation.ToolCalls,
+		ToolCallsByName:           observation.ToolCallsByName,
+		StatusReadCalls:           observation.StatusReadCalls,
+		ScopedReadCalls:           observation.ScopedReadCalls,
+		Tokens:                    observation.Tokens.withTotal(),
+		BaselineTokens:            observation.BaselineTokens.withTotal(),
+		PreGreetPeakCacheCreation: observation.PreGreetPeakCacheCreation,
+		TotalCostUSD:              observation.TotalCostUSD,
+		ModelUsage:                normalizeModelUsage(observation.ModelUsage),
+		Budget:                    spec.Budget,
+		ClaudeCodeVersion:         observation.ClaudeCodeVersion,
+		ResolvedModel:             observation.ResolvedModel,
 	}
 	if hasBudget(spec.Budget) {
 		result := EvaluateBudget(record, spec.Budget)
@@ -69,6 +73,7 @@ func BuildRecord(spec JourneySpec, result BehaviorResult, observation Observatio
 
 func EmitRecord(dir string, record Record) error {
 	record = normalizeRecord(record)
+	record = stampProvenance(record)
 	if strings.TrimSpace(record.ScenarioID) == "" {
 		return fmt.Errorf("scenario id is required")
 	}
@@ -81,6 +86,32 @@ func EmitRecord(dir string, record Record) error {
 	}
 	data = append(data, '\n')
 	return os.WriteFile(filepath.Join(dir, recordFilename(record)), data, 0o644)
+}
+
+// stampProvenance fills in the run-provenance fields a caller left unset.
+// CapturedAt defaults to the current time, so every freshly emitted record can be
+// ordered chronologically once it lands in a published ledger. RunID/RunURL
+// default from the GitHub Actions run environment ($GITHUB_RUN_ID /
+// $GITHUB_SERVER_URL / $GITHUB_REPOSITORY) when present; outside CI they stay
+// empty and the omitempty tags drop them from the JSON. It deliberately runs ONLY
+// at emission time, never inside normalizeRecord — normalizeRecord also runs when
+// re-reading an already-emitted record (ReadRecordsDir, AggregateLedger), and
+// re-stamping CapturedAt there would silently overwrite a historical record's real
+// capture time with "now" on every rebuild.
+func stampProvenance(record Record) Record {
+	if record.CapturedAt == "" {
+		record.CapturedAt = time.Now().UTC().Format(time.RFC3339)
+	}
+	if record.RunID == "" {
+		record.RunID = os.Getenv("GITHUB_RUN_ID")
+	}
+	if record.RunURL == "" && record.RunID != "" {
+		serverURL, repo := os.Getenv("GITHUB_SERVER_URL"), os.Getenv("GITHUB_REPOSITORY")
+		if serverURL != "" && repo != "" {
+			record.RunURL = strings.TrimSuffix(serverURL, "/") + "/" + repo + "/actions/runs/" + record.RunID
+		}
+	}
+	return record
 }
 
 func EvaluateBudget(record Record, budget Budget) BudgetResult {
@@ -110,6 +141,7 @@ func normalizeRecord(record Record) Record {
 	record.JourneyID = ""
 	record.Runtime = firstNonEmpty(record.Runtime, record.Host)
 	record.Tokens = record.Tokens.withTotal()
+	record.BaselineTokens = record.BaselineTokens.withTotal()
 	record.ModelUsage = normalizeModelUsage(record.ModelUsage)
 	return record
 }

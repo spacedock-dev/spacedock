@@ -3,4 +3,4 @@
 ===== stdout =====
 
 ===== stderr =====
-error: invalid model for stages.defaults.model: 'frobnicate' — must be one of: sonnet, opus, haiku
+error: invalid model for stages.defaults.model: 'frobnicate' — must be one of: sonnet, opus, haiku, fable

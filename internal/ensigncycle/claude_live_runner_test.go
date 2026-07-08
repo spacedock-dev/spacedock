@@ -98,6 +98,14 @@ type liveResult struct {
 	stream       string
 	artifactDir  string
 	duration     time.Duration
+	// configDir and cwd locate the dispatched-ensign sub-agent transcripts on disk
+	// (under {configDir}/projects/{encode(cwd)}/{FO-session-id}/subagents), so the
+	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
+	// EvalSymlinks-resolved FO working dir — the form Claude Code encodes into the
+	// projects path. Empty on transports that do not record them (the pty driver),
+	// so the fold no-ops to FO-front-door counts.
+	configDir string
+	cwd       string
 }
 
 type claudeLiveScenario struct {
@@ -149,12 +157,15 @@ func claudeLiveScenarios(t *testing.T) []claudeLiveScenario {
 // sharedRuntimeScenarios() ID.
 func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRuntimeScenario) {
 	return map[string]func(*testing.T, liveDriver, sharedRuntimeScenario){
-		"gate-guardrail":              runClaudeGateGuardrailScenario,
-		"rejection-flow":              runClaudeRejectionFlowScenario,
-		"feedback-3-cycle-escalation": runClaudeFeedback3CycleEscalationScenario,
-		"merge-hook-guardrail":        runClaudeMergeHookGuardrailScenario,
-		"filing":                      runClaudeFilingScenario,
-		"shallow-boot":                runClaudeShallowBootScenario,
+		"gate-guardrail":                runClaudeGateGuardrailScenario,
+		"rejection-flow":                runClaudeRejectionFlowScenario,
+		"feedback-3-cycle-escalation":   runClaudeFeedback3CycleEscalationScenario,
+		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
+		"filing":                        runClaudeFilingScenario,
+		"shallow-boot":                  runClaudeShallowBootScenario,
+		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
+		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
+		"keep-moving-posture":           runClaudeKeepMovingScenario,
 	}
 }
 
@@ -278,6 +289,68 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
+// runClaudeSelfEvidenceMergeTriageScenario drives the real FO against the
+// merge/triage fixture (a diff touching a live-lane-exercised path, the required lane
+// unapproved, a prior-session handoff mislabelling this run's live-CI red) and grades
+// the FO's OWN decision against the INCIDENT class only (Cycle-3): it must NOT wave the
+// change through — terminalize-as-PASSED or merge-without-evidence — while the required
+// lane is unapproved; a hold or a reject-without-merge both pass. Its final-message
+// diagnosis must name THIS run's failing test, not the inherited "known flake" label.
+// The this-run token is graded in the FINAL MESSAGE only — the fixture body carries it
+// so the FO can read it, so grading the transcript would pass on the entity-read echo.
+func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt())
+	after := readMergeTriageAfter(t, workflowRoot, entityPath)
+	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+// runClaudeSmallestSufficientMechanismScenario drives the real FO against the
+// smallest-sufficient-mechanism fixture (a commissioned workflow with two ready
+// entities plus two plain deterministic-edit notes whose content the prompt hands the
+// FO) and grades the FO's tool-call STREAM in both directions of the ladder: the
+// deterministic edits are FO-authored with a direct commit and NO worker/PR climb, and
+// the commissioned ready entities are engaged via the standing dispatch loop WITHOUT a
+// per-entity justification. The trace is graded, not the durable end-state, which is
+// identical whether the FO climbed or not.
+func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeSmallestMechanismWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt())
+	if err := assertClaudeSmallestSufficientMechanism(result.stream, ssmEditFiles(), ssmCommissioned()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+// runClaudeKeepMovingScenario drives the real FO against the keep-moving-posture fixture
+// (four independent entities: a just-approved gate, two independent ready entities, and a
+// questioned entity) and grades the FO's tool-call STREAM plus its FINAL MESSAGE against
+// the four false-stop patterns: it advances + dispatches the approved entity with no
+// permission question, dispatches both independent entities, re-shapes the questioned
+// entity and pauses only its dispatch, and does not end its turn on an async wait. The
+// durable end-state cannot distinguish keep-moving from a false stop, so the motion trace
+// (actions) and the turn-ending postures (final message) are graded, not the entity files.
+func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	writeKeepMovingWorkflow(t, workflowRoot)
+
+	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt())
+	if err := assertClaudeKeepMoving(result.stream, result.finalMessage, kmIndependent()); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
 // runClaudeFilingScenario drives the real FO against an EMPTY workflow and asks it
 // to file one seed entity. It grades the FO's recorded tool-call stream — the FO
 // filed via `spacedock … new <slug>`, not the `--next-id` + `Write` pair — because
@@ -304,8 +377,9 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 // reports MERGED) with a per-run isolated team root, and grades the durable
 // end-state: the FO greets and presents the gate, S7b advances+archives the merged
 // PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
-// then asserts the AC-2 behavioral signal (no TeamCreate before the greet) and the
-// AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
+// then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
+// pre-greet invocation of a deferred FO skill — fo-status-viewer / fo-write-core) and
+// the AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
 // ~89k cache_creation spike) over the captured stream.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
@@ -330,17 +404,29 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	// AC-6: the greet-turn context is below the ceiling and no pre-greet 89k
-	// cache_creation spike (measured, over the captured token stream).
+	// AC-2: the greet invokes no deferred FO skill. The staged plugin ships the real
+	// fo-status-viewer / fo-write-core skills (livePluginDir copies skills/), so the FO
+	// COULD invoke them — this asserts the greet-and-stop boot renders from status --boot
+	// without loading a deferred FO skill (present-gate is allowed pre-greet).
+	if err := assertGreetInvokesNoDeferredFOSkill(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	// The boot-window oracle: a greet turn was produced (structural only — the
+	// former ~60k ceiling/spike thresholds no longer gate CI, see
+	// assertShallowBootMeasuredTurns).
 	if err := assertShallowBootMeasured(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
+	// Record (don't gate on) the greet turn's full token usage as a distinct
+	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
+	// emitClaudeScenarioMetrics below already uses.
+	emitShallowBootWindowMetrics(t, result.stream, runner.model())
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
 // run launches the real `spacedock claude` front door for one shared scenario and
 // returns the (finalMessage, full stream) the shared assertions consume. The
-// launch shape is the spike WINNER: --plugin-dir + --skip-contract-check are the
+// launch shape is the spike WINNER: --plugin-dir + --skip-compat-check are the
 // spacedock-owned flags BEFORE `--`; every host flag (-p with the scenario prompt,
 // --permission-mode, --output-format stream-json, --verbose, --model) rides AFTER
 // `--` and forwards verbatim to claude. The observed source is the stream's
@@ -366,7 +452,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 
 	cmd := exec.Command(r.binary, "claude",
 		"--plugin-dir", r.pluginDir,
-		"--skip-contract-check",
+		"--skip-compat-check",
 		"--",
 		"-p", prompt+" "+antiShutdownOverride,
 		"--permission-mode", "bypassPermissions",
@@ -382,8 +468,18 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	// fresh slice (never a mutation of the shared r.env) keeps the parallel
 	// invocations race-free.
 	cmd.Env = r.env
+	configDir, _ := envValue(r.env, "CLAUDE_CONFIG_DIR")
 	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
-		cmd.Env = withClaudeConfigDir(r.env, filepath.Join(base, scenario.name))
+		configDir = filepath.Join(base, scenario.name)
+		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	}
+
+	// The resolved cwd is what Claude Code encodes into its projects path; the FO
+	// subprocess runs in workflowRoot, so resolve its symlinks (macOS t.TempDir is
+	// under /var -> /private/var) to match the on-disk subagents dir.
+	resolvedCwd := workflowRoot
+	if resolved, err := filepath.EvalSymlinks(workflowRoot); err == nil {
+		resolvedCwd = resolved
 	}
 
 	// stdout carries the stream-json transcript the watcher drains for liveness;
@@ -447,6 +543,8 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		stream:       stream,
 		artifactDir:  artifactDir,
 		duration:     duration,
+		configDir:    configDir,
+		cwd:          resolvedCwd,
 	}
 }
 

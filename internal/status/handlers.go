@@ -164,8 +164,9 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 				reason = "mod-block transition"
 			}
 			return errExit(stderr, fmt.Sprintf(
-				"entity %s has %s. Clear mod-block in a separate --set call, or use --force.",
-				slug, reason))
+				"entity %s has %s. Clear mod-block in a separate --set call. "+
+					"(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard %s instead.)",
+				slug, reason, slug))
 		}
 	}
 
@@ -200,13 +201,38 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 				"Set verdict in the same --set call, or use --force.",
 			slug))
 	}
+
+	// Finalize-status gate: the finalize action (setting `completed`) requires the
+	// resulting status to be a declared terminal stage — either already terminal or
+	// set terminal in THIS SAME --set call. This closes the residual hole behind the
+	// verdict gate above: `--set completed verdict=X worktree=` alone (no
+	// status={terminal}) satisfies the verdict gate yet still finalizes an entity
+	// that never advanced past a non-terminal stage — Spike C's exact reproduction
+	// of the incomplete-finalize deviation the merge guard's atomic terminalize
+	// (status+verdict+completed in one call) exists to prevent. No-op when the
+	// workflow declares no stages block (membership cannot be checked). --force
+	// bypasses, same idiom as the guards above.
+	postUpdateStatus := strings.TrimSpace(currentFields["status"])
+	for _, u := range set.updates {
+		if u.field == "status" && u.hasValue {
+			postUpdateStatus = u.value
+		}
+	}
+	if !force && finalizing && len(stages) > 0 && !terminalNames[postUpdateStatus] {
+		return errExit(stderr, fmt.Sprintf(
+			"entity %s cannot be finalized ('completed') while status '%s' is not the terminal stage. "+
+				"Set status=%s in the same --set (or run 'spacedock merge guard %s'), or use --force.",
+			slug, postUpdateStatus, terminalStageName(roots.definitionDir), slug))
+	}
+
 	if !force && policy != mergeLocal && isTerminalUpdate() && modBlock == "" && postUpdatePR == "" && postUpdateVerdict != "rejected" {
 		mergeHooks := scanMods(roots.definitionDir)["merge"]
 		if len(mergeHooks) > 0 {
 			return errExit(stderr, fmt.Sprintf(
 				"entity %s cannot advance to terminal — workflow has merge hook(s) [%s] that have not run "+
-					"(pr field is empty and mod-block is empty). Set mod-block=merge:%s and invoke the hook, or use --force to bypass.",
-				slug, strings.Join(mergeHooks, ", "), mergeHooks[0]))
+					"(pr field is empty and mod-block is empty). Set mod-block=merge:%s and invoke the hook. "+
+					"(--force bypasses this guard; a refusal usually means a ceremony step was skipped — re-run merge guard %s instead.)",
+				slug, strings.Join(mergeHooks, ", "), mergeHooks[0], slug))
 		}
 	}
 
@@ -312,7 +338,7 @@ func runSet(roots roots, set *setUpdate, args []string, whereFilters []whereFilt
 // runRead handles the table / --next / --boot / --validate read flows. Matches
 // the tail of main() after the mutation branches.
 func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env, whereFilters []whereFilter,
-	includeArchive, showNext, showBoot, showNextID, showValidate bool,
+	includeArchive, showNext, showBoot, showNextID, showValidate, identify bool,
 	explicitFields []string, allFieldsFlag, asJSON, quiet bool,
 	hasArchiveSlug, hasSet, hasResolve bool,
 	stdout, stderr io.Writer) int {
@@ -409,14 +435,14 @@ func runRead(probe claudeteam.TeamStateProbe, roots roots, args []string, e env,
 	switch {
 	case showBoot:
 		if asJSON {
-			data, err := gatherBoot(probe, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr)
+			data, err := gatherBoot(probe, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr, identify)
 			if err != nil {
 				return 1
 			}
 			emitJSON(stdout, bootJSON(data))
 			return 0
 		}
-		if err := printBoot(probe, stdout, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr); err != nil {
+		if err := printBoot(probe, stdout, entities, stages, roots.definitionDir, roots.entityDir, gitRoot, idStyle, e, stderr, identify); err != nil {
 			return 1
 		}
 	case showNext:

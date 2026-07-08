@@ -22,7 +22,7 @@ Each runner adapter turns a shared scenario into a real launch and returns `(bef
 | Concern | Codex runner | Claude runner |
 |---------|--------------|---------------|
 | Auth / HOME isolation | isolated `CODEX_HOME` + copied `auth.json` / `OPENAI_API_KEY` | clean `HOME` + OAuth benchmark-token / `ANTHROPIC_API_KEY` (`isolatedClaudeEnv`) |
-| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-contract-check` |
+| Plugin install | local Codex marketplace symlink + `codex plugin add` | `spacedock claude --plugin-dir <checkout> --skip-compat-check` |
 | Launch | `codex exec --json --output-last-message <file>` | `spacedock claude -- -p <prompt> --output-format stream-json` |
 | `observed` extract | read the `--output-last-message` file (+ jsonl) | extract the `result`/`success` event's `result` text from the stream (`extractClaudeFinalMessage`) |
 | Artifacts | jsonl / final-message / stderr | stream jsonl / final-message |
@@ -98,6 +98,6 @@ All live lanes must test the current checkout, not a remote `--ref next` install
 plugins/spacedock -> $GITHUB_WORKSPACE
 ```
 
-The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` then confirms Spacedock resolves the installed Codex manifest. The Codex live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the current-checkout stack instead of a remote `next` install. The Claude lane loads the current checkout directly via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`.
+The marketplace manifest uses `source: local` and `path: ./plugins/spacedock`. The job runs `codex plugin marketplace add`, `codex plugin add spacedock@spacedock`, and `codex plugin list`, and fails if the listing names `github.com` or `ref next` instead of the local path. `go test ./internal/cli -run TestCodexResolveManifestAgainstInstalledHost -v` then confirms Spacedock resolves the installed Codex manifest. The Codex live setup records that `skills/first-officer/references/codex-first-officer-runtime.md` exists in the current-checkout plugin cache, so the run proves the current-checkout stack instead of a remote `next` install. The Claude lane loads the current checkout directly via `spacedock claude --plugin-dir "$GITHUB_WORKSPACE"`. The `internal/ensigncycle` Codex live harness builds its local marketplace via `internal/cli.WriteCodexLocalMarketplace`, the same builder that backs `spacedock codex --plugin-dir` and `spacedock install --host codex --plugin-dir`, so the CI Go harness and the user-facing command share one implementation.
 
 A one-off host-only smoke is not enough for either lane: it can prove plugin/login plumbing while missing shared runtime regressions in gate handling, rejection routing, or merge-hook guards. The shared scenarios run real headless hosts, observe output, and check resulting workflow state; jsonl, stderr, and final-message artifacts upload for debugging.

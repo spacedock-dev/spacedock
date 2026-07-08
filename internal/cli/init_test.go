@@ -5,6 +5,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -124,9 +125,11 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 			t.Fatalf("install seam = %v, want %v — codex init on a present plugin must refresh, not no-op", fake.installCmds, wantInstall)
 		}
 		// After install, init runs doctor — a compatible report on stdout.
+		major, minor := binaryMinor(t)
 		out := stdout.String()
-		if !strings.Contains(out, "OK: spacedock binary "+Version+" and plugin 0.12.1") {
-			t.Fatalf("codex init should run doctor after install and report compatible; stdout = %q", out)
+		wantOK := fmt.Sprintf("OK: spacedock binary %s and plugin %d.%d.8", displayVersion(), major, minor)
+		if !strings.Contains(out, wantOK) {
+			t.Fatalf("codex init should run doctor after install and report compatible; stdout = %q, want substring %q", out, wantOK)
 		}
 	})
 
@@ -213,8 +216,10 @@ func TestInitCodexInstallReadiness(t *testing.T) {
 			t.Fatalf("exit = 0, want non-zero for incompatible installed plugin")
 		}
 		errOut := stderr.String()
-		if !strings.Contains(errOut, "Spacedock version mismatch: binary "+Version+", plugin 0.13.0") {
-			t.Fatalf("codex init should surface doctor mismatch; stderr = %q", errOut)
+		major, minor := binaryMinor(t)
+		wantMismatch := fmt.Sprintf("Spacedock version mismatch: binary %s, plugin %d.%d.0", displayVersion(), major, minor+1)
+		if !strings.Contains(errOut, wantMismatch) {
+			t.Fatalf("codex init should surface doctor mismatch; stderr = %q, want substring %q", errOut, wantMismatch)
 		}
 		for _, banned := range []string{"codex plugin marketplace add", "codex plugin add spacedock@spacedock"} {
 			if strings.Contains(stdout.String(), banned) || strings.Contains(errOut, banned) {

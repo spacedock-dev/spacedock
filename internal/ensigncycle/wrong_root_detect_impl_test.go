@@ -21,9 +21,15 @@ import (
 // phrasing) and pure (stream + fixtureRoot in, error out), with its own offline
 // test. The wander signatures it keys on, all observable in the boot stream:
 //
-//   - a `cd <abspath>` whose target escapes the fixture root,
-//   - a `spacedock status --boot --workflow-dir <PATH>` whose PATH escapes it, and
-//   - a `Read <dir>/README.md` (the boot's workflow-README read) outside it.
+//   - a `spacedock status --boot --workflow-dir <PATH>` whose PATH escapes the
+//     fixture root, standalone and fatal,
+//   - a `Read <dir>/README.md` (the boot's workflow-README read) outside it,
+//     standalone and fatal, and
+//   - a `cd <abspath>` whose target escapes the fixture root, but ONLY when the
+//     SAME command also carries a workflow-operative token (see
+//     hasWorkflowOperativeSignature) — a bare `cd <outside>` alone is sonnet's
+//     speculative repo-root sniff, a harmless version-probe that neither
+//     persists past the command nor drives any workflow operation.
 //
 // It deliberately does NOT flag the legitimate real-repo paths a correct boot
 // touches: the FO Reads its contract skills from the --plugin-dir checkout (the
@@ -39,6 +45,8 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
 		clean = resolved
 	}
+	var findings []wrongRootFinding
+	byToolID := make(map[string]int)
 	for _, line := range strings.Split(stream, "\n") {
 		line = strings.TrimSpace(line)
 		if line == "" || !strings.HasPrefix(line, "{") {
@@ -48,28 +56,94 @@ func detectWrongRootBoot(stream, fixtureRoot string) error {
 		if json.Unmarshal([]byte(line), &e) != nil {
 			continue
 		}
-		b := e.toolUseBlock()
-		if b == nil {
-			continue
+		for _, b := range e.toolUseBlocks() {
+			switch b.Name {
+			case "Bash":
+				if target, ok := wanderTarget(b.Input.Command, clean); ok {
+					f := wrongRootFinding{
+						kind:    wrongRootBash,
+						clean:   clean,
+						command: strings.TrimSpace(b.Input.Command),
+						target:  target,
+					}
+					findings = append(findings, f)
+					if b.ID != "" {
+						byToolID[b.ID] = len(findings) - 1
+					}
+				}
+			case "Read":
+				// The FO reads {workflow_dir}/README.md at boot (the Startup boot
+				// read). A workflow README read OUTSIDE the fixture means it booted
+				// the wrong workflow. Contract skills live under {plugin_dir}/skills/;
+				// those reads are legitimate and excluded by wanderWorkflowReadme.
+				if target, ok := wanderWorkflowReadme(b.Input.FilePath, clean); ok {
+					f := wrongRootFinding{
+						kind:   wrongRootRead,
+						clean:  clean,
+						target: target,
+					}
+					findings = append(findings, f)
+					if b.ID != "" {
+						byToolID[b.ID] = len(findings) - 1
+					}
+				}
+			}
 		}
-		switch b.Name {
-		case "Bash":
-			if target, ok := wanderTarget(b.Input.Command, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — a CI env leak likely lured the FO off its launch cwd",
-					clean, strings.TrimSpace(b.Input.Command), target)
+		for _, b := range e.resultBlocks() {
+			idx, ok := byToolID[b.ToolUseID]
+			if !ok {
+				continue
 			}
-		case "Read":
-			// The FO reads {workflow_dir}/README.md at boot (Startup step 4). A
-			// workflow README read OUTSIDE the fixture means it booted the wrong
-			// workflow. Contract skills live under {plugin_dir}/skills/...references/,
-			// never a bare <root>/README.md, so this does not flag a contract read.
-			if target, ok := wanderWorkflowReadme(b.Input.FilePath, clean); ok {
-				return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — a CI env leak likely lured the FO off its launch cwd",
-					clean, target)
+			if toolResultFailed(b) {
+				findings[idx].ignored = true
+				continue
 			}
+			return findings[idx].err()
+		}
+	}
+	for _, f := range findings {
+		if !f.ignored {
+			return f.err()
 		}
 	}
 	return nil
+}
+
+type wrongRootFindingKind int
+
+const (
+	wrongRootBash wrongRootFindingKind = iota
+	wrongRootRead
+)
+
+type wrongRootFinding struct {
+	kind    wrongRootFindingKind
+	clean   string
+	command string
+	target  string
+	ignored bool
+}
+
+func (f wrongRootFinding) err() error {
+	switch f.kind {
+	case wrongRootBash:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but the boot command %q targets %q (outside the fixture) — the FO's boot operated outside its launch cwd",
+			f.clean, f.command, f.target)
+	case wrongRootRead:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but it read the workflow README at %q (outside the fixture) — the FO's boot operated outside its launch cwd",
+			f.clean, f.target)
+	default:
+		return fmt.Errorf("FO booted the wrong root: expected the fixture root %q, but observed an unknown off-fixture workflow operation targeting %q",
+			f.clean, f.target)
+	}
+}
+
+func toolResultFailed(b *streamBlock) bool {
+	if b.IsError {
+		return true
+	}
+	text := strings.TrimSpace(b.flatText())
+	return strings.HasPrefix(text, "Exit code ")
 }
 
 // wanderWorkflowReadme returns the off-fixture absolute path of a workflow README
@@ -84,25 +158,104 @@ func wanderWorkflowReadme(filePath, fixtureRoot string) (string, bool) {
 	if isUnder(p, fixtureRoot) {
 		return "", false
 	}
+	if isPluginSkillRootReadme(p) {
+		return "", false
+	}
 	return p, true
+}
+
+func isPluginSkillRootReadme(path string) bool {
+	parent := filepath.Dir(path)
+	return filepath.Base(filepath.Dir(parent)) == "skills"
 }
 
 // wanderTarget returns the off-fixture absolute path a boot command targets, when
 // the command is a `cd <abspath>` or a `--workflow-dir <abspath>` resolving outside
 // fixtureRoot. ok is false when the command names no such escaping path (it stays
-// under the fixture, uses a relative path, or is an ordinary command).
+// under the fixture, uses a relative path, or is an ordinary command) — or when
+// the only escaping path is an uncorroborated bare `cd` (see
+// hasWorkflowOperativeSignature).
 func wanderTarget(command, fixtureRoot string) (string, bool) {
-	for _, tok := range bootPathArgs(command) {
-		if !filepath.IsAbs(tok) {
+	corroborated := hasWorkflowOperativeSignature(command)
+	args := bootPathArgs(command)
+	explicitWorkflowDirInFixture := false
+	for _, arg := range args {
+		if arg.cd || !filepath.IsAbs(arg.path) {
 			continue
 		}
-		p := filepath.Clean(tok)
+		p := filepath.Clean(arg.path)
 		if p == fixtureRoot || isUnder(p, fixtureRoot) {
+			explicitWorkflowDirInFixture = true
+			continue
+		}
+		return p, true
+	}
+	for _, arg := range args {
+		if !filepath.IsAbs(arg.path) {
+			continue
+		}
+		p := filepath.Clean(arg.path)
+		if p == fixtureRoot || isUnder(p, fixtureRoot) {
+			continue
+		}
+		if arg.cd && explicitWorkflowDirInFixture {
+			continue
+		}
+		if arg.cd && !corroborated {
+			// A bare cd escaping the fixture, alone, is sonnet's speculative
+			// repo-root sniff — a harmless version-probe that does not persist
+			// (the FO's very next command runs from the fixture root again) and
+			// drives no workflow operation. Standalone --workflow-dir escapes
+			// (arg.cd == false) are unaffected: they stay first-and-fatal.
 			continue
 		}
 		return p, true
 	}
 	return "", false
+}
+
+// workflowOperativeSubstrings are same-command tokens that turn a bare `cd
+// <outside-fixture>` into a genuine wander: the command goes on to operate the
+// workflow, rather than merely probing a version or toplevel from wherever the
+// cd landed.
+var workflowOperativeSubstrings = []string{
+	"--workflow-dir",
+	"--boot",
+	"--discover",
+	"status --read",
+	"state commit",
+}
+
+// hasWorkflowOperativeSignature reports whether command carries a
+// workflow-operative token: a spacedock workflow flag, a state-checkout commit,
+// `spacedock new`, or a README/entity-path reference. Paired with a same-command
+// `cd <outside-fixture>`, this distinguishes an actual attempt to operate the
+// workflow from outside the fixture from sonnet's harmless speculative
+// repo-root sniff.
+func hasWorkflowOperativeSignature(command string) bool {
+	for _, s := range workflowOperativeSubstrings {
+		if strings.Contains(command, s) {
+			return true
+		}
+	}
+	for _, f := range strings.Fields(command) {
+		f = trimBootSeparator(f)
+		if f == "new" {
+			return true
+		}
+		if strings.Contains(f, "README") || strings.HasSuffix(strings.ToLower(f), ".md") {
+			return true
+		}
+	}
+	return false
+}
+
+// bootPathArg is one path argument a boot command supplies, tagged with
+// whether it came from a `cd` (subject to the corroboration gate) or a
+// `--workflow-dir` (standalone-fatal, ungated).
+type bootPathArg struct {
+	path string
+	cd   bool
 }
 
 // bootPathArgs pulls the path arguments a boot command supplies: the target of a
@@ -112,17 +265,17 @@ func wanderTarget(command, fixtureRoot string) (string, bool) {
 // the path token straight into a shell separator with no preceding space —
 // `cd <root>; ls`, `cd <root>&& ls` — so each extracted token has any trailing
 // `;`/`&&`/`|` trimmed before it reaches the isUnder check.
-func bootPathArgs(command string) []string {
+func bootPathArgs(command string) []bootPathArg {
 	fields := strings.Fields(command)
-	var paths []string
+	var paths []bootPathArg
 	for i, f := range fields {
 		switch {
 		case f == "cd" && i+1 < len(fields):
-			paths = append(paths, trimBootSeparator(fields[i+1]))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(fields[i+1]), cd: true})
 		case f == "--workflow-dir" && i+1 < len(fields):
-			paths = append(paths, trimBootSeparator(fields[i+1]))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(fields[i+1])})
 		case strings.HasPrefix(f, "--workflow-dir="):
-			paths = append(paths, trimBootSeparator(strings.TrimPrefix(f, "--workflow-dir=")))
+			paths = append(paths, bootPathArg{path: trimBootSeparator(strings.TrimPrefix(f, "--workflow-dir="))})
 		}
 	}
 	return paths

@@ -1,0 +1,52 @@
+===== exit =====
+0
+===== stdout =====
+{
+  "schema_version": 2,
+  "description": "Thing: implementation",
+  "fetch_commands": [
+    "spacedock_launcher() { if [ -n \"${SPACEDOCK_BIN:-}\" ] && [ -x \"${SPACEDOCK_BIN:-}\" ]; then \"$SPACEDOCK_BIN\" \"$@\"; else spacedock \"$@\"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage implementation"
+  ],
+  "dispatch_file_path": "/tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation-advance.md",
+  "prompt": "Advancing to next stage: implementation.\n\nRead /tmp/spacedock-dispatch/fixture-team-spacedock-ensign-thing-implementation-advance.md and treat its content as your next-stage assignment.",
+  "model": null
+}
+
+===== stderr =====
+WARN: --team-name selects the legacy TeamCreate-registry dispatch shape (team_name present, run_in_background absent). On host=claude, auto-team is the default — omit --team-name to emit the auto-team shape (name + run_in_background, no team_name). If you mean the legacy team-registry path, this warning can be ignored.
+
+===== body =====
+## Advancing to next stage: implementation
+
+You are continuing work on: Thing
+
+Your working directory is <ROOT>/.worktrees/spacedock-ensign-thing
+All file reads and writes MUST use paths under <ROOT>/.worktrees/spacedock-ensign-thing.
+Your git branch is spacedock-ensign/thing. All commits MUST be on this branch. Do NOT switch branches or commit to main.
+
+Continue working on the entity at <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.
+
+### Feedback from prior review
+
+REJECTED: do better.
+
+### Completion checklist
+
+- a
+- b
+
+### Summary
+{brief description of what was accomplished}
+
+### Fetch commands
+
+    spacedock_launcher() { if [ -n "${SPACEDOCK_BIN:-}" ] && [ -x "${SPACEDOCK_BIN:-}" ]; then "$SPACEDOCK_BIN" "$@"; else spacedock "$@"; fi; }; spacedock_launcher dispatch show-stage-def --workflow-dir <ROOT> --stage implementation
+
+
+### Completion Signal
+
+When you finish (after all commits and stage report writes are done), your last action MUST be:
+
+    SendMessage(to="team-lead", message="Done: Thing completed implementation. Report written to <ROOT>/.worktrees/spacedock-ensign-thing/thing.md.")
+
+**If you are the first officer forwarding this prompt to Agent():** copy the entire block above into `Agent(prompt=...)` character-for-character. Do NOT paraphrase `SendMessage(to="team-lead", ...)` as "SendMessage with to='team-lead'" or any other English rewrite — the parenthesis-equals syntax is the literal call the ensign must emit, not a description of one.

@@ -11,11 +11,6 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 )
 
-// spawnModelEnum is the Agent-schema model enum spawn-standing validates against.
-var spawnModelEnum = map[string]bool{"sonnet": true, "opus": true, "haiku": true}
-
-const spawnModelEnumList = "must be one of: sonnet, opus, haiku"
-
 // runListStanding writes the absolute paths of standing: true mods under
 // {workflowDir}/_mods/*.md, one per line, sorted by filename. Exit 0 on success
 // including zero matches (empty stdout); exit 1 only when the workflow dir is
@@ -193,11 +188,11 @@ func buildSpawnSpec(home, modPath, teamName string) (spec spawnSpec, alreadyAliv
 	}
 	if model == "" {
 		return spec, false, fmt.Sprintf(
-			"mod %s has no 'model' in '## Hook: startup' — %s", modPath, spawnModelEnumList)
+			"mod %s has no 'model' in '## Hook: startup' — %s", modPath, modelEnumList)
 	}
-	if !spawnModelEnum[model] {
+	if !modelEnum[model] {
 		return spec, false, fmt.Sprintf(
-			"invalid model '%s' in '## Hook: startup' of %s — %s", model, modPath, spawnModelEnumList)
+			"invalid model '%s' in '## Hook: startup' of %s — %s", model, modPath, modelEnumList)
 	}
 
 	// Merged mode (no team name): there is no team config keyed by name to dedup

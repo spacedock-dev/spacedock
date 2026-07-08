@@ -125,10 +125,13 @@ func TestBridgeConversationReplyContract(t *testing.T) {
 // fleet-mode drains must obey Bridge's frozen target_set before falling back to
 // legacy target behavior.
 func TestFleetModeMentionsFrozenTargetSet(t *testing.T) {
-	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "first-officer-shared-core.md")
+	// Fleet Mode relocated out of the boot-resident shared core into the deferred
+	// references/fo-fleet.md (main's <=26755-byte collapse cap; boot core stays lean),
+	// so the target_set/egress routing guide lives — and is pinned — there.
+	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "fo-fleet.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("read first-officer-shared-core: %v", err)
+		t.Fatalf("read fo-fleet: %v", err)
 	}
 	c := string(data)
 	for _, r := range []string{

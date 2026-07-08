@@ -258,7 +258,7 @@ func driveHaikuLoopOnce(t *testing.T, binary string, env []string, artifactDir s
 	prompt := haikuLoopPrompt(fx)
 
 	// Bare `claude` — NOT `spacedock claude`. No --plugin-dir, no --agent, no
-	// --skip-contract-check: the FO contract is NOT loaded, which is the whole point
+	// --skip-compat-check: the FO contract is NOT loaded, which is the whole point
 	// of the spike (does Haiku follow the SIMPLIFIED loop). withBinaryOnPath already
 	// put the built `spacedock` on the child PATH (the prose-functions shell it).
 	cmd := exec.Command("claude",

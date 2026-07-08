@@ -1,9 +1,10 @@
-// ABOUTME: AC-1 skew test — the live repo manifest range rejects a contract-1
-// ABOUTME: binary (the published v0.22.0) and admits the current CONTRACT_VERSION.
+// ABOUTME: Minor-skew test — the live repo manifest's own version rejects an
+// ABOUTME: old-minor binary and admits a binary sharing its own minor.
 package integration
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,9 +12,9 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/contract"
 )
 
-// liveRequiresContract reads the requires-contract range declared by the named
-// repo plugin manifest (".claude-plugin" or ".codex-plugin").
-func liveRequiresContract(t *testing.T, pluginDir string) string {
+// liveManifestVersion reads the `version` field declared by the named repo
+// plugin manifest (".claude-plugin" or ".codex-plugin").
+func liveManifestVersion(t *testing.T, pluginDir string) string {
 	t.Helper()
 	path := filepath.Join(repoRoot(t), pluginDir, "plugin.json")
 	data, err := os.ReadFile(path)
@@ -21,36 +22,44 @@ func liveRequiresContract(t *testing.T, pluginDir string) string {
 		t.Fatalf("read %s: %v", path, err)
 	}
 	var m struct {
-		RequiresContract string `json:"requires-contract"`
+		Version string `json:"version"`
 	}
 	if err := json.Unmarshal(data, &m); err != nil {
 		t.Fatalf("parse %s: %v", path, err)
 	}
-	return m.RequiresContract
+	return m.Version
 }
 
-// TestContract1BinaryRejectedByLiveRange locks AC-1: a contract-1 binary (the
-// published v0.22.0, which reports `contract 1`) is REJECTED by the live skill
-// range with the too-old-binary verdict, while the current binary's
-// CONTRACT_VERSION is admitted as compatible. Both plugin manifests are exercised
-// so the Claude and Codex ranges agree. The test reads the live range and the
-// live CONTRACT_VERSION — leaving either side at contract 1 / `>=1,<2` makes the
-// contract-1 case Compatible and fails here.
-func TestContract1BinaryRejectedByLiveRange(t *testing.T) {
-	const contract1 = 1 // the published v0.22.0 binary's reported contract
+// TestOldMinorBinaryRejectedByLiveManifest locks D1: a binary one minor BEHIND
+// the live repo's own manifest version is REJECTED with the too-old-binary
+// verdict, while a binary sharing the manifest's own minor is admitted as
+// compatible. Both plugin manifests are exercised so the Claude and Codex
+// declarations agree. The test reads the LIVE manifest version — a future
+// minor bump that forgets to keep the binary in step still classifies an old
+// binary as too-old-binary here (the property this locks), so the test
+// self-adjusts with every release rather than pinning a stale integer.
+func TestOldMinorBinaryRejectedByLiveManifest(t *testing.T) {
 	for _, pluginDir := range []string{".claude-plugin", ".codex-plugin"} {
-		raw := liveRequiresContract(t, pluginDir)
+		pluginVersion := liveManifestVersion(t, pluginDir)
+		major, minor, ok := contract.ParseMajorMinor(pluginVersion)
+		if !ok {
+			t.Fatalf("%s version %q does not parse as major.minor", pluginDir, pluginVersion)
+		}
+		if minor == 0 {
+			t.Fatalf("%s minor is 0 — no room for an old-minor binary fixture one minor behind", pluginDir)
+		}
+		oldBinary := fmt.Sprintf("%d.%d.0", major, minor-1)
 
-		stale := contract.Compare(contract1, raw, "claude", "0.22.0", "0.23.0")
+		stale := contract.Compare("claude", pluginVersion, oldBinary)
 		if stale.Verdict != contract.TooOldBinary {
-			t.Fatalf("%s range %q: contract-1 binary verdict = %v, want too-old-binary (a contract-1 v0.22.0 binary must be rejected)",
-				pluginDir, raw, stale.Verdict)
+			t.Fatalf("%s: old-minor binary %s verdict = %v, want too-old-binary (an old-minor binary must be rejected)",
+				pluginDir, oldBinary, stale.Verdict)
 		}
 
-		current := contract.Compare(contract.CONTRACT_VERSION, raw, "claude", "0.23.0", "0.23.0")
+		current := contract.Compare("claude", pluginVersion, pluginVersion)
 		if current.Verdict != contract.Compatible {
-			t.Fatalf("%s range %q: current CONTRACT_VERSION=%d verdict = %v, want compatible",
-				pluginDir, raw, contract.CONTRACT_VERSION, current.Verdict)
+			t.Fatalf("%s: same-minor binary %s verdict = %v, want compatible",
+				pluginDir, pluginVersion, current.Verdict)
 		}
 	}
 }

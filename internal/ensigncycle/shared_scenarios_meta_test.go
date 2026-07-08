@@ -35,6 +35,9 @@ func TestSharedRuntimeScenarioDefinitions(t *testing.T) {
 		"merge-hook-guardrail",
 		"filing",
 		"shallow-boot",
+		"self-evidence-merge-triage",
+		"smallest-sufficient-mechanism",
+		"keep-moving-posture",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("shared runtime scenarios = %v, want %v", got, want)

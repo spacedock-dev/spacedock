@@ -49,6 +49,43 @@ defaults win.
 term.
 `
 
+// readmeModelsFable mirrors readmeModels but with fable at both the stage and
+// defaults precedence sites, for the AC-1 fable-joins-the-enum cases.
+const readmeModelsFable = `---
+entity-type: task
+id-style: slug
+stages:
+  defaults:
+    worktree: false
+    concurrency: 1
+    model: fable
+  states:
+    - name: stagemodel
+      initial: true
+      model: fable
+    - name: defaultsmodel
+    - name: done
+      terminal: true
+---
+# Fable Models Fixture
+
+### stagemodel
+
+stage wins.
+
+- **Outputs:** x.
+
+### defaultsmodel
+
+defaults win.
+
+- **Outputs:** y.
+
+### done
+
+term.
+`
+
 // readmeModelsNull mirrors readmeModels but with no model anywhere, so the
 // effective model resolves to null (empty stderr, "model": null in stdout).
 const readmeModelsNull = `---
@@ -91,6 +128,8 @@ func TestBuildModelPrecedence(t *testing.T) {
 		{name: "stage-wins-opus", readme: readmeModels, stage: "stagemodel", wantModel: "opus"},
 		{name: "defaults-haiku", readme: readmeModels, stage: "defaultsmodel", wantModel: "haiku"},
 		{name: "null", readme: readmeModelsNull, stage: "nomodel", wantModel: ""},
+		{name: "stage-fable", readme: readmeModelsFable, stage: "stagemodel", wantModel: "fable"},
+		{name: "defaults-fable", readme: readmeModelsFable, stage: "defaultsmodel", wantModel: "fable"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

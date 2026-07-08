@@ -4,6 +4,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,6 +79,181 @@ stages:
 	}
 }
 
+// TestSweepGhUnavailableReportsUnknown pins AC-4 (D2): with >=1 PR-pending entity
+// and every gh probe erroring, Sweep must declare merge state UNKNOWN rather than
+// silently reporting "0 entity(ies) merged" — a real empty sweep and a gh-outage
+// sweep are indistinguishable without this. classC itself stays best-effort (it
+// swallows the error); Sweep counts probes around it.
+func TestSweepGhUnavailableReportsUnknown(t *testing.T) {
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "pr-pending", "index.md"), reconcileEntityFM(map[string]string{
+		"id": "id-p", "title": "pending", "slug": "pr-pending", "status": "implementation", "pr": "42",
+	}))
+
+	ghUnavailable := func(string) (string, error) { return "", fmt.Errorf("gh: command not found") }
+	var out, errBuf strings.Builder
+	code := Sweep(workflowDir, ghUnavailable, true, &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("Sweep should exit 0 even when gh is unavailable; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if res.Gh != "unavailable" {
+		t.Fatalf(`sweep JSON should carry "gh": "unavailable", got %q (full: %s)`, res.Gh, out.String())
+	}
+	if !strings.Contains(res.Reason, "UNKNOWN") {
+		t.Fatalf("reason should declare merge state UNKNOWN, got %q", res.Reason)
+	}
+	if strings.Contains(res.Reason, "0 entity(ies)") {
+		t.Fatalf("gh-unavailable reason must NOT read as a real empty sweep, got %q", res.Reason)
+	}
+	if len(res.Swept) != 0 {
+		t.Fatalf("gh-unavailable sweep should report zero swept entities (all probes errored), got %v", res.Swept)
+	}
+}
+
+// TestSweepGhPartiallyAvailableStillReportsNormally pins the complement: when at
+// least one gh probe SUCCEEDS, the sweep is NOT gh-unavailable — a mixed
+// success/failure batch still resolves to the normal count-based reason (the
+// binary is reachable; a single flake should not mask real merged entities).
+func TestSweepGhPartiallyAvailableStillReportsNormally(t *testing.T) {
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "pr-merged", "index.md"), reconcileEntityFM(map[string]string{
+		"id": "id-m", "title": "merged", "slug": "pr-merged", "status": "implementation", "pr": "42",
+	}))
+	writeFile(t, filepath.Join(stateRoot, "pr-erroring", "index.md"), reconcileEntityFM(map[string]string{
+		"id": "id-e", "title": "erroring", "slug": "pr-erroring", "status": "implementation", "pr": "43",
+	}))
+
+	gh := func(pr string) (string, error) {
+		if pr == "42" {
+			return "MERGED", nil
+		}
+		return "", fmt.Errorf("rate limited")
+	}
+	var out, errBuf strings.Builder
+	code := Sweep(workflowDir, gh, true, &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("Sweep should exit 0; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if res.Gh == "unavailable" {
+		t.Fatalf("a partial gh failure must NOT report unavailable, got %q", res.Gh)
+	}
+	if !strings.Contains(res.Reason, "1 entity(ies)") {
+		t.Fatalf("reason should still report the one real merged entity, got %q", res.Reason)
+	}
+}
+
+// TestSweepNonEmptyNamesRegisteredStartupModNextStep pins AC-4/D2's non-empty
+// next-step: a workflow with a registered startup-hook mod names the mod file to
+// advance per, not a hardcoded procedure — the mod file is the per-workflow
+// authority (shipped pr-merge.md advances directly; this repo's local one
+// delegates to sentinel+merge-guard, and the binary must not pick a side).
+func TestSweepNonEmptyNamesRegisteredStartupModNextStep(t *testing.T) {
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	writeFile(t, filepath.Join(workflowDir, "_mods", "pr-merge.md"), "## Hook: startup\n\nAdvance a merged PR.\n")
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "pr-merged", "index.md"), reconcileEntityFM(map[string]string{
+		"id": "id-m", "title": "merged", "slug": "pr-merged", "status": "implementation", "pr": "42",
+	}))
+
+	gh := func(string) (string, error) { return "MERGED", nil }
+	var out, errBuf strings.Builder
+	if code := Sweep(workflowDir, gh, true, &out, &errBuf); code != 0 {
+		t.Fatalf("Sweep should exit 0; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if !strings.Contains(res.Next, "_mods/pr-merge.md") {
+		t.Fatalf("next-step should name the registered startup mod file, got %q", res.Next)
+	}
+	if strings.Contains(res.Next, "merge guard") || strings.Contains(res.Next, "sentinel") {
+		t.Fatalf("next-step must point at the mod file, not prescribe a procedure, got %q", res.Next)
+	}
+}
+
+// TestSweepNonEmptyNamesGenericModPointerWhenNoneRegistered pins the fallback: a
+// non-empty sweep with NO startup-hook mod registered still names a next-step,
+// pointing generically at _mods/ rather than a specific (nonexistent) file.
+func TestSweepNonEmptyNamesGenericModPointerWhenNoneRegistered(t *testing.T) {
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "pr-merged", "index.md"), reconcileEntityFM(map[string]string{
+		"id": "id-m", "title": "merged", "slug": "pr-merged", "status": "implementation", "pr": "42",
+	}))
+
+	gh := func(string) (string, error) { return "MERGED", nil }
+	var out, errBuf strings.Builder
+	if code := Sweep(workflowDir, gh, true, &out, &errBuf); code != 0 {
+		t.Fatalf("Sweep should exit 0; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if !strings.Contains(res.Next, "_mods/") {
+		t.Fatalf("next-step should still point generically at _mods/, got %q", res.Next)
+	}
+}
+
 // TestSweepEmptyIsEmptyArray pins the empty case: no merged-not-done entities yields
 // an empty swept array (never null), exit 0.
 func TestSweepEmptyIsEmptyArray(t *testing.T) {
@@ -108,5 +284,95 @@ stages:
 	}
 	if !strings.Contains(out.String(), `"swept": []`) {
 		t.Fatalf("empty sweep should emit an empty array, not null; json:\n%s", out.String())
+	}
+}
+
+// stubGhScript is the shared-fixture `gh` shim's exact shape (ensigncycle's
+// writeStubMergedGh): `gh pr view {n} --json state --jq .state` answers bare,
+// jq-extracted text ("MERGED"); every other gh invocation prints an empty line.
+// It does NOT emit a `{"state":...}` JSON envelope — mirroring the flags-agnostic
+// case match the live stub uses (it dispatches on $1 $2 only).
+const stubGhScript = "#!/bin/sh\n" +
+	"case \"$1 $2\" in\n" +
+	"  \"pr view\") echo MERGED ;;\n" +
+	"  *) echo \"\" ;;\n" +
+	"esac\n"
+
+// writeStubGh writes stubGhScript to dir/gh and prepends dir to PATH for the
+// test's duration via t.Setenv, so exec.Command("gh", ...) resolves to it.
+func writeStubGh(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "gh"), []byte(stubGhScript), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+// TestGhRunnerExecParsesJqExtractedState (feedback cycle 2 regression): the
+// production `GhRunnerExec` probe must parse the SAME `--jq .state`
+// bare-text shape boot.go's already-proven PR_STATE probe uses — a working `gh`
+// answering that way must not be treated as a probe error. Before the fix,
+// GhRunnerExec called `gh pr view PR --json state` (no --jq) and JSON-unmarshaled
+// the result expecting a `{"state":...}` envelope; against this stub's bare
+// "MERGED" text that unmarshal fails, so a genuinely-working `gh` was
+// misclassified as an error probe.
+func TestGhRunnerExecParsesJqExtractedState(t *testing.T) {
+	writeStubGh(t)
+
+	state, err := GhRunnerExec("#42")
+	if err != nil {
+		t.Fatalf("GhRunnerExec should not error against a working stub gh, got %v", err)
+	}
+	if state != "MERGED" {
+		t.Fatalf("GhRunnerExec state = %q, want MERGED", state)
+	}
+}
+
+// TestSweepWithRealGhStubDoesNotReportUnknown (feedback cycle 2 regression): this
+// is the exact live shallow-boot failure reproduced offline — Sweep driven with
+// the REAL production GhRunnerExec (not an injected fake) against a working `gh`
+// on PATH must NOT report gh-unavailable UNKNOWN for a PR-pending entity. Caught
+// by PR #465's codex-live shallow-boot scenario: the boot's before-greet sweep
+// reported UNKNOWN despite a working stub gh, so the FO skipped the mod's
+// advancement and hand-advanced without archiving.
+func TestSweepWithRealGhStubDoesNotReportUnknown(t *testing.T) {
+	writeStubGh(t)
+
+	repoRoot := t.TempDir()
+	workflowDir := filepath.Join(repoRoot, "docs", "wf")
+	writeFile(t, filepath.Join(workflowDir, "README.md"), `---
+entity-type: task
+state: .spacedock-state
+stages:
+  states:
+    - name: ideation
+      initial: true
+    - name: done
+      terminal: true
+---
+`)
+	// pr is quoted ("#42") to match the shared shallow-boot fixture's entity
+	// exactly (shared_fixtures_test.go's shallowBootMergedEntity) — an unquoted
+	// `pr: #42` would parse as a YAML comment (empty value), which reconcileEntityFM
+	// writes unquoted, so this entity is hand-written here instead.
+	stateRoot := filepath.Join(workflowDir, ".spacedock-state")
+	writeFile(t, filepath.Join(stateRoot, "merged-pr", "index.md"), "---\n"+
+		"id: id-m\ntitle: merged\nslug: merged-pr\nstatus: implementation\npr: \"#42\"\n---\n\nEntity body.\n")
+
+	var out, errBuf strings.Builder
+	code := Sweep(workflowDir, GhRunnerExec, true, &out, &errBuf)
+	if code != 0 {
+		t.Fatalf("Sweep should exit 0; got %d stderr=%q", code, errBuf.String())
+	}
+	var res sweepResult
+	if err := json.Unmarshal([]byte(out.String()), &res); err != nil {
+		t.Fatalf("Sweep --json should emit valid JSON: %v\n%s", err, out.String())
+	}
+	if res.Gh == "unavailable" {
+		t.Fatalf("a working gh must NOT report unavailable, got reason=%q", res.Reason)
+	}
+	if len(res.Swept) != 1 || res.Swept[0].Slug != "merged-pr" {
+		t.Fatalf("sweep should report the merged entity via the real GhRunnerExec, got %v", res.Swept)
 	}
 }

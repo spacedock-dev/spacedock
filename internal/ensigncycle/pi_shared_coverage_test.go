@@ -35,6 +35,18 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer shallow-boot runner.",
 		},
+		"self-evidence-merge-triage": {
+			mode:   "gap",
+			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer merge/triage self-evidence runner.",
+		},
+		"smallest-sufficient-mechanism": {
+			mode:   "gap",
+			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer smallest-sufficient-mechanism runner.",
+		},
+		"keep-moving-posture": {
+			mode:   "gap",
+			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer keep-moving-posture runner.",
+		},
 	}
 }
 

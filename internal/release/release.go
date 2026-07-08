@@ -33,6 +33,23 @@ func replaceFirstVersion(blob []byte, value string) []byte {
 	return out
 }
 
+// stableVersionRe matches a bare stable semver (no `v` prefix, no `-pre`
+// suffix). DevPreVersion uses it to reject anything that is not X.Y.Z.
+var stableVersionRe = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)$`)
+
+// DevPreVersion computes the post-release dev pre-version for the `next` edge
+// line from a just-released stable version: X.Y.Z -> X.(Y+1).0-pre1. Input must
+// be a bare stable semver (no hyphen) — release.yml only calls this on the
+// `!contains(github.ref, '-')` branch, which already guarantees that shape.
+func DevPreVersion(stableVersion string) (string, error) {
+	m := stableVersionRe.FindStringSubmatch(stableVersion)
+	if m == nil {
+		return "", fmt.Errorf("stable version %q is not X.Y.Z", stableVersion)
+	}
+	minor, _ := strconv.Atoi(m[2])
+	return fmt.Sprintf("%s.%d.0-pre1", m[1], minor+1), nil
+}
+
 // ManifestVersion reads the top-level `version` field of a plugin manifest
 // (plugin.json / .codex-plugin/plugin.json). It returns an empty string with no
 // error when the manifest parses but carries no top-level `version` (a stamp that

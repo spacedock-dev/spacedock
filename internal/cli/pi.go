@@ -332,10 +332,19 @@ func runInitWithPi(ctx context.Context, args []string, hostOps hostOps, piOps pi
 		return code
 	}
 	if host != "pi" {
-		// --plugin-dir is the pi dev-override install source; it is not supported
-		// for claude/codex install (which use the host plugin marketplace).
 		if pluginDir != "" {
-			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
+			// codex's `--plugin-dir` builds a local marketplace from the checkout and
+			// installs it under the binary's own channel, through the same shared helper
+			// `spacedock codex --plugin-dir` calls. claude has no such install path — its
+			// --plugin-dir is an ephemeral launch override, not an install.
+			if host == "codex" {
+				if err := installCodexLocalPluginDir(hostOps, pluginDir, stderr); err != nil {
+					fmt.Fprintf(stderr, "spacedock install: %v\n", err)
+					return 1
+				}
+				return 0
+			}
+			fmt.Fprintln(stderr, "spacedock install: --plugin-dir is not supported for claude; use SPACEDOCK_REPO_ROOT or run from the Spacedock checkout")
 			return 2
 		}
 		return runInit(ctx, args, hostOps, stdout, stderr)
@@ -397,8 +406,8 @@ func parsePiFrontDoorArgs(args []string) (fd frontDoorArgs, pluginDirs []string,
 	fs.SetOutput(io.Discard)
 	pluginDir := fs.StringArray("plugin-dir", nil, "Load local Spacedock skill checkout")
 	// The safehouse subset mirrors bindFrontDoorFlags' safehouse flags (same names
-	// for operator muscle-memory transfer across hosts). --skip-contract-check / --no-install
-	// are NOT registered: pi has no contract gate, so advertising them would mislead.
+	// for operator muscle-memory transfer across hosts). --skip-compat-check / --no-install
+	// are NOT registered: pi has no version gate, so advertising them would mislead.
 	forceSafehouse := fs.Bool("safehouse", false, "Force the safehouse sandbox wrap even without a .safehouse profile in the directory")
 	enable := fs.StringArray("safehouse-enable", nil, "Enable a safehouse capability (KEY[,KEY]); repeatable; e.g. --safehouse-enable ssh,docker")
 	addDirs := fs.StringArray("safehouse-add-dirs", nil, "Grant safehouse read-write access to a directory; repeatable")

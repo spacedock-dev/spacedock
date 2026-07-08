@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,17 +20,28 @@ import (
 // front door / init paths run with no real host CLI, no exec, no network.
 type fakeHost struct {
 	// manifest is the path returned by ResolveManifest; "" means no plugin found.
-	manifest    string
-	resolveErr  error
-	launchedArg []string // argv captured by Launch
-	launchedEnv []string // env captured by Launch
-	launchCode  int      // host exit code Launch returns (default 0)
-	launchErr   error
-	installCmds []string // host commands captured by Install
-	installOut  string
+	manifest string
+	// manifestAfterInstall, when non-empty, is what ResolveManifest returns once
+	// Install has been called — simulating a real install actually landing a
+	// (usually compatible) plugin, so D6's re-gate-once step sees the fix. Left
+	// empty (the default), ResolveManifest keeps returning the pre-install
+	// manifest even after Install — simulating an install that does NOT change
+	// resolution, the "second miss" case.
+	manifestAfterInstall string
+	installed            bool
+	resolveErr           error
+	launchedArg          []string // argv captured by Launch
+	launchedEnv          []string // env captured by Launch
+	launchCode           int      // host exit code Launch returns (default 0)
+	launchErr            error
+	installCmds          []string // host commands captured by Install
+	installOut           string
 }
 
 func (f *fakeHost) ResolveManifest(host string) (string, error) {
+	if f.installed && f.manifestAfterInstall != "" {
+		return f.manifestAfterInstall, nil
+	}
 	return f.manifest, f.resolveErr
 }
 
@@ -41,27 +53,69 @@ func (f *fakeHost) Launch(argv []string, env []string) (int, error) {
 
 func (f *fakeHost) Install(host, source, branch string) (string, error) {
 	f.installCmds = append(f.installCmds, host, source, branch)
+	f.installed = true
 	return f.installOut, nil
 }
 
-// compatibleManifest returns a fixture path whose requires-contract brackets
-// CONTRACT_VERSION (the testdata/compatible.json fixture is >=2,<3).
-func compatibleManifest(t *testing.T) string {
+// testBinaryVersion is the deterministic binary version a handful of gating
+// tests pin via withVersion when they need an exact, self-chosen relationship to
+// a fixture (e.g. the upgrade-hint patch-skew cases). It shares its minor (19)
+// with binaryMinor's fallback below.
+const testBinaryVersion = "0.19.4"
+
+// binaryMinor returns the (major, minor) pair of the CURRENT effective binary
+// version (displayVersion() — Version, or its dev-embed resolution). The fixture
+// helpers below derive their versions from it, so a "compatible" / "too-old-*"
+// fixture is self-consistent with whatever this test binary reports, whether
+// that is an explicit withVersion() stamp or the `dev` default's embedded
+// checkout minor — no hardcoded fixture value can drift out of sync with it.
+func binaryMinor(t *testing.T) (major, minor int) {
 	t.Helper()
-	p, err := filepath.Abs(filepath.Join("..", "contract", "testdata", "compatible.json"))
-	if err != nil {
-		t.Fatal(err)
+	major, minor, ok := contract.ParseMajorMinor(displayVersion())
+	if !ok {
+		t.Fatalf("displayVersion() %q has no parseable major.minor", displayVersion())
 	}
-	return p
+	return major, minor
 }
 
-func tooOldBinaryManifest(t *testing.T) string {
+// writeVersionedManifest writes a minimal plugin manifest fixture at the given
+// version under a fresh temp dir and returns its path.
+func writeVersionedManifest(t *testing.T, version string) string {
 	t.Helper()
-	p, err := filepath.Abs(filepath.Join("..", "contract", "testdata", "too-old-binary.json"))
-	if err != nil {
+	path := filepath.Join(t.TempDir(), "plugin.json")
+	body := `{ "name": "spacedock", "version": "` + version + `", "skills": "./skills/" }` + "\n"
+	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return p
+	return path
+}
+
+// compatibleManifest returns a fixture path whose version shares the current
+// binary's major.minor (patch 8, distinct from the binary's own patch to prove
+// patch-skew tolerance).
+func compatibleManifest(t *testing.T) string {
+	t.Helper()
+	major, minor := binaryMinor(t)
+	return writeVersionedManifest(t, fmt.Sprintf("%d.%d.8", major, minor))
+}
+
+// tooOldBinaryManifest returns a fixture path one minor AHEAD of the current
+// binary — the binary is too old for this plugin.
+func tooOldBinaryManifest(t *testing.T) string {
+	t.Helper()
+	major, minor := binaryMinor(t)
+	return writeVersionedManifest(t, fmt.Sprintf("%d.%d.0", major, minor+1))
+}
+
+// tooOldPluginManifest returns a fixture path one minor BEHIND the current
+// binary — the plugin is too old for this binary, the D6 auto-heal verdict.
+func tooOldPluginManifest(t *testing.T) string {
+	t.Helper()
+	major, minor := binaryMinor(t)
+	if minor == 0 {
+		t.Fatalf("binary minor is 0 — no room for a too-old-plugin fixture one minor behind")
+	}
+	return writeVersionedManifest(t, fmt.Sprintf("%d.%d.0", major, minor-1))
 }
 
 func withExecutablePath(t *testing.T, path string, err error) {
@@ -109,6 +163,7 @@ func envValue(env []string, key string) (string, bool) {
 // door invokes the launch seam with argv beginning `claude --agent
 // spacedock:first-officer` and passes through the operator's trailing args.
 func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -126,7 +181,7 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 // TestFrontDoorUpgradeHintOnBehindPlugin is AC-4: the front-door gate prints the
 // opt-in upgrade hint to stderr when the resolved plugin is contract-compatible
 // but behind the binary, then proceeds to launch (the hint never blocks). The
-// compatible.json fixture is plugin 0.12.1; stamping the binary Version to a
+// compatible.json fixture is plugin 0.19.8; stamping the binary Version to a
 // strictly-newer semver makes it behind-but-compatible. A paired equal-version
 // case (binary == plugin) asserts the gate stays silent. Both arms observe the
 // recorded launch + stderr, never a source grep.
@@ -147,7 +202,7 @@ func TestFrontDoorUpgradeHintOnBehindPlugin(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name+" behind-plugin hints + launches", func(t *testing.T) {
-			withVersion(t, "0.20.0") // strictly newer than the fixture plugin 0.12.1
+			withVersion(t, "0.19.20") // same minor as the fixture plugin 0.19.8, strictly newer patch
 			fake := &fakeHost{manifest: compatibleManifest(t)}
 			var stderr bytes.Buffer
 
@@ -169,7 +224,7 @@ func TestFrontDoorUpgradeHintOnBehindPlugin(t *testing.T) {
 		})
 
 		t.Run(tc.name+" equal-version stays silent", func(t *testing.T) {
-			withVersion(t, "0.12.1") // exactly the fixture plugin version
+			withVersion(t, "0.19.8") // exactly the fixture plugin version
 			fake := &fakeHost{manifest: compatibleManifest(t)}
 			var stderr bytes.Buffer
 
@@ -191,6 +246,7 @@ func TestFrontDoorUpgradeHintOnBehindPlugin(t *testing.T) {
 // TestClaudeFrontDoorFailFastOnMismatch: on a mismatch verdict the launch seam is
 // NOT invoked and the process exits non-zero with the pinned remedy on stderr.
 func TestClaudeFrontDoorInjectsResolvedLauncherBin(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	bin := executableFixture(t)
 	withExecutablePath(t, bin, nil)
 	t.Setenv(spacedockBinEnv, "/old/spacedock")
@@ -209,6 +265,7 @@ func TestClaudeFrontDoorInjectsResolvedLauncherBin(t *testing.T) {
 }
 
 func TestClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	withExecutablePath(t, "", errors.New("boom"))
 	t.Setenv(spacedockBinEnv, "/old/spacedock")
 	fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -225,6 +282,7 @@ func TestClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails(t *testing.T) {
 }
 
 func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	real := executableFixture(t)
 	link := filepath.Join(t.TempDir(), "spacedock-link")
 	if err := os.Symlink(real, link); err != nil {
@@ -249,6 +307,7 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 // carries it set to 1 — a best-effort export, not the authoritative enabler (the
 // authoritative enabler is ~/.claude/settings.json; see agentTeamsEnv).
 func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	t.Setenv(agentTeamsEnv, "") // register restore-on-cleanup, then unset for real
 	os.Unsetenv(agentTeamsEnv)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -269,6 +328,7 @@ func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
 // for CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS is preserved, not overridden — an
 // operator who set =0 keeps =0. The launcher respects the override either way.
 func TestClaudeFrontDoorPreservesExplicitAgentTeams(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	t.Setenv(agentTeamsEnv, "0")
 	fake := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
@@ -289,6 +349,7 @@ func TestClaudeFrontDoorPreservesExplicitAgentTeams(t *testing.T) {
 // incompatibility. The verdict reaches runClaude's mismatch branch, not the
 // no-plugin branch, so no install is invoked and no launch is reached.
 func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -308,13 +369,15 @@ func TestClaudeFrontDoorFailFastOnMismatch(t *testing.T) {
 
 // assertGateMismatchMessage is the gate-parity oracle: the live launch gate emits
 // the same version-bearing mismatch message the doctor does — it names both the
-// plugin display version (0.13.0, from the too-old-binary fixture) and the binary
-// display version (Version), and carries no `contract N` token in the user-facing
-// line.
+// too-old-binary fixture's plugin display version (one minor ahead of the
+// binary, patch 0 — see tooOldBinaryManifest) and the binary display version
+// (Version), and carries no `contract N` token in the user-facing line.
 func assertGateMismatchMessage(t *testing.T, out string) {
 	t.Helper()
-	if !strings.Contains(out, "plugin 0.13.0") {
-		t.Fatalf("gate mismatch message missing plugin version 0.13.0: %q", out)
+	major, minor := binaryMinor(t)
+	wantPluginVersion := fmt.Sprintf("plugin %d.%d.0", major, minor+1)
+	if !strings.Contains(out, wantPluginVersion) {
+		t.Fatalf("gate mismatch message missing %q: %q", wantPluginVersion, out)
 	}
 	if !strings.Contains(out, "binary "+Version) {
 		t.Fatalf("gate mismatch message missing binary version %q: %q", Version, out)
@@ -330,7 +393,7 @@ func assertGateMismatchMessage(t *testing.T, out string) {
 // rather than refusing. Install-invocation and launch-reached are observed
 // behaviors recorded by the stub, not a string match.
 func TestClaudeFrontDoorNoPluginAutoInstalls(t *testing.T) {
-	fake := &fakeHost{manifest: ""} // no plugin found
+	fake := &fakeHost{manifest: "", manifestAfterInstall: compatibleManifest(t)} // no plugin found; install lands a compatible one
 	var stdout, stderr bytes.Buffer
 
 	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
@@ -378,7 +441,7 @@ func TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-such-dir", ".claude-plugin", "plugin.json")
 
 	t.Run("default auto-installs", func(t *testing.T) {
-		fake := &fakeHost{manifest: missing} // non-empty path, but the file is absent
+		fake := &fakeHost{manifest: missing, manifestAfterInstall: compatibleManifest(t)} // non-empty path, but the file is absent; install lands a compatible one
 		var stdout, stderr bytes.Buffer
 
 		code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
@@ -416,7 +479,7 @@ func TestClaudeFrontDoorNonEmptyMissingManifestAutoInstalls(t *testing.T) {
 // the binary actually recognizes. After the init->install rename a user who hits
 // the gate and is told to "run spacedock init --host …" runs a command that now
 // exits 2 (unknown command). gateHost owns only the always-fail-fast remedies
-// (resolve error → MalformedRange); the NoPluginFound message is the caller's
+// (resolve error → MalformedVersion); the NoPluginFound message is the caller's
 // (it auto-installs by default, refuses under --no-install), so the no-plugin /
 // missing-manifest remedies are asserted on the launcher's --no-install output.
 // Each remedy must name `spacedock install` and never `spacedock init`.
@@ -427,7 +490,7 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	// not a missing plugin). It MUST print here.
 	t.Run("resolve error (gateHost-owned)", func(t *testing.T) {
 		var stderr bytes.Buffer
-		if v := gateHost(&fakeHost{resolveErr: errors.New("host CLI failed")}, "claude", &stderr); v == contract.Compatible {
+		if res := gateHost(&fakeHost{resolveErr: errors.New("host CLI failed")}, "claude", &stderr); res.Verdict == contract.Compatible {
 			t.Fatalf("gateHost = Compatible, want denied")
 		}
 		assertRemedyNamesInstall(t, stderr.String())
@@ -454,8 +517,8 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 		})
 		t.Run(tc.name+" (gateHost stays silent)", func(t *testing.T) {
 			var stderr bytes.Buffer
-			if v := gateHost(&fakeHost{manifest: tc.manifest}, "claude", &stderr); v != contract.NoPluginFound {
-				t.Fatalf("gateHost verdict = %v, want NoPluginFound", v)
+			if res := gateHost(&fakeHost{manifest: tc.manifest}, "claude", &stderr); res.Verdict != contract.NoPluginFound {
+				t.Fatalf("gateHost verdict = %v, want NoPluginFound", res.Verdict)
 			}
 			if stderr.Len() != 0 {
 				t.Fatalf("gateHost printed for NoPluginFound (caller owns the message): %q", stderr.String())
@@ -475,6 +538,136 @@ func TestGateRemedyNamesLiveInstallCommand(t *testing.T) {
 	}
 	if cmd, _, _ := root.Find([]string{"init"}); cmd != root {
 		t.Fatalf("`init` resolved to a command (%v) — the removed verb must fall back to the unknown-command path", cmd.Name())
+	}
+}
+
+// TestGateHostStaysSilentForTooOldPlugin mirrors the existing NoPluginFound
+// silence test for D6's second healable verdict: gateHost must NOT print the
+// mismatch remedy for too-old-plugin (the caller decides between the auto-heal
+// announcement and the --no-install remedy; a print here would show the
+// operator a scary message right before the silent heal).
+func TestGateHostStaysSilentForTooOldPlugin(t *testing.T) {
+	var stderr bytes.Buffer
+	res := gateHost(&fakeHost{manifest: tooOldPluginManifest(t)}, "claude", &stderr)
+	if res.Verdict != contract.TooOldPlugin {
+		t.Fatalf("gateHost verdict = %v, want TooOldPlugin", res.Verdict)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("gateHost printed for TooOldPlugin (the caller owns the message, D6): %q", stderr.String())
+	}
+}
+
+// TestFrontDoorTooOldPluginAutoRefreshes is D6's default-arm proof for both
+// front doors: a too-old-plugin verdict announces "Refreshing the {host}
+// plugin…" (not "Installing…" — no plugin was missing, one is just behind),
+// installs, re-gates ONCE, and on success proceeds to launch — mirroring the
+// NoPluginFound auto-install arm but for the SECOND healable verdict.
+func TestFrontDoorTooOldPluginAutoRefreshes(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tooOldPluginManifest(t), manifestAfterInstall: compatibleManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run(nil, t.TempDir(), fake, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (auto-refresh + re-gate + launch) (stderr=%q)", code, stderr.String())
+			}
+			want := "Refreshing the " + tc.host + " plugin"
+			if !strings.Contains(stderr.String(), want) {
+				t.Fatalf("stderr missing %q announcement: %q", want, stderr.String())
+			}
+			if strings.Contains(stderr.String(), "Spacedock version mismatch") {
+				t.Fatalf("stderr shows the scary mismatch remedy before the silent heal (D6 forbids it): %q", stderr.String())
+			}
+			if len(fake.installCmds) == 0 {
+				t.Fatalf("install seam not invoked: auto-refresh did not run")
+			}
+			if fake.launchedArg == nil {
+				t.Fatalf("launch seam not invoked after auto-refresh")
+			}
+		})
+	}
+}
+
+// TestFrontDoorTooOldPluginNoInstallRefuses is D6's --no-install refuse arm:
+// with a too-old-plugin verdict and --no-install, the launcher refuses with the
+// gate's own mismatch remedy (not the no-plugin remedy — a stale plugin is a
+// different situation), installs nothing, and never launches.
+func TestFrontDoorTooOldPluginNoInstallRefuses(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		run  func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int
+	}{
+		{"claude", "claude", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runClaude(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+		{"codex", "codex", func(args []string, dir string, fake *fakeHost, stderr *bytes.Buffer) int {
+			var stdout bytes.Buffer
+			return runCodex(context.Background(), args, dir, fake, lookFound, &stdout, stderr)
+		}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: tooOldPluginManifest(t)}
+			var stderr bytes.Buffer
+
+			code := tc.run([]string{"--no-install"}, t.TempDir(), fake, &stderr)
+
+			if code == 0 {
+				t.Fatalf("exit = 0, want non-zero with --no-install on a too-old-plugin verdict")
+			}
+			if !strings.Contains(stderr.String(), "Update the plugin to continue.") {
+				t.Fatalf("stderr missing the too-old-plugin remedy: %q", stderr.String())
+			}
+			if len(fake.installCmds) != 0 {
+				t.Fatalf("install seam invoked despite --no-install: %v", fake.installCmds)
+			}
+			if fake.launchedArg != nil {
+				t.Fatalf("launch seam invoked despite --no-install: %v", fake.launchedArg)
+			}
+		})
+	}
+}
+
+// TestFrontDoorTooOldPluginSecondMissRefuses is D6's "one retry, no loop"
+// guarantee: when the auto-refresh install does NOT fix the resolution (a
+// release-window race, a stale channel — modeled here by a fakeHost whose
+// manifest never changes after Install), the launcher refuses rather than
+// launching blind, and Install is called exactly ONCE (no retry loop).
+func TestFrontDoorTooOldPluginSecondMissRefuses(t *testing.T) {
+	fake := &fakeHost{manifest: tooOldPluginManifest(t)} // manifestAfterInstall unset: install does not fix it
+	var stdout, stderr bytes.Buffer
+
+	code := runClaude(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+	if code == 0 {
+		t.Fatalf("exit = 0, want non-zero when the refresh does not fix the mismatch")
+	}
+	if len(fake.installCmds) != 3 { // one Install call records {host, source, branch}
+		t.Fatalf("install seam called %v, want exactly one Install invocation (no retry loop)", fake.installCmds)
+	}
+	if fake.launchedArg != nil {
+		t.Fatalf("launch seam invoked despite the persisted mismatch: %v", fake.launchedArg)
+	}
+	if !strings.Contains(stderr.String(), "Update the plugin to continue.") {
+		t.Fatalf("stderr missing the second-miss remedy: %q", stderr.String())
 	}
 }
 
@@ -501,7 +694,7 @@ func TestNoPluginAutoInstallAnnouncesHostCorrectly(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			fake := &fakeHost{manifest: ""} // no plugin found
+			fake := &fakeHost{manifest: "", manifestAfterInstall: compatibleManifest(t)} // no plugin found; install lands a compatible one
 			var stderr bytes.Buffer
 
 			code := tc.run(nil, t.TempDir(), fake, &stderr)
@@ -529,7 +722,7 @@ func TestNoPluginAutoInstallAnnouncesHostCorrectly(t *testing.T) {
 // TestNoPluginNoInstallRemedyIsHostCorrect (AC-A, refuse arm): with --no-install
 // and no plugin the launcher prints the manual remedy naming the host-correct
 // install/bootstrap commands (`spacedock install --host {host}`, `spacedock
-// {host} --skip-contract-check`) and NEVER a `claude` hint in a codex run, then
+// {host} --skip-compat-check`) and NEVER a `claude` hint in a codex run, then
 // exits non-zero without installing or launching. This is the message the caller
 // now owns (gateHost stopped printing for NoPluginFound).
 func TestNoPluginNoInstallRemedyIsHostCorrect(t *testing.T) {
@@ -561,7 +754,7 @@ func TestNoPluginNoInstallRemedyIsHostCorrect(t *testing.T) {
 			if !strings.Contains(out, "spacedock install --host "+tc.host) {
 				t.Fatalf("remedy missing host-correct install command for %s: %q", tc.host, out)
 			}
-			if !strings.Contains(out, "spacedock "+tc.host+" --skip-contract-check") {
+			if !strings.Contains(out, "spacedock "+tc.host+" --skip-compat-check") {
 				t.Fatalf("remedy missing host-correct bootstrap command for %s: %q", tc.host, out)
 			}
 			if tc.host == "codex" && strings.Contains(out, "claude") {
@@ -590,17 +783,17 @@ func assertRemedyNamesInstall(t *testing.T, remedy string) {
 	}
 }
 
-// TestClaudeFrontDoorSkipContractCheckBootstrap: the --skip-contract-check
+// TestClaudeFrontDoorSkipCompatCheckBootstrap: the --skip-compat-check
 // override launches without resolving the manifest (bootstrap case where the
 // plugin is being installed for the first time).
-func TestClaudeFrontDoorSkipContractCheckBootstrap(t *testing.T) {
+func TestClaudeFrontDoorSkipCompatCheckBootstrap(t *testing.T) {
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // would mismatch if checked
 	var stdout, stderr bytes.Buffer
 
-	code := runClaude(context.Background(), []string{"--skip-contract-check"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+	code := runClaude(context.Background(), []string{"--skip-compat-check"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
 
 	if code != 0 {
-		t.Fatalf("exit = %d, want 0 with --skip-contract-check (stderr=%q)", code, stderr.String())
+		t.Fatalf("exit = %d, want 0 with --skip-compat-check (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", wantBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
@@ -613,6 +806,7 @@ func TestClaudeFrontDoorSkipContractCheckBootstrap(t *testing.T) {
 // --dangerously-bypass-approvals-and-sandbox` (under .safehouse) and passes
 // through the operator's trailing args before the FO-skill prompt.
 func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	dir := safehouseFixtureDir(t)
 	bin := executableFixture(t)
 	withExecutablePath(t, bin, nil)
@@ -634,6 +828,7 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 // TestCodexFrontDoorFailFastOnMismatch: codex fails fast on a mismatch verdict
 // with the pinned remedy and does NOT launch.
 func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	bin := executableFixture(t)
 	withExecutablePath(t, bin, nil)
 	t.Setenv(spacedockBinEnv, "/old/spacedock")
@@ -660,6 +855,7 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 // TestCodexFrontDoorDoesNotEnableAgentTeams: the agent-teams flag is a
 // claude-only concern; the codex launch path must NOT inject it (scope guard).
 func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	t.Setenv(agentTeamsEnv, "") // register restore-on-cleanup, then unset for real
 	os.Unsetenv(agentTeamsEnv)
 	fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -676,6 +872,7 @@ func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
 }
 
 func TestCodexFrontDoorFailFastOnMismatch(t *testing.T) {
+	withVersion(t, testBinaryVersion)
 	fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -711,7 +908,7 @@ func TestCodexFrontDoorNoPluginAutoInstalls(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			fake := &fakeHost{manifest: tc.manifest}
+			fake := &fakeHost{manifest: tc.manifest, manifestAfterInstall: compatibleManifest(t)}
 			var stdout, stderr bytes.Buffer
 
 			code := runCodex(context.Background(), nil, t.TempDir(), fake, lookFound, &stdout, &stderr)

@@ -39,7 +39,7 @@ func TestMismatchShowsVersionsNotContract(t *testing.T) {
 		manifest      string
 		pluginVersion string // the fixture's display version
 	}{
-		{"too-old-binary", "too-old-binary.json", "0.13.0"},
+		{"too-old-binary", "too-old-binary.json", "0.20.0"},
 		{"too-old-plugin", "too-old-plugin.json", "0.10.0"},
 	}
 	for _, c := range cases {
@@ -78,8 +78,8 @@ func TestCompatibleShowsVersions(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	out := stdout.String()
-	if !strings.Contains(out, "0.12.1") {
-		t.Fatalf("OK message must name the plugin version %q: %q", "0.12.1", out)
+	if !strings.Contains(out, "0.19.8") {
+		t.Fatalf("OK message must name the plugin version %q: %q", "0.19.8", out)
 	}
 	if !strings.Contains(out, binaryVersionForTest) {
 		t.Fatalf("OK message must name the binary version %q: %q", binaryVersionForTest, out)

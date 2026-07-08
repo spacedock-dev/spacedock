@@ -126,7 +126,7 @@ func TestLaunchBannerSingleWorkflowGolden(t *testing.T) {
 	repo := gitRepoFixture(t)
 	commissionWorkflowAt(t, filepath.Join(repo, "docs", "dev"))
 
-	want := "spacedock " + Version + " · launching claude as your first officer\n" +
+	want := "spacedock " + displayVersion() + " · launching claude as your first officer\n" +
 		"Workflow: " + filepath.Join("docs", "dev") + "\n" +
 		"Sandbox: unavailable (safehouse not on PATH)\n" +
 		"claude is your first officer — ask it for the queue and next steps.\n"

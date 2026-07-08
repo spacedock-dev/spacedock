@@ -7,13 +7,43 @@ import (
 	"strings"
 )
 
-// statusReadLaunchers are the command prefixes under which `status` is the
-// spacedock subcommand: the two installed binaries plus the
-// ${SPACEDOCK_BIN:-spacedock} form the fetch commands emit.
+// statusReadLaunchers are the literal command names under which `status` is the
+// spacedock subcommand: the two installed binaries, the `./spacedock` dev build,
+// and the `spacedock_launcher` shell function the dispatch fetch commands define
+// and call. The ${SPACEDOCK_BIN:-spacedock} variable form is recognized separately
+// (launcherIsSpacedock) since it is a value reference, not a fixed name.
 var statusReadLaunchers = map[string]bool{
-	"spacedock":                   true,
-	"sd":                          true,
-	"${SPACEDOCK_BIN:-spacedock}": true,
+	"spacedock":          true,
+	"sd":                 true,
+	"./spacedock":        true,
+	"spacedock_launcher": true,
+}
+
+// launcherIsSpacedock reports whether the token immediately preceding `status`
+// launches the spacedock binary. It normalizes the token first — stripping one
+// layer of surrounding quotes, so the contract-canonical quoted
+// "${SPACEDOCK_BIN:-spacedock}" form (shared-core invariant) is recognized — then
+// accepts either a literal launcher name or any reference to the SPACEDOCK_BIN
+// variable family (${SPACEDOCK_BIN:-spacedock}, quoted or not). $SPACEDOCK is a
+// legacy variable, NOT the SPACEDOCK_BIN family, so it stays unrecognized.
+func launcherIsSpacedock(tok string) bool {
+	tok = stripSurroundingQuotes(tok)
+	if statusReadLaunchers[tok] {
+		return true
+	}
+	return strings.Contains(tok, "SPACEDOCK_BIN")
+}
+
+// stripSurroundingQuotes removes one matching pair of surrounding single or double
+// quotes from s, leaving an unquoted or unbalanced token untouched.
+func stripSurroundingQuotes(s string) string {
+	if len(s) >= 2 {
+		q := s[0]
+		if (q == '"' || q == '\'') && s[len(s)-1] == q {
+			return s[1 : len(s)-1]
+		}
+	}
+	return s
 }
 
 // commandInvokesStatusRead reports whether cmd invokes the spacedock `status`
@@ -28,7 +58,7 @@ func commandInvokesStatusRead(cmd string) bool {
 		if tok != "status" {
 			continue
 		}
-		isSubcommand := i == 0 || statusReadLaunchers[tokens[i-1]]
+		isSubcommand := i == 0 || launcherIsSpacedock(tokens[i-1])
 		if !isSubcommand {
 			continue
 		}
@@ -39,6 +69,31 @@ func commandInvokesStatusRead(cmd string) bool {
 		}
 	}
 	return false
+}
+
+// FoldEnsignReadAdoption sums each dispatched-ensign sub-agent transcript's
+// `status --read` and scoped-`Read` counts onto obs's two --read adoption
+// counters. `status --read` adoption is principally an ensign behavior, and the
+// ensign runs as a separate sub-agent session whose transcript never reaches the
+// FO front-door stream — so the metric must fold those transcripts to observe the
+// surface the contract sites actually steer.
+//
+// Each transcript is parsed independently and its counts SUMMED (not concatenated
+// then parsed): tool IDs are unique per session, so summing cannot cross-count and
+// the per-stream multi-delta tool-ID dedup stays correct within each transcript.
+// Concatenating would risk tool-ID collision across sessions. Only the two
+// adoption counters fold; turns/tokens/tool_calls keep their FO-front-door
+// semantics.
+func FoldEnsignReadAdoption(obs Observation, transcripts [][]byte) (Observation, error) {
+	for _, transcript := range transcripts {
+		parsed, err := ParseClaudeJSONL(transcript)
+		if err != nil {
+			return obs, err
+		}
+		obs.StatusReadCalls += parsed.Observation.StatusReadCalls
+		obs.ScopedReadCalls += parsed.Observation.ScopedReadCalls
+	}
+	return obs, nil
 }
 
 // readInputIsScoped reports whether a Read tool_use input is a scoped read — one
@@ -56,6 +111,36 @@ func readInputIsScoped(input json.RawMessage) bool {
 		return false
 	}
 	return scope.Offset != 0 || scope.Limit != 0
+}
+
+// readToolTarget returns the file path or command a read-like tool_use names, so a
+// caller can detect whether a turn touched a specific file before some boundary
+// turn. Read names file_path, Grep names path, and Bash (a `cat`/`grep` of a file
+// included) names command. A non-read tool, or a tool whose input lacks the field,
+// returns "".
+func readToolTarget(name string, input json.RawMessage) string {
+	switch name {
+	case "Read":
+		return jsonStringField(input, "file_path")
+	case "Grep":
+		return jsonStringField(input, "path")
+	case "Bash":
+		return bashCommand(input)
+	}
+	return ""
+}
+
+// jsonStringField decodes one named string field from a tool_use input object,
+// returning "" when the input is empty, malformed, or lacks the field.
+func jsonStringField(input json.RawMessage, field string) string {
+	if len(input) == 0 {
+		return ""
+	}
+	var obj map[string]json.RawMessage
+	if err := json.Unmarshal(input, &obj); err != nil {
+		return ""
+	}
+	return rawString(obj[field])
 }
 
 // bashCommand extracts the command string from a Bash tool_use input.

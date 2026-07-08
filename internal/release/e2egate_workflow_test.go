@@ -13,7 +13,7 @@ import (
 //   - the goreleaser-carrying job declares `needs:` including `e2e-gate`, and
 //   - the e2e-gate job resolves the tagged commit SHA and runs the
 //     `spacedock-release e2e-gate` step over that SHA (which itself queries
-//     `gh run list --workflow "Runtime Live E2E" --status success -c <sha>`).
+//     `gh run list --workflow "Runtime Live E2E" -c <sha>`).
 func TestReleaseWorkflowGatesGoreleaserOnE2E(t *testing.T) {
 	release := readWorkflow(t, "release.yml")
 	if err := assertReleaseWorkflowGatesGoreleaserOnE2E(release); err != nil {

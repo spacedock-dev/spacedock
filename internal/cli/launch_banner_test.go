@@ -84,8 +84,8 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		launchBanner("claude", repo, false, lookMissing, &buf)
 
 		out := buf.String()
-		if !strings.Contains(out, "spacedock "+Version) {
-			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+Version, out)
+		if !strings.Contains(out, "spacedock "+displayVersion()) {
+			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+displayVersion(), out)
 		}
 		if !strings.Contains(out, "Workflow: "+filepath.Join("docs", "dev")+"\n") {
 			t.Fatalf("banner from repo root does not name the real workflow docs/dev: %q", out)
@@ -156,8 +156,8 @@ func TestLaunchBannerNamesDetectedWorkflow(t *testing.T) {
 		launchBanner("codex", bare, false, lookMissing, &buf)
 
 		out := buf.String()
-		if !strings.Contains(out, "spacedock "+Version) {
-			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+Version, out)
+		if !strings.Contains(out, "spacedock "+displayVersion()) {
+			t.Fatalf("banner missing version line naming %q: %q", "spacedock "+displayVersion(), out)
 		}
 		if !strings.Contains(out, "none detected") {
 			t.Fatalf("banner does not read none detected outside a workflow: %q", out)
@@ -193,7 +193,7 @@ func TestLaunchBannerReachesStderrBeforeLaunch(t *testing.T) {
 			if code != 0 {
 				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 			}
-			if !strings.Contains(stderr.String(), "spacedock "+Version) {
+			if !strings.Contains(stderr.String(), "spacedock "+displayVersion()) {
 				t.Fatalf("banner version line did not reach stderr: %q", stderr.String())
 			}
 			if fake.launchedArg == nil {
@@ -214,7 +214,7 @@ func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 		if code := runClaude(context.Background(), []string{"--", "--resume"}, t.TempDir(), fake, lookFound, &stdout, &stderr); code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		if strings.Contains(stderr.String(), "spacedock "+Version) {
+		if strings.Contains(stderr.String(), "spacedock "+displayVersion()) {
 			t.Fatalf("banner emitted on --resume (should be suppressed): %q", stderr.String())
 		}
 	})
@@ -226,7 +226,7 @@ func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 		if code := runCodex(context.Background(), []string{"--", "resume", "abc123"}, dir, fake, lookFound, &stdout, &stderr); code != 0 {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
-		if strings.Contains(stderr.String(), "spacedock "+Version) {
+		if strings.Contains(stderr.String(), "spacedock "+displayVersion()) {
 			t.Fatalf("banner emitted on codex resume (should be suppressed): %q", stderr.String())
 		}
 	})

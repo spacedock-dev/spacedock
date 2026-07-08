@@ -354,13 +354,6 @@ func TestNonPiSetupRejectsPluginDir(t *testing.T) {
 			wantStderr: "--plugin-dir is not supported",
 		},
 		{
-			name: "install codex",
-			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
-				return runInitWithPi(context.Background(), []string{"--host", "codex", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
-			},
-			wantStderr: "--plugin-dir is not supported",
-		},
-		{
 			name: "doctor claude",
 			run: func(hostOps hostOps, stdout, stderr io.Writer) int {
 				return runDoctorWithPi(context.Background(), []string{"--host", "claude", "--plugin-dir", "/checkout"}, hostOps, &fakePiRuntimeOps{}, nil, stdout, stderr)
@@ -1077,8 +1070,8 @@ func TestPiFrontDoorWrapInnerEqualsUnwrapped(t *testing.T) {
 
 // TestPiHelpCarriesSafehouseDetail pins AC-4: `spacedock pi --help` (exit 0)
 // carries the four --safehouse-* usages + the --safehouse-add-dirs ~/scratch
-// example + the -- forwarding note, and does NOT declare --skip-contract-check / --no-install
-// (pi has no contract gate).
+// example + the -- forwarding note, and does NOT declare --skip-compat-check / --no-install
+// (pi has no version gate).
 func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run([]string{"pi", "--help"}, &stdout, &stderr)
@@ -1100,7 +1093,7 @@ func TestPiHelpCarriesSafehouseDetail(t *testing.T) {
 			t.Errorf("pi --help missing %q:\n%s", want, out)
 		}
 	}
-	for _, notWant := range []string{"--skip-contract-check", "--no-install"} {
+	for _, notWant := range []string{"--skip-compat-check", "--no-install"} {
 		if strings.Contains(out, notWant) {
 			t.Errorf("pi --help should not declare %q:\n%s", notWant, out)
 		}
