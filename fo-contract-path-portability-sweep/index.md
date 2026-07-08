@@ -50,29 +50,104 @@ The following shipped-instruction hits were reviewed and are not the same class 
 
 ## Proposed approach
 
-Replace concrete current-repo paths in shipped FO operational contracts with workflow-derived placeholders or binary-owned classification. The FO should reason from discovered workflow state, state checkout, entity path, workflow directory, and exact captain grants; unmatched write targets should default to blocked product work unless they are classified as state/process by discovered workflow metadata.
+Replace concrete current-repo paths in shipped FO operational contracts with workflow-derived inputs and a small binary-owned classifier surface. The FO should reason from discovered workflow state, state checkout, entity path, workflow directory, and exact captain grants; unmatched write targets should default to blocked product work unless they are classified as state/process by discovered workflow metadata.
+
+The implementation should make the operational contract portable in two places:
+
+1. `skills/fo-write-core/SKILL.md` should stop teaching a global table of repo paths. The classifier block should describe inputs and precedence, not Spacedock's own development layout.
+2. `skills/first-officer/references/claude-fo-dispatch.md` should stop rebuilding `spacedock` from the managed repository during local-main-drift recovery. A managed repo may be any commissioned project, not the Spacedock source tree.
+
+### Contract guidance
+
+#### FO write-core classifier
+
+Current bad shape:
+
+```markdown
+| allowed-state | `.spacedock-state/**`; `{workflow_dir}/_archive/**` | ... |
+| allowed-process | `docs/dev/README.md`; `{workflow_dir}/README.md` | ... |
+| blocked-product | `cmd/**`; `internal/**`; ... `docs/dev/_mods/**` | ... |
+```
+
+Required shape:
+
+```markdown
+Before any FO-authored file write, classify every target path with `«write.classify»(target, intent, workflow_context)`.
+
+`workflow_context` is the resolved workflow metadata: `{workflow_dir}`, `{state_checkout}` when declared, active `{entity_path}`, archive roots, worktree path when set, registered mod paths, and the exact captain grant text for this turn.
+
+| class | source | rule |
+| --- | --- | --- |
+| allowed-state | resolved state/entity/archive paths | Entity frontmatter, new entity creation, archive moves, state-transition commits, and `### Feedback Cycles` under the existing state/worktree rules. |
+| allowed-process | `{workflow_dir}/README.md` only | The FO may edit the workflow README it operates because that file defines process, not the product being built. |
+| blocked-product | registered mods plus every target not classified as state/process | Code, tests, product docs, fixtures, release/CI files, shipped skill/agent/reference scaffolding, plugin manifests, mods, and deliverable content go through a dispatched worker. |
+| override | exact-target-grant | A blocked-product target is writable only when the captain explicitly grants direct-FO editing for this exact task and target path or exact path class. |
+```
+
+Do not replace the leaked `docs/dev` paths with another concrete state spelling such as `.spacedock-state/**`. The classifier may mention `.spacedock-state` only in an explicitly labeled example outside the operational classifier, such as "example: a workflow may declare `state: .spacedock-state`."
+
+#### Claude local-main-drift recovery
+
+Current bad shape:
+
+```markdown
+local-main-drift ... `git -C {repo} fetch origin {drift.trunk} && git -C {repo} merge --ff-only origin/{drift.trunk} && cd {repo} && go build -o spacedock ./cmd/spacedock`
+```
+
+Required shape:
+
+```markdown
+local-main-drift ... behind only (`drift.behind > 0 && drift.ahead == 0`): `git -C {repo} fetch origin {drift.trunk} && git -C {repo} merge --ff-only origin/{drift.trunk}`. Continue using the already resolved `${SPACEDOCK_BIN:-spacedock}` launcher for Spacedock helper calls. Rebuild the launcher only when `{repo}` is explicitly the Spacedock source checkout selected by the operator as the launcher source; never infer that from an arbitrary managed workflow repo.
+```
+
+This keeps drift reconciliation about synchronizing the managed repo. Launcher rebuilds remain a separate Spacedock-source install/update concern.
+
+### Riskiest mechanism decision
+
+The riskiest mechanism is the new contractlint guard: a naive grep for `docs/dev` or `.spacedock-state` would fail useful commission/survey examples, while an over-broad allowlist would miss the two operational leaks. Implementation should spike the scanner first against synthetic snippets before editing the shipped contracts.
+
+The scanner should classify markdown by local context:
+
+- Operational regions are first-officer contracts and deferred FO skills that tell the FO what to do: classifier tables, event-loop action bullets, recovery action bullets, and imperative command lines.
+- Explicit examples are allowed only when the same nearby block labels them as an example, placeholder, install hint, discovery signal, or Spacedock source-build hint.
+- Red controls must prove both sides: a planted operational `docs/dev/README.md` or `docs/dev/_mods/**` rule fails, while a planted commission example saying "example: `state: .spacedock-state`" passes.
+- A planted operational `cd {repo} && go build -o spacedock ./cmd/spacedock` in local-main-drift fails, while a planted Spacedock-source install hint passes.
 
 ## Acceptance criteria
 
-**AC-1 - Shipped FO write-core classifier is workflow-generic.**
-Verified by: `skills/fo-write-core/SKILL.md` no longer names `docs/dev`, `docs/dev/_mods`, or `.spacedock-state/**` as universal rules. It uses `{workflow_dir}`, discovered state checkout/entity paths, or a binary-owned classifier surface. The contract explicitly says unmatched targets default to blocked-product.
+**AC-1 - The shipped FO operational contract surface has zero repo-specific path leaks.**
+Verified by: a focused `internal/contractlint` scan over shipped FO contract files returns zero operational leaks for `docs/dev`, `docs/dev/_mods`, `.spacedock-state/**` universal state rules, and generic managed-repo `go build -o spacedock ./cmd/spacedock` recovery commands. The scan must report file and line for each leak and must fail on both planted historical leak shapes from #487 and #382.
 
-**AC-2 - Contractlint catches repo-specific operational path leaks.**
-Verified by: a focused contractlint test scanning shipped `SKILL.md` and `references/*.md` files. It must fail on operational mentions of this repo's dev workflow paths (`docs/dev`, `docs/dev/_mods`) or Spacedock source rebuild commands in generic managed-repo recovery, while allowing explicitly marked examples.
+**AC-2 - The write-core classifier is workflow-derived, not repo-derived.**
+Verified by: `internal/contractlint/fo_write_core_mutation_gate_test.go` parses the `FO-WRITE-CLASSIFIER` block and classifies synthetic workflow paths: `/tmp/acme-flow/README.md` or `workflows/acme/README.md` is `allowed-process` only when it equals the discovered `{workflow_dir}/README.md`; `/tmp/acme-flow/.state/task/index.md` or another synthetic resolved state checkout is `allowed-state`; `docs/dev/README.md` is `blocked-product` when `docs/dev` is not the discovered workflow dir; registered `_mods` paths are `blocked-product`. The unmatched-target default remains `blocked-product`.
 
-**AC-3 - The #487 tests stop protecting the bad examples.**
-Verified by: `internal/contractlint/fo_write_core_mutation_gate_test.go` and `internal/ensigncycle/fo_product_edit_guard_test.go` use synthetic non-`docs/dev` workflow/state paths and include a red control proving `docs/dev/README.md` is not specially allowed unless it is the discovered `{workflow_dir}/README.md`.
+**AC-3 - FO product-edit guard tests prove behavior with synthetic paths.**
+Verified by: `internal/ensigncycle/fo_product_edit_guard_test.go` uses non-`docs/dev` workflow and state paths in the good state/process examples, then includes a red control where the FO claims `docs/dev/README.md -> allowed-process` while the discovered workflow is synthetic; that transcript must fail unless `docs/dev` is the resolved workflow dir.
 
 **AC-4 - Claude local-main-drift recovery is repo-generic.**
-Verified by: `skills/first-officer/references/claude-fo-dispatch.md` no longer instructs the FO to run `go build -o spacedock ./cmd/spacedock` inside arbitrary `{repo}` after drift. The new behavior either syncs only, uses the already resolved launcher invariant, or names a Spacedock-source-only rebuild condition explicitly.
+Verified by: the shipped Claude dispatch contract no longer instructs the FO to run `cd {repo} && go build -o spacedock ./cmd/spacedock` after syncing local-main-drift. A red-control contractlint fixture that reintroduces that action under `local-main-drift` fails; a Spacedock-source-only install hint outside managed-repo recovery passes.
 
 **AC-5 - Provenance remains documented in the fix report.**
 Verified by: implementation or validation report cites the two source PRs/entities: #487 / entity 17 and #382 / entity pd, and states which non-findings were intentionally left alone.
 
 ## Test plan
 
-- Run focused contractlint for the new path-leak guard and the FO write-core mutation gate.
-- Run focused ensigncycle product-edit guard tests after replacing concrete fixtures with synthetic workflow/state paths.
-- Run `go test ./...` and `go test ./... -race`.
-- Detached audit: temporarily reintroduce `docs/dev/README.md` or `docs/dev/_mods/**` into the shipped write-core classifier and verify the new guard fails.
-- Detached audit: temporarily reintroduce `cd {repo} && go build -o spacedock ./cmd/spacedock` into the Claude local-main-drift action and verify the guard fails unless the line is explicitly marked as a Spacedock source-build install hint.
+- Contractlint, low cost: add `internal/contractlint/fo_contract_path_portability_test.go` or equivalent. It should walk the shipped FO operational surfaces (`skills/fo-write-core/SKILL.md`, `skills/first-officer/references/*.md`, and deferred FO skill `SKILL.md` files) and scan markdown context for operational leaks. Include discriminator tests with synthetic snippets for: operational `docs/dev/README.md` fail, operational `docs/dev/_mods/**` fail, operational `.spacedock-state/**` universal state rule fail, explicitly labeled `state: .spacedock-state` example pass, survey discovery-signal pass, operational `{repo}` rebuild fail, Spacedock-source install hint pass.
+- Write-core classifier test, low cost: update `internal/contractlint/fo_write_core_mutation_gate_test.go` so classification takes a synthetic `workflow_context`. Use non-`docs/dev` paths for allowed state/process and include `docs/dev/README.md` as a blocked red control when it is not the discovered workflow README.
+- Ensigncycle behavior fixture, medium cost: update `internal/ensigncycle/fo_product_edit_guard_test.go` to use the same synthetic workflow/state paths in Codex and Claude transcript fixtures. Add the red transcript where the FO labels `docs/dev/README.md` as allowed-process under a synthetic workflow context and verify the guard rejects it.
+- Claude dispatch contract test, low cost: add a focused scanner case for the local-main-drift bullet that rejects `cd {repo} && go build -o spacedock ./cmd/spacedock` in that action. Keep an allowed fixture for source-build install guidance so the guard distinguishes managed-repo recovery from launcher installation.
+- Repo gates: run `go test ./internal/contractlint ./internal/ensigncycle`, then `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+- Detached red audits: temporarily reintroduce the #487 write-core table paths and verify the new contractlint/ensigncycle tests fail; temporarily reintroduce the #382 local-main-drift rebuild command and verify the new guard fails. Revert audit edits before final verification.
+
+## Stage Report: ideation
+
+- DONE: Turn the sweep log into a workflow-generic, behavior-first fix plan with concrete before/after guidance for the shipped FO contracts.
+  Added contract guidance for `fo-write-core` and Claude local-main-drift with current bad shapes and required portable shapes.
+- DONE: Strengthen acceptance criteria so they measure portability and fail on both known leaks: #487 write-core path overfit and #382 Claude local-main-drift source rebuild.
+  AC-1 through AC-4 now require zero operational leaks, synthetic workflow-path behavior, and red controls for both historical leak classes.
+- DONE: Record the riskiest-mechanism decision and a non-tautological test plan, including red controls for reintroducing docs/dev path rules and arbitrary-repo go-build recovery.
+  Added a riskiest-mechanism section and a test plan centered on contextual contractlint plus behavior fixtures, not prose self-assertions.
+
+### Summary
+
+Ideation converted the existing sweep notes into an implementation-ready portability plan. The plan preserves provenance for #487/entity 17 and #382/entity pd, distinguishes operational contract leaks from labeled examples, and gives implementation concrete red controls for both known regressions.
