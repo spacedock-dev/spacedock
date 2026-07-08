@@ -1,17 +1,16 @@
 ---
 id: 81hn8vs2fv9wv34wm942r4zj
 title: Codex --plugin-dir prevents stale sibling Spacedock skill providers
-status: done
+status: validation
 source: captain request 2026-07-07 after local --plugin-dir session loaded a cached first-officer path
 started: 2026-07-07T12:49:53Z
-completed: 2026-07-08T05:37:25Z
-verdict: rejected
+completed:
+verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-codex-plugin-dir-skill-provider-shadowing
 issue:
-mod-block:
+mod-block: merge:pr-merge
 pr: "#486"
-archived: 2026-07-08T05:37:25Z
 ---
 
 A Codex session launched for local Spacedock development was expected to use `--plugin-dir .`, but the session skill registry surfaced a cached `spacedock:first-officer` path first. Live inspection on Codex CLI `0.142.5` showed both stable `spacedock@spacedock` and edge `spacedock@spacedock-edge` installed/enabled, while `spacedock codex --plugin-dir .` only refreshes the selected channel.
