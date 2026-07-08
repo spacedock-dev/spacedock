@@ -152,10 +152,11 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		}, 0)
 	}
 
-	// Absent checkout → resume it (reuse `state init`'s fetch + worktree-add path).
+	// Absent checkout → resume it (shares `state init`'s fetch + worktree-add path).
 	if !dirExists(checkout) {
-		if code := runStateInit(ctx, []string{"--workflow-dir", workflowDir}, env, dir, stdout, stderr); code != 0 {
-			return code
+		resumeCode, originReached := resumeAbsentSplitRootCheckout(workflowDir, branch, checkout, stdout, stderr)
+		if resumeCode != 0 {
+			return resumeCode
 		}
 		// The re-boot-after-resume sequencing the «state.ensure-ready» prose used to
 		// own: a just-linked checkout means the boot read the FO already did (if any)
@@ -163,6 +164,16 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		// Prose-only (not --json) — it is FO guidance, not part of the result envelope.
 		if !jsonOut {
 			fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
+		}
+		if !originReached {
+			// The resume already fell back to the local branch (no origin, or an
+			// unreachable one) and said so on stdout — there is no reachable origin
+			// to integrate from, so skip the network pull below rather than
+			// immediately failing it and defeating the fallback just taken.
+			return emitSync(stdout, jsonOut, syncResult{
+				Command: "state ready", Result: "ready", StateBranch: branch,
+				Reason: "State checkout ready (resumed from the local branch — no reachable origin to integrate from).",
+			}, 0)
 		}
 	}
 
@@ -377,7 +388,7 @@ func resolveStateCheckout(command, workflowDir string, stderr io.Writer) (checko
 		fmt.Fprintf(stderr, "spacedock %s: %v\n", command, err)
 		return "", "", status.StateInline, 1
 	}
-	return filepath.Join(workflowDir, relPath), b, status.StateSplitRoot, 0
+	return resolveSplitRootCheckout(workflowDir, relPath), b, status.StateSplitRoot, 0
 }
 
 // parseStateCommitArgs reads the positional <slug> plus `--workflow-dir DIR`,

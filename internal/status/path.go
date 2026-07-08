@@ -8,6 +8,13 @@ import (
 	"strings"
 )
 
+// RealpathOf is the exported form of realpathOf, for callers outside this
+// package (e.g. internal/cli's worktree-registration path comparisons) that need
+// the same symlink-resolving, nonexistent-leaf-tolerant canonicalization.
+func RealpathOf(p string) string {
+	return realpathOf(p)
+}
+
 // realpathOf resolves symlinks the way os.path.realpath does: it returns the
 // canonical absolute path, resolving symlinks in the existing prefix and
 // appending the remaining (non-existent) components. EvalSymlinks alone errors
