@@ -80,9 +80,10 @@ func TestClaudeChannelInstallArgvSequence(t *testing.T) {
 }
 
 // TestCodexChannelInstallArgvSequence is AC-3's codex half: the codex install argv
-// adds the BARE marketplace-repo source (no `--ref`, since the channel is the
-// marketplace name, not a branch ref) and adds the channel-correct id. The
-// marketplace-remove cleanup targets the channel's marketplace name.
+// removes both Spacedock channel providers before it adds the BARE marketplace-repo
+// source (no `--ref`, since the channel is the marketplace name, not a branch ref)
+// and adds the channel-correct id. Removing both channels keeps Codex's global
+// `spacedock:*` skill namespace authoritative for the selected install.
 func TestCodexChannelInstallArgvSequence(t *testing.T) {
 	cases := []struct {
 		channel         string
@@ -96,8 +97,10 @@ func TestCodexChannelInstallArgvSequence(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.channel, func(t *testing.T) {
 			want := []installStep{
-				{argv: []string{"plugin", "remove", tc.wantID}, tolerateExit: true},
-				{argv: []string{"plugin", "marketplace", "remove", tc.wantMarketplace}, tolerateExit: true},
+				{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
+				{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+				{argv: []string{"plugin", "remove", "spacedock@spacedock-edge"}, tolerateExit: true},
+				{argv: []string{"plugin", "marketplace", "remove", "spacedock-edge"}, tolerateExit: true},
 				{argv: []string{"plugin", "marketplace", "add", "spacedock-dev/marketplace"}},
 				{argv: []string{"plugin", "add", tc.wantID}},
 			}

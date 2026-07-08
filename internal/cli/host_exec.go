@@ -347,26 +347,26 @@ func installArgvSequence(source, devBranch string) []installStep {
 	}
 }
 
-// codexInstallArgvSequence is the codex analog of installArgvSequence: the same
-// 4-command cleanup-then-pin shape, but in codex's verb vocabulary (`plugin
-// remove` / `plugin add`, not claude's `uninstall` / `install`). The marketplace
-// add carries the source channelMarketplaceSource resolved (no `--ref` flag — any
-// channel ref is part of the source string): the bare repo for stable (root
-// marketplace.json named `spacedock`), `<repo>@edge` for edge (the `edge` branch
-// whose root marketplace.json is named `spacedock-edge`, so the add registers
-// `spacedock-edge` and the channel id `spacedock@spacedock-edge` resolves). The
-// entry is always `spacedock`, and the version pin lives in the marketplace
-// manifest. The tolerance asymmetry matches claude:
-// BOTH cleanup steps (plugin remove + marketplace remove) are tolerated — on a
-// fresh box `plugin remove` exits 0 (idempotent) but `marketplace remove` exits 1
-// ("marketplace is not configured or installed"), and neither is a real failure.
-// BOTH pinning steps (marketplace add + plugin add) stay fail-fast — they are the
-// real-failure backstops.
+// codexInstallArgvSequence is the codex analog of installArgvSequence, but Codex's
+// global skill namespace means Spacedock channels must be exclusive: remove BOTH
+// stable and edge before adding the selected channel. The marketplace add carries
+// the source channelMarketplaceSource resolved (no `--ref` flag — any channel ref
+// is part of the source string): the bare repo for stable (root marketplace.json
+// named `spacedock`), `<repo>@edge` for edge (the `edge` branch whose root
+// marketplace.json is named `spacedock-edge`, so the add registers `spacedock-edge`
+// and the channel id `spacedock@spacedock-edge` resolves). The entry is always
+// `spacedock`, and the version pin lives in the marketplace manifest. Cleanup
+// steps are tolerated — on a fresh box `plugin remove` exits 0 (idempotent) but
+// `marketplace remove` exits 1 ("marketplace is not configured or installed"), and
+// neither is a real failure. The pinning steps (marketplace add + plugin add) stay
+// fail-fast as real-failure backstops.
 func codexInstallArgvSequence(source, devBranch string) []installStep {
 	id := channelPluginID(devBranch)
 	return []installStep{
-		{argv: []string{"plugin", "remove", id}, tolerateExit: true},
-		{argv: []string{"plugin", "marketplace", "remove", channelMarketplace(devBranch)}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "spacedock@spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock"}, tolerateExit: true},
+		{argv: []string{"plugin", "remove", "spacedock@spacedock-edge"}, tolerateExit: true},
+		{argv: []string{"plugin", "marketplace", "remove", "spacedock-edge"}, tolerateExit: true},
 		{argv: []string{"plugin", "marketplace", "add", source}},
 		{argv: []string{"plugin", "add", id}},
 	}
@@ -378,8 +378,10 @@ func codexInstallArgvSequence(source, devBranch string) []installStep {
 // installArgvSequence / codexInstallArgvSequence; devBranch selects the channel
 // entry both install. The two cleanup steps are tolerated — their non-zero exits
 // on a fresh-box ("not installed" / "not found") are appended to combined output
-// and the loop continues. The two pinning steps (marketplace add, plugin
-// install/add) are fail-fast and surface real install failures.
+// and the loop continues. Codex has four cleanup steps because it removes both
+// Spacedock channels before pinning the selected one. The pinning steps
+// (marketplace add, plugin install/add) are fail-fast and surface real install
+// failures.
 func (execHost) Install(host, source, devBranch string) (string, error) {
 	var steps []installStep
 	switch host {
