@@ -134,20 +134,23 @@ func TestCodexLiveHomeParentUsesUserCacheOutsideSystemTemp(t *testing.T) {
 	}
 }
 
-func TestCodexLiveHomeParentCandidatesIncludeRepoFallbackWhenArtifactsAreTemp(t *testing.T) {
+func TestCodexLiveHomeParentCandidatesKeepFallbackOutsidePluginCheckoutWhenArtifactsAreTemp(t *testing.T) {
 	cacheDir := filepath.Join(string(os.PathSeparator), "blocked", "cache")
-	repoRoot := filepath.Join(string(os.PathSeparator), "Users", "clkao", "git", "spacedock")
+	repoRoot := filepath.Join(string(os.PathSeparator), "home", "runner", "work", "spacedock", "spacedock")
 	artifactRoot := filepath.Join(os.TempDir(), "spacedock-live-artifacts")
 
 	got := codexLiveIsolatedHomeParentCandidates(cacheDir, repoRoot, artifactRoot)
 	wantCache := filepath.Join(cacheDir, "spacedock-live-codex")
-	wantRepo := filepath.Join(repoRoot, ".spacedock-live-codex")
+	wantRepo := filepath.Join(filepath.Dir(repoRoot), ".spacedock-live-codex", filepath.Base(repoRoot))
 	if len(got) != 2 || got[0] != wantCache || got[1] != wantRepo {
 		t.Fatalf("candidates = %#v, want cache then repo fallback %#v", got, []string{wantCache, wantRepo})
 	}
 	for _, parent := range got {
 		if strings.HasPrefix(parent, artifactRoot) {
 			t.Fatalf("temp artifact root %q must not be used as isolated CODEX_HOME parent; candidates=%#v", artifactRoot, got)
+		}
+		if parent == repoRoot || strings.HasPrefix(parent, repoRoot+string(os.PathSeparator)) {
+			t.Fatalf("isolated CODEX_HOME parent %q is inside plugin checkout %q; codex plugin add copies the checkout into CODEX_HOME and can recurse until path limits fail", parent, repoRoot)
 		}
 	}
 }

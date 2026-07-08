@@ -92,10 +92,18 @@ func codexLiveIsolatedHomeParentCandidates(cacheDir, repoRoot, artifactRoot stri
 	if parent, err := codexLiveIsolatedHomeParent(cacheDir); err == nil {
 		out = append(out, parent)
 	}
-	if repoRoot != "" {
-		out = append(out, filepath.Join(repoRoot, ".spacedock-live-codex"))
+	if parent, err := codexLiveRepoAdjacentHomeParent(repoRoot); err == nil {
+		out = append(out, parent)
 	}
 	return out
+}
+
+func codexLiveRepoAdjacentHomeParent(repoRoot string) (string, error) {
+	if repoRoot == "" {
+		return "", fmt.Errorf("repo root is empty")
+	}
+	repoRoot = filepath.Clean(repoRoot)
+	return filepath.Join(filepath.Dir(repoRoot), ".spacedock-live-codex", filepath.Base(repoRoot)), nil
 }
 
 func pathIsUnderSystemTemp(path string) bool {
