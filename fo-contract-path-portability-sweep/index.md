@@ -4,7 +4,7 @@ status: validation
 score: 0.9
 source: captain request 2026-07-08 after PR #487 review found repo-specific paths in shipped FO contract
 issue:
-pr:
+pr: "#489"
 mod-block: merge:pr-merge
 worktree: .worktrees/spacedock-ensign-fo-contract-path-portability-sweep
 started: 2026-07-08T12:45:36Z
