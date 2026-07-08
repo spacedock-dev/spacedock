@@ -211,3 +211,16 @@ Recommendation: PASSED. Cycle 3 adds the missing adversarial prompt shape for AC
 ### Summary
 
 Fixed the CI-only compile failure by keeping the product-edit guard assertion helper in the test build, where the shared Codex trace item fixtures are defined. No guard behavior changed; the production package build no longer sees test-only helper symbols.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Reproduce the CI compile gate and local suite on the latest PR #487 head: go build ./..., go test ./..., go test ./... -race, and formatting check.
+  PR #487 head is `44f1abe2b4f1fe55a42e10e1db8a1c4aa057a57c`; `go build ./...` passed, and `go test ./...` / `go test ./... -race` each passed 2082 tests in 17 packages.
+- DONE: Verify AC-1 through AC-5 with concrete evidence from code, fixtures, command output, and state; reject self-referential prose-only proof.
+  Focused `ensigncycle` passed 6 tests for direct-pressure smoke, Codex/Claude product-write negatives, and lazy greet behavior; focused `contractlint` passed 4 tests for target classes, exact overrides, and deferred-load closure.
+- DONE: Run the detached adversarial audit from the test plan: weaken the guard in a throwaway checkout so a blocked internal/** edit can occur before classification; the new tests must fail.
+  In `.tmp/fo-product-edit-guard-audit`, changing pre-classification write handling to `return nil` made focused `ensigncycle` fail 2 tests: Codex `file_change` and Claude `Edit` before `fo-write-core`.
+
+### Summary
+
+Recommendation: PASSED. Cycle 4 restores production compilation without weakening guard coverage: `go list` shows `fo_product_edit_guard_impl_test.go` under `TestGoFiles`, `go build ./...` passes, and focused/full/race/adversarial checks prove the guard still fails unclassified product writes and narrow override gaps. `gofmt -w ./cmd ./internal` was run; it reintroduced known unrelated `internal/release/journeydelta.go` alignment drift, which was restored before confirming the code worktree was clean.
