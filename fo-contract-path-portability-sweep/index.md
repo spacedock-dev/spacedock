@@ -197,3 +197,16 @@ The pre-gate repair exercised the riskiest contextual-scanner mechanism instead 
 ### Summary
 
 Implementation hardens the shipped FO contracts against the two logged provenance leaks: #487 / entity 17 and #382 / entity pd. The non-findings from the sweep were intentionally left alone, while the new guard preserves labeled examples, discovery signals, and source-build install hints.
+
+## Stage Report: validation
+
+- DONE: Reproduce AC-1 through AC-5 with evidence, including the contextual contractlint red controls for #487/#382, synthetic workflow-path behavior, and documented provenance/non-findings.
+  AC-1/AC-4 reproduced by focused contractlint plus detached red audits: planted #487 write-core paths failed with `fo-write-core` line findings, planted #382 local-main-drift rebuild failed with `claude-fo-dispatch` managed-repo launcher rebuild; AC-2/AC-3 reproduced by synthetic `/tmp/acme-flow` and `workflows/acme` fixtures; AC-5 cites #487/entity 17, #382/entity pd, and leaves commission examples, source-build hints, split-root examples, survey probes, and worker-key conventions alone.
+- DONE: Run or verify the required focused and repo gates: gofmt -w ./cmd ./internal, go test ./internal/contractlint ./internal/ensigncycle, go test ./..., and go test ./... -race; report exact results or blockers.
+  `gofmt -w ./cmd ./internal` left the implementation worktree clean; `go test ./internal/contractlint ./internal/ensigncycle` reported `406 passed in 2 packages`; `go test ./...` and `go test ./... -race` each reported `2099 passed in 17 packages`.
+- DONE: Review the shipped contract diffs and behavior fixtures for regressions, confirming no operational docs/dev, universal .spacedock-state, or arbitrary managed-repo go-build leak remains.
+  Reviewed commit `23317ad`: `fo-write-core` now uses resolved workflow context, `claude-fo-dispatch` no longer rebuilds from arbitrary `{repo}`, behavior fixtures use synthetic workflow/state paths, and the `journeydelta.go` touch is gofmt-only alignment.
+
+### Summary
+
+Recommendation: PASSED. Validation independently reproduced the portability controls and required gates, including red controls for the two historical leak shapes, with no blocker or regression found.
