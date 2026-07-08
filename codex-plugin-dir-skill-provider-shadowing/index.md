@@ -1,7 +1,7 @@
 ---
 id: 81hn8vs2fv9wv34wm942r4zj
 title: Codex --plugin-dir prevents stale sibling Spacedock skill providers
-status: validation
+status: implementation
 source: captain request 2026-07-07 after local --plugin-dir session loaded a cached first-officer path
 started: 2026-07-07T12:49:53Z
 completed:
@@ -9,7 +9,7 @@ verdict:
 score: 0.6
 worktree: .worktrees/spacedock-ensign-codex-plugin-dir-skill-provider-shadowing
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: "#486"
 ---
 
@@ -136,3 +136,11 @@ Codex Spacedock installs now clear both stable and edge channel providers before
 ### Summary
 
 Recommendation: PASSED. The implementation satisfies AC-1 through AC-4 with behavior-level tests and live Codex prompt-input evidence; the only validation note is pre-existing formatter drift outside the submitted feature diff, not a stale-provider implementation defect.
+
+### Feedback Cycles
+
+**Cycle 1 (validation CI, 2026-07-08) - Codex live red on PR #486.** Runtime Live E2E run `28916396699` proved the plugin-dir/install side is not the blocker: docs build, install-e2e, offline, and `pi-live` were green, and the Codex setup step verified the selected checkout/provider. The blocker is the `codex-live` job `85784277335`: `TestLiveCodexSharedScenarios/smallest-sufficient-mechanism` failed saying `ready-two` was not dispatched, and `TestLiveCodexSharedScenarios/keep-moving-posture` failed saying `approved-gate` was not dispatched.
+
+Artifact inspection shows this is a Codex-side trace/oracle gap, not a plugin-dir behavior regression. In the `smallest-sufficient-mechanism` trace, the FO built and engaged `ready-two`, waited, observed completion, read the final state/report, committed, and ran merge guard. In the `keep-moving-posture` trace, the FO advanced the approved work, drove the independent work terminal, reshaped `questioned`, and presented the review gate. Under the current `multi_agent_v2` stream shape, the transcript exposes `wait` collaboration records plus FO messages and durable command/state evidence, but no visible `spawn_agent` records for the assertions to credit.
+
+Routed back to implementation: fix the Codex-only shared-scenario extractors/tests for the current `multi_agent_v2` evidence shape, especially `internal/ensigncycle/shared_smallest_mechanism_test.go` and `internal/ensigncycle/shared_keep_moving_test.go`. Add offline regression fixtures distilled from the #486 artifacts so the current completed-dispatch evidence passes while the existing negative cases still fail. Do not conflate this with the Claude final-result extractor issue from #483; Claude-side repair is tracked separately by `claude-result-extractor-first-vs-terminal`.
