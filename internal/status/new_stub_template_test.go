@@ -83,3 +83,56 @@ func TestNewNoFrontmatterErrorShowsStubTemplate(t *testing.T) {
 		})
 	}
 }
+
+// templateBlockFromPrinted returns the Body-template block a filing FO copies out
+// of printed new output: the lines from the "Body template" header to the next
+// blank-line section break (or end). It reads the LITERAL printed output, not the
+// source constant, so the round-trip below proves what a human actually copies is
+// pipe-safe.
+func templateBlockFromPrinted(printed string) string {
+	const header = "Body template (pipe this on stdin; fill the angle-bracket fields, id omitted):\n"
+	i := strings.Index(printed, header)
+	if i < 0 {
+		return ""
+	}
+	block := printed[i+len(header):]
+	if end := strings.Index(block, "\n\n"); end >= 0 {
+		block = block[:end+1]
+	}
+	return block
+}
+
+// TestPrintedStubTemplateBlockIsPipeSafe is the round-trip guard the audit finding
+// demands: it extracts the Body-template block AS PRINTED by new's no-frontmatter
+// error and pipes it VERBATIM back through runNew, asserting the atomic create
+// succeeds. A display indent on the fence line makes contentHasOpeningFence reject
+// it, so this reds on exactly the defect the substring/self-referential checks
+// missed. Placeholders are piped unfilled: the point is the SHAPE parses, as a
+// human's first copy-paste would.
+func TestPrintedStubTemplateBlockIsPipeSafe(t *testing.T) {
+	env := pinnedEnv(t)
+
+	// Capture the LITERAL printed template from new's own error output.
+	root := stageFixture(t, "seq-workflow")
+	_, printed, code := runNativeStdin(t, root, env, reader("oops\n"), "--workflow-dir", root, "--new", "trigger")
+	if code != 1 {
+		t.Fatalf("setup: malformed-stdin new exit=%d, want 1", code)
+	}
+	block := templateBlockFromPrinted(printed)
+	if block == "" {
+		t.Fatalf("could not locate the Body-template block in printed output:\n%s", printed)
+	}
+	if strings.HasPrefix(block, " ") || strings.HasPrefix(block, "\t") {
+		t.Fatalf("printed block's first line carries leading whitespace — a literal copy-paste is not pipe-safe:\n%q", block)
+	}
+
+	// Pipe that printed block VERBATIM into a fresh new — it must parse and create.
+	root2 := stageFixture(t, "seq-workflow")
+	out, errOut, code := runNativeStdin(t, root2, env, reader(block), "--workflow-dir", root2, "--new", "piped-back")
+	if code != 0 {
+		t.Fatalf("piping the printed template block verbatim failed: exit=%d\nstderr=%q\nblock=%q", code, errOut, block)
+	}
+	if !strings.Contains(out, "created:") {
+		t.Fatalf("expected a created entity, got out=%q", out)
+	}
+}

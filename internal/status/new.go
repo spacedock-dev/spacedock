@@ -22,11 +22,11 @@ spacedock state commit SLUG (and push) afterward; on a single-root workflow the
 entity is written into the working tree for your next state-transition commit.
 
 Body template (pipe this on stdin; fill the angle-bracket fields, id omitted):
-  ---
-  title: <one-line title>
-  status: <initial stage from the workflow README, e.g. backlog>
-  ---
-  <one-paragraph description of the work>`
+---
+title: <one-line title>
+status: <initial stage from the workflow README, e.g. backlog>
+---
+<one-paragraph description of the work>`
 
 // runNew implements --new [--folder] <slug>: read the entity body from stdin,
 // mint the id-style-appropriate id, stamp it into the STDIN frontmatter, and
