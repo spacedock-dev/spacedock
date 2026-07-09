@@ -3,6 +3,7 @@
 package ensigncycle
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -433,78 +434,35 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 // result/success event via extractClaudeFinalMessage — a 401/is_error result is a
 // LOUD launch failure here, never fed into a scenario assertion.
 //
-// Liveness is the EXISTING streamWatcher (the Go port of the upstream
-// FOStreamWatcher, shared with TestLiveEnsignCycle) — one mechanism, no second
-// impl. drainToExit runs the process to exit while accumulating the full
-// transcript, bounded by the per-step no-progress quietBudgetDefault (60s): the
-// deadline resets on every drained line, so a genuine multi-minute run of
-// sequential model work never trips as long as the stream keeps moving, and only
-// silence past the budget kills the process — the same ≤60s AC-1-guarded discipline
-// the live cycle uses.
+// A launch whose stream classifies as a boot-preamble fumble is retried via a
+// fresh launchAttempt, per the shouldRetryBootPreamble policy: up to
+// bootPreambleMaxAttempts total for most scenarios, but exactly one attempt for a
+// boot-subject scenario (isBootSubjectScenario), so a genuine boot-discipline
+// regression such a scenario exists to catch is never retried away.
 func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult {
 	t.Helper()
-	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
-	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	streamPath := filepath.Join(artifactDir, "claude-stream.jsonl")
-	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 
-	cmd := exec.Command(r.binary, "claude",
-		"--plugin-dir", r.pluginDir,
-		"--skip-compat-check",
-		"--",
-		"-p", prompt+" "+antiShutdownOverride,
-		"--permission-mode", "bypassPermissions",
-		"--output-format", "stream-json",
-		"--verbose",
-		"--model", r.modelName,
+	var (
+		preamble    error
+		stallErr    error
+		stream      string
+		duration    time.Duration
+		configDir   string
+		resolvedCwd string
+		artifactDir string
 	)
-	cmd.Dir = workflowRoot
-	// Per-scenario CLAUDE_CONFIG_DIR so parallel scenarios never share claude's
-	// session/config state. It nests under the runner's base config dir (the
-	// archivable CI path), so the artifact upload — which grabs the whole
-	// per-model config dir — still captures each scenario's projects/*.jsonl. A
-	// fresh slice (never a mutation of the shared r.env) keeps the parallel
-	// invocations race-free.
-	cmd.Env = r.env
-	configDir, _ := envValue(r.env, "CLAUDE_CONFIG_DIR")
-	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
-		configDir = filepath.Join(base, scenario.name)
-		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	for attempt := 1; ; attempt++ {
+		stream, stallErr, duration, configDir, resolvedCwd, artifactDir = r.launchAttempt(t, scenario, workflowRoot, prompt, attempt)
+		preamble = classifyBootPreambleFailure(stream, workflowRoot)
+		if !shouldRetryBootPreamble(scenario.name, attempt, preamble != nil) {
+			break
+		}
+		t.Logf("boot-preamble fumble on attempt %d/%d for %s, retrying with a fresh launch: %v", attempt, bootPreambleMaxAttempts, scenario.name, preamble)
 	}
-
-	// The resolved cwd is what Claude Code encodes into its projects path; the FO
-	// subprocess runs in workflowRoot, so resolve its symlinks (macOS t.TempDir is
-	// under /var -> /private/var) to match the on-disk subagents dir.
-	resolvedCwd := workflowRoot
-	if resolved, err := filepath.EvalSymlinks(workflowRoot); err == nil {
-		resolvedCwd = resolved
-	}
-
-	// stdout carries the stream-json transcript the watcher drains for liveness;
-	// stderr is folded into the same pipe so a launch error (e.g. a stale-token 401
-	// printed to stderr) lands in the transcript too — matching the live cycle's
-	// wiring. The cmdPoller closes the pipe write-end on exit so the scanner EOFs.
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	cmd.Stderr = pw
-
-	started := time.Now()
-	if startErr := cmd.Start(); startErr != nil {
-		t.Fatalf("spacedock claude failed to start for %s: %v", scenario.name, startErr)
-	}
-	poller := newCmdPoller(cmd, pw)
-	defer poller.kill()
-	watcher := newStreamWatcher(newPipeLineSource(pr), poller, discardStreamLine)
-
-	// drainToExit runs the process to exit accumulating the full transcript, OR
-	// kills it on a 60s no-progress stall (the per-step quiet budget). The deferred
-	// poller.kill() reaps the process on every exit path.
-	stream, stallErr := watcher.drainToExit(quietBudgetDefault, "claude shared scenario "+scenario.name)
-	duration := time.Since(started)
-
-	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
+	// The canonical (unsuffixed) stream path always reflects the LAST attempt —
+	// the one whose outcome this run reports, whether that is the attempt that
+	// finally cleared the preamble or the one whose fumble persisted.
+	if writeErr := os.WriteFile(filepath.Join(artifactDir, "claude-stream.jsonl"), []byte(stream), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
 	}
 
@@ -517,11 +475,11 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 	// cleanly). Classify it FIRST so the fumble fails legibly naming what happened,
 	// ahead of the generic stall message or the downstream assertions — it is a
 	// preamble accident, not the scenario's own assertion.
-	if preamble := classifyBootPreambleFailure(stream, workflowRoot); preamble != nil {
+	if preamble != nil {
 		if stallErr != nil {
-			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", preamble, stallErr, artifactDir)
+			t.Fatalf("%v (persisted across the boot-preamble retry budget)\nUnderlying stall: %v\nArtifacts: %s", preamble, stallErr, artifactDir)
 		}
-		t.Fatalf("%v\nArtifacts: %s", preamble, artifactDir)
+		t.Fatalf("%v (persisted across the boot-preamble retry budget)\nArtifacts: %s", preamble, artifactDir)
 	}
 	if stallErr != nil {
 		t.Fatalf("%v\nArtifacts: %s", stallErr, artifactDir)
@@ -536,6 +494,7 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		t.Fatalf("claude launch failed for %s: %v; artifacts in %s\nStream tail:\n%s",
 			scenario.name, extractErr, artifactDir, tail(stream, 4000))
 	}
+	finalPath := filepath.Join(artifactDir, "claude-final-message.txt")
 	if writeErr := os.WriteFile(finalPath, []byte(finalMessage), 0o644); writeErr != nil {
 		t.Fatal(writeErr)
 	}
@@ -548,6 +507,94 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		configDir:    configDir,
 		cwd:          resolvedCwd,
 	}
+}
+
+// launchAttempt runs ONE `spacedock claude` launch for scenario (attempt N of
+// run's boot-preamble retry budget) and returns its (stream, stallErr) plus the
+// bookkeeping run needs to assemble a liveResult. Each attempt's stream is
+// archived under its own attempt-numbered filename (claude-stream.attempt{N}.jsonl)
+// so a persisted failure's full retry history stays inspectable, not just the
+// last attempt — run separately archives the last attempt's stream under the
+// canonical claude-stream.jsonl name.
+//
+// Liveness is the EXISTING streamWatcher (the Go port of the upstream
+// FOStreamWatcher, shared with TestLiveEnsignCycle) — one mechanism, no second
+// impl. drainToExit runs the process to exit while accumulating the full
+// transcript, bounded by the per-step no-progress quietBudgetDefault (60s): the
+// deadline resets on every drained line, so a genuine multi-minute run of
+// sequential model work never trips as long as the stream keeps moving, and only
+// silence past the budget kills the process — the same ≤60s AC-1-guarded discipline
+// the live cycle uses.
+func (r claudeLiveRunner) launchAttempt(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string, attempt int) (stream string, stallErr error, duration time.Duration, configDir, resolvedCwd, artifactDir string) {
+	t.Helper()
+	artifactDir = filepath.Join(r.artifactRoot, scenario.name)
+	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	streamPath := filepath.Join(artifactDir, fmt.Sprintf("claude-stream.attempt%d.jsonl", attempt))
+
+	cmd := exec.Command(r.binary, "claude",
+		"--plugin-dir", r.pluginDir,
+		"--skip-compat-check",
+		"--",
+		"-p", prompt+" "+antiShutdownOverride,
+		"--permission-mode", "bypassPermissions",
+		"--output-format", "stream-json",
+		"--verbose",
+		"--model", r.modelName,
+	)
+	cmd.Dir = workflowRoot
+	// Per-scenario (and, on a retry, per-attempt) CLAUDE_CONFIG_DIR so parallel
+	// scenarios AND successive retry attempts never share claude's session/config
+	// state. It nests under the runner's base config dir (the archivable CI
+	// path), so the artifact upload — which grabs the whole per-model config dir
+	// — still captures every attempt's projects/*.jsonl. A fresh slice (never a
+	// mutation of the shared r.env) keeps the parallel invocations race-free.
+	cmd.Env = r.env
+	configDir, _ = envValue(r.env, "CLAUDE_CONFIG_DIR")
+	if base, ok := envValue(r.env, "CLAUDE_CONFIG_DIR"); ok {
+		suffix := scenario.name
+		if attempt > 1 {
+			suffix = fmt.Sprintf("%s-attempt%d", scenario.name, attempt)
+		}
+		configDir = filepath.Join(base, suffix)
+		cmd.Env = withClaudeConfigDir(r.env, configDir)
+	}
+
+	// The resolved cwd is what Claude Code encodes into its projects path; the FO
+	// subprocess runs in workflowRoot, so resolve its symlinks (macOS t.TempDir is
+	// under /var -> /private/var) to match the on-disk subagents dir.
+	resolvedCwd = workflowRoot
+	if resolved, err := filepath.EvalSymlinks(workflowRoot); err == nil {
+		resolvedCwd = resolved
+	}
+
+	// stdout carries the stream-json transcript the watcher drains for liveness;
+	// stderr is folded into the same pipe so a launch error (e.g. a stale-token 401
+	// printed to stderr) lands in the transcript too — matching the live cycle's
+	// wiring. The cmdPoller closes the pipe write-end on exit so the scanner EOFs.
+	pr, pw := io.Pipe()
+	cmd.Stdout = pw
+	cmd.Stderr = pw
+
+	started := time.Now()
+	if startErr := cmd.Start(); startErr != nil {
+		t.Fatalf("spacedock claude failed to start for %s (attempt %d): %v", scenario.name, attempt, startErr)
+	}
+	poller := newCmdPoller(cmd, pw)
+	defer poller.kill()
+	watcher := newStreamWatcher(newPipeLineSource(pr), poller, discardStreamLine)
+
+	// drainToExit runs the process to exit accumulating the full transcript, OR
+	// kills it on a 60s no-progress stall (the per-step quiet budget). The deferred
+	// poller.kill() reaps the process on every exit path.
+	stream, stallErr = watcher.drainToExit(quietBudgetDefault, "claude shared scenario "+scenario.name)
+	duration = time.Since(started)
+
+	if writeErr := os.WriteFile(streamPath, []byte(stream), 0o644); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+	return stream, stallErr, duration, configDir, resolvedCwd, artifactDir
 }
 
 func claudeLiveArtifactDir(t *testing.T, name string) string {
