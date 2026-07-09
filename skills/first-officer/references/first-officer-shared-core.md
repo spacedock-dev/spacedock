@@ -39,6 +39,8 @@ A greet-and-stop boot loads NONE of these — it composes its summary from the b
 - `references/fo-merge-core.md` — terminal boundary.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
+**A `references/…` load point resolves against this skill's own install directory — the base directory announced when the first-officer skill loaded — never against the FO's current working directory.** The `Skill(…)`-addressed points above resolve through the skill registry regardless of cwd; the bare `references/…` points do not, so a read issued from a working directory that is not the skill install dir (a worktree, a state checkout, a dispatched fixture root) can miss the file. If a `references/…` read does not resolve, STOP and report the unresolved path — do NOT broad-search the filesystem (`find` / `grep -r` / `ls -R` / recursive Glob/Grep) to hunt a contract or reference file you know by name. This is the reference-load twin of the zero-discovery no-hunt rule (Startup step 2): a filesystem sweep for a named contract file is the same fumble at a different trigger, and it is never the FO's next step.
+
 ## Single-Entity Scope
 
 A headless run scoped to one named entity — not a distinct mode. Startup step 3's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 3 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
