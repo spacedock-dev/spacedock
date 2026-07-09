@@ -37,14 +37,13 @@ import (
 // only the WORKFLOW root (where it boots / cd's / reads the workflow README) must
 // stay under the fixture.
 func detectWrongRootBoot(stream, fixtureRoot string) error {
-	clean := filepath.Clean(fixtureRoot)
 	// On macOS the fixture root is a `/var/folders/...` symlink while the FO, having
 	// cd'd in, reports the EvalSymlinks-resolved `/private/var/...` form — the same
-	// directory. Resolve the fixture root so an under-fixture path in either form is
-	// recognized, matching the EvalSymlinks guard the sibling live runners use.
-	if resolved, err := filepath.EvalSymlinks(clean); err == nil {
-		clean = resolved
-	}
+	// directory. canonicalizeWrongRootPath resolves the fixture root AND (at the two
+	// wander call sites below) the FO's observed path through the SAME function, so
+	// an under-fixture path in either spelling is recognized — isUnder only holds the
+	// under-relationship when both operands are canonicalized consistently.
+	clean := canonicalizeWrongRootPath(fixtureRoot)
 	var findings []wrongRootFinding
 	byToolID := make(map[string]int)
 	for _, line := range strings.Split(stream, "\n") {
@@ -154,7 +153,7 @@ func wanderWorkflowReadme(filePath, fixtureRoot string) (string, bool) {
 	if filePath == "" || filepath.Base(filePath) != "README.md" || !filepath.IsAbs(filePath) {
 		return "", false
 	}
-	p := filepath.Clean(filePath)
+	p := canonicalizeWrongRootPath(filePath)
 	if isUnder(p, fixtureRoot) {
 		return "", false
 	}
@@ -183,7 +182,7 @@ func wanderTarget(command, fixtureRoot string) (string, bool) {
 		if arg.cd || !filepath.IsAbs(arg.path) {
 			continue
 		}
-		p := filepath.Clean(arg.path)
+		p := canonicalizeWrongRootPath(arg.path)
 		if p == fixtureRoot || isUnder(p, fixtureRoot) {
 			explicitWorkflowDirInFixture = true
 			continue
@@ -194,7 +193,7 @@ func wanderTarget(command, fixtureRoot string) (string, bool) {
 		if !filepath.IsAbs(arg.path) {
 			continue
 		}
-		p := filepath.Clean(arg.path)
+		p := canonicalizeWrongRootPath(arg.path)
 		if p == fixtureRoot || isUnder(p, fixtureRoot) {
 			continue
 		}
@@ -300,4 +299,35 @@ func isUnder(p, dir string) bool {
 		return false
 	}
 	return rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+// canonicalizeWrongRootPath resolves p to its deepest-existing-ancestor form: if p
+// itself resolves via EvalSymlinks, that resolution is returned; otherwise the walk
+// climbs to the deepest EXISTING ancestor, resolves THAT, and rejoins the
+// non-existent tail onto it. This is what lets a stream-extracted observed path —
+// which may not exist on disk at check-time, e.g. a Read the FO's boot stream
+// captured for a file that was since removed — still canonicalize to the same
+// symlink-resolved spelling as the fixture root: a plain "EvalSymlinks, else use
+// the unresolved Clean'd path" fallback leaves such a path in its unresolved form
+// and the wrong-root comparison still mismatches. Falls back to Clean(p) only when
+// nothing up to the filesystem root resolves.
+func canonicalizeWrongRootPath(p string) string {
+	p = filepath.Clean(p)
+	if resolved, err := filepath.EvalSymlinks(p); err == nil {
+		return resolved
+	}
+	dir := p
+	var tail []string
+	for {
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		tail = append([]string{filepath.Base(dir)}, tail...)
+		dir = parent
+		if resolved, err := filepath.EvalSymlinks(dir); err == nil {
+			return filepath.Join(append([]string{resolved}, tail...)...)
+		}
+	}
+	return p
 }
