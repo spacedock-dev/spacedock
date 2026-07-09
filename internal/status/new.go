@@ -10,6 +10,24 @@ import (
 	"strings"
 )
 
+// EntityStubTemplate is the copyable entity stub a filing FO fills and pipes into
+// `spacedock new` on stdin, plus the post-new commit next-step. It is surfaced in
+// both `new --help` and the no-frontmatter stdin error so the FO is handed the
+// shape instead of hunting the skill tree for an example entity to model.
+const EntityStubTemplate = `The stdin body is a complete entity stub: YAML frontmatter with a title and the
+workflow's initial status, with id OMITTED (new mints and stamps it — a body that
+declares its own id is rejected), then a blank line, then a one-paragraph
+description. new writes the file but does NOT commit: on a split-root workflow run
+spacedock state commit SLUG (and push) afterward; on a single-root workflow the
+entity is written into the working tree for your next state-transition commit.
+
+Body template (pipe this on stdin; fill the angle-bracket fields, id omitted):
+  ---
+  title: <one-line title>
+  status: <initial stage from the workflow README, e.g. backlog>
+  ---
+  <one-paragraph description of the work>`
+
 // runNew implements --new [--folder] <slug>: read the entity body from stdin,
 // mint the id-style-appropriate id, stamp it into the STDIN frontmatter, and
 // write the entity in one filesystem operation (temp file + rename) so no
@@ -37,7 +55,7 @@ func runNew(roots roots, slug string, folderForm bool, idSeed, idActor string, i
 		return errExit(stderr, "cannot read entity body from stdin: "+err.Error())
 	}
 	if !contentHasOpeningFence(body) {
-		return errExit(stderr, "no frontmatter found in --new entity body (stdin must begin with ---)")
+		return errExit(stderr, "no frontmatter found in --new entity body (stdin must begin with ---)\n\n"+EntityStubTemplate)
 	}
 
 	idStyle, err := workflowIDStyle(roots.definitionDir)

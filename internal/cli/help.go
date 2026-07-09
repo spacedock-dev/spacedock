@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/spacedock-dev/spacedock/internal/status"
 	"github.com/spf13/cobra"
 )
 
@@ -151,6 +152,8 @@ Create an entity from a stdin body. Run from the project root: new auto-discover
 the lone commissioned workflow. If the repo holds more than one, new reports the
 candidates and you pass --workflow-dir to pick one.
 
+`+status.EntityStubTemplate+`
+
 Flags:
   --workflow-dir DIR   Target this workflow explicitly (skips auto-discovery)
   --folder             Write the entity in folder form (SLUG/index.md)
@@ -159,6 +162,7 @@ Flags:
 
 Examples:
   spacedock new my-task < body.md
+  printf '%s\n' '---' 'title: Wire the thing' 'status: backlog' '---' 'Wire it up.' | spacedock new my-task
   spacedock new --folder my-task < body.md
   spacedock new my-task --workflow-dir docs/dev < body.md
 `)
