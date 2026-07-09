@@ -1,12 +1,12 @@
 ---
 title: "Wrong-root boot detector false-positives on macOS: observed path not symlink-resolved before comparison"
-status: ideation
+status: implementation
 source: "Found 2026-07-09 while investigating one of sc5's (live-runner-boot-preamble-hardening) three anomalous PR #490 merge-gate failures locally, per captain direction to verify live behavior locally rather than only via GitHub Actions CI (which runs on ubuntu-latest and never hits this macOS-only symlink form). Confirmed via a local live re-run of TestLiveClaudeSharedScenarios/self-evidence-merge-triage on this machine (macOS): the test failed with 'FO booted the wrong root: expected .../private/var/folders/.../001, but it read the workflow README at .../var/folders/.../001/README.md' — the two paths are IDENTICAL directories (macOS /var is a symlink to /private/var); the FO did not actually wander."
 started: 2026-07-09T11:49:49Z
 completed:
 verdict:
 score: 0.5
-worktree:
+worktree: .worktrees/spacedock-ensign-wrong-root-detector-symlink-false-positive
 issue:
 id: 5qae7c01tnytacehaphrda4s
 ---
