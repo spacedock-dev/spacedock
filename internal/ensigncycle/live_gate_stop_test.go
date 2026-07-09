@@ -15,52 +15,6 @@ import (
 	"testing"
 )
 
-// gateStopReadme is a backlog → review(gate) → done workflow whose entity starts at
-// the INITIAL stage (not parked at the gate). A default headless `-p` FO with NO
-// conn must DRIVE the initial stage (dispatch an ensign), reach the `review` gate,
-// present it, and STOP — it must not greet-stop at boot (it has dispatchable work),
-// and it must not resolve the gate (no decision-maker is present). This is the
-// drive-to-gate-and-exit half of the two-mode determination, distinct from the
-// shared-scenario gate-guardrail fixture whose entity STARTS parked at the gate
-// (that proves an interactive gate HOLD; this proves a headless gate DRIVE).
-func gateStopReadme() string {
-	return "---\n" +
-		"entity-type: task\n" +
-		"id-style: slug\n" +
-		"stages:\n" +
-		"  defaults:\n" +
-		"    worktree: false\n" +
-		"    concurrency: 1\n" +
-		"  states:\n" +
-		"    - name: draft\n" +
-		"      initial: true\n" +
-		"    - name: review\n" +
-		"      gate: true\n" +
-		"    - name: done\n" +
-		"      terminal: true\n" +
-		"---\n" +
-		"# Gate-Stop Fixture\n\n" +
-		"### draft\n\nWrite the one-line note the review gate inspects.\n\n- **Outputs:** A draft stage report.\n\n" +
-		"### review\n\nHuman approval gate. Present the gate review and wait for a human decision.\n\n- **Outputs:** A gate review for the human operator.\n\n" +
-		"### done\n\nTerminal state.\n"
-}
-
-// gateStopEntity starts at the INITIAL `draft` stage — NOT at the gate. The FO must
-// drive it forward (dispatch the draft ensign) and only then reach the review gate.
-func gateStopEntity() string {
-	return "---\n" +
-		"id: gate-stop\n" +
-		"title: Gate Stop\n" +
-		"status: draft\n" +
-		"completed:\n" +
-		"verdict:\n" +
-		"worktree:\n" +
-		"---\n" +
-		"# Gate Stop\n\n" +
-		"This entity starts at the initial draft stage. A headless first officer drives the draft, " +
-		"then reaches the review gate and stops for a human decision.\n"
-}
-
 var (
 	// gateStopReached matches an entity that advanced to (and parked at) the review
 	// gate — the FO DROVE the initial draft stage rather than greet-stopping at

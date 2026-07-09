@@ -174,7 +174,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	entityPath := writeGateWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result, err := runner.run(t, scenario, workflowRoot, gatePrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -193,7 +193,7 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	attempt, err := runCodexRejectionFlowWithRetry(func(attempt int) (codexRejectionFlowAttempt, error) {
 		workflowRoot := t.TempDir()
 		entityPath := writeRejectionWorkflow(t, workflowRoot)
-		result, err := runner.run(t, scenario, workflowRoot, rejectionPrompt(), attempt)
+		result, err := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot), attempt)
 		if err != nil {
 			return codexRejectionFlowAttempt{result: result}, err
 		}
@@ -219,7 +219,7 @@ func runCodexFeedback3CycleEscalationScenario(t *testing.T, runner codexLiveRunn
 	workflowRoot := t.TempDir()
 	entityPath := writeEscalationWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, escalationPrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -236,7 +236,7 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result, err := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -263,7 +263,7 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 	workflowRoot := t.TempDir()
 	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -285,7 +285,7 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 	workflowRoot := t.TempDir()
 	writeSmallestMechanismWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -306,7 +306,7 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 	workflowRoot := t.TempDir()
 	writeKeepMovingWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -327,7 +327,7 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(), 0)
+	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}

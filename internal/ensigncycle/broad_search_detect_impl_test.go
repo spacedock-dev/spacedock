@@ -9,35 +9,38 @@ import (
 	"strings"
 )
 
-// detectBroadSearchAtBoot scans a captured FO boot stream for the lean-boot
-// violation the captain observed (2026-06-14): after `spacedock status --discover`
-// returned zero workflows, an FO ran a broad `find`/`grep -r`/`ls -R` filesystem
-// sweep to hunt a workflow down instead of obeying the contract's terminal zero
-// branch (Startup step 2: zero → report no workflow found and STOP). A broad sweep
-// at boot is both a discipline violation (the zero branch is report-and-stop) and a
-// cost/latency regression — the opposite of lean boot.
+// detectBroadSearchAtBoot scans a captured FO boot stream for a broad filesystem
+// sweep at boot: a `find`/`grep -r`/`ls -R` (or a recursive Glob/repo-wide Grep)
+// hunting a workflow or a contract reference file across the project root instead
+// of proceeding on the fixture/plugin content already in hand. Two boot shapes
+// trigger it: (1) after `spacedock status --discover` returns zero workflows, the
+// contract's terminal zero branch is report-and-stop, not a sweep to hunt one down
+// (the captain observed this 2026-06-14); (2) after a normal boot resolves its
+// workflow, the FO goes looking for a contract reference file (e.g. a skill's
+// cross-referenced doc) that lives only in the --plugin-dir checkout, not the
+// fixture — also a sweep, not a scoped read. A broad sweep at boot is both a
+// discipline violation and a cost/latency regression — the opposite of lean boot.
 //
-// Like detectWrongRootBoot it is model-agnostic (it reads the tool-call stream, not
-// any model phrasing) and pure (stream + fixtureRoot in, error out), with its own
-// offline test. It iterates ALL tool_use blocks of each entry (not just the first),
-// so a sweep cannot evade it by riding as a second block of a multi-tool turn. The
-// reddable sweep signatures, all observable in the boot stream:
+// It is model-agnostic (it reads the tool-call stream, not any model phrasing) and
+// pure (stream + fixtureRoot in, error out), with its own offline test. It iterates
+// ALL tool_use blocks of each entry (not just the first), so a sweep cannot evade
+// it by riding as a second block of a multi-tool turn. The reddable sweep
+// signatures, all observable in the boot stream:
 //
 //   - a `Bash` command invoking find / grep -r / rg / fd / ls -R whose target is the
 //     project root or a broad ancestor (not a scoped path under a resolved workflow),
-//   - a `Glob` tool_use with a recursive workflow-hunting pattern (e.g. **/README.md),
+//   - a `Glob` tool_use with a recursive hunting pattern (e.g. **/README.md),
 //   - a `Grep` tool_use whose path is the project root / unset (a repo-wide search).
 //
-// A correct zero-discover boot touches none of these: it runs --version,
-// git rev-parse, status --discover (zero), then reports no-workflow-found and stops.
-// A boot MAY also run a plain, non-recursive `ls` (e.g. `ls -la` of its own cwd, or
-// `ls {root}`) while orienting before it reports — the captain's decision (2026-07-02)
-// is that flat `ls` is not a hunt, so the detector never reds it. The detector passes
-// all of that and reds only the genuine sweep. It guards STRICTLY the zero-discover
-// branch's substituted sweep — a scoped search under an already-resolved workflow dir
-// is legitimate and must pass. The banned axis is recursion/hunting, not the `ls`
-// binary or the root path (keyed on recursion for `ls`; on the target being the
-// root / an unscoped path for find/rg/fd/grep -r/Glob/Grep).
+// A correct boot touches none of these. A boot MAY also run a plain, non-recursive
+// `ls` (e.g. `ls -la` of its own cwd, or `ls {root}`) while orienting — the
+// captain's decision (2026-07-02) is that flat `ls` is not a hunt, so the detector
+// never reds it. The detector passes all of that and reds only the genuine sweep.
+// It guards STRICTLY a substituted sweep — a scoped search under an
+// already-resolved workflow dir is legitimate and must pass. The banned axis is
+// recursion/hunting, not the `ls` binary or the root path (keyed on recursion for
+// `ls`; on the target being the root / an unscoped path for
+// find/rg/fd/grep -r/Glob/Grep).
 func detectBroadSearchAtBoot(stream, fixtureRoot string) error {
 	clean := filepath.Clean(fixtureRoot)
 	for _, line := range strings.Split(stream, "\n") {
@@ -53,17 +56,17 @@ func detectBroadSearchAtBoot(stream, fixtureRoot string) error {
 			switch b.Name {
 			case "Bash":
 				if sig, ok := broadSweepCommand(b.Input.Command, clean); ok {
-					return fmt.Errorf("FO broad-searched the filesystem at boot: command %q runs %s over the project root %q — after a zero `status --discover` the Startup zero branch is report-and-stop, not a filesystem sweep to hunt a workflow",
+					return fmt.Errorf("FO broad-searched the filesystem at boot: command %q runs %s over the project root %q — a boot-preamble filesystem sweep, not the scenario's own assertion",
 						strings.TrimSpace(b.Input.Command), sig, clean)
 				}
 			case "Glob":
 				if recursiveHuntPattern(b.Input.Pattern) {
-					return fmt.Errorf("FO broad-searched the filesystem at boot: a recursive Glob %q hunts a workflow project-wide — after a zero `status --discover` the Startup zero branch is report-and-stop",
+					return fmt.Errorf("FO broad-searched the filesystem at boot: a recursive Glob %q hunts the project root — a boot-preamble filesystem sweep, not the scenario's own assertion",
 						b.Input.Pattern)
 				}
 			case "Grep":
 				if repoWideGrep(b.Input.Path, clean) {
-					return fmt.Errorf("FO broad-searched the filesystem at boot: a repo-wide Grep for %q (path %q) hunts a workflow project-wide — after a zero `status --discover` the Startup zero branch is report-and-stop",
+					return fmt.Errorf("FO broad-searched the filesystem at boot: a repo-wide Grep for %q (path %q) hunts the project root — a boot-preamble filesystem sweep, not the scenario's own assertion",
 						b.Input.Pattern, b.Input.Path)
 				}
 			}
