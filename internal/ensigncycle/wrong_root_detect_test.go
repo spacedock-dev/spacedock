@@ -243,6 +243,84 @@ func TestDetectWrongRootBootRealPR446Commands(t *testing.T) {
 	}
 }
 
+// TestDetectWrongRootBootSymlinkMismatch proves the observed-path canonicalizer
+// fix: a fixture root and an FO-observed path that are the SAME directory but
+// spelled through a symlink vs its resolved target must not false-flag as a
+// wander, whether the observed path exists on disk (existing variant) or not
+// (ghost variant — the FO's stream captured a path that no longer exists by the
+// time the detector runs). Builds a REAL on-disk symlink divergence in
+// t.TempDir() so this reproduces deterministically on macOS AND Linux CI, unlike
+// the underlying macOS-only `/var` -> `/private/var` bug this guards.
+func TestDetectWrongRootBootSymlinkMismatch(t *testing.T) {
+	parent := t.TempDir()
+	real := filepath.Join(parent, "real")
+	if err := os.Mkdir(real, 0o755); err != nil {
+		t.Fatalf("mkdir real target: %v", err)
+	}
+	link := filepath.Join(parent, "link")
+	if err := os.Symlink(real, link); err != nil {
+		t.Fatalf("symlink: %v", err)
+	}
+	// fixtureRoot mirrors t.TempDir()'s unresolved spelling; detectWrongRootBoot
+	// resolves it internally, so `clean` inside the detector becomes `real`'s
+	// resolved form.
+	fixtureRoot := link
+
+	t.Run("existing_readme_passes", func(t *testing.T) {
+		readmePath := filepath.Join(link, "README.md")
+		if err := os.WriteFile(readmePath, []byte("# fixture\n"), 0o644); err != nil {
+			t.Fatalf("write README: %v", err)
+		}
+		stream := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"` + readmePath + `"}}]}}`
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector false-flagged a workflow README read through the SAME directory's symlink spelling as the (internally resolved) fixture root: %v", err)
+		}
+	})
+
+	t.Run("ghost_readme_passes", func(t *testing.T) {
+		// This README was never written — the observed path does not exist on disk
+		// at check-time. EvalSymlinks errors on the full path; only the
+		// deepest-existing-ancestor walk (resolving through `link`) closes this.
+		ghostPath := filepath.Join(link, "does", "not", "exist", "README.md")
+		stream := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"` + ghostPath + `"}}]}}`
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector false-flagged a workflow README read at a NON-EXISTENT path under the SAME directory's symlink spelling as the fixture root: %v", err)
+		}
+	})
+
+	t.Run("workflow_dir_bash_passes", func(t *testing.T) {
+		stream := streamLine(`spacedock status --boot --workflow-dir ` + link)
+		if err := detectWrongRootBoot(stream, fixtureRoot); err != nil {
+			t.Errorf("detector false-flagged a --workflow-dir boot through the SAME directory's symlink spelling as the fixture root: %v", err)
+		}
+	})
+
+	t.Run("genuine_wander_still_reds", func(t *testing.T) {
+		// Positive control: an observed path outside BOTH the link and its resolved
+		// target must still be flagged, even with the symlinked fixture root.
+		elsewhere := filepath.Join(parent, "elsewhere")
+		if err := os.Mkdir(elsewhere, 0o755); err != nil {
+			t.Fatalf("mkdir elsewhere: %v", err)
+		}
+		readmePath := filepath.Join(elsewhere, "README.md")
+		if err := os.WriteFile(readmePath, []byte("# elsewhere\n"), 0o644); err != nil {
+			t.Fatalf("write README: %v", err)
+		}
+		wantRoot, err := filepath.EvalSymlinks(real)
+		if err != nil {
+			t.Fatalf("EvalSymlinks(real): %v", err)
+		}
+		stream := `{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"` + readmePath + `"}}]}}`
+		gotErr := detectWrongRootBoot(stream, fixtureRoot)
+		if gotErr == nil {
+			t.Fatal("detector passed a workflow README read from a genuinely unrelated directory — want a wrong-root error")
+		}
+		if !strings.Contains(gotErr.Error(), wantRoot) {
+			t.Errorf("error must name the resolved fixture root %q: %v", wantRoot, gotErr)
+		}
+	})
+}
+
 // TestDetectWrongRootBootRealPR446Streams replays the two full captured sonnet
 // streams from PR #446 (run 28466995641, artifact
 // runtime-live-e2e-claude-live-sonnet, `claude-shared-scenarios/feedback-3-cycle-escalation/claude-stream.jsonl`)
