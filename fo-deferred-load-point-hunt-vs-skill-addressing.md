@@ -1,6 +1,6 @@
 ---
 title: "FO deferred load points: bare relative paths get filesystem-hunted when cwd isn't the skill install dir"
-status: validation
+status: ideation
 source: "Split out of sc5 (live-runner-boot-preamble-hardening) 2026-07-09 per captain direction, after an opus advisory ('science officer') consultation root-caused the highest-frequency remaining failure sub-class in sc5's 16-instance ledger. sc5 shipped three harness-only fixes (prompt anchor, discovery marker, fast/legible classification of a broad-search fumble) plus a since-reverted, buggy retry mechanism — all confined to internal/ensigncycle/*_test.go by sc5's own declared scope ('all edits are to the harness and fixtures. No doc diff required.'). This entity is the contract-level fix that scope excluded by construction; captain's framing: prior work was 'test hardening but not actually changing the contract to make things more predictable,' and the sc5 cycle-2 retry specifically was 'making changes to the tests to allow randomness,' a real antipattern — this entity targets the production FO's actual behavior instead of accommodating it in tests."
 started: 2026-07-09T07:11:29Z
 completed:
