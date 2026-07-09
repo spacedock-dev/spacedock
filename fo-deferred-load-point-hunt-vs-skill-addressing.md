@@ -85,6 +85,14 @@ Committed the design to Move 1 only: a single additive paragraph at `## Deferred
 
 Applied Move 1's exact additive paragraph to `## Deferred load points`, added and red-control-verified the AC-2 contractlint presence guard (`reference_load_anti_hunt_test.go`), and confirmed no docs-site/CLI surface changed with build/vet/test clean under both tag configurations — scoping the `-tags live` check to compile-cleanliness plus the offline classifier tests to avoid spending real model credits on AC-1's separately-owned live measurement. AC-1 (the live find-hunt rate) is unaddressed here by design — it is validation/live-lane work sequenced behind PR #490, not implementation's proof obligation. Committed to the worktree branch at 4ca38848.
 
+### Feedback Cycles
+
+**Cycle 1 (validation gate, REJECTED on AC-1).** AC-2's mechanism evidence (the prose rule is present and deletion-guarded) is solid. AC-1 — the value AC — measured 6/24 (25%) find-hunt rate live over 3 attempts, down from sc5's 8/24 (33%) baseline but well short of the ≤2/24 (8.3%) target, and `filing` found-hunted in all 3 attempts (0/3) — the AC's own explicitly named backslide trigger ("filing still 0/3, FAILS this AC"). Move 1 (the additive prose-only rule) measurably helped but did not clear the bar this entity itself set.
+
+Per the entity's own pre-registered escalation (`## Proposed approach`: "Move 2 is held as the pre-registered escalation lever... if Move 1's measured live effect is insufficient"), this routes to **Move 2**: unify addressing — promote `fo-dispatch-core.md`/`fo-merge-core.md`/`fo-smallest-sufficient-mechanism.md` to `Skill()`-addressed modules, or add an explicit skill-root path anchor the FO prepends to a bare read. This is materially higher risk than Move 1 (the boot → dispatch → merge path, the most load-bearing sequence in the system) — the routed implementation work must choose and justify a specific mechanism and spike its riskiest part first, per the workflow's Probe policy, before writing the change — not implement either candidate ad hoc.
+
+Separate, out-of-scope finding surfaced during AC-1 measurement (not this entity's to fix): `detectWrongRootBoot` has a pre-existing (PR #426) macOS-only symlink-resolution asymmetry that confounded the live measurement and required a local workaround to read around. Already tracked and being fixed by a separate entity (`wrong-root-detector-symlink-false-positive`, short-id 5q) — not duplicated here.
+
 ## Stage Report: validation
 
 - DONE: Independently reproduce AC-2 offline evidence yourself (contractlint presence + deletion-guard tests, both halves-insufficient-alone checks) plus full go build/go vet/go test clean, both with and without -tags live
