@@ -47,7 +47,7 @@ func lineLeaksClaudeModelToken(line string) bool {
 // TestDispatchCoreHasNoClaudeTeamImperative. The Claude realization legitimately lives
 // in claude-fo-dispatch.md. The paired discriminator control keeps this non-vacuous.
 func TestDispatchCoreHasNoClaudeModelToken(t *testing.T) {
-	path := filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
+	path := filepath.Join(skillsRoot(t), "fo-dispatch-core", "SKILL.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read dispatch core %s: %v", path, err)
@@ -91,7 +91,7 @@ func TestDispatchCoreModelTokenScannerDiscriminates(t *testing.T) {
 // status-query primitive (first-officer-shared-core.md) and banning it would be
 // over-broad. The paired discriminator control keeps this non-vacuous.
 func TestEventLoopCoreHasNoPRScan(t *testing.T) {
-	path := filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
+	path := filepath.Join(skillsRoot(t), "fo-dispatch-core", "SKILL.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read dispatch core %s: %v", path, err)

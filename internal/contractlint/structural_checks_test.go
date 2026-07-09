@@ -257,7 +257,7 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		// The host-neutral extraction re-homed Mod-Block Enforcement (which names the
 		// `## Hook: merge` mechanism surface) into the merge core; it legitimately
 		// carries the `## Hook:` token.
-		filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): true,
+		filepath.Join("skills", "fo-merge-core", "SKILL.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
 		filepath.Join("mods", "pr-merge.md"): true,
@@ -484,7 +484,7 @@ func lineLeaksClaudeTeamDispatch(line string) bool {
 // lives in claude-fo-dispatch.md, whose lines name the adapter as the actor. The
 // paired discriminator control below keeps this from passing vacuously.
 func TestDispatchCoreHasNoClaudeTeamImperative(t *testing.T) {
-	path := filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
+	path := filepath.Join(skillsRoot(t), "fo-dispatch-core", "SKILL.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read dispatch core %s: %v", path, err)

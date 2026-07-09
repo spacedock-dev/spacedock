@@ -36,7 +36,7 @@ var catastropheClauses = []catastropheClause{
 	// The verbatim reuse diagnostic (dispatch-core Reuse and Fresh Dispatch). Contractually
 	// pinned to appear character-for-character.
 	{
-		path: filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"),
+		path: filepath.Join("skills", "fo-dispatch-core", "SKILL.md"),
 		want: "does not match next stage effective_model",
 	},
 }

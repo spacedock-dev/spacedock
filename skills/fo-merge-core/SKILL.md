@@ -1,3 +1,9 @@
+---
+name: fo-merge-core
+description: "First-officer merge core — the terminal merge-and-cleanup ceremony, the mod-block guard that protects it, and step 10's boundary obligation. Loaded at the terminal boundary."
+user-invocable: false
+---
+
 # First Officer Merge Core
 
 The terminal merge-and-cleanup ceremony, the mod-block guard that protects it, and step 10's boundary obligation. The runtime adapter supplies the host's concrete terminal teardown (step 10's host-specific part), read alongside this file.

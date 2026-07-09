@@ -17,8 +17,8 @@ import (
 // a mechanism that does not ship (member 72 — fo-tier-delegation — is DEFERRED).
 var foContractCores = []string{
 	filepath.Join("first-officer", "references", "first-officer-shared-core.md"),
-	filepath.Join("first-officer", "references", "fo-dispatch-core.md"),
-	filepath.Join("first-officer", "references", "fo-merge-core.md"),
+	filepath.Join("fo-dispatch-core", "SKILL.md"),
+	filepath.Join("fo-merge-core", "SKILL.md"),
 	filepath.Join("first-officer", "references", "claude-first-officer-runtime.md"),
 	filepath.Join("first-officer", "references", "codex-first-officer-runtime.md"),
 	filepath.Join("first-officer", "references", "pi-first-officer-runtime.md"),

@@ -26,16 +26,22 @@ var bootResidentBodies = []string{
 }
 
 // foReferenceCores are the two host-neutral cores the boot-resident shared core names
-// at its dispatch and merge load points. Because every host loads the shared core at
+// at its dispatch and merge load points, each `Skill(skill="spacedock:<name>")`-addressed
+// (promoted off a bare `references/…` path so resolution no longer depends on the FO's
+// cwd matching the skill install dir). Because every host loads the shared core at
 // boot, naming the cores there is what makes the ceremony REACHABLE on codex and pi —
 // no per-host re-naming is required. Each core must exist on disk (the closure walk
 // over bootResidentBodies resolves them once shared-core names them) and carry its
-// ceremony anchors.
+// ceremony anchors. Kept OUT of deferredSkillCores deliberately: their anchor headings
+// ("Dispatch", "Event Loop") are common English words that appear throughout
+// claude-fo-dispatch.md's informal prose citations of these cores' sections — folding
+// them into sectionOwners()/the dangler scan would false-positive on every such
+// mention, not just a genuinely relocated section.
 var foReferenceCores = map[string][]string{
-	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
+	filepath.Join("skills", "fo-merge-core", "SKILL.md"): {
 		"## Merge and Cleanup", "## «merge.guard»", "### Worktree removal safety", "## Mod-Block Guard",
 	},
-	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
+	filepath.Join("skills", "fo-dispatch-core", "SKILL.md"): {
 		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
 	},
 }
@@ -95,12 +101,15 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 // shared core names them via `spacedock:<name>`, so the closure walk resolves each to
 // skills/<name>/SKILL.md, the same as the gate skills.
 var lazyLoadSkills = map[string]bool{
-	"using-legacy-claude-team": true,
-	"present-gate":             true,
-	"feedback-rejection-flow":  true,
-	"fo-status-viewer":         true,
-	"fo-write-core":            true,
-	"fo-dispatch-recovery":     true,
+	"using-legacy-claude-team":         true,
+	"present-gate":                     true,
+	"feedback-rejection-flow":          true,
+	"fo-status-viewer":                 true,
+	"fo-write-core":                    true,
+	"fo-dispatch-recovery":             true,
+	"fo-dispatch-core":                 true,
+	"fo-merge-core":                    true,
+	"fo-smallest-sufficient-mechanism": true,
 }
 
 // deferredLoadPoint is one extracted load-point: the on-disk path the body names
@@ -239,9 +248,10 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	}
 	sharedBody := string(sharedData)
 	for corePath, anchors := range foReferenceCores {
-		base := filepath.Base(corePath)
-		if !strings.Contains(sharedBody, base) {
-			t.Errorf("%s does not name %s — the boot-resident core is the sole core-namer, so an unnamed core is unreachable on every host", sharedCore, base)
+		name := filepath.Base(filepath.Dir(corePath)) // skills/<name>/SKILL.md -> <name>
+		token := "spacedock:" + name
+		if !strings.Contains(sharedBody, token) {
+			t.Errorf("%s does not name %q — the boot-resident core is the sole core-namer, so an unnamed core is unreachable on every host", sharedCore, token)
 		}
 		data, err := os.ReadFile(filepath.Join(root, corePath))
 		if err != nil {
@@ -476,6 +486,9 @@ func TestDeferredSkillProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
 var deadDeferredReferencePaths = []string{
 	"references/fo-status-viewer.md",
 	"references/fo-write-core.md",
+	"references/fo-dispatch-core.md",
+	"references/fo-merge-core.md",
+	"references/fo-smallest-sufficient-mechanism.md",
 }
 
 // TestNoSurvivingContractFileNamesDeadDeferredReferencePath is the AC-3 unguarded-re-point gate:
@@ -514,5 +527,55 @@ func TestNoSurvivingContractFileNamesDeadDeferredReferencePath(t *testing.T) {
 	}
 	if walked == 0 {
 		t.Fatal("walked zero .md files under skills/ — the unguarded-re-point gate would pass vacuously")
+	}
+}
+
+// promotedDeferredFOSkillPaths are the SKILL.md paths Move 2 promoted off a bare
+// `references/…` read (foReferenceCores' two dispatch/merge cores, plus
+// fo-smallest-sufficient-mechanism, which carries no ceremony-anchor entry of its own
+// since Working Principles names it once, not at a load-bearing dispatch/merge
+// boundary). TestUserSkillsParseWithFrontmatter only walks userSkills (the
+// user-invocable surface), so this is the offline frontmatter-validity guard for the
+// three FO-internal skills THIS entity's Move 2 introduced — a malformed frontmatter
+// block breaks host discovery at load time, the exact failure a live spawn cannot
+// cheaply catch but a parse check can.
+func promotedDeferredFOSkillPaths() []string {
+	paths := make([]string, 0, len(foReferenceCores)+1)
+	for p := range foReferenceCores {
+		paths = append(paths, p)
+	}
+	return append(paths, filepath.Join("skills", "fo-smallest-sufficient-mechanism", "SKILL.md"))
+}
+
+// TestPromotedDeferredFOSkillsParseWithFrontmatter is the Move-2 frontmatter-VALIDITY
+// check, the same shape as TestUserSkillsParseWithFrontmatter: each promoted SKILL.md's
+// YAML frontmatter block parses and declares `name`, `description`, and
+// `user-invocable` (false — none of the three is a captain-facing command).
+func TestPromotedDeferredFOSkillsParseWithFrontmatter(t *testing.T) {
+	root := repoRoot(t)
+	paths := promotedDeferredFOSkillPaths()
+	if len(paths) == 0 {
+		t.Fatal("no promoted deferred FO skills declared — the frontmatter check would pass vacuously")
+	}
+	for _, rel := range paths {
+		data, err := os.ReadFile(filepath.Join(root, rel))
+		if err != nil {
+			t.Errorf("promoted deferred FO skill has no SKILL.md at %s: %v", rel, err)
+			continue
+		}
+		fm, ok := frontmatter(string(data))
+		if !ok {
+			t.Errorf("%s has no parseable YAML frontmatter block", rel)
+			continue
+		}
+		if !frontmatterHasKey(fm, "name") {
+			t.Errorf("%s frontmatter declares no `name` key", rel)
+		}
+		if !frontmatterHasKey(fm, "description") {
+			t.Errorf("%s frontmatter declares no `description` key", rel)
+		}
+		if frontmatterField(fm, "user-invocable") != "false" {
+			t.Errorf("%s frontmatter `user-invocable` is not `false` — this is an FO-internal deferred module, not a captain-facing command", rel)
+		}
 	}
 }

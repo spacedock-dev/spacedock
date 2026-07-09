@@ -1,3 +1,9 @@
+---
+name: fo-smallest-sufficient-mechanism
+description: "First-officer smallest-sufficient-mechanism gate — the ladder, the busywork the FO refuses, and worked examples. Loaded when the FO faces a discretionary mechanism choice — never at boot."
+user-invocable: false
+---
+
 # Smallest Sufficient Mechanism
 
 The ladder, the busywork the FO refuses, and worked examples behind the Working-Principles gate. Loaded when the FO faces a discretionary mechanism choice — never at boot.

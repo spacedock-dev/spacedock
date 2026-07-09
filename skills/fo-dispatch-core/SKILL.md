@@ -1,3 +1,9 @@
+---
+name: fo-dispatch-core
+description: "First-officer dispatch core — the per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Loaded at the first worker dispatch."
+user-invocable: false
+---
+
 # First Officer Dispatch Core
 
 The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly, the reuse contract, worktree ownership, and the event-loop skeleton. Host-specific parts ride the `→` lines of the capability `«fn»`s below.

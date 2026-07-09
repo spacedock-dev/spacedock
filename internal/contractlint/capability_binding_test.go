@@ -14,7 +14,7 @@ import (
 
 func dispatchCorePath(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(skillsRoot(t), "first-officer", "references", "fo-dispatch-core.md")
+	return filepath.Join(skillsRoot(t), "fo-dispatch-core", "SKILL.md")
 }
 
 // capabilityHosts: legacy core → lines still present before the runtime-binding-block

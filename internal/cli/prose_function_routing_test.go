@@ -19,8 +19,8 @@ import (
 // boot_resident_closure_test.go uses), so the check drives the on-disk contract, not a copy.
 var proseFunctionCores = []string{
 	filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"),
-	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"),
-	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"),
+	filepath.Join("skills", "fo-dispatch-core", "SKILL.md"),
+	filepath.Join("skills", "fo-merge-core", "SKILL.md"),
 }
 
 // migrationTargetRe matches a prose-function declaration's `→` migration-target line and

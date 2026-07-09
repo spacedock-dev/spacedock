@@ -73,12 +73,11 @@ func deferredLoadPointsBlock(t *testing.T, body string) string {
 // closure walk leaves open: TestBootResidentDeferredLoadPointsResolve / ...CarryCeremony /
 // ...SkillCoresResolveAndCarryCeremony assert only that the four module targets resolve on disk,
 // never that a folded row kept its load-point trigger or the shared greet-guard. This walks the
-// single load-points block and asserts all four module tokens (the two skills via
-// `spacedock:<name>`, the two references via `references/*.md`), all four load-point triggers,
-// and the single shared greet-guard survive by name — so dropping a row (or its trigger, or the
-// guard) reds here while the closure tests stay green. The four-load-points invariant is
-// preserved; the collapse deliberately replaces the old >=4-per-row greet-guard with the single
-// shared clause, so this asserts >=1, not >=4.
+// single load-points block and asserts all four module tokens (all four `spacedock:<name>`
+// skill tokens), all four load-point triggers, and the single shared greet-guard survive by
+// name — so dropping a row (or its trigger, or the guard) reds here while the closure tests stay
+// green. The four-load-points invariant is preserved; the collapse deliberately replaces the old
+// >=4-per-row greet-guard with the single shared clause, so this asserts >=1, not >=4.
 func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T) {
 	root := repoRoot(t)
 	data, err := os.ReadFile(filepath.Join(root, sharedCorePath()))
@@ -88,10 +87,10 @@ func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T
 	block := deferredLoadPointsBlock(t, string(data))
 
 	for _, tok := range []string{
-		"spacedock:fo-status-viewer",     // status-viewer skill
-		"spacedock:fo-write-core",        // write/id-style skill
-		"references/fo-dispatch-core.md", // dispatch reference
-		"references/fo-merge-core.md",    // merge reference
+		"spacedock:fo-status-viewer", // status-viewer skill
+		"spacedock:fo-write-core",    // write/id-style skill
+		"spacedock:fo-dispatch-core", // dispatch skill
+		"spacedock:fo-merge-core",    // merge skill
 	} {
 		if !strings.Contains(block, tok) {
 			t.Errorf("deferred load points do not fold %s — a module load-point token is missing", tok)

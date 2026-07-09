@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	foDispatchCoreRel   = filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md")
+	foDispatchCoreRel   = filepath.Join("skills", "fo-dispatch-core", "SKILL.md")
 	claudeFODispatchRel = filepath.Join("skills", "first-officer", "references", "claude-fo-dispatch.md")
 	ensignSharedCoreRel = filepath.Join("skills", "ensign", "references", "ensign-shared-core.md")
 )

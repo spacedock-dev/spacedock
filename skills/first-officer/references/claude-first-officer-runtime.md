@@ -4,13 +4,13 @@ This file defines how the shared first-officer core executes on Claude Code: Cap
 
 ## Dispatch reference (load at first dispatch)
 
-The Claude dispatch parts — the worker back-channel, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the Awaiting-Completion idle guardrail, the Degraded-Mode/break-glass/budget-failure trigger lines, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside `fo-dispatch-core.md` at the first worker dispatch (the exception bodies behind those triggers load at failure time via `Skill(skill="spacedock:fo-dispatch-recovery")`). (`claude-fo-dispatch.md`'s one legacy-override line handles a runtime that still exposes `TeamCreate`; it is the sole legacy load point.)
+The Claude dispatch parts — the worker back-channel, the ID/next-id read, the `Agent()` spawn call and `SendMessage` advance handle, the Awaiting-Completion idle guardrail, the Degraded-Mode/break-glass/budget-failure trigger lines, the Context-Budget probe, and the Event-Loop reconcile sweep + Backstop — live in `references/claude-fo-dispatch.md`, read alongside `Skill(skill="spacedock:fo-dispatch-core")` at the first worker dispatch (the exception bodies behind those triggers load at failure time via `Skill(skill="spacedock:fo-dispatch-recovery")`). (`claude-fo-dispatch.md`'s one legacy-override line handles a runtime that still exposes `TeamCreate`; it is the sole legacy load point.)
 
 When filing a new task, read `id_style` from `status --boot --json`, then use `status --next-id` only when the style is `sequential` or `sd-b32` (see claude-fo-dispatch.md for the full read shape). A boot that only greets does not file a task.
 
 ## Terminal teardown (load at terminalization)
 
-`fo-merge-core.md` (read at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
+`Skill(skill="spacedock:fo-merge-core")` (loaded at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
 
 ## Captain Interaction
 

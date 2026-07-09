@@ -9,13 +9,18 @@ import (
 
 // deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
 // must NOT invoke before the greet: the status-viewer surface, the write/id-style
-// surface, and the dispatch-failure-recovery surface. Each loads only at its trigger
-// (the FIRST status query / --set / id lookup / issue filing, the FIRST write to
-// main, or a dispatch failure — never at boot). present-gate is deliberately NOT
+// surface, the dispatch-failure-recovery surface, the dispatch and merge cores, and
+// the smallest-sufficient-mechanism gate. Each loads only at its trigger (the FIRST
+// status query / --set / id lookup / issue filing, the FIRST write to main, a
+// dispatch failure, the FIRST worker dispatch, the terminal boundary, or a
+// discretionary mechanism choice — never at boot). present-gate is deliberately NOT
 // here — the greet legitimately presents a ready gate via
 // Skill(skill="spacedock:present-gate") (Startup step 3), so the oracle keys on the
 // skill ARGUMENT, not on any Skill call.
-var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
+var deferredFOSkillNames = []string{
+	"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery",
+	"fo-dispatch-core", "fo-merge-core", "fo-smallest-sufficient-mechanism",
+}
 
 // teamToolNames are the Claude team-mode tool calls whose presence before the
 // greet would mean an eager team was created. TeamCreate is the one the FO would
