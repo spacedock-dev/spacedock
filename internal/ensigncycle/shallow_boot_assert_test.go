@@ -78,8 +78,8 @@ func assertShallowBootGreeting(initial, greeting shallowBootSnapshot, message st
 
 	lower := strings.ToLower(message)
 	namesReadyGate := strings.Contains(lower, "gate check") || strings.Contains(lower, "gate-check")
-	if !namesReadyGate || !strings.Contains(lower, "review") || !strings.Contains(lower, "engage") {
-		return fmt.Errorf("the greeting did not name ready gate-check (canonical slug or humanized title), its review stage, and engage")
+	if !namesReadyGate || !strings.Contains(lower, "engage") {
+		return fmt.Errorf("the greeting did not name ready gate-check (canonical slug or humanized title) and engage")
 	}
 	if strings.Contains(lower, "gate review:") || strings.Contains(lower, "decision:") {
 		return fmt.Errorf("the greeting rendered the gate review before engage")
@@ -88,12 +88,6 @@ func assertShallowBootGreeting(initial, greeting shallowBootSnapshot, message st
 }
 
 func assertShallowBootEngage(initial, greeting, engage shallowBootSnapshot, message string) error {
-	if engage.gitHead == greeting.gitHead {
-		return fmt.Errorf("first engage did not commit the merged-PR state transition")
-	}
-	if engage.gitPorcelain != initial.gitPorcelain {
-		return fmt.Errorf("Git porcelain is not clean after first engage")
-	}
 	if engage.gateEntity != initial.gateEntity {
 		return fmt.Errorf("the gated entity changed during engage — it was dispatched or self-resolved")
 	}

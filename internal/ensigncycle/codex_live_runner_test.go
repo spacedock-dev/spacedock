@@ -342,9 +342,9 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 }
 
 // runCodexShallowBootScenario uses two normal Spacedock front-door launches over
-// one fixture. The prompt-mandatory greeting process receives only the minimal
-// stop clause; the second receives only `engage .`. The filesystem snapshots, not
-// either task's prose, prove the phase boundary.
+// one fixture. The greeting process uses the exact default front door with no
+// operator task; the second receives only `engage .`. The filesystem snapshots,
+// not either task's prose, prove the phase boundary.
 func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()

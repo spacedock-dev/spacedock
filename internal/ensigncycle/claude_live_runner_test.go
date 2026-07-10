@@ -419,6 +419,22 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 		t.Fatalf("extract Claude engage response: %v\nArtifacts: %s", err, session.artifactDir)
 	}
 	engage := gatherShallowBootSnapshot(t, workflowRoot, teamRoot, fixture)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-stream.jsonl"), []byte(engageStream), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-message.txt"), []byte(engageMessage), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-gh-calls.txt"), []byte(engage.ghCalls), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-merged-active.md"), []byte(engage.mergedActive), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-merged-archive.md"), []byte(engage.mergedArchive), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-gate-entity.md"), []byte(engage.gateEntity), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-git-head.txt"), []byte(engage.gitHead+"\n"), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-git-status.txt"), []byte(engage.gitPorcelain), 0o644)
+	paths := strings.Join([]string{
+		"workflow: " + workflowRoot,
+		"merged-active: " + fixture.mergedEntityPath,
+		"merged-archive: " + fixture.mergedArchive,
+		"gate: " + fixture.gateEntityPath,
+		"stub-gh-log: " + fixture.stubGhLog,
+	}, "\n") + "\n"
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-paths.txt"), []byte(paths), 0o644)
 	observation := shallowBootObservation{
 		initial: initial, greeting: greeting, greetingMessage: greetingMessage,
 		engage: engage, engageMessage: engageMessage,
@@ -426,9 +442,6 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertShallowBoot(observation); err != nil {
 		t.Fatalf("%v\nGreeting:\n%s\nEngage response:\n%s\nArtifacts: %s", err, greetingMessage, engageMessage, session.artifactDir)
 	}
-	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-stream.jsonl"), []byte(engageStream), 0o644)
-	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-message.txt"), []byte(engageMessage), 0o644)
-
 	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
 	if err := assertNoTeamCreateBeforeGreet(greetingStream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, session.artifactDir)

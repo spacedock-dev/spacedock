@@ -323,6 +323,8 @@ func gitCommitPathScoped(t *testing.T, root, rel, msg string) {
 func gitInit(t *testing.T, dir string) {
 	t.Helper()
 	git(t, dir, "init", "-q")
+	git(t, dir, "config", "user.email", "t@t")
+	git(t, dir, "config", "user.name", "t")
 	git(t, dir, "add", "-A")
 	git(t, dir, "commit", "-q", "-m", "init")
 }
