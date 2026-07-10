@@ -108,3 +108,20 @@ Commit `49c57685a62ea501000ded8846eb13274222e3c6` changes `internal/ensigncycle/
 ### Summary
 
 The rebased implementation is internally consistent and all deterministic acceptance and repository-wide tests pass: `go test ./...` and `go test ./... -race` each completed with 2,101 passing tests across 17 packages. Recommendation: REJECTED pending a safe, filesystem-isolated AC-3 live run; this is an evidence blocker, not an implementation defect found in AC-1 or AC-2.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-review the updated entity and apply the captain's canonical local-live clarification.
+  The cycle-1 safehouse prerequisite was not an AC-3 requirement; this cycle used the repository's documented fresh-isolated-`HOME` Claude harness with the available `~/.claude/benchmark-token`.
+- DONE: Run exactly the post-fix macOS `TestLiveClaudeSharedScenarios/self-evidence-merge-triage` scenario required by AC-3.
+  With `SPACEDOCK_BIN=$PWD/spacedock` and `SPACEDOCK_REPO_ROOT=$PWD`, `go test ./internal/ensigncycle/ -tags live -count=1 -timeout 40m -run 'TestLiveClaudeSharedScenarios/self-evidence-merge-triage' -v` passed in 207.016s (subtest 206.57s, exit 0).
+- DONE: Record whether wrong-root detection fires and distinguish any unrelated failure.
+  Wrong-root false-flag count was 0: the detector did not fire; the scenario itself passed, so there was no unrelated failure to qualify or mask the AC-3 result.
+- DONE: Reconfirm the worktree remains clean and retain the prior deterministic/full/race evidence.
+  The generated launcher was removed and `git status --short --branch` is clean; cycle 1's 5-node symlink controls, 25-node detector family, and both 2,101-test full/race gates remain the recorded evidence on unchanged commit `5c754fb0b52d4bd5775fec2526bc2675dc67875a`.
+- DONE: Verify all acceptance criteria and make a terminal recommendation.
+  AC-1 and AC-2 retain their independently reproduced deterministic evidence; AC-3 now has the required live macOS evidence, moving the observed wrong-root false-flag baseline from at least 1 to 0.
+
+### Summary
+
+Validation cycle 2 closes the only evidence gap: the real post-fix macOS `self-evidence-merge-triage` live scenario passed under the canonical fresh-isolated-`HOME` harness without any wrong-root detection or unrelated failure. Recommendation: PASSED; no implementation code changed, and the worktree is clean.
