@@ -63,6 +63,11 @@ func exerciseShallowBootTwoPhaseTrajectory(t *testing.T) {
 	if err := assertShallowBoot(good); err != nil {
 		t.Fatalf("correct greet-then-engage trajectory must pass: %v", err)
 	}
+	canonicalSlug := goodShallowBootObservation()
+	canonicalSlug.greetingMessage = "gate-check is ready at review. Say engage to continue."
+	if err := assertShallowBoot(canonicalSlug); err != nil {
+		t.Fatalf("canonical ready-gate slug must satisfy greeting naming: %v", err)
+	}
 
 	tests := []struct {
 		name   string
@@ -176,6 +181,12 @@ func exerciseShallowBootTwoPhaseTrajectory(t *testing.T) {
 			name: "greeting renders gate review",
 			mutate: func(o *shallowBootObservation) {
 				o.greetingMessage += "\nGate review: Gate Check\nDecision: approve?"
+			},
+		},
+		{
+			name: "greeting names only a future gate",
+			mutate: func(o *shallowBootObservation) {
+				o.greetingMessage = "merged-pr will reach the review gate. Say engage to continue."
 			},
 		},
 		{
