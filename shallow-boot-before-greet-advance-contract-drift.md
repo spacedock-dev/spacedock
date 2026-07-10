@@ -6,7 +6,7 @@ started: 2026-07-10T12:52:14Z
 completed:
 verdict:
 score: 0.5
-worktree:
+worktree: .worktrees/spacedock-ensign-shallow-boot-before-greet-advance-contract-drift
 issue:
 id: m3y296hx6tb939qqq5zcxphw
 ---
