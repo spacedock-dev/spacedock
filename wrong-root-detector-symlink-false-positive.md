@@ -70,3 +70,18 @@ No doc diff needed: this changes an internal test-harness detector (`internal/en
 ### Summary
 
 Firmed the fix to a single deepest-existing-ancestor canonicalizer shared by the fixture-root side and both observed-path sites, rejecting the draft's plain-`Clean`-fallback after the spike proved it still false-flags ghost (non-existent) stream paths. The spike also established that reproduction requires the fixture root to exist at check-time, which redirected the test plan away from an archived-stream replay toward a self-made on-disk symlink red control (deterministic and cross-platform, so it also guards the macOS-only bug on Linux CI) plus a real live self-evidence-merge-triage re-run as the end-value measurement. No doc diff needed — the detector is internal test infrastructure with no user-visible surface.
+
+## Stage Report: implementation
+
+- DONE: Complete and commit one deepest-existing-ancestor canonicalizer used consistently for fixture and observed paths, with TDD red/green evidence.
+  Commit `49c57685a62ea501000ded8846eb13274222e3c6` routes the fixture root, observed README path, and both observed Bash-path passes through `canonicalizeWrongRootPath`.
+- DONE: Preserve genuine wrong-root detection and prove existing-path, ghost-path, and unrelated-directory controls with focused tests.
+  The pre-fix focused run failed the three symlink-equivalent observed-path cases while its genuine-wander control passed; the restored fix passed all 5 symlink controls and all 25 `TestDetectWrongRootBoot` cases.
+- DONE: Append a complete implementation Stage Report naming commit, changed files, and exact clean verification commands; leave the live macOS end-value run to validation.
+  This report names the commit, both changed files, the exact commands and results, and explicitly reserves AC-3's live end-value run for the fresh validation stage.
+- SKIPPED: Re-run the real live macOS `TestLiveClaudeSharedScenarios/self-evidence-merge-triage` scenario.
+  Intentionally left to independent validation as required by the implementation dispatch; no live model budget was spent in this stage.
+
+### Summary
+
+Commit `49c57685a62ea501000ded8846eb13274222e3c6` changes `internal/ensigncycle/wrong_root_detect_impl_test.go` and `internal/ensigncycle/wrong_root_detect_test.go`: one deepest-existing-ancestor canonicalizer now preserves symlink equivalence for existing and ghost paths without weakening unrelated-directory detection. TDD evidence used `go test ./internal/ensigncycle -run '^TestDetectWrongRootBootSymlinkMismatch$' -count=1` (RED: 1 control passed, 4 test nodes failed for the expected false positives; GREEN: 5 passed), followed by `go test ./internal/ensigncycle/ -run TestDetectWrongRootBoot -count=1` (25 passed). Clean verification used `gofmt -w ./cmd ./internal`, `gofmt -d internal/ensigncycle/wrong_root_detect_impl_test.go internal/ensigncycle/wrong_root_detect_test.go` (empty), `git diff --check 821e5b08742696b1bde6e6304024086bce03b5fb..49c57685a62ea501000ded8846eb13274222e3c6` (empty), `go test ./...` (exit 0), `go test ./... -race` (exit 0), and `git status --short --branch` (clean).
