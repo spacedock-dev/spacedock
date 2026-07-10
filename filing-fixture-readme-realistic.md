@@ -9,6 +9,8 @@ score: 0.4
 worktree: .worktrees/spacedock-ensign-filing-fixture-readme-realistic
 issue:
 id: c3wxhq3qj94mhakam80g4zxw
+mod-block: merge:pr-merge
+pr: "#493"
 ---
 
 ## Problem
