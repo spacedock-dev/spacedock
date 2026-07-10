@@ -1,15 +1,16 @@
 ---
 title: "Live-runner boot preamble hardening — a driven FO's boot fumbles can't reach the scenario under test"
-status: validation
+status: done
 source: "0250 Commander session 2026-07-07 (captain-requested filing). Two same-day sonnet-lane instances of boot-phase nondeterminism failing scenarios UPSTREAM of their subject matter: (1) k7's PR run — TestLiveDefaultHeadlessStopsAtGate, the driven FO's `status --discover` returned empty twice in the fixture and it correctly stopped at no-workflow (rerun green); (2) zm's PR run — TestLiveClaudeSharedScenarios/smallest-sufficient-mechanism, the driven FO prefixed its boot with `cd /home/user` and operated outside the fixture root (caught by the runner's own claude_live_runner_test.go:130 diagnostic; opus variant green on the identical suite both times). Related same-day codex instance: shallow-boot's FO tried four wrong `state sweep` flag shapes (never `state sweep --workflow-dir .`), concluded the verb was broken, and improvised a partial manual advancement that skipped the archive — a call-shape fumble, not a deliverable defect. Each red costs a full lane run + FO triage + rerun; the flake tax erodes lane trust."
 started: 2026-07-08T15:56:12Z
-completed:
-verdict:
+completed: 2026-07-10T09:26:30Z
+verdict: passed
 score: 0.85
 worktree: .worktrees/spacedock-ensign-live-runner-boot-preamble-hardening
 issue:
 id: sc592grb0w36q8ravzeya70r
 pr: pr-merge:490
+archived: 2026-07-10T09:26:30Z
 ---
 
 **Status as of 2026-07-08 (tightened after PR #488/#489 evidence): this is now actively blocking routine merges, not an occasional footnote.** PR #488 (`claude-result-extractor-first-vs-terminal` — a diff touching ONLY two Go test files, `internal/ensigncycle/claude_final_message_impl_test.go`/`claude_final_message_test.go`) failed its `claude-live (sonnet, CI-E2E)` lane on **5 consecutive attempts, 0 passes**, hitting **7 distinct scenario names** (self-evidence-merge-triage x2, keep-moving-posture, filing x3, TestLiveDefaultHeadlessStopsAtGate, smallest-sufficient-mechanism) — none with any coupling to the diff (confirmed via `gh pr diff --name-only` each time). A same-day cross-PR survey (`gh run list` across unrelated branches) found the sonnet live lane failing in 4 of 6 distinct runs checked (~33% pass rate today), and PR #489 (a completely unrelated diff) independently reproduced two of the same failure shapes on the SAME day, including one (wrong-root cd into the real CI checkout) now confirmed on BOTH sonnet and opus — this class is model-agnostic. Full evidence: 16 logged instances below, spanning PRs #481/#482/#488/#489.
