@@ -25,12 +25,9 @@ var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 }
 
-// foReferenceCores are the two host-neutral cores the boot-resident shared core names
-// at its dispatch and merge load points. Because every host loads the shared core at
-// boot, naming the cores there is what makes the ceremony REACHABLE on codex and pi —
-// no per-host re-naming is required. Each core must exist on disk (the closure walk
-// over bootResidentBodies resolves them once shared-core names them) and carry its
-// ceremony anchors.
+// foReferenceCores are the two host-neutral cores the first-officer contract loads:
+// merge eagerly from SKILL.md and dispatch lazily from the shared core. Each core must
+// exist on disk and carry its ceremony anchors.
 var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
 		"## Merge and Cleanup", "## «merge.guard»", "### Worktree removal safety", "## Mod-Block Guard",
@@ -213,25 +210,21 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 }
 
-// TestHostNeutralCoresResolveAndCarryCeremony is the AC-1 reachability guard: the two
-// host-neutral cores the boot-resident shared core names at its dispatch and merge
-// load points exist on disk AND carry their ceremony anchors. Reachability for codex
-// and pi rides on the SINGLE core-naming in first-officer-shared-core.md — every host
-// loads the shared core at boot, so a core it names there is reachable on every host;
-// no per-adapter re-naming is required (the per-adapter restatement only added
-// redundancy). The closure half — that the shared core's named references resolve to
-// real files — is TestBootResidentDeferredLoadPointsResolve walking bootResidentBodies
-// (which includes the shared core). This test adds the content half: each core carries
-// its four ceremony anchors, so "reachable" means "reaches a real ceremony," not an
-// empty file. The independent source is the filesystem + the anchor set; a core
-// renamed/emptied/dropped fails.
+// TestHostNeutralCoresResolveAndCarryCeremony is the reachability guard: the merge
+// core is named by the eager SKILL.md import and the dispatch core by the shared core's
+// deferred load point. Both exist on disk AND carry their ceremony anchors.
 func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	root := repoRoot(t)
 	if len(foReferenceCores) == 0 {
 		t.Fatal("no host-neutral cores declared — the reachability check would pass vacuously")
 	}
-	// The shared core must NAME each core at a load point — that single naming is what
-	// makes the ceremony reachable on every host.
+	entryPath := filepath.Join("skills", "first-officer", "SKILL.md")
+	entryData, err := os.ReadFile(filepath.Join(root, entryPath))
+	if err != nil {
+		t.Fatalf("read first-officer entry %s: %v", entryPath, err)
+	}
+	entryBody := string(entryData)
+
 	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
 	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
 	if err != nil {
@@ -240,8 +233,12 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	sharedBody := string(sharedData)
 	for corePath, anchors := range foReferenceCores {
 		base := filepath.Base(corePath)
-		if !strings.Contains(sharedBody, base) {
-			t.Errorf("%s does not name %s — the boot-resident core is the sole core-namer, so an unnamed core is unreachable on every host", sharedCore, base)
+		if base == "fo-merge-core.md" {
+			if !strings.Contains(entryBody, "@references/"+base) {
+				t.Errorf("%s does not eagerly import %s", entryPath, base)
+			}
+		} else if !strings.Contains(sharedBody, base) {
+			t.Errorf("%s does not defer %s at the dispatch load point", sharedCore, base)
 		}
 		data, err := os.ReadFile(filepath.Join(root, corePath))
 		if err != nil {
