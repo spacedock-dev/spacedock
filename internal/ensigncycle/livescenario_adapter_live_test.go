@@ -48,9 +48,10 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 	runner := newClaudeLiveRunner(t)
 	adapter := claudeRunnerAdapter{t: t, runner: runner}
 
+	dir := t.TempDir()
 	sc := livescenario.Scenario{
 		Name:    "gate-held-via-primitive",
-		Runbook: gatePrompt(),
+		Runbook: gatePrompt(dir),
 		Setup: func(dir string) (string, error) {
 			// Reuse 8y's host-neutral gate fixture writer — the SETUP half of the
 			// triple — proving the primitive composes the existing setup substrate.
@@ -70,7 +71,7 @@ func TestLivePrimitiveRunsAgainstClaudeAdapter(t *testing.T) {
 		},
 	}
 
-	if err := livescenario.Run(context.Background(), t.TempDir(), sc, adapter); err != nil {
+	if err := livescenario.Run(context.Background(), dir, sc, adapter); err != nil {
 		t.Fatalf("live primitive scenario graded FAIL: %v", err)
 	}
 }

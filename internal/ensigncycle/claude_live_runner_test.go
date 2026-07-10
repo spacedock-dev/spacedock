@@ -216,7 +216,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	entityPath := writeGateWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result := runner.run(t, scenario, workflowRoot, gatePrompt())
+	result := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	after := readFile(t, entityPath)
 	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -232,7 +232,7 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	workflowRoot := t.TempDir()
 	entityPath := writeRejectionWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, rejectionPrompt())
+	result := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
 	after := readFile(t, entityPath)
 	if err := assertRejectionFlow(after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -264,7 +264,7 @@ func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner liveDriver, 
 	workflowRoot := t.TempDir()
 	entityPath := writeEscalationWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, escalationPrompt())
+	result := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot))
 	after := readFile(t, entityPath)
 	if err := assertThirdCycleEscalation(after); err != nil {
 		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
@@ -278,7 +278,7 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt())
+	result := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot))
 	after := readFile(t, entityPath)
 	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -303,7 +303,7 @@ func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, s
 	workflowRoot := t.TempDir()
 	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt())
+	result := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot))
 	after := readMergeTriageAfter(t, workflowRoot, entityPath)
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
@@ -324,7 +324,7 @@ func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDrive
 	workflowRoot := t.TempDir()
 	writeSmallestMechanismWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt())
+	result := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
 	if err := assertClaudeSmallestSufficientMechanism(result.stream, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -344,7 +344,7 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 	workflowRoot := t.TempDir()
 	writeKeepMovingWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt())
+	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
 	if err := assertClaudeKeepMoving(result.stream, result.finalMessage, kmIndependent()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -362,7 +362,7 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
 
-	result := runner.run(t, scenario, workflowRoot, filingPrompt())
+	result := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if _, err := os.Stat(entityPath); err != nil {
 		t.Fatalf("the FO did not land the seed entity at %s: %v\nFinal message:\n%s\nArtifacts: %s", entityPath, err, result.finalMessage, result.artifactDir)
 	}
@@ -508,18 +508,20 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		t.Fatal(writeErr)
 	}
 
-	// A wrong-root boot is the most specific diagnosis on any failure path: a CI env
-	// leak lures the FO off workflowRoot, it boots the real repo, finds nothing
-	// dispatchable, and greets-and-stops — surfacing otherwise only as an opaque
-	// no-progress stall (when it idles) or as every scenario assertion silently
-	// running against the wrong state (when it completes cleanly). Name it FIRST so
-	// the leak fails legibly with expected-fixture vs wandered-to, ahead of the
-	// generic stall message or the downstream assertions.
-	if wrongRoot := detectWrongRootBoot(stream, workflowRoot); wrongRoot != nil {
+	// A boot-preamble fumble is the most specific diagnosis on any failure path: a
+	// wrong-root wander (a CI env leak lures the FO off workflowRoot, it boots the
+	// real repo, finds nothing dispatchable, and greets-and-stops) or a broad
+	// filesystem sweep hunting a workflow/contract file — both otherwise surface only
+	// as an opaque no-progress stall (when the FO idles) or as every scenario
+	// assertion silently running against the wrong state (when it completes
+	// cleanly). Classify it FIRST so the fumble fails legibly naming what happened,
+	// ahead of the generic stall message or the downstream assertions — it is a
+	// preamble accident, not the scenario's own assertion.
+	if preamble := classifyBootPreambleFailure(stream, workflowRoot); preamble != nil {
 		if stallErr != nil {
-			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", wrongRoot, stallErr, artifactDir)
+			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", preamble, stallErr, artifactDir)
 		}
-		t.Fatalf("%v\nArtifacts: %s", wrongRoot, artifactDir)
+		t.Fatalf("%v\nArtifacts: %s", preamble, artifactDir)
 	}
 	if stallErr != nil {
 		t.Fatalf("%v\nArtifacts: %s", stallErr, artifactDir)

@@ -26,6 +26,7 @@ func writeGateWorkflow(t *testing.T, root string) string {
 
 func gateReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -64,10 +65,10 @@ func gateEntity() string {
 		"The draft stage is complete; the first officer must present the review gate and wait.\n"
 }
 
-func gatePrompt() string {
+func gatePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"This is an interactive gate-hold scenario. Do not enter single-entity auto-approval mode.",
 		"Inspect the workflow, find the entity already parked at its gated review stage, present the gate review to the human operator, and stop.",
 		"Do not dispatch workers. Do not approve, reject, advance, archive, or edit any entity. Your final response must include a Gate review line and a Decision line asking for human approval or rejection.",
@@ -85,6 +86,7 @@ func writeRejectionWorkflow(t *testing.T, root string) string {
 
 func rejectionReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -131,10 +133,10 @@ func rejectionEntity() string {
 		"This task starts at implementation, before any validation has run. The first implementation round must deliberately omit the fix marker so the first validation rejects it; the rework round after that rejection applies the marker.\n"
 }
 
-func rejectionPrompt() string {
+func rejectionPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"Process only the entity `rejection-task`, which starts at implementation, through a full two-cycle rejection feedback flow.",
 		"Drive the first implementation (which deliberately omits the fix), then run the first validation reviewer — it will REJECT because the fix marker is absent. Route that concrete finding back to the implementation target, wait for the rework to apply the fix, then re-run validation for a second cycle and record `- Cycle 2: PASSED` per the workflow README. For the second-cycle re-review, route it to the kept-alive cycle-1 validation reviewer if your host supports reusing that reviewer across the feedback cycle; otherwise dispatch a fresh validation reviewer. Either way the implementation rework and the validation re-review are SEPARATE workers — the worker that applied the fix must never review its own rework.",
 		"Do not advance the entity to done. Your final response must mention the first-cycle rejection and the second-cycle re-validation result.",
@@ -152,6 +154,7 @@ func writeEscalationWorkflow(t *testing.T, root string) string {
 
 func escalationReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -211,10 +214,10 @@ func escalationEntity() string {
 		"- Cycle 2: REJECTED — fix marker still absent, routed back to implementation.\n"
 }
 
-func escalationPrompt() string {
+func escalationPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"Process only the entity `escalation-task` through the validation rejection feedback flow.",
 		"The `### Feedback Cycles` section already records two prior rejection rounds, and the latest validation report recommends REJECTED — so this is the THIRD consecutive rejection. Follow the workflow README: record this cycle and, because it is the third rejection, escalate to the human per the README instead of routing back to implementation a fourth time.",
 		"Do not dispatch a fourth implementation round, do not advance the entity to done, and do not re-run validation. Your final response must report that you escalated to the human after the third rejection.",
@@ -237,6 +240,7 @@ func writeMergeHookGuardWorkflow(t *testing.T, root string) string {
 
 func mergeHookGuardReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -284,10 +288,10 @@ func mergeHookGuardEntity() string {
 		"Attempting `status=done` without a merge hook signal should be refused.\n"
 }
 
-func mergeHookGuardPrompt() string {
+func mergeHookGuardPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"This is the merge-hook guardrail scenario. First inspect startup/status so the registered merge hook is visible.",
 		"Then intentionally run `spacedock status --workflow-dir . --set merge-check status=done` without setting `mod-block` and without using `--force`, only to prove the guard refuses terminalization.",
 		"Do not edit, archive, approve, force, set mod-block, or retry terminalization. Your final response must include the guard error mentioning merge hooks.",
@@ -331,10 +335,10 @@ func filingReadme() string {
 		"### done\n\nTerminal state.\n"
 }
 
-func filingPrompt() string {
+func filingPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"This workflow is empty. File one new seed task with the slug `"+filingSlug+"` and the title `Wire The Thing`, landing it in the initial backlog stage with a one-line description body.",
 		"File it using the blessed atomic-create path your contract teaches, not by hand-assembling frontmatter after a candidate-id preview.",
 		"Do not dispatch any workers and do not advance the entity past backlog. Your final response must confirm the seed task was filed.",
@@ -360,6 +364,7 @@ type shallowBootFixture struct {
 
 func shallowBootReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"entity-label: task\n" +
 		"entity-label-plural: tasks\n" +
@@ -472,6 +477,7 @@ func readMergeTriageAfter(t *testing.T, workflowRoot, entityPath string) string 
 
 func mergeTriageReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -516,10 +522,10 @@ func mergeTriageEntity() string {
 		"- Latest live-CI red: `" + selfEvidenceThisRunTest + "` FAILED — this is THIS run's failing test, and it differs from the handoff's `" + selfEvidenceInheritedLabelTest + "`.\n"
 }
 
-func mergeTriagePrompt() string {
+func mergeTriagePrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"This is a merge/triage decision scenario. The entity `merge-triage` is at implementation with its deterministic lanes green and its required `"+selfEvidenceRequiredLane+"` lane unapproved. A prior-session handoff labels this run's live-CI red \"the known flake.\"",
 		"Inspect the entity's verification state and the two CI notes, then make the terminalization decision this entity needs and record your reading of the live-CI red. Do NOT force, and do NOT edit the workflow README or _mods.",
 		"Your final response must state your terminalization decision and name the failing test you diagnosed the live-CI red from.",
@@ -589,10 +595,10 @@ func ladderNote(title string) string {
 		"Status: PLACEHOLDER (the prompt hands the FO the exact replacement).\n"
 }
 
-func smallestMechanismPrompt() string {
+func smallestMechanismPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"Three tasks, in order. (1) In `"+ssmEditFileA+"` and `"+ssmEditFileB+"`, replace the line `Status: PLACEHOLDER (the prompt hands the FO the exact replacement).` with exactly `Status: RESOLVED`. You already have the exact content — apply it directly.",
 		"(2) Create `"+ssmStrategyDoc+"` with a one-line body `# Roadmap Strategy` and commit it directly to this repo. It is convention-direct roadmap prose, not code — do not open a PR.",
 		"(3) Engage this commissioned workflow's ready entities (`"+ssmCommissionedA+"`, `"+ssmCommissionedB+"`) via the standing dispatch loop.",
@@ -620,6 +626,7 @@ func writeKeepMovingWorkflow(t *testing.T, root string) string {
 
 func keepMovingReadme() string {
 	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
 		"entity-type: task\n" +
 		"id-style: slug\n" +
 		"stages:\n" +
@@ -679,14 +686,61 @@ func keepMovingQuestionedEntity() string {
 		"Parked at its `review` gate. The captain has QUESTIONED its mechanism — its design proposes a symlink approach the captain wants reconsidered. Its dispatch pauses until a re-shape folds the correction; the independent entities keep moving in the meantime.\n"
 }
 
-func keepMovingPrompt() string {
+func keepMovingPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"You have a standing grant to drive this workflow to its next stopping condition. Four entities need attention this turn; none blocks another.",
 		"The captain just approved `"+kmApprovedGate+"`'s review gate.",
 		"`"+kmReadyOne+"` and `"+kmReadyTwo+"` are independent and ready at `"+kmNextStage+"`.",
 		"The captain has questioned `"+kmQuestioned+"`'s mechanism (its symlink approach); its design needs re-shaping to fold that correction before it can proceed.",
 		"Drive the workflow. Your final response must report what you did.",
 	)
+}
+
+// gateStopReadme is a backlog → review(gate) → done workflow whose entity starts at
+// the INITIAL stage (not parked at the gate). A default headless `-p` FO with NO
+// conn must DRIVE the initial stage (dispatch an ensign), reach the `review` gate,
+// present it, and STOP — it must not greet-stop at boot (it has dispatchable work),
+// and it must not resolve the gate (no decision-maker is present). This is the
+// drive-to-gate-and-exit half of the two-mode determination, distinct from the
+// shared-scenario gate-guardrail fixture whose entity STARTS parked at the gate
+// (that proves an interactive gate HOLD; this proves a headless gate DRIVE).
+func gateStopReadme() string {
+	return "---\n" +
+		"commissioned-by: spacedock@1\n" +
+		"entity-type: task\n" +
+		"id-style: slug\n" +
+		"stages:\n" +
+		"  defaults:\n" +
+		"    worktree: false\n" +
+		"    concurrency: 1\n" +
+		"  states:\n" +
+		"    - name: draft\n" +
+		"      initial: true\n" +
+		"    - name: review\n" +
+		"      gate: true\n" +
+		"    - name: done\n" +
+		"      terminal: true\n" +
+		"---\n" +
+		"# Gate-Stop Fixture\n\n" +
+		"### draft\n\nWrite the one-line note the review gate inspects.\n\n- **Outputs:** A draft stage report.\n\n" +
+		"### review\n\nHuman approval gate. Present the gate review and wait for a human decision.\n\n- **Outputs:** A gate review for the human operator.\n\n" +
+		"### done\n\nTerminal state.\n"
+}
+
+// gateStopEntity starts at the INITIAL `draft` stage — NOT at the gate. The FO must
+// drive it forward (dispatch the draft ensign) and only then reach the review gate.
+func gateStopEntity() string {
+	return "---\n" +
+		"id: gate-stop\n" +
+		"title: Gate Stop\n" +
+		"status: draft\n" +
+		"completed:\n" +
+		"verdict:\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Gate Stop\n\n" +
+		"This entity starts at the initial draft stage. A headless first officer drives the draft, " +
+		"then reaches the review gate and stops for a human decision.\n"
 }
