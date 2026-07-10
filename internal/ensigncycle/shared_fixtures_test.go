@@ -332,7 +332,25 @@ func filingReadme() string {
 		"# Filing Fixture\n\n" +
 		"This fixture starts EMPTY: there are no entities yet. The first officer is asked to file one seed task. The id-style is `sequential`, so the manual flow (`status --next-id` then hand-writing the file) is available — the scenario proves the FO instead uses the atomic-create path.\n\n" +
 		"### backlog\n\nSeed tasks land here.\n\n- **Outputs:** A filed seed entity.\n\n" +
-		"### done\n\nTerminal state.\n"
+		"### done\n\nTerminal state.\n\n" +
+		"## Task Template\n\n" +
+		"```yaml\n" +
+		"---\n" +
+		"title: Task name here\n" +
+		"status: backlog\n" +
+		"---\n\n" +
+		"Brief description of this task and what it aims to achieve.\n\n" +
+		"## Problem\n\n" +
+		"{What is broken or missing, and why it matters. Ideation fills this in.}\n\n" +
+		"## Proposed approach\n\n" +
+		"{How the task intends to solve the problem. Ideation fills this in.}\n\n" +
+		"## Out of scope\n\n" +
+		"{What this task deliberately does not cover, so the boundary is explicit.}\n\n" +
+		"## Acceptance criteria\n\n" +
+		"{Each criterion names an end-state property and how it is verified.}\n\n" +
+		"## Test plan\n\n" +
+		"{What verifies the implementation, its cost, and whether fixture, CLI, or live tests are needed.}\n" +
+		"```\n"
 }
 
 func filingPrompt(workflowRoot string) string {
