@@ -82,6 +82,10 @@ No product or skill contract changes belong in this task. PR #480 already shippe
 - **Repository gates:** run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
 - **No prose-only proof:** prompt scans prove only neutrality. Entity bytes, Git state, archive location, frontmatter, stub-call logs, and live host runs prove behavior.
 
+### Feedback Cycles
+
+- Cycle 1 (ideation gate): REVISE. The captain agrees with the two-phase durable-state test but rejects the unexplained custom greeting prompt: use the host/runtime's existing default first-officer startup for phase one if that seam exists, then use only the operator action `engage .` for phase two. Audit the actual live-runner launch surface and remove the custom “interactive startup check” wording; retain any custom text only if technically unavoidable and demonstrate why the default cannot express the test.
+
 ## Stage Report: ideation
 
 - DONE: Lock the #480 move-to-engage behavior as authoritative: greet-only boot stays read-only, with merged-PR advancement deferred to engage.
