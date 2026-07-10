@@ -109,6 +109,10 @@ go test -tags live -run '^$' ./internal/ensigncycle/...
 
 No new live workflow run is required: the claim concerns deterministic post-hoc classification of an already captured stream, not model behavior. The saved live shapes established that the command/result boundary exists; the sanitized offline fixtures provide the durable proof. No product or docs-site change is needed because this alters only developer-facing live-test failure output; the exact before/after output contract appears above.
 
+### Feedback Cycles
+
+- Cycle 1 (ideation gate): REVISE. The captain questioned whether a classifier is needed and accepted the smaller direction: retain wrong-root and filesystem-hunt extraction only as diagnostic context for an already-existing runner or scenario failure. Do not invent a phase boundary, do not make a late search independently red, do not replace or pre-empt the primary failure, and remain silent when the scenario passes. Rework the proposal, acceptance criteria, tests, title, and scope around that primary-error-first diagnostic contract while preserving #490's fixture fixes.
+
 ## Stage Report: ideation
 
 - DONE: Define an observable phase boundary that distinguishes true boot orientation from later contract lookup without relying on model wording.
