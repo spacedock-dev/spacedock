@@ -1,6 +1,6 @@
 ---
 title: "shallow-boot live scenario asserts before-greet merged-PR advancement that the #480 Startup restructure moved to «engage»"
-status: ideation
+status: implementation
 source: "Science-officer finding during the dp (fo-deferred-load-point-hunt) shallow-boot investigation, 2026-07; captain-approved to file separately. The shallow-boot live scenario's prompt (internal/ensigncycle/shared_fixtures_test.go:430) scripts advance any merged PR per the before-greet merged-PR sweep and report the merged-PR entity as advanced, and its assertion (shallow_boot_assert_test.go:85-94) requires before-greet advancement. The current FO contract says the opposite: pr-merge advancement fires at first engage, not the greet — advanced at engage or never (first-officer-shared-core.md:26) — and a greet-and-stop boot writes nothing (Startup step 2). Git history: the scenario (fe4261be, PR #365, 2026-06-13) predates and was faithful to the pre-restructure contract's boot-time «state.sweep-merged» step; the #480 Startup restructure (0ba08c54, 2026-07-07) moved advancement to engage. So the scenario now passes only by scripting compliance with an instruction the contract no longer prescribes, and its sibling boot-subject scenarios use a neutral prompt instead (see below)."
 started: 2026-07-10T12:52:14Z
 completed:
