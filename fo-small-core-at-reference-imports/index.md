@@ -5,7 +5,7 @@ score: 0.95
 source: "Fresh local Claude shallow-boot evidence on 2026-07-11: exact engage ran an unscoped find / for fo-merge-core.md after the bare deferred reference failed to resolve from the fixture cwd. The captain previously rejected promotion to separately callable skills and chose the established @-reference loading pattern for two small cores; the larger fo-dispatch-core remains an explicit tradeoff."
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-fo-small-core-at-reference-imports
 issue:
 id: m1y5k6w8any3gachwxtxqjfk
 ---
