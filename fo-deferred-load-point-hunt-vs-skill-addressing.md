@@ -9,6 +9,8 @@ score: 0.8
 worktree: .worktrees/spacedock-ensign-fo-deferred-load-point-hunt-vs-skill-addressing
 issue:
 id: dpwp415wfzj6yrcwbs0krrea
+mod-block: merge:pr-merge
+pr: "#491"
 ---
 
 The FO's boot-resident contract (`skills/first-officer/references/first-officer-shared-core.md`, `## Deferred load points`, lines ~32-40) names five deferred references that load via `Skill(skill="spacedock:...")` — cwd-independent, resolved through the Claude Code plugin/skill registry regardless of the FO's working directory. Three more — `references/fo-dispatch-core.md`, `references/fo-merge-core.md`, and `references/fo-smallest-sufficient-mechanism.md` (plus the runtime adapter files, e.g. `claude-first-officer-runtime.md`, `claude-fo-dispatch.md`) — are named the same way in prose but load via a bare relative path. When the FO's cwd is not the skill's own install directory (as in the live-CI test harness, where `cmd.Dir` is set to the scenario's fixture root), a bare read of `references/fo-dispatch-core.md` resolves against cwd and fails to find the file. The FO, knowing the file exists by name because its own contract just named it, does what a competent agent does when a known file isn't where it looked: it searches the filesystem for it (`find`, `grep -r`) — the exact "contract-file find-hunt" failure sub-class documented across sc5's 16-instance ledger (spacedock-dev/spacedock).
