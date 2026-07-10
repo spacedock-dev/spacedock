@@ -153,6 +153,7 @@ type bootData struct {
 	prStatus     string
 	prResults    []prResult
 	dispatchable []dispatchable
+	readyGates   []*entity
 	teamPresent  bool
 	teamHint     string
 	// State backend: split-root when entityDir diverges from definitionDir (a
@@ -175,8 +176,8 @@ type bootData struct {
 	// Identify mode (the FO's opt-in local-identify boot). When set, the record
 	// folds the workflow discovery result and the stage taxonomy into the same
 	// envelope, PR_STATE is the local `pr:` mirror (checkPRStates skips gh), and the
-	// whole boot is a side-effect-free local read. discovery/stages are appended
-	// AFTER the existing key set so every prior key's order is preserved.
+	// whole boot is a side-effect-free local read. discovery/stages/ready_gates
+	// are appended AFTER the existing key set so every prior key's order is preserved.
 	identify  bool
 	discovery []string
 	stages    []Stage
@@ -208,6 +209,7 @@ func gatherBoot(probe claudeteam.TeamStateProbe, entities []*entity, stages []St
 	if identify {
 		d.discovery = discoverWorkflows(gitRoot)
 		d.stages = stages
+		d.readyGates = computeReadyGates(entities, stages)
 	}
 	// TEAM_STATE comes from the host-supplied probe. HOME resolution stays generic
 	// here; only the ~/.claude read moves into the Claude seam. The hint for both
