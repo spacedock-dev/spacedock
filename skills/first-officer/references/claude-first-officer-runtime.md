@@ -1,6 +1,6 @@
 # Claude Code First Officer Runtime
 
-This file defines how the shared first-officer core executes on Claude Code: Captain Interaction (the greet/guardrail), Agent Back-off, and Entity-Body Inspection. The dispatch and merge references load at their trigger, named in the sections below.
+This file defines how the shared first-officer core executes on Claude Code: Captain Interaction (the greet/guardrail), Agent Back-off, and Entity-Body Inspection. The dispatch reference loads at its trigger; the merge core is preloaded by the first-officer entry point and applies at the terminal boundary.
 
 ## Dispatch reference (load at first dispatch)
 
@@ -10,7 +10,7 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 ## Terminal teardown (load at terminalization)
 
-`fo-merge-core.md` (read at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
+`fo-merge-core.md` (preloaded by `first-officer/SKILL.md`, applied at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
 
 ## Captain Interaction
 
