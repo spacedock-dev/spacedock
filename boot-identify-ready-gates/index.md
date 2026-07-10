@@ -1,6 +1,6 @@
 ---
 title: Expose ready-gate entities in boot identify JSON
-status: implementation
+status: validation
 score: 0.9
 source: PR #493 local-live m3 investigation on 2026-07-10. The default Claude greeting omitted the already-gated Gate Check entity because status --boot --identify --json returned only dispatchable entities; dispatchAnalysis intentionally suppresses current gate stages, so the authoritative boot record made the shipped greet requirement impossible to satisfy.
 id: 8n55etrw9wj10jfejdq5f1s8
