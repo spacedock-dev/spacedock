@@ -1,12 +1,12 @@
 ---
 title: "Make the filing live-test fixture README representative of a real workflow (add a Task Template)"
-status: ideation
+status: implementation
 source: "Captain decision 2026-07-10 on the science-officer dp-premise finding. Verbatim: then fix the fixture's readme to be realistic. new --help is not a priority. Finding it acts on (science-officer-verified): filingReadme() at internal/ensigncycle/shared_fixtures_test.go:313-332 carries no Task Template and no copyable stub (grep for template over it is empty), so dp's AC-1 filing-hunt methodology is structurally blind to a README-based filing approach — it measures a stripped fixture. The real docs/dev/README.md carries a full column-0 pipe-safe ## Task Template. And the FO filing contract in claude-first-officer-runtime.md's ## Filing New Entities never points the FO at the workflow README before filing (grep across skills/first-officer for a README/template-consultation instruction returns zero)."
 started: 2026-07-10T12:52:14Z
 completed:
 verdict:
 score: 0.4
-worktree:
+worktree: .worktrees/spacedock-ensign-filing-fixture-readme-realistic
 issue:
 id: c3wxhq3qj94mhakam80g4zxw
 ---
