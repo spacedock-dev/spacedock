@@ -9,7 +9,7 @@ score: 0.85
 worktree: .worktrees/spacedock-ensign-live-runner-boot-preamble-hardening
 issue:
 id: sc592grb0w36q8ravzeya70r
-pr: "#490"
+pr: pr-merge:490
 ---
 
 **Status as of 2026-07-08 (tightened after PR #488/#489 evidence): this is now actively blocking routine merges, not an occasional footnote.** PR #488 (`claude-result-extractor-first-vs-terminal` — a diff touching ONLY two Go test files, `internal/ensigncycle/claude_final_message_impl_test.go`/`claude_final_message_test.go`) failed its `claude-live (sonnet, CI-E2E)` lane on **5 consecutive attempts, 0 passes**, hitting **7 distinct scenario names** (self-evidence-merge-triage x2, keep-moving-posture, filing x3, TestLiveDefaultHeadlessStopsAtGate, smallest-sufficient-mechanism) — none with any coupling to the diff (confirmed via `gh pr diff --name-only` each time). A same-day cross-PR survey (`gh run list` across unrelated branches) found the sonnet live lane failing in 4 of 6 distinct runs checked (~33% pass rate today), and PR #489 (a completely unrelated diff) independently reproduced two of the same failure shapes on the SAME day, including one (wrong-root cd into the real CI checkout) now confirmed on BOTH sonnet and opus — this class is model-agnostic. Full evidence: 16 logged instances below, spanning PRs #481/#482/#488/#489.
