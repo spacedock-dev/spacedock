@@ -155,3 +155,20 @@ The design bounds boot classification at the first correlated successful fixture
 ### Summary
 
 Cycle 2 removes phase classification and gives detector evidence no independent authority over test status. A narrow failure-only cleanup keeps passing scenarios silent, preserves runner and scenario failures exactly, and appends one secondary diagnostic only after an existing red while leaving #490's fixture hardening and single-attempt behavior untouched.
+
+## Stage Report: implementation
+
+- DONE: Start with deterministic red tests for the approved contract: a passing scenario with detector evidence stays passing and silent; existing runner and scenario failures remain the exact primary failures; applicable wrong-root or broad-search evidence appears only afterward as an `Additional diagnostic`, and cannot call Error/Fail/Fatal.
+  The initial focused command failed only on the missing diagnostic API; after implementation, `go test ./internal/ensigncycle -run 'Test(ClaudeLiveFailureDiagnostic|RegisterClaudeLiveFailureDiagnostic|DetectClaudeLiveFailureDiagnostic|DetectBroadSearchAtBoot|DetectWrongRootBoot)'` passed 52 tests, including the 1/1 silent pass and 2/2 byte-preserved primary matrix.
+- DONE: Implement the smallest diagnostic-only change. Remove the phase-classification/fatal authority from `classifyBootPreambleFailure`; reduce or rename it to select existing detector evidence and register one failure-only cleanup on the shared testing reporter. Do not add a boot boundary, make any detector match independently red, edit every scenario assertion, or restore retry behavior.
+  Commit `1f6f4a5a1e61e0238bfa6a11f2e9adcd37391552` replaces the classifier with `detectClaudeLiveFailureDiagnostic` plus a reporter limited to `Cleanup`, `Failed`, and `Logf`; one runner registration preserves every existing primary failure call.
+- DONE: Preserve merged PR #490 fixture/discovery and detector controls. Run gofmt, focused diagnostic/runner tests, #490 controls, go test ./..., go test ./... -race, and the live-tag compile check. Commit only the scoped branch changes and append a complete implementation Stage Report with exact commands, results, commit, and clean status.
+  `gofmt -w ./cmd ./internal` exposed the pre-existing `internal/release/journeydelta.go` origin/main formatting defect; that unrelated path was restored exactly, while `gofmt -d` and `git diff --check` stayed clean for all p4h files.
+  `go test ./internal/ensigncycle -run 'Test(SharedScenarioFixturesAreDiscoverable|ZeroDiscoverFixtureStaysUndiscoverable|SharedPrompt|ClaudePrompt|CodexPrompt)'` passed 12 #490 controls.
+  The first contended parallel `go test ./...` attempt reached 1,719 passes before `internal/cli` hit 600 seconds; `go test -timeout 12m ./internal/cli` then passed in 48.973s, and the isolated `go test ./...` rerun passed every package.
+  `go test ./... -race` passed every package; `go test -tags live -run '^$' ./internal/ensigncycle/...` exited 0; focused review reported no Critical, Important, or Minor findings.
+  Branch `spacedock-ensign/claude-live-classifier-phase-boundary` is clean and ahead by one commit with only the five diagnostic/runner paths changed.
+
+### Summary
+
+Claude live detector matches now select diagnostic evidence without deciding test status. A single failure-only cleanup keeps successful runs silent and appends detector context after the unchanged runner or scenario primary failure, while #490 fixtures, detectors, scenario assertions, and single-launch behavior remain intact.
