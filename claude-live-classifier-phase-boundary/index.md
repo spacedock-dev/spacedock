@@ -172,3 +172,28 @@ Cycle 2 removes phase classification and gives detector evidence no independent 
 ### Summary
 
 Claude live detector matches now select diagnostic evidence without deciding test status. A single failure-only cleanup keeps successful runs silent and appends detector context after the unchanged runner or scenario primary failure, while #490 fixtures, detectors, scenario assertions, and single-launch behavior remain intact.
+
+## Stage Report: validation
+
+- DONE: Independently audit commit 1f6f4a5a against current origin/main. Confirm the diff is exactly the five intended diagnostic/runner paths; the reporter surface cannot call Error, Fail, or Fatal; no phase boundary, retry, fixture, scenario-assertion, or product/doc change was introduced; and the unrelated journeydelta formatting path is absent.
+  Fresh fetch left `origin/main` at `2137832b`; `git diff --name-status origin/main..1f6f4a5a` named only the two removed classifier paths, two added diagnostic paths, and `claude_live_runner_test.go`, with no `journeydelta.go` or other path; the reporter exposes only `Cleanup`, `Failed`, and `Logf`.
+- DONE: Reproduce the primary-error-first contract with focused tests: passing scenario plus detector match stays passing and silent; runner/scenario primary text is preserved and logged before `Additional diagnostic`; wrong-root remains preferred over broad-search evidence; and the cleanup cannot independently red the test. Re-run #490 fixture/discovery/detector controls.
+  The focused diagnostic/detector command passed the 1/1 silent pass, 2/2 byte-preserved primaries, cleanup-order, nil-registration, wrong-root-priority, broad-search, and clean-stream cases; the discovery command passed all 10 discoverable fixtures plus the markerless zero-discovery control.
+- DONE: Audit the real PR #492 Sonnet shallow-boot stream at `/tmp/pr492-sonnet/spacedock/spacedock/live-artifacts/claude/sonnet/claude-shared-scenarios/shallow-boot/claude-stream.jsonl`: confirm it contains the targeted plugin-reference grep that current main promoted to a fatal, and connect it to the new pass-silent diagnostic-only behavior without claiming the separate m3 scenario oracle is fixed here.
+  Stream line 145 contains `grep -rn "single-root" /home/runner/work/spacedock/spacedock/skills/`; a temporary test fed that exact JSON line through the repository detector and reporter and passed with a diagnostic selected but zero failure/output on a passing reporter, then the test file was removed; m3 remains outside this task.
+- DONE: Run git diff --check, focused gofmt verification for changed files, go test ./..., go test ./... -race, and `go test -tags live -run '^$' ./internal/ensigncycle/...`. Verify AC-1 through AC-4 with concrete evidence, append a complete validation Stage Report, make a PASSED/REJECTED recommendation, and leave the worktree clean.
+  `git diff --check` and focused `gofmt -d` emitted no output; full and race gates each passed 2,105 tests in 17 packages; the live-tag compile check exited 0; the assigned worktree is clean.
+- DONE: Verify AC-1 (value — detector evidence has zero independent pass/fail authority).
+  `TestClaudeLiveFailureDiagnosticIsSecondaryOnly` passed its 1/1 silent-success case and 2/2 exact-primary cases, each with exactly one later `Additional diagnostic:` event only on failure.
+- DONE: Verify AC-2 (primary failure sites remain authoritative).
+  `TestRegisterClaudeLiveFailureDiagnostic` passed no-observation, passing, runner-failure, and scenario-failure timelines; the live-tag compile check proved `*testing.T` satisfies the narrow non-failing reporter interface.
+- DONE: Verify AC-3 (diagnostic selection remains deterministic without classification).
+  The wrong-root-priority, broad-search, and clean-stream tests passed; the clean case registered zero cleanups, and the reporter implementation contains no failure-producing call.
+- DONE: Verify AC-4 (#490 fixture and no-retry non-regression).
+  Discovery found 10/10 marked fixtures and rejected the markerless control; source review found eight non-boot prompts carrying `workflowRoot`, one Claude `exec.Command`, one `cmd.Start`, and no fixture or retry diff.
+- DONE: Recommend PASSED.
+  All acceptance criteria have fresh behavioral or source-backed evidence, all required gates pass, and the separate m3 scenario oracle was neither changed nor claimed fixed.
+
+### Summary
+
+Validation recommends PASSED for commit `1f6f4a5a1e61e0238bfa6a11f2e9adcd37391552`. The implementation keeps detector evidence silent on success and secondary to unchanged runner or scenario failures, preserves #490 controls and single-launch behavior, and leaves the assigned code worktree clean.
