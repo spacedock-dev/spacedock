@@ -146,3 +146,16 @@ Designed a three-file, offline-proven change that makes the filing fixture resem
 ### Summary
 
 The filing fixture now writes one complete, column-zero, pipe-safe Task Template matching the development workflow shape, and the Claude first officer is told to consult it when filing. The new offline test proves the exact on-disk fenced body creates an entity with a minted ID and that indenting its frontmatter fence produces the expected `no frontmatter` failure. The implementation is isolated to the three specified files and is ready for independent validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Transplant only the filing-fixture implementation onto current `origin/main`, excluding PR #491.
+  Fetched `origin/main` at `2137832b` and replayed only the implementation change; corrected commit `edde1514` is the branch's sole commit above that base. The prior report's `11b03fd4` SHA and claim that PR #491 ancestry was appropriate are superseded by this report.
+- DONE: Prove the branch diff contains exactly the three approved files and no PR #491 changes.
+  `git diff --name-only origin/main...HEAD` lists only `internal/ensigncycle/filing_readme_template_test.go`, `internal/ensigncycle/shared_fixtures_test.go`, and `skills/first-officer/references/claude-first-officer-runtime.md`; the stat is 3 files, 155 insertions, 1 deletion.
+- DONE: Re-run the focused tests, `go test ./...`, and `go test ./... -race` on the corrected ancestry.
+  The focused Task Template/discovery run passed in `internal/ensigncycle`, and both complete repository gates exited 0 after the transplant; `git diff --check origin/main...HEAD` also passed.
+
+### Summary
+
+The deliverable is unchanged, but its ancestry is repaired: commit `edde1514` now sits directly on current `origin/main` with no PR #491 help, skill-promotion, or prose-guard history. The branch and this report now agree on an exact three-file implementation, with all required tests freshly green.
