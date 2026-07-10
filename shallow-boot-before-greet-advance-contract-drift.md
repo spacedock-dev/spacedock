@@ -94,3 +94,24 @@ No product or skill contract changes belong in this task. PR #480 already shippe
 ### Summary
 
 The design makes the live scenario follow #480: greeting identifies without mutation, and first engage advances the merged PR. Two host invocations over one fixture preserve the phase boundary without scripting it, while offline negatives and live durable-state checks make both early and missing advancement fail.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Re-audit the current m3 design against PR #480's greet-read-only / engage-advances contract and retain the existing two-phase, durable-state approach. Do not change product or test code.
+  Source audit confirms `0ba08c54` makes boot identify local/read-only and moves `state ready` plus `state sweep` to first `engage`; the existing two-invocation design remains minimal, and this cycle changes only the state report.
+- DONE: Append an ideation cycle-2 Stage Report that explicitly maps AC-1 through AC-4 to the proposed verification surfaces and names which evidence is already established versus intentionally deferred to implementation/validation. Do not claim unrun live or offline tests passed.
+  The four mappings below distinguish source/fixture evidence established during ideation from every task-specific two-phase offline and live result deferred to later stages; no such test pass is claimed.
+- DONE: Record the integration constraint: m3 overlaps `internal/ensigncycle/shared_fixtures_test.go` with c3 / PR #493, so implementation must wait for #493 to land, then branch or rebase onto the updated origin/main before editing. Keep the design otherwise minimal and review-ready.
+  Implementation is explicitly sequenced after #493 and must begin from updated `origin/main`; no additional surface or behavior is added to the design.
+- DONE: AC-1 maps to host-neutral durable-state assertions supplied by both Claude and Codex live runners across two invocations of the same fixture.
+  Established: #480's contract, read-only identify coverage, fixture/archive seams, and the current stale oracle are present in source. Deferred: the new phase snapshots, engage advancement assertions, and both live-host executions.
+- DONE: AC-2 maps to an offline exact-prompt test that pins the engage prompt and rejects every banned behavior cue in the neutral greeting prompt.
+  Established: the current fixture visibly contains the stale before-greet sweep and gate-rendering cues. Deferred: replacing the prompts and running the prompt-neutrality test.
+- DONE: AC-3 maps to offline synthetic-observation cases covering the correct trajectory and each isolated early-mutation, missing-advancement, incomplete-terminal, gate-mutation/dispatch, and `gh`-call failure.
+  Established: the current source oracle requires pre-greet archival and therefore encodes the contract drift. Deferred: the TDD red capture, the rewritten phase oracle, all isolating cases, and their focused execution.
+- DONE: AC-4 maps to the two live phase responses plus byte-identical gate state and durable no-dispatch evidence, with transcript text used only for greeting/review timing.
+  Established: #480's shared-core requires the greet to name the gate and offer `engage` without rendering a review. Deferred: live confirmation that engage renders `Gate review:` / `Decision:` while leaving the gate entity unchanged.
+
+### Summary
+
+The cycle-2 audit retains the two-phase, same-fixture design because it directly measures #480's durable greet/engage boundary without prescribing the result. Implementation and all task-specific AC test execution remain intentionally deferred, and m3 must wait for c3 / PR #493 to land before branching or rebasing onto updated `origin/main` and editing the shared fixture.
