@@ -58,6 +58,10 @@ Spiked `filepath.EvalSymlinks` behavior on a non-existent observed path BEFORE c
 
 No doc diff needed: this changes an internal test-harness detector (`internal/ensigncycle`, all `_test.go`), not a user-visible surface — no CLI output, command surface, startup banner, or docs-site behavior changes. The only user-observable string is a test-failure message, which is not a product doc surface.
 
+### Feedback Cycles
+
+- Cycle 1 (validation): The first validation report rejected AC-3 only because the dispatch imposed a filesystem-safehouse prerequisite that is not part of this entity's acceptance criteria or documented local-live procedure. The captain confirmed `benchmark-token` is available and explicitly authorized necessary local live runs. No implementation change is requested; rerun the same independent validator against the canonical fresh-`HOME` live harness and report AC-3's actual outcome.
+
 ## Stage Report: ideation
 
 - DONE: Concrete proposed fix — resolve symlinks on the observed path at both call sites before `isUnder`, with a documented fallback, matching detectWrongRootBoot's fixture-root resolution; decide whether to centralize
