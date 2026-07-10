@@ -187,6 +187,53 @@ func withBinaryOnPath(env []string, binary string) []string {
 	return out
 }
 
+// withClaudeBashEnvFile preserves the harness PATH across interactive Claude
+// Code's Bash-tool environment initialization. Claude sources CLAUDE_ENV_FILE
+// before each later Bash command, so exporting the already-isolated child PATH
+// there keeps fixture binaries (notably the shallow-boot stub gh) authoritative.
+// The caller supplies its per-session config dir; CreateTemp plus t.Cleanup make
+// concurrent sessions isolated and remove the file when that session's test ends.
+func withClaudeBashEnvFile(t *testing.T, env []string, sessionDir string) ([]string, string) {
+	t.Helper()
+	pathValue, ok := envValue(env, "PATH")
+	if !ok {
+		pathValue = ""
+	}
+	if err := os.MkdirAll(sessionDir, 0o755); err != nil {
+		t.Fatalf("create Claude session dir for bash env: %v", err)
+	}
+	f, err := os.CreateTemp(sessionDir, "spacedock-bash-env-*.sh")
+	if err != nil {
+		t.Fatalf("create Claude bash env file: %v", err)
+	}
+	envFile := f.Name()
+	line := "export PATH=" + shellSingleQuote(pathValue) + "\n"
+	if _, err := f.WriteString(line); err != nil {
+		_ = f.Close()
+		_ = os.Remove(envFile)
+		t.Fatalf("write Claude bash env file: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(envFile)
+		t.Fatalf("close Claude bash env file: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Remove(envFile) })
+
+	out := make([]string, 0, len(env)+1)
+	for _, kv := range env {
+		if strings.HasPrefix(kv, "CLAUDE_ENV_FILE=") {
+			continue
+		}
+		out = append(out, kv)
+	}
+	out = append(out, "CLAUDE_ENV_FILE="+envFile)
+	return out, envFile
+}
+
+func shellSingleQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
+}
+
 // envOr returns the environment value for key, or def when unset/empty.
 func envOr(key, def string) string {
 	if v := os.Getenv(key); v != "" {

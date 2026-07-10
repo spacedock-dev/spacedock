@@ -199,6 +199,11 @@ func (d ptyLiveDriver) launchToIdle(t *testing.T, label, workflowRoot string) pt
 	} else {
 		env = withoutEnvKey(env, "CLAUDE_CODE_OAUTH_TOKEN")
 	}
+	env, bashEnvFile := withClaudeBashEnvFile(t, env, effectiveConfigDir)
+	if body, err := os.ReadFile(bashEnvFile); err == nil {
+		diagnostic := "path: " + bashEnvFile + "\n" + string(body)
+		_ = os.WriteFile(filepath.Join(artifactDir, "claude-bash-env-file.txt"), []byte(diagnostic), 0o644)
+	}
 
 	session := fmt.Sprintf("sdpty-%s-%d", label, time.Now().UnixNano())
 	proc := newTmuxLiveProc(session)

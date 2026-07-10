@@ -449,7 +449,7 @@ func shallowBootMergedEntity() string {
 
 const (
 	claudeShallowBootGreetingTask = ""
-	codexShallowBootGreetingTask  = "Stop after the greeting."
+	codexShallowBootGreetingTask  = ""
 	shallowBootEngageTask         = "engage ."
 )
 
@@ -457,18 +457,23 @@ const (
 // the `--` grammar and forwards only Codex-native execution flags after it. The
 // front door appends its normal first-officer bootstrap to task.
 func codexShallowBootFrontDoorArgv(workflowRoot, finalPath, task string) []string {
-	return []string{
+	args := []string{
 		"codex",
 		"--skip-compat-check",
-		task,
+	}
+	if task != "" {
+		args = append(args, task)
+	}
+	return append(args,
 		"--",
 		"exec",
+		"-c", `model_reasoning_effort="low"`,
 		"--json",
 		"--enable", "multi_agent_v2",
 		"--dangerously-bypass-approvals-and-sandbox",
 		"--cd", workflowRoot,
 		"--output-last-message", finalPath,
-	}
+	)
 }
 
 // writeMergeTriageWorkflow writes the self-evidence-merge-triage fixture: one entity
