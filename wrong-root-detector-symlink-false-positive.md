@@ -85,3 +85,22 @@ Firmed the fix to a single deepest-existing-ancestor canonicalizer shared by the
 ### Summary
 
 Commit `49c57685a62ea501000ded8846eb13274222e3c6` changes `internal/ensigncycle/wrong_root_detect_impl_test.go` and `internal/ensigncycle/wrong_root_detect_test.go`: one deepest-existing-ancestor canonicalizer now preserves symlink equivalence for existing and ghost paths without weakening unrelated-directory detection. TDD evidence used `go test ./internal/ensigncycle -run '^TestDetectWrongRootBootSymlinkMismatch$' -count=1` (RED: 1 control passed, 4 test nodes failed for the expected false positives; GREEN: 5 passed), followed by `go test ./internal/ensigncycle/ -run TestDetectWrongRootBoot -count=1` (25 passed). Clean verification used `gofmt -w ./cmd ./internal`, `gofmt -d internal/ensigncycle/wrong_root_detect_impl_test.go internal/ensigncycle/wrong_root_detect_test.go` (empty), `git diff --check 821e5b08742696b1bde6e6304024086bce03b5fb..49c57685a62ea501000ded8846eb13274222e3c6` (empty), `go test ./...` (exit 0), `go test ./... -race` (exit 0), and `git status --short --branch` (clean).
+
+## Stage Report: validation
+
+- DONE: Independently review the rebased diff against origin/main and verify the canonicalizer is applied consistently without weakening genuine-wander detection.
+  Audited clean rebased commit `5c754fb0b52d4bd5775fec2526bc2675dc67875a` against current `origin/main` `2137832bcbb7fe78e38d054c3e4b9c0e1ac32186`: fixture root, README observation, and both Bash-path passes share `canonicalizeWrongRootPath`; no weakening finding.
+- DONE: Reproduce the focused symlink existing/ghost/unrelated controls, then run go test ./... and go test ./... -race on the rebased commit.
+  Focused symlink test passed all 5 nodes (existing README, ghost README, Bash workflow-dir, genuine unrelated wander, parent); detector family passed 25 nodes; both full gates passed 2,101 tests in 17 packages.
+- SKIPPED: Measure AC-3 live only inside a proven filesystem-isolated safehouse; if isolation is unavailable, do not run unsandboxed and report the exact safety blocker instead of rendering a false PASS.
+  Filesystem isolation is unavailable: `command -v safehouse` exited 1, invoking the discovered local binary failed with `Operation not permitted`, no `.safehouse` profile exists, and this worker has unrestricted filesystem access; the live model was not launched unsandboxed.
+- DONE: Verify AC-1 (symlink mismatch no longer false-flags; deterministic, cross-platform).
+  `go test ./internal/ensigncycle -run '^TestDetectWrongRootBootSymlinkMismatch$' -count=1 -v` passed the existing-path and deepest-existing-ancestor ghost-path variants.
+- DONE: Verify AC-2 (a genuine wander is still caught).
+  The same focused run passed `genuine_wander_still_reds`, and `go test ./internal/ensigncycle -run 'TestDetectWrongRootBoot' -count=1` passed all 25 detector nodes including archived PR #446 command/stream controls.
+- FAILED: Verify AC-3 (the real local false positive is gone).
+  No safe AC-3 evidence was produced because the required filesystem-isolated safehouse is unavailable; this criterion remains unverified rather than falsely passed.
+
+### Summary
+
+The rebased implementation is internally consistent and all deterministic acceptance and repository-wide tests pass: `go test ./...` and `go test ./... -race` each completed with 2,101 passing tests across 17 packages. Recommendation: REJECTED pending a safe, filesystem-isolated AC-3 live run; this is an evidence blocker, not an implementation defect found in AC-1 or AC-2.
