@@ -25,6 +25,7 @@ import (
 
 type codexLiveRunner struct {
 	codexBin     string
+	spacedockBin string
 	env          []string
 	artifactRoot string
 }
@@ -139,7 +140,7 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 		t.Fatal(err)
 	}
 
-	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{codexBin: codexBin, spacedockBin: binary, env: env, artifactRoot: artifactRoot}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -340,35 +341,48 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-// runCodexShallowBootScenario drives the real FO against the shallow-boot fixture
-// and grades the SAME host-neutral durable end-state assertShallowBoot the Claude
-// runner feeds: the FO greets and presents the gate, S7b advances+archives the
-// merged PR before-greet, and NO worker is dispatched (the gate entity is
-// unchanged, not archived, no worktree). Codex has no Claude team root, so the
-// no-team-config check is host-neutral-vacuous (empty teamRoot); the no-dispatch
-// proof rides the durable gate-unchanged + no-worktree facts. The AC-2/AC-6 Claude
-// token-stream measurements are Claude-specific and live in the Claude runner.
+// runCodexShallowBootScenario uses two normal Spacedock front-door launches over
+// one fixture. The prompt-mandatory greeting process receives only the minimal
+// stop clause; the second receives only `engage .`. The filesystem snapshots, not
+// either task's prose, prove the phase boundary.
 func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
-	gateBefore := readFile(t, fixture.gateEntityPath)
+	initial := gatherShallowBootSnapshot(t, workflowRoot, "", fixture)
 
 	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
 	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
 	scenarioRunner := runner
 	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
 
-	result, err := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(), 0)
+	greetingResult, err := scenarioRunner.runFrontDoor(t, scenario, workflowRoot, codexShallowBootGreetingTask, 0)
 	if err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+		t.Fatalf("%v\nArtifacts: %s", err, greetingResult.artifactDir)
+	}
+	greeting := gatherShallowBootSnapshot(t, workflowRoot, "", fixture)
+	if err := assertShallowBootGreeting(initial, greeting, greetingResult.finalMessage); err != nil {
+		t.Fatalf("%v\nGreeting:\n%s\nArtifacts: %s", err, greetingResult.finalMessage, greetingResult.artifactDir)
 	}
 
-	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
-	if err := assertShallowBoot(obs); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	engageResult, err := scenarioRunner.runFrontDoor(t, scenario, workflowRoot, shallowBootEngageTask, 1)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, engageResult.artifactDir)
 	}
-	emitCodexScenarioMetrics(t, scenario, result)
+	engage := gatherShallowBootSnapshot(t, workflowRoot, "", fixture)
+	observation := shallowBootObservation{
+		initial: initial, greeting: greeting, greetingMessage: greetingResult.finalMessage,
+		engage: engage, engageMessage: engageResult.finalMessage,
+	}
+	if err := assertShallowBoot(observation); err != nil {
+		t.Fatalf("%v\nGreeting:\n%s\nEngage response:\n%s\nArtifacts: %s", err, greetingResult.finalMessage, engageResult.finalMessage, engageResult.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, codexScenarioResult{
+		finalMessage: engageResult.finalMessage,
+		jsonl:        greetingResult.jsonl + "\n" + engageResult.jsonl,
+		artifactDir:  greetingResult.artifactDir,
+		duration:     greetingResult.duration + engageResult.duration,
+	})
 }
 
 func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
@@ -390,6 +404,14 @@ func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
 // a scenario pass, because the pass assertions still grade durable state plus the
 // Codex producer signal.
 func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string, attempt int) (codexScenarioResult, error) {
+	return r.runCommand(t, scenario, workflowRoot, prompt, attempt, false)
+}
+
+func (r codexLiveRunner) runFrontDoor(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, task string, attempt int) (codexScenarioResult, error) {
+	return r.runCommand(t, scenario, workflowRoot, task, attempt, true)
+}
+
+func (r codexLiveRunner) runCommand(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string, attempt int, frontDoor bool) (codexScenarioResult, error) {
 	t.Helper()
 	artifactDir := codexAttemptArtifactDir(r.artifactRoot, scenario.name, attempt)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
@@ -400,6 +422,9 @@ func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workf
 	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
 
 	cmd := exec.Command(r.codexBin, codexExecArgv(workflowRoot, finalPath, prompt)...)
+	if frontDoor {
+		cmd = exec.Command(r.spacedockBin, codexShallowBootFrontDoorArgv(workflowRoot, finalPath, prompt)...)
+	}
 	cmd.Env = r.env
 	// stdout (the --json event stream) flows through the watcher's pipe for the
 	// no-progress liveness guard; stderr goes to its own artifact file. The

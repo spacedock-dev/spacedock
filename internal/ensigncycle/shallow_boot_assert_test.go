@@ -1,42 +1,37 @@
 package ensigncycle
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
 )
 
-// shallowBootObservation is the host-neutral set of durable, on-disk facts the
-// shallow-boot scenario grades, plus the FO's final message. The runner gathers
-// these from THIS run's filesystem (per-run temp HOME for the team root, the
-// workflow root for entity/archive/worktree state) so the assertion never reads a
-// stale prior team or a transcript phrase as authoritative.
-type shallowBootObservation struct {
-	// finalMessage is the FO's final greet output.
-	finalMessage string
-	// gateBefore / gateAfter is the gate-check entity frontmatter before and after
-	// the boot — it must be byte-identical (the FO presented the gate, did not
-	// dispatch or self-approve).
-	gateBefore string
-	gateAfter  string
-	// mergedAfter is the merged-PR entity's durable state read from wherever it
-	// lives after the boot (the archive, once S7b advances it). Empty when the file
-	// is gone from the active dir AND absent from the archive.
-	mergedAfter string
-	// mergedArchived is true when the merged-PR entity was moved to _archive/.
-	mergedArchived bool
-	// gateWorktreeCreated is true when a .worktrees/ dir was created for the gate
-	// entity (it must NOT be — no dispatch happened).
+// shallowBootSnapshot is one durable observation of the two-phase shallow-boot
+// fixture. Transcript prose never stands in for a state transition: the oracle
+// reads Git, both entity locations, the recording gh shim, and dispatch traces.
+type shallowBootSnapshot struct {
+	gitHead             string
+	gitPorcelain        string
+	gateEntity          string
+	mergedActive        string
+	mergedArchive       string
+	ghCalls             string
+	gateArchived        bool
 	gateWorktreeCreated bool
-	// gateArchived is true when the gate entity was archived (it must NOT be — it is
-	// parked at its gate).
-	gateArchived bool
-	// teamConfigOnDisk is true when a team config.json exists under THIS run's team
-	// root (it must NOT be — lazy-TeamCreate means no team is created at boot).
-	teamConfigOnDisk bool
+	teamWorkerOnDisk    bool
+}
+
+type shallowBootObservation struct {
+	initial         shallowBootSnapshot
+	greeting        shallowBootSnapshot
+	greetingMessage string
+	engage          shallowBootSnapshot
+	engageMessage   string
 }
 
 var (
@@ -45,111 +40,173 @@ var (
 	mergedModBlockClear  = regexp.MustCompile(`(?im)^mod-block:\s*$`)
 )
 
-// assertShallowBoot is the host-neutral AC-1 oracle over the run's durable on-disk
-// state and final message. It grades, on independent on-disk facts (never a
-// transcript phrase as the sole signal):
-//
-//	(a)  the greet presents a gate review + decision prompt;
-//	(a2) the S7b merged-PR entity is advanced before-greet — terminal frontmatter
-//	     (done / verdict PASSED / mod-block cleared) AND archived (the M3 proof);
-//	(b)  NO team artifact on disk (lazy-TeamCreate) AND no worker dispatched (the
-//	     gate entity is unchanged, not archived, no worktree created);
-//	(c)  the FO stopped for input (it presented a gate, did not advance it).
-//
-// The absence-of-team-config is the lazy-TeamCreate proof; the unchanged gate
-// frontmatter is the shallow-boot / no-dispatch proof; the advanced+archived merged
-// entity is the S7b proof.
+// assertShallowBoot grades the #480 phase boundary: greeting is a byte-for-byte,
+// no-gh observation; first engage performs the PR sweep, archives a complete
+// terminal entity, and renders the already-ready gate without mutating it.
 func assertShallowBoot(o shallowBootObservation) error {
-	// (b) lazy-TeamCreate: no team artifact created at boot.
-	if o.teamConfigOnDisk {
-		return fmt.Errorf("a team config.json exists under this run's team root — the boot created a team (lazy-TeamCreate was not honored)")
+	if err := assertShallowBootGreeting(o.initial, o.greeting, o.greetingMessage); err != nil {
+		return err
 	}
-	// (b) no-dispatch: the gate entity must be byte-identical and not advanced.
-	if o.gateBefore != o.gateAfter {
-		return fmt.Errorf("the gated entity's frontmatter changed during boot — a worker was dispatched or the gate self-resolved")
+	return assertShallowBootEngage(o.initial, o.greeting, o.engage, o.engageMessage)
+}
+
+func assertShallowBootGreeting(initial, greeting shallowBootSnapshot, message string) error {
+	if greeting.gitHead != initial.gitHead {
+		return fmt.Errorf("Git HEAD changed during the greeting")
 	}
-	if !reviewStatus.MatchString(o.gateAfter) {
-		return fmt.Errorf("the gated entity is no longer at status: review — it was advanced past its gate")
+	if greeting.gitPorcelain != initial.gitPorcelain {
+		return fmt.Errorf("Git porcelain changed during the greeting")
 	}
-	if completedSet.MatchString(o.gateAfter) || verdictSetFM.MatchString(o.gateAfter) {
-		return fmt.Errorf("the gated entity has completed/verdict set — the boot self-approved instead of presenting the gate")
+	if greeting.gateEntity != initial.gateEntity {
+		return fmt.Errorf("the gated entity changed during the greeting")
 	}
-	if o.gateArchived {
-		return fmt.Errorf("the gated entity was archived during boot — it must stay parked at its gate")
+	if greeting.mergedActive != initial.mergedActive {
+		return fmt.Errorf("the active merged-PR entity changed during the greeting")
 	}
-	if o.gateWorktreeCreated {
-		return fmt.Errorf("a worktree was created for the gated entity — a dispatch happened at boot")
+	if greeting.mergedArchive != initial.mergedArchive {
+		return fmt.Errorf("the merged-PR archive changed during the greeting")
 	}
-	// (a2) S7b: the merged-PR entity is advanced and archived before-greet.
-	if !o.mergedArchived {
-		return fmt.Errorf("the merged-PR entity was not archived — S7b did not advance it before the greet")
+	if greeting.ghCalls != initial.ghCalls {
+		return fmt.Errorf("the greeting called gh; PR probing belongs to first engage")
 	}
-	if !mergedTerminalStatus.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity is not at the terminal stage (status: done) — S7b advancement is incomplete")
+	if greeting.gateArchived != initial.gateArchived || greeting.gateWorktreeCreated != initial.gateWorktreeCreated {
+		return fmt.Errorf("the greeting archived or dispatched the gated entity")
 	}
-	if !mergedVerdictPassed.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity has no verdict: PASSED — S7b advancement is incomplete")
+	if greeting.teamWorkerOnDisk != initial.teamWorkerOnDisk {
+		return fmt.Errorf("the greeting created a worker team")
 	}
-	if !mergedModBlockClear.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity still carries a mod-block — S7b did not clear it on advancement")
+
+	lower := strings.ToLower(message)
+	if !strings.Contains(lower, "gate check") || !strings.Contains(lower, "review") || !strings.Contains(lower, "engage") {
+		return fmt.Errorf("the greeting did not name the ready Gate Check review and offer engage")
 	}
-	// (a) the greet presents a gate review + decision prompt.
-	lowerFinal := strings.ToLower(o.finalMessage)
-	if !strings.Contains(lowerFinal, "gate review:") || !strings.Contains(lowerFinal, "decision:") {
-		return fmt.Errorf("the greet did not present a gate review and decision prompt")
+	if strings.Contains(lower, "gate review:") || strings.Contains(lower, "decision:") {
+		return fmt.Errorf("the greeting rendered the gate review before engage")
 	}
 	return nil
 }
 
-// gatherShallowBootObservation reads the run's durable on-disk state into a
-// shallowBootObservation: the gate entity's post-boot frontmatter, the merged
-// entity's state (from the archive once S7b advances it, else its active path), the
-// archive/worktree facts, and the team-config-on-disk check under the host's team
-// root. It is host-neutral over the entity/archive/worktree state; teamRoot is the
-// host's team-config root (Claude: {home}/.claude/teams) — an empty teamRoot means
-// the host writes no team config there and the check is vacuously false.
-func gatherShallowBootObservation(t *testing.T, workflowRoot, teamRoot string, fx shallowBootFixture, gateBefore, finalMessage string) shallowBootObservation {
-	t.Helper()
-	o := shallowBootObservation{
-		finalMessage: finalMessage,
-		gateBefore:   gateBefore,
-		gateAfter:    readFileAllowMissing(fx.gateEntityPath),
+func assertShallowBootEngage(initial, greeting, engage shallowBootSnapshot, message string) error {
+	if engage.gitHead == greeting.gitHead {
+		return fmt.Errorf("first engage did not commit the merged-PR state transition")
 	}
-	// The merged entity lives in _archive once S7b advances it; before that it stays
-	// at its active path. Read whichever exists so the assertion sees its real state.
-	if data, err := os.ReadFile(fx.mergedArchive); err == nil {
-		o.mergedAfter = string(data)
-		o.mergedArchived = true
-	} else {
-		o.mergedAfter = readFileAllowMissing(fx.mergedEntityPath)
+	if engage.gitPorcelain != initial.gitPorcelain {
+		return fmt.Errorf("Git porcelain is not clean after first engage")
 	}
-	if _, err := os.Stat(fx.gateEntityArchivePath(workflowRoot)); err == nil {
-		o.gateArchived = true
+	if engage.gateEntity != initial.gateEntity {
+		return fmt.Errorf("the gated entity changed during engage — it was dispatched or self-resolved")
 	}
-	// A worktree created for the gate entity is a dispatch fingerprint. The default
-	// ensign worker_key is spacedock-ensign, so the dir would be
-	// .worktrees/spacedock-ensign-gate-check; glob loosely on the slug to catch any
-	// worker_key.
-	if matches, _ := filepath.Glob(filepath.Join(workflowRoot, ".worktrees", "*gate-check*")); len(matches) > 0 {
-		o.gateWorktreeCreated = true
+	if !reviewStatus.MatchString(engage.gateEntity) {
+		return fmt.Errorf("the gated entity is no longer at status: review")
 	}
-	if teamRoot != "" {
-		if matches, _ := filepath.Glob(filepath.Join(teamRoot, "*", "config.json")); len(matches) > 0 {
-			o.teamConfigOnDisk = true
-		}
+	if completedSet.MatchString(engage.gateEntity) || verdictSetFM.MatchString(engage.gateEntity) {
+		return fmt.Errorf("the gated entity has completed/verdict set — engage self-approved it")
 	}
-	return o
+	if engage.gateArchived {
+		return fmt.Errorf("the gated entity was archived during engage")
+	}
+	if engage.gateWorktreeCreated {
+		return fmt.Errorf("a worktree was created for the gated entity — engage dispatched it")
+	}
+	if engage.teamWorkerOnDisk {
+		return fmt.Errorf("a worker member exists in the team registry — engage dispatched during a gate-only trajectory")
+	}
+
+	if engage.mergedActive != "" {
+		return fmt.Errorf("the merged-PR entity remains active — first engage did not archive it")
+	}
+	if engage.mergedArchive == "" {
+		return fmt.Errorf("the merged-PR entity was not archived on first engage")
+	}
+	if !mergedTerminalStatus.MatchString(engage.mergedArchive) {
+		return fmt.Errorf("the archived merged-PR entity is not at status: done")
+	}
+	if !mergedVerdictPassed.MatchString(engage.mergedArchive) {
+		return fmt.Errorf("the archived merged-PR entity has no verdict: PASSED")
+	}
+	if !mergedModBlockClear.MatchString(engage.mergedArchive) {
+		return fmt.Errorf("the archived merged-PR entity still carries a mod-block")
+	}
+	if engage.ghCalls == greeting.ghCalls {
+		return fmt.Errorf("first engage made no gh call")
+	}
+
+	lower := strings.ToLower(message)
+	if !strings.Contains(lower, "gate review:") || !strings.Contains(lower, "decision:") {
+		return fmt.Errorf("the engage response did not render a gate review and decision prompt")
+	}
+	return nil
 }
 
-// gateEntityArchivePath is the path the gate entity would occupy if it were
-// archived (it must NOT be — it is parked at its gate).
+func gatherShallowBootSnapshot(t *testing.T, workflowRoot, teamRoot string, fx shallowBootFixture) shallowBootSnapshot {
+	t.Helper()
+	snapshot := shallowBootSnapshot{
+		gateEntity:    readFileAllowMissing(fx.gateEntityPath),
+		mergedActive:  readFileAllowMissing(fx.mergedEntityPath),
+		mergedArchive: readFileAllowMissing(fx.mergedArchive),
+		ghCalls:       readFileAllowMissing(fx.stubGhLog),
+	}
+
+	head, err := exec.Command("git", "-C", workflowRoot, "rev-parse", "HEAD").CombinedOutput()
+	if err != nil {
+		t.Fatalf("snapshot shallow-boot Git HEAD: %v\n%s", err, head)
+	}
+	snapshot.gitHead = strings.TrimSpace(string(head))
+	porcelain, err := exec.Command("git", "-C", workflowRoot, "status", "--porcelain=v1").CombinedOutput()
+	if err != nil {
+		t.Fatalf("snapshot shallow-boot Git porcelain: %v\n%s", err, porcelain)
+	}
+	snapshot.gitPorcelain = string(porcelain)
+
+	if _, err := os.Stat(fx.gateEntityArchivePath(workflowRoot)); err == nil {
+		snapshot.gateArchived = true
+	}
+	if matches, _ := filepath.Glob(filepath.Join(workflowRoot, ".worktrees", "*gate-check*")); len(matches) > 0 {
+		snapshot.gateWorktreeCreated = true
+	}
+	if teamRoot != "" {
+		if matches, _ := filepath.Glob(filepath.Join(teamRoot, "*", "config.json")); shallowBootTeamHasWorker(matches) {
+			snapshot.teamWorkerOnDisk = true
+		}
+	}
+	return snapshot
+}
+
+// shallowBootTeamHasWorker ignores Claude's transport-created, leader-only
+// session registry and detects an actual dispatched teammate. Recent interactive
+// Claude versions create the lead record before the model's greeting even though
+// no TeamCreate/Agent action occurred.
+func shallowBootTeamHasWorker(configPaths []string) bool {
+	for _, path := range configPaths {
+		body, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var config struct {
+			Members []struct {
+				Name string `json:"name"`
+			} `json:"members"`
+		}
+		if json.Unmarshal(body, &config) != nil {
+			continue
+		}
+		for _, member := range config.Members {
+			if member.Name != "" && member.Name != "team-lead" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (fx shallowBootFixture) gateEntityArchivePath(workflowRoot string) string {
 	return filepath.Join(workflowRoot, "_archive", "gate-check.md")
 }
 
-// readFileAllowMissing returns the file's content, or "" when the file is absent
-// (e.g. an entity moved to the archive leaves its active path empty).
 func readFileAllowMissing(path string) string {
+	if path == "" {
+		return ""
+	}
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
