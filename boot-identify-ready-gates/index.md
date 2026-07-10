@@ -85,3 +85,19 @@ No skill, first-officer prompt, shared live fixture, or scenario assertion chang
 ### Summary
 
 The design adds one identify-only, append-only `ready_gates` array and reuses existing active-entity parsing and status ordering. It supplies the missing m3 gate identity while preserving ordinary boot output, dispatchability, prompts, and entity-body read boundaries.
+
+## Stage Report: implementation
+
+- DONE: TDD the missing identify schema on coupled base 5ec370c0. Add a real native boot-identify mixed fixture that is RED because 3/3 current-gate entities are absent, then cover deterministic status order, exact row keys (`id`,`slug`,`current`), m3-shaped `gate-check`/`review`, and zero-gate output.
+  RED: `TestBootIdentifyReadyGates` received an absent `ready_gates` value instead of the exact three rows, and `TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR` reported the zero-gate key missing; ordinary boot already passed its omission pin. GREEN: the focused `TestBoot(Identify|JSON)` command passed all 11 selected tests.
+- DONE: Implement the smallest append-only identify surface: `ready_gates` appears only in `--boot --identify --json`, after `stages`; ordinary `--boot --json` remains byte-compatible; dispatchable/--next semantics and bytes remain unchanged; terminal, terminal+gate, unknown, archived, and ordinary non-gates are excluded. Reuse parsed active entities/stages and existing ordering; no entity-body rereads, prompts, stage mutations, or m3 assertion changes.
+  Commit `c5a96678` adds the status-ordered selector in `format.go`, identify-only boot data in `boot.go`, fixed-row rendering in `json_commands.go`, native controls in `boot_identify_test.go`/`json_boot_test.go`, and the command-reference wording; no other path changed.
+- DONE: Run focused boot/status/CLI tests including `TestBootJSONDispatchableMirrorsNext`, exact key-order/zero-gate/ordinary-boot controls, git diff --check, scoped gofmt, go test ./internal/status ./internal/cli, go test ./..., go test ./... -race, and live-tag compile. Commit only the ready-gate schema/tests/reference changes above base 5ec370c0; exclude the known journeydelta formatting defect.
+  `git diff --check` and scoped `gofmt -d` emitted no output; status/CLI passed 1,049 tests in 2 packages; full and race gates each passed 2,116 tests in 17 packages; live-tag compile exited 0. `git merge-base HEAD 5ec370c0` equals `5ec370c0`, and the six-path diff excludes `journeydelta.go`.
+- DONE: Append a complete implementation Stage Report with RED/GREEN evidence, exact files and commit/ancestry, AC-1 through AC-3 evidence, AC-4 explicitly handed to the combined m3 live rerun, and clean status.
+  AC-1: the mixed native fixture returns 3/3 exact ordered gate rows, including `gate-check` at `review`. AC-2: its independently specified raw dispatchable value equals `--next`, while terminal, terminal+gate, unknown, archived, and non-gate rows stay absent. AC-3: zero gates render `[]`, `ready_gates` follows `stages`, and ordinary boot omits the field. AC-4 remains assigned to the combined PR #493 m3 live rerun; this commit changes no live oracle.
+  Independent review found 0 Critical, 0 Important, and 0 Minor issues and returned Ready: Yes; the code worktree was clean at report time.
+
+### Summary
+
+Boot identify JSON now exposes active, non-terminal ready gates as fixed `id`/`slug`/`current` rows in deterministic status order. The additive identify-only field preserves ordinary boot and dispatchable output, and the committed native tests cover the m3-shaped value, exclusions, ordering, and zero-gate behavior; the combined m3 live run remains the AC-4 handoff.
