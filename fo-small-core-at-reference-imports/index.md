@@ -1,6 +1,6 @@
 ---
 title: Reliably preload the two small first-officer cores with @ references
-status: backlog
+status: implementation
 score: 0.95
 source: "Fresh local Claude shallow-boot evidence on 2026-07-11: exact engage ran an unscoped find / for fo-merge-core.md after the bare deferred reference failed to resolve from the fixture cwd. The captain previously rejected promotion to separately callable skills and chose the established @-reference loading pattern for two small cores; the larger fo-dispatch-core remains an explicit tradeoff."
 completed:
