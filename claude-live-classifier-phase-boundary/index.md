@@ -1,6 +1,6 @@
 ---
 title: Append Claude live detector evidence only after a primary failure
-status: implementation
+status: validation
 score: 0.7
 source: Captain-approved recovery item 1 on 2026-07-10, after review of merged PR #490 showed classifyBootPreambleFailure scans the full transcript and can label later contract-lookup searches as boot-preamble failures before the scenario assertion is evaluated.
 id: p4h6a5wcqe5ddkhnmrac1w9a
