@@ -77,8 +77,9 @@ func assertShallowBootGreeting(initial, greeting shallowBootSnapshot, message st
 	}
 
 	lower := strings.ToLower(message)
-	if !strings.Contains(lower, "gate check") || !strings.Contains(lower, "review") || !strings.Contains(lower, "engage") {
-		return fmt.Errorf("the greeting did not name the ready Gate Check review and offer engage")
+	namesReadyGate := strings.Contains(lower, "gate check") || strings.Contains(lower, "gate-check")
+	if !namesReadyGate || !strings.Contains(lower, "review") || !strings.Contains(lower, "engage") {
+		return fmt.Errorf("the greeting did not name ready gate-check (canonical slug or humanized title), its review stage, and engage")
 	}
 	if strings.Contains(lower, "gate review:") || strings.Contains(lower, "decision:") {
 		return fmt.Errorf("the greeting rendered the gate review before engage")
