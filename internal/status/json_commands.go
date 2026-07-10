@@ -134,6 +134,19 @@ func dispatchableJSONArr(disp []dispatchable) jsonArr {
 	return arr
 }
 
+// readyGatesJSONArr builds the identify-only current-gate inventory. Its three
+// fixed keys give the greet a stable identity without projecting entity bodies.
+func readyGatesJSONArr(entities []*entity) jsonArr {
+	arr := make(jsonArr, 0, len(entities))
+	for _, e := range entities {
+		arr = append(arr, newJSONObj().
+			set("id", e.fields["id"]).
+			set("slug", e.fields["slug"]).
+			set("current", e.fields["status"]))
+	}
+	return arr
+}
+
 // bootJSON builds the nested {"command":"boot",...} envelope from gathered boot
 // data. mods is an object of point->[mods] (empty -> {}); min_prefix is present
 // only for sd-b32; team_state.present is the string "true"/"false".
@@ -213,6 +226,7 @@ func bootJSON(d *bootData) *jsonObj {
 	if d.identify {
 		out.setValue("discovery", jsonStrArr(d.discovery))
 		out.setValue("stages", stagesJSONArr(d.stages))
+		out.setValue("ready_gates", readyGatesJSONArr(d.readyGates))
 	}
 
 	return out

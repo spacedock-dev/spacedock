@@ -30,6 +30,28 @@ stages:
 # Identify Boot Workflow
 `
 
+const identifyReadyGatesReadme = `---
+commissioned-by: spacedock@1
+id-style: slug
+state: .spacedock-state
+stages:
+  states:
+    - name: draft
+      initial: true
+    - name: review
+      gate: true
+    - name: review-b
+      gate: true
+    - name: terminal-gate
+      gate: true
+      terminal: true
+    - name: done
+      terminal: true
+---
+
+# Identify Ready Gates Workflow
+`
+
 // writeRecordingGh writes a `gh` shim that appends to sentinelPath whenever it is
 // invoked, so a test can prove `gh` was NEVER run by asserting the sentinel is
 // absent afterward. It still prints a merge state, so a boot that DID shell out to
@@ -70,7 +92,7 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 		"command", "mods", "id_style", "next_id",
 		"orphans", "pr_state", "dispatchable", "team_state",
 		"state_backend", "definition_dir", "entity_dir", "entity_dir_present",
-		"sandbox", "discovery", "stages",
+		"sandbox", "discovery", "stages", "ready_gates",
 	}
 	last := -1
 	for _, key := range orderedKeys {
@@ -93,6 +115,7 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 			Status  string              `json:"status"`
 			Entries []map[string]string `json:"entries"`
 		} `json:"pr_state"`
+		ReadyGates json.RawMessage `json:"ready_gates"`
 	}
 	if err := json.Unmarshal([]byte(out), &rec); err != nil {
 		t.Fatalf("parse identify record: %v\n%s", err, out)
@@ -111,6 +134,65 @@ func TestBootIdentifyFoldsDiscoveryTaxonomyLocalPR(t *testing.T) {
 	}
 	if rec.PRState.Entries[0]["state"] != "local" {
 		t.Fatalf("pr_state entry state = %q, want \"local\" (not-gh-checked)", rec.PRState.Entries[0]["state"])
+	}
+	if got := string(rec.ReadyGates); got != "[]" {
+		t.Fatalf("ready_gates = %s, want [] for a workflow with no current gates", got)
+	}
+}
+
+// TestBootIdentifyReadyGates is AC-1/AC-2's native-path proof: identify exposes
+// every active non-terminal current gate in status order, leaves dispatchable
+// byte-stable with --next, and excludes every non-ready class.
+func TestBootIdentifyReadyGates(t *testing.T) {
+	def, state := buildSplitRoot(t, identifyReadyGatesReadme, map[string]string{
+		"alpha-gate.md":    "---\nstatus: review\nscore: 5\n---\n",
+		"dispatch-me.md":   "---\nstatus: draft\nscore: 100\n---\n",
+		"done.md":          "---\nstatus: done\n---\n",
+		"gate-check.md":    "---\nstatus: review\nscore: 5\n---\n",
+		"later-gate.md":    "---\nstatus: review-b\nscore: 1000\n---\n",
+		"ordinary.md":      "---\nstatus: draft\nworktree: busy\n---\n",
+		"terminal-gate.md": "---\nstatus: terminal-gate\n---\n",
+		"unknown.md":       "---\nstatus: vanished\n---\n",
+	})
+	archiveDir := filepath.Join(state, "_archive")
+	if err := os.MkdirAll(archiveDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(archiveDir, "archived-gate.md"), "---\nstatus: review\nscore: 9999\n---\n")
+
+	identifyOut, errOut, code := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--boot", "--identify", "--json")
+	if code != 0 {
+		t.Fatalf("--boot --identify --json exit=%d stderr=%q", code, errOut)
+	}
+	var identify struct {
+		Dispatchable json.RawMessage `json:"dispatchable"`
+		ReadyGates   json.RawMessage `json:"ready_gates"`
+	}
+	if err := json.Unmarshal([]byte(identifyOut), &identify); err != nil {
+		t.Fatalf("parse identify boot: %v\n%s", err, identifyOut)
+	}
+
+	wantReady := `[{"id":"alpha-gate","slug":"alpha-gate","current":"review"},{"id":"gate-check","slug":"gate-check","current":"review"},{"id":"later-gate","slug":"later-gate","current":"review-b"}]`
+	if got := string(identify.ReadyGates); got != wantReady {
+		t.Fatalf("ready_gates = %s\nwant        = %s", got, wantReady)
+	}
+	wantDispatchable := `[{"id":"dispatch-me","slug":"dispatch-me","current":"draft","next":"review","worktree":"no"}]`
+	if got := string(identify.Dispatchable); got != wantDispatchable {
+		t.Fatalf("identify dispatchable = %s\nwant                  = %s", got, wantDispatchable)
+	}
+
+	nextOut, nextErr, nextCode := runNative(t, def, pinnedEnv(t), "--workflow-dir", def, "--next", "--json")
+	if nextCode != 0 {
+		t.Fatalf("--next --json exit=%d stderr=%q", nextCode, nextErr)
+	}
+	var next struct {
+		Dispatchable json.RawMessage `json:"dispatchable"`
+	}
+	if err := json.Unmarshal([]byte(nextOut), &next); err != nil {
+		t.Fatalf("parse next: %v\n%s", err, nextOut)
+	}
+	if string(next.Dispatchable) != string(identify.Dispatchable) {
+		t.Fatalf("identify dispatchable = %s, --next dispatchable = %s", identify.Dispatchable, next.Dispatchable)
 	}
 }
 
