@@ -7,98 +7,114 @@ id: p4h6a5wcqe5ddkhnmrac1w9a
 started: 2026-07-10T12:56:28Z
 ---
 
-Separate true boot-orientation failures from later contract-lookup hunts, and preserve the scenario's primary failure evidence so the live harness reports the phase and cause it actually observed.
+# Append Claude live detector evidence only after a primary failure
+
+Preserve the Claude live harness's real runner or scenario failure, and add wrong-root or broad-search observations only as secondary context when that primary failure already exists.
+
+## End value
+
+A passing Claude shared scenario stays passing even when the full transcript contains a wrong-root or filesystem-hunt detector match. A failing scenario reports its existing assertion or runner error byte-for-byte as the primary evidence, followed by an explicitly secondary detector observation; the observation can never create, replace, relabel, or pre-empt the failure.
 
 ## Problem statement
 
-PR #490 added `classifyBootPreambleFailure(stream, workflowRoot)` to the Claude shared-scenario runner. The classifier correctly detects wrong-root operations and broad filesystem hunts, but `claudeLiveRunner.run` passes the full transcript to it after the process exits or stalls. A matching search at any later point therefore becomes a "boot-preamble" failure and aborts the test before its scenario assertion runs.
+Merged PR #490 calls `classifyBootPreambleFailure(stream, workflowRoot)` in `claudeLiveRunner.run` immediately after transcript capture and before the existing stall check, final-message extraction, and every scenario assertion. The classifier scans the entire stream and calls `t.Fatalf` on any wrong-root or broad-search match. It therefore gives detector evidence independent pass/fail authority and can suppress the failure the scenario actually owns.
 
-The archived #490 cycle-2 evidence exposed the consequence: a run could boot successfully, perform scenario work, and then search for a deferred contract reference. The full-stream classifier discarded the phase distinction. Its later retry experiment even manufactured a false scenario failure by rerunning against state already mutated by the first attempt. The retry was reverted before merge, but the classifier still scans the full stream and still pre-empts the scenario's primary assertion.
+That authority is the bug. The detector cannot reliably infer a phase from a full transcript, and this task will not add a phase boundary. Wrong-root and filesystem-hunt matches are still useful when a run has already failed, but they are only diagnostic observations. They must remain invisible when the runner and scenario pass.
 
-This task fixes classification and reporting only. It does not permit contract hunts, retry a scenario, reset fixture state, or weaken the scenario assertions.
+The fix is reporting-only. It does not permit a contract hunt, weaken any scenario assertion, alter fixture state, retry a scenario, or restore #490's reverted retry experiment.
 
-## Evidence probe
+## Current call-site finding
 
-The risky question was whether the Claude stream exposes a stable boundary without reading model prose. It does. Saved sonnet streams contain a `Bash` `tool_use` for `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json --workflow-dir <fixture>` followed by a correlated, non-error `tool_result`. The keep-moving stream then loads `spacedock:fo-dispatch-core` and runs `find <plugin> -iname "claude-fo-dispatch.md"`; the feedback-escalation stream runs `find <fixture> ... -iname "README*"` after the same successful boot result. In both streams, the tool events order boot completion before the hunt without relying on assistant text.
+The merged #490 surface has one relevant classifier call: `claudeLiveRunner.run` invokes it after writing `claude-stream.jsonl`. Runner failures occur next through the existing stall and final-message-extraction `t.Fatalf` calls; scenario failures occur later in the nine `runClaude*Scenario` functions. All share the same `*testing.T`, so one cleanup registered by the runner can observe the final subtest outcome without changing those failure sites.
 
-Implementation tests will embed minimal, sanitized JSONL events from these shapes. They must not depend on the local `/tmp` artifacts.
+No spike needed: the design relies only on Go's documented `testing.T.Cleanup` and `testing.T.Failed` behavior, the existing full-transcript detectors, and the existing single-`*testing.T` runner/scenario call chain. The implementation's fake-reporter tests exercise the cleanup decision and output order without a model run.
 
 ## Approaches considered
 
-1. **Recommended: split the transcript at a successful boot result.** Pair the `status --boot` tool-use ID with its non-error tool result. Run boot classifiers only on the prefix through that result; scan the suffix for a late-search diagnostic. This boundary describes an observed command completion, survives model wording changes, and treats a failed or missing boot result as unfinished orientation.
-2. **Stop boot at the `status --boot` tool call.** This is simpler, but it moves concurrent tool uses and failed boot recovery into the later phase before orientation has succeeded. It would under-report genuine boot failures.
-3. **Stop boot at the first scenario-specific mutation, dispatch, or skill load.** This recognizes progress, but every scenario would need its own marker and a contract hunt can occur before the first mutation. It couples the classifier to scenario details and leaves the disputed gap unresolved.
+1. **Recommended: register detector evidence for failure-only cleanup.** After transcript capture, select the existing wrong-root or broad-search observation and register a cleanup. The cleanup logs `Additional diagnostic: ...` only when `t.Failed()` is already true. It has no `Error`, `Fail`, or `Fatal` capability, so the observation cannot create a red; the existing failure remains untouched and appears first.
+2. **Return a diagnostic in `liveResult` and compose at every assertion.** This can preserve ordering, but it requires editing every Claude scenario failure site and separately handling runner failures that return no result. The broader surface creates omission risk with no additional end value.
+3. **Split the transcript into boot and post-boot phases.** Rejected by the captain. A boundary would add parsing and classification semantics while still granting some detector matches independent failure authority. The desired contract needs neither.
+4. **Log detector matches immediately.** This is a small change but violates the silence requirement: passing scenarios would emit misleading warnings despite having no primary failure.
 
 ## Proposed approach
 
-### Observable boundary
+### Primary-error-first registration
 
-Parse the stream with the existing `streamEntry`, `toolUseBlocks`, `resultBlocks`, and `toolResultFailed` machinery. Track a `Bash` tool use that invokes `status --boot` for the expected fixture workflow. Boot orientation ends only when the stream carries a correlated, non-error tool result for that call.
+Rename and reduce `classifyBootPreambleFailure` to `detectClaudeLiveFailureDiagnostic`. It may retain the current deterministic evidence priority—wrong-root observation before broad-search observation—but it returns context only and never decides pass/fail.
 
-The prefix includes the successful result. The suffix begins with the next stream event. A failed boot result, a missing result, or process death before the result leaves the whole transcript in the boot phase. Tool calls emitted in the same turn before the result also remain in the boot phase.
+Add a narrow diagnostic reporter helper with only these capabilities:
 
-Run `detectWrongRootBoot` and the boot form of the broad-search detector on the prefix. Run a phase-neutral broad-search finding function on the suffix and format that finding as a **late contract-lookup diagnostic**, never as a boot-preamble failure. Keep detector input and output model-agnostic: tool name, command/path, tool-use ID, tool-result status, and event order only.
-
-### Failure composition
-
-An early boot finding remains fatal before scenario grading because the scenario never acquired a valid orientation. Preserve the existing wrong-root-before-broad-search priority and attach an underlying stall when present.
-
-A late search still makes the test red, but it cannot pre-empt scenario grading. On a clean process exit, return the `liveResult`, register the late diagnostic for end-of-subtest reporting, and let the existing scenario assertion run first. If that assertion fails, its current message remains the primary failure and the late diagnostic follows as additional evidence. If the scenario assertion passes, the deferred late-search diagnostic becomes the sole failure.
-
-When the runner cannot return a gradable result because of a stall or final-message extraction failure, that runner error is primary and the late-search diagnostic is appended. The formatter must never replace, relabel, or omit the primary error.
-
-Expected developer-facing output changes from one misleading failure:
-
-```text
-FO broad-searched the filesystem at boot: ... a boot-preamble filesystem sweep, not the scenario's own assertion
+```go
+type claudeLiveDiagnosticReporter interface {
+    Cleanup(func())
+    Failed() bool
+    Logf(string, ...any)
+}
 ```
 
-to ordered evidence such as:
+`claudeLiveRunner.run` detects the observation after persisting the transcript and registers it before the existing stall and extraction checks. The cleanup runs after the runner and scenario finish:
+
+- if `Failed()` is false, it emits nothing;
+- if `Failed()` is true, it logs `Additional diagnostic: <existing detector evidence>`;
+- it never calls a failure-producing method and never wraps or edits the primary error.
+
+This covers both failure classes with one hook. A stall or extraction `t.Fatalf` unwinds through the registered cleanup. A returned `liveResult` keeps the cleanup registered while the existing scenario assertions run. The first failure line and its exact text remain owned by the existing call site; the cleanup's later log is visibly secondary context.
+
+### Classifier decision
+
+Delete the classification concept and rename the helper rather than add a phase boundary. The helper's two-detector body can remain structurally identical because selecting the most applicable observation is useful; its contract and caller change from fatal classification to failure-only diagnostic registration. Renaming is the smallest code delta that removes misleading pass/fail semantics while retaining offline detector-priority coverage.
+
+### Output contract
+
+Passing run with a detector match:
 
 ```text
-<existing scenario assertion or runner failure>
-Additional diagnostic: FO broad-searched the filesystem after successful boot orientation: ...
+<no detector output; test remains passing>
 ```
 
-True prefix failures retain the existing `FO booted the wrong root` or `FO broad-searched the filesystem at boot` form.
+Failing run with a detector match:
+
+```text
+<exact existing runner or scenario failure>
+Additional diagnostic: <wrong-root or broad-search detector evidence>
+```
+
+The diagnostic text describes evidence found in the full transcript; it does not assert a phase, change the test status, or become the scenario's failure label.
 
 ### Implementation scope and #490 preservation
 
-Change only the classifier and Claude-runner failure composition:
+The exact proposed product-test files are:
 
-- `internal/ensigncycle/boot_preamble_classify_impl_test.go`: add the successful-result boundary and return separate early failure and late diagnostic.
-- `internal/ensigncycle/boot_preamble_classify_test.go`: replace the ambiguous full-stream example with paired early/late controls built from correlated tool events.
-- `internal/ensigncycle/broad_search_detect_impl_test.go`: expose a phase-neutral finding while retaining the existing boot wrapper and zero-discovery wording contract.
-- `internal/ensigncycle/broad_search_detect_test.go`: keep its current detector matrix green and add formatting coverage only if the extraction requires it.
-- `internal/ensigncycle/claude_live_runner_test.go`: classify by phase, preserve runner/scenario failure priority, and defer a suffix diagnostic until scenario grading finishes.
-- `internal/ensigncycle/claude_live_failure_compose_test.go` (new): prove primary-first composition without launching a model.
+- rename `internal/ensigncycle/boot_preamble_classify_impl_test.go` to `internal/ensigncycle/claude_live_failure_diagnostic_impl_test.go`; rename/reduce the classifier and add the failure-only reporter registration helper;
+- rename `internal/ensigncycle/boot_preamble_classify_test.go` to `internal/ensigncycle/claude_live_failure_diagnostic_test.go`; replace fatal-classification expectations with fake-reporter controls for pass silence, primary preservation, secondary ordering, and detector priority;
+- update `internal/ensigncycle/claude_live_runner_test.go`; remove the classifier-owned `t.Fatalf` branch and register the observation before the existing runner failure checks.
 
-Keep #490's fixture fixes intact: the absolute-root prompt signatures and commissioned markers in `shared_fixtures_test.go`; the corresponding root arguments in `claude_live_runner_test.go`, `codex_live_runner_test.go`, and `livescenario_adapter_live_test.go`; the gate-stop fixture relocation from `live_gate_stop_test.go`; and `boot_discovery_test.go`'s 10 discoverable-fixture plus markerless zero-discovery controls. Do not revive the reverted retry files or alter fixture content.
+Do not change `broad_search_detect_impl_test.go`, `wrong_root_detect_impl_test.go`, any scenario assertion, or any fixture. Preserve #490's absolute-root prompt signatures and commissioned markers in `shared_fixtures_test.go`; the root arguments in the Claude, Codex, and live-scenario adapters; the gate-stop fixture relocation; and `boot_discovery_test.go`'s 10 discoverable fixtures plus markerless zero-discovery control. Do not add retry files or a second launch attempt.
 
 ## Acceptance criteria
 
-- **AC-1 (value — correct phase and primary evidence against the current classifier).** In a four-stream offline corpus containing two searches before boot completion and the same two searches after a correlated successful boot result, **2/2 early streams** classify as boot failures, **0/2 late streams** carry a boot-failure label, and **2/2 late streams** reach an injected scenario assertion before reporting their search diagnostic. The current full-stream classifier labels all four as boot failures and reaches **0/2** injected late-stream assertions, so either 1+ late stream mislabeled as boot or 1+ suppressed primary assertion fails this criterion. *Test:* `TestClassifyClaudeLiveFailurePhaseBoundary` and `TestClaudeLiveFailureCompositionKeepsPrimaryFirst` exercise sanitized JSONL from the keep-moving and feedback-escalation shapes.
-- **AC-2 (boundary semantics).** Boot ends only at the correlated, non-error result of the expected fixture's `status --boot` call. A missing result, an error result, a result for another tool ID, and a search emitted before the successful result all remain in the boot prefix; a search after it enters the suffix. *Test:* table-driven `TestClaudeLiveBootBoundary` covers every case and asserts the exact prefix/suffix event counts.
-- **AC-3 (failure priority).** Wrong-root remains ahead of broad-search within the boot prefix; an early boot failure remains primary over a stall; a stall or extraction error remains primary over a late diagnostic; and a scenario assertion remains primary when both it and a late diagnostic fail. A late diagnostic alone still reds the subtest. *Test:* `TestClassifyBootPreambleFailureWrongRootTakesPriority` plus table-driven `TestComposeClaudeLiveFailure` and `TestClaudeLiveFailureCompositionKeepsPrimaryFirst` assert both membership and output order.
-- **AC-4 (#490 fixture non-regression).** All 10 intended shared fixtures remain discoverable, the zero-discovery fixture remains markerless and undiscoverable, all eight non-boot-subject prompts keep their absolute workflow root, and the reverted retry mechanism remains absent. *Test:* `TestSharedScenarioFixturesAreDiscoverable`, `TestZeroDiscoverFixtureStaysUndiscoverable`, the shared prompt-signature tests, and a diff review against merged PR #490's fixture files.
+- **AC-1 (value — detector evidence has zero independent pass/fail authority).** In an offline three-case matrix using the same broad-search observation, **1/1 passing case remains passing with zero diagnostic lines**, while **2/2 failing cases preserve the exact injected primary error** (one runner error and one scenario assertion) and append exactly one `Additional diagnostic:` line afterward. Against merged #490, the passing case is made red and **0/2 injected primaries** survive because classification pre-empts them. *Test:* table-driven `TestClaudeLiveFailureDiagnosticIsSecondaryOnly` uses a fake reporter and asserts final failed state, exact primary bytes, log count, and order.
+- **AC-2 (primary failure sites remain authoritative).** The existing stall, extraction, and scenario assertion messages are unchanged; with a detector observation present, each remains the first reported failure and the diagnostic follows only during cleanup. *Test:* `TestRegisterClaudeLiveFailureDiagnostic` covers pass, runner-fail, and scenario-fail reporter timelines, while the live-tag compile check proves the real `*testing.T` call site satisfies the narrow interface.
+- **AC-3 (diagnostic selection remains deterministic without classification).** When both detector observations apply, wrong-root evidence is selected before broad-search evidence; when neither applies, no cleanup is registered and no output is possible. Neither result can fail a test. *Test:* renamed offline controls `TestDetectClaudeLiveFailureDiagnosticWrongRootTakesPriority`, `TestDetectClaudeLiveFailureDiagnosticBroadSearch`, and `TestDetectClaudeLiveFailureDiagnosticCleanStream` assert the selected observation and registration count.
+- **AC-4 (#490 fixture and no-retry non-regression).** All 10 intended shared fixtures remain discoverable, the zero-discovery fixture remains markerless and undiscoverable, all eight non-boot-subject prompts retain their absolute workflow root, and the runner still launches exactly once. *Test:* existing discovery and prompt-signature tests stay green; focused source review confirms no fixture diff and no retry path, and the full/race gates exercise the unchanged suite.
 
 ## Test plan
 
-Implementation starts with the offline red controls. Use exact tool-use IDs and paired tool results; changing only the search's position around the successful boot result must flip early failure to late diagnostic. The composition tests use a fake reporter or pure formatter, cost milliseconds, and spend no model tokens.
+Implementation begins with deterministic red controls in the renamed diagnostic test. A fake reporter records cleanup registration, failed state, and log order; it gives the test direct proof that a detector match cannot fail a pass and cannot mutate an injected primary error. The tests cost milliseconds, use synthetic stream lines already supported by the detector fixtures, and spend no model tokens.
 
-Run focused classifier and composition tests:
-
-```bash
-go test ./internal/ensigncycle -run 'Test(ClaudeLiveBootBoundary|ClassifyClaudeLiveFailurePhaseBoundary|ClassifyBootPreambleFailure|ComposeClaudeLiveFailure|ClaudeLiveFailureCompositionKeepsPrimaryFirst)'
-```
-
-Run #490's fixture and detector controls:
+Run the focused diagnostic and detector controls:
 
 ```bash
-go test ./internal/ensigncycle -run 'Test(SharedScenarioFixturesAreDiscoverable|ZeroDiscoverFixtureStaysUndiscoverable|DetectBroadSearchAtBoot|DetectWrongRootBoot)'
+go test ./internal/ensigncycle -run 'Test(ClaudeLiveFailureDiagnostic|RegisterClaudeLiveFailureDiagnostic|DetectClaudeLiveFailureDiagnostic|DetectBroadSearchAtBoot|DetectWrongRootBoot)'
 ```
 
-Then run the repository gates and live-tag compile check:
+Run #490's discovery and shared-fixture controls:
+
+```bash
+go test ./internal/ensigncycle -run 'Test(SharedScenarioFixturesAreDiscoverable|ZeroDiscoverFixtureStaysUndiscoverable|SharedPrompt|ClaudePrompt|CodexPrompt)'
+```
+
+Then run the required repository gates and live-tag compile check:
 
 ```bash
 gofmt -w ./cmd ./internal
@@ -107,7 +123,7 @@ go test ./... -race
 go test -tags live -run '^$' ./internal/ensigncycle/...
 ```
 
-No new live workflow run is required: the claim concerns deterministic post-hoc classification of an already captured stream, not model behavior. The saved live shapes established that the command/result boundary exists; the sanitized offline fixtures provide the durable proof. No product or docs-site change is needed because this alters only developer-facing live-test failure output; the exact before/after output contract appears above.
+No live workflow run is required. The behavior under change is deterministic Go test reporting after a captured stream exists, not model behavior. No documentation-site change is needed because this affects developer-facing live-test diagnostics only; the exact output contract is recorded above.
 
 ### Feedback Cycles
 
@@ -125,3 +141,16 @@ No new live workflow run is required: the claim concerns deterministic post-hoc 
 ### Summary
 
 The design bounds boot classification at the first correlated successful fixture boot result and treats later hunts as deferred diagnostics. It preserves #490's fixture hardening, keeps genuine early failures fatal, and proves the corrected failure order offline with paired red controls.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Re-open merged PR #490's current call sites and determine the smallest diagnostic-only design. Treat the captain's decision as binding: no phase boundary and no classifier that independently changes pass/fail; wrong-root and broad-search observations may only be appended to an already-existing runner or scenario failure.
+  AC-2/AC-3: the current single classifier call is replaced by one failure-only cleanup registration on the shared `*testing.T`; the reporter surface cannot fail a test and introduces no phase parser.
+- DONE: Rewrite the entity's title, end value, problem statement, considered approaches, proposed approach, implementation scope, acceptance criteria, and test plan around primary-error-first composition. Require silence when the scenario passes, preservation of the exact primary error when it fails, and secondary diagnostics that cannot replace, relabel, or pre-empt it. Explicitly decide whether `classifyBootPreambleFailure` should be deleted, reduced, or renamed based on the smallest code delta.
+  AC-1/AC-2: the body title and all design sections now require pass silence and byte-preserved primary errors; `classifyBootPreambleFailure` is renamed/reduced to evidence selection, with YAML title mutation left to the FO-owned status surface.
+- DONE: Preserve all merged #490 fixture/discovery controls and do not reintroduce retry behavior. Add deterministic red controls proving: passing scenario + observed hunt remains passing; failing scenario/runner remains primary; applicable detector evidence is appended only as diagnostic context. Append a complete ideation cycle-2 Stage Report with exact proposed files and measurable evidence.
+  AC-1/AC-4: scope is limited to two renamed diagnostic files and the Claude runner, AC-1 measures 1/1 silent pass and 2/2 exact primary failures against merged #490's 0/2 baseline, and all existing fixture/discovery controls remain required.
+
+### Summary
+
+Cycle 2 removes phase classification and gives detector evidence no independent authority over test status. A narrow failure-only cleanup keeps passing scenarios silent, preserves runner and scenario failures exactly, and appends one secondary diagnostic only after an existing red while leaving #490's fixture hardening and single-attempt behavior untouched.
