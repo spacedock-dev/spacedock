@@ -133,3 +133,16 @@ The exact skill-text change appears above. No docs-site change is needed because
 ### Summary
 
 Designed a three-file, offline-proven change that makes the filing fixture resemble a real development workflow and teaches the Claude first officer to use that workflow-local shape at filing time. The literal on-disk README template must round-trip through the native `new` path, mint an ID, and fail when its opening fence is indented. The work starts after merged PR #490 and after or atop open PR #491; it does not extend `spacedock new --help` or spend a live lane.
+
+## Stage Report: implementation
+
+- DONE: Write the failing on-disk fixture Task Template round-trip test first, including the indented-fence red control and preservation of PR #490 discovery behavior.
+  `TestFilingReadmeTaskTemplateRoundTripsThroughNew` first failed because the written README had zero Task Templates, then passed with its literal native-new round trip and indented-fence rejection; the focused run also kept `TestSharedScenarioFixturesAreDiscoverable` green.
+- DONE: Implement exactly the realistic Task Template and the one filing-local workflow README pointer; do not change spacedock new help or unrelated files.
+  Commit `11b03fd4` changes exactly the fixture producer, its new test, and the Claude filing runtime pointer; the branch is based atop PR #491 and its help work is untouched.
+- DONE: Run gofmt, focused affected-package tests, go test ./..., and go test ./... -race; commit the deliverable and append a complete implementation Stage Report.
+  Repository Go sources were formatted (the one unrelated pre-existing formatting delta was restored), the 14-case focused run and affected-package run passed, and both full repository gates exited 0 before commit `11b03fd4`.
+
+### Summary
+
+The filing fixture now writes one complete, column-zero, pipe-safe Task Template matching the development workflow shape, and the Claude first officer is told to consult it when filing. The new offline test proves the exact on-disk fenced body creates an entity with a minted ID and that indenting its frontmatter fence produces the expected `no frontmatter` failure. The implementation is isolated to the three specified files and is ready for independent validation.
