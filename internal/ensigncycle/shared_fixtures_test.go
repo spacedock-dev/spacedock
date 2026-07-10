@@ -365,11 +365,12 @@ func filingPrompt(workflowRoot string) string {
 
 // shallowBootFixture is the shallow-boot scenario's on-disk state plus the stub-gh
 // dir the runner prepends to PATH. The fixture seeds TWO entities: a gate-check at
-// a human gate (which the FO must present, not dispatch) and a PR-bearing
-// non-terminal entity whose stubbed `gh` reports MERGED (which S7b advances and
-// archives before-greet). The canonical pr-merge mod is registered so the boot
-// JSON `mods` map shows it and S7b can read it; the merged entity carries `pr` so
-// its terminal advancement clears the merge-hook guard without `--force`. The
+// a human gate (which the FO must identify at greeting, then present after
+// engage) and a PR-bearing non-terminal entity whose stubbed `gh` reports MERGED
+// (which first engage advances and archives). The canonical pr-merge mod is
+// registered so the engage-time state sweep can read it; the merged entity
+// carries `pr` so its terminal advancement clears the merge-hook guard without
+// `--force`. The
 // fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner file;
 // the pure string builders below are default-tagged so the offline negative cases
 // reuse them without a model.
@@ -378,6 +379,7 @@ type shallowBootFixture struct {
 	mergedEntityPath string
 	mergedArchive    string
 	stubGhDir        string
+	stubGhLog        string
 }
 
 func shallowBootReadme() string {
@@ -417,7 +419,7 @@ func shallowBootGateEntity() string {
 		"worktree:\n" +
 		"---\n" +
 		"# Gate Check\n\n" +
-		"This entity sits at the human review gate. The FO must present the gate at boot and stop — not dispatch a worker, not approve.\n\n" +
+		"This entity sits at the human review gate. The FO must name it in the read-only greeting, then present it after engage — not dispatch a worker, not approve.\n\n" +
 		"## Stage Report: implementation\n\n" +
 		"- DONE: Work exists\n" +
 		"  The implementation is complete and ready for review.\n" +
@@ -437,22 +439,36 @@ func shallowBootMergedEntity() string {
 		"worktree:\n" +
 		"---\n" +
 		"# Merged PR Entity\n\n" +
-		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The boot's S7b merged-PR sweep must advance it to terminal (`done`, `verdict: PASSED`) and archive it BEFORE the greet — proving a greet-and-stop boot still advances a merged PR.\n\n" +
+		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The read-only greeting must leave it active and unchanged; first engage must advance it to terminal (`done`, `verdict: PASSED`) and archive it.\n\n" +
 		"## Stage Report: implementation\n\n" +
 		"- DONE: Work exists and a PR was opened\n" +
-		"  The PR (#42) has since merged; the boot must advance and archive this entity.\n" +
+		"  The PR (#42) has since merged; first engage must advance and archive this entity.\n" +
 		"\n### Summary\n\n" +
-		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
+		"PR #42 is merged; the greeting observes it and first engage advances it to done and archives it.\n"
 }
 
-func shallowBootPrompt() string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
-		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
-		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
-		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
-		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
-	)
+const (
+	claudeShallowBootGreetingTask = ""
+	codexShallowBootGreetingTask  = "Stop after the greeting."
+	shallowBootEngageTask         = "engage ."
+)
+
+// codexShallowBootFrontDoorArgv keeps the operator task on the Spacedock side of
+// the `--` grammar and forwards only Codex-native execution flags after it. The
+// front door appends its normal first-officer bootstrap to task.
+func codexShallowBootFrontDoorArgv(workflowRoot, finalPath, task string) []string {
+	return []string{
+		"codex",
+		"--skip-compat-check",
+		task,
+		"--",
+		"exec",
+		"--json",
+		"--enable", "multi_agent_v2",
+		"--dangerously-bypass-approvals-and-sandbox",
+		"--cd", workflowRoot,
+		"--output-last-message", finalPath,
+	}
 }
 
 // writeMergeTriageWorkflow writes the self-evidence-merge-triage fixture: one entity

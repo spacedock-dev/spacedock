@@ -33,24 +33,28 @@ func writeShallowBootWorkflow(t *testing.T, root string) shallowBootFixture {
 	mergedPath := filepath.Join(root, "merged-pr.md")
 	writeFile(t, mergedPath, shallowBootMergedEntity())
 	gitInit(t, root)
+	stubGhDir, stubGhLog := writeStubMergedGh(t)
 
 	return shallowBootFixture{
 		gateEntityPath:   gatePath,
 		mergedEntityPath: mergedPath,
 		mergedArchive:    filepath.Join(root, "_archive", "merged-pr.md"),
-		stubGhDir:        writeStubMergedGh(t),
+		stubGhDir:        stubGhDir,
+		stubGhLog:        stubGhLog,
 	}
 }
 
 // writeStubMergedGh writes a `gh` shim that reports MERGED for `gh pr view`, so the
 // boot's live PR-state probe and the pr-merge startup hook both see a merged PR
 // deterministically (offline, no real PR). Returns the dir to prepend to PATH.
-func writeStubMergedGh(t *testing.T) string {
+func writeStubMergedGh(t *testing.T) (string, string) {
 	t.Helper()
 	dir := t.TempDir()
+	logPath := filepath.Join(t.TempDir(), "gh-calls.log")
 	// gh pr view {n} --json state --jq .state -> MERGED; any other gh subcommand
 	// (e.g. repo view) prints an empty line so it does not hard-error the FO.
 	script := "#!/bin/sh\n" +
+		"printf '%s\\n' \"$*\" >> " + shellQuote(logPath) + "\n" +
 		"case \"$1 $2\" in\n" +
 		"  \"pr view\") echo MERGED ;;\n" +
 		"  *) echo \"\" ;;\n" +
@@ -59,5 +63,5 @@ func writeStubMergedGh(t *testing.T) string {
 	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return dir
+	return dir, logPath
 }

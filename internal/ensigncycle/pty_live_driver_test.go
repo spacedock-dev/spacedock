@@ -132,13 +132,12 @@ func (s ptySession) newFileSource() *fileLineSource {
 	return newFileLineSourceByID(s.projectsDir, s.foSessionID)
 }
 
-// launchAndSend launches the interactive session WITHOUT a stdout pipe (claude
-// owns the pane tty — the no-pipe hazard), gates the first send on stable-idle (the
-// queued-keystroke hazard), sends prompt to the title-resolved FO pane (the
-// FO-pane-capture hazard), and resolves the FO's session jsonl on disk. It returns
-// a ptySession ready to drain or watch. label names the run for artifacts/errors.
+// launchToIdle launches the interactive session WITHOUT a stdout pipe (claude
+// owns the pane tty — the no-pipe hazard), waits for the default first-officer
+// greeting to reach stable idle, and resolves the FO's session jsonl on disk. It
+// sends no scenario text. label names the run for artifacts/errors.
 // The caller MUST defer session.proc.kill() to reap the resident tmux session.
-func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt string) ptySession {
+func (d ptyLiveDriver) launchToIdle(t *testing.T, label, workflowRoot string) ptySession {
 	t.Helper()
 	artifactDir := filepath.Join(d.artifactRoot, label)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
@@ -298,11 +297,6 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 			label, ptyBootBudget, err, dumpPane, artifactDir)
 	}
 
-	if err := d.sendToFO(session, prompt); err != nil {
-		proc.kill()
-		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, artifactDir)
-	}
-
 	return ptySession{
 		tmuxName:    session,
 		projectsDir: projectsDir,
@@ -312,6 +306,18 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 		artifactDir: artifactDir,
 		started:     started,
 	}
+}
+
+// launchAndSend preserves the existing callers' behavior while making the
+// default-greeting boundary independently observable for shallow-boot.
+func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt string) ptySession {
+	t.Helper()
+	session := d.launchToIdle(t, label, workflowRoot)
+	if err := d.sendToFO(session.tmuxName, prompt); err != nil {
+		session.proc.kill()
+		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, session.artifactDir)
+	}
+	return session
 }
 
 // run satisfies liveDriver: it launches+sends, then drains the session jsonl to
@@ -402,6 +408,30 @@ func (d ptyLiveDriver) waitTranscriptIdle(projectsDir, sessionID string, proc pr
 		}
 		if time.Now().After(deadline) {
 			return fmt.Errorf("no committed idle turn within %s (consecutive idle polls=%d/%d)", budget, consecutive, ptyIdleStablePolls)
+		}
+		time.Sleep(ptyPollInterval)
+	}
+}
+
+// sendAndWaitForFreshIdle sends one literal operator input and waits until the
+// pinned transcript grows and reaches a new committed idle. The growth check
+// prevents the pre-send greeting idle from satisfying the engage wait.
+func (d ptyLiveDriver) sendAndWaitForFreshIdle(session ptySession, text string, budget time.Duration) error {
+	preLen := len(session.readPinnedTranscript())
+	if err := d.sendToFO(session.tmuxName, text); err != nil {
+		return err
+	}
+	deadline := time.Now().Add(budget)
+	for {
+		lines := session.readPinnedTranscript()
+		if len(lines) > preLen && transcriptReachedIdle(lines) {
+			return nil
+		}
+		if _, exited := session.proc.poll(); exited {
+			return fmt.Errorf("tmux session died before input %q reached a fresh committed idle", text)
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("input %q produced no fresh committed idle within %s", text, budget)
 		}
 		time.Sleep(ptyPollInterval)
 	}

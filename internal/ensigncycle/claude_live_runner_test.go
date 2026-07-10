@@ -3,6 +3,7 @@
 package ensigncycle
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -372,56 +373,89 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-// runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
-// (a gate-check entity at a human gate + a PR-bearing entity whose stubbed `gh`
-// reports MERGED) with a per-run isolated team root, and grades the durable
-// end-state: the FO greets and presents the gate, S7b advances+archives the merged
-// PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
-// then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
-// pre-greet invocation of a deferred FO skill — fo-status-viewer / fo-write-core) and
-// the AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
-// ~89k cache_creation spike) over the captured stream.
+// runClaudeShallowBootScenario observes the normal interactive greeting before it
+// sends any scenario text, snapshots the read-only boundary, then sends exactly
+// `engage .` through the same resident PTY session. Durable state proves the PR
+// sweep occurs only in the second phase while the ready gate remains untouched.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
+	_ = runner // shallow-boot intentionally routes through the interactive PTY seam.
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
-	gateBefore := readFile(t, fixture.gateEntityPath)
+	initial := gatherShallowBootSnapshot(t, workflowRoot, "", fixture)
 
-	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
-	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
-	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
+	driver := newPtyLiveDriver(t)
+	driver.env = withPATHPrefix(driver.env, fixture.stubGhDir)
+	session := driver.launchToIdle(t, scenario.name, workflowRoot)
+	defer session.proc.kill()
 
-	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt())
-
-	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
-	// startup hook membership-checks and TeamCreate writes a team config.json under.
-	teamRoot := filepath.Join(runner.home(), ".claude", "teams")
-	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
-	if err := assertShallowBoot(obs); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	teamRoot := filepath.Join(session.configDir, "teams")
+	greetingStream := strings.Join(session.readPinnedTranscript(), "\n")
+	greetingMessage, err := extractClaudeFinalMessage(greetingStream)
+	if err != nil {
+		t.Fatalf("extract default Claude greeting: %v\nArtifacts: %s", err, session.artifactDir)
 	}
+	greeting := gatherShallowBootSnapshot(t, workflowRoot, teamRoot, fixture)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-greeting-stream.jsonl"), []byte(greetingStream), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-greeting-message.txt"), []byte(greetingMessage), 0o644)
+	if teamConfigs, _ := filepath.Glob(filepath.Join(teamRoot, "*", "config.json")); len(teamConfigs) > 0 {
+		_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-greeting-team-config-paths.txt"), []byte(strings.Join(teamConfigs, "\n")+"\n"), 0o644)
+		for i, path := range teamConfigs {
+			if body, readErr := os.ReadFile(path); readErr == nil {
+				_ = os.WriteFile(filepath.Join(session.artifactDir, fmt.Sprintf("pty-greeting-team-config-%d.json", i)), body, 0o644)
+			}
+		}
+	}
+	if err := assertShallowBootGreeting(initial, greeting, greetingMessage); err != nil {
+		t.Fatalf("%v\nGreeting:\n%s\nArtifacts: %s", err, greetingMessage, session.artifactDir)
+	}
+
+	if err := driver.sendAndWaitForFreshIdle(session, shallowBootEngageTask, ptyBootBudget); err != nil {
+		t.Fatalf("send shallow-boot engage: %v\nFO pane:\n%s\nArtifacts: %s", err, driver.captureFOPane(session.tmuxName), session.artifactDir)
+	}
+	engageStream := strings.Join(session.readPinnedTranscript(), "\n")
+	engageMessage, err := extractClaudeFinalMessage(engageStream)
+	if err != nil {
+		t.Fatalf("extract Claude engage response: %v\nArtifacts: %s", err, session.artifactDir)
+	}
+	engage := gatherShallowBootSnapshot(t, workflowRoot, teamRoot, fixture)
+	observation := shallowBootObservation{
+		initial: initial, greeting: greeting, greetingMessage: greetingMessage,
+		engage: engage, engageMessage: engageMessage,
+	}
+	if err := assertShallowBoot(observation); err != nil {
+		t.Fatalf("%v\nGreeting:\n%s\nEngage response:\n%s\nArtifacts: %s", err, greetingMessage, engageMessage, session.artifactDir)
+	}
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-stream.jsonl"), []byte(engageStream), 0o644)
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "pty-engage-message.txt"), []byte(engageMessage), 0o644)
+
 	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
-	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	if err := assertNoTeamCreateBeforeGreet(greetingStream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, session.artifactDir)
 	}
 	// AC-2: the greet invokes no deferred FO skill. The staged plugin ships the real
 	// fo-status-viewer / fo-write-core skills (livePluginDir copies skills/), so the FO
 	// COULD invoke them — this asserts the greet-and-stop boot renders from status --boot
 	// without loading a deferred FO skill (present-gate is allowed pre-greet).
-	if err := assertGreetInvokesNoDeferredFOSkill(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	if err := assertGreetInvokesNoDeferredFOSkill(greetingStream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, session.artifactDir)
 	}
 	// The boot-window oracle: a greet turn was produced (structural only — the
 	// former ~60k ceiling/spike thresholds no longer gate CI, see
 	// assertShallowBootMeasuredTurns).
-	if err := assertShallowBootMeasured(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	if err := assertShallowBootMeasured(greetingStream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, session.artifactDir)
 	}
 	// Record (don't gate on) the greet turn's full token usage as a distinct
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
-	emitShallowBootWindowMetrics(t, result.stream, runner.model())
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	emitShallowBootWindowMetrics(t, greetingStream, driver.model())
+	emitClaudeScenarioMetrics(t, scenario, liveResult{
+		finalMessage: engageMessage,
+		stream:       engageStream,
+		artifactDir:  session.artifactDir,
+		duration:     time.Since(session.started),
+	}, driver.model())
 }
 
 // run launches the real `spacedock claude` front door for one shared scenario and
