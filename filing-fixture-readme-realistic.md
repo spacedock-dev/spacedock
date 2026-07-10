@@ -159,3 +159,28 @@ The filing fixture now writes one complete, column-zero, pipe-safe Task Template
 ### Summary
 
 The deliverable is unchanged, but its ancestry is repaired: commit `edde1514` now sits directly on current `origin/main` with no PR #491 help, skill-promotion, or prose-guard history. The branch and this report now agree on an exact three-file implementation, with all required tests freshly green.
+
+## Stage Report: validation
+
+- DONE: Independently audit the branch against current origin/main. Confirm it is exactly one c3 commit above origin/main, changes only the three approved files, and contains no PR #491 ancestry or behavior.
+  After a fresh fetch, `origin/main=2137832b`; `HEAD=edde1514` has that exact parent and `origin/main...HEAD` is `0 1`. The diff is exactly the approved three paths; `git merge-base --is-ancestor 205ca99a HEAD` exited 1, and the PR #491 help-producing paths have no branch diff.
+- DONE: Reproduce the filing fixture end value: the on-disk Task Template round-trips exactly, including its indented fenced block; the filing-local README pointer is present; PR #490 discovery behavior remains intact; no spacedock-new help text changed.
+  The focused run passed the literal-template create/ID-mint subtest and its indented-frontmatter `no frontmatter`/no-file negative control; the 14-case run kept `TestSharedScenarioFixturesAreDiscoverable` green. Focused diff review places the README pointer only under `## Filing New Entities` and leaves Startup plus `internal/status/new.go`, its stub test, `cmd`, and `internal/cli` unchanged.
+- DONE: Run focused affected-package tests, gofmt verification, git diff --check, go test ./..., and go test ./... -race. Record exact commands/results and the reviewed commit in the validation Stage Report.
+  Reviewed `edde151478d6c7d946d1404f4de3dbc172d5226c`; `go test ./internal/ensigncycle -run 'Test(FilingReadmeTaskTemplateRoundTripsThroughNew|SharedScenarioFixturesAreDiscoverable)' -count=1` passed 14 cases.
+  `go test ./internal/ensigncycle ./internal/status ./internal/contractlint -count=1`, `git diff --check origin/main...HEAD`, `go test ./...`, and `go test ./... -race` all exited 0.
+  `gofmt -l internal/ensigncycle/shared_fixtures_test.go internal/ensigncycle/filing_readme_template_test.go` printed nothing. The broader `gofmt -l ./cmd ./internal` reports only unchanged `origin/main` file `internal/release/journeydelta.go`, verified by a zero `git diff --exit-code origin/main --` result.
+- DONE: AC-1 — The filing fixture exposes the workflow-local entity shape that a real development workflow exposes.
+  The on-disk fixture test observed exactly one Task Template with column-zero frontmatter, `title`, `status: backlog`, no `id`, and all five required body sections; the development README independently supplies the same section scaffold.
+- DONE: AC-2 — The literal fixture template is pipe-safe through the production creation path.
+  The verbose targeted test passed literal `status.NativeRunner --new` creation with `created:` output and a minted ID, while the indented opening fence exited 1 with `no frontmatter` and created no entity.
+- DONE: AC-3 — The Claude filing contract points to the workflow Task Template at the moment of filing.
+  Focused diff review shows the specified sentence as the sole addition under `## Filing New Entities`; Startup is unchanged, and no banned prose-grep test was added.
+- SKIPPED: Live-model lanes.
+  The approved test plan explicitly excludes them because this task claims fixture fidelity and parser round-trip state, not a filing-hunt-rate improvement; PR #491 already left no behavioral headroom for that measure.
+- DONE: PASSED recommendation.
+  All three acceptance criteria are satisfied by commit `edde1514`; no material validation finding remains in the scoped branch.
+
+### Summary
+
+Validated the corrected one-commit branch independently against freshly fetched `origin/main`. The fixture's actual README template round-trips through native creation, the malformed-indentation control fails as intended, PR #490 discovery remains green, and PR #491 help behavior is absent. Recommend PASSED, with the repository-wide pre-existing `internal/release/journeydelta.go` formatting output recorded but not attributed to this branch.
