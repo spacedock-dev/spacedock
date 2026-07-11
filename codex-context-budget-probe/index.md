@@ -141,3 +141,30 @@ No AC is fully implementation-proven at ideation. `922c7b9337ac715cb391040905b7d
 ### Summary
 
 The revised v1 is an automatic, conditional JSONL gate, not a diagnostic or observer bridge. Body commit `922c7b9337ac715cb391040905b7ddceb5d583b6` records the live mapping, compaction boundary, fail-closed matrix, revised ACs, and JSONL-only validation plan.
+
+## Stage Report: implementation
+
+- DONE: AC-1 / AC-2 direct-child reader and exact identity binding in code commit `914e0584bede8d9e577d412e17e9a7b6ff37d238`.
+  `internal/codexsession.ReadBudget` requires a well-formed `$CODEX_THREAD_ID`, both metadata parent fields, and a byte-exact roster task path; its fixtures cover zero, one, duplicate, mismatched, replacement, and completed-status-independent candidates. Equality at 60% reuses and the next token produces `reuse_ok: false`.
+- DONE: AC-3 fail-closed command and adapter routing in `914e0584bede8d9e577d412e17e9a7b6ff37d238`.
+  `spacedock dispatch codex-context-budget --worker <task-path>` emits no JSON and exits 1 for `binding`, `ambiguous`, `record`, `stale`, and `unsafe-path`; `CodexContextBudgetRouteForProbe` sends every non-zero, malformed, missing, or false result to fresh dispatch.
+- DONE: AC-4 active-window-only accounting in `internal/codexsession/budget.go` and its deterministic fixtures.
+  The typed projection reads only `last_token_usage.total_tokens` and `model_context_window`; it accepts the 18,893-to-4,097 compaction drop and uses integer comparison for the 60% boundary.
+- DONE: AC-5 canonical-path and transcript-exclusion coverage in `internal/codexsession/budget_test.go`.
+  Tests reject symlinked roots/candidates and non-regular `.jsonl` paths, latch malformed known metadata or token records even when a later record is valid, and assert a prompt/response sentinel never reaches result JSON or errors.
+- DONE: AC-6 JSONL-only product path.
+  The implementation adds `internal/codexsession` plus the synchronous dispatch command only; it adds no observer, socket, sidecar, UI route, capability file, or telemetry cache. The first-officer binding now invokes the command and treats unavailable evidence as fresh dispatch.
+- DONE: Opt-in live replay harness added at `internal/ensigncycle/codex_context_budget_live_test.go`.
+  It runs the built command from an FO session with an explicitly roster-selected child, verifies a fresh content-free snapshot, then checks the child entity marker, state-checkout log, and clean entity status. It compiled and skipped without the four explicit live-run inputs in this implementation session; the earlier ideation spike remains the recorded live mapping evidence.
+
+### Verification
+
+- `rtk go test ./...` — exit 0.
+- `rtk go test ./... -race` — exit 0.
+- `rtk go test ./internal/codexsession -count=1` — 28 passing tests.
+- `rtk go test ./internal/dispatch -run 'TestCodex(ContextBudget|MultiAgentV2)' -count=1` — 22 passing tests.
+- `rtk proxy go test -tags live -run TestLiveCodexContextBudgetCurrentWorkerReplay ./internal/ensigncycle -count=1 -v` — compiled; skipped as designed without `SPACEDOCK_CODEX_CONTEXT_BUDGET_{WORKER,ENTITY,STATE_ROOT,MARKER}`.
+
+### Summary
+
+Implemented the approved direct-parent session-JSONL context-budget gate in code commit `914e0584bede8d9e577d412e17e9a7b6ff37d238`. The production path is content-free and fail-closed; validation should execute the opt-in live replay with a named child in a temporary split-root workflow before accepting the gate.
