@@ -25,6 +25,23 @@ The design must work across different project types without hardcoding developme
 - The FO drives small goals inline and delegates only when fan-out, isolation, or an independent sprint boundary justifies a Commander.
 - Commander is an internal worker skill in the existing Spacedock plugin. The FO dispatches it from an approved, immutable package reference.
 - The FO remains the sole user-facing status and gate surface while Commanders drive their packages and dispatch workers.
+- The FO chooses the sprint's integration topology during shaping. A sprint may merge members independently to the target branch, or assemble them on one shared sprint branch and present the integrated result as one final PR.
+
+## Shared sprint-branch pattern to consider
+
+Some sprint deliverables are meaningful only as an assembled whole. For those drives, the approved package may declare a shared integration branch:
+
+1. The FO pins the target branch, immutable starting revision, sprint branch name, integration proof, and final review gate while shaping.
+2. The Commander creates or verifies the sprint branch from that revision. Each member still executes and validates through its own entity and isolated worktree.
+3. After a member passes its entity gate, the Commander merges it locally with `--no-ff` into the sprint branch. The sprint branch is pushed after each accepted member so shared CI, preview, or integration evidence can run against the assembled result.
+4. Sprint-wide review and integration proof run on the shared branch, not on disconnected member branches.
+5. After ship-blockers are resolved, the Commander opens one final sprint PR from the shared branch to the target branch. That PR is the review and publication unit for the integrated deliverable.
+
+Member branches do not need separate PRs merely to enter the sprint branch. A member-level PR remains available when that member has an independent external review, compliance, ownership, or publication gate. Otherwise, PR-per-member adds a second review ceremony without changing the sprint's actual delivery boundary.
+
+This topology is optional. Independently shippable members may merge directly through their normal entity policy. The FO selects the topology from the deliverable's integration and review needs; the Commander must not change it mid-drive without returning a sprint-wide amendment to the FO.
+
+The design must also keep workflow state independent of the sprint branch. Entity state and Commander obligations remain in their authoritative state checkout; changing the code integration branch must not redirect or strand state commits.
 
 ## Artifact lifecycle to design
 
@@ -40,6 +57,7 @@ The ideation should define:
 6. **Amendments:** entity-local execution detail stays in the entity; sprint-wide scope, order, proof, gate, or terminal changes return to the FO, append an explicit amendment, advance the package revision, and require the appropriate captain approval before the Commander continues.
 7. **Resume:** how a new FO reconstructs active Commander obligations from durable artifacts and live workflow state without relying on a conversation summary or worker handle alone.
 8. **Close:** how integration review, deferred findings, debrief, and next-sprint seeds attach without turning the package into a historical dump.
+9. **Integration topology:** how the approved package selects direct member merges or a shared sprint branch; pins its base and target; defines member-merge, push, preview, integration-review, and final-PR boundaries; and prevents workflow state from riding the integration branch.
 
 ## Privacy boundary
 
@@ -54,12 +72,15 @@ Generalize only the reusable operating pattern. Shipped instructions, examples, 
 - What durable evidence distinguishes a proposed Commander from an active, completed, superseded, or abandoned drive?
 - How are profile-specific proof and outward-action gates supplied without leaking them into the stage-neutral core?
 - When should one user goal become multiple sprints and therefore multiple Commanders?
+- When does an assembled deliverable justify a shared sprint branch and one final PR, and when does a member still require its own PR before integration?
+- Which actor may create, update, and close the sprint branch, and what evidence lets a resumed FO prove that its head contains exactly the accepted member revisions?
 
 ## Acceptance criteria for ideation
 
 - Define a user journey in which the user interacts only with the FO from goal through completion.
 - Define the FO's direct-drive versus Commander-dispatch decision with explicit smallest-sufficient conditions.
 - Define one-Commander-per-integrated-deliverable semantics, including cross-workflow drives.
+- Define both integration topologies: independently merged members and locally assembled shared sprint branches with one final PR; specify the selection rule and the exception for member-level external gates.
 - Specify the artifact schema, authoritative-state boundaries, approval stamp, immutable dispatch pointer, amendment protocol, resume behavior, and close behavior.
 - Exercise the design against at least three synthetic profiles with different proof, gate, and terminal-action shapes.
 - Determine whether shaping and Commander remain internal skills/references in the existing plugin and identify any binary surface justified by enforcement needs.
