@@ -21,23 +21,23 @@ const (
 	codexForegroundWaitEntity       = "foreground-wait-timeout"
 	codexForegroundWaitReportMarker = "CODEX_FOREGROUND_WAIT_PROBE_COMPLETE"
 
-	codexForegroundWaitDelay        = 45 * time.Second
+	codexForegroundWaitHoldDuration = 45 * time.Second
 	codexForegroundWaitCrossingMin  = 35 * time.Second
-	codexForegroundWaitReturnBudget = 30 * time.Second
 )
 
 var (
-	codexForegroundWaitStartedEpoch  = regexp.MustCompile(`(?m)^CODEX_FOREGROUND_WAIT_STARTED_EPOCH=(\d+)$`)
-	codexForegroundWaitFinishedEpoch = regexp.MustCompile(`(?m)^CODEX_FOREGROUND_WAIT_FINISHED_EPOCH=(\d+)$`)
-	codexForegroundWaitTimedOut      = regexp.MustCompile(`(?i)"timed_out"\s*:\s*true`)
+	codexForegroundWaitHoldStartedEpoch  = regexp.MustCompile(`(?m)^CODEX_FOREGROUND_WAIT_STARTED_EPOCH=(\d+)$`)
+	codexForegroundWaitHoldFinishedEpoch = regexp.MustCompile(`(?m)^CODEX_FOREGROUND_WAIT_FINISHED_EPOCH=(\d+)$`)
+	codexForegroundWaitTimedOut          = regexp.MustCompile(`(?i)"timed_out"\s*:\s*true`)
 )
 
 // TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy is the runtime proof for
 // the Codex adapter's explicit foreground wait. The worker does no repository write
-// before a 45-second hold, then commits its implementation stage report. The test
-// records the live collaboration stream and requires one wait across the old default
-// horizon, no timeout/re-wait before the owned worker completes, and a return shortly
-// after that committed completion.
+// before a 45-second hold, then commits its implementation stage report. Its recorded
+// timestamps mark the delayed hold only, not report, final-status, or completion time.
+// The test records the live collaboration stream and requires one non-timeout wait
+// across the old default horizon, no pre-return re-wait churn, and separate durable
+// report/path-scoped-commit verification.
 func TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy(t *testing.T) {
 	runner := newCodexLiveRunner(t)
 	workflowRoot := t.TempDir()
@@ -49,29 +49,29 @@ func TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy(t *testing.T) {
 	}
 
 	entity := readFile(t, entityPath)
-	workerStarted, workerFinished, err := codexForegroundWaitReportTimes(entity)
+	holdStarted, holdFinished, err := codexForegroundWaitHoldTimes(entity)
 	if err != nil {
-		t.Fatalf("read delayed worker timing report: %v\nEntity:\n%s\nArtifacts: %s", err, entity, result.artifactDir)
+		t.Fatalf("read delayed-hold timing report: %v\nEntity:\n%s\nArtifacts: %s", err, entity, result.artifactDir)
 	}
-	if workerFinished.Sub(workerStarted) < codexForegroundWaitDelay {
-		t.Fatalf("worker delay = %s, want at least %s\nEntity:\n%s\nArtifacts: %s", workerFinished.Sub(workerStarted), codexForegroundWaitDelay, entity, result.artifactDir)
+	if holdFinished.Sub(holdStarted) < codexForegroundWaitHoldDuration {
+		t.Fatalf("delayed hold = %s, want at least %s\nEntity:\n%s\nArtifacts: %s", holdFinished.Sub(holdStarted), codexForegroundWaitHoldDuration, entity, result.artifactDir)
 	}
 	entityRelativePath := filepath.Join(codexForegroundWaitEntity, "index.md")
 	if !codexForegroundWaitReportCommitted(t, stateRoot, entityRelativePath) {
-		t.Fatalf("worker timing report was not committed path-scoped to state checkout %s\nArtifacts: %s", entityRelativePath, result.artifactDir)
+		t.Fatalf("delayed-hold timing report was not committed path-scoped to state checkout %s\nArtifacts: %s", entityRelativePath, result.artifactDir)
 	}
 	if status := strings.TrimSpace(git(t, stateRoot, "status", "--short", "--", entityRelativePath)); status != "" {
 		t.Fatalf("state-checkout worker entity has uncommitted changes after completion: %s\nArtifacts: %s", status, result.artifactDir)
 	}
 
-	if err := assertCodexForegroundWaitTrace(result.trace, result.rollout, workerFinished); err != nil {
+	if err := assertCodexForegroundWaitTrace(result.trace, result.rollout, holdFinished); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := writeCodexForegroundWaitEvidence(t, result, workerStarted, workerFinished, stateRoot, entityRelativePath); err != nil {
+	if err := writeCodexForegroundWaitEvidence(t, result, holdStarted, holdFinished, stateRoot, entityRelativePath); err != nil {
 		t.Fatalf("write foreground-wait evidence: %v", err)
 	}
 
-	t.Logf("Codex foreground wait evidence: worker_delay=%s artifacts=%s", workerFinished.Sub(workerStarted), result.artifactDir)
+	t.Logf("Codex foreground wait evidence: hold_duration=%s artifacts=%s", holdFinished.Sub(holdStarted), result.artifactDir)
 }
 
 type timedCodexLine struct {
@@ -335,7 +335,7 @@ func codexForegroundWaitReadme() string {
 		"# Codex Foreground Wait Fixture\n\n" +
 		"This fixture has one owned implementation worker. Its delay is an intentional live timing control, not background work.\n\n" +
 		"### implementation\n\n" +
-		"Before writing any repository file, run exactly `started=$(date +%s); sleep 45; finished=$(date +%s); printf '%s %s\\n' \"$started\" \"$finished\"`. Do not shorten or background the delay. Then append an implementation stage report to `.spacedock-state/foreground-wait-timeout/index.md` containing exactly these machine-readable lines, with the captured values substituted:\n\n" +
+		"Before writing any repository file, run exactly `started=$(date +%s); sleep 45; finished=$(date +%s); printf '%s %s\\n' \"$started\" \"$finished\"`. Do not shorten or background the delay. These are delayed-hold endpoints, not report or final-status timestamps. Then append an implementation stage report to `.spacedock-state/foreground-wait-timeout/index.md` containing exactly these machine-readable lines, with the captured values substituted:\n\n" +
 		"```text\n" +
 		"CODEX_FOREGROUND_WAIT_STARTED_EPOCH=<started>\n" +
 		"CODEX_FOREGROUND_WAIT_FINISHED_EPOCH=<finished>\n" +
@@ -370,26 +370,26 @@ func codexForegroundWaitPrompt(workflowRoot string) string {
 	)
 }
 
-func codexForegroundWaitReportTimes(entity string) (time.Time, time.Time, error) {
-	start := codexForegroundWaitStartedEpoch.FindStringSubmatch(entity)
-	finish := codexForegroundWaitFinishedEpoch.FindStringSubmatch(entity)
+func codexForegroundWaitHoldTimes(entity string) (time.Time, time.Time, error) {
+	start := codexForegroundWaitHoldStartedEpoch.FindStringSubmatch(entity)
+	finish := codexForegroundWaitHoldFinishedEpoch.FindStringSubmatch(entity)
 	if len(start) != 2 || len(finish) != 2 || !strings.Contains(entity, codexForegroundWaitReportMarker) {
-		return time.Time{}, time.Time{}, fmt.Errorf("stage report is missing required foreground-wait timing markers")
+		return time.Time{}, time.Time{}, fmt.Errorf("stage report is missing required delayed-hold timing markers")
 	}
 	startSeconds, err := strconv.ParseInt(start[1], 10, 64)
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("parse worker start epoch %q: %w", start[1], err)
+		return time.Time{}, time.Time{}, fmt.Errorf("parse delayed-hold start epoch %q: %w", start[1], err)
 	}
 	finishSeconds, err := strconv.ParseInt(finish[1], 10, 64)
 	if err != nil {
-		return time.Time{}, time.Time{}, fmt.Errorf("parse worker finish epoch %q: %w", finish[1], err)
+		return time.Time{}, time.Time{}, fmt.Errorf("parse delayed-hold finish epoch %q: %w", finish[1], err)
 	}
-	workerStarted := time.Unix(startSeconds, 0)
-	workerFinished := time.Unix(finishSeconds, 0)
-	if !workerFinished.After(workerStarted) {
-		return time.Time{}, time.Time{}, fmt.Errorf("worker finish %s is not after start %s", workerFinished, workerStarted)
+	holdStarted := time.Unix(startSeconds, 0)
+	holdFinished := time.Unix(finishSeconds, 0)
+	if !holdFinished.After(holdStarted) {
+		return time.Time{}, time.Time{}, fmt.Errorf("delayed-hold finish %s is not after start %s", holdFinished, holdStarted)
 	}
-	return workerStarted, workerFinished, nil
+	return holdStarted, holdFinished, nil
 }
 
 func codexForegroundWaitReportCommitted(t *testing.T, root, entityName string) bool {
@@ -407,7 +407,7 @@ func codexForegroundWaitReportCommitted(t *testing.T, root, entityName string) b
 	return false
 }
 
-func assertCodexForegroundWaitTrace(trace []timedCodexLine, rollout codexForegroundWaitRollout, workerFinished time.Time) error {
+func assertCodexForegroundWaitTrace(trace []timedCodexLine, rollout codexForegroundWaitRollout, holdFinished time.Time) error {
 	if rollout.spawnCalls != 1 {
 		return fmt.Errorf("isolated Codex rollout spawned %d workers, want exactly the one owned timing worker (%s)", rollout.spawnCalls, rollout.artifactPath)
 	}
@@ -437,11 +437,8 @@ func assertCodexForegroundWaitTrace(trace []timedCodexLine, rollout codexForegro
 	if wait.returnedAt.Sub(wait.calledAt) < codexForegroundWaitCrossingMin {
 		return fmt.Errorf("wait_agent lasted %s, want at least %s to cross the old short default (%s)", wait.returnedAt.Sub(wait.calledAt), codexForegroundWaitCrossingMin, rollout.artifactPath)
 	}
-	if wait.returnedAt.Before(workerFinished) {
-		return fmt.Errorf("wait_agent returned at %s before the worker's committed report at %s", wait.returnedAt.Format(time.RFC3339Nano), workerFinished.Format(time.RFC3339Nano))
-	}
-	if wait.returnedAt.Sub(workerFinished) > codexForegroundWaitReturnBudget {
-		return fmt.Errorf("wait_agent returned %s after the worker's report, want no more than %s", wait.returnedAt.Sub(workerFinished), codexForegroundWaitReturnBudget)
+	if wait.returnedAt.Before(holdFinished) {
+		return fmt.Errorf("wait_agent returned at %s before the delayed-hold end marker at %s", wait.returnedAt.Format(time.RFC3339Nano), holdFinished.Format(time.RFC3339Nano))
 	}
 	var waitStarts, waitReturns, completions, timedOut []timedCodexLine
 	for _, entry := range trace {
@@ -489,9 +486,9 @@ func assertCodexForegroundWaitTrace(trace []timedCodexLine, rollout codexForegro
 		return fmt.Errorf("collaboration stream has %d wait starts before the owned worker's first wait returned, want 1\n%s", startsBeforeFirstReturn, codexForegroundWaitTraceTail(trace))
 	}
 	if len(completions) == 0 {
-		// Current multi_agent_v2 traces can return an empty agents_states object on a
-		// completed wait. The paired isolated rollout's timed_out:false output is the
-		// authoritative completion classification for this headless run.
+		// Current multi-agent traces can return an empty agents_states object on a
+		// non-timeout wait. The paired isolated rollout's timed_out:false output is
+		// the authoritative non-timeout classification for this headless run.
 		return nil
 	}
 	completion := completions[0]
@@ -527,7 +524,7 @@ func codexForegroundWaitTraceTail(trace []timedCodexLine) string {
 	return out.String()
 }
 
-func writeCodexForegroundWaitEvidence(t *testing.T, result codexForegroundWaitResult, workerStarted, workerFinished time.Time, stateRoot, entityName string) error {
+func writeCodexForegroundWaitEvidence(t *testing.T, result codexForegroundWaitResult, holdStarted, holdFinished time.Time, stateRoot, entityName string) error {
 	t.Helper()
 	var trace strings.Builder
 	for _, entry := range result.trace {
@@ -538,5 +535,5 @@ func writeCodexForegroundWaitEvidence(t *testing.T, result codexForegroundWaitRe
 	}
 	gitLog := git(t, stateRoot, "log", "--oneline", "--", entityName)
 	wait := result.rollout.waits[0]
-	return os.WriteFile(filepath.Join(result.artifactDir, "codex-foreground-wait-evidence.txt"), []byte(fmt.Sprintf("worker_started=%s\nworker_finished=%s\nworker_delay=%s\nprocess_duration=%s\nwait_call=%s\nwait_started=%s\nwait_returned=%s\nwait_duration=%s\ntimeout_ms=%d\ntimed_out=%t\nrollout_source=%s\nrollout_artifact=%s\n\nstate checkout git log --oneline -- %s\n%s", workerStarted.Format(time.RFC3339Nano), workerFinished.Format(time.RFC3339Nano), workerFinished.Sub(workerStarted), result.duration, wait.callID, wait.calledAt.Format(time.RFC3339Nano), wait.returnedAt.Format(time.RFC3339Nano), wait.returnedAt.Sub(wait.calledAt), wait.timeoutMS, *wait.timedOut, result.rollout.sourcePath, result.rollout.artifactPath, entityName, gitLog)), 0o644)
+	return os.WriteFile(filepath.Join(result.artifactDir, "codex-foreground-wait-evidence.txt"), []byte(fmt.Sprintf("hold_started=%s\nhold_finished=%s\nhold_duration=%s\nprocess_duration=%s\nwait_call=%s\nwait_started=%s\nwait_returned=%s\nwait_duration=%s\ntimeout_ms=%d\ntimed_out=%t\nrollout_source=%s\nrollout_artifact=%s\n\nstate checkout git log --oneline -- %s\n%s", holdStarted.Format(time.RFC3339Nano), holdFinished.Format(time.RFC3339Nano), holdFinished.Sub(holdStarted), result.duration, wait.callID, wait.calledAt.Format(time.RFC3339Nano), wait.returnedAt.Format(time.RFC3339Nano), wait.returnedAt.Sub(wait.calledAt), wait.timeoutMS, *wait.timedOut, result.rollout.sourcePath, result.rollout.artifactPath, entityName, gitLog)), 0o644)
 }
