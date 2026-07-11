@@ -452,3 +452,24 @@ The ordered state machine fixes cycle 3, but its aggregate-output attribution st
 ### Summary
 
 Cycle 4 removes both remaining evidence cross-products without changing runtime contract prose or weakening temporal ordering. Failed-batch success is now record-local, batched reports are one-for-one with named read targets, and the exact locally resolved launcher form observed by CI is recognized without accepting arbitrary shell aliases. Offline, race, compile, and two targeted real Codex lanes are green on the pushed repair.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Reproduce AC-1 through AC-4 and every historical rejection control on exact commit `3f4bea88c1c9961c2f0569eb2330d16b78e9bcb6`.
+  The prompt registry remains at `addresses=0 bytes=117062`, 5,338 bytes below baseline. Ordered procedures, named closure, commissioned dispatch, three canonical eager imports, wrapper absence, balanced launcher captures, malformed capture negatives, temporal stale/pre-wait/failed-build negatives, per-record failed-batch identity, and the two-target/one-report negative all pass. Focused ensigncycle, contractlint, and `git diff --check` pass; the implementation report records green full/race/live-tag gates and real local Codex keep-moving and filing runs. The deliverable worktree is clean.
+- DONE: Confirm the intended new positives.
+  Complete success JSON records are decoded independently before aggregate error text. A batched read with one anonymous report block per named target is credited. The exact balanced `launcher="${SPACEDOCK_BIN:-$(command -v spacedock)}"` followed by `"$launcher" new wire-the-thing` form is accepted, while unrelated capture grammars remain outside the whitelist.
+- FAILED: Require the captured launcher variable to own the `new` invocation within one bounded command segment.
+  Three detached exact-head fixtures reused the valid command-v capture but did not execute its variable as `new`: (1) `$launcher status; $EDITOR new wire-the-thing`; (2) malformed `"$launcher' new wire-the-thing`; and (3) `$launcher --version; touch new wire-the-thing`. All three were falsely accepted. The call regex has independent optional quote/brace delimiters and `[^\n]*?` reach across `;`, so an earlier launcher mention can borrow a later unrelated `new` token. The fix should recognize only a bounded simple command whose executable is the captured variable and whose own argument is `new`/`--new`; no general shell parser is needed.
+- FAILED: Count actual Stage Report headings, not incidental phrase mentions.
+  A detached exact-head batched read named `ready-one.md` and `ready-two.md` and returned one real `## Stage Report: implementation` block whose bullet merely mentioned the words `Stage Report`. `strings.Count(output, "Stage Report")` returned two and falsely credited both entities. Count line-anchored report headings such as `(?m)^## Stage Report:`; retain the existing one-report-per-named-target rule. The throwaway checkout was removed and the deliverable was unchanged.
+- FAILED: AC-5 and protected exact-SHA evidence.
+  PR #496 run `https://github.com/spacedock-dev/spacedock/actions/runs/29141171440` targets exact head `3f4bea88c1c9961c2f0569eb2330d16b78e9bcb6`. Offline/build/install and Pi are successful; Sonnet, Opus, and Codex remain in progress at this verdict. Their eventual conclusions cannot cure the four independently reproduced detector false positives.
+
+### Recommendation
+
+**REJECTED.** Bound captured-variable invocation matching to one simple command segment with balanced supported variable syntax and `new`/`--new` as that executable's argument. Count only anchored `## Stage Report:` headings for batched-read cardinality. Retain all four exact fixtures as negative controls; do not build a general shell parser or disturb the now-correct per-record and temporal evidence logic.
+
+### Summary
+
+Every prior rejection is repaired, but two narrow token-boundary mistakes remain: launcher invocation matching crosses into unrelated commands, and report cardinality counts prose mentions. AC-1 through AC-4 remain green; AC-5 is rejected on three executable-segment escapes and one heading-count escape.
