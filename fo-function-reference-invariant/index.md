@@ -346,3 +346,22 @@ The named-function and eager-`@` cleanup is structurally sound, smaller by 6,421
 ### Summary
 
 Cycle 1 separates one assertion bug from one real dispatcher regression: filing was atomic but unrecognized, while keep-moving built assignments without spawning workers. The minimal correction fixes both seams without restoring numeric addresses or expanding eager topology, and retains substantial prompt shrinkage. Local Codex and all offline gates are green; captain-authorized protected PR CI now owns the unavailable local Claude proof.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Re-check AC-1 through AC-4 on exact commit `58cf120fca8a2e56c67533fafe1c84b232c5d3d6`.
+  AC-1 passes with `FO_FUNCTION_METRICS addresses=0 bytes=116833`, and every ordered-procedure preservation case passes. AC-2's named owners/call sites and the new deferred-dispatch-owner precondition pass the focused contractlint suite. AC-3 passes: 116,833 bytes remains 5,567 below the 122,400 baseline, exactly three canonical eager `@` imports remain, and neither removed wrapper has returned. AC-4's production classifier discriminator remains green. Full contractlint, coupled runtime metadata, CLI prose-function, `git diff --check`, and `go test ./...` also pass; the implementation worktree is clean.
+- DONE: Reproduce the prior filing and keep-moving corrections.
+  The positive regression fixture now recognizes PR #496's actual balanced quoted capture and invocation. The contract also makes reading the deferred dispatch owner and observing `«worker.spawn»` mandatory before waiting, reading a report, or claiming completion for every ready task, including one made ready by gate approval. The prior implementation report records real local Codex filing and keep-moving passes.
+- FAILED: Prove the quoted-launcher detector fix preserves the durable negative boundary.
+  A detached throwaway checkout planted three syntactically malformed assignments before the same `"$launcher" new wire-the-thing` call: mismatched quotes, a leading quote without a closing quote, and a trailing quote without an opening quote. All three were incorrectly accepted by `commandFilesViaNew`. The cause is `launcherCapture` using independent optional quote classes on both sides of the expansion, so it does not require balanced matching forms. This broadens accepted evidence beyond an executable launcher capture and violates the cycle assignment's requirement to close filing without weakening durable assertions. The detached checkout was removed and the implementation worktree was unchanged.
+- FAILED: AC-5 and exact-SHA protected evidence.
+  PR #496 run `https://github.com/spacedock-dev/spacedock/actions/runs/29139009565` targets exact head `58cf120fca8a2e56c67533fafe1c84b232c5d3d6`. At this fail-closed verdict, offline/build/install and Pi are successful; Sonnet, Opus, and Codex remain in progress. Their eventual conclusions cannot cure the independently reproduced detector false positives on this commit. The validation race/compile rerun was stopped after the material rejection was confirmed; the implementation report's green exact-head race/compile runs remain recorded but do not override the failed adversarial boundary.
+
+### Recommendation
+
+**REJECTED.** Replace the permissive optional-quote capture with exactly three alternatives—unquoted, balanced double-quoted, and balanced single-quoted—and retain the three malformed forms as negative tests. Preserve the dispatch-owner/spawn correction and all current structural invariants, then reuse this validator for cycle 3 on the repaired exact head.
+
+### Summary
+
+The dispatch correction addresses the real keep-moving failure and the detector recognizes the real balanced quoted filing command, but its regex also false-accepts three malformed launcher assignments. AC-1 through AC-4 remain green; AC-5 is rejected because the filing assertion was weakened at the very boundary this cycle needed to preserve.
