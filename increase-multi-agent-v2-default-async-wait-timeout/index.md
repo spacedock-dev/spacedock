@@ -313,3 +313,62 @@ Cycle 1 removes a flaky, semantically invalid timing proxy without rolling back
 the five-minute per-call policy. Focused live and offline/race verification are
 green; the full shared lane exposed an unrelated quoted-launcher filing parser
 gap that remains outside this task's scope.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Repaired the legitimate shared-lane filing assertion gap exposed in
+  cycle 1. The parser now recognizes only the observed, contract-blessed
+  double-quoted launcher capture
+  `BIN="${SPACEDOCK_BIN:-spacedock}"` followed by `"$BIN" new`, alongside the
+  original unquoted form. It still ties the call to the exact captured variable.
+- DONE: Added an exact JSON-valid positive for the quoted Codex
+  capture-and-call idiom. Added RED negative controls for `$BINN new` and
+  `${BINN} new`: before the boundary repair, both falsely matched a prior `BIN`
+  capture because the call pattern consumed the suffix. The matcher now requires
+  a non-variable, non-newline boundary after the exact `$BIN` or `${BIN}`
+  expansion. The observed quoted positive remains accepted.
+- DONE: Code commit `30e435e4` (`Codex: accept quoted filing launcher capture`)
+  changes only `internal/ensigncycle/shared_filing_test.go` and
+  `internal/ensigncycle/shared_filing_negative_test.go`; it changes no wait
+  policy, adapter, configuration, or contractlint surface.
+- DONE: Verification passed: focused
+  `TestAssertCodexFilingViaNew` (latest 0.376s), `go test ./...`, and
+  `go test ./... -race`. `gofmt -d` on the two changed Go files and
+  `git diff --check` were clean. The focused five-minute foreground-wait live
+  control also passed in this worktree (276.89s), retaining evidence at
+  `/tmp/spacedock-95w-filing-repair-proof/codex-shared-scenarios/foreground-wait-timeout/`.
+- DONE: The repaired `filing` scenario passed in the required shared live run
+  (83.90s), proving the real quoted `"$BIN" new wire-the-thing` producer stream
+  is accepted. The full retained run is
+  `/tmp/spacedock-95w-filing-boundary-shared-live/codex-shared-scenarios/`.
+- BLOCKED: That full shared live run exited nonzero after 559.22s for external
+  Codex capacity, not an assertion or product behavior failure. It passed
+  `gate-guardrail`, `rejection-flow`, `feedback-3-cycle-escalation`,
+  `merge-hook-guardrail`, and `filing`; `shallow-boot`,
+  `self-evidence-merge-triage`, `smallest-sufficient-mechanism`, and
+  `keep-moving-posture` each emitted only `thread.started`, the standard
+  `multi_agent_v2` warning, `turn.started`, then
+  `You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage
+  to purchase more credits or try again at Jul 12th, 2026 12:27 AM.`, followed
+  by `turn.failed`. None reached a tool call, skill execution, or final-message
+  write, so each runner then reported the missing `codex-final-message.txt`.
+  The test-only filing matcher cannot causally affect that pre-agent capacity
+  failure.
+- BLOCKED: An isolated fresh `shallow-boot` rerun reproduced the same missing
+  final-message result and retained the same usage-limit stream at
+  `/tmp/spacedock-95w-filing-boundary-isolated-shallow-boot/codex-shared-scenarios/shallow-boot/`.
+  A `self-evidence-merge-triage` rerun had already started when the capacity
+  diagnosis was confirmed; it was intentionally interrupted (exit `signal:
+  interrupt`, 76.924s) to avoid blind retries before the stated reset. It is not
+  pass/fail evidence.
+- TODO: Leave this entity in `implementation`. Rerun the required shared Codex
+  lane after capacity is available; do not unhold or claim the full live gate
+  green from the partial result.
+
+### Summary
+
+Cycle 2 preserves the five-minute wait implementation and fixes the exact
+quoted-launcher parser hole that the prior live filing stream demonstrated. The
+repair is unit-, offline-, race-, focused-live-, and filing-live proven. The
+remaining full-lane result is explicitly capacity-blocked, with retained
+pre-agent usage-limit evidence, so the workflow remains in implementation.
