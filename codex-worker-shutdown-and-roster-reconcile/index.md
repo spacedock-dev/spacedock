@@ -1,8 +1,8 @@
 ---
 title: Reclaim Codex worker slots with real shutdown and roster reconciliation
-status: backlog
+status: ideation
 source: "Captain question 2026-07-11 while 88t context degradation coincided with the live four-thread collaboration ceiling."
-started:
+started: 2026-07-11T05:51:08Z
 completed:
 verdict:
 score: 0.9
