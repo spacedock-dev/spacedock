@@ -66,21 +66,20 @@ skill is used--including an existing Codex session that did not start through
 `spacedock codex`--and it uses the already-probed live tool call shape.
 
 Keep the live-surface probe generic (`wait_agent(timeout_ms)`) so a missing or
-incompatible tool remains a concrete runtime blocker. In the normative Codex
-wait notes, replace the currently unspecified call with the explicit
-five-minute value and say that it is a Spacedock per-call policy, not a claim
-that Codex's global default changed.
+incompatible tool remains a concrete runtime blocker. Bind the exact
+five-minute value in the adjacent `«async-dispatch»` runtime binding; the
+generic Codex wait notes remain lifecycle-only. This is a Spacedock per-call
+policy, not a claim that Codex's global default changed.
 
 Implementation changes only these product surfaces:
 
 1. `skills/first-officer/references/codex-first-officer-runtime.md` -- bind the
-   normative idle wait to `timeout_ms: 300000` while preserving timeout and
-   interruption lifecycle rules.
-2. The focused `internal/contractlint` wait-shape expectations -- keep the
-   structural command/cue invariant aligned with the rendered adapter.
-3. A focused Codex live scenario under `internal/ensigncycle` -- prove a
+   foreground wait in the adjacent `«async-dispatch»` runtime binding to
+   `timeout_ms: 300000`, while preserving timeout and interruption lifecycle
+   rules in the generic wait notes.
+2. A focused Codex live scenario under `internal/ensigncycle` -- prove a
    delayed owned worker crosses the old short default without a timeout/re-wait
-   and still ends the five-minute wait as soon as it completes.
+   and receives a non-timeout foreground-wait return after the delayed hold.
 
 Do **not** add a global setting, modify the operator's `~/.codex/config.toml`,
 add a repository `.codex/config.toml`, or add `-c` to `runCodex` in this
@@ -109,34 +108,38 @@ change.
 
 The shipped Codex adapter is the user-facing contract surface. No CLI output,
 command, or site documentation changes because no launcher or configuration
-surface changes. The implementation must apply this adapter diff:
+surface changes. The implementation binds the exact per-call policy in the
+adjacent async-dispatch runtime binding; the generic `## Codex wait notes`
+section stays lifecycle-only:
 
 ```diff
-@@ ## Codex wait notes
--When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status.
-+When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms: 300000)` before ending the turn or reporting idle/status. This five-minute ceiling is Spacedock's per-call foreground-wait policy; it does not change Codex's global default.
+@@ ## Runtime implementation
+- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction.
++ `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction. When async multi-agent dispatch is live, foreground waiting MUST call `wait_agent(timeout_ms: 300000)` as the named long-task default.
 ```
 
 ## Acceptance criteria
 
 **AC-1 (value): A healthy owned worker that takes longer than the current short
-wait completes without timeout churn.** In an isolated Codex live run, a
-no-write/delayed owned worker taking at least 45 seconds causes one foreground
-wait to remain active through the delay and reach the worker's completion; no
-timeout/re-wait occurs before that completion. The measured delay exceeds the
-approximately 30-second baseline, so an omitted/default wait can fail this
-criterion.
+wait avoids timeout churn.** In an isolated Codex live run, a delayed owned
+worker taking at least 45 seconds causes one foreground wait to remain active
+through the delayed hold and receive a non-timeout return; no timeout/re-wait
+occurs before that first return. The measured hold exceeds the approximately
+30-second baseline, so an omitted/default wait can fail this criterion.
 Verified by: a focused `//go:build live` Codex scenario that captures the
 collaboration stream plus durable workflow state, with an assertion that fails
-on a timeout or repeated wait before the owned worker finishes.
+on a timeout or repeated wait before the first return.
 
-**AC-2 (value): Five-minute waiting remains responsive to a real completion.**
-The same delayed-worker run returns from its 300,000-ms foreground wait on the
-worker completion rather than waiting out five minutes, then verifies the
-worker's committed stage report before the workflow advances.
-Verified by: the live scenario's timestamped wait/completion trace and durable
-stage-report/git-state assertion; it must finish shortly after the delayed
-worker completes, not at the timeout ceiling.
+**AC-2 (value): Five-minute waiting observes an early post-hold mailbox
+return.** The same delayed-worker run calls `wait_agent(timeout_ms: 300000)`,
+returns `timed_out:false` after the delayed-hold end marker rather than waiting
+for the five-minute ceiling, and then verifies the committed stage report
+separately. The end-of-hold marker is a whole-second value emitted before the
+report and commit; it is not a worker-final-status timestamp, and the live
+surface may deliver a post-hold mailbox return before the child FINAL_ANSWER.
+Verified by: the live scenario's timestamped wait trace, non-timeout output,
+delayed-hold marker, and separate stage-report/git-state assertion. It makes
+no marker-to-final-completion causality or latency-SLO claim.
 
 **AC-3 (scope and safety): Spacedock's Codex wait policy is explicit without
 changing host-wide configuration or interruption semantics.** The shipped
@@ -144,10 +147,10 @@ adapter names the per-call 300,000-ms duration, keeps a timeout normal and
 retryable, and preserves the explicit rule that an operator interruption does
 not fail, close, or redispatch the worker. The implementation changes neither
 the global Codex config nor `spacedock codex` argv.
-Verified by: focused contractlint structural coverage for the adapter's required
-call/cue shape, targeted front-door argv regression coverage showing no added
-`-c` override, and the live AC-1/AC-2 run exercising the actual timeout
-behavior rather than treating instruction-text matching as behavioral proof.
+Verified by: the adjacent async-dispatch adapter binding, scoped-diff review
+showing no added configuration or front-door override, and the live AC-1/AC-2
+run exercising the actual timeout behavior rather than treating instruction
+text as behavioral proof.
 
 ## Test plan
 
@@ -155,12 +158,13 @@ behavior rather than treating instruction-text matching as behavioral proof.
    `CODEX_HOME` Codex runner so no developer-local config can mask the baseline.
    Delay the owned no-write worker for 45 seconds--longer than the observed
    short default but below the existing 60-second stream-silence guard. Record
-   the collaboration wait begin/completion events, timeout/retry count, process
-   exit, entity body, and state-checkout git log. Estimated cost: one Codex run,
-   roughly 1--2 minutes.
-2. Add/adjust focused contractlint only for the stable adapter structure and
-   safety cue. It is a guard against accidental wording/shape drift, not the
-   proof of AC-1 or AC-2.
+   the foreground wait begin/return, timeout/retry count, process exit,
+   delayed-hold markers, entity body, and state-checkout git log. The markers
+   are end-of-hold values only: do not impose a marker-relative completion
+   latency budget. Estimated cost: one Codex run, roughly 1--2 minutes.
+2. Do not use contractlint or any instruction-text assertion as AC-1/AC-2
+   proof. Keep the live-surface probe and generic wait notes lifecycle-only;
+   the adjacent async-dispatch binding owns the exact per-call duration.
 3. Run the required offline gates: `go test ./...`, `go test ./... -race`, and
    `gofmt -w ./cmd ./internal`. Because the changed adapter is loaded by the
    Codex live lane, run the focused live control and then
@@ -196,29 +200,29 @@ behavior rather than treating instruction-text matching as behavioral proof.
   global default changed or injecting a config override that only applies to
   front-door launches.
 - DONE: Specify a live delayed-worker control that measures the operational
-  value against the observed short baseline and proves completion still wakes
-  early.
+  value against the observed short baseline and proves a post-hold non-timeout
+  return without asserting worker-final-status causality.
 - DONE: Trace each acceptance criterion to independent evidence so the
-  implementation does not substitute adapter wording or the mailbox probe for
-  the live completion claim.
+  implementation does not substitute adapter wording or an invented
+  marker-relative latency budget for the live timeout behavior.
   - **AC-1:** the isolated 45-second owned-worker run must capture one
-    foreground wait spanning the delay and fail if it records a timeout or a
-    second wait before the worker completes. The delay is the moving baseline:
-    it exceeds the observed approximately 30-second omitted wait.
-  - **AC-2:** in that same run, record `wait_started`, the owned worker's real
-    final-status/completion event, and `wait_returned`. The assertion must bind
-    the return to that completion, require no timeout result, and require the
-    return well before the 300,000-ms ceiling; then it must verify the
-    committed stage report and state-checkout git log before advancement. This
-    is the actual early-return proof--not merely a short test duration.
-  - **AC-3:** focused contractlint guards the fixed call/cue shape and
-    existing front-door argv coverage proves no `-c` override was added;
-    neither is treated as proof of AC-1 or AC-2 behavior.
+    foreground wait spanning the delayed hold and fail if it records a timeout
+    or a second wait before its first non-timeout return. The hold is the
+    moving baseline: it exceeds the observed approximately 30-second omitted
+    wait.
+  - **AC-2:** in that same run, record `wait_started`, the delayed-hold end
+    marker, and `wait_returned`. The assertion requires non-timeout output and
+    a return after the hold marker; report and state-checkout commit verification
+    happen separately. The whole-second hold marker precedes those writes and
+    cannot prove final-status timing.
+  - **AC-3:** the adjacent async-dispatch binding owns the fixed per-call
+    shape; scoped-diff review proves no `-c`, configuration, or front-door
+    change. Neither text inspection nor a generic contractlint check is used
+    as proof of AC-1 or AC-2 behavior.
   The observed 21-second return from a 60-second wait after a parent mailbox
   message is supporting behavior only: it demonstrates that an incoming
   mailbox event wakes the live wait early and is consistent with the surfaced
-  user-input rule, but it is not the required real-worker completion evidence
-  for AC-2.
+  user-input rule, but it does not establish child-final-answer causality.
 
 ### Summary
 
@@ -226,9 +230,10 @@ Codex owns the omitted wait default, but it exposes a validated session config
 surface at `features.multi_agent_v2.default_wait_timeout_ms`. Spacedock should
 not alter that global/session default for this task: the robust, compatibility-
 first behavior is an explicit `wait_agent(timeout_ms: 300000)` in the shipped
-Codex first-officer adapter. A 45-second owned-worker live control will prove
-that the new five-minute ceiling removes the approximately 30-second timeout
-churn without delaying completion handling.
+Codex first-officer adapter's async-dispatch binding. A 45-second owned-worker
+live control proves that the new five-minute ceiling removes approximately
+30-second timeout churn and produces a non-timeout post-hold return, without
+claiming a marker-to-final-completion latency SLO.
 
 ## Stage Report: implementation
 
@@ -239,21 +244,20 @@ churn without delaying completion handling.
 - DONE: Added the live-only `TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy`
   control. It creates one 45-second delayed owned worker, preserves raw Codex
   JSON/rollout records and timing evidence, verifies its report and
-  path-scoped state commit, and fails on timeout or re-wait churn before that
-  worker completes.
+  path-scoped state commit, and fails on timeout or re-wait churn before the
+  first non-timeout return.
 - DONE: Final live control passed after the capability-based adapter wording:
   the worker held for 45 seconds; the first wait used `timeout_ms=300000`, ran
-  for 1m25.706s, returned `timed_out=false`, and returned about 20 seconds
-  after the committed worker report. Evidence is retained at
+  for 1m25.706s, and returned `timed_out=false` after the delayed-hold marker.
+  Evidence is retained at
   `/tmp/spacedock-95w-live-proof-final/codex-shared-scenarios/foreground-wait-timeout/`.
 - DONE: Verification passed: `go test ./...`; `go test ./... -race`; focused
   live control; and `go test -tags live -count=1 -timeout 40m -run
   '^TestLiveCodexSharedScenarios$' ./internal/ensigncycle -v` (all nine shared
   scenarios passed in 1103.83s). The new Go test is gofmt-clean.
-- DONE: The initial focused structural check was observed red before the
-  policy was added; its temporary contractlint expectation change was removed
-  during the captain-directed re-scope. The live delayed-worker control is the
-  behavioral proof.
+- DONE: No contractlint change is retained. The live delayed-worker control is
+  the behavioral proof; the adapter's async-dispatch binding is documented as
+  the policy mechanism, not a text-proof oracle.
 - DONE: Code commit `b733ab5c` (`Codex: use long-task foreground waits`).
 
 ### Summary
@@ -261,4 +265,51 @@ churn without delaying completion handling.
 Spacedock now instructs live async multi-agent Codex foreground waits to use a
 five-minute per-call ceiling while preserving existing interruption and timeout
 lifecycle rules. A delayed owned-worker live scenario proves that the wait
-does not churn at the old short horizon and still returns promptly on completion.
+does not churn at the old short horizon and receives a non-timeout post-hold
+mailbox return; durable report/commit verification is separate.
+
+### Feedback Cycles
+
+**Cycle 1 — timing-proxy design correction (2026-07-11).** A fresh independent
+focused live run went RED at 30.011s against the former 30-second upper bound.
+The bound compared `time.Unix(date +%s, 0)` from the end-of-hold marker with
+the foreground wait return. That whole-second marker is emitted before report
+append and commit; retained runs measured 20.324s and 29.282s, and a direct
+trace showed report append 5.567s, commit 17.169s, and child FINAL_ANSWER
+28.062s after the marker. The correction removes only this invalid latency SLO,
+keeps the explicit 300,000-ms policy and all non-timeout/no-churn assertions,
+and restates AC-2 as an early post-hold mailbox return rather than
+worker-final-completion causality.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Removed only the invalid marker-relative 30-second upper bound.
+  The live test now labels `date +%s` values as delayed-hold endpoints, retains
+  the explicit 300,000-ms call, 35-second crossing, `timed_out:false`,
+  post-hold return, single-owned-worker, no-re-wait, and durable report/commit
+  checks, and does not invent a replacement latency SLO.
+- DONE: Corrected the design, ACs, test plan, and prior implementation report:
+  the exact policy lives in the adjacent async-dispatch binding, generic wait
+  notes remain lifecycle-only, and AC-2 claims only an early post-hold mailbox
+  return rather than child-final-answer causality.
+- DONE: The corrected focused live control passed in 278.36s. Its retained
+  evidence records a 45-second hold and a 1m34.656s foreground wait using
+  `timeout_ms=300000` with `timed_out=false`; its 32.224-second
+  marker-to-return gap is intentionally not treated as a completion SLO.
+  Evidence: `/tmp/spacedock-95w-correction-proof/codex-shared-scenarios/foreground-wait-timeout/`.
+- DONE: `go test ./...` and `go test ./... -race` passed; the repository-wide
+  gofmt pass left the corrected live test clean (an unrelated pre-existing
+  alignment change was restored).
+- DONE: Code commit `069643f9` (`Codex: clarify foreground wait timing proof`).
+- FAILED: The required full shared Codex live suite ran for 1183.01s with 8 of
+  9 scenarios passing. Only `filing` failed, independently of this correction:
+  the FO correctly used `BIN="${SPACEDOCK_BIN:-spacedock}"` and `"$BIN" new
+  wire-the-thing`, but the existing filing parser accepts only an unquoted
+  launcher capture. No filing behavior or parser was changed in this task.
+
+### Summary
+
+Cycle 1 removes a flaky, semantically invalid timing proxy without rolling back
+the five-minute per-call policy. Focused live and offline/race verification are
+green; the full shared lane exposed an unrelated quoted-launcher filing parser
+gap that remains outside this task's scope.
