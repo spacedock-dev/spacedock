@@ -2,6 +2,7 @@
 
 **Sprint:** the entities matching `sprint: 0250-fo-behavioral-discipline` — list current members with `spacedock status --workflow-dir docs/dev --where sprint=0250-fo-behavioral-discipline`. Membership and per-task state are the query, never enumerated or tracked in this doc.
 **Theme:** a captain can leave the FO to run itself between deliberate touches — boot into a light greet, trigger work with an explicit `engage` verb, and trust the FO to self-triage correctly while unattended. The flagship (`k74g`) makes the boot light and gives the captain the `engage` verb; the discipline cluster (`z25`/`zm`/`vcm`) is what makes `engage` SAFE to lean on — an FO that holds its own evidence bar, does the right-sized thing, and keeps moving without stalling or busywork.
+**Release status:** `v0.25.0-pre1` was published on 2026-07-11 from commit `8efdbfe02f12fd0cad181c98f2ec0840dfe8ce28`; stable `v0.25.0` remains pending.
 
 ## Goal (success criterion)
 
@@ -87,7 +88,8 @@ Measurement command for the implementing Commander: `wc -c skills/first-officer/
 - [x] **Package** — `dispatch-sprint-execution.md` (cold-boot Commander recipe)
 
 **Drive — Commander (separate cold-booted session)**
-- [ ] Implementation → validation → done per member; detached adversarial audit at validation for the shipped-contract surface
-- [ ] Merge each to `main`; state commits concurrency-safe
-- [ ] **⚠️ Pre-cut antipattern audit** (independent, before the tag fires)
+- [x] Implementation → validation → done per member; detached adversarial audit at validation for the shipped-contract surface
+- [x] Merge each to `main`; state commits concurrency-safe
+- [x] **Prerelease** `v0.25.0-pre1` published from `8efdbfe02f12fd0cad181c98f2ec0840dfe8ce28` *(2026-07-11)*
+- [ ] **⚠️ Pre-cut antipattern audit** (independent, before the stable tag fires)
 - [ ] **Cut** `v0.25.0` per `docs/releasing.md` *(captain authorizes)*
