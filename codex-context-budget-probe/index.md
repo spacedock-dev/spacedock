@@ -1,6 +1,6 @@
 ---
 title: Bind Codex context budget to per-thread token telemetry
-status: implementation
+status: validation
 source: "Captain request 2026-07-11 plus live Codex 0.144.1 schema and rollout evidence gathered while reusing 88t workers."
 started: 2026-07-11T05:50:29Z
 completed:
