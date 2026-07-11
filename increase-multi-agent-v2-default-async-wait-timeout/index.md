@@ -198,6 +198,27 @@ behavior rather than treating instruction-text matching as behavioral proof.
 - DONE: Specify a live delayed-worker control that measures the operational
   value against the observed short baseline and proves completion still wakes
   early.
+- DONE: Trace each acceptance criterion to independent evidence so the
+  implementation does not substitute adapter wording or the mailbox probe for
+  the live completion claim.
+  - **AC-1:** the isolated 45-second owned-worker run must capture one
+    foreground wait spanning the delay and fail if it records a timeout or a
+    second wait before the worker completes. The delay is the moving baseline:
+    it exceeds the observed approximately 30-second omitted wait.
+  - **AC-2:** in that same run, record `wait_started`, the owned worker's real
+    final-status/completion event, and `wait_returned`. The assertion must bind
+    the return to that completion, require no timeout result, and require the
+    return well before the 300,000-ms ceiling; then it must verify the
+    committed stage report and state-checkout git log before advancement. This
+    is the actual early-return proof--not merely a short test duration.
+  - **AC-3:** focused contractlint guards the fixed call/cue shape and
+    existing front-door argv coverage proves no `-c` override was added;
+    neither is treated as proof of AC-1 or AC-2 behavior.
+  The observed 21-second return from a 60-second wait after a parent mailbox
+  message is supporting behavior only: it demonstrates that an incoming
+  mailbox event wakes the live wait early and is consistent with the surfaced
+  user-input rule, but it is not the required real-worker completion evidence
+  for AC-2.
 
 ### Summary
 
