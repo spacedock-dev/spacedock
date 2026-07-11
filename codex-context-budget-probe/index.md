@@ -1,12 +1,12 @@
 ---
 title: Bind Codex context budget to per-thread token telemetry
-status: ideation
+status: implementation
 source: "Captain request 2026-07-11 plus live Codex 0.144.1 schema and rollout evidence gathered while reusing 88t workers."
 started: 2026-07-11T05:50:29Z
 completed:
 verdict:
 score: 0.9
-worktree: .worktrees/spacedock-ensign-codex-context-budget-probe
+worktree: .worktrees/spacedock-ensign-codex-context-budget-probe-jsonl
 issue:
 id: bct1zbqhbkatrwmqf6s6qd9v
 ---
