@@ -383,3 +383,22 @@ Cycle 2 closes two adversarial gaps. Launcher capture now recognizes only balanc
 ### Summary
 
 The dispatch correction addresses the real keep-moving failure and the detector recognizes the real balanced quoted filing command, but its regex also false-accepts three malformed launcher assignments. AC-1 through AC-4 remain green; AC-5 is rejected because the filing assertion was weakened at the very boundary this cycle needed to preserve.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify the cycle-2 quote fix and original structural acceptance criteria on exact commit `88778c5156e8764a6a4bbbfe273b12e8626cebd0`.
+  The detector accepts unquoted, balanced double-quoted, and balanced single-quoted captures and rejects the prior mismatched, leading-only, and trailing-only controls. AC-1 passes at `FO_FUNCTION_METRICS addresses=0 bytes=117062`, with every ordered procedure preserved. AC-2's named closure, deferred dispatch owner, and restored commissioned-dispatch sentence pass focused contractlint. AC-3 passes 5,338 bytes below the 122,400 baseline with exactly three eager canonical imports and no removed wrapper. AC-4's classifier discriminator and detached structural controls remain green. Focused keep-moving/filing regressions, full contractlint, and `git diff --check` pass; the implementation report records green full/race/live-tag gates for this exact commit and the implementation worktree is clean.
+- DONE: Confirm the intended multi_agent_v2 positive dialect.
+  The positive fixture credits successful dispatch-build evidence followed by a completed collaboration wait and a later durable working-stage report, allowing the hidden-spawn Codex dialect without demanding premature terminal status. The real local Codex keep-moving run is recorded green in 214.66 seconds.
+- FAILED: Preserve missing-dispatch detection under ordering and command-failure adversaries.
+  A detached exact-head checkout planted three invalid streams. All three incorrectly set `stageReport[ready-one]=true`: (1) a stale durable report before dispatch build, followed by build and wait; (2) dispatch build, then report before wait, then wait; and (3) a completed command item with `exit_code: 1` / `status: failed`, followed by wait and report. The extractor uses unordered per-entity booleans and does not parse build exit/status, so it proves only that the three facts appear somewhere, not the required successful build → subsequent completed wait → subsequent durable report sequence. This weakens the missing-dispatch assertion and fails the cycle assignment even if the positive live scenario passes. The throwaway checkout was removed; the implementation worktree was unchanged.
+- FAILED: AC-5 and exact-SHA protected evidence.
+  PR #496 run `https://github.com/spacedock-dev/spacedock/actions/runs/29139931249` targets exact head `88778c5156e8764a6a4bbbfe273b12e8626cebd0`. Offline/build/install and Pi are successful; Sonnet, Opus, and Codex remain in progress at this verdict. Those conclusions cannot cure the independently reproduced false-positive evidence boundary on this head.
+
+### Recommendation
+
+**REJECTED.** Implement an ordered per-entity evidence state machine that requires a successful zero-exit dispatch build, then a subsequently completed wait, then a subsequently observed durable Stage Report. Retain all three invalid streams as negative controls alongside the current positive dialect. This is feedback cycle 3, so escalate the repeated assertion weakening to the captain rather than automatically routing another repair.
+
+### Summary
+
+The quote repair, named-function cleanup, prompt shrinkage, and intended hidden-spawn positive path are sound. The new dispatch-evidence fallback nevertheless false-accepts stale reports, pre-wait reports, and failed builds; AC-5 remains rejected and the third feedback cycle requires captain escalation.
