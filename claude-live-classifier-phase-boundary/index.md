@@ -6,6 +6,7 @@ source: Captain-approved recovery item 1 on 2026-07-10, after review of merged P
 id: p4h6a5wcqe5ddkhnmrac1w9a
 started: 2026-07-10T12:56:28Z
 worktree: .worktrees/spacedock-ensign-claude-live-classifier-phase-boundary
+pr: pr-merge:495
 ---
 
 # Append Claude live detector evidence only after a primary failure
