@@ -1,16 +1,17 @@
 ---
 title: spacedock new lacks a copyable entity stub template, so the filing FO find-hunts for an example to model
-status: validation
+status: done
 source: "Split out of sc5 (live-runner-boot-preamble-hardening) 2026-07-09 per captain direction, after an opus advisory ('science officer') consultation root-caused the highest-frequency remaining failure sub-class in sc5's 16-instance ledger. sc5 shipped three harness-only fixes (prompt anchor, discovery marker, fast/legible classification of a broad-search fumble) plus a since-reverted, buggy retry mechanism — all confined to internal/ensigncycle/*_test.go by sc5's own declared scope ('all edits are to the harness and fixtures. No doc diff required.'). This entity is the contract-level fix that scope excluded by construction; captain's framing: prior work was 'test hardening but not actually changing the contract to make things more predictable,' and the sc5 cycle-2 retry specifically was 'making changes to the tests to allow randomness,' a real antipattern — this entity targets the production FO's actual behavior instead of accommodating it in tests."
 started: 2026-07-09T07:11:29Z
-completed:
-verdict:
+completed: 2026-07-11T09:10:12Z
+verdict: rejected
 score: 0.8
 worktree: .worktrees/spacedock-ensign-fo-deferred-load-point-hunt-vs-skill-addressing
 issue:
 id: dpwp415wfzj6yrcwbs0krrea
-mod-block: merge:pr-merge
+mod-block:
 pr:
+archived: 2026-07-11T09:10:12Z
 ---
 
 The FO's boot-resident contract (`skills/first-officer/references/first-officer-shared-core.md`, `## Deferred load points`, lines ~32-40) names five deferred references that load via `Skill(skill="spacedock:...")` — cwd-independent, resolved through the Claude Code plugin/skill registry regardless of the FO's working directory. Three more — `references/fo-dispatch-core.md`, `references/fo-merge-core.md`, and `references/fo-smallest-sufficient-mechanism.md` (plus the runtime adapter files, e.g. `claude-first-officer-runtime.md`, `claude-fo-dispatch.md`) — are named the same way in prose but load via a bare relative path. When the FO's cwd is not the skill's own install directory (as in the live-CI test harness, where `cmd.Dir` is set to the scenario's fixture root), a bare read of `references/fo-dispatch-core.md` resolves against cwd and fails to find the file. The FO, knowing the file exists by name because its own contract just named it, does what a competent agent does when a known file isn't where it looked: it searches the filesystem for it (`find`, `grep -r`) — the exact "contract-file find-hunt" failure sub-class documented across sc5's 16-instance ledger (spacedock-dev/spacedock).
