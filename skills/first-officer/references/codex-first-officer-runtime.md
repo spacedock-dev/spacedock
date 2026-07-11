@@ -25,6 +25,8 @@ Do not infer capabilities from a Codex version name. Do not infer that the turn-
 - `«context-budget»`: ABSENT; its reuse condition is satisfied because Codex has no bound context-budget probe.
 - `«roster-reconcile»`: `«roster-reconcile»` may provide active/completed task-path reads when bound. `list_agents(path_prefix?)` provides attribution, stale-cohort classification, debugging, and cleanup targeting.
 
+When `«async-dispatch»` is live, foreground waiting MUST call `wait_agent(timeout_ms: 300000)` as the long-task default: dispatched work can outlast Codex's short default. This is Spacedock's per-call policy and does not change Codex's global configuration.
+
 ## Codex wait notes
 
 When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. Before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait without treating the interruption as completion.
