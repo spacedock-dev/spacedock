@@ -124,6 +124,15 @@ worktree:
 	return codexCompletedCommandOutput(command, output)
 }
 
+func TestCodexDurableStageReportCountIgnoresProseMentions(t *testing.T) {
+	command := "sed -n '1,260p' alpha.md beta.md"
+	output := "## Stage Report: done\n\nThe Stage Report is durable.\n"
+	reported := codexDurableStageReportTargets(command, output, []string{"alpha", "beta"})
+	if reported["alpha"] || reported["beta"] {
+		t.Fatalf("one anchored report heading must not prove two named entities: %#v", reported)
+	}
+}
+
 func TestCodexSmallestSufficientCreditsDispatchBuildWaitAndDurableRead(t *testing.T) {
 	stream := strings.Join([]string{
 		codexFileChange("/tmp/wf/"+ssmEditFileA, "/tmp/wf/"+ssmEditFileB),

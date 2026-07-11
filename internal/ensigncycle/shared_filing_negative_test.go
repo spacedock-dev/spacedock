@@ -134,6 +134,19 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		})
 	}
 
+	crossSegmentCalls := map[string]string{
+		"different command after launcher status": `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" status; $EDITOR new ` + slug,
+		"mismatched invocation quotes":            `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher' new ` + slug,
+		"new token after launcher version":        `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n$launcher --version; touch new ` + slug,
+	}
+	for name, command := range crossSegmentCalls {
+		t.Run(name, func(t *testing.T) {
+			if err := assertCodexFilingViaNew(codexCommand(command), slug); err == nil {
+				t.Fatalf("unrelated simple command counted as captured-launcher filing: %s", command)
+			}
+		})
+	}
+
 	// Negative: no atomic filing — must fail on the missing-`new` half.
 	none := codexCommand("spacedock status --workflow-dir .")
 	if err := assertCodexFilingViaNew(none, slug); err == nil {

@@ -51,14 +51,14 @@ func commandFilesViaNew(command, slug string) bool {
 	if newInvocation.MatchString(command) {
 		return true
 	}
-	return capturedLauncherFilesViaNew(command)
+	return capturedLauncherFilesViaNew(command, slug)
 }
 
 // capturedLauncherFilesViaNew reports whether the command captured the resolved
 // launcher into a var (`B=${SPACEDOCK_BIN:-spacedock}`) and then ran `$B new` /
 // `$B --new` with that exact var. Tying recognition to the captured var name keeps
 // it from matching an unrelated `$X new` that never resolved a spacedock launcher.
-func capturedLauncherFilesViaNew(command string) bool {
+func capturedLauncherFilesViaNew(command, slug string) bool {
 	m := launcherCapture.FindStringSubmatch(command)
 	if m == nil {
 		return false
@@ -66,15 +66,28 @@ func capturedLauncherFilesViaNew(command string) bool {
 	varName := ""
 	for _, candidate := range m[1:] {
 		if candidate != "" {
-			varName = regexp.QuoteMeta(candidate)
+			varName = candidate
 			break
 		}
 	}
 	if varName == "" {
 		return false
 	}
-	call := regexp.MustCompile(`"?\$\{?` + varName + `\}?"?[^\n]*?(?:\bnew\b|--new)`)
-	return call.MatchString(command)
+	// This is deliberately a bounded simple-command recognizer, not a shell
+	// parser. Shell command separators end the candidate; the captured variable
+	// must then be the balanced executable at the start of one segment, with the
+	// create verb and requested slug in that same segment.
+	captureEnd := strings.Index(command, m[0]) + len(m[0])
+	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
+	executable := regexp.QuoteMeta(varName)
+	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)\b`)
+	for _, segment := range segments {
+		segment = strings.TrimSpace(segment)
+		if call.MatchString(segment) && strings.Contains(segment, slug) {
+			return true
+		}
+	}
+	return false
 }
 
 // assertClaudeFilingViaNew scans the stream-json transcript for the FO filing the

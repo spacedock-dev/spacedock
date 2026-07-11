@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 )
 
@@ -147,7 +148,7 @@ func codexWaitTool(tool string) bool {
 
 func codexDurableStageReportTargets(command, output string, entities []string) map[string]bool {
 	reported := map[string]bool{}
-	reportCount := strings.Count(output, "Stage Report")
+	reportCount := len(regexp.MustCompile(`(?m)^##[ \t]+Stage Report:`).FindAllStringIndex(output, -1))
 	if reportCount == 0 {
 		return reported
 	}
