@@ -402,3 +402,18 @@ The dispatch correction addresses the real keep-moving failure and the detector 
 ### Summary
 
 The quote repair, named-function cleanup, prompt shrinkage, and intended hidden-spawn positive path are sound. The new dispatch-evidence fallback nevertheless false-accepts stale reports, pre-wait reports, and failed builds; AC-5 remains rejected and the third feedback cycle requires captain escalation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Replace unordered Codex dispatch-evidence booleans with an ordered per-entity state machine.
+  Commit `f49b7826` requires a proven successful build, a subsequent completed collaboration wait, and a subsequent successful durable Stage Report read before crediting an entity. Stale reports before build and reports before wait remain uncredited.
+- DONE: Parse failed builds without losing successful builds that Codex batches into the same shell item.
+  A zero-exit build item proves its addressed targets. For a non-zero batch, only targets with a complete emitted `dispatch_file_path` JSON result advance; the failed target does not. The durable-read fallback likewise requires a successful post-wait command that names the entity file or `status --read` target.
+- DONE: Retain the validator's three negative controls and add exact mixed-batch and named batched-read regressions.
+  The focused suite passes 10 tests covering the valid multi_agent_v2 stream, stale report, pre-wait report, failed build, three-success/one-failure build batching, and post-wait batched entity reads.
+- DONE: Prove the repair with a fresh real Codex keep-moving drive and all repository gates before pushing.
+  The real local `keep-moving-posture` run passed both live checks. `go test ./...` and `go test ./... -race` each passed 2,148 tests across 17 packages; `go test -tags live -run '^$' ./...` compiled cleanly; `git diff --check` passed. The branch is pushed at `f49b7826`.
+
+### Summary
+
+Cycle 3 preserves the required build → wait → report temporal invariant while matching Codex's real event granularity. A failed aggregate shell item no longer erases earlier successful dispatch JSON in that batch, and a named batched durable read can prove its post-wait reports without admitting stale, pre-wait, or failed-build streams. The exact real scenario and all required local gates are green; protected exact-SHA lanes remain validation's external evidence boundary.
