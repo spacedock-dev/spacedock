@@ -1,6 +1,6 @@
 ---
 title: Replace mutable step-number references with named FO functions
-status: validation
+status: implementation
 score: 0.95
 source: "Captain direction 2026-07-11: widen the step-number sweep; hooks and references use the «fn» notation."
 id: 88tq5zyg9jvx13f33zz3eq28
