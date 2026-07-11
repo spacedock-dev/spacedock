@@ -118,3 +118,21 @@ func TestCodexKeepMovingCreditsDispatchBuildWaitAndDurableRead(t *testing.T) {
 		t.Fatalf("multi_agent_v2 dispatch-build/wait/durable-read evidence must credit keep-moving dispatches and re-shape: %v", err)
 	}
 }
+
+func TestCodexKeepMovingCreditsPostWaitWorkingStageReports(t *testing.T) {
+	stream := strings.Join([]string{
+		codexCommand("spacedock status --workflow-dir . --set " + kmApprovedGate + " status=" + kmNextStage + " verdict=approved"),
+		codexDispatchBuildEvidence(kmReadyOne, kmNextStage),
+		codexDispatchBuildEvidence(kmApprovedGate, kmNextStage),
+		codexDispatchBuildEvidence(kmReadyTwo, kmNextStage),
+		codexWaitCompleted(),
+		codexEntityReadEvidence(kmReadyOne, kmNextStage, kmNextStage),
+		codexEntityReadEvidence(kmApprovedGate, kmNextStage, kmNextStage),
+		codexEntityReadEvidence(kmReadyTwo, kmNextStage, kmNextStage),
+		codexCommand("spacedock status --workflow-dir . --set " + kmQuestioned + " status=" + kmReopenStage + " verdict=questioned"),
+	}, "\n")
+
+	if err := assertCodexKeepMoving(stream, kmCorrectFinal(), kmIndependent()); err != nil {
+		t.Fatalf("build + wait + durable working-stage report must prove dispatch before FO terminalization: %v", err)
+	}
+}

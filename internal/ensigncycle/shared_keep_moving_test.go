@@ -304,11 +304,11 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 			}
 		}
 	}
-	if dispatchEvidence.doneReport[kmApprovedGate] {
+	if dispatchEvidence.stageReport[kmApprovedGate] {
 		tr.approvedDispatched = true
 	}
 	for _, e := range independent {
-		if dispatchEvidence.doneReport[e] {
+		if dispatchEvidence.stageReport[e] {
 			tr.independentDispatched[e] = true
 		}
 	}

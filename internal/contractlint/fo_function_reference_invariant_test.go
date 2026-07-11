@@ -173,6 +173,17 @@ func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
 			t.Errorf("engage dispatch boundary missing %q", want)
 		}
 	}
+
+	principles := foMarkdownSection(t, shared, "## Working Principles")
+	for _, want := range []string{
+		"Commissioned workflow dispatch is mandatory",
+		"in-house execution is not a lower rung",
+		"every ready entity, including one advanced by gate approval",
+	} {
+		if !strings.Contains(principles, want) {
+			t.Errorf("smallest-sufficient commissioned-dispatch boundary missing %q", want)
+		}
+	}
 }
 
 func TestFOFunctionRequiredCallSites(t *testing.T) {

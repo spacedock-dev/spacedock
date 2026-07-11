@@ -109,6 +109,23 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 	if err := assertCodexFilingViaNew(filedQuotedCapture, slug); err != nil {
 		t.Fatalf("expected PR #496's quoted launcher-capture filing to count as atomic: %v", err)
 	}
+	filedSingleQuotedCapture := codexCommand("launcher='${SPACEDOCK_BIN:-spacedock}'\\n\\\"$launcher\\\" new " + slug)
+	if err := assertCodexFilingViaNew(filedSingleQuotedCapture, slug); err != nil {
+		t.Fatalf("expected balanced single-quoted launcher capture to count as atomic: %v", err)
+	}
+
+	malformedCaptures := map[string]string{
+		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
+		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,
+		"trailing-only quote": `launcher=${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" new ` + slug,
+	}
+	for name, command := range malformedCaptures {
+		t.Run(name, func(t *testing.T) {
+			if err := assertCodexFilingViaNew(codexCommand(command), slug); err == nil {
+				t.Fatalf("malformed launcher assignment counted as atomic filing: %s", command)
+			}
+		})
+	}
 
 	// Negative: no atomic filing — must fail on the missing-`new` half.
 	none := codexCommand("spacedock status --workflow-dir .")

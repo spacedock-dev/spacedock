@@ -27,10 +27,11 @@ import (
 // on one line with a `new` verb on an unrelated later line.
 var newInvocation = regexp.MustCompile(`(?:spacedock|SPACEDOCK_BIN)[^\n]*?(?:\bnew\b|--new)`)
 
-// launcherCapture matches the contract-blessed var-capture of the resolved
-// launcher — `B=${SPACEDOCK_BIN:-spacedock}` — anywhere in a command string. The
-// captured var name is recorded so the create call below can require THAT var.
-var launcherCapture = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)=["']?\$\{SPACEDOCK_BIN:-spacedock\}["']?`)
+// launcherCapture matches exactly three contract-blessed assignments of the
+// resolved launcher: unquoted, balanced-double-quoted, or balanced-single-quoted.
+// Each alternative captures its var name separately; independent optional quote
+// classes are forbidden because they accept mismatched or one-sided quotes.
+var launcherCapture = regexp.MustCompile(`(?:([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-spacedock\}"|([A-Za-z_][A-Za-z0-9_]*)='\$\{SPACEDOCK_BIN:-spacedock\}')(?:[;\s]|$)`)
 
 // nextIDInvocation matches a `status --next-id` candidate-preview command — the
 // first half of the manual filing pair the atomic path replaces.
@@ -61,7 +62,16 @@ func capturedLauncherFilesViaNew(command string) bool {
 	if m == nil {
 		return false
 	}
-	varName := regexp.QuoteMeta(m[1])
+	varName := ""
+	for _, candidate := range m[1:] {
+		if candidate != "" {
+			varName = regexp.QuoteMeta(candidate)
+			break
+		}
+	}
+	if varName == "" {
+		return false
+	}
 	call := regexp.MustCompile(`"?\$\{?` + varName + `\}?"?[^\n]*?(?:\bnew\b|--new)`)
 	return call.MatchString(command)
 }
