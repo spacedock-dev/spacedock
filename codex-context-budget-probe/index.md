@@ -168,3 +168,24 @@ The revised v1 is an automatic, conditional JSONL gate, not a diagnostic or obse
 ### Summary
 
 Implemented the approved direct-parent session-JSONL context-budget gate in code commit `914e0584bede8d9e577d412e17e9a7b6ff37d238`. The production path is content-free and fail-closed; validation should execute the opt-in live replay with a named child in a temporary split-root workflow before accepting the gate.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce the direct JSONL identity, threshold, compaction, and unavailable-result behavior; assess every AC from observable evidence.
+  `go test ./internal/codexsession -count=1`, `go test ./internal/dispatch -run 'TestCodex(ContextBudget|MultiAgentV2)' -count=1`, and `go test ./...` exited 0; AC-3 through AC-5 have fixture and golden coverage. AC-1 lacks retained-versus-new child-thread evidence, and AC-2 lacks an independently anchored live identity assertion.
+- FAILED: Adversarially inspect the JSONL-only command and adapter for fail-open paths, unsafe traversal, observer/cache/capability routes, and transcript-content leakage.
+  The shipped reader/command are direct JSONL-only (`internal/codexsession/budget.go:79-158`, `internal/dispatch/codex_context_budget.go:18-37`), but `skills/ensign/references/codex-ensign-runtime.md:12` still declares context-budget unavailable while the FO binding declares it PRESENT at `skills/first-officer/references/codex-first-officer-runtime.md:25`.
+- FAILED: Run the relevant focused, repository, race, and feasible live-replay checks; distinguish a skipped live replay from a demonstrated current-worker replay and recommend PASSED or REJECTED.
+  The live test skipped without its four required inputs (`internal/ensigncycle/codex_context_budget_live_test.go:37-45`); it accepts only a nonempty `ThreadID` (`:62-63`). The focused race command could not start because the Go temp filesystem had 136 MiB free and returned `no space left on device`.
+
+### Recommendation
+
+REJECTED. Bounce back to implementation:
+
+1. Add deterministic retained-versus-new child thread-ID decision evidence for below/above/unavailable budget outcomes.
+2. Make the opt-in live replay take an independently supplied expected named-child thread ID, assert equality, and execute it when infrastructure permits.
+3. Reconcile the stale Codex Ensign context-budget-unavailable binding with the new PRESENT FO binding, and adjust guarding tests as appropriate.
+
+### Summary
+
+The fixture and command behavior is promising, but it does not yet prove the actual reuse decision or a live named-child mapping. The skipped live replay and stale runtime binding prevent a PASSED recommendation; the race rerun remains an infrastructure block, not a product failure.
