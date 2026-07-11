@@ -121,6 +121,17 @@ Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-pla
 - DONE: Specify fail-closed eligibility, revised acceptance criteria, and a validation plan.
   Unique fresh binding supports conditional automatic reuse; duplicate, missing, stale, malformed, mismatched, and unsafe-path evidence exits non-zero and fresh-dispatches.
 
+### AC evidence map
+
+No AC is fully implementation-proven at ideation. `922c7b9337ac715cb391040905b7ddceb5d583b6` is the durable body/evidence commit; its `## Test plan` records future validation, not passing results.
+
+- **AC-1 — PARTIAL live evidence:** `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Spike findings`, bullets 1–2, proves one current task-path-to-child binding and a fresh active-window snapshot. The retained-follow-up versus new-child decision remains planned for `## Test plan` items 3–4.
+- **AC-2 — PARTIAL live evidence:** `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Spike findings`, bullets 1–2, proves both child parent fields match the current parent for one worker. This stage did not exercise successful command results, fixture tables, or a completed-worker follow-up; `## Test plan` items 1, 3, and 4 own those proofs.
+- **AC-3 — PLANNED validation:** `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Proposed direction`, defines the unavailable-result matrix, but the stage did not exercise any failure path. `## Test plan` items 1–3 must prove non-zero/no-JSON results and fresh dispatch.
+- **AC-4 — PARTIAL semantic evidence:** `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Spike findings`, bullet 4, records the 18,893-to-4,097 active-window compaction pair. Parser field exclusion and the 60% boundary remain planned in `## Test plan` items 1 and 3.
+- **AC-5 — PLANNED validation:** `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Spike findings`, records a manually restricted projection, not a secure reader implementation. `## Test plan` items 1–2 must prove canonical-root, symlink, non-regular-file, and content-sentinel behavior.
+- **AC-6 — PLANNED validation:** `## Feedback Cycles` records the rejected observer bridge, and `922c7b9337ac715cb391040905b7ddceb5d583b6`, `## Proposed direction`, excludes its replacement. This stage did not exercise a production command or launcher; `## Test plan` item 3 must prove the JSONL-only path.
+
 ### Summary
 
 The revised v1 is an automatic, conditional JSONL gate, not a diagnostic or observer bridge. Body commit `922c7b9337ac715cb391040905b7ddceb5d583b6` records the live mapping, compaction boundary, fail-closed matrix, revised ACs, and JSONL-only validation plan.
