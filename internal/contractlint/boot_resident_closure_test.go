@@ -40,9 +40,9 @@ var foReferenceCores = map[string][]string{
 	},
 }
 
-// deferredSkillCores are the two adapter-less deferred modules the boot-resident shared
+// deferredSkillCores are adapter-less deferred modules the boot-resident shared
 // core names as non-user-invocable skills (via `spacedock:<name>`), NOT as references/*.md
-// read-paths: the status-viewer surface and the write/id-style surface. Each must exist
+// read-paths. Each must exist
 // on disk AND carry its section anchors. Keyed on the skill path so a newly-registered
 // anchor is both watched + owner-resolved (sectionOwners) and stat-checked (the skill-anchor
 // test) from one place.
@@ -88,7 +88,7 @@ var bodyModRe = regexp.MustCompile(`_mods/([a-z0-9][a-z0-9_.-]*\.md)`)
 // lazyLoadSkills are the skill names a boot-resident body may name as deferred
 // load points. The ensign skill is the dispatched-worker contract, not a boot-core
 // load point, so it is excluded; the FO-self reference would be a self-load. The two
-// adapter-less deferred modules (fo-status-viewer, fo-write-core) are here because the
+// adapter-less deferred modules (currently fo-status-viewer) are here because the
 // shared core names them via `spacedock:<name>`, so the closure walk resolves each to
 // skills/<name>/SKILL.md, the same as the gate skills.
 var lazyLoadSkills = map[string]bool{
@@ -96,7 +96,6 @@ var lazyLoadSkills = map[string]bool{
 	"present-gate":             true,
 	"feedback-rejection-flow":  true,
 	"fo-status-viewer":         true,
-	"fo-write-core":            true,
 	"fo-dispatch-recovery":     true,
 }
 

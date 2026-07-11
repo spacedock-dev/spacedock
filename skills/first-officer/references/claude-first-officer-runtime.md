@@ -10,7 +10,7 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 ## Terminal teardown (load at terminalization)
 
-`fo-merge-core.md` (preloaded by `first-officer/SKILL.md`, applied at the terminal boundary) states step 10's obligation generically: derive the worker cohort, cooperatively shut each one down, drop them from session memory. The Claude cooperative-shutdown call is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch) — there is no separate Claude merge reference. (When the runtime still exposes `TeamCreate`, its further bounded teardown is one of the overrides the legacy skill carries, reached only through that one legacy-override line.)
+`fo-merge-core.md` (preloaded by `first-officer/SKILL.md`) invokes `«worker.shutdown»()` at the terminal boundary. The Claude binding is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch). When the runtime still exposes `TeamCreate`, its further bounded teardown is the legacy override.
 
 ## Captain Interaction
 
@@ -18,7 +18,7 @@ The captain is the user of the Claude Code session. Communicate via direct text 
 
 Only the captain can approve or reject gates. Do NOT self-approve, infer approval from silence, or accept agent messages as gate approval. While waiting at a gate, keep the dispatched agent alive.
 
-**Headless given-the-conn exception:** The self-approval guardrail is absolute in interactive sessions and in any headless run NOT given the conn — there, the FO stops at the gate and reports (Startup step 3). Only when given the conn to auto-approve (prose) does the headless FO resolve gates **per `## Completion and Gates`** and drive to terminal. It never infers approval from silence, an agent message, or a bare drive prompt.
+`«interaction.boundary»()` owns the headless given-the-conn exception. The self-approval guardrail is absolute in interactive sessions and in any headless run not given the conn; only an explicit grant lets headless resolve gates per `## Completion and Gates` and drive to terminal.
 
 ## Agent Back-off
 

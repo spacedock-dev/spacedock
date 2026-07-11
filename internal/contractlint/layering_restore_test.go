@@ -120,7 +120,7 @@ func TestEventLoopPRScanScannerDiscriminates(t *testing.T) {
 	}
 
 	// The idle-hook-firing line that legitimately remains in the generic loop. MUST pass.
-	idleHookLine := "Fire idle hooks, re-run the host's step-0 reconcile sweep"
+	idleHookLine := "invoke «hooks.run»(\"idle\"), then «roster-reconcile»()"
 	if lineLeaksPRScan(idleHookLine) {
 		t.Errorf("discriminator control: the legitimately-remaining idle-hook line was wrongly flagged: %q", idleHookLine)
 	}

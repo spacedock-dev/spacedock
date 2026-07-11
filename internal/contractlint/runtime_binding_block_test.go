@@ -193,7 +193,7 @@ func TestCodexValidationReviewerReuseFollowsAddressableWorkerProbe(t *testing.T)
 	for _, want := range []string{
 		"`followup_task(target,message)` is the current turn-starting reuse/advance route",
 		"`send_message(target,message)` is non-triggering context/preservation only",
-		"When absent, reuse-condition-1 fails and feedback re-review fresh-dispatches a separate validation reviewer.",
+		"When absent, the `«addressable-worker»` reuse condition fails and feedback re-review fresh-dispatches a separate validation reviewer.",
 	} {
 		if !strings.Contains(runtime, want) {
 			t.Errorf("%s runtime implementation missing Codex addressable-worker binding %q", rel, want)

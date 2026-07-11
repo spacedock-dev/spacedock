@@ -10,10 +10,10 @@ This file defines how the shared first-officer core executes on Pi. The shared c
 - `«worker-identity»`: Record worker address, substrate, run/session handle, entity slug, stage, epoch, completion state, and stamped model. When the helper emits null model, stamp the parent's live model via `intercom({action:"list"})`; stage-declared model overrides are passed unchanged. Pi's model-space binding is provider/model strings, including provider-qualified and `~`-prefixed Pi-valid model names.
 - `«completion-signal»`: For `pi-subagents`, the primary completion signal is the child return/status; optional advisory is only a heads-up. file verification remains the completion gate: the FO reads the entity file and verifies the stage report before advancing state. For `pi-agent-teams`, task/member completion is likewise verified against the entity file.
 - `«worker.shutdown»`: For `pi-subagents`, a completed child invocation needs no mailbox shutdown; mark the worker complete/closed in first-officer memory. For `pi-agent-teams`, map teardown to `member_shutdown` or `team_done` according to the active adapter lifecycle.
-- `«context-budget»`: ABSENT; reuse-condition-0 is satisfied for Pi.
+- `«context-budget»`: ABSENT; its reuse condition is satisfied for Pi.
 - `«roster-reconcile»`: ABSENT; Pi relies on durable entity state and adapter-held worker identity, not a shared roster sweep.
 
-The build artifact carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. It must not be replaced by a locally composed assignment. The model stamped through `«worker-identity»` is a Pi-native value used by reuse-condition-4.
+The build artifact carries the entity slug/name, entity path, workflow directory, target stage, stage definition fetch command, worktree path when applicable, completion checklist, and completion-signal wording. It must not be replaced by a locally composed assignment. The model stamped through `«worker-identity»` is a Pi-native value used by `«reuse.model-match»`.
 
 ## Live Harness Isolation
 

@@ -43,6 +43,7 @@ Exempt any agent whose entity is in an active feedback-cycle state (tracked via 
 ## Break-Glass Manual Dispatch
 
 The resident trigger line already covers the first action (report the helper failure — command, exit code, stderr — to the captain before proceeding). Fill this template directly as the degraded fallback:
+Populate `{numbered checklist}` with the output of `«dispatch.checklist»(entity, stage)`; do not rebuild its rules here.
 ```
 Agent(
     subagent_type="{dispatch_agent_id}",
