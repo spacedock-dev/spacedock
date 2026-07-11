@@ -218,3 +218,20 @@ The fixture and command behavior is promising, but it does not yet prove the act
 ### Summary
 
 The second implementation cycle makes child identity an observable reuse decision, accepts the live session's safe embedded-parent metadata shape without relaxing target-relevant failure handling, and proves the exact live mapping. No observer, sidecar, cache, or transcript-content path was added.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently exercise the feedback decision boundary: only a complete verified envelope may retain the exact child ID; all other results invoke fresh exactly once with a distinct ID.
+  Fresh `go test ./internal/dispatch -run 'TestCodexContextBudget(CommandGoldens|DecisionRetainsOrFreshensChildThread|RouteFailsFreshOnEveryUnavailableProbe|RequiresWorker)$' -count=1 -v` passed (30 tests): a complete below-budget envelope retains its ID; above-budget, unavailable, partial, malformed, and wrong-worker results call fresh exactly once with the distinct fixture ID.
+- DONE: Review the embedded-parent JSONL classification and preserved parent-session live replay artifact; verify exact child-ID, entity marker, state-log, and clean-state evidence without reading transcript content.
+  The fresh codexsession suite exercised the non-target embedded-parent allow and target-relevant malformed-record rejection. Preserved replay `/tmp/spacedock-bc-live-replay.7OTBln` has matching marker `019f51df-2041-75e1-b86a-9d9e1c9a3585`, state commit `75dd88c`, and clean entity path; no JSONL was opened. Current proof commit `442710b` records a completed-and-still-addressable child, fresh content-free exact-ID projection, then exact-path follow-up state commit `c5e7395` with the same ID.
+- DONE: Run fresh baseline, race, focused, and live-harness checks as capacity allows; verify the Ensign/FO binding reconciliation and no observer/cache/capability route, then recommend PASSED or REJECTED.
+  Fresh baseline and race runs over `./internal/codexsession ./internal/dispatch ./internal/ensigncycle` passed 687 tests each; focused command coverage passed 30 and contract compatibility 93 (not behavioral proof). The validator's parent-only live harness correctly skipped without supplied inputs; the current completed-addressable proof instead executed the parent command with exit 0, `source:"session-jsonl"`, a fresh 21,179/353,400 snapshot, and `reuse_ok:true`. The Ensign/FO bindings agree on the fail-closed command; the synchronous command golden exercises the JSONL-only route. A broad `go test ./...` host run remains blocked at unrelated real-Claude install behavior and is not counted as green evidence.
+
+### Recommendation
+
+PASSED. Commit `59ba8101` closes the prior decision, live-identity, and binding findings; all six ACs now have executable or durable state evidence, including the formerly missing completed-but-addressable path.
+
+### Summary
+
+Validation found one real AC-2 gap, held the verdict, and closed it with a new parent-FO completed-addressable replay rather than prose or contractlint. The proof retains only content-free output and durable state; the reader's JSONL input was never opened by the validator.
