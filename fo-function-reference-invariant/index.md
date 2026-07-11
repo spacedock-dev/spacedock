@@ -6,6 +6,7 @@ source: "Captain direction 2026-07-11: widen the step-number sweep; hooks and re
 id: 88tq5zyg9jvx13f33zz3eq28
 started: 2026-07-10T23:57:47Z
 worktree: .worktrees/spacedock-ensign-fo-function-reference-invariant
+pr: "#496"
 ---
 
 ## Problem
