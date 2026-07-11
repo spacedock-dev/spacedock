@@ -1,6 +1,6 @@
 ---
 title: Replace mutable step-number references with named FO functions
-status: validation
+status: implementation
 score: 0.95
 source: "Captain direction 2026-07-11: widen the step-number sweep; hooks and references use the «fn» notation."
 id: 88tq5zyg9jvx13f33zz3eq28
@@ -271,6 +271,7 @@ The riskiest mechanism is the lint and deletion boundary, not runtime execution.
 ### Feedback Cycles
 
 - Cycle 1 — validation REJECTED commit `9c8cbea6` because PR #496 exact-SHA `codex-live` failed two behavioral scenarios: filing claimed success without an observed atomic `spacedock new wire-the-thing` command, and keep-moving claimed both ready tasks complete while `ready-one` was never dispatched. AC-1 through AC-4 remained green; AC-5 was unmet. Route back to implementation to reproduce both Codex failures locally with `benchmark-token`, repair the smallest contract surface that restores behavior, run targeted local Codex and Claude drives before pushing, then reuse the same validator for re-review.
+- Cycle 2 — re-review REJECTED commit `58cf120f` because the broadened launcher-capture regex accepted mismatched, leading-only, and trailing-only quote forms as valid atomic filing evidence. Protected live CI cannot satisfy the “without weakening durable assertions” requirement. Route back to implementation for three explicit capture alternatives only—unquoted, balanced double-quoted, and balanced single-quoted—and retain all three malformed forms as negative controls before reusing the same validator again.
 
 ## Stage Report: ideation
 
