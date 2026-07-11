@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-claude-result-extractor-first-vs-terminal
 issue:
 mod-block: merge:pr-merge
-pr: "#488"
+pr: pr-merge:495
 ---
 
 ## Problem statement
