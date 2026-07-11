@@ -30,7 +30,7 @@ var newInvocation = regexp.MustCompile(`(?:spacedock|SPACEDOCK_BIN)[^\n]*?(?:\bn
 // launcherCapture matches the contract-blessed var-capture of the resolved
 // launcher — `B=${SPACEDOCK_BIN:-spacedock}` — anywhere in a command string. The
 // captured var name is recorded so the create call below can require THAT var.
-var launcherCapture = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}`)
+var launcherCapture = regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)=["']?\$\{SPACEDOCK_BIN:-spacedock\}["']?`)
 
 // nextIDInvocation matches a `status --next-id` candidate-preview command — the
 // first half of the manual filing pair the atomic path replaces.

@@ -19,7 +19,7 @@ Shared first-officer semantics — the boot-resident core. Status and dispatch l
 Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
 
 - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
-- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. At each gate, invoke `Skill(skill="spacedock:present-gate")`, render the complete review per `## Completion and Gates`, and stop without resolving it.
+- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate, invoke `Skill(skill="spacedock:present-gate")`, render the complete review per `## Completion and Gates`, and stop without resolving it.
 - **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
 
 - **done-when:** interactive has presented the summary and stopped; headless has reported every bounded stop reason; given-the-conn headless has driven the requested scope to terminal.
@@ -30,6 +30,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 
 - **trigger:** the captain invokes `engage`, optionally naming a workflow, after the greet. A captain-facing FO INTERACTION VERB.
 - **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST run `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)`), then the separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. The registered startup mod owns live PR advancement; the sweep's exit-0 `gh: "unavailable"` distinguishes real-empty from UNKNOWN. THEN run `«dispatch.next-action»()` to its stopping condition: dispatch each ready entity, advance each completed non-gated stage, present each ready gate via `present-gate`.
+- **dispatch boundary:** the ready set includes every status-ready entity, including one made ready by gate approval during this invocation. Every member needs an observed `«worker.spawn»` before waiting for completion or reading a stage report; state mutation and `«dispatch.build»` alone are not dispatch or completion evidence.
 - **scope:** ONE workflow per invocation. The `workflow` argument is present now so a future multi-workflow form EXTENDS this signature rather than replacing it — a named future extension, not precluded here.
 - **done-when:** `«dispatch.next-action»()` reaches its stopping condition for the named workflow (a gate presented and awaiting the captain, terminal reached, or nothing dispatchable).
 - → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
@@ -40,7 +41,7 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»()` and follows the interactive branch of `«interaction.boundary»()`. Each loads only at its trigger:
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `references/fo-dispatch-core.md` — first worker dispatch.
+- `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
 ## Single-Entity Scope

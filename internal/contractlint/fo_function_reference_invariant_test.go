@@ -144,6 +144,37 @@ func TestFirstOfficerEagerReferenceTopology(t *testing.T) {
 	}
 }
 
+func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+	loads := foMarkdownSection(t, shared, "## Deferred load points")
+	for _, want := range []string{
+		"references/fo-dispatch-core.md",
+		"before invoking `«dispatch.next-action»()`",
+		"`«dispatch.build»` output is not a dispatch",
+		"`«worker.spawn»`",
+	} {
+		if !strings.Contains(loads, want) {
+			t.Errorf("deferred dispatch load point missing precondition %q", want)
+		}
+	}
+
+	interaction := foMarkdownSection(t, shared, "## «interaction.boundary»(): route interactive and headless launch behavior")
+	if !strings.Contains(interaction, "Read the deferred dispatch owner before the first dispatch") {
+		t.Error("headless interaction can enter dispatch without loading its named owner")
+	}
+
+	engage := foMarkdownSection(t, shared, "## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition")
+	for _, want := range []string{
+		"including one made ready by gate approval",
+		"observed `«worker.spawn»`",
+		"before waiting for completion",
+	} {
+		if !strings.Contains(engage, want) {
+			t.Errorf("engage dispatch boundary missing %q", want)
+		}
+	}
+}
+
 func TestFOFunctionRequiredCallSites(t *testing.T) {
 	type site struct {
 		path, heading string

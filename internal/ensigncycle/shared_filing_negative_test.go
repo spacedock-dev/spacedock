@@ -102,6 +102,14 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		t.Fatalf("expected the `$B new` var-capture idiom to count as atomic filing on Codex: %v", err)
 	}
 
+	// Positive regression: PR #496's Codex command quoted both the captured
+	// expansion and its invocation. It succeeded and created the entity atomically;
+	// quote placement must not erase that durable action from the detector.
+	filedQuotedCapture := codexCommand("launcher=\\\"${SPACEDOCK_BIN:-spacedock}\\\"\\nprintf '%s\\\\n' stub | \\\"$launcher\\\" new " + slug)
+	if err := assertCodexFilingViaNew(filedQuotedCapture, slug); err != nil {
+		t.Fatalf("expected PR #496's quoted launcher-capture filing to count as atomic: %v", err)
+	}
+
 	// Negative: no atomic filing — must fail on the missing-`new` half.
 	none := codexCommand("spacedock status --workflow-dir .")
 	if err := assertCodexFilingViaNew(none, slug); err == nil {
