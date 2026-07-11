@@ -372,3 +372,20 @@ quoted-launcher parser hole that the prior live filing stream demonstrated. The
 repair is unit-, offline-, race-, focused-live-, and filing-live proven. The
 remaining full-lane result is explicitly capacity-blocked, with retained
 pre-agent usage-limit evidence, so the workflow remains in implementation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: The required full shared Codex live suite passed after the quota reset:
+  `SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-95w-postreset-shared-live-20260712 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v`.
+  It exited 0; `TestLiveCodexSharedScenarios` passed in 1192.11s and the package
+  completed in 1192.362s.
+- DONE: All nine scenarios passed: `gate-guardrail` (81.69s),
+  `rejection-flow` (269.70s), `feedback-3-cycle-escalation` (73.41s),
+  `merge-hook-guardrail` (45.46s), `filing` (57.74s), `shallow-boot`
+  (132.07s), `self-evidence-merge-triage` (71.45s),
+  `smallest-sufficient-mechanism` (220.57s), and `keep-moving-posture`
+  (239.45s).
+- DONE: Retained artifacts, including nine final-message files, are at
+  `/tmp/spacedock-95w-postreset-shared-live-20260712/codex-shared-scenarios/`.
+- NOTE: This verification rerun changed no code. The entity remains in
+  `implementation` by direction; this report does not change its status.
