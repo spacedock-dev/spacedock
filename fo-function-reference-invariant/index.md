@@ -328,3 +328,20 @@ The implementation replaces every mutable numeric procedure address with a named
 ### Summary
 
 The named-function and eager-`@` cleanup is structurally sound, smaller by 6,421 bytes, and resistant to representative regressions. Release is blocked because the exact-SHA Codex protected lane failed filing and keep-moving behavior; validation recommends rejection and a focused implementation feedback cycle.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Reproduce PR #496 exact-head Codex filing and keep-moving failures locally using the available benchmark-token, trace the causal contract deletion or rewrite, and do not label them flakes without evidence.
+  PR artifact inspection proved filing executed `"$launcher" new wire-the-thing` successfully; the detector false-rejected its quoted capture. Keep-moving was real: `dispatch build` ran without `spawn_agent`, followed by hand-authored reports. Local Codex then reproduced the approved-gate variant.
+- DONE: Apply the smallest contract correction that restores both behaviors while retaining zero mutable addresses, named ownership, the singular eager @ topology, and substantial prompt shrinkage.
+  Commit `58cf120f` accepts the quoted launcher-capture command and makes deferred-owner load plus observed `«worker.spawn»` a precondition for every ready task, including one made ready by gate approval. Metrics remain `addresses=0 bytes=116833`, 5,567 bytes below the 122,400 post-#495 baseline.
+- DONE: Run targeted real local Codex live drives plus focused/full/race/compile gates before pushing.
+  Real Codex filing passed in 43.89s and corrected keep-moving passed in 216.75s. Focused regressions passed; `go test ./...` and `go test ./... -race` each passed 2,138 tests; `go test -tags live -run '^$' ./...` compiled cleanly; `git diff --check` passed.
+- SKIPPED: Run targeted real local Claude live drives before pushing.
+  The harness skipped because `~/.claude/benchmark-token` was empty (1 byte), the documented Keychain snapshot had zero-length access/refresh tokens, and `claude auth status --json` reported logged out. Captain explicitly overrode this local prerequisite and directed protected PR CI to supply Claude proof.
+- DONE: Push the cycle-1 correction and leave the worktree clean.
+  `58cf120f` is pushed to PR #496; the code worktree is clean. Exact-SHA protected Claude/Codex/Pi conclusions are the required external AC-5 proof for validation cycle 2.
+
+### Summary
+
+Cycle 1 separates one assertion bug from one real dispatcher regression: filing was atomic but unrecognized, while keep-moving built assignments without spawning workers. The minimal correction fixes both seams without restoring numeric addresses or expanding eager topology, and retains substantial prompt shrinkage. Local Codex and all offline gates are green; captain-authorized protected PR CI now owns the unavailable local Claude proof.
