@@ -108,6 +108,6 @@ Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-pla
 ### Cycle 1 — captain-directed re-ideation (2026-07-11)
 
 - The implementation bridge gate rejected the app-server observer-first direction: a second initialized client received `thread/started` but could not resume the producer-owned thread after its rollout existed (`-32603`), so it received no `thread/tokenUsage/updated` event.
-- Preserve the existing uncommitted worktree experiment as non-shipping evidence; it must not become a partial public binding.
+- Preserve the existing uncommitted worktree experiment at `.worktrees/spacedock-ensign-codex-context-budget-probe` as non-shipping evidence; it must not become a partial public binding.
 - Rework the v1 direction around Codex's own worker inventory and session JSONL: map `list_agents` task paths through parent/child metadata to fresh `token_count` records, remain fail-closed for missing, stale, or ambiguous evidence, and never parse or persist prompt/response content.
 - Required ideation proof: a live current-worker mapping to a child session record, active-window (`last`) accounting across compaction, and explicit stale/mismatch safety. Decide whether the result can support automatic reuse or remains diagnostic-only.
