@@ -1,11 +1,11 @@
 ---
 title: Codex post-compaction contract reload
 status: backlog
-source: "Captain correction 2026-07-11: after Codex context compaction, enforce re-reading the current first-officer contract before continuing workflow actions."
+source: Duplicate filing; canonical ideation is task njr36mfyhbafy8zx9ydks8ep in another workflow, preserved at /tmp/first-officer-compaction-rehydration.md
 started:
 completed:
 verdict:
-score: 0.9
+score: 0
 worktree:
 issue:
 id: c60nzb396vgf0f8a9v0sggwm
