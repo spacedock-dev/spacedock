@@ -111,3 +111,16 @@ Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-pla
 - Preserve the existing uncommitted worktree experiment at `.worktrees/spacedock-ensign-codex-context-budget-probe` as non-shipping evidence; it must not become a partial public binding.
 - Rework the v1 direction around Codex's own worker inventory and session JSONL: map `list_agents` task paths through parent/child metadata to fresh `token_count` records, remain fail-closed for missing, stale, or ambiguous evidence, and never parse or persist prompt/response content.
 - Required ideation proof: a live current-worker mapping to a child session record, active-window (`last`) accounting across compaction, and explicit stale/mismatch safety. Decide whether the result can support automatic reuse or remains diagnostic-only.
+
+## Stage Report: ideation (cycle 1)
+
+- DONE: Reframe the v1 observation mechanism around Codex inventory and session JSONL.
+  Replaced the observer, socket, capability, and cache proposal with a direct-parent `$CODEX_THREAD_ID` plus allowlisted session-JSONL lookup.
+- DONE: Prove the smallest current-worker mapping and active-window evidence without retaining content.
+  Live roster path mapped to child `019f50f7-8f5b-7950-8a9b-102082cdcd3c`; at 2026-07-11T11:56:50Z its final projected `last_token_usage` was 120,352 / 353,400, 25 seconds old.
+- DONE: Specify fail-closed eligibility, revised acceptance criteria, and a validation plan.
+  Unique fresh binding supports conditional automatic reuse; duplicate, missing, stale, malformed, mismatched, and unsafe-path evidence exits non-zero and fresh-dispatches.
+
+### Summary
+
+The revised v1 is an automatic, conditional JSONL gate, not a diagnostic or observer bridge. Body commit `922c7b9337ac715cb391040905b7ddceb5d583b6` records the live mapping, compaction boundary, fail-closed matrix, revised ACs, and JSONL-only validation plan.
