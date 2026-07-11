@@ -474,3 +474,16 @@ Cycle 4 removes both remaining evidence cross-products without changing runtime 
 ### Summary
 
 Every prior rejection is repaired, but two narrow token-boundary mistakes remain: launcher invocation matching crosses into unrelated commands, and report cardinality counts prose mentions. AC-1 through AC-4 remain green; AC-5 is rejected on three executable-segment escapes and one heading-count escape.
+
+## Stage Report: implementation (cycle 5 repair)
+
+- DONE: Bound captured-launcher filing evidence to one simple command segment where the same captured variable is the balanced executable and `new` or `--new` is its argument.
+  Commit `c247cd8e` replaces the cross-separator regex with a bounded splitter over newline, `;`, `&&`, `||`, and `|`. A candidate must begin with the captured variable as an unquoted or balanced-double-quoted executable, then carry `new`/`--new` and the requested slug in that same segment. The three exact cycle-five escapes are retained as negative tests; no general shell parser was introduced.
+- DONE: Count only line-anchored `## Stage Report:` headings for per-target batched-read cardinality.
+  `codexDurableStageReportTargets` now counts only `(?m)^##[ \t]+Stage Report:` matches. The retained two-target control has one real heading plus a prose `Stage Report` mention and proves neither target.
+- DONE: Retain all cycle-1 through cycle-5 adversarial controls; run focused, real Codex filing/keep-moving, full, race, live-tag compile, and diff gates before reporting.
+  Focused cycle-five controls passed 8/8; `internal/ensigncycle` passed 348 tests; contractlint passed 114; CLI prose checks passed 3; live-tag all-package compile passed; `go test ./...` and `go test ./... -race` each passed 2,154 tests across 17 packages; `git diff --check` passed. The provenance-correct live command was `SPACEDOCK_BIN="$PWD/spacedock" SPACEDOCK_REPO_ROOT="$PWD" SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/88t-cycle5-live SPACEDOCK_CODEX_LIVE_REQUIRED= rtk go test -tags live -count=1 -timeout 40m -run 'TestLiveCodexSharedScenarios/(filing|keep-moving-posture)$' ./internal/ensigncycle -v`; it passed all 3 Go test nodes. Codex selected local ChatGPT auth from `~/.codex/auth.json`, seeded it into an isolated `CODEX_HOME`, and the setup artifact reports `Logged in using ChatGPT`. The marketplace symlink targeted this exact worktree; transcript reads used its isolated plugin cache; cached and worktree hashes matched for `first-officer/SKILL.md` (`11a36a7d…`), shared core (`e8935c73…`), and Codex runtime (`49011fdd…`). The explicit worktree binary hash was `2e430fb5…`, and the transcript reported it as `0.24.0+dev`. Durable live artifacts are under `/tmp/88t-cycle5-live/codex-shared-scenarios/`.
+
+### Summary
+
+Cycle five closes the two remaining token-boundary false positives with a 42-insertion/6-deletion local test-helper change. Captured-launcher evidence cannot cross into another shell command, and incidental prose cannot inflate durable-report cardinality. Offline, race, compile, and provenance-audited local Codex filing/keep-moving behavior are green at `c247cd8e`.
