@@ -1,12 +1,15 @@
 ---
 title: Replace mutable step-number references with named FO functions
-status: validation
+status: done
 score: 0.95
 source: "Captain direction 2026-07-11: widen the step-number sweep; hooks and references use the «fn» notation."
 id: 88tq5zyg9jvx13f33zz3eq28
 started: 2026-07-10T23:57:47Z
 worktree: .worktrees/spacedock-ensign-fo-function-reference-invariant
 pr: pr-merge:496
+verdict: passed
+completed: 2026-07-11T09:09:12Z
+archived: 2026-07-11T09:09:12Z
 ---
 
 ## Problem
