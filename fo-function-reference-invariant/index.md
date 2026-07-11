@@ -347,6 +347,23 @@ The named-function and eager-`@` cleanup is structurally sound, smaller by 6,421
 
 Cycle 1 separates one assertion bug from one real dispatcher regression: filing was atomic but unrecognized, while keep-moving built assignments without spawning workers. The minimal correction fixes both seams without restoring numeric addresses or expanding eager topology, and retains substantial prompt shrinkage. Local Codex and all offline gates are green; captain-authorized protected PR CI now owns the unavailable local Claude proof.
 
+## Stage Report: implementation (cycle 2)
+
+- DONE: Replace the weakened launcher-capture regex with explicit unquoted, balanced-double-quoted, and balanced-single-quoted alternatives; reject mismatched, leading-only, and trailing-only quotes.
+  `88778c51` uses three explicit assignment alternatives with a required delimiter; no independent optional quote classes remain.
+- DONE: Add the validator's three malformed assignments as durable negative controls while retaining the real quoted PR #496 command as a positive control.
+  `TestAssertCodexFilingViaNew` passes four positive variants and rejects mismatched, leading-only, trailing-only, missing-new, and next-id/manual shapes.
+- DONE: Resolve repeated approved-gate/ready-task keep-moving failures from exact-head evidence rather than another prose synonym.
+  PR #496 run `29139009565` at `58cf120f` failed only approved-gate dispatch. Its artifact and the next local trace showed multi_agent_v2 legitimately omits `spawn_agent`: successful `dispatch build`, then `wait`, then a durable working-stage report is the completion gate before FO terminalization. The compact owner again states commissioned dispatch is mandatory; the grader now credits that evidenced stage report instead of requiring premature `status=done`.
+- DONE: Run focused detector/adversarial tests and all affected contract gates.
+  Filing controls, keep-moving positives/negatives, dispatch-evidence regression, named-function invariants, and prompt gates pass. The final local real Codex keep-moving drive passed in 214.66s; `go test ./...` and `go test ./... -race` each passed 2,142 tests; live-tag compile and `git diff --check` passed.
+- DONE: Commit, push PR #496, and leave the worktree clean without changing unrelated contract behavior.
+  `88778c51` changes the parser/evidence guards and one compact existing-owner sentence only. Metrics remain `addresses=0 bytes=117062`, 5,338 bytes below the 122,400 baseline; eager topology is unchanged.
+
+### Summary
+
+Cycle 2 closes two adversarial gaps. Launcher capture now recognizes only balanced valid assignments, and keep-moving proof follows Codex multi_agent_v2's durable dispatch dialect instead of demanding a hidden spawn event or terminal status before the FO advances it. The exact local scenario and all repository gates are green; PR #496 protected lanes now validate `88778c51`.
+
 ## Stage Report: validation (cycle 2)
 
 - DONE: Re-check AC-1 through AC-4 on exact commit `58cf120fca8a2e56c67533fafe1c84b232c5d3d6`.
