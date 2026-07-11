@@ -417,3 +417,24 @@ The quote repair, named-function cleanup, prompt shrinkage, and intended hidden-
 ### Summary
 
 Cycle 3 preserves the required build → wait → report temporal invariant while matching Codex's real event granularity. A failed aggregate shell item no longer erases earlier successful dispatch JSON in that batch, and a named batched durable read can prove its post-wait reports without admitting stale, pre-wait, or failed-build streams. The exact real scenario and all required local gates are green; protected exact-SHA lanes remain validation's external evidence boundary.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Reproduce the original AC-1 through AC-4 and all prior rejection controls on exact repair commit `f49b782626069041cc7c4587782f4abffb07d408`.
+  Zero mutable addresses, exact ordered-procedure preservation, named-owner closure, the commissioned-dispatch boundary, singular three-import eager topology, and the 117,062-byte prompt surface all remain green. Balanced launcher positives and malformed-quote negatives pass. The repaired state machine rejects stale-report-before-build, report-before-wait, and failed-build-before-wait/report streams. Focused keep-moving, filing, contractlint, and `git diff --check` commands pass; the implementation report records green full/race/live-tag gates and a real local Codex keep-moving pass for this exact head. The implementation worktree remains clean.
+- DONE: Confirm the intended ordered positive paths.
+  The exact-head tests credit a successful per-entity build → completed wait → successful post-wait durable report, retain successful targets in a clean failed aggregate batch, and credit a named batched read when the fixture supplies one Stage Report per named target.
+- FAILED: Prevent success-record cross-attribution inside a failed mixed batch.
+  A detached exact-head fixture supplied one complete `dispatch_file_path` JSON for `ready-one`, then a failure line naming `spacedock-ensign-ready-two-implementation`. The nonzero batch correctly credited `ready-one` but incorrectly credited failed `ready-two` because `codexSuccessfulDispatchBuildTargets` checks the output globally: another target supplies the `"dispatch_file_path":` token while the failed target's error supplies its ensign path. A structural success record and entity identity must co-occur in the same parsed result, not merely somewhere in aggregate output.
+- FAILED: Prevent one anonymous report from proving every target named by a batched read command.
+  A detached exact-head fixture performed valid builds and a completed wait for `ready-one` and `ready-two`, then ran one successful batched read command naming both files whose output contained only one anonymous `## Stage Report`. Both targets were incorrectly credited because each filename occurs in the command while `Stage Report` occurs globally in output. A batched read must attribute a distinct returned report block to each credited target; command names multiplied by a global report marker are insufficient. The throwaway checkout was removed and the deliverable was unchanged.
+- FAILED: AC-5 and protected exact-SHA evidence.
+  PR #496 currently targets `f49b782626069041cc7c4587782f4abffb07d408`. Run `https://github.com/spacedock-dev/spacedock/actions/runs/29140687746` has successful offline/build/install checks, while Sonnet, Opus, Codex, and Pi remain waiting for environment approval at this verdict. Regardless of their eventual conclusions, the two independently reproduced false-positive dispatch assertions leave AC-5 unmet.
+
+### Recommendation
+
+**REJECTED.** Parse each failed-batch output record so its complete success shape and entity belong to the same record. For named batched reads, require a distinct attributable Stage Report per credited target (or another per-target durable marker), and retain both adversarial fixtures as negatives. Do not weaken the now-correct temporal state machine or the structural contract invariants.
+
+### Summary
+
+The ordered state machine fixes cycle 3, but its aggregate-output attribution still forms two unsafe cross products: one target's success marker can bless another target's failure path, and one anonymous Stage Report can bless every filename in a batched command. AC-1 through AC-4 remain green; AC-5 is rejected on these two exact adversarial failures.
