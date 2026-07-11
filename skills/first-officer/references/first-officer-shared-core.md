@@ -1,6 +1,6 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. The deferred status, write, dispatch, and merge load points are named at their triggers below.
+Shared first-officer semantics — the boot-resident core. Status and dispatch load points remain deferred; merge, write scope, and smallest-sufficient mechanism are eagerly imported by the entry skill.
 
 ## Startup
 
@@ -34,7 +34,6 @@ Shared first-officer semantics — the boot-resident core. The deferred status, 
 A greet-and-stop boot loads NONE of these — it composes its summary from the boot record (Startup step 2) and NAMES any ready gate without rendering it (the no-render-at-greet rule is Startup step 3). Each loads only at its trigger:
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** file-write intent or state mutation. Before using Edit, Write, apply_patch, shell redirection, `tee`, `sed -i`, or any command that writes a repo file, load `fo-write-core` and run `«write.classify»(target, intent)`. NOT «engage»'s sweep / pr-merge advancement, whose `status --set`/`archive` are pre-authorized at engage and need no write-scope load.
 - `references/fo-dispatch-core.md` — first worker dispatch.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
@@ -94,7 +93,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch (full write-authority scope in `Skill(skill="spacedock:fo-write-core")`, loaded at first FO-authored file-write intent or state mutation).
+- The FO owns YAML frontmatter on the main branch under the eagerly loaded `«write.classify»` write-authority scope.
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 

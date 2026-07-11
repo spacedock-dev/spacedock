@@ -86,7 +86,6 @@ func TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard(t *testing.T) {
 
 	for _, tok := range []string{
 		"spacedock:fo-status-viewer",     // status-viewer skill
-		"spacedock:fo-write-core",        // write/id-style skill
 		"references/fo-dispatch-core.md", // dispatch reference
 	} {
 		if !strings.Contains(block, tok) {
@@ -96,7 +95,6 @@ func TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard(t *testing.T) {
 	for _, lp := range []string{
 		"first status query",    // status-query load-point
 		"first worker dispatch", // dispatch load-point
-		"file-write intent",     // write/new-entity load-point
 	} {
 		if !strings.Contains(block, lp) {
 			t.Errorf("deferred load points lost load-point trigger %q — a folded row's trigger vanished", lp)

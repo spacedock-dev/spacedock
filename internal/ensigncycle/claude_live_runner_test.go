@@ -391,7 +391,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
 	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
 
-	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt())
+	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
 
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.

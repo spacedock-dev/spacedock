@@ -25,8 +25,8 @@ var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 }
 
-// foReferenceCores are the two host-neutral cores the first-officer contract loads:
-// merge eagerly from SKILL.md and dispatch lazily from the shared core. Each core must
+// foReferenceCores are the host-neutral cores the first-officer contract loads:
+// merge and write eagerly from SKILL.md and dispatch lazily from the shared core. Each core must
 // exist on disk and carry its ceremony anchors.
 var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
@@ -34,6 +34,9 @@ var foReferenceCores = map[string][]string{
 	},
 	filepath.Join("skills", "first-officer", "references", "fo-dispatch-core.md"): {
 		"## Dispatch", "## Reuse and Fresh Dispatch", "## Dispatch Adapter", "## Event Loop",
+	},
+	filepath.Join("skills", "first-officer", "references", "fo-write-core.md"): {
+		"## Mutation Gate", "## FO Write Scope", "## ID Styles",
 	},
 }
 
@@ -46,9 +49,6 @@ var foReferenceCores = map[string][]string{
 var deferredSkillCores = map[string][]string{
 	filepath.Join("skills", "fo-status-viewer", "SKILL.md"): {
 		"## Status Viewer", "### Captain-Facing State Display", "## Issue Filing",
-	},
-	filepath.Join("skills", "fo-write-core", "SKILL.md"): {
-		"## Mutation Gate", "## FO Write Scope", "## ID Styles",
 	},
 	filepath.Join("skills", "fo-dispatch-recovery", "SKILL.md"): {
 		"## Degraded Mode", "## Break-Glass Manual Dispatch", "## Context Budget Failure and Dead Ensign Handling",
@@ -233,7 +233,7 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	sharedBody := string(sharedData)
 	for corePath, anchors := range foReferenceCores {
 		base := filepath.Base(corePath)
-		if base == "fo-merge-core.md" {
+		if base != "fo-dispatch-core.md" {
 			if !strings.Contains(entryBody, "@references/"+base) {
 				t.Errorf("%s does not eagerly import %s", entryPath, base)
 			}
@@ -262,7 +262,11 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 // one place. The section-name set the prose-pointer scanner watches is exactly this map's
 // keys; the owner drives the Skill(skill="spacedock:<owner>") cross-file resolution.
 func sectionOwners() map[string]string {
-	owners := map[string]string{}
+	owners := map[string]string{
+		"Mutation Gate":  "fo-write-core",
+		"FO Write Scope": "fo-write-core",
+		"ID Styles":      "fo-write-core",
+	}
 	for skillPath, anchors := range deferredSkillCores {
 		owner := filepath.Base(filepath.Dir(skillPath)) // skills/<owner>/SKILL.md -> <owner>
 		for _, anchor := range anchors {
@@ -472,7 +476,6 @@ func TestDeferredSkillProsePointerGuardFailsOnDanglingTarget(t *testing.T) {
 // as resolved on the bare path token) both escape it.
 var deadDeferredReferencePaths = []string{
 	"references/fo-status-viewer.md",
-	"references/fo-write-core.md",
 }
 
 // TestNoSurvivingContractFileNamesDeadDeferredReferencePath is the AC-3 unguarded-re-point gate:

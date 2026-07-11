@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -445,14 +446,25 @@ func shallowBootMergedEntity() string {
 		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
 }
 
-func shallowBootPrompt() string {
+func shallowBootPrompt(workflowRoot string) string {
 	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: .",
+		"Workflow directory: "+workflowRoot,
 		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
 		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
 		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
 	)
+}
+
+func TestShallowBootPromptUsesExactAbsoluteFixtureRoot(t *testing.T) {
+	const fixtureRoot = "/tmp/TestLiveSharedScenariosshallow-boot1234567890/001"
+	prompt := shallowBootPrompt(fixtureRoot)
+	if strings.Contains(prompt, "Workflow directory: .") {
+		t.Fatal("shallow boot prompt uses a relative-only workflow directory")
+	}
+	if !strings.Contains(prompt, "Workflow directory: "+fixtureRoot) {
+		t.Fatal("shallow boot prompt does not anchor the exact absolute fixture root")
+	}
 }
 
 // writeMergeTriageWorkflow writes the self-evidence-merge-triage fixture: one entity

@@ -28,6 +28,7 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 		"@references/first-officer-shared-core.md",
 		"@references/fo-merge-core.md",
 		"@references/fo-smallest-sufficient-mechanism.md",
+		"@references/fo-write-core.md",
 	}
 	if strings.Join(imports, "\n") != strings.Join(wantImports, "\n") {
 		t.Fatalf("first-officer eager imports = %v, want exactly %v (dispatch core remains deferred)", imports, wantImports)
@@ -53,6 +54,7 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 	for _, bare := range []string{
 		"references/fo-merge-core.md",
 		"references/fo-smallest-sufficient-mechanism.md",
+		"references/fo-write-core.md",
 	} {
 		if strings.Contains(string(shared), bare) {
 			t.Errorf("shared core retains bare eager-reference load cue %q", bare)
@@ -64,5 +66,46 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Errorf("rejected promoted-skill directory exists at %s; want no separately callable capability", path)
 		}
+	}
+}
+
+func TestFirstOfficerEagerWriteCoreHasSingleCanonicalBody(t *testing.T) {
+	root := skillsRoot(t)
+	canonical := filepath.Join(root, "first-officer", "references", "fo-write-core.md")
+	body, err := os.ReadFile(canonical)
+	if err != nil {
+		t.Fatalf("read canonical eager write core: %v", err)
+	}
+	if !strings.Contains(string(body), "## Mutation Gate") || !strings.Contains(string(body), "## FO Write Scope") {
+		t.Fatalf("canonical eager write core does not carry the write contract")
+	}
+
+	wrapperPath := filepath.Join(root, "fo-write-core", "SKILL.md")
+	wrapper, err := os.ReadFile(wrapperPath)
+	if err != nil {
+		t.Fatalf("read fo-write-core wrapper: %v", err)
+	}
+	wantImport := "@../first-officer/references/fo-write-core.md"
+	if !strings.Contains(string(wrapper), wantImport) {
+		t.Fatalf("fo-write-core wrapper does not import canonical body via %q", wantImport)
+	}
+	if strings.Count(string(wrapper), "## Mutation Gate") != 0 {
+		t.Fatal("fo-write-core wrapper duplicates the canonical mutation-gate body")
+	}
+}
+
+func TestPR495FilingHuntTargetIsEagerlyResolvable(t *testing.T) {
+	const capturedHunt = `find / -path /proc -prune -o -iname "fo-write-core*" -print 2>/dev/null`
+	const capturedHuntTarget = "fo-write-core"
+	root := skillsRoot(t)
+	entry, err := os.ReadFile(filepath.Join(root, "first-officer", "SKILL.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(entry), "@references/fo-write-core.md") {
+		t.Fatalf("PR #495 filing hunt %q for %s remains possible: first-officer entry does not eagerly import write-core", capturedHunt, capturedHuntTarget)
+	}
+	if _, err := os.Stat(filepath.Join(root, "first-officer", "references", "fo-write-core.md")); err != nil {
+		t.Fatalf("PR #495 filing hunt eager target does not resolve: %v", err)
 	}
 }

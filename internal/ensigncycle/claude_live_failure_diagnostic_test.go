@@ -4,6 +4,7 @@ package ensigncycle
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -203,5 +204,41 @@ func TestDetectClaudeLiveFailureDiagnosticCleanStream(t *testing.T) {
 	registerClaudeLiveFailureDiagnostic(reporter, nil)
 	if len(reporter.cleanups) != 0 {
 		t.Fatalf("clean stream registered %d cleanups, want 0", len(reporter.cleanups))
+	}
+}
+
+func TestLiveGateStopRoutesDetectorEvidenceThroughFailureOnlyReporter(t *testing.T) {
+	sourcePath := "live_gate_stop_test.go"
+	source, err := os.ReadFile(sourcePath)
+	if err != nil {
+		t.Fatalf("read %s: %v", sourcePath, err)
+	}
+	body := string(source)
+	want := "registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, rootResolved))"
+	if !strings.Contains(body, want) {
+		t.Fatalf("live gate-stop does not route its captured stream through the failure-only reporter: missing %q", want)
+	}
+	for _, direct := range []string{"detectWrongRootBoot(stream, rootResolved)", "detectBroadSearchAtBoot(stream, rootResolved)"} {
+		if strings.Contains(body, direct) {
+			t.Errorf("live gate-stop directly invokes fatal detector path %q outside the failure-only reporter", direct)
+		}
+	}
+}
+
+func TestLiveGateStopCapturedDiagnosticStaysSecondary(t *testing.T) {
+	const fixtureRoot = "/tmp/TestLiveDefaultHeadlessStopsAtGate1234567890/001"
+	stream := streamLine(`cd /home/runner/work/spacedock/spacedock && spacedock status --discover`)
+	reporter := &fakeClaudeLiveDiagnosticReporter{}
+	registerClaudeLiveFailureDiagnostic(reporter, detectClaudeLiveFailureDiagnostic(stream, fixtureRoot))
+	reporter.injectPrimary("durable gate assertion failed")
+	reporter.runCleanups()
+	if len(reporter.events) != 2 {
+		t.Fatalf("timeline = %#v, want durable failure plus one detector diagnostic", reporter.events)
+	}
+	if reporter.events[0] != "durable gate assertion failed" {
+		t.Fatalf("primary failure changed or moved: %#v", reporter.events)
+	}
+	if !strings.Contains(reporter.events[1], "Additional diagnostic: FO booted the wrong root") {
+		t.Fatalf("detector evidence was not secondary: %#v", reporter.events)
 	}
 }

@@ -182,6 +182,18 @@ func TestDetectBroadSearchAtBoot(t *testing.T) {
 	}
 }
 
+func TestDetectBroadSearchAtBootPR495CapturedFilingHunt(t *testing.T) {
+	const fixtureRoot = "/tmp/TestLiveClaudeSharedScenariosfiling180063050/001"
+	const captured = `find / -path /proc -prune -o -iname "fo-write-core*" -print 2>/dev/null`
+	err := detectBroadSearchAtBoot(streamLine(captured), fixtureRoot)
+	if err == nil {
+		t.Fatal("PR #495 captured filing hunt was not detected")
+	}
+	if !strings.Contains(err.Error(), "find /") || !strings.Contains(err.Error(), "fo-write-core") {
+		t.Fatalf("diagnostic does not identify captured filing hunt %q: %v", captured, err)
+	}
+}
+
 // TestDetectBroadSearchAtBootSecondBlock proves the detector iterates ALL tool_use
 // blocks of a multi-tool assistant turn, not just the first — a broad-search Bash
 // riding as a second block must still red (it cannot be evaded by block ordering).
