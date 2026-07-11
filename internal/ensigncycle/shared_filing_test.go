@@ -27,11 +27,12 @@ import (
 // on one line with a `new` verb on an unrelated later line.
 var newInvocation = regexp.MustCompile(`(?:spacedock|SPACEDOCK_BIN)[^\n]*?(?:\bnew\b|--new)`)
 
-// launcherCapture matches exactly three contract-blessed assignments of the
+// launcherCapture matches the three contract-blessed assignments of the
 // resolved launcher: unquoted, balanced-double-quoted, or balanced-single-quoted.
+// It also accepts the exact balanced command-v fallback observed in PR #496.
 // Each alternative captures its var name separately; independent optional quote
 // classes are forbidden because they accept mismatched or one-sided quotes.
-var launcherCapture = regexp.MustCompile(`(?:([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-spacedock\}"|([A-Za-z_][A-Za-z0-9_]*)='\$\{SPACEDOCK_BIN:-spacedock\}')(?:[;\s]|$)`)
+var launcherCapture = regexp.MustCompile(`(?:([A-Za-z_][A-Za-z0-9_]*)=\$\{SPACEDOCK_BIN:-spacedock\}|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-spacedock\}"|([A-Za-z_][A-Za-z0-9_]*)='\$\{SPACEDOCK_BIN:-spacedock\}'|([A-Za-z_][A-Za-z0-9_]*)="\$\{SPACEDOCK_BIN:-\$\(command -v spacedock\)\}")(?:[;\s]|$)`)
 
 // nextIDInvocation matches a `status --next-id` candidate-preview command — the
 // first half of the manual filing pair the atomic path replaces.

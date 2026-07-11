@@ -83,7 +83,7 @@ func codexMixedDispatchBuildEvidence(succeeded []string, failed, stage string) s
 		results = append(results, fmt.Sprintf(`{"dispatch_file_path":"/tmp/spacedock-dispatch/spacedock-ensign-%s-%s.md"}`, entity, stage))
 	}
 	commands = append(commands, fmt.Sprintf("spacedock dispatch build --entity-path %s.md --stage %s", failed, stage))
-	results = append(results, "error: dispatch build failed")
+	results = append(results, fmt.Sprintf("error: dispatch build failed for spacedock-ensign-%s-%s", failed, stage))
 	line := map[string]any{
 		"type": "item.completed",
 		"item": map[string]any{
@@ -231,6 +231,25 @@ func TestCodexDispatchEvidenceCreditsOnlySuccessfulBuildsInFailedBatch(t *testin
 	}
 }
 
+func TestCodexDispatchEvidenceDoesNotCrossAttributeFailedBatchSuccess(t *testing.T) {
+	succeeded := kmReadyOne
+	failed := kmReadyTwo
+	stream := strings.Join([]string{
+		codexMixedDispatchBuildEvidence([]string{succeeded}, failed, kmNextStage),
+		codexWaitCompleted(),
+		codexEntityReadEvidence(succeeded, kmNextStage, kmNextStage),
+		codexEntityReadEvidence(failed, kmNextStage, kmNextStage),
+	}, "\n")
+
+	evidence := codexDispatchCompletionEvidenceFromJSONL(stream, []string{succeeded, failed})
+	if !evidence.stageReport[succeeded] {
+		t.Fatalf("successful build %q was not credited: %+v", succeeded, evidence)
+	}
+	if evidence.stageReport[failed] || evidence.doneReport[failed] {
+		t.Fatalf("failed build %q borrowed another target's success record: %+v", failed, evidence)
+	}
+}
+
 func TestCodexDispatchEvidenceCreditsNamedBatchedDurableReads(t *testing.T) {
 	entities := []string{kmApprovedGate, kmReadyOne, kmReadyTwo}
 	stream := []string{codexDispatchBuildEvidence(kmApprovedGate, kmNextStage)}
@@ -245,6 +264,26 @@ func TestCodexDispatchEvidenceCreditsNamedBatchedDurableReads(t *testing.T) {
 	for _, entity := range entities {
 		if !evidence.stageReport[entity] {
 			t.Errorf("named entity %q in successful batched durable read was not credited", entity)
+		}
+	}
+}
+
+func TestCodexDispatchEvidenceDoesNotMultiplyAnonymousBatchedReport(t *testing.T) {
+	entities := []string{kmReadyOne, kmReadyTwo}
+	stream := strings.Join([]string{
+		codexDispatchBuildEvidence(kmReadyOne, kmNextStage),
+		codexDispatchBuildEvidence(kmReadyTwo, kmNextStage),
+		codexWaitCompleted(),
+		codexCompletedCommandOutput(
+			"sed -n '14,40p' ready-one.md; sed -n '14,40p' ready-two.md",
+			"## Stage Report: implementation\n\n- DONE: completed.\n",
+		),
+	}, "\n")
+
+	evidence := codexDispatchCompletionEvidenceFromJSONL(stream, entities)
+	for _, entity := range entities {
+		if evidence.stageReport[entity] || evidence.doneReport[entity] {
+			t.Errorf("one anonymous report was cross-attributed to %q: %+v", entity, evidence)
 		}
 	}
 }

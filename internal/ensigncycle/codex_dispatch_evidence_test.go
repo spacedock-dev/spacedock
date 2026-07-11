@@ -62,10 +62,11 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
 			if ev.Item.ExitCode == nil || *ev.Item.ExitCode != 0 || ev.Item.Status == "failed" {
 				continue
 			}
+			reported := codexDurableStageReportTargets(ev.Item.Command, ev.Item.AggregatedOutput, entities)
 			for _, entity := range entities {
-				if phase[entity] == dispatchWaited && codexDurableStageReportForEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
+				if phase[entity] == dispatchWaited && reported[entity] {
 					result.stageReport[entity] = true
-					if codexDurableStatusForEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity, "done") {
+					if codexDurableStatusForEntity(ev.Item.AggregatedOutput, "done") {
 						result.doneReport[entity] = true
 					}
 				}
@@ -100,11 +101,24 @@ func codexSuccessfulDispatchBuildTargets(command, output string, exitCode *int, 
 		return codexDispatchBuildTargets(command, output, entities)
 	}
 
-	var matched []string
-	for _, entity := range entities {
-		if strings.Contains(output, `"dispatch_file_path":`) &&
-			strings.Contains(output, "spacedock-ensign-"+entity+"-") {
-			matched = append(matched, entity)
+	type dispatchResult struct {
+		DispatchFilePath string `json:"dispatch_file_path"`
+	}
+	matched := make([]string, 0, len(entities))
+	dec := json.NewDecoder(strings.NewReader(output))
+	for {
+		var result dispatchResult
+		if dec.Decode(&result) != nil {
+			break
+		}
+		if result.DispatchFilePath == "" {
+			continue
+		}
+		for _, entity := range entities {
+			if strings.Contains(result.DispatchFilePath, "spacedock-ensign-"+entity+"-") {
+				matched = append(matched, entity)
+				break
+			}
 		}
 	}
 	return matched
@@ -131,21 +145,30 @@ func codexWaitTool(tool string) bool {
 	return tool == "wait" || tool == "wait_agent" || tool == "collab:wait"
 }
 
-func codexDurableStageReportForEntity(command, output, entity string) bool {
-	if !strings.Contains(output, "Stage Report") {
-		return false
+func codexDurableStageReportTargets(command, output string, entities []string) map[string]bool {
+	reported := map[string]bool{}
+	reportCount := strings.Count(output, "Stage Report")
+	if reportCount == 0 {
+		return reported
 	}
-	return strings.Contains(output, "id: "+entity) ||
-		strings.Contains(output, `"id":"`+entity+`"`) ||
-		strings.Contains(output, entity+".md") ||
-		strings.Contains(command, entity+".md") ||
-		strings.Contains(command, "status --read "+entity)
+
+	var named []string
+	for _, entity := range entities {
+		if strings.Contains(command, entity+".md") || strings.Contains(command, "status --read "+entity) {
+			named = append(named, entity)
+		}
+	}
+	// A command that names several files may prove anonymous report blocks only
+	// when it returns a distinct block for every named target.
+	if reportCount >= len(named) {
+		for _, entity := range named {
+			reported[entity] = true
+		}
+	}
+	return reported
 }
 
-func codexDurableStatusForEntity(command, output, entity, status string) bool {
-	if !codexDurableStageReportForEntity(command, output, entity) {
-		return false
-	}
+func codexDurableStatusForEntity(output, status string) bool {
 	return strings.Contains(output, "status: "+status) ||
 		strings.Contains(output, `"status":"`+status+`"`)
 }

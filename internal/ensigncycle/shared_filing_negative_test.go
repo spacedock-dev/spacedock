@@ -114,6 +114,13 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		t.Fatalf("expected balanced single-quoted launcher capture to count as atomic: %v", err)
 	}
 
+	// Positive regression: PR #496's superseded f49b7826 Codex lane resolved the
+	// fallback through command -v before invoking the same captured launcher.
+	filedCommandVCapture := codexCommand("launcher=\\\"${SPACEDOCK_BIN:-$(command -v spacedock)}\\\"\\n\\\"$launcher\\\" new " + slug + " <<EOF")
+	if err := assertCodexFilingViaNew(filedCommandVCapture, slug); err != nil {
+		t.Fatalf("expected the exact command-v resolved launcher filing to count as atomic: %v", err)
+	}
+
 	malformedCaptures := map[string]string{
 		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
 		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,
