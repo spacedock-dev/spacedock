@@ -487,3 +487,20 @@ Every prior rejection is repaired, but two narrow token-boundary mistakes remain
 ### Summary
 
 Cycle five closes the two remaining token-boundary false positives with a 42-insertion/6-deletion local test-helper change. Captured-launcher evidence cannot cross into another shell command, and incidental prose cannot inflate durable-report cardinality. Offline, race, compile, and provenance-audited local Codex filing/keep-moving behavior are green at `c247cd8e`.
+
+## Stage Report: validation (cycle 6)
+
+- FAILED: Validate AC-1 through AC-5 from scratch against exact HEAD c247cd8e, including the 117,062-byte end-value measurement and every host-neutral contract invariant.
+  AC-1 through AC-4 pass at exact `c247cd8e3050e8d40987cd91a7fea14fd00202b7`: `FO_FUNCTION_METRICS addresses=0 bytes=117062`, ordered procedures, named single-owner closure, three-import eager topology, classifier controls, prompt shrinkage, preservation suite, full/race/live-tag gates, formatting, and diff checks are green. AC-5 fails the fresh detached assertion audit described below.
+- FAILED: Reproduce all historical detector counterexamples and independently search for new cross-record, cross-command, quote, separator, report-cardinality, and stale-order false positives without changing the deliverable.
+  Every retained cycle-1 through cycle-5 control passes, as do fresh captured-variable, report-cardinality, and per-record wait-order variants. Four new direct-launcher streams are falsely credited as atomic filing: `spacedock status; touch new wire-the-thing`, and equivalent `&&`, `||`, and pipe forms. `newInvocation` spans shell separators, so an unrelated later command supplies `new` and the slug. The detached checkout was removed; the deliverable remains unchanged.
+- DONE: Independently verify exact-head local provenance (worktree binary, repo root, isolated Codex auth/plugin cache and loaded skill content) plus all required protected CI lanes; issue PASSED or REJECTED.
+  Local Codex filing/keep-moving passed 3/3 nodes with explicit worktree `SPACEDOCK_BIN`/`SPACEDOCK_REPO_ROOT`, binary SHA-256 `2e430fb5…` (`0.24.0+dev`), local `~/.codex/auth.json` copied into isolated `CODEX_HOME`, local marketplace/cache paths, and cached shared/write/merge/Codex runtime content observed in worktree-unique transcripts under `/tmp/88t-final-validation-live/`; no benchmark token was used. Exact-head run `https://github.com/spacedock-dev/spacedock/actions/runs/29141719629` is successful: offline, Sonnet, Opus, Codex, and Pi jobs all concluded success.
+
+### Recommendation
+
+**REJECTED.** Bound the direct literal `spacedock` / `${SPACEDOCK_BIN...}` filing alternative to the same simple-command segment discipline as the captured-variable path, and retain all four separator escapes as negative controls. Do not disturb the repaired per-record dispatch identity, build → completed-wait → post-wait report ordering, or anchored report-heading cardinality.
+
+### Summary
+
+The named-function normalization itself remains structurally closed at zero mutable addresses and 117,062 bytes, all repository gates pass, provenance-correct local Codex behavior passes, and every protected exact-head live lane is green. Final validation nevertheless rejects because the direct-launcher filing detector can borrow `new <slug>` from an unrelated command after a shell separator, leaving AC-5's fail-closed evidence boundary unsatisfied.
