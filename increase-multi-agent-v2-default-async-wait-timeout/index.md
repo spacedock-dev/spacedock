@@ -1,11 +1,11 @@
 ---
 title: Increase multi_agent_v2 default async wait timeout
-status: ideation
+status: implementation
 score: 0.5
 source: "Captain filing request 2026-07-11."
 completed:
 verdict:
-worktree:
+worktree: .worktrees/spacedock-ensign-increase-multi-agent-v2-default-async-wait-timeout
 issue:
 id: 95we0fhydgx5rbay5fw3qy4q
 started: 2026-07-11T11:51:34Z
