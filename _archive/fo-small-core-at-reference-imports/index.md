@@ -1,13 +1,14 @@
 ---
 title: Reliably preload the two small first-officer cores with @ references
-status: implementation
+status: done
 score: 0.95
 source: "Fresh local Claude shallow-boot evidence on 2026-07-11: exact engage ran an unscoped find / for fo-merge-core.md after the bare deferred reference failed to resolve from the fixture cwd. The captain previously rejected promotion to separately callable skills and chose the established @-reference loading pattern for two small cores; the larger fo-dispatch-core remains an explicit tradeoff."
-completed:
-verdict:
+completed: 2026-07-11T09:10:06Z
+verdict: rejected
 worktree: .worktrees/spacedock-ensign-fo-small-core-at-reference-imports
 issue:
 id: m1y5k6w8any3gachwxtxqjfk
+archived: 2026-07-11T09:10:06Z
 ---
 
 The 0.25 recovery stack proves the detector and fixture fixes are insufficient by themselves: a real Claude first officer still searched the host filesystem for the known merge-core document. Preload the two small cores through the existing top-level `@references/...` import mechanism so they are reliably addressed without adding callable capabilities. Keep the 2,386-word dispatch core deferred for this release, retain its anti-hunt stop rule, and do not merge the rejected skill-promotion portion of PR #491.
