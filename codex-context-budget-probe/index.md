@@ -1,6 +1,6 @@
 ---
 title: Bind Codex context budget to per-thread token telemetry
-status: implementation
+status: ideation
 source: "Captain request 2026-07-11 plus live Codex 0.144.1 schema and rollout evidence gathered while reusing 88t workers."
 started: 2026-07-11T05:50:29Z
 completed:
@@ -102,3 +102,12 @@ The runtime binding replaces `«context-budget»: ABSENT` with the bridge comman
 ### Summary
 
 Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-planned; the two-client observer is the first implementation gate.
+
+## Feedback Cycles
+
+### Cycle 1 — captain-directed re-ideation (2026-07-11)
+
+- The implementation bridge gate rejected the app-server observer-first direction: a second initialized client received `thread/started` but could not resume the producer-owned thread after its rollout existed (`-32603`), so it received no `thread/tokenUsage/updated` event.
+- Preserve the existing uncommitted worktree experiment as non-shipping evidence; it must not become a partial public binding.
+- Rework the v1 direction around Codex's own worker inventory and session JSONL: map `list_agents` task paths through parent/child metadata to fresh `token_count` records, remain fail-closed for missing, stale, or ambiguous evidence, and never parse or persist prompt/response content.
+- Required ideation proof: a live current-worker mapping to a child session record, active-window (`last`) accounting across compaction, and explicit stale/mismatch safety. Decide whether the result can support automatic reuse or remains diagnostic-only.
