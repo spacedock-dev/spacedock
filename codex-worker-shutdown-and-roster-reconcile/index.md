@@ -261,12 +261,16 @@ documentation diff before it ships.
 - DONE: Turn the desired capacity gain into an observable value criterion.
   AC-6 requires zero-to-one fresh task-worker capacity at the live four-thread
   cap while a feedback-routable worker and durable stage output remain intact.
-- PENDING: Parent-owned terminal-completion probe.
-  After this report is committed, the first officer will capture the roster before
-  and after this worker's final-status signal and attempt one disposable
-  replacement only if the live surface permits it. The first officer will append
-  the observed outcome; this report does not claim that completion is a shutdown
-  binding.
+- DONE: Record the parent-observed terminal-completion probe.
+  The pre-final roster contained `/root`, `/root/comm_officer`, the `bc`
+  ideation worker, and the `jv` ideation worker. After `jv` emitted its terminal
+  completion signal, `list_agents` still listed `jv` as completed. One
+  disposable, read-only replacement spawn, `jv_capacity_probe`, succeeded. The
+  probe reported successful startup and completed without filesystem or state
+  changes. A later roster no longer listed `jv` and listed
+  `jv_capacity_probe` as completed. Terminal completion therefore freed a spawn
+  slot despite temporary roster visibility, but it did not prove a callable
+  close/archive binding. `interrupt_agent` remains disallowed as shutdown.
 
 ### Summary
 
