@@ -1,12 +1,15 @@
 ---
 title: Append Claude live detector evidence only after a primary failure
-status: validation
+status: done
 score: 0.7
 source: Captain-approved recovery item 1 on 2026-07-10, after review of merged PR #490 showed classifyBootPreambleFailure scans the full transcript and can label later contract-lookup searches as boot-preamble failures before the scenario assertion is evaluated.
 id: p4h6a5wcqe5ddkhnmrac1w9a
 started: 2026-07-10T12:56:28Z
 worktree: .worktrees/spacedock-ensign-claude-live-classifier-phase-boundary
 pr: pr-merge:495
+verdict: passed
+completed: 2026-07-11T02:54:04Z
+archived: 2026-07-11T02:54:04Z
 ---
 
 # Append Claude live detector evidence only after a primary failure
