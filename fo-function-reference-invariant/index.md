@@ -439,3 +439,16 @@ Cycle 3 preserves the required build → wait → report temporal invariant whil
 ### Summary
 
 The ordered state machine fixes cycle 3, but its aggregate-output attribution still forms two unsafe cross products: one target's success marker can bless another target's failure path, and one anonymous Stage Report can bless every filename in a batched command. AC-1 through AC-4 remain green; AC-5 is rejected on these two exact adversarial failures.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Bind successful failed-batch dispatch evidence to one structural result.
+  Commit `3f4bea88` decodes each complete JSON result emitted before the aggregate command failure and reads that result's `dispatch_file_path`; a failed target named only in later error text can no longer borrow another target's success marker. The exact ready-one-success/ready-two-named-failure regression is retained.
+- DONE: Require distinct durable report evidence for every named batched-read target.
+  A successful post-wait command that names multiple entity files now credits its anonymous report blocks only when it returned at least one `Stage Report` block per named target. The prior three-report positive remains green, while the new two-target/one-report cross-attribution fixture stays uncredited. The ordered successful build → completed wait → subsequent report state machine is unchanged.
+- DONE: Incorporate the completed superseded-head Codex filing evidence and run every required gate.
+  The exact `launcher="${SPACEDOCK_BIN:-$(command -v spacedock)}"` then `"$launcher" new wire-the-thing <<EOF` fixture failed before the detector edit and now passes through one narrow balanced-double-quoted grammar alternative; arbitrary variables/aliases and the mismatched, leading-only, and trailing-only quote controls remain rejected. Focused ensigncycle passed 344 tests before the filing addition and the filing detector suite passed 6 tests after it. Fresh final `go test ./...` and `go test ./... -race` each passed 2,150 tests across 17 packages; live-tag compile and `git diff --check` passed. Real local Codex `keep-moving-posture` and `filing` each passed both live checks. The branch is pushed at `3f4bea88` and the code worktree is clean.
+
+### Summary
+
+Cycle 4 removes both remaining evidence cross-products without changing runtime contract prose or weakening temporal ordering. Failed-batch success is now record-local, batched reports are one-for-one with named read targets, and the exact locally resolved launcher form observed by CI is recognized without accepting arbitrary shell aliases. Offline, race, compile, and two targeted real Codex lanes are green on the pushed repair.
