@@ -25,18 +25,32 @@ Four API/deployment features from the guide are deliberately **not adopted**:
 - Persisted reasoning is Responses API state policy; this task does not add or change cross-turn reasoning persistence.
 - `text.verbosity` is an API response-detail setting; it does not replace first-officer gate reports, status output, or other required output contracts.
 
+## Captain amendment: eager `@` reference cleanup
+
+PR #495 changed the live-proven Claude loading boundary after the original 118,178-byte inventory was recorded. The first-officer entry now eagerly imports the shared, merge, smallest-sufficient, and write cores with `@references/...`; both Claude live matrix legs passed on that exact head. Preserve those four imports and the canonical bodies they resolve. Do not reintroduce PR #491's rejected callable-skill mechanism or rely on model skill discovery for required boot behavior.
+
+Make that boundary singular and truthful:
+
+- remove the standalone `skills/fo-write-core/SKILL.md` compatibility shim; the first-officer entry is the sole write-core entry surface and imports the canonical `skills/first-officer/references/fo-write-core.md` body directly;
+- remove the smallest-sufficient core's contradictory claim that it is loaded only on demand or "never at boot"; it is eagerly available because the entry imports it;
+- retain deferred prose only for files still loaded lazily (`fo-dispatch-core.md`, host dispatch material, gate/rejection/recovery helpers at their declared triggers);
+- measure the real active surface: include both eagerly imported canonical cores and exclude the removed shim.
+
+The post-#495, pre-task active prompt baseline is **122,400 bytes across 14 files**. This supersedes the stale 118,178-byte/13-file baseline below wherever acceptance or checkpoint accounting refers to the implementation starting point.
+
 ## Active lint boundary
 
-Use an explicit path registry, not a recursive `skills/**/*.md` ban. The invariant applies to the first-officer entry point, its three host adapters and host-neutral cores, and the helpers those cores directly load for gates, rejection, legacy/recovery, and hook execution:
+Use an explicit path registry, not a recursive `skills/**/*.md` ban. The invariant applies to the first-officer entry point, its three host adapters and host-neutral cores, both additional eager canonical cores, and the helpers those cores directly load for gates, rejection, legacy/recovery, and hook execution:
 
 - `skills/first-officer/SKILL.md`
 - `skills/first-officer/references/{first-officer-shared-core,fo-dispatch-core,fo-merge-core}.md`
+- `skills/first-officer/references/{fo-smallest-sufficient-mechanism,fo-write-core}.md`
 - `skills/first-officer/references/{claude-first-officer-runtime,claude-fo-dispatch,codex-first-officer-runtime,pi-first-officer-runtime}.md`
-- `skills/{present-gate,feedback-rejection-flow,using-legacy-claude-team,fo-dispatch-recovery,fo-write-core}/SKILL.md`
+- `skills/{present-gate,feedback-rejection-flow,using-legacy-claude-team,fo-dispatch-recovery}/SKILL.md`
 
 This boundary excludes unrelated skills whose local numbered recipes are not first-officer cross-file APIs. Inside the boundary, leading ordered-list markers remain legal. A line such as `3. If nothing is dispatchable` defines local order; prose such as `re-run step 3` is a mutable address and fails.
 
-The same registry is the prompt-size boundary. Raw bytes are measured with `wc -c` over the 13 paths in registry order. The pre-change vector is:
+The same registry is the prompt-size boundary. Raw bytes are measured with `wc -c` over the 14 paths in registry order. The original pre-#495 vector below is retained as historical evidence; the authoritative implementation baseline is the post-#495 122,400-byte surface recorded in the captain amendment.
 
 | File | Bytes |
 |---|---:|
@@ -55,7 +69,7 @@ The same registry is the prompt-size boundary. Raw bytes are measured with `wc -
 | write core | 6,127 |
 | **Total** | **118,178** |
 
-Implementation must finish below **118,178 bytes** across exactly these files. Individual owners may grow when a body moves into them, but the fixed-surface total must shrink.
+Implementation must finish below **122,400 bytes** across the amended 14-file registry. Individual owners may grow when a body moves into them, but the fixed-surface total must shrink.
 
 ## Numeric-reference inventory
 
@@ -122,7 +136,7 @@ A name is not a license to add a second abstraction layer. Every retained or pro
 3. A runtime adapter owns only its concrete host/tool signature and host-specific failure translation. It does not restate host-neutral semantics, success criteria, or stop rules.
 4. Rename an existing owner section in place where possible. Do not add alias headings, `see also` wrappers, or a second explanatory definition.
 5. Retain a verbatim template or example only when it is a machine-consumed artifact or a behavior-bearing output contract. Such a template calls the owner for shared content instead of copying its rules.
-6. A new name is accepted only when it replaces mutable callers and duplicated procedure text and contributes to a strict net reduction below 118,178 bytes. If implementation cannot meet that test, reuse an existing capability or named owner heading instead.
+6. A new name is accepted only when it replaces mutable callers and duplicated procedure text and contributes to a strict net reduction below the amended 122,400-byte baseline. If implementation cannot meet that test, reuse an existing capability or named owner heading instead.
 
 The four proposed names survive this reassessment, but narrowly:
 
@@ -185,14 +199,15 @@ The durable structural test checks each token in the bounded section shown; a to
 
 The same test enforces body ownership. `Interactive`/`Headless` branch headings occur only inside `«interaction.boundary»`; checklist constraint bullets occur only inside `«dispatch.checklist»`; hook discovery, alphabetical execution, and run-once semantics occur only inside `«hooks.run»`; legacy recovery's 1-3 ladder occurs only inside the section renamed `«legacy-team.recover»`. Caller sections contain the named call but no second copy of those structural blocks. Hook callers still own their point-specific position relative to state sweep, status lookup, roster reconciliation, and merge guard; that order is a caller invariant and must not be hidden in the generic hook body.
 
-The implementation changes instruction structure and contractlint only. It adds no command, tool call, stage transition, hook point, retry, or runtime behavior. No docs-site diff is needed: the CLI and user-visible runtime behavior remain unchanged, and `docs/runtime-support.md` already defines named capability binding.
+The implementation changes instruction structure, removes the redundant write-core skill shim, and updates contractlint only. It adds no command, tool call, stage transition, hook point, retry, or runtime behavior. No docs-site diff is needed: the CLI and user-visible runtime behavior remain unchanged, and `docs/runtime-support.md` already defines named capability binding.
 
 ## Lint design
 
 Add `internal/contractlint/fo_function_reference_invariant_test.go` with:
 
-- a fixed `foFunctionReferencePaths` registry containing the 13 files above;
-- a `foFunctionReferenceBaselineBytes = 118178` constant and a test that sums raw file bytes through that same registry and requires the implementation total to be strictly smaller;
+- a fixed `foFunctionReferencePaths` registry containing the amended 14 files above;
+- a `foFunctionReferenceBaselineBytes = 122400` constant and a test that sums raw file bytes through that same registry and requires the implementation total to be strictly smaller;
+- an eager-reference topology test requiring exactly the four live-proven imports, their canonical targets, truthful eager/deferred wording, and absence of the redundant standalone `fo-write-core` skill directory;
 - a `mutableProcedureAddress` classifier for `step N`, `step-N`, ranges such as `steps 1-3`, reuse-condition numbers, legacy tier-number pointers, entry-point principle numbers, and parenthesized numeric “above” pointers;
 - a production test requiring **zero** matches and reporting `path:line` plus the matched address;
 - a discriminator table that plants failures in shared, Claude, Codex, Pi, gate, and legacy paths, proving every surface uses the same classifier;
@@ -216,20 +231,20 @@ Update structural tests that currently anchor on `step 0`: `reconcile_class_bind
 
 - **AC-1 (end value: zero mutable addresses).** The fixed 13-file active surface contains **0 mutable numeric procedure addresses**, down from the measured baseline of **51**, while every real local ordered procedure retains its exact marker sequence. *Verified by:* `TestFOFunctionReferenceInvariant`, the reproducible per-file baseline vector, and `TestFOLocalOrderedProceduresPreserved`; pass controls separately prove local markers and semantic counters are legal.
 - **AC-2 (single-owner named closure).** Every boot, interaction, dispatch-checklist, event-loop, reuse, completion, teardown, recovery, and lifecycle-hook cross-reference resolves to the named owner in the inventory. `«interaction.boundary»`, `«dispatch.checklist»`, and `«hooks.run»` each have one definition; the existing legacy recovery section is renamed in place as `«legacy-team.recover»`; existing capabilities retain one owner and explicit runtime binding. Callers contain only the call, arguments, and caller-specific order/branch condition. No moved process prose, structural body, constraint list, fallback example, or host-neutral semantic copy remains at a caller or adapter. *Verified by:* the section-bounded required call-site matrix, body-ownership checks, and caller-only negative checks above; the implementation diff audit is supplemental evidence, not the invariant.
-- **AC-3 (prompt surface shrinks).** The raw-byte total of the fixed 13-file prompt surface is **strictly less than 118,178**, its recorded pre-change baseline. Function headings and bindings do not create net abstraction growth. *Verified by:* `TestFOFunctionPromptSurfaceShrinks`, which reads the same path registry as the address invariant, plus a recorded post-change per-file vector and total.
+- **AC-3 (prompt surface shrinks and eager topology is singular).** The raw-byte total of the amended 14-file prompt surface is **strictly less than 122,400**, its post-#495 implementation baseline. Exactly four live-proven canonical `@references/...` imports remain; eager cores make no deferred-load claim; and no standalone `fo-write-core` entry surface remains. Function headings and bindings do not create net abstraction growth. *Verified by:* `TestFOFunctionPromptSurfaceShrinks` and the eager-reference topology test, plus a recorded post-change per-file vector and total.
 - **AC-4 (non-vacuous lint boundary).** The same classifier rejects planted mutable addresses attributed to shared core, Claude, Codex, Pi, present-gate, and legacy-helper paths, and accepts local ordering, cycle/exit values, AC IDs, versions, and issue numbers. *Verified by:* table-driven discriminator tests that call the production classifier, not a copy.
 - **AC-5 (behavior and consequential constraints preserved).** The reference-only diff changes no user-visible outcome, success/stop criterion, evidence requirement, permission boundary, binary route, emitted command, contextual tool route, host tool signature, hook ordering, validation invariant, or durable workflow outcome. Existing offline, race, live-tag compile, and protected Claude/Codex/Pi live scenarios remain green. *Verified by:* `TestFOFunctionNormalizationPreservationSuite` passing unchanged at baseline and after every instruction group; the preservation-ledger diff audit; exact commands below; a changed-file audit showing instruction/contractlint paths only; and successful fail-closed `claude-live` (both matrix legs), `codex-live`, and `pi-live` jobs for the implementation SHA. A local live test that skips is not green evidence.
 
 ## Test plan
 
-- **RED and semantic baseline:** add the production scanner, preservation suite, single-owner checks, and byte gate first. Run `go test ./internal/contractlint -run 'TestFOFunctionReferenceInvariant|TestFOFunctionReferenceClassifierDiscriminates|TestFOFunctionPromptSurfaceShrinks' -count=1`; it must report the current 51 addresses and unchanged 118,178-byte surface, with representative address failures in shared, Claude, Codex, Pi, gate, and legacy surfaces. Immediately afterward, before editing any instruction group, run `go test ./internal/contractlint -run '^TestFOFunctionNormalizationPreservationSuite$' -count=1`, require green, and record that exact result as the unchanged semantic baseline reused after groups 1-4.
+- **RED and semantic baseline:** add the production scanner, preservation suite, single-owner checks, eager-topology check, and byte gate first. Run `go test ./internal/contractlint -run 'TestFOFunctionReferenceInvariant|TestFOFunctionReferenceClassifierDiscriminates|TestFOFunctionPromptSurfaceShrinks|TestFirstOfficerEagerReferenceTopology' -count=1`; the address, byte, and duplicate-entry assertions must fail against the post-#495 baseline, with representative address failures in shared, Claude, Codex, Pi, gate, and legacy surfaces. Immediately afterward, before editing any instruction group, run `go test ./internal/contractlint -run '^TestFOFunctionNormalizationPreservationSuite$' -count=1`, require green, and record that exact result as the unchanged semantic baseline reused after groups 1-4.
 - **Incremental GREEN:** change exactly one instruction group at a time: (1) boot/interaction; (2) dispatch/checklist/reuse/completion; (3) teardown/legacy recovery; (4) startup/idle/merge hooks. After every group, run the identical green command `go test ./internal/contractlint -run '^TestFOFunctionNormalizationPreservationSuite$' -count=1`, followed by the same runtime metadata and CLI evals: `go test -tags live ./internal/ensigncycle -run 'TestSharedScenarioRunnerCoverage|TestSharedRuntimeScenarioDefinitions|TestPiSharedScenarioCoverage' -count=1` and `go test ./internal/cli -run TestProseFunction -count=1`. All three commands must pass at every checkpoint. Do not combine groups to mask a regression; repair or revert that group before proceeding.
 - **Executable checkpoint accounting:** after each group run `go test ./internal/contractlint -run '^TestFOFunctionReferenceCheckpointMetrics$' -v -count=1` and copy its `FO_FUNCTION_METRICS` values into the implementation Stage Report table below. After groups 1-3 also run `go test ./internal/contractlint -run '^TestFOFunctionReferenceInvariant$' -count=1`, require a non-zero exit, and confirm its reported count equals the metrics line; after group 4 require the same invariant command to pass. Each row must be strictly lower than its predecessor in both columns:
 
   | Checkpoint | Mutable addresses | Prompt bytes |
   |---|---:|---:|
-  | Baseline | 51 | 118,178 |
-  | Group 1: boot/interaction | `< 51` | `< 118,178` |
+  | Baseline | `<measured post-#495 count>` | 122,400 |
+  | Group 1: boot/interaction | `< baseline` | `< 122,400` |
   | Group 2: dispatch/checklist/reuse/completion | `< group 1` | `< group 1` |
   | Group 3: teardown/legacy recovery | `< group 2` | `< group 2` |
   | Group 4: startup/idle/merge hooks | `0` | `< group 3` |
