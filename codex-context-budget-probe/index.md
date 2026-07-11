@@ -196,3 +196,25 @@ REJECTED. Bounce back to implementation:
 ### Summary
 
 The fixture and command behavior is promising, but it does not yet prove the actual reuse decision or a live named-child mapping. The skipped live replay and stale runtime binding prevent a PASSED recommendation; the race rerun remains an infrastructure block, not a product failure.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add deterministic behavior evidence that a roster-selected worker retains its child thread below budget and receives a distinct child above budget or when evidence is unavailable.
+  Code commit `59ba810`; `TestCodexContextBudgetDecisionRetainsOrFreshensChildThread` uses the command-golden envelope, retains the verified child below budget, and invokes the injected fresh boundary exactly once for above-budget, unavailable, partial, malformed, and mismatched evidence.
+- DONE: Require exact equality to an independently supplied expected child thread ID in the live replay, and execute it once Codex quota and temporary-disk capacity permit; record a genuine block otherwise.
+  Parent-FO replay passed in 11.09s: the command's `session-jsonl` identity equalled the named child's independently recorded `CODEX_THREAD_ID`; the child marker, state git log (`75dd88c`), and clean path status passed. Preserved artifact: `/tmp/spacedock-bc-live-replay.7OTBln`.
+- DONE: Reconcile the Ensign and FO Codex context-budget bindings, then rerun the relevant baseline/race checks when capacity permits without replacing behavior proof with contractlint.
+  `skills/ensign/references/codex-ensign-runtime.md` now carries the same PRESENT/fail-closed rule; `internal/contractlint/codex_multi_agent_v2_contract_test.go` removes only its obsolete unavailable-string assertion and is not behavior evidence.
+
+### Verification
+
+- `rtk proxy go test ./... -count=1` — completed successfully after the schema fix.
+- `rtk proxy go test ./... -race -count=1` — completed successfully after the schema fix.
+- `rtk go test ./internal/codexsession ./internal/dispatch ./internal/contractlint ./internal/ensigncycle -count=1` — 780 passing tests.
+- `rtk proxy go test -tags=live -run 'TestLiveCodexContextBudgetCurrentWorkerReplay$' ./internal/ensigncycle -count=1 -v` — parent-FO exact-ID replay passed in 11.09s.
+- `gofmt -d` on the five changed Go files and `git diff --check` — clean.
+- The comm officer's separately running full suite had not completed when this report was written; it is not included as green evidence.
+
+### Summary
+
+The second implementation cycle makes child identity an observable reuse decision, accepts the live session's safe embedded-parent metadata shape without relaxing target-relevant failure handling, and proves the exact live mapping. No observer, sidecar, cache, or transcript-content path was added.
