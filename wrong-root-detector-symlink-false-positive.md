@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-wrong-root-detector-symlink-false-positive
 issue:
 id: 5qae7c01tnytacehaphrda4s
 mod-block: merge:pr-merge
-pr: "#492"
+pr:
 ---
 
 `internal/ensigncycle/wrong_root_detect_impl_test.go`'s `detectWrongRootBoot` resolves the fixture root via `filepath.EvalSymlinks` before comparing (lines 39-46, with an explicit comment acknowledging the macOS `/var` vs `/private/var` symlink case) — but the two call sites that extract the FO's OBSERVED path from its tool-call stream do not apply the same resolution to that observed path before calling `isUnder`:
