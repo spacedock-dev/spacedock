@@ -1,16 +1,17 @@
 ---
 title: FO contract path portability sweep and hardening
-status: validation
+status: done
 score: 0.9
 source: captain request 2026-07-08 after PR #487 review found repo-specific paths in shipped FO contract
 issue:
 pr:
-mod-block: merge:pr-merge
+mod-block:
 worktree: .worktrees/spacedock-ensign-fo-contract-path-portability-sweep
 started: 2026-07-08T12:45:36Z
-completed:
-verdict:
+completed: 2026-07-11T09:10:12Z
+verdict: rejected
 id: fafb8xb7ptn2dx5k2c423b50
+archived: 2026-07-11T09:10:12Z
 ---
 
 ## Problem
