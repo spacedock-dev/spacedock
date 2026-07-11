@@ -305,3 +305,22 @@ Normalize the active first-officer contract around named functions while retaini
 ### Summary
 
 The implementation replaces every mutable numeric procedure address with a named `«fn»` owner/call, retains all local ordered procedures, and updates stale structural tests to bind the named Claude reconcile section. It also dogfoods smallest-sufficient mechanism by deleting the redundant eager smallest-sufficient prompt and write-core shim while keeping required Claude loading direct and canonical. The deliverable is committed and pushed for fresh validation; only protected PR live-lane evidence remains external.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce AC-1 through AC-4 against exact implementation commit `9c8cbea6cffdf63f334365a4afbdd363bd9bbec2`.
+  The focused invariant suite and full `internal/contractlint` package pass. The measured active surface is `FO_FUNCTION_METRICS addresses=0 bytes=115979`; all eight real local ordered procedures retain their exact marker sequences; required named call sites and single owners pass; exactly three eager imports remain (`first-officer-shared-core`, `fo-merge-core`, `fo-write-core`); the smallest-sufficient reference body and standalone write-core shim are absent. The former 47-line smallest-sufficient file is replaced by one resident shared Working-Principles rule, so applying the principle requires no self-referential load.
+- DONE: Prove the structural guards are non-vacuous in a detached throwaway checkout without changing the implementation worktree.
+  Four independent adversarial edits each failed the intended production guard: a planted `Startup step 2` address failed `TestFOFunctionReferenceInvariant` with `path:line`; removing the eager write import failed both eager-topology tests; replacing the Dispatch caller's `«dispatch.checklist»(entity, stage)` call failed the required-call-site and ordered-anchor guards; changing Dispatch marker `2.` to `10.` failed the exact marker-sequence guard. The throwaway checkout was removed. No finding was introduced into the implementation worktree.
+- DONE: Reproduce repository and coupled offline gates.
+  `go test ./internal/contractlint/... -count=1`, shared runtime metadata coverage, CLI prose-function tests, `git diff --check`, `go test ./...`, `go test ./... -race`, and `go test -tags live -run '^$' ./...` all pass. The implementation worktree remains clean.
+- FAILED: AC-5 exact-SHA protected behavior evidence.
+  PR #496 run `https://github.com/spacedock-dev/spacedock/actions/runs/29137693096` targets exact head `9c8cbea6cffdf63f334365a4afbdd363bd9bbec2`. `offline`, build, both install jobs, and `pi-live` are successful. Both Claude matrix jobs remain in progress at this verdict and therefore are not green evidence. `codex-live` job `86505084027` failed `TestLiveCodexSharedScenarios` in two scenarios: `filing` reported that the FO never used a `spacedock … new wire-the-thing` atomic-create command, despite the final message claiming the seed was filed; `keep-moving-posture` reported that independent ready task `ready-one` was not dispatched, despite the final message claiming all ready tasks completed. These are behavioral failures at the required protected boundary, so passing structural and local suites cannot satisfy AC-5.
+
+### Recommendation
+
+**REJECTED.** AC-1 through AC-4 pass, but AC-5 explicitly requires successful fail-closed Claude, Codex, and Pi jobs for the implementation SHA. Route the two Codex failures back to implementation, preserve the current structural guards, and re-run validation cycle 1 on the repaired exact SHA. Pending Claude conclusions may add evidence but cannot cure the recorded Codex failure.
+
+### Summary
+
+The named-function and eager-`@` cleanup is structurally sound, smaller by 6,421 bytes, and resistant to representative regressions. Release is blocked because the exact-SHA Codex protected lane failed filing and keep-moving behavior; validation recommends rejection and a focused implementation feedback cycle.
