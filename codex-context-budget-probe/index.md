@@ -199,12 +199,12 @@ The fixture and command behavior is promising, but it does not yet prove the act
 
 ## Stage Report: implementation (cycle 2)
 
-- DONE: Add deterministic behavior evidence that a roster-selected worker retains its child thread below budget and receives a distinct child above budget or when evidence is unavailable.
+- DONE: Add deterministic behavior evidence that a roster-selected worker retains its child thread below budget and receives a distinct child above budget or when evidence is unavailable. (AC-1, AC-3)
   Code commit `59ba810`; `TestCodexContextBudgetDecisionRetainsOrFreshensChildThread` uses the command-golden envelope, retains the verified child below budget, and invokes the injected fresh boundary exactly once for above-budget, unavailable, partial, malformed, and mismatched evidence.
-- DONE: Require exact equality to an independently supplied expected child thread ID in the live replay, and execute it once Codex quota and temporary-disk capacity permit; record a genuine block otherwise.
+- DONE: Require exact equality to an independently supplied expected child thread ID in the live replay, and execute it once Codex quota and temporary-disk capacity permit; record a genuine block otherwise. (AC-1, AC-2)
   Parent-FO replay passed in 11.09s: the command's `session-jsonl` identity equalled the named child's independently recorded `CODEX_THREAD_ID`; the child marker, state git log (`75dd88c`), and clean path status passed. Preserved artifact: `/tmp/spacedock-bc-live-replay.7OTBln`.
-- DONE: Reconcile the Ensign and FO Codex context-budget bindings, then rerun the relevant baseline/race checks when capacity permits without replacing behavior proof with contractlint.
-  `skills/ensign/references/codex-ensign-runtime.md` now carries the same PRESENT/fail-closed rule; `internal/contractlint/codex_multi_agent_v2_contract_test.go` removes only its obsolete unavailable-string assertion and is not behavior evidence.
+- DONE: Reconcile the Ensign and FO Codex context-budget bindings, then rerun the relevant baseline/race checks when capacity permits without replacing behavior proof with contractlint. (AC-3, AC-4, AC-5, AC-6)
+  `skills/ensign/references/codex-ensign-runtime.md` now carries the same PRESENT/fail-closed rule; the baseline/race reruns retain the existing active-window, path-safety, transcript-exclusion, and JSONL-only command evidence. `internal/contractlint/codex_multi_agent_v2_contract_test.go` removes only its obsolete unavailable-string assertion and is not behavior evidence.
 
 ### Verification
 
