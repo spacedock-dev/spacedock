@@ -1,6 +1,6 @@
 ---
 title: Replace mutable step-number references with named FO functions
-status: validation
+status: implementation
 score: 0.95
 source: "Captain direction 2026-07-11: widen the step-number sweep; hooks and references use the «fn» notation."
 id: 88tq5zyg9jvx13f33zz3eq28
@@ -267,6 +267,10 @@ Implementation checkpoint evidence (the group-2 byte increase was a measured 116
 ## Mechanism spike
 
 The riskiest mechanism is the lint and deletion boundary, not runtime execution. The read-only candidate classifier was exercised against the exact fixed scope before design: it returned 51 current matches and did not classify local ordered-list markers. The same 13-file registry measures a reproducible 118,178-byte baseline. Its planned discriminator adds explicit fail/pass fixtures, and the strict byte gate makes alias-only functions or copied owner prose fail even if reference syntax is correct. No runtime spike is needed because the task changes addresses only; the existing protected live matrix already exercises boot, dispatch, gate, feedback, and teardown behavior.
+
+### Feedback Cycles
+
+- Cycle 1 — validation REJECTED commit `9c8cbea6` because PR #496 exact-SHA `codex-live` failed two behavioral scenarios: filing claimed success without an observed atomic `spacedock new wire-the-thing` command, and keep-moving claimed both ready tasks complete while `ready-one` was never dispatched. AC-1 through AC-4 remained green; AC-5 was unmet. Route back to implementation to reproduce both Codex failures locally with `benchmark-token`, repair the smallest contract surface that restores behavior, run targeted local Codex and Claude drives before pushing, then reuse the same validator for re-review.
 
 ## Stage Report: ideation
 
