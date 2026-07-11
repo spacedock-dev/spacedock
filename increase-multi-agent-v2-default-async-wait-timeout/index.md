@@ -389,3 +389,24 @@ pre-agent usage-limit evidence, so the workflow remains in implementation.
   `/tmp/spacedock-95w-postreset-shared-live-20260712/codex-shared-scenarios/`.
 - NOTE: This verification rerun changed no code. The entity remains in
   `implementation` by direction; this report does not change its status.
+
+## Stage Report: validation
+
+- DONE: Independently inspect the quoted-launcher matcher change: observed quoted positive, exact-variable prefix negatives, and retained manual-filing negatives.
+  The retained filing stream invokes `launcher="${SPACEDOCK_BIN:-spacedock}"` then `"$launcher" new wire-the-thing`; fresh normal and race runs of `TestAssertCodexFilingViaNew` pass its quoted positive, `$BINN`/`${BINN}` negative, and `--next-id` manual-flow negatives.
+- DONE: Verify the foreground wait policy remains capability-scoped and the focused wait/live evidence proves tool-call behavior rather than instruction-file text.
+  The adapter changes only the `«async-dispatch»` per-call policy; its isolated rollout records one spawn and a first `wait_agent(timeout_ms:300000)` lasting 1m19.08s with `timed_out:false`, after the 45s hold and before any later wait.
+- DONE: Inspect the retained post-reset nine-scenario live artifacts and implementation test results; run the smallest fresh focused checks needed, identify any material regression, and recommend PASSED or REJECTED.
+  All nine retained scenario streams have a final message and `turn.completed`; the recorded full lane exited 0. Fresh `go test ./... -count=1`, `go test ./... -race -count=1`, live-tag compile, targeted gofmt, and `git diff --check` found no regression.
+- DONE: **AC-1 (value):** A healthy 45-second owned worker avoided short-horizon timeout/re-wait churn.
+  `codex-foreground-wait-rollout.jsonl` shows the first non-timeout foreground wait crossing the 35-second control and no later wait before its return.
+- DONE: **AC-2 (value):** The five-minute call returned after the hold marker without a completion-latency claim.
+  The evidence records a 45s hold, a 1m19.08s first wait, `timeout_ms=300000`, `timed_out=false`, and separately recorded path-scoped state commits.
+- DONE: **AC-3 (scope and safety):** The policy is explicit and scoped without a global config or launcher-argv change.
+  The branch diff from `f22360de` contains only the adapter, focused live control, and filing assertion repair; the live rollout supplies behavior proof rather than text matching.
+
+### Summary
+
+Independent validation found the quoted-launcher repair correctly bounded and the wait policy behaviorally supported by retained live tool-call evidence. The clean implementation branch passes the fresh offline/race gates; no material regression was found.
+
+Recommendation: PASSED.
