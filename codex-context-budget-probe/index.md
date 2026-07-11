@@ -1,6 +1,6 @@
 ---
 title: Bind Codex context budget to per-thread token telemetry
-status: validation
+status: implementation
 source: "Captain request 2026-07-11 plus live Codex 0.144.1 schema and rollout evidence gathered while reusing 88t workers."
 started: 2026-07-11T05:50:29Z
 completed:
@@ -111,6 +111,13 @@ Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-pla
 - Preserve the existing uncommitted worktree experiment at `.worktrees/spacedock-ensign-codex-context-budget-probe` as non-shipping evidence; it must not become a partial public binding.
 - Rework the v1 direction around Codex's own worker inventory and session JSONL: map `list_agents` task paths through parent/child metadata to fresh `token_count` records, remain fail-closed for missing, stale, or ambiguous evidence, and never parse or persist prompt/response content.
 - Required ideation proof: a live current-worker mapping to a child session record, active-window (`last`) accounting across compaction, and explicit stale/mismatch safety. Decide whether the result can support automatic reuse or remains diagnostic-only.
+
+### Cycle 2 — validation rejection (2026-07-11)
+
+- Validation report `deafe49d7745104c767009459db7a45f3f197854` recommended REJECTED. Keep the direct JSONL-only design and rework in the existing `.worktrees/spacedock-ensign-codex-context-budget-probe-jsonl` worktree.
+- Add deterministic evidence that a roster-selected worker retains its child thread when `reuse_ok:true` and receives a distinct child when the budget is above threshold or unavailable; do not substitute adapter-prose inspection.
+- Make the opt-in live replay accept an independently supplied expected child thread ID, assert exact equality, and execute it when the host has sufficient Codex quota and temporary-disk capacity.
+- Reconcile `skills/ensign/references/codex-ensign-runtime.md` with the FO's PRESENT context-budget binding. The validator's independent race rerun could not start because the Go temp filesystem had 136 MiB free; preserve artifacts and rerun it once capacity is available.
 
 ## Stage Report: ideation (cycle 1)
 
