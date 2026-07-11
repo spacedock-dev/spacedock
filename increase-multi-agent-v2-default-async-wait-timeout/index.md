@@ -229,3 +229,36 @@ first behavior is an explicit `wait_agent(timeout_ms: 300000)` in the shipped
 Codex first-officer adapter. A 45-second owned-worker live control will prove
 that the new five-minute ceiling removes the approximately 30-second timeout
 churn without delaying completion handling.
+
+## Stage Report: implementation
+
+- DONE: Bound the Codex `«async-dispatch»` foreground wait to the named
+  long-task per-call policy `wait_agent(timeout_ms: 300000)`. The generic wait
+  notes remain lifecycle-only; no global/project Codex configuration or
+  `spacedock codex` argv changed.
+- DONE: Added the live-only `TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy`
+  control. It creates one 45-second delayed owned worker, preserves raw Codex
+  JSON/rollout records and timing evidence, verifies its report and
+  path-scoped state commit, and fails on timeout or re-wait churn before that
+  worker completes.
+- DONE: Final live control passed after the capability-based adapter wording:
+  the worker held for 45 seconds; the first wait used `timeout_ms=300000`, ran
+  for 1m25.706s, returned `timed_out=false`, and returned about 20 seconds
+  after the committed worker report. Evidence is retained at
+  `/tmp/spacedock-95w-live-proof-final/codex-shared-scenarios/foreground-wait-timeout/`.
+- DONE: Verification passed: `go test ./...`; `go test ./... -race`; focused
+  live control; and `go test -tags live -count=1 -timeout 40m -run
+  '^TestLiveCodexSharedScenarios$' ./internal/ensigncycle -v` (all nine shared
+  scenarios passed in 1103.83s). The new Go test is gofmt-clean.
+- DONE: The initial focused structural check was observed red before the
+  policy was added; its temporary contractlint expectation change was removed
+  during the captain-directed re-scope. The live delayed-worker control is the
+  behavioral proof.
+- DONE: Code commit `b733ab5c` (`Codex: use long-task foreground waits`).
+
+### Summary
+
+Spacedock now instructs live async multi-agent Codex foreground waits to use a
+five-minute per-call ceiling while preserving existing interruption and timeout
+lifecycle rules. A delayed owned-worker live scenario proves that the wait
+does not churn at the old short horizon and still returns promptly on completion.
