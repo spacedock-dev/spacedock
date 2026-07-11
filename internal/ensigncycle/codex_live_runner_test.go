@@ -359,7 +359,7 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	scenarioRunner := runner
 	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
 
-	result, err := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(), 0)
+	result, err := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}

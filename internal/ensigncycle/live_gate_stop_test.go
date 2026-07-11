@@ -115,9 +115,7 @@ func TestLiveDefaultHeadlessStopsAtGate(t *testing.T) {
 	if r, err := filepath.EvalSymlinks(root); err == nil {
 		rootResolved = r
 	}
-	if wrongRoot := detectWrongRootBoot(stream, rootResolved); wrongRoot != nil {
-		t.Fatalf("AC-a gate drive failed due to a wrong-root boot: %v", wrongRoot)
-	}
+	registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, rootResolved))
 	if stallErr != nil {
 		t.Fatalf("AC-a gate drive stalled before reaching the gate: %v", stallErr)
 	}

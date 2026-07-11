@@ -66,7 +66,7 @@ func TestFOWriteCoreMutationGateRequiresExactOverride(t *testing.T) {
 
 func readFOWriteClassifierTable(t *testing.T) string {
 	t.Helper()
-	path := filepath.Join(repoRoot(t), "skills", "fo-write-core", "SKILL.md")
+	path := filepath.Join(repoRoot(t), "skills", "first-officer", "references", "fo-write-core.md")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)
@@ -75,7 +75,7 @@ func readFOWriteClassifierTable(t *testing.T) string {
 	start := strings.Index(body, foWriteClassifierStart)
 	end := strings.Index(body, foWriteClassifierEnd)
 	if start < 0 || end < 0 || end <= start {
-		t.Fatalf("skills/fo-write-core/SKILL.md must carry a machine-readable classifier block bounded by %s and %s", foWriteClassifierStart, foWriteClassifierEnd)
+		t.Fatalf("canonical fo-write-core reference must carry a machine-readable classifier block bounded by %s and %s", foWriteClassifierStart, foWriteClassifierEnd)
 	}
 	return body[start+len(foWriteClassifierStart) : end]
 }

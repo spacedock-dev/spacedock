@@ -391,7 +391,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
 	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
 
-	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt())
+	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
 
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.
@@ -508,21 +508,11 @@ func (r claudeLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, work
 		t.Fatal(writeErr)
 	}
 
-	// A boot-preamble fumble is the most specific diagnosis on any failure path: a
-	// wrong-root wander (a CI env leak lures the FO off workflowRoot, it boots the
-	// real repo, finds nothing dispatchable, and greets-and-stops) or a broad
-	// filesystem sweep hunting a workflow/contract file — both otherwise surface only
-	// as an opaque no-progress stall (when the FO idles) or as every scenario
-	// assertion silently running against the wrong state (when it completes
-	// cleanly). Classify it FIRST so the fumble fails legibly naming what happened,
-	// ahead of the generic stall message or the downstream assertions — it is a
-	// preamble accident, not the scenario's own assertion.
-	if preamble := classifyBootPreambleFailure(stream, workflowRoot); preamble != nil {
-		if stallErr != nil {
-			t.Fatalf("%v\nUnderlying stall: %v\nArtifacts: %s", preamble, stallErr, artifactDir)
-		}
-		t.Fatalf("%v\nArtifacts: %s", preamble, artifactDir)
-	}
+	// Wrong-root and broad-search observations come from the full transcript, so
+	// they cannot reliably classify a boot phase or decide pass/fail. Retain the
+	// evidence only as secondary context: one cleanup reports it after an existing
+	// runner or scenario failure and remains silent when the shared scenario passes.
+	registerClaudeLiveFailureDiagnostic(t, detectClaudeLiveFailureDiagnostic(stream, workflowRoot))
 	if stallErr != nil {
 		t.Fatalf("%v\nArtifacts: %s", stallErr, artifactDir)
 	}

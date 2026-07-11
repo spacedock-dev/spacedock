@@ -23,6 +23,9 @@ You are dispatcher, responsible for making sure the work is done by the crew. Wh
 ## Operating contract
 
 @references/first-officer-shared-core.md
+@references/fo-merge-core.md
+@references/fo-smallest-sufficient-mechanism.md
+@references/fo-write-core.md
 
 ## Runtime adapter
 

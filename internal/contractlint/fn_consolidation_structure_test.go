@@ -69,17 +69,14 @@ func deferredLoadPointsBlock(t *testing.T, body string) string {
 	return rest
 }
 
-// TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard (AC-8) closes the gap the
+// TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard (AC-8) closes the gap the
 // closure walk leaves open: TestBootResidentDeferredLoadPointsResolve / ...CarryCeremony /
-// ...SkillCoresResolveAndCarryCeremony assert only that the four module targets resolve on disk,
+// ...SkillCoresResolveAndCarryCeremony assert only that the deferred module targets resolve on disk,
 // never that a folded row kept its load-point trigger or the shared greet-guard. This walks the
-// single load-points block and asserts all four module tokens (the two skills via
-// `spacedock:<name>`, the two references via `references/*.md`), all four load-point triggers,
-// and the single shared greet-guard survive by name — so dropping a row (or its trigger, or the
-// guard) reds here while the closure tests stay green. The four-load-points invariant is
-// preserved; the collapse deliberately replaces the old >=4-per-row greet-guard with the single
-// shared clause, so this asserts >=1, not >=4.
-func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T) {
+// single load-points block and asserts the remaining module tokens and triggers plus the single
+// shared greet-guard survive by name. The merge core is eagerly imported by first-officer/SKILL.md,
+// so it must not reappear here as a deferred read.
+func TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard(t *testing.T) {
 	root := repoRoot(t)
 	data, err := os.ReadFile(filepath.Join(root, sharedCorePath()))
 	if err != nil {
@@ -89,9 +86,7 @@ func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T
 
 	for _, tok := range []string{
 		"spacedock:fo-status-viewer",     // status-viewer skill
-		"spacedock:fo-write-core",        // write/id-style skill
 		"references/fo-dispatch-core.md", // dispatch reference
-		"references/fo-merge-core.md",    // merge reference
 	} {
 		if !strings.Contains(block, tok) {
 			t.Errorf("deferred load points do not fold %s — a module load-point token is missing", tok)
@@ -100,8 +95,6 @@ func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T
 	for _, lp := range []string{
 		"first status query",    // status-query load-point
 		"first worker dispatch", // dispatch load-point
-		"file-write intent",     // write/new-entity load-point
-		"terminal boundary",     // merge load-point
 	} {
 		if !strings.Contains(block, lp) {
 			t.Errorf("deferred load points lost load-point trigger %q — a folded row's trigger vanished", lp)
@@ -111,6 +104,6 @@ func TestDeferredLoadPointsFoldFourModulesWithTriggersAndGreetGuard(t *testing.T
 	// is the invariant; a block that dropped it reads as if a greet-and-stop boot could load a
 	// deferred module.
 	if !strings.Contains(block, "greet-and-stop boot loads NONE") {
-		t.Error("deferred load points lost the shared greet-guard clause (\"a greet-and-stop boot loads NONE of these\") — the single-shared-guard the four-fold collapse produces vanished")
+		t.Error("deferred load points lost the shared greet-guard clause (\"a greet-and-stop boot loads NONE of these\")")
 	}
 }

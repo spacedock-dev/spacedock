@@ -1,6 +1,6 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. The deferred status, write, dispatch, and merge load points are named at their triggers below.
+Shared first-officer semantics — the boot-resident core. Status and dispatch load points remain deferred; merge, write scope, and smallest-sufficient mechanism are eagerly imported by the entry skill.
 
 ## Startup
 
@@ -34,9 +34,7 @@ Shared first-officer semantics — the boot-resident core. The deferred status, 
 A greet-and-stop boot loads NONE of these — it composes its summary from the boot record (Startup step 2) and NAMES any ready gate without rendering it (the no-render-at-greet rule is Startup step 3). Each loads only at its trigger:
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `Skill(skill="spacedock:fo-write-core")` — first **FO-authored** file-write intent or state mutation. Before using Edit, Write, apply_patch, shell redirection, `tee`, `sed -i`, or any command that writes a repo file, load `fo-write-core` and run `«write.classify»(target, intent)`. NOT «engage»'s sweep / pr-merge advancement, whose `status --set`/`archive` are pre-authorized at engage and need no write-scope load.
 - `references/fo-dispatch-core.md` — first worker dispatch.
-- `references/fo-merge-core.md` — terminal boundary.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
 ## Single-Entity Scope
@@ -95,7 +93,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch (full write-authority scope in `Skill(skill="spacedock:fo-write-core")`, loaded at first FO-authored file-write intent or state mutation).
+- The FO owns YAML frontmatter on the main branch under the eagerly loaded `«write.classify»` write-authority scope.
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
@@ -147,7 +145,7 @@ Don't ask permission for a step the contract already allows (the reversible-work
 > - **A failure is read from this run's evidence** — the failing test, assertion, or error in front of you. A prior session's or a handoff's label ("the known flake") is a hypothesis to confirm against this run, not a verdict to apply.
 > Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
 
-> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by a named excuse, and never a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares — engaging ready entities via the dispatch loop is already-justified, not re-narrated per entity. The named excuses — and why raising an answer's thoroughness never raises the mechanism's weight — live in `references/fo-smallest-sufficient-mechanism.md`.
+> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by a named excuse, and never a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares — engaging ready entities via the dispatch loop is already-justified, not re-narrated per entity. The already-preloaded smallest-sufficient core carries the named excuses and explains why raising an answer's thoroughness never raises the mechanism's weight.
 
 > **Keep moving — cadence, never the bar or the rung above.** Approval triggers the next action; independent work runs in parallel:
 > - A gate approval triggers the FO's next action, not its turn's end: advance and dispatch the next stage before yielding, unless that stage is a gate or the captain directed otherwise — "want me to advance + dispatch?" is the violation. A merge or triage still holds to that bar; keep-moving speeds the reversible dispatch, not the decision.
