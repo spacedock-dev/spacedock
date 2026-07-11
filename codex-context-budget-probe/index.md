@@ -95,13 +95,10 @@ The runtime binding replaces `«context-budget»: ABSENT` with the bridge comman
 
 ## Stage Report: ideation
 
-- DONE: Prove worker-to-thread telemetry identity and active-window semantics.
-  A live 0.144.1 app-server replay mapped `/root/alpha` to one child ID, then compaction held total at 18,893 while active `last` fell to 4,097.
-- DONE: Specify fail-safe reuse behavior for stale, missing, or over-budget telemetry.
-  The design defines a two-minute bound, integer 60% threshold, epoch isolation, and a non-zero/no-JSON result for every unavailable reading.
-- DONE: Record observable acceptance evidence and the smallest live replay.
-  The entity names fixture, golden-CLI, and live bridge evidence, including a low-cost threshold override for the fresh-versus-reuse replay.
+- DONE: AC-1 worker/task-path identity. Live spike: parent subAgentActivity mapped /root/alpha to child thread 019f4fc2-547f-7720-8ed9-a6183fe51e21; child thread/read confirmed its parent and task path.
+- DONE: AC-4 active-window accounting. Compaction changed last.totalTokens 18,893 -> 4,097; lifetime total.totalTokens stayed 18,893 (modelContextWindow 353,400).
+- SKIPPED: AC-2, AC-3, AC-5, AC-6, and AC-7. Intentionally deferred to implementation/validation: AC-2 golden CLI and routed follow-up (3-4); AC-3 threshold/adapter (2-3); AC-5 ordering/alpha-beta (2,4); AC-6 sentinel/mode/symlink (2); AC-7 snapshot/live threshold (4).
 
 ### Summary
 
-The task now has a bounded bridge design, stable command contract, and behavior-first acceptance criteria. The direct app-server producer path is proven; a two-client remote-UI observer remains the explicit first implementation gate, so a rollout-only shortcut cannot silently bind the capability.
+Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-planned; the two-client observer is the first implementation gate.
