@@ -120,6 +120,12 @@ Only AC-1 and AC-4 have live-spike evidence. The other criteria remain proof-pla
   Live roster path mapped to child `019f50f7-8f5b-7950-8a9b-102082cdcd3c`; at 2026-07-11T11:56:50Z its final projected `last_token_usage` was 120,352 / 353,400, 25 seconds old.
 - DONE: Specify fail-closed eligibility, revised acceptance criteria, and a validation plan.
   Unique fresh binding supports conditional automatic reuse; duplicate, missing, stale, malformed, mismatched, and unsafe-path evidence exits non-zero and fresh-dispatches.
+- DONE: AC-1 — Partial ideation evidence only: the live current-worker mapping and fresh active-window snapshot are recorded; retained-follow-up versus new-child behavior remains future validation.
+- DONE: AC-2 — Partial ideation evidence only: one child session's two parent fields matched the current parent; command-wide mapping, fixtures, and completed-worker follow-up remain future validation.
+- DONE: AC-4 — Partial ideation evidence only: the preserved compaction pair proves active-window semantics; parser field exclusion and threshold-boundary behavior remain future validation.
+- SKIPPED: AC-3 — Production failure-path behavior is not proven at ideation; non-zero/no-JSON and fresh-dispatch tests remain planned.
+- SKIPPED: AC-5 — Secure reader, path-safety, and content-sentinel behavior are not proven at ideation; temp-tree validation remains planned.
+- SKIPPED: AC-6 — The production JSONL-only command and launcher path are not exercised at ideation; command and launcher validation remain planned.
 
 ### AC evidence map
 
