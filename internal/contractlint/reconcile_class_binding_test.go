@@ -1,5 +1,5 @@
 // ABOUTME: AC-2 — binds the reconcile drift-class set in two independent sources
-// ABOUTME: (helper driftClasses var via AST, contract step-0 JSON-shape token via regex) as equal sets.
+// ABOUTME: (helper driftClasses via AST, named Claude reconcile binding via regex) as equal sets.
 package contractlint
 
 import (
@@ -22,7 +22,7 @@ func reconcileSourcePath(t *testing.T) string {
 	return filepath.Join(repoRoot(t), "internal", "dispatch", "reconcile.go")
 }
 
-// dispatchContractPath is the FO dispatch contract whose event-loop step-0 names
+// dispatchContractPath is the FO dispatch contract whose named reconcile binding lists
 // the same class set in its JSON-shape token.
 func dispatchContractPath(t *testing.T) string {
 	t.Helper()
@@ -101,14 +101,10 @@ func helperDriftClasses(t *testing.T) []string {
 	return classes
 }
 
-// The step-0 block bounds. The contract event-loop step-0 opens with the
-// `0. **Reconcile sweep.**` heading and runs until the next numbered step
-// (`1. **`). All three class-bearing surfaces (JSON-shape token, action bullets,
-// one-line summary) live inside this slice; bounding to it keeps the extractors
-// from picking up an identically-shaped token elsewhere in the contract.
+// The named Claude reconcile binding bounds all three class-bearing surfaces.
 var (
-	step0HeadingRe = regexp.MustCompile(`(?m)^0\. \*\*Reconcile sweep\.\*\*`)
-	nextStepRe     = regexp.MustCompile(`(?m)^1\. \*\*`)
+	reconcileHeadingRe = regexp.MustCompile(`(?m)^## Claude binding: «roster-reconcile»\(\)\n`)
+	nextH2Re           = regexp.MustCompile(`(?m)^## `)
 )
 
 // contractClassToken matches the step-0 JSON-shape `"class":"a|b|c"` token. The
@@ -130,21 +126,20 @@ var boldNameRe = regexp.MustCompile(`\*\*([a-z][a-z-]*)\*\*`)
 // suffix anchors it to the summary template, not arbitrary prose.
 var summaryClassRe = regexp.MustCompile(`([a-z][a-z-]*)=\{N\}`)
 
-// step0Block returns the contract's event-loop step-0 slice, bounded by its
-// heading and the next numbered step. Fails if either anchor is missing.
-func step0Block(t *testing.T) string {
+// reconcileBindingBlock returns the named Claude binding section.
+func reconcileBindingBlock(t *testing.T) string {
 	t.Helper()
 	data, err := os.ReadFile(dispatchContractPath(t))
 	if err != nil {
 		t.Fatalf("read contract: %v", err)
 	}
-	loc := step0HeadingRe.FindIndex(data)
+	loc := reconcileHeadingRe.FindIndex(data)
 	if loc == nil {
-		t.Fatalf("step-0 heading `0. **Reconcile sweep.**` not found in %s", dispatchContractPath(t))
+		t.Fatalf("named `«roster-reconcile»()` binding not found in %s", dispatchContractPath(t))
 	}
 	rest := data[loc[0]:]
-	if end := nextStepRe.FindIndex(rest); end != nil {
-		rest = rest[:end[0]]
+	if end := nextH2Re.FindIndex(rest[loc[1]-loc[0]:]); end != nil {
+		rest = rest[:loc[1]-loc[0]+end[0]]
 	}
 	return string(rest)
 }
@@ -208,7 +203,7 @@ func TestReconcileClassBinding(t *testing.T) {
 	}
 	helperSet := toSet(helper)
 
-	block := step0Block(t)
+	block := reconcileBindingBlock(t)
 	surfaces := []struct {
 		name    string
 		classes []string

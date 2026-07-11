@@ -54,14 +54,14 @@ func ensignReferenceDir(t *testing.T) string {
 }
 
 // deferredSkillPaths is the fixed set of deferred-skill SKILL.md files this lint also
-// walks. These load on-trigger (feedback rejection, status query, write boundary, gate
+// walks. These load on-trigger (feedback rejection, status query, gate
 // presentation, legacy-team back-channel, dispatch-failure recovery) rather than at
 // boot, but still teach the FO launcher invocations by example.
 func deferredSkillPaths(t *testing.T) []string {
 	t.Helper()
 	root := skillsRoot(t)
 	names := []string{
-		"fo-status-viewer", "fo-write-core", "present-gate",
+		"fo-status-viewer", "present-gate",
 		"feedback-rejection-flow", "using-legacy-claude-team", "fo-dispatch-recovery",
 	}
 	paths := make([]string, len(names))
@@ -329,11 +329,11 @@ func TestLauncherSurfaceGroupsScopeDiscriminates(t *testing.T) {
 }
 
 // TestDeferredSkillLauncherScopeDiscriminates is the DISCRIMINATOR control for the
-// scope-extension escape class: the six deferred-skill SKILL.md files that were
+// scope-extension escape class: the deferred-skill SKILL.md files that were
 // previously unscanned MUST be present in the walked set, by exact name.
 func TestDeferredSkillLauncherScopeDiscriminates(t *testing.T) {
 	want := []string{
-		"fo-status-viewer", "fo-write-core", "present-gate",
+		"fo-status-viewer", "present-gate",
 		"feedback-rejection-flow", "using-legacy-claude-team", "fo-dispatch-recovery",
 	}
 	paths := deferredSkillPaths(t)

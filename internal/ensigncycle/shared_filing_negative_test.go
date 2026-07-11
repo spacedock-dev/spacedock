@@ -102,6 +102,51 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		t.Fatalf("expected the `$B new` var-capture idiom to count as atomic filing on Codex: %v", err)
 	}
 
+	// Positive regression: PR #496's Codex command quoted both the captured
+	// expansion and its invocation. It succeeded and created the entity atomically;
+	// quote placement must not erase that durable action from the detector.
+	filedQuotedCapture := codexCommand("launcher=\\\"${SPACEDOCK_BIN:-spacedock}\\\"\\nprintf '%s\\\\n' stub | \\\"$launcher\\\" new " + slug)
+	if err := assertCodexFilingViaNew(filedQuotedCapture, slug); err != nil {
+		t.Fatalf("expected PR #496's quoted launcher-capture filing to count as atomic: %v", err)
+	}
+	filedSingleQuotedCapture := codexCommand("launcher='${SPACEDOCK_BIN:-spacedock}'\\n\\\"$launcher\\\" new " + slug)
+	if err := assertCodexFilingViaNew(filedSingleQuotedCapture, slug); err != nil {
+		t.Fatalf("expected balanced single-quoted launcher capture to count as atomic: %v", err)
+	}
+
+	// Positive regression: PR #496's superseded f49b7826 Codex lane resolved the
+	// fallback through command -v before invoking the same captured launcher.
+	filedCommandVCapture := codexCommand("launcher=\\\"${SPACEDOCK_BIN:-$(command -v spacedock)}\\\"\\n\\\"$launcher\\\" new " + slug + " <<EOF")
+	if err := assertCodexFilingViaNew(filedCommandVCapture, slug); err != nil {
+		t.Fatalf("expected the exact command-v resolved launcher filing to count as atomic: %v", err)
+	}
+
+	malformedCaptures := map[string]string{
+		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
+		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,
+		"trailing-only quote": `launcher=${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" new ` + slug,
+	}
+	for name, command := range malformedCaptures {
+		t.Run(name, func(t *testing.T) {
+			if err := assertCodexFilingViaNew(codexCommand(command), slug); err == nil {
+				t.Fatalf("malformed launcher assignment counted as atomic filing: %s", command)
+			}
+		})
+	}
+
+	crossSegmentCalls := map[string]string{
+		"different command after launcher status": `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" status; $EDITOR new ` + slug,
+		"mismatched invocation quotes":            `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher' new ` + slug,
+		"new token after launcher version":        `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n$launcher --version; touch new ` + slug,
+	}
+	for name, command := range crossSegmentCalls {
+		t.Run(name, func(t *testing.T) {
+			if err := assertCodexFilingViaNew(codexCommand(command), slug); err == nil {
+				t.Fatalf("unrelated simple command counted as captured-launcher filing: %s", command)
+			}
+		})
+	}
+
 	// Negative: no atomic filing — must fail on the missing-`new` half.
 	none := codexCommand("spacedock status --workflow-dir .")
 	if err := assertCodexFilingViaNew(none, slug); err == nil {

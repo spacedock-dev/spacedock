@@ -1,5 +1,5 @@
 // ABOUTME: Pins the first-officer entry point's small eager-reference split.
-// ABOUTME: Merge and mechanism preload; the larger dispatch core stays deferred.
+// ABOUTME: Merge and write preload; the larger dispatch core stays deferred.
 package contractlint
 
 import (
@@ -27,7 +27,6 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 	wantImports := []string{
 		"@references/first-officer-shared-core.md",
 		"@references/fo-merge-core.md",
-		"@references/fo-smallest-sufficient-mechanism.md",
 		"@references/fo-write-core.md",
 	}
 	if strings.Join(imports, "\n") != strings.Join(wantImports, "\n") {
@@ -53,7 +52,6 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 	}
 	for _, bare := range []string{
 		"references/fo-merge-core.md",
-		"references/fo-smallest-sufficient-mechanism.md",
 		"references/fo-write-core.md",
 	} {
 		if strings.Contains(string(shared), bare) {
@@ -61,7 +59,7 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 		}
 	}
 
-	for _, dir := range []string{"fo-merge-core", "fo-smallest-sufficient-mechanism"} {
+	for _, dir := range []string{"fo-merge-core", "fo-smallest-sufficient-mechanism", "fo-write-core"} {
 		path := filepath.Join(root, dir)
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Errorf("rejected promoted-skill directory exists at %s; want no separately callable capability", path)
@@ -80,17 +78,8 @@ func TestFirstOfficerEagerWriteCoreHasSingleCanonicalBody(t *testing.T) {
 		t.Fatalf("canonical eager write core does not carry the write contract")
 	}
 
-	wrapperPath := filepath.Join(root, "fo-write-core", "SKILL.md")
-	wrapper, err := os.ReadFile(wrapperPath)
-	if err != nil {
-		t.Fatalf("read fo-write-core wrapper: %v", err)
-	}
-	wantImport := "@../first-officer/references/fo-write-core.md"
-	if !strings.Contains(string(wrapper), wantImport) {
-		t.Fatalf("fo-write-core wrapper does not import canonical body via %q", wantImport)
-	}
-	if strings.Count(string(wrapper), "## Mutation Gate") != 0 {
-		t.Fatal("fo-write-core wrapper duplicates the canonical mutation-gate body")
+	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
+		t.Fatalf("standalone fo-write-core wrapper remains: %v", err)
 	}
 }
 

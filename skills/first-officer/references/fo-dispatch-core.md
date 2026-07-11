@@ -9,7 +9,7 @@ The per-entity dispatch procedure, worker resolution, dispatch-adapter assembly,
 For each entity reported by `status --next`:
 
 1. Read the entity file and the target stage definition.
-2. Build a numbered checklist (≤3 items) of dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. The cap is an upper bound — 0–3 are all valid, do not pad. Not a work-breakdown — the ensign already reads the body, commits before signaling, and writes a stage report (structural conventions MUST NOT appear). Name what separates a good outcome from a ceremonial one. Entity-level acceptance criteria are properties of the finished entity, not stage actions — they live in the body's `## Acceptance criteria` and are cross-checked at every gate (`## Completion and Gates` in the boot-resident core), independent of this checklist's DONE/SKIPPED/FAILED accounting.
+2. Invoke `«dispatch.checklist»(entity, stage)` and retain its numbered output.
 3. Check for obvious conflicts if multiple worktree stages would touch overlapping files.
 4. Determine `dispatch_agent_id` from the stage `agent:` property. Default to `ensign` when absent.
 5. Update main-branch frontmatter for dispatch:
@@ -25,6 +25,15 @@ For each entity reported by `status --next`:
 A feedback-stage worker checks and reports on what was produced; it does not silently take over the prior stage.
 
 **Routing through a standing prose-polisher.** When composing drafts for captain review (PR bodies, gate-review summaries, long narrative entity-body sections, debrief content), the FO MAY route through a live standing prose-polisher (convention: `comm-officer`). Best-effort, non-blocking regardless of duration; if absent, proceed un-polished. Read the polisher's usage (when to polish, the polish modes) from its mod.
+
+## «dispatch.checklist»(entity, stage): assemble dispatch linchpins
+
+Build a numbered checklist of ≤3 dispatch-specific linchpin signals from the target stage's `Outputs:` bullets and any entity-level acceptance criteria this stage naturally advances. Zero to three items are valid; do not pad. Name what separates a good outcome from a ceremonial one.
+
+This is not a work breakdown: the ensign already reads the body, commits before signaling, and writes a stage report, so structural conventions do not appear. Entity-level acceptance criteria are finished-entity properties, not stage actions; every gate cross-checks them independently of checklist DONE/SKIPPED/FAILED accounting.
+
+- **done-when:** the output contains no more than three outcome signals and no structural task boilerplate.
+- → **prose** — deterministic assembly from the entity and stage definition.
 
 ## Reuse and Fresh Dispatch
 
@@ -43,7 +52,7 @@ Advancing a completed worker. The gate-presentation spine (checklist review, AC 
 
 **Supersede-shutdown.** On fresh dispatch from a `-cycleN` increment or a feedback-rework re-entering the prior stage, invoke `«worker.shutdown»` for the prior cohort BEFORE the new dispatch in a SEPARATE message. The prior cohort is every roster member whose handle decomposes to the same `(slug, stage)` pair as the new dispatch. Issue the adapter's cooperative-shutdown call and drop them from session memory. **Mandatory at the boundary; backstops, if any, are the adapter's.**
 
-## «reuse.model-match»: reuse-condition-4 — stamped model matches the next stage's declared model
+## «reuse.model-match»: stamped model matches the next stage's declared model
 
 - **guard:** skip when `next_stage.effective_model` is null; `«worker-identity»` stamps the null case and null-declared stages accept any reused worker.
 - **effect:** resolve the worker's `«worker-identity»`-stamped model via the runtime's model-for-member lookup and compare it to `next_stage.effective_model` in `«worker-identity»`'s canonical model space.
@@ -79,7 +88,7 @@ The runtime adapter binds the spawn call, helper-field mapping, model/null handl
 
 ## «addressable-worker»: address a still-running worker and hear from it mid-run
 
-- **block:** ABSENT → reuse-condition-1 fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle, event-loop step 0.5 omitted). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
+- **block:** ABSENT → the `«addressable-worker»` reuse condition fails; fresh one-shot only (return value is the sole completion signal; no mid-run steering, no reusable handle, and the inbound-message drain is omitted). When PRESENT, `«async-dispatch»` must be async — a blocking FO cannot answer a mid-run escalation within the worker's timeout window.
 - → **Claude:** PRESENT when team-mode is enabled (boot-probed), else ABSENT (fresh one-shot, no reuse). · **Codex:** PRESENT — mailbox back-channel. · **Pi:** PRESENT — `contact_supervisor`/`intercom` back-channel. Each host's worker↔FO routes, probe, and ABSENT teardown are its adapter's `## Runtime implementation` binding.
 
 ## «async-dispatch»: dispatch a worker without blocking the FO event loop
@@ -88,9 +97,9 @@ The runtime adapter binds the spawn call, helper-field mapping, model/null handl
 
 ## «worker-identity»: the spawn-time metadata that keeps a worker addressable and reuse-comparable
 
-Records worker label, substrate, run/session handle, worker address, entity slug, stage, state, completion epoch, stamped model, and the host canonical model space (reuse-condition-4's comparator). Each host's model-resolution stamps the model, including the `«dispatch.build»` null case.
+Records worker label, substrate, run/session handle, worker address, entity slug, stage, state, completion epoch, stamped model, and the host canonical model space used by `«reuse.model-match»`. Each host's model-resolution stamps the model, including the `«dispatch.build»` null case.
 
-- → **Claude:** canonical model space = the Claude enum in `claude-fo-dispatch.md`. · **Codex:** the thread's model. · **Pi:** the Pi model space, OWNED BY `pi-dispatch-model-stamping`. Each host's handle/address shape and null-model stamping (the per-host case reuse-condition-4 and `«dispatch.build»` defer to) are its adapter's `## Runtime implementation` binding.
+- → **Claude:** canonical model space = the Claude enum in `claude-fo-dispatch.md`. · **Codex:** the thread's model. · **Pi:** the Pi model space, OWNED BY `pi-dispatch-model-stamping`. Each host's handle/address shape and null-model stamping are its adapter's `## Runtime implementation` binding.
 
 ## «completion-signal»: the signals that trigger the completion-verify path
 
@@ -104,12 +113,12 @@ Runs at terminal, supersede, or fresh-dispatch cleanup boundaries after any requ
 
 ## «context-budget»: probe whether a completed worker is still under context budget for reuse
 
-- **block:** an over-budget or unavailable reading forces fresh dispatch (fail-safe). ABSENT → reuse-condition-0 is satisfied.
+- **block:** an over-budget or unavailable reading forces fresh dispatch (fail-safe). ABSENT satisfies the `«context-budget»()` reuse condition.
 - → **Claude:** PRESENT — `spacedock dispatch context-budget --name {name}`. · **Codex:** ABSENT. · **Pi:** ABSENT.
 
 ## «roster-reconcile»: sweep the host roster for drift before dispatching
 
-- → **Claude:** PRESENT — `spacedock dispatch reconcile` (drift classes and per-class remedy are the adapter's event-loop step 0). · **Codex:** ABSENT. · **Pi:** ABSENT.
+- → **Claude:** PRESENT — `spacedock dispatch reconcile` (drift classes and per-class remedy are in the adapter's named binding). · **Codex:** ABSENT. · **Pi:** ABSENT.
 
 ## «dispatch.build»(): assemble the initial-dispatch artifact the spawn call consumes
 
@@ -144,14 +153,14 @@ These are FO-internal scheduling reads — consume them as `--json` (compact, by
 
 ## «dispatch.next-action»(): pick the next event-loop action — dispatch a ready entity, resume a block, or end the iteration
 
-`«roster-reconcile»` inserts a host step 0 before step 0.5; a host where it is ABSENT omits it. The skeleton is:
+When PRESENT, invoke `«roster-reconcile»()` before the inbound-message drain. The skeleton is:
 
 0.5. **Drain inbound worker messages.** When `«addressable-worker»` is PRESENT, drain pending worker messages (its listen call) at each iteration before checking dispatchables. Reply to a `need_decision` / `interview_request` within the worker's timeout window; read and acknowledge a `progress_update` (no reply required). When `«addressable-worker»` is ABSENT, this step is omitted.
 1. **Check mod-blocked entities** — Run `status --where "mod-block !=" --json --fields id,slug,mod-block`. For each entity in `entities`, re-read the blocking mod and resume its pending action (e.g. re-present the PR summary); do not dispatch new work for it.
 2. **Run `status --next --json --fields id,slug`** — Dispatch any newly ready entity in `dispatchable` (each row carries the fixed `id,slug,current,next,worktree` plus named frontmatter keys; `--fields` is additive over those five, the computed dispatch columns are not projectable).
-3. **If nothing is dispatchable** — Fire `idle` hooks, re-run the `«roster-reconcile»` step-0 sweep when PRESENT on the host, then re-run `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
+3. **If nothing is dispatchable** — After the first empty `status --next`, invoke `«hooks.run»("idle")` exactly once, then `«roster-reconcile»()` when PRESENT, then the second `status --next`. Dispatch anything newly unblocked; otherwise end the iteration.
 
 - **done-when:** a ready entity is dispatched, a mod-block's pending action is resumed, or nothing is dispatchable and the iteration ends.
 - → **prose** (deterministic mechanism, binary pending — NOT judgment-owned), becomes `` `spacedock dispatch next-action` `` — no driver binary backs it yet (descoped to roadmap 0222); the FO hand-follows the deterministic skeleton above and does not probe for the unshipped command (runtime-support.md's `→ prose` trichotomy).
 
-Repeat from step 1 after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.
+Repeat the skeleton after each completion until the captain ends the session or, in single-entity mode, the target entity is resolved.

@@ -11,19 +11,26 @@ Shared first-officer semantics — the boot-resident core. Status and dispatch l
    - **Binary present but wrong version** — the version's major.minor is below the required minor (binary too old) or above it (these skills are too old — update the plugin), or the version token carries no major.minor at all (`dev` — an integer-era source build; rebuild it). ABORT with the mismatch message and run `${SPACEDOCK_BIN:-spacedock} doctor` for the per-class remedy.
 
    In every class, do NOT proceed to discovery or `--boot`.
-2. **Boot — local identify.** `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` runs the whole pre-greet identify in ONE call — project root, workflow discovery, the stage taxonomy, and the local boot sections — folded into one JSON record. Consume it as JSON (every value a string); the human table is NOT for the FO's own reasoning. Every part is a **local read** (filesystem, git-read, entity frontmatter, the host team-state probe): **no `gh`, no `state ready` pull, no sweep, no mod-file open, no team creation, no mutation** — a greet-only session writes nothing. The record self-describes its sections; read its keys, do not restate them here. PR_STATE is a **local `pr:` mirror, labeled not-gh-checked**; the live PR state fills in at «engage». Semantics are uniform across the discovered set:
-   - **zero discovery:** no managed workflow — report and STOP; do NOT broad-search the filesystem to hunt one (no `find` / `grep -r` / `ls -R` / recursive Glob/Grep over the project root; code-gated by the `detectBroadSearchAtBoot` boot detector).
-   - **one or many:** a LIST of the discovered workflow(s); one is a list of length 1 with no eager convergence. NAME them in the greet; the captain converges and acts on one via «engage»(workflow). Single-entity mode fails with an ambiguity error when many.
-   The record's counts and PR fields are a possibly-stale local view, labeled as such, until the first «engage».
-3. **Interactive vs headless.** Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the boot record.
-   - **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch, and do NOT render a `present-gate` review at the greet: NAME any ready `gate: true` gate in the summary, but assemble its review only when «engage» reaches it — the expensive deferrals, gate assembly included, stay past the greet, reached on the captain's first «engage».
-   - **Headless:** do NOT greet-stop — drive every dispatchable entity through the event loop (converging each workflow at its first «engage») to its first `gate: true` stage or to terminal/blocked, then EXIT reporting each entity's stop reason. Stop AT gates (a gate is human-owned); do not resolve them. **When the stop reason is a `gate: true` stage, the FO MUST author the FULL gate review at that stop, for EACH gate, BEFORE exiting** — invoke `Skill(skill="spacedock:present-gate")` and render its complete template (the `Gate review:` heading, the chosen-direction prose, the checklist roll-up, and the `Decision:` prompt) per `## Completion and Gates`, as the interactive path does. A terse stop-reason line is NOT sufficient: the human who picks up the headless transcript decides from the authored `Gate review:` … `Decision:` content. The FO still does NOT resolve the gate headless (no verdict, no terminalize) — it presents and stops; only "given the conn" (below) resolves.
-   - **Headless + given the conn to auto-approve (prose):** additionally resolve gates **per `## Completion and Gates`** and drive to terminal. The grant must be a phrase you can QUOTE from the prompt ("auto-approve gates" / "drive to done" / "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is NOT a grant — present and stop.
+2. **Boot — local identify.** Invoke `«state.boot»()` once and retain its boot record.
+3. **Interaction boundary.** Invoke `«interaction.boundary»()` with that boot record and the launch context.
+
+## «interaction.boundary»(): route interactive and headless launch behavior
+
+Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Compose the state summary from the `«state.boot»()` record.
+
+- **Interactive:** present the summary — the managed workflow(s) with their dispatchable / ready-gate counts — and hint `Use engage <workflow>` to act; then STOP for input. Do NOT auto-dispatch or render a `present-gate` review at the greet. NAME any ready `gate: true` gate, but assemble its review only when «engage» reaches it.
+- **Headless:** do NOT greet-stop. Drive every dispatchable entity through the event loop, converging each workflow at its first «engage», to its first `gate: true` stage or terminal/blocked; then EXIT with each stop reason. Read the deferred dispatch owner before the first dispatch and before invoking its capabilities. At each gate, invoke `Skill(skill="spacedock:present-gate")`, render the complete review per `## Completion and Gates`, and stop without resolving it.
+- **Headless + given the conn to auto-approve:** additionally resolve gates per `## Completion and Gates` and drive to terminal. The grant must be a phrase quoted from the prompt ("auto-approve gates", "drive to done", or "you have the conn", per `skills/commission/SKILL.md`); a bare "Drive the workflow" is not a grant.
+
+- **done-when:** interactive has presented the summary and stopped; headless has reported every bounded stop reason; given-the-conn headless has driven the requested scope to terminal.
+- **block:** never infer the conn from silence, an agent message, or a bare drive prompt.
+- → **prose** — launch routing only; it adds no tool call.
 
 ## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition
 
 - **trigger:** the captain invokes `engage`, optionally naming a workflow, after the greet. A captain-facing FO INTERACTION VERB.
-- **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST converge its state with the existing verbs, each on its own call: `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)` BEFORE the sweep), then `state sweep` (advance merged PRs to terminal — the pr-merge startup-hook advancement fires HERE, at first engage, not the greet; "advanced at engage or never"; its exit-0 `gh: "unavailable"` field distinguishes real-empty from UNKNOWN, never collapsed) plus the live PR state (`gh`). THEN run `«dispatch.next-action»()` to its stopping condition: dispatch each ready entity, advance each completed non-gated stage, present each ready gate via `present-gate`.
+- **effect — converge, then drive:** for the named `workflow` (default: the current / only managed workflow), FIRST run `state ready` (the split-root pull/resume; single-root a no-op; on exit 3 → `«halt.rebase-conflict»(paths)`), then the separate read-only `state sweep`, then `«hooks.run»("startup")` exactly once. The registered startup mod owns live PR advancement; the sweep's exit-0 `gh: "unavailable"` distinguishes real-empty from UNKNOWN. THEN run `«dispatch.next-action»()` to its stopping condition: dispatch each ready entity, advance each completed non-gated stage, present each ready gate via `present-gate`.
+- **dispatch boundary:** the ready set includes every status-ready entity, including one made ready by gate approval during this invocation. Every member needs an observed `«worker.spawn»` before waiting for completion or reading a stage report; state mutation and `«dispatch.build»` alone are not dispatch or completion evidence.
 - **scope:** ONE workflow per invocation. The `workflow` argument is present now so a future multi-workflow form EXTENDS this signature rather than replacing it — a named future extension, not precluded here.
 - **done-when:** `«dispatch.next-action»()` reaches its stopping condition for the named workflow (a gate presented and awaiting the captain, terminal reached, or nothing dispatchable).
 - → **shipped** (converge): `` `spacedock state ready` `` then `` `spacedock state sweep` `` — two calls, each guard on its own.
@@ -31,15 +38,15 @@ Shared first-officer semantics — the boot-resident core. Status and dispatch l
 
 ## Deferred load points
 
-A greet-and-stop boot loads NONE of these — it composes its summary from the boot record (Startup step 2) and NAMES any ready gate without rendering it (the no-render-at-greet rule is Startup step 3). Each loads only at its trigger:
+A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»()` and follows the interactive branch of `«interaction.boundary»()`. Each loads only at its trigger:
 
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
-- `references/fo-dispatch-core.md` — first worker dispatch.
+- `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
 
 ## Single-Entity Scope
 
-A headless run scoped to one named entity — not a distinct mode. Startup step 3's headless rule governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity; drive that entity only; gates and stop conditions per step 3 (and `## Completion and Gates` when given the conn). If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
+A headless run scoped to one named entity is not a distinct mode. The headless branch of `«interaction.boundary»()` governs; scoping only narrows it: resolve the named reference (slug/title/id), stop on ambiguity, and drive that entity only. If the README defines `## Output Format`, use it; otherwise report status, verdict, and entity ID.
 
 ## Working Directory
 
@@ -103,8 +110,10 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 
 ## «state.boot»(): read all local startup identify in one call
 
-- **effect:** discover the workflow(s), read each stage taxonomy, and yield the boot record — all local reads, no `gh`, no `state ready` pull, no sweep, no mod-file open, no team creation, no mutation. The record self-describes its sections; PR_STATE is the local `pr:` mirror, labeled not-gh-checked until «engage». Uniform across the discovered set: zero → no-workflow; one or many → a list.
-- **done-when:** the boot record is in hand for the greet; the greet has mutated nothing.
+- **effect:** run `${SPACEDOCK_BIN:-spacedock} status --boot --identify --json` once for project root, workflow discovery, stage taxonomy, and local boot sections. Consume JSON, not the human table. These are local reads only: no `gh`, `state ready`, sweep, mod-file open, team creation, or mutation. PR_STATE is a local `pr:` mirror labeled not-gh-checked until «engage».
+- **zero discovery:** report no managed workflow and STOP; do not broad-search the filesystem (`find`, `grep -r`, `ls -R`, or recursive Glob/Grep over the project root). The boot detector enforces this.
+- **one or many:** return a list (including length one), NAME each workflow in the greet, and leave convergence to «engage». Single-entity mode fails on ambiguity.
+- **done-when:** the self-describing boot record is in hand, its counts and PR fields labeled possibly stale, and the greet has mutated nothing.
 - → **shipped**: `` `spacedock status --boot --identify --json` `` (extended to fold in discovery + taxonomy and render PR_STATE local); convergence moves to «engage».
 
 ## «state.commit»(slug): record an entity's change durably
@@ -125,7 +134,16 @@ Supported lifecycle points:
 - `idle`
 - `merge`
 
-Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT reads the `mods` map without opening a mod file (Startup step 2). The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
+Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT comes from `«state.boot»()` without opening a mod file. The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
+
+Invoke `«hooks.run»(point)` at the named lifecycle boundary; do not open or execute mods during boot.
+
+## «hooks.run»(point): run registered lifecycle hooks
+
+- **guard:** `point` is `startup`, `idle`, or `merge`; discover registrations from the `«state.boot»()` mods map, opening only the registered mod bodies at invocation.
+- **effect:** run the registered point alphabetically by mod filename, exactly once at its caller boundary. The hook body owns its commands and durable effects; no sweep result is passed into it.
+- **done-when:** every registered hook for `point` has run once or a hook has recorded its existing block state.
+- → **prose** — hook discovery and ordered execution; each mod body supplies its concrete actions.
 
 Standing-teammate injection is driven by `spacedock dispatch spawn-standing-all` at first dispatch; the concept is team-scoped (members die with the team at teardown).
 
@@ -145,7 +163,7 @@ Don't ask permission for a step the contract already allows (the reversible-work
 > - **A failure is read from this run's evidence** — the failing test, assertion, or error in front of you. A prior session's or a handoff's label ("the known flake") is a hypothesis to confirm against this run, not a verdict to apply.
 > Where the captain holds the gate, this bar relocates to the evidence the FO surfaces there — see `present-gate`.
 
-> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by a named excuse, and never a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares — engaging ready entities via the dispatch loop is already-justified, not re-narrated per entity. The already-preloaded smallest-sufficient core carries the named excuses and explains why raising an answer's thoroughness never raises the mechanism's weight.
+> **Smallest sufficient mechanism (both directions).** When the FO discretionarily chooses a task's mechanism, before climbing to a workflow, a dispatched worker, or a PR — and before re-running verification a stage already owns — it names in one line why the cheaper rung cannot do it. Climbing is justified ONLY by genuine fan-out, required isolation, or independent adversarial verification; re-doing a stage's verification is justified ONLY when its report shows the required check did not actually run green. Never by "it's substantive," "Ultracode is on," "I'm the dispatcher," or "let me double-check," and never by a reflexive gate-time re-run. This gates a discretionary choice, NOT the standing dispatch a commissioned workflow stage already declares. **Commissioned workflow dispatch is mandatory:** the declared loop dispatches every ready entity, including one advanced by gate approval; in-house execution is not a lower rung because commissioning already fixed the mechanism. Raising an answer's thoroughness never raises the mechanism's weight.
 
 > **Keep moving — cadence, never the bar or the rung above.** Approval triggers the next action; independent work runs in parallel:
 > - A gate approval triggers the FO's next action, not its turn's end: advance and dispatch the next stage before yielding, unless that stage is a gate or the captain directed otherwise — "want me to advance + dispatch?" is the violation. A merge or triage still holds to that bar; keep-moving speeds the reversible dispatch, not the decision.
@@ -154,10 +172,10 @@ Don't ask permission for a step the contract already allows (the reversible-work
 
 **FO posture:**
 
-- **Name the end value before starting, verify it was delivered at the gate** (entry-point principle 1) — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
+- **Name the end value before starting, verify it was delivered at the gate** — state the outcome before mechanism; end-value framing is judgeable, step-framing is not. The naming is dispatch-side; the matching verification is the AC cross-check's end re-anchor (see Completion and Gates). Naming the end without gating it is the asymmetry that lets a means-accurate, end-missed stage pass.
 - **Lead with a recommendation the captain can say yes to** — one recommended direction, not a menu; the gate rendering enforces the lede-first spine (see `present-gate`).
-- **Do obvious reversible work without ceremony** (entry-point principle 3) — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
-- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` read at Startup step 2, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
+- **Do obvious reversible work without ceremony** — reversible steps the contract allows just happen; reserve asking for choices that are hard to reverse or genuinely matter.
+- **Speak the workflow's declared label, not the generic "entity".** When the FO produces captain-facing prose — gate presentations, status narration, conversation — it names entities by the declared `entity-label` / `entity-label-plural` from `«state.boot»()`, wherever it would otherwise write "entity" / "entities". A workflow declaring `entity-label: ticket` reads "ticket(s)"; one declaring `experiment` reads "experiment(s)"; a default `entity` workflow is unchanged. Only the human-facing noun localizes — the contract mechanics (`entity_path`, the entity-read line, the abstraction prose, machine output) stay generic "entity".
 
 ## Probe and Ideation Discipline
 

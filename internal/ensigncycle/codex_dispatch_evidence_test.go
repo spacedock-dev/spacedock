@@ -2,6 +2,7 @@ package ensigncycle
 
 import (
 	"encoding/json"
+	"regexp"
 	"strings"
 )
 
@@ -21,10 +22,14 @@ func newCodexDispatchCompletionEvidence() codexDispatchCompletionEvidence {
 // the stream omits spawn_agent records but still shows dispatch build, a foreground
 // wait, and durable entity/report state after completion.
 func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) codexDispatchCompletionEvidence {
-	pendingDispatch := map[string]bool{}
-	waitedAfterDispatch := map[string]bool{}
-	durableDoneReport := map[string]bool{}
-	durableStageReport := map[string]bool{}
+	type dispatchPhase uint8
+	const (
+		dispatchNone dispatchPhase = iota
+		dispatchBuilt
+		dispatchWaited
+	)
+	phase := map[string]dispatchPhase{}
+	result := newCodexDispatchCompletionEvidence()
 
 	for _, line := range strings.Split(jsonl, "\n") {
 		line = strings.TrimSpace(line)
@@ -38,45 +43,86 @@ func codexDispatchCompletionEvidenceFromJSONL(jsonl string, entities []string) c
 				Tool             string `json:"tool"`
 				Command          string `json:"command"`
 				AggregatedOutput string `json:"aggregated_output"`
+				ExitCode         *int   `json:"exit_code"`
+				Status           string `json:"status"`
 			} `json:"item"`
 		}
 		if err := json.Unmarshal([]byte(line), &ev); err != nil {
 			continue
 		}
 		if ev.Item.Type == "command_execution" && ev.Type == "item.completed" {
-			for _, entity := range codexDispatchBuildTargets(ev.Item.Command, ev.Item.AggregatedOutput, entities) {
-				pendingDispatch[entity] = true
+			for _, entity := range codexSuccessfulDispatchBuildTargets(
+				ev.Item.Command,
+				ev.Item.AggregatedOutput,
+				ev.Item.ExitCode,
+				ev.Item.Status,
+				entities,
+			) {
+				phase[entity] = dispatchBuilt
 			}
+			if ev.Item.ExitCode == nil || *ev.Item.ExitCode != 0 || ev.Item.Status == "failed" {
+				continue
+			}
+			reported := codexDurableStageReportTargets(ev.Item.Command, ev.Item.AggregatedOutput, entities)
 			for _, entity := range entities {
-				if codexDurableStageReportForEntity(ev.Item.AggregatedOutput, entity) {
-					durableStageReport[entity] = true
-					if codexDurableStatusForEntity(ev.Item.AggregatedOutput, entity, "done") {
-						durableDoneReport[entity] = true
+				if phase[entity] == dispatchWaited && reported[entity] {
+					result.stageReport[entity] = true
+					if codexDurableStatusForEntity(ev.Item.AggregatedOutput, "done") {
+						result.doneReport[entity] = true
 					}
 				}
 				if codexMergeGuardCompletedEntity(ev.Item.Command, ev.Item.AggregatedOutput, entity) {
-					durableDoneReport[entity] = true
-					durableStageReport[entity] = true
+					result.doneReport[entity] = true
+					result.stageReport[entity] = true
 				}
 			}
 		}
-		if ev.Item.Type == "collab_tool_call" && ev.Type == "item.completed" && codexWaitTool(ev.Item.Tool) {
-			for entity := range pendingDispatch {
-				waitedAfterDispatch[entity] = true
+		if ev.Item.Type == "collab_tool_call" && ev.Type == "item.completed" &&
+			codexWaitTool(ev.Item.Tool) && ev.Item.Status == "completed" {
+			for entity, current := range phase {
+				if current == dispatchBuilt {
+					phase[entity] = dispatchWaited
+				}
 			}
 		}
 	}
+	return result
+}
 
-	result := newCodexDispatchCompletionEvidence()
-	for _, entity := range entities {
-		if waitedAfterDispatch[entity] && durableDoneReport[entity] {
-			result.doneReport[entity] = true
+// codexSuccessfulDispatchBuildTargets accounts for Codex batching several
+// dispatch builds into one shell item. A zero-exit item proves every addressed
+// build succeeded. For a non-zero batch, only the targets with a complete
+// dispatch-build JSON result are proven; a later command in the batch may have
+// failed after those results were emitted.
+func codexSuccessfulDispatchBuildTargets(command, output string, exitCode *int, status string, entities []string) []string {
+	if !strings.Contains(command, "dispatch build") {
+		return nil
+	}
+	if exitCode != nil && *exitCode == 0 && status != "failed" {
+		return codexDispatchBuildTargets(command, output, entities)
+	}
+
+	type dispatchResult struct {
+		DispatchFilePath string `json:"dispatch_file_path"`
+	}
+	matched := make([]string, 0, len(entities))
+	dec := json.NewDecoder(strings.NewReader(output))
+	for {
+		var result dispatchResult
+		if dec.Decode(&result) != nil {
+			break
 		}
-		if waitedAfterDispatch[entity] && durableStageReport[entity] {
-			result.stageReport[entity] = true
+		if result.DispatchFilePath == "" {
+			continue
+		}
+		for _, entity := range entities {
+			if strings.Contains(result.DispatchFilePath, "spacedock-ensign-"+entity+"-") {
+				matched = append(matched, entity)
+				break
+			}
 		}
 	}
-	return result
+	return matched
 }
 
 func codexDispatchBuildTargets(command, output string, entities []string) []string {
@@ -100,19 +146,30 @@ func codexWaitTool(tool string) bool {
 	return tool == "wait" || tool == "wait_agent" || tool == "collab:wait"
 }
 
-func codexDurableStageReportForEntity(output, entity string) bool {
-	if !strings.Contains(output, "Stage Report") {
-		return false
+func codexDurableStageReportTargets(command, output string, entities []string) map[string]bool {
+	reported := map[string]bool{}
+	reportCount := len(regexp.MustCompile(`(?m)^##[ \t]+Stage Report:`).FindAllStringIndex(output, -1))
+	if reportCount == 0 {
+		return reported
 	}
-	return strings.Contains(output, "id: "+entity) ||
-		strings.Contains(output, `"id":"`+entity+`"`) ||
-		strings.Contains(output, entity+".md")
+
+	var named []string
+	for _, entity := range entities {
+		if strings.Contains(command, entity+".md") || strings.Contains(command, "status --read "+entity) {
+			named = append(named, entity)
+		}
+	}
+	// A command that names several files may prove anonymous report blocks only
+	// when it returns a distinct block for every named target.
+	if reportCount >= len(named) {
+		for _, entity := range named {
+			reported[entity] = true
+		}
+	}
+	return reported
 }
 
-func codexDurableStatusForEntity(output, entity, status string) bool {
-	if !codexDurableStageReportForEntity(output, entity) {
-		return false
-	}
+func codexDurableStatusForEntity(output, status string) bool {
 	return strings.Contains(output, "status: "+status) ||
 		strings.Contains(output, `"status":"`+status+`"`)
 }
