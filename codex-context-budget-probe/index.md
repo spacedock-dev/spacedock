@@ -1,7 +1,7 @@
 ---
 title: Bind Codex context budget to per-thread token telemetry
 status: ideation
-source: "Captain request 2026-07-11 plus live Codex 0.144.1 schema and rollout evidence gathered while reusing 88t workers."
+source: "Captain request 2026-07-11, with 2026-07-12 native-index and read-only WAL evidence from live Codex 0.144.1."
 started: 2026-07-11T05:50:29Z
 completed:
 verdict:
@@ -13,35 +13,52 @@ id: bct1zbqhbkatrwmqf6s6qd9v
 
 ## Problem
 
-The Codex first-officer adapter declares `«context-budget»` ABSENT, so reuse-condition 0 always passes. Codex exposes enough local metadata to make a bounded decision, but `list_agents` exposes only a task path and status. A task path is inventory, not a thread identity.
+The Codex first-officer adapter needs a direct-child identity before it can decide whether to reuse a worker. `$CODEX_THREAD_ID` provides the parent identity, but `list_agents` exposes only a task path and status. A task path is inventory, not a thread identity.
 
-The rejected observer experiment proved why v1 cannot depend on an app-server sidecar: a second initialized client saw `thread/started`, but it could not resume the producer-owned rollout and received no usable token event. The retained worktree is evidence for that rejection only. It must never become a bridge, a UI scraper, or a rollout-tail substitute.
+The current implementation solves that gap by walking and fully parsing every session JSONL. On this host that means 978 files and about 1.1 GiB before it identifies the one child log, taking about 30 seconds. That all-history replay is not acceptable: it conflates child discovery with active-token projection, can grow without bound, and is unnecessary because Codex maintains its own local thread inventory.
 
-This work is limited to the Codex budget binding: identity, fresh active-window telemetry, fail-safe reuse, its command surface, and tests. It does not add PR, mod, generic roster behavior, or a Codex launch wrapper.
+The rejected observer experiment remains rejected: a second initialized app-server client could not resume the producer-owned rollout and received no usable token event. This redesign is limited to a synchronous local-index lookup plus selected-log projection. It does not add an observer, socket, sidecar, capability file, telemetry cache, companion process, PR/mod behavior, generic roster behavior, or a Codex launch wrapper.
 
 ## Spike findings
 
-The replacement spike read only session identity fields and `token_count` fields from the live Codex session store. It did not read, retain, or print prompts, responses, reasoning, tool arguments, or lifetime token totals.
+The spikes read only thread IDs, task paths, file paths, status, and allowlisted `token_count` fields. They did not read, retain, or print prompts, responses, reasoning, tool arguments, or lifetime token totals.
 
-- The live roster contained `/root/spacedock_ensign_codex_context_budget_probe_reideation`. Its child session metadata mapped that exact path to `019f50f7-8f5b-7950-8a9b-102082cdcd3c`, with both parent fields equal to `019f4fa1-3e99-7593-b79c-1d816e9bd467`. This worker's `CODEX_THREAD_ID` equalled the child metadata ID.
-- At `2026-07-11T11:44:54Z`, the child JSONL's last projected `token_count` was ten seconds old: event timestamp `2026-07-11T11:44:44.685Z`, `last_token_usage.total_tokens` 79,822, and `model_context_window` 353,400. This proves a current worker can be bound to a fresh active-window record without an observer.
-- The current parent also has two child metadata records for each of `/root/spacedock_ensign_codex_context_budget_probe_implementation` and `/root/spacedock_ensign_codex_context_budget_probe_ideation`. A task path plus parent is therefore not sufficient after replacement. Selecting the newest file would be an unsafe guess.
-- The preserved read-only compaction spike remains the semantic fixture: a compaction moved the active `last` count from 18,893 to 4,097 in a 353,400-token window. The JSONL reader uses the corresponding `last_token_usage` field and permits a lower later value. It never reads lifetime accounting.
+- Codex 0.144.1's local state DB contains `thread_spawn_edges(parent_thread_id, child_thread_id, status)` and `threads(id, rollout_path, agent_path, ...)`. A read-only query joining those tables on the current parent and exact worker uses `idx_thread_spawn_edges_parent_status`, then the `threads` primary-key index.
+- A live query opened `/Users/clkao/.codex/state_5.sqlite` with SQLite's `-readonly` mode and URI `mode=ro&cache=private`. It reported `journal_mode=wal`, returned exactly one binding for parent `019f4fa1-3e99-7593-b79c-1d816e9bd467` plus `/root/bc_session_live_probe2`, and resolved child `019f53a3-ea0c-7e10-b307-47d3da3bf6e9` to its canonical rollout JSONL. The edge status was `open`; it is not a running-state signal and must not filter completed-but-addressable children.
+- Codex's documented precedence is top-level `sqlite_home` in config, then `CODEX_SQLITE_HOME`, then `CODEX_HOME`; relative SQLite-home paths resolve from the current working directory. The config option identifies the directory holding the SQLite-backed state DB, not a fixed `~/.codex/state_5.sqlite` pathname.
+- A selected session's metadata still revalidates the exact child ID, both parent fields, and byte-exact worker path. Its final projected `token_count` remains the only source of active-window tokens; the preserved compaction fixture is 18,893 -> 4,097 in a 353,400-token window. `threads.tokens_used` is lifetime state and is not a budget input.
+- The current parent has had more than one historical child for a task path after replacement. The index query must therefore return at most one exact binding; it must not choose newest, highest counter, modified time, or an edge status.
 
 ## Proposed direction
 
-Ship no observer, socket, sidecar, capability file, or new `spacedock codex` launch mode. The smallest v1 surface is a synchronous, Codex-specific command:
+Ship no observer, socket, sidecar, capability file, telemetry cache, or new `spacedock codex` launch mode. The public surface remains the synchronous command:
 
 ```text
 spacedock dispatch codex-context-budget --worker <task-path>
 ```
 
-The caller obtains `<task-path>` from the live roster, but the command treats it only as a lookup key. `$CODEX_THREAD_ID` is the required direct-parent anchor. The command scans the canonical `$CODEX_HOME/sessions` root and recognizes only these fields:
+The caller obtains `<task-path>` from the live roster, but the command treats it only as an exact lookup key. `$CODEX_THREAD_ID` is the required direct-parent anchor.
+
+**Storage resolution and read-only index.** Resolve `CODEX_HOME` as today. Resolve the SQLite directory using Codex's documented precedence: user-level `sqlite_home` in `$CODEX_HOME/config.toml`, then `CODEX_SQLITE_HOME`, then `CODEX_HOME`; resolve a relative value from the current working directory. Parse TOML rather than grepping it. Canonicalize and validate that directory, then recognize only regular, non-symlinked `state_*.sqlite` candidates beneath it. Open a uniquely schema-qualified candidate with a pure-Go SQLite driver through a file URI whose query is exactly `mode=ro&cache=private`; use one short-lived connection and normal SQLite locking. Never enable `immutable=1` or `nolock=1`, never issue a mutating pragma or migration, and close the query and DB promptly. A small SQLite driver and TOML decoder are justified dependencies here; hand-parsing either format would weaken the safety boundary.
+
+Schema qualification requires the tables and columns used by the lookup: `thread_spawn_edges(parent_thread_id, child_thread_id, status)` and `threads(id, rollout_path, agent_path)`. It must not hardcode the operator's `~/.codex/state_5.sqlite` path or a schema version. Missing, symlinked, locked, unreadable, schema-mismatched, or multiply-qualified state DBs are unavailable evidence. The query is bounded to two rows:
+
+```sql
+SELECT e.child_thread_id, t.rollout_path, t.agent_path
+FROM thread_spawn_edges AS e
+JOIN threads AS t ON t.id = e.child_thread_id
+WHERE e.parent_thread_id = ? AND t.agent_path = ?
+LIMIT 2;
+```
+
+It deliberately has no `status` predicate. Zero rows, a query error, or index/schema inconsistency yields `unavailable: binding`; two rows yield `unavailable: ambiguous`. Neither condition falls back to a full JSONL replay. V1 intentionally ships no header-scan fallback; a future dependency-free fallback would need a separately approved, fixed-byte header-only scan and could never rescue an existing index failure.
+
+**Selected-log validation and token projection.** The single `rollout_path` returned by the index is not trusted blindly. It must be an absolute, canonical, regular non-symlink `.jsonl` below the canonical `$CODEX_HOME/sessions` root, with an identity check before and after open. Stream only that one file and recognize only:
 
 1. `session_meta.payload.id`, `session_meta.payload.parent_thread_id`, and `session_meta.payload.source.subagent.thread_spawn.{parent_thread_id,agent_path}`.
 2. `event_msg` records whose payload type is `token_count`, limited to the event timestamp, `info.last_token_usage.total_tokens`, and `info.model_context_window`.
 
-It accepts one candidate only when the child ID is well formed; both parent fields equal `$CODEX_THREAD_ID`; the metadata path equals `--worker` byte-for-byte; and exactly one matching candidate has a final, well-formed token record whose event timestamp is in `[now - 120 seconds, now]`. A direct child that is `completed` remains eligible when it meets those checks because the roster status does not change its session identity.
+The selected metadata must contain exactly one well-formed binding whose child ID equals the index row, whose two parent fields equal `$CODEX_THREAD_ID`, and whose worker path equals `--worker` byte-for-byte. Any metadata mismatch, duplicate target metadata, target-relevant malformed known record, unsafe path, or missing final record fails closed. A direct child that is completed remains eligible when this exact evidence is fresh because edge status does not determine addressability.
 
 The command accepts a lower later `last_token_usage` value after compaction. It compares active-window values with integer arithmetic: `active_tokens * 100 <= context_window * 60`. Equality reuses; the next token fresh-dispatches. The parser has no field for `total_token_usage`, and it never serializes or persists raw JSONL records or content-bearing event types.
 
@@ -51,47 +68,50 @@ This is an automatic, conditional reuse gate rather than diagnostic-only output.
 
 | Evidence condition | Result |
 | --- | --- |
-| Missing or malformed `$CODEX_THREAD_ID`; no matching direct child; parent/path/child-ID disagreement | Non-zero `unavailable: binding`; fresh-dispatch. |
-| More than one fresh matching child after a replacement or concurrent spawn | Non-zero `unavailable: ambiguous`; fresh-dispatch. |
+| Missing or malformed `$CODEX_THREAD_ID`; unavailable/locked/schema-mismatched native DB; no index row; index/metadata parent-path-child disagreement | Non-zero `unavailable: binding`; fresh-dispatch. |
+| More than one index row or duplicate matching metadata after a replacement/concurrent spawn | Non-zero `unavailable: ambiguous`; fresh-dispatch. |
 | Missing final `token_count`; malformed timestamp or fields; zero window; negative or over-window active count | Non-zero `unavailable: record`; fresh-dispatch. |
 | Timestamp older than 120 seconds or later than `now` | Non-zero `unavailable: stale`; fresh-dispatch. |
-| Session root or candidate path escapes the canonical root, is a symlink, or is not a regular file | Non-zero `unavailable: unsafe-path`; fresh-dispatch. |
+| State DB or selected rollout escapes its canonical root, is a symlink, or is not a regular file | Non-zero `unavailable: unsafe-path`; fresh-dispatch. |
 | A unique fresh, valid snapshot | Exit zero; `reuse_ok` decides follow-up versus a new child. |
 
-The reader resolves the sessions root before walking it, does not follow symlinked entries, and accepts only regular `.jsonl` files that remain beneath that root. It drops unknown records without logging their payloads. A malformed known record invalidates its candidate. A stale record is never a fallback for a fresh record, and a fresh tie is never resolved by ordering. These rules contain replacement, compaction, symlink/path, missing-record, and mismatch failures without retaining session content.
+The reader never walks the sessions tree for discovery. It drops unknown selected-log records without logging their payloads. A malformed known target record invalidates the selected candidate. A stale record is never a fallback for a fresh record, and a tie is never resolved by ordering. These rules contain replacement, compaction, path, missing-record, index, and mismatch failures without retaining session content.
 
 ## Acceptance criteria
 
-- **AC-1:** A uniquely bound, fresh direct Codex child receives a follow-up at or below 60% active-window use and a new child above 60%. A deterministic decision test measures the retained versus new child thread IDs, and a live-gated replay verifies one current worker's command result against its session JSONL snapshot.
-- **AC-2:** Every successful `codex-context-budget` result maps one roster task path to one child whose two parent fields match the invoking FO's `$CODEX_THREAD_ID`. Fixture tables cover zero, one, and multiple candidates; wrong parent/path; duplicate child metadata; and a completed-but-addressable worker. The live replay proves the current-worker mapping recorded above.
-- **AC-3:** Missing, stale, future-dated, malformed, ambiguous, replacement, or mismatched evidence never causes a follow-up. Table and CLI tests assert a non-zero, no-JSON result with the stable reason; adapter tests assert a fresh dispatch for every unavailable result instead of an ABSENT fallback.
-- **AC-4:** The threshold uses only `last_token_usage.total_tokens` and `model_context_window`, accepts a lower value after compaction, and returns the documented integer-boundary result. Fixtures include the 18,893-to-4,097 compaction pair, 60.0%, and the next-token boundary; source and output fixtures omit all lifetime fields.
-- **AC-5:** The reader accepts only canonical-root regular JSONL files and never emits or persists content-bearing records. Temp-tree tests cover valid data, malformed known records, wrong root, symlink escape, non-regular files, and prompt/response sentinels. Output, stderr, and any test artifact omit the sentinels.
-- **AC-6:** The production Codex path has no app-server observer, remote UI, socket, capability file, or telemetry cache. Command and launcher tests exercise the JSONL-only surface and assert that an unavailable lookup fresh-dispatches without launching a companion process.
+- **AC-1:** Against a fixture with 978 session JSONLs (the measured current-store baseline), each successful budget decision opens and parses exactly one selected JSONL and no decoy JSONL. An instrumented file-access test records the count, and a CLI fixture proves the same resolved child ID and output as the native index row. This is the measurable end value: one selected-log read rather than an all-history 978-file replay.
+- **AC-2:** Every successful `codex-context-budget` result maps one exact `(parent thread ID, roster worker path)` pair through the native thread index to one child, then revalidates its two JSONL parent fields, child ID, and worker path. SQLite fixtures cover zero, one, and two query rows; wrong parent/path; stale index-versus-log disagreement; duplicate metadata; and a completed-but-addressable edge. A live-gated replay verifies a current worker's command result against its independently recorded child ID.
+- **AC-3:** The state index is read-only and WAL-safe: `sqlite_home` overrides `CODEX_SQLITE_HOME`, which overrides `CODEX_HOME`; a normal-locking `mode=ro&cache=private` reader sees a writer's committed WAL row; and a write attempt through the reader is rejected. Absent, locked, unreadable, symlinked, schema-mismatched, or ambiguous index state produces non-zero/no-JSON and a fresh dispatch. Tests create a temporary WAL DB and prove these outcomes without `immutable=1` or `nolock=1`.
+- **AC-4:** Only the index-selected path may supply active tokens. The selected path must remain canonical, beneath the sessions root, regular, and non-symlinked, and the parser must use only `last_token_usage.total_tokens` plus `model_context_window`. Fixtures cover path escape, symlink/non-regular paths, malformed known records, the 18,893-to-4,097 compaction pair, 60.0%, and the next-token boundary; source/output/artifacts omit lifetime and transcript-content sentinels.
+- **AC-5:** Missing, stale, future-dated, malformed, ambiguous, replacement, locked, or mismatched evidence never causes a follow-up. CLI and adapter decision tests assert non-zero/no-JSON plus exactly one fresh dispatch for every unavailable condition, while a valid below-budget result retains the verified child ID and a valid above-budget result receives a distinct ID.
+- **AC-6:** The production command works using only a native read-only state query and the selected JSONL. An integration fixture deliberately supplies no app-server, socket, sidecar, cache, capability file, remote UI, or companion executable and still exercises valid reuse and unavailable-to-fresh behavior.
 
 ## Test plan
 
-1. Add a small JSONL reader package with an injected clock and sessions root. Fixture records contain only allowed `session_meta` and `token_count` fields plus opaque content sentinels. Table-test exact parent/path reduction, no candidate, duplicate fresh candidate, stale prior candidate, malformed known record, lower post-compaction count, future timestamp, and threshold arithmetic. Estimated cost: small.
-2. Add filesystem fixtures for canonical-root validation. Exercise missing roots, symlinked root entries, symlinked and non-regular candidates, paths outside the canonical root, and a malformed final token record. Assert no content sentinel reaches a result, diagnostic, or persisted file. Estimated cost: small.
-3. Add command goldens for valid under-budget, valid over-budget, and every unavailable reason. Preserve Claude's existing `context-budget` bytes. Add adapter decision tests that distinguish valid `reuse_ok: false` from an unavailable non-zero result and fresh-dispatch for both. Estimated cost: small.
-4. Add an opt-in live Codex replay with a temp workflow. Capture the FO `CODEX_THREAD_ID`, dispatch a named direct child, use the live roster only to choose its task path, and require one exact child JSONL mapping plus a fresh `last_token_usage`/window result. A fixture, not an observer, covers duplicate replacement and compaction. The replay verifies process exit, entity body, state-checkout git log, and clean status. Estimated cost: medium.
+1. Add storage-resolution tests using TOML fixtures plus `CODEX_HOME`, `CODEX_SQLITE_HOME`, and current-working-directory fixtures. Assert documented precedence and relative-path behavior; recognize exactly one regular, non-symlinked schema-qualified `state_*.sqlite` file and fail closed for absent, invalid, multiple, or lock-contended DBs. Estimated cost: medium.
+2. Add a native-index package using a pure-Go SQLite driver. Its table fixtures create the required schema and exact parent/worker rows. Assert the `LIMIT 2` lookup returns zero/one/two correctly, ignores edge `status` as a running signal, and exposes no row content beyond child ID/rollout path/agent path. Estimated cost: medium.
+3. Add a read-only/WAL test: a separate writer uses WAL and commits a matching row while it remains open; the `mode=ro&cache=private` lookup sees the commit. A write through the production read-only connection must return SQLite read-only, and lock/query/schema errors must reach the existing non-zero/no-JSON fresh path. Do not set `immutable=1`, `nolock=1`, migrations, or mutating pragmas in the production reader. Estimated cost: medium.
+4. Refactor the session reader to accept the single index-resolved rollout. Inject an open-counting filesystem seam, place 977 content-sentinel decoys beside the selected fixture, and assert only the selected file opens. Retain selected-file metadata revalidation, path identity checks, compaction, threshold, stale/future, malformed-token, and content-sentinel coverage. Estimated cost: medium.
+5. Update command goldens and adapter decision tests. Preserve Claude's existing `context-budget` bytes; distinguish `reuse_ok:false` from unavailable output; prove below-budget retains the exact verified child ID and above-budget/unavailable invokes one fresh child with a distinct ID. Estimated cost: small.
+6. Add an opt-in live Codex replay with an explicitly recorded expected child ID. It queries the live native index through the built binary, verifies the selected session's fresh active-window result, then proves exact-path follow-up or fresh dispatch through entity markers, state-checkout git log, and clean status. It records DB mode/schema/query-plan metadata only, never transcript content. Estimated cost: medium.
 
-No app-server spike remains. The riskiest mechanism is the live parent-anchor to child-session mapping, and the current-worker spike above exercised it before implementation.
+The riskiest mechanism was native state-index lookup against a live WAL DB. The current read-only indexed join exercised it before implementation. No observer spike remains.
 
 ## Documentation change
 
 The implementation updates `docs/runtime-support.md` and the Codex first-officer runtime binding. The public-facing addition is:
 
 ```diff
-+ Codex context-budget checks bind a live roster task path to a unique direct child
-+ session of the current first officer. They read only fresh active-window token
-+ metadata from the local session JSONL. Missing, stale, ambiguous, or unsafe evidence
-+ causes a fresh dispatch; Spacedock never reads transcript content for this decision.
++ Codex context-budget checks use Codex's local read-only thread index to bind a live
++ roster task path to a unique direct child of the current first officer. They then read
++ fresh active-window metadata only from that selected session JSONL. Missing, locked,
++ stale, ambiguous, inconsistent, or unsafe evidence causes a fresh dispatch; Spacedock
++ never modifies Codex state or reads transcript content for this decision.
 ```
 
-The runtime binding replaces `«context-budget»: ABSENT` with the JSONL command and its failure rule. It does not mention app-server fields or imply a background observer.
+The runtime binding continues to call the same command and failure rule. It does not mention app-server fields or imply a background observer; it says that the index is discovery-only and token values come from the selected session JSONL.
 
-The earlier ideation stage report below records the rejected observer proposal. It remains historical evidence, not validation for this revision.
+The earlier stage reports below are historical evidence for the superseded direct-all-history reader, not validation for this revision.
 
 ## Stage Report: ideation
 
@@ -235,3 +255,23 @@ PASSED. Commit `59ba8101` closes the prior decision, live-identity, and binding 
 ### Summary
 
 Validation found one real AC-2 gap, held the verdict, and closed it with a new parent-FO completed-addressable replay rather than prose or contractlint. The proof retains only content-free output and durable state; the reader's JSONL input was never opened by the validator.
+
+## Feedback Cycles
+
+### Cycle 3 — captain-directed native-index re-ideation (2026-07-12)
+
+- The current all-history JSONL discovery scans 978 files / about 1.1 GiB and is too slow for a context-budget gate.
+- Replace discovery with Codex's native local `thread_spawn_edges` plus `threads` index, anchored by `$CODEX_THREAD_ID` and exact worker path. The selected rollout JSONL remains the sole active-token source.
+- Open the state DB only through an explicit read-only `mode=ro&cache=private` URI, preserve normal SQLite/WAL locking, and never use `immutable=1` or `nolock=1`.
+- Resolve the SQLite directory through effective Codex configuration rather than hardcoding `~/.codex/state_5.sqlite`; absent, locked, inconsistent, ambiguous, unsafe, or schema-mismatched evidence must fresh-dispatch, never trigger a full-transcript fallback.
+
+## Stage Report: ideation (cycle 3)
+
+- DONE: Reframed child discovery around the native indexed thread inventory rather than a full session-tree walk. The design's measurable target is one selected JSONL open against the 978-file current-store baseline.
+- DONE: Exercised the riskiest live mechanism read-only. A `mode=ro&cache=private` query against the WAL state DB used the parent-edge and thread primary-key indexes and returned one exact parent/worker-to-rollout binding; no transcript content was read.
+- DONE: Made read-only/WAL behavior, configuration precedence, schema qualification, selected-path validation, and fail-closed outcomes explicit in the problem, direction, ACs, and test plan.
+- DONE: Preserved the existing public command and the selected-log active-window contract. No implementation, observer, cache, or fallback was added during ideation.
+
+### Summary
+
+The next implementation replaces all-history JSONL discovery with a short-lived native read-only index lookup, revalidates one selected rollout, and measures one file open rather than a 978-file replay. SQLite failure is safety evidence for fresh dispatch, not a reason to reintroduce an observer or broad scan.
