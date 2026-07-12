@@ -1,6 +1,6 @@
 ---
 title: Preserve Zellij targeting metadata through Safehouse
-status: validation
+status: implementation
 score: 0.55
 source: "Captain request 2026-07-12."
 id: 6jk4gverktmthbzkn4vas1kg
@@ -78,6 +78,19 @@ environment through Claude, Codex, and Pi or add host-specific `WithEnv`
 front-door variants merely to implement this shared Safehouse behavior. Retain
 the existing `SPACEDOCK_BIN` and operator `SAFEHOUSE_ENV_PASS` composition,
 avoid broad inheritance, and reduce the diff/tests to the wrapper-owned proof.
+
+**Cycle 2 — taste and ownership correction (2026-07-12).** The one-entry
+terminal-targeting registry, argv scanner, custom `--env-pass` merger, and
+ambient-environment test choreography are speculative machinery. Safehouse
+already owns named-env composition and exposes the operator-level generic
+`SAFEHOUSE_ENV_PASS` configuration. Prefer that zero-code configuration when
+it satisfies the desired default. If a Spacedock-built-in default remains
+necessary, keep the wrapper-only change to one clean function that constructs
+one static terminal-targeting `--env-pass` argument; let Safehouse combine it
+with the existing launcher argument. Do not invent a set registry, parse or
+merge Safehouse argv, or touch the three front doors. Update the task body and
+ACs to express the outcome rather than prescribing a generic data structure;
+keep each AC heading on one line so the gate extractor can audit it.
 
 ## Stage Report: ideation
 
