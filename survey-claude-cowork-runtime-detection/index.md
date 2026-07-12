@@ -337,3 +337,18 @@ Implementation stopped at the required first live spike because this runtime can
 ### Summary
 
 The blocking spike ran in the target runtime itself and settled the design's one unproven mechanism: Cowork's mounted project binds through the declared selected-folder capability's two per-session surfaces, not through any cwd. The session-tool schemas were reconciled against live observations (no timestamps, no pagination, `is_child`, app-global inventory), the report gained an honest app-wide-scope disclosure, and two new live-observed failure/asymmetry classes entered the contract. Implementation is unblocked pending the fresh-session re-bind arm and the consented bootstrap proof.
+
+## Stage Report: implementation (live bootstrap spike, captain-directed FO session)
+
+- DONE: Execute run 1 of the consented bootstrap in a real Cowork session (2026-07-13).
+  Parent-first validation observed `parents-absent: both`; leaf probe returned `COWORK_INSTALL_ABSENT`; consent affirmed by explicit captain instruction. The checksum-verifying installer ran with `SPACEDOCK_INSTALL_DIR` in session space (`fetch → checksums.txt gate → extract → install`, fail-closed), session `--version` verified, parents created and revalidated parent-first, the leaf first-created via one noclobber exclusive open, `chmod 0755`, and direct `--version` verified from the exact mounted path. Cross-surface: the created leaf is readable through the host file surface — `file-surface-binding: confirmed`, `shell-surface-binding: confirmed`.
+- DONE: Exercise `COWORK_SHELL_UNAVAILABLE` live (2026-07-12→13).
+  The prior session's workspace VM refused every shell command while file/session tools kept working; the flow stopped with zero network and zero project mutation, and resumed cleanly after relaunch — validating relaunch-and-rerun as the recovery boundary. The workspace (and its mount prefix) survived the relaunch; the binding is still re-derived per run.
+- DONE: Characterize the deletion-denied mount live.
+  Leaf creation (create+write) succeeded under the default no-delete mount policy; an unlink-requiring operation (git index-lock rename in an unrelated flow) failed with `Operation not permitted` until an explicit host-side deletion grant — confirming the design's deletion-denied lane semantics (first create without unlink works; no unlink/rename is silently available).
+- FAILED: `spacedock state commit` from inside the Cowork sandbox.
+  The split-root state checkout is a linked git worktree whose `.git` pointer carries a host-absolute gitdir; inside the sandbox that path does not exist, so the verb (and bare git) fail with `not a git repository`. Worked around via an explicit in-sandbox `GIT_DIR`/`GIT_WORK_TREE` override, path-scoped. Filed as a spacedock-in-Cowork finding beyond this task's scope: state sync needs a relative or re-derived gitdir to operate from a sandbox surface.
+
+### Summary
+
+Run 0 and run 1 of the bootstrap lifecycle are now live-proven end to end in the target runtime: consent-gated zero-network stop, checksum-gated session install, parent-first validation, exclusive first-create of the exact mounted leaf, and dual-surface verification. Remaining for validation: run 2 (fresh session, same folder — zero-network reuse plus the cross-session re-bind arm) and the fixture/test harness the test plan specifies.
