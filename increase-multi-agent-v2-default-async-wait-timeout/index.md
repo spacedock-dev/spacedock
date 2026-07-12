@@ -298,6 +298,16 @@ weaken the existing timeout/interruption lifecycle rules. Implementation must
 update the adapter and focused proof so repeated ordinary timeouts do not emit
 repetitive “continuing with …” narration within one unchanged wait epoch.
 
+**Cycle 3 — ordering-invariant escalation (2026-07-12).** Fresh validation
+rejected the cycle-2 proof even though the retained run observed the intended
+ordering: the assertion receives neither hold marker, so it can pass when a
+timeout/re-wait occurs after the worker hold or a workflow-state change. The
+missing executable invariant is concrete: require the first wait to overlap the
+hold, its ordinary timeout to precede `holdFinished`, and the silent re-wait to
+begin before that finish marker; add a fast negative boundary control. This is
+the third feedback cycle, so it is escalated to the captain rather than
+auto-routed to another implementation pass.
+
 ## Stage Report: implementation (cycle 1)
 
 - DONE: Removed only the invalid marker-relative 30-second upper bound.
