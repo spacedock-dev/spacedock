@@ -154,7 +154,7 @@ and file a focused follow-up.
 ## Test plan
 
 Captain-directed scope correction (2026-07-12): remove the task-specific
-foreground-wait and quiet-epoch live scenarios. Their 45-second and six-minute
+delayed-worker and quiet-epoch live scenarios. Their 45-second and six-minute
 holds made routine verification slow and produced a disproportionate amount of
 test-only machinery for a small declarative policy. Keep the product diff
 adapter-only: do not restore those tests or replace them with Contractlint,
@@ -634,3 +634,20 @@ The adapter now treats `wait_agent` as asynchronous idle monitoring rather
 than a completion or lifecycle mechanism. It only waits when the
 captain-authorized active scope has no work, verifies durable state on a final
 notification, and immediately resumes the shared next-action loop.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Remove every live adapter use of foreground wait/foreground monitoring, including the heading and reinstall wording.
+  Commit `ee606c0` removes every case-insensitive `foreground` occurrence from the shipped Codex adapter and renames the interruption subsection to async idle-monitoring terminology.
+- DONE: Update current task-facing plan/acceptance prose to async idle monitoring where it describes the active policy.
+  The current chosen direction, documentation impact, acceptance criteria, test plan, and out-of-scope text use async idle monitoring; earlier stage reports remain unchanged historical evidence.
+- DONE: Keep the adapter-only, no-heavy-tests scope; verify the scoped diff is clean and append the repair report without pushing the branch.
+  `origin/main...HEAD` contains one product file, the Codex adapter, and `git diff --check` is clean. No timing harness, parser, or prose-only substitute was restored; the code branch remains unpushed.
+- FAILED: Re-run the existing Contractlint package after removing the obsolete vocabulary.
+  `go test -count=1 -v ./internal/contractlint` reports three stale structural checks that require `### Foreground wait` or `next foreground wait`. They contradict the captain-directed no-alias requirement and are not changed in this adapter-only task.
+
+### Summary
+
+Shipped Codex instructions now use async idle monitoring as their sole term.
+The only failed check is the known legacy prose-grep guard, which cannot be
+satisfied without restoring the terminology the captain explicitly rejected.
