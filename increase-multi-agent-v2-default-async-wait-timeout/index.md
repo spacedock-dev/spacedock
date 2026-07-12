@@ -10,7 +10,7 @@ issue:
 id: 95we0fhydgx5rbay5fw3qy4q
 started: 2026-07-11T11:51:34Z
 mod-block: merge:pr-merge
-pr: "#500"
+pr: pr-merge:500
 ---
 
 `multi_agent_v2`’s short default wait causes repeated timeout churn while subagents perform normal verification or interactive work. Because the wait already returns immediately when an agent responds or new user input arrives, increase the default timeout to five minutes. This reduces unnecessary polling and tool traffic without delaying updates or reducing responsiveness.
