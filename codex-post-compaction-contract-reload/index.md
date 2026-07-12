@@ -33,6 +33,8 @@ The current contracts already state the right behavior:
 
 Generated summaries are advisory. Repo instructions can require a re-read, but they do not reconstruct live assignments. Durable workflow state proves stage and committed reports, but does not presently distinguish `await_completion` from `verify_report`, `rerun_review`, or `present_gate`.
 
+External evidence sharpens the boundary. ECC's strategic-compaction hook uses actual transcript context size as its primary pressure signal, tool-call count only as a fallback, and rate-limits reminders by context-growth buckets. Its own guidance says to compact at logical phase boundaries rather than when a threshold fires. ECC's PreCompact summary is deliberately lossy and failure-open: it samples at most 25 recent turns and 7,000 characters, invokes an LLM, and falls back to logging when generation fails. Its SessionStart loader marks prior summaries as historical-only and skips prior-summary injection for `resume`, `clear`, and `compact` modes. These are useful risk reductions, but none proves same-session continuation or replaces a typed obligation record.
+
 The invariant is: after dispatching or reusing a critical-path worker, the FO cannot produce a completion response until it consumes the matching completion signal, verifies the durable report, records the next continuation, and reaches a gate, terminal state, or explicit blocker.
 
 ## Live Codex 0.144.1 schema findings
@@ -142,7 +144,13 @@ If a source cannot be resolved, a digest changes during the read, the checkpoint
 
 With no compaction and no unresolved obligation, the command is a no-op: no roster reconciliation, contract streaming, or checkpoint write.
 
-### 5. Codex plugin lifecycle adapter, conditional on the spike
+### 5. Computed compaction readiness
+
+Context pressure is a suggestion signal, never permission to compact mid-obligation. The launcher computes `compaction_ready` from durable state. It is true only when every active obligation has been written to the checkpoint, every dispatched obligation has its worker identity and assignment epoch bound, every report baseline is stored, and every obligation has one typed next action. A context-size or tool-count threshold may suggest compaction only at a logical phase boundary and only when this predicate is true.
+
+For launcher/client-initiated compaction, `compaction_ready=false` refuses the request and reports the missing durable fields; it does not synthesize them from transcript text or a generated summary. An automatic host compaction that bypasses this prevention layer still sets `needs_rehydrate` and must pass the durable fence. Thus strategic compaction reduces exposure while the ledger and fence preserve correctness when timing control fails. With zero obligations, readiness evaluation is a cheap in-memory predicate and adds no checkpoint write, contract stream, roster query, or recurring ceremony.
+
+### 6. Codex plugin lifecycle adapter, conditional on the spike
 
 A bundled Codex plugin is a stronger lifecycle aid than skill prose, but it is never the source of truth. The durable checkpoint and rehydration fence remain authoritative for worker state, completion attribution, and every guarded action.
 
@@ -152,6 +160,8 @@ The intended plugin policy is:
 - `SubagentStart` and `SubagentStop` record observed worker lifecycle facts in plugin-owned `PLUGIN_DATA`, keyed by validated thread/session and assignment identity. This is an observation cache for prompt repair and stop handling, not a second ledger: it cannot satisfy, clear, or invent a durable obligation.
 - `Stop` consults the unresolved state derived from the checkpoint/fence. While an obligation remains and no applicable captain opt-out is recorded, its planned result is `decision: "block"` plus the same fixed reconcile-and-`wait_agent` directive. A block asks Codex to continue reconciliation; it does not declare any worker complete, spawn a replacement, or itself start a watchdog turn.
 - A captain's explicit `do not wait` is recorded as typed, scoped opt-out state with a checkpoint generation and explicit reversal. It may be mirrored into `PLUGIN_DATA`, but the checkpoint is authoritative. For matching obligations, the plugin omits the wait directive and `Stop` does not block, so it never fights that instruction; the opt-out does not clear the obligation or waive the rehydration fence for mutations, gates, merges, or completion claims.
+
+Lifecycle handling distinguishes fresh `startup`, persisted-session `resume`, context `clear`, and same-session `compact`. Each source must set or preserve the correct checkpoint identity and fence state; none may treat a prior generated summary as live instruction. In particular, `compact` requires an independent PostCompact/turn-entry proof because ECC's analogous SessionStart path intentionally skips prior-summary injection for every non-startup source. `clear` may discard model context but cannot discard an unresolved durable obligation, and `resume` adopts retained state only through the validation rules above.
 
 The event-capable client still deduplicates `postCompact`, `item/completed` with `contextCompaction`, and legacy `thread/compacted` into one compaction epoch. Duplicate signals mark the same epoch; they do not trigger repeated reloads. If the spike proves plugin context ordering, `PostCompact` marks `needs_rehydrate` through the checkpoint service and contributes the fixed directive. If plugin context is unavailable but injection ordering is proven, the client uses `thread/inject_items` for that directive. If `preToolUse` coverage is proven for a tool class, it blocks that class while the fence is outstanding.
 
@@ -163,7 +173,7 @@ Evidence is deliberately tiered:
 
 No hook is authoritative. Hook failure, timeout, malformed output, absent notification, late context, stale plugin data, or uncovered collaboration call leaves `needs_rehydrate` set. The launcher/client-side fence remains the authority. Where the client cannot intercept a call, the design claims only the host-neutral turn-entry contract until a live probe proves stronger coverage.
 
-### 6. Bounded continuation
+### 7. Bounded continuation
 
 Automatic enforcement must not create an injection or turn-start loop.
 
@@ -184,7 +194,7 @@ This preserves the keep-moving invariant without an unbounded autonomous loop.
 
 **AC-2: Critical-path continuity.** Across manual and automatic compaction, a summary omitting every wait instruction, queued completion, and operator interruption, the replay records zero premature shutdowns, replacement dispatches, completion-only final responses, or state advances before the matching committed Stage Report. After the report arrives, the entity reaches its next gate or terminal continuation in the same drive.
 
-**AC-3: Durable recovery without summary state.** Reconstructing from only the checkpoint, launcher-selected contracts, workflow checkout, roster fixture, and mailbox fixture recovers the same entity, stage, cycle, assignment epoch, report baseline, continuation state, and next typed action as before compaction.
+**AC-3: Durable recovery without summary state.** Reconstructing from only the checkpoint, launcher-selected contracts, workflow checkout, roster fixture, and mailbox fixture recovers the same entity, stage, cycle, assignment epoch, report baseline, continuation state, and next typed action as before compaction. The test replaces any generated summary with stale executable-looking prose and proves that no action is derived from it.
 
 **AC-4: Event detection and fallback.** Event-capable fixtures deduplicate `postCompact`, `contextCompaction`, and legacy `thread/compacted` into one epoch. Eventless and failed-hook fixtures still fence the first subsequent FO turn and every active turn before guarded actions.
 
@@ -198,29 +208,37 @@ This preserves the keep-moving invariant without an unbounded autonomous loop.
 
 **AC-9: Wait and feedback guarantees.** Timeout or operator interruption returns control without failing, closing, or redispatching the worker. The next idle action reinstalls wait; a rejected fix proceeds through repair completion, durable verification, reviewer re-run, and normal gate flow.
 
-**AC-10: Inactive cost.** With no observed compaction requiring reload and no unresolved obligation, rehydration performs no roster reconciliation, contract streaming, or checkpoint write.
+**AC-10: Inactive cost.** With no observed compaction requiring reload and no unresolved obligation, readiness and rehydration perform no roster reconciliation, contract streaming, checkpoint write, or repeated suggestion work beyond the existing pressure-bucket check. A trace fixture asserts zero such operations.
+
+**AC-11: Compaction readiness prevents unsafe voluntary compaction.** `compaction_ready` is false whenever any active obligation lacks durable persistence, bound dispatch identity/epoch, stored report baseline, or typed next action; launcher/client-initiated compaction is refused with the exact missing fields. Readiness becomes true only when all obligations satisfy that predicate, and compaction is allowed only when readiness is true and the current point is a declared logical boundary. Table tests toggle every term independently, and an automatic-compaction fixture proves that bypassing this prevention layer still leaves `needs_rehydrate` set and the fence mandatory.
+
+**AC-12: Distinct lifecycle sources preserve continuity.** Fresh `startup`, validated `resume`, context `clear`, and same-session `compact` each produce the expected checkpoint identity, `needs_rehydrate` transition, and typed next action without executing prior-summary text. Mode-specific fixture traces cover all four sources, and a live Codex spike separately proves same-session `compact` ordering rather than inferring it from startup behavior.
 
 ### Interactive
 
-**AC-11: Live Codex demonstration.** During a delayed worker repair, CL triggers `/compact`, interrupts one foreground wait, and sends an unrelated status question. The FO answers from durable state, restores wait, consumes the final notification, verifies the committed report, and continues to re-review or the next gate without a reminder. Evidence includes app-server notifications, plugin hook and `PLUGIN_DATA` traces, checkpoint generations, workflow git log, and clean state.
+**AC-13: Live Codex demonstration.** During a delayed worker repair, CL triggers `/compact`, interrupts one foreground wait, and sends an unrelated status question. The FO answers from durable state, restores wait, consumes the final notification, verifies the committed report, and continues to re-review or the next gate without a reminder. Evidence includes app-server notifications, plugin hook and `PLUGIN_DATA` traces, checkpoint generations, workflow git log, and clean state.
 
-**AC-12: Plugin lifecycle assistance is evidence-gated and opt-out-safe.** Before the plugin claims enforcement on a target Codex version, a live trace establishes plugin discovery plus all five callback traces; `SessionStart`/`PostCompact` developer-context delivery before the first guarded action; two-worker `SubagentStart`/`SubagentStop` accounting in `PLUGIN_DATA` under duplicate and out-of-order events; and `Stop` `decision: "block"` acceptance for an unresolved fixture obligation while a resolved obligation may stop. The same trace proves that a recorded explicit captain `do not wait` opt-out suppresses the matching wait directive and stop block only. Absent, late, malformed, stale, or unproven plugin behavior leaves the durable fence as the sole guard and never treats work as complete.
+**AC-14: Plugin lifecycle assistance is evidence-gated and opt-out-safe.** Before the plugin claims enforcement on a target Codex version, a live trace establishes plugin discovery plus all five callback traces; `SessionStart`/`PostCompact` developer-context delivery before the first guarded action; two-worker `SubagentStart`/`SubagentStop` accounting in `PLUGIN_DATA` under duplicate and out-of-order events; and `Stop` `decision: "block"` acceptance for an unresolved fixture obligation while a resolved obligation may stop. The same trace proves that a recorded explicit captain `do not wait` opt-out suppresses the matching wait directive and stop block only. Absent, late, malformed, stale, or unproven plugin behavior leaves the durable fence as the sole guard and never treats work as complete.
 
 ## Test plan
 
 The riskiest unproved mechanism remains Codex ordering and coverage. Invalidate that mechanism before implementing the full protocol.
 
-1. Build a temporary target-Codex plugin/client probe with `SessionStart`, `PostCompact`, `SubagentStart`, `SubagentStop`, `Stop`, a context marker, `thread/inject_items`, and a blocking `preToolUse` hook. First fixture-test the rendered hook map, fixed context-directive text, `PLUGIN_DATA` serialization, duplicate-epoch handling, and the pure unresolved/opt-out predicate; those fixtures do not certify host execution. Then confirm plugin discovery and retain its identity, hook callback stdin/env/stdout, `item/completed`, `hook/started`, `hook/completed`, `PLUGIN_DATA` transitions, context/injection acknowledgements, `turn/completed`, the first post-compaction tool event, and the final stop decision. Start two delayed subagents, exercise duplicate and out-of-order start/stop events, invoke `thread/compact/start`, and test manual and automatic compaction, unresolved and resolved stop, and an explicit captain `do not wait` opt-out. Fail the stronger path if any callback is absent, context is absent or late, duplicate events create multiple epochs, `PLUGIN_DATA` is unavailable or cannot attribute both fixture workers, the stop result is not demonstrably blocking or a resolved obligation cannot stop, the opt-out still injects or blocks, operator input races the watchdog, or any collaboration lifecycle call bypasses the claimed hook. Record exact coverage; do not generalize from shell-tool coverage.
-2. Add checkpoint serialization, private-path validation, atomic-write, compare-and-swap, incomplete-bind, digest, lifecycle, and stale-resume tests under a proposed `internal/rehydrate/` package.
-3. Add concurrent-ledger and state-machine tests: out-of-order completions, two workflows, stale epochs, generation conflicts, matching and malformed reports, hook failure, no-progress watchdog, and bounded wait timeout.
+1. Build a temporary target-Codex plugin/client probe with `SessionStart`, `PostCompact`, `SubagentStart`, `SubagentStop`, `Stop`, a context marker, `thread/inject_items`, and a blocking `preToolUse` hook. First fixture-test the rendered hook map, fixed context-directive text, `PLUGIN_DATA` serialization, duplicate-epoch handling, and the pure unresolved/opt-out predicate; those fixtures do not certify host execution. Then confirm plugin discovery and capture distinct `startup`, `resume`, `clear`, and `compact` traces, retaining callback stdin/env/stdout, `item/completed`, `hook/started`, `hook/completed`, `PLUGIN_DATA` transitions, context/injection acknowledgements, `turn/completed`, the first post-compaction tool event, and the final stop decision. Start two delayed subagents, exercise duplicate and out-of-order start/stop events, invoke `thread/compact/start`, and test manual and automatic compaction, unresolved and resolved stop, and an explicit captain `do not wait` opt-out. Fail the stronger path if any callback is absent, context is absent or late, same-session compact is inferred only from startup, duplicate events create multiple epochs, `PLUGIN_DATA` is unavailable or cannot attribute both fixture workers, the stop result is not demonstrably blocking or a resolved obligation cannot stop, the opt-out still injects or blocks, operator input races the watchdog, or any collaboration lifecycle call bypasses the claimed hook. Record exact coverage; do not generalize from shell-tool coverage.
+2. Add checkpoint serialization, private-path validation, atomic-write, compare-and-swap, incomplete-bind, digest, lifecycle, and stale-resume tests under a proposed `internal/rehydrate/` package. Add table tests that toggle each `compaction_ready` term independently, require a logical boundary, report missing fields, refuse unsafe launcher/client compaction, and prove automatic bypass still requires the fence.
+3. Add concurrent-ledger and state-machine tests: out-of-order completions, two workflows, stale epochs, generation conflicts, matching and malformed reports, hook failure, no-progress watchdog, bounded wait timeout, and all four lifecycle sources. Inject stale executable-looking summary text and assert that transitions depend only on typed durable inputs.
 4. Add a split-root replay fixture under `internal/ensigncycle/testdata/compaction-rehydration/`: validation rejects to implementation, a delayed fixer commits a report, and validation must run again before the gate.
 5. Add `internal/ensigncycle/compaction_rehydration_test.go`. Replace context with a summary that omits the obligation, deliver completion before and after the next turn, interrupt wait, verify the committed report, and assert the next gate or terminal state.
-6. Extend the Codex idle-notification integration region to prove wait restoration, durable file verification, and eventless turn-entry fallback. Assertions must use tool/event traces and workflow state, not transcript phrasing.
-7. Run AC-11 live and retain app-server JSONL, plugin hook log, `PLUGIN_DATA` audit, checkpoint transitions, and the temp workflow git log as CI artifacts.
+6. Extend the Codex idle-notification integration region to prove wait restoration, durable file verification, eventless turn-entry fallback, and zero inactive roster/contract/checkpoint operations. Assertions must use tool/event traces and workflow state, not transcript phrasing.
+7. Run AC-13 and AC-14 live and retain app-server JSONL, plugin hook log, `PLUGIN_DATA` audit, checkpoint/readiness transitions, and the temp workflow git log as CI artifacts.
 
 ## Out of scope
 
 Implementing the protocol in ideation; changing Codex compaction algorithms; persisting conversation history; treating generated summaries as authoritative; changing Claude or Pi behavior; weakening existing wait, feedback, gate, or merge contracts; using workflow mods as context-lifecycle hooks; defending against a malicious same-UID process with unrestricted filesystem access; and fixing the separate `spacedock codex -- resume` bootstrap-prompt bug.
+
+## Evidence reviewed for this revision
+
+- ECC `strategic-compact`, `suggest-compact.js`, `pre-compact.js`, `session-start.js`, and `llm-summary.js` at `affaan-m/ECC` main commit `40927950c49f6e742d341e20ff7b9b7e1e7bfff5`.
 
 ## Stage Report: ideation
 
@@ -247,3 +265,16 @@ The minimum reliable contract is a durable continuation fence, not a better summ
 ### Summary
 
 The plugin is now designed as a lifecycle assist that reinjects the FO wait contract, observes worker events, and can prevent an accidental stop while work remains. The checkpoint-backed rehydration fence remains the only authority; no hook behavior is claimed until the target Codex plugin spike captures its real registration, order, data lifetime, and stop semantics. An explicit captain `do not wait` opt-out suppresses only the matching wait directive and stop block, and never waives durable verification.
+
+## Stage Report: ideation
+
+- DONE: Add a computed `compaction_ready` prevention layer without weakening the durable rehydration fence.
+  The predicate now requires every active obligation to be durable, every dispatch identity and assignment epoch to be bound, every report baseline to be stored, and every obligation to have a typed next action. Voluntary launcher/client compaction is refused with missing fields until readiness is true and a logical phase boundary is reached; automatic host compaction still sets `needs_rehydrate` and must pass the existing fence.
+- DONE: Turn the applicable ECC findings into evidence-backed acceptance criteria and realistic lifecycle tests.
+  Recorded transcript context size as the primary pressure signal, tool count as fallback, rate-limited non-blocking suggestions, lossy/failure-open PreCompact summaries, and historical-only replay. AC-10 through AC-12 and test steps 1 through 3 now exercise readiness terms, near-zero inactive cost, stale executable-looking summaries, and distinct startup/resume/clear/compact behavior. The first live hook-ordering spike remains blocking for strong Codex enforcement claims.
+- DONE: Keep c6 focused on post-compaction continuity and exclude unrelated workflow-efficiency ideas.
+  The entity remains limited to ECC-informed compaction prevention plus the authoritative typed ledger and rehydration fence; unrelated workflow-efficiency mechanisms and evaluation changes are excluded.
+
+### Summary
+
+Strategic compaction now acts as a prevention layer: real context pressure may suggest a logical boundary, but computed durable readiness decides whether voluntary compaction is safe. Generated summaries remain historical and non-authoritative. Correctness still comes only from the typed obligation ledger and rehydration fence, with startup, resume, clear, and same-session compact proved separately and the live Codex hook-ordering spike still blocking any strong enforcement claim.
