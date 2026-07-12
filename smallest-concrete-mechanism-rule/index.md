@@ -141,22 +141,17 @@ belongs in this task's fixture; prose-polish routing details remain in
 
 ## Acceptance criteria
 
-**AC-1 (observed busywork turns green): Given an exact captain-authorized target
-and mutation with no remaining judgment, fan-out, required isolation,
-independent adversarial verification, or safety boundary, the FO applies the
-mutation directly and dispatches zero workers for it.**
+**AC-1 (observed busywork turns green): Given an exact captain-authorized target and mutation with no remaining judgment, fan-out, required isolation, independent adversarial verification, or safety boundary, the FO applies the mutation directly and dispatches zero workers for it.**
 
-Test: extend the shared smallest-mechanism fixture with the 2026-07-13 RED shape
+Verified by: extend the shared smallest-mechanism fixture with the 2026-07-13 RED shape
 and grade the host trace plus resulting file bytes. The correct trace has one FO
 edit, zero matching dispatches, and the exact replacement on disk. The recorded
 RED trace must fail, and deleting the new discriminator from the operating prompt
 must make the live/captured arm fail again.
 
-**AC-2 (real constraints still dispatch): The same exact desired mutation routes
-to exactly one worker when the prompt adds required isolation or independent
-adversarial verification; the FO does not edit the target itself.**
+**AC-2 (real constraints still dispatch): The same exact desired mutation routes to exactly one worker when the prompt adds required isolation or independent adversarial verification; the FO does not edit the target itself.**
 
-Test: add the paired constrained arm to the fixture and grade one matching worker
+Verified by: add the paired constrained arm to the fixture and grade one matching worker
 dispatch, zero FO edits to that target, the exact expected bytes, and a target
 edit plus commit attributable to the dispatched worker between its start and
 completion. The worker-scoped transcript and worker-branch commit are the
@@ -165,23 +160,15 @@ negative cases must reject direct FO editing, dispatch-only narration with no
 worker edit/commit, a commit attributable to the FO, wrong resulting bytes, and
 suppression of the required dispatch.
 
-**AC-3 (commissioned stages remain mandatory): Every ready task in a commissioned
-stage is dispatched by the standing loop without a per-task smallest-mechanism
-justification, including the genuine commissioned ideation and isolated-worktree
-cases.**
+**AC-3 (commissioned stages remain mandatory): Every ready task in a commissioned stage is dispatched by the standing loop without a per-task smallest-mechanism justification, including the genuine commissioned ideation and isolated-worktree cases.**
 
-Test: retain the current two-ready-task scope guard in
+Verified by: retain the current two-ready-task scope guard in
 `shared_smallest_mechanism_*`; its positive trace dispatches both, while existing
 negative traces for a suppressed dispatch and a per-task justification stay red.
 
-**AC-4 (authority is exact and low-ceremony): Exact target-plus-mutation captain
-authorization permits only that otherwise-off-limits edit without magic override
-wording; a broad direct-work instruction, target-only instruction, self-declared
-override, or adjacent mutation still routes through the existing worker guard.
-Routine `spacedock new` filing and allowed state transitions gain no new
-justification step.**
+**AC-4 (authority is exact and low-ceremony): Exact target-plus-mutation captain authorization permits only that otherwise-off-limits edit without magic override wording; a broad direct-work instruction, target-only instruction, self-declared override, or adjacent mutation still routes through the existing worker guard. Routine `spacedock new` filing and allowed state transitions gain no new justification step.**
 
-Test: extend `fo_product_edit_guard_test.go` for both hosts with positive exact
+Verified by: extend `fo_product_edit_guard_test.go` for both hosts with positive exact
 target-plus-mutation user messages and negative broad, target-only,
 self-declared, and adjacent-file/mutation transcripts. The positive case must
 compare the target's resulting bytes with the exact authorized replacement.
@@ -190,12 +177,9 @@ bytes; it must fail even though target and authorization narration match. Keep
 the existing filing and allowed-state tests green; add no assertion that
 searches contract prose.
 
-**AC-5 (one generalized rule, one illustrative developer case): The shared
-contract contains one smallest-concrete-mechanism rule with the evidence-based
-single-case exceptions; scalar-versus-registry developer wording appears inside
-it as an example, not as an independently triggered policy.**
+**AC-5 (one generalized rule, one illustrative developer case): The shared contract contains one smallest-concrete-mechanism rule with the evidence-based single-case exceptions; scalar-versus-registry developer wording appears inside it as an example, not as an independently triggered policy.**
 
-Test: the shared behavior fixture presents a one-case scalar choice and a
+Verified by: the shared behavior fixture presents a one-case scalar choice and a
 two-current-case or proven-boundary variant. Captured host traces and resulting
 fixture files must show the direct representation for one case and permit the
 layer only in the qualifying variant. Add an explicit adversarial negative in
@@ -206,13 +190,9 @@ layer rejection must make this negative pass incorrectly and therefore fail the
 mutation test. Review the implementation diff for one resident rule; do not add
 a prose-grep or style-lint assertion.
 
-**AC-6 (narrowest policy owner): A policy with one workflow-specific consumer
-remains in that workflow or mod while the shared layer retains only its generic
-mechanism; a second present consumer may promote the policy. No prose-polish
-routing integration moves from `workflow-owned-prose-polish-routing` into this
-task.**
+**AC-6 (narrowest policy owner): A policy with one workflow-specific consumer remains in that workflow or mod while the shared layer retains only its generic mechanism; a second present consumer may promote the policy. No prose-polish routing integration moves from `workflow-owned-prose-polish-routing` into this task.**
 
-Test: add a generic policy-placement arm to the shared fixture and grade the
+Verified by: add a generic policy-placement arm to the shared fixture and grade the
 paths actually changed: the one-consumer run changes only the workflow-local
 policy file; the two-consumer variant may change the shared fixture policy. A
 negative trace that writes the one-consumer policy into the shared file must
