@@ -661,3 +661,21 @@ notification, and immediately resumes the shared next-action loop.
 Shipped Codex instructions now use async idle monitoring as their sole term.
 The only failed check is the known legacy prose-grep guard, which cannot be
 satisfied without restoring the terminology the captain explicitly rejected.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Retire only the stale literal phrase checks in `internal/contractlint/codex_foreground_wait_shape_test.go` that require the rejected foreground terminology.
+  B5 is absorbed in `854ef07`: the obsolete heading assertion and the obsolete reinstall literal were removed, while unresolved-worker, no-other-work, `wait_agent`, and safe-interruption checks remain.
+- DONE: Preserve legitimate structural Contractlint coverage and avoid unrelated cleanup.
+  The runtime-binding list retains its other Codex semantics; only its stale `next foreground wait` literal was removed because it otherwise kept the full suite red.
+- DONE: Do not restore aliases or replace the removed checks with another prose-only assertion.
+  No adapter alias, new literal check, or timing harness was added; the removal lets the existing async-idle adapter be the sole shipped terminology.
+- DONE: Run focused Contractlint, full normal/race, and formatting verification; record b5 absorption in the 95w implementation report, commit the worktree, and do not push it.
+  `go test -count=1 -v ./internal/contractlint` passed 113 tests; `go test -count=1 -p 1 ./...` and its `-race` counterpart passed; `gofmt -w ./cmd ./internal` ran with the known unrelated `journeydelta.go` alignment restored.
+
+### Summary
+
+B5's stale foreground-literal checks are absorbed without inventing an
+async-idle replacement. The remaining Contractlint structure guards the
+live adapter's safe waiting lifecycle, and the branch stays unpushed for the
+captain's PR #500 flow.
