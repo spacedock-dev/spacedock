@@ -1,7 +1,7 @@
 ---
 id: w8rrjv6jsmgahc269arx9k5v
 title: Restore Codex handoff bootstrap with post-fence options
-status: implementation
+status: validation
 source: Captain-reported regression, 2026-07-13
 started: 2026-07-12T23:16:40Z
 completed:
