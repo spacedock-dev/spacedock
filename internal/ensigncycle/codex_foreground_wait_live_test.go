@@ -43,7 +43,7 @@ func TestLiveCodexForegroundWaitUsesFiveMinutePerCallPolicy(t *testing.T) {
 	workflowRoot := t.TempDir()
 	stateRoot, entityPath := writeCodexForegroundWaitWorkflow(t, workflowRoot)
 
-	result, err := runner.runForegroundWaitScenario(t, workflowRoot, codexForegroundWaitPrompt(workflowRoot))
+	result, err := runner.runForegroundWaitScenario(t, workflowRoot, codexForegroundWaitPrompt(workflowRoot), codexForegroundWaitScenarioName, quietBudgetDispatchClose)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -235,9 +235,9 @@ func codexRolloutTimedOutValue(value any) (bool, bool) {
 	return false, false
 }
 
-func (r codexLiveRunner) runForegroundWaitScenario(t *testing.T, workflowRoot, prompt string) (codexForegroundWaitResult, error) {
+func (r codexLiveRunner) runForegroundWaitScenario(t *testing.T, workflowRoot, prompt, scenarioName string, silenceBudget time.Duration) (codexForegroundWaitResult, error) {
 	t.Helper()
-	artifactDir := codexAttemptArtifactDir(r.artifactRoot, codexForegroundWaitScenarioName, 0)
+	artifactDir := codexAttemptArtifactDir(r.artifactRoot, scenarioName, 0)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -270,12 +270,11 @@ func (r codexLiveRunner) runForegroundWaitScenario(t *testing.T, workflowRoot, p
 	if err != nil {
 		return codexForegroundWaitResult{codexScenarioResult: codexScenarioResult{artifactDir: artifactDir}}, fmt.Errorf("snapshot workflow state for foreground-wait scenario: %w", err)
 	}
-	watchdog := newCodexCollabWaitWatchdog(codexForegroundWaitScenarioName, artifactDir, probe)
+	watchdog := newCodexCollabWaitWatchdog(scenarioName, artifactDir, probe)
 	// The parent stream is intentionally quiet while the worker boots its assigned
-	// skill and performs the 45-second hold. Use the existing dispatch-close
-	// no-progress budget so that setup overhead cannot be misclassified as a Codex
-	// wait timeout; this is still a stream-silence watchdog, not a per-call timeout.
-	jsonl, runErr := drainCodexToExitWithWaitWatchdog(watcher, quietBudgetDispatchClose, "codex foreground-wait scenario", watchdog)
+	// skill and performs the configured hold. The caller supplies a stream-silence
+	// budget distinct from the per-call timeout under test.
+	jsonl, runErr := drainCodexToExitWithWaitWatchdog(watcher, silenceBudget, "codex foreground-wait scenario", watchdog)
 	result := codexForegroundWaitResult{
 		codexScenarioResult: codexScenarioResult{
 			jsonl:       jsonl,
