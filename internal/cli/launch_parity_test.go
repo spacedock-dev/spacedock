@@ -238,10 +238,22 @@ func TestFenceTaskPromptOverride(t *testing.T) {
 			t.Fatalf("last token = %q, want codexBase+space+task", last)
 		}
 	})
+	t.Run("codex-task-before-fenced-model", func(t *testing.T) {
+		fake := &fakeHost{manifest: compatibleManifest(t)}
+		var stdout, stderr bytes.Buffer
+		code := runCodex(context.Background(), []string{"@/tmp/handoff-file.md", "--", "--model", "gpt-5.6-sol"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		if code != 0 {
+			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+		}
+		want := []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt + " @/tmp/handoff-file.md"}
+		if !equalArgv(fake.launchedArg, want) {
+			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+		}
+	})
 }
 
-// LP-AC-2: any nonempty Codex post-fence argv suppresses the prompt; bare Codex
-// gets the bootstrap prompt.
+// LP-AC-2: a no-task nonempty Codex post-fence argv suppresses the prompt; bare
+// Codex gets the bootstrap prompt.
 func TestCodexPostFenceSuppressesPrompt(t *testing.T) {
 	t.Run("post-fence-argv-no-prompt", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -274,8 +286,8 @@ func TestCodexPostFenceSuppressesPrompt(t *testing.T) {
 	})
 }
 
-// Every nonempty Codex post-fence example receives the same opaque passthrough
-// posture, without classifying its options or command tokens.
+// Every no-task nonempty Codex post-fence example receives the same opaque
+// passthrough posture, without classifying its options or command tokens.
 func TestCodexPostFenceExamplesSuppressPrompt(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -343,8 +355,8 @@ func TestCodexPostFenceExamplesSuppressPrompt(t *testing.T) {
 	}
 }
 
-// A nonempty post-fence Codex argv belongs entirely to Codex. Spacedock must not
-// parse its tokens to decide whether to add its own launch defaults.
+// A no-task nonempty post-fence Codex argv belongs entirely to Codex. Spacedock
+// must not parse its tokens to decide whether to add its own launch defaults.
 func TestCodexPostFencePassthroughIsOpaque(t *testing.T) {
 	tests := []struct {
 		name       string

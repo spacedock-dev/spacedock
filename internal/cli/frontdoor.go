@@ -535,8 +535,8 @@ const codexBootstrapPrompt = "You totally got this. Take your time. I love you. 
 // `--safehouse-*` knob} is given — safehouse is the sandbox, so codex's own
 // sandbox is bypassed. Otherwise the launch is plain `codex …` keeping codex's own
 // sandbox (the bypass flag is omitted: it is safe only when safehouse provides the
-// sandbox). A nonempty post-`--` Codex argv is opaque host passthrough: it gets no
-// Spacedock banner, default approval mode, or bootstrap prompt. A declared
+// sandbox). A no-task nonempty post-`--` Codex argv is opaque host passthrough: it
+// gets no Spacedock banner, default approval mode, or bootstrap prompt. A declared
 // pre-fence `--plugin-dir` installs its local checkout before the normal gate;
 // `--skip-compat-check` alone bypasses that gate. `lookPath` resolves the safehouse
 // binary (default exec.LookPath; injected so tests pin not-found).
@@ -571,8 +571,8 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	}
 	// Once Spacedock-owned plugin-dir handling has been consumed, any remaining
 	// post-fence argv belongs wholly to Codex. Do not inspect its option or command
-	// grammar: new Codex forms must retain the same no-injection posture.
-	opaquePassthrough := len(fd.passthrough) > 0
+	// grammar: only a no-task launch keeps the no-injection posture.
+	opaquePassthrough := !fd.hasTask && len(fd.passthrough) > 0
 	// The gate fails fast on too-old-binary, but the two healable verdicts
 	// (NoPluginFound, TooOldPlugin) auto-install the codex plugin and proceed to
 	// launch so the single command the user typed yields a working session —
@@ -595,7 +595,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	// auto-mode flag, so its nearest analog to claude's auto permission-mode is
 	// `--ask-for-approval on-request` (the model decides when to escalate).
 	// The sandboxed arm's bypass flag above already covers its posture, so this is
-	// the !wrap counterpart. Opaque post-fence argv receives no launcher defaults.
+	// the !wrap counterpart. Opaque no-task post-fence argv receives no launcher defaults.
 	if !wrap && !opaquePassthrough {
 		inner = append(inner, "--ask-for-approval", "on-request")
 	}

@@ -196,8 +196,8 @@ func TestOperatorPermissionFlagSuppressesInjection(t *testing.T) {
 }
 
 // AC-4: the injected flag rides the non-bootstrap gate — Claude resume and every
-// nonempty Codex post-fence argv are not forced into their default permission/
-// approval mode. The bootstrap prompt and injected flag share the same gate.
+// no-task nonempty Codex post-fence argv are not forced into their default
+// permission/approval mode. The bootstrap prompt and injected flag share the same gate.
 func TestResumeUnsandboxedSuppressesInjection(t *testing.T) {
 	t.Run("claude-resume", func(t *testing.T) {
 		dir := t.TempDir() // no .safehouse

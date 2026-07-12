@@ -205,8 +205,8 @@ func TestLaunchBannerReachesStderrBeforeLaunch(t *testing.T) {
 
 // TestLaunchBannerSuppressedOnResume (AC-B polish): a resume continues an
 // existing session, not a fresh launch, so the banner is suppressed — its
-// version line must NOT appear on stderr. Claude's resume is a flag; any nonempty
-// Codex post-fence argv is opaque and has the same no-banner posture.
+// version line must NOT appear on stderr. Claude's resume is a flag; a no-task
+// nonempty Codex post-fence argv is opaque and has the same no-banner posture.
 func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 	t.Run("claude --resume", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
