@@ -23,7 +23,7 @@ func TestLiveCodexForegroundWaitRetriesQuietlyWithinEpoch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("quiet-epoch scenario: %v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertCodexQuietEpochRollout(result.rollout); err != nil {
+	if err := assertCodexQuietEpochRollout(result.rollout, result.holdStarted, result.holdFinished); err != nil {
 		t.Fatalf("quiet-epoch rollout: %v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if err := assertCodexQuietEpochTrace(result.trace); err != nil {
@@ -31,13 +31,20 @@ func TestLiveCodexForegroundWaitRetriesQuietlyWithinEpoch(t *testing.T) {
 	}
 }
 
-func runCodexQuietEpochScenario(t *testing.T) (codexForegroundWaitResult, error) {
+type codexQuietEpochResult struct {
+	codexForegroundWaitResult
+	holdStarted  time.Time
+	holdFinished time.Time
+}
+
+func runCodexQuietEpochScenario(t *testing.T) (codexQuietEpochResult, error) {
 	t.Helper()
 	runner := newCodexLiveRunner(t)
 	workflowRoot := t.TempDir()
 	stateRoot, entityPath := writeCodexQuietEpochWorkflow(t, workflowRoot)
 
-	result, err := runner.runForegroundWaitScenario(t, workflowRoot, codexQuietEpochPrompt(workflowRoot), codexQuietEpochScenarioName, codexQuietEpochSilenceBudget)
+	foregroundResult, err := runner.runForegroundWaitScenario(t, workflowRoot, codexQuietEpochPrompt(workflowRoot), codexQuietEpochScenarioName, codexQuietEpochSilenceBudget)
+	result := codexQuietEpochResult{codexForegroundWaitResult: foregroundResult}
 	if err != nil {
 		return result, err
 	}
@@ -50,6 +57,8 @@ func runCodexQuietEpochScenario(t *testing.T) (codexForegroundWaitResult, error)
 	if holdFinished.Sub(holdStarted) < codexQuietEpochHoldDuration {
 		return result, fmt.Errorf("quiet-epoch hold = %s, want at least %s", holdFinished.Sub(holdStarted), codexQuietEpochHoldDuration)
 	}
+	result.holdStarted = holdStarted
+	result.holdFinished = holdFinished
 	entityRelativePath := filepath.Join(codexQuietEpochEntity, "index.md")
 	if !codexForegroundWaitReportCommitted(t, stateRoot, entityRelativePath) {
 		return result, fmt.Errorf("quiet-epoch report was not committed path-scoped to %s", entityRelativePath)
@@ -120,7 +129,7 @@ func codexQuietEpochPrompt(workflowRoot string) string {
 	)
 }
 
-func assertCodexQuietEpochRollout(rollout codexForegroundWaitRollout) error {
+func assertCodexQuietEpochRollout(rollout codexForegroundWaitRollout, holdStarted, holdFinished time.Time) error {
 	if rollout.spawnCalls != 1 {
 		return fmt.Errorf("isolated Codex rollout spawned %d workers, want one quiet-epoch worker (%s)", rollout.spawnCalls, rollout.artifactPath)
 	}
@@ -136,6 +145,107 @@ func assertCodexQuietEpochRollout(rollout codexForegroundWaitRollout) error {
 	}
 	if second.calledAt.IsZero() || !second.calledAt.After(first.returnedAt) {
 		return fmt.Errorf("quiet-epoch re-wait did not begin after the ordinary timeout return")
+	}
+	return assertCodexQuietEpochTiming(rollout, holdStarted, holdFinished)
+}
+
+func TestCodexQuietEpochTimingAcceptsTimeoutAndRewaitDuringHold(t *testing.T) {
+	holdStarted := time.Date(2026, time.July, 12, 3, 0, 0, 0, time.UTC)
+	holdFinished := holdStarted.Add(codexQuietEpochHoldDuration)
+	rollout := quietEpochTimingRollout(
+		holdStarted.Add(-5*time.Second),
+		holdFinished.Add(-2*time.Second),
+		holdFinished.Add(-time.Second),
+	)
+
+	if err := assertCodexQuietEpochRollout(rollout, holdStarted, holdFinished); err != nil {
+		t.Fatalf("timeout and re-wait inside the unresolved hold must pass: %v", err)
+	}
+}
+
+func TestCodexQuietEpochTimingRejectsBoundaryRegressions(t *testing.T) {
+	holdStarted := time.Date(2026, time.July, 12, 3, 0, 0, 0, time.UTC)
+	holdFinished := holdStarted.Add(codexQuietEpochHoldDuration)
+	tests := []struct {
+		name    string
+		rollout codexForegroundWaitRollout
+	}{
+		{
+			name: "first wait misses hold",
+			rollout: quietEpochTimingRollout(
+				holdFinished.Add(time.Second),
+				holdFinished.Add(5*time.Minute),
+				holdFinished.Add(5*time.Minute+time.Second),
+			),
+		},
+		{
+			name: "timeout reaches hold finish",
+			rollout: quietEpochTimingRollout(
+				holdStarted,
+				holdFinished,
+				holdFinished.Add(time.Second),
+			),
+		},
+		{
+			name: "rewait begins after hold",
+			rollout: quietEpochTimingRollout(
+				holdStarted,
+				holdFinished.Add(-time.Second),
+				holdFinished,
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := assertCodexQuietEpochRollout(tt.rollout, holdStarted, holdFinished); err == nil {
+				t.Fatal("late or non-overlapping wait epoch must fail")
+			}
+		})
+	}
+}
+
+func quietEpochTimingRollout(firstStarted, firstReturned, rewaitStarted time.Time) codexForegroundWaitRollout {
+	timedOut := true
+	return codexForegroundWaitRollout{
+		spawnCalls: 1,
+		waits: []codexForegroundWaitCall{
+			{
+				calledAt:   firstStarted,
+				returnedAt: firstReturned,
+				timeoutMS:  300000,
+				timedOut:   &timedOut,
+			},
+			{
+				calledAt:  rewaitStarted,
+				timeoutMS: 300000,
+			},
+		},
+	}
+}
+
+// assertCodexQuietEpochTiming binds the timeout/re-wait trace to the period in
+// which the worker is still unresolved. Epoch silence is meaningful only while
+// the first wait overlaps the worker hold and both the timeout and re-wait occur
+// before that hold ends.
+func assertCodexQuietEpochTiming(rollout codexForegroundWaitRollout, holdStarted, holdFinished time.Time) error {
+	if holdStarted.IsZero() || holdFinished.IsZero() || !holdFinished.After(holdStarted) {
+		return fmt.Errorf("quiet-epoch hold markers are invalid: %s through %s", holdStarted, holdFinished)
+	}
+	if len(rollout.waits) < 2 {
+		return fmt.Errorf("quiet-epoch timing needs a timeout and reinstalled wait")
+	}
+	first, second := rollout.waits[0], rollout.waits[1]
+	if first.calledAt.IsZero() || first.returnedAt.IsZero() || second.calledAt.IsZero() {
+		return fmt.Errorf("quiet-epoch timing is missing a wait timestamp")
+	}
+	if !first.calledAt.Before(holdFinished) || !first.returnedAt.After(holdStarted) {
+		return fmt.Errorf("first wait does not overlap the unresolved hold")
+	}
+	if !first.returnedAt.Before(holdFinished) {
+		return fmt.Errorf("ordinary timeout returned at or after the hold finished")
+	}
+	if !second.calledAt.Before(holdFinished) {
+		return fmt.Errorf("silent re-wait began at or after the hold finished")
 	}
 	return nil
 }
