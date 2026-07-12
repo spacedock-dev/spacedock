@@ -41,7 +41,7 @@ The experimental schema was generated from the live `codex-cli 0.144.1` and reta
 
 ### Schema-proven surfaces
 
-- Hook event names include `preToolUse`, `preCompact`, `postCompact`, and `stop`; hook execution modes include `sync` and `async`; hook output kinds include `context`, `stop`, `feedback`, `warning`, and `error`. Evidence: `v2/HookStartedNotification.json` and `v2/HookCompletedNotification.json`.
+- `PluginDetail` exposes plugin `hooks` as `PluginHookSummary`; the static hook configuration schema enumerates `SessionStart`, `PostCompact`, `SubagentStart`, `SubagentStop`, and `Stop`; runtime hook notifications spell those events `sessionStart`, `postCompact`, `subagentStart`, `subagentStop`, and `stop`. `HookRunSummary` can identify `source: plugin`, `sync` or `async` execution, and `context`, `stop`, `feedback`, `warning`, or `error` output kinds. Evidence: `PluginDetail`, `PluginHookSummary`, `ManagedHooksRequirements`, `v2/HookStartedNotification.json`, and `v2/HookCompletedNotification.json`.
 - `item/completed` can carry a `ThreadItem` whose type is `contextCompaction`. Evidence: `v2/ItemCompletedNotification.json`.
 - Deprecated `thread/compacted` remains present as a compatibility notification. Evidence: `v2/ContextCompactedNotification.json` and the method union in `codex_app_server_protocol.v2.schemas.json`.
 - `thread/compact/start` accepts a `threadId`. Evidence: `v2/ThreadCompactStartParams.json`.
@@ -52,8 +52,11 @@ The experimental schema was generated from the live `codex-cli 0.144.1` and reta
 
 The schema does **not** prove that:
 
-- a plugin can register the proposed hook configuration in the required scope;
-- a synchronous `postCompact` context entry is visible before the model's first post-compaction action;
+- an installed plugin can register and run the proposed `SessionStart`, `PostCompact`, `SubagentStart`, `SubagentStop`, and `Stop` configuration in the required scope;
+- `SessionStart` or `PostCompact` can re-inject the fixed FO wait contract as developer context before the model's first relevant action;
+- `SubagentStart` and `SubagentStop` have complete worker coverage, or that their `PLUGIN_DATA` survives and is visible across the lifecycle boundary with the assignment identity needed for attribution;
+- a `Stop` handler accepts `decision: "block"`, prevents an inappropriate final stop, and delivers its fixed “reconcile agents and call `wait_agent`” directive without racing an operator turn;
+- an explicit captain `do not wait` opt-out reaches the hook, suppresses that block only for its recorded scope, and cannot be confused with a missing or stale worker record;
 - `thread/inject_items` called after compaction is ordered before that action;
 - `preToolUse` observes or can block collaboration lifecycle calls such as spawn, follow-up, wait, or interrupt;
 - duplicate hook/item/legacy notifications have a stable order or one-to-one relationship;
@@ -139,19 +142,33 @@ If a source cannot be resolved, a digest changes during the read, the checkpoint
 
 With no compaction and no unresolved obligation, the command is a no-op: no roster reconciliation, contract streaming, or checkpoint write.
 
-### 5. Codex event adapter, conditional on the spike
+### 5. Codex plugin lifecycle adapter, conditional on the spike
 
-An event-capable Codex client should translate `postCompact`, `item/completed` with `contextCompaction`, and legacy `thread/compacted` into one deduplicated compaction epoch. Duplicate signals mark the same epoch; they do not trigger repeated reloads.
+A bundled Codex plugin is a stronger lifecycle aid than skill prose, but it is never the source of truth. The durable checkpoint and rehydration fence remain authoritative for worker state, completion attribution, and every guarded action.
 
-If the spike proves hook ordering, a synchronous `postCompact` hook marks `needs_rehydrate` and contributes a fixed context directive. If direct hook context is not model-visible but injection ordering is proven, the client uses `thread/inject_items` for the same fixed directive. If `preToolUse` coverage is proven for a tool class, it blocks that class while the fence is outstanding.
+The intended plugin policy is:
 
-No hook is authoritative. Hook failure, timeout, malformed output, absent notification, or uncovered collaboration call leaves `needs_rehydrate` set. The launcher/client-side fence remains the authority. Where the client cannot intercept a call, the design claims only the host-neutral turn-entry contract until a live probe proves stronger coverage.
+- `SessionStart` and `PostCompact` target re-injection of a fixed FO wait-contract developer-context block. It identifies the launcher-selected contract and tells the FO to reconcile unresolved agents and call `wait_agent`; it never copies checkpoint contents, worker output, or transcript text into context. Until a live trace proves role, visibility, and ordering, this is only a candidate context directive, not a claim that developer context arrived before a guarded action.
+- `SubagentStart` and `SubagentStop` record observed worker lifecycle facts in plugin-owned `PLUGIN_DATA`, keyed by validated thread/session and assignment identity. This is an observation cache for prompt repair and stop handling, not a second ledger: it cannot satisfy, clear, or invent a durable obligation.
+- `Stop` consults the unresolved state derived from the checkpoint/fence. While an obligation remains and no applicable captain opt-out is recorded, its planned result is `decision: "block"` plus the same fixed reconcile-and-`wait_agent` directive. A block asks Codex to continue reconciliation; it does not declare any worker complete, spawn a replacement, or itself start a watchdog turn.
+- A captain's explicit `do not wait` is recorded as typed, scoped opt-out state with a checkpoint generation and explicit reversal. It may be mirrored into `PLUGIN_DATA`, but the checkpoint is authoritative. For matching obligations, the plugin omits the wait directive and `Stop` does not block, so it never fights that instruction; the opt-out does not clear the obligation or waive the rehydration fence for mutations, gates, merges, or completion claims.
+
+The event-capable client still deduplicates `postCompact`, `item/completed` with `contextCompaction`, and legacy `thread/compacted` into one compaction epoch. Duplicate signals mark the same epoch; they do not trigger repeated reloads. If the spike proves plugin context ordering, `PostCompact` marks `needs_rehydrate` through the checkpoint service and contributes the fixed directive. If plugin context is unavailable but injection ordering is proven, the client uses `thread/inject_items` for that directive. If `preToolUse` coverage is proven for a tool class, it blocks that class while the fence is outstanding.
+
+Evidence is deliberately tiered:
+
+- **Schema-proven now:** the live v2 schema names the lifecycle hooks, recognizes plugin-sourced runs, and describes hook modes and output kinds.
+- **Fixture-proven after implementation:** plugin configuration rendering, fixed-context redaction, epoch de-duplication, `PLUGIN_DATA` record serialization, and the pure unresolved/opt-out predicate can be tested without claiming host execution.
+- **Live-plugin-spike required:** plugin discovery and registration, callback delivery and order, developer-context role/visibility, `PLUGIN_DATA` existence/lifetime and worker coverage, the exact `decision: "block"` wire behavior, the effect on a final stop, and opt-out propagation. A failed or ambiguous claim disables that enforcement claim; it cannot weaken the fence.
+
+No hook is authoritative. Hook failure, timeout, malformed output, absent notification, late context, stale plugin data, or uncovered collaboration call leaves `needs_rehydrate` set. The launcher/client-side fence remains the authority. Where the client cannot intercept a call, the design claims only the host-neutral turn-entry contract until a live probe proves stronger coverage.
 
 ### 6. Bounded continuation
 
 Automatic enforcement must not create an injection or turn-start loop.
 
 - At most one directive injection and one watchdog-started continuation turn are allowed per `(compaction_epoch, checkpoint_generation)` pair.
+- A `Stop` `decision: "block"` is one stop refusal, not a new watchdog turn or durable progress. Repeated stop events cannot recursively inject or restart the FO.
 - A watchdog continuation is allowed only when the previous turn completed while an obligation required a non-wait next action and no operator turn is already pending.
 - Durable progress means a generation advance tied to a verified source read, report boundary, or typed continuation transition. Assistant prose and repeated hook notifications are not progress.
 - If the automatic continuation makes no durable progress, fails the fence, or returns to the same state, the watchdog stops. It preserves the obligation, records the blocker, and waits for an external turn or operator recovery; it never recursively injects.
@@ -185,19 +202,21 @@ This preserves the keep-moving invariant without an unbounded autonomous loop.
 
 ### Interactive
 
-**AC-11: Live Codex demonstration.** During a delayed worker repair, CL triggers `/compact`, interrupts one foreground wait, and sends an unrelated status question. The FO answers from durable state, restores wait, consumes the final notification, verifies the committed report, and continues to re-review or the next gate without a reminder. Evidence includes app-server notifications, hook trace, checkpoint generations, workflow git log, and clean state.
+**AC-11: Live Codex demonstration.** During a delayed worker repair, CL triggers `/compact`, interrupts one foreground wait, and sends an unrelated status question. The FO answers from durable state, restores wait, consumes the final notification, verifies the committed report, and continues to re-review or the next gate without a reminder. Evidence includes app-server notifications, plugin hook and `PLUGIN_DATA` traces, checkpoint generations, workflow git log, and clean state.
+
+**AC-12: Plugin lifecycle assistance is evidence-gated and opt-out-safe.** Before the plugin claims enforcement on a target Codex version, a live trace establishes plugin discovery plus all five callback traces; `SessionStart`/`PostCompact` developer-context delivery before the first guarded action; two-worker `SubagentStart`/`SubagentStop` accounting in `PLUGIN_DATA` under duplicate and out-of-order events; and `Stop` `decision: "block"` acceptance for an unresolved fixture obligation while a resolved obligation may stop. The same trace proves that a recorded explicit captain `do not wait` opt-out suppresses the matching wait directive and stop block only. Absent, late, malformed, stale, or unproven plugin behavior leaves the durable fence as the sole guard and never treats work as complete.
 
 ## Test plan
 
 The riskiest unproved mechanism remains Codex ordering and coverage. Invalidate that mechanism before implementing the full protocol.
 
-1. Build a temporary Codex 0.144.1 plugin/client probe with `postCompact`, a context marker, `thread/inject_items`, and a blocking `preToolUse` hook. Start a delayed subagent through app-server v2, invoke `thread/compact/start`, and retain `item/completed`, `hook/started`, `hook/completed`, injection acknowledgements, `turn/completed`, and the first post-compaction tool event. Test manual and automatic compaction. Fail the stronger path if the marker is absent or late, duplicate events create multiple epochs, operator input races the watchdog, or any collaboration lifecycle call bypasses the hook. Record exact coverage; do not generalize from shell-tool coverage.
+1. Build a temporary target-Codex plugin/client probe with `SessionStart`, `PostCompact`, `SubagentStart`, `SubagentStop`, `Stop`, a context marker, `thread/inject_items`, and a blocking `preToolUse` hook. First fixture-test the rendered hook map, fixed context-directive text, `PLUGIN_DATA` serialization, duplicate-epoch handling, and the pure unresolved/opt-out predicate; those fixtures do not certify host execution. Then confirm plugin discovery and retain its identity, hook callback stdin/env/stdout, `item/completed`, `hook/started`, `hook/completed`, `PLUGIN_DATA` transitions, context/injection acknowledgements, `turn/completed`, the first post-compaction tool event, and the final stop decision. Start two delayed subagents, exercise duplicate and out-of-order start/stop events, invoke `thread/compact/start`, and test manual and automatic compaction, unresolved and resolved stop, and an explicit captain `do not wait` opt-out. Fail the stronger path if any callback is absent, context is absent or late, duplicate events create multiple epochs, `PLUGIN_DATA` is unavailable or cannot attribute both fixture workers, the stop result is not demonstrably blocking or a resolved obligation cannot stop, the opt-out still injects or blocks, operator input races the watchdog, or any collaboration lifecycle call bypasses the claimed hook. Record exact coverage; do not generalize from shell-tool coverage.
 2. Add checkpoint serialization, private-path validation, atomic-write, compare-and-swap, incomplete-bind, digest, lifecycle, and stale-resume tests under a proposed `internal/rehydrate/` package.
 3. Add concurrent-ledger and state-machine tests: out-of-order completions, two workflows, stale epochs, generation conflicts, matching and malformed reports, hook failure, no-progress watchdog, and bounded wait timeout.
 4. Add a split-root replay fixture under `internal/ensigncycle/testdata/compaction-rehydration/`: validation rejects to implementation, a delayed fixer commits a report, and validation must run again before the gate.
 5. Add `internal/ensigncycle/compaction_rehydration_test.go`. Replace context with a summary that omits the obligation, deliver completion before and after the next turn, interrupt wait, verify the committed report, and assert the next gate or terminal state.
 6. Extend the Codex idle-notification integration region to prove wait restoration, durable file verification, and eventless turn-entry fallback. Assertions must use tool/event traces and workflow state, not transcript phrasing.
-7. Run AC-11 live and retain app-server JSONL, hook log, checkpoint transitions, and the temp workflow git log as CI artifacts.
+7. Run AC-11 live and retain app-server JSONL, plugin hook log, `PLUGIN_DATA` audit, checkpoint transitions, and the temp workflow git log as CI artifacts.
 
 ## Out of scope
 
@@ -215,3 +234,16 @@ Implementing the protocol in ideation; changing Codex compaction algorithms; per
 ### Summary
 
 The minimum reliable contract is a durable continuation fence, not a better summary. Every active first-officer turn reconstructs unresolved obligations from a launcher-owned typed ledger and authoritative checkout sources. Codex 0.144.1 exposes promising hook, compaction, injection, and completion names, but the schema does not prove their ordering or tool coverage; the first spike must do so before Spacedock claims enforced post-compaction rehydration. The revised design also prevents concurrent-worker loss, fails closed on corrupt or failed checkpoints/hooks, and bounds automatic continuation so recovery cannot become an infinite turn loop.
+
+## Stage Report: ideation
+
+- DONE: Amend c6's design with the missing Codex plugin lifecycle-hook note: SessionStart/PostCompact re-inject the FO wait contract as developer context; SubagentStart/SubagentStop track workers in PLUGIN_DATA; Stop returns decision block while unresolved workers exist; an explicit captain opt-out honors do not wait.
+  Added the named lifecycle policy, fixed reconcile-and-`wait_agent` directive, non-authoritative `PLUGIN_DATA` cache, planned `decision: "block"`, and typed captain opt-out without allowing any of them to clear a durable obligation.
+- DONE: Keep the current durable rehydration fence as authority and distinguish each lifecycle-hook claim that needs a live plugin spike from schema- or fixture-proven behavior; do not overclaim ordering or interception.
+  Re-read the retained Codex 0.144.1 schema: `PluginDetail`/`PluginHookSummary` and the hook enums prove the static surface, while registration, callback delivery/order, developer-context visibility, `PLUGIN_DATA`, stop semantics, and opt-out propagation remain explicitly live-spike claims.
+- DONE: Update the relevant acceptance/test plan and append an ideation stage report; make no product implementation changes.
+  Added AC-12 and a fixture-versus-live probe plan covering every named hook and the opt-out; only this split-root entity body changed, and `git diff --check` passes.
+
+### Summary
+
+The plugin is now designed as a lifecycle assist that reinjects the FO wait contract, observes worker events, and can prevent an accidental stop while work remains. The checkpoint-backed rehydration fence remains the only authority; no hook behavior is claimed until the target Codex plugin spike captures its real registration, order, data lifetime, and stop semantics. An explicit captain `do not wait` opt-out suppresses only the matching wait directive and stop block, and never waives durable verification.
