@@ -1,6 +1,6 @@
 ---
 title: Increase multi_agent_v2 default async wait timeout
-status: implementation
+status: validation
 score: 0.5
 source: "Captain filing request 2026-07-11."
 completed:
