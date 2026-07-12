@@ -723,3 +723,20 @@ This directly addresses validation cycle 4's two remaining prose-proxy
 findings without touching the adapter policy or inventing a replacement
 assertion. The local branch is committed and intentionally unpushed so the
 captain can reconcile the stale PR head deliberately.
+
+## Stage Report: validation (cycle 5)
+
+- DONE: Independently verify that all nonstructural Codex adapter prose reads are gone while meaningful Contractlint structure checks remain.
+  `02b56bb` deletes the adapter-prose test and all Codex phrase-preservation cases; the retained binding schema, tool-placement, deferred-tier absence, and filesystem-closure checks have topology or filesystem oracles rather than a required policy sentence. A separate read-only adversarial audit reached the same result.
+- DONE: Verify the shipped adapter’s async-idle semantics and scope, the removal-only diff, and applicable normal/race evidence; reject any alias, text guard, timing harness, config, or front-door scope creep.
+  The adapter alone carries the explicit `wait_agent(timeout_ms: 300000)` async-idle policy, captain-authorized scope, interruption, durable verification, and immediate next-action rule. Fresh `go test -count=1 ./internal/contractlint` (101 tests), `go test -count=1 ./...`, `go test -count=1 -race ./...`, `gofmt -d ./cmd ./internal`, and `git diff --check origin/main...HEAD` passed; the diff is the adapter plus Contractlint removals only. This is the captain-directed delivery review, not a synthetic host-behavior substitute.
+- FAILED: Check PR #500 delivery accurately against the local head but do not push or merge; write a durable PASSED/REJECTED report with concrete evidence.
+  PR #500 remains open on `spacedock-ensign/increase-multi-agent-v2-default-async-wait-timeout-cycle3` at `b305da7`; local validated HEAD is descendant `02b56bb`. The remote PR still exposes the removed heavy-test revision, and validation intentionally did not push or merge.
+
+### Summary
+
+The local 95w/b5 implementation now meets the adapter-only scope: it has no
+replacement prose proxy, no heavyweight timing machinery, and fresh normal and
+race evidence. Recommendation: REJECTED solely for undelivered PR #500; after
+a normal push of `02b56bb` to the PR head, re-check the updated revision before
+presenting the gate.
