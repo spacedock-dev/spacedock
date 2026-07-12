@@ -61,25 +61,33 @@ global completion bus.
 
 ## Chosen direction
 
-Bind the Spacedock Codex first officer's *foreground wait* explicitly to five
-minutes: `wait_agent(timeout_ms: 300000)`. This is the smallest durable
-in-repository behavior because it applies wherever the shipped first-officer
-skill is used--including an existing Codex session that did not start through
-`spacedock codex`--and it uses the already-probed live tool call shape.
+Bind the Spacedock Codex first officer's *async idle monitor* explicitly to
+five minutes: `wait_agent(timeout_ms: 300000)`. The monitor is asynchronous
+with respect to worker progress and captain interaction: it does not stop the
+FO event loop, and steered captain input interrupts it immediately. This is
+the smallest durable in-repository behavior because it applies wherever the
+shipped first-officer skill is used--including an existing Codex session that
+did not start through `spacedock codex`--and it uses the already-probed live
+tool call shape.
 
 Keep the live-surface probe generic (`wait_agent(timeout_ms)`) so a missing or
-incompatible tool remains a concrete runtime blocker. Bind the exact
-five-minute value in the adjacent `«async-dispatch»` runtime binding; the
-generic Codex wait notes remain lifecycle-only. This is a Spacedock per-call
+incompatible tool remains a concrete runtime blocker. Idle monitoring applies
+only when no captain-authorized active-scope dispatchable, gate, or state work
+is ready. A final-status notification starts durable report/state verification;
+after that verification the FO immediately runs `«dispatch.next-action»()`.
+Bind the exact five-minute value in the adjacent `«async-dispatch»` runtime
+binding. It reduces ordinary timeout churn but cannot correct conceptual misuse
+of idle monitoring when active work exists. This is a Spacedock per-call
 policy, not a claim that Codex's global default changed.
 
 Implementation changes only one product surface:
 
-1. `skills/first-officer/references/codex-first-officer-runtime.md` -- bind the
-   foreground wait in the adjacent `«async-dispatch»` runtime binding to
-   `timeout_ms: 300000`, while preserving timeout and interruption lifecycle
-   rules in the generic wait notes. The policy will be observed in ordinary
-   use, not through a task-specific synthetic timing harness.
+1. `skills/first-officer/references/codex-first-officer-runtime.md` -- bind
+   async idle monitoring in the adjacent `«async-dispatch»` runtime binding to
+   `timeout_ms: 300000`, scope it to captain-authorized idle time, and route
+   completion through durable verification into `«dispatch.next-action»()`.
+   The policy will be observed in ordinary use, not through a task-specific
+   synthetic timing harness.
 
 Do **not** add a global setting, modify the operator's `~/.codex/config.toml`,
 add a repository `.codex/config.toml`, or add `-c` to `runCodex` in this
@@ -108,47 +116,55 @@ change.
 
 The shipped Codex adapter is the user-facing contract surface. No CLI output,
 command, or site documentation changes because no launcher or configuration
-surface changes. The implementation binds the exact per-call policy in the
-adjacent async-dispatch runtime binding; the generic `## Codex wait notes`
-section stays lifecycle-only:
+surface changes. The implementation names async idle monitoring, scopes it to
+captain-authorized idle time, binds the exact per-call policy, and routes a
+final-status notification through durable verification into the next-action
+loop:
 
 ```diff
 @@ ## Runtime implementation
-- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction.
+- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle. `wait_agent` is asynchronous with respect to worker progress and captain interaction: it is idle monitoring only, does not stop the FO event loop, and steered captain input interrupts it immediately so the FO can resume active work.
 + `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction. When async multi-agent dispatch is live, foreground waiting MUST call `wait_agent(timeout_ms: 300000)` as the named long-task default.
 ```
 
 ## Acceptance criteria
 
-**AC-1 (policy): The shipped Codex adapter states the explicit per-call
-long-task policy.** Its adjacent async-dispatch binding directs foreground
-waiting through `wait_agent(timeout_ms: 300000)`. This is a Spacedock policy,
-not a claim that Codex's global default has changed.
+**AC-1 (async idle monitoring): The shipped Codex adapter explicitly states
+that `wait_agent` is asynchronous with respect to worker progress and captain
+interaction, does not stop the FO event loop, and is immediately interrupted
+by steered captain input.** Its adjacent async-dispatch binding directs the
+idle monitor through `wait_agent(timeout_ms: 300000)`. This is a Spacedock
+policy, not a claim that Codex's global default has changed.
 
-**AC-2 (scope and safety): The change stays out of host configuration and the
-front door.** It preserves the established timeout and interruption lifecycle,
-does not add a global or repository Codex configuration, and does not alter
-`spacedock codex` argv.
+**AC-2 (scope, completion, and safety): Idle monitoring runs only when no
+captain-authorized active-scope work is ready.** A timeout reduces normal
+churn but cannot repair a conceptual misuse of idle monitoring. A final-status
+notification must be followed by durable report/state verification and an
+immediate `«dispatch.next-action»()` call; it is not a completion-only stop.
+The change does not add a global or repository Codex configuration and does
+not alter `spacedock codex` argv.
 
 **AC-3 (operational follow-through): Validate the policy in ordinary use, then
 iterate from observed behavior.** A healthy long-running worker should no
 longer cause short-default churn, but this task deliberately does not build a
 synthetic delayed-worker timing harness or make a latency-SLO claim. If actual
-use exposes a responsiveness or retry problem, capture that behavior and file
-a focused follow-up.
+use exposes a responsiveness, scope, or retry problem, capture that behavior
+and file a focused follow-up.
 
 ## Test plan
 
 Captain-directed scope correction (2026-07-12): remove the task-specific
 foreground-wait and quiet-epoch live scenarios. Their 45-second and six-minute
 holds made routine verification slow and produced a disproportionate amount of
-test-only machinery for a small declarative policy. Do not replace them with
-Contractlint, instruction-text matching, or another prose-only substitute.
+test-only machinery for a small declarative policy. Keep the product diff
+adapter-only: do not restore those tests or replace them with Contractlint,
+instruction-text matching, or another prose-only substitute.
 
 1. Run the repository's normal offline gates: `go test ./...`,
    `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
-2. Review the scoped implementation diff for the explicit per-call policy and
-   for the absence of configuration or launcher changes; this is a delivery
+2. Review the adapter-only implementation diff for async idle-monitoring
+   semantics, the explicit per-call policy, durable-verification next action,
+   and the absence of configuration or launcher changes; this is a delivery
    review, not an automated substitute for host behavior.
 3. Observe the policy in normal Codex first-officer use after merge. Do not add
    an artificial delay, stream parser, or timing assertion solely for this
