@@ -282,6 +282,22 @@ keeps the explicit 300,000-ms policy and all non-timeout/no-churn assertions,
 and restates AC-2 as an early post-hold mailbox return rather than
 worker-final-completion causality.
 
+**Cycle 2 — quiet wait epochs (captain correction, 2026-07-12).** The
+five-minute wait removes short-timeout churn, but the Codex FO remains too loud
+when an ordinary timeout causes it to reinstall the same asynchronous wait.
+Treat consecutive waits over the same unresolved worker set and unchanged
+workflow state as one monitoring epoch: announce the epoch once when monitoring
+starts, then reinstall `wait_agent` silently while that worker set and state
+remain unchanged. Speak again only on worker completion, blocker, workflow
+state transition, or a periodic heartbeat the captain explicitly requested.
+Preserve the existing interruption explanation and `wait_agent` requirement;
+an operator interruption still returns control without failing, closing, or
+redispatching the worker, and the next idle action reinstalls the wait. This is
+a Codex runtime-adapter simplification only. Do not edit the shared core or
+weaken the existing timeout/interruption lifecycle rules. Implementation must
+update the adapter and focused proof so repeated ordinary timeouts do not emit
+repetitive “continuing with …” narration within one unchanged wait epoch.
+
 ## Stage Report: implementation (cycle 1)
 
 - DONE: Removed only the invalid marker-relative 30-second upper bound.
