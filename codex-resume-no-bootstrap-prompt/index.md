@@ -9,33 +9,42 @@ started: 2026-07-11T04:11:33Z
 
 ## Problem
 
-The captain reported that `spacedock codex -- resume` appended the default first-officer bootstrap prompt. Investigation did not reproduce that behavior: the installed `0.24.0-pre2` binary, the `v0.24.0` source, and current `main` all preserve the resume invocation without a prompt. The reported symptom therefore needs a failing argv capture before product code changes.
+The earlier investigation correctly proved the leading form, `spacedock codex -- resume <session>`, but that proof does not cover Codex global options before its subcommand. The captain's exact form, `spacedock codex -- --model <model> resume <session>`, is valid: local Codex `0.144.1` accepts `codex --model probe-model resume --help` and reports `Usage: codex resume [OPTIONS] [SESSION_ID] [PROMPT]`.
+
+This is a real launcher gap. Safe argv captures against both a binary built from current `main` (`f22360de`) and installed `/opt/homebrew/bin/spacedock` (`0.25.0-pre1`) forwarded `--model probe-model resume xv-session` but appended both launcher defaults: `--ask-for-approval on-request` and the Spacedock bootstrap prompt. Plain leading `resume xv-session` captured exactly those two tokens with neither injection. `codexResume` currently tests only `passthrough[0] == "resume"`, so it classifies the option-before-subcommand form as a fresh launch.
 
 ## Proposed approach
 
-Close this entity as already satisfied by the archived launch-parity work (`sandbox-flag-passthrough`, implementation commit `31ad7c8e`). Do not add a second parser or broaden Codex grammar speculatively.
+Make resume classification find `resume` as the first Codex command token after known top-level Codex options, beginning with the captain's `--model <value>` form. The classifier must be value-aware, preserve every forwarded token byte-for-byte, and stop at the first non-option command token rather than treating any later word `resume` as a resume request. It must cover documented equivalent model spellings (`--model value`, `--model=value`, and `-m value`) and avoid a second independent host-argv parser where existing option knowledge can be shared.
 
-If the symptom recurs, capture the resolved `spacedock --version` and the exact launched argv. Reopen only if that capture contains the bootstrap prompt after a leading post-fence `resume`; a resumed transcript displaying its original bootstrap message is not evidence that the launcher injected a new one.
+Keep `--plugin-dir` consumption before classification and preserve safehouse wrapping: both paths should receive the same classified inner Codex argv. The fix suppresses the launch banner, default approval mode, and bootstrap prompt only for the recognized resume form; a model-selected fresh launch remains a fresh launch.
+
+Documentation diff proposed for `docs/site/reference/command-reference.md` line 27:
+
+```diff
+-Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like).
++Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like); for Codex this includes `spacedock codex -- --model <model> resume <session>`.
+```
 
 ## Out of scope
 
 - Changing Codex's own resume semantics or session storage.
 - Removing the first-officer prompt from fresh launches.
-- Broad passthrough-command redesign beyond the minimum subcommand classification.
+- Broad passthrough-command redesign or an arbitrary word search for `resume`.
 
 ## Acceptance criteria
 
-- **AC-1:** `spacedock codex -- resume` reaches Codex as `codex resume` with no appended Spacedock bootstrap prompt.
-- **AC-2:** `spacedock codex -- resume <session>` preserves `<session>` and all later operator arguments in order, with no injected prompt.
-- **AC-3:** A fresh `spacedock codex` launch still receives the normal first-officer bootstrap prompt.
-- **AC-4:** Safehouse, no-safehouse, and `--plugin-dir` argv fixtures prove the same resume behavior without leaking launcher flags past `--`.
-- **AC-5:** No production change lands while the supported release source and installed binary already satisfy AC-1 through AC-4.
+- **AC-1:** `spacedock codex -- --model <model> resume <session>` reaches Codex as the same model option followed by `resume <session>`, with neither the Spacedock bootstrap prompt nor injected `--ask-for-approval on-request`; an argv fixture checks exact order.
+- **AC-2:** Equivalent `--model=value` and `-m <model>` forms receive the same resume treatment, while the first non-option non-`resume` command is not misclassified; table-driven argv fixtures check both outcomes.
+- **AC-3:** Leading `spacedock codex -- resume <session>` remains prompt- and approval-free, and `spacedock codex -- --model <model>` remains a fresh launch with the normal bootstrap prompt; focused fixtures provide the two controls.
+- **AC-4:** Safehouse and local `--plugin-dir` paths preserve the option-before-resume behavior: their inner Codex argv has no injected bootstrap/default approval, and `--plugin-dir` remains consumed rather than forwarded; wrapper fixtures check exact inner argv.
+- **AC-5:** The command reference explicitly gives the supported option-before-resume example; the documentation test/review checks the stated command surface.
 
 ## Test plan
 
-- Keep the existing recorded-launch oracles as the durable proof: `TestCodexResumeSubcommandSuppressesPrompt` covers resume plus session ID and the fresh-launch negative control; `TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume` covers the safehouse envelope; and `TestFrontDoorSubcommandPassthrough` covers `--plugin-dir` consumption followed by resume.
-- For any recurrence, use an argv-recording `codex` stub against the resolved installed binary before changing code. Record both the resume invocation and a fresh-launch control.
-- No full/race implementation gate is needed for a no-op close; focused current-source tests and the installed-binary argv capture are the evidence gate.
+- Extend the recorded-launch oracles around `TestCodexResumeSubcommandSuppressesPrompt`, `TestResumeUnsandboxedSuppressesInjection`, and `TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume` with the three model spellings, a non-resume command control, and exact direct/safehouse argv assertions. Add the local-marketplace (`--plugin-dir`) inner-argv fixture without relying on an installed user plugin.
+- Run focused `go test ./internal/cli` cases, then the repository baseline and race gates. Validate the documentation diff in the normal docs review.
+- Re-run a temporary argv-recording `codex` stub against a freshly built main binary and the resolved installed launcher. The completed spike already proves the failing pre-fix behavior: both launchers appended the bootstrap/default approval after `--model probe-model resume xv-session`; leading resume did not.
 
 ## Stage Report: ideation
 
@@ -64,3 +73,16 @@ Mark ideation complete and close the entity as already satisfied/no-op. If the c
 ### Summary
 
 Traced the exact command through parsing, plugin-dir consumption, resume classification, prompt suppression, and safehouse wrapping; compared it with the archived launch-parity design and `v0.24.0`; and reproduced both resume and fresh-launch behavior against the installed binary. The reported bug is already fixed and durably tested, so the smallest correct change is no product change and a no-op close.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Reproduce the captain's exact option-before-resume argv shape against the current main/installed launcher.
+  Safe stubs captured the bootstrap prompt and `--ask-for-approval on-request` after `--model probe-model resume xv-session` from main `f22360de` and installed `0.25.0-pre1`; both exited 0.
+- DONE: Determine whether prompt suppression recognizes a resume subcommand after Codex options.
+  It does not: `codexResume` sees only a leading `resume`; leading-resume control captured `codex resume xv-session` with neither injection, while safehouse and isolated `--plugin-dir` reproduced the modeled-resume injection.
+- DONE: Update the task's diagnosis and proof plan; make no product edits.
+  The body now records the confirmed gap, a narrow value-aware classification direction, exact acceptance tests, and the required command-reference diff; no files outside this entity changed.
+
+### Summary
+
+The captain's `--model … resume` form is a real, reproducible regression, not transcript history or a stale binary. This supersedes the prior no-op recommendation, which applied only to leading `resume`; implementation must change resume recognition while preserving forwarded argv and fresh-launch behavior.
