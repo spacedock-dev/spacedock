@@ -556,3 +556,25 @@ Cycle 3 turns the previously observed ordering into a failing invariant, so a
 quiet re-wait can pass only while the same worker is still held and unresolved.
 The feedback correction is scoped to the focused Codex proof and preserves the
 five-minute per-call policy and interruption lifecycle.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Independently verify the quiet-epoch assertion consumes hold markers and fails on missing overlap, timeout-at-finish, and re-wait-at-finish boundaries.
+  Fresh normal and `-race` focused controls passed the inside-hold positive, all three named boundary negatives, and both narration controls.
+- DONE: Run a fresh real timeout/re-wait live proof that demonstrates overlap, timeout before hold completion, silent re-wait before completion, and no intervening FO narration.
+  Fresh rollout: first 300000-ms wait 06:48:18.609Z–06:53:18.624Z timed out during the 06:48:36Z–06:54:36Z hold; silent re-wait began 06:53:20.392Z and returned after the hold, with no `agent_message` between the two wait events.
+- DONE: Re-run applicable standard, race, and live-tag controls; assess every acceptance criterion and return PASSED or REJECTED without editing product code.
+  `TMPDIR=/tmp go test ./... -count=1`, its `-race` counterpart, the focused live-tag normal/race controls, and the fresh 45-second live policy control all passed; validation made no product edit.
+- DONE: **AC-1 (value):** A healthy owned worker longer than the old short wait avoids timeout churn.
+  The fresh 45-second hold was inside its first 300000-ms wait, which lasted 1m31.21s and returned `timed_out:false`; its only later wait began after that first return.
+- DONE: **AC-2 (value):** Five-minute waiting observes an early post-hold mailbox return.
+  The same fresh rollout records the hold ending at 15:04:53+08:00 and the first non-timeout wait returning at 15:05:27.913+08:00, with the report's path-scoped state commit separately recorded.
+- DONE: **AC-3 (scope and safety):** Spacedock's Codex wait policy is explicit without changing host-wide configuration or interruption semantics.
+  `origin/main...HEAD` changes only the adapter and focused tests; no config or front-door file changed, while the live runs exercised explicit 300000-ms calls rather than treating adapter text as behavioral proof.
+
+### Summary
+
+Cycle 3 closes the prior material validation gap: the current assertion consumes
+the worker hold markers and rejects each late/non-overlapping boundary. Fresh
+live evidence independently reproduces both the long-wait policy and the quiet
+timeout/re-wait ordering. Recommendation: PASSED.
