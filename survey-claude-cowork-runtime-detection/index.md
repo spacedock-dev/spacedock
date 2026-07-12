@@ -307,3 +307,16 @@ SUPERSEDED HISTORICAL SUMMARY: this cycle introduced the correct exclusive leaf 
 ### Summary
 
 The mounted-project protocol now validates ancestors before it even constructs the leaf path and repeats that validation after parent creation. Its guarantees match the shell mechanism: static symlinks are rejected without touching their targets and cooperative leaf installers serialize via noclobber, while hostile ancestor swaps are openly unsupported and characterized rather than hand-waved away.
+
+## Stage Report: implementation
+
+- FAILED: Implement the capability-gated Cowork survey branch, beginning with the blocking live `system init.cwd` mounted-project correlation and preserving the existing local agentsview path.
+  The required live correlation could not run: this worker exposes neither the Cowork session tools nor a host current-project file capability, and no prior durable live-pass evidence exists in the repository.
+- SKIPPED: Implement the consented `.spacedock/bin/spacedock` install/reuse flow with exact-path, parent-validation, exclusive-create, failure-boundary, deletion-restricted, and fresh-session proofs.
+  The approved design forbids implementation until the live mounted-project binding passes, so no product files were changed.
+- SKIPPED: Implement the bounded privacy-preserving Cowork report adapter and concise documentation, with fixture/live coverage for every acceptance criterion and no private session material.
+  The blocking binding gate did not pass; proceeding with fixture-only evidence would violate the implementation contract.
+
+### Summary
+
+Implementation stopped at the required first live spike because this runtime cannot observe both `system init.cwd` and Cowork's current-project file surface. A Cowork-capable session must run the sanitized cross-session marker correlation before the product, fixture, or documentation changes can begin.
