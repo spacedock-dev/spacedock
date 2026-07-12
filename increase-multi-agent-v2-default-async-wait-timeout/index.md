@@ -427,3 +427,42 @@ pre-agent usage-limit evidence, so the workflow remains in implementation.
 Independent validation found the quoted-launcher repair correctly bounded and the wait policy behaviorally supported by retained live tool-call evidence. The clean implementation branch passes the fresh offline/race gates; no material regression was found.
 
 Recommendation: PASSED.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Rebasing 95w onto current `origin/main` retained both the current
+  named-capability/runtime-evidence structure and the five-minute per-call wait
+  policy, without `-X`, skip, force push, or a PR. Replayed commits:
+  `0e2c0d1e`, `0a3ba677`, and `c5565289`.
+- DONE: Preserved main's stronger segmented launcher matcher and restored 95w's
+  exact-variable `$BINN` / `${BINN}` negative coverage. Focused
+  `TestAssertCodexFilingViaNew` passed.
+- DONE: Implemented captain feedback cycle 2 in the Codex adapter only:
+  unchanged-worker/state waits form one monitoring epoch; the FO announces once
+  at epoch start and silently reinstalls an ordinary timed-out wait.
+- DONE: Added `TestLiveCodexForegroundWaitRetriesQuietlyWithinEpoch` plus
+  fast positive/negative trace controls. The control raises only its test-only
+  stream-silence watchdog so a real five-minute wait is observable.
+- DONE: Fresh quiet-epoch live proof passed in 495.19s. Its first
+  `wait_agent(timeout_ms:300000)` returned `timed_out:true` at 03:30:16Z; the
+  second began at 03:30:18Z, and the next FO narration occurred only after that
+  re-wait completed. Evidence:
+  `/tmp/spacedock-95w-quiet-epoch-green-20260712/codex-shared-scenarios/foreground-wait-quiet-epoch/`.
+- DONE: Fresh original short-hold proof still passed in 219.46s, with a 45s
+  hold and non-timeout foreground wait. Evidence:
+  `/tmp/spacedock-95w-cycle2-short-focus-20260712/codex-shared-scenarios/foreground-wait-timeout/`.
+- DONE: Verification passed sequentially: `go test ./...` (2,154),
+  `go test ./... -race` (2,154), targeted live trace/lifecycle checks, and
+  `gofmt -w ./cmd ./internal`; the known unrelated
+  `internal/release/journeydelta.go` alignment drift was restored.
+- SKIPPED: Completing the broad shared Codex lane begun before feedback.
+  It was captain-interrupted at gate-guardrail after 45.361s so it is not
+  evidence; the changed behavior has fresh focused live proof instead.
+- DONE: Code commit `3043aff` (`Codex: quiet foreground wait epochs`).
+
+### Summary
+
+The rebase now carries the five-minute policy on current main, and the Codex
+adapter explicitly treats repeated ordinary timeouts as one quiet monitoring
+epoch. The live baseline was already quiet on this host; the new focused control
+makes that behavior executable and guards it through a real timeout/re-wait.
