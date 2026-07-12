@@ -635,20 +635,60 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	return code
 }
 
-// codexResume reports whether the codex passthrough begins with the `resume`
-// subcommand (codex's resume is a leading subcommand, not a flag like claude's
-// `--resume`). A resume carries its own session intent, so the bootstrap prompt
-// is suppressed.
+// codexResume reports whether `resume` is the first Codex command token after
+// known global options. A resume carries its own session intent, so the bootstrap
+// prompt is suppressed. The scan is classification-only: it never rewrites the
+// forwarded passthrough argv.
 func codexResume(passthrough []string) bool {
-	return len(passthrough) > 0 && passthrough[0] == "resume"
+	command, ok := codexCommandToken(passthrough)
+	return ok && command == "resume"
+}
+
+// codexCommandToken returns the first Codex command token after known global
+// options. Unknown options stop the scan so an unknown option's value cannot be
+// mistaken for a command. The returned token remains in passthrough unchanged.
+func codexCommandToken(passthrough []string) (string, bool) {
+	valueFlags := valueTakingHostFlags["codex"]
+	flagOnly := flagOnlyHostFlags["codex"]
+	for len(passthrough) > 0 {
+		tok := passthrough[0]
+		if !strings.HasPrefix(tok, "-") || tok == "-" {
+			return tok, true
+		}
+		if flag, _, hasEqualsValue := strings.Cut(tok, "="); hasEqualsValue {
+			if !valueFlags[flag] {
+				return "", false
+			}
+			passthrough = passthrough[1:]
+			continue
+		}
+		if len(tok) > 2 && tok[0] == '-' && tok[1] != '-' && valueFlags[tok[:2]] {
+			passthrough = passthrough[1:] // compact short form, such as -mmodel
+			continue
+		}
+		if valueFlags[tok] {
+			if len(passthrough) < 2 {
+				return "", false
+			}
+			passthrough = passthrough[2:]
+			continue
+		}
+		if flagOnly[tok] {
+			passthrough = passthrough[1:]
+			continue
+		}
+		return "", false
+	}
+	return "", false
 }
 
 // valueTakingHostFlags is the per-host set of host flags whose successor token is
 // the flag's value (space form), so that successor is NOT a stray positional. The
-// assembled argv is unchanged regardless of membership; the set only tunes the
-// advisory's accuracy. The spacedock-injected `--plugin-dir <dir>` prefix is NOT
-// handled here — skipInjectedPrefix strips it structurally before any scan — so
-// the prefix interaction stays in one place rather than threaded through this set.
+// assembled argv is unchanged regardless of membership; the set tunes the
+// advisory and Codex command classifiers. The spacedock-injected `--plugin-dir
+// <dir>` prefix is NOT handled here — skipInjectedPrefix strips it structurally
+// before any scan — so the prefix interaction stays in one place rather than
+// threaded through this set.
 var valueTakingHostFlags = map[string]map[string]bool{
 	"claude": {
 		"-p": true, "--print": true,
@@ -663,14 +703,38 @@ var valueTakingHostFlags = map[string]map[string]bool{
 	},
 	"codex": {
 		"-m": true, "--model": true,
-		"--config":           true,
-		"-c":                 true,
-		"--cd":               true,
-		"--image":            true,
-		"--sandbox":          true,
-		"--profile":          true,
-		"--ask-for-approval": true,
-		"-a":                 true,
+		"--config":                true,
+		"-c":                      true,
+		"--enable":                true,
+		"--disable":               true,
+		"--remote":                true,
+		"--remote-auth-token-env": true,
+		"--cd":                    true,
+		"-C":                      true,
+		"--image":                 true,
+		"-i":                      true,
+		"--local-provider":        true,
+		"--sandbox":               true,
+		"-s":                      true,
+		"--profile":               true,
+		"-p":                      true,
+		"--add-dir":               true,
+		"--ask-for-approval":      true,
+		"-a":                      true,
+	},
+}
+
+// flagOnlyHostFlags complements valueTakingHostFlags for the known global host
+// flags that consume no following token. Keeping arity here lets codexResume
+// stop safely at an unknown option instead of mistaking its value for `resume`.
+var flagOnlyHostFlags = map[string]map[string]bool{
+	"codex": {
+		"--oss":           true,
+		"--strict-config": true,
+		"--dangerously-bypass-approvals-and-sandbox": true,
+		"--dangerously-bypass-hook-trust":            true,
+		"--search":                                   true,
+		"--no-alt-screen":                            true,
 	},
 }
 
@@ -730,7 +794,11 @@ func strayPromptAfterDash(fd frontDoorArgs, host string) (positional string, ok 
 	}
 	tokens := skipInjectedPrefix(fd.passthrough)
 	subcommands := leadingHostSubcommands[host]
-	if len(tokens) > 0 && subcommands[tokens[0]] {
+	if host == "codex" {
+		if command, found := codexCommandToken(tokens); found && subcommands[command] {
+			return "", false
+		}
+	} else if len(tokens) > 0 && subcommands[tokens[0]] {
 		return "", false
 	}
 	valueFlags := valueTakingHostFlags[host]

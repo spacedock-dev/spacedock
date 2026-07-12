@@ -227,6 +227,11 @@ func TestStrayPromptAfterDashClassifier(t *testing.T) {
 			host:        "codex",
 		},
 		{
+			name:        "option-before-resume command is not stray",
+			passthrough: []string{"--model", "gpt-x", "resume", "abc-123"},
+			host:        "codex",
+		},
+		{
 			name:           "equals-form successor positional is stray",
 			passthrough:    []string{"--model=gpt-x", "@/tmp/handoff.md"},
 			host:           "claude",

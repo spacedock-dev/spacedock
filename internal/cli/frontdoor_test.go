@@ -852,6 +852,29 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	}
 }
 
+func TestCodexFrontDoorRecognizesOptionBeforeResumeThroughSafehouse(t *testing.T) {
+	withVersion(t, testBinaryVersion)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	dir := safehouseFixtureDir(t)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), []string{"--", "--model", "gpt-x", "resume", "abc123"}, dir, fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "--model", "gpt-x", "resume", "abc123"}
+	if !equalArgv(fake.launchedArg, wantArgv) {
+		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("option-before-resume printed a launch banner: %q", stderr.String())
+	}
+}
+
 // TestCodexFrontDoorDoesNotEnableAgentTeams: the agent-teams flag is a
 // claude-only concern; the codex launch path must NOT inject it (scope guard).
 func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
