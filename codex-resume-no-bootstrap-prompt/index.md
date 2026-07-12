@@ -7,6 +7,7 @@ id: xvcz44jbmye15bpz1ekzxvkc
 started: 2026-07-11T04:11:33Z
 worktree: .worktrees/spacedock-ensign-codex-resume-no-bootstrap-prompt
 mod-block: merge:pr-merge
+pr: "#498"
 ---
 
 ## Problem
