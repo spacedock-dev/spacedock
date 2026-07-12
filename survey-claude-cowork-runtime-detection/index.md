@@ -1,13 +1,13 @@
 ---
 id: eqn4ecmdy9d5a0meeqxwjwfa
 title: Make survey work inside Claude Cowork
-status: ideation
+status: implementation
 source: captain request
 started: 2026-07-12T06:27:41Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-survey-claude-cowork-runtime-detection
 issue:
 ---
 
