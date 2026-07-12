@@ -309,6 +309,17 @@ begin before that finish marker; add a fast negative boundary control. This is
 the third feedback cycle, so it is escalated to the captain rather than
 auto-routed to another implementation pass.
 
+**Cycle 4 — captain scope correction (2026-07-12).** The five-minute per-call
+wait policy is intentionally simple and can be verified through normal use and
+iterated if it proves wrong. Remove the task-specific heavyweight Codex live
+timeout/quiet-epoch test stack rather than carrying roughly a thousand lines of
+slow scenario machinery. Retain the explicit policy and its scope boundaries;
+do not replace the removed live proof with Contractlint, instruction-file
+substring checks, or another prose-only surrogate. Keep only the smallest
+meaningful ordinary verification the existing code supports, if any, and record
+the captain-directed actual-use/iterate posture in the task's updated plan and
+report.
+
 ## Stage Report: implementation (cycle 1)
 
 - DONE: Removed only the invalid marker-relative 30-second upper bound.
