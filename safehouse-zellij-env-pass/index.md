@@ -16,16 +16,17 @@ address the correct pane and session.
 
 ## Chosen direction
 
-The shared Safehouse wrapper owns conditional terminal/session-targeting
-metadata. Its generic terminal-targeting data set can compose a future tmux
-allowlist without renaming the mechanism; today's set is triggered by
-`ZELLIJ` and carries `ZELLIJ`, `ZELLIJ_PANE_ID`, and
-`ZELLIJ_SESSION_NAME`. The wrapper merges those names into one existing
-Safehouse `--env-pass` allowlist, never hardcodes or manufactures values.
+The shared Safehouse wrapper owns one built-in terminal/session-targeting
+default. When `ZELLIJ` is present, it adds one static
+`--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME` argument; the variable
+names are fixed, while Safehouse copies the inherited values. Safehouse's own
+named-env parser composes that argument with the existing launcher allowance
+and optional `SAFEHOUSE_ENV_PASS` operator configuration.
 
 Claude, Codex, and Pi retain their ordinary front-door assembly and existing
-`SPACEDOCK_BIN` handling. When the parent is not in a configured terminal
-session, the wrapper leaves the caller's Safehouse extra argv unchanged.
+`SPACEDOCK_BIN` handling. When the parent is not in Zellij, the wrapper adds
+nothing. A future terminal multiplexer can extend this same wrapper helper
+without introducing a configuration framework or a Safehouse argv parser.
 
 Keep Safehouse's native `SAFEHOUSE_ENV_PASS` as the operator's global mechanism
 for any additional, explicitly chosen variables. Do not add a competing
@@ -34,30 +35,20 @@ repository `.safehouse` profile.
 
 ## Acceptance criteria
 
-**AC-1 (value): A Safehouse-wrapped host launched from Zellij receives the exact
-inherited values of `ZELLIJ`, `ZELLIJ_PANE_ID`, and
-`ZELLIJ_SESSION_NAME`, so in-sandbox tooling can identify and target the active
-pane/session.** Verified by: a wrapper-owned scrubbed-environment executable
-smoke whose host prints the three values, plus a control that omits them.
+**AC-1 (value): A Safehouse-wrapped host launched from Zellij receives the exact inherited values of `ZELLIJ`, `ZELLIJ_PANE_ID`, and `ZELLIJ_SESSION_NAME`, so in-sandbox tooling can identify and target the active pane/session.** Verified by: a wrapper-owned scrubbed-environment executable smoke whose host prints the three values, plus a control that omits them.
 
-**AC-2 (scope): A non-targeting parent neither manufactures Zellij values nor
-changes the caller's Safehouse extra argv; Claude, Codex, and Pi retain their
-ordinary `SPACEDOCK_BIN` and launch-environment shapes.** Verified by:
-wrapper-level allowlist tests and an ambient-`ZELLIJ=0` repository test run.
+**AC-2 (scope): A non-Zellij parent neither manufactures targeting values nor adds a Safehouse argument, and Claude, Codex, and Pi retain their ordinary `SPACEDOCK_BIN` and launch-environment shapes.** Verified by: a wrapper argv control and an ambient-`ZELLIJ=0` repository test run.
 
-**AC-3 (compatibility): The built-in Zellij trio composes with the native
-Safehouse global allowlist for unrelated operator-selected variables, without a
-new Spacedock configuration surface or broad `--env` inheritance.** Verified
-by: a focused Safehouse integration fixture and scoped code review of the
-launcher/config surfaces.
+**AC-3 (compatibility): The built-in Zellij argument uses Safehouse's native repeated named-env contract and composes with `SAFEHOUSE_ENV_PASS` for unrelated operator-selected variables, without a Spacedock config surface or broad `--env` inheritance.** Verified by: a focused Safehouse integration fixture and scoped code review.
 
 ## Test plan
 
-1. Add terminal-targeting metadata composition beside `safehouse.Wrap`, keeping
-   the current Zellij trio as data and merging it with the caller allowlist.
+1. Add one wrapper helper that conditionally constructs the static Zellij
+   `--env-pass=` argument, leaving Safehouse to compose named-env inputs.
 2. Extend the scrubbed Safehouse smoke to prove exact forwarding of all three
    Zellij values and prove the wrapper-owned stripped control cannot see them.
-3. Prove the ordinary front-door shapes remain stable under ambient `ZELLIJ=0`.
+3. Prove the ordinary front-door shapes remain stable under ambient `ZELLIJ=0`
+   and native `SAFEHOUSE_ENV_PASS` composes with the built-in argument.
 4. Run `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
 
 ## Out of scope
@@ -174,3 +165,30 @@ extension point for future terminal multiplexers.
 PASSED. The cycle-1 correction removes the prior front-door rethreading and
 keeps the test mechanism proportionate: one existing scrubbed Safehouse fixture
 extended for all three acceptance criteria, plus small wrapper unit controls.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Replace one-entry registry and custom argv merger with clean wrapper-only terminal-targeting argument construction; do not touch front doors.
+  Product commit `d57d82d` replaces the speculative machinery with the single
+  `terminalTargetingEnvArgs` helper in `safehouse.Wrap`. The combined production
+  diff still contains no Claude, Codex, or Pi front-door change.
+- DONE: Use Safehouse's actual named-env composition contract; preserve built-in Zellij default while leaving SAFEHOUSE_ENV_PASS generic operator extension.
+  The helper conditionally supplies one static
+  `--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME` argument. Review of
+  Safehouse's parser confirmed it deduplicates repeated `--env-pass` names and
+  composes them with `SAFEHOUSE_ENV_PASS`; the scrubbed-child smoke proves the
+  exact three values, the stripped control, and `EXTRA_TARGET` composition.
+- DONE: Update task body and one-line ACs, keep meaningful forwarding/scrub proof, run focused and required tests, write report, commit, and do not push.
+  The task body and one-line ACs describe the static wrapper behavior.
+  `ZELLIJ=0 go test ./... -count=1` and
+  `ZELLIJ=0 go test ./... -race -count=1` each passed 2168 tests in 17
+  packages. `gofmt -l ./cmd ./internal` reports only pre-existing unrelated
+  `internal/release/journeydelta.go`; the local product commit was intentionally
+  not pushed.
+
+### Summary
+
+The cycle-2 correction relies on Safehouse's native named-environment
+composition instead of reimplementing it. Independent review found no
+actionable issues: the result is one conditional wrapper helper, exact
+least-privilege forwarding, and no front-door or configuration-surface change.
