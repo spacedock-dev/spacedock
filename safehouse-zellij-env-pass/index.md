@@ -1,6 +1,6 @@
 ---
 title: Preserve Zellij targeting metadata through Safehouse
-status: validation
+status: implementation
 score: 0.55
 source: "Captain request 2026-07-12."
 id: 6jk4gverktmthbzkn4vas1kg
