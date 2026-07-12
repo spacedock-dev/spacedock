@@ -1,9 +1,10 @@
 ---
 title: Move prose-polish routing policy into the workflow
-status: backlog
+status: ideation
 score: "0.70"
 source: "Captain correction after c6 ideation review."
 id: csb4c89dteavbq1htdac7fwm
+started: 2026-07-12T23:19:51Z
 ---
 
 # Move prose-polish routing policy into the workflow
