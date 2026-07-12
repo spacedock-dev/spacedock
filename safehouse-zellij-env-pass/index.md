@@ -70,3 +70,19 @@ launcher/config surfaces.
 - DONE: The smallest mechanism is the existing Safehouse named environment
   forwarding surface; a new Spacedock config format would duplicate it and make
   security-sensitive allowlisting harder to audit.
+
+## Stage Report: implementation
+
+- DONE: Implement a conditional, shared Safehouse named-env allowlist for ZELLIJ, ZELLIJ_PANE_ID, and ZELLIJ_SESSION_NAME without hardcoding values.
+  Product commit `53848e52` forwards only the three names when `ZELLIJ` is present and retains the resolved `SPACEDOCK_BIN` allowance.
+- DONE: Add behavior-level scrub/pass-through and non-Zellij argv controls for every wrapped Spacedock host using the shared helper.
+  Explicit-parent fixtures cover Claude, Codex, and Pi; the scrubbed executable smoke proves exact `ZELLIJ=0`, pane, and session values plus the stripped control.
+- DONE: Preserve Safehouse's native global SAFEHOUSE_ENV_PASS route for arbitrary extras; run focused tests plus gofmt and repository baseline gates.
+  `go test ./... -count=1` and `go test ./... -race -count=1` each passed 2168 tests in 17 packages; `ZELLIJ=0 go test ./internal/cli -count=1` passed, and only pre-existing `internal/release/journeydelta.go` remained from `gofmt -l ./cmd ./internal`.
+
+### Summary
+
+Safehouse-wrapped Claude, Codex, and Pi launches now conditionally retain the
+current Zellij targeting metadata without manufacturing values or widening the
+environment. Existing non-Zellij argv fixtures are terminal-independent, while
+the native global Safehouse allowlist remains available for operator extras.
