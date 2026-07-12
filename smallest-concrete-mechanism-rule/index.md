@@ -17,87 +17,237 @@ second universal policy.
 
 ## Problem
 
-The existing smallest-sufficient-mechanism guidance is sound but easy to apply
-only at the workflow level. A recent Safehouse change turned “future tmux” into
-a one-item registry and custom parser/merger, because no short rule required
-the implementer or validator to justify the abstraction with a present case.
+The contract already says to choose the smallest sufficient mechanism, but its
+dispatch wording and write-authority wording leave a live edge ambiguous. On
+2026-07-13 the captain named an existing task and supplied its exact amendment.
+The FO dispatched a worker whose assignment repeated the target and mutation.
+There was no remaining judgment, fan-out, isolation, adversarial verification,
+or safety boundary. The expected trace was one direct edit and zero dispatches;
+the observed trace contained a needless dispatch. That run is the RED baseline,
+not evidence that the proposed repair works.
 
-The same rule applies to orchestration busywork. In a live RED case, the captain
-named an existing backlog task and supplied the specific amendment to make. The
-FO nevertheless dispatched a worker whose assignment merely repeated those
-instructions. The direct alternative was a local edit; it needed no fan-out,
-isolation, or independent verification. A generic entity-body convention was
-treated as sufficient reason to choose a heavier mechanism even though the
-captain had authorized the exact target and mutation.
+The same missing discriminator permits implementation layers with no present
+need. A recent Safehouse change represented one future tmux case with a registry
+and custom parser/merger. Nothing required the implementer or validator to name
+a second current case or a boundary that made the direct scalar mechanism fail.
 
-Policy placement supplies a second example: a shared contract should not absorb
-the purpose and routing policy of one workflow-specific teammate. The concrete
-prose-polish repair is tracked separately; this task owns only the generalized
-rule that would expose the wrong layer.
+Policy placement is another instance, not a separate universal rule. A shared
+contract should not absorb one workflow's prose-polish routing policy merely
+because the shared layer supplies teammate mechanics. The concrete routing
+integration remains owned by `workflow-owned-prose-polish-routing`; this task
+owns only the narrowest-policy-owner rule that reveals the wrong layer.
 
 ## Proposed direction
 
-Add this generalized rule to the shared contract at the appropriate decision
-point:
+Replace the existing `Smallest sufficient mechanism` paragraph in
+`skills/first-officer/references/first-officer-shared-core.md` with one compact
+rule that covers both abstraction and routing:
 
-> Prefer the smallest concrete mechanism that achieves the current outcome. Do
-> not add a layer, workflow, agent, stage, gate, state record, configuration
-> surface, or extensibility scheme unless you name two current concrete cases
-> that require it. Before acting, state the direct alternative and why it fails
-> for this task.
+> **Smallest concrete mechanism.** Prefer the direct mechanism that achieves the
+> current outcome. Do not add a layer, workflow, agent, stage, gate, state
+> record, configuration surface, or extensibility scheme without two present
+> concrete cases that need it. One case is enough only for a proven safety,
+> compatibility, isolation, or external-contract boundary; cite the boundary.
+> When discretionarily choosing a heavier mechanism, name the direct alternative
+> and the remaining judgment, fan-out, required isolation, independent
+> adversarial verification, or safety boundary that makes it fail. An exact
+> captain-authorized target and mutation with none of those constraints is a
+> direct edit, not a worker assignment. This check does not fire for a
+> commissioned stage: commissioning has already fixed dispatch, so the declared
+> loop dispatches every ready task without per-task justification. Nor does it
+> require narration for the direct choice or other deterministic filing work.
+> Put policy at the narrowest layer with its present consumers; workflow-specific
+> behavior stays in that workflow or mod until a second current consumer needs
+> the shared policy. For example, a developer uses a scalar or direct branch for
+> one case and introduces a type, collection, parser, or extensibility layer only
+> for two present cases or one cited boundary.
 
-Keep this narrow exception adjacent to it:
+This is one decision rule, not a scoring system. The two-case check asks whether
+a new general-purpose layer exists at all; it does not demand two cases for a
+plain function, ordinary file, or other direct mechanism. The exception list is
+evidence-based, not a vocabulary escape hatch such as “substantive” or “future
+proof.”
 
-> A single case can justify structure only for a proven external contract,
-> safety invariant, required isolation, or compatibility boundary; cite that
-> evidence.
+### Decision order and write authority
 
-Retain this developer-specific adaptation as an illustrative example, not a
-separate rule:
+Use the following order so the general rule cannot override a stronger existing
+boundary:
 
-> Prefer the most direct implementation. Do not add a type, collection,
-> parser, or extensibility layer unless you name two current concrete cases
-> that require it. Before coding, show the simpler rejected alternative and why
-> it fails.
+1. If the work is a declared stage of a commissioned workflow, dispatch it by
+   the standing loop. The stage worker remains correct for this ideation task
+   and for implementation or validation that requires its worktree or role.
+2. Otherwise classify the intended write under `fo-write-core`. Routine filing
+   through `spacedock new`, state transitions, and other already-allowed FO
+   mutations stay direct without new ceremony.
+3. An instruction that supplies the exact target and exact mutation is the
+   existing exact captain grant for that mutation; it needs no magic word such
+   as “override.” Refine `fo-write-core` to say that this grant can authorize the
+   exact otherwise-off-limits body or product edit, while a broad “fix it
+   directly” instruction cannot.
+4. For that exact authorized mutation, dispatch only if judgment remains or a
+   concrete fan-out, required-isolation, adversarial-verification, or safety
+   constraint blocks the direct edit. Name that blocker once at the climb. If
+   none exists, edit directly. The grant changes authority for only the named
+   mutation; it does not widen FO ownership afterward.
 
-Before choosing a worker for a deterministic captain-directed mutation, name the
-direct edit and the concrete constraint that prevents it. A general convention
-is not enough when the captain names the exact target and mutation. If no
-fan-out, isolation, adversarial verification, safety boundary, or unresolved
-design judgment remains, dispatch is busywork.
+Thus an exact amendment to an existing backlog body can be direct when the
+captain supplied both target and replacement. An underspecified body rewrite
+still belongs to a stage worker. A blocked product path still routes to a worker
+under a generic direct-work prompt, but an exact path plus exact mutation can use
+the existing override. A required isolated worktree or independent adversarial
+check still dispatches even when the desired text is exact.
 
-Apply the same ownership test to policy placement: state a policy at the
-narrowest layer that has two current consumers. A workflow-specific behavior
-stays with its workflow or mod; the shared layer retains only mechanics that are
-actually shared.
+### Concrete documentation diff
+
+In `skills/first-officer/references/fo-write-core.md`, keep the current mutation
+table and replace the prose below it with this authority clarification:
+
+> A blocked target routes through a worker unless the captain grants the exact
+> target and exact mutation. Supplying both is the grant; no special “override”
+> phrase is required. The grant authorizes only that mutation and may also cover
+> otherwise-off-limits entity-body content. Broad direction such as “fix it
+> directly,” a target without the mutation, or an FO's self-declared override is
+> not a grant. After authority is established, apply the smallest-concrete-
+> mechanism rule: direct work stays direct when no judgment, fan-out, required
+> isolation, adversarial verification, or safety boundary remains.
+
+Update the `override` row's rule to match: `Exact captain-authorized target and
+mutation; scoped to that mutation only.` Do not add a new class, policy engine,
+mandatory decision log, per-edit template, or runtime flag.
+
+In `docs/specs/scenario-testing-principles.md`, revise only the
+`smallest-sufficient-mechanism` seed description so it names all three arms:
+exact authorized mutation -> direct; real isolation/verification constraint ->
+dispatch; commissioned stage -> standing dispatch. The generic policy-placement
+example belongs in this task's fixture; prose-polish routing details remain in
+`workflow-owned-prose-polish-routing`.
 
 ## Acceptance criteria
 
-**AC-1 (general rule): The shared contract expresses the generalized rule and its evidence-based single-case exception.**
+**AC-1 (observed busywork turns green): Given an exact captain-authorized target
+and mutation with no remaining judgment, fan-out, isolation, adversarial
+verification, or safety boundary, the FO applies the mutation directly and
+dispatches zero workers for it.**
 
-**AC-2 (developer example): The developer-specific wording remains an example of the general rule, not a competing policy.**
+Test: extend the shared smallest-mechanism fixture with the 2026-07-13 RED shape
+and grade the host trace plus resulting file bytes. The correct trace has one FO
+edit, zero matching dispatches, and the exact replacement on disk. The recorded
+RED trace must fail, and deleting the new discriminator from the operating prompt
+must make the live/captured arm fail again.
 
-**AC-3 (low ceremony): The addition guides discretionary design choices without requiring ritual for deterministic state edits or every dispatch.**
+**AC-2 (real constraints still dispatch): The same exact desired mutation routes
+to exactly one worker when the prompt adds a required isolated worktree or
+independent adversarial-verification boundary; the FO does not edit the target
+itself.**
 
-**AC-4 (busywork discriminator): Given a named file and specific authorized edit with no remaining fan-out, isolation, verification, safety, or design need, the FO edits directly; a paired case with a real blocking constraint still dispatches.**
+Test: add the paired constrained arm to the fixture and grade one matching worker
+dispatch, zero FO edits to that target, and the worker-owned resulting state.
+Offline negative cases must reject both direct editing of the constrained target
+and suppressing its required dispatch.
 
-**AC-5 (narrowest policy owner): Workflow-specific behavior remains in its workflow/mod unless two current consumers justify promotion to the shared contract.**
+**AC-3 (commissioned stages remain mandatory): Every ready task in a commissioned
+stage is dispatched by the standing loop without a per-task smallest-mechanism
+justification, including the genuine commissioned ideation and isolated-worktree
+cases.**
+
+Test: retain the current two-ready-task scope guard in
+`shared_smallest_mechanism_*`; its positive trace dispatches both, while existing
+negative traces for a suppressed dispatch and a per-task justification stay red.
+
+**AC-4 (authority is exact and low-ceremony): Exact target-plus-mutation captain
+authorization permits only that otherwise-off-limits edit without magic override
+wording; a broad direct-work instruction, target-only instruction, self-declared
+override, or adjacent mutation still routes through the existing worker guard.
+Routine `spacedock new` filing and allowed state transitions gain no new
+justification step.**
+
+Test: extend `fo_product_edit_guard_test.go` for both hosts with positive exact
+target-plus-mutation user messages and negative broad, target-only,
+self-declared, and adjacent-file/mutation transcripts. Keep the existing filing
+and allowed-state tests green; add no assertion that searches contract prose.
+
+**AC-5 (one generalized rule, one illustrative developer case): The shared
+contract contains one smallest-concrete-mechanism rule with the evidence-based
+single-case exceptions; scalar-versus-registry developer wording appears inside
+it as an example, not as an independently triggered policy.**
+
+Test: the shared behavior fixture presents a one-case scalar choice and a
+two-current-case or proven-boundary variant. Captured host traces and resulting
+fixture files must show the direct representation for one case and permit the
+layer only in the qualifying variant. Review the implementation diff for one
+resident rule; do not add a prose-grep or style-lint assertion.
+
+**AC-6 (narrowest policy owner): A policy with one workflow-specific consumer
+remains in that workflow or mod while the shared layer retains only its generic
+mechanism; a second present consumer may promote the policy. No prose-polish
+routing integration moves from `workflow-owned-prose-polish-routing` into this
+task.**
+
+Test: add a generic policy-placement arm to the shared fixture and grade the
+paths actually changed: the one-consumer run changes only the workflow-local
+policy file; the two-consumer variant may change the shared fixture policy. A
+negative trace that writes the one-consumer policy into the shared file must
+fail.
 
 ## Test plan
 
-Ideation should identify the smallest contract insertion point and propose a
-behavioral or fixture-backed proof that the guidance routes an actual
-overengineering choice toward the direct alternative. Do not add prose-grep or
-style-lint enforcement.
+Implementation starts by extending the existing
+`smallest-sufficient-mechanism` shared scenario rather than adding a parallel
+harness. The fixture, host-neutral grader, Claude/Codex extractors, offline
+negative tests, and live runners already prove direct FO edits, matching worker
+dispatches, direct commits, and mandatory commissioned dispatch. Estimated cost
+is medium: extend the trace to distinguish direct, constrained, abstraction, and
+policy-placement targets; add fixture variants; then update both host extractors
+and their pure transcript tests. No new dependency or runtime surface is needed.
 
-Add a behavioral fixture based on the observed RED case. One arm gives the FO an
-existing backlog file plus the exact amendment and asserts a direct edit with
-zero worker dispatches. The discriminator arm adds a concrete isolation or
-independent-verification requirement and asserts one dispatch. Mutate the rule
-away and prove the first arm returns to the heavier mechanism. Record the live
-2026-07-13 dispatch as the baseline failure, not as evidence that the fix works.
+Run focused tests first:
 
-Add a policy-placement fixture with one workflow-specific consumer and a shared
-mechanism. It must keep the policy at the workflow layer while preserving the
-generic mechanism; a second-consumer variant may justify promotion. The
-separate prose-routing task exercises the concrete integration.
+```text
+go test ./internal/ensigncycle -run 'Smallest|FOProductEditGuard'
+```
+
+Then run the repository gates required by `AGENTS.md`:
+
+```text
+gofmt -w ./cmd ./internal
+go test ./...
+go test ./... -race
+```
+
+The behavior fixture and offline mutation/negative cases are required. Run the
+existing live shared scenario for Claude and Codex when credentials are
+available because the claim concerns model routing; record an unavailable live
+lane as unavailable, never as green. Do not accept contract substring checks,
+self-review of the new prose, or the 2026-07-13 RED transcript as proof of the
+fix.
+
+## Spike determination
+
+No spike needed. The proposal reuses proven mechanisms already exercised in
+this repo: exact-override transcript grading in
+`fo_product_edit_guard_test.go`, host-neutral mechanism traces and on-disk
+fixtures in `shared_smallest_mechanism_*`, and the commissioned-dispatch scope
+guard in the live shared scenario. Implementation extends those inputs and
+graders; it does not assume a new parser, handoff, file format, or CLI flag.
+
+## Stage Report: ideation
+
+- DONE: Define the generalized direct-versus-dispatch rule so the observed busywork case fails while genuine commissioned or constrained work still dispatches.
+  The decision order makes exact authorized closed mutations direct, while commissioned stages and named isolation, verification, or safety constraints still dispatch.
+- DONE: Resolve the filing, write-authority, and commissioned-stage boundaries without adding ritual or a policy engine.
+  The proposal refines the existing exact grant, preserves `spacedock new` and state mutations, and adds no classifier, flag, log, or required direct-choice narration.
+- DONE: Produce behavior-first acceptance criteria and tests.
+  Six criteria specify trace and on-disk outcomes, paired positives/negatives, mutation coverage, focused tests, and the full repository gates.
+- DONE: Run the repository verification required for this stage.
+  Focused tests, `go test ./...`, and a clean standalone `go test ./... -race` passed; an earlier concurrent race run's replay failure also passed isolated.
+- SKIPPED: Route the captain-facing draft through the workflow comm officer before commit.
+  `/root/comm_officer` remained `pending_init` beyond the declared two-minute bound; proceeded with a behavior-preserving self-edit as the routing contract directs.
+
+### Summary
+
+The ideation generalizes the rule across abstraction, dispatch, write authority,
+and policy placement while keeping one precise discriminator: exact target plus
+exact mutation plus no remaining constraint means direct work. It reuses the
+existing cross-runtime smallest-mechanism and FO write-guard harnesses, keeps
+prose-routing integration in its separate task, and records the bounded comm-
+officer fallback.
