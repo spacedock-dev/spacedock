@@ -9,6 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-restore-codex-handoff-bootstrap
 issue:
+mod-block: merge:pr-merge
 ---
 
 Restore a fresh Codex launch when a Spacedock handoff is supplied before the
