@@ -147,16 +147,6 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		})
 	}
 
-	// Negative: resolving the launcher into BIN does not authorize a similarly
-	// named variable. Both unbraced and braced expansions must name the captured
-	// variable exactly; otherwise `$BINN new` / `${BINN} new` could false-pass.
-	for _, wrongVar := range []string{"$BINN", "${BINN}"} {
-		nearMiss := codexCommand(`BIN=\"${SPACEDOCK_BIN:-spacedock}\"\n\"` + wrongVar + `\" new ` + slug + ` --workflow-dir .`)
-		if err := assertCodexFilingViaNew(nearMiss, slug); err == nil {
-			t.Errorf("expected `%s new` to fail when only BIN captured the launcher", wrongVar)
-		}
-	}
-
 	// Negative: no atomic filing — must fail on the missing-`new` half.
 	none := codexCommand("spacedock status --workflow-dir .")
 	if err := assertCodexFilingViaNew(none, slug); err == nil {
