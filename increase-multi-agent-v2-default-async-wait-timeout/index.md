@@ -123,8 +123,8 @@ loop:
 
 ```diff
 @@ ## Runtime implementation
-- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle. `wait_agent` is asynchronous with respect to worker progress and captain interaction: it is idle monitoring only, does not stop the FO event loop, and steered captain input interrupts it immediately so the FO can resume active work.
-+ `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction. When async multi-agent dispatch is live, foreground waiting MUST call `wait_agent(timeout_ms: 300000)` as the named long-task default.
+- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction.
++ `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle. `wait_agent` is asynchronous with respect to worker progress and captain interaction: it is idle monitoring only, does not stop the FO event loop, and steered captain input interrupts it immediately so the FO can resume active work.
 ```
 
 ## Acceptance criteria
@@ -175,8 +175,8 @@ instruction-text matching, or another prose-only substitute.
 - Changing Codex's product-wide default or asking users to edit global config.
 - Adding a user-facing Spacedock timeout flag, profile, or configuration file.
 - Changing Claude or Pi wait behavior.
-- Treating a sibling/cross-tree completion as the foreground wait's completion
-  signal.
+- Treating a sibling/cross-tree completion as the async idle monitor's completion
+ signal.
 - Replacing the existing timeout/interruption lifecycle guarantees.
 
 ## Stage Report: ideation
@@ -614,3 +614,23 @@ and removes the 45-second/six-minute synthetic timing stack rather than
 replacing it with prose matching. Normal verification is green; race evidence
 must come from a host with sufficient temporary build space, such as the PR's
 offline CI, before this stage can be treated as fully verified.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Rewrite the Codex adapter from foreground waiting/monitoring to async idle monitoring.
+  Code commit `99b2bf4` makes `wait_agent` an async idle monitor and states that it does not stop worker progress, captain interaction, or the FO event loop.
+- DONE: State explicitly that wait_agent is asynchronous with respect to worker progress and captain interaction, does not stop the event loop, and steered input interrupts it immediately.
+  The adjacent async-dispatch binding and idle-monitoring rule carry all three conditions without adding a synthetic timing test.
+- DONE: Scope the no-other-work condition to the captain-authorized active scope; make worker completion require durable report verification followed immediately by the next-action loop; say the five-minute timeout reduces churn but cannot correct conceptual misuse.
+  The adapter requires durable report/state verification before `«dispatch.next-action»()` and reserves the five-minute call for true captain-authorized idle time.
+- DONE: Keep the final product diff adapter-only with no revived heavyweight tests; update the task/report for this correction and prepare the final worktree commit for PR #500 without pushing it.
+  The net worktree diff contains only `skills/first-officer/references/codex-first-officer-runtime.md`; the task body records the same correction, and the branch remains unpushed.
+- DONE: Run proportionate normal/race verification.
+  `go test -p 1 ./...` and `go test -race -p 1 ./...` passed after temporary-build capacity recovered; `gofmt -w ./cmd ./internal` ran with the known unrelated `journeydelta.go` alignment restored.
+
+### Summary
+
+The adapter now treats `wait_agent` as asynchronous idle monitoring rather
+than a completion or lifecycle mechanism. It only waits when the
+captain-authorized active scope has no work, verifies durable state on a final
+notification, and immediately resumes the shared next-action loop.
