@@ -64,6 +64,19 @@ launcher/config surfaces.
 - Passing the full host environment or secrets through Safehouse.
 - Adding a Spacedock-specific persistent configuration format.
 
+### Feedback Cycles
+
+**Cycle 1 — captain ownership and extensibility correction (2026-07-12).**
+The pass-through mechanism must be named for generic terminal/session targeting
+metadata, not Zellij, so a later tmux set composes without renaming the
+abstraction. Keep the current Zellij variables as today's concrete allowlist
+data, not the helper/API name. Move environment-to-`--env-pass` composition to
+the Safehouse wrapper/its immediate generic helper; do not rethread parent
+environment through Claude, Codex, and Pi or add host-specific `WithEnv`
+front-door variants merely to implement this shared Safehouse behavior. Retain
+the existing `SPACEDOCK_BIN` and operator `SAFEHOUSE_ENV_PASS` composition,
+avoid broad inheritance, and reduce the diff/tests to the wrapper-owned proof.
+
 ## Stage Report: ideation
 
 - DONE: The captain approved a built-in conditional allowlist for the three
