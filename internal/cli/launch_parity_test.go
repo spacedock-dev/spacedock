@@ -240,9 +240,10 @@ func TestFenceTaskPromptOverride(t *testing.T) {
 	})
 }
 
-// LP-AC-2: codex resume subcommand suppresses the prompt; bare codex gets base.
-func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
-	t.Run("resume-no-prompt", func(t *testing.T) {
+// LP-AC-2: any nonempty Codex post-fence argv suppresses the prompt; bare Codex
+// gets the bootstrap prompt.
+func TestCodexPostFenceSuppressesPrompt(t *testing.T) {
+	t.Run("post-fence-argv-no-prompt", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
 		code := runCodex(context.Background(), []string{"--", "resume", "abc-123"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
@@ -251,11 +252,11 @@ func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
 		}
 		want := []string{"codex", "resume", "abc-123"}
 		if !equalArgv(fake.launchedArg, want) {
-			t.Fatalf("launch argv = %v, want %v (resume forwards verbatim, no prompt)", fake.launchedArg, want)
+			t.Fatalf("launch argv = %v, want %v (post-fence argv forwards verbatim, no prompt)", fake.launchedArg, want)
 		}
 		for _, tok := range fake.launchedArg {
 			if tok == wantCodexBootstrapPrompt {
-				t.Fatalf("codex resume carried the bootstrap prompt: %v", fake.launchedArg)
+				t.Fatalf("codex post-fence argv carried the bootstrap prompt: %v", fake.launchedArg)
 			}
 		}
 	})
@@ -271,6 +272,114 @@ func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
 			t.Fatalf("bare codex last token = %q, want codex base prompt", last)
 		}
 	})
+}
+
+// Every nonempty Codex post-fence example receives the same opaque passthrough
+// posture, without classifying its options or command tokens.
+func TestCodexPostFenceExamplesSuppressPrompt(t *testing.T) {
+	tests := []struct {
+		name        string
+		passthrough []string
+		want        []string
+	}{
+		{
+			name:        "model space form",
+			passthrough: []string{"--model", "gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "--model", "gpt-x", "resume", "abc-123"},
+		},
+		{
+			name:        "model equals form",
+			passthrough: []string{"--model=gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "--model=gpt-x", "resume", "abc-123"},
+		},
+		{
+			name:        "model short form",
+			passthrough: []string{"-m", "gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "-m", "gpt-x", "resume", "abc-123"},
+		},
+		{
+			name:        "model short attached value",
+			passthrough: []string{"-mgpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "-mgpt-x", "resume", "abc-123"},
+		},
+		{
+			name:        "shared value-taking option",
+			passthrough: []string{"--config", "model=\"gpt-x\"", "resume", "abc-123"},
+			want:        []string{"codex", "--config", "model=\"gpt-x\"", "resume", "abc-123"},
+		},
+		{
+			name:        "known valueless option",
+			passthrough: []string{"--oss", "resume", "abc-123"},
+			want:        []string{"codex", "--oss", "resume", "abc-123"},
+		},
+		{
+			name:        "model only remains opaque",
+			passthrough: []string{"--model", "gpt-x"},
+			want:        []string{"codex", "--model", "gpt-x"},
+		},
+		{
+			name:        "arbitrary command with later resume text remains opaque",
+			passthrough: []string{"--model", "gpt-x", "exec", "resume", "abc-123"},
+			want:        []string{"codex", "--model", "gpt-x", "exec", "resume", "abc-123"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+			args := append([]string{"--"}, tt.passthrough...)
+			code := runCodex(context.Background(), args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if !equalArgv(fake.launchedArg, tt.want) {
+				t.Fatalf("launch argv = %v, want %v", fake.launchedArg, tt.want)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+			}
+		})
+	}
+}
+
+// A nonempty post-fence Codex argv belongs entirely to Codex. Spacedock must not
+// parse its tokens to decide whether to add its own launch defaults.
+func TestCodexPostFencePassthroughIsOpaque(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       []string
+		want       []string
+		wantSilent bool
+	}{
+		{
+			name:       "future option and positional remain opaque",
+			args:       []string{"--", "--future-codex-flag=handoff", "opaque-argument"},
+			want:       []string{"codex", "--future-codex-flag=handoff", "opaque-argument"},
+			wantSilent: true,
+		},
+		{
+			name: "bare codex still boots the first officer",
+			want: []string{"codex", "--ask-for-approval", "on-request", wantCodexBootstrapPrompt},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+			code := runCodex(context.Background(), tt.args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if !equalArgv(fake.launchedArg, tt.want) {
+				t.Fatalf("launch argv = %v, want %v", fake.launchedArg, tt.want)
+			}
+			if tt.wantSilent && stderr.Len() != 0 {
+				t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+			}
+		})
+	}
 }
 
 // LP-AC-3: for claude, --plugin-dir passes through (multiplicity, order) AND

@@ -73,6 +73,71 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 	}
 }
 
+func TestRunCodexPluginDirPostFenceExamplePreservesInnerArgv(t *testing.T) {
+	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
+	checkout := t.TempDir()
+	host := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), []string{"--plugin-dir", checkout, "--", "--model", "gpt-x", "resume", "abc123"}, t.TempDir(), host, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	want := []string{"codex", "--model", "gpt-x", "resume", "abc123"}
+	if !equalArgv(host.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
+	}
+	if strings.Contains(stderr.String(), "· launching codex") {
+		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+	}
+}
+
+func TestRunCodexPluginDirOpaquePostFencePreservesInnerArgv(t *testing.T) {
+	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
+	checkout := t.TempDir()
+	host := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	args := []string{"--plugin-dir", checkout, "--", "--future-codex-flag=handoff", "opaque-argument"}
+	code := runCodex(context.Background(), args, t.TempDir(), host, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	want := []string{"codex", "--future-codex-flag=handoff", "opaque-argument"}
+	if !equalArgv(host.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
+	}
+	if strings.Contains(stderr.String(), "· launching codex") || strings.Contains(stderr.String(), "warning: positional") {
+		t.Fatalf("opaque post-fence argv produced Spacedock launch output: %q", stderr.String())
+	}
+}
+
+func TestRunCodexPostFencePluginDirRemainsOpaque(t *testing.T) {
+	t.Setenv("CODEX_HOME", t.TempDir())
+	postFenceCheckout := t.TempDir()
+	host := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	args := []string{"--", "--plugin-dir", postFenceCheckout}
+	code := runCodex(context.Background(), args, t.TempDir(), host, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	want := []string{"codex", "--plugin-dir", postFenceCheckout}
+	if !equalArgv(host.launchedArg, want) {
+		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
+	}
+	if len(host.installCmds) != 0 {
+		t.Fatalf("post-fence --plugin-dir invoked the local-install seam: %v", host.installCmds)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+	}
+}
+
 // TestCodexPluginDirAdvisoryPresenceAndAbsence is AC-3: every --plugin-dir codex
 // install prints the version-masquerade advisory; a plain (non---plugin-dir) launch
 // prints none. The pair (not a presence-only check) means the test cannot pass by

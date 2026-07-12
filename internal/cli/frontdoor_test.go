@@ -802,9 +802,8 @@ func TestClaudeFrontDoorSkipCompatCheckBootstrap(t *testing.T) {
 }
 
 // TestCodexFrontDoorLaunchesOnCompatible: on a compatible contract the codex
-// front door invokes the launch seam with argv beginning `codex
-// --dangerously-bypass-approvals-and-sandbox` (under .safehouse) and passes
-// through the operator's trailing args before the FO-skill prompt.
+// front door preserves nonempty post-fence argv exactly, with safehouse owning
+// only its outer wrapping and bypass flag.
 func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 	withVersion(t, testBinaryVersion)
 	dir := safehouseFixtureDir(t)
@@ -819,7 +818,7 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", wantCodexBootstrapPrompt}
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x"}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -849,6 +848,53 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
+	}
+}
+
+func TestCodexFrontDoorForwardsPostFenceExampleThroughSafehouse(t *testing.T) {
+	withVersion(t, testBinaryVersion)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	dir := safehouseFixtureDir(t)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	code := runCodex(context.Background(), []string{"--", "--model", "gpt-x", "resume", "abc123"}, dir, fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "--model", "gpt-x", "resume", "abc123"}
+	if !equalArgv(fake.launchedArg, wantArgv) {
+		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+	}
+}
+
+func TestCodexFrontDoorPreservesOpaquePostFenceThroughSafehouse(t *testing.T) {
+	withVersion(t, testBinaryVersion)
+	bin := executableFixture(t)
+	withExecutablePath(t, bin, nil)
+	dir := safehouseFixtureDir(t)
+	fake := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+
+	args := []string{"--", "--future-codex-flag=handoff", "opaque-argument"}
+	code := runCodex(context.Background(), args, dir, fake, lookFound, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "--future-codex-flag=handoff", "opaque-argument"}
+	if !equalArgv(fake.launchedArg, wantArgv) {
+		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
 	}
 }
 
