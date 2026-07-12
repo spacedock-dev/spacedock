@@ -297,6 +297,18 @@ meaningful ordinary verification the existing code supports, if any, and record
 the captain-directed actual-use/iterate posture in the task's updated plan and
 report.
 
+**Cycle 5 — captain conceptual and delivery correction (2026-07-12).** Rename
+the misleading "foreground wait" / "foreground monitoring" framing to async
+idle monitoring. State directly that `wait_agent` is asynchronous with respect
+to worker progress and captain interaction: it does not stop the event loop,
+and steered input interrupts it immediately. Scope the no-other-work predicate
+to the captain-authorized active scope. On worker completion, require durable
+report verification followed immediately by the next-action loop; completion
+alone is never a stopping condition. Say that five minutes reduces churn but
+does not correct conceptual misuse. Finally, update PR #500 from its stale
+`b305da7` head to the final worktree commit after this correction; never merge
+the removed heavyweight live-test files.
+
 ## Stage Report: implementation (cycle 1)
 
 - DONE: Removed only the invalid marker-relative 30-second upper bound.
