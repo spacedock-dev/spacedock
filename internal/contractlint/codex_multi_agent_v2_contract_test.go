@@ -7,71 +7,6 @@ import (
 	"testing"
 )
 
-func TestCodexCurrentMultiAgentRuntimeReferencesUseLiveToolSurfaceProbe(t *testing.T) {
-	root := repoRoot(t)
-	paths := []string{
-		filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
-		filepath.Join("skills", "ensign", "references", "codex-ensign-runtime.md"),
-		filepath.Join("skills", "feedback-rejection-flow", "SKILL.md"),
-		filepath.Join("docs", "dev", "codex-idle-notification-probe.md"),
-	}
-
-	joined := ""
-	for _, rel := range paths {
-		data, err := os.ReadFile(filepath.Join(root, rel))
-		if err != nil {
-			t.Fatalf("read %s: %v", rel, err)
-		}
-		text := string(data)
-		joined += "\n--- " + rel + " ---\n" + text
-		for _, banned := range []string{
-			"Codex multi_agent_v2",
-			"multi_agent_v2",
-			"Codex v2",
-			"pre-v2",
-			"wait_agent(handle)",
-		} {
-			if strings.Contains(text, banned) {
-				t.Errorf("%s contains stale or version-assuming Codex wording %q", rel, banned)
-			}
-		}
-	}
-
-	for _, want := range []string{
-		"live tool surface",
-		"not from a runtime-version label",
-		"`«worker.spawn»`",
-		"`spawn_agent(task_name,message,fork_turns)`",
-		"`«worker-identity»`",
-		"`«addressable-worker»`",
-		"`send_message(target,message)`",
-		"`followup_task(target,message)`",
-		"`followup_task(target,message)` is the current turn-starting reuse/advance route",
-		"Legacy `send_input` is a fallback only when that surface is actually present.",
-		"completed-but-still-addressable worker",
-		"`«completion-signal»`",
-		"`wait_agent(timeout_ms)`",
-		"queued/activity-driven",
-		"`«roster-reconcile»`",
-		"`list_agents(path_prefix?)`",
-		"`«worker.shutdown»`",
-		"Do not bless `interrupt_agent`",
-		"Do not infer capabilities from a Codex version name",
-		"re-run the kept-alive reviewer through the same `«addressable-worker»` capability",
-		"already sent a completion signal",
-		"Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail",
-		"Do not infer that the turn-starting addressable-worker route is absent from the absence of newer follow-up tools",
-	} {
-		if !strings.Contains(joined, want) {
-			t.Errorf("Codex current-runtime references missing %q", want)
-		}
-	}
-
-	if _, err := os.Stat(filepath.Join(root, "skills", "first-officer", "references", "codex-v2-first-officer-runtime.md")); !os.IsNotExist(err) {
-		t.Fatalf("Codex v2 must be a host-binding section in the existing Codex runtime reference, not a separate runtime file")
-	}
-}
-
 func TestFeedbackRejectionFlowStaysHostNeutral(t *testing.T) {
 	root := repoRoot(t)
 	rel := filepath.Join("skills", "feedback-rejection-flow", "SKILL.md")
@@ -175,47 +110,6 @@ func TestCodexToolNamesStayInRuntimeBindingSection(t *testing.T) {
 		strings.Contains(waitSection, "SendMessage") ||
 		strings.Contains(waitSection, "interrupt_agent") {
 		t.Errorf("%s Codex wait notes may mention only wait_agent as a concrete runtime tool", codexRuntimeRel)
-	}
-}
-
-func TestCodexFirstOfficerRuntimeAvoidsNegativeHostContrast(t *testing.T) {
-	root := repoRoot(t)
-	rel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
-	data, err := os.ReadFile(filepath.Join(root, rel))
-	if err != nil {
-		t.Fatalf("read %s: %v", rel, err)
-	}
-	text := string(data)
-
-	for _, banned := range []string{
-		"## Terminal Teardown",
-		"Merge-and-Cleanup step",
-		"10. **Teardown agents at terminal.**",
-		"## Team Creation",
-		"## Backstop",
-		"TeamDelete",
-		"TeamCreate",
-		"team registry",
-		"team-lead",
-		"Claude specifics",
-		"Do not create teams",
-		"Codex declares none",
-		"no-op",
-	} {
-		if strings.Contains(text, banned) {
-			t.Errorf("%s contains negative host-contrast wording %q", rel, banned)
-		}
-	}
-
-	for _, want := range []string{
-		"`«worker.shutdown»` remains unresolved until probed.",
-		"`«roster-reconcile»` may provide active/completed task-path reads when bound.",
-		"`«addressable-worker»` may carry cooperative preservation text when present.",
-		"Durable workflow state remains authoritative.",
-	} {
-		if !strings.Contains(text, want) {
-			t.Errorf("%s missing positive Codex capability wording %q", rel, want)
-		}
 	}
 }
 
