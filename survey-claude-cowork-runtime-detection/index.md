@@ -48,11 +48,11 @@ Narrow evidence boundary: Anthropic documents isolated **remote** Cowork sandbox
 
 The available Cowork session-info capabilities enumerate sessions and transcripts, not connected-folder roots. The supplied live research does not identify a root-enumeration tool or a stable shell working-directory convention. `pwd` is insufficient: it cannot prove whether the directory is scratch or a mounted root and cannot enumerate multiple roots. A create-only writability probe would leave an artifact on a deletion-denied mount; a create/delete probe is not non-destructive there. Therefore survey does **not** discover, select, probe, or write a connected folder, and it does not create `.spacedock/cache/`. This avoids invented root selection, unsafe partial metadata, noexec assumptions, and replacement on mounts that cannot unlink.
 
-Choose honest per-environment installation: `$HOME/.local/bin/spacedock` is the exact binary for the current Cowork execution environment. When that environment resets and the path disappears, survey repeats the settings/relaunch/install flow. The live probe records execution mode as only `remote`, `local`, or `unknown` when the host exposes it; never infer mode and never record a path. For each selected lane, three runs empirically characterize reset behavior: run 1 creates a non-sensitive random sentinel in HOME and installs the exact binary; runs 2 and 3 record whether that sentinel and exact path are present before any install action. The operative contract claims HOME reset only if both later runs observe the sentinel and exact binary absent. If either persists, record `home-persistence: observed` and reuse the exact binary; do not claim a cross-mode rule.
+Choose honest per-environment installation: `$HOME/.local/bin/spacedock` is the exact binary for the current Cowork execution environment. When that environment resets and the path disappears, survey repeats the settings/relaunch/install flow. The live probe records execution mode as only `remote`, `local`, or `unknown` when the host exposes it; never infer mode and never record a path. Lifecycle phases are fixed: **run 0** observes the missing exact binary, records zero network events, presents the Settings/Full-network/relaunch instruction, and stops. **Run 1** is the post-settings environment: install and verify the exact binary first, then create/record a non-sensitive random sentinel in that same HOME. **Runs 2 and 3** inspect the run-1 sentinel and exact path before any install action. Classify reset only when both values are absent in both later runs; each reset run reinstalls. Classify persistence when the exact path survives and direct invocation succeeds with zero network. Record only mode class and the two presence booleans; do not claim a cross-mode rule.
 
 On the Cowork branch:
 
-1. The durable Cowork install identity is exactly `$HOME/.local/bin/spacedock`, never whichever `spacedock` resolves later on `PATH`. Execute this probe block as written; `COWORK_INSTALL_ABSENT` enters step 2, `COWORK_INSTALL_BROKEN` stops, and silent success reuses the binary:
+1. The exact Cowork execution identity is `$HOME/.local/bin/spacedock`, never whichever `spacedock` resolves later on `PATH`. Execute this probe block as written; `COWORK_INSTALL_ABSENT` enters step 2, `COWORK_INSTALL_BROKEN` stops, and silent success reuses the binary:
 
    ```sh
    COWORK_BIN="$HOME/.local/bin/spacedock"
@@ -82,7 +82,7 @@ Before (current opening route):
 
 After:
 
-> Run `ToolSearch(query="select:mcp__session_info__list_sessions,mcp__session_info__read_transcript", max_results=2)` so lazy-loaded schemas cannot false-negative. If both exact tools resolve, call `mcp__session_info__list_sessions` once. A successful call selects **check durable Spacedock install → ask before network → bounded Cowork scan → sampled Cowork report and offer**; reuse its inventory and never enter agentsview or repo probes. A missing definition selects the existing local path unchanged. If both definitions resolve but inventory fails, report `Cowork session inventory unavailable` and stop; do not misroute into local history. Missing files or binaries alone never identify Cowork.
+> Run `ToolSearch(query="select:mcp__session_info__list_sessions,mcp__session_info__read_transcript", max_results=2)` so lazy-loaded schemas cannot false-negative. If both exact tools resolve, call `mcp__session_info__list_sessions` once. A successful call selects **check exact session Spacedock execution → ask before network → bounded Cowork scan → sampled Cowork report and offer**; reuse its inventory and never enter agentsview or repo probes. A missing definition selects the existing local path unchanged. If both definitions resolve but inventory fails, report `Cowork session inventory unavailable` and stop; do not misroute into local history. Missing files or binaries alone never identify Cowork.
 
 Insert this exact permission prompt when the Cowork branch cannot invoke Spacedock:
 
@@ -104,7 +104,7 @@ In `docs/site/get-started/survey.md`, replace the local-only opening paragraph:
 
 with these two paragraphs:
 
-> When you use the `spacedock:survey` skill, it reads the session history available to the current host. Local coding-agent sessions use agentsview.
+> When you use the `spacedock:survey` skill, it reads the session history available to the current host. Local coding-agent sessions use agentsview; the local scan is read-only, and if agentsview is missing, Survey asks before installing it.
 >
 > In Claude Cowork, Survey reads a bounded session sample and does not change connected files. If Spacedock is unavailable, set Cowork to **Full network access** in Settings, relaunch, and run survey again; Survey may reinstall its session-local helper when Cowork resets the environment.
 
@@ -125,10 +125,10 @@ No install-page or commission documentation changes belong to this task.
 Verified by: `TestLiveClaudeCoworkSurveyProbe` produces a sanitized event recording and `TestSurveyCoworkEventReplay` replays `cowork-tool-events.jsonl`; ToolSearch precedes deferred calls, both exact definitions plus one successful inventory call select Cowork, partial definitions select local, a resolved-schema/inventory error stops, and every non-local case records zero agentsview/repo-probe operations.
 
 **AC-2 - A working exact session binary resumes Cowork survey without network activity; an absent binary produces the Full-network/settings/relaunch instruction and no cache or connected-folder mutation.**
-Verified by: an event-ledger test with a fake `$HOME`, read-only connected-folder fixture, and transport. A working exact-path stub yields one direct version invocation and 0 requests; absence emits the exact prompt and stops with 0 requests, 0 cache-discovery events, and no connected-folder changes. The simulated post-relaunch rerun permits only the four internal installer-flow domains. Shadow-PATH mutants retain their prior absent/broken guarantees.
+Verified by: run 0 of an event-ledger test with a fake `$HOME`, read-only connected-folder fixture, and transport. Exact-path absence emits the prompt and stops with 0 requests, 0 cache/discovery events, and no connected-folder changes. A persistent working exact-path mutant yields one direct invocation and 0 requests; shadow-PATH mutants retain their absent/broken guarantees.
 
 **AC-3 - After the settings relaunch, a fresh Cowork installation verifies the architecture-matched release, invokes only the exact session path, and is honestly repeated when the selected lane resets HOME.**
-Verified by: the real installer seams plus three fake/live environment runs. Run 1 creates a random HOME sentinel and installs/verifies the exact path. Before any install action, runs 2 and 3 assert whether the run-1 sentinel and exact binary exist; when both are absent, each re-enters the install flow and never claims restore. When host metadata exposes execution mode, evidence records only `remote`, `local`, or `unknown`. Unique-`mktemp`, cleanup, failure-boundary, and shadow-PATH tests remain. A read-only connected-folder snapshot is byte-identical before/after all runs.
+Verified by: the real installer seams plus runs 1-3 after run 0's stop. Run 1 installs and directly verifies the exact path, then creates/records a random HOME sentinel. Before any install action, runs 2 and 3 record only mode class, `home-sentinel-present`, and `exact-binary-present`. Reset requires both booleans false in both runs and each run reinstalls; persistence requires direct exact-path success with 0 network. Unique-`mktemp`, cleanup, failure-boundary, and shadow-PATH tests remain. A read-only connected-folder snapshot is byte-identical throughout.
 
 **AC-4 - Cowork survey renders a complete, honestly sampled orientation with correct filled values and no repository-only claims.**
 Verified by: a deterministic replay inventory with four idle sessions and one active session. Its newest-first transcript pages produce exactly `4 of 4` analyzed, `2` hand-steering interruptions, `1` resolved decision, `1` `OPEN (sample-unverified)`, four workstreams (`manual`, `exploration`, `knowledge-work`, `unlabeled`), `0` read failures, and the `up to 45 messages/session; active sessions excluded` disclosure. The output contains no literal `{slot}` and omits BACKLOG, WORK BY AREA, CODEX, scaffold, dispatch, no-follow-up, shipped, and git/PR sections. Mutant cases cover 21 idle sessions (20 sampled), truncation with one/two continuation pages, repeated cursor, missing pagination, and one read failure.
@@ -145,14 +145,14 @@ Implementation starts with the fixture harness so routing, consent, privacy, and
 
 - **Cowork event replay (medium):** add `TestSurveyCoworkEventReplay` and the committed sanitized `skills/integration/testdata/survey/cowork-tool-events.jsonl`. The runner consumes tool events and synthetic responses, enforcing the exact ToolSearch -> inventory -> bounded transcript sequence and rendering the Cowork projection. Fixture/mutant expectations are AC-1/AC-4's exact values. The existing `TestSurveyInstallProbe` remains the executable local-path control; no generic “skill smoke” is assumed.
 - **Installer/consent CLI tests (medium, existing installer seams):** wrap the exact-path probe and post-relaunch acquisition commands with a fake `$HOME`, stub `curl` request ledger, stub `uname`, and fixture assets/checksums. Execute the real `install.sh`; assert the short settings/relaunch prompt and zero pre-relaunch requests, the internal four-domain allowlist after rerun, direct exact-path verification, architecture mapping, fresh-install success, and documented pre-final-write failures. Retain both shadow-PATH mutants and unique-`mktemp`/cleanup cases. Assert zero connected-folder discovery/write events.
-- **Environment-reset characterization (medium):** run three times with the lane's real lifecycle. Run 1 creates a random non-sensitive HOME sentinel and exact binary. Runs 2/3 inspect both before any install event. Record only mode class (`remote|local|unknown`), `home-sentinel-present`, and `exact-binary-present`; no paths. A reset classification requires both later runs absent. The reset case reinstalls; the persistence case reuses the exact binary. In both cases a synthetic connected-folder tree remains byte-identical and no cache operations occur.
+- **Environment-reset characterization (medium):** run 0 proves missing exact binary -> 0 requests -> Settings/Full-network/relaunch stop. Run 1, after settings, installs and directly verifies the exact path before creating the random HOME sentinel. Runs 2/3 inspect sentinel and exact binary before any install event. Record only mode class (`remote|local|unknown`) and the two booleans. Reset requires both false in both runs and leads to reinstall; persistence requires direct exact-path reuse with 0 network. A synthetic connected-folder tree remains byte-identical and no cache operations occur.
 - **Report/privacy replay (medium):** render the exact four-session baseline and pagination/failure mutants from synthetic in-memory payloads. Assert filled values, no placeholders, sampling disclosure, omission matrix, open-thread label, mode mapping, and transformed-canary absence across stdout and the test temp tree.
 - **Documentation render (low):** build the docs site and visually/readably inspect the changed Survey page.
-- **Live Cowork smoke (required, medium/manual host harness):** run 1 executes ToolSearch/inventory, records mode class when exposed, writes a random HOME sentinel, and observes the settings/relaunch stop with no request; after relaunch/rerun it installs and scans. Runs 2/3 record sentinel and exact-binary presence before any install event. If reset, each proves reinstall; if persistent, each reuses the exact binary. Evidence records `connected-folder-discovery: unsupported/not-used`, `connected-folder-handle: none`, `cache-read-event: none`, `zero-network-restore: not-applicable`, and `copy-from-cache: none`; in the reset case it records exact-binary absence, then zero network before the consented install event, then execution only from the exact HOME path after installation. No path, folder name, payload, or identifying handle is retained, and no command/file event targets connected-folder content.
+- **Live Cowork smoke (required, medium/manual host harness):** run 0 executes ToolSearch/inventory, records mode class when exposed, observes exact-binary absence, and stops at the settings/relaunch prompt with 0 requests. Run 1 is post-settings: install and verify the exact HOME path first, then create/record the random sentinel, then scan. Runs 2/3 record the two presence booleans before any install event. Reset requires both false twice and proves reinstall; persistence directly reuses the exact path with 0 network. Evidence also records `connected-folder-discovery: unsupported/not-used`, `connected-folder-handle: none`, `cache-read-event: none`, `zero-network-restore: not-applicable`, and `copy-from-cache: none`. No path, folder name, payload, or identifying handle is retained, and no command/file event targets connected-folder content.
 
 ## Risk spike
 
-The focused review invalidates the cache premise: neither official guidance nor the supplied schema provides a general shell root-discovery/selection contract. No cache spike is warranted because the mechanism is removed. The remaining runtime uncertainty is lane-specific HOME persistence, so the three-run sentinel characterization is the first live implementation gate. Its result determines reuse versus honest reinstall without changing the connected-folder read-only boundary; replay cannot substitute for that live lifecycle result.
+The focused review invalidates the cache premise: neither official guidance nor the supplied schema provides a general shell root-discovery/selection contract. No cache spike is warranted because the mechanism is removed. The remaining runtime uncertainty is lane-specific HOME persistence, so run 0 plus the run-1-to-3 sentinel characterization is the first live implementation gate. Its result determines reuse versus honest reinstall without changing the connected-folder read-only boundary; replay cannot substitute for that live lifecycle result.
 
 ## Stage Report: ideation
 
@@ -184,7 +184,7 @@ This repair keeps Cowork inside `survey` but replaces every abstract runtime ass
 
 ## Stage Report: ideation
 
-- DONE: Replace the PATH-based durable-install identity probe with explicit path semantics.
+- DONE: Replace the PATH-based install identity probe with explicit execution-path semantics.
   The design invokes and verifies only `"$HOME/.local/bin/spacedock"`; absent, working, and broken exact-path states cannot be shadowed by PATH.
 - DONE: Add two executable test mutants for later-PATH binaries.
   AC-2 and the installer test plan require absent-exact-path/valid-PATH consent and broken-exact-path/valid-PATH stop cases with invocation and network ledgers.
@@ -195,12 +195,12 @@ This repair keeps Cowork inside `survey` but replaces every abstract runtime ass
 
 ### Summary
 
-This surgical repair makes the Cowork binary identity the exact durable path rather than PATH resolution and adds executable shadow-PATH mutants for both absent and broken states. Installer acquisition is uniquely named and cleanup is verified or honestly reported, while the previously resolved capability, report, and privacy contracts remain intact.
+This surgical repair makes the Cowork binary identity the exact session-local execution path rather than PATH resolution and adds executable shadow-PATH mutants for both absent and broken states. Installer acquisition is uniquely named and cleanup is verified or honestly reported, while the previously resolved capability, report, and privacy contracts remain intact.
 
-## Stage Report: ideation
+## Stage Report: ideation — SUPERSEDED (historical cache design)
 
 - DONE: Resolve binary persistence across Cowork session relaunches.
-  Official Cowork architecture/safety guidance and supplied live research establish session-local HOME versus connected-folder persistence; the design chooses a verified binary/manifest cache with a two-HOME restore proof and honest per-session fallback.
+  SUPERSEDED: this cycle chose a connected-folder binary/manifest cache; the later no-cache report and operative body remove that mechanism because discovery and safe updates were not proven.
 - DONE: Clarify existing survey behavior versus Cowork-specific sampling/report behavior.
   The analysis step now labels retained direct-report, evidence, mode, offer, and conservative-frontier rules separately from Cowork bounds, extraction, sampling labels, privacy generalization, and omissions.
 - DONE: Shorten the proposed Cowork documentation into a new paragraph.
@@ -210,12 +210,12 @@ This surgical repair makes the Cowork binary identity the exact durable path rat
 
 ### Summary
 
-The revised ideation no longer assumes Cowork HOME survives: it restores an installer-verified binary from a connected-folder cache into each fresh session, or states that reinstallation is required when no durable folder is available. It also distinguishes reused survey semantics from Cowork adaptations and reduces the public network guidance to the settings change and required relaunch while preserving internal zero-request proof and privacy controls.
+SUPERSEDED HISTORICAL SUMMARY: this cycle proposed restoring from a connected-folder cache. That proposal does not ship; the later no-cache design uses exact session-local reuse or honest reinstall and never reads or writes a connected-folder cache. The sampling and user-network wording from this cycle remain historical inputs only where retained by the operative body.
 
 ## Stage Report: ideation
 
 - DONE: Narrow the persistence premise and bind it to lane-specific live evidence.
-  Official evidence is now limited to temporary remote sandboxes/multiple modes; the three-run probe records only mode class and empirically characterizes HOME reset for the selected lane.
+  Official evidence is now limited to temporary remote sandboxes/multiple modes; run 0 plus runs 1-3 record only mode class/booleans and empirically characterize HOME reset for the selected lane.
 - DONE: Define real connected-folder discovery and deterministic selection, or remove the unsupported mechanism.
   No root-enumeration/working-directory contract was found, so the design explicitly performs no discovery, selection, writability probe, cache read, or connected-folder write and uses honest per-environment reinstall.
 - SKIPPED: Define cache schema and operations precisely.
@@ -223,8 +223,23 @@ The revised ideation no longer assumes Cowork HOME survives: it restores an inst
 - DONE: Resolve the read-only contract.
   Local agentsview and both evidence scans remain project/session-source read-only; Cowork's disclosed exception writes only temporary/session-HOME helper files after the settings relaunch.
 - DONE: Strengthen live persistence proof.
-  Runs 2/3 check a run-1 HOME sentinel and exact binary before install, record mode/unsupported-folder classes without paths, prove reinstall rather than restore on reset, execute only the exact HOME path, and assert connected-folder bytes unchanged.
+  Run 0 proves the zero-network stop; run 1 installs/verifies before creating the sentinel; runs 2/3 inspect both booleans before install, prove reinstall rather than restore on reset, and execute only the exact HOME path.
 
 ### Summary
 
-This repair removes the under-specified connected-folder cache instead of inventing discovery and safe-update semantics that Cowork does not expose. The operative design now characterizes each live lane across three runs, reuses a surviving exact HOME binary or honestly reinstalls it after reset, and preserves connected folders as read-only while keeping routing, report, consent, docs brevity, and privacy behavior intact.
+This repair removes the under-specified connected-folder cache instead of inventing discovery and safe-update semantics that Cowork does not expose. The operative design now characterizes each live lane through run 0 plus runs 1-3, reuses a surviving exact HOME binary or honestly reinstalls it after reset, and preserves connected folders as read-only while keeping routing, report, consent, docs brevity, and privacy behavior intact.
+
+## Stage Report: ideation
+
+- DONE: Preserve local agentsview's read-only and ask-before-install behavior in proposed docs.
+  The local paragraph now states both guarantees; Cowork's session-local helper exception remains in its separate short paragraph and connected files stay unchanged.
+- DONE: Make the live lifecycle phases unambiguous.
+  Run 0 is the missing-binary zero-network stop; run 1 installs/verifies before sentinel creation; runs 2/3 inspect both booleans before install and classify reset versus persistence exactly.
+- DONE: Mark historical cache claims as superseded without erasing workflow history.
+  The cache-choosing report heading, evidence, and summary are explicitly SUPERSEDED, and the later no-cache report/body remain operative.
+- DONE: Rename the session-local binary identity.
+  Operative wording now calls `$HOME/.local/bin/spacedock` the exact Cowork execution identity, not a durable install identity.
+
+### Summary
+
+This consistency repair preserves the no-cache design while making documentation, lifecycle evidence, and identity terminology agree. Historical cache evidence remains visible but unmistakably superseded; the operative proof now has a precise run-0/run-1/run-2/run-3 sequence using only mode class and presence booleans.
