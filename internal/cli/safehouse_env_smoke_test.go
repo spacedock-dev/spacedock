@@ -13,27 +13,40 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
 )
 
-// envPassSafehouse writes a fake `safehouse` that SCRUBS SPACEDOCK_BIN by default
-// (the env-sanitization the real safehouse does across its boundary) BUT honors
-// `--env-pass NAMES` (comma-separated): each named var is forwarded from the host
-// env it inherited, on top of the sanitized defaults. This models the real
-// `--env-pass` flag the front door now passes. The inner program after `--` runs
-// with SPACEDOCK_BIN present only when `--env-pass SPACEDOCK_BIN` was given.
+// envPassSafehouse writes a fake `safehouse` that SCRUBS named test variables by
+// default, then honors comma-separated `--env-pass NAMES` and Safehouse's native
+// SAFEHOUSE_ENV_PASS configuration. Each named value is forwarded from the host
+// env it inherited, on top of sanitized defaults. The fake lets the smoke prove
+// that a named allowlist matters rather than passing through ambient process env.
 func envPassSafehouse(t *testing.T, dir string) string {
 	t.Helper()
 	path := filepath.Join(dir, "safehouse")
 	body := `#!/bin/sh
 # Capture the inherited value before scrubbing (the host env safehouse sees).
-saved_bin="${SPACEDOCK_BIN:-}"
-unset SPACEDOCK_BIN
-pass=""
+saved_bin="${SPACEDOCK_BIN-}"
+saved_zellij="${ZELLIJ-}"
+saved_zellij_pane_id="${ZELLIJ_PANE_ID-}"
+saved_zellij_session_name="${ZELLIJ_SESSION_NAME-}"
+saved_extra_target="${EXTRA_TARGET-}"
+pass="${SAFEHOUSE_ENV_PASS-}"
+unset SPACEDOCK_BIN ZELLIJ ZELLIJ_PANE_ID ZELLIJ_SESSION_NAME EXTRA_TARGET
+append_pass() {
+  if [ -n "$pass" ]; then pass="$pass,$1"; else pass="$1"; fi
+}
 while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
-  if [ "$1" = "--env-pass" ]; then shift; pass="$1"; fi
+  case "$1" in
+    --env-pass) shift; append_pass "$1" ;;
+    --env-pass=*) append_pass "${1#--env-pass=}" ;;
+  esac
   shift
 done
 if [ "$1" = "--" ]; then shift; fi
-# Honor --env-pass SPACEDOCK_BIN: forward the named var from the saved host env.
+# Honor each named pass-through: forward values from the saved host env.
 case ",$pass," in *,SPACEDOCK_BIN,*) export SPACEDOCK_BIN="$saved_bin" ;; esac
+case ",$pass," in *,ZELLIJ,*) export ZELLIJ="$saved_zellij" ;; esac
+case ",$pass," in *,ZELLIJ_PANE_ID,*) export ZELLIJ_PANE_ID="$saved_zellij_pane_id" ;; esac
+case ",$pass," in *,ZELLIJ_SESSION_NAME,*) export ZELLIJ_SESSION_NAME="$saved_zellij_session_name" ;; esac
+case ",$pass," in *,EXTRA_TARGET,*) export EXTRA_TARGET="$saved_extra_target" ;; esac
 exec "$@"
 `
 	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
@@ -98,8 +111,8 @@ func TestSafehouseEnvPassForwardsSpacedockBin(t *testing.T) {
 		spacedockBinEnv+"="+launchedBin)
 
 	t.Run("--env-pass forwards SPACEDOCK_BIN through the scrub", func(t *testing.T) {
-		// The wrap as runClaude composes it: the production launcherBinEnvPassFlags
-		// (driven by executablePath → launchedBin) in the safehouse extra slot. The
+		// The wrap as runClaude composes it: launcherBinEnvPassFlags (driven by
+		// executablePath → launchedBin) is handed to the Safehouse wrapper. The
 		// inner program after `--` is the probe directly (no /usr/bin/env wrapper).
 		withExecutablePath(t, launchedBin, nil)
 		argv := safehouse.Wrap([]string{probe}, launcherBinEnvPassFlags())
@@ -119,6 +132,101 @@ func TestSafehouseEnvPassForwardsSpacedockBin(t *testing.T) {
 			t.Fatalf("env-only probe resolved %q, want PATH-FALLBACK (the scrub must drop SPACEDOCK_BIN absent --env-pass)", out)
 		}
 	})
+}
+
+func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
+	dir := t.TempDir()
+	safehousePath := envPassSafehouse(t, dir)
+	probe := zellijTargetingProbe(t, dir)
+
+	parent := []string{
+		"PATH=/usr/bin:/bin",
+		"ZELLIJ=0",
+		"ZELLIJ_PANE_ID=51",
+		"ZELLIJ_SESSION_NAME=excellent-pheasant",
+	}
+
+	t.Run("wrapper-owned targeting allowlist forwards exact inherited values", func(t *testing.T) {
+		setZellijTargetingEnv(t)
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
+		out := runWrapped(t, safehousePath, argv[1:], parent)
+		want := "ZELLIJ=0\nZELLIJ_PANE_ID=51\nZELLIJ_SESSION_NAME=excellent-pheasant"
+		if out != want {
+			t.Fatalf("Zellij metadata = %q, want %q", out, want)
+		}
+	})
+
+	t.Run("without Zellij names the scrubbed child cannot see targeting metadata", func(t *testing.T) {
+		clearZellijTargetingEnv(t)
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
+		out := runWrapped(t, safehousePath, argv[1:], parent)
+		want := "ZELLIJ=<unset>\nZELLIJ_PANE_ID=<unset>\nZELLIJ_SESSION_NAME=<unset>"
+		if out != want {
+			t.Fatalf("Zellij metadata = %q, want %q", out, want)
+		}
+	})
+
+	t.Run("native global allowlist composes with the built-in trio", func(t *testing.T) {
+		setZellijTargetingEnv(t)
+		probe := extraTargetProbe(t, dir)
+		env := append(append([]string{}, parent...), "SAFEHOUSE_ENV_PASS=EXTRA_TARGET", "EXTRA_TARGET=operator-choice")
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
+		out := runWrapped(t, safehousePath, argv[1:], env)
+		if out != "EXTRA_TARGET=operator-choice" {
+			t.Fatalf("global Safehouse env pass-through = %q, want %q", out, "EXTRA_TARGET=operator-choice")
+		}
+	})
+}
+
+func setZellijTargetingEnv(t *testing.T) {
+	t.Helper()
+	clearZellijTargetingEnv(t)
+	t.Setenv("ZELLIJ", "0")
+	t.Setenv("ZELLIJ_PANE_ID", "51")
+	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
+}
+
+func clearZellijTargetingEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+		value, present := os.LookupEnv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			if present {
+				_ = os.Setenv(key, value)
+				return
+			}
+			_ = os.Unsetenv(key)
+		})
+	}
+}
+
+func zellijTargetingProbe(t *testing.T, dir string) string {
+	t.Helper()
+	path := filepath.Join(dir, "zellij-probe")
+	body := `#!/bin/sh
+printf 'ZELLIJ=%s\n' "${ZELLIJ-<unset>}"
+printf 'ZELLIJ_PANE_ID=%s\n' "${ZELLIJ_PANE_ID-<unset>}"
+printf 'ZELLIJ_SESSION_NAME=%s\n' "${ZELLIJ_SESSION_NAME-<unset>}"
+`
+	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func extraTargetProbe(t *testing.T, dir string) string {
+	t.Helper()
+	path := filepath.Join(dir, "extra-target-probe")
+	body := `#!/bin/sh
+printf 'EXTRA_TARGET=%s\n' "${EXTRA_TARGET-<unset>}"
+`
+	if err := os.WriteFile(path, []byte(body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return path
 }
 
 // runWrapped execs the fake safehouse with the wrapped argv (everything after the

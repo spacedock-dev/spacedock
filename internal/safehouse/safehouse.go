@@ -61,12 +61,24 @@ func TranslateFlags(deprefixed []string) (extra []string, err error) {
 	return extra, nil
 }
 
+// terminalTargetingEnvArgs returns Safehouse's built-in terminal/session
+// metadata allowance. Safehouse itself composes repeated --env-pass flags and
+// SAFEHOUSE_ENV_PASS, so this wrapper adds its default without parsing caller
+// arguments or owning an operator configuration surface.
+func terminalTargetingEnvArgs() []string {
+	if _, present := os.LookupEnv("ZELLIJ"); !present {
+		return nil
+	}
+	return []string{"--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME"}
+}
+
 // Wrap returns the inner argv wrapped as
 // `safehouse --trust-workdir-config [extra...] -- <inner>`. Callers gate on
-// Present (and Available) first; Wrap itself only composes the prefix and is
-// inner-command-agnostic so the claude and codex launchers share it.
+// Present (and Available) first; Wrap adds the conditional built-in terminal
+// targeting allowance and remains inner-command-agnostic for every host front door.
 func Wrap(inner []string, extra []string) (argv []string) {
 	argv = []string{"safehouse", "--trust-workdir-config"}
+	argv = append(argv, terminalTargetingEnvArgs()...)
 	argv = append(argv, extra...)
 	argv = append(argv, "--")
 	argv = append(argv, inner...)

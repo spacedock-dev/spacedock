@@ -38,6 +38,15 @@ func TestMain(m *testing.M) {
 	case "execlauncher":
 		execLauncherRole()
 	default:
+		// Most historical front-door tests assert the non-targeting argv contract.
+		// Keep that baseline independent of the developer's terminal; dedicated
+		// wrapper fixtures set targeting metadata explicitly.
+		for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+			if err := os.Unsetenv(key); err != nil {
+				fmt.Fprintln(os.Stderr, "test setup: unset", key+":", err)
+				os.Exit(1)
+			}
+		}
 		os.Exit(m.Run())
 	}
 }

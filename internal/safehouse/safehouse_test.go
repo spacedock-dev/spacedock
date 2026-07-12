@@ -76,6 +76,7 @@ func TestAvailableNotFound(t *testing.T) {
 // TestWrapComposesPrefix: Wrap prepends the safehouse prefix and the `--`
 // separator, then the inner argv, with no extra args.
 func TestWrapComposesPrefix(t *testing.T) {
+	clearTerminalTargetingEnv(t)
 	inner := []string{"claude", "--agent", "spacedock:first-officer", "--foo"}
 	got := Wrap(inner, nil)
 	want := []string{"safehouse", "--trust-workdir-config", "--",
@@ -88,10 +89,41 @@ func TestWrapComposesPrefix(t *testing.T) {
 // TestWrapWithExtra: extra safehouse args land between --trust-workdir-config
 // and the `--` separator, never mixed into the inner command.
 func TestWrapWithExtra(t *testing.T) {
+	clearTerminalTargetingEnv(t)
 	got := Wrap([]string{"claude"}, []string{"--profile", "x"})
 	want := []string{"safehouse", "--trust-workdir-config", "--profile", "x", "--", "claude"}
 	if !equalArgv(got, want) {
 		t.Fatalf("Wrap with extra = %v, want %v", got, want)
+	}
+}
+
+func TestWrapAddsTerminalTargetingEnvArgument(t *testing.T) {
+	clearTerminalTargetingEnv(t)
+	t.Setenv("ZELLIJ", "0")
+	t.Setenv("ZELLIJ_PANE_ID", "51")
+	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
+
+	got := Wrap([]string{"claude"}, []string{"--env-pass", "SPACEDOCK_BIN"})
+	want := []string{"safehouse", "--trust-workdir-config", "--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME", "--env-pass", "SPACEDOCK_BIN", "--", "claude"}
+	if !equalArgv(got, want) {
+		t.Fatalf("Wrap = %v, want %v", got, want)
+	}
+}
+
+func clearTerminalTargetingEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+		value, present := os.LookupEnv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			if present {
+				_ = os.Setenv(key, value)
+				return
+			}
+			_ = os.Unsetenv(key)
+		})
 	}
 }
 
