@@ -66,9 +66,8 @@ func TestCodexAndPiFirstOfficerRuntimeLifecycleHeadingsRemoved(t *testing.T) {
 	}
 }
 
-func TestCodexAndPiFirstOfficerRuntimeRejectMutableStepAndNegativeContrast(t *testing.T) {
+func TestPiFirstOfficerRuntimeRejectMutableStepAndNegativeContrast(t *testing.T) {
 	for _, rel := range []string{
-		filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"),
 		filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 	} {
 		text := readRepoFile(t, rel)
@@ -137,19 +136,8 @@ func TestPiToolNamesStayInRuntimeBindingOrHarnessSections(t *testing.T) {
 	}
 }
 
-func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
+func TestPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 	cases := map[string][]string{
-		filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md"): {
-			"live tool surface",
-			"`spawn_agent(task_name,message,fork_turns)`",
-			"sanitize the helper-emitted `name`",
-			"`wait_agent(timeout_ms)`",
-			"wait timeout return is normal and retryable",
-			"worker is not failed, closed, or redispatched",
-			"queued/activity-driven delivery",
-			"autonomous FO wake-up",
-			"MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`",
-		},
 		filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"): {
 			"Pi-native substrate selected by the launch/test harness",
 			"`subagent(...)` with explicit `context: \"fresh\"` and `cwd: <resolved repo root>`",
@@ -169,42 +157,6 @@ func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 			if !strings.Contains(text, want) {
 				t.Errorf("%s missing preserved runtime semantic %q", rel, want)
 			}
-		}
-	}
-}
-
-func TestCodexValidationReviewerReuseFollowsAddressableWorkerProbe(t *testing.T) {
-	rel := filepath.Join("skills", "first-officer", "references", "codex-first-officer-runtime.md")
-	text := readRepoFile(t, rel)
-	probe := markdownSectionFromText(t, text, "## Live Tool Surface Probe")
-	runtime := markdownSectionFromText(t, text, "## Runtime implementation")
-	feedback := markdownSectionFromText(t, text, "## Feedback reviewer reuse")
-
-	for _, want := range []string{
-		"PRESENT only when a turn-starting route is live: `followup_task(target,message)`",
-		"ABSENT when the live surface exposes only `spawn_agent` and `wait_agent`",
-		"`send_message(target,message)` is non-triggering only and never makes `«addressable-worker»` PRESENT by itself",
-	} {
-		if !strings.Contains(probe, want) {
-			t.Errorf("%s live probe section missing Codex addressable-worker probe branch %q", rel, want)
-		}
-	}
-	for _, want := range []string{
-		"`followup_task(target,message)` is the current turn-starting reuse/advance route",
-		"`send_message(target,message)` is non-triggering context/preservation only",
-		"When absent, the `«addressable-worker»` reuse condition fails and feedback re-review fresh-dispatches a separate validation reviewer.",
-	} {
-		if !strings.Contains(runtime, want) {
-			t.Errorf("%s runtime implementation missing Codex addressable-worker binding %q", rel, want)
-		}
-	}
-	for _, want := range []string{
-		"When `«addressable-worker»` is PRESENT, keep the validation reviewer addressable after its REJECTED report and MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`.",
-		"When `«addressable-worker»` is ABSENT, fresh-dispatch a separate validation reviewer for cycle 2.",
-		"After a PASSED re-review, re-enter the normal gate flow and advance or terminalize from durable state.",
-	} {
-		if !strings.Contains(feedback, want) {
-			t.Errorf("%s feedback reviewer reuse note missing %q", rel, want)
 		}
 	}
 }

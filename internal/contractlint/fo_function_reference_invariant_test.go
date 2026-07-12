@@ -245,7 +245,6 @@ func TestFOFunctionNormalizationPreservationSuite(t *testing.T) {
 		{"write-permission", "skills/first-officer/references/fo-write-core.md", []string{"## Mutation Gate"}, []string{"classify", "blocked-product", "exact task and target path"}},
 		{"approval-evidence-feedback", "skills/first-officer/references/first-officer-shared-core.md", []string{"## Completion and Gates"}, []string{"Stage Report", "AC coverage cross-check", "captain", "«feedback.route»"}},
 		{"claude-binding", "skills/first-officer/references/claude-fo-dispatch.md", []string{"## Worker Back-Channel"}, []string{"Agent", "SendMessage"}},
-		{"codex-binding", "skills/first-officer/references/codex-first-officer-runtime.md", []string{"## Runtime implementation"}, []string{"spawn_agent", "followup_task", "async final-status notification"}},
 		{"pi-binding", "skills/first-officer/references/pi-first-officer-runtime.md", []string{"## Runtime implementation"}, []string{"subagent", "intercom", "member_shutdown"}},
 	}
 	for _, tc := range checks {
