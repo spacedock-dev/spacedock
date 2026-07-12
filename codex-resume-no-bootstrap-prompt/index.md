@@ -95,3 +95,39 @@ Traced the exact command through parsing, plugin-dir consumption, resume classif
 ### Summary
 
 The captain's `--model … resume` form is a real, reproducible regression, not transcript history or a stale binary. This supersedes the prior no-op recommendation, which applied only to leading `resume`; implementation must change resume recognition while preserving forwarded argv and fresh-launch behavior.
+
+## Stage Report: implementation
+
+### Deliverable
+
+Committed [`243ca50`](https://github.com/spacedock-dev/spacedock/commit/243ca50753b9d46e0b9dec0a5151c5f615da7c61) on `spacedock-ensign/codex-resume-no-bootstrap-prompt`.
+
+- `internal/cli/frontdoor.go` now finds the first Codex command token after known global options without mutating forwarded argv. It handles space, equals, and compact short value forms (`--model value`, `--model=value`, `-m value`, and `-mvalue`), stops at the first non-option command, and shares the same classifier with the stray-prompt advisory.
+- Direct, safehouse, and local `--plugin-dir` launch fixtures pin exact inner argv, no default approval injection, no bootstrap prompt, and no launch banner for option-before-resume forms.
+- `docs/site/reference/command-reference.md` documents `spacedock codex -- --model <model> resume <session>`.
+
+### TDD evidence
+
+- RED: before the classifier change, focused option-before-resume fixtures had 8 expected failures and 2 controls passing; every resume form carried injected approval and the bootstrap prompt.
+- RED: after the initial classifier, the new stray-advisory unit fixture failed because `warnStrayPromptAfterDash` still treated option-before-resume as a bare positional. The shared command-token classifier fixed that independent warning path.
+- RED: review identified compact `-mvalue`; its focused fixture failed with injected approval/bootstrap. Installed Codex `0.144.1` confirmed `codex -mprobe-model resume --help` enters the `resume` command. The compact-short recognition was then added.
+- GREEN: focused CLI regression suite: 29 passed.
+
+### Acceptance evidence
+
+- DONE AC-1: exact direct `--model <model> resume <session>` argv is preserved with no bootstrap, approval injection, or banner.
+- DONE AC-2: exact `--model=<model>`, `-m <model>`, and compact `-m<model>` argv are preserved; `--model <model> exec resume …` remains a fresh launch.
+- DONE AC-3: existing leading-resume and model-only fresh-launch controls remain green.
+- DONE AC-4: safehouse and local `--plugin-dir` fixtures preserve the classified inner argv; the local plugin flag is still consumed.
+- DONE AC-5: command reference contains the approved option-before-resume example.
+
+### Verification
+
+- `gofmt -w ./cmd ./internal` run; the pre-existing unrelated formatting drift in `internal/release/journeydelta.go` was restored and excluded.
+- `go test ./...` — 2129 passed in 17 packages.
+- `go test ./... -race` — 2129 passed in 17 packages.
+- Independent code review found and drove the compact-short regression; its follow-up found no remaining Critical or Important issue.
+
+### Summary
+
+Codex resume classification now recognizes options before `resume` while preserving operator argv and fresh-launch behavior. The committed deliverable is ready for independent validation.
