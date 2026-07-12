@@ -1,13 +1,16 @@
 ---
 title: Preserve Zellij targeting metadata through Safehouse
-status: validation
+status: done
 score: 0.55
 source: "Captain request 2026-07-12."
 id: 6jk4gverktmthbzkn4vas1kg
 worktree: .worktrees/spacedock-ensign-safehouse-zellij-env-pass
 started: 2026-07-12T04:17:30Z
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:499
+verdict: passed
+completed: 2026-07-12T14:41:08Z
+archived: 2026-07-12T14:41:08Z
 ---
 
 Safehouse sanitizes the environment passed to a wrapped Spacedock host. Tooling
