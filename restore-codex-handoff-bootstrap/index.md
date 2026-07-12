@@ -1,13 +1,13 @@
 ---
 id: w8rrjv6jsmgahc269arx9k5v
 title: Restore Codex handoff bootstrap with post-fence options
-status: ideation
+status: implementation
 source: Captain-reported regression, 2026-07-13
 started: 2026-07-12T23:16:40Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-restore-codex-handoff-bootstrap
 issue:
 ---
 
