@@ -325,6 +325,16 @@ does not correct conceptual misuse. Finally, update PR #500 from its stale
 `b305da7` head to the final worktree commit after this correction; never merge
 the removed heavyweight live-test files.
 
+**Cycle 6 — absorb b5 Contractlint retirement (2026-07-12).** The b5 backlog
+task is a direct consequence of this rename and is folded into 95w rather than
+held behind a separate gate. Retire only the stale
+`codex_foreground_wait_shape_test.go` literal phrase checks that require the
+rejected terminology; retain legitimate structural Contractlint coverage. Do
+not restore aliases or create a new prose-only replacement. Validate the
+focused package plus normal and race suites, then update PR #500 from its stale
+heavy-test head to the final adapter-plus-retirement commit. Close b5 as
+absorbed once that merged scope is validated.
+
 ## Stage Report: implementation (cycle 1)
 
 - DONE: Removed only the invalid marker-relative 30-second upper bound.
