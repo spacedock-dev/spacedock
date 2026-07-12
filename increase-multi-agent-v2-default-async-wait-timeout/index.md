@@ -1,6 +1,6 @@
 ---
 title: Increase multi_agent_v2 default async wait timeout
-status: validation
+status: implementation
 score: 0.5
 source: "Captain filing request 2026-07-11."
 completed:
@@ -334,6 +334,17 @@ not restore aliases or create a new prose-only replacement. Validate the
 focused package plus normal and race suites, then update PR #500 from its stale
 heavy-test head to the final adapter-plus-retirement commit. Close b5 as
 absorbed once that merged scope is validated.
+
+**Cycle 7 — complete b5 retirement after fresh validation (2026-07-12).** The
+first absorption removed only three literal checks, but fresh validation found
+that `codex_foreground_wait_shape_test.go` still reads and interprets adapter
+prose throughout, while `runtime_binding_block_test.go` still pins exact
+runtime-adapter wording. These are the same meaning-proxy antipattern, not
+legitimate structural coverage. Remove the nonstructural reads entirely; retain
+only independently meaningful Contractlint structure checks elsewhere. Do not
+restore aliases, parse prose differently, or add a replacement phrase guard.
+The final PR delivery still waits for this full retirement and its green
+validation.
 
 ## Stage Report: implementation (cycle 1)
 
