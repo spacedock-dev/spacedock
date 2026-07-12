@@ -1,6 +1,6 @@
 ---
 title: Codex resume passthrough must not append the default Spacedock prompt
-status: implementation
+status: validation
 score: 0.7
 source: "Captain report 2026-07-10: `spacedock codex -- resume` should not invoke Codex with the default Spacedock prompt."
 id: xvcz44jbmye15bpz1ekzxvkc
