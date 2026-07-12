@@ -42,20 +42,19 @@ Add a short `0. Select the evidence adapter` section before current step 1. Dete
 
 This binding is proven live by a sanitized Cowork run named `TestLiveClaudeCoworkSurveyProbe` and replayed without Cowork by `TestSurveyCoworkEventReplay` over `skills/integration/testdata/survey/cowork-tool-events.jsonl`. The fixture records tool names, success/error classes, counts, ordering, and synthetic payload fields only; it contains no real payload values. The replay must show ToolSearch before either deferred tool, both definitions plus successful inventory selecting Cowork, partial definition results selecting local, and a resolved-schema/inventory error stopping without transcript or local-history calls. The current `survey_probe_test.go` continues to execute the unchanged local agentsview probe.
 
-### Cowork execution and reinstall model
+### Cowork mounted-project persistence model
 
-Narrow evidence boundary: Anthropic documents isolated **remote** Cowork sandboxes as temporary and documents both remote and local execution modes ([Cowork safety](https://support.claude.com/en/articles/13364135-use-claude-cowork-safely), [architecture](https://support.claude.com/en/articles/14479288-claude-cowork-architecture-overview)). It does not establish that every mode resets `$HOME`, or that a connected folder is Cowork's only durable storage. For the selected/probed lane, a connected folder is only a candidate shell-readable, user-controlled cross-session boundary; persistence must be established by live behavior, not generalized from the documentation.
+The selected Cowork lane supplies a mounted **current project folder** as a host capability and that mount persists across Cowork session environments. Bind exactly that supplied root; do not enumerate arbitrary connected roots and do not derive the root from `pwd` alone. `pwd` may confirm that shell execution is bound under the supplied mount, but it is not discovery. If the host does not supply the current-project-folder capability or the shell binding cannot address it, stop with `current-project-folder-unavailable` and make no install/network/project mutation. Durable evidence records only `current-project-folder: available|unavailable` and `shell-binding: confirmed|failed`, never a path or project name.
 
-The available Cowork session-info capabilities enumerate sessions and transcripts, not connected-folder roots. The supplied live research does not identify a root-enumeration tool or a stable shell working-directory convention. `pwd` is insufficient: it cannot prove whether the directory is scratch or a mounted root and cannot enumerate multiple roots. A create-only writability probe would leave an artifact on a deletion-denied mount; a create/delete probe is not non-destructive there. Therefore survey does **not** discover, select, probe, or write a connected folder, and it does not create `.spacedock/cache/`. This avoids invented root selection, unsafe partial metadata, noexec assumptions, and replacement on mounts that cannot unlink.
+The persistent Cowork execution identity is exactly `<current-project-folder>/.spacedock/bin/spacedock`. Do not use `$HOME/.local/bin/spacedock`, PATH, another connected root, or a project cache/pointer. Probe and invoke this exact mounted path directly. An absent path enters the consent/install flow. Any existing filesystem entry—including a dangling symlink—is existing state: direct invocation success means working/reusable; non-executable or failed invocation means broken and stops without network or overwrite. Repairing broken state requires a separate explicit user decision and is not inferred from rerunning survey.
 
-Choose honest per-environment installation: `$HOME/.local/bin/spacedock` is the exact binary for the current Cowork execution environment. When that environment resets and the path disappears, survey repeats the settings/relaunch/install flow. The live probe records execution mode as only `remote`, `local`, or `unknown` when the host exposes it; never infer mode and never record a path. Lifecycle phases are fixed: **run 0** observes the missing exact binary, records zero network events, presents the Settings/Full-network/relaunch instruction, and stops. **Run 1** is the post-settings environment: install and verify the exact binary first, then create/record a non-sensitive random sentinel in that same HOME. **Runs 2 and 3** inspect the run-1 sentinel and exact path before any install action. Classify reset only when both values are absent in both later runs; each reset run reinstalls. Classify persistence when the exact path survives and direct invocation succeeds with zero network. Record only mode class and the two presence booleans; do not claim a cross-mode rule.
+Lifecycle phases are fixed: **run 0** receives the host current-project-folder capability, observes the exact mounted binary absent, records zero network events, presents the Settings/Full-network/relaunch instruction, and stops. **Run 1** is post-settings: install and checksum-verify in session temp/HOME, invoke that session copy, then create the persistent mounted path as described below and directly verify it. **Run 2** uses a fresh session HOME with the same mounted project folder, directly verifies/executes the mounted binary, and records zero network/download/install events. Evidence contains only capability/result classes and booleans.
 
 On the Cowork branch:
 
-1. The exact Cowork execution identity is `$HOME/.local/bin/spacedock`, never whichever `spacedock` resolves later on `PATH`. Execute this probe block as written; `COWORK_INSTALL_ABSENT` enters step 2, `COWORK_INSTALL_BROKEN` stops, and silent success reuses the binary:
+1. Bind `{project_root}` from Cowork's host-supplied current-project-folder capability and set `COWORK_BIN="{project_root}/.spacedock/bin/spacedock"`. Never substitute `pwd` or PATH. Execute this probe block as written; `COWORK_INSTALL_ABSENT` enters step 2, `COWORK_INSTALL_BROKEN` stops, and silent success reuses the mounted binary:
 
    ```sh
-   COWORK_BIN="$HOME/.local/bin/spacedock"
    if [ -e "$COWORK_BIN" ] || [ -L "$COWORK_BIN" ]; then
      if ! "$COWORK_BIN" --version >/dev/null 2>&1; then echo "COWORK_INSTALL_BROKEN"; fi
    else
@@ -63,10 +62,10 @@ On the Cowork branch:
    fi
    ```
 
-   The `-L` arm classifies a dangling symlink as broken rather than absent. Success reuses the exact file with no network activity. Non-executable or failing existing content stops; do not search PATH, download, or overwrite it. Absence proceeds to consent even when another valid `spacedock` exists on PATH.
-2. When the exact path is absent, display the exact prompt below and stop. The user changes Cowork Settings to **Full network access**, relaunches the Cowork session, and runs survey again; nothing is downloaded before that relaunch/rerun. Before consent there must be no `WebFetch`, `WebSearch`, `curl`, GitHub API call, installer fetch, release fetch, or network-capability test. Do not search for a cache or touch connected folders.
-3. The post-relaunch survey rerun is the affirmative continuation. Allocate a unique installer path with `INSTALLER_TMP=$(mktemp "${TMPDIR:-/tmp}/spacedock-install.XXXXXX")`; abort without networking if allocation fails. Register `trap 'rm -f "$INSTALLER_TMP" 2>/dev/null || true' EXIT HUP INT TERM`, acquire with `curl -fsSL -o "$INSTALLER_TMP" https://raw.githubusercontent.com/spacedock-dev/spacedock/main/install.sh`, then run `SPACEDOCK_INSTALL_DIR="$HOME/.local/bin" sh "$INSTALLER_TMP"`. Attempt `rm -f "$INSTALLER_TMP"` on the success path and clear the trap when it succeeds. On a deletion-blocked temp filesystem, report only that the temporary installer could not be removed; do not echo its path or claim cleanup succeeded. Internally, the transport allowlist and request ledger cover `raw.githubusercontent.com`, `api.github.com`, `github.com`, and `release-assets.githubusercontent.com`; these details do not belong in the user prompt or docs. Do not send credentials and do not try alternate mirrors. Verify the installed identity directly with `"$HOME/.local/bin/spacedock" --version`; only afterward may `PATH="$HOME/.local/bin:$PATH"` be exported for command convenience. The branch writes only VM/session temporary files and `$HOME/.local/bin/spacedock`, never project or connected-folder content.
-4. Claim only the installer's shipped failure boundary: acquisition, unsupported target, download, missing checksum, checksum mismatch, and archive-extraction failures occur before it writes the final install path, so a **fresh, absent** `$HOME/.local/bin/spacedock` remains absent. After checksum/extraction it writes the final path directly; the task makes no atomic replacement or preservation claim. Because this flow refuses to overwrite an existing path, overwrite-failure preservation is out of scope.
+   The `-L` arm classifies a dangling symlink as broken rather than absent. Success reuses the exact mounted file with no network activity. Non-executable or failing existing content stops; do not search PATH, download, or overwrite it. Absence proceeds to consent even when another valid `spacedock` exists on PATH.
+2. When the exact mounted path is absent, display the exact prompt below and stop. The user changes Cowork Settings to **Full network access**, relaunches, and runs survey again; nothing is downloaded before that relaunch/rerun. Before consent there must be no network request or project mutation.
+3. On the post-relaunch rerun, allocate unique session paths (`INSTALLER_TMP=$(mktemp "${TMPDIR:-/tmp}/spacedock-install.XXXXXX")` and `SESSION_INSTALL_DIR=$(mktemp -d "${TMPDIR:-/tmp}/spacedock-bin.XXXXXX")`), run the checksum-verifying installer with `SPACEDOCK_INSTALL_DIR="$SESSION_INSTALL_DIR"`, and directly verify `VERIFIED_BIN="$SESSION_INSTALL_DIR/spacedock"` via `"$VERIFIED_BIN" --version`. All acquisition, target, download, checksum, extraction, or session-verification failures happen before project mutation and leave `.spacedock/bin/spacedock` absent. Internal request-domain and temp-cleanup ledgers remain as previously specified and stay out of user prose.
+4. First creation on the mounted folder is no-overwrite and does not require unlink or atomic rename: create `.spacedock/bin/`; re-check `[ ! -e "$COWORK_BIN" ] && [ ! -L "$COWORK_BIN" ]`; reserve the absent final name with a shell noclobber create (`( set -C; : > "$COWORK_BIN" )`); then `cp "$VERIFIED_BIN" "$COWORK_BIN"`, `chmod 0755 "$COWORK_BIN"`, and directly invoke `"$COWORK_BIN" --version`. Do not create a sibling temp/pointer and do not claim atomic installation. Directory creation or reservation failure leaves no binary content guarantee beyond observed state. Copy/chmod/final-verification failure may leave a partial/broken final path; report `Cowork Spacedock install incomplete` and stop. Future runs classify it broken and refuse overwrite until a separate explicit repair decision. This ordering works without unlink; the live lane must prove first creation on its deletion-denied mount.
 5. Reuse the successful inventory probe. Sort idle sessions by the inventory's most-recent timestamp descending (stable tie-break: opaque id, used only in memory), omit active sessions, and sample at most the newest 20 idle sessions. For each sampled session, call `read_transcript(max_wait_seconds: 0, limit: 15)` and request the newest page. If the returned schema/result exposes both a continuation cursor and `truncated=true`, fetch at most two more 15-message pages for that session (45 messages maximum); otherwise do not invent pagination. Stop paging on no cursor, `truncated=false`, repeat cursor, or the 45-message ceiling. Tool errors omit that session from analyzed counts and increment a generic read-failure count.
 6. Analyze only the returned window. **Retained existing survey behavior:** render directly without a scratch preamble; fill every displayed value from evidence; never invent an empty signal; keep the existing `manual` / `exploration` / `knowledge-work` / `unlabeled` meanings and their mode-keyed commission offers; keep conservative open-frontier wording when artifact evidence is unavailable. **Cowork-specific adapter behavior:** the 20-session/15-message/three-page bounds, sampling disclosure, message-level decision/interruption extraction, `sample-unverified` label, privacy-generalized cluster names, and repo-only section omissions. These are host adaptations, not changes to the local agentsview path.
 
@@ -82,11 +81,11 @@ Before (current opening route):
 
 After:
 
-> Run `ToolSearch(query="select:mcp__session_info__list_sessions,mcp__session_info__read_transcript", max_results=2)` so lazy-loaded schemas cannot false-negative. If both exact tools resolve, call `mcp__session_info__list_sessions` once. A successful call selects **check exact session Spacedock execution → ask before network → bounded Cowork scan → sampled Cowork report and offer**; reuse its inventory and never enter agentsview or repo probes. A missing definition selects the existing local path unchanged. If both definitions resolve but inventory fails, report `Cowork session inventory unavailable` and stop; do not misroute into local history. Missing files or binaries alone never identify Cowork.
+> Run `ToolSearch(query="select:mcp__session_info__list_sessions,mcp__session_info__read_transcript", max_results=2)` so lazy-loaded schemas cannot false-negative. If both exact tools resolve, call `mcp__session_info__list_sessions` once. A successful call selects **bind current project folder → check exact mounted Spacedock execution → ask before network → bounded Cowork scan → sampled Cowork report and offer**; reuse its inventory and never enter agentsview or repo probes. Missing Cowork definitions select the existing local path. Resolved Cowork tools plus an inventory error or missing current-project-folder capability stop; neither case falls into local history.
 
 Insert this exact permission prompt when the Cowork branch cannot invoke Spacedock:
 
-> Spacedock is not available in this Cowork environment. In Cowork Settings, choose **Full network access**, then relaunch this session and run survey again. Nothing will be downloaded before you relaunch.
+> Spacedock is not installed in this Cowork project. In Cowork Settings, choose **Full network access**, then relaunch this session and run survey again. Nothing will be downloaded before you relaunch.
 
 ### Privacy boundary
 
@@ -94,7 +93,7 @@ Session identifiers are in-memory tool handles only. Never echo or persist ident
 
 ### Read-only boundary
 
-The existing local agentsview survey remains strictly read-only with respect to the project and session sources. The Cowork evidence scan is also read-only. Its consented bootstrap is the narrow exception: after the settings relaunch it may create a temporary installer and `$HOME/.local/bin/spacedock` inside that Cowork execution environment. It never writes project/connected-folder content and creates no persistent cache. The report must call this a session-local helper installation, not a project change or durable install.
+The existing local agentsview survey remains strictly read-only with respect to the project and session sources. Cowork session-history reads are also read-only. The consented Cowork bootstrap is the narrow project mutation: after the settings relaunch it may create exactly `<current-project-folder>/.spacedock/bin/spacedock` (plus the `.spacedock/bin/` directories when absent). No transcript/session material enters that file. Aside from this disclosed bootstrap path, connected/project files remain unchanged. The report calls it a project-local Cowork helper installation.
 
 ### Documentation change proposed for implementation
 
@@ -106,7 +105,9 @@ with these two paragraphs:
 
 > When you use the `spacedock:survey` skill, it reads the session history available to the current host. Local coding-agent sessions use agentsview; the local scan is read-only, and if agentsview is missing, Survey asks before installing it.
 >
-> In Claude Cowork, Survey reads a bounded session sample and does not change connected files. If Spacedock is unavailable, set Cowork to **Full network access** in Settings, relaunch, and run survey again; Survey may reinstall its session-local helper when Cowork resets the environment.
+> In Claude Cowork, Survey reads a bounded session sample. On first use it stores the Spacedock helper at `.spacedock/bin/spacedock` in the current project folder so later Cowork sessions can reuse it; other connected files stay unchanged.
+>
+> If Spacedock is unavailable, set Cowork to **Full network access** in Settings, relaunch, and run survey again.
 
 No install-page or commission documentation changes belong to this task.
 
@@ -124,11 +125,11 @@ No install-page or commission documentation changes belong to this task.
 **AC-1 - A successful, lazy-load-safe Cowork capability probe selects exactly one Cowork evidence path; missing definitions retain existing local behavior, while a resolved inventory error stops.**
 Verified by: `TestLiveClaudeCoworkSurveyProbe` produces a sanitized event recording and `TestSurveyCoworkEventReplay` replays `cowork-tool-events.jsonl`; ToolSearch precedes deferred calls, both exact definitions plus one successful inventory call select Cowork, partial definitions select local, a resolved-schema/inventory error stops, and every non-local case records zero agentsview/repo-probe operations.
 
-**AC-2 - A working exact session binary resumes Cowork survey without network activity; an absent binary produces the Full-network/settings/relaunch instruction and no cache or connected-folder mutation.**
-Verified by: run 0 of an event-ledger test with a fake `$HOME`, read-only connected-folder fixture, and transport. Exact-path absence emits the prompt and stops with 0 requests, 0 cache/discovery events, and no connected-folder changes. A persistent working exact-path mutant yields one direct invocation and 0 requests; shadow-PATH mutants retain their absent/broken guarantees.
+**AC-2 - Cowork binds only the host-supplied current project folder and probes exactly `.spacedock/bin/spacedock`; missing capability stops, working state reuses with zero network, absent state prompts, and all broken states refuse overwrite.**
+Verified by: a capability/event-ledger fixture plus live events. `current-project-folder: unavailable` causes no path/network call. Available+absent emits the prompt with 0 requests/project changes. Working invokes only the mounted exact path with 0 requests. Non-executable, failing, and dangling-symlink entries stop broken. A valid later-PATH binary is never invoked in any case. Evidence contains only capability/result classes.
 
-**AC-3 - After the settings relaunch, a fresh Cowork installation verifies the architecture-matched release, invokes only the exact session path, and is honestly repeated when the selected lane resets HOME.**
-Verified by: the real installer seams plus runs 1-3 after run 0's stop. Run 1 installs and directly verifies the exact path, then creates/records a random HOME sentinel. Before any install action, runs 2 and 3 record only mode class, `home-sentinel-present`, and `exact-binary-present`. Reset requires both booleans false in both runs and each run reinstalls; persistence requires direct exact-path success with 0 network. Unique-`mktemp`, cleanup, failure-boundary, and shadow-PATH tests remain. A read-only connected-folder snapshot is byte-identical throughout.
+**AC-3 - After the settings relaunch, the verified binary is first-created at the exact mounted project path without overwrite/unlink, and a fresh-HOME second session reuses it with zero network.**
+Verified by: run 1 installs/verifies in session space, reserves the absent mounted filename with noclobber, copies/chmods, then directly verifies it. Failures before reservation leave the project byte-identical; reservation/copy/chmod/final-verify failures may leave a broken path and must stop without retry. Run 2 uses a fresh HOME plus the same mounted project and directly executes the mounted binary with 0 request/install events. A deletion-denied fixture proves mkdir, noclobber reservation, copy, chmod, and direct execution without unlink. Byte-level comparison permits only creation of `.spacedock/bin/spacedock` and its parent directories.
 
 **AC-4 - Cowork survey renders a complete, honestly sampled orientation with correct filled values and no repository-only claims.**
 Verified by: a deterministic replay inventory with four idle sessions and one active session. Its newest-first transcript pages produce exactly `4 of 4` analyzed, `2` hand-steering interruptions, `1` resolved decision, `1` `OPEN (sample-unverified)`, four workstreams (`manual`, `exploration`, `knowledge-work`, `unlabeled`), `0` read failures, and the `up to 45 messages/session; active sessions excluded` disclosure. The output contains no literal `{slot}` and omits BACKLOG, WORK BY AREA, CODEX, scaffold, dispatch, no-follow-up, shipped, and git/PR sections. Mutant cases cover 21 idle sessions (20 sampled), truncation with one/two continuation pages, repeated cursor, missing pagination, and one read failure.
@@ -136,7 +137,7 @@ Verified by: a deterministic replay inventory with four idle sessions and one ac
 **AC-5 - Cowork output and durable artifacts contain only aggregate/synthetic evidence, not raw or transform-preserving private session material.**
 Verified by: canary identifiers, titles, transcript sentences, proper nouns, account/token/path values, and identifying attributes injected into the in-memory harness; recursive assertions reject exact, case-folded, punctuation-stripped, partial-token, title-derived, and paraphrased-attribute canaries from output and files, while expected aggregate counts, sampling disclosure, and generic activity categories remain. The harness also asserts no raw tool response is written.
 
-**AC-6 - User documentation preserves local survey's read-only promise and briefly discloses Cowork's session-local helper reinstall without implying connected-folder writes or durable caching.**
+**AC-6 - User documentation preserves local read-only/ask-before-install behavior and separately discloses Cowork's project-local `.spacedock/bin/spacedock` mutation and short network relaunch instruction.**
 Verified by: render and inspect the Survey page against the exact proposed replacement; runtime replay and live smoke remain the behavioral proof rather than a prose substring test.
 
 ## Test plan
@@ -144,15 +145,16 @@ Verified by: render and inspect the Survey page against the exact proposed repla
 Implementation starts with the fixture harness so routing, consent, privacy, and rendered-report assertions fail against the current skill before its instructions change.
 
 - **Cowork event replay (medium):** add `TestSurveyCoworkEventReplay` and the committed sanitized `skills/integration/testdata/survey/cowork-tool-events.jsonl`. The runner consumes tool events and synthetic responses, enforcing the exact ToolSearch -> inventory -> bounded transcript sequence and rendering the Cowork projection. Fixture/mutant expectations are AC-1/AC-4's exact values. The existing `TestSurveyInstallProbe` remains the executable local-path control; no generic “skill smoke” is assumed.
-- **Installer/consent CLI tests (medium, existing installer seams):** wrap the exact-path probe and post-relaunch acquisition commands with a fake `$HOME`, stub `curl` request ledger, stub `uname`, and fixture assets/checksums. Execute the real `install.sh`; assert the short settings/relaunch prompt and zero pre-relaunch requests, the internal four-domain allowlist after rerun, direct exact-path verification, architecture mapping, fresh-install success, and documented pre-final-write failures. Retain both shadow-PATH mutants and unique-`mktemp`/cleanup cases. Assert zero connected-folder discovery/write events.
-- **Environment-reset characterization (medium):** run 0 proves missing exact binary -> 0 requests -> Settings/Full-network/relaunch stop. Run 1, after settings, installs and directly verifies the exact path before creating the random HOME sentinel. Runs 2/3 inspect sentinel and exact binary before any install event. Record only mode class (`remote|local|unknown`) and the two booleans. Reset requires both false in both runs and leads to reinstall; persistence requires direct exact-path reuse with 0 network. A synthetic connected-folder tree remains byte-identical and no cache operations occur.
+- **Capability/path routing (medium):** replay host current-project-folder available/unavailable classes without storing roots. Execute exact-path probes for absent, working, non-executable, failing, and dangling-symlink state plus later-PATH shadows. Assert no arbitrary-root enumeration, no `pwd`-only discovery, and no PATH binary invocation.
+- **Installer/first-create CLI tests (medium):** keep the consent/request/architecture/checksum/temp-cleanup seams. Install to session space first, then exercise mkdir -> absent recheck -> noclobber reservation -> copy -> chmod -> direct final verification. Mutate every boundary: pre-verification failure leaves project unchanged; race/existing path refuses overwrite; copy/chmod/final-verify failure leaves a classified broken path and no retry. Run on a deletion-denied mount fixture and assert no unlink/rename call. Snapshot comparison allows only `.spacedock/`, `.spacedock/bin/`, and `.spacedock/bin/spacedock` creation.
+- **Fresh-session persistence (medium):** run 0 proves absent mounted binary -> 0 requests -> Settings/Full-network/relaunch stop. Run 1 uses HOME A and the mounted project to install/verify persistent identity. Run 2 uses empty HOME B and the same mount; assert direct mounted-path invocation, 0 network/download/install events, and no additional project bytes. Record only capability/result booleans/classes.
 - **Report/privacy replay (medium):** render the exact four-session baseline and pagination/failure mutants from synthetic in-memory payloads. Assert filled values, no placeholders, sampling disclosure, omission matrix, open-thread label, mode mapping, and transformed-canary absence across stdout and the test temp tree.
 - **Documentation render (low):** build the docs site and visually/readably inspect the changed Survey page.
-- **Live Cowork smoke (required, medium/manual host harness):** run 0 executes ToolSearch/inventory, records mode class when exposed, observes exact-binary absence, and stops at the settings/relaunch prompt with 0 requests. Run 1 is post-settings: install and verify the exact HOME path first, then create/record the random sentinel, then scan. Runs 2/3 record the two presence booleans before any install event. Reset requires both false twice and proves reinstall; persistence directly reuses the exact path with 0 network. Evidence also records `connected-folder-discovery: unsupported/not-used`, `connected-folder-handle: none`, `cache-read-event: none`, `zero-network-restore: not-applicable`, and `copy-from-cache: none`. No path, folder name, payload, or identifying handle is retained, and no command/file event targets connected-folder content.
+- **Live Cowork smoke (required):** run 0 records current-project-folder capability available, exact mounted binary absent, and 0 requests before the relaunch stop. Run 1 (HOME A) verifies in session space, first-creates/directly verifies `.spacedock/bin/spacedock`, and records project delta class `expected-helper-only`. Run 2 (fresh HOME B, same mount) directly executes the mounted binary with 0 network/download/install events. A parallel deletion-denied lane proves first create without unlink; missing-capability and broken-state lanes prove stops. Durable evidence contains only generic capability/result classes and booleans—no root, project name, session identifier, or payload.
 
 ## Risk spike
 
-The focused review invalidates the cache premise: neither official guidance nor the supplied schema provides a general shell root-discovery/selection contract. No cache spike is warranted because the mechanism is removed. The remaining runtime uncertainty is lane-specific HOME persistence, so run 0 plus the run-1-to-3 sentinel characterization is the first live implementation gate. Its result determines reuse versus honest reinstall without changing the connected-folder read-only boundary; replay cannot substitute for that live lifecycle result.
+The captain confirms the selected lane's host-supplied current project folder is mounted and persistent, superseding the no-cache/session-only design. The riskiest mechanism is first creation on a deletion-denied mount without overwrite or unlink. Implementation begins with the deletion-denied fixture and then the live HOME-A/HOME-B same-mount proof. No atomicity is claimed: failures after noclobber reservation may leave a broken final path, and recovery requires a separate explicit repair decision.
 
 ## Stage Report: ideation
 
@@ -182,7 +184,7 @@ Ideation selects integration into the existing survey skill as the smallest cohe
 
 This repair keeps Cowork inside `survey` but replaces every abstract runtime assumption with an executable ToolSearch/inventory binding and named live-to-replay proof. It also fully discloses and gates installer networking, narrows failure guarantees to shipped behavior, and specifies a bounded, privacy-preserving Cowork report whose values and omissions can be checked deterministically.
 
-## Stage Report: ideation
+## Stage Report: ideation — SUPERSEDED (historical session-local path design)
 
 - DONE: Replace the PATH-based install identity probe with explicit execution-path semantics.
   The design invokes and verifies only `"$HOME/.local/bin/spacedock"`; absent, working, and broken exact-path states cannot be shadowed by PATH.
@@ -195,12 +197,12 @@ This repair keeps Cowork inside `survey` but replaces every abstract runtime ass
 
 ### Summary
 
-This surgical repair makes the Cowork binary identity the exact session-local execution path rather than PATH resolution and adds executable shadow-PATH mutants for both absent and broken states. Installer acquisition is uniquely named and cleanup is verified or honestly reported, while the previously resolved capability, report, and privacy contracts remain intact.
+SUPERSEDED HISTORICAL SUMMARY: this cycle chose an exact session-local HOME execution path rather than PATH resolution. The captain's later correction keeps the exact/no-shadow semantics but moves the persistent identity to `<current-project-folder>/.spacedock/bin/spacedock`.
 
 ## Stage Report: ideation — SUPERSEDED (historical cache design)
 
 - DONE: Resolve binary persistence across Cowork session relaunches.
-  SUPERSEDED: this cycle chose a connected-folder binary/manifest cache; the later no-cache report and operative body remove that mechanism because discovery and safe updates were not proven.
+  SUPERSEDED: this cycle chose a connected-folder binary/manifest cache; the next historical cycle removed it, and the current operative design instead uses the captain-specified exact project-local `.spacedock/bin/spacedock` file without a cache manifest/pointer.
 - DONE: Clarify existing survey behavior versus Cowork-specific sampling/report behavior.
   The analysis step now labels retained direct-report, evidence, mode, offer, and conservative-frontier rules separately from Cowork bounds, extraction, sampling labels, privacy generalization, and omissions.
 - DONE: Shorten the proposed Cowork documentation into a new paragraph.
@@ -210,9 +212,9 @@ This surgical repair makes the Cowork binary identity the exact session-local ex
 
 ### Summary
 
-SUPERSEDED HISTORICAL SUMMARY: this cycle proposed restoring from a connected-folder cache. That proposal does not ship; the later no-cache design uses exact session-local reuse or honest reinstall and never reads or writes a connected-folder cache. The sampling and user-network wording from this cycle remain historical inputs only where retained by the operative body.
+SUPERSEDED HISTORICAL SUMMARY: this cycle proposed restoring from a connected-folder cache. That manifest/pointer cache does not ship; the operative design uses the single exact project-local `.spacedock/bin/spacedock` identity. Sampling and user-network wording remain historical inputs only where retained by the operative body.
 
-## Stage Report: ideation
+## Stage Report: ideation — SUPERSEDED (historical no-cache/session-only design)
 
 - DONE: Narrow the persistence premise and bind it to lane-specific live evidence.
   Official evidence is now limited to temporary remote sandboxes/multiple modes; run 0 plus runs 1-3 record only mode class/booleans and empirically characterize HOME reset for the selected lane.
@@ -227,19 +229,36 @@ SUPERSEDED HISTORICAL SUMMARY: this cycle proposed restoring from a connected-fo
 
 ### Summary
 
-This repair removes the under-specified connected-folder cache instead of inventing discovery and safe-update semantics that Cowork does not expose. The operative design now characterizes each live lane through run 0 plus runs 1-3, reuses a surviving exact HOME binary or honestly reinstalls it after reset, and preserves connected folders as read-only while keeping routing, report, consent, docs brevity, and privacy behavior intact.
+SUPERSEDED HISTORICAL SUMMARY: this cycle removed all mounted-folder persistence and chose exact-HOME reuse/reinstall. The captain's later correction replaces that design with the host-supplied current project folder and exact `.spacedock/bin/spacedock` persistence. Its no-arbitrary-root and privacy constraints remain retained where stated in the operative body.
 
-## Stage Report: ideation
+## Stage Report: ideation — SUPERSEDED (historical session-only consistency design)
 
 - DONE: Preserve local agentsview's read-only and ask-before-install behavior in proposed docs.
   The local paragraph now states both guarantees; Cowork's session-local helper exception remains in its separate short paragraph and connected files stay unchanged.
 - DONE: Make the live lifecycle phases unambiguous.
   Run 0 is the missing-binary zero-network stop; run 1 installs/verifies before sentinel creation; runs 2/3 inspect both booleans before install and classify reset versus persistence exactly.
 - DONE: Mark historical cache claims as superseded without erasing workflow history.
-  The cache-choosing report heading, evidence, and summary are explicitly SUPERSEDED, and the later no-cache report/body remain operative.
+  At that cycle the cache-choosing report was superseded by no-cache; this entire session-only cycle is now itself SUPERSEDED by the captain's exact project-local binary correction.
 - DONE: Rename the session-local binary identity.
   Operative wording now calls `$HOME/.local/bin/spacedock` the exact Cowork execution identity, not a durable install identity.
 
 ### Summary
 
-This consistency repair preserves the no-cache design while making documentation, lifecycle evidence, and identity terminology agree. Historical cache evidence remains visible but unmistakably superseded; the operative proof now has a precise run-0/run-1/run-2/run-3 sequence using only mode class and presence booleans.
+SUPERSEDED HISTORICAL SUMMARY: this cycle aligned the session-only/no-cache design. The captain's later correction replaces its HOME execution identity and run-0-to-3 lifecycle with persistent `<current-project-folder>/.spacedock/bin/spacedock` and a fresh-HOME run-2 reuse proof. Local read-only, consent, and historical-labeling fixes remain retained.
+
+## Stage Report: ideation
+
+- DONE: Bind persistence to Cowork's mounted current project folder.
+  The operative design consumes only the host-supplied current-project-folder capability, records generic availability/binding classes, and never enumerates roots or logs a path/name.
+- DONE: Make `.spacedock/bin/spacedock` the exact persistent execution identity.
+  Absent enters consent; working executes directly with zero network; non-executable, failing, dangling-symlink, and PATH-shadow cases stop or ignore the shadow exactly as specified.
+- DONE: Define deletion-denied first creation and honest failure boundaries.
+  Run 1 verifies in session space, reserves the absent final name with noclobber, copies/chmods/verifies without unlink or rename, and treats any partial final state as broken pending explicit repair.
+- DONE: Prove fresh-HOME reuse and constrain project mutation.
+  Run 2 uses a fresh HOME plus the same mount, executes the mounted binary with zero network/install events, and byte-level evidence permits only `.spacedock/bin/spacedock` and absent parent-directory creation.
+- DONE: Update read-only, docs, consent, privacy, and historical consistency.
+  Local/history reads stay read-only; project-local helper storage is disclosed separately from short network guidance; no sensitive identifiers enter evidence; both immediately preceding session-only reports are marked SUPERSEDED.
+
+### Summary
+
+The captain's project-local correction is now the operative persistence design: Cowork installs once at the exact mounted `.spacedock/bin/spacedock` path and later fresh-HOME sessions reuse it directly without network. First creation requires no unlink or rename and makes no atomicity claim; broken or partial state is never overwritten without a separate repair decision.
