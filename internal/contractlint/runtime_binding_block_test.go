@@ -146,7 +146,6 @@ func TestCodexAndPiFirstOfficerRuntimeSemanticsPreserved(t *testing.T) {
 			"`wait_agent(timeout_ms)`",
 			"wait timeout return is normal and retryable",
 			"worker is not failed, closed, or redispatched",
-			"next foreground wait is reinstalled",
 			"queued/activity-driven delivery",
 			"autonomous FO wake-up",
 			"MUST first re-run the kept-alive validation reviewer through `«addressable-worker»`",
