@@ -73,15 +73,13 @@ five-minute value in the adjacent `«async-dispatch»` runtime binding; the
 generic Codex wait notes remain lifecycle-only. This is a Spacedock per-call
 policy, not a claim that Codex's global default changed.
 
-Implementation changes only these product surfaces:
+Implementation changes only one product surface:
 
 1. `skills/first-officer/references/codex-first-officer-runtime.md` -- bind the
    foreground wait in the adjacent `«async-dispatch»` runtime binding to
    `timeout_ms: 300000`, while preserving timeout and interruption lifecycle
-   rules in the generic wait notes.
-2. A focused Codex live scenario under `internal/ensigncycle` -- prove a
-   delayed owned worker crosses the old short default without a timeout/re-wait
-   and receives a non-timeout foreground-wait return after the delayed hold.
+   rules in the generic wait notes. The policy will be observed in ordinary
+   use, not through a task-specific synthetic timing harness.
 
 Do **not** add a global setting, modify the operator's `~/.codex/config.toml`,
 add a repository `.codex/config.toml`, or add `-c` to `runCodex` in this
@@ -122,60 +120,39 @@ section stays lifecycle-only:
 
 ## Acceptance criteria
 
-**AC-1 (value): A healthy owned worker that takes longer than the current short
-wait avoids timeout churn.** In an isolated Codex live run, a delayed owned
-worker taking at least 45 seconds causes one foreground wait to remain active
-through the delayed hold and receive a non-timeout return; no timeout/re-wait
-occurs before that first return. The measured hold exceeds the approximately
-30-second baseline, so an omitted/default wait can fail this criterion.
-Verified by: a focused `//go:build live` Codex scenario that captures the
-collaboration stream plus durable workflow state, with an assertion that fails
-on a timeout or repeated wait before the first return.
+**AC-1 (policy): The shipped Codex adapter states the explicit per-call
+long-task policy.** Its adjacent async-dispatch binding directs foreground
+waiting through `wait_agent(timeout_ms: 300000)`. This is a Spacedock policy,
+not a claim that Codex's global default has changed.
 
-**AC-2 (value): Five-minute waiting observes an early post-hold mailbox
-return.** The same delayed-worker run calls `wait_agent(timeout_ms: 300000)`,
-returns `timed_out:false` after the delayed-hold end marker rather than waiting
-for the five-minute ceiling, and then verifies the committed stage report
-separately. The end-of-hold marker is a whole-second value emitted before the
-report and commit; it is not a worker-final-status timestamp, and the live
-surface may deliver a post-hold mailbox return before the child FINAL_ANSWER.
-Verified by: the live scenario's timestamped wait trace, non-timeout output,
-delayed-hold marker, and separate stage-report/git-state assertion. It makes
-no marker-to-final-completion causality or latency-SLO claim.
+**AC-2 (scope and safety): The change stays out of host configuration and the
+front door.** It preserves the established timeout and interruption lifecycle,
+does not add a global or repository Codex configuration, and does not alter
+`spacedock codex` argv.
 
-**AC-3 (scope and safety): Spacedock's Codex wait policy is explicit without
-changing host-wide configuration or interruption semantics.** The shipped
-adapter names the per-call 300,000-ms duration, keeps a timeout normal and
-retryable, and preserves the explicit rule that an operator interruption does
-not fail, close, or redispatch the worker. The implementation changes neither
-the global Codex config nor `spacedock codex` argv.
-Verified by: the adjacent async-dispatch adapter binding, scoped-diff review
-showing no added configuration or front-door override, and the live AC-1/AC-2
-run exercising the actual timeout behavior rather than treating instruction
-text as behavioral proof.
+**AC-3 (operational follow-through): Validate the policy in ordinary use, then
+iterate from observed behavior.** A healthy long-running worker should no
+longer cause short-default churn, but this task deliberately does not build a
+synthetic delayed-worker timing harness or make a latency-SLO claim. If actual
+use exposes a responsiveness or retry problem, capture that behavior and file
+a focused follow-up.
 
 ## Test plan
 
-1. Add the live delayed-worker control first. Use the existing isolated
-   `CODEX_HOME` Codex runner so no developer-local config can mask the baseline.
-   Delay the owned no-write worker for 45 seconds--longer than the observed
-   short default but below the existing 60-second stream-silence guard. Record
-   the foreground wait begin/return, timeout/retry count, process exit,
-   delayed-hold markers, entity body, and state-checkout git log. The markers
-   are end-of-hold values only: do not impose a marker-relative completion
-   latency budget. Estimated cost: one Codex run, roughly 1--2 minutes.
-2. Do not use contractlint or any instruction-text assertion as AC-1/AC-2
-   proof. Keep the live-surface probe and generic wait notes lifecycle-only;
-   the adjacent async-dispatch binding owns the exact per-call duration.
-3. Run the required offline gates: `go test ./...`, `go test ./... -race`, and
-   `gofmt -w ./cmd ./internal`. Because the changed adapter is loaded by the
-   Codex live lane, run the focused live control and then
-   `go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v` before validation/merge.
-4. If a later task elects the rejected launcher-config alternative, add separate
-   parser/argv tests for the exact `features.multi_agent_v2...` key, an
-   unsupported-version failure path, user-supplied override precedence, fresh
-   vs resume behavior, and a fresh-process live proof. Those tests are not part
-   of this per-call change.
+Captain-directed scope correction (2026-07-12): remove the task-specific
+foreground-wait and quiet-epoch live scenarios. Their 45-second and six-minute
+holds made routine verification slow and produced a disproportionate amount of
+test-only machinery for a small declarative policy. Do not replace them with
+Contractlint, instruction-text matching, or another prose-only substitute.
+
+1. Run the repository's normal offline gates: `go test ./...`,
+   `go test ./... -race`, and `gofmt -w ./cmd ./internal`.
+2. Review the scoped implementation diff for the explicit per-call policy and
+   for the absence of configuration or launcher changes; this is a delivery
+   review, not an automated substitute for host behavior.
+3. Observe the policy in normal Codex first-officer use after merge. Do not add
+   an artificial delay, stream parser, or timing assertion solely for this
+   task; use any concrete operational issue to define a later focused test.
 
 ## Out of scope
 
@@ -590,3 +567,22 @@ Cycle 3 closes the prior material validation gap: the current assertion consumes
 the worker hold markers and rejects each late/non-overlapping boundary. Fresh
 live evidence independently reproduces both the long-wait policy and the quiet
 timeout/re-wait ordering. Recommendation: PASSED.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Remove the task-specific heavyweight Codex foreground-wait and quiet-epoch live scenario machinery; retain the explicit 300000-ms per-call policy and its no-config/no-front-door scope.
+  Code commit `ff36de8` removes 858 lines of task-specific or unrelated test-only changes; the net product diff against `origin/main` is the existing three-line adapter policy.
+- DONE: Do not replace removed evidence with Contractlint, instruction-file string matching, or another prose-only test.
+  No replacement test was added; the revised plan deliberately relies on normal operational use and a focused follow-up only if it exposes a concrete problem.
+- DONE: Update the task's acceptance/test plan and implementation report for this scope correction, commit the worktree changes.
+  The acceptance criteria and test plan now document the captain-directed actual-use/iterate posture and scope review; `ff36de8` is committed on the assigned worktree branch.
+- FAILED: Run proportionate normal/race verification.
+  `go test ./internal/ensigncycle -count=1` and `go test -p 1 ./...` passed; `gofmt -w ./cmd ./internal` ran with the known unrelated `journeydelta.go` alignment restored. The local `go test -race -p 1 ./...` and focused race retry could not create build artifacts because the shared temporary volume had only about 160 MiB free (`no space left on device`), not because of a test assertion.
+
+### Summary
+
+The captain-directed correction leaves the explicit five-minute per-call policy
+and removes the 45-second/six-minute synthetic timing stack rather than
+replacing it with prose matching. Normal verification is green; race evidence
+must come from a host with sufficient temporary build space, such as the PR's
+offline CI, before this stage can be treated as fully verified.
