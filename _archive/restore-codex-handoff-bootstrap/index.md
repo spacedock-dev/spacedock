@@ -1,16 +1,17 @@
 ---
 id: w8rrjv6jsmgahc269arx9k5v
 title: Restore Codex handoff bootstrap with post-fence options
-status: validation
+status: done
 source: Captain-reported regression, 2026-07-13
 started: 2026-07-12T23:16:40Z
-completed:
-verdict:
+completed: 2026-07-12T23:49:25Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-restore-codex-handoff-bootstrap
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:501
+archived: 2026-07-12T23:49:25Z
 ---
 
 Restore a fresh Codex launch when a Spacedock handoff is supplied before the
