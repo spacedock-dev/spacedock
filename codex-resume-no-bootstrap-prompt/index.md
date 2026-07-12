@@ -217,3 +217,28 @@ Committed and pushed [`df47f20`](https://github.com/spacedock-dev/spacedock/comm
 ### Summary
 
 Codex post-fence argv is now future-proof opaque passthrough while bare and declared pre-fence local-plugin launches retain first-officer bootstrapping. The draft PR is updated and ready for independent validation.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: **AC-1:** A nonempty direct post-fence passthrough remains byte-for-byte opaque.
+  A fresh `df47f20` binary and NUL-delimited recorder matched an arbitrary future option, spaced value, empty argument, post-fence `--plugin-dir`, `resume`, a second `--`, and trailing token exactly; no launcher output appeared.
+- DONE: **AC-2:** Bare Codex and pre-fence-plugin-only launches retain the bootstrap path.
+  `TestCodexPlainWhenNoTrigger` ran in the focused suite; a live pre-fence `--plugin-dir` recorder matched only injected approval plus the first-officer prompt and observed the launch banner.
+- DONE: **AC-3:** Safehouse and local-plugin paths retain only their owned behavior while forwarding opaque argv exactly.
+  Live NUL recorders matched Safehouse's outer envelope and inner argv, local-plugin's consumed pre-fence prefix and final argv, and their combined path; the post-fence `--plugin-dir` was forwarded, not installed.
+- DONE: **AC-4:** Remove Codex grammar parsing and token-sensitive advisory handling.
+  Production-source review found no `codexResume`, Codex value-flag table, or Codex subcommand table; `runCodex` decides solely from remaining argv length after its declared owned prefix.
+- DONE: **AC-5:** Document the opaque post-fence contract.
+  Reviewed `docs/site/reference/command-reference.md`: it states that nonempty Codex post-fence argv receives no banner, default approval mode, or bootstrap prompt.
+- DONE: Independently prove arbitrary post-`--` Codex argv is forwarded byte-for-byte with no bootstrap, default approval, banner, or token classification across direct/Safehouse/local-plugin paths.
+  Direct, Safehouse, local-plugin, and combined executable probes all used `cmp` against NUL-separated expected argv and passed.
+- DONE: Verify bare `spacedock codex` retains the first-officer bootstrap while only pre-fence Spacedock-owned `--plugin-dir` handling remains special.
+  Focused no-argument control and live pre-fence-plugin control retained the bootstrap; the same live opaque probe preserved a post-fence spelling verbatim.
+- DONE: Review the revised acceptance contract and run focused, full, and race verification; reject any residual Codex grammar mirror or PR-ready claim without opaque-boundary evidence.
+  `go test -count=1 ./internal/cli`, `go test -count=1 ./...`, and `go test -count=1 -race ./...` passed; `gofmt -d` and `git diff --check` were clean. PR #498 is still draft (`isDraft=true`).
+- DONE: Detached adversarial audit.
+  In a throwaway `df47f20` checkout, changed the opaque predicate to `false`; the targeted suite produced 5 failures across direct, Safehouse, and plugin paths. The checkout was restored clean and removed.
+
+### Summary
+
+The opaque boundary is behaviorally proven rather than inferred from a curated Codex grammar: arbitrary argv survives all launcher paths exactly, while bootstrap controls remain intact. The revision detects a deliberate reintroduction of injection and satisfies the revised contract; recommend PASSED. PR #498 remains draft.
