@@ -1,8 +1,8 @@
 ---
 title: Generalize the smallest-concrete-mechanism rule
-status: backlog
+status: ideation
 source: "Captain request 2026-07-13."
-started:
+started: 2026-07-12T23:19:48Z
 completed:
 verdict:
 score:
