@@ -34,7 +34,10 @@ append_pass() {
   if [ -n "$pass" ]; then pass="$pass,$1"; else pass="$1"; fi
 }
 while [ "$#" -gt 0 ] && [ "$1" != "--" ]; do
-  if [ "$1" = "--env-pass" ]; then shift; append_pass "$1"; fi
+  case "$1" in
+    --env-pass) shift; append_pass "$1" ;;
+    --env-pass=*) append_pass "${1#--env-pass=}" ;;
+  esac
   shift
 done
 if [ "$1" = "--" ]; then shift; fi
