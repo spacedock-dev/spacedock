@@ -288,3 +288,16 @@ The next implementation replaces all-history JSONL discovery with a short-lived 
 ### Summary
 
 The storage-resolution substep is committed and its three focused tests pass (`rtk go test ./internal/codexsession -run '^TestResolveSQLiteHome' -count=1`). The actual native-index delivery is blocked on an obtainable approved pure-Go SQLite dependency; the command, JSONL reader, and runtime bindings remain unchanged.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Write and commit a task-local implementation plan before production edits; include exact files and red-green test order.
+  The prior task-local plan remains at state commit `a105c38`, and the worktree remained clean for this retry.
+- FAILED: Prove the native index opens read-only and WAL-safe, then parse exactly one selected rollout JSONL.
+  Fresh approved fetch failed: `rtk go mod download -json modernc.org/sqlite@v1.34.5` exited 1 with `dial tcp: lookup proxy.golang.org: i/o timeout` for the module `.info` URL.
+- SKIPPED: Prove all unavailable index/path/token evidence fresh-dispatches without a full JSONL replay.
+  Per captain direction, no retry workaround, replacement, cgo binding, CLI, observer, or broad replay was attempted.
+
+### Summary
+
+This retry changed no code or dependency files; the assigned worktree is clean. The same network/module-resolution blocker prevents the required pure-Go SQLite test and implementation from proceeding.
