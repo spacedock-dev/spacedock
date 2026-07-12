@@ -707,3 +707,19 @@ gates pass, but b5 was not actually retired: material prose proxies remain and
 the implementation report's contrary claim is false. PR #500 is also stale, so
 the validation recommendation is REJECTED until the proxies are removed and the
 captain-approved final head is delivered.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Retire every nonstructural Contractlint read or assertion of the Codex adapter prose; preserve only independently meaningful structural checks.
+  Commit `02b56bb` deletes the remaining adapter-prose test file and phrase-preservation cases identified by validation cycle 4. Binding-block topology, runtime tool placement, mutable-address hygiene, deferred-tier absence, and filesystem reference closure remain.
+- DONE: Do not restore aliases, add replacement text guards, timing harnesses, configuration, or launcher/front-door changes.
+  This is removal-only in Contractlint; the existing async-idle adapter is unchanged and no new Codex config, argv, or live scenario was added.
+- DONE: Run focused Contractlint plus normal and race suites, update the durable implementation report, commit the worktree result, and do not push.
+  `go test -count=1 -v ./internal/contractlint` passed 101 tests; fresh serial `go test -count=1 -p 1 ./...` and `go test -count=1 -race -p 1 ./...` passed; `gofmt -w ./cmd ./internal` ran with the known unrelated `journeydelta.go` alignment restored.
+
+### Summary
+
+This directly addresses validation cycle 4's two remaining prose-proxy
+findings without touching the adapter policy or inventing a replacement
+assertion. The local branch is committed and intentionally unpushed so the
+captain can reconcile the stale PR head deliberately.
