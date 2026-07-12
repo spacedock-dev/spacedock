@@ -170,7 +170,7 @@ func newClaudeCommand(ctx context.Context, env []string, dir string, stdout, std
 			}
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
-			if code := runClaude(ctx, args, dir, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
+			if code := runClaudeWithEnv(ctx, args, dir, env, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil
@@ -193,7 +193,7 @@ func newCodexCommand(ctx context.Context, env []string, dir string, stdout, stde
 			}
 			applyDevBranchOverride(env)
 			applyMarketplaceSourceOverride(env)
-			if code := runCodex(ctx, args, dir, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
+			if code := runCodexWithEnv(ctx, args, dir, env, execHost{}, exec.LookPath, stdout, stderr); code != 0 {
 				return exitCodeError{code}
 			}
 			return nil

@@ -901,12 +901,12 @@ func TestPiFrontDoorWrapsWhenKnobPresent(t *testing.T) {
 		t.Fatalf("TranslateFlags err = %v", err)
 	}
 	// Feedback cycle 2: pi now mirrors claude/codex's wrap plumbing —
-	// launcherBinEnvPassFlags() prefixes the safehouse extra with --env-pass
+	// safehouseEnvPassFlags() prefixes the Safehouse extra with --env-pass
 	// SPACEDOCK_BIN (AC-4) so the launcher the helper calls resolve survives the
 	// sandbox boundary. The operator's add-dirs follows.
-	wantExtra = append(launcherBinEnvPassFlags(), wantExtra...)
+	wantExtra = append(safehouseEnvPassFlags(nil), wantExtra...)
 	if !equalArgv(piSafehouseExtra(ops.launched), wantExtra) {
-		t.Fatalf("extra = %v, want TranslateFlags output prefixed by launcherBinEnvPassFlags %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
+		t.Fatalf("extra = %v, want TranslateFlags output prefixed by safehouseEnvPassFlags %v\nargv=%v", piSafehouseExtra(ops.launched), wantExtra, ops.launched)
 	}
 	inner := piSafehouseInnerArgv(ops.launched)
 	// The retired --skill <repo>/skills/{first-officer,ensign} flags are absent
@@ -949,7 +949,7 @@ func TestPiFrontDoorPlainWhenNoTrigger(t *testing.T) {
 
 // TestPiFrontDoorWrapsWhenSafehouseProfileAlone pins AC-2: a .safehouse profile
 // alone (no flags) also triggers the wrap; the extra slot carries only the
-// env-pass prefix (launcherBinEnvPassFlags, AC-4) — no operator add-dirs/enables.
+// env-pass prefix (safehouseEnvPassFlags, AC-4) — no operator add-dirs/enables.
 func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
@@ -966,8 +966,8 @@ func TestPiFrontDoorWrapsWhenSafehouseProfileAlone(t *testing.T) {
 	if len(ops.launched) == 0 || ops.launched[0] != "safehouse" {
 		t.Fatalf("expected safehouse-wrapped argv for .safehouse profile alone, got %v", ops.launched)
 	}
-	if !equalArgv(piSafehouseExtra(ops.launched), launcherBinEnvPassFlags()) {
-		t.Fatalf("extra should be just launcherBinEnvPassFlags for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
+	if !equalArgv(piSafehouseExtra(ops.launched), safehouseEnvPassFlags(nil)) {
+		t.Fatalf("extra should be just safehouseEnvPassFlags for profile-alone wrap, got %v", piSafehouseExtra(ops.launched))
 	}
 }
 

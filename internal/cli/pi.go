@@ -216,8 +216,9 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 	// a `.safehouse` profile in dir, the bare `--safehouse` flag, or any knob. An
 	// unknown key is a hard error (no Launch), mirroring the claude/codex gate. The
 	// wrap arm mirrors claude/codex's env-forwarding plumbing (frontdoor.go:345):
-	// launcherBinEnvPassFlags() carries SPACEDOCK_BIN through the sandbox via
-	// --env-pass and Launch is called with launchEnv(os.Environ()); the pi-specific
+	// safehouseEnvPassFlags() carries SPACEDOCK_BIN and, when present, Zellij
+	// targeting metadata through the sandbox via --env-pass. Launch receives the
+	// same explicit parent environment; the pi-specific
 	// load-bearing addition is --safehouse-add-dirs <fnm-install-bin-dir> (see the
 	// resolution block below) so the sandbox can see the stable `pi` it is handed.
 	extra, err := safehouse.TranslateFlags(fd.safehouseFlags)
@@ -303,21 +304,21 @@ func runPi(ctx context.Context, args []string, dir string, env []string, ops piR
 			return 1
 		}
 		// Mirror claude/codex's wrap plumbing (frontdoor.go:345):
-		// launcherBinEnvPassFlags() forwards SPACEDOCK_BIN through the sandbox via
-		// --env-pass (launchEnv sets it on the safehouse process; the flag carries
-		// it through) so the launcher the helper calls resolve survives the
-		// boundary. The pi-specific load-bearing addition is
+		// safehouseEnvPassFlags() forwards SPACEDOCK_BIN and conditional Zellij
+		// targeting metadata through the sandbox via --env-pass (launchEnv sets
+		// them on the safehouse process; named flags carry them through). The
+		// pi-specific load-bearing addition is
 		// --safehouse-add-dirs <fnmSandboxDir>: the dir whose node_modules holds
 		// the stable `pi`'s real script + hoisted deps (computed by
 		// fnmStableSandboxDir), which the sandbox cannot see by default. Targeted —
 		// grants pi's actual code+dep tree, not the whole filesystem.
-		piExtra := append(launcherBinEnvPassFlags(), extra...)
+		piExtra := append(safehouseEnvPassFlags(env), extra...)
 		if fnmSandboxDir != "" {
 			piExtra = append(piExtra, "--add-dirs="+fnmSandboxDir)
 		}
 		argv = safehouse.Wrap(argv, piExtra)
 	}
-	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	code, err := ops.Launch(argv, launchEnv(env))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock pi: launch failed: %v\n", err)
 		return 1

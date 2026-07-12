@@ -56,6 +56,14 @@ var executablePath = os.Executable
 
 const spacedockBinEnv = "SPACEDOCK_BIN"
 
+const zellijEnv = "ZELLIJ"
+
+var zellijTargetEnvNames = []string{
+	"ZELLIJ",
+	"ZELLIJ_PANE_ID",
+	"ZELLIJ_SESSION_NAME",
+}
+
 // agentTeamsEnv is the env flag associated with claude's worker↔FO back-channel
 // (SendMessage/TeamCreate). The authoritative enabler is ~/.claude/settings.json
 // (env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 + teammateMode:auto), which re-applies
@@ -93,20 +101,23 @@ func hasEnv(env []string, key string) bool {
 	return false
 }
 
-// launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
-// that tell safehouse to forward SPACEDOCK_BIN from its (the launching process's)
-// environment into the otherwise-sanitized sandbox, so the launcher binary the
-// helper calls resolve survives the boundary. launchEnv already sets SPACEDOCK_BIN
-// on the safehouse process; this flag carries it through. It is gated on the same
-// resolvedLauncherBin() source as launchEnv and mirrors its omit-on-failure: when
-// no binary resolves, no flag — never a stale pass-through. Returned as safehouse
-// wrap flags (before `--`) so the inner program safehouse sees stays the real host
-// (claude/codex), keeping its program-keyed profile auto-detection intact.
-func launcherBinEnvPassFlags() []string {
+// safehouseEnvPassFlags returns the named Safehouse allowlist shared by every
+// wrapped host. SPACEDOCK_BIN is forwarded when the launcher resolves it; when
+// the parent is running in Zellij, the three targeting variables are forwarded
+// too. Values are never manufactured: Safehouse receives names only and copies
+// the inherited values across its environment scrub.
+func safehouseEnvPassFlags(parent []string) []string {
+	names := make([]string, 0, 1+len(zellijTargetEnvNames))
 	if _, ok := resolvedLauncherBin(); ok {
-		return []string{"--env-pass", spacedockBinEnv}
+		names = append(names, spacedockBinEnv)
 	}
-	return nil
+	if hasEnv(parent, zellijEnv) {
+		names = append(names, zellijTargetEnvNames...)
+	}
+	if len(names) == 0 {
+		return nil
+	}
+	return []string{"--env-pass", strings.Join(names, ",")}
 }
 
 func withoutEnv(env []string, key string) []string {
@@ -357,6 +368,10 @@ func printHealableRemedy(host string, res contract.Result, stderr io.Writer) {
 // the installed plugin). `lookPath` resolves the safehouse binary (default
 // exec.LookPath; injected so tests pin not-found).
 func runClaude(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
+	return runClaudeWithEnv(ctx, args, dir, os.Environ(), ops, lookPath, stdout, stderr)
+}
+
+func runClaudeWithEnv(ctx context.Context, args []string, dir string, parentEnv []string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: %v\n", err)
@@ -407,15 +422,15 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
-		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
-		// it into the sandbox. It rides the safehouse flags (before `--`), so the
-		// inner program stays `claude` and safehouse's program-keyed profile
-		// auto-detection still fires. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
+		// Forward SPACEDOCK_BIN and, for a Zellij parent, its targeting metadata
+		// through Safehouse's env sanitization with `--env-pass`. launchEnv carries
+		// inherited values to the Safehouse process; these names carry them into the
+		// sandbox. They ride the Safehouse flags (before `--`), so the inner program
+		// stays `claude` and profile auto-detection still fires.
+		argv = safehouse.Wrap(inner, append(safehouseEnvPassFlags(parentEnv), extra...))
 	}
 
-	code, err := ops.Launch(argv, withAgentTeams(launchEnv(os.Environ())))
+	code, err := ops.Launch(argv, withAgentTeams(launchEnv(parentEnv)))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock claude: launch failed: %v\n", err)
 		return 1
@@ -549,6 +564,10 @@ const codexBootstrapPrompt = "You totally got this. Take your time. I love you. 
 // `--plugin-dir`. `lookPath` resolves the safehouse binary (default exec.LookPath;
 // injected so tests pin not-found).
 func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
+	return runCodexWithEnv(ctx, args, dir, os.Environ(), ops, lookPath, stdout, stderr)
+}
+
+func runCodexWithEnv(ctx context.Context, args []string, dir string, parentEnv []string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
@@ -619,15 +638,15 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			fmt.Fprintln(stderr, hint)
 			return 1
 		}
-		// Forward SPACEDOCK_BIN through safehouse's env sanitization with
-		// `--env-pass`: launchEnv sets it on the safehouse process, this flag carries
-		// it into the sandbox. It rides the safehouse flags (before `--`), so the
-		// inner program stays `codex` and safehouse's program-keyed profile
-		// auto-detection still fires. Omitted when the bin cannot be resolved.
-		argv = safehouse.Wrap(inner, append(launcherBinEnvPassFlags(), extra...))
+		// Forward SPACEDOCK_BIN and, for a Zellij parent, its targeting metadata
+		// through Safehouse's env sanitization with `--env-pass`. launchEnv carries
+		// inherited values to the Safehouse process; these names carry them into the
+		// sandbox. They ride the Safehouse flags (before `--`), so the inner program
+		// stays `codex` and profile auto-detection still fires.
+		argv = safehouse.Wrap(inner, append(safehouseEnvPassFlags(parentEnv), extra...))
 	}
 
-	code, err := ops.Launch(argv, launchEnv(os.Environ()))
+	code, err := ops.Launch(argv, launchEnv(parentEnv))
 	if err != nil {
 		fmt.Fprintf(stderr, "spacedock codex: launch failed: %v\n", err)
 		return 1
