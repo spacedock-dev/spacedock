@@ -466,3 +466,54 @@ The rebase now carries the five-minute policy on current main, and the Codex
 adapter explicitly treats repeated ordinary timeouts as one quiet monitoring
 epoch. The live baseline was already quiet on this host; the new focused control
 makes that behavior executable and guards it through a real timeout/re-wait.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently reviewed the rebased cycle-2 diff. It retains main's
+  named capability structure, keeps the explicit `wait_agent(timeout_ms:
+  300000)` policy scoped to the Codex adapter, and adds the quiet-monitoring
+  rule without a launcher/configuration change or shared-core edit.
+- DONE: Ran the fresh focused live quiet-epoch control with a launcher built
+  from this worktree: `SPACEDOCK_BIN=/tmp/spacedock-95w-cycle2-validation-bin
+  SPACEDOCK_LIVE_ARTIFACT_DIR=/tmp/spacedock-95w-cycle2-validation-rerun-20260712
+  go test -tags live -count=1 -timeout 25m -run
+  '^TestLiveCodexForegroundWaitRetriesQuietlyWithinEpoch$'
+  ./internal/ensigncycle -v`. It passed in 485.26s. The retained rollout
+  observed a `300000`-ms wait from 04:21:44Z to a `timed_out:true` return at
+  04:26:44Z, a second `300000`-ms wait beginning at 04:26:46Z, and no
+  captain-visible FO narration between those two wait calls.
+- DONE: The fresh run's retained artifact independently shows the intended
+  concrete ordering: the worker's six-minute hold spans
+  `CODEX_FOREGROUND_WAIT_STARTED_EPOCH=1783830120` through
+  `CODEX_FOREGROUND_WAIT_FINISHED_EPOCH=1783830480`; the first wait starts
+  before that interval, times out while it is still open, and the silent
+  re-wait begins before the finish marker. Artifact:
+  `/tmp/spacedock-95w-cycle2-validation-rerun-20260712/codex-shared-scenarios/foreground-wait-quiet-epoch/`.
+- DONE: Offline and race gates pass on the clean rebased branch: `go test
+  ./... -count=1` and `go test ./... -race -count=1` each passed 2,154 tests
+  in 17 packages. Live-tag quiet-trace unit and race controls passed; `gofmt
+  -d` on every changed Go file and `git diff --check origin/main...HEAD` were
+  clean.
+- FAILED: The cycle-2 focused test does not make its observed wait/hold
+  ordering a failing invariant. `runCodexQuietEpochScenario` reads
+  `holdStarted` and `holdFinished` only to check the six-minute duration, then
+  calls `assertCodexQuietEpochRollout(result.rollout)` without either marker.
+  That assertion can pass if the first timed-out wait or its silent re-wait is
+  no longer over the same unresolved worker/state--for example, if either
+  begins after the hold/report boundary. The fresh artifact happens to have
+  the right order, but a control that can pass after that regression does not
+  prove the required unchanged monitoring epoch.
+- TODO: Return to implementation. Thread the hold markers into the rollout
+  assertion and make it fail unless the first wait overlaps the hold, its
+  ordinary timeout occurs before `holdFinished`, and the silent second wait
+  begins before `holdFinished` (with a fast negative boundary control). This
+  keeps the test tied to an unresolved worker and unchanged workflow state;
+  then rerun the focused live control and applicable gates.
+
+### Summary
+
+The concrete behavior was observed twice and the branch is clean, but the
+cycle-2 regression control does not enforce the crucial temporal relation that
+makes the re-wait a quiet continuation of the same monitoring epoch.
+
+Recommendation: REJECTED.
