@@ -86,3 +86,30 @@ Safehouse-wrapped Claude, Codex, and Pi launches now conditionally retain the
 current Zellij targeting metadata without manufacturing values or widening the
 environment. Existing non-Zellij argv fixtures are terminal-independent, while
 the native global Safehouse allowlist remains available for operator extras.
+
+## Stage Report: validation
+
+- DONE: Independently exercised the scrubbed Safehouse executable smoke. With
+  `ZELLIJ=0`, `ZELLIJ_PANE_ID=51`, and
+  `ZELLIJ_SESSION_NAME=excellent-pheasant`, the child printed those exact three
+  values; the otherwise identical stripped control printed all three as unset.
+  The same smoke proved the native `SAFEHOUSE_ENV_PASS=EXTRA_TARGET` operator
+  extension composes with the built-in trio.
+- DONE: Independently ran the conditional argv checks across Claude, Codex, and
+  Pi. A Zellij parent emits the single named allowlist
+  `SPACEDOCK_BIN,ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME`; a parent without
+  `ZELLIJ` retains only the established `SPACEDOCK_BIN` allowance. The helper is
+  shared by all three wrapped front doors, and no new Spacedock config surface
+  or broad environment pass-through appears in the product diff.
+- DONE: Validation gates passed: focused Zellij/Safehouse tests (17 test units),
+  `go test ./... -count=1`, and `go test ./... -race -count=1`. `git diff
+  --check origin/main...HEAD` was clean. The changed Go files were gofmt-clean;
+  repository-wide `gofmt -l ./cmd ./internal` reports only the unrelated,
+  pre-existing `internal/release/journeydelta.go`.
+
+### Validation summary
+
+PASSED. The implementation preserves exact inherited Zellij targeting metadata
+through the Safehouse scrub boundary only when `ZELLIJ` is present, leaves
+non-Zellij launches stable, and retains `SAFEHOUSE_ENV_PASS` as the global
+operator extension mechanism.
