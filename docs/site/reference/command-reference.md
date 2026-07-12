@@ -24,7 +24,7 @@ The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no
 spacedock claude [task] [spacedock-flags] [-- host-flags]
 ```
 
-The task comes first and becomes the launch prompt. Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like). When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
+The task comes first and becomes the launch prompt. Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like); for Codex, this includes `spacedock codex -- --model <model> resume <session>`. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
 
 An unsandboxed launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and `spacedock codex` in `--ask-for-approval on-request`. A sandboxed launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Either posture is suppressed when you pass your own mode or a resume.
 

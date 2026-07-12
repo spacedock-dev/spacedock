@@ -273,6 +273,83 @@ func TestCodexResumeSubcommandSuppressesPrompt(t *testing.T) {
 	})
 }
 
+// LP-AC-2 extension: Codex global options may precede its first command token.
+// A recognized option-before-resume form still carries its own session intent,
+// while the first non-option command token decides the fresh-vs-resume posture.
+func TestCodexOptionBeforeResumeSuppressesPrompt(t *testing.T) {
+	tests := []struct {
+		name        string
+		passthrough []string
+		want        []string
+		resume      bool
+	}{
+		{
+			name:        "model space form",
+			passthrough: []string{"--model", "gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "--model", "gpt-x", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "model equals form",
+			passthrough: []string{"--model=gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "--model=gpt-x", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "model short form",
+			passthrough: []string{"-m", "gpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "-m", "gpt-x", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "model short attached value",
+			passthrough: []string{"-mgpt-x", "resume", "abc-123"},
+			want:        []string{"codex", "-mgpt-x", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "shared value-taking option",
+			passthrough: []string{"--config", "model=\"gpt-x\"", "resume", "abc-123"},
+			want:        []string{"codex", "--config", "model=\"gpt-x\"", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "known valueless option",
+			passthrough: []string{"--oss", "resume", "abc-123"},
+			want:        []string{"codex", "--oss", "resume", "abc-123"},
+			resume:      true,
+		},
+		{
+			name:        "model only remains fresh",
+			passthrough: []string{"--model", "gpt-x"},
+			want:        []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-x", wantCodexBootstrapPrompt},
+		},
+		{
+			name:        "first command wins over later resume text",
+			passthrough: []string{"--model", "gpt-x", "exec", "resume", "abc-123"},
+			want:        []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-x", "exec", "resume", "abc-123", wantCodexBootstrapPrompt},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+			args := append([]string{"--"}, tt.passthrough...)
+			code := runCodex(context.Background(), args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if !equalArgv(fake.launchedArg, tt.want) {
+				t.Fatalf("launch argv = %v, want %v", fake.launchedArg, tt.want)
+			}
+			if tt.resume && stderr.Len() != 0 {
+				t.Fatalf("option-before-resume printed a launch banner: %q", stderr.String())
+			}
+		})
+	}
+}
+
 // LP-AC-3: for claude, --plugin-dir passes through (multiplicity, order) AND
 // relaxes the gate (launches even on a failing manifest); without it the gate
 // still fails. Codex is the exception: its CLI has no --plugin-dir flag, so the
