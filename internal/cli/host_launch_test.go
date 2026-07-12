@@ -24,6 +24,12 @@ import (
 // stub role reports its process identity + TTY state to a logfile.
 const launchTestRoleEnv = "SPACEDOCK_LAUNCH_TEST_ROLE"
 
+var terminalTargetingTestEnvNames = []string{
+	"ZELLIJ",
+	"ZELLIJ_PANE_ID",
+	"ZELLIJ_SESSION_NAME",
+}
+
 // TestMain dispatches the helper-process roles before the test suite runs. Each
 // role reads its logfile path and mode from os.Args[1]/os.Args[2] and os.Exits;
 // only the default arm runs the tests. This is the os/exec helper-process pattern
@@ -38,11 +44,10 @@ func TestMain(m *testing.M) {
 	case "execlauncher":
 		execLauncherRole()
 	default:
-		// Most historical front-door tests assert the non-Zellij argv contract.
+		// Most historical front-door tests assert the non-targeting argv contract.
 		// Keep that baseline independent of the developer's terminal; dedicated
-		// fixtures pass an explicit Zellij parent environment when exercising the
-		// conditional allowlist.
-		for _, key := range zellijTargetEnvNames {
+		// wrapper fixtures set targeting metadata explicitly.
+		for _, key := range terminalTargetingTestEnvNames {
 			if err := os.Unsetenv(key); err != nil {
 				fmt.Fprintln(os.Stderr, "test setup: unset", key+":", err)
 				os.Exit(1)

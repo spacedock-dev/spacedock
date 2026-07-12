@@ -108,11 +108,11 @@ func TestSafehouseEnvPassForwardsSpacedockBin(t *testing.T) {
 		spacedockBinEnv+"="+launchedBin)
 
 	t.Run("--env-pass forwards SPACEDOCK_BIN through the scrub", func(t *testing.T) {
-		// The wrap as runClaude composes it: the production safehouseEnvPassFlags
-		// (driven by executablePath → launchedBin) in the Safehouse extra slot. The
+		// The wrap as runClaude composes it: launcherBinEnvPassFlags (driven by
+		// executablePath → launchedBin) is handed to the Safehouse wrapper. The
 		// inner program after `--` is the probe directly (no /usr/bin/env wrapper).
 		withExecutablePath(t, launchedBin, nil)
-		argv := safehouse.Wrap([]string{probe}, safehouseEnvPassFlags(nil))
+		argv := safehouse.Wrap([]string{probe}, launcherBinEnvPassFlags())
 		out := runWrapped(t, safehousePath, argv[1:], env)
 		if out != "LAUNCHED" {
 			t.Fatalf("probe resolved %q, want LAUNCHED (--env-pass must forward SPACEDOCK_BIN through the scrub)", out)
@@ -135,8 +135,6 @@ func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
 	dir := t.TempDir()
 	safehousePath := envPassSafehouse(t, dir)
 	probe := zellijTargetingProbe(t, dir)
-	bin := executableFixture(t)
-	withExecutablePath(t, bin, nil)
 
 	parent := []string{
 		"PATH=/usr/bin:/bin",
@@ -145,8 +143,9 @@ func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
 		"ZELLIJ_SESSION_NAME=excellent-pheasant",
 	}
 
-	t.Run("shared Zellij allowlist forwards exact inherited values", func(t *testing.T) {
-		argv := safehouse.Wrap([]string{probe}, safehouseEnvPassFlags(parent))
+	t.Run("wrapper-owned targeting allowlist forwards exact inherited values", func(t *testing.T) {
+		setZellijTargetingEnv(t)
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
 		out := runWrapped(t, safehousePath, argv[1:], parent)
 		want := "ZELLIJ=0\nZELLIJ_PANE_ID=51\nZELLIJ_SESSION_NAME=excellent-pheasant"
 		if out != want {
@@ -155,6 +154,7 @@ func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
 	})
 
 	t.Run("without Zellij names the scrubbed child cannot see targeting metadata", func(t *testing.T) {
+		clearZellijTargetingEnv(t)
 		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
 		out := runWrapped(t, safehousePath, argv[1:], parent)
 		want := "ZELLIJ=<unset>\nZELLIJ_PANE_ID=<unset>\nZELLIJ_SESSION_NAME=<unset>"
@@ -164,14 +164,40 @@ func TestSafehouseEnvPassForwardsZellijTargetingMetadata(t *testing.T) {
 	})
 
 	t.Run("native global allowlist composes with the built-in trio", func(t *testing.T) {
+		setZellijTargetingEnv(t)
 		probe := extraTargetProbe(t, dir)
 		env := append(append([]string{}, parent...), "SAFEHOUSE_ENV_PASS=EXTRA_TARGET", "EXTRA_TARGET=operator-choice")
-		argv := safehouse.Wrap([]string{probe}, safehouseEnvPassFlags(parent))
+		argv := safehouse.Wrap([]string{probe}, []string{"--env-pass", spacedockBinEnv})
 		out := runWrapped(t, safehousePath, argv[1:], env)
 		if out != "EXTRA_TARGET=operator-choice" {
 			t.Fatalf("global Safehouse env pass-through = %q, want %q", out, "EXTRA_TARGET=operator-choice")
 		}
 	})
+}
+
+func setZellijTargetingEnv(t *testing.T) {
+	t.Helper()
+	clearZellijTargetingEnv(t)
+	t.Setenv("ZELLIJ", "0")
+	t.Setenv("ZELLIJ_PANE_ID", "51")
+	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
+}
+
+func clearZellijTargetingEnv(t *testing.T) {
+	t.Helper()
+	for _, key := range []string{"ZELLIJ", "ZELLIJ_PANE_ID", "ZELLIJ_SESSION_NAME"} {
+		value, present := os.LookupEnv(key)
+		if err := os.Unsetenv(key); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			if present {
+				_ = os.Setenv(key, value)
+				return
+			}
+			_ = os.Unsetenv(key)
+		})
+	}
 }
 
 func zellijTargetingProbe(t *testing.T, dir string) string {

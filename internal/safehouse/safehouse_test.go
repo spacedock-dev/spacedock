@@ -76,6 +76,7 @@ func TestAvailableNotFound(t *testing.T) {
 // TestWrapComposesPrefix: Wrap prepends the safehouse prefix and the `--`
 // separator, then the inner argv, with no extra args.
 func TestWrapComposesPrefix(t *testing.T) {
+	clearTerminalTargetingEnv(t)
 	inner := []string{"claude", "--agent", "spacedock:first-officer", "--foo"}
 	got := Wrap(inner, nil)
 	want := []string{"safehouse", "--trust-workdir-config", "--",
@@ -88,10 +89,73 @@ func TestWrapComposesPrefix(t *testing.T) {
 // TestWrapWithExtra: extra safehouse args land between --trust-workdir-config
 // and the `--` separator, never mixed into the inner command.
 func TestWrapWithExtra(t *testing.T) {
+	clearTerminalTargetingEnv(t)
 	got := Wrap([]string{"claude"}, []string{"--profile", "x"})
 	want := []string{"safehouse", "--trust-workdir-config", "--profile", "x", "--", "claude"}
 	if !equalArgv(got, want) {
 		t.Fatalf("Wrap with extra = %v, want %v", got, want)
+	}
+}
+
+func TestWithTerminalTargetingEnvPass(t *testing.T) {
+	extra := []string{"--env-pass", "SPACEDOCK_BIN", "--enable=ssh"}
+
+	t.Run("terminal parent merges current targeting metadata into the existing named allowlist", func(t *testing.T) {
+		parent := []string{
+			"ZELLIJ=0",
+			"ZELLIJ_PANE_ID=51",
+			"ZELLIJ_SESSION_NAME=excellent-pheasant",
+		}
+		want := []string{"--env-pass", "SPACEDOCK_BIN,ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME", "--enable=ssh"}
+		if got := withTerminalTargetingEnvPass(extra, parent); !equalArgv(got, want) {
+			t.Fatalf("terminal targeting env pass = %v, want %v", got, want)
+		}
+	})
+
+	t.Run("ordinary parent preserves the caller extra verbatim", func(t *testing.T) {
+		if got := withTerminalTargetingEnvPass(extra, []string{"ZELLIJ_PANE_ID=51"}); !equalArgv(got, extra) {
+			t.Fatalf("terminal targeting env pass = %v, want %v", got, extra)
+		}
+	})
+
+	t.Run("terminal parent starts a named allowlist when no caller allowance exists", func(t *testing.T) {
+		parent := []string{"ZELLIJ=0", "ZELLIJ_PANE_ID=51", "ZELLIJ_SESSION_NAME=excellent-pheasant"}
+		want := []string{"--env-pass", "ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME"}
+		if got := withTerminalTargetingEnvPass(nil, parent); !equalArgv(got, want) {
+			t.Fatalf("terminal targeting env pass = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestWrapAddsTerminalTargetingEnvPass(t *testing.T) {
+	clearTerminalTargetingEnv(t)
+	t.Setenv("ZELLIJ", "0")
+	t.Setenv("ZELLIJ_PANE_ID", "51")
+	t.Setenv("ZELLIJ_SESSION_NAME", "excellent-pheasant")
+
+	got := Wrap([]string{"claude"}, []string{"--env-pass", "SPACEDOCK_BIN"})
+	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", "SPACEDOCK_BIN,ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME", "--", "claude"}
+	if !equalArgv(got, want) {
+		t.Fatalf("Wrap = %v, want %v", got, want)
+	}
+}
+
+func clearTerminalTargetingEnv(t *testing.T) {
+	t.Helper()
+	for _, set := range terminalTargetingEnvSets {
+		for _, key := range set.names {
+			value, present := os.LookupEnv(key)
+			if err := os.Unsetenv(key); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if present {
+					_ = os.Setenv(key, value)
+					return
+				}
+				_ = os.Unsetenv(key)
+			})
+		}
 	}
 }
 
