@@ -146,3 +146,18 @@ The correction makes Safehouse—not each host front door—the sole owner of
 terminal/session metadata pass-through. The wrapper combines current Zellij
 metadata with the existing least-privilege allowlist and leaves a clean data
 extension point for future terminal multiplexers.
+
+## Stage Report: validation (cycle 1)
+
+- DONE: Independently prove the behavior is owned by Safehouse alone: compare against origin/main to confirm Claude, Codex, and Pi production front doors retain their prior shapes, while the wrapper carries generic terminal-targeting metadata and today’s Zellij data.
+  `git diff origin/main...5f61c16b` is empty for production Claude/Codex/Pi front doors; only `internal/safehouse` owns the generic `terminalTargetingEnvSet` data and allowlist composition.
+- DONE: Exercise the wrapper-owned scrubbed smoke and composition controls; verify exact inherited Zellij values, no manufacture without the targeting parent, and native SAFEHOUSE_ENV_PASS composition without broad inheritance.
+  Fresh ambient-Zellij focused controls passed; the scrubbed child observed `0`, `51`, and `excellent-pheasant`, the stripped control observed all unset, and `SAFEHOUSE_ENV_PASS=EXTRA_TARGET` composed without broad inheritance.
+- DONE: Perform a smallest-sufficient-mechanism review of the code and tests. Reject any residual host-front-door rewiring, Zellij-shaped API, or disproportionate test/fixture scaffolding; run focused, full, and race evidence before recommending PASSED.
+  The production change is a single wrapper helper plus generic data; the three focused controls cover join, public wrap, and real scrubbed-child behavior. Full and race repository gates exited 0; a detached mutation that suppressed forwarding made all three controls fail.
+
+### Summary
+
+PASSED. The cycle-1 correction removes the prior front-door rethreading and
+keeps the test mechanism proportionate: one existing scrubbed Safehouse fixture
+extended for all three acceptance criteria, plus small wrapper unit controls.
