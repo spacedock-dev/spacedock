@@ -183,3 +183,37 @@ Codex resume classification now recognizes options before `resume` while preserv
 ### Summary
 
 Independent executable argv evidence covers every acceptance criterion, including the captain's option-before-resume form and the safehouse/plugin-dir paths. The implementation is behaviorally correct and clean at `243ca507`; recommend PASSED, with the full-repository race gate noted as an environment-capacity follow-up rather than a product defect.
+
+## Stage Report: implementation (opaque post-fence advance)
+
+### Deliverable
+
+Committed and pushed [`df47f20`](https://github.com/spacedock-dev/spacedock/commit/df47f20f7a4991d6d5e4b1b6cbd819b2ce5834e1) on the existing draft [PR #498](https://github.com/spacedock-dev/spacedock/pull/498); the PR remains draft.
+
+- `runCodex` now treats every nonempty post-fence argv as opaque: it only checks whether argv remains after declared Spacedock-owned handling, then forwards it unchanged with no launch banner, default approval mode, or bootstrap prompt.
+- Removed the Codex option/subcommand classifier, Codex token-sensitive stray-prompt handling, and its host-grammar tables. Claude's advisory-only value-flag scan remains isolated to Claude.
+- Pre-fence `--plugin-dir` is counted as an owned prefix and is still installed/consumed; a post-fence `--plugin-dir` remains opaque host argv and does not invoke the install seam.
+- Updated the command reference and draft PR description to describe the opaque-boundary contract.
+
+### TDD evidence
+
+- RED: new direct, safehouse, and local-plugin future-option fixtures failed against the prior classifier (4 failures), showing its fresh-launch injection and banner behavior.
+- RED: the post-fence `--plugin-dir` fixture failed against the prior all-token consumer, which invoked the local install and appended bootstrap defaults.
+- GREEN: focused `go test ./internal/cli` completed with 471 passing tests after the opaque branch and owned-prefix split.
+
+### Dispatch checklist
+
+- DONE: Restored the opaque post-`--` boundary by removing Codex option/subcommand parsing and retaining only declared pre-fence plugin-dir handling.
+- DONE: Added arbitrary/future-option direct, safehouse, local-plugin, and post-fence-plugin-dir controls; bare and pre-fence-plugin-only bootstrap behavior remains covered.
+- DONE: Updated draft PR #498 without creating a new PR or making it ready for review; title/body now describe the opaque contract.
+- DONE: Ran `gofmt -w ./cmd ./internal` (restoring the unrelated pre-existing `internal/release/journeydelta.go` drift), focused CLI, repository-wide, and race verification.
+
+### Verification
+
+- `go test ./...` — 2164 passed in 17 packages.
+- `go test ./... -race` — 2164 passed in 17 packages.
+- Independent review: APPROVE, with no Critical or Important findings; its stale-comment minor was corrected before push.
+
+### Summary
+
+Codex post-fence argv is now future-proof opaque passthrough while bare and declared pre-fence local-plugin launches retain first-officer bootstrapping. The draft PR is updated and ready for independent validation.
