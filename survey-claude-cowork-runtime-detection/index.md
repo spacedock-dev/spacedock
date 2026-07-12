@@ -1,9 +1,9 @@
 ---
 id: eqn4ecmdy9d5a0meeqxwjwfa
 title: Make survey work inside Claude Cowork
-status: backlog
+status: ideation
 source: captain request
-started:
+started: 2026-07-12T06:27:41Z
 completed:
 verdict:
 score:
