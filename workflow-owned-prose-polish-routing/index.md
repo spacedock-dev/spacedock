@@ -66,10 +66,12 @@ falls back immediately. A successfully routed but silent target falls back at
 two real wall-clock minutes; no fake clock is assumed. The writer then commits
 the original narrative and records the exact Stage Report line
 `comm-officer unavailable; proceeded unpolished`. No retry or replacement agent
-is required. If a timely response changes protected semantics, the writer rejects
-the edit and immediately commits the original narrative. That is a reviewed
-response disposition, not teammate unavailability, so it records no fallback
-line.
+is required. A timely response completes the route obligation. The writer
+reviews it before commit: an accepted reply permits the polished narrative; if
+the reply changes technical meaning, qualifiers, acceptance criteria, or
+evidence, the writer commits the original narrative immediately, does not retry
+or spawn a replacement, and records the exact Stage Report line
+`comm-officer response rejected; proceeded unpolished`.
 
 The exclusions are direct captain chat, a non-complex ideation body below 1,500
 words, short operational status, tool output, logs, commit messages, and prose
@@ -154,6 +156,7 @@ After:
     - Apply the comm-officer exclusions before either qualification trigger. Excluded content never routes because of complexity or word count.
     - The writer counts the final narrative after YAML frontmatter and before the first `## Stage Report` with `wc -w`; YAML and all Stage Reports are excluded. A staff-review-complex draft or a narrative of at least 1,500 words requires exactly one route using the projected comm-officer `## Routing Usage`.
     - The route starts before the first commit that records the final draft or its stage-state transition. The attempt and ordering are required; reply and acceptance are best-effort, and technical meaning, qualifiers, criteria, and evidence remain writer-owned.
+    - Review a timely reply before commit. Accept behavior-preserving polish. If it changes technical meaning, qualifiers, acceptance criteria, or evidence, commit the original narrative without retry or replacement and record `comm-officer response rejected; proceeded unpolished`.
   - For template or skill text changes: specific before/after wording, not just "change X".
 ```
 
@@ -202,9 +205,9 @@ Send only the prose to polish. Do not send captain directives, secrets, internal
 
 Payload modes remain text passthrough; `polish this file {absolute_path}`; `polish and write to {absolute_path}:`; and `polish and edit {absolute_path}:` with exact `old_string:` and `new_string:` blocks. The caller chooses the target and reviews the returned change.
 
-The required obligation is the route attempt and its ordering. A reply and its acceptance are best-effort. Preserve technical meaning, qualifiers, criteria, and evidence; the caller rejects any returned change that alters them, immediately commits the original narrative, and records no unavailability fallback.
+The required obligation is the route attempt and its ordering. A timely reply completes that obligation. Review it before commit: an accepted reply permits the polished narrative; if it changes technical meaning, qualifiers, acceptance criteria, or evidence, commit the original narrative immediately, do not retry or spawn a replacement, and add this exact Stage Report line: `comm-officer response rejected; proceeded unpolished`.
 
-The two-minute clock starts at the runtime's recorded successful turn-starting attempt. If the target is absent or explicitly rejects the request, proceed immediately. If a successfully routed target is silent, proceed after two real wall-clock minutes. Commit the original narrative and add this exact Stage Report line: `comm-officer unavailable; proceeded unpolished`. Do not retry or spawn a replacement.
+The two-minute clock starts at the runtime's recorded successful turn-starting attempt. If the target is absent, unwakeable, or explicitly rejects the request, proceed immediately. If a successfully routed target is silent, proceed after two real wall-clock minutes. In only those unavailable cases, commit the original narrative and add this exact Stage Report line: `comm-officer unavailable; proceeded unpolished`. Do not retry or spawn a replacement.
 ```
 
 `skills/first-officer/references/fo-dispatch-core.md` replaces this complete
@@ -276,16 +279,18 @@ under 1,500 (one), and both triggers (one, not two). Each count uses only the
 defined narrative region; YAML and Stage Reports contain extra decoy words that
 must not affect the result.
 
-**AC-4 (bounded fallback and commit gate): An absent or unwakeable target falls back immediately and a successfully routed silent target falls back at two real wall-clock minutes; a commit occurs only after response disposition or genuine fallback, fallback commits preserve the original narrative plus the exact durable note, and a semantically rejected response commits the original without a false unavailability note.**
+**AC-4 (bounded fallback and commit gate): An absent or unwakeable target falls back immediately and a successfully routed silent target falls back at two real wall-clock minutes; a commit occurs only after response disposition or genuine fallback, and unavailable versus semantically rejected responses preserve the original narrative with their distinct exact durable lines.**
 
 Verified by: registered live arms exercise absent, no-turn-starting-binding, and
 deliberately silent targets plus accepted and semantic-drift responses. The runner times from the
 recorded successful request event; the silent arm uses real wall time and
 observes no commit before 120 seconds, followed by the bounded commit. The
 accepted arm commits only after the response event and semantic acceptance. The
-semantic-drift arm rejects the edit, then commits the original immediately with
-no unavailability line.
-Fallback commits contain `comm-officer unavailable; proceeded unpolished`. The
+semantic-drift arm returns one protected semantic change before commit; the
+altered bytes never commit, the original narrative-region SHA-256 remains
+unchanged, `comm-officer response rejected; proceeded unpolished` is durable,
+and route logs show zero retry/replacement. Unavailable fallback commits contain
+`comm-officer unavailable; proceeded unpolished`. The
 before/after SHA-256 covers only the defined narrative region, so the Stage
 Report note does not invalidate the unchanged-draft proof.
 
@@ -344,8 +349,9 @@ Before merge, run the workflow's detached adversarial audit on a throwaway
 checkout. At minimum, mutate away the non-team-name projection, replace Codex
 `followup_task` with queue-only `send_message`, treat a completed target as dead,
 shift the threshold to 1,501, permit two routes when both triggers fire, move the
-commit before response disposition/fallback, falsely label semantic rejection as
-unavailability, and remove the fallback note. Each
+commit before response disposition/fallback, commit a protected-semantic change,
+retry after semantic rejection, conflate the two disposition lines, and remove
+the fallback note. Each
 claim-breaking mutation must turn its owning test red. Structural contractlint
 may guard the deleted workflow-specific shared prose, but prose-grep is never the
 sole proof.
@@ -372,7 +378,7 @@ Ideation assigns qualification and commit ordering to this workflow, detailed ca
 - DONE: Choose the smallest existing mechanism that moves prose-polish policy from the shared contract to this workflow and exposes it to the producing writer.
   Repaired the design around the existing stage scope-notes, mod projection, and a generic `teammate.request` runtime binding; no registry, schema, or policy engine is proposed.
 - DONE: Define qualifying content, required or best-effort routing, bounded fallback, and exclusions without inventing a registry or policy engine.
-  Defined the FO complexity decision path, exact narrative/word boundary, single-request rule, response/commit gate, runtime lifecycle, exclusions, and immediate-versus-two-minute fallback.
+  Defined the FO complexity decision path, exact narrative/word boundary, single-request rule, response/commit gate, runtime lifecycle, exclusions, and distinct unavailable versus rejected-response dispositions.
 - DONE: Produce behavior-first acceptance criteria and tests from the c6 RED case, then route the captain-facing draft through the comm officer before commit.
   Replaced testimony-as-proof and fake-clock fixtures with a reproducible RED plus registered live tool-event/state evidence; both comm-officer reviews were incorporated after the initial bounded fallback.
 
