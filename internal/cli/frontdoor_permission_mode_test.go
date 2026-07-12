@@ -195,9 +195,9 @@ func TestOperatorPermissionFlagSuppressesInjection(t *testing.T) {
 	})
 }
 
-// AC-4: the injected flag rides the non-resume gate — a resumed unsandboxed
-// launch is NOT forced into the auto/approval mode. Mirrors the resume-suppression
-// oracle: the bootstrap prompt and the injected flag share the same gate.
+// AC-4: the injected flag rides the non-bootstrap gate — Claude resume and every
+// nonempty Codex post-fence argv are not forced into their default permission/
+// approval mode. The bootstrap prompt and injected flag share the same gate.
 func TestResumeUnsandboxedSuppressesInjection(t *testing.T) {
 	t.Run("claude-resume", func(t *testing.T) {
 		dir := t.TempDir() // no .safehouse
@@ -215,7 +215,7 @@ func TestResumeUnsandboxedSuppressesInjection(t *testing.T) {
 			}
 		}
 	})
-	t.Run("codex-resume", func(t *testing.T) {
+	t.Run("codex-post-fence", func(t *testing.T) {
 		dir := t.TempDir() // no .safehouse
 		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
@@ -227,7 +227,7 @@ func TestResumeUnsandboxedSuppressesInjection(t *testing.T) {
 		}
 		for _, tok := range fake.launchedArg {
 			if tok == "--ask-for-approval" {
-				t.Fatalf("resumed codex launch carried injected --ask-for-approval: %v", fake.launchedArg)
+				t.Fatalf("Codex post-fence launch carried injected --ask-for-approval: %v", fake.launchedArg)
 			}
 		}
 	})

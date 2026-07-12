@@ -24,9 +24,9 @@ The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no
 spacedock claude [task] [spacedock-flags] [-- host-flags]
 ```
 
-The task comes first and becomes the launch prompt. Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like); for Codex, this includes `spacedock codex -- --model <model> resume <session>`. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
+The task comes first and becomes the launch prompt. Anything after `--` forwards verbatim to the host (`--model`, `--resume`, and the like). For Codex, any nonempty post-fence argv is an opaque host-directed launch: Spacedock adds no launch banner, default approval mode, or bootstrap prompt. Use bare `spacedock codex` to start the first officer. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
 
-An unsandboxed launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and `spacedock codex` in `--ask-for-approval on-request`. A sandboxed launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Either posture is suppressed when you pass your own mode or a resume.
+An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and bare `spacedock codex` in `--ask-for-approval on-request`. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume; Codex suppresses them for any nonempty post-fence passthrough.
 
 ## Setup
 
