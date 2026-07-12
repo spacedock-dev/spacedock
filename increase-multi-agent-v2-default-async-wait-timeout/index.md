@@ -527,3 +527,32 @@ cycle-2 regression control does not enforce the crucial temporal relation that
 makes the re-wait a quiet continuation of the same monitoring epoch.
 
 Recommendation: REJECTED.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Threaded `holdStarted` and `holdFinished` from the committed worker
+  report into the quiet-epoch rollout assertion. It now requires the first wait
+  to overlap the unresolved hold, its ordinary timeout to return before hold
+  finish, and the silent re-wait to start before that finish marker.
+- DONE: Added fast full-assertion boundary controls for a missing overlap, a
+  timeout at the hold boundary, and a re-wait at the hold boundary. Each must
+  fail; the inside-hold positive remains green.
+- DONE: The focused live quiet-epoch control passed in 516.16s with the timing
+  invariant active. The hold markers are 1783836755 through 1783837115; the
+  first 300,000-ms wait timed out at 06:17:21Z and the silent re-wait began at
+  06:17:23Z, both before hold finish. Evidence:
+  `/tmp/spacedock-95w-cycle3-quiet-epoch-live-20260712/codex-shared-scenarios/foreground-wait-quiet-epoch/`.
+- DONE: Fast live-tag controls, including the three boundary negatives and
+  narration controls, passed 7/7 both normally and with `-race`.
+- DONE: `go test ./...` and `go test ./... -race` each passed 2,154 tests in
+  17 packages. `gofmt -w ./cmd ./internal` was run; only the known unrelated
+  `internal/release/journeydelta.go` alignment drift was restored.
+- DONE: No global Codex configuration, launcher argv, or shared-core behavior
+  changed. Code commit `b305da7` (`Codex: bind quiet waits to active hold`).
+
+### Summary
+
+Cycle 3 turns the previously observed ordering into a failing invariant, so a
+quiet re-wait can pass only while the same worker is still held and unresolved.
+The feedback correction is scoped to the focused Codex proof and preserves the
+five-minute per-call policy and interruption lifecycle.
