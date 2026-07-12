@@ -1,13 +1,16 @@
 ---
 title: Codex resume passthrough must not append the default Spacedock prompt
-status: validation
+status: done
 score: 0.7
 source: "Captain report 2026-07-10: `spacedock codex -- resume` should not invoke Codex with the default Spacedock prompt."
 id: xvcz44jbmye15bpz1ekzxvkc
 started: 2026-07-11T04:11:33Z
 worktree: .worktrees/spacedock-ensign-codex-resume-no-bootstrap-prompt
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:498
+verdict: passed
+completed: 2026-07-12T07:45:52Z
+archived: 2026-07-12T07:45:52Z
 ---
 
 ## Problem
