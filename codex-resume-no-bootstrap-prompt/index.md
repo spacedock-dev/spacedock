@@ -47,6 +47,14 @@ Documentation diff proposed for `docs/site/reference/command-reference.md` line 
 - Run focused `go test ./internal/cli` cases, then the repository baseline and race gates. Validate the documentation diff in the normal docs review.
 - Re-run a temporary argv-recording `codex` stub against a freshly built main binary and the resolved installed launcher. The completed spike already proves the failing pre-fix behavior: both launchers appended the bootstrap/default approval after `--model probe-model resume xv-session`; leading resume did not.
 
+## Implementation plan
+
+1. In `internal/cli/launch_parity_test.go`, first add direct argv fixtures for `--model <value>`, `--model=<value>`, and `-m <value>` followed by `resume`, plus a first-command control that must remain fresh. Run the focused test and record the expected pre-change failure.
+2. In `internal/cli/frontdoor_permission_mode_test.go` and `internal/cli/frontdoor_test.go`, first add unsandboxed, safehouse, and local `--plugin-dir` argv fixtures that pin no bootstrap/default approval and exact forwarding. Run them red before changing production code.
+3. Make the smallest change in `internal/cli/frontdoor.go`: classify only the first Codex command token after known value-taking global options, without rewriting the passthrough slice.
+4. Update `docs/site/reference/command-reference.md` with the approved `--model <model> resume <session>` command reference example.
+5. Run focused `go test ./internal/cli`, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`; record each red/green result in the implementation report.
+
 ## Stage Report: ideation
 
 ### Trace and root-cause result
