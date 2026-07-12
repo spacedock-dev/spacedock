@@ -127,3 +127,24 @@ The Codex handoff-plus-model launch now preserves the operator's model tokens,
 the unsandboxed approval default, and the bootstrap prompt as the final token.
 No-task post-fence invocations remain opaque and prompt-free; the product change
 is committed and pushed as `7b71385a`.
+
+## Stage Report: validation
+
+- DONE: AC-1 independently exercised the focused fake-host handoff regression.
+  `go test ./internal/cli -run '^TestFenceTaskPromptOverride$/^codex-task-before-fenced-model$' -count=1 -v` passed at `7b71385a`. Its exact-vector oracle requires `codex --ask-for-approval on-request --model gpt-5.6-sol "<bootstrap> @/tmp/handoff-file.md"`, preserving the model pair before the final bootstrap-plus-handoff prompt.
+- DONE: AC-2 independently exercised the existing no-task resume control.
+  `go test ./internal/cli -run '^TestCodexPostFenceSuppressesPrompt$/^post-fence-argv-no-prompt$' -count=1 -v` passed; its exact argv remains `codex resume abc-123`, with no bootstrap token.
+- DONE: AC-3 independently exercised opaque no-task forwarding and reviewed the mechanism diff.
+  `go test ./internal/cli -run '^TestCodexPostFencePassthroughIsOpaque$' -count=1 -v` passed both the future-token opaque case and bare-Codex bootstrap control. The implementation diff changes the injection gate only to `!fd.hasTask && len(fd.passthrough) > 0`; no Codex argv parser, grammar table, or reconstruction layer appears in the five-file diff. `git diff --check 7b71385a^ 7b71385a` was clean.
+- DONE: AC-4 matches the shipped command-reference correction against the exercised behavior.
+  The scoped document diff says a task before `--` remains a fresh first-officer launch while only a no-task nonempty passthrough is opaque, and changes default suppression to the no-task case. This agrees with the independently passing fresh-handoff and no-task opaque argv controls.
+- DONE: Detached adversarial audit proved the AC-1 oracle can fail.
+  Created detached `/tmp/spacedock-codex-handoff-audit.z55qoS` at `7b71385a`, changed only `opaquePassthrough := !fd.hasTask && len(fd.passthrough) > 0` to `opaquePassthrough := len(fd.passthrough) > 0`, then ran `go test ./internal/cli -run '^TestFenceTaskPromptOverride$/^codex-task-before-fenced-model$' -count=1 -v`. It failed with actual argv `[codex --model gpt-5.6-sol]` versus the expected approval/model/final-bootstrap vector (exit 1). The audit worktree was removed with `git worktree remove --force` and confirmed unregistered.
+
+### Recommendation
+
+PASSED. All four acceptance criteria have direct argv or shipped-artifact evidence, and the focused regression fails under the smallest claim-breaking gate edit.
+
+### Summary
+
+Validation reproduced the new fresh-handoff behavior, preserved no-task resume and opaque controls, confirmed the narrow no-parser implementation boundary, and verified that the new oracle rejects the prior broad opaque condition in a disposable checkout.
