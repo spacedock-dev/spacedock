@@ -128,6 +128,12 @@ Committed [`243ca50`](https://github.com/spacedock-dev/spacedock/commit/243ca507
 - `go test ./... -race` — 2129 passed in 17 packages.
 - Independent code review found and drove the compact-short regression; its follow-up found no remaining Critical or Important issue.
 
+### Dispatch checklist
+
+- DONE: Wrote and committed the task-local implementation plan before production edits, then recorded the focused red/green TDD sequence.
+- DONE: Added the shared option-aware Codex resume classifier, direct/safehouse/local-plugin argv fixtures, and the approved command-reference example.
+- DONE: Ran focused CLI, repository-wide, and race verification; the final full and race runs each passed 2129 tests in 17 packages.
+
 ### Summary
 
 Codex resume classification now recognizes options before `resume` while preserving operator argv and fresh-launch behavior. The committed deliverable is ready for independent validation.
