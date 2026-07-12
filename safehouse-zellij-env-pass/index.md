@@ -192,3 +192,20 @@ The cycle-2 correction relies on Safehouse's native named-environment
 composition instead of reimplementing it. Independent review found no
 actionable issues: the result is one conditional wrapper helper, exact
 least-privilege forwarding, and no front-door or configuration-surface change.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently verify the wrapper has only clean static terminal-targeting argument construction: no registry, argv parser/merger, or Claude/Codex/Pi front-door change.
+  `d57d82d` replaces the stale registry/merger with wrapper-only `terminalTargetingEnvArgs()`, which conditionally returns one static `--env-pass=ZELLIJ,ZELLIJ_PANE_ID,ZELLIJ_SESSION_NAME`; `git diff origin/main...HEAD` contains no production Claude, Codex, or Pi change.
+- DONE: Prove exact forwarding and scrubbed absence against Safehouse named-env composition, with a meaningful adversarial control; reproduce relevant normal/race evidence.
+  Focused ambient-Zellij controls passed; a detached audit changed that helper to return `nil`, making both the scrubbed-child exact-forwarding smoke and wrapper contract test fail. `ZELLIJ=0 go test ./... -count=1` and `ZELLIJ=0 go test ./... -race -count=1` completed cleanly; changed Go files are gofmt-clean and `git diff --check origin/main...HEAD` is clean.
+- DONE: Cross-check every AC with evidence, including the now-extractable one-line AC headings; report PASSED/REJECTED and do not push or merge.
+  AC-1 is the exact-three-values smoke plus stripped control; AC-2 is the absent-parent wrapper control and no-front-door diff; AC-3 is the composition smoke with `SAFEHOUSE_ENV_PASS=EXTRA_TARGET`. The remote PR head remains the older `5f61c16b`; this validation covers local `d57d82d` and does not push or merge it.
+
+### Summary
+
+PASSED for `d57d82d`. The prior `withTerminalTargetingEnvPass` shape was
+unnecessarily indirect; the candidate now has the smallest legible form: a
+single conditional function that constructs the one Safehouse argument and
+leaves composition to Safehouse. PR #499 must be fast-forwarded to this
+validated commit before it can be presented as the reviewed change.
