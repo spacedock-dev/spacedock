@@ -275,3 +275,16 @@ Validation found one real AC-2 gap, held the verdict, and closed it with a new p
 ### Summary
 
 The next implementation replaces all-history JSONL discovery with a short-lived native read-only index lookup, revalidates one selected rollout, and measures one file open rather than a 978-file replay. SQLite failure is safety evidence for fresh dispatch, not a reason to reintroduce an observer or broad scan.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Write and commit a task-local implementation plan before production edits; include exact files and red-green test order.
+  State commit `a105c38` records the file map, dependency choices, and focused red/green commands; code commit `b083ec6` adds the tested TOML storage-precedence resolver.
+- FAILED: Prove the native index opens read-only and WAL-safe, then parse exactly one selected rollout JSONL.
+  The WAL/read-only test went red as intended, but `modernc.org/sqlite@v1.34.5` cannot be fetched here: `proxy.golang.org` and `modernc.org` DNS time out; the one bounded GitHub-mirror check requires persistent replacement handling for transitive `modernc.org/*` modules, which the captain declined.
+- SKIPPED: Prove all unavailable index/path/token evidence fresh-dispatches without a full JSONL replay.
+  Stopped at the approved dependency boundary; no alternate driver, cgo binding, SQLite CLI, observer, or fallback was introduced.
+
+### Summary
+
+The storage-resolution substep is committed and its three focused tests pass (`rtk go test ./internal/codexsession -run '^TestResolveSQLiteHome' -count=1`). The actual native-index delivery is blocked on an obtainable approved pure-Go SQLite dependency; the command, JSONL reader, and runtime bindings remain unchanged.
