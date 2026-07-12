@@ -25,6 +25,23 @@ fixture. Implementation must first reproduce the failure by running the new
 registered scenario against the pre-change revision and retaining its tool-event
 and state artifacts as the RED baseline.
 
+A live 2026-07-13 diagnosis isolated the routing failure. Both ideation writers
+sent polish requests while the standing comm officer was completed and shown as
+`pending_init`. The requests queued, but the teammate did not start even after a
+concurrency slot became free. A turn-starting `followup_task` reactivated it
+immediately, and it then saw both queued requests. This rules out ordinary
+scheduler starvation: a preservation message can deliver context to a completed
+Codex teammate but cannot start its work.
+
+The Codex adapter already states this distinction under addressable-worker
+reuse: `followup_task` is turn-starting, while `send_message` is
+preservation-only. The standing-teammate call site never consumes that binding,
+and the workflow mod instead says `SendMessage` and assumes “stay live” is a
+portable lifecycle. The fix must connect the existing runtime fact to the
+standing request site so callers cannot choose a queue-only operation by
+accident. The live incident is diagnostic evidence; the registered scenario
+must reproduce it before it counts as proof of the fix.
+
 ## Proposed direction
 
 The ideation stage owns qualification and commit ordering; the comm-officer mod
