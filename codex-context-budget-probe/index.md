@@ -301,3 +301,16 @@ The storage-resolution substep is committed and its three focused tests pass (`r
 ### Summary
 
 This retry changed no code or dependency files; the assigned worktree is clean. The same network/module-resolution blocker prevents the required pure-Go SQLite test and implementation from proceeding.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Write and commit a task-local implementation plan before production edits; include exact files and red-green test order.
+  The task-local plan and the prior green TOML-resolution substep remain unchanged; this retry began from a clean assigned worktree.
+- FAILED: Prove the native index opens read-only and WAL-safe, then parse exactly one selected rollout JSONL.
+  The required normal fetch still fails: `rtk go mod download -json modernc.org/sqlite@v1.34.5` exited 1 with `dial tcp: lookup proxy.golang.org: i/o timeout` for the `.info` URL.
+- SKIPPED: Prove all unavailable index/path/token evidence fresh-dispatches without a full JSONL replay.
+  The captain prohibited mirrors, replacements, cgo, external SQLite, sidecars, observers, and full-replay fallbacks; none was added.
+
+### Summary
+
+Product code and dependency files are unchanged by this retry. This report is committed locally only, per the current no-push instruction.
