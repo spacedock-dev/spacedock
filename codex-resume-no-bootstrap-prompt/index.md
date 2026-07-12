@@ -49,6 +49,25 @@ Documentation diff proposed for `docs/site/reference/command-reference.md` line 
 - Run focused `go test ./internal/cli` cases, then the repository baseline and race gates. Validate the documentation diff in the normal docs review.
 - Re-run a temporary argv-recording `codex` stub against a freshly built main binary and the resolved installed launcher. The completed spike already proves the failing pre-fix behavior: both launchers appended the bootstrap/default approval after `--model probe-model resume xv-session`; leading resume did not.
 
+## Approved implementation advance: opaque Codex post-fence contract
+
+The prior option-aware resume classifier is superseded. A nonempty Codex argv after the Spacedock `--` fence is opaque host passthrough: Spacedock forwards it unchanged and does not inspect it, emit a launch banner, inject `--ask-for-approval on-request`, or append the bootstrap prompt. Bare `spacedock codex` remains the explicit first-officer bootstrap path. Spacedock-owned pre-fence flags, including Codex local `--plugin-dir`, remain parsed and consumed before this decision; a pre-fence plugin-dir with no remaining post-fence argv remains a bootstrapped launch.
+
+### Revised acceptance criteria
+
+- **AC-1:** A nonempty direct post-fence passthrough, including an arbitrary future-looking option/value sequence, reaches Codex byte-for-byte with no Spacedock banner, approval default, or bootstrap prompt.
+- **AC-2:** Bare `spacedock codex` and pre-fence `--plugin-dir <checkout>` without user post-fence argv retain the normal first-officer bootstrap and default approval behavior.
+- **AC-3:** Safehouse and local `--plugin-dir` paths keep their owned wrapping/consumption while opaque post-fence argv stays exact and injection-free.
+- **AC-4:** `runCodex` no longer parses Codex option or subcommand grammar; Codex-only option/subcommand classifier tables and token-sensitive advisory handling are removed.
+- **AC-5:** The command reference describes the opaque post-fence contract rather than a special option-before-resume form.
+
+### Advance implementation plan
+
+1. Add direct, safehouse, and local-plugin argv fixtures for arbitrary/future-looking nonempty post-fence inputs, plus bare and plugin-only bootstrap controls; run them red against the current classifier.
+2. Remove Codex token classification and Codex stray-prompt parsing from `internal/cli/frontdoor.go`; use only whether user post-fence argv remains after owned plugin-dir consumption.
+3. Update `docs/site/reference/command-reference.md` to document the opaque boundary, run focused tests green, then `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+4. Push the existing PR #498 branch only; do not create another PR or mark it ready for review.
+
 ## Implementation plan
 
 1. In `internal/cli/launch_parity_test.go`, first add direct argv fixtures for `--model <value>`, `--model=<value>`, and `-m <value>` followed by `resume`, plus a first-command control that must remain fresh. Run the focused test and record the expected pre-change failure.
