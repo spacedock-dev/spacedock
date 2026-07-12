@@ -1,16 +1,17 @@
 ---
 title: Increase multi_agent_v2 default async wait timeout
-status: validation
+status: done
 score: 0.5
 source: "Captain filing request 2026-07-11."
-completed:
-verdict:
+completed: 2026-07-12T14:37:15Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-increase-multi-agent-v2-default-async-wait-timeout
 issue:
 id: 95we0fhydgx5rbay5fw3qy4q
 started: 2026-07-11T11:51:34Z
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:500
+archived: 2026-07-12T14:37:15Z
 ---
 
 `multi_agent_v2`’s short default wait causes repeated timeout churn while subagents perform normal verification or interactive work. Because the wait already returns immediately when an agent responds or new user input arrives, increase the default timeout to five minutes. This reduces unnecessary polling and tool traffic without delaying updates or reducing responsiveness.
