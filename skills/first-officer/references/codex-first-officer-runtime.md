@@ -8,7 +8,7 @@ At boot, bind Codex capabilities from the live tool surface, not from a runtime-
 
 - `«worker.spawn»`: `spawn_agent(task_name,message,fork_turns)`
 - `«addressable-worker»`: PRESENT only when a turn-starting route is live: `followup_task(target,message)` or a proven equivalent such as legacy `send_input`; ABSENT when the live surface exposes only `spawn_agent` and `wait_agent`. `send_message(target,message)` is non-triggering only and never makes `«addressable-worker»` PRESENT by itself.
-- `«completion-signal»`: `wait_agent(timeout_ms)` for foreground waiting, while the async mailbox notification remains the signal
+- `«completion-signal»`: `wait_agent(timeout_ms)` for async idle monitoring, while the async mailbox final-status notification remains the signal
 - `«roster-reconcile»`: `list_agents(path_prefix?)`
 - `«worker.shutdown»`: unresolved unless a shutdown-specific probe proves a binding; Do not bless `interrupt_agent`
 
@@ -18,32 +18,32 @@ Do not infer capabilities from a Codex version name. Do not infer that the turn-
 
 - `«worker.spawn»`: A successful `«dispatch.build»` is not a dispatch by itself. For every ready entity, including one just advanced by gate approval, call `spawn_agent(task_name,message,fork_turns)` with the helper-emitted prompt unchanged as `message`. sanitize the helper-emitted `name` to a lowercase digit/underscore `task_name`; retain the mapping from helper identity to sanitized task path, entity slug, stage, and cycle.
 - `«addressable-worker»`: When PRESENT, a spawned worker remains addressable by live task path/handle while active or completed and still listed, including a completed-but-still-addressable worker. `followup_task(target,message)` is the current turn-starting reuse/advance route — its advance payload is `${SPACEDOCK_BIN:-spacedock} dispatch build --advance`'s emitted `output.prompt`, forwarded verbatim. `send_message(target,message)` is non-triggering context/preservation only. Legacy `send_input` is a fallback only when that surface is actually present. When absent, the `«addressable-worker»` reuse condition fails and feedback re-review fresh-dispatches a separate validation reviewer.
-- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle and the FO event loop remains available for mailbox notifications, gate work, and captain interaction.
+- `«async-dispatch»`: Codex dispatch is async; the spawn call returns a handle. `wait_agent` is asynchronous with respect to worker progress and captain interaction: it is idle monitoring only, does not stop the FO event loop, and steered captain input interrupts it immediately so the FO can resume active work.
 - `«worker-identity»`: Record Codex task name, mailbox handle, sanitized path, helper-emitted identity, entity slug, stage, cycle, completion epoch, and thread-inherited model when the helper emits null.
-- `«completion-signal»`: The single completion signal is the async final-status notification in the FO mailbox. Foreground wait is only an idle observation action and does not itself complete the worker.
+- `«completion-signal»`: The single completion signal is the async final-status notification in the FO mailbox. A `wait_agent` return is only an idle observation and never completes the worker: verify the durable report/state first, then immediately run `«dispatch.next-action»()`.
 - `«worker.shutdown»`: `«worker.shutdown»` remains unresolved until probed. Durable workflow state remains authoritative. `«addressable-worker»` may carry cooperative preservation text when present.
 - `«context-budget»`: ABSENT; its reuse condition is satisfied because Codex has no bound context-budget probe.
 - `«roster-reconcile»`: `«roster-reconcile»` may provide active/completed task-path reads when bound. `list_agents(path_prefix?)` provides attribution, stale-cohort classification, debugging, and cleanup targeting.
 
-When `«async-dispatch»` is live, foreground waiting MUST call `wait_agent(timeout_ms: 300000)` as the long-task default: dispatched work can outlast Codex's short default. This is Spacedock's per-call policy and does not change Codex's global configuration.
+When `«async-dispatch»` is live, async idle monitoring MUST call `wait_agent(timeout_ms: 300000)` as the long-task default: dispatched work can outlast Codex's short default. Five minutes reduces normal timeout churn; it cannot correct conceptual misuse of idle monitoring when captain-authorized active-scope work is ready. This is Spacedock's per-call policy and does not change Codex's global configuration.
 
 ## Codex wait notes
 
-When there is an unresolved Codex worker and no other dispatchable, gate, or state work, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. Consecutive waits over the same unresolved worker set and unchanged workflow state are one foreground monitoring epoch. At the epoch start, before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. On an ordinary timeout, silently reinstall `wait_agent` while that worker set and workflow state remain unchanged; speak again only on worker completion, a blocker, a workflow-state transition, or a heartbeat the captain explicitly requested. If captain input or operator activity interrupts foreground wait and the worker remains unresolved, the next idle action MUST reinstall foreground wait without treating the interruption as completion.
+Async idle monitoring applies only when there is an unresolved Codex worker and no other dispatchable, gate, or state work within the captain-authorized active scope. In that condition, the FO MUST call `wait_agent(timeout_ms)` before ending the turn or reporting idle/status. It remains asynchronous with respect to worker progress and captain interaction; it does not stop the FO event loop, and steered captain input interrupts it immediately. Consecutive waits over the same unresolved worker set and unchanged workflow state are one async idle-monitoring epoch. At the epoch start, before calling `wait_agent`, tell the captain that an operator interruption only returns control; the worker is not failed, closed, or redispatched. A wait timeout return is normal and retryable; it means no final-status mailbox update arrived before the deadline. On an ordinary timeout, silently reinstall `wait_agent` only while that worker set, workflow state, and captain-authorized active scope remain unchanged; speak again only on worker completion, a blocker, a workflow-state transition, or a heartbeat the captain explicitly requested. If captain input or operator activity interrupts idle monitoring and the worker remains unresolved, the next idle action MUST reinstall foreground wait as async idle monitoring without treating the interruption as completion.
 
-A wait return must be attributed by mailbox content, task path, `«roster-reconcile»` state when present, or durable workflow state, not by a handle argument. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
+A wait result must be attributed by mailbox content, task path, `«roster-reconcile»` state when present, or durable workflow state, not by a handle argument; no wait result alone completes a worker. An async final-status notification starts completion verification, not completion itself: verify the durable entity report/state, then immediately run `«dispatch.next-action»()` rather than ending on a completion-only turn or reinstalling idle monitoring. A captain message or shell-out during the wait is operator activity, not idle wake evidence.
 
 ### Foreground wait
 
-The operator cue must state that an interruption returns control; the worker is not failed, closed, or redispatched, and the next foreground wait is reinstalled to retry the same unresolved worker when waiting is again the next useful idle action.
+This legacy heading denotes Codex's async idle monitor. The operator cue must state that an interruption returns control; the worker is not failed, closed, or redispatched, and the next foreground wait is reinstalled as async idle monitoring for the same unresolved worker only when that is again the next useful idle action in the captain-authorized active scope.
 
 ### Queued notification flushed by later activity
 
-The FO ends the turn without foreground wait, and a later captain message, tool action, or shell-out causes Codex to deliver a worker final-status notification that had already been queued. This is queued/activity-driven delivery, not autonomous FO wake-up.
+The FO ends the turn without async idle monitoring, and a later captain message, tool action, or shell-out causes Codex to deliver a worker final-status notification that had already been queued. This is queued/activity-driven delivery, not autonomous FO wake-up.
 
 ### Autonomous idle FO wake-up
 
-The FO does not use foreground wait, performs no later captain message, tool action, shell-out, or terminal job, and Codex starts a new assistant turn from the worker final-status notification alone. This is the only observation that proves no-wait autonomous FO wake-up.
+The FO does not use async idle monitoring, performs no later captain message, tool action, shell-out, or terminal job, and Codex starts a new assistant turn from the worker final-status notification alone. This is the only observation that proves no-wait autonomous FO wake-up.
 
 ## Feedback reviewer reuse
 
