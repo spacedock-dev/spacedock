@@ -111,3 +111,19 @@ The repair is deliberately one boolean boundary: an explicit pre-fence handoff
 means fresh launch even when opaque Codex options follow `--`; no-task post-fence
 launches stay prompt-free, including resume. The implementation retains operator
 tokens verbatim and adds neither a Codex grammar nor a framework.
+
+## Stage Report: implementation
+
+- DONE: Add the exact handoff-plus-model argv regression test first.
+  `TestFenceTaskPromptOverride/codex-task-before-fenced-model` failed before the fix and passes in product commit `7b71385a`.
+- DONE: Restore fresh-launch posture only when a pre-fence task exists.
+  `opaquePassthrough` is now `!fd.hasTask && len(fd.passthrough) > 0`; the existing no-task resume and opaque-passthrough controls pass.
+- DONE: Update the launch reference and run focused plus full Go tests.
+  The approved command-reference wording landed in `7b71385a`; focused `internal/cli`, `go test ./...`, and `go test ./... -race` passed.
+
+### Summary
+
+The Codex handoff-plus-model launch now preserves the operator's model tokens,
+the unsandboxed approval default, and the bootstrap prompt as the final token.
+No-task post-fence invocations remain opaque and prompt-free; the product change
+is committed and pushed as `7b71385a`.
