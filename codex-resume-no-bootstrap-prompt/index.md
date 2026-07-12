@@ -137,3 +137,28 @@ Committed [`243ca50`](https://github.com/spacedock-dev/spacedock/commit/243ca507
 ### Summary
 
 Codex resume classification now recognizes options before `resume` while preserving operator argv and fresh-launch behavior. The committed deliverable is ready for independent validation.
+
+## Stage Report: validation
+
+- DONE: **AC-1:** Preserve `--model <model> resume <session>` with no bootstrap/default approval/banner.
+  A freshly built `243ca507` binary and argv-recording `codex` emitted only `--model`, `probe-model`, `resume`, `xv-session`.
+- DONE: **AC-2:** Cover equals, short, compact-short, and first-command controls.
+  Direct recorder probes preserved `--model=probe-model`, `-m probe-model`, and `-mprobe-model`; `--model probe-model exec resume …` remained a fresh launch. Installed Codex 0.144.1 accepted both long and compact forms before `resume --help`.
+- DONE: **AC-3:** Retain leading-resume suppression and model-only fresh launch behavior.
+  Leading `resume xv-session` had no extra argv/banner; model-only recorded approval plus bootstrap and the normal banner.
+- DONE: **AC-4:** Preserve safehouse/local-plugin inner argv and consume `--plugin-dir`.
+  The executable recorder observed safehouse's exact inner `codex --dangerously-bypass-approvals-and-sandbox --model probe-model resume xv-session`; combined local `--plugin-dir` output contained no forwarded plugin flag, approval, or bootstrap.
+- DONE: **AC-5:** Document the supported command surface.
+  Reviewed `docs/site/reference/command-reference.md`: it explicitly shows `spacedock codex -- --model <model> resume <session>`.
+- DONE: Independently reproduce option-before-resume argv behavior across direct, safehouse, and plugin-dir paths.
+  Reproduced direct, safehouse, local-plugin, and combined safehouse+local-plugin launches through an executable argv recorder; all preserved the intended inner argv.
+- DONE: Verify leading resume and fresh-launch controls remain correct, including compact `-mVALUE`.
+  Focused CLI suite and the independent direct probes covered leading `resume`, model-only, later-`resume` after `exec`, and `-mprobe-model`.
+- DONE: Validate AC evidence from actual commands/tests and report PASSED or REJECTED without changing product code.
+  Focused CLI and focused `-race` suites passed; serialized `go test -p 1 ./...` passed all 17 packages. Code worktree remains clean at `243ca507`.
+- SKIPPED: Repository-wide `go test -p 1 ./... -race` completion.
+  It was attempted but the host volume exhausted temporary build space (`no space left on device`); failures were environmental before XV assertions. The focused XV race suite passed.
+
+### Summary
+
+Independent executable argv evidence covers every acceptance criterion, including the captain's option-before-resume form and the safehouse/plugin-dir paths. The implementation is behaviorally correct and clean at `243ca507`; recommend PASSED, with the full-repository race gate noted as an environment-capacity follow-up rather than a product defect.
