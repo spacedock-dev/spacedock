@@ -740,3 +740,18 @@ replacement prose proxy, no heavyweight timing machinery, and fresh normal and
 race evidence. Recommendation: REJECTED solely for undelivered PR #500; after
 a normal push of `02b56bb` to the PR head, re-check the updated revision before
 presenting the gate.
+
+## Stage Report: validation (cycle 6)
+
+- DONE: Confirm PR #500 now points at the validated 02b56bb head and its description matches the final adapter-plus-removal scope.
+  Open PR #500's cycle-3 head is `02b56bb9c2f2eb1b92254f81a400464ab25dc07a`, exactly equal to the clean validation worktree HEAD; its body names the five-minute async-idle policy, durable next action, prose-proxy retirement, and the deliberately excluded timing/config/front-door scope.
+- DONE: Check the relevant Codex CI state for the updated head; do not require Claude and do not merge.
+  After approval of only `CI-E2E-CODEX`, `codex-live` job `86659167560` for run `29196061550` completed SUCCESS at 2026-07-12T14:33:53Z on `02b56bb`; offline also passed. Claude and Pi remain intentionally unapproved/waiting, and this stage did not merge.
+- DONE: Record a concise durable delivery recheck without rerunning already-green local suites unless the evidence is missing or stale.
+  The delivered SHA is unchanged from cycle 5's fresh Contractlint (101), normal, race, formatting, and diff-check evidence, so no duplicate local run was warranted.
+
+### Summary
+
+PR delivery now matches the validated adapter-plus-removal revision, and the
+captain-authorized Codex CI job is green. Recommendation: PASSED; the unrelated
+Claude and Pi environment waits are not part of this approval or gate.
