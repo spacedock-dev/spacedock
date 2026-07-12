@@ -4,6 +4,8 @@ status: implementation
 score: 0.55
 source: "Captain request 2026-07-12."
 id: 6jk4gverktmthbzkn4vas1kg
+worktree: .worktrees/spacedock-ensign-safehouse-zellij-env-pass
+started: 2026-07-12T04:17:30Z
 ---
 
 Safehouse sanitizes the environment passed to a wrapped Spacedock host. Tooling
