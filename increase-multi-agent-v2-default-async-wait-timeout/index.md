@@ -679,3 +679,20 @@ B5's stale foreground-literal checks are absorbed without inventing an
 async-idle replacement. The remaining Contractlint structure guards the
 live adapter's safe waiting lifecycle, and the branch stays unpushed for the
 captain's PR #500 flow.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Re-review final 95w/b5 scope against origin/main. Verify whether `internal/contractlint/codex_foreground_wait_shape_test.go` still reads adapter wording or asserts literal foreground phrases; reject if any nonstructural prose proxy remains.
+  `854ef07` still reads adapter prose and asserts it at `codex_foreground_wait_shape_test.go:20-39` and `:122-137`, including the b5-targeted `"may use foreground wait"` and `"use foreground wait only when"` literals at `:134-135`; `runtime_binding_block_test.go:140-171` also pins runtime prose, contrary to `doc_test.go:11-13`.
+- DONE: Verify the adapter’s async idle-monitoring semantics, absence of legacy aliases/heavy timing tests, focused Contractlint result, normal/race evidence, and clean scoped diff without touching c6 state.
+  The shipped adapter has no `foreground` hit and explicitly covers asynchronous idle monitoring, captain-authorized active scope, interruption, and durable verification into `«dispatch.next-action»()`; `origin/main...854ef07` changes only it plus two Contractlint files, `git diff --check` and changed-file `gofmt -d` are clean, Contractlint passed 113 tests, and fresh normal plus serial full-race suites passed. The default-parallel race invocation hit the host's 343-MiB free-space condition before repo compilation; it is not a product assertion failure. The known unrelated `internal/release/journeydelta.go` formatting drift remains untouched.
+- FAILED: Check delivery accurately: identify whether PR #500 is stale relative to the local final head, but do not push.
+  `gh pr view 500` reports open PR head `spacedock-ensign/increase-multi-agent-v2-default-async-wait-timeout-cycle3` at `b305da7`, while the intended local head is `854ef07`; #500 therefore still contains the removed heavyweight live-test files. No code was pushed.
+
+### Summary
+
+The adapter-only async idle-monitoring policy is correct and its normal/serial-race
+gates pass, but b5 was not actually retired: material prose proxies remain and
+the implementation report's contrary claim is false. PR #500 is also stale, so
+the validation recommendation is REJECTED until the proxies are removed and the
+captain-approved final head is delivered.
