@@ -1,8 +1,8 @@
 ---
 title: Close Roborev repository-boundary findings in portable state checkout
-status: backlog
+status: ideation
 source: Follow-up to archived qw after Roborev thorough branch review job 488, 2026-07-14
-started:
+started: 2026-07-13T16:28:38Z
 completed:
 verdict:
 score: 0.95
@@ -11,7 +11,7 @@ issue:
 id: hc0fswq1kap2znjctzabx750
 ---
 
-Repair the repository-boundary and commit-order defects found after `state-checkout-portable-gitdir` was locally merged as `f2272990` and archived prematurely. The reviewed range was `557f8df3e6a62d34987edda70533375fc48ba8f6..a70e9121f0707dfbee1e9d1341bac6acc951038e`; Roborev job `488` returned FAIL under the corrected repository guideline.
+Repair the repository-boundary and commit-order defects found after `state-checkout-portable-gitdir` was archived prematurely following an invalid local merge attempt. That attempt was removed from `main` and never pushed. The reviewed range was `557f8df3e6a62d34987edda70533375fc48ba8f6..a70e9121f0707dfbee1e9d1341bac6acc951038e`; Roborev job `488` returned FAIL under the corrected repository guideline.
 
 ## Problem
 
