@@ -1,13 +1,13 @@
 ---
 id: sxcjbvk7tvefs8rswcseg3fd
 title: Restore model-only Codex bootstrap with exact resume-token heuristic
-status: backlog
+status: implementation
 source: Captain clarification, 2026-07-13
-started:
+started: 2026-07-13T00:37:33Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-codex-resume-token-bootstrap-heuristic
 issue:
 ---
 
