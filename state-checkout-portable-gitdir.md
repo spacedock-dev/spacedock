@@ -9,6 +9,7 @@ score:
 worktree: .worktrees/spacedock-ensign-state-checkout-portable-gitdir
 issue:
 id: qwp7vn4dnt0sx96wzz1wfy8b
+mod-block: merge:pr-merge
 ---
 
 Make every Spacedock-owned state operation work when the same repository tree is reached through a path surface different from where its state checkout was created. Observed live: a Cowork sandbox mounts the project at `/sessions/<name>/mnt/<folder>` while the linked checkout's `.git` file still points at the host-absolute administrative directory, so Git reports `not a git repository` even though the checkout and repository metadata are both present under the mounted project.
