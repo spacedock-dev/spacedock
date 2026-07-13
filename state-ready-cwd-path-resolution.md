@@ -170,3 +170,23 @@ Reproduced every claim in the implementation report independently rather than tr
 ### Summary
 
 Closed all five findings from Roborev job 487 on the existing PR branch. Repository-boundary resolution is now one fail-closed source shared by status, dispatch, and state verbs; resume is serialized across processes; JSON stdout is atomic; and the expanded real-Git suite checks exact roots, refs, output bytes, registrations, failure ordering, and cleanup state before replacement review.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently reproduce all five Roborev job 487 repairs and every AC against exact head 3d50bd9a; verify failures precede cross-checkout or destructive mutation and JSON output remains atomic.
+  Exact head `3d50bd9a` was clean and matched PR #503. Focused real-Git tests passed for wrong-root status/sweep, 12-caller resume, linked-worktree `.gitignore` cleanliness, fail-closed metadata, all three absent-checkout JSON variants, and AC-1 through AC-5; AC-6's shipped documentation sentence matches the specified diff. The failure-order tests assert no nested checkout or main-state HEAD mutation, exact registration/HEAD/entity preservation, clean main status, and one decodable JSON document.
+- DONE: Run gofmt verification, focused adversarial tests, go test ./..., go test ./... -race, and the required detached adversarial audit without modifying the implementation worktree.
+  `gofmt -l ./cmd ./internal` returned empty, `git diff --check` passed, the focused suite passed, and `go test ./... -count=1` plus `go test ./... -race -count=1` passed. In detached scratch checkout `/tmp/e6j-detached-audit.hZbeYP/repo`, bypassing the repository lock made `TestConcurrentStateReadySerializesRepairAndCreation` fail in all 5 runs during competing stale-registration removal; the implementation worktree remained clean.
+- FAILED: Run a replacement thorough Roborev review for exact base 557f8df3 and head 3d50bd9a under the corrected repository guideline, then report PR #503 head/CI state and a PASSED or REJECTED recommendation.
+  Authoritative Roborev job `707` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`, thorough reasoning, corrected Compatibility/Trust/Behavioral-proof/Review-focus guideline, and verdict FAIL. PR #503 remains OPEN/MERGEABLE at that exact head; offline, docs build, and Ubuntu/macOS install checks pass, but Claude Sonnet, Claude Opus, Codex, and Pi live jobs remain WAITING and are not green.
+
+### Reviewer findings
+
+- HIGH: `internal/status/repository_placement.go:64` parses line-delimited porcelain paths; a real main-worktree path containing a newline split across records, proving it can anchor state under the wrong root. Use `--porcelain -z` and NUL parsing.
+- HIGH: `internal/status/repository_placement.go:68` accepts the first worktree record without its `bare` marker; a real bare repo listed the bare Git directory first, proving state can be placed in administration storage. Parse complete records and fail closed without a usable primary worktree.
+- MEDIUM: `internal/cli/state_sync.go:164` releases the resume lock before origin-backed `pull --rebase`; waiters also treat configured origin as reached. Add reachable- and unreachable-origin concurrency coverage and keep synchronization atomic.
+- MEDIUM: `internal/cli/state.go:103` fetches before `state init` restores an existing local branch but does not integrate the fetched remote state, so successful init can return a stale checkout.
+
+### Summary
+
+The five job-487 repairs and their stated AC proofs pass at exact head `3d50bd9a`, and the race test is independently mutation-proven. Replacement review exposed four adjacent repository-path and synchronization defects, while required live CI remains unapproved, so the validation recommendation is **REJECTED**; do not merge PR #503.
