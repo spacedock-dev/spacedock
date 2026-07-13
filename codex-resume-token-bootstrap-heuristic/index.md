@@ -1,11 +1,11 @@
 ---
 id: sxcjbvk7tvefs8rswcseg3fd
 title: Restore model-only Codex bootstrap with exact resume-token heuristic
-status: validation
+status: done
 source: Captain clarification, 2026-07-13
 started: 2026-07-13T00:37:33Z
-completed:
-verdict:
+completed: 2026-07-13T01:38:57Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-codex-resume-token-bootstrap-heuristic
 issue:
@@ -87,3 +87,61 @@ Codex now bootstraps model-only launches and suppresses its bootstrap posture
 only when its forwarded argv contains the exact token `resume`. The
 model-plus-resume path remains prompt-free, and the pre-fence plugin-dir path
 remains correctly consumed.
+
+## Stage Report: validation
+
+**Verdict: PASSED**
+
+- DONE: Independently validated product commit `d0082e3d` in the assigned
+  clean worktree, without changing product code. The focused fake-host proof
+  passed:
+  `go test ./internal/cli -run '^(TestCodexPostFenceUsesExactResumeToken|TestRunCodexPluginDirPostFenceResumeStaysPromptFree|TestRunCodexPluginDirModelOnlyRetainsBootstrapPosture)$' -count=1 -v`.
+
+- DONE: AC-1 — model-only Codex launch retains fresh bootstrap posture. The
+  passing `model_only_retains_bootstrap_posture` subtest verifies
+  `-- --model gpt-5.6-sol` preserves the model pair, adds
+  `--ask-for-approval on-request`, appends the established first-officer
+  bootstrap prompt, and emits the launch banner.
+
+- DONE: AC-2 — exact-token resume stays prompt-free. The passing
+  `model_plus_resume_stays_prompt_free` subtest verifies
+  `-- --model gpt-5.6-sol resume abc-123` forwards those tokens without the
+  automatic approval flag, bootstrap prompt, or banner. The paired
+  `resume-like_option_stays_a_fresh_launch` case also proves that
+  `--resume=abc-123` is not treated as the token `resume`.
+
+- DONE: AC-3 — source and diff review confirms the classification is the
+  direct `slices.Contains(fd.passthrough, "resume")` check after the
+  pre-fence plugin-dir seam is consumed. The `d0082e3d^..d0082e3d`
+  `frontdoor.go` diff adds no Codex option table, argv parser/reconstruction,
+  host-command classifier, subprocess, or front-door flag. The focused
+  plugin-dir model-only and exact-resume tests both passed, proving the owned
+  pre-fence pair is consumed while the remaining forwarded slice receives the
+  same exact-token decision.
+
+- DONE: AC-4 — reviewed
+  `docs/site/reference/command-reference.md` at `d0082e3d`. It states the
+  exact-token heuristic, gives the model-only fresh-launch and
+  model-plus-resume prompt-free examples, and explicitly says Codex option
+  grammar is not parsed.
+
+- DONE: Performed the required lean detached audit from a clean throwaway
+  worktree at `d0082e3d`. I changed the resume assignment back to broad
+  nonempty suppression (and removed only the now-unused `slices` import so
+  Go could compile), then ran
+  `go test ./internal/cli -run '^TestCodexPostFenceUsesExactResumeToken/model_only_retains_bootstrap_posture$' -count=1 -v`.
+  It failed as required: actual argv was
+  `[codex --model gpt-5.6-sol]`, missing both the automatic approval default
+  and bootstrap prompt expected by the model-only oracle. I restored the
+  audit edit, confirmed the checkout clean, and removed the detached worktree
+  without `--force`.
+
+- DONE: Validation deliberately reran only the focused proof above; it did not
+  run Contractlint, modify product code, create a PR, or merge.
+
+### Summary
+
+PASSED. The model-only launch resumes normal first-officer bootstrap/default
+posture, while only a literal forwarded `resume` token suppresses it. The
+pre-fence plugin-dir seam composes with both paths, and the isolated broad-rule
+mutation demonstrably fails the model-only regression oracle.
