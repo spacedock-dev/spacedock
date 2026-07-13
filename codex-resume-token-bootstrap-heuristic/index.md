@@ -1,7 +1,7 @@
 ---
 id: sxcjbvk7tvefs8rswcseg3fd
 title: Restore model-only Codex bootstrap with exact resume-token heuristic
-status: implementation
+status: validation
 source: Captain clarification, 2026-07-13
 started: 2026-07-13T00:37:33Z
 completed:
