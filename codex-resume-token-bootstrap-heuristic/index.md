@@ -5,7 +5,7 @@ status: done
 source: Captain clarification, 2026-07-13
 started: 2026-07-13T00:37:33Z
 completed: 2026-07-13T01:38:57Z
-verdict: passed
+verdict: PASSED
 score:
 worktree: .worktrees/spacedock-ensign-codex-resume-token-bootstrap-heuristic
 issue:
