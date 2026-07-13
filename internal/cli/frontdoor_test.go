@@ -801,9 +801,9 @@ func TestClaudeFrontDoorSkipCompatCheckBootstrap(t *testing.T) {
 	}
 }
 
-// TestCodexFrontDoorLaunchesOnCompatible: on a compatible contract the codex
-// front door preserves nonempty post-fence argv exactly, with safehouse owning
-// only its outer wrapping and bypass flag.
+// TestCodexFrontDoorLaunchesOnCompatible: on a compatible contract the Codex
+// front door preserves post-fence argv order and retains fresh-launch posture
+// when no exact `resume` token is present.
 func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 	withVersion(t, testBinaryVersion)
 	dir := safehouseFixtureDir(t)
@@ -818,7 +818,7 @@ func TestCodexFrontDoorLaunchesOnCompatible(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x"}
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-x", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -870,11 +870,11 @@ func TestCodexFrontDoorForwardsPostFenceExampleThroughSafehouse(t *testing.T) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
 	if stderr.Len() != 0 {
-		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+		t.Fatalf("resume launch produced Spacedock output: %q", stderr.String())
 	}
 }
 
-func TestCodexFrontDoorPreservesOpaquePostFenceThroughSafehouse(t *testing.T) {
+func TestCodexFrontDoorBootstrapsPostFenceWithoutResumeThroughSafehouse(t *testing.T) {
 	withVersion(t, testBinaryVersion)
 	bin := executableFixture(t)
 	withExecutablePath(t, bin, nil)
@@ -889,12 +889,12 @@ func TestCodexFrontDoorPreservesOpaquePostFenceThroughSafehouse(t *testing.T) {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
 	wantArgv := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
-		"codex", "--dangerously-bypass-approvals-and-sandbox", "--future-codex-flag=handoff", "opaque-argument"}
+		"codex", "--dangerously-bypass-approvals-and-sandbox", "--future-codex-flag=handoff", "opaque-argument", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
-	if stderr.Len() != 0 {
-		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "\u00b7 launching codex") {
+		t.Fatalf("fresh post-fence launch omitted the Codex banner: %q", stderr.String())
 	}
 }
 

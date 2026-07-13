@@ -234,7 +234,8 @@ func TestClaudeSafehousePresentButBinaryMissing(t *testing.T) {
 const wantCodexBootstrapPrompt = "You totally got this. Take your time. I love you. And tell all subagents and team members you love them too. Assume $spacedock:first-officer for the entire session."
 
 // codex AC-2: .safehouse present → canonical safehouse-wrapped codex argv with
-// codex's own sandbox bypassed and opaque post-fence argv forwarded unchanged.
+// codex's own sandbox bypassed, forwarded post-fence tokens preserved, and the
+// bootstrap prompt appended unless an exact `resume` token was forwarded.
 // Mirrors runClaude's dir+lookPath threading. The wrap
 // carries `--env-pass SPACEDOCK_BIN` among the safehouse flags (before `--`); the
 // inner program is `codex` directly after `--` (NO /usr/bin/env, NO SPACEDOCK_BIN=
@@ -253,7 +254,7 @@ func TestCodexSafehousePresentWrapsArgv(t *testing.T) {
 	}
 	want := []string{"safehouse", "--trust-workdir-config", "--env-pass", spacedockBinEnv, "--",
 		"codex", "--dangerously-bypass-approvals-and-sandbox",
-		"--foo"}
+		"--foo", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
@@ -301,8 +302,9 @@ func TestCodexSafehousePromptNamesFirstOfficerSkill(t *testing.T) {
 	}
 }
 
-// codex no-`.safehouse`: a nonempty post-fence argv is plain `codex <argv>` with
-// no bypass flag and no Spacedock launch defaults.
+// codex no-`.safehouse`: a post-fence argv without an exact `resume` token is a
+// plain Codex launch with its default approval posture and bootstrap prompt, but
+// no safehouse bypass flag.
 func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 	dir := t.TempDir() // no .safehouse
 	fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -313,7 +315,7 @@ func TestCodexNoSafehouseLaunchesPlainNoBypass(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--foo"}
+	want := []string{"codex", "--ask-for-approval", "on-request", "--foo", wantCodexBootstrapPrompt}
 	if !equalArgv(fake.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
 	}
