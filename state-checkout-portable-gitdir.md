@@ -1,6 +1,6 @@
 ---
 title: Make the split-root state checkout operable from foreign path surfaces (Cowork sandbox)
-status: implementation
+status: validation
 source: live Cowork dogfood 2026-07-13 (survey-claude-cowork-runtime-detection run-1 session)
 started: 2026-07-13T02:54:30Z
 completed:
