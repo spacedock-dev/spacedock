@@ -375,3 +375,37 @@ moves and public state convergence, and all repository/race gates are green.
 Validation rejects because a corrupt split-root directory can commit state onto
 main, two load-bearing boundaries lack tests, and the required Git 2.48 proof
 lane was not delivered.
+
+### Feedback Cycles (validation cycle 2)
+
+**Cycle 2 (detached adversarial re-review of `3fe3f1f3`).** The repair closes
+the `state commit` parent-discovery escape, and both formerly green mutants are
+now caught: removing the forced absolute-link override fails
+`TestWorktreeAddForcesAbsoluteForInheritedTrueAndLocalFalse`, while routing an
+ordinary code-worktree archive through state recovery fails
+`TestArchiveDoesNotRecoverOrdinaryCodeWorktree`.
+
+The shared fail-closed claim is still false. `Resolve` accepts an absent `.git`
+as a normal runner, and CLI/status `stateOrigin` explicitly classify that same
+absence as no origin. Detached public-command negatives observed exit 0 for
+`state ready`, present-checkout `state init`, boot, and dispatch; ready printed
+`local-only`, boot printed `remote: none`, and dispatch emitted local-only
+assignment guidance. Route back to implementation: require checkout-local Git
+metadata in every state-only resolver entry point and replace the obsolete
+dispatch no-gitfile fixture with a real no-origin state checkout.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Reproduce AC-1 through AC-3 after commit 3fe3f1f3, including the missing-gitfile main-branch escape negative and tri-state fail-closed behavior.
+  AC-1 collision/back-pointer tests and AC-2 path-scoped/two-move public tests pass; `state commit` no longer advances main. AC-3 fails because ready, present-init, boot, and dispatch accept missing `.git` and report local-only/no-origin success.
+- FAILED: Reproduce AC-4 through AC-6, including committed A-to-B-to-C convergence, inherited-config temporary/persisted adds, state-only archive scope, and Git 2.48/old-Git lanes where available.
+  AC-4 public A-to-B-to-C and AC-6 scope/full/race/format gates pass. AC-5's inherited-config and local Git 2.39 unsupported-opt-in tests pass, but the Git 2.48 integration test skips and no CI workflow declares a 2.48 lane or `SPACEDOCK_OLD_GIT` binary.
+- DONE: Repeat the detached adversarial mutants that stayed green in cycle 1, run all required focused/full/race/format checks, and return PASSED or REJECTED with per-AC evidence.
+  In `/tmp/spacedock-audit-portable-cycle2`, both prior mutants turned their focused tests red; focused, `go test ./...`, `go test ./... -race`, changed-file gofmt, diff, and branch-clean checks passed. Verdict: REJECTED.
+
+### Summary
+
+Cycle 2 materially strengthens the absolute-link-default and state-only archive
+guards, and valid stale-pointer convergence remains green. Validation still
+rejects because four state consumers violate AC-3's shared fail-closed contract;
+the required Git 2.48 proof also remains unavailable and undeclared in CI.
