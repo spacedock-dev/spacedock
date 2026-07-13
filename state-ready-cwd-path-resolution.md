@@ -200,6 +200,19 @@ Reproduced every claim in the implementation report independently rather than tr
 
 Closed all five findings from Roborev job 487 on the existing PR branch. Repository-boundary resolution is now one fail-closed source shared by status, dispatch, and state verbs; resume is serialized across processes; JSON stdout is atomic; and the expanded real-Git suite checks exact roots, refs, output bytes, registrations, failure ordering, and cleanup state before replacement review.
 
+## Stage Report: implementation (cycle 3)
+
+- DONE: Replace line-delimited worktree parsing with complete NUL-delimited records that handle newline paths and reject bare-only or unusable primary-worktree candidates.
+  Local commit `d346aba4` requests `git worktree list --porcelain -z` and shares a complete-record parser across placement, stale-registration repair, and boot orphan scanning; byte-preservation, real newline-root, truncated-record, synthetic bare-primary, and real bare-repository-with-linked-worktree regressions pass, while placement also rejects non-absolute, missing, non-worktree, prunable, and common-Git-dir candidates.
+- DONE: Keep resume synchronization atomic through origin-backed pull and make restored local branches integrate fetched remote state, with reachable/unreachable concurrency regressions.
+  `state init` and `state ready` now hold the repository-scoped lock from the absent/present observation recheck through fetch, add, pull/rebase or fallback, output, and conflict cleanup; an 8-caller boundary barrier proves reachable callers all return only after the peer HEAD is present and unreachable-origin waiters do not re-pull, while a separate `state init` regression verifies exact peer bytes and HEAD after restoring a stale local branch.
+- DONE: Run focused, full, and race tests and commit locally without pushing; leave an exact clean head for fresh Roborev-first validation, with any excluded failure mode made explicit.
+  Focused adversarial tests pass; `go test ./... -count=1 -p 1` and `go test ./... -race -count=1 -p 1` pass at clean head `d346aba4dffd706918e8b0f746ca1be78ba7c9c6`. Package-parallel full/race runs intermittently hit the unrelated pre-existing `TestSonnetTeamDeleteHangReplay` replay-order flake, which passed 10/10 non-race and on isolated race rerun. The code branch remains one local commit ahead of remote head `3d50bd9a`; it was not pushed and CI was not triggered or approved.
+
+### Summary
+
+Closed all four findings from corrected-guideline Roborev job 707 without excluding a failure mode. Worktree identity now survives arbitrary path bytes and rejects non-working-tree primaries, while resume creation and remote convergence form one serialized transaction for both `state init` and `state ready`; the exact clean local head is ready for the required fresh Roborev-first validation before any push or CI action.
+
 ## Stage Report: validation (cycle 2)
 
 - DONE: Independently reproduce all five Roborev job 487 repairs and every AC against exact head 3d50bd9a; verify failures precede cross-checkout or destructive mutation and JSON output remains atomic.
