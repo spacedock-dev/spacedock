@@ -73,9 +73,9 @@ Ship two complementary lanes, with legacy recovery first.
 ### 1. Shared state-checkout Git runner
 
 Add a small `internal/stategit` package with one resolved runner for a project
-checkout plus its nested state checkout. Two present consumers justify the
-package: state verbs in `internal/cli` and split-root Git probes/commits in
-`internal/status`.
+checkout plus its nested state checkout. Three present consumers justify the
+package: state verbs in `internal/cli`, split-root Git probes/commits in
+`internal/status`, and assignment guidance in `internal/dispatch`.
 
 The runner preserves current behavior on the normal path. It resolves the
 checkout's `.git` pointer; when its target exists, commands remain ordinary
@@ -106,11 +106,26 @@ Fallback is narrow and read-only:
 Resolve the runner once per command so every subordinate operation shares the
 same mode. Route all current state-checkout Git calls through it: `state commit`
 and its lock/rebase/conflict helpers, `state ready`, the present-checkout branch
-of `state init`, boot's origin probe, and split-root archive commit/rollback in
-merge guard. Change origin detection from `bool` to `(present, error)`: a clean
-`remote get-url origin` miss means local-only, while runner resolution or Git
-repository failure is fatal. An unreadable checkout must never render or behave
-as `remote: none`.
+of `state init`, boot's origin probe, split-root archive commit/rollback in merge
+guard, and dispatch's state-commit guidance probe. Dispatch must propagate a
+runner or origin-classification error and produce no misleading local-only
+guidance.
+
+Give the shared runner one tri-state origin query rather than independent
+boolean helpers. It first runs `git remote`; failure to enumerate remotes is an
+error. If that successful result does not contain the exact remote name
+`origin`, the checkout is genuinely local-only. If `origin` is listed, it then
+runs `git remote get-url origin`; failure is an error and success means origin
+is present. Thus only successfully proved absence selects `remote: none` or
+local-only guidance; a declared origin with an unreadable URL is fatal in CLI,
+boot, and dispatch.
+
+For an already-present checkout, `state init` resolves the runner and uses that
+same origin query. A proved-absent origin preserves today's initialized success
+path. A present origin must complete both fetch and rebase pull before the
+success line is printed; either failure is returned instead of being silently
+discarded. Resolver validation failure returns the stable recovery diagnostic
+without running fetch or pull.
 
 `state sweep` remains unchanged because it reads state files and invokes Git only
 for the operable main checkout. Keep it in the end-to-end fixture to prove the
@@ -123,17 +138,25 @@ Keep persisted state worktrees absolute by default. This is the compatibility
 policy while Git 2.34 remains a supported consumer; lane 1 makes those checkouts
 portable through Spacedock commands.
 
-Use Git's existing repository config as the explicit opt-in, avoiding a new
-Spacedock flag or README field:
+Use Git's repository-local config as the explicit opt-in, avoiding a new
+Spacedock flag or README field. Read only the local scope with a typed boolean;
+an invalid local value is an error. Inherited system or global config never
+opts a repository into the compatibility-breaking extension:
 
-- unset/false `worktree.useRelativePaths` -> both verbs use today's ordinary
-  `git worktree add`, producing absolute links;
-- true -> before any birth/resume mutation, probe `git worktree add -h` for the
-  `--relative-paths` option token; if absent, fail with a diagnostic that names
-  the Git 2.48 floor and tells the operator to upgrade or unset the config;
-- true with support -> both persisted creation sites pass `--relative-paths`.
-  The temporary orphan-birth worktree is implementation scratch, not a persisted
-  state checkout; it need not define the policy.
+- local unset/false `worktree.useRelativePaths` -> every creation-time
+  `worktree add` runs with `-c worktree.useRelativePaths=false`, overriding an
+  inherited true value and forcing absolute links on both old and new Git;
+- local true -> before any birth/resume mutation, probe `git worktree add -h`
+  for the `--relative-paths` option token; if absent, fail with a diagnostic
+  that names the Git 2.48 floor and tells the operator to upgrade or unset the
+  local config;
+- local true with support -> every creation-time `worktree add` passes
+  `--relative-paths`.
+
+Apply the selected policy to the temporary orphan-birth worktree as well as the
+persisted checkout. On Git 2.48 an inherited true value on that temporary add
+can itself enable `extensions.relativeWorktrees`; forcing false in the default
+lane prevents a repository-wide compatibility change before the final add.
 
 The option probe avoids vendor-version parsing and prevents old Git from silently
 ignoring the opt-in. Documentation must state that opting in declares every
@@ -158,9 +181,16 @@ Append this section to `docs/site/advanced/split-root-state.md`:
 > New state checkouts keep absolute Git links by default for compatibility with
 > older Git. To opt into movable relative links, first ensure every host and
 > sandbox that opens the repository uses Git 2.48 or newer, then run
-> `git config worktree.useRelativePaths true` before `spacedock state new` or
-> `spacedock state init`. Git enables `extensions.relativeWorktrees`; older Git
-> then refuses the repository. Unset the config when older consumers remain.
+> `git config --local worktree.useRelativePaths true` before `spacedock state
+> new` or `spacedock state init`. Only a repository-local true value opts in;
+> inherited global and system settings are ignored, and Spacedock explicitly
+> forces absolute links otherwise. Git enables `extensions.relativeWorktrees`;
+> older Git then refuses the repository. Unset the local config when older
+> consumers remain.
+>
+> Spacedock reports a checkout as local-only only after Git successfully lists
+> its remotes without `origin`. Failure to resolve the checkout, enumerate its
+> remotes, or read a declared origin URL is an error.
 
 No command-reference wording changes: command names, arguments, output, and exit
 contracts stay the same.
@@ -182,42 +212,44 @@ Verified by: create two same-basename worktrees so the target id has a numeric c
 
 Verified by: create at A with relative paths explicitly disabled, record both link files, move the entire repository to B, edit one flat entity while leaving a sibling dirty, and run the public command. Assert exit 0, unchanged link bytes, only the named entity in the commit, the expected entity body in the state branch, a new state-checkout log entry, sibling dirt retained, and no staged residue. Exercise local-only and origin-backed push results.
 
-**AC-3 (ready and origin fail closed): `spacedock state ready` and boot's state-remote probe use the same resolved runner; a recovery error is fatal and is never reported as a local-only/no-origin checkout.**
+**AC-3 (sync and origin fail closed): `state ready`, present-checkout `state init`, boot, and dispatch use the same resolved runner and tri-state origin query; only successfully enumerated absence is local-only.**
 
-Verified by: the moved origin-backed fixture exercises ready no-op, peer integration, and same-entity rebase-conflict exit 3 with the existing output contract. Corrupt each resolver invariant and assert nonzero plus the recovery diagnostic, no pull/push, and no `remote: none` or local-only success. A valid fallback still reports `origin`.
+Verified by: the moved origin-backed fixture exercises ready no-op, peer integration, same-entity rebase-conflict exit 3, and successful present-checkout init fetch/pull with existing output contracts. Corrupt each resolver invariant and assert nonzero plus the recovery diagnostic, no pull/push, and no `remote: none` or local-only guidance. For CLI, boot, and dispatch, distinguish a successful remote list without `origin` from remote enumeration failure and from a listed origin whose URL lookup fails; the latter two are fatal, and dispatch produces no assignment artifact containing local-only guidance. A valid fallback still reports `origin`.
 
 **AC-4 (foreign-surface convergence): The public `state ready → state sweep → state commit` sequence succeeds from two successive foreign path surfaces without metadata repair, with stable output and durable state after each pass.**
 
 Verified by: prepare a pending entity at A, move A→B, run the three commands in order, then move B→C and repeat with a second entity. Assert each process exit and contractual stdout, sweep's read-only result and unchanged HEAD, expected entity bodies, state-branch log commits, clean named paths after commit, and byte-identical link files. The second move proves recovery derives from the current surface rather than a one-way rewrite.
 
-**AC-5 (one explicit creation policy): `state new` and `state init` both create persisted state checkouts with absolute links by default, and both honor `worktree.useRelativePaths=true` only when the Git command advertises `--relative-paths`.**
+**AC-5 (one explicit creation policy): `state new` and `state init` create absolute links unless repository-local `worktree.useRelativePaths=true` explicitly opts in and Git advertises `--relative-paths`.**
 
-Verified by: shared creation-helper tests drive both verbs through false/unset, true-plus-option, and true-without-option capabilities. The default lane records no new flag and produces absolute links. The supported opt-in lane records `--relative-paths`; a declared Git 2.48 CI fixture proves relative `.git`/`gitdir` links, `extensions.relativeWorktrees=true`, and ordinary Git success after a move for both verbs. The unsupported opt-in lane fails before `.gitignore`, branch, worktree, or extension mutation with the tailored Git-floor diagnostic. A Git 2.39 negative proves the extension-bearing repository is rejected rather than claiming backward compatibility.
+Verified by: shared creation-helper tests drive both verbs through local unset, local false, local true-plus-option, invalid local value, and local true-without-option. With global `worktree.useRelativePaths=true` and local unset, and again with local false, every temporary and persisted add records `-c worktree.useRelativePaths=false`; real Git 2.48 produces absolute pointers and no extension. The supported local opt-in lane records `--relative-paths`; a declared Git 2.48 CI fixture proves relative `.git`/`gitdir` links, `extensions.relativeWorktrees=true`, and ordinary Git success after a move for both verbs. The unsupported opt-in lane fails before `.gitignore`, branch, worktree, or extension mutation with the tailored Git-floor diagnostic. A Git 2.39 negative proves the extension-bearing repository is rejected rather than claiming backward compatibility.
 
-**AC-6 (normal-path compatibility): Unmoved repositories retain current command output, exit codes, and Git argv; split-root archive commit/rollback also uses the runner without widening recovery to code worktrees.**
+**AC-6 (normal-path compatibility): Unmoved repositories retain current command output and exit codes; only creation's deliberate config override changes Git argv, and split-root archive commit/rollback uses the runner without widening recovery to code worktrees.**
 
-Verified by: existing `state init|new|ready|sweep|commit`, boot, and merge-guard fixtures remain byte-for-byte stable where output is contractual. Focused spy-runner tests show a valid pointer uses `git -C`, the fallback only changes Git addressing, archive commits remain path-scoped, and non-state `.worktrees/` are never considered. `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` pass.
+Verified by: existing `state init|new|ready|sweep|commit`, boot, dispatch, and merge-guard fixtures remain byte-for-byte stable where output is contractual. Focused spy-runner tests show a valid pointer uses `git -C`, the fallback only changes Git addressing, archive commits remain path-scoped, and non-state `.worktrees/` are never considered. `go test ./...`, `go test ./... -race`, and `gofmt -w ./cmd ./internal` pass.
 
 ## Test plan
 
 Implementation cost is medium. Start with pure resolver tests and a small injected
 command runner so fail-closed cases prove that no Git process ran. Add the real-
 Git moved-repository fixture next; it is the primary end-value proof and should
-exercise B and C surfaces, collision ids, local/origin modes, rebase halt, boot
-remote reporting, and split-root archive commit/rollback.
+exercise B and C surfaces, collision ids, local/origin modes, present-checkout
+init, rebase halt, boot and dispatch origin classification, and split-root
+archive commit/rollback.
 
 Test creation policy once in a shared helper, then call it from both `state new`
-and `state init`; verb-level tests must still prove both call sites. Default CI
-can exercise absolute creation and injected capability results on any supported
-Git. Add a declared Git 2.48 integration lane (explicit binary path supplied by
-the test job) for the real relative pointers, repository extension, move, and
-old-Git rejection. This dependency is declared by the lane rather than assumed
-on developer machines.
+and `state init`; verb-level tests must still prove both call sites and the
+temporary `state new` add. Default CI can exercise absolute creation and
+injected capability results on any supported Git. The Git 2.48 integration lane
+must cover global true/local unset and local false, proving the forced default,
+as well as local true for real relative pointers, repository extension, move,
+and old-Git rejection. This dependency is declared by the lane rather than
+assumed on developer machines.
 
 Focused commands:
 
 ```text
-go test ./internal/stategit ./internal/cli ./internal/status -run 'State.*(Portable|Relative|Ready|Commit)|SplitRootArchive'
+go test ./internal/stategit ./internal/cli ./internal/status ./internal/dispatch -run 'State.*(Portable|Relative|Ready|Commit|Init)|SplitRootArchive|Dispatch.*Origin'
 ```
 
 Repository gates:
@@ -252,3 +284,19 @@ and makes legacy state operations portable through a validated runner that never
 rewrites metadata. Relative links are an explicit Git-config opt-in with a 2.48
 capability gate and a documented older-Git incompatibility; state new and init
 share the policy.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Expand the shared runner to every state-checkout Git consumer, including dispatch guidance, with explicit origin absence versus failure in CLI, boot, and dispatch.
+  The design now routes dispatch's origin probe through `internal/stategit`, propagates resolution errors, and defines absence only as a successful `git remote` enumeration without the exact `origin` name; enumeration failure and URL lookup failure for a listed origin are fatal.
+- DONE: Make relative-worktree creation a repository-local opt-in and force absolute links regardless of inherited configuration.
+  Only local true enables the capability-gated relative lane. Local unset or false applies `-c worktree.useRelativePaths=false` to every temporary and persisted `worktree add`; tests cover global true/local unset and local false on Git 2.48.
+- DONE: Prove present-checkout `state init` on a moved surface and preserve the earlier collision-id, validation, no-rewrite, old-Git, and two-move requirements.
+  AC-3 now requires successful fetch/pull through a valid recovered runner and fatal corrupt-resolver behavior with no suppressed failure. The expanded test plan retains collision ids, byte-identical pointers, Git 2.39 rejection, and A→B→C convergence.
+
+### Summary
+
+The repaired design closes all three stale-pointer call sites and classifies
+origin state without conflating absence with failure. It also prevents inherited
+global or system relative-worktree settings from silently enabling a repository
+extension, while preserving a deliberate repository-local Git 2.48+ opt-in.
