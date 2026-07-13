@@ -171,6 +171,40 @@ Out of scope: implementing this protocol during ideation; changing Codex compact
 
 Evidence: ECC files at commit `40927950c49f6e742d341e20ff7b9b7e1e7bfff5`; live Codex 0.144.1 discovery schema (temporary provenance only, to become the versioned extraction fixture); current FO, dispatch, feedback, and runtime contracts. Superseded ideation reports are preserved verbatim in `artifacts/ideation-history.md`.
 
+### Feedback Cycles
+
+**Cycle 1 (captain feedback from live compacted FO session, 2026-07-14).**
+The session confirmed that summary prose can preserve the story while losing the
+operative authorization and wait obligations. After compaction, the FO treated
+ready task `00` as authorized, dispatched an unsolicited staff review, surfaced
+its gate, and repeatedly needed the captain to restore the Codex 300-second wait
+contract. The captain's unrelated questions correctly interrupted waits without
+completing workers.
+
+Routed back to ideation with these required changes:
+
+- Add a typed, revisioned `authorized_scope` / engagement grant to the durable
+  checkpoint. Rehydration must restore the exact captain-authorized workflow and
+  task set; readiness outside that set never authorizes dispatch, review, gate
+  presentation, state mutation, or merge.
+- Treat an explicit captain cue that compaction may have occurred as an
+  operator-asserted rehydration trigger that sets or preserves
+  `needs_rehydrate`, even when no reliable host compaction event was observed.
+- Make the Codex wait obligation part of the authoritative reconstructed action:
+  unresolved workers plus no authorized ready work require
+  `wait_agent(timeout_ms: 300000)`; timeout is normal, interruption only returns
+  control, and the same idle-monitoring epoch reinstalls after the question.
+- Fence dispatch, state transition, gate presentation, merge, and final idle or
+  completion responses until authoritative contracts are fully reloaded and
+  scope, worker epochs, reports, gates, and successors reconcile.
+- Add a live split-root proof for the observed sequence: delayed workers,
+  compaction, unrelated captain question, no action on out-of-scope task `00`,
+  300-second wait restoration, matching completion consumption, and continued
+  routing without a reminder.
+
+Revise the decision, state schema, lifecycle table, ACs, and proof suites
+together; do not treat this feedback entry itself as behavioral evidence.
+
 ## Stage Report: ideation
 
 - DONE: Compress within budget.
