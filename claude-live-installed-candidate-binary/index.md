@@ -131,3 +131,16 @@ making the launcher path non-checkout-shaped, with an artifact that proves the
 installed binary embeds the actual checked-out revision. The design deliberately
 does not alter the wrong-root detector, first-officer wording, or launch-cwd
 authority work.
+
+## Stage Report: implementation
+
+- DONE: Install the checked-out candidate with local go install into a physical runner-temp bin outside the checkout, failing closed on executable, symlink, canonical-path, revision, and modified-state checks.
+  Commit `5ff92f9b` installs with `GOBIN=$RUNNER_TEMP/spacedock-live-bin`; focused tests exercise success plus dangling-symlink, inside-checkout, dirty-state, and revision-mismatch rejection.
+- DONE: Export the same installed candidate through SPACEDOCK_BIN and GITHUB_PATH, preserve staged local plugin bytes, and replace the obsolete binary artifact with provenance plus the installed executable.
+  The workflow exports the verified path through both GitHub environment files, writes `candidate-binary-provenance.txt`, uploads the runner-temp executable, and leaves plugin staging unchanged.
+- DONE: Run the affected checks, commit the bounded CI change, and report evidence that the embedded revision equals the checkout SHA while wrong-root controls remain untouched.
+  Focused tests, `go test ./...`, and `go test ./... -race` passed; a clean standalone checkout produced matching `5ff92f9b58e2aae918a9cbbda560eb7394dae413` revisions with `vcs.modified=false`, and the diff contains no `internal/ensigncycle` or first-officer contract files.
+
+### Summary
+
+Claude live E2E now installs the exact checked-out candidate into a physical runner-temp bin, verifies its placement and Go VCS metadata before model spend, and retains both provenance and executable artifacts. Behavioral workflow tests cover the positive path and the principal fail-closed boundaries without changing staged plugin bytes or wrong-root detection.
