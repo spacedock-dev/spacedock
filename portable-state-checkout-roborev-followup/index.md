@@ -323,3 +323,72 @@ The immutable qwp head and PR-only, no-local-merge path remain unchanged.
 ### Summary
 
 State Git operations now bind one validated runner to the declared project and checkout instead of trusting an operable stale pointer or walking into a parent repository. The repair is committed only on the append-only follow-up branch, with immutable qwp ancestry and local main unchanged; it is ready for fresh independent validation and exact-range Roborev review, not integration.
+
+### Feedback Cycles
+
+**Cycle 2 (validation Roborev and detached adversarial audit).** Exact-range
+Roborev job `716` rejected
+`557f8df3e6a62d34987edda70533375fc48ba8f6..2ca163b8ff0ff350799ac412b5fdeda46925e504`
+under the corrected guideline:
+
+- High: `stategit.Resolve` accepts a checkout with a standalone `.git`
+  directory before validating its relationship to the declared project. A
+  workflow-local symlink can therefore select an unrelated repository for
+  `state commit` or merge finalization. The detached validation audit added an
+  uncommitted public-command regression in a throwaway checkout; changing the
+  workflow's state path to a symlink into an unrelated repository made
+  `state commit` exit 0 and advance that unrelated HEAD. Add a fail-closed
+  symlink-escape regression that snapshots both repositories and validate
+  containment before accepting the standalone-directory lane.
+- Medium: the existing-checkout path in `state init` now turns fetch or pull
+  failures into exit 1, where the reviewed base treated refresh as best-effort
+  and retained idempotent success. Preserve the existing public exit contract,
+  or explicitly scope and prove a compatibility change.
+
+The same detached audit's copied-linked-project public-command journey was
+clean: with the source live and the nested state back-pointer target removed,
+the command rejected before mutation and preserved exact source/copy refs,
+gitfiles, and dirty entity bytes. No validation edit entered the implementation
+worktree. The audit worktree was removed after the run.
+
+## Stage Report: validation
+
+- FAILED: AC-1 — refuse every cross-repository state target before mutation.
+  The missing-metadata and live-source copy matrices passed, but the detached
+  public-command audit reproduced the standalone-`.git` symlink escape from
+  Roborev job `716`: an unrelated repository's HEAD advanced.
+- DONE: AC-2 — fail split-root merge finalization before entity or repository mutation when state `.git` is missing.
+  `TestMergeGuardMissingStateGitFailsBeforeFinalization` passed and pinned code
+  and state refs, both indexes, entity bytes and mode, worktree registrations,
+  and the absent archive tree.
+- DONE: AC-3 — reject operable stale regular-file gitlinks against the declared project.
+  The focused ordinary-copy and copied-linked-project tests passed. A detached
+  public `state commit` journey independently covered the linked-project case
+  with the permitted missing nested back-pointer fallback and exact cleanup
+  snapshots.
+- DONE: AC-4 — classify the exact named origin before committing and produce one exact retry commit.
+  `TestStateCommitReadsDeclaredOriginBeforeMutation` and the no-origin fixture
+  passed, including exact parent, attribution, timestamps, message, sole path,
+  blob, local/remote refs, and empty staged state.
+- FAILED: AC-5 — integrate only through an exact-SHA PR while preserving history.
+  The local invariants passed: original qwp remains `a70e9121`, follow-up HEAD
+  remains `2ca163b8`, and both local `main` and `origin/main` remain `557f8df3`.
+  Roborev failed, so the branch was not pushed and no PR was opened; the remote
+  branch remains absent and no local-merge fallback was attempted.
+- FAILED: AC-6 — pass every repository gate and corrected exact-range review at one head.
+  `gofmt -w ./cmd ./internal` left the implementation worktree clean;
+  focused adversarial tests, `go test ./...`, and `go test ./... -race` passed.
+  The real bind-mount tests are correctly capability-gated to the dedicated
+  Ubuntu workflow and cannot run on this macOS validator; that remote lane was
+  not entered because the review failed before push. Roborev job `716` stored
+  the exact `base_sha..head_sha` range and a prompt containing `Compatibility
+  posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`, but
+  returned FAIL with the high and medium findings above.
+
+### Summary
+
+Independent validation rejects exact head `2ca163b8`. Core copied-checkout,
+missing-metadata, origin-ordering, formatting, full, and race evidence is green,
+but the detached audit confirms a cross-repository symlink escape and Roborev
+also identifies an existing-checkout `state init` compatibility regression.
+No push, PR, ref movement, implementation edit, or local merge occurred.
