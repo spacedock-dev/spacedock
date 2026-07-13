@@ -242,6 +242,8 @@ bytes, and clean status; transcript wording is not evidence.
   Six behavior-first criteria require two successive moves, process exits, pointer bytes, entity bodies, logs, path scope, origin behavior, clean state, and normal-output compatibility.
 - DONE: Run the ideation verification gates.
   AC scan emitted AC-1 through AC-6 in order, checklist extraction emitted all three required DONE items, focused CLI/status tests passed, and `go test ./...` plus `go test ./... -race` passed.
+- SKIPPED: Route the qualifying long narrative through the standing comm officer.
+  comm-officer unavailable; proceeded unpolished
 
 ### Summary
 
