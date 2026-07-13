@@ -144,3 +144,22 @@ authority work.
 ### Summary
 
 Claude live E2E now installs the exact checked-out candidate into a physical runner-temp bin, verifies its placement and Go VCS metadata before model spend, and retains both provenance and executable artifacts. Behavioral workflow tests cover the positive path and the principal fail-closed boundaries without changing staged plugin bytes or wrong-root detection.
+
+## Stage Report: validation
+
+- DONE: Independently audit commit 5ff92f9b and reproduce the focused positive and fail-closed candidate-install tests plus full and race suites; verify the branch is clean and the diff stays bounded to the Claude live harness.
+  Focused install tests passed 5/5; `go test ./...`, `go test ./... -race`, and `git diff --check` passed; the clean two-file diff is only the Claude workflow and its behavioral test.
+- FAILED: AC-1 — Claude live E2E exercises a physical candidate binary outside the checkout while continuing to run the exact workflow-dispatch SHA and current local plugin bytes.
+  No origin branch, final-SHA GitHub run, durable scenario result, or uploaded live artifact exists; an exact-`5ff92f9b` standalone clone proved local install/provenance, but absent live evidence is not green.
+- DONE: AC-2 — The host-visible binary path no longer names the repository checkout, and no symlink resolves it back there.
+  Runner-equivalent standalone execution produced a regular executable under `/private/tmp/.../runner/spacedock-live-bin`, outside `/private/tmp/.../checkout`, with no symlink target.
+- DONE: AC-3 — The change does not weaken the separate wrong-root detector or claim to solve launch-cwd authority.
+  The diff touches no `internal/ensigncycle` or first-officer files, and all wrong-root detector cases passed independently.
+- DONE: Verify AC-1 through AC-3 with exact evidence: physical non-symlink binary outside the canonical checkout, embedded clean revision equals the reviewed head, local plugin bytes remain current, and wrong-root/first-officer behavior is untouched.
+  Exact-SHA standalone provenance recorded checkout and embedded revision `5ff92f9b58e2aae918a9cbbda560eb7394dae413` with `vcs.modified=false`; local plugin staging code is unchanged, but its required live-path proof remains the AC-1 failure above.
+- FAILED: Run or inspect the required exact-SHA Claude live E2E evidence and retained provenance/executable artifacts; return PASSED or REJECTED and name any infrastructure blocker without treating a skipped or absent live run as green.
+  REJECTED: commit `5ff92f9b` is not on origin and has no workflow run or uploaded artifacts; external push/live dispatch was withheld pending captain approval.
+
+### Summary
+
+The implementation passes all local behavioral, full, race, bounded-diff, exact-revision, placement, and wrong-root checks in a fresh standalone checkout matching the CI topology. Validation recommends REJECTED only because the acceptance contract requires a final-SHA Claude live run and retained CI artifacts, and none currently exists; rerun validation after that evidence is available.
