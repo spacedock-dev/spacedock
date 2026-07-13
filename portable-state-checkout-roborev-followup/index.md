@@ -310,3 +310,16 @@ The cycle-2 design validates the project before using it as the state resolver's
 trust anchor, proves mount aliases through filesystem identity and a real bind
 mount, and makes both the origin retry commit and PR/Roborev evidence atomic.
 The immutable qwp head and PR-only, no-local-merge path remain unchanged.
+
+## Stage Report: implementation
+
+- DONE: Implement the project/state identity, finalization-preflight, and origin-before-commit repairs with public adversarial regressions for every Roborev job 488 finding and the staff-review trust-anchor gap.
+  Commit `2ca163b8ff0ff350799ac412b5fdeda46925e504` validates linked-project and state metadata by filesystem identity, preflights split-root finalization, and classifies the exact named origin before staging. Public regressions cover live-source copies, missing state metadata, origin failure/retry, moved repositories, injected same-object aliases, and a capability-gated real bind mount.
+- DONE: Preserve immutable qwp history and exact local main OID while committing only the follow-up branch; make commit attribution, changed paths, refs, output, and cleanup assertions semantically exact.
+  Original head `a70e9121f0707dfbee1e9d1341bac6acc951038e` remains the follow-up's ancestor and the original branch still names it; local `main` and `origin/main` both remain `557f8df3e6a62d34987edda70533375fc48ba8f6`. Tests pin source/copy refs, indexes, metadata and entity bytes, retry parent and attribution, exact message and sole path, remote ref, and staged cleanup.
+- DONE: Apply the documented compatibility behavior and run gofmt, focused tests, go test ./..., and go test ./... -race, leaving a committed exact head ready for fresh validation and Roborev review.
+  The split-root guide and dedicated Linux bind-mount CI lane were updated. `gofmt -w ./cmd ./internal` left exact head `2ca163b8ff0ff350799ac412b5fdeda46925e504` clean; focused suites, `go test ./...`, and `go test ./... -race` passed.
+
+### Summary
+
+State Git operations now bind one validated runner to the declared project and checkout instead of trusting an operable stale pointer or walking into a parent repository. The repair is committed only on the append-only follow-up branch, with immutable qwp ancestry and local main unchanged; it is ready for fresh independent validation and exact-range Roborev review, not integration.
