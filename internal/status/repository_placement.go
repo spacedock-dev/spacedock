@@ -3,7 +3,9 @@
 package status
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -61,20 +63,103 @@ func ResolveRepositoryPlacement(dir string) (RepositoryPlacement, error) {
 		return placement, nil
 	}
 
-	worktreesOut, err := runGitCmd(dir, "worktree", "list", "--porcelain")
+	worktreesOut, err := runGitCmd(dir, "worktree", "list", "--porcelain", "-z")
 	if err != nil {
 		return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: %w", dir, err)
 	}
-	for _, line := range strings.Split(worktreesOut, "\n") {
-		if strings.HasPrefix(line, "worktree ") {
-			placement.MainWorktreeRoot = strings.TrimSpace(strings.TrimPrefix(line, "worktree "))
-			if placement.MainWorktreeRoot == "" {
-				break
-			}
-			return placement, nil
-		}
+	mainRoot, err := primaryWorktreeFromPorcelainZ([]byte(worktreesOut))
+	if err != nil {
+		return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: %w", dir, err)
 	}
-	return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: git worktree list returned no worktree entries", dir)
+	if !filepath.IsAbs(mainRoot) {
+		return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: primary worktree path is not absolute", dir)
+	}
+	info, err := os.Stat(mainRoot)
+	if err != nil || !info.IsDir() || !hasGitEntry(mainRoot) {
+		return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: primary worktree %q is not usable", dir, mainRoot)
+	}
+	if RealpathOf(mainRoot) == commonDir {
+		return RepositoryPlacement{}, fmt.Errorf("resolve main worktree for %s: primary worktree resolves to the common Git directory", dir)
+	}
+	placement.MainWorktreeRoot = mainRoot
+	return placement, nil
+}
+
+// primaryWorktreeFromPorcelainZ parses one complete primary record from
+// `git worktree list --porcelain -z`. Under -z, fields are NUL-delimited and
+// records end with a second NUL; path bytes are never C-quoted, so embedded
+// newlines and backslashes remain unambiguous. The first record is authoritative:
+// a bare primary is rejected rather than skipped in favor of a linked worktree.
+func primaryWorktreeFromPorcelainZ(raw []byte) (string, error) {
+	records, err := ParseWorktreePorcelainZ(raw)
+	if err != nil {
+		return "", err
+	}
+	if len(records) == 0 {
+		return "", fmt.Errorf("git worktree list returned no primary record")
+	}
+	primary := records[0]
+	if primary.Bare {
+		return "", fmt.Errorf("primary worktree record is bare")
+	}
+	if primary.Prunable {
+		return "", fmt.Errorf("primary worktree record is prunable")
+	}
+	return primary.Path, nil
+}
+
+// WorktreeRecord is one complete `git worktree list --porcelain -z` record.
+type WorktreeRecord struct {
+	Path     string
+	Branch   string
+	Bare     bool
+	Prunable bool
+}
+
+// ParseWorktreePorcelainZ decodes complete NUL-delimited porcelain records.
+// It preserves path bytes exactly and rejects truncated or structurally
+// ambiguous records instead of guessing at repository placement.
+func ParseWorktreePorcelainZ(raw []byte) ([]WorktreeRecord, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	separator := []byte{0, 0}
+	if !bytes.HasSuffix(raw, separator) {
+		return nil, fmt.Errorf("git worktree list returned an incomplete record")
+	}
+	parts := bytes.Split(raw, separator)
+	records := make([]WorktreeRecord, 0, len(parts)-1)
+	for i, part := range parts[:len(parts)-1] {
+		if len(part) == 0 {
+			return nil, fmt.Errorf("git worktree list returned an empty record at index %d", i)
+		}
+		var record WorktreeRecord
+		pathSeen := false
+		for _, field := range bytes.Split(part, []byte{0}) {
+			if len(field) == 0 {
+				return nil, fmt.Errorf("worktree record %d has an empty field", i)
+			}
+			switch {
+			case bytes.Equal(field, []byte("bare")):
+				record.Bare = true
+			case bytes.HasPrefix(field, []byte("prunable")):
+				record.Prunable = true
+			case bytes.HasPrefix(field, []byte("branch ")):
+				record.Branch = string(bytes.TrimPrefix(field, []byte("branch ")))
+			case bytes.HasPrefix(field, []byte("worktree ")):
+				if pathSeen {
+					return nil, fmt.Errorf("worktree record %d has multiple paths", i)
+				}
+				pathSeen = true
+				record.Path = string(bytes.TrimPrefix(field, []byte("worktree ")))
+			}
+		}
+		if !pathSeen || record.Path == "" {
+			return nil, fmt.Errorf("worktree record %d has no path", i)
+		}
+		records = append(records, record)
+	}
+	return records, nil
 }
 
 // ResolveSplitRootCheckout anchors a workflow's state checkout under the main

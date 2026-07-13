@@ -30,6 +30,11 @@ type syncResult struct {
 	Reason           string   `json:"reason"`
 }
 
+// stateReadyObservationHook is a test seam for placing concurrent callers at
+// the exact absent-checkout observation boundary before any acquires the resume
+// lock. Production leaves it nil.
+var stateReadyObservationHook func()
+
 // emitSync writes the result as JSON (jsonOut) or as a one-line prose summary, then
 // returns code. Centralizing the dual rendering keeps every verb's exit path
 // identical: the JSON envelope and the prose say the same thing.
@@ -152,59 +157,76 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		}, 0)
 	}
 
-	// Absent checkout → resume it (shares `state init`'s fetch + worktree-add path).
-	if !dirExists(checkout) {
-		resumeOut := stdout
-		if jsonOut {
-			// The resume helper's initialization/warning narration is prose. JSON
-			// mode owns stdout atomically: exactly one document, with diagnostics on
-			// stderr and no prefix bytes that make the envelope undecodable.
-			resumeOut = io.Discard
-		}
-		resumeCode, originReached := resumeAbsentSplitRootCheckout(workflowDir, branch, checkout, resumeOut, stderr)
-		if resumeCode != 0 {
-			return resumeCode
-		}
-		// The re-boot-after-resume sequencing the «state.ensure-ready» prose used to
-		// own: a just-linked checkout means the boot read the FO already did (if any)
-		// predates the entity dir existing, so it must re-read before greeting.
-		// Prose-only (not --json) — it is FO guidance, not part of the result envelope.
-		if !jsonOut {
-			fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
-		}
-		if !originReached {
-			// The resume already fell back to the local branch (no origin, or an
-			// unreachable one) and said so on stdout — there is no reachable origin
-			// to integrate from, so skip the network pull below rather than
-			// immediately failing it and defeating the fallback just taken.
+	observedAbsent := !dirExists(checkout)
+	if stateReadyObservationHook != nil {
+		stateReadyObservationHook()
+	}
+	resumeOut := stdout
+	if jsonOut {
+		// The resume helper's initialization/warning narration is prose. JSON mode
+		// owns stdout atomically: exactly one document.
+		resumeOut = io.Discard
+	}
+	code, lockErr := withStateResumeLock(workflowDir, func() int {
+		if !dirExists(checkout) {
+			resumeCode, originConverged := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, checkout, resumeOut, stderr)
+			if resumeCode != 0 {
+				return resumeCode
+			}
+			if !jsonOut {
+				fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
+			}
+			if !originConverged {
+				return emitSync(stdout, jsonOut, syncResult{
+					Command: "state ready", Result: "ready", StateBranch: branch,
+					Reason: "State checkout ready (resumed from the local branch — no reachable origin to integrate from).",
+				}, 0)
+			}
 			return emitSync(stdout, jsonOut, syncResult{
 				Command: "state ready", Result: "ready", StateBranch: branch,
-				Reason: "State checkout ready (resumed from the local branch — no reachable origin to integrate from).",
+				Reason: fmt.Sprintf("State checkout ready — integrated peers' state from %s.", branch),
 			}, 0)
 		}
-	}
 
-	// No origin → ready, local-only (no network integration to do).
-	if !stateHasOrigin(checkout) {
+		if observedAbsent {
+			// This caller waited behind another resume. The creator held this same
+			// lock through remote integration or local fallback, so repeating a pull
+			// would both race the convergence boundary and turn a successful
+			// unreachable-origin fallback into a false failure.
+			if !jsonOut {
+				fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
+			}
+			return emitSync(stdout, jsonOut, syncResult{
+				Command: "state ready", Result: "ready", StateBranch: branch,
+				Reason: "State checkout ready (concurrent resume completed).",
+			}, 0)
+		}
+
+		if !stateHasOrigin(checkout) {
+			return emitSync(stdout, jsonOut, syncResult{
+				Command: "state ready", Result: "ready", StateBranch: branch,
+				Reason: "State checkout ready (no origin remote — state is local-only).",
+			}, 0)
+		}
+
+		rebaseOK, rebaseOut := runGit(checkout, "pull", "--rebase", "origin", branch)
+		if !rebaseOK {
+			if rebaseInProgress(checkout) {
+				return haltOnConflict(stdout, stderr, jsonOut, "state ready", "", branch, checkout, "", rebaseOut)
+			}
+			fmt.Fprintf(stderr, "spacedock state ready: pull --rebase failed (not a conflict):\n%s\n", rebaseOut)
+			return 1
+		}
 		return emitSync(stdout, jsonOut, syncResult{
 			Command: "state ready", Result: "ready", StateBranch: branch,
-			Reason: "State checkout ready (no origin remote — state is local-only).",
+			Reason: fmt.Sprintf("State checkout ready — integrated peers' state from %s.", branch),
 		}, 0)
-	}
-
-	// Integrate peers' state with one pull --rebase, reading git's own exit status.
-	rebaseOK, rebaseOut := runGit(checkout, "pull", "--rebase", "origin", branch)
-	if !rebaseOK {
-		if rebaseInProgress(checkout) {
-			return haltOnConflict(stdout, stderr, jsonOut, "state ready", "", branch, checkout, "", rebaseOut)
-		}
-		fmt.Fprintf(stderr, "spacedock state ready: pull --rebase failed (not a conflict):\n%s\n", rebaseOut)
+	})
+	if lockErr != nil {
+		fmt.Fprintf(stderr, "spacedock state ready: cannot lock state convergence: %v\n", lockErr)
 		return 1
 	}
-	return emitSync(stdout, jsonOut, syncResult{
-		Command: "state ready", Result: "ready", StateBranch: branch,
-		Reason: fmt.Sprintf("State checkout ready — integrated peers' state from %s.", branch),
-	}, 0)
+	return code
 }
 
 // runStateSweep implements `spacedock state sweep`. It is the state-repo's

@@ -7,9 +7,8 @@ import "sync"
 
 var stateResumeMu sync.Mutex
 
-func withStateResumeLock(_ string, fn func() (int, bool)) (int, bool, error) {
+func withStateResumeLock(_ string, fn func() int) (int, error) {
 	stateResumeMu.Lock()
 	defer stateResumeMu.Unlock()
-	code, reached := fn()
-	return code, reached, nil
+	return fn(), nil
 }

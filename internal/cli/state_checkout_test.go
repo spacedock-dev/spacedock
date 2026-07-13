@@ -350,6 +350,114 @@ func TestConcurrentStateReadySerializesRepairAndCreation(t *testing.T) {
 	}
 }
 
+func runConcurrentStateReadyAtAbsentBoundary(t *testing.T, root, workflowDir string, callers int) []string {
+	t.Helper()
+	arrived := make(chan struct{}, callers)
+	release := make(chan struct{})
+	stateReadyObservationHook = func() {
+		arrived <- struct{}{}
+		<-release
+	}
+	t.Cleanup(func() { stateReadyObservationHook = nil })
+
+	results := make(chan string, callers)
+	var wg sync.WaitGroup
+	for i := 0; i < callers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var out, errBuf strings.Builder
+			code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+				os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+			results <- strings.Join([]string{fmt.Sprint(code), out.String(), errBuf.String()}, "|")
+		}()
+	}
+	for i := 0; i < callers; i++ {
+		<-arrived
+	}
+	close(release)
+	wg.Wait()
+	close(results)
+	var collected []string
+	for result := range results {
+		collected = append(collected, result)
+	}
+	return collected
+}
+
+func originBackedCheckoutBehindRemote(t *testing.T) (root, workflowDir, statePath, wantHead string) {
+	t.Helper()
+	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	hostB := filepath.Dir(filepath.Dir(workflowB))
+	writeEntity(t, workflowB, "first-task", "---\nstatus: ideation\n---\n# Peer state\n")
+	if code, _, errOut := runStateCommitCmd(t, hostB, workflowB, "first-task", "-m", "peer state"); code != 0 {
+		t.Fatalf("peer state commit exit=%d stderr=%q", code, errOut)
+	}
+	wantHead = strings.TrimSpace(git(t, bare, "rev-parse", stateBranch))
+	statePath = filepath.Join(workflowA, ".spacedock-state")
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	return filepath.Dir(filepath.Dir(workflowA)), workflowA, statePath, wantHead
+}
+
+func TestStateInitRestoredLocalBranchIntegratesFetchedRemoteState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath, wantHead := originBackedCheckoutBehindRemote(t)
+	var out, errBuf strings.Builder
+	code := run(context.Background(), []string{"state", "init", "--workflow-dir", workflowDir},
+		os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("state init exit=%d stdout=%q stderr=%q", code, out.String(), errBuf.String())
+	}
+	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
+		t.Fatalf("restored state HEAD=%s, want fetched peer HEAD=%s", got, wantHead)
+	}
+	body, err := os.ReadFile(filepath.Join(statePath, "first-task.md"))
+	if err != nil || !strings.Contains(string(body), "# Peer state") {
+		t.Fatalf("restored state omitted peer bytes: err=%v body=%q", err, body)
+	}
+}
+
+func TestConcurrentStateReadyReachableOriginConvergesAtomically(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath, wantHead := originBackedCheckoutBehindRemote(t)
+	for _, result := range runConcurrentStateReadyAtAbsentBoundary(t, root, workflowDir, 8) {
+		if !strings.HasPrefix(result, "0|") {
+			t.Fatalf("reachable-origin concurrent ready failed: %q", result)
+		}
+	}
+	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
+		t.Fatalf("concurrent ready HEAD=%s, want integrated peer HEAD=%s", got, wantHead)
+	}
+}
+
+func TestConcurrentStateReadyUnreachableOriginWaitersDoNotRepull(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	git(t, t.TempDir(), "init", "-q", "--bare", bare)
+	root := filepath.Join(t.TempDir(), "host")
+	git(t, t.TempDir(), "clone", "-q", bare, root)
+	git(t, root, "config", "user.email", "t@t")
+	git(t, root, "config", "user.name", "t")
+	workflowDir, _, _ := commissionSplitWorkflow(t, root)
+	statePath := filepath.Join(workflowDir, ".spacedock-state")
+	wantHead := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD"))
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	git(t, root, "remote", "set-url", "origin", filepath.Join(t.TempDir(), "missing.git"))
+
+	for _, result := range runConcurrentStateReadyAtAbsentBoundary(t, root, workflowDir, 8) {
+		if !strings.HasPrefix(result, "0|") {
+			t.Fatalf("unreachable-origin concurrent ready failed: %q", result)
+		}
+	}
+	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
+		t.Fatalf("fallback state HEAD=%s, want preserved local HEAD=%s", got, wantHead)
+	}
+}
+
 func TestLinkedWorktreeMetadataFailureFailsClosed(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root, _, statePath := noOriginSplitWorkflow(t)

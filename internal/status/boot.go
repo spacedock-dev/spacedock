@@ -31,19 +31,15 @@ type orphan struct {
 // existence info from `git worktree list --porcelain`. Matches scan_orphans.
 func scanOrphans(entities []*entity, gitRoot string) []orphan {
 	worktreePaths := map[string]bool{}
-	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd := exec.Command("git", "worktree", "list", "--porcelain", "-z")
 	cmd.Dir = gitRoot
 	out, err := cmd.Output()
 	if err == nil {
-		var current string
-		for _, line := range strings.Split(string(out), "\n") {
-			switch {
-			case strings.HasPrefix(line, "worktree "):
-				current = strings.TrimSpace(line[len("worktree "):])
-			case strings.HasPrefix(line, "branch ") && current != "":
-				worktreePaths[realpathOf(current)] = true
-			case line == "":
-				current = ""
+		if records, parseErr := ParseWorktreePorcelainZ(out); parseErr == nil {
+			for _, record := range records {
+				if record.Branch != "" {
+					worktreePaths[realpathOf(record.Path)] = true
+				}
 			}
 		}
 	}

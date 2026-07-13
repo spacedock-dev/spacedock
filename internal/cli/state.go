@@ -53,24 +53,41 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 		return 1
 	}
 
-	// Path-exists guard: a present state checkout is a no-op. Refresh it from
-	// origin so a resume sees peers' commits, then report. Never re-`worktree add`
-	// (the spike showed a 2nd add fatals "already exists").
-	if dirExists(statePath) {
-		if fetchOK, _ := runGit(statePath, "fetch", "origin", branch); fetchOK {
-			runGit(statePath, "pull", "--rebase", "origin", branch)
+	observedAbsent := !dirExists(statePath)
+	code, lockErr := withStateResumeLock(workflowDir, func() int {
+		// A caller that observed absence but finds the checkout after acquiring the
+		// lock waited behind the creator. That creator owned fetch/fallback and any
+		// origin integration through completion, so this waiter must not repeat a
+		// possibly unreachable pull.
+		if dirExists(statePath) {
+			if !observedAbsent {
+				if fetchOK, _ := runGit(statePath, "fetch", "origin", branch); fetchOK {
+					if pullOK, pullOut := runGit(statePath, "pull", "--rebase", "origin", branch); !pullOK {
+						if rebaseInProgress(statePath) {
+							runGit(statePath, "rebase", "--abort")
+						}
+						fmt.Fprintf(stderr, "spacedock state init: pull --rebase failed:\n%s\n", pullOut)
+						return 1
+					}
+				}
+			}
+			fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
+			return 0
 		}
-		fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
-		return 0
+		resumeCode, _ := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath, stdout, stderr)
+		return resumeCode
+	})
+	if lockErr != nil {
+		fmt.Fprintf(stderr, "spacedock state init: cannot lock state resume: %v\n", lockErr)
+		return 1
 	}
-
-	code, _ = resumeAbsentSplitRootCheckout(workflowDir, branch, statePath, stdout, stderr)
 	return code
 }
 
-// resumeAbsentSplitRootCheckout implements the RESUME half of `state init`,
+// resumeAbsentSplitRootCheckoutLocked implements the RESUME half of `state init`,
 // shared with `state ready`'s absent-checkout resume. Callers confirm statePath's
-// directory is ABSENT before calling. It repairs a stale worktree registration —
+// directory is ABSENT and hold the repository resume lock before calling. It
+// repairs a stale worktree registration —
 // necessarily stale here, since a live registration's directory would exist (e.g.
 // issue #484's deleted-checkout-but-registered-worktree repro, where a raw `git
 // worktree add` at that path fatals exit 128 "missing but already registered
@@ -79,80 +96,72 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 // absent or unreachable (mirrors `state commit`'s local-only carve-out). Neither
 // fetchable nor local is a hard failure (exit 1).
 //
-// originReached reports whether this resume actually fetched from origin — false
-// for a local-only or fallback resume. `state ready` uses this to skip its own
-// follow-up network pull against a checkout it just proved can't reach origin
-// (rather than immediately failing that pull and defeating the fallback).
-func resumeAbsentSplitRootCheckout(workflowDir, branch, statePath string, stdout, stderr io.Writer) (code int, originReached bool) {
-	code, originReached, err := withStateResumeLock(workflowDir, func() (int, bool) {
-		// Another process may have completed the resume while this caller waited.
-		// Re-check while holding the same repository-scoped lock that guards repair
-		// and creation; never remove a checkout that appeared after the outer check.
-		if dirExists(statePath) {
-			return 0, stateHasOrigin(statePath)
-		}
-		if err := repairStaleWorktreeRegistration(workflowDir, statePath, stdout); err != nil {
-			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
-			return 1, false
-		}
-
-		hasOrigin := stateHasOrigin(workflowDir)
-		var fetchOK bool
-		var fetchOut string
-		if hasOrigin {
-			fetchOK, fetchOut = runGit(workflowDir, "fetch", "origin", branch)
-		}
-		localBranchExists, _ := runGit(workflowDir, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
-
-		switch {
-		case fetchOK:
-			if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
-				fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
-				return 1, false
-			}
-			fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s).\n", statePath, branch)
-			return 0, true
-
-		case localBranchExists:
-			if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
-				fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
-				return 1, false
-			}
-			if !hasOrigin {
-				fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s) — no origin remote, state is local-only.\n", statePath, branch)
-			} else {
-				fmt.Fprintf(stdout, "Warning: git fetch origin %s failed; resumed from the local branch — peers' state may be missing:\n%s\n", branch, fetchOut)
-				fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s).\n", statePath, branch)
-			}
-			return 0, false
-
-		default:
-			// Neither a fetchable origin branch nor a local branch. Disambiguate
-			// "never birthed" (no way the branch exists anywhere) from "origin
-			// unreachable" (indeterminate — the branch may exist, we just can't see
-			// it) so the hint doesn't send an operator to `state new` when a peer's
-			// birth is merely unreachable right now.
-			reachable, found := false, false
-			if hasOrigin {
-				reachable, found = remoteBranchStatus(workflowDir, branch)
-			}
-			neverBirthed := !found && (!hasOrigin || reachable)
-			if neverBirthed {
-				fmt.Fprintf(stderr, "spacedock state init: state branch %s not found locally or on origin at %s — the workflow has not been birthed here. Run `spacedock state new --workflow-dir %s`.\n",
-					branch, statePath, workflowDir)
-			} else {
-				fmt.Fprintf(stderr, "spacedock state init: git fetch origin %s failed:\n%s\n"+
-					"Manual fallback: git fetch origin %s && git worktree add %s %s\n",
-					branch, fetchOut, branch, statePath, branch)
-			}
-			return 1, false
-		}
-	})
-	if err != nil {
-		fmt.Fprintf(stderr, "spacedock state init: cannot lock state resume: %v\n", err)
+// originConverged reports whether this resume fetched and integrated origin —
+// false for a local-only or unreachable-origin fallback.
+func resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath string, stdout, stderr io.Writer) (code int, originConverged bool) {
+	if err := repairStaleWorktreeRegistration(workflowDir, statePath, stdout); err != nil {
+		fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
 		return 1, false
 	}
-	return code, originReached
+
+	hasOrigin := stateHasOrigin(workflowDir)
+	var fetchOK bool
+	var fetchOut string
+	if hasOrigin {
+		fetchOK, fetchOut = runGit(workflowDir, "fetch", "origin", branch)
+	}
+	localBranchExists, _ := runGit(workflowDir, "rev-parse", "--verify", "--quiet", "refs/heads/"+branch)
+
+	switch {
+	case fetchOK:
+		if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
+			fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
+			return 1, false
+		}
+		if ok, out := runGit(statePath, "pull", "--rebase", "origin", branch); !ok {
+			if rebaseInProgress(statePath) {
+				runGit(statePath, "rebase", "--abort")
+			}
+			fmt.Fprintf(stderr, "spacedock state init: pull --rebase origin %s failed after restoring checkout:\n%s\n", branch, out)
+			return 1, false
+		}
+		fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s).\n", statePath, branch)
+		return 0, true
+
+	case localBranchExists:
+		if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
+			fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
+			return 1, false
+		}
+		if !hasOrigin {
+			fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s) — no origin remote, state is local-only.\n", statePath, branch)
+		} else {
+			fmt.Fprintf(stdout, "Warning: git fetch origin %s failed; resumed from the local branch — peers' state may be missing:\n%s\n", branch, fetchOut)
+			fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s).\n", statePath, branch)
+		}
+		return 0, false
+
+	default:
+		// Neither a fetchable origin branch nor a local branch. Disambiguate
+		// "never birthed" (no way the branch exists anywhere) from "origin
+		// unreachable" (indeterminate — the branch may exist, we just can't see
+		// it) so the hint doesn't send an operator to `state new` when a peer's
+		// birth is merely unreachable right now.
+		reachable, found := false, false
+		if hasOrigin {
+			reachable, found = remoteBranchStatus(workflowDir, branch)
+		}
+		neverBirthed := !found && (!hasOrigin || reachable)
+		if neverBirthed {
+			fmt.Fprintf(stderr, "spacedock state init: state branch %s not found locally or on origin at %s — the workflow has not been birthed here. Run `spacedock state new --workflow-dir %s`.\n",
+				branch, statePath, workflowDir)
+		} else {
+			fmt.Fprintf(stderr, "spacedock state init: git fetch origin %s failed:\n%s\n"+
+				"Manual fallback: git fetch origin %s && git worktree add %s %s\n",
+				branch, fetchOut, branch, statePath, branch)
+		}
+		return 1, false
+	}
 }
 
 // parseStateInitArgs reads `--workflow-dir DIR`, resolving a relative path
@@ -498,19 +507,19 @@ func dirExists(path string) bool {
 // removes a registration whose directory exists (the caller's dirExists guard
 // already routes that case to the present-checkout no-op instead).
 func repairStaleWorktreeRegistration(workflowDir, statePath string, stdout io.Writer) error {
-	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain")
+	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain", "-z")
 	if !ok {
 		// Best-effort: a listing failure just skips the repair; the subsequent
 		// `worktree add` will surface any real problem.
 		return nil
 	}
+	records, err := status.ParseWorktreePorcelainZ([]byte(out))
+	if err != nil {
+		return fmt.Errorf("parsing worktree registrations: %w", err)
+	}
 	target := status.RealpathOf(statePath)
-	for _, line := range strings.Split(out, "\n") {
-		if !strings.HasPrefix(line, "worktree ") {
-			continue
-		}
-		registered := strings.TrimSpace(line[len("worktree "):])
-		if status.RealpathOf(registered) != target {
+	for _, record := range records {
+		if status.RealpathOf(record.Path) != target {
 			continue
 		}
 		if ok, out := runGit(workflowDir, "worktree", "remove", "--force", statePath); !ok {
