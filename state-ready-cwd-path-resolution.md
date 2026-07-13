@@ -232,3 +232,22 @@ Closed all four findings from corrected-guideline Roborev job 707 without exclud
 ### Summary
 
 The five job-487 repairs and their stated AC proofs pass at exact head `3d50bd9a`, and the race test is independently mutation-proven. Replacement review exposed four adjacent repository-path and synchronization defects, while required live CI remains unapproved, so the validation recommendation is **REJECTED**; do not merge PR #503.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..d346aba4 and inspect stored range/prompt; on any finding stop REJECTED without pushing PR #503 or engaging CI.
+  Authoritative thorough Roborev job `775` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..d346aba4dffd706918e8b0f746ca1be78ba7c9c6`, all four corrected guideline sections, and verdict FAIL. It found a false-success waiter after failed checkout convergence, non-Unix cross-process locking reduced to an in-process mutex, and an over-broad shared-exclude mutation.
+- SKIPPED: Only after Roborev PASS independently reproduce newline/bare-worktree parsing and atomic resume convergence, verify every AC, gofmt, focused/full/race suites, and a detached adversarial mutation audit.
+  Roborev failed the first gate, so the assignment required validation to stop before these downstream checks.
+- SKIPPED: Only after all local gates pass push exact head d346aba4 to PR #503 and then engage required CI; report actual check outcomes, treating waits/skips/flakes as non-green until this-run evidence resolves them.
+  No code was pushed and no CI job was triggered or approved; PR #503 remains on remote head `3d50bd9a` while exact reviewed head `d346aba4` remains local-only.
+
+### Reviewer findings
+
+- MEDIUM: a waiter that observed an absent checkout can return success after a creator leaves a post-creation `pull --rebase` failure behind; remove the failed checkout/registration or propagate convergence failure, and add creator-failure concurrency coverage.
+- MEDIUM: `internal/cli/state_resume_lock_other.go` provides only an in-process mutex on `!unix`, so separate processes can race repair and creation; provide a cross-process lock or fail explicitly and test separate processes.
+- LOW: shared `.git/info/exclude` is mutated even for main-worktree births; gate it on linked-worktree placement so normal births do not leave a persistent hidden ignore rule.
+
+### Summary
+
+Validation is **REJECTED** at the Roborev-first gate. Exact-range job `775` found three unscoped failure modes, so no tests beyond review, PR update, or CI engagement were performed; these findings must return to implementation before another fresh validation.
