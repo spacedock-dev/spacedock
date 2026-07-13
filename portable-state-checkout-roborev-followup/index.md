@@ -405,3 +405,16 @@ No push, PR, ref movement, implementation edit, or local merge occurred.
 ### Summary
 
 The standalone compatibility lane now accepts only a state checkout and Git directory physically contained by the declared workflow, closing both whole-checkout and `.git`-only symlink escapes. The prior idempotent `state init` refresh contract is restored, and exact local head `f9186346` is ready for fresh corrected-guideline Roborev-first validation.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..f9186346 and inspect its stored range/prompt; on any finding stop REJECTED without push, PR, or CI.
+  Job `758` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..f91863463a7058cf1b98f20ffdae868173c37695`, included all four corrected-guideline sections, and returned FAIL with two high and one medium findings. Job `751` was discarded because positional inclusive-range syntax stored `aeeadf45..f9186346` instead of the required Git difference.
+- SKIPPED: Only after Roborev PASS independently reproduce the symlink-escape and best-effort-init fixes, AC-1 through AC-6, gofmt cleanliness, focused tests, full/race suites, real-mount evidence, and detached audit.
+  Roborev failed the first gate, so no local test, formatting, real-mount, or detached-audit work ran in this cycle; prior-cycle evidence was not promoted across the failed exact head.
+- SKIPPED: Only after every local gate passes push the exact reviewed head, open and verify the PR, then engage required CI; OAuth workflow-scope or CI failure blocks with no local integration.
+  No push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted.
+
+### Summary
+
+Validation recommends REJECTED for exact head `f91863463a7058cf1b98f20ffdae868173c37695`. Roborev job `758` found that a symlink to an external linked worktree can escape the declared project, a checkout-local `.git/commondir` can redirect standalone operations into another repository, and `status --boot` can discard resolver errors and exit silently. AC-1 and AC-6 therefore fail; AC-2 through AC-5 were not revalidated because the mandated first gate stopped the cycle. Local `main` remained exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, and the implementation worktree remained clean at the reviewed head.
