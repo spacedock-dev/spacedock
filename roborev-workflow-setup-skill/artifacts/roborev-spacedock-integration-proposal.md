@@ -2,7 +2,8 @@
 
 ## Decision
 
-Ship a user-invocable `spacedock-roborev-setup` skill that helps a
+Ship a user-invocable `roborev-setup` skill, exposed by the plugin as
+`spacedock:roborev-setup`, that helps a
 Spacedock user add Roborev to an existing development workflow when independent
 code review would strengthen the workflow.
 
@@ -22,6 +23,36 @@ The fresh Spacedock validator verifies that exact-head Roborev evidence, then
 reproduces the entity's acceptance criteria. Roborev cleanliness never replaces
 behavioral validation.
 
+## Why setup starts with `roborev quickstart`
+
+The first draft told the setup agent to follow three official web pages before
+it named any local setup command. In the adoption run this caused an avoidable
+search detour: the agent went looking for setup guidance even though
+`roborev quickstart` already prints the repository's **Current state** and a
+version-matched **Configuration playbook**.
+
+The revised skill runs `roborev quickstart` as its first Roborev command and
+works from those two sections. Local `roborev <command> --help` is the next
+source for syntax. A directly named official page is a targeted fallback only
+when those local sources leave a specific configuration gap; broad search is
+not part of normal setup.
+
+The pilot also produced an over-broad `review_guidelines` block by copying
+repository procedures and test commands. Roborev's own repository uses this
+field to calibrate judgments the reviewer cannot infer on its own: trust
+boundaries, intentional compatibility posture, false-positive suppressions,
+and review-focus boundaries. The setup skill follows that narrower pattern,
+never duplicates `AGENTS.md`, workflow or stage instructions, component
+procedures, or required developer commands, and shows the proposed calibration
+to the user before writing it.
+
+The adoption pilot also produced a valuable semantic adversarial checklist for
+the maker. That guidance belongs in `AGENTS.md` or generated implementation-stage
+instructions, not in `review_guidelines`: trace changed values and events across
+representations and lifecycle phases; matrix adjacent variants and boundaries;
+validate full records atomically; inspect scaling and implicit limits; and ask
+how tests could pass while observable behavior is wrong.
+
 ## When the skill should recommend adoption
 
 Recommend this integration when the workflow:
@@ -39,26 +70,25 @@ daemon and its agent processes.
 
 ## User adoption journey
 
-The user invokes `$spacedock-roborev-setup` from the project root and asks
+The user invokes `$spacedock:roborev-setup` from the project root and asks
 to add Roborev to the current Spacedock workflow.
 
 The skill then:
 
 1. Discovers the workflow README, stage names, base branch, worktree policy,
-   split state checkout, and current Roborev state.
-2. Explains the integration boundary and proposed workflow edits before making
-   changes.
-3. Directs setup through Roborev's current official documentation:
-   - [Quick Start](https://roborev.io/quickstart/)
-   - [Configuration](https://roborev.io/configuration/)
-   - [Subagent Review Panels](https://roborev.io/advanced/subagent-review-panels/)
-4. Points the user to those documents to choose available review agents and
-   configure an advisory `quick` panel plus a required `code_completion` panel in
-   `.roborev.toml`. The Roborev documentation remains the command and schema
+   and split state checkout.
+2. Runs `roborev quickstart` from the canonical code repository as the first
+   Roborev command. Its Current state and Configuration playbook are the setup
    authority.
-5. Runs or proposes `roborev init` from the canonical code repository outside
-   Safehouse, subject to the user's approval for installation and configuration
-   changes.
+3. Explains the integration boundary, the missing items that matter, the
+   intentionally omitted fix/refine and agent-hook features, and the proposed
+   workflow edits before making changes. Any proposed `review_guidelines`
+   calibration is reviewed separately by the user before it is written.
+4. Uses local `--help` for command syntax and opens only the directly relevant
+   official configuration or panel page when quickstart leaves a named gap.
+5. With approval, applies only the missing setup needed for an advisory `quick`
+   panel and a required `code_completion` panel, then reruns `quickstart` to
+   verify the result.
 6. Adds the split state checkout's actual state branch to that checkout's
    `excluded_branches` during setup. This is configuration, not a live enqueue
    probe. The integration never deliberately queues a state-only review merely
@@ -76,6 +106,47 @@ The skill then:
 
 No first-officer core-contract change and no new workflow schema are required.
 The integration is a workflow-owned implementation-exit discipline.
+
+## Exact-tip cost-gate order
+
+Roborev's post-commit `quick` job and an explicitly requested
+`code_completion` panel are independent. The generated implementation-stage
+contract therefore orders them:
+
+1. Record the final candidate commit.
+2. Wait for that exact commit's already-enqueued quick review with `roborev wait
+   <head>`, then inspect `roborev show <head> --json` and verify the quick panel.
+3. Keep Medium-or-higher findings in implementation. Fix and recommit, then
+   wait for the replacement tip. Low findings remain advisory.
+4. Only after quick clears, launch `code_completion` for the complete branch and
+   preserve its synthesis parent.
+
+The two jobs never start in parallel. Missing or failed final-tip quick
+coverage is repaired before the expensive panel starts. Any fixing commit
+invalidates both results and restarts the sequence at quick. Quick saves cost;
+it never satisfies the implementation-exit evidence requirement.
+
+The `wait` exit code alone is not the Low-versus-Medium decision: a Low-only
+review may still have a failed verdict. The implementation contract classifies
+the stored exact-tip findings and permits only the Low-only case to continue.
+
+## Implementation-owned semantic pass
+
+Before the final candidate commit and the quick wait, the generated
+implementation guidance requires a semantic adversarial pass:
+
+- trace identity, cardinality, order, exact bytes, attribution, authority, and
+  terminal state across every representation and lifecycle phase;
+- matrix empty/terminal, repeated/out-of-order, every input path, Unicode, EOF,
+  size, visibility, and layout variants;
+- use canonical validators or atomic validation of the complete record;
+- inspect hot paths and readers for multiplicative work, blocking I/O,
+  unbounded allocation, and implicit size limits, with scaling/over-limit proof;
+- assert exact observable results plus failure and cleanup behavior, especially
+  where the old tests could pass despite wrong behavior.
+
+Implementation owns this work and any fixes. It is pre-review preparation, not
+Roborev reviewer calibration or Roborev-owned remediation.
 
 ## Why the required panel belongs at implementation exit
 
@@ -169,6 +240,10 @@ The agent hook remains useful for projects using Roborev without Spacedock.
 Reconsider it here only if a future repository-scoped notification can route
 findings into Spacedock without invoking a competing fixer.
 
+`roborev quickstart` may also report Roborev fix/refine skills as missing. Leave
+them missing for this integration: implementation owns code changes and the
+First Officer owns routing.
+
 ## Runtime and sandbox topology
 
 When the skill detects Safehouse or another sandbox, it advises the user to run
@@ -195,12 +270,15 @@ daemon for untrusted code.
 After the current working-tree changes settle:
 
 1. Invoke the skill from the canonical project root.
-2. Configure and initialize Roborev from its official setup documentation.
+2. Confirm `roborev quickstart` is the first Roborev command and configure only
+   the missing setup it identifies; use direct official pages only for a named
+   panel-schema gap.
 3. Add the state-branch exclusion during setup.
 4. Update the implementation and validation stage definitions.
-5. Pilot on the next entity leaving implementation.
-6. Prove a failing panel keeps the entity in implementation, a fixing commit
-   invalidates the old result, and a replacement panel can pass.
+5. Prove the final-tip quick job finishes before `code_completion` starts;
+   Medium-or-higher findings hold implementation while Low findings do not.
+6. Prove a failing required panel keeps the entity in implementation, a fixing
+   commit invalidates the old result, and a replacement panel can pass.
 7. Confirm the fresh validator verifies the stored exact-head evidence and
    independently reproduces the entity's ACs.
 

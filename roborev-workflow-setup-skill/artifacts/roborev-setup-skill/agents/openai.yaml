@@ -1,4 +1,4 @@
 interface:
   display_name: "Spacedock Roborev Setup"
   short_description: "Set up Roborev for a Spacedock workflow"
-  default_prompt: "Use $spacedock-roborev-setup to add Roborev review evidence to this Spacedock development workflow."
+  default_prompt: "Use $spacedock:roborev-setup to add Roborev review evidence to this Spacedock development workflow."
