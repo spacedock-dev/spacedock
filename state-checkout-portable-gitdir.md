@@ -300,3 +300,20 @@ The repaired design closes all three stale-pointer call sites and classifies
 origin state without conflating absence with failure. It also prevents inherited
 global or system relative-worktree settings from silently enabling a repository
 extension, while preserving a deliberate repository-local Git 2.48+ opt-in.
+
+## Stage Report: implementation
+
+- DONE: Implement one validated internal/stategit runner and route CLI, status/merge, and dispatch state-checkout Git consumers through it without changing normal output.
+  Commits `d36475b7` and `57d29a6a` add exact-id, confined, no-rewrite recovery; tri-state origin handling; and state-only routing for CLI sync, boot/status, split-root archive commit/rollback, and dispatch. The follow-up commit keeps ordinary code-worktree discovery on unmodified Git addressing.
+- DONE: Implement one repository-local creation policy for state new/init that forces absolute links by default and capability-gates explicit relative-worktree opt-in across temporary and persisted adds.
+  Both verbs use the shared worktree-add helper. Local unset/false supplies `-c worktree.useRelativePaths=false`; only repository-local true supplies `--relative-paths`, after the Git help surface proves support, and unsupported opt-in fails before mutation with the Git 2.48 diagnostic.
+- DONE: Land the specified resolver, origin-tristate, moved A→B→C, inherited-config, old/new Git, init/ready/sweep/commit, docs, race, and formatting proof on the implementation branch.
+  Resolver fixtures exercise a collision-suffixed administrative id across A→B→C without pointer rewrites, malformed back-pointers fail closed, origin absence/presence is explicit, and the installed Git 2.39.5 proves the unsupported relative-opt-in diagnostic. Existing public verb, status/merge, and dispatch suites remain green; the split-root documentation now describes moved repositories, explicit relative-link opt-in, and older-Git incompatibility. `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed against the committed implementation.
+
+### Summary
+
+Spacedock now operates legacy split-root state checkouts after their enclosing
+repository moves, using validated alternate Git addressing without rewriting
+worktree metadata. New checkouts retain absolute links unless a repository-local,
+Git-2.48-capable opt-in requests relative links, and origin failures now halt
+instead of being mislabeled local-only.
