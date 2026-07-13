@@ -231,7 +231,11 @@ func Reconcile(opts reconcileOpts, stdout, stderr io.Writer) int {
 			"note: no session-scoped team resolved; reporting git/filesystem drift only (roster reconciliation needs a team identity — pass --team-name)")
 	}
 
-	stateRoot := splitRootStateCheckout(opts.workflowDir)
+	stateRoot, err := splitRootStateCheckout(opts.workflowDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "error: cannot resolve split-root state checkout: %v\n", err)
+		return 1
+	}
 	if stateRoot == "" {
 		stateRoot = opts.workflowDir
 	}
@@ -688,7 +692,11 @@ func Sweep(workflowDir string, gh GhRunner, jsonOut bool, stdout, stderr io.Writ
 		fmt.Fprintf(stderr, "spacedock state sweep: workflow directory not found: %s\n", workflowDir)
 		return 1
 	}
-	stateRoot := splitRootStateCheckout(workflowDir)
+	stateRoot, err := splitRootStateCheckout(workflowDir)
+	if err != nil {
+		fmt.Fprintf(stderr, "spacedock state sweep: cannot resolve state checkout: %v\n", err)
+		return 1
+	}
 	if stateRoot == "" {
 		stateRoot = workflowDir
 	}

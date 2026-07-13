@@ -154,7 +154,14 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 
 	// Absent checkout → resume it (shares `state init`'s fetch + worktree-add path).
 	if !dirExists(checkout) {
-		resumeCode, originReached := resumeAbsentSplitRootCheckout(workflowDir, branch, checkout, stdout, stderr)
+		resumeOut := stdout
+		if jsonOut {
+			// The resume helper's initialization/warning narration is prose. JSON
+			// mode owns stdout atomically: exactly one document, with diagnostics on
+			// stderr and no prefix bytes that make the envelope undecodable.
+			resumeOut = io.Discard
+		}
+		resumeCode, originReached := resumeAbsentSplitRootCheckout(workflowDir, branch, checkout, resumeOut, stderr)
 		if resumeCode != 0 {
 			return resumeCode
 		}
@@ -388,7 +395,12 @@ func resolveStateCheckout(command, workflowDir string, stderr io.Writer) (checko
 		fmt.Fprintf(stderr, "spacedock %s: %v\n", command, err)
 		return "", "", status.StateInline, 1
 	}
-	return resolveSplitRootCheckout(workflowDir, relPath), b, status.StateSplitRoot, 0
+	checkout, err = resolveSplitRootCheckout(workflowDir, relPath)
+	if err != nil {
+		fmt.Fprintf(stderr, "spacedock %s: cannot resolve state checkout: %v\n", command, err)
+		return "", "", status.StateInline, 1
+	}
+	return checkout, b, status.StateSplitRoot, 0
 }
 
 // parseStateCommitArgs reads the positional <slug> plus `--workflow-dir DIR`,
