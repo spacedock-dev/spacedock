@@ -49,3 +49,41 @@ Verified by: updated command reference aligned to the focused tests.
 Update the existing fake-host launch-parity tests with model-only and
 model-plus-resume cases, run focused `internal/cli` tests, then `go test ./...`.
 No live host test is required for deterministic argv assembly.
+
+## Stage Report: implementation
+
+- DONE: Replaced the broad no-task post-fence suppression rule with direct exact
+  membership of `resume` in the forwarded Codex slice, after pre-fence
+  `--plugin-dir` consumption. The implementation uses
+  `slices.Contains(fd.passthrough, "resume")`; it adds no Codex parser, option
+  table, argv reconstruction, flag, or subprocess.
+- DONE: Added fake-host argv coverage proving `-- --model gpt-5.6-sol` retains
+  unsandboxed `--ask-for-approval on-request`, the Codex bootstrap prompt, and
+  the launch banner, while `-- --model gpt-5.6-sol resume <id>` remains
+  prompt-free. A `--resume=<id>` case pins full-token matching.
+- DONE: Preserved and extended the pre-fence `--plugin-dir` seam: it is consumed
+  before the heuristic, never reaches Codex, and composes with both the
+  model-only fresh launch and exact-resume launch.
+- DONE: Updated stale launch, banner, safehouse, and permission tests plus the
+  command reference to describe the exact-token heuristic and the separate
+  explicit-approval override.
+- DONE: Requested independent review. The reviewer approved the diff with no
+  Critical or Important findings; its minor documentation and exact-token test
+  suggestions were incorporated.
+- DONE: Committed and pushed the code branch:
+  `d0082e3d fix: restore Codex model-only bootstrap`
+  on `spacedock-ensign/codex-resume-token-bootstrap-heuristic`.
+- DONE: Verification completed successfully:
+  `go test ./internal/cli -run '^TestCodexPostFenceUsesExactResumeToken$' -count=1 -v`;
+  `go test ./internal/cli -run 'Codex|OperatorPermissionFlag|ResumeUnsandboxed|LaunchBannerSuppressedOnResume' -count=1 -v`;
+  `go test ./internal/contractlint -count=1`;
+  `go test ./... -count=1`;
+  `go test ./... -race -count=1`;
+  `gofmt -w ./cmd ./internal`; and `git diff --check`.
+
+### Summary
+
+Codex now bootstraps model-only launches and suppresses its bootstrap posture
+only when its forwarded argv contains the exact token `resume`. The
+model-plus-resume path remains prompt-free, and the pre-fence plugin-dir path
+remains correctly consumed.
