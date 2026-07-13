@@ -351,6 +351,23 @@ the command rejected before mutation and preserved exact source/copy refs,
 gitfiles, and dirty entity bytes. No validation edit entered the implementation
 worktree. The audit worktree was removed after the run.
 
+**Cycle 3 (Roborev-first validation, job 758; captain escalation).** The
+corrected-guideline first gate rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..f91863463a7058cf1b98f20ffdae868173c37695`
+before tests, push, PR creation, or CI:
+
+- HIGH: linked-worktree containment is lexical; a workflow-local symlink can
+  select an external linked worktree and mutate it.
+- HIGH: a checkout-local `.git/commondir` can redirect the standalone lane to
+  another repository's refs and objects.
+- MEDIUM: `status --boot` discards state resolver/origin errors and exits without
+  a diagnostic.
+
+Per the three-cycle feedback rule, this rejection is escalated to the captain
+instead of automatically routing another implementation round. The follow-up
+branch remains local at `f9186346`; local `main` is unchanged; no PR or CI exists
+for this branch.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
