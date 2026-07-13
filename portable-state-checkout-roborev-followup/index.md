@@ -392,3 +392,16 @@ missing-metadata, origin-ordering, formatting, full, and race evidence is green,
 but the detached audit confirms a cross-repository symlink escape and Roborev
 also identifies an existing-checkout `state init` compatibility regression.
 No push, PR, ref movement, implementation edit, or local merge occurred.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Reject standalone .git directories that escape the declared project through symlinks or unrelated repositories, with public-command snapshots proving zero mutation in both repositories.
+  Commit `f91863463a7058cf1b98f20ffdae868173c37695` resolves the declared workflow, checkout, and standalone Git directory through filesystem identity before accepting the compatibility lane. `TestStateCommitRejectsStandaloneRepositorySymlinkEscape` uses an unrelated nested repository outside the workflow root and pins both HEADs, indexes, statuses, entity bytes and mode, stdout, and the symlink; `TestResolveRejectsStandaloneGitDirectorySymlinkEscape` covers the adjacent `.git`-only symlink.
+- DONE: Restore the existing-checkout state init best-effort refresh exit contract unless an explicit compatibility change is separately scoped and proven.
+  Existing-checkout metadata still fails closed, while fetch failure skips pull and pull failure is ignored exactly as the reviewed base did. `TestStateInitExistingCheckoutRefreshIsBestEffort` proves both paths retain exit 0, empty stderr, exact success stdout, and the expected fetch/pull cardinality.
+- DONE: Run focused, full, and race tests and commit locally without pushing; leave an exact clean head for fresh corrected-guideline Roborev-first validation before any CI engagement.
+  Focused `internal/cli`, `internal/stategit`, and adjacent `internal/status` tests passed; `gofmt -w ./cmd ./internal` left exact head `f91863463a7058cf1b98f20ffdae868173c37695` clean; `go test ./...` and `go test ./... -race` passed. The code branch was not pushed and no PR, CI, merge, approval, or integration action was attempted.
+
+### Summary
+
+The standalone compatibility lane now accepts only a state checkout and Git directory physically contained by the declared workflow, closing both whole-checkout and `.git`-only symlink escapes. The prior idempotent `state init` refresh contract is restored, and exact local head `f9186346` is ready for fresh corrected-guideline Roborev-first validation.
