@@ -100,6 +100,27 @@ Fleshed out issue #484 into a three-fix design: a shared main-worktree-anchored 
 
 Routed back to ideation: either (a) extend the fix's scope to also cover `internal/dispatch/helpers.go`'s `splitRootStateCheckout`, or (b) correct the "every split-root state verb" claim to exclude `sweep` (consistent with the existing Out-of-scope line) and adjust AC-2 / AC-5 / the Test plan so no verified-by claim overclaims `sweep` coverage. Either resolution is acceptable; the gate blocks on the self-contradiction, not on a specific choice between them.
 
+**Cycle 2 (post-validation Roborev review, job 487).** The independent
+thorough branch review rejected exact head
+`9c24747050250c60b5807bcd7bb89bbbfae28f28` with five material findings:
+
+- `internal/cli/state_checkout.go:22`: main-worktree anchoring reaches only the
+  selected state subcommands, so `status` and `state sweep` can still target a
+  wrong checkout.
+- `internal/cli/state.go:457`: concurrent resume can race through destructive
+  `git worktree remove --force` behavior.
+- `internal/cli/state.go:217`: `state new` from a linked worktree edits the wrong
+  `.gitignore`, leaving the main checkout dirty.
+- `internal/cli/state_checkout.go:23`: metadata failure falls back to a
+  worktree-local path instead of failing closed.
+- `internal/cli/state_sync.go:157`: `state ready --json` can emit prose before
+  the JSON document.
+
+Routed back to implementation: close each repository-boundary, concurrency,
+cleanliness, fail-closed, and output-atomicity defect with an adversarial
+behavioral regression. Re-run full and race gates, then replace Roborev job 487
+at the corrected exact head before the validation gate can be presented again.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
