@@ -15,7 +15,7 @@ Restore the intended first-officer loading boundary: boot reads the shared core 
 
 ## Problem
 
-PR #495 (`f22360de`) fixed a real Claude live failure in which the model hunted the filesystem for the delayed write capability, but it overcorrected by eagerly importing `fo-merge-core.md` and `fo-write-core.md` from the first-officer entry skill. Commit `6baeed70` moved merge eager and `1e4423e1` moved write eager; later contractlint tests canonized exactly three eager imports. This regressed the earlier split explicitly designed in `shared-merge-dispatch-contract`: an interactive greet that stops should not pay for mutation or terminal ceremony it never uses.
+The archived `dp` task (`dpwp415wfzj6yrcwbs0krrea`, `fo-deferred-load-point-hunt-vs-skill-addressing`) diagnosed a real Claude failure class in which the model hunted the filesystem for delayed references; its structural addressing direction fed PR #491. PR #495 (`f22360de`) was not `dp`: it explicitly superseded #491's root-addressing direction and bundled `6h`, `p4`, and the `m1y` small-core preload. That preload overcorrected by eagerly importing `fo-merge-core.md` and `fo-write-core.md` from the first-officer entry skill. Commit `6baeed70` moved merge eager and `1e4423e1` moved write eager; later contractlint tests canonized exactly three eager imports. This regressed the earlier split explicitly designed in `shared-merge-dispatch-contract`: an interactive greet that stops should not pay for mutation or terminal ceremony it never uses.
 
 The failure was deterministic discovery, not laziness itself. Restoring vague skill discovery would recreate the original hunt. The delayed cues must name exact canonical reference paths and load them at behaviorally enforced triggers.
 
