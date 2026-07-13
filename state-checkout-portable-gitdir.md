@@ -317,3 +317,46 @@ repository moves, using validated alternate Git addressing without rewriting
 worktree metadata. New checkouts retain absolute links unless a repository-local,
 Git-2.48-capable opt-in requests relative links, and origin failures now halt
 instead of being mislabeled local-only.
+
+### Feedback Cycles
+
+**Cycle 1 (validation gate, detached adversarial audit finding).** Audited commit
+`57d29a6a` in detached throwaway checkout `/tmp/spacedock-audit-portable`; the
+implementation worktree remained untouched.
+
+1. A public split-root `state commit` fixture with a present state directory but
+   no `.git` exited 0 and advanced the main/code branch from `8e64eeaf` to
+   `f7592e78`. `Resolve`/`ResolveContaining` accepted parent-repository discovery,
+   violating the linked-checkout-only and fail-closed contract.
+2. Removing `-c worktree.useRelativePaths=false` from the default creation lane
+   left `go test ./internal/stategit ./internal/cli` green. No committed test
+   protects the inherited-global-config override, temporary add, or persisted add.
+3. Forcing split-root archive Git routing onto ordinary/code worktrees left
+   `go test ./internal/status` green. No test protects the state-only recovery
+   scope. The collision-id and origin-absence mutants did turn their focused
+   tests red, so those two guards are discriminating.
+
+Route back to implementation: reject missing/non-gitfile split-root directories
+before parent discovery can stage onto main; add the public corrupt-checkout
+negative, inherited-config creation tests, and non-state archive-scope negative.
+Add the specified Git 2.48 integration lane and committed public A→B→C fixture;
+neither exists in the reviewed diff.
+
+## Stage Report: validation
+
+- FAILED: Reproduce AC-1 through AC-3 from committed code: exact collision-id recovery, byte-stable path-scoped commit, tri-state origin, present-init/ready/boot/dispatch fail-closed behavior.
+  Collision-id A→B→C and tri-state unit tests passed; an independent moved public commit/init/ready fixture preserved both link files and path scope. Fail-closed recovery is false: missing state `.git` committed the entity onto main with exit 0.
+- FAILED: Reproduce AC-4 through AC-6: A→B→C public convergence, creation-policy/inherited-config lanes, old-Git rejection or documented fixture limits, stable outputs, full tests, race, format, and clean branch.
+  Independent public A→B→C ready/sweep/commit passed; full and race suites passed and changed Go files are formatted on a clean branch. AC-5 lacks the required Git 2.48 lane/old-Git extension fixture, and the config-override mutant stayed green.
+- DONE: Run the required detached adversarial audit on a throwaway checkout, trying claim-breaking resolver/origin/scope/config edits against the implementation tests; return PASSED or REJECTED with per-AC evidence.
+  See Feedback Cycles: resolver-id and origin mutants red; config-default and recovery-scope mutants green; the missing-`.git` public negative exposed a main-branch state commit. Verdict: REJECTED.
+- SKIPPED: Route the qualifying validation report through the standing comm officer.
+  comm-officer unavailable; proceeded unpolished
+
+### Summary
+
+The portable runner succeeds for valid stale absolute metadata, including two
+moves and public state convergence, and all repository/race gates are green.
+Validation rejects because a corrupt split-root directory can commit state onto
+main, two load-bearing boundaries lack tests, and the required Git 2.48 proof
+lane was not delivered.
