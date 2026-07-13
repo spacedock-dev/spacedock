@@ -191,6 +191,31 @@ record the exact SHA before the replacement Roborev review. Review
 commits. Only PASS at that SHA permits push and PR creation; no local merge is
 part of this plan.
 
+### Feedback Cycles
+
+**Cycle 1 (ideation staff review).** Independent review rejected the first
+follow-up design on four false-green or incomplete boundaries:
+
+- The resolver validates the state checkout but still trusts a declared
+  project's regular-file `.git` through ordinary Git. Add the copied linked
+  project case, including the allowed missing state back-pointer fallback, and
+  prove the project trust anchor cannot cross into the source repository while
+  same-object path aliases remain valid.
+- Integration evidence must require local `main`'s exact OID to remain unchanged;
+  “no merge commit” does not exclude fast-forward, squash, cherry-pick, or direct
+  ref movement. The Roborev record must bind exact base and head SHAs and prove
+  the job prompt contains the corrected guideline; rerun when the PR base differs.
+- A symlink does not prove bind/sandbox-mount compatibility. Require a
+  deterministic distinct-path same-object identity oracle plus a
+  capability-gated real mount check, or narrow the compatibility claim.
+- The state-commit proof must pin exact parent, author/committer attribution,
+  message, and changed-path set so sibling-sweeping or misattributed commits
+  cannot pass.
+
+Routed back to ideation: revise the design, AC-4 through AC-6, and the test plan
+together, then return for another independent staff review before the captain
+gate.
+
 ## Stage Report: ideation
 
 - DONE: Reproduce the operable-stale-gitfile boundary crossing and identify the discriminating validation rule.
