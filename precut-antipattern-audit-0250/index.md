@@ -1,10 +1,11 @@
 ---
 title: "Independent pre-cut antipattern audit for v0.25.0"
-status: backlog
+status: implementation
 source: "Captain directive 2026-07-13: dispatch the pre-cut antipattern audit now."
 score: 1.0
-worktree: ""
+worktree: .worktrees/spacedock-ensign-precut-antipattern-audit-0250
 id: 1nv6hngvcx5gj67sqtdxsc2b
+started: 2026-07-13T08:23:30Z
 ---
 
 ## Problem
