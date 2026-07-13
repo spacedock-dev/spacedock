@@ -155,11 +155,69 @@ jobs:
           curl -fsSL https://claude.ai/install.sh | bash -s -- "$VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build spacedock binary
+      - name: Install spacedock candidate
         run: |
-          go build -o ./spacedock ./cmd/spacedock
-          echo "SPACEDOCK_BIN=$(pwd)/spacedock" >> "$GITHUB_ENV"
-          echo "$(pwd)" >> "$GITHUB_PATH"
+          set -euo pipefail
+
+          candidate_dir="$RUNNER_TEMP/spacedock-live-bin"
+          candidate_bin="$candidate_dir/spacedock"
+          if [ -e "$candidate_bin" ] || [ -L "$candidate_bin" ]; then
+            echo "candidate output already exists: $candidate_bin" >&2
+            exit 1
+          fi
+          if [ -e "$candidate_dir" ] || [ -L "$candidate_dir" ]; then
+            if [ ! -d "$candidate_dir" ] || [ -L "$candidate_dir" ]; then
+              echo "candidate directory is not a physical directory: $candidate_dir" >&2
+              exit 1
+            fi
+            if find "$candidate_dir" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+              echo "candidate directory is not empty: $candidate_dir" >&2
+              exit 1
+            fi
+          else
+            mkdir -p "$candidate_dir"
+          fi
+
+          GOBIN="$candidate_dir" go install ./cmd/spacedock
+          if [ ! -f "$candidate_bin" ] || [ ! -x "$candidate_bin" ] || [ -L "$candidate_bin" ]; then
+            echo "installed candidate is not a physical executable: $candidate_bin" >&2
+            exit 1
+          fi
+
+          candidate_canonical_path="$(realpath "$candidate_bin")"
+          checkout_canonical_path="$(realpath "$(git rev-parse --show-toplevel)")"
+          case "$candidate_canonical_path" in
+            "$checkout_canonical_path"|"$checkout_canonical_path"/*)
+              echo "candidate resolves inside checkout: $candidate_canonical_path" >&2
+              exit 1
+              ;;
+          esac
+
+          checkout_revision="$(git rev-parse HEAD)"
+          build_metadata="$(go version -m "$candidate_bin")"
+          embedded_revision="$(printf '%s\n' "$build_metadata" | awk '$1 == "build" && $2 ~ /^vcs.revision=/ { sub(/^vcs.revision=/, "", $2); print $2; exit }')"
+          vcs_modified="$(printf '%s\n' "$build_metadata" | awk '$1 == "build" && $2 ~ /^vcs.modified=/ { sub(/^vcs.modified=/, "", $2); print $2; exit }')"
+          if [ -z "$embedded_revision" ] || [ "$embedded_revision" != "$checkout_revision" ]; then
+            echo "embedded revision does not match checkout: embedded=${embedded_revision:-missing} checkout=$checkout_revision" >&2
+            exit 1
+          fi
+          if [ "$vcs_modified" != "false" ]; then
+            echo "candidate build reports vcs.modified=${vcs_modified:-missing}" >&2
+            exit 1
+          fi
+
+          mkdir -p "$SPACEDOCK_LIVE_ARTIFACT_DIR"
+          provenance="$SPACEDOCK_LIVE_ARTIFACT_DIR/candidate-binary-provenance.txt"
+          {
+            printf 'candidate_path=%s\n' "$candidate_bin"
+            printf 'candidate_canonical_path=%s\n' "$candidate_canonical_path"
+            printf 'checkout_revision=%s\n' "$checkout_revision"
+            printf 'embedded_revision=%s\n' "$embedded_revision"
+            printf 'vcs_modified=%s\n' "$vcs_modified"
+          } > "$provenance"
+
+          printf 'SPACEDOCK_BIN=%s\n' "$candidate_bin" >> "$GITHUB_ENV"
+          printf '%s\n' "$candidate_dir" >> "$GITHUB_PATH"
 
       # gotestsum renders the live test run as a CLEAN step log (a per-package
       # progress view + an `=== Failed` recap listing each failing test with
@@ -301,7 +359,7 @@ jobs:
         with:
           name: runtime-live-e2e-claude-live-${{ matrix.model }}
           path: |
-            ./spacedock
+            ${{ runner.temp }}/spacedock-live-bin/spacedock
             ./live-e2e-detail.jsonl
             ./claude-shared-scenarios-detail.jsonl
             ./pty-team-mode-detail.jsonl
