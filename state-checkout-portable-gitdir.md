@@ -409,3 +409,19 @@ Cycle 2 materially strengthens the absolute-link-default and state-only archive
 guards, and valid stale-pointer convergence remains green. Validation still
 rejects because four state consumers violate AC-3's shared fail-closed contract;
 the required Git 2.48 proof also remains unavailable and undeclared in CI.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Make every state-only resolver entry point require checkout-local Git metadata; missing .git must fail closed for state ready, present-checkout state init, boot, and dispatch without local-only/no-origin output or assignment guidance. Replace the obsolete dispatch missing-gitfile success fixture with a real valid no-origin state checkout.
+  Commit `db7f71d5` makes absent checkout-local metadata a resolver error, removes CLI/status absence-as-no-origin exceptions and dispatch's stale direct probe, preserves boot's wholly absent-checkout bootstrap case, and converts all 16 obsolete success fixtures to valid local-only Git state repositories.
+- DONE: Commit a declared Git 2.48+ CI integration lane that exercises TestRelativeWorktreeGit248Integration and supplies an older Git through SPACEDOCK_OLD_GIT, proving relative-pointer creation, move portability, and old-Git rejection.
+  Commit `db7f71d5` adds `.github/workflows/git-248-state-worktrees.yml`: macOS installs current Homebrew Git, exports `/usr/bin/git` as `SPACEDOCK_OLD_GIT`, and runs the named versioned integration test on pull requests plus main/next pushes.
+- DONE: Run focused tests, gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race; append an implementation cycle-2 report with exact durable evidence and commit all product changes.
+  Focused `internal/stategit`, CLI, dispatch, status, and skill-integration tests passed; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all passed before product commit `db7f71d5`.
+
+### Summary
+
+Cycle 2 completes the fail-closed repair while retaining the intentional
+declared-but-not-yet-materialized bootstrap state. Every success fixture now
+models real state Git metadata, and CI owns the promised Git 2.48/old-Git
+compatibility proof instead of silently skipping it on older developer hosts.
