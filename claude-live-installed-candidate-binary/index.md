@@ -1,6 +1,6 @@
 ---
 title: Install the checked-out candidate into a neutral bin for Claude live E2E
-status: implementation
+status: validation
 source: "Captain direction 2026-07-13 after Opus treated the checkout-shaped SPACEDOCK_BIN path as a workflow root."
 score: 0.85
 started: 2026-07-13T04:20:06Z
