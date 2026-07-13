@@ -13,6 +13,14 @@ issue:
 
 Ship Roborev adoption as a first-party, user-invocable `spacedock:roborev-setup` skill in the main Spacedock plugin. The skill helps a user decide whether Roborev fits a code workflow and configures the Spacedock workflow boundary without making Roborev a dependency of ordinary Spacedock use.
 
+## Reference artifacts
+
+- [Approved Spacedock–Roborev integration proposal](artifacts/roborev-spacedock-integration-proposal.md)
+- [Draft `roborev-setup` skill](artifacts/roborev-setup-skill/SKILL.md)
+- [Draft skill UI metadata](artifacts/roborev-setup-skill/agents/openai.yaml)
+
+These files preserve the reviewed proposal, the user feedback folded into it, and the validated setup-skill package that seeded this task. Ideation may revise them, but should retain the decision history they capture.
+
 ## Problem
 
 Spacedock users can benefit from independent Roborev code-review evidence, but adoption currently requires knowing how to combine Roborev panels, implementation-exit ownership, fresh validation, split state checkouts, daemon placement, and Safehouse access. A separate integration plugin would make the setup entry point harder to discover and would create a one-skill packaging boundary without independent runtime code or release needs.
