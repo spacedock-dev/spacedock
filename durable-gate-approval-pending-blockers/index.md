@@ -54,6 +54,38 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 - What atomic boundary consumes approval across state advance and external dispatch, and how does it reconcile a crash between them?
 - How should superseding approvals and multiple review rounds retain audit history while exposing one current decision?
 
+## Design proposal and review
+
+The broader commit-derived event design is preserved at
+[`artifacts/spacedock-state-commit-event-proposal.md`](artifacts/spacedock-state-commit-event-proposal.md)
+(SHA-256 `ec9200c8467666b6515c614f554fc61c18f2314ffa5d71634a6aca1cdfd13604`).
+It proposes treating the state checkout's Git history as the sole durable event
+authority, projecting commits into versioned events, reducing those events into
+workflow state, and keeping Zaphod a read-only projection with a separate
+runtime-observation overlay.
+
+The 2026-07-13 Subspace single-file review returned an advisory `approve` with
+no annotations. The run also reproduced this task's motivating gap: the
+Resolution was returned as structured JSON, but the temporary review package
+was deleted and no durable workflow Resolution existed until this entity update.
+
+Ideation must retain three corrections identified during review:
+
+1. `approved_pending_dispatch` must include committed blocker identity,
+   version, satisfaction, and failure state. Approval plus “not yet dispatched”
+   is insufficient to distinguish safely blocked work from dispatchable work.
+2. Dispatch needs a committed pre-effect `dispatch.prepared` intent and an
+   idempotent or authoritatively queryable runtime boundary keyed by
+   `dispatch_attempt_id`. Otherwise a crash after spawn but before the success
+   receipt cannot be reconciled into safe retry or exactly-once consumption.
+3. Git-DAG projection must emit an explicit merge-resolution event whenever
+   parents disagree, including when the merge result exactly equals one parent.
+   The rule “emit only when the result differs from every parent” can leave an
+   inherited contradictory event unresolved.
+
+Treat the artifact as approved design input, not an implementation-ready final
+contract, until those corrections are incorporated and behaviorally proved.
+
 ## Out of scope
 
 - Adding an `approved-pending` lifecycle stage.
