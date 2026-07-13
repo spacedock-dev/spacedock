@@ -9,7 +9,7 @@ score:
 worktree: .worktrees/spacedock-ensign-state-checkout-portable-gitdir
 issue:
 id: qwp7vn4dnt0sx96wzz1wfy8b
-mod-block: merge:pr-merge
+mod-block:
 pr: local-merge:f2272990
 ---
 
