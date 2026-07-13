@@ -1,9 +1,9 @@
 ---
 id: 008h7wr55c7fn5x3r2wk26yz
 title: Ship the Roborev workflow setup skill
-status: backlog
+status: ideation
 source: Captain decision after spacedock-subspace Roborev adoption pilot, 2026-07-13
-started:
+started: 2026-07-13T16:11:06Z
 completed:
 verdict:
 score:
