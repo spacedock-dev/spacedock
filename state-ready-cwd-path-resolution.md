@@ -143,6 +143,13 @@ and are not green. Per the three-cycle feedback rule, this cycle is escalated to
 the captain instead of being automatically routed to another implementation
 worker. PR #503 must not merge in its current state.
 
+Captain decision: send cycle 3 back for another implementation round. Fix and
+test locally without pushing a new head. The next fresh validator must run the
+corrected exact-range Roborev review before any push, CI trigger, deployment
+approval, or live-lane engagement. Only a Roborev PASS may release the exact
+head to the PR and CI; any deliberately unhandled failure mode must first be
+explicitly scoped out in the task and validation evidence.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
