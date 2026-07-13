@@ -1,8 +1,8 @@
 ---
 title: Semantic adversarial pass before implementation requests review
-status: backlog
+status: ideation
 source: Captain learning from spacedock-subspace Roborev adoption, 2026-07-14
-started:
+started: 2026-07-13T16:24:34Z
 completed:
 verdict:
 score: 0.85
