@@ -121,6 +121,28 @@ cleanliness, fail-closed, and output-atomicity defect with an adversarial
 behavioral regression. Re-run full and race gates, then replace Roborev job 487
 at the corrected exact head before the validation gate can be presented again.
 
+**Cycle 3 (replacement validation, Roborev job 707; captain escalation).** The
+five cycle-2 repairs, focused tests, full suite, race suite, and detached
+lock-removal audit passed at exact PR head
+`3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`. Authoritative corrected-guideline
+Roborev job `707` nevertheless rejected the exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`
+range:
+
+- HIGH: line-delimited porcelain parsing breaks on a real main-worktree path
+  containing a newline; use NUL-delimited complete-record parsing.
+- HIGH: the first porcelain record can be a bare repository; fail closed unless
+  a usable primary worktree is identified.
+- MEDIUM: the resume lock ends before origin-backed `pull --rebase`, leaving
+  reachable/unreachable-origin concurrency non-atomic.
+- MEDIUM: `state init` fetches before restoring an existing local branch but can
+  return without integrating the fetched remote state.
+
+Required live Claude Sonnet, Claude Opus, Codex, and Pi jobs also remain WAITING
+and are not green. Per the three-cycle feedback rule, this cycle is escalated to
+the captain instead of being automatically routed to another implementation
+worker. PR #503 must not merge in its current state.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
