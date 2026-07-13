@@ -205,8 +205,8 @@ func TestLaunchBannerReachesStderrBeforeLaunch(t *testing.T) {
 
 // TestLaunchBannerSuppressedOnResume (AC-B polish): a resume continues an
 // existing session, not a fresh launch, so the banner is suppressed — its
-// version line must NOT appear on stderr. Claude's resume is a flag; a no-task
-// nonempty Codex post-fence argv is opaque and has the same no-banner posture.
+// version line must NOT appear on stderr. Claude's resume is a flag; Codex uses
+// an exact `resume` token in its post-fence argv.
 func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 	t.Run("claude --resume", func(t *testing.T) {
 		fake := &fakeHost{manifest: compatibleManifest(t)}
@@ -219,7 +219,7 @@ func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 		}
 	})
 
-	t.Run("codex post-fence passthrough", func(t *testing.T) {
+	t.Run("codex exact post-fence resume", func(t *testing.T) {
 		dir := safehouseFixtureDir(t)
 		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
@@ -227,7 +227,7 @@ func TestLaunchBannerSuppressedOnResume(t *testing.T) {
 			t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 		}
 		if strings.Contains(stderr.String(), "spacedock "+displayVersion()) {
-			t.Fatalf("banner emitted on codex post-fence passthrough: %q", stderr.String())
+			t.Fatalf("banner emitted on codex exact resume: %q", stderr.String())
 		}
 	})
 }

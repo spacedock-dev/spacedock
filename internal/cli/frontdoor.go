@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -443,8 +444,8 @@ func warnStrayPromptAfterDash(fd frontDoorArgs, name string, stderr io.Writer) {
 }
 
 // launchPrompt returns the inner-argv launch prompt: `base + " " + task` when the
-// operator fenced a task after `--`, otherwise the bare base prompt. Claude
-// suppresses it on a resume; Codex suppresses it for any nonempty post-fence argv.
+// operator fenced a task after `--`, otherwise the bare base prompt. Claude and
+// Codex suppress it on their respective resume forms.
 func launchPrompt(base string, fd frontDoorArgs) string {
 	if fd.hasTask {
 		return base + " " + fd.task
@@ -467,8 +468,8 @@ func hasPluginDir(passthrough []string) bool {
 // takeCodexPluginDir consumes only the declared pre-fence --plugin-dir pairs
 // parseFrontDoorArgs injected at the front of passthrough. Codex itself rejects
 // that Spacedock-owned flag, so those owned pairs become a local-marketplace
-// install. Tokens written after the fence are opaque host argv, even if they spell
-// `--plugin-dir`, and are never consumed here.
+// install. Tokens written after the fence are forwarded host argv, even if they
+// spell `--plugin-dir`, and are never consumed here.
 func takeCodexPluginDir(passthrough []string, ownedPairs int) (dir string, rest []string, found bool) {
 	if ownedPairs == 0 {
 		return "", passthrough, false
@@ -535,11 +536,13 @@ const codexBootstrapPrompt = "You totally got this. Take your time. I love you. 
 // `--safehouse-*` knob} is given — safehouse is the sandbox, so codex's own
 // sandbox is bypassed. Otherwise the launch is plain `codex …` keeping codex's own
 // sandbox (the bypass flag is omitted: it is safe only when safehouse provides the
-// sandbox). A no-task nonempty post-`--` Codex argv is opaque host passthrough: it
-// gets no Spacedock banner, default approval mode, or bootstrap prompt. A declared
-// pre-fence `--plugin-dir` installs its local checkout before the normal gate;
-// `--skip-compat-check` alone bypasses that gate. `lookPath` resolves the safehouse
-// binary (default exec.LookPath; injected so tests pin not-found).
+// sandbox). After Spacedock consumes its own pre-fence flags, an exact `resume`
+// token in Codex's forwarded argv suppresses the banner, default approval mode,
+// and bootstrap prompt; every other forwarded argv retains the normal fresh-launch
+// posture. A declared pre-fence `--plugin-dir` installs its local checkout before
+// the normal gate; `--skip-compat-check` alone bypasses that gate. `lookPath`
+// resolves the safehouse binary (default exec.LookPath; injected so tests pin
+// not-found).
 func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
@@ -569,10 +572,10 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 			return 1
 		}
 	}
-	// Once Spacedock-owned plugin-dir handling has been consumed, any remaining
-	// post-fence argv belongs wholly to Codex. Do not inspect its option or command
-	// grammar: only a no-task launch keeps the no-injection posture.
-	opaquePassthrough := !fd.hasTask && len(fd.passthrough) > 0
+	// Once Spacedock-owned plugin-dir handling has been consumed, suppress the
+	// bootstrap posture only for Codex's exact resume command token. This is
+	// deliberately not an option parser or command grammar.
+	resume := slices.Contains(fd.passthrough, "resume")
 	// The gate fails fast on too-old-binary, but the two healable verdicts
 	// (NoPluginFound, TooOldPlugin) auto-install the codex plugin and proceed to
 	// launch so the single command the user typed yields a working session —
@@ -584,7 +587,7 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		}
 	}
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
-	if !opaquePassthrough {
+	if !resume {
 		launchBanner("codex", dir, wrap, lookPath, stderr)
 	}
 	inner := []string{"codex"}
@@ -595,12 +598,13 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 	// auto-mode flag, so its nearest analog to claude's auto permission-mode is
 	// `--ask-for-approval on-request` (the model decides when to escalate).
 	// The sandboxed arm's bypass flag above already covers its posture, so this is
-	// the !wrap counterpart. Opaque no-task post-fence argv receives no launcher defaults.
-	if !wrap && !opaquePassthrough {
+	// the !wrap counterpart. An exact resume keeps its established prompt-free
+	// posture, and an operator-provided approval mode always wins.
+	if !wrap && !resume && !passthroughHasFlag(fd.passthrough, "--ask-for-approval", "-a") {
 		inner = append(inner, "--ask-for-approval", "on-request")
 	}
 	inner = append(inner, fd.passthrough...)
-	if !opaquePassthrough {
+	if !resume {
 		inner = append(inner, launchPrompt(codexBootstrapPrompt, fd))
 	}
 
@@ -627,8 +631,8 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 }
 
 // claudeValueTakingHostFlags identifies Claude's space-form values for its
-// advisory-only stray-prompt scan. Codex has no corresponding grammar table:
-// its nonempty post-fence argv is opaque.
+// advisory-only stray-prompt scan. Codex has no corresponding grammar table; its
+// bootstrap posture is decided solely by exact `resume` token membership.
 var claudeValueTakingHostFlags = map[string]bool{
 	"-p": true, "--print": true,
 	"--model":                true,
@@ -713,7 +717,7 @@ type frontDoorArgs struct {
 	passthrough []string
 	// pluginDirPairs counts the pre-fence --plugin-dir pairs re-injected at the
 	// front of passthrough. It lets Codex consume only Spacedock-owned flags while
-	// preserving opaque post-fence argv.
+	// preserving post-fence argv exactly.
 	pluginDirPairs int
 	// task is the launch-prompt override (the bare text after the `--` fence);
 	// hasTask distinguishes an explicit empty task from "no fence given".

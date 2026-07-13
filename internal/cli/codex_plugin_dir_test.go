@@ -73,48 +73,53 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 	}
 }
 
-func TestRunCodexPluginDirPostFenceExamplePreservesInnerArgv(t *testing.T) {
+// A pre-fence plugin-dir is consumed before the exact-resume check, so neither
+// the checkout flag nor its value reaches the real Codex argv.
+func TestRunCodexPluginDirPostFenceResumeStaysPromptFree(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
 	checkout := t.TempDir()
 	host := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
-	code := runCodex(context.Background(), []string{"--plugin-dir", checkout, "--", "--model", "gpt-x", "resume", "abc123"}, t.TempDir(), host, lookFound, &stdout, &stderr)
+	code := runCodex(context.Background(), []string{"--plugin-dir", checkout, "--", "--model", "gpt-5.6-sol", "resume", "abc123"}, t.TempDir(), host, lookFound, &stdout, &stderr)
 
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--model", "gpt-x", "resume", "abc123"}
+	want := []string{"codex", "--model", "gpt-5.6-sol", "resume", "abc123"}
 	if !equalArgv(host.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
 	}
 	if strings.Contains(stderr.String(), "· launching codex") {
-		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+		t.Fatalf("exact resume produced a fresh-launch banner: %q", stderr.String())
 	}
 }
 
-func TestRunCodexPluginDirOpaquePostFencePreservesInnerArgv(t *testing.T) {
+// The pre-fence plugin-dir consumption seam composes with model-only Codex
+// launches: the host receives the model pair and normal bootstrap posture, but
+// never the Spacedock-owned checkout tokens.
+func TestRunCodexPluginDirModelOnlyRetainsBootstrapPosture(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
 	checkout := t.TempDir()
 	host := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
-	args := []string{"--plugin-dir", checkout, "--", "--future-codex-flag=handoff", "opaque-argument"}
+	args := []string{"--plugin-dir", checkout, "--", "--model", "gpt-5.6-sol"}
 	code := runCodex(context.Background(), args, t.TempDir(), host, lookFound, &stdout, &stderr)
 
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--future-codex-flag=handoff", "opaque-argument"}
+	want := []string{"codex", "--ask-for-approval", "on-request", "--model", "gpt-5.6-sol", wantCodexBootstrapPrompt}
 	if !equalArgv(host.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
 	}
-	if strings.Contains(stderr.String(), "· launching codex") || strings.Contains(stderr.String(), "warning: positional") {
-		t.Fatalf("opaque post-fence argv produced Spacedock launch output: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "· launching codex") {
+		t.Fatalf("model-only launch omitted the Codex banner: %q", stderr.String())
 	}
 }
 
-func TestRunCodexPostFencePluginDirRemainsOpaque(t *testing.T) {
+func TestRunCodexPostFencePluginDirRemainsForwardedAndBootstraps(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir())
 	postFenceCheckout := t.TempDir()
 	host := &fakeHost{manifest: compatibleManifest(t)}
@@ -126,15 +131,15 @@ func TestRunCodexPostFencePluginDirRemainsOpaque(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	want := []string{"codex", "--plugin-dir", postFenceCheckout}
+	want := []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", postFenceCheckout, wantCodexBootstrapPrompt}
 	if !equalArgv(host.launchedArg, want) {
 		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
 	}
 	if len(host.installCmds) != 0 {
 		t.Fatalf("post-fence --plugin-dir invoked the local-install seam: %v", host.installCmds)
 	}
-	if stderr.Len() != 0 {
-		t.Fatalf("opaque post-fence argv produced Spacedock output: %q", stderr.String())
+	if !strings.Contains(stderr.String(), "· launching codex") {
+		t.Fatalf("post-fence --plugin-dir launch omitted the Codex banner: %q", stderr.String())
 	}
 }
 
