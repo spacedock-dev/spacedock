@@ -318,6 +318,21 @@ worktree metadata. New checkouts retain absolute links unless a repository-local
 Git-2.48-capable opt-in requests relative links, and origin failures now halt
 instead of being mislabeled local-only.
 
+## Stage Report: implementation (cycle 1)
+
+- DONE: Fail closed when a declared split-root checkout lacks a valid linked-worktree gitfile, proving state commit cannot discover the parent repo or mutate main.
+  Commit `3fe3f1f3` makes the state-only runner require checkout-local `.git` metadata before discovery. The public regression fixture creates a present split-root directory without `.git`, asserts nonzero plus the stable recovery diagnostic, and proves main HEAD is unchanged.
+- DONE: Add discriminating tests for inherited global relative-worktree config across temporary/persisted adds and for state-only archive recovery scope against ordinary code worktrees.
+  A recording Git shim now proves both temporary and persisted adds carry `-c worktree.useRelativePaths=false` for global-true/local-unset and local-false repositories. A moved stale ordinary code-worktree archive test proves the non-state lane uses ordinary Git and cannot re-anchor as state.
+- DONE: Commit the required public A→B→C convergence fixture and Git 2.48 relative-worktree/old-Git incompatibility proof lane, then rerun focused, full, race, and formatting gates.
+  The public fixture runs `state ready`, read-only `state sweep`, and path-scoped `state commit` after A→B and B→C, preserving the gitfile bytes. `TestRelativeWorktreeGit248Integration` is capability-gated for Git 2.48+, verifies relative pointers, the repository extension, and post-move Git operation, and accepts `SPACEDOCK_OLD_GIT` for the rejection proof. Local Git 2.39.5 exercises the unsupported-opt-in negative. `gofmt -w ./cmd ./internal`, focused tests, `go test ./...`, and `go test ./... -race` passed.
+
+### Summary
+
+Cycle 1 closes the parent-discovery escape, makes the absolute-link default and
+state-only archive boundary mutation-resistant, and adds the missing public
+two-move convergence and versioned relative-worktree integration lanes.
+
 ### Feedback Cycles
 
 **Cycle 1 (validation gate, detached adversarial audit finding).** Audited commit
