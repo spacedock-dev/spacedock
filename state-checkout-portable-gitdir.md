@@ -425,3 +425,43 @@ Cycle 2 completes the fail-closed repair while retaining the intentional
 declared-but-not-yet-materialized bootstrap state. Every success fixture now
 models real state Git metadata, and CI owns the promised Git 2.48/old-Git
 compatibility proof instead of silently skipping it on older developer hosts.
+
+### Feedback Cycles (validation cycle 3)
+
+**Cycle 3 (detached adversarial re-review of `db7f71d5`).** Public negatives in
+`/tmp/spacedock-audit-portable-cycle3` prove `state commit`, `state ready`,
+present-checkout `state init`, and dispatch now reject a present checkout without
+`.git`; dispatch emits no artifact or local-only guidance. The wholly absent boot
+case remains `present: false`, and real no-origin ready/boot/dispatch remain
+local-only. Boot is still defective: it exits 1 for the same missing metadata but
+writes neither the stable recovery diagnostic nor any stderr.
+
+Reverting `Resolve`'s absent-`.git` error to a normal runner left every committed
+focused stategit/CLI/status/dispatch test green, so the repaired direct-resolver
+boundary is unguarded. The inherited-config and ordinary-code-worktree archive
+mutants both turn their intended tests red. Route back to implementation: print
+the propagated boot error and commit public missing-metadata negatives for all
+five surfaces, including the direct `Resolve` consumers.
+
+The Git 2.48 workflow is syntactically valid and declares Homebrew Git plus
+`/usr/bin/git` as the old binary. It has no executable run yet (the workflow is
+not on the default branch and `db7f71d5` is not on the remote feature branch),
+while the exact local command skips on Git 2.39.5. The lane also permits that skip
+and exercises `WorktreeAdd` rather than both public creation verbs; make capability
+absence fatal in CI and add verb-level relative/absolute pointer assertions.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Independently reproduce AC-1 through AC-3 at commit db7f71d5, with detached public-command negatives proving missing checkout-local .git fails closed for state commit, state ready, present-checkout state init, boot, and dispatch, while a wholly absent declared checkout retains only the intentional bootstrap behavior and a real no-origin checkout remains local-only.
+  AC-1's collision/id and nine-case invalid matrix pass; AC-2's moved public commit preserves both pointer files, path scope, state HEAD, body, and sibling dirt. AC-3 fails because boot returns 1 with empty stderr instead of the required recovery diagnostic.
+- FAILED: Independently reproduce AC-4 through AC-6, including public A-to-B-to-C convergence, collision-id/no-rewrite/path-scope evidence, inherited-config and ordinary-worktree scope mutants, local old-Git rejection, and a static plus executable review of the declared Git 2.48 CI lane.
+  AC-4 and AC-6 focused behavior pass, and both prior mutants are red. AC-5's local 2.39 rejection passes, but the 2.48 test skips locally, has no remote run, can skip in CI, and does not exercise both public verbs.
+- DONE: Audit the complete aeeadf45..db7f71d5 diff in a detached throwaway checkout, run focused/full/race/format/cleanliness gates, append validation cycle 3 with per-AC durable evidence, and return PASSED or REJECTED. Do not edit the implementation worktree.
+  Full and race suites pass; the committed checkout was clean and feature files are formatted. Exact repository gofmt changes only pre-existing `internal/release/journeydelta.go`. Verdict: REJECTED.
+
+### Summary
+
+Cycle 3 closes the dangerous parent-repository escape and preserves valid moved,
+bootstrap, and no-origin behavior. Validation still rejects the silent boot
+failure, the unguarded direct-resolver boundary, and the non-enforcing/unexecuted
+Git 2.48 proof lane.
