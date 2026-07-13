@@ -1,16 +1,17 @@
 ---
 title: Make the split-root state checkout operable from foreign path surfaces (Cowork sandbox)
-status: validation
+status: done
 source: live Cowork dogfood 2026-07-13 (survey-claude-cowork-runtime-detection run-1 session)
 started: 2026-07-13T02:54:30Z
-completed:
-verdict:
+completed: 2026-07-13T16:03:27Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-state-checkout-portable-gitdir
 issue:
 id: qwp7vn4dnt0sx96wzz1wfy8b
 mod-block:
 pr: local-merge:f2272990
+archived: 2026-07-13T16:03:27Z
 ---
 
 Make every Spacedock-owned state operation work when the same repository tree is reached through a path surface different from where its state checkout was created. Observed live: a Cowork sandbox mounts the project at `/sessions/<name>/mnt/<folder>` while the linked checkout's `.git` file still points at the host-absolute administrative directory, so Git reports `not a git repository` even though the checkout and repository metadata are both present under the mounted project.
