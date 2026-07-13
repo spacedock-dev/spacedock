@@ -61,8 +61,16 @@ func resolveRoots(workflowDir, baseDir string) (roots, error) {
 		return r, nil
 	}
 
-	r.entityDir = filepath.Join(abs, relPath)
-	r.entityDirSpelling = PyJoin(spellingOr(workflowDir, abs), relPath)
+	entityDir, err := ResolveSplitRootCheckout(abs, relPath)
+	if err != nil {
+		return roots{}, fmt.Errorf("resolve split-root state checkout: %w", err)
+	}
+	r.entityDir = entityDir
+	if entityDir != filepath.Join(abs, relPath) {
+		r.entityDirSpelling = entityDir
+	} else {
+		r.entityDirSpelling = PyJoin(spellingOr(workflowDir, abs), relPath)
+	}
 	return r, nil
 }
 

@@ -120,14 +120,14 @@ func isFile(path string) bool {
 // resolved state checkout is workflowDir/<state> — NOT workflowDir itself (which
 // is the definition dir where the state checkout is git-excluded). Returns "" when
 // the README is unreadable or carries no non-empty state: field.
-func splitRootStateCheckout(workflowDir string) string {
+func splitRootStateCheckout(workflowDir string) (string, error) {
 	readmePath := filepath.Join(workflowDir, "README.md")
 	fm := status.ParseFrontmatter(readmePath)
 	mode, relPath, err := status.ClassifyState(fm["state"])
 	if err != nil || mode != status.StateSplitRoot {
-		return ""
+		return "", err
 	}
-	return filepath.Join(workflowDir, relPath)
+	return status.ResolveSplitRootCheckout(workflowDir, relPath)
 }
 
 // pyRelpath returns path relative to base the way os.path.relpath does for the

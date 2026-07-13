@@ -5,11 +5,15 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/spacedock-dev/spacedock/internal/dispatch"
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
@@ -209,6 +213,260 @@ func TestStateReadyNoOriginResumeFromRoot(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "local-only") {
 		t.Fatalf("no-origin resume output should say local-only; got stdout=%q", out.String())
+	}
+}
+
+func TestStateReadyJSONAbsentCheckoutIsAtomic(t *testing.T) {
+	cases := []struct {
+		name  string
+		setup func(t *testing.T) (root, workflowDir, statePath string)
+	}{
+		{
+			name: "local-only with stale registration",
+			setup: func(t *testing.T) (string, string, string) {
+				root, workflowDir, statePath := noOriginSplitWorkflow(t)
+				if err := os.RemoveAll(statePath); err != nil {
+					t.Fatal(err)
+				}
+				return root, workflowDir, statePath
+			},
+		},
+		{
+			name: "origin-backed fresh clone",
+			setup: func(t *testing.T) (string, string, string) {
+				bare := filepath.Join(t.TempDir(), "origin.git")
+				git(t, t.TempDir(), "init", "-q", "--bare", bare)
+				hostA := filepath.Join(t.TempDir(), "host-a")
+				git(t, t.TempDir(), "clone", "-q", bare, hostA)
+				git(t, hostA, "config", "user.email", "a@t")
+				git(t, hostA, "config", "user.name", "a")
+				commissionSplitWorkflow(t, hostA)
+				git(t, hostA, "push", "-q", "origin", "HEAD")
+				fresh := filepath.Join(t.TempDir(), "fresh")
+				git(t, t.TempDir(), "clone", "-q", bare, fresh)
+				return fresh, filepath.Join(fresh, "docs", "dev"), filepath.Join(fresh, "docs", "dev", ".spacedock-state")
+			},
+		},
+		{
+			name: "unreachable origin local fallback warning suppressed",
+			setup: func(t *testing.T) (string, string, string) {
+				bare := filepath.Join(t.TempDir(), "origin.git")
+				git(t, t.TempDir(), "init", "-q", "--bare", bare)
+				host := filepath.Join(t.TempDir(), "host")
+				git(t, t.TempDir(), "clone", "-q", bare, host)
+				git(t, host, "config", "user.email", "t@t")
+				git(t, host, "config", "user.name", "t")
+				workflowDir, _, _ := commissionSplitWorkflow(t, host)
+				statePath := filepath.Join(workflowDir, ".spacedock-state")
+				if err := os.RemoveAll(statePath); err != nil {
+					t.Fatal(err)
+				}
+				git(t, host, "remote", "set-url", "origin", filepath.Join(t.TempDir(), "missing.git"))
+				return host, workflowDir, statePath
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("HOME", t.TempDir())
+			root, workflowDir, statePath := tc.setup(t)
+			var out, errBuf strings.Builder
+			code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir, "--json"},
+				os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+			if code != 0 {
+				t.Fatalf("state ready --json exit=%d stderr=%q stdout=%q", code, errBuf.String(), out.String())
+			}
+			if errBuf.String() != "" {
+				t.Fatalf("successful state ready --json wrote stderr=%q", errBuf.String())
+			}
+			if !json.Valid([]byte(out.String())) {
+				t.Fatalf("stdout is not one atomic JSON document: %q", out.String())
+			}
+			var envelope map[string]any
+			if err := json.Unmarshal([]byte(out.String()), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			if envelope["command"] != "state ready" || envelope["result"] != "ready" {
+				t.Fatalf("unexpected envelope: %#v", envelope)
+			}
+			if _, err := os.Stat(statePath); err != nil {
+				t.Fatalf("state checkout not restored: %v", err)
+			}
+		})
+	}
+}
+
+func TestConcurrentStateReadySerializesRepairAndCreation(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	entity := filepath.Join(statePath, "race-task.md")
+	if err := os.WriteFile(entity, []byte("---\nstatus: implementation\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, statePath, "add", "race-task.md")
+	git(t, statePath, "commit", "-q", "-m", "seed race task")
+	wantHead := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD"))
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+
+	const callers = 12
+	start := make(chan struct{})
+	results := make(chan string, callers)
+	var wg sync.WaitGroup
+	for i := 0; i < callers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			var out, errBuf strings.Builder
+			code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+				os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+			results <- strings.Join([]string{fmt.Sprint(code), out.String(), errBuf.String()}, "|")
+		}()
+	}
+	close(start)
+	wg.Wait()
+	close(results)
+	for result := range results {
+		if !strings.HasPrefix(result, "0|") {
+			t.Fatalf("concurrent state ready failed: %q", result)
+		}
+	}
+	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
+		t.Fatalf("state HEAD changed: got %s want %s", got, wantHead)
+	}
+	if _, err := os.Stat(entity); err != nil {
+		t.Fatalf("entity missing after concurrent resume: %v", err)
+	}
+	registrations := 0
+	for _, line := range strings.Split(git(t, root, "worktree", "list", "--porcelain"), "\n") {
+		if strings.HasPrefix(line, "worktree ") && status.RealpathOf(strings.TrimSpace(strings.TrimPrefix(line, "worktree "))) == status.RealpathOf(statePath) {
+			registrations++
+		}
+	}
+	if registrations != 1 {
+		t.Fatalf("state checkout registrations=%d, want exactly 1", registrations)
+	}
+}
+
+func TestLinkedWorktreeMetadataFailureFailsClosed(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, _, statePath := noOriginSplitWorkflow(t)
+	wantHead := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD"))
+	wtRoot := addAgentWorktree(t, root, "broken-metadata")
+	wtWorkflow := filepath.Join(wtRoot, "docs", "dev")
+	if err := os.WriteFile(filepath.Join(wtRoot, ".git"), []byte("gitdir: /definitely/missing\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errBuf strings.Builder
+	code := run(context.Background(), []string{"state", "ready", "--workflow-dir", wtWorkflow},
+		os.Environ(), wtRoot, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	if code != 1 || !strings.Contains(errBuf.String(), "cannot resolve state checkout") {
+		t.Fatalf("metadata failure must fail closed; exit=%d stdout=%q stderr=%q", code, out.String(), errBuf.String())
+	}
+	if _, err := os.Stat(filepath.Join(wtWorkflow, ".spacedock-state")); !os.IsNotExist(err) {
+		t.Fatalf("metadata failure created nested state path: %v", err)
+	}
+	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
+		t.Fatalf("main state checkout mutated: got HEAD %s want %s", got, wantHead)
+	}
+}
+
+func TestStatusAndSweepFromLinkedWorktreeUseMainState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, _, statePath := noOriginSplitWorkflow(t)
+	entity := filepath.Join(statePath, "placement-task.md")
+	if err := os.WriteFile(entity, []byte("---\nid: placement\ntitle: Placement\nstatus: implementation\npr: '#42'\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, statePath, "add", "placement-task.md")
+	git(t, statePath, "commit", "-q", "-m", "seed placement task")
+	wtRoot := addAgentWorktree(t, root, "placement")
+	wtWorkflow := filepath.Join(wtRoot, "docs", "dev")
+
+	var statusOut, statusErr strings.Builder
+	code := run(context.Background(), []string{"status", "--workflow-dir", wtWorkflow, "--set", "placement-task", "status=ideation"},
+		os.Environ(), wtRoot, nil, &statusOut, &statusErr, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("linked-worktree status mutation exit=%d stderr=%q", code, statusErr.String())
+	}
+	if got := status.ParseFrontmatter(entity)["status"]; got != "ideation" {
+		t.Fatalf("main state entity status=%q, want ideation", got)
+	}
+	if _, err := os.Stat(filepath.Join(wtWorkflow, ".spacedock-state")); !os.IsNotExist(err) {
+		t.Fatalf("status created or used nested checkout: %v", err)
+	}
+	var bootOut, bootErr strings.Builder
+	code = run(context.Background(), []string{"status", "--workflow-dir", wtWorkflow, "--boot", "--json"},
+		os.Environ(), wtRoot, nil, &bootOut, &bootErr, &status.NativeRunner{}, nil)
+	if code != 0 || !json.Valid([]byte(bootOut.String())) {
+		t.Fatalf("linked-worktree boot exit=%d stdout=%q stderr=%q", code, bootOut.String(), bootErr.String())
+	}
+	if !strings.Contains(bootOut.String(), statePath) || strings.Contains(bootOut.String(), filepath.Join(wtWorkflow, ".spacedock-state")) {
+		t.Fatalf("boot did not report exact main-root entity directory: %s", bootOut.String())
+	}
+
+	var sweepOut, sweepErr strings.Builder
+	code = dispatch.Sweep(wtWorkflow, func(string) (string, error) { return "MERGED", nil }, true, &sweepOut, &sweepErr)
+	if code != 0 || !json.Valid([]byte(sweepOut.String())) {
+		t.Fatalf("linked-worktree sweep exit=%d stdout=%q stderr=%q", code, sweepOut.String(), sweepErr.String())
+	}
+	if !strings.Contains(sweepOut.String(), `"slug": "placement-task"`) {
+		t.Fatalf("sweep did not read main state checkout: %s", sweepOut.String())
+	}
+}
+
+func TestStateNewFromLinkedWorktreeIgnoresPhysicalMainCheckout(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root := t.TempDir()
+	git(t, root, "init", "-q")
+	git(t, root, "config", "user.email", "t@t")
+	git(t, root, "config", "user.name", "t")
+	workflowDir := filepath.Join(root, "docs", "dev")
+	if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(workflowDir, "README.md"), []byte(splitWorkflowReadme), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".gitignore"), []byte(".worktrees/\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, root, "add", "docs/dev/README.md", ".gitignore")
+	git(t, root, "commit", "-q", "-m", "add workflow")
+	wtRoot := addAgentWorktree(t, root, "birth")
+	wtWorkflow := filepath.Join(wtRoot, "docs", "dev")
+
+	code, _, stderr := execStateNew(t, wtRoot, wtWorkflow)
+	if code != 0 {
+		t.Fatalf("state new from linked worktree exit=%d stderr=%q", code, stderr)
+	}
+	if _, err := os.Stat(filepath.Join(workflowDir, ".spacedock-state")); err != nil {
+		t.Fatalf("main-anchored state checkout absent: %v", err)
+	}
+	exclude, err := os.ReadFile(filepath.Join(root, ".git", "info", "exclude"))
+	if err != nil || !strings.Contains(string(exclude), "/docs/dev/.spacedock-state/") {
+		t.Fatalf("shared exclude does not protect physical checkout: err=%v body=%q", err, string(exclude))
+	}
+	trackedIgnore, err := os.ReadFile(filepath.Join(wtRoot, ".gitignore"))
+	if err != nil || !strings.Contains(string(trackedIgnore), "docs/dev/.spacedock-state/") {
+		t.Fatalf("tracked ignore missing on invoking branch: err=%v body=%q", err, string(trackedIgnore))
+	}
+	if got := strings.TrimSpace(git(t, root, "status", "--porcelain", "--untracked-files=all")); got != "" {
+		t.Fatalf("main worktree sees physical state checkout as dirty: %q", got)
+	}
+	if got := strings.TrimSpace(git(t, wtRoot, "status", "--porcelain", "--untracked-files=all")); got != "M .gitignore" && got != " M .gitignore" {
+		t.Fatalf("linked worktree should carry only the intentional .gitignore edit, got %q", got)
+	}
+	git(t, wtRoot, "add", ".gitignore")
+	git(t, wtRoot, "commit", "-q", "-m", "ignore state checkout")
+	if got := strings.TrimSpace(git(t, root, "status", "--porcelain", "--untracked-files=all")); got != "" {
+		t.Fatalf("main worktree dirty after linked ignore commit: %q", got)
+	}
+	if got := strings.TrimSpace(git(t, wtRoot, "status", "--porcelain", "--untracked-files=all")); got != "" {
+		t.Fatalf("linked worktree dirty after ignore commit: %q", got)
 	}
 }
 

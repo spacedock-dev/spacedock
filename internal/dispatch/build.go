@@ -473,7 +473,10 @@ func runBuildFields(probe claudeteam.TeamStateProbe, opts buildOptions, fields m
 	// isolates CODE only — the entity body stays at the FO-passed entity_path.
 	// stateCheckout is the resolved absolute state-checkout dir (workflowDir/<state>),
 	// the git repo where the entity body lives; "" when the workflow is single-root.
-	stateCheckout := splitRootStateCheckout(workflowDir)
+	stateCheckout, err := splitRootStateCheckout(workflowDir)
+	if err != nil {
+		return buildError(stderr, 1, "cannot resolve split-root state checkout: %v", err)
+	}
 	splitRoot := stateCheckout != ""
 
 	// stateBranch is the orphan state branch peers push/pull on a split-root

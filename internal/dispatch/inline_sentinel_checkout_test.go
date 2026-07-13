@@ -29,7 +29,10 @@ func TestSplitRootStateCheckoutInlineSentinel(t *testing.T) {
 			fm += "---\n\n# WF\n"
 			writeFile(t, filepath.Join(wf, "README.md"), fm)
 
-			got := splitRootStateCheckout(wf)
+			got, err := splitRootStateCheckout(wf)
+			if err != nil {
+				t.Fatalf("splitRootStateCheckout: %v", err)
+			}
 			if got != "" {
 				t.Fatalf("splitRootStateCheckout = %q, want \"\" (inline has no state checkout)", got)
 			}
