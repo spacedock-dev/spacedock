@@ -41,6 +41,19 @@ checkout gitfile, using filesystem identity. No further spike is needed: the
 missing-metadata climb and origin-before-commit ordering are direct control-flow
 defects visible in the reviewed code.
 
+A second `/tmp` spike closed the trust-anchor question from staff review. The
+declared project was itself a linked worktree, with a nested state worktree, and
+the entire project was copied while its source and common repository remained
+reachable. Both regular-file gitfiles in the copy pointed into the source common
+directory, and ordinary Git succeeded from both copied paths. After removing
+the source state gitfile, the state administrative `gitdir` back-pointer target
+was nonexistent—the fallback case the moved-repository design permits—yet
+ordinary Git still succeeded from the copied state path. The project
+administrative back-pointer still resolved to the source project gitfile, whose
+filesystem identity differed from the copied project gitfile. Therefore the
+declared project must itself be validated before its common directory can serve
+as the trust anchor; state validation alone cannot distinguish this copy.
+
 ## Proposed approach
 
 ### Strict state-checkout resolver
@@ -49,6 +62,18 @@ Make the declared project root and declared state checkout explicit inputs to
 the state Git runner. Split-root mutation paths must never obtain their Git root
 by walking upward from the entity directory. Resolve one runner before the
 command's first mutation and reuse it for every subordinate Git operation.
+
+Establish the project trust anchor without first trusting ordinary Git. A
+project with an in-place `.git` directory anchors its own common directory. If
+the declared project has a regular-file `.git`, parse and validate that linked
+worktree metadata first: its recorded administrative target must exist, its
+`commondir` must resolve to the same filesystem object as the candidate common
+directory, and its existing administrative `gitdir` back-pointer target must be
+the same filesystem object as the declared project's `.git` file. Do not permit
+the stale-suffix fallback for the project trust anchor; without an existing
+same-object back-pointer, ownership of an external common directory is not
+proved. Only after this validation may the resulting common directory be used
+to construct and validate the nested state candidate.
 
 For a regular-file `.git`, remove the current "ordinary Git succeeds" shortcut.
 Always parse the exact administrative id and construct the expected candidate
@@ -72,6 +97,18 @@ bind mount, sandbox mount, or symlinked surface of the same repository remains
 valid. Different copied objects fail even when their suffixes match. Preserve
 the standalone `.git`-directory compatibility lane, but do not let a missing or
 malformed declared `.git` fall through to the parent code repository.
+
+Make the identity decision testable behind a small injected `sameObject(a, b)`
+oracle. Its deterministic test supplies two distinct, non-symlink lexical paths
+that the oracle marks as the same object and proves the resolver accepts them;
+the negative marks identical-looking suffixes as different and proves refusal.
+Add a Linux capability-gated real bind-mount test that presents the project and
+state checkout at a second mounted path, asserts distinct path strings plus
+equal device/inode identity, and runs the public state command successfully.
+The dedicated CI step enables this test and treats inability to create the bind
+mount as failure; ordinary developer runs may skip it when the capability flag
+is absent. This is the evidence for the sandbox/bind-mount claim—symlink
+coverage alone is not.
 
 ### Finalization preflight
 
@@ -102,17 +139,26 @@ Keep `spacedock-ensign/state-checkout-portable-gitdir` fixed at reviewed head
 branch from that exact commit and append repair commits; do not cherry-pick,
 squash, rebase, or rewrite the original four commits. The eventual PR targets
 `main`, so its range contains both the original implementation and the repairs.
-There is no local-merge fallback. If pushing the workflow-bearing branch remains
-blocked by OAuth's missing `workflow` scope, stop at the integration gate and
-report that blocker rather than merging locally or weakening the diff.
+Record local `main` at
+`557f8df3e6a62d34987edda70533375fc48ba8f6` before work and require its OID to
+remain exactly that value throughout this task. There is no local-merge
+fallback. If pushing the workflow-bearing branch remains blocked by OAuth's
+missing `workflow` scope, stop at the integration gate and report that blocker
+rather than merging locally or weakening the diff.
 
 After formatting and full/race gates pass in a clean worktree, run one
 replacement thorough Roborev branch review against `origin/main` under the
-corrected repository guideline. Record the exact reviewed HEAD and require
-PASS. Any finding returns the same branch to implementation for another cycle;
-it is not approval evidence. Push that same exact HEAD, verify the remote branch
-and PR head equal it, open the PR, and leave integration to the PR merge
-ceremony.
+corrected repository guideline. Resolve and record immutable `base_sha` and
+`head_sha`, require the Roborev job's stored range to equal
+`base_sha..head_sha`, and inspect the stored prompt for the corrected
+`Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review
+focus` guideline sections. PASS without that prompt evidence is invalid. Any
+finding returns the same branch to implementation for another cycle; it is not
+approval evidence. Push that same exact HEAD, verify the remote branch and PR
+head equal it, and record the PR base OID. If the PR base OID differs from
+`base_sha` at gate presentation or integration, rerun the full/race gates and a
+replacement Roborev review against the new exact base before proceeding. Open
+the PR and leave integration to the PR merge ceremony.
 
 ## Concrete documentation diff
 
@@ -147,23 +193,23 @@ with:
 
 ## Acceptance criteria
 
-**AC-1 (VALUE) - Split-root operations never mutate a parent or source repository when the declared state checkout is missing, copied, moved, or backed by an operable stale absolute gitfile.**
-Verified by: a public-command matrix covering missing state `.git`, copy-while-source-remains, moved checkout, and a same-object alias. Each negative records exact HEADs and state refs, index-file bytes, worktree registrations and status, gitfile/admin-file bytes, entity bytes and mode, and archive contents before invocation; it exits nonzero with every snapshot unchanged. The moved and same-object-alias positives still commit only to the declared state ref.
+**AC-1 (VALUE) - Split-root operations never mutate a parent or source repository when the declared project or state checkout is missing, copied, moved, or backed by an operable stale absolute gitfile.**
+Verified by: a public-command matrix covering missing state `.git`, copied ordinary project plus state, copied linked project plus nested state, moved checkout, and a same-object mounted alias. The copied-linked-project negative leaves the permitted state back-pointer target nonexistent while its project back-pointer still identifies the source, proving project trust-anchor validation rejects it. Each negative records exact HEADs and state refs, index-file bytes, worktree registrations and status, gitfile/admin-file bytes, entity bytes and mode, and archive contents before invocation; it exits nonzero with every snapshot unchanged. The moved and same-object-mounted positives still commit only to the declared state ref.
 
 **AC-2 - Merge finalization with a declared split-root state directory lacking `.git` fails closed instead of staging or committing the archived entity on the code branch.**
 Verified by: a public merge-guard/finalization regression with a merge sentinel that removes the state gitfile, then records code HEAD, code index bytes and staged paths, state ref, live entity bytes/mode, and archive tree. The command exits 1 before clearing or terminalizing fields; the code and state refs, both indexes, live bytes, and archive tree remain exact.
 
 **AC-3 - Every regular-file `.git` target is validated against the declared project even when raw Git commands would succeed.**
-Verified by: a copy-while-source-remains fixture first proves raw `git -C copy/state status` succeeds, then edits a copied entity and invokes public `state commit`. It exits 1 before staging. Source and copy code/state refs, both state index files, worktree registrations/status, pointer and back-pointer bytes, and entity bytes remain exact; the copied edit remains dirty. A same-object alias positive proves filesystem identity does not reject a second path surface of the same checkout.
+Verified by: copy-while-source-remains fixtures first prove raw `git -C copy status` and `git -C copy/state status` succeed. The linked-project variant removes the source state gitfile so the state back-pointer target is missing, then invokes public `state commit`; project trust validation still exits 1 before state fallback or staging. Source and copy code/state refs, both state index files, worktree registrations/status, pointer and back-pointer bytes, and entity bytes remain exact; the copied edit remains dirty. An injected distinct-path/same-object oracle and a capability-gated real Linux bind mount prove filesystem identity accepts a second path surface of the same checkout.
 
 **AC-4 - `state commit` validates origin before local mutation and cannot strand a commit behind the no-op retry path.**
-Verified by: a repository whose remote enumeration contains `origin` but whose URL lookup fails. The first public call exits 1 with local HEAD, state ref, index bytes, staged paths, entity bytes, and remote ref unchanged while preserving the dirty edit. After adding the URL, the second call creates exactly one commit whose tree contains the exact entity bytes, pushes local HEAD to the remote state ref, and leaves no staged residue. A separate no-origin fixture still creates one local-only commit with unchanged output and exit contract.
+Verified by: a repository whose remote enumeration contains `origin` but whose URL lookup fails. The first public call exits 1 with local HEAD, state ref, index bytes, staged paths, entity bytes, and remote ref unchanged while preserving the dirty edit. The fixture fixes author/committer names, emails, and timestamps and invokes the retry with an explicit message. After adding the URL, the second call creates exactly one commit whose sole parent is the pre-failure HEAD, whose author/committer identities and dates equal the fixture values, whose message equals the explicit message byte-for-byte, whose changed-path set is exactly the requested entity path, and whose blob equals the dirty entity bytes. Local HEAD and the remote state ref equal that commit, with no staged residue. A separate no-origin fixture still creates one local-only commit with unchanged output and exit contract.
 
 **AC-5 - The follow-up preserves the original reviewed history and can integrate only through a PR.**
-Verified by: the original branch ref still equals `a70e9121f0707dfbee1e9d1341bac6acc951038e`; that commit is an ancestor of the follow-up HEAD; the four original commits and their trees are unchanged; no merge commit is created on local `main`; and the pushed remote branch plus PR head equal the recorded follow-up HEAD. A missing `workflow` OAuth scope blocks at push/PR rather than selecting a local fallback.
+Verified by: the original branch ref still equals `a70e9121f0707dfbee1e9d1341bac6acc951038e`; that commit is an ancestor of the follow-up HEAD; the four original commits and their trees are unchanged; local `main` remains exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`; and the pushed remote branch plus PR head equal the recorded follow-up HEAD. A missing `workflow` OAuth scope blocks at push/PR rather than selecting a local fallback.
 
 **AC-6 - The corrected exact range passes independent review and required repository gates.**
-Verified by: `gofmt -w ./cmd ./internal` leaves the exact head clean, `go test ./...` and `go test ./... -race` pass there, and a replacement thorough Roborev branch job against `origin/main` under the corrected guideline records PASS for that same SHA. A FAIL is routed back to implementation and cannot advance or finalize the task.
+Verified by: record exact `base_sha` and `head_sha`; `gofmt -w ./cmd ./internal` leaves that head clean; `go test ./...` and `go test ./... -race` pass there; and a replacement thorough Roborev job records PASS for exactly `base_sha..head_sha`. The stored job prompt contains all four corrected-guideline sections. Remote branch and PR head equal `head_sha`, and the PR base OID equals `base_sha`; any base drift invalidates the evidence and requires fresh full/race plus Roborev proof. A FAIL is routed back to implementation and cannot advance or finalize the task.
 
 ## Test plan
 
@@ -173,23 +219,37 @@ changing production code. Use real Git repositories for the boundary tests and
 small injected filesystem/runner seams only for identity-error exhaustiveness.
 
 The missing-metadata fixture drives merge finalization, not a helper. The copy
-fixture keeps the source live and demonstrates that raw Git accepts the bad
-pointer before Spacedock refuses it. Its snapshot helper records SHA-256 bytes
-for each index and metadata file in addition to exact refs and porcelain status.
+fixtures keep the source live and demonstrate that raw Git accepts both a copied
+ordinary project and a copied linked project before Spacedock refuses them. In
+the linked-project case, remove the source state gitfile so the state
+back-pointer target is missing; the project trust-anchor check must still reject
+the copy before that fallback. Snapshot helpers record SHA-256 bytes for every
+index and metadata file in addition to exact refs and porcelain status.
+
+Test the injected identity oracle with distinct, non-symlink path strings so the
+resolver's decision is proven independently of host path canonicalization. Add
+a capability-gated Linux integration test using a real bind mount and a
+dedicated CI step that enables it and fails rather than skips when mount setup is
+unavailable. Assert the two surfaces have distinct strings but the compared
+objects have equal filesystem identity, then run the public command and verify
+the expected state ref only.
+
 The origin fixture creates a listed remote without a URL, proves failure before
-the index or HEAD changes, repairs the URL, then proves one durable pushed
-commit. Keep moved A-to-B recovery, no-origin local-only, malformed metadata,
-and normal unmoved command tests green. Exercise a symlinked same-object surface
-in default CI; a bind-mount live check is useful where available but is not the
-only acceptance proof.
+the index or HEAD changes, repairs the URL, then proves the exact parent,
+author, committer, timestamps, message, changed path, blob, local ref, and remote
+ref of one durable pushed commit. Keep moved A-to-B recovery, no-origin
+local-only, malformed metadata, and normal unmoved command tests green.
 
 Run focused tests for `internal/stategit`, `internal/status` merge guard, and
 `internal/cli` state commit first, then `gofmt -w ./cmd ./internal`,
 `go test ./...`, and `go test ./... -race`. Confirm the worktree is clean and
 record the exact SHA before the replacement Roborev review. Review
-`origin/main..<exact-head>` as the complete branch behavior, not only the repair
-commits. Only PASS at that SHA permits push and PR creation; no local merge is
-part of this plan.
+the immutable `base_sha..head_sha` as the complete branch behavior, not only the
+repair commits. Inspect the stored job range and prompt, then fetch and compare
+the PR's base OID before gate presentation and integration. Base drift requires
+fresh full/race and Roborev evidence. Only atomic PASS evidence permits push and
+PR creation; local `main` must retain its exact starting OID and no local merge
+is part of this plan.
 
 ### Feedback Cycles
 
@@ -234,3 +294,19 @@ ordinary Git can follow a stale absolute pointer, and it moves both merge
 finalization and origin inspection ahead of mutation. Public adversarial tests
 pin exact repository state, while an append-only follow-up branch and exact-SHA
 Roborev gate provide a PR-only route to integration.
+
+## Stage Report: ideation (cycle 2)
+
+- DONE: Close the declared-project trust-anchor gap, including the state fallback that could otherwise mask it.
+  A copied linked-project spike kept the source common directory live, removed the source state gitfile so the nested state back-pointer target was missing, and proved ordinary Git still accepted both copied paths. The revised design validates a regular-file project gitfile and its existing same-object back-pointer before trusting its common directory; the state stale-back-pointer fallback cannot run first.
+- DONE: Replace path-shape alias evidence with deterministic identity and real-mount proof.
+  The test plan now requires an injected distinct-path/same-object oracle plus a capability-gated Linux bind-mount test in a dedicated CI step that fails rather than skips when enabled. Symlinks are not the acceptance oracle for sandbox-mount compatibility.
+- DONE: Make origin-retry and integration evidence semantically exact.
+  AC-4 pins the successful commit's sole parent, author/committer identities and timestamps, exact message, sole changed path, blob, and local/remote refs. AC-5 and AC-6 keep local main at its exact starting OID and bind gates, corrected-guideline prompt, Roborev range, remote head, PR head, and PR base to recorded SHAs, with mandatory rerun on base drift.
+
+### Summary
+
+The cycle-2 design validates the project before using it as the state resolver's
+trust anchor, proves mount aliases through filesystem identity and a real bind
+mount, and makes both the origin retry commit and PR/Roborev evidence atomic.
+The immutable qwp head and PR-only, no-local-merge path remain unchanged.
