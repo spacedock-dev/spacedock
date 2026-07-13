@@ -1,0 +1,443 @@
+# Proposal: Commit-Derived Spacedock Events and a Read-Only Zaphod Projection
+
+Status: Draft  
+Date: 2026-07-13
+
+## Decision
+
+Spacedock should derive its durable event stream from the Git history of the
+workflow state checkout. It should not maintain a second append-only ledger.
+
+A deterministic projector will convert state commits into versioned event
+envelopes. A pure reducer will replay those envelopes into task timelines and
+current state. Zaphod will consume that projection through a native adapter and
+render it without changing workflow state.
+
+Runtime facts that do not exist in state commits—live worker handles, pane
+presence, or an open review UI—belong to a separate observational overlay. If
+one of those facts must survive restart, Spacedock must record it in a state
+commit. The projector remains the sole source of durable events.
+
+This design gives Spacedock one durable authority: state Git history.
+
+## Goals
+
+- Reconstruct the same event stream from the same state history.
+- Derive current workflow state through a pure, replayable reducer.
+- Represent approval before dispatch without inventing another lifecycle
+  stage.
+- Correlate tasks, stage runs, dispatch attempts, workers, gates, and evidence
+  across Spacedock, Subspace, Roborev, and Zaphod.
+- Let Zaphod show durable state and live observations without becoming a
+  workflow authority.
+- Detect stale, missing, duplicate, concurrent, and rewritten history.
+
+## Non-goals
+
+- Zaphod will not advance tasks, resolve gates, dispatch workers, or repair
+  state.
+- The event stream will not copy prompts, transcripts, review bodies, or other
+  sensitive prose. Events will carry identifiers, digests, and references.
+- `m3` will not implement the ledger. It will supply stable gate and pane
+  correlation metadata.
+- This proposal does not make a tab title, CWD, pane geometry, or plugin path
+  substring authoritative identity.
+
+## Sources of truth
+
+The system has three distinct sources:
+
+1. **State commits** are the durable workflow authority. They record task
+   creation, field changes, stage reports, feedback cycles, gate resolutions,
+   completion, verdicts, and explicit receipts.
+2. **Product commits** prove code integration and merge ancestry. State may
+   reference an exact product commit, but state cannot prove that commit exists
+   or has the claimed ancestry without inspecting the product repository.
+3. **Runtime observations** report current workers, panes, processes, and open
+   review surfaces. They can disappear and can disagree with durable state.
+
+The durable reducer consumes only state-derived events. A view reducer may
+overlay product verification and runtime observations for display.
+
+## Stable identity
+
+The contract must keep these identities separate:
+
+| Identity | Source | Meaning |
+|---|---|---|
+| `workflow_id` | Workflow frontmatter | Stable identity independent of path or remote URL |
+| `task_id` | Task frontmatter | Existing stable Spacedock task identity |
+| `event_id` | Projector | One normalized event derived from one state commit |
+| `stage_run_id` | Projector | One entry into a task stage |
+| `dispatch_attempt_id` | Dispatch preparation | One concrete attempt to spawn a worker |
+| `worker_id` | Runtime receipt | Worker handle returned by a successful spawn |
+| `gate_attempt_id` | Gate metadata | One review of one task, stage, round, and artifact digest |
+
+`stage_run_id` should derive from the event that enters the stage:
+
+```text
+stage_run_id = hash(workflow_id, task_id, stage_entered_event_id)
+```
+
+`gate_attempt_id` should derive from stable inputs established by `m3`:
+
+```text
+gate_attempt_id = hash(workflow_id, task_id, stage, round, artifact_digest)
+```
+
+`dispatch_attempt_id` cannot derive from a stage alone because one stage run may
+need retries or replacement workers. Dispatch preparation must mint it before
+the spawn call and pass it into the package, worker environment, pane title,
+result record, and any later receipt.
+
+## Canonical event envelope
+
+The projector should emit JSON Lines. Every line uses one versioned envelope:
+
+```json
+{
+  "schema": "spacedock.state-event/v1",
+  "event_id": "se1:8c6b…",
+  "kind": "task.stage_entered",
+  "workflow_id": "wf1:…",
+  "task_id": "kjhq0t2h6drse6b32cqybggv",
+  "task_slug": "managed-tab-safety-session-integration",
+  "stage": "implementation",
+  "stage_run_id": "sr1:4e91…",
+  "recorded_at": "2026-07-13T12:30:05Z",
+  "source": {
+    "ref": "spacedock-state/agent-rail-dev",
+    "commit": "b24f470…",
+    "parents": ["9a76e74…"],
+    "path": "managed-tab-safety-session-integration.md",
+    "ordinal": 2
+  },
+  "data": {
+    "from": "ideation",
+    "to": "implementation"
+  }
+}
+```
+
+The projector computes `event_id` from the schema version, workflow identity,
+source commit, path, ordinal, event kind, and normalized payload. Replaying the
+same history therefore produces byte-identical IDs and payloads.
+
+`recorded_at` comes from the state commit's committer timestamp. The envelope
+may preserve an authored or externally observed timestamp inside `data`, but
+the reducer orders durable events by state history, not wall-clock time.
+
+## Events derived from tree changes
+
+The first contract should recognize these durable events:
+
+- `task.created`
+- `task.field_changed`
+- `task.stage_entered`
+- `task.worktree_assigned`
+- `stage.report_recorded`
+- `feedback.cycle_recorded`
+- `gate.resolution_recorded`
+- `task.verdict_recorded`
+- `task.completed`
+- `task.merge_reference_recorded`
+- `task.archived`
+
+The projector should parse structured frontmatter and committed decision-log
+records. It should treat narrative prose as an opaque artifact. For example,
+`stage.report_recorded` should carry the heading, stage, digest, and source
+lines; it should not pretend to understand free-form claims unless the Stage
+Report grammar supplies structured checklist results.
+
+Gate resolution becomes durable only when the Resolution record enters the
+state history. A temporary Subspace briefing or an FO-authored presentation
+file is not a gate event. The committed record must carry `gate_attempt_id`,
+task ID, stage, round, artifact digest, decision, actor, and timestamp.
+
+## Explicit receipts for external side effects
+
+Tree changes cannot prove that an external side effect occurred. A transition
+commit written before `spawn_agent` proves dispatch intent, not spawn success.
+Likewise, a gate artifact proves that a review can be opened, not that its UI
+opened.
+
+When a side effect must become durable, Spacedock should create a small state
+commit with machine-readable commit trailers. The projector will convert those
+trailers into ordinary envelopes. No second ledger file is required.
+
+Example trailers:
+
+```text
+Spacedock-Receipt: dispatch.spawned/v1
+Spacedock-Workflow-ID: wf1:…
+Spacedock-Task-ID: kjhq0t2h6drse6b32cqybggv
+Spacedock-Stage-Run-ID: sr1:…
+Spacedock-Dispatch-Attempt-ID: da1:…
+Spacedock-Worker-ID: codex:/root/spacedock_ensign_…
+```
+
+Candidate receipt events are:
+
+- `dispatch.prepared`
+- `dispatch.spawned`
+- `dispatch.failed`
+- `worker.completion_signaled`
+- `worker.superseded`
+- `gate.opened`
+- `gate.open_failed`
+- `merge.verified`
+- `worker.cancelled`
+
+The recorder command must create a state commit; it must not append to a
+parallel journal. Repeated calls with the same receipt identity must be
+idempotent. The command should reject conflicting payloads for an existing
+receipt ID.
+
+Spacedock need not persist every observation. A product may choose a smaller
+durable contract and leave `gate.opened` or worker liveness in the runtime
+overlay. The UI must then label those facts as observations.
+
+## Git history and concurrency
+
+The projector must support the state branch's commit graph without double
+counting merged work.
+
+Recommended projection rules:
+
+1. Walk every commit reachable from the canonical state ref in deterministic
+   topological order. Break ties by commit SHA.
+2. For a normal commit, compare its tree with its first parent.
+3. For a merge commit, emit tree-derived events only for paths whose result
+   differs from every parent. Parent commits already account for inherited
+   changes; the merge contributes only conflict resolutions or new merge-time
+   edits.
+4. Read recognized receipt trailers from every reachable commit, including
+   commits introduced through a merge.
+5. Sort multiple events from one commit by task ID, path, event precedence,
+   and normalized payload before assigning ordinals.
+6. Detect concurrent contradictory transitions for one task. Mark the reduced
+   task conflicted until a later state commit resolves it; never select a
+   winner by timestamp.
+
+A projection cursor is `{canonical_ref_tip, event_id}`. If the canonical ref no
+longer descends from the stored tip, the consumer must report history rewrite,
+find a common ancestor, and rebuild. It must not silently continue from an
+unrelated history.
+
+## Reducer
+
+The reducer is a pure function:
+
+```text
+reduce(previous_snapshot, ordered_event) -> next_snapshot
+```
+
+Each task snapshot should contain:
+
+- durable stage and `stage_run_id`;
+- worktree and referenced product head;
+- latest Stage Report reference and digest;
+- current gate attempt, decision, and artifact digest;
+- dispatch attempts and durable receipts, if recorded;
+- completion, verdict, and merge reference;
+- conflicts, stale approvals, and invalid transitions.
+
+The reducer must never inspect live workers or mutate workflow files.
+
+### Approved but not dispatched
+
+`approved_pending_dispatch` is a computed gate condition, not a lifecycle
+stage. It holds when:
+
+1. the latest committed Resolution approves the current task, stage, round,
+   and artifact digest;
+2. no later event invalidates that digest or decision; and
+3. no later `task.stage_entered` or durable `dispatch.spawned` receipt consumes
+   the approval.
+
+Changing the reviewed artifact makes the approval stale. A new gate attempt
+must resolve the changed digest.
+
+To preserve this state, Spacedock must stop treating approval as an instruction
+to commit the next stage before a worker exists. The revised sequence is:
+
+1. Commit the gate Resolution.
+2. Prepare a package and mint `dispatch_attempt_id` without consuming approval.
+3. Call the runtime spawn boundary.
+4. After success, commit the stage transition and spawn receipt.
+5. If the process dies between steps 3 and 4, reconciliation reports a live
+   orphan; it does not fabricate state.
+
+A failed spawn may receive a committed failure receipt while the approval
+remains pending for retry.
+
+## Runtime overlay and reconciliation
+
+Runtime observations should use a separate schema, such as
+`spacedock.runtime-observation/v1`. They may report:
+
+- worker handle and liveness;
+- pane and process identity;
+- open Subspace review surface;
+- AgentsView session identity;
+- current Zellij session and stable tab ID.
+
+The overlay must link to durable `workflow_id`, `task_id`, `stage_run_id`,
+`dispatch_attempt_id`, or `gate_attempt_id`. It must not infer identity from a
+title, CWD, geometry, or path substring.
+
+Reconciliation compares reduced durable state with current observations and
+emits diagnostics:
+
+- `unconfirmed`: durable running state has no live worker observation;
+- `orphaned`: a live worker has no durable spawn receipt;
+- `stale`: a recorded worker or gate observation has expired;
+- `superseded`: a later attempt owns the stage run;
+- `conflicted`: concurrent state commits disagree.
+
+Reconciliation never changes task state merely to repair the display. An
+operator or explicit recovery command must authorize any state commit.
+
+## Zaphod integration
+
+The Zaphod WASM plugin should not read Git repositories or state files. A
+native Zaphod adapter should consume Spacedock's versioned projection:
+
+```text
+spacedock events project --workflow-dir <dir> --after <cursor> --jsonl
+spacedock events reduce  --workflow-dir <dir> --json
+spacedock events watch   --workflow-dir <dir> --after <cursor> --jsonl
+```
+
+The adapter will combine durable snapshots with runtime observations, then
+send tab-targeted rows through Zaphod's existing native-to-plugin boundary.
+The plugin remains a read-only renderer and action surface.
+
+The launcher must bind a tab to a workflow explicitly. A task worker should
+receive stable IDs through its environment and pane metadata, including
+`SPACEDOCK_WORKFLOW_ID`, `SPACEDOCK_TASK_ID`, `SPACEDOCK_STAGE_RUN_ID`, and
+`SPACEDOCK_DISPATCH_ATTEMPT_ID`. Zaphod may display a title or emoji derived
+from this binding, but those decorations remain non-authoritative.
+
+The sidebar may render these projections:
+
+- approved, pending dispatch;
+- prepared;
+- running;
+- awaiting gate;
+- feedback;
+- failed;
+- superseded;
+- completed;
+- merged;
+- stale, unconfirmed, orphaned, or conflicted.
+
+Each row should expose its source: durable state commit, product verification,
+or runtime observation.
+
+## Ownership
+
+### Spacedock
+
+- Define the event and receipt schemas.
+- Project state commits and reduce events.
+- Persist stable workflow, stage-run, dispatch-attempt, and gate-attempt
+  identities.
+- Expose project, reduce, watch, and reconciliation commands.
+- Commit gate decisions and any selected external-side-effect receipts.
+
+### Subspace and `m3`
+
+- `m3` supplies stable task, stage, gate-attempt, actor, round, and artifact
+  digest metadata on gate covers and Resolution records.
+- The wrapper returns actual open/result observations with those IDs.
+- Spacedock decides which observations become state receipts.
+
+### Zaphod
+
+- Consume the supported Spacedock stream through a native adapter.
+- Correlate rows through stable IDs.
+- Render durable state, observations, and discrepancies.
+- Never write workflow state or claim dispatch success from package creation.
+
+### Roborev and workers
+
+- Carry the same task, stage-run, dispatch-attempt, product-head, and evidence
+  IDs in reports and review records.
+- Store evidence by reference and digest rather than copying review prose into
+  events.
+
+## Delivery plan
+
+### Phase 1: Freeze the commit-derived contract
+
+1. Add stable `workflow_id` to commissioned workflow metadata.
+2. Specify `spacedock.state-event/v1` and deterministic event IDs.
+3. Implement Git DAG projection and the pure reducer.
+4. Persist gate Resolution records with stable `gate_attempt_id` and artifact
+   digest.
+5. Derive `approved_pending_dispatch` without runtime instrumentation.
+
+### Phase 2: Add dispatch identity and selected receipts
+
+1. Mint `dispatch_attempt_id` before runtime spawn.
+2. Pass all stable IDs through packages, environments, pane metadata, reports,
+   and Roborev evidence.
+3. Commit spawn success, spawn failure, completion signal, and supersession
+   receipts.
+4. Add restart reconciliation without automatic state repair.
+
+### Phase 3: Build the Zaphod projection
+
+1. Add the native event-stream adapter.
+2. Bind one managed tab to one explicit workflow identity.
+3. Render durable attempt state and stale-state diagnostics.
+4. Add the managed-tab indicator and provenance view without making either an
+   ownership input.
+
+After Phase 1 freezes envelope and reducer fixtures, Phase 2 boundary
+instrumentation and Phase 3 Zaphod work may proceed in parallel.
+
+## Acceptance tests
+
+1. **Determinism:** two projections of the same state ref produce byte-identical
+   events, IDs, order, and reduced snapshots.
+2. **Resume:** replay after a stored cursor emits no duplicate event.
+3. **Merge:** concurrent state branches merged in either ordinary supported
+   shape produce each parent event once and emit only genuine merge-resolution
+   changes at the merge commit.
+4. **Approval:** a committed approval with no consumed dispatch reduces to
+   `approved_pending_dispatch`; changing the artifact digest makes it stale.
+5. **No overclaim:** a package-build commit cannot reduce to spawned or running
+   without a spawn receipt or live observation.
+6. **Retry:** two dispatch attempts in one stage run retain separate IDs;
+   superseding one cannot rewrite the other.
+7. **Rewrite:** a non-descendant canonical ref causes a visible rebuild warning.
+8. **Reconciliation:** missing and orphaned workers produce diagnostics without
+   changing workflow state.
+9. **Projection safety:** Zaphod renders the stream but cannot advance, resolve,
+   dispatch, or merge a task.
+10. **Privacy:** event fixtures contain identifiers, digests, and references but
+    no prompt, transcript, or review body.
+
+## Open questions
+
+1. Should the canonical state ref permit arbitrary merge commits, or should
+   Spacedock serialize state commits through one writer? The projector above
+   supports merges, but serialization would simplify ordering.
+2. Which external receipts merit a state commit in the first release? Spawn
+   success and failure are the minimum for a durable dispatch ledger.
+3. Should `merge.verified` record only the product commit reference, or also
+   the exact ancestry query and result digest?
+4. How long should Zaphod retain runtime observations after their source
+   disappears?
+5. Should snapshots be cached beside the state checkout? Any cache must remain
+   disposable and rebuildable from Git history.
+
+## Recommendation
+
+Implement Phase 1 in Spacedock before adding a Zaphod ledger reader. Treat the
+state commit graph as the ledger, the event projector as its public contract,
+and the reducer as the sole durable interpretation. Add runtime receipts only
+for external facts that must survive restart. Keep Zaphod a read-only
+projection of that truth.
