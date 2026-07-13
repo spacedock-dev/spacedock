@@ -157,3 +157,16 @@ Implemented the three-fix design from ideation: a shared main-worktree-anchoring
 ### Summary
 
 Reproduced every claim in the implementation report independently rather than trusting it: full test suite green, all 9 new tests re-run and passed, all 6 ACs verified against their cited tests plus a verbatim doc-diff read, and three adversarial mutations on a throwaway checkout (stale-registration repair, origin-reachability gate, never-birthed disambiguation) each drove a distinct, predicted test red. The only deviation from the report is `golangci-lint run ./...`, which panics in this environment on a pre-existing go1.25/go1.26 toolchain mismatch reproduced identically on unmodified `main` — per-package lint confirms zero new findings from this diff. PASSED.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Close all five Roborev job 487 defects with focused adversarial regressions covering wrong-root reach, concurrent resume, linked-worktree .gitignore cleanliness, metadata failure, and atomic JSON output.
+  Commit `3d50bd9a` moves repository placement into `internal/status` for CLI/status/dispatch, adds a repository-scoped resume lock with an in-lock existence recheck, protects the main physical checkout through the shared Git exclude, fails closed on corrupt worktree metadata, and suppresses resume prose under `--json`; linked-root read/write/sweep, 12-caller race, exact registration/HEAD, three JSON resume variants, and cleanup-state regressions pass.
+- DONE: Preserve compatibility-first output and split-root semantics while proving failures occur before destructive or cross-checkout mutation.
+  Existing prose mode and state paths remain stable; the metadata-failure regression asserts exit 1 before nested-path creation or main-state HEAD mutation, the race asserts one registration and preserved entity bytes/HEAD, and the linked-worktree birth regression proves the main checkout stays clean while the invoking branch receives the tracked `.gitignore` edit.
+- DONE: Run gofmt plus focused, full, and race gates; commit the repair on the existing branch and leave PR #503 ready for a replacement exact-head Roborev review.
+  Ran `gofmt -w ./cmd ./internal`, focused adversarial tests, `go test ./... -count=1`, and `go test ./... -race -count=1` successfully; pushed exact head `3d50bd9a` to `origin/spacedock-ensign/state-ready-cwd-path-resolution`, updating PR #503 without any local merge.
+
+### Summary
+
+Closed all five findings from Roborev job 487 on the existing PR branch. Repository-boundary resolution is now one fail-closed source shared by status, dispatch, and state verbs; resume is serialized across processes; JSON stdout is atomic; and the expanded real-Git suite checks exact roots, refs, output bytes, registrations, failure ordering, and cleanup state before replacement review.
