@@ -5,12 +5,13 @@ status: done
 source: Captain clarification, 2026-07-13
 started: 2026-07-13T00:37:33Z
 completed: 2026-07-13T01:38:57Z
-verdict: PASSED
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-codex-resume-token-bootstrap-heuristic
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:502
+archived: 2026-07-13T01:46:15Z
 ---
 
 Restore the default first-officer prompt when Codex receives host options after
