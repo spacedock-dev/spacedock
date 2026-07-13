@@ -9,7 +9,7 @@ verdict:
 score:
 worktree: .worktrees/spacedock-ensign-state-ready-cwd-path-resolution
 issue: spacedock-dev/spacedock#484
-mod-block: merge:pr-merge
+mod-block:
 pr: "#503"
 ---
 
