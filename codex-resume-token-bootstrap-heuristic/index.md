@@ -10,7 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-codex-resume-token-bootstrap-heuristic
 issue:
 mod-block: merge:pr-merge
-pr: "#502"
+pr: pr-merge:502
 ---
 
 Restore the default first-officer prompt when Codex receives host options after
