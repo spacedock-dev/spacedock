@@ -10,9 +10,17 @@ worktree: .worktrees/spacedock-ensign-state-checkout-portable-gitdir
 issue:
 id: qwp7vn4dnt0sx96wzz1wfy8b
 mod-block:
-pr: local-merge:f2272990
+pr:
 archived: 2026-07-13T16:03:27Z
 ---
+
+## Finalization correction (2026-07-14)
+
+This entity was finalized prematurely after an invalid local merge attempt. The
+local merge was never pushed and has been removed from `main`; it is not PR or
+integration evidence. Roborev job `488` rejected the reviewed branch head. The
+required repair continues in `portable-state-checkout-roborev-followup` while
+this record remains archived as an audit trail.
 
 Make every Spacedock-owned state operation work when the same repository tree is reached through a path surface different from where its state checkout was created. Observed live: a Cowork sandbox mounts the project at `/sessions/<name>/mnt/<folder>` while the linked checkout's `.git` file still points at the host-absolute administrative directory, so Git reports `not a git repository` even though the checkout and repository metadata are both present under the mounted project.
 
