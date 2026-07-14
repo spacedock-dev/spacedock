@@ -1,6 +1,6 @@
 ---
 title: Close Roborev repository-boundary findings in portable state checkout
-status: validation
+status: implementation
 source: Follow-up to archived qw after Roborev thorough branch review job 488, 2026-07-14
 started: 2026-07-13T16:28:38Z
 completed:
