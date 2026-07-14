@@ -492,3 +492,23 @@ Validation is **REJECTED** at the Roborev-first gate. Exact-range job `1016` fou
 ### Summary
 
 Closed all three job-1016 findings with kernel-enforced no-replace publication, exact stale-registration identity checks, and same-checkout waiter result consumption across the ready-before-unlock boundary. The exact clean local head is fully verified and intentionally unpushed for fresh corrected exact-range Roborev-first validation.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Fetch current origin/main and rebase the clean local e6j branch from 9627a564 onto it. The ensign owns the rebase. On any conflict, abort the rebase and report the exact paths and peer commit; never force-push, discard either side, or auto-resolve with ours/theirs.
+  `git fetch origin main` resolved current main to `23c32369da2066bf23c58d4298d1296192d667ff`; `git rebase origin/main` replayed 8/8 commits without conflict, mapping old head `9627a56435f8e036f7c89dbecc3cd51216367ae1` to final head `5e4b32fd888cd275a226c27aa30f467ff7ec96d7`.
+  `git range-diff 557f8df3..9627a564 23c32369..5e4b32fd` marked all eight commits `=` (patch-identical).
+- DONE: After rebase, independently verify all three Roborev job-1016 repairs still hold: kernel-enforced no-replace publication, exact unique prunable expected-branch registration cleanup, and same-checkout waiter result consumption across ready-before-unlock.
+  Seven focused top-level regressions passed in 8.911s with no skips: the no-replace race preserved the competing branch and exact bytes; stale-registration classification/real-Git mutation tests accepted only the unique expected prunable branch and refused active/wrong/duplicate records without mutation; published-before-ready and ready-before-unlock waiters consumed the holder outcome while the later-peer control still pulled.
+- DONE: Run every relevant implementation gate and behavioral proof on the rebased exact head: focused state lifecycle and real-Git cross-process/concurrency tests, gofmt and git diff --check, go test ./..., go test ./... -race, and the documented Linux/Windows cross-compiles. Reproduce each acceptance criterion's cited real behavior; no skip counts as green.
+  The 11 cited AC-1..AC-5 real-Git cases passed in 10.787s; `go test ./internal/cli -run '^TestState' -count=1 -v` passed in 96.516s; the 18-test cross-process/concurrency matrix passed in 23.189s and with `-race` in 33.112s. All verbose output contained zero skips; AC-6's exact split-root documentation sentence is present.
+  `gofmt -w ./cmd ./internal` completed (one unrelated formatter drift was restored); `git diff --check` and `git diff --exit-code` passed. Fresh-cache `go test ./...` passed (CLI 168.469s, status 63.129s) and fresh-cache `go test ./... -race` passed (CLI 176.856s, status 42.802s).
+  `GOOS=linux GOARCH=amd64 go test -c -o /tmp/spacedock-cli-linux-cycle9.test ./internal/cli` produced ELF64 x86-64; `GOOS=windows GOARCH=amd64 go test -c -o /tmp/spacedock-cli-windows-cycle9.test.exe ./internal/cli` produced PE32+ x86-64.
+- DONE: Audit the post-rebase diff against e6j scope and leave the code worktree clean. Do not push code, update PR #503, approve CI, or request Roborev; the First Officer owns the end-of-implementation review after your evidence is green.
+  The patch-identical range audit and 24-file `origin/main...HEAD` inventory match established e6j scope; `git status --porcelain=v1` is empty at exact head `5e4b32fd888cd275a226c27aa30f467ff7ec96d7`. Remote e6j remains `3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`; no code push, PR/CI mutation, approval, or Roborev request occurred.
+- DONE: Append a new implementation Stage Report with DONE/SKIPPED/FAILED accounting, exact commands/results and final head, commit and push state only, then signal completion.
+  This report accounts for 5 DONE, 0 SKIPPED, and 0 FAILED items. It was committed path-scoped and pushed only to `spacedock-state/dev`; the required completion signal follows.
+
+### Summary
+
+Rebased the complete e6j series cleanly onto current `origin/main` and independently re-proved every job-1016 repair, acceptance behavior, concurrency boundary, platform build, full suite, and race suite. The code worktree is clean and deliberately unpushed at exact head `5e4b32fd888cd275a226c27aa30f467ff7ec96d7`; only this state report was committed and pushed for First-Officer review.
