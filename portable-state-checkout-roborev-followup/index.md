@@ -375,6 +375,27 @@ adjacent regression of the same resolver routing. Fix and test locally. The next
 fresh validator must again run corrected exact-range Roborev first; no push, PR,
 or CI is permitted before PASS.
 
+**Cycle 4 (Roborev-first validation, job 855).** Corrected-guideline Roborev
+rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..f63f71eb4ee41b227e24ca288d0aaffc0366fb54`
+before tests, push, PR creation, or CI:
+
+- HIGH: inherited `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, and
+  `GIT_INDEX_FILE` can redirect subprocesses after path validation.
+- HIGH: effective inherited, included, global, or system `core.worktree` can
+  redirect the standalone-repository runner.
+- MEDIUM: project-gitfile validation rejects valid separate-git-dir and
+  submodule layouts even though only the linked-worktree lane requires the
+  stricter relationship check.
+- LOW: boot can print a returned `computeNextID` error twice.
+
+Captain standing decision: send these findings back without reframing. They
+remain within the existing trust-boundary and compatibility scope. Sanitize Git
+routing authority, validate configuration provenance without rejecting supported
+layouts, de-duplicate the boot error, and add exact zero-mutation regressions.
+The next fresh validator must again run corrected exact-range Roborev first; no
+push, PR, or CI is permitted before PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
