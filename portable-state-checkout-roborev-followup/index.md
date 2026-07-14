@@ -756,3 +756,20 @@ cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
 ### Summary
 
 Validated state runners no longer accept symlinked repository-routing records beneath their Git directories, including external object/ref stores and linked administrative directories. State birth also refuses a symlinked root ignore file before its first write; the append-only local head is ready for fresh corrected exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 9)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..ef180439 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `991` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..ef180439157f13bdbf6d754421fad63025f36e78`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. Its `branch: main` field is invocation-checkout metadata for this exact local qwp range, not a review of `main` or another PR. It returned FAIL with one high and one medium finding: the separate-git-dir/submodule project lane does not prove a live external gitfile target belongs to the declared checkout, and the nominally read-only clean preflight may refresh index stat data before origin validation fails.
+- SKIPPED: Only after Roborev PASS independently reproduce administrative-entry symlink refusal, root .gitignore symlink zero-mutation behavior, prior canonical-destination and ignored-entity protections, every AC, gofmt, focused/full/race suites, and detached adversarial evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no implementation evidence was promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head ef180439, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation or update, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `ef180439157f13bdbf6d754421fad63025f36e78`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `ef180439`. Roborev job `991`
+found a copied external-gitdir source mutation path and a pre-origin index
+mutation risk. AC-1, AC-3, AC-4, and AC-6 therefore fail; the remaining
+criteria were not revalidated because the mandatory first gate stopped the
+cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
