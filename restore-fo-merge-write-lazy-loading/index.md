@@ -175,3 +175,16 @@ The design restores the original loading economy without reviving the rejected c
 ### Summary
 
 Cycle 2 closes the staff-review gaps with real host recovery proof and a sharper evidence boundary. The current eager streams are now a captured RED baseline, the post-change live journey must defer merge-core until the seeded recovery boundary without changing terminal state, contractlint asserts topology only, and narration no longer masquerades as a `write.classify` event.
+
+## Stage Report: implementation
+
+- DONE: Defer merge-core and write-core from cold first-officer startup while preserving one eager shared core and deterministic exact-path lazy loading at the first mutation or merge boundary.
+  Commit `83af540d` leaves only `first-officer-shared-core.md` eager, adds base-anchored exact write/merge cues with halt-on-failure semantics, and leaves both canonical core bodies byte-identical (`a347fc4a…` merge, `a350c1cc…` write).
+- DONE: Implement topology-only contract tests plus behavioral/event-stream and protected Claude/Codex live assertions for gate, mutation, terminal, refusal, and seeded mod-block recovery journeys, including adversarial order controls.
+  Contractlint now proves only eager/deferred reachability and wrapper absence; host normalizers ignore classification narration and the shared order oracle rejects eager, missing, post-mutation/post-guard, wrong-path, wrapper, broad-search, and reversed recovery traces. Both protected runners call the oracle for gate, filing, rejection, merge refusal, and seeded `mod-block=merge:pr-merge` shallow-boot recovery while retaining their durable assertions.
+- DONE: Prove at least 8,000 bytes of cold-contract reduction without behavior regression, apply the concrete runtime documentation diff, and pass gofmt, focused, full, race, compile-live, and detached mutation audit gates.
+  Cold entry+shared size is 27,020 B versus the fixed 35,095 B eager baseline, saving 8,075 B. `gofmt -w ./cmd ./internal`, focused contractlint/order/integration suites, `go test ./...`, `go test ./... -race`, `go test -tags live -run '^$' ./...`, and `git diff --check` passed; the detached audit independently made eager import, dangling literal, restored wrapper, and reversed-order plants fail before returning green. `docs/runtime-live-ci.md` records the stream-order evidence boundary.
+
+### Summary
+
+The first-officer cold contract again loads one shared core while write and merge owners resolve once, by literal paths under the loader-supplied skill base, at their first owned boundaries. Commit `83af540d` adds topology-only structural guards, cross-host behavioral order oracles, live-runner assertions, the seeded merge-mod recovery journey, and the runtime evidence documentation without changing either canonical core body or any binary/mod behavior.
