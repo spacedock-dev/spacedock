@@ -321,3 +321,16 @@ Closed all three Roborev job 775 findings without excluding their failure modes:
 ### Summary
 
 Validation is **REJECTED** at the Roborev-first gate. Exact-range job `867` found two unscoped concurrency and data-loss defects, so local tests, PR update, and CI engagement were not performed; return the findings to implementation before another fresh validation.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Prevent failed-resume cleanup from deleting a concurrently valid checkout or uncommitted state, using private convergence or proven ownership plus cross-command writer coverage.
+  Local commit `4cdb53c2` removes every failed-resume deletion of the public checkout and keeps failure fan-out in the per-resume outcome; stale registrations now recover with Git's same-path `worktree add --force`, which replaces absent metadata but refuses an occupied checkout. Deterministic `state ready` and `state init` races preserve a concurrent `state new` birth, a different direct-Git worktree plus exact uncommitted bytes, and an uncommitted `status --set` mutation after pull/rebase failure; temporarily restoring forced cleanup drove all three ready-path tests red.
+- DONE: Key durable resume outcomes by canonical checkout path and prove simultaneous resumes for two workflows cannot overwrite or misread one another.
+  Outcome filenames now use the SHA-256 of the realpath-normalized checkout under the repository common Git dir while retaining the canonical path inside the JSON record. Four callers simultaneously resume two absent workflows in one repository and all return ready with distinct durable results; overwriting workflow A's outcome leaves B ready, and mutating the implementation back to one repository-wide file makes the regression fail.
+- DONE: Run focused/full/race gates and commit locally only; a fresh validator must run corrected exact-range Roborev before any PR update or CI engagement.
+  Changed-file gofmt and `git show --check` are clean; Windows cross-compilation produced a PE32+ test executable; focused lifecycle tests, full `internal/cli`, `go test ./... -count=1`, and `go test ./... -race -count=1` pass at clean head `4cdb53c27ed8165ee425e2bca36af316caff3892`. The branch is three local commits ahead of unchanged remote `3d50bd9a`; no code push, PR update, CI trigger, or CI approval occurred.
+
+### Summary
+
+Closed both job-867 findings without deleting or overwriting any public checkout: failed convergence is durable and fail-closed, stale metadata recovery is non-destructive, and every non-locking adjacent writer path is exercised for both resume verbs. Outcomes are independently keyed per canonical checkout, and the exact clean local head is ready for corrected exact-range Roborev-first validation.
