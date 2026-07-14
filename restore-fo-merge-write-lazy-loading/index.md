@@ -1,12 +1,12 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores
-status: ideation
+status: implementation
 source: Captain correction after fresh-session boot trace, 2026-07-13
 started: 2026-07-13T15:56:42Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-restore-fo-merge-write-lazy-loading
 issue:
 id: 1kevganrmr2csr539ktfjerh
 ---
