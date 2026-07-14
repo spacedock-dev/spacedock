@@ -455,7 +455,7 @@ func mergeModRecoveryEntity() string {
 	return "---\n" +
 		"id: merge-recovery\n" +
 		"title: Merge Recovery\n" +
-		"status: implementation\n" +
+		"status: review\n" +
 		"completed:\n" +
 		"verdict: PASSED\n" +
 		"pr: pr-merge:42\n" +
@@ -487,7 +487,7 @@ func TestMergeRecoveryKeepsShallowBootReadOnlyAndDoesNotPrescribeMechanism(t *te
 		t.Fatal("shallow-boot no longer starts from a discoverable open PR with no pre-seeded recovery state")
 	}
 	recovery := mergeModRecoveryEntity()
-	if !strings.Contains(recovery, "pr: pr-merge:42") || !strings.Contains(recovery, "mod-block: merge:pr-merge") {
+	if !strings.Contains(recovery, "status: review") || !strings.Contains(recovery, "verdict: PASSED") || !strings.Contains(recovery, "pr: pr-merge:42") || !strings.Contains(recovery, "mod-block: merge:pr-merge") {
 		t.Fatal("separate recovery fixture lacks the durable in-flight merge state")
 	}
 	prompt := mergeModRecoveryPrompt("/tmp/workflow")
