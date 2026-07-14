@@ -1,6 +1,6 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores (clean reset)
-status: validation
+status: implementation
 source: Clean reset from rejected 1k implementation, captain direction 2026-07-14
 started: 2026-07-14T14:12:36Z
 completed:
