@@ -792,3 +792,16 @@ found a copied external-gitdir source mutation path and a pre-origin index
 mutation risk. AC-1, AC-3, AC-4, and AC-6 therefore fail; the remaining
 criteria were not revalidated because the mandatory first gate stopped the
 cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Bind separate-git-dir and submodule gitfile targets to the declared checkout so a copied checkout cannot mutate a live source repository, with exact source zero-mutation proof.
+  Commit `720b29b227aa23dc5292acbd702aec11a1063f28` treats an external self-contained project target as trusted only when repository-local `core.worktree` metadata binds it to the exact declared checkout; internal targets still move safely with their checkout. A public `state new` matrix keeps copied separate-git-dir and absolute submodule gitfiles operable against the live source, then requires refusal while preserving exact source HEAD/refs/index/status/worktree registrations, the complete administrative target and source/copy trees, and empty stdout. Valid bound separate-git-dir and submodule runners remain covered, while an unbound external separate Git directory fails closed.
+- DONE: Make the pre-origin clean-status probe genuinely read-only by disabling optional locks/index refresh effects, and prove index bytes remain identical when origin validation fails.
+  Exact entity classification now invokes Git's global `--no-optional-locks` option before `status`. The folder-form regression tracks a clean artifact, makes its cached stat data stale, dirties only `index.md`, injects a named-origin URL failure, verifies the read-only status argv, and pins HEAD, index bytes, entity bytes, and artifact bytes before and after refusal.
+- DONE: Run focused/full/race gates, commit locally only, and leave push, PR, and CI blocked for a fresh corrected exact-range Roborev-first validation.
+  Focused ownership and non-refresh regressions passed; complete `internal/stategit`, `internal/cli`, and `internal/status` packages passed; `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./... -count=1`, and `go test ./... -race -count=1` all passed. The clean local branch remains unpushed at `720b29b2`; immutable qwp `a70e9121` remains an ancestor, local `main` and `origin/main` remain `557f8df3`, and the remote follow-up branch is absent.
+
+### Summary
+
+External self-contained project Git metadata now needs an exact checkout ownership binding, closing the copied separate-git-dir and submodule source-mutation lane without rejecting safely bound layouts. The clean preflight cannot refresh the index before origin validation; the append-only local head is ready for a fresh corrected exact-range Roborev-first review.
