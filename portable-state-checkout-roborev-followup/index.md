@@ -455,6 +455,25 @@ arming, and preserve clean no-op ordering. The next fresh validator must again
 run corrected exact-range Roborev first; no push, PR, or CI is permitted before
 PASS.
 
+**Cycle 8 (Roborev-first validation, job 912).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..0f362360880e13230276a57aab0d3224d036d5ca`
+before tests, push, PR creation, or CI:
+
+- HIGH: an existing ancestor of the state path can be a symlink outside the
+  project before `state init` or `state new` validates the destination.
+- MEDIUM: clean-entity classification omits ignored untracked files and can
+  return a false no-op.
+- MEDIUM: lexical workflow spelling can write the wrong `.gitignore` rule when
+  an internal symlink resolves to a target that remains inside the repository.
+
+Captain standing decision: send these findings back without reframing. They are
+the remaining canonical-destination and exact-classification edges of the
+existing task. Validate every existing ancestor before creation, include ignored
+untracked entity state in dirtiness, and derive ignore spelling from the
+canonical in-repository workflow path. The next fresh validator must again run
+corrected exact-range Roborev first; no push, PR, or CI is permitted before PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
