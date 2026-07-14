@@ -388,3 +388,22 @@ Validation is **REJECTED** at the Roborev-first gate. Exact-range job `904` foun
 ### Summary
 
 Closed all four job-904 findings with exact checkout identity checks, private origin convergence plus atomic publication, canonical linked-worktree classification, and byte-preserving Git path parsing. Exact clean head `f57b0924523ee75ef0a2c08f9c999d9c6b0756a1` is locally verified and intentionally unpushed for a fresh corrected exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 6)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..f57b0924 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, PR update, or CI.
+  Authoritative thorough Roborev job `951` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..f57b0924523ee75ef0a2c08f9c999d9c6b0756a1`, Compatibility posture, Trust boundaries, Behavioral proof, and Review focus, and verdict FAIL.
+- SKIPPED: Only after Roborev PASS independently reproduce exact registered-worktree identity, private pre-publication origin convergence and writer races, external-linked-worktree symlink classification, whitespace-byte preservation, every AC, gofmt, focused/full/race suites, and detached audit evidence.
+  Roborev failed the mandatory first gate, so no local validation suites or detached audit ran.
+- SKIPPED: Only after every local gate passes push exact head f57b0924 to PR #503 and engage required CI; report actual outcomes and block on waiting, skipped, unapproved, or failed evidence.
+  No code was pushed, PR #503 was not updated, and no CI was triggered or approved; exact reviewed head `f57b0924` remains local-only.
+
+### Reviewer findings
+
+- MEDIUM: `internal/cli/state.go:620` runs repository-wide `git worktree prune --expire now`, which can delete unrelated temporarily missing worktree registrations instead of repairing only `statePath`.
+- MEDIUM: `internal/cli/state_sync.go:166` can observe the published checkout before the publisher releases the lock, then ignore the completed resume outcome and issue a redundant pull; an unreachable origin can turn successful local fallback into failure.
+- MEDIUM: `internal/cli/state_resume_outcome.go:17` persists outcomes indefinitely keyed only by checkout path, so a deleted and independently recreated checkout can inherit a stale `ready` outcome without current remote integration.
+
+### Summary
+
+Validation is **REJECTED** at the Roborev-first gate. Exact-range job `951` found three remaining scope and generation-identity defects; local tests, PR publication, and CI engagement were correctly not performed.
