@@ -1,6 +1,6 @@
 ---
 title: Close Roborev repository-boundary findings in portable state checkout
-status: validation
+status: implementation
 source: Follow-up to archived qw after Roborev thorough branch review job 488, 2026-07-14
 started: 2026-07-13T16:28:38Z
 completed:
@@ -473,6 +473,23 @@ existing task. Validate every existing ancestor before creation, include ignored
 untracked entity state in dirtiness, and derive ignore spelling from the
 canonical in-repository workflow path. The next fresh validator must again run
 corrected exact-range Roborev first; no push, PR, or CI is permitted before PASS.
+
+**Cycle 9 (Roborev-first validation, job 930).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..6f54d8d636521b7e48d0dbbc964d606d4a488e27`
+before tests, push, PR creation, or CI:
+
+- HIGH: validated Git administrative directories can contain symlinked entries
+  that redirect reads or writes to metadata outside the repository.
+- HIGH: `state new` can write through a symlinked repository-root `.gitignore`
+  and mutate an external file.
+
+Captain standing decision: send these findings back without reframing. They are
+direct trust-boundary continuations of the existing task. Reject redirected Git
+administrative entries before use and refuse a symlinked root `.gitignore`
+before any write, with exact external-target zero-mutation evidence. The next
+fresh validator must again run corrected exact-range Roborev first; no push, PR,
+or CI is permitted before PASS.
 
 ## Stage Report: validation
 
