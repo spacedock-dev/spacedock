@@ -61,3 +61,11 @@ The prior implementation branch and its proof harness were rejected. This task i
 ### Summary
 
 Restored the intended cold boundary without changing mutation, merge, routing, or terminal resolution semantics. The existing supported-host journeys now make the load order visible and falsifiable while retaining their durable outcome assertions.
+
+### Roborev
+
+- Exact-head review requested for `09288711f8c9069eb7afefe5057c7c737236f4d2` after the recorded Codex and Claude live-green runs. No prior review existed for that SHA.
+- Request: Roborev job `1423`, agent `codex`, reasoning `thorough`; status `done`, verdict `F` (finished 2026-07-14T23:27:09+08:00).
+- Medium finding at `internal/ensigncycle/fo_deferred_load_trace_test.go:39`: `observeLoad` can count any successful event containing a matching path suffix as a completed read. Roborev recommends requiring the exact loader-supplied base and host-native read operation, correlating a genuine full-file Codex read, and adding negative cases for path-only mentions, partial reads, and same-suffix alternate roots.
+- Medium finding at `internal/ensigncycle/fo_deferred_load_trace_test.go:172`: the checks cover atomic filing and `status=done`, but not the broader set of FO-authored mutations or every existing mutating live scenario. Roborev recommends detecting the first general FO mutation across those scenarios while retaining the specialized terminal merge-order assertion.
+- No code was changed in response; both concrete findings await first-officer feedback routing.
