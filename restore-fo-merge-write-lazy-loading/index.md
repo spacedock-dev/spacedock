@@ -314,3 +314,16 @@ Cycle 3 separates automatic merged-PR discovery from resumed mod-block recovery 
 ### Summary
 
 Cycle 4 repairs the three Roborev job-1167 false-red/false-green paths and aligns all recovery evidence with read-only boot followed by engage. Code commit `89859d0c926844f799bb8ef02f555903e2fae493` changes only oracle/scenario evidence; canonical lazy-loading instructions and merge/write core bodies are unchanged.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Treat Roborev job 1218 as the first validation gate; verify it covers aeeadf451c80748215de344ca8b814eca4e81afa through exact head 89859d0c926844f799bb8ef02f555903e2fae493, and triage every Medium-or-higher finding before any live run.
+  Job 1218 stored `a255b0544927d6f91966ca51c9220eddb2cf0b27..89859d0c926844f799bb8ef02f555903e2fae493`; `a255b054` is `aeeadf45`'s first parent, the prompt lists `aeeadf45` and every task commit through exact HEAD, and all four guideline sections are present. Its FAIL verdict has one High and three Medium findings.
+- SKIPPED: Only if job 1218 is clean, run exact-head focused, full, race, live-tag compile, and the smallest exact live journeys that prove read-only boot, engage-time merged-PR recovery, and lazy merge/write-core loading; merged-PR discovery is not required at boot.
+  The mandatory review gate was unclean, so no downstream test, compile, audit, or live command ran.
+- SKIPPED: Verify every acceptance criterion with independent evidence, including unchanged core hashes and actual-body, uppercase-path, and stale-frontmatter controls; recommend PASSED or REJECTED without changing product or test code.
+  AC reproduction and the named controls remained blocked after Roborev; recommendation: REJECTED because both in-scope evidence findings are valid, with no product or test edit made.
+
+### Summary
+
+The High bootstrap-positional and Medium `resume`-option-value findings are valid preexisting frontdoor defects from `d0082e3`/`aeeadf45`, already documented by the `557f8df3` audit; they were not introduced by the lazy-loading commits but keep this mandated inclusive review range unclean. The two in-scope findings are also valid: headless `claude -p`/`codex exec` runners cannot prove the claimed interactive boot default by prompting the model not to engage, and the order oracle neither rejects mutation/terminal events at a cold gate nor requires shared/runtime reads for the other journeys. Validation is REJECTED without downstream tests or live spend.
