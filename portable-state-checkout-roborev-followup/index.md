@@ -544,3 +544,16 @@ writable object-routing authority, and can silently downgrade a vanished
 checkout to local-only. AC-1, AC-4, and AC-6 therefore fail; the remaining
 criteria were not revalidated because the mandatory first gate stopped the
 cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 5)
+
+- DONE: Run every state-Git subprocess from the validated checkout so relative remote URLs retain Git's established resolution semantics.
+  Commit `82adfab58de230fa2f05a2150c1910a35d545247` sets `cmd.Dir` to the validated checkout for both runner operations and include-aware config inspection; creation-time subprocesses already use their validated project directory. `TestStateCommitResolvesRelativeOriginFromValidatedCheckout` rewrites the real state origin to a path relative to the state checkout, invokes the public command from an unrelated process directory, and proves the intended state HEAD and exact remote branch advance together.
+- DONE: Neutralize writable object/shallow routing authority and prove inherited routing cannot mutate or source another repository.
+  The sanitized environment now removes `GIT_OBJECT_DIRECTORY`, `GIT_SHALLOW_FILE`, `GIT_ALTERNATE_OBJECT_DIRECTORIES`, graft/namespace/replace/quarantine routing, and inherited command-config parameters in addition to the previously covered repository, work-tree, common-dir, and index variables. The public hostile-environment matrix now covers object and shallow routing while snapshotting the unrelated object tree and shallow file exactly. Focused depth-fetch tests prove neither victim path is written, and an adjacent object-removal test proves the runner cannot source a missing commit through an inherited alternate object directory.
+- DONE: Fail closed when a checkout disappears after resolution, then run all local gates without pushing or engaging CI.
+  `Origin` now errors on every checkout stat failure or non-directory replacement; a direct regression moves the checkout after `Resolve`, and `TestStateReadyFailsClosedIfCheckoutDisappearsAfterResolve` uses a Git boundary shim to move it after config validation, then pins exit 1, empty stdout, the fail-closed diagnostic, and unchanged code/state refs, indexes, and state status. `gofmt -w ./cmd ./internal`, focused suites, exact-head `go test ./...`, and exact-head `go test ./... -race` all passed. No code push, PR, CI, merge, approval, or integration action occurred.
+
+### Summary
+
+Validated state runners now preserve relative-remote compatibility by executing from their checkout, strip the remaining writable and alternate object-routing authority, and refuse a checkout that vanishes after resolution instead of reporting local-only success. Clean local head `82adfab5` is ready for a fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
