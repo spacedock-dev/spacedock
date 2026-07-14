@@ -495,3 +495,16 @@ and one boot error can be duplicated. AC-1, AC-3, and AC-6 therefore fail; the
 remaining criteria were not revalidated because the mandated first gate stopped
 the cycle. No tests, push, PR, CI, implementation mutation, or local merge
 occurred.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Sanitize inherited Git repository-routing authority at every state-Git subprocess boundary and prove hostile values cannot mutate another repository.
+  Commit `3c842d1713411b41ae7f074a3ced8e48d4ac820c` removes inherited `GIT_DIR`, `GIT_WORK_TREE`, `GIT_COMMON_DIR`, `GIT_INDEX_FILE`, and command-scoped Git config before invoking Git, then supplies only the checkout and Git directory validated by `Resolve`. `TestStateCommitSanitizesHostileGitRoutingAndConfig` drives the public command separately under each routing variable and under command-scoped, global, and system `core.worktree`; each case commits only the intended state checkout while pinning the unrelated repository's HEAD, index, status, and bytes plus the code repository's HEAD, index, and status.
+- DONE: Validate standalone `core.worktree` provenance without rejecting valid separate-git-dir or submodule project layouts.
+  Standalone resolution uses Git's canonical include-aware parser only when local config can name `worktree` or an include, rejects a `core.worktree` sourced outside the validated Git directory, and requires every value to resolve to the checkout. Adjacent tests accept direct and checkout-local included values, reject an external include even when its value names the checkout, and exercise operational runners from real separate-git-dir and submodule project gitfiles. The linked-worktree commondir/back-pointer relationship check now remains specific to the linked lane; self-contained project Git directories retain structural validation.
+- DONE: De-duplicate boot's returned next-ID diagnostic, run formatting and all local gates, and keep the implementation local for fresh Roborev-first validation.
+  `gatherBoot` now returns minting errors without printing them, leaving the text and JSON callers as the single diagnostic owners; a focused test pins empty callee stderr and the exact returned error. `gofmt -w ./cmd ./internal`, all focused suites, and exact-head `go test ./...` passed. The aggregate `go test ./... -race` passed every package except the same unrelated `TestSonnetTeamDeleteHangReplay` replay-fixture flake recorded in cycle 3; that test then passed in isolation under race, the full `internal/ensigncycle -race` package rerun passed, and the changed `internal/stategit` package passed a final exact-head race rerun. No code push, PR, CI, merge, approval, or integration action occurred.
+
+### Summary
+
+Every state Git subprocess now operates through repository and work-tree paths owned by the validated runner, so inherited routing and effective `core.worktree` cannot supersede the trust decision. Include provenance is checked without regressing separate-git-dir or submodule projects, and boot errors have one diagnostic owner. Clean local head `3c842d17` is ready for a fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
