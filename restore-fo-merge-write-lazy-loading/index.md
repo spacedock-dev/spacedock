@@ -218,3 +218,16 @@ The first-officer cold contract again loads one shared core while write and merg
 ### Summary
 
 Roborev job 915 rejected the exact implementation range with two medium findings. The Claude runtime and status-viewer still describe merge/write cores as eager, while the order oracle can mistake a command that merely mentions a core path for a successful read and misses shell mutation forms such as redirection, `sed -i`, `mv`, and Git writes; both must be corrected with negative controls before fresh validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Update every affected Claude runtime and status-viewer reference so no shipped instruction falsely claims merge/write cores remain eager, while preserving exact deferred load points.
+  Commit `0e38db2b` replaces stale eager claims in the Claude runtime, status viewer, and feedback-rejection flow with the shared core's exact write/merge boundaries; a contractlint consistency guard covers all three shipped surfaces.
+- DONE: Make the order oracle require a successful exact canonical read rather than path mention or failed attempt, with negative controls for wrong/failed/retried reads.
+  Claude reads now resolve only from matching non-error tool results; Codex reads require completed exit-zero commands. Both hosts additionally require the canonical body's heading in output, so `echo`/`sed` path mentions, empty output, failed reads, and wrong/failed retries remain red instead of becoming load evidence.
+- DONE: Detect shell mutation boundaries including redirection, sed -i, mv, and Git writes; run focused/full/race/compile-live and adversarial gates, committing locally only for fresh Roborev-first validation.
+  The event normalizer now detects `>`/`>>`, in-place sed, file commands, and Git mutations alongside Spacedock writes. Focused contractlint/order suites, `gofmt -w ./cmd ./internal`, `go test ./...`, `go test ./... -race`, `go test -tags live -run '^$' ./...`, and `git diff --check` passed. A detached audit made a stale eager instruction, path-only command, and failed exact read independently fail; the branch remains local and unpushed with no PR or CI engagement.
+
+### Summary
+
+Cycle 2 closes both Roborev findings without changing the approved loading design. Commit `0e38db2b` makes every shipped cross-reference agree on deferred exact-path loading and upgrades the behavioral oracle from path-text recognition to successful canonical-body evidence across the wider shell mutation surface; both canonical core hashes and the 8,075-byte cold saving remain unchanged.
