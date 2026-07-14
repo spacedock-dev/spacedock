@@ -1,6 +1,6 @@
 ---
 title: state ready resolves split state from linked-worktree cwd (clean reset)
-status: implementation
+status: validation
 source: Clean reset from rejected e6j implementation and GitHub issue #484, captain direction 2026-07-14
 started: 2026-07-14T14:12:39Z
 completed:
