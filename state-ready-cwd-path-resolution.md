@@ -189,6 +189,27 @@ reframing is needed. No push or CI is permitted before a fresh corrected
 exact-range Roborev PASS. A deliberately unhandled case must be explicitly
 scoped out with evidence before re-review.
 
+**Cycle 6 (Roborev-first validation, job 904).** Authoritative thorough review
+stored exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..4cdb53c27ed8165ee425e2bca36af316caff3892`,
+included all four corrected guideline sections, and rejected before tests, PR
+update, or CI:
+
+- HIGH: existing state directories are trusted without proving they are the
+  exact registered worktree on the expected state branch, allowing Git to climb
+  and mutate the main code branch.
+- HIGH: resume publishes the final checkout before origin convergence, so
+  non-locking state writers can lose concurrent entity changes.
+- MEDIUM: an external symlink into a linked worktree is misclassified as a
+  standalone repository.
+- MEDIUM: `strings.TrimSpace` corrupts valid leading or trailing whitespace in
+  Git-reported paths and prefixes.
+
+Routed back to implementation under the captain's standing instruction. These
+are existing-scope repository identity, publication-race, symlink, and exact-path
+defects; no reframing is needed. No PR update or CI is permitted before a fresh
+corrected exact-range Roborev PASS.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
