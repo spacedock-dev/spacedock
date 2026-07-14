@@ -136,6 +136,23 @@ Routed back to ideation: update the approach, AC-2 through AC-4, and test plan
 together, exercise the live recovery path, then return for independent staff
 re-review.
 
+**Cycle 2 (Roborev-first validation, job 915).** Corrected-guideline Roborev
+rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..83af540d2a4a37a789a665c9b3a3c871bdc3ebdf`
+before downstream tests, push, PR, or CI:
+
+- MEDIUM: `claude-first-officer-runtime.md` and `fo-status-viewer/SKILL.md`
+  retain stale claims that merge/write cores are eagerly loaded.
+- MEDIUM: `fo_reference_order_test.go` can treat a path mention or failed read
+  as a successful core load and misses shell mutation forms including
+  redirection, `sed -i`, `mv`, and Git writes.
+
+Routed back to implementation under the captain's standing instruction. These
+are approved-scope contract consistency and behavioral-oracle gaps; no
+reframing is needed. Correct every stale eager claim, require successful exact
+reads, cover the full mutation boundary with adversarial negatives, and return
+to a fresh Roborev-first validation without push or CI.
+
 ## Stage Report: ideation
 
 - DONE: Produce a behavior-first design that restores exact-path deferred write-core and merge-core loads at their mutation and terminal/mod-block triggers without reintroducing search or skill-discovery guessing.
