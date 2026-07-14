@@ -103,6 +103,28 @@ AC-4 is the mechanism serving AC-1 through AC-3; it does not pass if the live/or
 
 Estimated implementation complexity is medium: instruction text and structural tests are small; the main work is a reliable cross-host event normalizer and strengthening existing live assertions. No production Go command behavior changes.
 
+### Feedback Cycles
+
+**Cycle 1 (independent ideation staff review).** The design direction is sound,
+but the evidence plan is not ready for the ideation gate:
+
+- AC-3 claims `mod-block=merge:*` recovery while proving it only with an
+  authored host-dialect fixture. Add a live Claude/Codex recovery journey, or
+  seed merge mod-block recovery into an existing positive terminal journey and
+  preserve its durable assertions. This matters because a resumed FO must load
+  the deferred merge core before continuing an already in-flight merge.
+- Restrict contractlint to topology: reference closure, literal exact paths,
+  structural absence, and wrapper absence. Trigger timing and read order must be
+  proved exclusively by behavioral stream/live assertions, not ordered wording
+  or reversed-prose tests.
+- Clarify the observable `write.classify` evidence. Either require a real
+  classification event emitted by the driven behavior, or stop treating model
+  narration as proof.
+
+Routed back to ideation: update the approach, AC-2 through AC-4, and test plan
+together, exercise the live recovery path, then return for independent staff
+re-review.
+
 ## Stage Report: ideation
 
 - DONE: Produce a behavior-first design that restores exact-path deferred write-core and merge-core loads at their mutation and terminal/mod-block triggers without reintroducing search or skill-discovery guessing.
