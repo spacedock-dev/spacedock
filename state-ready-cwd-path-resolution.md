@@ -532,3 +532,23 @@ Closed all three job-1016 findings with kernel-enforced no-replace publication, 
 ### Summary
 
 Rebased the complete e6j series cleanly onto current `origin/main` and independently re-proved every job-1016 repair, acceptance behavior, concurrency boundary, platform build, full suite, and race suite. The code worktree is clean and deliberately unpushed at exact head `5e4b32fd888cd275a226c27aa30f467ff7ec96d7`; only this state report was committed and pushed for First-Officer review.
+
+## Stage Report: implementation (cycle 10)
+
+- DONE: Canonically contain every resolved state-checkout path beneath the canonical main worktree, rejecting escapes through a symlinked main workflow prefix or `state:` child; add an adversarial main-prefix-symlink versus linked-prefix-directory proof and preserve valid linked-worktree resolution.
+  Code commit `a155a077` makes `ResolveSplitRootCheckout` compare the realpath-normalized candidate to the canonical main root with a strict descendant check while preserving the stable contained path spelling. `TestResolveSplitRootCheckoutRejectsCanonicalEscapes` rejects main-prefix symlink, state-child symlink, and parent traversal escapes while its linked-directory control remains valid.
+- DONE: Eliminate the destructive TOCTOU in stale-registration repair: after any unlocked path/identity check, do not run public-path `git worktree remove` or another operation that can delete a newly recreated checkout. Remove only the exact verified stale administrative record or redesign publication/cleanup so no destructive action can target a replacement; add deterministic interleaving coverage that recreates a clean different-branch checkout in the gap and proves it and its bytes/registration survive.
+  Stale repair no longer invokes public-path removal: it locates the unique expected administrative record, snapshots its directory identity plus `gitdir`/`HEAD`/`commondir`, atomically quarantines it outside Git's worktree registry, re-verifies exact identity, and deletes only that claimed record; a changed record is atomically restored and rejected.
+  `TestStateReadyStaleRepairPreservesCheckoutRecreatedAfterVerification` was red on `5e4b32fd`, then passed at `a155a077`, preserving the clean replacement's branch, HEAD, exact committed bytes, clean status, and registration across the verified-before-cleanup interleaving.
+- DONE: Re-run the focused job-1016/job-1223 controls, all AC and real-Git lifecycle/concurrency gates, gofmt/diff, go test ./..., go test ./... -race, and Linux/Windows cross-compiles with no skips.
+  Final-head verbose runs passed 9 placement/job-1223 controls, 8 job-1016/publication controls, all 11 cited AC cases, the 19-test concurrency matrix (65.162s), its race run (47.429s), and `go test ./internal/cli -run '^TestState' -count=1 -v` (88.949s), all with zero skips.
+  `gofmt -w ./cmd ./internal` completed with only the known unrelated formatter drift restored; `git diff --check`, `git diff --exit-code`, and `git show --check` pass. Fresh-cache `go test ./...` passed (CLI 165.929s, status 58.363s) and fresh-cache `go test ./... -race` passed (CLI 210.956s, status 50.572s).
+  `GOOS=linux GOARCH=amd64 go test -c -o /tmp/spacedock-cli-linux-cycle10.test ./internal/cli` produced ELF64 x86-64; the analogous `GOOS=windows` command produced PE32+ x86-64.
+- DONE: Do not push code, update PR #503, approve CI, or request Roborev.
+  The cycle-10 delta is exactly five scoped files and the code worktree is clean at `a155a0773a46ab2f1e67ff4278c4093c94c89ba6`; remote e6j remains `3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`. No code/PR/CI/approval/Roborev mutation occurred.
+- DONE: Append `Stage Report: implementation (cycle 10)` with exact DONE/SKIPPED/FAILED evidence and final clean head, commit/push state only, then signal completion.
+  This report accounts for 5 DONE, 0 SKIPPED, and 0 FAILED items. It was committed path-scoped and pushed only to `spacedock-state/dev`; the required completion signal follows.
+
+### Summary
+
+Closed both job-1223 findings with canonical repository containment and exact administrative-record quarantine, preserving stable path output and every prior job-1016 guarantee. An initial full run caught the canonical-path spelling regression; after correcting it, the exact failures and every required focused, full, race, lifecycle, and platform gate passed at clean local head `a155a0773a46ab2f1e67ff4278c4093c94c89ba6`, which remains intentionally unpushed.
