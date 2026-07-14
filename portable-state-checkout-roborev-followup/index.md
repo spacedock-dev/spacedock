@@ -646,3 +646,16 @@ found two remaining path escapes, a corrupt-metadata fail-open lane, and a clean
 commit compatibility regression. AC-1, AC-2, AC-3, AC-4, and AC-6 therefore
 fail; AC-5 was not revalidated because the mandatory first gate stopped the
 cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Reject symlinked state Git metadata and canonical workflow paths outside the canonical project repository, with public-command cross-worktree and workflow-symlink zero-mutation coverage.
+  Commit `0f362360880e13230276a57aab0d3224d036d5ca` uses `Lstat` before following state `.git` metadata and binds the canonical declared workflow to the canonical discovered repository. `TestStateCommitRejectsGitfileSymlinkToAnotherLinkedWorktree` and `TestStateNewRejectsWorkflowSymlinkOutsideProjectBeforeMutation` pin empty stdout, refusal diagnostics, both repositories' HEAD/index/status or worktree registrations, metadata pointers, entity/external bytes, modes, and symlink targets.
+- DONE: Require an operational valid standalone repository before merge auto-arm, preserving exact entity bytes and repository state on empty/corrupt metadata.
+  Standalone resolution now requires the complete self-contained metadata record and asks Git's sanitized canonical parser to verify the exact Git-directory, top-level, and inside-work-tree identity before returning a runner. `TestMergeGuardEmptyStandaloneGitFailsBeforeAutoArm` drives the public guard against empty metadata and proves exact entity bytes/mode, unchanged empty metadata, and no archive; resolver tests cover empty and malformed/symlink adjacent variants.
+- DONE: Restore clean state commit's compatibility no-op before origin probing; run focused/full/race gates and commit locally only for fresh Roborev-first validation.
+  `state commit` atomically classifies the exact entity path across tracked, staged, and untracked status before remote inspection. `TestStateCommitCleanNoOpDoesNotProbeUnreadableOrigin` proves exit 0, exact no-op result, empty stderr, zero `remote get-url origin` calls, and unchanged HEAD/index, while the dirty-origin failure/retry contract remains green. Focused packages, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all passed at clean local head `0f362360`; no code push, PR, CI, merge, approval, rebase, or integration action occurred.
+
+### Summary
+
+State resolution now refuses both metadata and workflow symlink redirection, and standalone state is accepted only after complete operational identity validation. Clean defensive commits retain their established no-op without touching an unreadable origin; the append-only local branch is ready for a fresh corrected-guideline exact-range Roborev-first validation.
