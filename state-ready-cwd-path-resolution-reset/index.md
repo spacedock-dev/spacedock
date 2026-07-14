@@ -138,6 +138,11 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
   - MEDIUM outcome defect: line-delimited `git worktree list --porcelain` can mis-handle Git-quoted paths. Use the supported NUL-delimited porcelain form and prove a quoting-triggering path.
   - MEDIUM outcome defect: a worktree-registry query error is treated as “not registered.” Propagate the error and abort before fetch, checkout creation, pull, or any recovery mutation.
   - Scope boundary: fix these existing Git recovery boundaries only; add no lock, journal, generation, publication, quarantine, lease, daemon, or lifecycle subsystem.
+- **Cycle 2 — Roborev job 1431, exact head `602d7652`, REJECTED:**
+  - MEDIUM outcome defect: the NUL parser consumes combined stdout/stderr, so successful diagnostic output can hide the first structured worktree record. Keep structured stdout separate and prove a successful stderr diagnostic does not affect parsing.
+  - MEDIUM outcome defect: `TrimSpace` can remove valid whitespace from the repository-relative workflow directory. Remove only Git's record terminator and prove a whitespace-bearing workflow path.
+  - LOW outcome defect: abbreviated symbolic-ref output can be ambiguous. Compare the full ref against normalized `refs/heads/<expected>`.
+  - Scope boundary: correct these three Git output boundaries only; another rejected review is cycle 3 and must escalate.
 
 ## Stage Report: implementation (cycle 2)
 
