@@ -1,6 +1,6 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. Status and dispatch load points remain deferred; merge, write scope, and smallest-sufficient mechanism are eagerly imported by the entry skill.
+Shared first-officer semantics — the boot-resident core. Status, dispatch, write, and merge owners load only at their named boundaries.
 
 ## Startup
 
@@ -43,6 +43,9 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
+- Resolve delayed references only from the `Base directory for this skill` supplied when `spacedock:first-officer` loaded: append the literal suffix, never cwd, another skill, discovery, search, or retry. If the exact read fails, report its path and halt.
+- `references/fo-write-core.md` — before the first FO-authored write intent or state-changing command: READ, then `«write.classify»`, then mutate.
+- `references/fo-merge-core.md` — at the first terminal boundary or `mod-block=merge:*` recovery: READ before merge guard, merge hook, terminal mutation, archive, or cleanup. When both first-loads coincide, write/classify precedes merge.
 
 ## Single-Entity Scope
 
@@ -65,7 +68,7 @@ When a worker completes:
 
 **Reading a live CI result.** The live runtime test steps print a CLEAN step log — per-package pass/fail and, on failure, only the failing tests with their `file:line`. Read that step output / job summary directly for triage; it is small. Fetch the archived `*-detail.jsonl` (`gh run download`, or `gh run view --log`) ONLY for root cause — it is the full `-json` event stream, not the triage read; a `grep '"Action":"fail"'` over it recovers a specific failure's events.
 
-If not gated: terminal → merge; else decide reuse-or-fresh.
+If not gated: terminal → read the exact merge owner, then merge; else decide reuse-or-fresh.
 
 **A completed non-gated, non-terminal stage is not a stopping point.** After verifying the report, the FO MUST advance the entity to the next stage and dispatch it (reuse-or-fresh per the dispatch module's reuse conditions) BEFORE ending its turn. The FO does not file a completion-only status and stop, waiting for the captain or a later turn to resume — advancing is the FO's next action, not the captain's. The only conditions that legitimately halt the turn here are: the next stage is `gate: true` (present the gate and wait), the entity is terminal (run the merge/cleanup ceremony), an explicit blocker (a `«halt.rebase-conflict»`, an unmet clarification), or a captain decision the contract requires. Absent one of those, stopping after a completion-only report is a contract violation.
 
@@ -100,7 +103,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch under the eagerly loaded `«write.classify»` write-authority scope.
+- The FO owns YAML frontmatter on the main branch after the exact write-core read and `«write.classify»` at its first FO-authored mutation.
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 
@@ -134,7 +137,7 @@ Supported lifecycle points:
 - `idle`
 - `merge`
 
-Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT comes from `«state.boot»()` without opening a mod file. The mod-block enforcement that guards a terminal transition travels with the deferred merge module, loaded at terminalization.
+Hooks are additive and run alphabetically by mod filename. The boot MODS-REPORT comes from `«state.boot»()` without opening a mod file. Before reasoning from `mod-block=merge:*`, or invoking a merge hook or terminal transition, read the exact merge owner per Deferred load points.
 
 Invoke `«hooks.run»(point)` at the named lifecycle boundary; do not open or execute mods during boot.
 

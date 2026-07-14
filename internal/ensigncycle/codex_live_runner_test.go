@@ -185,6 +185,9 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "gate"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
@@ -204,6 +207,9 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	})
 	if err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, attempt.result.finalMessage, attempt.result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(attempt.result.jsonl), "rejection"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, attempt.result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, attempt.result)
 }
@@ -246,6 +252,9 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "terminal"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
@@ -337,6 +346,9 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "filing"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
@@ -367,6 +379,9 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "recovery"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }

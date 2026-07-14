@@ -113,32 +113,84 @@ func TestFOFunctionReferenceCheckpointMetrics(t *testing.T) {
 	t.Logf("FO_FUNCTION_METRICS addresses=%d bytes=%d", addresses, bytes)
 }
 
-func TestFirstOfficerEagerReferenceTopology(t *testing.T) {
+func TestFirstOfficerDeferredReferenceTopology(t *testing.T) {
 	root := skillsRoot(t)
 	entry := readRepoFile(t, filepath.Join("skills", "first-officer", "SKILL.md"))
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+	if err := checkFODeferredReferenceTopology(entry, shared, func(suffix string) bool {
+		info, err := os.Stat(filepath.Join(root, "first-officer", filepath.FromSlash(suffix)))
+		return err == nil && info.Size() > 0
+	}, func(name string) bool {
+		_, err := os.Stat(filepath.Join(root, name))
+		return err == nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	const eagerColdBaselineBytes = 35095
+	coldBytes := len([]byte(entry)) + len([]byte(shared))
+	if saving := eagerColdBaselineBytes - coldBytes; saving < 8000 {
+		t.Fatalf("cold FO contract saving = %d bytes, want >= 8000 (baseline=%d cold=%d)", saving, eagerColdBaselineBytes, coldBytes)
+	}
+}
+
+func checkFODeferredReferenceTopology(entry, shared string, resolves func(string) bool, wrapperExists func(string) bool) error {
 	var imports []string
 	for _, line := range strings.Split(entry, "\n") {
 		if strings.HasPrefix(strings.TrimSpace(line), "@references/") {
 			imports = append(imports, strings.TrimSpace(line))
 		}
 	}
-	want := []string{
-		"@references/first-officer-shared-core.md",
-		"@references/fo-merge-core.md",
-		"@references/fo-write-core.md",
-	}
+	want := []string{"@references/first-officer-shared-core.md"}
 	if strings.Join(imports, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("eager imports = %v, want live-proven topology %v", imports, want)
+		return fmt.Errorf("eager imports = %v, want %v", imports, want)
 	}
-	for _, include := range imports {
-		path := filepath.Join(root, "first-officer", strings.TrimPrefix(include, "@"))
-		if info, err := os.Stat(path); err != nil || info.Size() == 0 {
-			t.Errorf("eager import %s does not resolve to a non-empty canonical body: %v", include, err)
+	for _, suffix := range []string{"references/fo-write-core.md", "references/fo-merge-core.md"} {
+		if strings.Count(shared, "`"+suffix+"`") != 1 {
+			return fmt.Errorf("delayed literal %q count = %d, want 1", suffix, strings.Count(shared, "`"+suffix+"`"))
+		}
+		if !resolves(suffix) {
+			return fmt.Errorf("delayed literal %q does not resolve to a non-empty canonical body", suffix)
 		}
 	}
-	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
-		t.Errorf("redundant standalone fo-write-core entry surface remains: %v", err)
+	for _, wrapper := range []string{"fo-write-core", "fo-merge-core"} {
+		if wrapperExists(wrapper) {
+			return fmt.Errorf("redundant standalone %s entry surface remains", wrapper)
+		}
 	}
+	return nil
+}
+
+func TestFODeferredReferenceTopologyRejectsStructuralRegressions(t *testing.T) {
+	entry := "@references/first-officer-shared-core.md\n"
+	shared := "`references/fo-write-core.md` `references/fo-merge-core.md`"
+	resolves := func(string) bool { return true }
+	noWrapper := func(string) bool { return false }
+	if err := checkFODeferredReferenceTopology(entry, shared, resolves, noWrapper); err != nil {
+		t.Fatalf("positive topology: %v", err)
+	}
+	controls := []struct {
+		name, entry, shared string
+		resolves            func(string) bool
+		wrapper             func(string) bool
+	}{
+		{"eager import", entry + "@references/fo-write-core.md\n", shared, resolves, noWrapper},
+		{"missing literal", entry, "`references/fo-write-core.md`", resolves, noWrapper},
+		{"altered literal", entry, "`references/fo-write.md` `references/fo-merge-core.md`", resolves, noWrapper},
+		{"dangling body", entry, shared, func(s string) bool { return s != "references/fo-merge-core.md" }, noWrapper},
+		{"wrapper restored", entry, shared, resolves, func(s string) bool { return s == "fo-write-core" }},
+	}
+	for _, control := range controls {
+		t.Run(control.name, func(t *testing.T) {
+			if err := checkFODeferredReferenceTopology(control.entry, control.shared, control.resolves, control.wrapper); err == nil {
+				t.Fatal("planted structural regression passed")
+			}
+		})
+	}
+}
+
+func TestFirstOfficerSmallestSufficientDuplicateAbsent(t *testing.T) {
+	root := skillsRoot(t)
 	if _, err := os.Stat(filepath.Join(root, "first-officer", "references", "fo-smallest-sufficient-mechanism.md")); !os.IsNotExist(err) {
 		t.Errorf("duplicated smallest-sufficient eager body remains: %v", err)
 	}

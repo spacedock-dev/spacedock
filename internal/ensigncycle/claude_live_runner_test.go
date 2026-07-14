@@ -224,6 +224,9 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "gate"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -247,6 +250,9 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	// contract-correct single-entity assertion is used here. The team-mode
 	// reviewer-reuse question is the spun-off option-(a) task.
 	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "rejection"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
@@ -285,6 +291,9 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
+	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "terminal"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
@@ -369,6 +378,9 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "filing"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -415,6 +427,9 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// former ~60k ceiling/spike thresholds no longer gate CI, see
 	// assertShallowBootMeasuredTurns).
 	if err := assertShallowBootMeasured(result.stream); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "recovery"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// Record (don't gate on) the greet turn's full token usage as a distinct

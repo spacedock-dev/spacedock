@@ -1,5 +1,5 @@
-// ABOUTME: Pins the first-officer entry point's small eager-reference split.
-// ABOUTME: Merge and write preload; the larger dispatch core stays deferred.
+// ABOUTME: Pins the first-officer entry point's one eager-reference topology.
+// ABOUTME: Dispatch, merge, and write cores stay exact-path deferred.
 package contractlint
 
 import (
@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
+func TestFirstOfficerKeepsOperationalCoresDeferred(t *testing.T) {
 	root := skillsRoot(t)
 	skillPath := filepath.Join(root, "first-officer", "SKILL.md")
 	data, err := os.ReadFile(skillPath)
@@ -24,22 +24,9 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 			imports = append(imports, line)
 		}
 	}
-	wantImports := []string{
-		"@references/first-officer-shared-core.md",
-		"@references/fo-merge-core.md",
-		"@references/fo-write-core.md",
-	}
+	wantImports := []string{"@references/first-officer-shared-core.md"}
 	if strings.Join(imports, "\n") != strings.Join(wantImports, "\n") {
-		t.Fatalf("first-officer eager imports = %v, want exactly %v (dispatch core remains deferred)", imports, wantImports)
-	}
-	for _, rel := range wantImports[1:] {
-		path := filepath.Join(root, "first-officer", strings.TrimPrefix(rel, "@"))
-		body, err := os.ReadFile(path)
-		if err != nil {
-			t.Errorf("eager reference %s does not resolve to a readable file: %v", rel, err)
-		} else if len(body) == 0 {
-			t.Errorf("eager reference %s resolves to an empty file", rel)
-		}
+		t.Fatalf("first-officer eager imports = %v, want exactly %v", imports, wantImports)
 	}
 
 	sharedPath := filepath.Join(root, "first-officer", "references", "first-officer-shared-core.md")
@@ -47,15 +34,14 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read shared core: %v", err)
 	}
-	if block := deferredLoadPointsBlock(t, string(shared)); strings.Contains(block, "references/fo-merge-core.md") {
-		t.Error("preloaded fo-merge-core.md remains in the shared core's deferred load points")
-	}
-	for _, bare := range []string{
+	block := deferredLoadPointsBlock(t, string(shared))
+	for _, delayed := range []string{
+		"references/fo-dispatch-core.md",
 		"references/fo-merge-core.md",
 		"references/fo-write-core.md",
 	} {
-		if strings.Contains(string(shared), bare) {
-			t.Errorf("shared core retains bare eager-reference load cue %q", bare)
+		if !strings.Contains(block, delayed) {
+			t.Errorf("shared core lacks exact delayed-reference cue %q", delayed)
 		}
 	}
 
@@ -67,15 +53,15 @@ func TestFirstOfficerEagerReferencesKeepDispatchCoreDeferred(t *testing.T) {
 	}
 }
 
-func TestFirstOfficerEagerWriteCoreHasSingleCanonicalBody(t *testing.T) {
+func TestFirstOfficerDeferredWriteCoreHasSingleCanonicalBody(t *testing.T) {
 	root := skillsRoot(t)
 	canonical := filepath.Join(root, "first-officer", "references", "fo-write-core.md")
 	body, err := os.ReadFile(canonical)
 	if err != nil {
-		t.Fatalf("read canonical eager write core: %v", err)
+		t.Fatalf("read canonical deferred write core: %v", err)
 	}
 	if !strings.Contains(string(body), "## Mutation Gate") || !strings.Contains(string(body), "## FO Write Scope") {
-		t.Fatalf("canonical eager write core does not carry the write contract")
+		t.Fatalf("canonical deferred write core does not carry the write contract")
 	}
 
 	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
@@ -83,18 +69,20 @@ func TestFirstOfficerEagerWriteCoreHasSingleCanonicalBody(t *testing.T) {
 	}
 }
 
-func TestPR495FilingHuntTargetIsEagerlyResolvable(t *testing.T) {
+func TestPR495FilingHuntTargetHasDeterministicDelayedAddress(t *testing.T) {
 	const capturedHunt = `find / -path /proc -prune -o -iname "fo-write-core*" -print 2>/dev/null`
 	const capturedHuntTarget = "fo-write-core"
 	root := skillsRoot(t)
-	entry, err := os.ReadFile(filepath.Join(root, "first-officer", "SKILL.md"))
+	shared, err := os.ReadFile(filepath.Join(root, "first-officer", "references", "first-officer-shared-core.md"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(entry), "@references/fo-write-core.md") {
-		t.Fatalf("PR #495 filing hunt %q for %s remains possible: first-officer entry does not eagerly import write-core", capturedHunt, capturedHuntTarget)
+	for _, want := range []string{"Base directory for this skill", "references/fo-write-core.md", "never cwd", "search, or retry"} {
+		if !strings.Contains(string(shared), want) {
+			t.Fatalf("PR #495 filing hunt %q for %s remains possible: deferred rule lacks %q", capturedHunt, capturedHuntTarget, want)
+		}
 	}
 	if _, err := os.Stat(filepath.Join(root, "first-officer", "references", "fo-write-core.md")); err != nil {
-		t.Fatalf("PR #495 filing hunt eager target does not resolve: %v", err)
+		t.Fatalf("PR #495 filing hunt delayed target does not resolve: %v", err)
 	}
 }

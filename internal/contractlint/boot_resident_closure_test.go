@@ -209,21 +209,14 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 }
 
-// TestHostNeutralCoresResolveAndCarryCeremony is the reachability guard: the merge
-// core is named by the eager SKILL.md import and the dispatch core by the shared core's
-// deferred load point. Both exist on disk AND carry their ceremony anchors.
+// TestHostNeutralCoresResolveAndCarryCeremony is the reachability guard: each
+// host-neutral core is named by the shared core's deferred load points. Each exists
+// on disk AND carries its ceremony anchors.
 func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	root := repoRoot(t)
 	if len(foReferenceCores) == 0 {
 		t.Fatal("no host-neutral cores declared — the reachability check would pass vacuously")
 	}
-	entryPath := filepath.Join("skills", "first-officer", "SKILL.md")
-	entryData, err := os.ReadFile(filepath.Join(root, entryPath))
-	if err != nil {
-		t.Fatalf("read first-officer entry %s: %v", entryPath, err)
-	}
-	entryBody := string(entryData)
-
 	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
 	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
 	if err != nil {
@@ -232,12 +225,8 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	sharedBody := string(sharedData)
 	for corePath, anchors := range foReferenceCores {
 		base := filepath.Base(corePath)
-		if base != "fo-dispatch-core.md" {
-			if !strings.Contains(entryBody, "@references/"+base) {
-				t.Errorf("%s does not eagerly import %s", entryPath, base)
-			}
-		} else if !strings.Contains(sharedBody, base) {
-			t.Errorf("%s does not defer %s at the dispatch load point", sharedCore, base)
+		if !strings.Contains(sharedBody, "references/"+base) {
+			t.Errorf("%s does not name deferred core %s", sharedCore, base)
 		}
 		data, err := os.ReadFile(filepath.Join(root, corePath))
 		if err != nil {

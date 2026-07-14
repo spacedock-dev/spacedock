@@ -36,6 +36,8 @@ The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`
 
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
 
+Reference-loading scenarios also inspect tool-call order because the read boundary is the behavior: write-core before the first FO mutation, merge-core before terminal or `mod-block` handling, and neither during a mutation-free gate hold. Durable state still grades the resulting mutation, refusal, and archive outcome.
+
 **To add a shared runtime scenario:**
 
 1. Add a `sharedRuntimeScenario` entry to `sharedRuntimeScenarios()` with a unique `name`, its old Python provenance, the behavior `intent`, and a live `timeout`. Keep it host-neutral — no launch/auth/plugin field.
