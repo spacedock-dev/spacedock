@@ -187,16 +187,51 @@ func codexRolloutCallInput(record codexRolloutRecord) string {
 			return command
 		}
 	}
+	if commands := codexRolloutJSTemplateCommands(raw); len(commands) > 0 {
+		return strings.Join(commands, "\n")
+	}
 	return raw
 }
 
-var codexRolloutJSCmdRE = regexp.MustCompile(`(?s)\bcmd\s*:\s*("(?:\\.|[^"\\])*")`)
+var (
+	codexRolloutJSCmdRE         = regexp.MustCompile(`(?s)\bcmd\s*:\s*("(?:\\.|[^"\\])*")`)
+	codexRolloutJSTemplateCmdRE = regexp.MustCompile("(?s)\\bcmd\\s*:\\s*`((?:\\\\.|[^`])*)`")
+	codexRolloutJSStringBinding = regexp.MustCompile(`\bconst\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("(?:\\.|[^"\\])*")\s*;`)
+	codexRolloutSkillPathRE     = regexp.MustCompile(`<path>[[:space:]]*([^<\r\n]+/skills/first-officer)/SKILL\.md[[:space:]]*</path>`)
+)
+
+// codexRolloutJSTemplateCommands normalizes the real Codex TUI tool-call shape:
+// an exec custom tool may bind an exact path in JavaScript and interpolate it
+// into one or more exec_command `cmd` templates. Resolve only const JSON-string
+// bindings and only their exact ${name} occurrences; arbitrary expressions stay
+// unresolved and therefore cannot satisfy the exact-base oracle.
+func codexRolloutJSTemplateCommands(raw string) []string {
+	bindings := make(map[string]string)
+	for _, match := range codexRolloutJSStringBinding.FindAllStringSubmatch(raw, -1) {
+		var value string
+		if json.Unmarshal([]byte(match[2]), &value) == nil {
+			bindings[match[1]] = value
+		}
+	}
+	var commands []string
+	for _, match := range codexRolloutJSTemplateCmdRE.FindAllStringSubmatch(raw, -1) {
+		command := match[1]
+		for name, value := range bindings {
+			command = strings.ReplaceAll(command, "${"+name+"}", value)
+		}
+		commands = append(commands, command)
+	}
+	return commands
+}
 
 func codexInteractiveFirstOfficerBase(records []codexRolloutRecord) string {
 	for _, record := range records {
 		if record.Type == "response_item" && record.Payload.Type == "message" {
 			for _, block := range record.Payload.Content {
 				if match := firstOfficerBaseAnnouncementRE.FindStringSubmatch(block.Text); len(match) == 2 {
+					return strings.TrimSpace(match[1])
+				}
+				if match := codexRolloutSkillPathRE.FindStringSubmatch(block.Text); len(match) == 2 {
 					return strings.TrimSpace(match[1])
 				}
 			}
@@ -294,6 +329,34 @@ func TestCodexInteractiveRolloutRequiresTUIIdleAndOrderedReads(t *testing.T) {
 	}
 	if err := assertFOReferenceJourney(normalizeCodexInteractiveFOReferenceEvents(stream), "gate"); err != nil {
 		t.Fatalf("interactive ordered gate stream: %v", err)
+	}
+}
+
+func TestCodexInteractiveRolloutResolvesExactJSBaseTemplates(t *testing.T) {
+	const skillBase = "/plugin/skills/first-officer"
+	input := `const base="` + skillBase + `";
+const r = await tools.exec_command({cmd:` + "`" + `cat "${base}/references/first-officer-shared-core.md" && cat "${base}/references/codex-first-officer-runtime.md"` + "`" + `}); text(r.output);`
+	stream := strings.Join([]string{
+		`{"type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"<skill><path>` + skillBase + `/SKILL.md</path></skill>"}]}}`,
+		`{"type":"response_item","payload":{"type":"custom_tool_call","name":"exec","call_id":"refs","status":"completed","input":` + mustJSONString(input) + `}}`,
+		`{"type":"response_item","payload":{"type":"custom_tool_call_output","call_id":"refs","output":[{"type":"text","text":"Script completed\nWall time 0.0 seconds\nOutput:\n"},{"type":"text","text":"# First Officer Shared Core\n# Codex First Officer Runtime\n"}]}}`,
+	}, "\n")
+	records := parseCodexRollout(stream)
+	events := normalizeCodexInteractiveFOReferenceEvents(stream)
+	if err := assertFOReferenceJourney(events, "gate"); err != nil {
+		t.Fatalf("exact const-base template reads: %v; base=%q input=%q", err, codexInteractiveFirstOfficerBase(records), codexRolloutCallInput(records[1]))
+	}
+
+	wrongBase := strings.Replace(input, skillBase, "/wrong/skills/first-officer", 1)
+	wrongStream := strings.Replace(stream, mustJSONString(input), mustJSONString(wrongBase), 1)
+	if err := assertFOReferenceJourney(normalizeCodexInteractiveFOReferenceEvents(wrongStream), "gate"); err == nil {
+		t.Fatal("a JS template bound to a base other than the loader-supplied skill base passed")
+	}
+
+	unbound := strings.Replace(input, `const base="`+skillBase+`";`, `const base=process.env.UNRELATED;`, 1)
+	unboundStream := strings.Replace(stream, mustJSONString(input), mustJSONString(unbound), 1)
+	if err := assertFOReferenceJourney(normalizeCodexInteractiveFOReferenceEvents(unboundStream), "gate"); err == nil {
+		t.Fatal("an unresolved JS template expression passed as an exact-base read")
 	}
 }
 
