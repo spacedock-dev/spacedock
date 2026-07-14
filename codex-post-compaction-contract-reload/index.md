@@ -214,6 +214,32 @@ Routed back to ideation with these required changes:
 Revise the decision, state schema, lifecycle table, ACs, and proof suites
 together; do not treat this feedback entry itself as behavioral evidence.
 
+**Cycle 2 (independent ideation staff review).** The authorization and wait
+direction improved, but four material design/proof gaps remain:
+
+- Normalize one typed action vocabulary. `authorized_scope` grants
+  `state_transition` while subject/permit/crash paths require
+  `state_mutation`; initial staff-review launch and worker reuse are promised
+  protection without exact action/subject mappings. Prove every protected class,
+  including the unsolicited task-`00` review, has zero effects without a matching
+  scope entry.
+- Bind captain gate approval to typed gate identity and successor digest, not
+  only task/stage/cycle and an action mask. Add stale, same-cycle, and
+  multiple-gate negatives so prior or general approval cannot authorize a later
+  gate.
+- The collaboration-review and final-response interceptor is still unproved even
+  though it is the observed failure surface. Run the target-version
+  interception/ordering spike during ideation, or narrow the claimed guarantee
+  to already proved action classes.
+- Bind completion to the exact post-baseline report blob/commit OID for the
+  worker, task, stage, cycle, and assignment epoch. A merely newer report is not
+  enough; add wrong-newer-report negatives and align AC-16/Suite 5 with the
+  stage-report claim.
+
+Routed back to ideation: revise the schema, action table, gate authorization,
+live spike evidence, AC-16, and proof suites together before another staff
+review.
+
 ## Stage Report: ideation
 
 - DONE: Compress within budget.
