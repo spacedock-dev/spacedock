@@ -9,6 +9,7 @@ score: 0.95
 worktree:
 issue:
 id: c60nzb396vgf0f8a9v0sggwm
+milestone: 0.26.0
 ---
 
 ## Decision
