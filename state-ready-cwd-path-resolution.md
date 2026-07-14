@@ -167,6 +167,28 @@ Routed back to implementation under the captain's standing instruction: no push
 or CI before a fresh corrected exact-range Roborev PASS. Any finding not fixed
 must be explicitly scoped out with evidence before the next review.
 
+**Cycle 5 (Roborev-first validation, job 867).** Authoritative thorough review
+stored exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..677215842a369850fcefbf239851da69a3389d2b`,
+included all four corrected guideline sections, and rejected before tests, push,
+PR update, or CI. Earlier job `862` is non-authoritative because its positional
+range included the base commit.
+
+- HIGH: failed-resume cleanup force-removes the published checkout path even
+  though `state new`, state writers, and direct Git operations do not honor the
+  resume lock. A concurrent valid checkout or uncommitted state can be deleted.
+  Converge privately before publication, or prove exclusive ownership and
+  unchanged state before cleanup, with cross-command writer coverage.
+- MEDIUM: one repository-wide durable outcome file lets workflow B overwrite
+  workflow A's result before A's waiter reads it. Key outcomes by canonical
+  checkout path and cover concurrent resumes of two workflows.
+
+Routed back to implementation under the captain's standing instruction. These
+are concurrency and data-loss defects inside the existing task scope; no
+reframing is needed. No push or CI is permitted before a fresh corrected
+exact-range Roborev PASS. A deliberately unhandled case must be explicitly
+scoped out with evidence before re-review.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
