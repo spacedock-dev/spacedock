@@ -552,3 +552,23 @@ Rebased the complete e6j series cleanly onto current `origin/main` and independe
 ### Summary
 
 Closed both job-1223 findings with canonical repository containment and exact administrative-record quarantine, preserving stable path output and every prior job-1016 guarantee. An initial full run caught the canonical-path spelling regression; after correcting it, the exact failures and every required focused, full, race, lifecycle, and platform gate passed at clean local head `a155a0773a46ab2f1e67ff4278c4093c94c89ba6`, which remains intentionally unpushed.
+
+## Stage Report: implementation (cycle 11)
+
+- DONE: Fetch origin and rebase the clean e6j series at a155a077 onto current origin/main. Own the rebase; on conflict abort and report exact paths/peer commits, with no ours/theirs, discard, or force.
+  `git fetch origin main` resolved `origin/main` to `36b956965a2a9da50dc952f07aa1d292f7b2fab0`; `git rebase origin/main` replayed 9/9 commits without conflict, mapping `a155a0773a46ab2f1e67ff4278c4093c94c89ba6` to `13749cc3894f3b52a7f2896c271228ef96996826`.
+- DONE: Prove the rebased task delta is patch-equivalent via range-diff or explain any necessary integration delta.
+  `git range-diff 23c32369..a155a077 36b95696..13749cc3` marked all nine e6j commits `=`. The first full run then exposed a deterministic overlap with newly merged PR #506: its foreign-worktree merge-guard AC expected refusal, while the shared e6j resolver safely reanchored state to main and allowed mutation.
+  Integration commit `42924db6` adds only a merge-guard-local lexical state-path check (10 insertions, 2 deletions in `internal/status/merge.go`), retaining e6j main-root resolution for status while preserving PR #506's stricter mutation refusal; the previously red AC and its negative-hint control pass.
+- DONE: Re-run job-1016/1223 focused controls, AC/lifecycle/concurrency gates, gofmt/diff, go test ./..., go test ./... -race, and Linux/Windows cross-compiles with no skips.
+  Final-head verbose runs passed 11 placement/integration controls (6.354s), 8 job-1016/job-1223 controls (23.005s), 11 cited AC cases (21.635s), the 19-test concurrency matrix (76.740s), its race run (79.525s), and the full `TestState` lifecycle (128.097s), all with zero skips.
+  `gofmt -w ./cmd ./internal` completed with only known unrelated formatter drift restored; `git diff --check`, `git diff --exit-code`, and `git show --check` pass. Fresh-cache `go test ./...` passed (CLI 248.903s, status 84.693s) and fresh-cache `go test ./... -race` passed (CLI 207.668s, status 58.584s).
+  Linux amd64 compilation produced an ELF64 x86-64 test binary; Windows amd64 compilation produced a PE32+ x86-64 test binary. Both temporary artifacts were removed.
+- DONE: Do not push code, update PR #503, approve CI, or request Roborev.
+  The code worktree is clean at exact head `42924db6ff5291c6d0a1d733a8e4a212ed8e8c0e`; remote main remains `36b956965a2a9da50dc952f07aa1d292f7b2fab0` and remote e6j remains `3d50bd9af2dd31e4b0d5ad6bab09df0f7459e535`. No code/PR/CI/approval/Roborev mutation occurred.
+- DONE: Append `Stage Report: implementation (cycle 11)` with DONE/SKIPPED/FAILED evidence and clean exact head, commit/push state only, then signal completion.
+  This report accounts for 5 DONE, 0 SKIPPED, and 0 FAILED items. It was committed path-scoped and pushed only to `spacedock-state/dev`; the required completion signal follows.
+
+### Summary
+
+Rebased all nine e6j commits patch-identically onto the two newly merged mainline PRs, then reconciled their one semantic overlap with a narrow, tested integration commit. Every agreed gate passes at clean, deliberately unpushed head `42924db6ff5291c6d0a1d733a8e4a212ed8e8c0e`; only this durable state report was published.
