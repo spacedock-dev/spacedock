@@ -1,6 +1,6 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores
-status: validation
+status: implementation
 source: Captain correction after fresh-session boot trace, 2026-07-13
 started: 2026-07-13T15:56:42Z
 completed:
@@ -152,6 +152,27 @@ are approved-scope contract consistency and behavioral-oracle gaps; no
 reframing is needed. Correct every stale eager claim, require successful exact
 reads, cover the full mutation boundary with adversarial negatives, and return
 to a fresh Roborev-first validation without push or CI.
+
+**Cycle 3 (Roborev-first validation, job 988).** Corrected-guideline Roborev
+rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..0e38db2bda324b924b3220aef1c494dc4e33b26e`
+before downstream tests, push, PR, or CI:
+
+- MEDIUM: the changed shallow-boot journey replaces automatic merged-PR sweep
+  discovery with a pre-seeded sentinel/mod-block and prescribes owner reads and
+  the exact merge-guard command. Preserve the original discovery journey and add
+  a separate outcome-oriented recovery scenario.
+- MEDIUM: canonical-read classification accepts a matching suffix under any
+  base path instead of the exact loaded first-officer skill base.
+- MEDIUM: a compound command that targets a wrong path and then the canonical
+  path can suppress the wrong-path hazard because only the aggregate command is
+  classified. Classify every target independently.
+
+Captain standing decision: send back without reframing. These are approved-scope
+journey preservation and exact behavioral-oracle defects. Preserve automatic
+discovery evidence, bind reads to the exact skill base, and reject every wrong
+target even when a later target is canonical. Return to fresh Roborev-first
+validation without push, PR, or CI.
 
 ## Stage Report: ideation
 
