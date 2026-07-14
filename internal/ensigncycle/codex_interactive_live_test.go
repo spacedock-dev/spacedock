@@ -55,14 +55,16 @@ func (r codexLiveRunner) runInteractiveSession(t *testing.T, scenario sharedRunt
 	// itself runs under Codex. Removing them gives the child an independent TUI
 	// session and durable rollout. The actual Spacedock front door remains the
 	// launched program; --no-alt-screen only makes pane diagnostics legible.
-	hostArgs := []string{"--no-alt-screen"}
+	var hostArgs []string
 	if followup != "" {
 		// The recovery turn must archive and commit fixture state. Match the
-		// established headless live runner's explicit test-only permission mode so
-		// the TUI cannot stop at an approval picker after the ordering evidence has
-		// already crossed the merge boundary.
-		hostArgs = append(hostArgs, "--dangerously-bypass-approvals-and-sandbox")
+		// established headless live runner's no-prompt/full-write posture without
+		// passing the aggregate bypass flag: on an unsandboxed front door that flag
+		// otherwise coexists with the launcher's injected `on-request` mode and
+		// Codex rejects the conflicting pair before opening the TUI.
+		hostArgs = append(hostArgs, "--ask-for-approval", "never", "--sandbox", "danger-full-access")
 	}
+	hostArgs = append(hostArgs, "--no-alt-screen")
 	launch := shellJoin(append([]string{
 		"env", "-u", "CODEX_THREAD_ID", "-u", "CODEX_CI",
 		r.spacedockBin, "codex", "--skip-compat-check", "--",
