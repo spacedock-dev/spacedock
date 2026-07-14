@@ -9,6 +9,7 @@ score:
 worktree:
 issue:
 id: 5wmx24qwygh711wsmmqb1qwj
+milestone: 0.26.0
 ---
 
 Capture a concise, reusable anti-overengineering rule in the shared Spacedock
@@ -36,6 +37,18 @@ contract should not absorb one workflow's prose-polish routing policy merely
 because the shared layer supplies teammate mechanics. The concrete routing
 integration remains owned by `workflow-owned-prose-polish-routing`; this task
 owns only the narrowest-policy-owner rule that reveals the wrong layer.
+
+The 7h incident exposed the same gap after dispatch. A disposable Zellij/WASM
+smoke grew into a test-owned PTY/session controller with foreground
+process-group checks, raw-byte canaries, lease publication, signal coordination,
+readiness races, and cleanup state. It consumed about 4.25 active hours across
+13.5 elapsed hours; the final packet failed 3/3 on harness readiness while
+focused profile runs passed, and nothing merged. The successful replacement
+used the supported boundary: isolated tmux -> real Zellij -> literal keys ->
+captured screen/native state -> cleanup. The missing general rule is not “never
+use a PTY.” It is that a mechanism must keep naming the value it serves and the
+simpler route it beat; when the mechanism fails but that value remains reachable
+more simply, the feedback loop resets scope instead of repairing the mechanism.
 
 ## Proposed direction
 
@@ -82,6 +95,16 @@ judgment, fan-out, required isolation, independent adversarial verification, or
 a safety boundary. The direct-versus-heavy check then chooses the mechanism for
 that task. Neither list is a vocabulary escape hatch such as “substantive” or
 “future proof.”
+
+The First Officer wording remains general. At dispatch, while assessing a
+completed implementation, and before routing a rejection, it requires a new
+mechanism to name the value AC it serves, the simplest available alternative,
+and the concrete reason that alternative is insufficient. When rejection shows
+the mechanism failed while the value remains reachable by the simpler route,
+the FO records rejected experimental evidence and escalates a scope/design
+reset; it does not increment the feedback cycle or redispatch implementation to
+repair the mechanism. Runtime- or test-specific tripwires do not belong in the
+shared FO contract.
 
 ### Decision order and write authority
 
@@ -130,6 +153,26 @@ table and replace the prose below it with this authority clarification:
 Update the `override` row's rule to match: `Exact captain-authorized target and
 mutation; scoped to that mutation only.` Do not add a new class, policy engine,
 mandatory decision log, per-edit template, or runtime flag.
+
+In `skills/commission/references/templates/development.md`, add the
+developer-specific realization. Tests orchestrate and observe the supported
+runtime rather than owning a parallel protocol, daemon, lease, lifecycle state,
+recovery loop, or process controller. For terminal multiplexers, `setsid`,
+process-group control, raw PTY writes, or a second lifecycle supervisor trigger
+explicit architecture review and an existing real-terminal harness is tried
+first. Require one end-to-end run through the simplest substrate before
+approving an enabling layer; if no visible product proof appears within 90
+minutes, stop for architecture review rather than adding coordination. A
+mechanism-architecture rejection recommends a design reset, while a product
+defect still routes through the ordinary implementation feedback cycle.
+
+When either the FO or the development workflow recommends a “narrow fix,” it
+must label an **outcome defect** (the delivered behavior or state fails the value
+AC) or an **evidence defect** (the test, harness, or observation boundary cannot
+validly establish the AC), cite the affected AC, and name the exact failing
+boundary. A correction spanning both paths, or an evidence correction that adds
+another controller or lifecycle layer, is a design reset rather than a narrow
+fix.
 
 In `docs/specs/scenario-testing-principles.md`, revise only the
 `smallest-sufficient-mechanism` seed description so it names all three arms:
@@ -198,6 +241,30 @@ policy file; the two-consumer variant may change the shared fixture policy. A
 negative trace that writes the one-consumer policy into the shared file must
 fail.
 
+**AC-7 (failed mechanism resets scope): When a rejected enabling mechanism fails but its served value remains reachable through a simpler alternative, the FO records rejected experimental evidence, adds no feedback cycle, dispatches no implementation repair, and surfaces a scope/design reset; a paired product defect still follows the ordinary feedback route.**
+
+Verified by: extend the existing smallest-mechanism and rejection-flow scenario
+infrastructure with paired mechanism-failure and product-defect arms. Grade
+dispatch calls, feedback-cycle state, and the resulting routing decision. A
+mechanism failure bounced to implementation and a product defect suppressed as
+a design reset are mandatory red controls; FO narration alone is not evidence.
+
+**AC-8 (developer adaptation stays in the development template): A freshly commissioned development workflow carries the observer-not-second-implementation harness boundary, real-substrate-first rule, architecture tripwires, timebox, and design-reset exception, while the shared FO contract contains only the general mechanism/value rule.**
+
+Verified by: commission a development workflow and inspect the generated stage
+structure for the dev-specific obligations, then drive the paired AC-7 behavior
+through the existing scenario harness. Contract structure may prove placement;
+it cannot substitute for the routing behavior. Review the shared FO diff to
+reject PTY, Zellij, tmux, or 90-minute development-specific wording there.
+
+**AC-9 (narrow-fix diagnosis is explicit): Every narrow-fix recommendation labels exactly one failing path—outcome defect or evidence defect—cites its value AC, and names the failing boundary; a mixed-path correction or evidence change that adds another controller/lifecycle layer is surfaced as a design reset.**
+
+Verified by: paired gate fixtures accept one precise outcome-path recommendation
+and one precise evidence-path recommendation, then reject an unlabeled “narrow
+fix,” a recommendation with no served AC, a mixed-path recommendation, and an
+evidence fix that grows another supervisor. Grade the recommendation fields and
+routing outcome, not wording in the contract file.
+
 ## Test plan
 
 Extend the existing `smallest-sufficient-mechanism` shared scenario rather than
@@ -206,6 +273,11 @@ tests, and live runners already cover direct edits and commissioned dispatch.
 Estimated cost is medium: distinguish direct, constrained, abstraction, and
 policy-placement targets in both host extractors and add paired fixture
 variants. No new dependency or runtime surface is needed.
+
+Extend the existing rejection-flow fixture for AC-7/AC-9 and the existing
+commission-template fixture for AC-8. Do not create a dedicated policy daemon,
+controller, lifecycle, or live harness. The general FO behavior is proven by
+routing/state outcomes; the template-specific placement is a structural check.
 
 Run focused tests first:
 
@@ -302,3 +374,21 @@ behavioral proof inspect the actual mechanism: worker attribution, commit,
 resulting bytes, or forbidden layer. Commissioned stages still dispatch,
 closed exact mutations remain direct, cs retains prose-routing integration, and
 the comm officer's behavior-preserving polish is folded into the proposal.
+
+## Stage Report: ideation (captain amendment, cycle 3)
+
+- DONE: Fold the 7h mechanism failure into the general rule without putting test-specific wording in the FO contract.
+  The FO owns mechanism/value tracing and the design-reset exception; the development template owns PTY/process/lifecycle tripwires and the 90-minute enabling-task timebox.
+- DONE: Distinguish outcome defects from evidence defects in narrow-fix recommendations.
+  AC-9 requires one labeled path, the affected value AC, and the exact failing boundary; mixed-path or controller-growing corrections reset design.
+- DONE: Keep normal product-defect feedback routing intact.
+  AC-7 requires paired behavior: mechanism failure resets scope, product failure still routes to implementation.
+- DONE: Reuse existing proof infrastructure.
+  AC-7/AC-9 extend smallest-mechanism plus rejection-flow; AC-8 uses the commission-template fixture. No new harness or controller is proposed.
+
+### Summary
+
+The captain amendment generalizes the Zaphod learning at the correct layers:
+strong value-to-mechanism and reset semantics in the FO contract, concrete
+harness discipline in the development template, and behavior proof through the
+existing scenario infrastructure.
