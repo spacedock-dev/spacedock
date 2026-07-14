@@ -85,13 +85,8 @@ func withAgentTeams(env []string) []string {
 }
 
 func hasEnv(env []string, key string) bool {
-	prefix := key + "="
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			return true
-		}
-	}
-	return false
+	_, ok := envValueOf(env, key)
+	return ok
 }
 
 // subprocessEnvScrubEnv is Claude Code's own subprocess credential-scrubbing

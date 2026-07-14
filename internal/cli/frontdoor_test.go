@@ -149,16 +149,6 @@ func executableFixture(t *testing.T) string {
 	return real
 }
 
-func envValue(env []string, key string) (string, bool) {
-	prefix := key + "="
-	for _, entry := range env {
-		if strings.HasPrefix(entry, prefix) {
-			return strings.TrimPrefix(entry, prefix), true
-		}
-	}
-	return "", false
-}
-
 // TestSubprocessEnvScrubActive covers the truthy/falsy parsing of
 // CLAUDE_CODE_SUBPROCESS_ENV_SCRUB that gates the launch warning (Task 2) and
 // the doctor note (Task 3).
@@ -283,7 +273,7 @@ func TestClaudeFrontDoorInjectsResolvedLauncherBin(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
 	}
@@ -301,7 +291,7 @@ func TestClaudeFrontDoorOmitsStaleLauncherBinWhenResolutionFails(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); ok {
+	if got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv); ok {
 		t.Fatalf("%s in launch env = %q, want omitted", spacedockBinEnv, got)
 	}
 }
@@ -322,7 +312,7 @@ func TestClaudeFrontDoorLaunchEnvResolvesSymlink(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, spacedockBinEnv); !ok || got != real {
+	if got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv); !ok || got != real {
 		t.Fatalf("%s = %q, %v; want symlink target %q, true", spacedockBinEnv, got, ok, real)
 	}
 }
@@ -343,7 +333,7 @@ func TestClaudeFrontDoorEnablesAgentTeamsWhenParentUnset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv)
 	if !ok || got != "1" {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "1", fake.launchedEnv)
 	}
@@ -363,7 +353,7 @@ func TestClaudeFrontDoorPreservesExplicitAgentTeams(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	got, ok := envValue(fake.launchedEnv, agentTeamsEnv)
+	got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv)
 	if !ok || got != "0" {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", agentTeamsEnv, got, ok, "0", fake.launchedEnv)
 	}
@@ -870,7 +860,7 @@ func TestCodexFrontDoorInjectsLauncherBinThroughSafehouseResume(t *testing.T) {
 	if !equalArgv(fake.launchedArg, wantArgv) {
 		t.Fatalf("launch argv = %v, want %v", fake.launchedArg, wantArgv)
 	}
-	got, ok := envValue(fake.launchedEnv, spacedockBinEnv)
+	got, ok := envValueOf(fake.launchedEnv, spacedockBinEnv)
 	if !ok || got != bin {
 		t.Fatalf("%s in launch env = %q, %v; want %q, true (env=%v)", spacedockBinEnv, got, ok, bin, fake.launchedEnv)
 	}
@@ -937,7 +927,7 @@ func TestCodexFrontDoorDoesNotEnableAgentTeams(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
 	}
-	if got, ok := envValue(fake.launchedEnv, agentTeamsEnv); ok {
+	if got, ok := envValueOf(fake.launchedEnv, agentTeamsEnv); ok {
 		t.Fatalf("%s in codex launch env = %q, want omitted", agentTeamsEnv, got)
 	}
 }
