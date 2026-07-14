@@ -607,3 +607,20 @@ mutation, or local merge occurred.
 ### Summary
 
 Fresh bootstrap no longer has an unsanitized Git mutation path, moved-checkout fallback identifies the complete workflow within its validated repository, and merge guard validates split-root state before auto-arm can write. Clean local head `13aec014` is ready for fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
+
+## Stage Report: validation (cycle 6)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..13aec014 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `903` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..13aec0142c5c12cb0071565928328fcbf24e3673`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. It returned FAIL with two high and two medium findings: a symlinked state `.git` can redirect to another linked worktree's metadata; project discovery does not prove a canonical workflow remains inside its canonical repository; an empty standalone `.git` directory can pass pre-arm validation; and clean `state commit` now classifies an unreadable origin before preserving the established no-op result.
+- SKIPPED: Only after Roborev PASS independently reproduce hostile fresh init/new mutations, equal-suffix multi-workflow recovery, pre-arm merge failure, every AC, gofmt, focused/full/race suites, and detached zero-mutation evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no implementation evidence was promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head 13aec014, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `13aec0142c5c12cb0071565928328fcbf24e3673`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `13aec014`. Roborev job `903`
+found two remaining path escapes, a corrupt-metadata fail-open lane, and a clean
+commit compatibility regression. AC-1, AC-2, AC-3, AC-4, and AC-6 therefore
+fail; AC-5 was not revalidated because the mandatory first gate stopped the
+cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
