@@ -427,6 +427,10 @@ func terminalMutationIndex(command string) int {
 
 func containsMergeModBlock(output string) bool {
 	compact := strings.ReplaceAll(strings.ToLower(output), " ", "")
+	// Interactive Codex commonly emits text(JSON.stringify(execResult)), so the
+	// command's JSON stdout arrives one transport layer deeper with escaped
+	// quotes. Normalize that encoding before looking for the durable field/value.
+	compact = strings.ReplaceAll(compact, `\"`, `"`)
 	return strings.Contains(compact, "mod-block:merge:") || strings.Contains(compact, `"mod-block":"merge:`)
 }
 

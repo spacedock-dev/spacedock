@@ -156,6 +156,28 @@ func TestFOReferenceOrderRequiresSuccessfulExactReads(t *testing.T) {
 	}
 }
 
+func TestContainsMergeModBlockTransportEncodings(t *testing.T) {
+	positives := []string{
+		`{"command":"status","entities":[{"mod-block":"merge:pr-merge"}]}`,
+		`{"output":"{\"command\":\"status\",\"entities\":[{\"mod-block\":\"merge:pr-merge\"}]}\n"}`,
+		`mod-block: merge:local-merge`,
+	}
+	for _, output := range positives {
+		if !containsMergeModBlock(output) {
+			t.Errorf("merge mod-block not detected in %q", output)
+		}
+	}
+	for _, output := range []string{
+		`{"command":"status","entities":[{"mod-block":""}]}`,
+		`{"output":"{\"mod-block\":\"review:human\"}"}`,
+		`merge recovery is ready`,
+	} {
+		if containsMergeModBlock(output) {
+			t.Errorf("non-merge output classified as a merge mod-block: %q", output)
+		}
+	}
+}
+
 func TestFOReferenceOrderPreservesLoadedSkillBaseCase(t *testing.T) {
 	const skillBase = "/PluginCache/skills/first-officer"
 	events := classifyFOCommand("cat "+skillBase+"/references/fo-write-core.md", skillBase)
