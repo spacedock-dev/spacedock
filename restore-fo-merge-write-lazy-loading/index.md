@@ -1,6 +1,6 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores
-status: validation
+status: implementation
 source: Captain correction after fresh-session boot trace, 2026-07-13
 started: 2026-07-13T15:56:42Z
 completed:
