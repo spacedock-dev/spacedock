@@ -231,3 +231,16 @@ Roborev job 915 rejected the exact implementation range with two medium findings
 ### Summary
 
 Cycle 2 closes both Roborev findings without changing the approved loading design. Commit `0e38db2b` makes every shipped cross-reference agree on deferred exact-path loading and upgrades the behavioral oracle from path-text recognition to successful canonical-body evidence across the wider shell mutation surface; both canonical core hashes and the 8,075-byte cold saving remain unchanged.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..0e38db2b and inspect the stored range and all four guideline sections; on any finding stop REJECTED without downstream tests, push, PR, or CI.
+  Roborev job 988 stored exact `git_ref` `557f8df3e6a62d34987edda70533375fc48ba8f6..0e38db2bda324b924b3220aef1c494dc4e33b26e` and all four guideline sections, then returned three medium findings; recommendation: REJECTED.
+- SKIPPED: Only after Roborev PASS independently reproduce AC-1 through AC-5: at least 8,000 cold bytes saved, successful canonical lazy-read ordering across the journey matrix, topology-only structural proof, unchanged core bodies, and preserved durable host behavior.
+  The mandatory first gate failed, so no acceptance-criterion evidence was reproduced or treated as green.
+- SKIPPED: Run gofmt/diff, focused/full/race/compile-live gates plus the detached adversarial audit and applicable exact-head Claude/Codex live journeys; report any external authorization blocker without pushing or engaging CI.
+  Per the Roborev-first stop rule, no downstream formatting check, test, audit, live journey, push, PR, or CI action ran.
+
+### Summary
+
+Roborev job 988 rejected the exact cycle-2 range. It found that the changed shallow-boot fixture removes automatic merged-PR discovery coverage and prescribes the implementation, that suffix-only checks accept a core under the wrong skill base, and that a compound wrong-path-then-canonical retry can evade the hazard detector; the implementation needs separate discovery/recovery journeys and per-target exact-base classification before fresh validation.
