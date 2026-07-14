@@ -120,6 +120,12 @@ Cycle 1 closes both false-green evidence gaps without changing lazy-loading or w
   - Material (AC-2/AC-4 evidence defect): early supported `state commit`, `status --archive`, and `merge guard` mutations are absent from the fixed first-mutation classifier and therefore false-pass before the write-core read.
   - Material (AC-4 evidence defect): a lexical `/tmp` installed base does not match host events reported through macOS's canonical `/private/tmp` alias; the same three Codex scenarios were rejected 0/3 through the alias and passed 3/3 through the canonical path.
   - No outcome defect was observed. Keep the correction in the observer: reject every non-exact core occurrence, cover supported mutation families, and compare canonical installed paths; do not change product semantics, parsing, controllers, or lifecycle.
+- Cycle 3 — Roborev job 1445, exact head `5e78f71c`, ESCALATED.
+  - Material evidence defect (AC-2): common terminal workflows can execute `merge guard` or `status --archive` after write-core but before merge-core and still pass a later terminal action.
+  - Material evidence defect (AC-2/AC-4): supported stdin JSON dispatch with `"advance":true` remains invisible to the mutation classifier.
+  - Material evidence defect (AC-4): valid common checkout paths containing spaces are truncated and falsely rejected.
+  - Release-scope triage: all three affect named ACs and common or explicitly exercised workflows; the Linux-only non-distinct `/tmp` alias control is a deferred risk with synthetic-symlink revisit condition.
+  - Design-reset trigger: another observer patch would require shell quoting, JSON payload semantics, and further command-family interpretation. The branch is now 749 additions across 12 files, including a 575-line observer, while the shipped contract delta is small. No automatic cycle 4 dispatch.
 
 ## Stage Report: validation (cycle 2)
 
