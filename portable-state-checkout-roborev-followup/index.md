@@ -659,3 +659,21 @@ cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
 ### Summary
 
 State resolution now refuses both metadata and workflow symlink redirection, and standalone state is accepted only after complete operational identity validation. Clean defensive commits retain their established no-op without touching an unreadable origin; the append-only local branch is ready for a fresh corrected-guideline exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 7)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..0f362360 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `912` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..0f362360880e13230276a57aab0d3224d036d5ca`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. It returned FAIL with one high and two medium findings: an existing state-path ancestor can symlink outside the project before `state init` or `state new`; the clean-entity preflight omits ignored untracked files and can false-no-op; and lexical workflow spelling can write the wrong `.gitignore` rule for a symlink whose target remains inside the repository.
+- SKIPPED: Only after Roborev PASS independently reproduce state-git/workflow symlink refusals, operational standalone pre-arm validation, clean unreadable-origin no-op, every AC, gofmt, focused/full/race suites, and detached zero-mutation evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no implementation evidence was promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head 0f362360, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `0f362360880e13230276a57aab0d3224d036d5ca`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `0f362360`. Roborev job `912`
+found one remaining destination escape and two compatibility false-result paths
+in ignored-entity classification and canonical ignore spelling. AC-1, AC-4,
+and AC-6 therefore fail; the remaining criteria were not revalidated because
+the mandatory first gate stopped the cycle. No tests, push, PR, CI,
+implementation mutation, or local merge occurred.
