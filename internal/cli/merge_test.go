@@ -82,6 +82,19 @@ func TestMergeGuardHelpRenders(t *testing.T) {
 	}
 }
 
+// TestMergeGuardHelpDocumentsWorkflowDirResolution is AC-6: the merge help text
+// states the cwd-relative --workflow-dir resolution rule, so an operator reads
+// the fix before hitting the issue-#485 foreign-cwd confusion.
+func TestMergeGuardHelpDocumentsWorkflowDirResolution(t *testing.T) {
+	out, errOut, code := runMergeCLI(t, t.TempDir(), "merge", "guard", "--help")
+	if code != 0 {
+		t.Fatalf("merge guard --help exit=%d stderr=%q", code, errOut)
+	}
+	if !strings.Contains(out, "resolves against the current directory") || !strings.Contains(out, "absolute path") {
+		t.Fatalf("merge guard --help missing cwd-relative --workflow-dir resolution rule:\n%s", out)
+	}
+}
+
 // TestMergeGuardInGroupedHelp (AC-7): `merge guard <slug>` appears in the
 // top-level grouped help workflow group.
 func TestMergeGuardInGroupedHelp(t *testing.T) {
