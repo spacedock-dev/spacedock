@@ -508,3 +508,21 @@ occurred.
 ### Summary
 
 Every state Git subprocess now operates through repository and work-tree paths owned by the validated runner, so inherited routing and effective `core.worktree` cannot supersede the trust decision. Include provenance is checked without regressing separate-git-dir or submodule projects, and boot errors have one diagnostic owner. Clean local head `3c842d17` is ready for a fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..3c842d17 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `894` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..3c842d1713411b41ae7f074a3ced8e48d4ac820c`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. It returned FAIL with three medium findings: `Runner.Combined` no longer gives relative remote URLs the checkout as their resolution directory; writable routing variables including `GIT_OBJECT_DIRECTORY` and `GIT_SHALLOW_FILE` remain inherited; and `Origin` can classify a checkout that disappears after resolution as local-only success.
+- SKIPPED: Only after Roborev PASS independently reproduce hostile Git environment/config refusal, supported separate-git-dir/submodule layouts, single boot diagnostics, every AC, gofmt, focused/full/race suites, and detached zero-mutation evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no prior-cycle test or flake attribution was promoted to this exact head.
+- SKIPPED: Only after every local gate passes push exact head 3c842d17, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `3c842d1713411b41ae7f074a3ced8e48d4ac820c`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `3c842d17`. Roborev job `894`
+found that the sanitized runner still mishandles relative remotes, inherits
+writable object-routing authority, and can silently downgrade a vanished
+checkout to local-only. AC-1, AC-4, and AC-6 therefore fail; the remaining
+criteria were not revalidated because the mandatory first gate stopped the
+cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
