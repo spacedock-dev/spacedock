@@ -139,13 +139,40 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.WriteFile(filepath.Join(setupDir, "codex-runtime-adapter-present.txt"), []byte(adapterPath+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	firstOfficerBase := codexInstalledFirstOfficerBase(t, codexHome)
 
 	return codexLiveRunner{
 		codexBin:         codexBin,
 		env:              env,
 		artifactRoot:     artifactRoot,
-		firstOfficerBase: filepath.Join(install.PluginPath, "skills", "first-officer"),
+		firstOfficerBase: firstOfficerBase,
 	}
+}
+
+// codexInstalledFirstOfficerBase resolves the one installed cache entry in this
+// runner's isolated CODEX_HOME. This is the loader-visible base emitted in Codex
+// command events; the marketplace source symlink is not the installed path.
+func codexInstalledFirstOfficerBase(t *testing.T, codexHome string) string {
+	t.Helper()
+	cacheRoot := filepath.Join(codexHome, "plugins", "cache", "spacedock", "spacedock")
+	entries, err := os.ReadDir(cacheRoot)
+	if err != nil {
+		t.Fatalf("read isolated Codex plugin cache %s: %v", cacheRoot, err)
+	}
+	var candidates []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		base := filepath.Join(cacheRoot, entry.Name(), "skills", "first-officer")
+		if _, err := os.Stat(filepath.Join(base, "SKILL.md")); err == nil {
+			candidates = append(candidates, base)
+		}
+	}
+	if len(candidates) != 1 {
+		t.Fatalf("isolated Codex plugin cache has %d first-officer installs under %s, want exactly one: %v", len(candidates), cacheRoot, candidates)
+	}
+	return candidates[0]
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
