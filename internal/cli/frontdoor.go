@@ -398,6 +398,7 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		}
 	}
 	warnStrayPromptAfterDash(fd, "spacedock claude", stderr)
+	warnSubprocessEnvScrub(os.Environ(), fd.passthrough, "spacedock claude", stderr)
 
 	wrap := safehouse.Present(dir) || fd.forceSafehouse || len(fd.safehouseFlags) > 0
 	resume := containsResume(fd.passthrough)
@@ -462,6 +463,30 @@ func warnStrayPromptAfterDash(fd frontDoorArgs, name string, stderr io.Writer) {
 			"the spacedock launch prompt was NOT prepended to it. "+
 			"To make it the launch prompt, put it BEFORE `--`: `%s %q -- …`\n",
 		name, pos, name, pos)
+}
+
+// warnSubprocessEnvScrub prints a spacedock-attributed advisory when Claude
+// Code's subprocess credential-scrubbing hardening is active in the launching
+// environment. Claude Code forces the launched session's permission mode back
+// to "default" whenever subprocessEnvScrubEnv is set truthy and no
+// --allowedTools is declared, regardless of what --permission-mode spacedock
+// or the operator requests, and regardless of the wrap/!wrap launch posture —
+// there is no evidence --dangerously-skip-permissions is exempt from the
+// hardening, so this fires on both paths. Suppressed only when the operator
+// already declared --allowedTools/--allowed-tools themselves (the documented
+// workaround), mirroring the "operator wins" suppression passthroughHasFlag
+// backs elsewhere in this file.
+func warnSubprocessEnvScrub(env []string, passthrough []string, name string, w io.Writer) {
+	if !subprocessEnvScrubActive(env) {
+		return
+	}
+	if passthroughHasFlag(passthrough, "--allowedTools", "--allowed-tools") {
+		return
+	}
+	fmt.Fprintf(w,
+		"%s: warning: %s is set — Claude Code will force this session's permission mode back to \"default\" unless --allowedTools is declared explicitly. "+
+			"Declare --allowedTools yourself (see `claude --help`), or unset %s for this launch to keep the requested permission mode.\n",
+		name, subprocessEnvScrubEnv, subprocessEnvScrubEnv)
 }
 
 // launchPrompt returns the inner-argv launch prompt: `base + " " + task` when the

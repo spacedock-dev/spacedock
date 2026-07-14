@@ -193,6 +193,79 @@ func TestClaudeFrontDoorLaunchesOnCompatible(t *testing.T) {
 	}
 }
 
+// TestClaudeFrontDoorWarnsOnSubprocessEnvScrub: when
+// CLAUDE_CODE_SUBPROCESS_ENV_SCRUB is set truthy and the operator has not
+// declared --allowedTools themselves, spacedock claude prints its own
+// attributed warning — on both the unsandboxed and --safehouse launch paths,
+// since --dangerously-skip-permissions is not known to be exempt from Claude
+// Code's hardening.
+func TestClaudeFrontDoorWarnsOnSubprocessEnvScrub(t *testing.T) {
+	cases := []struct {
+		name string
+		args []string // bare --safehouse forces the wrap path, matching TestClaudeForceSafehouseWrapsNoProfile
+	}{
+		{"unsandboxed", []string{"--", "-p", "do the thing"}},
+		{"safehouse", []string{"--safehouse"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withVersion(t, testBinaryVersion)
+			t.Setenv(subprocessEnvScrubEnv, "1")
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := runClaude(context.Background(), tc.args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if !strings.Contains(stderr.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+				t.Fatalf("stderr missing env-scrub warning: %q", stderr.String())
+			}
+			if !strings.Contains(stderr.String(), "--allowedTools") {
+				t.Fatalf("stderr missing the --allowedTools remedy: %q", stderr.String())
+			}
+		})
+	}
+}
+
+// TestClaudeFrontDoorSuppressesSubprocessEnvScrubWarning covers the two
+// suppression cases: the var isn't truthy, or the operator already declared
+// --allowedTools themselves (the documented workaround).
+func TestClaudeFrontDoorSuppressesSubprocessEnvScrubWarning(t *testing.T) {
+	cases := []struct {
+		name string
+		env  string // value to set subprocessEnvScrubEnv to ("" means leave unset)
+		args []string
+	}{
+		{"var unset", "", []string{"--", "-p", "do the thing"}},
+		{"var explicit zero", "0", []string{"--", "-p", "do the thing"}},
+		{"operator declared allowedTools", "1", []string{"--", "--allowedTools", "Bash(git *)", "-p", "do the thing"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withVersion(t, testBinaryVersion)
+			if tc.env == "" {
+				t.Setenv(subprocessEnvScrubEnv, "") // register restore-on-cleanup, then unset for real
+				os.Unsetenv(subprocessEnvScrubEnv)
+			} else {
+				t.Setenv(subprocessEnvScrubEnv, tc.env)
+			}
+			fake := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := runClaude(context.Background(), tc.args, t.TempDir(), fake, lookFound, &stdout, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if strings.Contains(stderr.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+				t.Fatalf("stderr should not carry the env-scrub warning: %q", stderr.String())
+			}
+		})
+	}
+}
+
 // TestFrontDoorUpgradeHintOnBehindPlugin is AC-4: the front-door gate prints the
 // opt-in upgrade hint to stderr when the resolved plugin is contract-compatible
 // but behind the binary, then proceeds to launch (the hint never blocks). The
