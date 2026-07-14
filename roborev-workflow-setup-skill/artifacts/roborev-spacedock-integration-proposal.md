@@ -46,6 +46,18 @@ never duplicates `AGENTS.md`, workflow or stage instructions, component
 procedures, or required developer commands, and shows the proposed calibration
 to the user before writing it.
 
+The setup also combined strict TDD with an automatic post-commit review hook
+without saying whether the expected-red state belonged in Git. That ambiguity
+caused implementers to commit intentionally failing or non-buildable tests,
+which immediately consumed reviewer time and tokens and polluted pass-rate and
+correction data with a known failure. Excluding those commits from convergence
+accounting avoids false escalation but not wasted review work. The generated
+contract now keeps RED in the working tree, records the pre-fix command, exact
+failure, and predicted reason in the Stage Report, and permits a product commit
+only after the test and minimal implementation pass the focused check and
+relevant suite together. The post-commit hook remains enabled for that green
+candidate.
+
 The adoption pilot also produced a valuable semantic adversarial checklist for
 the maker. That guidance belongs in `AGENTS.md` or generated implementation-stage
 instructions, not in `review_guidelines`: trace changed values and events across
@@ -94,6 +106,11 @@ The skill then:
    probe. The integration never deliberately queues a state-only review merely
    to prove the exclusion.
 7. Updates the workflow's implementation and validation stage definitions:
+   - expected RED is an uncommitted working-tree state evidenced by the pre-fix
+     command, exact failure, and predicted reason in the Stage Report;
+   - red-only and non-buildable product commits are forbidden, and the test and
+     minimal implementation are committed together only after focused and
+     relevant-suite checks pass while the post-commit hook stays enabled;
    - implementation must produce passing exact-head `code_completion` evidence;
    - validation must verify that evidence without rerunning an unchanged panel;
    - a fixing commit invalidates the old evidence and returns responsibility to
@@ -113,12 +130,19 @@ Roborev's post-commit `quick` job and an explicitly requested
 `code_completion` panel are independent. The generated implementation-stage
 contract therefore orders them:
 
-1. Record the final candidate commit.
-2. Wait for that exact commit's already-enqueued quick review with `roborev wait
+1. Produce test-first RED in the working tree, record its command, exact
+   failure, and predicted reason in the Stage Report, and leave `HEAD`
+   unchanged.
+2. Add the minimal implementation, pass the focused check and relevant suite,
+   then commit the test and implementation together. Never create a red-only or
+   non-buildable product commit; keep the post-commit hook enabled.
+3. Record the final green candidate commit.
+4. Wait for that exact commit's already-enqueued quick review with `roborev wait
    <head>`, then inspect `roborev show <head> --json` and verify the quick panel.
-3. Keep Medium-or-higher findings in implementation. Fix and recommit, then
+5. Keep Medium-or-higher findings in implementation. Fix, rerun the relevant
+   checks, and recommit only green, then
    wait for the replacement tip. Low findings remain advisory.
-4. Only after quick clears, launch `code_completion` for the complete branch and
+6. Only after quick clears, launch `code_completion` for the complete branch and
    preserve its synthesis parent.
 
 The two jobs never start in parallel. Missing or failed final-tip quick
@@ -275,11 +299,16 @@ After the current working-tree changes settle:
    panel-schema gap.
 3. Add the state-branch exclusion during setup.
 4. Update the implementation and validation stage definitions.
-5. Prove the final-tip quick job finishes before `code_completion` starts;
+5. Inspect the generated implementation-stage contract for working-tree RED,
+   durable pre-fix evidence, green-before-commit, combined test-and-implementation
+   commits, the red-only/non-buildable prohibition, and an enabled post-commit
+   hook. Drive it once to prove RED leaves `HEAD` unchanged and enqueues no job,
+   while the combined green candidate does enqueue `quick`.
+6. Prove the final-tip quick job finishes before `code_completion` starts;
    Medium-or-higher findings hold implementation while Low findings do not.
-6. Prove a failing required panel keeps the entity in implementation, a fixing
+7. Prove a failing required panel keeps the entity in implementation, a fixing
    commit invalidates the old result, and a replacement panel can pass.
-7. Confirm the fresh validator verifies the stored exact-head evidence and
+8. Confirm the fresh validator verifies the stored exact-head evidence and
    independently reproduces the entity's ACs.
 
 The pilot succeeds when Safehouse commits receive advisory reviews when the
