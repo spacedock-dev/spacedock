@@ -1,16 +1,17 @@
 ---
 title: "Wrong-root boot detector false-positives on macOS: observed path not symlink-resolved before comparison"
-status: validation
+status: done
 source: "Found 2026-07-09 while investigating one of sc5's (live-runner-boot-preamble-hardening) three anomalous PR #490 merge-gate failures locally, per captain direction to verify live behavior locally rather than only via GitHub Actions CI (which runs on ubuntu-latest and never hits this macOS-only symlink form). Confirmed via a local live re-run of TestLiveClaudeSharedScenarios/self-evidence-merge-triage on this machine (macOS): the test failed with 'FO booted the wrong root: expected .../private/var/folders/.../001, but it read the workflow README at .../var/folders/.../001/README.md' — the two paths are IDENTICAL directories (macOS /var is a symlink to /private/var); the FO did not actually wander."
 started: 2026-07-09T11:49:49Z
-completed:
-verdict:
+completed: 2026-07-14T12:34:32Z
+verdict: passed
 score: 0.5
 worktree: .worktrees/spacedock-ensign-wrong-root-detector-symlink-false-positive
 issue:
 id: 5qae7c01tnytacehaphrda4s
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:507
+archived: 2026-07-14T12:34:32Z
 ---
 
 `internal/ensigncycle/wrong_root_detect_impl_test.go`'s `detectWrongRootBoot` resolves the fixture root via `filepath.EvalSymlinks` before comparing (lines 39-46, with an explicit comment acknowledging the macOS `/var` vs `/private/var` symlink case) — but the two call sites that extract the FO's OBSERVED path from its tool-call stream do not apply the same resolution to that observed path before calling `isUnder`:
