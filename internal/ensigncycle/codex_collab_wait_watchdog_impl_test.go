@@ -19,6 +19,8 @@ type codexScenarioResult struct {
 	jsonl        string
 	artifactDir  string
 	duration     time.Duration
+	interactive  bool
+	resident     bool
 }
 
 type codexWaitStallArm string

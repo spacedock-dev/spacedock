@@ -14,6 +14,12 @@ import (
 // workflow root for entity/archive/worktree state) so the assertion never reads a
 // stale prior team or a transcript phrase as authoritative.
 type shallowBootObservation struct {
+	// interactiveTransport is true only when the host ran its interactive TUI,
+	// rather than a headless prompt that asked the model to imitate a greeting.
+	interactiveTransport bool
+	// sessionResidentAfterGreet proves the host returned to its input loop after
+	// the greet instead of exiting like a headless invocation.
+	sessionResidentAfterGreet bool
 	// finalMessage is the FO's final greet output.
 	finalMessage string
 	// gateBefore / gateAfter is the gate-check entity frontmatter before and after
@@ -43,7 +49,7 @@ type shallowBootObservation struct {
 // state and final message. It grades, on independent on-disk facts (never a
 // transcript phrase as the sole signal):
 //
-//	(a)  the greet names the ready gate and PR-bearing entity, then offers engage;
+//	(a)  the greet names the PR-bearing entity's local state, then offers engage;
 //	(a2) the PR-bearing entity remains byte-identical and active until engage;
 //	(b)  NO team artifact on disk (lazy-TeamCreate) AND no worker dispatched (the
 //	     gate entity is unchanged, not archived, no worktree created);
@@ -52,6 +58,12 @@ type shallowBootObservation struct {
 // The absence-of-team-config is the lazy-TeamCreate proof; the unchanged gate
 // frontmatter and unchanged PR-bearing entity are the read-only boot proof.
 func assertShallowBoot(o shallowBootObservation) error {
+	if !o.interactiveTransport {
+		return fmt.Errorf("shallow boot did not run through an actual interactive transport")
+	}
+	if !o.sessionResidentAfterGreet {
+		return fmt.Errorf("interactive host was not resident after the greet-and-stop turn")
+	}
 	// (b) lazy-TeamCreate: no team artifact created at boot.
 	if o.teamConfigOnDisk {
 		return fmt.Errorf("a team config.json exists under this run's team root — the boot created a team (lazy-TeamCreate was not honored)")
@@ -82,9 +94,9 @@ func assertShallowBoot(o shallowBootObservation) error {
 	if o.mergedBefore != o.mergedAfter {
 		return fmt.Errorf("the PR-bearing entity changed during read-only boot — convergence belongs to engage")
 	}
-	// (a) the greet reports local state and leaves convergence behind engage.
+	// (a) the greet reports the local PR mirror and leaves convergence behind engage.
 	lowerFinal := strings.ToLower(o.finalMessage)
-	for _, required := range []string{"gate-check", "merged-pr", "engage"} {
+	for _, required := range []string{"merged-pr", "engage"} {
 		if !strings.Contains(lowerFinal, required) {
 			return fmt.Errorf("the greet did not name %q while reporting read-only startup state", required)
 		}

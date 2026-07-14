@@ -446,27 +446,6 @@ func shallowBootMergedEntity() string {
 		"Read-only boot reports this entity without live PR discovery or advancement.\n"
 }
 
-func shallowBootPrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
-		"Use $spacedock:first-officer for this whole run.",
-		"Workflow directory: "+workflowRoot,
-		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
-		"Perform only the read-only boot: read local startup state, then greet the operator and STOP for input. Do not engage, run live PR discovery, advance or archive the PR-bearing entity, or mutate workflow state.",
-		"Do NOT create a team or dispatch any worker. Name `gate-check` as a ready gate, name `merged-pr` with its local PR state still pending a live check, and invite the operator to use `engage` for convergence.",
-	)
-}
-
-func TestShallowBootPromptUsesExactAbsoluteFixtureRoot(t *testing.T) {
-	const fixtureRoot = "/tmp/TestLiveSharedScenariosshallow-boot1234567890/001"
-	prompt := shallowBootPrompt(fixtureRoot)
-	if strings.Contains(prompt, "Workflow directory: .") {
-		t.Fatal("shallow boot prompt uses a relative-only workflow directory")
-	}
-	if !strings.Contains(prompt, "Workflow directory: "+fixtureRoot) {
-		t.Fatal("shallow boot prompt does not anchor the exact absolute fixture root")
-	}
-}
-
 type mergeModRecoveryFixture struct {
 	entityPath  string
 	archivePath string
@@ -506,15 +485,6 @@ func TestMergeRecoveryKeepsShallowBootReadOnlyAndDoesNotPrescribeMechanism(t *te
 	shallow := shallowBootMergedEntity()
 	if !strings.Contains(shallow, `pr: "#42"`) || !strings.Contains(shallow, "mod-block:\n") || strings.Contains(shallow, "pr: pr-merge:") {
 		t.Fatal("shallow-boot no longer starts from a discoverable open PR with no pre-seeded recovery state")
-	}
-	shallowPrompt := strings.ToLower(shallowBootPrompt("/tmp/workflow"))
-	if !strings.Contains(shallowPrompt, "read-only boot") || !strings.Contains(shallowPrompt, "do not engage") {
-		t.Fatalf("shallow-boot prompt does not keep convergence behind engage:\n%s", shallowPrompt)
-	}
-	for _, obsolete := range []string{"before-greet", "before the greet", "report the merged-pr entity as advanced"} {
-		if strings.Contains(shallowPrompt, obsolete) {
-			t.Errorf("shallow-boot prompt retains obsolete boot-time advancement requirement %q", obsolete)
-		}
 	}
 	recovery := mergeModRecoveryEntity()
 	if !strings.Contains(recovery, "pr: pr-merge:42") || !strings.Contains(recovery, "mod-block: merge:pr-merge") {

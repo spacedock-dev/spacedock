@@ -25,6 +25,8 @@ import (
 
 type codexLiveRunner struct {
 	codexBin     string
+	spacedockBin string
+	codexHome    string
 	env          []string
 	artifactRoot string
 }
@@ -140,7 +142,13 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 		t.Fatal(err)
 	}
 
-	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
+	return codexLiveRunner{
+		codexBin:     codexBin,
+		spacedockBin: binary,
+		codexHome:    codexHome,
+		env:          env,
+		artifactRoot: artifactRoot,
+	}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -353,14 +361,10 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
-// runCodexShallowBootScenario drives the real FO against the shallow-boot fixture
-// and grades the SAME host-neutral durable end-state assertShallowBoot the Claude
-// runner feeds: the FO greets from local state, leaves the PR-bearing entity
-// untouched until engage, and NO worker is dispatched (the gate entity is
-// unchanged, not archived, no worktree). Codex has no Claude team root, so the
-// no-team-config check is host-neutral-vacuous (empty teamRoot); the no-dispatch
-// proof rides the durable gate-unchanged + no-worktree facts. The AC-2/AC-6 Claude
-// token-stream measurements are Claude-specific and live in the Claude runner.
+// runCodexShallowBootScenario launches the actual Codex TUI and grades its normal
+// launcher-injected first turn. No scenario prompt is sent: Codex's TUI-authored
+// rollout marker, completed greet turn, and still-resident tmux process prove the
+// interactive greet-and-stop default rather than a `codex exec` emulation.
 func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -373,19 +377,20 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	scenarioRunner := runner
 	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
 
-	result, err := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot), 0)
+	result, err := scenarioRunner.runInteractiveGreet(t, scenario, workflowRoot)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, mergedBefore, result.finalMessage)
+	obs.interactiveTransport = result.interactive
+	obs.sessionResidentAfterGreet = result.resident
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "gate"); err != nil {
+	if err := assertFOReferenceJourney(normalizeCodexInteractiveFOReferenceEvents(result.jsonl), "gate"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func runCodexMergeModRecoveryScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {

@@ -98,6 +98,8 @@ type liveResult struct {
 	stream       string
 	artifactDir  string
 	duration     time.Duration
+	interactive  bool
+	resident     bool
 	// configDir and cwd locate the dispatched-ensign sub-agent transcripts on disk
 	// (under {configDir}/projects/{encode(cwd)}/{FO-session-id}/subagents), so the
 	// journey-metrics fold can observe the ensign's --read adoption. cwd is the
@@ -385,17 +387,13 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
-// runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
-// (a gate-check entity at a human gate + a PR-bearing entity whose stubbed `gh`
-// reports MERGED) with a per-run isolated team root, and grades the durable
-// end-state: the FO greets from local state, leaves the PR-bearing entity untouched
-// until engage, NO team config lands on disk, and NO worker is dispatched. It
-// then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
-// pre-greet invocation of a deferred FO skill — fo-status-viewer / fo-write-core) and
-// the AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
-// ~89k cache_creation spike) over the captured stream.
+// runClaudeShallowBootScenario launches the actual interactive Claude TUI and
+// grades its launcher-injected first turn. It sends no scenario prompt: reaching a
+// committed greet while the tmux-hosted process remains resident proves the real
+// greet-and-stop default rather than a headless model imitating one.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
+	_ = runner // Other shared journeys use the headless runner; shallow boot owns PTY transport.
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
@@ -403,14 +401,16 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 
 	// The stub `gh` (reporting MERGED) resolves on the FO subprocess PATH so an
 	// accidental engage would advance the PR and fail the read-only durable oracle.
-	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
-
-	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
+	interactive := newPtyLiveDriver(t)
+	interactive.env = withPATHPrefix(interactive.env, fixture.stubGhDir)
+	result := interactive.runInteractiveGreet(t, scenario, workflowRoot)
 
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.
-	teamRoot := filepath.Join(runner.home(), ".claude", "teams")
+	teamRoot := filepath.Join(interactive.home(), ".claude", "teams")
 	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, mergedBefore, result.finalMessage)
+	obs.interactiveTransport = result.interactive
+	obs.sessionResidentAfterGreet = result.resident
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -437,8 +437,8 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// Record (don't gate on) the greet turn's full token usage as a distinct
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
-	emitShallowBootWindowMetrics(t, result.stream, runner.model())
-	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+	emitShallowBootWindowMetrics(t, result.stream, interactive.model())
+	emitClaudeScenarioMetrics(t, scenario, result, interactive.model())
 }
 
 func runClaudeMergeModRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {

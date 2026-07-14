@@ -412,11 +412,26 @@ func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 	merged := shallowBootMergedEntity()
 	greet := "Workflow overview: gate-check is ready; merged-pr has local PR #42 pending a live check. Use engage to converge the workflow."
 	good := shallowBootObservation{
+		interactiveTransport: true, sessionResidentAfterGreet: true,
 		finalMessage: greet, gateBefore: gate, gateAfter: gate,
 		mergedBefore: merged, mergedAfter: merged,
 	}
 	if err := assertShallowBoot(good); err != nil {
 		t.Fatalf("the realized shallow-boot end-state must pass: %v", err)
+	}
+
+	// Independent transport controls: a headless prompt can imitate the same text
+	// and filesystem outcome, but it is not evidence of the interactive default;
+	// an exited process likewise did not greet and stop for operator input.
+	headless := good
+	headless.interactiveTransport = false
+	if err := assertShallowBoot(headless); err == nil {
+		t.Fatal("expected a headless prompt-emulated greeting to fail assertShallowBoot")
+	}
+	exited := good
+	exited.sessionResidentAfterGreet = false
+	if err := assertShallowBoot(exited); err == nil {
+		t.Fatal("expected an exited host after the greet to fail assertShallowBoot")
 	}
 
 	// Broken: a team config landed on disk — lazy-TeamCreate was not honored. The

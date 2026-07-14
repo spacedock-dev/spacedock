@@ -12,9 +12,8 @@ func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"1","content":"# First Officer Shared Core"}]}}
 {"type":"assistant","message":{"id":"b","content":[{"type":"tool_use","id":"2","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/claude-first-officer-runtime.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"2","content":"# Claude Code First Officer Runtime"}]}}
-{"type":"user","message":{"content":[{"type":"tool_result","content":"{\"mod-block\":\"merge:pr-merge\"}"}]}}
 {"type":"assistant","message":{"id":"engage","content":[{"type":"tool_use","id":"ready","name":"Bash","input":{"command":"$B state ready --workflow-dir /tmp/workflow --json"}}]}}
-{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"ready","content":"{\"ready\":true}"}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"ready","content":"{\"ready\":true,\"mod-block\":\"merge:pr-merge\"}"}]}}
 {"type":"assistant","message":{"id":"c","content":[{"type":"text","text":"write.classify says allowed"}]}}
 {"type":"assistant","message":{"id":"d","content":[{"type":"tool_use","id":"3","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/fo-write-core.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"3","content":"# First Officer Write Core"}]}}
@@ -28,8 +27,7 @@ func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
 	}
 
 	codex := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n 1,220p /plugin/skills/first-officer/references/codex-first-officer-runtime.md","aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}
-{"type":"item.completed","item":{"type":"command_execution","command":"$B status --boot --json","aggregated_output":"{\"mod-block\":\"merge:pr-merge\"}"}}
-{"type":"item.completed","item":{"type":"command_execution","command":"$B state ready --workflow-dir /tmp/workflow --json","status":"completed","exit_code":0,"aggregated_output":"{\"ready\":true}"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"$B state ready --workflow-dir /tmp/workflow --json","status":"completed","exit_code":0,"aggregated_output":"{\"ready\":true,\"mod-block\":\"merge:pr-merge\"}"}}
 {"type":"item.completed","item":{"type":"agent_message","text":"write.classify says allowed"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/fo-write-core.md","aggregated_output":"# First Officer Write Core"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/fo-merge-core.md","aggregated_output":"# First Officer Merge Core"}}
@@ -51,15 +49,24 @@ func TestFOReferenceOrderOracleRejectsAdversarialControls(t *testing.T) {
 		events  []foReferenceEvent
 	}{
 		{"eager gate", "gate", []foReferenceEvent{foSharedRead, foWriteRead, foRuntimeRead}},
+		{"gate mutation", "gate", []foReferenceEvent{foSharedRead, foRuntimeRead, foMutation}},
+		{"gate terminal", "gate", []foReferenceEvent{foSharedRead, foRuntimeRead, foTerminal}},
+		{"missing shared precondition", "filing", []foReferenceEvent{foRuntimeRead, foWriteRead, foMutation}},
+		{"failed shared precondition", "filing", []foReferenceEvent{foFailedRead, foRuntimeRead, foWriteRead, foMutation}},
+		{"missing runtime precondition", "filing", []foReferenceEvent{foSharedRead, foWriteRead, foMutation}},
+		{"failed runtime precondition", "filing", []foReferenceEvent{foSharedRead, foFailedRead, foWriteRead, foMutation}},
+		{"runtime before shared", "filing", []foReferenceEvent{foRuntimeRead, foSharedRead, foWriteRead, foMutation}},
+		{"write before runtime", "filing", []foReferenceEvent{foSharedRead, foWriteRead, foRuntimeRead, foMutation}},
 		{"missing write", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foMutation}},
 		{"write after mutation", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foMutation, foWriteRead}},
 		{"wrong path retry", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foWrongPath, foWriteRead, foMutation}},
 		{"wrapper invocation", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foWrapperSkill, foWriteRead, foMutation}},
 		{"broad search", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foBroadSearch, foWriteRead, foMutation}},
 		{"merge after guard", "terminal", []foReferenceEvent{foSharedRead, foRuntimeRead, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
-		{"recovery before engage", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foEngage, foMergeRead, foMergeGuard, foMutation}},
-		{"reversed recovery", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foEngage, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
-		{"repeated merge work", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foEngage, foWriteRead, foMergeRead, foRepeatedMerge, foMergeAction, foMutation}},
+		{"mod block before engage", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foEngage, foWriteRead, foMergeRead, foMergeGuard, foMutation}},
+		{"write before mod block", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foEngage, foWriteRead, foModBlockSeen, foMergeRead, foMergeGuard, foMutation}},
+		{"reversed recovery", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foEngage, foModBlockSeen, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
+		{"repeated merge work", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foEngage, foModBlockSeen, foWriteRead, foMergeRead, foRepeatedMerge, foMergeAction, foMutation}},
 	}
 	for _, control := range controls {
 		t.Run(control.name, func(t *testing.T) {

@@ -132,13 +132,13 @@ func (s ptySession) newFileSource() *fileLineSource {
 	return newFileLineSourceByID(s.projectsDir, s.foSessionID)
 }
 
-// launchAndSend launches the interactive session WITHOUT a stdout pipe (claude
-// owns the pane tty — the no-pipe hazard), gates the first send on stable-idle (the
-// queued-keystroke hazard), sends prompt to the title-resolved FO pane (the
-// FO-pane-capture hazard), and resolves the FO's session jsonl on disk. It returns
-// a ptySession ready to drain or watch. label names the run for artifacts/errors.
-// The caller MUST defer session.proc.kill() to reap the resident tmux session.
-func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt string) ptySession {
+// launchToGreet launches the interactive session WITHOUT a stdout pipe (claude
+// owns the pane tty — the no-pipe hazard) and waits for the launcher-injected
+// first-officer boot turn to reach a stable idle. It sends no follow-up prompt:
+// the returned resident process is direct evidence of the real interactive
+// greet-and-stop default. label names the run for artifacts/errors. The caller
+// MUST defer session.proc.kill() to reap the resident tmux session.
+func (d ptyLiveDriver) launchToGreet(t *testing.T, label, workflowRoot string) ptySession {
 	t.Helper()
 	artifactDir := filepath.Join(d.artifactRoot, label)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
@@ -298,11 +298,6 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 			label, ptyBootBudget, err, dumpPane, artifactDir)
 	}
 
-	if err := d.sendToFO(session, prompt); err != nil {
-		proc.kill()
-		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, artifactDir)
-	}
-
 	return ptySession{
 		tmuxName:    session,
 		projectsDir: projectsDir,
@@ -311,6 +306,49 @@ func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt s
 		proc:        proc,
 		artifactDir: artifactDir,
 		started:     started,
+	}
+}
+
+// launchAndSend starts at the same real interactive greet as launchToGreet, then
+// sends a captain follow-up only after that turn is stably idle. Non-boot PTY
+// journeys use this path; shallow boot deliberately stops at launchToGreet.
+func (d ptyLiveDriver) launchAndSend(t *testing.T, label, workflowRoot, prompt string) ptySession {
+	t.Helper()
+	session := d.launchToGreet(t, label, workflowRoot)
+	if err := d.sendToFO(session.tmuxName, prompt); err != nil {
+		session.proc.kill()
+		t.Fatalf("send prompt to FO for %s: %v\nArtifacts: %s", label, err, session.artifactDir)
+	}
+	return session
+}
+
+// runInteractiveGreet records the initial launcher-driven boot turn and returns
+// while the TUI is still resident at its input loop. Unlike run, it never sends a
+// scenario prompt and never drains to process exit.
+func (d ptyLiveDriver) runInteractiveGreet(t *testing.T, scenario sharedRuntimeScenario, workflowRoot string) liveResult {
+	t.Helper()
+	session := d.launchToGreet(t, scenario.name, workflowRoot)
+	defer session.proc.kill()
+
+	stream := strings.Join(session.readPinnedTranscript(), "\n")
+	finalMessage, err := extractClaudeFinalMessage(stream)
+	if err != nil {
+		t.Fatalf("extract interactive Claude greet: %v\nArtifacts: %s", err, session.artifactDir)
+	}
+	_, exited := session.proc.poll()
+	pane := d.captureFOPane(session.tmuxName)
+	if writeErr := os.WriteFile(filepath.Join(session.artifactDir, "pty-stream.jsonl"), []byte(stream), 0o644); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+	_ = os.WriteFile(filepath.Join(session.artifactDir, "fo-pane-at-greet.txt"), []byte(pane), 0o644)
+
+	return liveResult{
+		finalMessage: finalMessage,
+		stream:       stream,
+		artifactDir:  session.artifactDir,
+		duration:     time.Since(session.started),
+		interactive:  true,
+		resident:     !exited,
 	}
 }
 

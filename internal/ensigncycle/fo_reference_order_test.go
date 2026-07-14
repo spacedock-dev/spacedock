@@ -407,12 +407,31 @@ func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
 			return fmt.Errorf("%s contains forbidden %s event: %v", journey, hazard, events)
 		}
 	}
-	if journey == "gate" {
-		if eventIndex(events, foSharedRead) < 0 || eventIndex(events, foRuntimeRead) < 0 {
-			return fmt.Errorf("cold gate lacks shared/runtime reads: %v", events)
+	sharedAt := eventIndex(events, foSharedRead)
+	runtimeAt := eventIndex(events, foRuntimeRead)
+	if sharedAt < 0 || runtimeAt < 0 || sharedAt >= runtimeAt {
+		return fmt.Errorf("%s requires successful shared-core → runtime reads as ordered boot preconditions: %v", journey, events)
+	}
+	for _, boundary := range []foReferenceEvent{
+		foWriteRead,
+		foMergeRead,
+		foEngage,
+		foModBlockSeen,
+		foMutation,
+		foTerminal,
+		foMergeGuard,
+		foMergeAction,
+	} {
+		if at := eventIndex(events, boundary); at >= 0 && runtimeAt >= at {
+			return fmt.Errorf("%s runtime read must precede first %s event: %v", journey, boundary, events)
 		}
+	}
+	if journey == "gate" {
 		if eventIndex(events, foWriteRead) >= 0 || eventIndex(events, foMergeRead) >= 0 {
 			return fmt.Errorf("cold gate eagerly read a deferred core: %v", events)
+		}
+		if eventIndex(events, foMutation) >= 0 || eventIndex(events, foTerminal) >= 0 {
+			return fmt.Errorf("cold gate crossed a mutation or terminal boundary: %v", events)
 		}
 		return nil
 	}
@@ -450,8 +469,8 @@ func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
 		modAt := eventIndex(events, foModBlockSeen)
 		engageAt := eventIndex(events, foEngage)
 		actionAt := eventIndex(events, foMergeAction)
-		if modAt < 0 || engageAt < 0 || actionAt < 0 || !(modAt < engageAt && engageAt < writeAt && writeAt < mergeAt && mergeAt < actionAt) {
-			return fmt.Errorf("recovery order must be boot mod-block → engage → write → merge → first merge action: %v", events)
+		if modAt < 0 || engageAt < 0 || actionAt < 0 || !(engageAt < modAt && modAt < writeAt && writeAt < mergeAt && mergeAt < actionAt) {
+			return fmt.Errorf("recovery order must be engage → observed mod-block → write → merge → first merge action: %v", events)
 		}
 	}
 	return nil
