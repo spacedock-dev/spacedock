@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/application-committed.v1.json",
+  "title": "helm.application.committed.v1",
+  "description": "Append-only evidence that the accountable applier committed its canonical state. Git OIDs are full 40-hex SHA-1 or 64-hex SHA-256 values. Ledger acceptance is the sole pending_apply to applied fold input.",
+  "type": "object",
+  "required": ["schema", "application_id", "gate_id", "resolution_id", "applier", "target_owner", "target_ref", "target_kind", "before", "after", "committed_at"],
+  "properties": {
+    "schema": { "const": "helm.application.committed.v1" },
+    "application_id": { "type": "string", "pattern": "^app_" },
+    "supersedes_application_id": { "type": "string", "pattern": "^app_" },
+    "gate_id": { "type": "string", "pattern": "^gat_" },
+    "resolution_id": { "type": "string", "minLength": 1 },
+    "applier": { "type": "string", "minLength": 1 },
+    "target_owner": { "type": "string", "minLength": 1 },
+    "target_ref": { "type": "string", "minLength": 1 },
+    "target_kind": { "enum": ["git", "agent"] },
+    "before": { "type": "string" },
+    "after": { "type": "string" },
+    "commit_oid": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+    "parent_oids": { "type": "array", "items": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" } },
+    "tree_or_blob_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "committed_at": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "target_kind": { "const": "git" } }, "required": ["target_kind"] },
+      "then": {
+        "required": ["commit_oid", "parent_oids", "tree_or_blob_digest"]
+      }
+    },
+    {
+      "if": { "properties": { "target_kind": { "const": "agent" } }, "required": ["target_kind"] },
+      "then": {
+        "not": {
+          "anyOf": [
+            { "required": ["commit_oid"] },
+            { "required": ["parent_oids"] },
+            { "required": ["tree_or_blob_digest"] }
+          ]
+        }
+      }
+    },
+    {
+      "not": {
+        "anyOf": [
+          { "required": ["idempotency_key"] },
+          { "required": ["body_digest"] }
+        ]
+      }
+    }
+  ],
+  "additionalProperties": true
+}

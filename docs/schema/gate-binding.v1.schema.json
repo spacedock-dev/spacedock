@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.spacedock.dev/gate-binding.v1.schema.json",
+  "title": "Spacedock gate binding v1 (Draft)",
+  "description": "Spacedock-owned provider target stored in a Helm Ledger gate binding slot. The binding exists before a Resolution or application obligation, so later gate, Resolution, application, attestation, and projection fields remain outside this payload. This review draft does not imply a shipped writer, projector, watcher, command, or endpoint.",
+  "type": "object",
+  "required": [
+    "ns",
+    "entity_ref"
+  ],
+  "properties": {
+    "ns": {
+      "const": "spacedock.gate-binding.v1",
+      "description": "The Spacedock-owned provider namespace. The containing Ledger gate attaches this binding to its gat_ identity."
+    },
+    "entity_ref": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Stable Spacedock entity reference used to locate the workflow-owned target."
+    },
+    "stage": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Optional expected current stage before the authorized transition."
+    },
+    "target_stage": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Optional stage the Spacedock apply coordinator may enter after validating the selected Resolution."
+    },
+    "workflow_ref": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Optional explicit workflow reference when entity_ref alone is not sufficient for provider routing."
+    },
+    "provider_instance_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Optional immutable Spacedock installation or service identity used for multi-instance routing."
+    },
+    "expected_revision": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S",
+      "description": "Optional provider-owned optimistic concurrency pin checked before mutation."
+    }
+  },
+  "additionalProperties": true
+}

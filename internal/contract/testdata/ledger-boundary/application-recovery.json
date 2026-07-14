@@ -1,0 +1,106 @@
+{
+  "committed_request": {
+    "schema": "helm.application.record_committed_request.v1",
+    "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740",
+    "fact": {
+      "schema": "helm.application.committed.v1",
+      "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+      "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+      "resolution_id": "resolution:approve-1",
+      "applier": "spacedock:apply-coordinator",
+      "target_owner": "spacedock:workflow",
+      "target_ref": "workflow:wf1-demo/entity:task-42",
+      "target_kind": "git",
+      "before": "plan",
+      "after": "execute",
+      "commit_oid": "1111111111111111111111111111111111111111",
+      "parent_oids": [
+        "0000000000000000000000000000000000000000"
+      ],
+      "tree_or_blob_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "committed_at": "2026-07-14T08:00:00Z",
+      "spacedock:stage_run_id": "sr1:demo"
+    }
+  },
+  "accepted_receipt": {
+    "schema": "helm.application.committed_receipt.v1",
+    "receipt_id": "rcpt_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e71",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "accepted_event_id": 43,
+    "applied_at": "2026-07-14T08:00:01Z",
+    "gate_status": "applied",
+    "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+  },
+  "same_key_same_body_replay": {
+    "schema": "helm.application.committed_receipt.v1",
+    "receipt_id": "rcpt_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e71",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "accepted_event_id": 43,
+    "applied_at": "2026-07-14T08:00:01Z",
+    "gate_status": "applied",
+    "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+  },
+  "changed_body_conflict": {
+    "request": {
+      "schema": "helm.application.record_committed_request.v1",
+      "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+      "body_digest": "sha256:7f158adb41a904179cafe659c58a4db95064c4b189b17bb268f450837ce5dafa",
+      "fact": {
+        "schema": "helm.application.committed.v1",
+        "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+        "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+        "resolution_id": "resolution:approve-1",
+        "applier": "spacedock:apply-coordinator",
+        "target_owner": "spacedock:workflow",
+        "target_ref": "workflow:wf1-demo/entity:task-42",
+        "target_kind": "git",
+        "before": "plan",
+        "after": "review",
+        "commit_oid": "2222222222222222222222222222222222222222",
+        "parent_oids": [
+          "1111111111111111111111111111111111111111"
+        ],
+        "tree_or_blob_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "committed_at": "2026-07-14T08:00:02Z"
+      }
+    },
+    "error": {
+      "schema": "helm.http.error.v1",
+      "status": 409,
+      "code": "helm.application.idempotency_conflict.v1"
+    },
+    "effect": "refuse_without_new_fact"
+  },
+  "response_lost_recovery": {
+    "coordinator_state": "commit_succeeded_attestation_outcome_unknown",
+    "read_application": {
+      "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f"
+    },
+    "application_view": {
+      "schema": "helm.application.view.v1",
+      "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+      "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+      "resolution_id": "resolution:approve-1",
+      "apply_requirement": "required",
+      "status": "applied",
+      "provider_binding": {
+        "ns": "spacedock.gate-binding.v1",
+        "entity_ref": "task-42"
+      },
+      "committed_receipt": {
+        "schema": "helm.application.committed_receipt.v1",
+        "receipt_id": "rcpt_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e71",
+        "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+        "accepted_event_id": 43,
+        "applied_at": "2026-07-14T08:00:01Z",
+        "gate_status": "applied",
+        "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+        "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+      },
+      "observations": []
+    }
+  }
+}

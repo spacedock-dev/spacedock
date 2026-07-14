@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/provider-binding.v1.json",
+  "title": "helm.provider.binding.v1",
+  "description": "Generic provider-owned opaque binding. Helm requires only a nonblank namespace and preserves additive provider fields without interpreting them.",
+  "type": "object",
+  "required": ["ns"],
+  "properties": {
+    "ns": { "type": "string", "minLength": 1, "pattern": "\\S" }
+  },
+  "additionalProperties": true
+}

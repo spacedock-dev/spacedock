@@ -1,0 +1,13 @@
+{
+  "ns": "spacedock.gate-binding.v1",
+  "entity_ref": "docs/ship-flow/m4.13",
+  "stage": "shape",
+  "target_stage": "plan",
+  "workflow_ref": "docs/ship-flow/README.md",
+  "provider_instance_id": "sd_local_paris",
+  "expected_revision": "9d6f7e1",
+  "spacedock:provider_instance_id": "sd_future_paris",
+  "spacedock:future_binding_hint": {
+    "mode": "content-addressed"
+  }
+}

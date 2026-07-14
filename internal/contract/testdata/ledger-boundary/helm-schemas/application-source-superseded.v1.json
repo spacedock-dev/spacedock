@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/application-source-superseded.v1.json",
+  "title": "helm.application.source_superseded.v1",
+  "description": "Append-only evidence that a source pin changed; original application facts remain immutable.",
+  "type": "object",
+  "required": ["schema", "application_id", "old_source_pin", "new_source_pin", "reason", "observed_at"],
+  "properties": {
+    "schema": { "const": "helm.application.source_superseded.v1" },
+    "application_id": { "type": "string", "pattern": "^app_" },
+    "old_source_pin": {
+      "type": "string",
+      "minLength": 1,
+      "anyOf": [
+        { "pattern": "^git:(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+        { "not": { "pattern": "^git:" } }
+      ]
+    },
+    "new_source_pin": {
+      "type": "string",
+      "minLength": 1,
+      "anyOf": [
+        { "pattern": "^git:(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+        { "not": { "pattern": "^git:" } }
+      ]
+    },
+    "reason": { "type": "string", "minLength": 1 },
+    "observed_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}

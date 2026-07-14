@@ -1,0 +1,44 @@
+{
+  "expected_pin": {
+    "ns": "spacedock.gate-binding.v1",
+    "digest": "sha256:cec57389af09a520888645d3c0b0b6e7f0cffebc266265befd07f53a746c330b"
+  },
+  "cases": [
+    {
+      "name": "unsupported-version",
+      "observed_pin": {
+        "ns": "spacedock.gate-binding.v2",
+        "digest": "sha256:cec57389af09a520888645d3c0b0b6e7f0cffebc266265befd07f53a746c330b"
+      },
+      "binding": {
+        "ns": "spacedock.gate-binding.v2",
+        "entity_ref": "task-42"
+      },
+      "error": {
+        "schema": "helm.http.error.v1",
+        "status": 409,
+        "code": "helm.provider_binding.unsupported_version.v1"
+      },
+      "effect": "refuse_before_mutation",
+      "fallback_guess_allowed": false
+    },
+    {
+      "name": "digest-mismatch",
+      "observed_pin": {
+        "ns": "spacedock.gate-binding.v1",
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "binding": {
+        "ns": "spacedock.gate-binding.v1",
+        "entity_ref": "task-42"
+      },
+      "error": {
+        "schema": "helm.http.error.v1",
+        "status": 409,
+        "code": "helm.provider_binding.unsupported_version.v1"
+      },
+      "effect": "refuse_before_mutation",
+      "fallback_guess_allowed": false
+    }
+  ]
+}

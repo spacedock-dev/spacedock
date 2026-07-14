@@ -18,10 +18,11 @@ The division is deliberate: a behavior that can be guarded by the binary or a fa
 
 ## Design contracts under `docs/specs/`
 
-`docs/specs/` holds the contracts downstream code cites instead of re-deriving. Two are current.
+`docs/specs/` holds the contracts downstream code cites instead of re-deriving. Two are current, and one is a ratification Draft.
 
 - **`state-behavior-extension.md`** defines the split-root storage profile. A development workflow keeps its README in the main repo and its mutable entities in a per-workflow `.spacedock-state` checkout, so shared issues advance without noisy state commits on the code branch. The README's `state: .spacedock-state` frontmatter field names the checkout, resolved relative to the README directory. The spec fixes the v0 layout (entities directly under `.spacedock-state`, no `entities/` directory; `_archive/` and `_debriefs/` siblings) and the mutation rules: reads compose the main README's stages with the checkout's entities, while `--set` and `--archive` write only inside the checkout.
 - **`scenario-testing-principles.md`** sets out the semantic model for scenario testing. A *scenario* is a natural-language behavioral spec graded on **durable outcomes** (entity state before → after, archive state, on-disk artifacts, durable user-facing output), never transcript phrasing. An *executor* is a pluggable implementation of that check: a **codified** executor (a deterministic Go fixture/unit test, proving the modeled consumer) or an **LLM** executor (a real Claude/Codex run, proving the real producer). The two check the same scenario at different fidelity, which dissolves the recurring failure mode where an offline proof passes while the live run fails. The four seed scenario IDs declared in this spec must equal the `sharedRuntimeScenarios()` table in `internal/ensigncycle`; a lock test reds on drift in either direction.
+- **`ledger-gate-binding.md`** proposes the Spacedock-owned provider boundary for one Helm Ledger gate Resolution and application obligation. The Draft pins identity and recovery without moving gate or application authority into Spacedock. Its schema and fixtures are review material; no writer, projector, watcher, command, or endpoint ships with the proposal.
 
 ## Runtime live CI model
 

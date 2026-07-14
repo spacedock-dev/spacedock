@@ -1,0 +1,6 @@
+{
+  "ns": "other-provider.gate-binding.v1",
+  "entity_ref": "docs/ship-flow/m4.13",
+  "stage": "shape",
+  "target_stage": "plan"
+}

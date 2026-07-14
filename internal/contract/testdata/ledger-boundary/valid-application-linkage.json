@@ -1,0 +1,59 @@
+{
+  "gate": {
+    "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+    "binding": {
+      "ns": "spacedock.gate-binding.v1",
+      "entity_ref": "docs/ship-flow/m4.13"
+    }
+  },
+  "resolution": {
+    "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+    "resolution_id": "resolution:approve-1"
+  },
+  "application": {
+    "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+    "resolution_id": "resolution:approve-1",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f"
+  },
+  "committed": {
+    "schema": "helm.application.committed.v1",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "gate_id": "gat_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e70",
+    "resolution_id": "resolution:approve-1",
+    "applier": "spacedock:apply-coordinator",
+    "target_owner": "spacedock:workflow",
+    "target_ref": "workflow:wf1-demo/entity:task-42",
+    "target_kind": "git",
+    "before": "plan",
+    "after": "execute",
+    "commit_oid": "1111111111111111111111111111111111111111",
+    "parent_oids": [
+      "0000000000000000000000000000000000000000"
+    ],
+    "tree_or_blob_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "committed_at": "2026-07-14T08:00:00Z"
+  },
+  "observed": {
+    "schema": "helm.application.observed.v1",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "source_event_key": "github:spacedock:refs/heads/main:1111111",
+    "observed_commit": "1111111111111111111111111111111111111111",
+    "ref": "refs/heads/main",
+    "remote": "origin",
+    "provider": "github",
+    "observed_at": "2026-07-14T08:05:00Z",
+    "provenance": "watcher"
+  },
+  "source_superseded": {
+    "schema": "helm.application.source_superseded.v1",
+    "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
+    "old_source_pin": "git:1111111111111111111111111111111111111111",
+    "new_source_pin": "git:3333333333333333333333333333333333333333",
+    "reason": "canonical ref was rebased",
+    "observed_at": "2026-07-14T09:00:00Z"
+  },
+  "expected": {
+    "committed_effect": "pending_apply_to_applied",
+    "observed_effect": "audit_only"
+  }
+}

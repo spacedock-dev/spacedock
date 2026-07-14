@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/application-record-committed-request.v1.json",
+  "title": "helm.application.record_committed_request.v1",
+  "description": "Committed-attestation request. body_digest is sha256: plus lowercase SHA-256 over the fact's RFC 8785 JCS UTF-8 bytes and must be verified before acceptance.",
+  "type": "object",
+  "required": ["schema", "idempotency_key", "body_digest", "fact"],
+  "properties": {
+    "schema": { "const": "helm.application.record_committed_request.v1" },
+    "idempotency_key": { "type": "string", "minLength": 1 },
+    "body_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "description": "Exact RFC 8785 JCS digest of fact; a mismatch is helm.application.attestation_invalid.v1." },
+    "fact": { "$ref": "https://helm.spacedock.dev/schemas/ledger/application-committed.v1.json" }
+  },
+  "additionalProperties": true
+}

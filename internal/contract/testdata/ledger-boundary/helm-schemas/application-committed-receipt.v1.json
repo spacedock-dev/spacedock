@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/application-committed-receipt.v1.json",
+  "title": "helm.application.committed_receipt.v1",
+  "type": "object",
+  "required": ["schema", "receipt_id", "application_id", "accepted_event_id", "applied_at", "gate_status", "idempotency_key", "body_digest"],
+  "properties": {
+    "schema": { "const": "helm.application.committed_receipt.v1" },
+    "receipt_id": { "type": "string", "pattern": "^rcpt_" },
+    "application_id": { "type": "string", "pattern": "^app_" },
+    "accepted_event_id": { "type": "integer", "minimum": 1 },
+    "applied_at": { "type": "string", "format": "date-time" },
+    "gate_status": { "const": "applied" },
+    "idempotency_key": { "type": "string", "minLength": 1 },
+    "body_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "description": "Echoes the accepted request's verified RFC 8785 JCS fact digest." }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,47 @@
+{
+  "provenance_status": "complete",
+  "source_repository": "https://github.com/spacedock-dev/helm",
+  "source_revision": "3d39fcdc67cc6aac22d51f4abcc2dfdadf56c838",
+  "schemas": {
+    "application-record-committed-request.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-record-committed-request.v1.json",
+      "git_blob": "c8e8565cf45c0b58c434d566d590256db2489f93",
+      "raw_sha256": "sha256:a4b9863f2105dc7a9a9dd91baf0a19477b6edb3a3825c948556018e6091696d0"
+    },
+    "application-committed.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-committed.v1.json",
+      "git_blob": "c0d1bc132b8f7f979cbd1135108eb4a3cf8ae2b1",
+      "raw_sha256": "sha256:8b6083e2b474a2771e59422ea6bd8f67562cbc66b828246f3aa8645a8f1b90d2"
+    },
+    "application-committed-receipt.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-committed-receipt.v1.json",
+      "git_blob": "284edb237773cb7d29f059972602f3aa504a2227",
+      "raw_sha256": "sha256:d9ec2b35f991176668f17a472d1e88210892f6bb5c8049cfdfb29af151d36682"
+    },
+    "application-observed.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-observed.v1.json",
+      "git_blob": "5340539217020d22bcf0ed4626f19610d8e01520",
+      "raw_sha256": "sha256:f269282d4763877766069593883a4a0b0da662d886f9b09a5f30d8cb8d812b10"
+    },
+    "application-source-superseded.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-source-superseded.v1.json",
+      "git_blob": "05d4e3ff060fb36d92bcc07c47666ad097decfa8",
+      "raw_sha256": "sha256:d38df905ca61f7facd93d26b5156d90ddca629f94cfc1c9fb1dbd4fddf7a9ba9"
+    },
+    "application-view.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/application-view.v1.json",
+      "git_blob": "c0dda55e7b6ccda691116bc8929caf89521c4f85",
+      "raw_sha256": "sha256:7132cafbef0e065f92b5af65dc73f61327264a9fa55f657c2053079295d78a69"
+    },
+    "projection-rewrite-quarantined.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/projection-rewrite-quarantined.v1.json",
+      "git_blob": "aaf216d4d82b0d5b9a2c84d925d920bb5d2aa986",
+      "raw_sha256": "sha256:f1c11a37d61285879953dd8c9b7e49b2ba1a142a04810404b4831e9cb22e67c5"
+    },
+    "provider-binding.v1.json": {
+      "source_path": "src/ledger/contracts/schemas/provider-binding.v1.json",
+      "git_blob": "862d4d1a7bda7a573c8a9582dd280665ad7f31b8",
+      "raw_sha256": "sha256:b4cef68b735cb8875b1acdbb8e04e43e7d8546ebe4e9f1bfbce92136f1eff04c"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "initial_page": {
+    "projection_epoch": "epoch_01",
+    "next_cursor": "opaque:epoch_01:44"
+  },
+  "cursor_invalidation": {
+    "request": {
+      "projection_epoch": "epoch_01",
+      "after": "opaque:epoch_01:44"
+    },
+    "error": {
+      "schema": "helm.http.error.v1",
+      "status": 409,
+      "code": "helm.projection.cursor_invalidated.v1",
+      "details": {
+        "current_projection_epoch": "epoch_02",
+        "restart": "request a fresh cursor"
+      }
+    }
+  },
+  "exposed_binding": {
+    "ns": "spacedock.gate-binding.v1",
+    "entity_ref": "task-42"
+  },
+  "candidate_binding": {
+    "ns": "spacedock.gate-binding.v1",
+    "entity_ref": "task-99"
+  },
+  "rewrite_quarantined": {
+    "schema": "helm.projection.rewrite_quarantined.v1",
+    "old_projection_epoch": "epoch_01",
+    "new_projection_epoch": "epoch_02",
+    "invalidated_cursor": "opaque:epoch_01:44",
+    "exposed_binding": {
+      "ns": "spacedock.gate-binding.v1",
+      "entity_ref": "task-42"
+    },
+    "exposed_binding_digest": "sha256:b170621f50bbcedbf4950e4026191f63098b8ed3b73de338fca9186180e3422f",
+    "candidate_binding": {
+      "ns": "spacedock.gate-binding.v1",
+      "entity_ref": "task-99"
+    },
+    "candidate_binding_digest": "sha256:b1c07d3c26830652602baf4035bd47583831bc1cdcdfa4300d455d35d16e18e0",
+    "source_evidence": {
+      "old_commit": "1111111111111111111111111111111111111111",
+      "new_commit": "3333333333333333333333333333333333333333"
+    },
+    "quarantined_at": "2026-07-14T09:00:01Z"
+  },
+  "expected": {
+    "exposed_binding_frozen": true,
+    "new_application_minted": false
+  }
+}

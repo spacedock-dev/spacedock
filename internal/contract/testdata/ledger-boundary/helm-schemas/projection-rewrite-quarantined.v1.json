@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://helm.spacedock.dev/schemas/ledger/projection-rewrite-quarantined.v1.json",
+  "title": "helm.projection.rewrite_quarantined.v1",
+  "description": "Typed rewrite evidence that invalidates an old cursor and freezes the exposed binding until reconciliation.",
+  "type": "object",
+  "required": ["schema", "old_projection_epoch", "new_projection_epoch", "invalidated_cursor", "exposed_binding", "exposed_binding_digest", "candidate_binding", "candidate_binding_digest", "source_evidence", "quarantined_at"],
+  "properties": {
+    "schema": { "const": "helm.projection.rewrite_quarantined.v1" },
+    "old_projection_epoch": { "type": "string", "minLength": 1 },
+    "new_projection_epoch": { "type": "string", "minLength": 1 },
+    "invalidated_cursor": { "type": "string", "minLength": 1 },
+    "exposed_binding": { "$ref": "https://helm.spacedock.dev/schemas/ledger/provider-binding.v1.json" },
+    "exposed_binding_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "candidate_binding": { "$ref": "https://helm.spacedock.dev/schemas/ledger/provider-binding.v1.json" },
+    "candidate_binding_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source_evidence": { "type": "object", "additionalProperties": true },
+    "quarantined_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": true
+}
