@@ -265,3 +265,16 @@ Cycle 2 closes both Roborev findings without changing the approved loading desig
 ### Summary
 
 Roborev job 988 rejected the exact cycle-2 range. It found that the changed shallow-boot fixture removes automatic merged-PR discovery coverage and prescribes the implementation, that suffix-only checks accept a core under the wrong skill base, and that a compound wrong-path-then-canonical retry can evade the hazard detector; the implementation needs separate discovery/recovery journeys and per-target exact-base classification before fresh validation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Preserve the original automatic merged-PR sweep discovery journey and add a separate outcome-oriented mod-block recovery scenario without pre-seeding away discovery or prescribing exact owner commands.
+  Commit `52d4e92f` restores shallow-boot's original open-PR discovery fixture and adds a distinct `merge-mod-block-recovery` journey whose prompt specifies only the durable resumed-merge outcome. Both Claude and Codex runners preserve the terminal/archive/clean-state oracle, and commit `664d64c3` registers the new shared scenario in the locked seed-scenario documentation.
+- DONE: Require successful canonical core reads under the exact loaded first-officer skill base, rejecting matching suffixes rooted elsewhere.
+  The host normalizers derive the loaded first-officer base from the real skill-load event (with a successful canonical `SKILL.md` fallback) and accept a merge/write core only at the exact base-plus-literal path. Claude and Codex wrong-base/same-suffix negatives fail, while the positive host-order fixtures remain green.
+- DONE: Classify every command target independently so a wrong-path access remains hazardous even when the same compound command later reads the canonical target; run focused/full/race/compile-live and detached gates locally only.
+  Each shell read target is now classified independently; compound wrong-then-canonical controls retain `wrong-core-path` and fail. Focused order/recovery/doc-lock tests, `gofmt -w ./cmd ./internal`, `go test ./...`, corrected-PATH `go test ./... -race`, `go test -tags live -run '^$' ./...`, `git diff --check`, and the detached adversarial audit passed locally. The detached plants independently proved shallow discovery cannot be replaced, a wrong skill base fails, and a compound wrong-then-canonical read stays hazardous; no branch push, PR, or CI action occurred.
+
+### Summary
+
+Cycle 3 separates automatic merged-PR discovery from resumed mod-block recovery and makes the recovery prompt judge the durable outcome instead of a prescribed command sequence. Exact loaded-base binding and per-target classification close both Roborev false-green paths while preserving the canonical core hashes (`a347fc4a…`, `a350c1cc…`) and the 8,075-byte cold-contract saving.
