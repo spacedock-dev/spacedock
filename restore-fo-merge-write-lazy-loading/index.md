@@ -174,6 +174,25 @@ discovery evidence, bind reads to the exact skill base, and reject every wrong
 target even when a later target is canonical. Return to fresh Roborev-first
 validation without push, PR, or CI.
 
+**Cycle 4 (Roborev-first validation, job 1167).** Roborev reviewed the full
+range through exact implementation head
+`664d64c32813a534c790cfb80e38aa20ef82465e` and returned three medium findings:
+
+- A successful shared-core read can be classified as failed because the real
+  document contains the phrase `is not found`; structured exit/status and a
+  canonical document anchor must distinguish success from failure.
+- The command classifier lowercases extracted paths but compares them with the
+  original-case loaded skill base, so valid reads under uppercase-containing
+  paths can be classified as wrong-path reads.
+- The merge-recovery assertion searches the entire Markdown body instead of
+  isolating YAML frontmatter, allowing stale frontmatter to false-green when
+  matching terminal fields appear later in body text.
+
+Captain clarification (2026-07-14): merged-PR discovery or advancement is not
+required during the read-only boot greeting; it may occur on `engage`. Job 1167
+did not repeat the obsolete before-greet discovery objection. These findings
+are proof-oracle defects, not evidence of an observed runtime lazy-load failure.
+
 ## Stage Report: ideation
 
 - DONE: Produce a behavior-first design that restores exact-path deferred write-core and merge-core loads at their mutation and terminal/mod-block triggers without reintroducing search or skill-discovery guessing.
