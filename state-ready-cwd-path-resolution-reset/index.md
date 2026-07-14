@@ -78,3 +78,19 @@ Implemented the clean reset as a narrow `state ready` recovery change backed by
 real Git behavior, with canonical main-root placement, local-branch fallback,
 and non-mutating stale-registration refusal. All required focused, full, and race
 gates passed; code is committed at `0384a012` and ready for independent validation.
+
+## Stage Report: validation
+
+- DONE: Verify AC-1 and AC-2 with independent real-Git fixtures: linked-worktree cwd restores the canonical main-worktree state path, and a missing origin falls back to the local state branch.
+  The exact-head binary recovered `state-ready-cwd-path-resolution-reset/index.md` only at the canonical main path in both origin-backed and no-origin runs (exit 0); forced origin failure exited 1 before checkout creation, proving fetch-first remained intact.
+- DONE: Verify AC-3: stale linked-worktree registration fails closed with precise path-scoped remediation, leaves the registry unchanged, and adds no repair or coordination subsystem.
+  Stale recovery exited 1 with byte-identical registry and exact canonical remediation; that command removed only the stale registration when exercised, while a present-checkout run preserved registry, HEAD, and gitfile byte-for-byte.
+- DONE: Reproduce the focused behavior checks plus applicable package, full, and race suites on exact implementation head 0384a012; map independent evidence to every AC and issue PASSED or a precisely classified REJECTED recommendation.
+  At `0384a012faa25bae41ac56f7cc8b1347122942b2`: focused AC tests passed 4/4, all `TestStateReady*` tests passed 10/10, `go test ./internal/cli`, `go test ./...`, and `go test ./... -race` passed; `gofmt -w ./cmd ./internal` completed and the final tree is clean.
+
+### Summary
+
+PASSED. AC-1 through AC-4 are independently reproduced with real Git state,
+process exits, exact paths, registry snapshots, and the required suites. The
+implementation stays narrow: only existing `state_sync.go` and its real-Git test
+file changed, with no repair, locking, publication, or lifecycle subsystem.
