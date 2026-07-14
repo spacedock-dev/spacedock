@@ -594,3 +594,16 @@ multi-workflow recovery, and merge-guard arming. AC-1, AC-2, AC-3, and AC-6
 therefore fail; the remaining criteria were not revalidated because the
 mandatory first gate stopped the cycle. No tests, push, PR, CI, implementation
 mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Route every mutating fresh `state init` and `state new` Git operation through validated sanitized runners.
+  Commit `13aec0142c5c12cb0071565928328fcbf24e3673` adds a filesystem-anchored `ResolveProject` path for bootstrap before a state checkout exists, retaining separate-git-dir, submodule, linked-worktree, and standalone project compatibility. Fresh fetch/add, orphan checkout/index clear/commit/push, temporary worktree removal, and final state worktree creation all run through project or temporary-worktree runners; the raw `runGit` helper is removed from this lifecycle. Public `state init` and `state new` matrices exercise `GIT_DIR`, `GIT_INDEX_FILE`, `GIT_OBJECT_DIRECTORY`, and `GIT_SHALLOW_FILE` separately while proving intended checkout creation and exact non-mutation of the unrelated HEAD, index, status, object tree, and shallow file.
+- DONE: Bind stale-backpointer recovery to repository identity plus the full project-relative workflow/state path.
+  Linked-state recovery now combines the already validated common repository with the checkout's full project-relative path rather than accepting only its workflow-relative state suffix. `TestResolveRejectsStaleBackPointerFromEqualSuffixSiblingWorkflow` creates two sibling workflows with the same `.state` suffix, points workflow A's missing back-pointer at workflow B's full path, and proves rejection while B's HEAD and status remain exact.
+- DONE: Preflight split-root state before merge-guard auto-arm and run all local gates without integration activity.
+  `MergeGuard` resolves split-root Git state immediately after root resolution, before entity mutation classification, and reuses that runner for finalize instead of validating only inside the finalize branch. `TestMergeGuardMissingStateGitFailsBeforeAutoArm` covers the empty-mod-block registered-hook path and pins exit/stderr, empty stdout, entity bytes and mode, both refs and indexes, both statuses, worktree registrations, and absent archive output. `gofmt -w ./cmd ./internal`, all focused and affected-package suites, exact-head `go test ./...`, and exact-head `go test ./... -race` passed. No code push, PR, CI, merge, approval, or integration action occurred.
+
+### Summary
+
+Fresh bootstrap no longer has an unsanitized Git mutation path, moved-checkout fallback identifies the complete workflow within its validated repository, and merge guard validates split-root state before auto-arm can write. Clean local head `13aec014` is ready for fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
