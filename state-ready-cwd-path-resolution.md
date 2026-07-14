@@ -1,7 +1,7 @@
 ---
 id: e6j9adxnn5hgv4hd7g5edr3t
 title: "spacedock state ready resolves init paths relative to cwd and requires an origin remote"
-status: validation
+status: implementation
 source: "GitHub issue #484 (spacedock-dev/spacedock#484), filed by clkao 2026-07-07, from a live split-root dogfooding session on this exact workflow shape (5 stages, ~6 entities, sd-b32 ids)."
 started: 2026-07-07T22:59:51Z
 completed:
@@ -228,6 +228,27 @@ Routed back to implementation under the captain's standing instruction. These
 are existing-scope targeted cleanup, publication ordering, and generation
 identity defects; no reframing is needed. No PR update or CI is permitted before
 a fresh corrected exact-range Roborev PASS.
+
+**Cycle 8 (Roborev-first validation, job 1016).** Authoritative thorough review
+stored exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..ff5bb0363a130a23228e6f5bf14679eaacb390e6`,
+included all four corrected guideline sections, and rejected before tests, PR
+update, or CI:
+
+- MEDIUM: destination absence is checked separately from cleanup and rename, so
+  a checkout created in the gap can be removed or replaced; publication needs
+  atomic no-replace semantics.
+- MEDIUM: any registration resolving to the destination is treated as stale
+  without proving expected branch, prunable status, and uniqueness, allowing an
+  active, wrong-branch, or duplicate registration to be removed.
+- MEDIUM: a caller first seeing the published checkout after `ready` but before
+  unlock misses the concurrent-resume outcome and can redundantly pull, turning
+  successful fallback into failure during an outage.
+
+Routed back to implementation under the captain's standing instruction. These
+are existing-scope atomic publication, registration identity, and waiter-order
+defects; no reframing is needed. No PR update or CI is permitted before a fresh
+corrected exact-range Roborev PASS.
 
 ## Stage Report: ideation (cycle 2)
 
