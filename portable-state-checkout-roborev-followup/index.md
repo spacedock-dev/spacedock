@@ -557,3 +557,21 @@ cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
 ### Summary
 
 Validated state runners now preserve relative-remote compatibility by executing from their checkout, strip the remaining writable and alternate object-routing authority, and refuse a checkout that vanishes after resolution instead of reporting local-only success. Clean local head `82adfab5` is ready for a fresh corrected-guideline exact-range Roborev-first validation; the branch remains unpushed and no PR or CI exists for it.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..82adfab5 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `900` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..82adfab58de230fa2f05a2150c1910a35d545247`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. It returned FAIL with three high findings: fresh `state init` and `state new` still route several mutations through unsanitized helpers; moved-checkout fallback compares only the workflow-relative state suffix and can collide across multiple workflows; and merge-guard auto-arm mutates before split-root state validation.
+- SKIPPED: Only after Roborev PASS independently reproduce relative-remote behavior, hostile writable/object routing refusal, post-resolution disappearance failure, every AC, gofmt, focused/full/race suites, and detached zero-mutation evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no implementation evidence was promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head 82adfab5, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `82adfab58de230fa2f05a2150c1910a35d545247`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `82adfab5`. Roborev job `900`
+found three remaining cross-repository mutation paths in bootstrap, moved
+multi-workflow recovery, and merge-guard arming. AC-1, AC-2, AC-3, and AC-6
+therefore fail; the remaining criteria were not revalidated because the
+mandatory first gate stopped the cycle. No tests, push, PR, CI, implementation
+mutation, or local merge occurred.
