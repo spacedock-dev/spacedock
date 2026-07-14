@@ -250,6 +250,26 @@ are existing-scope atomic publication, registration identity, and waiter-order
 defects; no reframing is needed. No PR update or CI is permitted before a fresh
 corrected exact-range Roborev PASS.
 
+**Cycle 9 (end-of-implementation Roborev, job 1223).** The review ran only the
+rebased eight-commit e6j task delta
+`23c32369da2066bf23c58d4298d1296192d667ff..5e4b32fd888cd275a226c27aa30f467ff7ec96d7`
+after the implementer completed focused, full, race, real-Git concurrency, and
+cross-platform gates. It rejected before code push, PR update, or CI:
+
+- HIGH: the resolved state-checkout path is not canonically contained beneath
+  the main worktree, so a symlinked workflow prefix or `state:` child in main
+  can redirect linked-worktree commands outside the selected repository.
+- MEDIUM: stale-registration repair still calls `git worktree remove` by the
+  public path after an unlocked absence/identity check, so a clean checkout
+  recreated in that interval can be deleted before no-replace publication.
+
+Routed back to implementation under the captain's standing instruction. These
+are existing-scope repository-containment and destructive-race defects; no
+reframing is needed. Canonically reject escapes and eliminate destructive
+public-path cleanup after an unlocked check, with adversarial interleaving
+coverage. No PR update or CI is permitted before ordinary gates and a fresh
+task-delta Roborev PASS.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
