@@ -368,6 +368,13 @@ instead of automatically routing another implementation round. The follow-up
 branch remains local at `f9186346`; local `main` is unchanged; no PR or CI exists
 for this branch.
 
+Captain decision: send cycle 3 back without reframing. The linked-worktree
+symlink and standalone `commondir` escapes are direct violations of the existing
+declared-project containment invariant; the silent boot diagnostic is an
+adjacent regression of the same resolver routing. Fix and test locally. The next
+fresh validator must again run corrected exact-range Roborev first; no push, PR,
+or CI is permitted before PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
