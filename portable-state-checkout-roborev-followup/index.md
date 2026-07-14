@@ -396,6 +396,24 @@ layouts, de-duplicate the boot error, and add exact zero-mutation regressions.
 The next fresh validator must again run corrected exact-range Roborev first; no
 push, PR, or CI is permitted before PASS.
 
+**Cycle 5 (Roborev-first validation, job 894).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..3c842d1713411b41ae7f074a3ced8e48d4ac820c`
+before tests, push, PR creation, or CI:
+
+- MEDIUM: `Runner.Combined` does not set `cmd.Dir` to the validated checkout,
+  so relative remote URLs resolve from the caller's process directory.
+- MEDIUM: writable Git routing variables including `GIT_OBJECT_DIRECTORY` and
+  `GIT_SHALLOW_FILE` remain inherited.
+- MEDIUM: `Origin` can map checkout disappearance after `Resolve` to
+  no-origin/local-only success instead of failing closed.
+
+Captain standing decision: send these findings back without reframing. They are
+direct continuations of the existing routing-authority, compatibility, and
+fail-closed scope. Fix them with public-command zero-mutation regressions. The
+next fresh validator must again run corrected exact-range Roborev first; no
+push, PR, or CI is permitted before PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
