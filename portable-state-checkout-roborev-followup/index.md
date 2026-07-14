@@ -442,3 +442,16 @@ The standalone compatibility lane now accepts only a state checkout and Git dire
 ### Summary
 
 Validation recommends REJECTED for exact head `f91863463a7058cf1b98f20ffdae868173c37695`. Roborev job `758` found that a symlink to an external linked worktree can escape the declared project, a checkout-local `.git/commondir` can redirect standalone operations into another repository, and `status --boot` can discard resolver errors and exit silently. AC-1 and AC-6 therefore fail; AC-2 through AC-5 were not revalidated because the mandated first gate stopped the cycle. Local `main` remained exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, and the implementation worktree remained clean at the reviewed head.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Canonicalize and identity-check declared project/worktree containment so symlinks to external linked worktrees fail before mutation while real same-object mount aliases remain supported.
+  Commits `bee4ddba2bdf68f5927cc706e68947da9578cb2d` and `f63f71eb4ee41b227e24ca288d0aaffc0366fb54` canonicalize the original declared workflow and checkout before containment while retaining filesystem identity for administrative metadata and bind aliases. `TestStateCommitRejectsLinkedWorktreeSymlinkEscape` drives the public command and pins code/external HEADs, indexes, statuses, gitfile, entity bytes, stdout, and error output.
+- DONE: Validate standalone checkout commondir/worktree ownership so checkout-local metadata cannot redirect refs or objects outside the declared checkout, with public zero-mutation regressions.
+  Standalone resolution requires the common directory to be the same filesystem object as `.git` and any configured `core.worktree` to be the checkout itself; normal configs avoid a multiplicative Git subprocess. `TestStateCommitRejectsStandaloneExternalCommondir` proves raw Git follows the external common directory before the public command refuses with both repositories and local metadata unchanged; `TestResolveRejectsStandaloneExternalCoreWorktree` covers the adjacent worktree redirect.
+- DONE: Render boot resolver/origin failures deterministically, run focused/full/race tests, and commit locally without push; leave an exact head for fresh Roborev-first validation before PR or CI.
+  Text and JSON boot now emit exact `Error: ...` stderr with exit 1 and empty stdout. Focused suites and `go test ./...` passed at exact clean head `f63f71eb4ee41b227e24ca288d0aaffc0366fb54`; the aggregate race run passed every package except one unrelated pre-existing `TestSonnetTeamDeleteHangReplay` replay flake, which then passed both isolated under `-race` and on a full `internal/ensigncycle -race` package rerun. No code push, PR, CI, merge, approval, or integration action occurred.
+
+### Summary
+
+Linked and standalone state checkouts can no longer redirect mutation through path or Git-metadata aliases outside the declared workflow, and boot surfaces resolver failures instead of failing silently. The append-only local head is ready for fresh corrected-guideline Roborev-first validation; the race replay flake and its successful exact-head reruns are recorded explicitly rather than hidden.
