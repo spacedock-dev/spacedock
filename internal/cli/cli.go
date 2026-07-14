@@ -493,6 +493,17 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
 				return nil
 			}
+			if len(args) >= 2 && args[0] == "inbox" && args[1] == "check" {
+				rest := args[2:]
+				decision := bridgeingress.CheckFromReader(stdin, bridgeingress.CheckOptions{
+					Host:      parseBridgeHost(rest),
+					Root:      parseBridgeStringFlag(rest, "--repo-root", ""),
+					Slug:      parseBridgeStringFlag(rest, "--slug", ""),
+					SessionID: parseBridgeStringFlag(rest, "--session-id", ""),
+				})
+				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(decision)
+				return nil
+			}
 			return nil
 		},
 	}
