@@ -85,6 +85,7 @@ type liveDriver interface {
 	run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) liveResult
 	model() string
 	home() string
+	firstOfficerBase() string
 	withStubPATH(dir string) liveDriver
 }
 
@@ -200,6 +201,9 @@ var _ liveDriver = claudeLiveRunner{}
 
 func (r claudeLiveRunner) model() string { return r.modelName }
 func (r claudeLiveRunner) home() string  { return r.homeDir }
+func (r claudeLiveRunner) firstOfficerBase() string {
+	return filepath.Join(r.pluginDir, "skills", "first-officer")
+}
 
 // withStubPATH returns a runner copy whose launched FO subprocess resolves a stub
 // binary in dir first (the shallow-boot scenario's stub `gh` reporting MERGED). It
@@ -221,7 +225,7 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOGateLoadBoundary(claudeFOLoadTrace(result.stream, "claude", nil)); err != nil {
+	if err := assertFOGateLoadBoundary(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
@@ -252,6 +256,9 @@ func runClaudeRejectionFlowScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertClaudeSingleEntityRejectionFlow(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
+	if err := assertFOWriteBeforeFirstMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -272,6 +279,9 @@ func runClaudeFeedback3CycleEscalationScenario(t *testing.T, runner liveDriver, 
 	if err := assertThirdCycleEscalation(after); err != nil {
 		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOWriteBeforeFirstMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -286,7 +296,7 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOTerminalLoadBoundary(claudeFOLoadTrace(result.stream, "claude", claudeTerminalAction("merge-check"))); err != nil {
+	if err := assertFOTerminalLoadBoundary(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), claudeTerminalAction("merge-check"))); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
@@ -314,6 +324,9 @@ func runClaudeSelfEvidenceMergeTriageScenario(t *testing.T, runner liveDriver, s
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOWriteBeforeObservedMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -334,6 +347,9 @@ func runClaudeSmallestSufficientMechanismScenario(t *testing.T, runner liveDrive
 	if err := assertClaudeSmallestSufficientMechanism(result.stream, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOWriteBeforeFirstMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 
@@ -353,6 +369,9 @@ func runClaudeKeepMovingScenario(t *testing.T, runner liveDriver, scenario share
 	result := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
 	if err := assertClaudeKeepMoving(result.stream, result.finalMessage, kmIndependent()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOWriteBeforeFirstMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
@@ -375,7 +394,7 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOFilingLoadBoundary(claudeFOLoadTrace(result.stream, "claude", claudeFilingAction(filingSlug))); err != nil {
+	if err := assertFOFilingLoadBoundary(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), claudeFilingAction(filingSlug))); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
@@ -408,6 +427,9 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOWriteBeforeFirstMutation(claudeFOLoadTrace(result.stream, mustFOLoadSpec(t, runner.firstOfficerBase(), "claude"), nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
 	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {

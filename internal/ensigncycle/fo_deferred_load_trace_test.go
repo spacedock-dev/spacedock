@@ -5,6 +5,8 @@ package ensigncycle
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -16,16 +18,75 @@ const (
 	foAdapter    = "adapter"
 )
 
-var foCoreSuffixes = map[string]string{
-	foSharedCore: "/skills/first-officer/references/first-officer-shared-core.md",
-	foWriteCore:  "/skills/first-officer/references/fo-write-core.md",
-	foMergeCore:  "/skills/first-officer/references/fo-merge-core.md",
+var foCoreFiles = map[string]string{
+	foSharedCore: "first-officer-shared-core.md",
+	foWriteCore:  "fo-write-core.md",
+	foMergeCore:  "fo-merge-core.md",
+}
+
+// foLoadSpec binds the observer to the loader-supplied base for one installed
+// first-officer skill. Codex also uses the canonical file bodies to distinguish a
+// full command result from path-only or partial output.
+type foLoadSpec struct {
+	paths  map[string]string
+	bodies map[string]string
+}
+
+func readFOLoadSpec(firstOfficerBase, host string) (foLoadSpec, error) {
+	files := make(map[string]string, len(foCoreFiles)+1)
+	for core, name := range foCoreFiles {
+		files[core] = name
+	}
+	files[foAdapter] = host + "-first-officer-runtime.md"
+
+	spec := foLoadSpec{paths: map[string]string{}, bodies: map[string]string{}}
+	for core, name := range files {
+		path := filepath.Join(firstOfficerBase, "references", name)
+		body, err := os.ReadFile(path)
+		if err != nil {
+			return foLoadSpec{}, fmt.Errorf("read canonical %s core %s: %w", core, path, err)
+		}
+		spec.paths[core] = path
+		spec.bodies[core] = string(body)
+	}
+	return spec, nil
+}
+
+func mustFOLoadSpec(t testing.TB, firstOfficerBase, host string) foLoadSpec {
+	t.Helper()
+	spec, err := readFOLoadSpec(firstOfficerBase, host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return spec
+}
+
+func fixtureFOLoadSpec(t testing.TB, host string) foLoadSpec {
+	t.Helper()
+	base := filepath.Join(t.TempDir(), "skills", "first-officer")
+	refs := filepath.Join(base, "references")
+	if err := os.MkdirAll(refs, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	files := make(map[string]string, len(foCoreFiles)+1)
+	for core, name := range foCoreFiles {
+		files[core] = name
+	}
+	files[foAdapter] = host + "-first-officer-runtime.md"
+	for core, name := range files {
+		body := []byte("# " + host + " " + core + " canonical body\n\nfull-file sentinel for " + core + "\n")
+		if err := os.WriteFile(filepath.Join(refs, name), body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return mustFOLoadSpec(t, base, host)
 }
 
 type foLoadTrace struct {
 	completed  map[string][]int
 	attempted  map[string][]int
 	actions    []int
+	mutations  []int
 	violations []string
 }
 
@@ -33,34 +94,60 @@ func newFOLoadTrace() foLoadTrace {
 	return foLoadTrace{completed: map[string][]int{}, attempted: map[string][]int{}}
 }
 
-// observeLoad records only fields the hosts already emit: a canonical instruction
-// path and whether its host event completed successfully. Counting basename and
-// suffix occurrences rejects alternate-path retries without interpreting a shell.
-func (tr *foLoadTrace) observeLoad(input, host string, line int, completed bool) []string {
-	targets := make(map[string]string, len(foCoreSuffixes)+1)
-	for core, suffix := range foCoreSuffixes {
-		targets[core] = suffix
-	}
-	targets[foAdapter] = "/skills/first-officer/references/" + host + "-first-officer-runtime.md"
+func isPathByte(b byte) bool {
+	return b == '/' || b == '.' || b == '_' || b == '-' || b == '~' ||
+		b >= '0' && b <= '9' || b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z'
+}
 
+// containsExactPath accepts the literal installed path only at non-path
+// boundaries. This rejects a same-suffix alternate root and path.bak without
+// needing to parse shell syntax.
+func containsExactPath(input, path string) bool {
+	for from := 0; from <= len(input)-len(path); {
+		i := strings.Index(input[from:], path)
+		if i < 0 {
+			return false
+		}
+		i += from
+		end := i + len(path)
+		beforeOK := i == 0 || !isPathByte(input[i-1])
+		afterOK := end == len(input) || !isPathByte(input[end])
+		if beforeOK && afterOK {
+			return true
+		}
+		from = i + 1
+	}
+	return false
+}
+
+// mentionedCores validates exact installed paths without interpreting command
+// grammar. A basename mention at any other root is a hard evidence violation.
+func (tr *foLoadTrace) mentionedCores(input string, spec foLoadSpec, line int) []string {
 	var found []string
-	for core, suffix := range targets {
-		base := strings.TrimSuffix(suffix[strings.LastIndex(suffix, "/")+1:], ".md")
-		mentions := strings.Count(input, base)
-		if mentions == 0 {
+	for core, path := range spec.paths {
+		base := strings.TrimSuffix(filepath.Base(path), ".md")
+		if !strings.Contains(input, base) {
 			continue
 		}
-		if strings.Count(input, suffix) != mentions {
-			tr.violations = append(tr.violations, fmt.Sprintf("line %d names %s outside its canonical first-officer reference path", line, base))
+		if !containsExactPath(input, path) {
+			tr.violations = append(tr.violations, fmt.Sprintf("line %d names %s outside loader-supplied path %s", line, base, path))
 			continue
 		}
 		found = append(found, core)
-		tr.attempted[core] = append(tr.attempted[core], line)
-		if completed {
-			tr.completed[core] = append(tr.completed[core], line)
-		}
 	}
 	return found
+}
+
+func (tr *foLoadTrace) attempt(cores []string, line int) {
+	for _, core := range cores {
+		tr.attempted[core] = append(tr.attempted[core], line)
+	}
+}
+
+func (tr *foLoadTrace) complete(cores []string, line int) {
+	for _, core := range cores {
+		tr.completed[core] = append(tr.completed[core], line)
+	}
 }
 
 func inputHuntsDeferredCore(input string) bool {
@@ -76,7 +163,46 @@ func inputHuntsDeferredCore(input string) bool {
 	return false
 }
 
-func claudeFOLoadTrace(stream, host string, action func(name, command string) bool) foLoadTrace {
+// commandStartsFOMutation recognizes only the repository's supported mutation
+// surfaces. It is deliberately a fixed marker check over an already-emitted host
+// field, not a shell parser or an attempt to model arbitrary commands.
+func commandStartsFOMutation(command string) bool {
+	lower := strings.ToLower(command)
+	padded := " " + strings.Join(strings.Fields(lower), " ") + " "
+	if strings.Contains(lower, "spacedock") {
+		if strings.Contains(lower, "--set") && strings.Contains(lower, "status") {
+			return true
+		}
+		if strings.Contains(padded, " new ") {
+			return true
+		}
+		if strings.Contains(lower, "dispatch build") && strings.Contains(lower, "--advance") {
+			return true
+		}
+		if strings.Contains(lower, "state ready") {
+			return true
+		}
+	}
+	for _, marker := range []string{"apply_patch", "applypatch", "git commit", "git mv", "git rm"} {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	return strings.Contains(lower, "_archive") && strings.Contains(padded, " mv ")
+}
+
+func claudeToolStartsFOMutation(block *streamBlock) bool {
+	switch block.Name {
+	case "Edit", "Write", "MultiEdit", "NotebookEdit":
+		return true
+	case "Bash":
+		return commandStartsFOMutation(block.Input.Command)
+	default:
+		return false
+	}
+}
+
+func claudeFOLoadTrace(stream string, spec foLoadSpec, action func(name, command string) bool) foLoadTrace {
 	trace := newFOLoadTrace()
 	pending := map[string][]string{}
 	for lineNo, line := range strings.Split(stream, "\n") {
@@ -92,8 +218,29 @@ func claudeFOLoadTrace(stream, host string, action func(name, command string) bo
 			if strings.Contains(block.Input.Skill, "fo-write-core") || strings.Contains(block.Input.Skill, "fo-merge-core") {
 				trace.violations = append(trace.violations, fmt.Sprintf("line %d invokes a deferred core through a wrapper skill", lineNo+1))
 			}
-			if cores := trace.observeLoad(input, host, lineNo+1, false); len(cores) > 0 {
-				pending[block.ID] = cores
+			cores := trace.mentionedCores(input, spec, lineNo+1)
+			if len(cores) > 0 {
+				if block.Name != "Read" {
+					trace.violations = append(trace.violations, fmt.Sprintf("line %d mentions a first-officer core outside Claude Read", lineNo+1))
+				} else {
+					var exact []string
+					for _, core := range cores {
+						if block.Input.FilePath == spec.paths[core] {
+							exact = append(exact, core)
+						}
+					}
+					trace.attempt(exact, lineNo+1)
+					if block.Input.Offset != nil || block.Input.Limit != nil {
+						trace.violations = append(trace.violations, fmt.Sprintf("line %d uses a partial Claude Read for %v", lineNo+1, exact))
+					} else if block.ID == "" {
+						trace.violations = append(trace.violations, fmt.Sprintf("line %d has an uncorrelatable Claude Read", lineNo+1))
+					} else {
+						pending[block.ID] = exact
+					}
+				}
+			}
+			if claudeToolStartsFOMutation(block) {
+				trace.mutations = append(trace.mutations, lineNo+1)
 			}
 			if action != nil && action(block.Name, block.Input.Command) {
 				trace.actions = append(trace.actions, lineNo+1)
@@ -101,9 +248,7 @@ func claudeFOLoadTrace(stream, host string, action func(name, command string) bo
 		}
 		for _, block := range entry.resultBlocks() {
 			if !block.IsError {
-				for _, core := range pending[block.ToolUseID] {
-					trace.completed[core] = append(trace.completed[core], lineNo+1)
-				}
+				trace.complete(pending[block.ToolUseID], lineNo+1)
 			}
 			delete(pending, block.ToolUseID)
 		}
@@ -114,32 +259,48 @@ func claudeFOLoadTrace(stream, host string, action func(name, command string) bo
 type codexFOTraceEntry struct {
 	Type string `json:"type"`
 	Item struct {
-		Type     string `json:"type"`
-		Command  string `json:"command"`
-		Status   string `json:"status"`
-		ExitCode *int   `json:"exit_code"`
+		Type             string `json:"type"`
+		Command          string `json:"command"`
+		Status           string `json:"status"`
+		AggregatedOutput string `json:"aggregated_output"`
+		ExitCode         *int   `json:"exit_code"`
 	} `json:"item"`
 }
 
-func codexFOLoadTrace(jsonl, host string, action func(string) bool) foLoadTrace {
+func codexFOLoadTrace(jsonl string, spec foLoadSpec, action func(string) bool) foLoadTrace {
 	trace := newFOLoadTrace()
 	for lineNo, line := range strings.Split(jsonl, "\n") {
 		var event codexFOTraceEntry
-		if json.Unmarshal([]byte(line), &event) != nil || event.Item.Type != "command_execution" {
+		if json.Unmarshal([]byte(line), &event) != nil {
 			continue
 		}
-		if event.Type == "item.started" {
-			if inputHuntsDeferredCore(event.Item.Command) {
-				trace.violations = append(trace.violations, fmt.Sprintf("line %d hunts for a deferred core", lineNo+1))
-			}
-			trace.observeLoad(event.Item.Command, host, lineNo+1, false)
-			if action != nil && action(event.Item.Command) {
-				trace.actions = append(trace.actions, lineNo+1)
-			}
+		if event.Item.Type == "file_change" && (event.Type == "item.started" || event.Type == "item.completed") {
+			trace.mutations = append(trace.mutations, lineNo+1)
 			continue
 		}
-		if event.Type == "item.completed" && event.Item.Status == "completed" && event.Item.ExitCode != nil && *event.Item.ExitCode == 0 {
-			trace.observeLoad(event.Item.Command, host, lineNo+1, true)
+		if event.Item.Type != "command_execution" || (event.Type != "item.started" && event.Type != "item.completed") {
+			continue
+		}
+		if inputHuntsDeferredCore(event.Item.Command) {
+			trace.violations = append(trace.violations, fmt.Sprintf("line %d hunts for a deferred core", lineNo+1))
+		}
+		cores := trace.mentionedCores(event.Item.Command, spec, lineNo+1)
+		trace.attempt(cores, lineNo+1)
+		if commandStartsFOMutation(event.Item.Command) {
+			trace.mutations = append(trace.mutations, lineNo+1)
+		}
+		if action != nil && action(event.Item.Command) {
+			trace.actions = append(trace.actions, lineNo+1)
+		}
+		if event.Type != "item.completed" || event.Item.Status != "completed" || event.Item.ExitCode == nil || *event.Item.ExitCode != 0 {
+			continue
+		}
+		for _, core := range cores {
+			if strings.Contains(event.Item.AggregatedOutput, spec.bodies[core]) {
+				trace.complete([]string{core}, lineNo+1)
+				continue
+			}
+			trace.violations = append(trace.violations, fmt.Sprintf("line %d did not return the full canonical %s body", lineNo+1, core))
 		}
 	}
 	return trace
@@ -169,8 +330,28 @@ func assertFOGateLoadBoundary(trace foLoadTrace) error {
 	return nil
 }
 
-func assertFOFilingLoadBoundary(trace foLoadTrace) error {
+func assertFOWriteBeforeFirstMutation(trace foLoadTrace) error {
 	if err := traceViolation(trace); err != nil {
+		return err
+	}
+	if len(trace.mutations) == 0 {
+		return fmt.Errorf("mutating journey emitted no supported FO-authored mutation event")
+	}
+	if len(trace.completed[foWriteCore]) == 0 || trace.completed[foWriteCore][0] >= trace.mutations[0] {
+		return fmt.Errorf("write core did not complete before the first FO-authored mutation (write=%v mutation=%v)", trace.completed[foWriteCore], trace.mutations)
+	}
+	return nil
+}
+
+func assertFOWriteBeforeObservedMutation(trace foLoadTrace) error {
+	if len(trace.mutations) == 0 {
+		return traceViolation(trace)
+	}
+	return assertFOWriteBeforeFirstMutation(trace)
+}
+
+func assertFOFilingLoadBoundary(trace foLoadTrace) error {
+	if err := assertFOWriteBeforeFirstMutation(trace); err != nil {
 		return err
 	}
 	if len(trace.actions) == 0 {
@@ -186,7 +367,7 @@ func assertFOFilingLoadBoundary(trace foLoadTrace) error {
 }
 
 func assertFOTerminalLoadBoundary(trace foLoadTrace) error {
-	if err := traceViolation(trace); err != nil {
+	if err := assertFOWriteBeforeFirstMutation(trace); err != nil {
 		return err
 	}
 	if len(trace.actions) == 0 || len(trace.completed[foWriteCore]) == 0 || len(trace.completed[foMergeCore]) == 0 {
@@ -220,11 +401,15 @@ func codexTerminalAction(slug string) func(string) bool {
 }
 
 func codexBoundaryEvent(kind, command, status string, exitCode int) string {
-	body, _ := json.Marshal(map[string]any{"type": kind, "item": map[string]any{"type": "command_execution", "command": command, "status": status, "exit_code": exitCode}})
+	return codexBoundaryEventWithOutput(kind, command, status, exitCode, "")
+}
+
+func codexBoundaryEventWithOutput(kind, command, status string, exitCode int, output string) string {
+	body, _ := json.Marshal(map[string]any{"type": kind, "item": map[string]any{"type": "command_execution", "command": command, "status": status, "exit_code": exitCode, "aggregated_output": output}})
 	return string(body)
 }
 
-func claudeBoundaryEvent(id, kind, name string, input map[string]string) string {
+func claudeBoundaryEvent(id, kind, name string, input map[string]any) string {
 	block := map[string]any{"type": kind}
 	if kind == "tool_use" {
 		block["id"], block["name"], block["input"] = id, name, input
@@ -240,20 +425,20 @@ func claudeBoundaryEvent(id, kind, name string, input map[string]string) string 
 }
 
 func TestCodexFODeferredLoadTraceBoundaries(t *testing.T) {
-	root := "/cache/skills/first-officer/references/"
-	boot := codexBoundaryEvent("item.completed", "cat "+root+"first-officer-shared-core.md "+root+"codex-first-officer-runtime.md", "completed", 0)
-	write := codexBoundaryEvent("item.completed", "cat "+root+"fo-write-core.md", "completed", 0)
-	merge := codexBoundaryEvent("item.completed", "cat "+root+"fo-merge-core.md", "completed", 0)
+	spec := fixtureFOLoadSpec(t, "codex")
+	boot := codexBoundaryEventWithOutput("item.completed", "cat "+spec.paths[foSharedCore]+" "+spec.paths[foAdapter], "completed", 0, spec.bodies[foSharedCore]+spec.bodies[foAdapter])
+	write := codexBoundaryEventWithOutput("item.completed", "cat "+spec.paths[foWriteCore], "completed", 0, spec.bodies[foWriteCore])
+	merge := codexBoundaryEventWithOutput("item.completed", "cat "+spec.paths[foMergeCore], "completed", 0, spec.bodies[foMergeCore])
 	filing := codexBoundaryEvent("item.started", "spacedock new wire-the-thing", "in_progress", 0)
 	terminal := codexBoundaryEvent("item.started", "spacedock status --set merge-check status=done", "in_progress", 0)
 
-	if err := assertFOGateLoadBoundary(codexFOLoadTrace(boot, "codex", nil)); err != nil {
+	if err := assertFOGateLoadBoundary(codexFOLoadTrace(boot, spec, nil)); err != nil {
 		t.Fatalf("cold gate: %v", err)
 	}
-	if err := assertFOFilingLoadBoundary(codexFOLoadTrace(strings.Join([]string{boot, write, filing}, "\n"), "codex", codexFilingAction("wire-the-thing"))); err != nil {
+	if err := assertFOFilingLoadBoundary(codexFOLoadTrace(strings.Join([]string{boot, write, filing}, "\n"), spec, codexFilingAction("wire-the-thing"))); err != nil {
 		t.Fatalf("filing: %v", err)
 	}
-	if err := assertFOTerminalLoadBoundary(codexFOLoadTrace(strings.Join([]string{boot, write, merge, terminal}, "\n"), "codex", codexTerminalAction("merge-check"))); err != nil {
+	if err := assertFOTerminalLoadBoundary(codexFOLoadTrace(strings.Join([]string{boot, write, merge, terminal}, "\n"), spec, codexTerminalAction("merge-check"))); err != nil {
 		t.Fatalf("terminal: %v", err)
 	}
 
@@ -262,11 +447,15 @@ func TestCodexFODeferredLoadTraceBoundaries(t *testing.T) {
 		trace foLoadTrace
 		check func(foLoadTrace) error
 	}{
-		{"eager gate", codexFOLoadTrace(boot+"\n"+write, "codex", nil), assertFOGateLoadBoundary},
-		{"late write", codexFOLoadTrace(strings.Join([]string{boot, filing, write}, "\n"), "codex", codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
-		{"reversed terminal", codexFOLoadTrace(strings.Join([]string{boot, merge, write, terminal}, "\n"), "codex", codexTerminalAction("merge-check")), assertFOTerminalLoadBoundary},
-		{"filesystem hunt", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEvent("item.started", `find / -iname "fo-write-core*"`, "in_progress", 0), write, filing}, "\n"), "codex", codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
-		{"alternate path", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEvent("item.started", "cat /tmp/fo-write-core.md", "in_progress", 0), write, filing}, "\n"), "codex", codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"eager gate", codexFOLoadTrace(boot+"\n"+write, spec, nil), assertFOGateLoadBoundary},
+		{"late write", codexFOLoadTrace(strings.Join([]string{boot, filing, write}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"reversed terminal", codexFOLoadTrace(strings.Join([]string{boot, merge, write, terminal}, "\n"), spec, codexTerminalAction("merge-check")), assertFOTerminalLoadBoundary},
+		{"filesystem hunt", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEvent("item.started", `find / -iname "fo-write-core*"`, "in_progress", 0), write, filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"alternate path", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEvent("item.started", "cat /tmp/fo-write-core.md", "in_progress", 0), write, filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"path only", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEventWithOutput("item.completed", "printf "+spec.paths[foWriteCore], "completed", 0, spec.paths[foWriteCore]), filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"partial read", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEventWithOutput("item.completed", "head -n 1 "+spec.paths[foWriteCore], "completed", 0, strings.SplitN(spec.bodies[foWriteCore], "\n", 2)[0]+"\n"), filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"same suffix alternate root", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEventWithOutput("item.completed", "cat /alternate/skills/first-officer/references/fo-write-core.md", "completed", 0, spec.bodies[foWriteCore]), filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
+		{"early ordinary mutation", codexFOLoadTrace(strings.Join([]string{boot, codexBoundaryEvent("item.started", "spacedock status --set ordinary status=review", "in_progress", 0), write, filing}, "\n"), spec, codexFilingAction("wire-the-thing")), assertFOFilingLoadBoundary},
 	}
 	for _, tc := range bad {
 		if err := tc.check(tc.trace); err == nil {
@@ -276,23 +465,41 @@ func TestCodexFODeferredLoadTraceBoundaries(t *testing.T) {
 }
 
 func TestClaudeFODeferredLoadTraceBoundaries(t *testing.T) {
-	root := "/cache/skills/first-officer/references/"
+	spec := fixtureFOLoadSpec(t, "claude")
+	root := filepath.Dir(spec.paths[foWriteCore]) + string(os.PathSeparator)
 	read := func(id, name string) []string {
 		return []string{
-			claudeBoundaryEvent(id, "tool_use", "Read", map[string]string{"file_path": root + name}),
+			claudeBoundaryEvent(id, "tool_use", "Read", map[string]any{"file_path": root + name}),
 			claudeBoundaryEvent(id, "tool_result", "", nil),
 		}
 	}
 	boot := append(read("shared", "first-officer-shared-core.md"), read("adapter", "claude-first-officer-runtime.md")...)
 	write, merge := read("write", "fo-write-core.md"), read("merge", "fo-merge-core.md")
-	terminal := claudeBoundaryEvent("terminal", "tool_use", "Bash", map[string]string{"command": "spacedock status --set merge-check status=done"})
+	terminal := claudeBoundaryEvent("terminal", "tool_use", "Bash", map[string]any{"command": "spacedock status --set merge-check status=done"})
 	lines := append(append(append([]string{}, boot...), write...), merge...)
 	lines = append(lines, terminal)
-	if err := assertFOTerminalLoadBoundary(claudeFOLoadTrace(strings.Join(lines, "\n"), "claude", claudeTerminalAction("merge-check"))); err != nil {
+	if err := assertFOTerminalLoadBoundary(claudeFOLoadTrace(strings.Join(lines, "\n"), spec, claudeTerminalAction("merge-check"))); err != nil {
 		t.Fatalf("terminal: %v", err)
 	}
-	wrapper := claudeBoundaryEvent("wrapper", "tool_use", "Skill", map[string]string{"skill": "spacedock:fo-write-core"})
-	if err := traceViolation(claudeFOLoadTrace(strings.Join(append(boot, wrapper), "\n"), "claude", nil)); err == nil {
+	wrapper := claudeBoundaryEvent("wrapper", "tool_use", "Skill", map[string]any{"skill": "spacedock:fo-write-core"})
+	if err := traceViolation(claudeFOLoadTrace(strings.Join(append(boot, wrapper), "\n"), spec, nil)); err == nil {
 		t.Fatal("wrapper-skill invocation must fail")
+	}
+
+	filing := claudeBoundaryEvent("filing", "tool_use", "Bash", map[string]any{"command": "spacedock new wire-the-thing"})
+	bad := []struct {
+		name  string
+		lines []string
+	}{
+		{"path only", []string{claudeBoundaryEvent("fake", "tool_use", "Bash", map[string]any{"command": "printf " + root + "fo-write-core.md"}), claudeBoundaryEvent("fake", "tool_result", "", nil), filing}},
+		{"partial read", []string{claudeBoundaryEvent("partial", "tool_use", "Read", map[string]any{"file_path": root + "fo-write-core.md", "limit": 1}), claudeBoundaryEvent("partial", "tool_result", "", nil), filing}},
+		{"same suffix alternate root", []string{claudeBoundaryEvent("alternate", "tool_use", "Read", map[string]any{"file_path": "/alternate/skills/first-officer/references/fo-write-core.md"}), claudeBoundaryEvent("alternate", "tool_result", "", nil), filing}},
+		{"early ordinary mutation", append([]string{claudeBoundaryEvent("early", "tool_use", "Bash", map[string]any{"command": "spacedock status --set ordinary status=review"})}, append(write, filing)...)},
+	}
+	for _, tc := range bad {
+		lines := append(append([]string{}, boot...), tc.lines...)
+		if err := assertFOFilingLoadBoundary(claudeFOLoadTrace(strings.Join(lines, "\n"), spec, claudeFilingAction("wire-the-thing"))); err == nil {
+			t.Errorf("%s trace must fail", tc.name)
+		}
 	}
 }

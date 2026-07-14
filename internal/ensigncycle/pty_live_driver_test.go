@@ -58,6 +58,9 @@ var _ liveDriver = ptyLiveDriver{}
 
 func (d ptyLiveDriver) model() string { return d.modelName }
 func (d ptyLiveDriver) home() string  { return d.homeDir }
+func (d ptyLiveDriver) firstOfficerBase() string {
+	return filepath.Join(d.pluginDir, "skills", "first-officer")
+}
 
 // withStubPATH returns a driver copy whose launched FO subprocess resolves a stub
 // binary in dir first. It never mutates the receiver's env so parallel runs sharing

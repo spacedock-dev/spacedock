@@ -608,6 +608,10 @@ type streamToolInput struct {
 	// Skill is the target of a Skill tool_use. Deferred write/merge cores are
 	// references, so the lazy-load observer rejects wrapper-skill invocations.
 	Skill string `json:"skill"`
+	// Offset and Limit are optional Read bounds. Their presence distinguishes a
+	// partial Read from the host-native full-file Read required for deferred cores.
+	Offset *int `json:"offset"`
+	Limit  *int `json:"limit"`
 }
 
 // toolUseBlock returns the first tool_use block of an assistant entry, or nil —
