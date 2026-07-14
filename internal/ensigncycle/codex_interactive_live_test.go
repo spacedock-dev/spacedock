@@ -22,6 +22,18 @@ const codexInteractiveBootBudget = 8 * time.Minute
 // first-officer bootstrap, the durable rollout supplies the TUI source marker and
 // task-complete turn end, and the still-live tmux session proves greet-and-stop.
 func (r codexLiveRunner) runInteractiveGreet(t *testing.T, scenario sharedRuntimeScenario, workflowRoot string) (codexScenarioResult, error) {
+	return r.runInteractiveSession(t, scenario, workflowRoot, "")
+}
+
+// runInteractiveEngage exercises the real two-turn boundary: the launcher-owned
+// greet reaches a committed idle first, then the captain sends only the literal
+// interaction verb. The recovery state is discovered by engage, not disclosed in
+// a headless scenario prompt that can cue eager owner reads before convergence.
+func (r codexLiveRunner) runInteractiveEngage(t *testing.T, scenario sharedRuntimeScenario, workflowRoot string) (codexScenarioResult, error) {
+	return r.runInteractiveSession(t, scenario, workflowRoot, "engage")
+}
+
+func (r codexLiveRunner) runInteractiveSession(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, followup string) (codexScenarioResult, error) {
 	t.Helper()
 	artifactDir := codexAttemptArtifactDir(r.artifactRoot, scenario.name+"-interactive", 0)
 	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
@@ -67,6 +79,21 @@ func (r codexLiveRunner) runInteractiveGreet(t *testing.T, scenario sharedRuntim
 		pane := captureTmuxPane(session)
 		_ = os.WriteFile(filepath.Join(artifactDir, "codex-pane-at-stall.txt"), []byte(pane), 0o644)
 		return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("%w\nCodex pane:\n%s", err, pane)
+	}
+	if followup != "" {
+		stream, readErr := os.ReadFile(rolloutPath)
+		if readErr != nil {
+			return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("read interactive Codex rollout before follow-up: %w", readErr)
+		}
+		completedBefore := codexRolloutTaskCompleteCount(string(stream))
+		if err := sendCodexInteractiveInput(session, followup); err != nil {
+			return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("send interactive Codex follow-up: %w", err)
+		}
+		if err := waitForCodexInteractiveNextIdle(rolloutPath, completedBefore, proc, codexInteractiveBootBudget); err != nil {
+			pane := captureTmuxPane(session)
+			_ = os.WriteFile(filepath.Join(artifactDir, "codex-pane-at-followup-stall.txt"), []byte(pane), 0o644)
+			return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("%w\nCodex pane:\n%s", err, pane)
+		}
 	}
 
 	streamBytes, err := os.ReadFile(rolloutPath)
@@ -180,6 +207,49 @@ func waitForCodexInteractiveIdle(path string, proc procPoller, budget time.Durat
 		}
 		time.Sleep(ptyPollInterval)
 	}
+}
+
+func codexRolloutTaskCompleteCount(stream string) int {
+	count := 0
+	for _, record := range parseCodexRollout(stream) {
+		if record.Type == "event_msg" && record.Payload.Type == "task_complete" {
+			count++
+		}
+	}
+	return count
+}
+
+func waitForCodexInteractiveNextIdle(path string, completedBefore int, proc procPoller, budget time.Duration) error {
+	deadline := time.Now().Add(budget)
+	consecutive := 0
+	for {
+		if data, err := os.ReadFile(path); err == nil && codexRolloutTaskCompleteCount(string(data)) > completedBefore && codexRolloutReachedIdle(string(data)) {
+			consecutive++
+			if consecutive >= ptyIdleStablePolls {
+				return nil
+			}
+		} else {
+			consecutive = 0
+		}
+		if _, exited := proc.poll(); exited {
+			return fmt.Errorf("interactive Codex process exited before completing its follow-up turn")
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("no completed interactive Codex follow-up within %s", budget)
+		}
+		time.Sleep(ptyPollInterval)
+	}
+}
+
+func sendCodexInteractiveInput(session, input string) error {
+	if out, err := exec.Command("tmux", "send-keys", "-t", session, "-l", input).CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux send-keys (literal): %w (%s)", err, out)
+	}
+	time.Sleep(300 * time.Millisecond)
+	if out, err := exec.Command("tmux", "send-keys", "-t", session, "Enter").CombinedOutput(); err != nil {
+		return fmt.Errorf("tmux send-keys (enter): %w (%s)", err, out)
+	}
+	return nil
 }
 
 func captureTmuxPane(session string) string {

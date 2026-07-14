@@ -397,7 +397,7 @@ func runCodexMergeModRecoveryScenario(t *testing.T, runner codexLiveRunner, scen
 	t.Helper()
 	workflowRoot := t.TempDir()
 	fixture := writeMergeModRecoveryWorkflow(t, workflowRoot)
-	result, err := runner.run(t, scenario, workflowRoot, mergeModRecoveryPrompt(workflowRoot), 0)
+	result, err := runner.runInteractiveEngage(t, scenario, workflowRoot)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -409,10 +409,9 @@ func runCodexMergeModRecoveryScenario(t *testing.T, runner codexLiveRunner, scen
 	if err := assertMergeModRecovery(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "recovery"); err != nil {
+	if err := assertFOReferenceJourney(normalizeCodexInteractiveFOReferenceEvents(result.jsonl), "recovery"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
