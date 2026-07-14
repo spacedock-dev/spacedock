@@ -3,6 +3,7 @@
 package bridgeingress
 
 import (
+	"bufio"
 	"encoding/json"
 	"io"
 	"os"
@@ -109,7 +110,11 @@ func Check(opts CheckOptions) HookDecision {
 	if opts.StopHookActive {
 		return HookDecision{}
 	}
-	root := absRootOr(opts.Root)
+	// Resolve the SAME _bridge/ root the egress producer writes to: walk up to the
+	// nearest .git so a Stop-payload cwd that is a repo subdir still finds the
+	// fleet root's inbox (otherwise check reads an empty subdir _bridge/ → {} →
+	// Claude intent silently undelivered). Mirrors bridgeegress.canonicalBridgeRoot.
+	root := gitRootOr(absRootOr(opts.Root))
 	if _, err := os.Stat(filepath.Join(root, "_bridge", "inbox.jsonl")); err != nil {
 		return HookDecision{}
 	}
@@ -233,28 +238,36 @@ func readInboxFull(path string) ([]fullInboxRecord, int, error) {
 
 	var out []fullInboxRecord
 	lineNo := 0
-	scanner := lineScanner(f)
-	for scanner.Scan() {
-		lineNo++
-		if strings.TrimSpace(scanner.Text()) == "" {
-			continue
+	r := bufio.NewReader(f)
+	for {
+		raw, rerr := r.ReadString('\n')
+		// Only a newline-TERMINATED line counts toward the physical line number —
+		// Bridge's read-back (`fointents.go`) and the FO's `wc -l` both count
+		// newlines, so a torn trailing fragment at EOF is skipped, not counted.
+		// Counting it here would over-report pending by one and force a spurious
+		// Stop-block turn.
+		if strings.HasSuffix(raw, "\n") {
+			lineNo++ // 1-based; advances even for a blank/malformed line
+			if trimmed := strings.TrimSpace(raw); trimmed != "" {
+				var rec fullInboxRecord
+				if json.Unmarshal([]byte(trimmed), &rec) == nil {
+					// Preserve the exact on-disk ts string for verbatim round-trip.
+					var tsOnly struct {
+						TS string `json:"ts"`
+					}
+					_ = json.Unmarshal([]byte(trimmed), &tsOnly)
+					rec.RawTS = tsOnly.TS
+					rec.Line = lineNo
+					out = append(out, rec)
+				}
+			}
 		}
-		var rec fullInboxRecord
-		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
-			continue
+		if rerr != nil {
+			if rerr == io.EOF {
+				break
+			}
+			return nil, 0, rerr
 		}
-		// Preserve the exact on-disk ts string so a downstream reader can round-trip
-		// it verbatim rather than reformatting to UTC.
-		var raw struct {
-			TS string `json:"ts"`
-		}
-		_ = json.Unmarshal(scanner.Bytes(), &raw)
-		rec.RawTS = raw.TS
-		rec.Line = lineNo
-		out = append(out, rec)
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, 0, err
 	}
 	return out, lineNo, nil
 }
@@ -271,4 +284,23 @@ func absRootOr(root string) string {
 		return abs
 	}
 	return root
+}
+
+// gitRootOr walks up from start to the nearest directory containing a `.git`
+// entry (a dir, or a file for a linked worktree), returning that directory —
+// the fleet root the seam files live under. Returns start unchanged when no
+// `.git` is found. Mirrors bridgeegress.canonicalBridgeRoot so the check and the
+// egress producer resolve the identical `_bridge/` root.
+func gitRootOr(start string) string {
+	dir := start
+	for {
+		if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return start
+		}
+		dir = parent
+	}
 }

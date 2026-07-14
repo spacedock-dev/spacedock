@@ -441,7 +441,18 @@ func loadReplies(root string) map[string]bool {
 		if err := json.Unmarshal(scanner.Bytes(), &rec); err != nil {
 			continue
 		}
-		if rec.Schema != 1 || rec.Target == "" || rec.InReplyToLine <= 0 || rec.IntentKind == "" {
+		// Accept an ack correlated by strong id (what the seam mod writes) OR the
+		// legacy line form; require an intent kind and a target. Only a TERMINAL
+		// ack means the intent is done — an interim `acting`/`received` leaves it
+		// pending, so those do not suppress it.
+		if rec.Schema != 1 || rec.Target == "" || rec.IntentKind == "" {
+			continue
+		}
+		if rec.InReplyToID == "" && rec.InReplyToLine <= 0 {
+			continue
+		}
+		switch rec.Status {
+		case "", "acting", "received", "queued":
 			continue
 		}
 		if !safeSlugPattern.MatchString(rec.Target) || rec.Target == "." || rec.Target == ".." {
@@ -452,12 +463,16 @@ func loadReplies(root string) map[string]bool {
 	return out
 }
 
+// replyKey correlates an inbox intent to its ack. The primary key is the strong
+// id (`in_reply_to_id`), which is what the seam mod writes (contract §2.3) and
+// what Bridge's own lifecycle reader prefers; the physical line is NOT part of
+// the id key, so an id-only ack still matches. Only when no id exists does it
+// fall back to the legacy line+ts form.
 func replyKey(rec inboxRecord, target string) string {
-	id := rec.ID
-	if id == "" {
-		id = rec.TS.Format(time.RFC3339Nano)
+	if rec.ID != "" {
+		return "id\x00" + rec.ID + "\x00" + rec.Kind + "\x00" + target
 	}
-	return strconv.Itoa(rec.Line) + "\x00" + id + "\x00" + rec.Kind + "\x00" + target
+	return "line\x00" + strconv.Itoa(rec.Line) + "\x00" + rec.TS.Format(time.RFC3339Nano) + "\x00" + rec.Kind + "\x00" + target
 }
 
 func targetsFor(root string, rec inboxRecord, members []string) []string {

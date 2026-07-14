@@ -12,6 +12,7 @@ import (
 // The full drain protocol lives in the bridge-seam mod; these speak it too.
 var bridgeSeamProseFiles = []string{
 	"mods/bridge-seam.md",
+	"docs/dev/_mods/bridge-seam.md",
 	"skills/first-officer/references/first-officer-shared-core.md",
 	"skills/first-officer/references/fo-dispatch-core.md",
 	"skills/first-officer/references/fo-fleet.md",
@@ -63,6 +64,18 @@ func TestBridgeSeamReferenceClosure(t *testing.T) {
 		if body := readRepoFile(t, filepath.FromSlash(rel)); strings.TrimSpace(body) == "" {
 			t.Errorf("required seam file %s is missing or empty", rel)
 		}
+	}
+}
+
+// TestBridgeSeamDogfoodCopyMatchesCanonical is a dedup gate: the dogfood install
+// copy must be byte-identical to the canonical mod, so drift (e.g. a reworded
+// line that reintroduces a dropped-verb string on only one path) cannot slip the
+// per-file gates.
+func TestBridgeSeamDogfoodCopyMatchesCanonical(t *testing.T) {
+	canonical := readRepoFile(t, filepath.FromSlash("mods/bridge-seam.md"))
+	dogfood := readRepoFile(t, filepath.FromSlash("docs/dev/_mods/bridge-seam.md"))
+	if canonical != dogfood {
+		t.Error("docs/dev/_mods/bridge-seam.md drifted from mods/bridge-seam.md — keep the dogfood copy byte-identical")
 	}
 }
 
