@@ -139,3 +139,23 @@ Cycle 1 closes both false-green evidence gaps without changing lazy-loading or w
 ### Summary
 
 Exact-head deterministic gates, canonical-path Codex outcomes, implementer-owned Claude evidence, and Roborev are green, but independent adversarial controls still falsify AC-2/AC-4's proof boundary. Validation rejects `f745bba1` for three narrow observer defects and routes an evidence-only correction back to implementation; the quantitative same-model shallow-boot comparison remains a post-PR CI requirement.
+
+## Stage Report: implementation (cycle 2)
+
+- FAILED: Canonicalize the loader base and observed paths, require successful full-file exact reads, and reject every noncanonical core occurrence even when an exact occurrence also exists; cover combined exact+alternate and `/tmp`↔`/private/tmp` cases.
+  Commit `5e78f71c` makes the assigned combined-path and macOS alias controls pass after they failed at `f745bba1`, but Roborev found a valid loader path containing spaces is truncated and falsely rejected.
+- FAILED: Extend the existing bounded supported-mutation classifier to catch early `state commit`, `status --archive`, and `merge guard` alongside current mutations; add adversarial controls and stop if this requires a general shell or operation-language parser.
+  All six Claude/Codex controls for the three requested families went RED then green without a parser, but Roborev found JSON `"advance":true` remains invisible and merge/archive are not graded as merge-core terminal actions.
+- FAILED: Preserve product semantics, run focused/full/race and exact-head local Codex gates, request exact-head Roborev only after green, and return any rejection without further mutation for cycle-3 escalation.
+  Product semantics were untouched; focused/live-tag, `go test ./...`, `go test ./... -race`, and exact-head Codex gate/merge-hook/filing 3/3 passed at `5e78f71cd63503f9e49c63cc400221db0b6cb304`. Roborev job `1445` then returned verdict `F`; no code changed afterward.
+
+### Roborev and release-scope triage
+
+- MATERIAL: `merge guard` and `status --archive` can occur after write-core but before merge-core and still pass a later terminal-status action. These are common terminal workflows under AC-2's explicit terminal ordering promise.
+- MATERIAL: supported stdin JSON dispatch with `"advance":true` is present in existing reviewer-reuse fixtures and can false-pass the first-mutation boundary; this is an explicitly exercised supported workflow.
+- MATERIAL: quoted loader paths containing spaces are valid common checkout paths and currently false-reject exact reads, undermining AC-4 proof portability.
+- DEFERRED RISK: the `/tmp` alias regression control is non-distinct on Linux. Revisit with an explicit synthetic symlink if non-macOS CI must independently exercise alias resolution; the assigned macOS `/tmp`↔`/private/tmp` case was distinct and green locally.
+
+### Summary
+
+Cycle 2 closes the three routed examples with a bounded test-only observer change and all required local gates green. Exact-head Roborev nevertheless rejected three material proof gaps, so the last automatic correction stops without another code mutation and returns for cycle-3 captain escalation.
