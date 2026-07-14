@@ -1,6 +1,6 @@
 ---
 title: state ready resolves split state from linked-worktree cwd (clean reset)
-status: validation
+status: implementation
 source: Clean reset from rejected e6j implementation and GitHub issue #484, captain direction 2026-07-14
 started: 2026-07-14T14:12:39Z
 completed:
@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-state-ready-cwd-path-resolution-reset
 issue: spacedock-dev/spacedock#484
 milestone: 0.25.0
 id: qx18j81e0b1pe84ck9jxrbkj
-mod-block: merge:pr-merge
+mod-block:
 ---
 
 Make `spacedock state ready` recover the declared split-root state checkout from inside an agent worktree and in a local-only repository, without becoming a worktree/session manager.
@@ -130,3 +130,11 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
 - CLEAN — Detached adversarial audit of the high-stakes stale-registration guard at exact head `0384a012faa25bae41ac56f7cc8b1347122942b2` used a detached throwaway checkout, never the implementation worktree.
   The one-line adversarial edit bypassed `registeredWorktree`; `go test ./internal/cli -run '^TestStateReadyStaleRegistrationFailsClosed$' -count=1 -v` exited 1 at `state_ready_test.go:351` because the raw `git worktree add` failure replaced the required non-mutating guard/remediation output.
   Restoring that one line returned the same test to PASS; the throwaway checkout was removed and the implementation worktree remained clean, so the audit found no test-strength hole or material feedback cycle.
+
+### Feedback Cycles
+
+- **Cycle 1 — Roborev job 1426, exact head `0384a012`, REJECTED:**
+  - HIGH outcome defect: after resolving the canonical main worktree, recovery still trusts `state-branch` and state-relative path from the linked-worktree README. Re-resolve the main-worktree README, fail closed on disagreement, and verify the present checkout branch before pull/rebase.
+  - MEDIUM outcome defect: line-delimited `git worktree list --porcelain` can mis-handle Git-quoted paths. Use the supported NUL-delimited porcelain form and prove a quoting-triggering path.
+  - MEDIUM outcome defect: a worktree-registry query error is treated as “not registered.” Propagate the error and abort before fetch, checkout creation, pull, or any recovery mutation.
+  - Scope boundary: fix these existing Git recovery boundaries only; add no lock, journal, generation, publication, quarantine, lease, daemon, or lifecycle subsystem.
