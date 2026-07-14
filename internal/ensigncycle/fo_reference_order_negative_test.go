@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 const (
 	claudeFirstOfficerBaseEvent = `{"type":"user","message":{"content":[{"type":"text","text":"Base directory for this skill: /plugin/skills/first-officer\n\n# First Officer"}]},"isSynthetic":true}`
@@ -153,6 +156,29 @@ func TestFOReferenceOrderPreservesLoadedSkillBaseCase(t *testing.T) {
 	events := classifyFOCommand("cat "+skillBase+"/references/fo-write-core.md", skillBase)
 	if eventIndex(events, foWriteRead) < 0 || eventIndex(events, foWrongPath) >= 0 {
 		t.Fatalf("uppercase-containing loaded skill base classified as %v, want write-read", events)
+	}
+}
+
+func TestFindFirstOfficerSkillBaseUsesSuccessfulCodexBootPair(t *testing.T) {
+	bootPair := `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/skills/first-officer/references/first-officer-shared-core.md && cat /plugin/skills/first-officer/references/codex-first-officer-runtime.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}`
+	if got := findFirstOfficerSkillBase(bootPair); got != "/plugin/skills/first-officer" {
+		t.Fatalf("base from successful boot pair = %q, want /plugin/skills/first-officer", got)
+	}
+
+	failedPair := strings.Replace(bootPair, `"status":"completed","exit_code":0`, `"status":"failed","exit_code":1`, 1)
+	if got := findFirstOfficerSkillBase(failedPair); got != "" {
+		t.Fatalf("failed boot pair established base %q", got)
+	}
+
+	splitPair := strings.Replace(bootPair, "/plugin/skills/first-officer/references/codex-first-officer-runtime.md", "/other/skills/first-officer/references/codex-first-officer-runtime.md", 1)
+	if got := findFirstOfficerSkillBase(splitPair); got != "" {
+		t.Fatalf("split-base boot pair established base %q", got)
+	}
+
+	wrongDelayed := bootPair + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /other/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(wrongDelayed), "filing"); err == nil {
+		t.Fatal("boot-pair fallback accepted a delayed read under a different skill base")
 	}
 }
 

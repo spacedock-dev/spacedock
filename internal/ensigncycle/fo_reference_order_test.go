@@ -43,12 +43,15 @@ type claudePendingFOCall struct {
 var (
 	firstOfficerBaseAnnouncementRE = regexp.MustCompile(`Base directory for this skill:[[:space:]]*([^\\"\r\n]+/first-officer)`)
 	firstOfficerEntryPathRE        = regexp.MustCompile(`([^"'[:space:];|&]+/skills/first-officer)/SKILL\.md`)
+	firstOfficerSharedPathRE       = regexp.MustCompile(`([^"'[:space:];|&]+/skills/first-officer)/references/first-officer-shared-core\.md`)
+	firstOfficerRuntimePathRE      = regexp.MustCompile(`([^"'[:space:];|&]+/skills/first-officer)/references/(?:claude|codex|pi)-first-officer-runtime\.md`)
 )
 
 func findFirstOfficerSkillBase(stream string) string {
 	if match := firstOfficerBaseAnnouncementRE.FindStringSubmatch(stream); len(match) == 2 {
 		return filepath.Clean(match[1])
 	}
+	bootBase := ""
 	scanner := bufio.NewScanner(strings.NewReader(stream))
 	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	for scanner.Scan() {
@@ -69,14 +72,22 @@ func findFirstOfficerSkillBase(stream string) string {
 		if row.Item.Status == "failed" || (row.Item.ExitCode != nil && *row.Item.ExitCode != 0) {
 			continue
 		}
-		if !strings.Contains(strings.ToLower(row.Item.AggregatedOutput+row.Item.Output), "name: first-officer") {
+		output := row.Item.AggregatedOutput + row.Item.Output
+		if bootBase == "" && ReferenceReadSucceeded(true, output, "# First Officer Shared Core", "First Officer Runtime") {
+			shared := firstOfficerSharedPathRE.FindStringSubmatch(row.Item.Command)
+			runtime := firstOfficerRuntimePathRE.FindStringSubmatch(row.Item.Command)
+			if len(shared) == 2 && len(runtime) == 2 && filepath.Clean(shared[1]) == filepath.Clean(runtime[1]) {
+				bootBase = filepath.Clean(shared[1])
+			}
+		}
+		if !strings.Contains(strings.ToLower(output), "name: first-officer") {
 			continue
 		}
 		if match := firstOfficerEntryPathRE.FindStringSubmatch(row.Item.Command); len(match) == 2 {
 			return filepath.Clean(match[1])
 		}
 	}
-	return ""
+	return bootBase
 }
 
 func normalizeClaudeFOReferenceEvents(stream string) []foReferenceEvent {
