@@ -138,3 +138,28 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
   - MEDIUM outcome defect: line-delimited `git worktree list --porcelain` can mis-handle Git-quoted paths. Use the supported NUL-delimited porcelain form and prove a quoting-triggering path.
   - MEDIUM outcome defect: a worktree-registry query error is treated as “not registered.” Propagate the error and abort before fetch, checkout creation, pull, or any recovery mutation.
   - Scope boundary: fix these existing Git recovery boundaries only; add no lock, journal, generation, publication, quarantine, lease, daemon, or lifecycle subsystem.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Re-resolve state path and branch from the canonical main-worktree README, fail closed on linked/main disagreement, and verify an existing checkout is on the expected branch before pull or rebase.
+  Code commit `602d76521dbfbaea7ab2b3af65bc00285b46b548`; real-Git fixtures prove path/branch drift and a wrong checked-out branch exit nonzero before recovery or pull.
+- DONE: Parse `git worktree list --porcelain -z` as NUL-delimited records and propagate registry-query errors; prove quoting-triggering paths and unknown-registry failure cause no fetch or recovery mutation.
+  The feedback regressions were RED 5/5 before implementation and green 5/5 after it; a newline-bearing POSIX root round-trips, while injected registry exit 73 records no fetch, worktree-add, or pull.
+- FAILED: Keep the change within existing Git recovery boundaries, run focused/full/race checks, then request exact-head Roborev only after green and record all evidence.
+  Scope and gates passed, but exact-head Roborev job 1431 returned verdict F with two MEDIUM findings and one LOW finding.
+
+### Summary
+
+Cycle 2 kept recovery inside the existing Git command sequence: the canonical main README now owns state configuration, present checkouts must be on the configured branch, and worktree registry inspection is NUL-safe and fail-closed. `gofmt -w ./cmd ./internal`, the complete `TestStateReady` family, `go test ./...`, and `go test ./... -race` passed; only the two assigned files are in code commit `602d7652`, which was not pushed. Roborev rejected that exact tested commit, so no post-review code mutation was made and the findings are preserved for a fresh feedback dispatch.
+
+### Roborev Request
+
+- Job `1431`, review `1416`, UUID `6f332856-41f3-4bf9-a351-7d2fd94fa1d7`, patch `dafdb85c263686340fd0de02503913674a8b9369`.
+- Exact `git_ref`: `602d76521dbfbaea7ab2b3af65bc00285b46b548`; agent `codex`, reasoning `thorough`, status `done`, retry count `0`, verdict `F`.
+- The request ran only after focused, full, and race gates were green; the reviewed worktree was clean and the code branch remained unpushed.
+
+### Reviewer Findings
+
+- MEDIUM (`internal/cli/state_sync.go:302`): `worktreePaths` parses combined stdout/stderr, so a successful warning can prefix and hide the first NUL `worktree` field. Capture structured stdout separately and test successful stderr output.
+- MEDIUM (`internal/cli/state_sync.go:277`): `strings.TrimSpace(prefixOut)` can remove valid whitespace from a repository-relative workflow directory. Remove only Git's output terminator and cover whitespace-bearing workflow paths.
+- LOW (`internal/cli/state_sync.go:322`): `symbolic-ref --short` can return `heads/foo` when another ref makes `foo` ambiguous. Compare the full symbolic ref with normalized `refs/heads/<expected>`.
