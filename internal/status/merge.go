@@ -193,10 +193,18 @@ func mergeRootsGuard(workflowDirSpelling string, roots roots, dir string, stderr
 	if mode != StateSplitRoot {
 		return 0
 	}
-	if info, statErr := os.Stat(roots.entityDir); statErr != nil || !info.IsDir() {
+	guardEntityDir := roots.entityDir
+	if workflowDirSpelling != "" && !filepath.IsAbs(workflowDirSpelling) {
+		// ResolveSplitRootCheckout intentionally reanchors status reads to the
+		// main worktree. Merge guard has a stricter mutation contract: a relative
+		// --workflow-dir from a linked worktree must still refuse and point at the
+		// working absolute spelling before it can finalize an entity elsewhere.
+		guardEntityDir = filepath.Join(roots.definitionDir, relPath)
+	}
+	if info, statErr := os.Stat(guardEntityDir); statErr != nil || !info.IsDir() {
 		msg := fmt.Sprintf(
 			"merge guard: workflow at %s declares state: %s but the state checkout is missing at %s",
-			roots.definitionDir, relPath, roots.entityDir)
+			roots.definitionDir, relPath, guardEntityDir)
 		return errExit(stderr, appendHint(msg, hint))
 	}
 	return 0
