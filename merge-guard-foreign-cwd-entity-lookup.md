@@ -153,3 +153,50 @@ Closed the cycle-1 coverage gap: `didYouMeanHint`'s own `validateRootsOrExit` ga
 ### Summary
 
 Re-reviewed the cycle-2 fix independently rather than trusting the implementation report: read the new test and confirmed it drives a real linked worktree against a genuinely non-validating candidate, then reproduced cycle-1's exact adversarial edit myself on a fresh throwaway worktree to verify the test's discriminating power (red under the mutation, green restored), and confirmed the full build/vet/test suite is clean with the diff scoped to only the new test. The cycle-1 gap is closed. Recommendation: **PASSED**.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: The branch is clean and based on current origin/main, with only the approved bme change set.
+  After a final `git fetch origin main`, HEAD is `c84c9333`; both merge-base and `origin/main` are `23c32369`. Porcelain is clean, and the branch holds two commits across the four approved files (+302/-1).
+- DONE: Relevant merge-guard coverage plus full and race gates pass on the rebased head.
+  Focused issue-#485 checks passed 6/6; `go test ./...` and `go test ./... -race` each passed 15/15 packages at `c84c9333`. The required `gofmt -w ./cmd ./internal` ran; its unrelated baseline-only delta was restored, leaving the worktree clean.
+- DONE: A complete PR title/body draft follows the workflow pr-merge template; nothing is pushed or opened.
+  `git ls-remote --heads` returned no code branch and `gh pr list --head ... --state all` returned `[]`; the exact captain-review draft follows.
+
+**Title:** spacedock merge guard: entity not found from a foreign cwd even with --workflow-dir
+
+**Branch:** spacedock-ensign/merge-guard-foreign-cwd-entity-lookup -> main
+
+**Changes:** 4 files changed across 2 commits (`git diff --stat origin/main...spacedock-ensign/merge-guard-foreign-cwd-entity-lookup`)
+
+**Files:** `internal/cli/help.go`, `internal/cli/merge_test.go`, `internal/status/merge.go`, `internal/status/merge_guard_foreign_cwd_test.go`
+
+**Body:**
+
+```markdown
+Foreign-worktree merge guards now explain invalid relative workflow paths and provide a verified absolute path, letting operators recover safely.
+
+## What changed
+
+- Fail closed when merge guard resolves an unusable workflow or state checkout.
+- Suggest the validated main-checkout workflow path from linked worktrees.
+- Document current-directory resolution for relative merge workflow paths.
+- Cover positive, negative, and unchanged entity-lookup behavior with regression tests.
+
+## Evidence
+
+- Focused merge-guard checks: 6/6 passed.
+- Full and race suites: 15/15 packages passed in each.
+
+## Review guidance
+
+Focus on `didYouMeanHint` candidate validation and its negative regression test.
+
+---
+[bme](/spacedock-dev/spacedock/blob/8673df842848188c986d0f4e7fbf59dd248f21d1/merge-guard-foreign-cwd-entity-lookup.md)
+Closes spacedock-dev/spacedock#485
+```
+
+### Summary
+
+Verified the two-commit bme branch is already based on freshly fetched `origin/main`, clean, and scoped to the approved four-file change set, so no rebase was necessary. Focused, full, and race gates all pass; the code branch remains unpublished and no PR exists. Recommendation: **PASSED**; the draft above is ready for explicit captain approval.
