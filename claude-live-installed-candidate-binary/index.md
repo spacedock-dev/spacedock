@@ -10,6 +10,8 @@ worktree: .worktrees/spacedock-ensign-claude-live-installed-candidate-binary
 issue:
 id: 2h786rdtw1f26q7q98v5bp43
 milestone:
+mod-block: merge:pr-merge
+pr: "#505"
 ---
 
 The Claude live job currently builds `./spacedock`, exports `SPACEDOCK_BIN=$(pwd)/spacedock`, and adds the checkout to PATH. The front door then deliberately re-exports its own executable path to the first officer. In a real Opus failure, that repository-shaped path became the apparent project root even though the host process started in a fixture.
