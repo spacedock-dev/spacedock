@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-state-ready-cwd-path-resolution-reset
 issue: spacedock-dev/spacedock#484
 milestone: 0.25.0
 id: qx18j81e0b1pe84ck9jxrbkj
+mod-block: merge:pr-merge
 ---
 
 Make `spacedock state ready` recover the declared split-root state checkout from inside an agent worktree and in a local-only repository, without becoming a worktree/session manager.
