@@ -164,6 +164,7 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 	}
 
 	observedAbsent := !dirExists(checkout)
+	observedPending := !observedAbsent && stateResumeWasPending(workflowDir, checkout)
 	if stateReadyObservationHook != nil {
 		stateReadyObservationHook()
 	}
@@ -209,22 +210,25 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 			}, 0)
 		}
 
-		if observedAbsent {
+		if observedAbsent || observedPending {
 			// This caller waited behind another resume. The creator held this same
 			// lock through remote integration or local fallback, so repeating a pull
 			// would both race the convergence boundary and turn a successful
 			// unreachable-origin fallback into a false failure.
 			if result, err := readStateResumeOutcome(workflowDir, checkout); err != nil || result != "ready" {
-				fmt.Fprintln(stderr, "spacedock state ready: concurrent state resume did not converge")
-				return 1
+				if observedAbsent {
+					fmt.Fprintln(stderr, "spacedock state ready: concurrent state resume did not converge")
+					return 1
+				}
+			} else {
+				if !jsonOut {
+					fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
+				}
+				return emitSync(stdout, jsonOut, syncResult{
+					Command: "state ready", Result: "ready", StateBranch: branch,
+					Reason: "State checkout ready (concurrent resume completed).",
+				}, 0)
 			}
-			if !jsonOut {
-				fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
-			}
-			return emitSync(stdout, jsonOut, syncResult{
-				Command: "state ready", Result: "ready", StateBranch: branch,
-				Reason: "State checkout ready (concurrent resume completed).",
-			}, 0)
 		}
 
 		if !stateHasOrigin(checkout) {

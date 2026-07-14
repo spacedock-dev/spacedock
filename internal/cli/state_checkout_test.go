@@ -200,6 +200,48 @@ func TestStateReadyIssue484Repro(t *testing.T) {
 	}
 }
 
+func TestStateReadyRepairsOnlyTargetRegistration(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	siblingPath := filepath.Join(root, ".worktrees", "temporarily-missing-sibling")
+	siblingBranch := "temporarily-missing-sibling"
+	git(t, root, "worktree", "add", "-q", "-b", siblingBranch, siblingPath, "HEAD")
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(siblingPath); err != nil {
+		t.Fatal(err)
+	}
+
+	var out, errBuf strings.Builder
+	code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+		os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+	if code != 0 {
+		t.Fatalf("targeted stale repair exit=%d stdout=%q stderr=%q", code, out.String(), errBuf.String())
+	}
+	records, err := status.ParseWorktreePorcelainZ([]byte(git(t, root, "worktree", "list", "--porcelain", "-z")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	stateRegistrations, siblingRegistrations := 0, 0
+	siblingPrunable := false
+	for _, record := range records {
+		switch status.RealpathOf(record.Path) {
+		case status.RealpathOf(statePath):
+			stateRegistrations++
+		case status.RealpathOf(siblingPath):
+			siblingRegistrations++
+			siblingPrunable = record.Prunable
+		}
+	}
+	if stateRegistrations != 1 {
+		t.Fatalf("restored state registration count=%d, want 1", stateRegistrations)
+	}
+	if siblingRegistrations != 1 || !siblingPrunable {
+		t.Fatalf("unrelated missing sibling registration=(count=%d prunable=%v), want preserved", siblingRegistrations, siblingPrunable)
+	}
+}
+
 // TestStateReadyNoOriginResumeFromRoot pins test-plan item 4, AC-3: a no-origin
 // repo resumes an absent checkout from the local state branch when invoked from
 // the repo root (no worktree involved) — exit 0, entities present, local-only
@@ -608,6 +650,137 @@ func TestConcurrentStateReadyUnreachableOriginWaitersDoNotRepull(t *testing.T) {
 	}
 	if got := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); got != wantHead {
 		t.Fatalf("fallback state HEAD=%s, want preserved local HEAD=%s", got, wantHead)
+	}
+}
+
+func TestStateReadyWaiterObservingPublishedCheckoutConsumesOutcome(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath, wantHead := originBackedCheckoutBehindRemote(t)
+	published := make(chan struct{})
+	releasePublisher := make(chan struct{})
+	stateResumeAfterPublishHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(published)
+			<-releasePublisher
+		}
+	}
+	t.Cleanup(func() { stateResumeAfterPublishHook = nil })
+
+	type result struct {
+		code        int
+		stdout, err string
+	}
+	runReady := func(ch chan<- result) {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		ch <- result{code: code, stdout: out.String(), err: errBuf.String()}
+	}
+	publisherResult := make(chan result, 1)
+	go runReady(publisherResult)
+	<-published
+
+	// Origin becomes unreachable after the creator converged privately. A waiter
+	// that observed the published path but ignores the pending->ready outcome
+	// would issue a redundant pull and turn this successful fallback into failure.
+	git(t, root, "remote", "set-url", "origin", filepath.Join(t.TempDir(), "missing.git"))
+	waiterObserved := make(chan struct{})
+	stateReadyObservationHook = func() { close(waiterObserved) }
+	t.Cleanup(func() { stateReadyObservationHook = nil })
+	waiterResult := make(chan result, 1)
+	go runReady(waiterResult)
+	<-waiterObserved
+	close(releasePublisher)
+
+	if got := <-publisherResult; got.code != 0 {
+		t.Fatalf("publisher failed after private convergence: %+v", got)
+	}
+	got := <-waiterResult
+	if got.code != 0 || !strings.Contains(got.stdout, "concurrent resume completed") {
+		t.Fatalf("published-path waiter did not consume completed outcome: %+v", got)
+	}
+	if head := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); head != wantHead {
+		t.Fatalf("published-path waiter changed state HEAD=%s, want %s", head, wantHead)
+	}
+}
+
+func TestStateReadyCompletedOutcomeDoesNotSuppressLaterPeerPull(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	_, workflowA, workflowB, _ := twoHostStateWorkflow(t)
+	rootA := filepath.Dir(filepath.Dir(workflowA))
+	rootB := filepath.Dir(filepath.Dir(workflowB))
+	stateA := filepath.Join(workflowA, ".spacedock-state")
+	if err := os.RemoveAll(stateA); err != nil {
+		t.Fatal(err)
+	}
+	if code, _, errOut := runStateReadyCmd(t, rootA, workflowA); code != 0 {
+		t.Fatalf("initial resume exit=%d stderr=%q", code, errOut)
+	}
+	if result, err := readStateResumeOutcome(workflowA, stateA); err != nil || result != "ready" {
+		t.Fatalf("initial resume outcome=%q err=%v", result, err)
+	}
+
+	writeEntity(t, workflowB, "later-peer-task", "---\nstatus: ideation\n---\n# Later peer state\n")
+	if code, _, errOut := runStateCommitCmd(t, rootB, workflowB, "later-peer-task", "-m", "later peer state"); code != 0 {
+		t.Fatalf("peer state commit exit=%d stderr=%q", code, errOut)
+	}
+	if _, err := os.Stat(filepath.Join(stateA, "later-peer-task.md")); !os.IsNotExist(err) {
+		t.Fatalf("precondition: resumed checkout already has later peer task: %v", err)
+	}
+	if code, _, errOut := runStateReadyCmd(t, rootA, workflowA); code != 0 {
+		t.Fatalf("later state ready exit=%d stderr=%q", code, errOut)
+	}
+	if _, err := os.Stat(filepath.Join(stateA, "later-peer-task.md")); err != nil {
+		t.Fatalf("durable ready outcome suppressed later peer pull: %v", err)
+	}
+}
+
+func TestStateReadyRejectsStaleOutcomeAfterIndependentRecreation(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	branch, err := status.StateBranch(workflowDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeStateResumeOutcome(workflowDir, statePath, "pending"); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
+		t.Fatal(err)
+	}
+	if result, err := readStateResumeOutcome(workflowDir, statePath); err != nil || result != "ready" {
+		t.Fatalf("current checkout ready outcome=%q err=%v", result, err)
+	}
+	git(t, root, "worktree", "remove", statePath)
+
+	observed := make(chan struct{})
+	release := make(chan struct{})
+	stateReadyObservationHook = func() {
+		close(observed)
+		<-release
+	}
+	t.Cleanup(func() { stateReadyObservationHook = nil })
+	type result struct {
+		code int
+		err  string
+	}
+	readyResult := make(chan result, 1)
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		readyResult <- result{code: code, err: errBuf.String()}
+	}()
+	<-observed
+	git(t, root, "worktree", "add", "-q", statePath, branch)
+	if result, err := readStateResumeOutcome(workflowDir, statePath); err == nil || result != "" || !strings.Contains(err.Error(), "checkout identity") {
+		close(release)
+		t.Fatalf("independently recreated checkout inherited outcome=%q err=%v", result, err)
+	}
+	close(release)
+	got := <-readyResult
+	if got.code != 1 || !strings.Contains(got.err, "concurrent state resume did not converge") {
+		t.Fatalf("state ready accepted stale generation outcome: %+v", got)
 	}
 }
 

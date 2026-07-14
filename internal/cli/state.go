@@ -14,10 +14,12 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
-// Resume lifecycle seams let real-Git tests place non-locking commands at the
-// two publication boundaries. Production leaves both nil.
+// Resume lifecycle seams let real-Git tests place non-locking commands around
+// private restoration and public checkout publication. Production leaves them
+// nil.
 var stateResumeBeforeRestoreHook func(string)
 var stateResumeBeforePublishHook func(string)
+var stateResumeAfterPublishHook func(string)
 
 // runStateInit implements `spacedock state init`. It reads the workflow's
 // `state:` and `state-branch:` from the README, and for a split-root workflow
@@ -59,6 +61,7 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 	}
 
 	observedAbsent := !dirExists(statePath)
+	observedPending := !observedAbsent && stateResumeWasPending(workflowDir, statePath)
 	code, lockErr := withStateResumeLock(workflowDir, func() int {
 		if dirExists(statePath) {
 			if err := validateExistingStateCheckout(workflowDir, statePath, branch); err != nil {
@@ -66,17 +69,23 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 				return 1
 			}
 		}
-		// A caller that observed absence but finds the checkout after acquiring the
-		// lock waited behind the creator. That creator owned fetch/fallback and any
-		// origin integration through completion, so this waiter must not repeat a
-		// possibly unreachable pull.
+		// A caller that observed absence, or saw the creator's pending outcome after
+		// publication, waited behind that creator. The creator owned fetch/fallback
+		// and origin integration through completion, so this waiter must not repeat
+		// a possibly unreachable pull.
 		if dirExists(statePath) {
-			if observedAbsent {
+			if observedAbsent || observedPending {
 				if result, err := readStateResumeOutcome(workflowDir, statePath); err != nil || result != "ready" {
-					fmt.Fprintln(stderr, "spacedock state init: concurrent state resume did not converge")
-					return 1
+					if observedAbsent {
+						fmt.Fprintln(stderr, "spacedock state init: concurrent state resume did not converge")
+						return 1
+					}
+				} else {
+					fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
+					return 0
 				}
-			} else {
+			}
+			if !observedAbsent {
 				if fetchOK, _ := runGit(statePath, "fetch", "origin", branch); fetchOK {
 					if pullOK, pullOut := runGit(statePath, "pull", "--rebase", "origin", branch); !pullOK {
 						if rebaseInProgress(statePath) {
@@ -618,8 +627,8 @@ func publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch str
 		return false, fmt.Errorf("checking state checkout publication path %s: %w", statePath, err)
 	}
 	if stale {
-		if ok, out := runGit(workflowDir, "worktree", "prune", "--expire", "now"); !ok {
-			return false, fmt.Errorf("pruning stale state worktree registration failed:\n%s", out)
+		if ok, out := runGit(workflowDir, "worktree", "remove", statePath); !ok {
+			return false, fmt.Errorf("removing stale state worktree registration failed:\n%s", out)
 		}
 	}
 	if err := os.Rename(privatePath, statePath); err != nil {
@@ -631,6 +640,9 @@ func publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch str
 	}
 	if err := validateExistingStateCheckout(workflowDir, statePath, branch); err != nil {
 		return true, fmt.Errorf("published state checkout validation failed: %w", err)
+	}
+	if stateResumeAfterPublishHook != nil {
+		stateResumeAfterPublishHook(statePath)
 	}
 	return true, nil
 }
