@@ -17,7 +17,7 @@ import (
 // Resume lifecycle seams let real-Git tests place non-locking commands at the
 // two publication boundaries. Production leaves both nil.
 var stateResumeBeforeRestoreHook func(string)
-var stateResumeFailureHook func(string)
+var stateResumeBeforePublishHook func(string)
 
 // runStateInit implements `spacedock state init`. It reads the workflow's
 // `state:` and `state-branch:` from the README, and for a split-root workflow
@@ -60,6 +60,12 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 
 	observedAbsent := !dirExists(statePath)
 	code, lockErr := withStateResumeLock(workflowDir, func() int {
+		if dirExists(statePath) {
+			if err := validateExistingStateCheckout(workflowDir, statePath, branch); err != nil {
+				fmt.Fprintf(stderr, "spacedock state init: refusing invalid state checkout: %v\n", err)
+				return 1
+			}
+		}
 		// A caller that observed absence but finds the checkout after acquiring the
 		// lock waited behind the creator. That creator owned fetch/fallback and any
 		// origin integration through completion, so this waiter must not repeat a
@@ -91,9 +97,6 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 		resumeCode, _ := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath, stdout, stderr)
 		if resumeCode != 0 {
 			writeStateResumeOutcome(workflowDir, statePath, "failed")
-			if stateResumeFailureHook != nil {
-				stateResumeFailureHook(statePath)
-			}
 			return resumeCode
 		}
 		if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
@@ -112,14 +115,9 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 // resumeAbsentSplitRootCheckoutLocked implements the RESUME half of `state init`,
 // shared with `state ready`'s absent-checkout resume. Callers confirm statePath's
 // directory is ABSENT and hold the repository resume lock before calling. It
-// repairs a stale worktree registration —
-// necessarily stale here, since a live registration's directory would exist (e.g.
-// issue #484's deleted-checkout-but-registered-worktree repro, where a raw `git
-// worktree add` at that path fatals exit 128 "missing but already registered
-// worktree") — then adds statePath as a linked worktree on branch, preferring a
-// fresh fetch from origin and falling back to the local branch when origin is
-// absent or unreachable (mirrors `state commit`'s local-only carve-out). Neither
-// fetchable nor local is a hard failure (exit 1).
+// converges the state branch in a unique adjacent private worktree, then renames
+// the fully ready directory into statePath and repairs its Git metadata. The
+// public path is therefore never visible with a pre-convergence tree.
 //
 // originConverged reports whether this resume fetched and integrated origin —
 // false for a local-only or unreachable-origin fallback.
@@ -142,24 +140,64 @@ func resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath string, 
 
 	switch {
 	case fetchOK:
-		if err := addResumedStateWorktree(workflowDir, statePath, branch, stdout); err != nil {
+		privatePath, stale, err := addPrivateStateWorktree(workflowDir, statePath, branch)
+		if err != nil {
 			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
 			return 1, false
 		}
-		if ok, out := runGit(statePath, "pull", "--rebase", "origin", branch); !ok {
-			if rebaseInProgress(statePath) {
-				runGit(statePath, "rebase", "--abort")
+		privateActive := true
+		defer func() {
+			if privateActive {
+				if ok, out := runGit(workflowDir, "worktree", "remove", privatePath); !ok {
+					fmt.Fprintf(stderr, "spacedock state init: preserving private resume checkout %s after cleanup failure:\n%s\n", privatePath, out)
+				}
 			}
-			fmt.Fprintf(stderr, "spacedock state init: pull --rebase origin %s failed after restoring checkout:\n%s\n", branch, out)
+		}()
+		if ok, out := runGit(privatePath, "pull", "--rebase", "origin", branch); !ok {
+			if rebaseInProgress(privatePath) {
+				runGit(privatePath, "rebase", "--abort")
+			}
+			fmt.Fprintf(stderr, "spacedock state init: pull --rebase origin %s failed in private checkout:\n%s\n", branch, out)
 			return 1, false
+		}
+		published, err := publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch, stale)
+		if published {
+			privateActive = false
+		}
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
+			return 1, false
+		}
+		if stale {
+			fmt.Fprintf(stdout, "Repaired stale worktree registration for %s.\n", statePath)
 		}
 		fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s).\n", statePath, branch)
 		return 0, true
 
 	case localBranchExists:
-		if err := addResumedStateWorktree(workflowDir, statePath, branch, stdout); err != nil {
+		privatePath, stale, err := addPrivateStateWorktree(workflowDir, statePath, branch)
+		if err != nil {
 			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
 			return 1, false
+		}
+		privateActive := true
+		defer func() {
+			if privateActive {
+				if ok, out := runGit(workflowDir, "worktree", "remove", privatePath); !ok {
+					fmt.Fprintf(stderr, "spacedock state init: preserving private resume checkout %s after cleanup failure:\n%s\n", privatePath, out)
+				}
+			}
+		}()
+		published, err := publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch, stale)
+		if published {
+			privateActive = false
+		}
+		if err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
+			return 1, false
+		}
+		if stale {
+			fmt.Fprintf(stdout, "Repaired stale worktree registration for %s.\n", statePath)
 		}
 		if !hasOrigin {
 			fmt.Fprintf(stdout, "Initialized state checkout at %s (branch %s) — no origin remote, state is local-only.\n", statePath, branch)
@@ -467,7 +505,7 @@ func repoRoot(workflowDir string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("not a git repository at %s:\n%s", workflowDir, out)
 	}
-	return strings.TrimSpace(out), nil
+	return status.TrimGitLineTerminator(out), nil
 }
 
 // repoRelPrefix returns workflowDir's path relative to its repo root, as git sees
@@ -479,7 +517,7 @@ func repoRelPrefix(workflowDir string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("not a git repository at %s:\n%s", workflowDir, out)
 	}
-	return strings.TrimSpace(out), nil
+	return status.TrimGitLineTerminator(out), nil
 }
 
 // parseStateNewArgs reads `--workflow-dir DIR`, resolving a relative path against
@@ -524,40 +562,75 @@ func dirExists(path string) bool {
 	return err == nil && info.IsDir()
 }
 
-// addResumedStateWorktree restores statePath without ever removing that public
-// path. A matching absent registration is recovered by Git's same-path
-// `worktree add --force`: Git replaces the stale registration atomically, while
-// an externally-created non-empty checkout makes add fail and is left untouched.
-func addResumedStateWorktree(workflowDir, statePath, branch string, stdout io.Writer) error {
+// addPrivateStateWorktree checks out branch beside statePath without publishing
+// the final path. A stale final-path registration requires --force solely to let
+// the same branch enter this private worktree; the stale record remains until
+// publication.
+func addPrivateStateWorktree(workflowDir, statePath, branch string) (privatePath string, stale bool, err error) {
 	if dirExists(statePath) {
-		return fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
+		return "", false, fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
 	}
 	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain", "-z")
 	if !ok {
-		return fmt.Errorf("listing worktree registrations failed:\n%s", out)
+		return "", false, fmt.Errorf("listing worktree registrations failed:\n%s", out)
 	}
 	records, err := status.ParseWorktreePorcelainZ([]byte(out))
 	if err != nil {
-		return fmt.Errorf("parsing worktree registrations: %w", err)
+		return "", false, fmt.Errorf("parsing worktree registrations: %w", err)
 	}
 	target := status.RealpathOf(statePath)
-	stale := false
 	for _, record := range records {
 		if status.RealpathOf(record.Path) == target {
 			stale = true
 			break
 		}
 	}
+	privatePath, err = os.MkdirTemp(filepath.Dir(statePath), ".spacedock-state-resume-")
+	if err != nil {
+		return "", false, fmt.Errorf("creating private resume path: %w", err)
+	}
+	if err := os.Remove(privatePath); err != nil {
+		return "", false, fmt.Errorf("preparing private resume path: %w", err)
+	}
 	args := []string{"worktree", "add"}
 	if stale {
 		args = append(args, "--force")
 	}
-	args = append(args, statePath, branch)
+	args = append(args, privatePath, branch)
 	if ok, out := runGit(workflowDir, args...); !ok {
-		return fmt.Errorf("git worktree add %s %s failed:\n%s", statePath, branch, out)
+		return "", false, fmt.Errorf("git worktree add private checkout for %s failed:\n%s", statePath, out)
+	}
+	return privatePath, stale, nil
+}
+
+// publishPrivateStateWorktree atomically publishes a fully converged private
+// directory. A concurrent non-empty final directory makes Rename fail and is
+// left byte-for-byte untouched. published reports that the rename occurred even
+// if subsequent metadata repair/validation fails, so callers never clean the
+// now-public directory through its former private name.
+func publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch string, stale bool) (published bool, err error) {
+	if stateResumeBeforePublishHook != nil {
+		stateResumeBeforePublishHook(statePath)
+	}
+	if _, err := os.Lstat(statePath); err == nil {
+		return false, fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("checking state checkout publication path %s: %w", statePath, err)
 	}
 	if stale {
-		fmt.Fprintf(stdout, "Repaired stale worktree registration for %s.\n", statePath)
+		if ok, out := runGit(workflowDir, "worktree", "prune", "--expire", "now"); !ok {
+			return false, fmt.Errorf("pruning stale state worktree registration failed:\n%s", out)
+		}
 	}
-	return nil
+	if err := os.Rename(privatePath, statePath); err != nil {
+		return false, fmt.Errorf("publishing converged state checkout at %s: %w", statePath, err)
+	}
+	published = true
+	if ok, out := runGit(workflowDir, "worktree", "repair", statePath); !ok {
+		return true, fmt.Errorf("repairing published state checkout metadata failed:\n%s", out)
+	}
+	if err := validateExistingStateCheckout(workflowDir, statePath, branch); err != nil {
+		return true, fmt.Errorf("published state checkout validation failed: %w", err)
+	}
+	return true, nil
 }

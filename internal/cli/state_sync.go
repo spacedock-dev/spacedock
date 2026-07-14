@@ -72,6 +72,12 @@ func runStateCommit(ctx context.Context, args []string, env []string, dir string
 			Reason: "Inline workflow — entities live beside the README; nothing to commit to a state checkout.",
 		}, 0)
 	}
+	if dirExists(checkout) {
+		if err := validateExistingStateCheckout(workflowDir, checkout, branch); err != nil {
+			fmt.Fprintf(stderr, "spacedock state commit: refusing invalid state checkout: %v\n", err)
+			return 1
+		}
+	}
 
 	entityPath, ok := resolveEntityPath(checkout, slug)
 	if !ok {
@@ -168,6 +174,12 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		resumeOut = io.Discard
 	}
 	code, lockErr := withStateResumeLock(workflowDir, func() int {
+		if dirExists(checkout) {
+			if err := validateExistingStateCheckout(workflowDir, checkout, branch); err != nil {
+				fmt.Fprintf(stderr, "spacedock state ready: refusing invalid state checkout: %v\n", err)
+				return 1
+			}
+		}
 		if !dirExists(checkout) {
 			if err := writeStateResumeOutcome(workflowDir, checkout, "pending"); err != nil {
 				fmt.Fprintf(stderr, "spacedock state ready: cannot record resume outcome: %v\n", err)
@@ -176,9 +188,6 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 			resumeCode, originConverged := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, checkout, resumeOut, stderr)
 			if resumeCode != 0 {
 				writeStateResumeOutcome(workflowDir, checkout, "failed")
-				if stateResumeFailureHook != nil {
-					stateResumeFailureHook(checkout)
-				}
 				return resumeCode
 			}
 			if err := writeStateResumeOutcome(workflowDir, checkout, "ready"); err != nil {
@@ -353,7 +362,7 @@ func rebaseInProgress(checkout string) bool {
 		if !ok {
 			continue
 		}
-		p := strings.TrimSpace(out)
+		p := status.TrimGitLineTerminator(out)
 		if !filepath.IsAbs(p) {
 			p = filepath.Join(checkout, p)
 		}

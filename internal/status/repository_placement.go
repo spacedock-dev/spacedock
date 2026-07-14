@@ -28,13 +28,17 @@ type RepositoryPlacement struct {
 // broken linked worktree as a standalone directory could redirect mutations into
 // a worktree-local copy.
 func ResolveRepositoryPlacement(dir string) (RepositoryPlacement, error) {
-	gitRoot := FindGitRoot(dir)
-	if !hasGitEntry(gitRoot) {
-		return RepositoryPlacement{}, nil
-	}
-
 	gitDirOut, err := runGitCmd(dir, "rev-parse", "--path-format=absolute", "--git-dir")
 	if err != nil {
+		// A path reached through an external symlink has no lexical .git ancestor,
+		// so Git is the primary classifier. Only downgrade a failed Git probe to
+		// standalone when neither the lexical nor canonical path has repository
+		// metadata; a broken linked checkout must still fail closed.
+		lexicalRoot := FindGitRoot(dir)
+		canonicalRoot := FindGitRoot(RealpathOf(dir))
+		if !hasGitEntry(lexicalRoot) && !hasGitEntry(canonicalRoot) {
+			return RepositoryPlacement{}, nil
+		}
 		return RepositoryPlacement{}, fmt.Errorf("resolve git directory for %s: %w", dir, err)
 	}
 	commonDirOut, err := runGitCmd(dir, "rev-parse", "--path-format=absolute", "--git-common-dir")
@@ -50,11 +54,11 @@ func ResolveRepositoryPlacement(dir string) (RepositoryPlacement, error) {
 		return RepositoryPlacement{}, fmt.Errorf("resolve worktree root for %s: %w", dir, err)
 	}
 
-	gitDir := RealpathOf(strings.TrimSpace(gitDirOut))
-	commonDir := RealpathOf(strings.TrimSpace(commonDirOut))
+	gitDir := RealpathOf(TrimGitLineTerminator(gitDirOut))
+	commonDir := RealpathOf(TrimGitLineTerminator(commonDirOut))
 	placement := RepositoryPlacement{
-		MainWorktreeRoot: strings.TrimSpace(topOut),
-		Prefix:           strings.TrimSpace(prefixOut),
+		MainWorktreeRoot: TrimGitLineTerminator(topOut),
+		Prefix:           TrimGitLineTerminator(prefixOut),
 		CommonGitDir:     commonDir,
 		InGit:            true,
 		Linked:           gitDir != commonDir,
@@ -83,6 +87,13 @@ func ResolveRepositoryPlacement(dir string) (RepositoryPlacement, error) {
 	}
 	placement.MainWorktreeRoot = mainRoot
 	return placement, nil
+}
+
+// TrimGitLineTerminator removes Git's one output-record LF without trimming
+// path bytes. A path or prefix may legitimately begin or end with spaces, tabs,
+// carriage returns, or even a newline; only the command's final LF is framing.
+func TrimGitLineTerminator(out string) string {
+	return strings.TrimSuffix(out, "\n")
 }
 
 // primaryWorktreeFromPorcelainZ parses one complete primary record from

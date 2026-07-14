@@ -32,6 +32,21 @@ func TestPrimaryWorktreePorcelainZPreservesNewlinePath(t *testing.T) {
 	}
 }
 
+func TestTrimGitLineTerminatorPreservesWhitespacePathBytes(t *testing.T) {
+	for _, tc := range []struct {
+		in, want string
+	}{
+		{" /tmp/leading-and-trailing \n", " /tmp/leading-and-trailing "},
+		{"\t/tmp/tabbed\t\n", "\t/tmp/tabbed\t"},
+		{"/tmp/path-ending-in-newline\n\n", "/tmp/path-ending-in-newline\n"},
+		{"", ""},
+	} {
+		if got := TrimGitLineTerminator(tc.in); got != tc.want {
+			t.Fatalf("TrimGitLineTerminator(%q)=%q want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
 func TestPrimaryWorktreePorcelainZRejectsBarePrimary(t *testing.T) {
 	raw := []byte("worktree /tmp/repo.git\x00bare\x00\x00" +
 		"worktree /tmp/linked\x00HEAD cafe\x00branch refs/heads/main\x00\x00")
@@ -71,6 +86,82 @@ func TestResolveRepositoryPlacementFromNewlineWorktree(t *testing.T) {
 	want := filepath.Join(RealpathOf(mainRoot), "docs", "dev", ".state")
 	if RealpathOf(got) != want {
 		t.Fatalf("checkout = %q, want exact newline-root placement %q", got, want)
+	}
+}
+
+func TestResolveRepositoryPlacementFromExternalSymlinkIntoLinkedWorktree(t *testing.T) {
+	base := t.TempDir()
+	mainRoot := filepath.Join(base, "main")
+	workflowRel := filepath.Join("docs", "dev")
+	if err := os.MkdirAll(filepath.Join(mainRoot, workflowRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "init", "-q")
+	placementGit(t, mainRoot, "config", "user.email", "t@t")
+	placementGit(t, mainRoot, "config", "user.name", "t")
+	if err := os.WriteFile(filepath.Join(mainRoot, workflowRel, "README.md"), []byte("---\nstate: .state\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "add", "docs/dev/README.md")
+	placementGit(t, mainRoot, "commit", "-q", "-m", "seed")
+	linked := filepath.Join(base, "linked")
+	placementGit(t, mainRoot, "worktree", "add", "-q", "-b", "linked-symlink", linked)
+	external := filepath.Join(t.TempDir(), "external-workflow")
+	if err := os.Symlink(filepath.Join(linked, workflowRel), external); err != nil {
+		t.Fatal(err)
+	}
+
+	placement, err := ResolveRepositoryPlacement(external)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !placement.InGit || !placement.Linked {
+		t.Fatalf("external symlink placement=%+v, want linked Git worktree", placement)
+	}
+	got, err := ResolveSplitRootCheckout(external, ".state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(mainRoot, workflowRel, ".state")
+	if RealpathOf(got) != RealpathOf(want) {
+		t.Fatalf("external symlink checkout=%q want main-root checkout %q", got, want)
+	}
+}
+
+func TestResolveSplitRootCheckoutPreservesWhitespacePathBytes(t *testing.T) {
+	base := t.TempDir()
+	mainRoot := filepath.Join(base, " main root ")
+	workflowRel := filepath.Join(" docs ", " dev ")
+	if err := os.MkdirAll(filepath.Join(mainRoot, workflowRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "init", "-q")
+	placementGit(t, mainRoot, "config", "user.email", "t@t")
+	placementGit(t, mainRoot, "config", "user.name", "t")
+	if err := os.WriteFile(filepath.Join(mainRoot, workflowRel, "README.md"), []byte("---\nstate: .state\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "add", ".")
+	placementGit(t, mainRoot, "commit", "-q", "-m", "seed")
+	linked := filepath.Join(base, " linked root ")
+	placementGit(t, mainRoot, "worktree", "add", "-q", "-b", "linked-whitespace", linked)
+
+	workflow := filepath.Join(linked, workflowRel)
+	placement, err := ResolveRepositoryPlacement(workflow)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantPrefix := filepath.ToSlash(workflowRel) + "/"
+	if placement.Prefix != wantPrefix {
+		t.Fatalf("prefix bytes=%q want %q", placement.Prefix, wantPrefix)
+	}
+	got, err := ResolveSplitRootCheckout(workflow, ".state")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(mainRoot, workflowRel, ".state")
+	if RealpathOf(got) != RealpathOf(want) {
+		t.Fatalf("whitespace checkout=%q want exact %q", got, want)
 	}
 }
 

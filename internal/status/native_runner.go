@@ -576,7 +576,7 @@ func resolveMutationEntity(roots roots, ref string, stderr io.Writer) (*entity, 
 func discoverWorkflowDownward(dir string, stderr io.Writer) (string, int) {
 	root := dir
 	if out, err := runGitCmd(dir, "rev-parse", "--show-toplevel"); err == nil {
-		root = strings.TrimSpace(out)
+		root = TrimGitLineTerminator(out)
 	}
 	workflows := discoverWorkflows(root)
 	switch len(workflows) {
@@ -606,7 +606,7 @@ func discoverWorkflowDownward(dir string, stderr io.Writer) (string, int) {
 func resolveIdentifyBootDir(dir string, asJSON bool, stdout, stderr io.Writer) (string, bool, int) {
 	root := dir
 	if out, err := runGitCmd(dir, "rev-parse", "--show-toplevel"); err == nil {
-		root = strings.TrimSpace(out)
+		root = TrimGitLineTerminator(out)
 	}
 	workflows := discoverWorkflows(root)
 	switch len(workflows) {
@@ -664,7 +664,7 @@ func runDiscover(args []string, dir string, stderr, stdout io.Writer) int {
 	if rootPath == "" {
 		out, err := runGitCmd(dir, "rev-parse", "--show-toplevel")
 		if err == nil {
-			rootPath = strings.TrimSpace(out)
+			rootPath = TrimGitLineTerminator(out)
 		} else {
 			rootPath = dir
 		}
