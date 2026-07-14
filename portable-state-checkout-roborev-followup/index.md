@@ -696,3 +696,16 @@ in ignored-entity classification and canonical ignore spelling. AC-1, AC-4,
 and AC-6 therefore fail; the remaining criteria were not revalidated because
 the mandatory first gate stopped the cycle. No tests, push, PR, CI,
 implementation mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Reject any existing state-path ancestor symlink that escapes the canonical project before state init/new creates or mutates, with exact outside-destination zero-mutation coverage.
+  Commit `6f54d8d636521b7e48d0dbbc964d606d4a488e27` resolves the nearest existing destination ancestor, canonicalizes it, appends only missing path components, and requires the result to remain inside the canonical validated repository before fetch, ignore-file write, ref birth, or worktree creation. Public `state init` and `state new` regressions pin empty stdout, refusal diagnostics, exact HEAD/index/status/refs/worktree registrations, unchanged outside trees, and absent outside checkout paths.
+- DONE: Include ignored untracked entity files in exact clean classification so state commit cannot false-no-op, while preserving the established clean compatibility result.
+  Exact path status now includes matching ignored records alongside tracked, staged, and ordinary untracked state. `TestStateCommitIgnoredUntrackedEntityIsNotCleanNoOp` proves an ignored present entity reaches the real path-scoped add refusal rather than no-op, with unchanged HEAD/index/bytes; the genuine clean and clean-with-unreadable-origin no-op regressions remain green.
+- DONE: Derive gitignore entries from the canonical in-repository workflow path for internal symlinks; run focused/full/race gates and commit locally only for fresh Roborev-first validation.
+  Fresh state creation now uses the canonical destination for both worktree creation and repository-relative ignore spelling. `TestStateNewInternalWorkflowAliasUsesCanonicalGitignorePath` drives lexical-alias and canonical invocations independently and requires the same `docs/dev/.spacedock-state/` rule, no alias rule, and one canonical checkout. Focused affected packages, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all passed at clean local head `6f54d8d6`; no code push, PR, CI, merge, approval, rebase, or integration action occurred.
+
+### Summary
+
+Fresh split-root creation now has one canonical in-repository destination from validation through ignore spelling and worktree registration, so partial ancestor symlinks cannot redirect mutation. Exact entity classification includes ignored untracked files without changing the established clean no-op; the append-only local branch is ready for another corrected exact-range Roborev-first validation.
