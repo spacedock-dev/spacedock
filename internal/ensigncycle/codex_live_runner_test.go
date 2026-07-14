@@ -182,6 +182,9 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOGateLoadBoundary(codexFOLoadTrace(result.jsonl, "codex", nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
@@ -243,6 +246,9 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	after := readFile(t, entityPath)
 	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOTerminalLoadBoundary(codexFOLoadTrace(result.jsonl, "codex", codexTerminalAction("merge-check"))); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
@@ -336,6 +342,9 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	}
 	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOFilingLoadBoundary(codexFOLoadTrace(result.jsonl, "codex", codexFilingAction(filingSlug))); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }

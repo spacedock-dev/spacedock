@@ -605,6 +605,9 @@ type streamToolInput struct {
 	// Path is the search root of a Grep tool_use (unset or the project root means a
 	// repo-wide sweep), read by the broad-search-at-boot detector.
 	Path string `json:"path"`
+	// Skill is the target of a Skill tool_use. Deferred write/merge cores are
+	// references, so the lazy-load observer rejects wrapper-skill invocations.
+	Skill string `json:"skill"`
 }
 
 // toolUseBlock returns the first tool_use block of an assistant entry, or nil —

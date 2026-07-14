@@ -25,9 +25,8 @@ var bootResidentBodies = []string{
 	filepath.Join("skills", "first-officer", "references", "pi-first-officer-runtime.md"),
 }
 
-// foReferenceCores are the host-neutral cores the first-officer contract loads:
-// merge and write eagerly from SKILL.md and dispatch lazily from the shared core. Each core must
-// exist on disk and carry its ceremony anchors.
+// foReferenceCores are the host-neutral cores the first-officer contract loads lazily
+// from the shared core. Each core must exist on disk and carry its ceremony anchors.
 var foReferenceCores = map[string][]string{
 	filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): {
 		"## Merge and Cleanup", "## «merge.guard»", "### Worktree removal safety", "## Mod-Block Guard",
@@ -209,21 +208,14 @@ func TestBootResidentDeferredLoadPointGuardFailsOnDanglingTarget(t *testing.T) {
 	}
 }
 
-// TestHostNeutralCoresResolveAndCarryCeremony is the reachability guard: the merge
-// core is named by the eager SKILL.md import and the dispatch core by the shared core's
-// deferred load point. Both exist on disk AND carry their ceremony anchors.
+// TestHostNeutralCoresResolveAndCarryCeremony is the reachability guard: every
+// host-neutral deferred core is named by the shared core's load points and exists on
+// disk with its ceremony anchors.
 func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	root := repoRoot(t)
 	if len(foReferenceCores) == 0 {
 		t.Fatal("no host-neutral cores declared — the reachability check would pass vacuously")
 	}
-	entryPath := filepath.Join("skills", "first-officer", "SKILL.md")
-	entryData, err := os.ReadFile(filepath.Join(root, entryPath))
-	if err != nil {
-		t.Fatalf("read first-officer entry %s: %v", entryPath, err)
-	}
-	entryBody := string(entryData)
-
 	sharedCore := filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md")
 	sharedData, err := os.ReadFile(filepath.Join(root, sharedCore))
 	if err != nil {
@@ -232,12 +224,8 @@ func TestHostNeutralCoresResolveAndCarryCeremony(t *testing.T) {
 	sharedBody := string(sharedData)
 	for corePath, anchors := range foReferenceCores {
 		base := filepath.Base(corePath)
-		if base != "fo-dispatch-core.md" {
-			if !strings.Contains(entryBody, "@references/"+base) {
-				t.Errorf("%s does not eagerly import %s", entryPath, base)
-			}
-		} else if !strings.Contains(sharedBody, base) {
-			t.Errorf("%s does not defer %s at the dispatch load point", sharedCore, base)
+		if !strings.Contains(sharedBody, base) {
+			t.Errorf("%s does not name %s in its deferred load points", sharedCore, base)
 		}
 		data, err := os.ReadFile(filepath.Join(root, corePath))
 		if err != nil {

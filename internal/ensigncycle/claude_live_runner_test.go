@@ -221,6 +221,9 @@ func runClaudeGateGuardrailScenario(t *testing.T, runner liveDriver, scenario sh
 	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
+	if err := assertFOGateLoadBoundary(claudeFOLoadTrace(result.stream, "claude", nil)); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
@@ -282,6 +285,9 @@ func runClaudeMergeHookGuardrailScenario(t *testing.T, runner liveDriver, scenar
 	after := readFile(t, entityPath)
 	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.stream); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOTerminalLoadBoundary(claudeFOLoadTrace(result.stream, "claude", claudeTerminalAction("merge-check"))); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
@@ -368,6 +374,9 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 	}
 	if err := assertClaudeFilingViaNew(result.stream, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOFilingLoadBoundary(claudeFOLoadTrace(result.stream, "claude", claudeFilingAction(filingSlug))); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }

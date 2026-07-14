@@ -1,6 +1,6 @@
 # First Officer Shared Core
 
-Shared first-officer semantics — the boot-resident core. Status and dispatch load points remain deferred; merge, write scope, and smallest-sufficient mechanism are eagerly imported by the entry skill.
+Shared first-officer semantics — the boot-resident core. The active runtime adapter is also a boot read; status, dispatch, write authority, and merge handling load only at their triggers.
 
 ## Startup
 
@@ -40,9 +40,15 @@ Headless = a non-interactive launch (`-p` / `exec`); otherwise interactive. Comp
 
 A greet-and-stop boot loads NONE of these — it composes its summary from `«state.boot»()` and follows the interactive branch of `«interaction.boundary»()`. Each loads only at its trigger:
 
+**Combined-boundary order:** evaluate the write trigger before the merge trigger. A terminal status transition is both an FO-authored mutation and a terminal boundary, so complete the write-core read first, then the merge-core read, then issue the transition. Never select merge first merely because the requested action is terminal. Each deferred read must complete in its own host event; do not batch either read with the other or with the mutation command.
+
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
+- `{first_officer_base}/references/fo-write-core.md` — read in its own completed host event immediately before the first FO-authored mutation. The read activates `«write.classify»`; no FO-owned file, state, process-doc, archive, or mutation command may precede it.
+- `{first_officer_base}/references/fo-merge-core.md` — read in its own completed host event at the first terminal boundary, or when `«engage»` begins recovery for `mod-block=merge:*`, before a terminal status transition, merge hook/guard, archive, shutdown, or other merge-owned action.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
+
+These two reads use only the retained loader-supplied `{first_officer_base}` plus their literal suffixes above; cwd, wrapper-skill discovery, alternate paths, retries at another root, and filesystem search are forbidden.
 
 ## Single-Entity Scope
 
@@ -100,7 +106,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## State Management
 
-- The FO owns YAML frontmatter on the main branch under the eagerly loaded `«write.classify»` write-authority scope.
+- The FO owns YAML frontmatter on the main branch under the `«write.classify»` write-authority scope, loaded at the first mutation boundary above.
 - Assign entity IDs through `id-style`; validate active plus archived entities before trusting status output.
 - Commit state changes at dispatch and merge boundaries.
 

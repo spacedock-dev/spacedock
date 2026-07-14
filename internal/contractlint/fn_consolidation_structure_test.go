@@ -74,8 +74,7 @@ func deferredLoadPointsBlock(t *testing.T, body string) string {
 // ...SkillCoresResolveAndCarryCeremony assert only that the deferred module targets resolve on disk,
 // never that a folded row kept its load-point trigger or the shared greet-guard. This walks the
 // single load-points block and asserts the remaining module tokens and triggers plus the single
-// shared greet-guard survive by name. The merge core is eagerly imported by first-officer/SKILL.md,
-// so it must not reappear here as a deferred read.
+// shared greet-guard survive by name.
 func TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard(t *testing.T) {
 	root := repoRoot(t)
 	data, err := os.ReadFile(filepath.Join(root, sharedCorePath()))
@@ -87,14 +86,18 @@ func TestDeferredLoadPointsFoldModulesWithTriggersAndGreetGuard(t *testing.T) {
 	for _, tok := range []string{
 		"spacedock:fo-status-viewer",     // status-viewer skill
 		"references/fo-dispatch-core.md", // dispatch reference
+		"references/fo-write-core.md",    // write-authority reference
+		"references/fo-merge-core.md",    // terminal/recovery reference
 	} {
 		if !strings.Contains(block, tok) {
 			t.Errorf("deferred load points do not fold %s — a module load-point token is missing", tok)
 		}
 	}
 	for _, lp := range []string{
-		"first status query",    // status-query load-point
-		"first worker dispatch", // dispatch load-point
+		"first status query",         // status-query load-point
+		"first worker dispatch",      // dispatch load-point
+		"first FO-authored mutation", // write-authority load-point
+		"first terminal boundary",    // merge load-point
 	} {
 		if !strings.Contains(block, lp) {
 			t.Errorf("deferred load points lost load-point trigger %q — a folded row's trigger vanished", lp)

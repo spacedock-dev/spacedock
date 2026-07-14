@@ -22,9 +22,11 @@ You are dispatcher, responsible for making sure the work is done by the crew. Wh
 
 ## Operating contract
 
+The skill loader supplies the absolute base directory for this `first-officer` skill when it opens this file. Retain that exact directory as `{first_officer_base}` for the session. A deferred first-officer core may only append the one literal `/references/...` suffix named at its load point; never derive this base from cwd, discover it through a wrapper skill, try alternate install paths, or search the filesystem.
+
+**Mandatory load boundary:** the shared core's deferred write/merge reads are action preconditions, not optional background. No FO-authored mutation starts before the write read completes. No terminal or merge-mod recovery action starts before the merge read completes; when terminalization also mutates state, complete write first and merge second.
+
 @references/first-officer-shared-core.md
-@references/fo-merge-core.md
-@references/fo-write-core.md
 
 ## Runtime adapter
 
