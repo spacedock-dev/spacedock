@@ -4,7 +4,7 @@ Deferred reference for the one Bridge signal the boot-resident core does not car
 
 ## Permission Blocks and Bridge Alerts
 
-When a host sandbox or permission boundary blocks a workflow action that would otherwise be valid to attempt, surface it as a high-priority Bridge interrupt **before parking the loop**. There is no `spacedock bridge alert` verb — this is a direct file write, exactly like the rest of the seam: append one JSONL line to `_bridge/fo-alerts.jsonl` (relative to the fleet root where the FO launched), using the §2.8 shape verbatim:
+When a host sandbox or permission boundary blocks a workflow action that would otherwise be valid to attempt, surface it as a high-priority Bridge interrupt **before parking the loop**. There is no packaged permission-alert verb — this is a direct file write, exactly like the rest of the seam: append one JSONL line to `_bridge/fo-alerts.jsonl` (relative to the fleet root where the FO launched), using the §2.8 shape verbatim:
 
 ```json
 {"schema":1,"id":"al_3c","ts":"2026-07-14T18:08:00Z","kind":"permission-request","workflow":"linear-drc-ship","entity":"drc-3467","reason":"rm outside repo","command":"rm -rf /tmp/x","prefix_rule":["rm -rf /tmp/"],"status":"open"}
