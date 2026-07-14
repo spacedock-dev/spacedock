@@ -81,9 +81,17 @@ func capturedLauncherFilesViaNew(command, slug string) bool {
 	segments := regexp.MustCompile(`\r?\n|;|&&|\|\||\|`).Split(command[captureEnd:], -1)
 	executable := regexp.QuoteMeta(varName)
 	call := regexp.MustCompile(`^(?:\$` + executable + `|\$\{` + executable + `\}|"\$` + executable + `"|"\$\{` + executable + `\}")[ \t]+(?:new|--new)\b`)
+	// Codex wraps exec_command calls in `/bin/zsh -lc '…'`. When a quoted
+	// captured launcher appears after a pipeline, the recorded outer command
+	// uses zsh's quote-splice form `\""'$launcher" new`. Recognize that exact
+	// transport encoding only for the known wrapper; do not broaden the normal
+	// simple-command matcher to accept mismatched quotes or arbitrary `$VAR new`
+	// narration.
+	wrappedCall := regexp.MustCompile(`^\\""'\$` + executable + `"[ \t]+(?:new|--new)\b`)
+	codexLCWrapper := strings.HasPrefix(strings.TrimSpace(command), "/bin/zsh -lc '")
 	for _, segment := range segments {
 		segment = strings.TrimSpace(segment)
-		if call.MatchString(segment) && strings.Contains(segment, slug) {
+		if (call.MatchString(segment) || (codexLCWrapper && wrappedCall.MatchString(segment))) && strings.Contains(segment, slug) {
 			return true
 		}
 	}

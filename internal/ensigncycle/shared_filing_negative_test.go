@@ -1,6 +1,9 @@
 package ensigncycle
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 // Offline positive + negative cases for the `filing` scenario assertions. They
 // build synthetic host streams — a stream that filed via `new` (passes) and the
@@ -17,6 +20,17 @@ func claudeToolUse(name, inputJSON string) string {
 // codexCommand builds a `codex exec --json` command_execution item line.
 func codexCommand(command string) string {
 	return `{"type":"item.completed","item":{"type":"command_execution","command":"` + command + `"}}`
+}
+
+func codexRawCommand(command string) string {
+	row := codexCommandItem{Type: "item.completed"}
+	row.Item.Type = "command_execution"
+	row.Item.Command = command
+	encoded, err := json.Marshal(row)
+	if err != nil {
+		panic(err)
+	}
+	return string(encoded)
 }
 
 func TestAssertClaudeFilingViaNew(t *testing.T) {
@@ -121,6 +135,15 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		t.Fatalf("expected the exact command-v resolved launcher filing to count as atomic: %v", err)
 	}
 
+	// Positive regression: current Codex records a quoted captured launcher
+	// behind a pipeline using zsh -lc's quote-splice form. This exact live shape
+	// exited zero and created the entity through the atomic command.
+	filedWrappedCapture := codexRawCommand(`/bin/zsh -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"
+printf '%s\\n' body | \""'$launcher" new ` + slug + `'`)
+	if err := assertCodexFilingViaNew(filedWrappedCapture, slug); err != nil {
+		t.Fatalf("expected the exact Codex zsh-wrapper launcher filing to count as atomic: %v", err)
+	}
+
 	malformedCaptures := map[string]string{
 		"mismatched quotes":   `launcher=\"${SPACEDOCK_BIN:-spacedock}'\n\"$launcher\" new ` + slug,
 		"leading-only quote":  `launcher=\"${SPACEDOCK_BIN:-spacedock}\n\"$launcher\" new ` + slug,
@@ -138,6 +161,8 @@ func TestAssertCodexFilingViaNew(t *testing.T) {
 		"different command after launcher status": `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher\" status; $EDITOR new ` + slug,
 		"mismatched invocation quotes":            `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n\"$launcher' new ` + slug,
 		"new token after launcher version":        `launcher=\"${SPACEDOCK_BIN:-spacedock}\"\n$launcher --version; touch new ` + slug,
+		"wrapped different variable":              `/bin/zsh -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; printf body | \""'$EDITOR" new ` + slug + `'`,
+		"wrapped narrated invocation":             `/bin/zsh -lc 'launcher="${SPACEDOCK_BIN:-spacedock}"; echo \""'$launcher" new ` + slug + `'`,
 	}
 	for name, command := range crossSegmentCalls {
 		t.Run(name, func(t *testing.T) {
