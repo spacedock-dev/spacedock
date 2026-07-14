@@ -95,3 +95,20 @@ Restored the intended cold boundary without changing mutation, merge, routing, o
 ### Summary
 
 The current Claude and Codex journeys visibly perform the intended lazy reads and preserve durable outcomes, and all deterministic gates pass at `09288711`. Validation rejects the shipped evidence boundary because two detached adversarial edits proved it can certify behavior it did not observe; route a narrow test-harness correction back to implementation.
+
+## Stage Report: implementation (cycle 1)
+
+- DONE: Bind deferred-load evidence to the exact loader-supplied installation and a successful host-native full-file read.
+  Commit `c7def2b7` requires correlated, non-partial Claude `Read` results and full canonical Codex command output at exact installed paths; commit `f745bba1` binds Codex to its unique loader-visible isolated cache entry. Path-only, partial-read, and same-suffix alternate-root controls were RED on `09288711` and are green at exact head.
+- DONE: Detect the first general FO-authored mutation across existing mutating scenarios while retaining specialized filing and terminal order checks.
+  Fixed supported-event markers now catch ordinary early `status --set` and other established mutation surfaces; Claude and Codex rejection, escalation, merge-triage, smallest-mechanism, keep-moving, and shallow-boot runners apply the write-before-first-mutation boundary. Filing still requires write before `new`, and terminal flow still requires write then merge before its action.
+- DONE: Preserve product behavior and keep the correction inside the existing observer and scenario runners.
+  No product semantics, shell parser, runtime controller, or lifecycle layer changed. Focused controls, live-tag compilation, `go test ./...`, and `go test ./... -race` passed at `f745bba1592837aa8697d321177cc3a07a224115`; exact-head Codex and Claude were each 3/3 green.
+- DONE: Prove the Claude gate through supported stored-login setup without changing repository or operator credential state.
+  The exact-head Claude pass used a disposable profile populated from the already-working operator login and normal external Go caches. Later unchanged attempts that used `Bash cat` or skipped the write-core read were correctly rejected by the hardened observer rather than false-passing.
+- DONE: Obtain an exact-head Roborev result after all required gates.
+  Roborev job `1433` reviewed `f745bba1592837aa8697d321177cc3a07a224115` with agent `codex`, reasoning `thorough`; status `done`, verdict `P`, with no issues found.
+
+### Summary
+
+Cycle 1 closes both false-green evidence gaps without changing lazy-loading or workflow semantics. Exact installed-base/full-read proof and first-mutation coverage are now adversarially falsifiable, with deterministic gates, supported-host live evidence, and exact-head Roborev green.
