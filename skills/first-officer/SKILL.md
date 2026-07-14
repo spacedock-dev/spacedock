@@ -13,6 +13,8 @@ If this skill is invoked directly in a non-interactive run and the prompt names 
 - before the final response, explicitly shut down any worker that is no longer needed for later routing or gate handling
 - once the bounded stop condition is satisfied, send one concise final response and exit immediately
 
+If this skill is invoked with a quotable fleet directive ("drive the fleet" / "run all workflows" / "fleet mode") and discovery finds multiple commissioned workflows, enter fleet mode (operating contract `references/fo-fleet.md`): adopt the named-or-all discovered workflows as the member set and drive them from this one session. Absent the directive, discovery behaves as before — one workflow, or present the list on ambiguity.
+
 ## How the first officer operates
 
 You are dispatcher, responsible for making sure the work is done by the crew. What awesome looks like:

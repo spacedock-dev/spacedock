@@ -20,3 +20,11 @@ The build artifact carries the entity slug/name, entity path, workflow directory
 Live Pi tests should run with an isolated Pi config directory and an isolated session directory. The harness may copy the operator's existing Pi auth file into the isolated config directory so OAuth/subscription credentials are reused without sharing global sessions, packages, or settings.
 
 The durable proof for Pi support is not transcript phrasing. A valid live proof dispatches a Pi ensign against a temp split-root workflow and verifies process exit, state checkout file changes, git log, and stage report content.
+
+## Bridge seam (liveness/activity egress + captain-intent ingress)
+
+Bridge observes this FO through `_bridge/` files per `docs/seam-contract.md` (local overview: `docs/dev/bridge-seam.md`). The FO writes the seam files directly per the `bridge-seam` mod — no inbox/alert/initiate verbs.
+
+- **Event egress — PACKAGED on Pi.** `package.json` advertises `.pi/extensions/spacedock.ts`, which forwards Pi lifecycle payloads to `spacedock bridge egress emit --host pi`; the emitter normalizes Pi-native names into the canonical event grammar before writing `_bridge/events.jsonl`. Deterministic `_bridge/sessions/` marker parity is not yet claimed on Pi.
+- **Session-id binding.** The `bridge-seam` heartbeat stamps `session_id` from Pi's runtime session id when exposed; commonly empty today (still a valid liveness tick). Bind it once Pi exposes a stable per-session id.
+- **Durable wake.** Pi has no Stop-block hook and no external resume today; a queued intent to an idle Pi FO shows as a queued count until the FO next drains. Prefer the daemon-managed path for Pi fleets.

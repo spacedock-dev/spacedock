@@ -12,6 +12,7 @@ Shared first-officer semantics — the boot-resident core. Status and dispatch l
 
    In every class, do NOT proceed to discovery or `--boot`.
 2. **Boot — local identify.** Invoke `«state.boot»()` once and retain its boot record.
+2b. **Bridge liveness — before greet.** Invoke `«bridge.boot-liveness»()` with the boot record. When the `bridge-seam` mod is registered it writes each member's `_bridge/fo.$SLUG.json` heartbeat and runs the initial inbox drain BEFORE the greet, so a live FO shows attached in Bridge from boot — even a greet-and-stop launch. A no-op when the mod is not registered.
 3. **Interaction boundary.** Invoke `«interaction.boundary»()` with that boot record and the launch context.
 
 ## «interaction.boundary»(): route interactive and headless launch behavior
@@ -43,6 +44,8 @@ A greet-and-stop boot loads NONE of these — it composes its summary from `«st
 - `Skill(skill="spacedock:fo-status-viewer")` — first status query (`--set` / `--next-id` / `--resolve` / issue filing).
 - `references/fo-dispatch-core.md` — read before the first worker dispatch, before invoking `«dispatch.next-action»()`, or before mutating dispatch state. `«dispatch.build»` output is not a dispatch: forward every ready entity's artifact to `«worker.spawn»`; never author its stage report or claim completion without the worker's `«completion-signal»`.
 - `Skill(skill="spacedock:fo-dispatch-recovery")` — dispatch failure recovery (Degraded Mode, break-glass manual dispatch, budget-fail/dead-ensign handling); named at its triggers inside the Claude dispatch module — no boot and no happy-path dispatch loads it.
+- `references/fo-bridge.md` — first permission block: appends the `permission-request` alert line to `_bridge/fo-alerts.jsonl` directly (deny / approve-once / approve-rule), a direct file write, no `spacedock bridge` verb.
+- `references/fo-fleet.md` — a quotable fleet directive adopts the named/ALL discovered workflows as one member set.
 
 ## Single-Entity Scope
 
@@ -85,6 +88,7 @@ If the stage is gated, `«gate.assemble-verdict»(slug, stage)`, then route on t
 
 ## «gate.assemble-verdict»(slug, stage): assemble the gate review and render the verdict
 
+- **effect — drain before presenting (honor a queued Bridge decision):** when the `bridge-seam` mod is registered, run THIS entity's `idle` drain once (keyed by its `$SLUG`) BEFORE assembling, so a Bridge-queued `decision` record for this gate is applied now; re-read status. Bridge wake is best-effort and delivery is confirmed only by this FO-owned drain, so a captain decision could otherwise sit unprocessed while you redundantly present. If the drain advanced the entity past `{stage}`, do NOT present — report what you applied and return (the **block** below forbids inventing a verdict). Otherwise present normally.
 - **effect — extract (deterministic):** roll up the structured inputs via the shipped modes — `status --read <ref> --checklist` and `status --read <ref> --ac-scan`. These feed the verdict; they do not make it.
 - **effect — decide (judgment):** the verdict (approve/reject, is-this-AC-satisfied, is-this-direction-sound) is irreducible judgment; the FO renders its own `Recommend` line. Present via `Skill(skill="spacedock:present-gate")` and its template + assembly rules.
 - **done-when:** the gate review is presented and the FO is waiting on the captain's decision, the worker kept alive.
@@ -115,6 +119,14 @@ The FO declares state intent by invoking the prose-functions below. Each is idem
 - **one or many:** return a list (including length one), NAME each workflow in the greet, and leave convergence to «engage». Single-entity mode fails on ambiguity.
 - **done-when:** the self-describing boot record is in hand, its counts and PR fields labeled possibly stale, and the greet has mutated nothing.
 - → **shipped**: `` `spacedock status --boot --identify --json` `` (extended to fold in discovery + taxonomy and render PR_STATE local); convergence moves to «engage».
+
+## «bridge.boot-liveness»(): write the FO heartbeat before the greet
+
+- **effect:** when the boot record's MODS map registers the `bridge-seam` mod (a `## Hook: startup` section), read that mod at `{workflow_dir}/_mods/bridge-seam.md` and run its startup hook per member `$SLUG` — write `_bridge/fo.$SLUG.json` and run the initial drain — BEFORE composing the greet. This is the one liveness signal that cannot wait for the event loop: without it a greet-and-stop boot shows "no FO attached" in Bridge though the session is live. The heartbeat MUST carry `session_id` = the harness's own session id (Claude `$CLAUDE_CODE_SESSION_ID`, Codex `$CODEX_THREAD_ID`, Pi its runtime id, else empty), so Bridge's Stop-hook wake can resolve which slugs belong to this session; the mod's `## Agent Prompt` states the exact write.
+- **observe-only:** an absent `_bridge/inbox.jsonl` no-ops the drain; the heartbeat write still fires. A greet-only session mutates no workflow state — this touches only `_bridge/`.
+- **fleet:** runs once per member, keyed by that member's `$SLUG`.
+- **done-when:** each member's heartbeat is fresh and its initial drain has run, or the mod is unregistered (skip).
+- → **shipped:** the FO writes the files directly per the `bridge-seam` mod; no `spacedock bridge` verb is involved.
 
 ## «state.commit»(slug): record an entity's change durably
 

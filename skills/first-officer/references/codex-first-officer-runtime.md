@@ -52,3 +52,11 @@ Feedback rejection is the load-bearing exception to casual fresh dispatch. When 
 ## Captain Interaction
 
 The captain is the user of the Codex session. Communicate gate results, clarifications, and status directly in the conversation.
+
+## Bridge seam (liveness/activity egress + captain-intent ingress)
+
+Bridge observes this FO through `_bridge/` files per `docs/seam-contract.md` (local overview: `docs/dev/bridge-seam.md`). The FO writes the seam files directly per the `bridge-seam` mod — no inbox/alert/initiate verbs. Codex differs from Claude in one way: it supports a durable EXTERNAL wake.
+
+- **Event egress — PACKAGED on Codex.** `.codex-plugin/plugin.json` → `hooks/codex-hooks.json` (non-async command hooks) calls `spacedock bridge egress emit --host codex` (bin via `$SPACEDOCK_BIN`/`PATH`). The emitter normalizes Codex-native lifecycle names into the canonical event grammar before writing `_bridge/events.jsonl`. Deterministic `_bridge/sessions/` marker parity is not yet claimed on Codex.
+- **Session-id binding.** The `bridge-seam` heartbeat stamps `session_id` = `$CODEX_THREAD_ID` when exposed; else empty (still a valid liveness tick — Bridge reads freshness from `ts`).
+- **Durable wake is external.** Bridge runs `spacedock bridge ingress wake --host codex`, which resumes the parked session via `codex exec resume` and prompts it to drain. A wake is only an attempt; delivery is confirmed by the FO-owned drain + ack. No Stop-block hook on Codex.
