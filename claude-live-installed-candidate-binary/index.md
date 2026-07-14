@@ -163,3 +163,16 @@ Claude live E2E now installs the exact checked-out candidate into a physical run
 ### Summary
 
 The implementation passes all local behavioral, full, race, bounded-diff, exact-revision, placement, and wrong-root checks in a fresh standalone checkout matching the CI topology. Validation recommends REJECTED only because the acceptance contract requires a final-SHA Claude live run and retained CI artifacts, and none currently exists; rerun validation after that evidence is available.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Run corrected-guideline Roborev first on exact range 557f8df3..5ff92f9b and inspect its stored range/prompt; on any finding stop without push or CI.
+  Roborev job `895` returned `No issues found`; stored `git_ref` is exact `557f8df3e6a62d34987edda70533375fc48ba8f6..5ff92f9b58e2aae918a9cbbda560eb7394dae413`, and its prompt contains all four configured guideline sections.
+- FAILED: Only after Roborev PASS push exact head 5ff92f9b, verify the remote branch, and dispatch the exact-SHA Claude live E2E required by AC-1 with retained provenance and executable artifacts.
+  GitHub rejected the exact-head push because the HTTPS OAuth credential lacks workflow scope; the remote branch remains absent and no CI was dispatched.
+- SKIPPED: Inspect the actual live result and artifacts, rerun local focused/full/race evidence if the head changes, and return PASSED or REJECTED without treating waiting/skipped/absent CI as green.
+  REJECTED: no remote head or live run exists after the authorized push failed; local head stayed exact `5ff92f9b`, so the already-passing focused/full/race evidence did not require rerun.
+
+### Summary
+
+The corrected Roborev exact-range gate passed cleanly and verified the intended guideline injection. Validation remains REJECTED on an explicit infrastructure blocker: Git cannot publish the workflow-changing commit without an OAuth credential carrying workflow scope, so the required exact-SHA live evidence cannot yet be produced.
