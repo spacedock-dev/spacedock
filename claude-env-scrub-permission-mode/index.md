@@ -1,9 +1,9 @@
 ---
 id: d1sah62r0xckeysjet5j6zzk
 title: Preserve Claude first-officer permissions with subprocess environment scrubbing
-status: backlog
+status: ideation
 source: GitHub issue spacedock-dev/spacedock#504, reported by jesserobbins 2026-07-14
-started:
+started: 2026-07-14T04:12:50Z
 completed:
 verdict:
 score:
