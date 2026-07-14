@@ -80,6 +80,35 @@ real Git behavior, with canonical main-root placement, local-branch fallback,
 and non-mutating stale-registration refusal. All required focused, full, and race
 gates passed; code is committed at `0384a012` and ready for independent validation.
 
+### Roborev request
+
+- **Identity:** job `1426`, review `1412`, UUID
+  `6448bbfa-5461-4264-8a14-c5ac84355a15`, patch
+  `3db7a3fd7140070070ed7e99ceb866776a9e3367`; exact `git_ref`
+  `0384a012faa25bae41ac56f7cc8b1347122942b2`, agent `codex`, reasoning
+  `thorough`.
+- **Status:** `done`, verdict `F`, zero retries; enqueued
+  `2026-07-14T15:27:33Z` and finished `2026-07-14T23:30:46+08:00`.
+- **HIGH — `internal/cli/state_sync.go:159`:** `branch` and `stateRel` still
+  come from the linked-worktree README after the checkout path moves to the
+  main worktree. If an agent branch changes `state-branch`, `state ready` can
+  pull/rebase that branch into the existing main state checkout and corrupt its
+  history. Re-resolve and validate the main-worktree README, fail closed on any
+  disagreement, and verify the present checkout is on the expected branch
+  before pulling.
+- **MEDIUM — `internal/cli/state_sync.go:228`:** both worktree-list parsers use
+  line-delimited porcelain, so Git C-quoted paths (including backslashes, tabs,
+  newlines, or quoted non-ASCII byte sequences) can produce an invalid main root
+  or hide a stale registration. Use `git worktree list --porcelain -z`, parse
+  NUL-delimited records, and cover a path that triggers quoting.
+- **MEDIUM — `internal/cli/state_sync.go:249`:** `registeredWorktree` converts a
+  registry-query failure into “not registered,” after which recovery can fetch
+  and attempt mutation while registry state is unknown. Return registration plus
+  error and abort recovery when the query fails.
+
+No code changed and no verification was rerun during this request; these concrete
+findings are recorded for the feedback/rejection implementation cycle.
+
 ## Stage Report: validation
 
 - DONE: Verify AC-1 and AC-2 with independent real-Git fixtures: linked-worktree cwd restores the canonical main-worktree state path, and a missing origin falls back to the local state branch.
