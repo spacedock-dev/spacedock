@@ -26,10 +26,11 @@ The artifacts preserve the reviewed proposal and the user feedback folded into i
 
 Spacedock users can benefit from independent Roborev code-review evidence, but adoption currently requires knowing how to combine Roborev panels, implementation-exit ownership, fresh validation, split state checkouts, daemon placement, and Safehouse access. A separate integration plugin would make the setup entry point harder to discover and would create a one-skill packaging boundary without independent runtime code or release needs.
 
-The pilot exposed two concrete guidance failures:
+The pilot exposed three concrete guidance failures:
 
 1. The first skill draft led with three web-documentation links. An actual setup run went searching for guidance even though `roborev quickstart` already emitted a version-matched **Current state** and **Configuration playbook**. This was an avoidable first-contact detour.
 2. The generated `review_guidelines` copied repository procedures and required test commands. Inspection of `kenn-io/roborev`'s own configuration showed the narrower useful pattern: calibrate reviewer judgment with context it cannot infer from the diff or repository, such as trust boundaries, intentional compatibility posture, false-positive suppressions, and review-focus boundaries.
+3. **Roborev setup reviews intentional red commits.** The setup combines strict TDD with an automatic post-commit review hook but does not say whether the expected-red state belongs in Git. Implementers therefore commit tests that intentionally fail or do not compile. Roborev immediately reviews those commits, reports the known failure, consumes reviewer time and tokens, and adds misleading noise to pass-rate and correction data. Excluding expected-red commits from the authoritative convergence budget prevents false escalation but does not prevent wasted review work; a reviewer cannot account for a green commit that does not yet exist.
 
 Skill behavior is harder to test than command behavior. Repository policy bans prose-grep as behavioral proof, requires a live drive for a skill change, and requires a detached adversarial audit for shipped contract or scaffolding changes. The design must produce fixture-backed durable evidence rather than treating skill wording or transcript phrasing as proof.
 
@@ -53,6 +54,7 @@ No product helper spike is needed. The setup mutations are ordinary file edits a
 - Explain which quickstart items matter and which are intentionally left missing. In particular, do not install or invoke Roborev fix/refine skills or the agent hook in a Spacedock-managed workflow.
 - Before writes, show the integration boundary, proposed files, and any proposed `review_guidelines` calibration to the user. Apply only approved changes, then rerun `roborev quickstart` to verify current state.
 - Configure `quick` as the cheap post-commit cost gate, the exact-head `code_completion` panel as authoritative implementation-exit evidence, and fresh validation as the consumer of stored synthesis-parent evidence before independent behavioral validation.
+- Define expected RED as a working-tree state with durable evidence, not a required commit. The implementer records the pre-fix command, exact failure, and predicted reason in the Stage Report, then adds the minimal implementation and commits the test and implementation together only after the focused check and relevant suite pass. Generated guidance forbids red-only or non-buildable product commits while keeping the post-commit hook enabled, so Roborev receives green candidate states without weakening test-first proof.
 - Encode panel order in generated implementation-stage text or a dispatch checklist: after the final candidate commit, wait for that exact tip's existing `quick` review; fix and recommit any Medium-or-higher finding; let Low findings remain advisory; launch `code_completion` only after `quick` clears. The panels never start independently.
 - Add the split state checkout's actual branch to its checkout-local `excluded_branches` without enqueueing a probe review.
 - Detect Safehouse or another sandbox. When present, advise the smallest read-only runtime access needed for the external daemon; omit sandbox advice otherwise. Never commit machine-local permissions or expose all of `~/.roborev`.
@@ -63,13 +65,15 @@ No product helper spike is needed. The setup mutations are ordinary file edits a
 
 The implementation stage receives this observable sequence:
 
-1. Before the final candidate commit, run the implementation-owned semantic adversarial pass: trace identity/cardinality/order/bytes/attribution/authority/terminal state through every representation and lifecycle phase; matrix empty/terminal, repeated/out-of-order, every input path, Unicode/EOF/size/visibility/layout; use canonical validators or atomic full-record validation; inspect hot paths/readers for multiplicative work, blocking I/O, unbounded allocation, and implicit limits; and add exact-result plus failure/cleanup/scaling/over-limit proof where relevant.
-2. Resolve and record candidate `HEAD` after the final implementation commit.
-3. Run `roborev wait <head>` for that exact commit's already-enqueued `quick` job, then inspect `roborev show <head> --json` and verify its panel and head. Do not start `code_completion` before both operations complete.
-4. On missing/error coverage or a Medium-or-higher stored finding, stay in implementation. Repair coverage or fix, commit, and wait on the replacement tip. Because `wait` may exit nonzero for a Low-only verdict, stored finding severities—not exit status alone—allow the Low-only result to continue without another commit.
-5. Once quick clears, run the complete branch through `roborev review --repo <root> --branch=<branch> --base <base> --panel code_completion --min-severity medium --wait` and preserve the synthesis parent ID even on nonzero exit.
-6. Fetch `roborev show --job <parent-id> --json`; require the current head and frozen merge-base-to-head range, the `code_completion` panel, exactly one successful execution per required member, and a passing synthesis parent.
-7. Any code-changing commit invalidates both quick and `code_completion` evidence and restarts at step 1.
+1. Create the failing test in the working tree before its implementation. Run the focused pre-fix command and record the command, exact failure, and predicted reason in the Stage Report. This durable evidence is RED; `HEAD` must remain unchanged, and the workflow must not create a red-only or non-buildable product commit.
+2. Add the minimal implementation, then run the focused check and relevant suite. Only after both pass, commit the test and minimal implementation together. Keep the post-commit hook enabled so its `quick` job receives this green candidate state.
+3. Before the final candidate commit, run the implementation-owned semantic adversarial pass: trace identity/cardinality/order/bytes/attribution/authority/terminal state through every representation and lifecycle phase; matrix empty/terminal, repeated/out-of-order, every input path, Unicode/EOF/size/visibility/layout; use canonical validators or atomic full-record validation; inspect hot paths/readers for multiplicative work, blocking I/O, unbounded allocation, and implicit limits; and add exact-result plus failure/cleanup/scaling/over-limit proof where relevant.
+4. Resolve and record candidate `HEAD` after the final green implementation commit.
+5. Run `roborev wait <head>` for that exact commit's already-enqueued `quick` job, then inspect `roborev show <head> --json` and verify its panel and head. Do not start `code_completion` before both operations complete.
+6. On missing/error coverage or a Medium-or-higher stored finding, stay in implementation. Repair coverage or fix, run the focused check and relevant suite, commit only a green replacement, and wait on that replacement tip. Because `wait` may exit nonzero for a Low-only verdict, stored finding severities—not exit status alone—allow the Low-only result to continue without another commit.
+7. Once quick clears, run the complete branch through `roborev review --repo <root> --branch=<branch> --base <base> --panel code_completion --min-severity medium --wait` and preserve the synthesis parent ID even on nonzero exit.
+8. Fetch `roborev show --job <parent-id> --json`; require the current head and frozen merge-base-to-head range, the `code_completion` panel, exactly one successful execution per required member, and a passing synthesis parent.
+9. Any code-changing commit invalidates both quick and `code_completion` evidence and restarts at step 3; a new test-first change starts at step 1.
 
 Roborev supplies evidence only. Implementation owns fixes and commits. The First Officer owns entity state and routing. Fresh validation verifies the stored exact-head parent, then independently exercises acceptance behavior; it does not rerun an unchanged passing panel.
 
@@ -119,6 +123,9 @@ Verified by: the fixture provides four structured calibration facts plus an `AGE
 **AC-8 - The test suite can refute materially broken setup behavior rather than merely certify shipped text.**
 Verified by: a detached adversarial audit on a throwaway checkout mutates at least two independent boundaries—quickstart-first ordering and either state exclusion or exact-head gating—and demonstrates the relevant live/fixture oracle turns red, then restores the checkout and records clean status.
 
+**AC-9 - Generated implementation guidance preserves test-first RED evidence without sending intentional-red or non-buildable product commits to Roborev.**
+Verified by: a setup regression that parses the generated implementation-stage contract and requires all of these rules together: RED remains in the working tree; the Stage Report records the pre-fix command, exact failure, and predicted reason; `HEAD` stays unchanged until the focused check and relevant suite pass; the test and minimal implementation are committed together; red-only and non-buildable product commits are forbidden; and the post-commit hook remains enabled. The live panel-order fixture separately proves the observable behavior, so this structural contract inspection does not stand in for runtime evidence.
+
 ## Test architecture and plan
 
 ### Hermetic fixture
@@ -145,6 +152,8 @@ Both modes assert process exit, resulting README and TOML semantics, state-check
 
 Drive the generated implementation text once through a supported live worker with fake synthesis records:
 
+- the worker creates a failing test in the working tree, runs the focused pre-fix command, and records the exact failure and predicted reason in the Stage Report; assert `HEAD` is unchanged and no post-commit review event exists for RED;
+- the worker adds the minimal implementation, passes the focused check and relevant suite, then commits the test and implementation together; assert the enabled hook enqueues `quick` only for that green candidate commit;
 - the baseline suite passes while a seeded Unicode/over-limit record produces wrong bytes or terminal cleanup; the pre-review pass exposes it, uses the canonical full-record validator, fixes it, and records exact/scaling/failure proof before candidate HEAD;
 - tip A quick returns Medium; no `code_completion` event may exist;
 - implementation fixes and commits tip B;
@@ -160,6 +169,7 @@ Run the setup drive with and without a `.safehouse`/launcher sandbox signal. Com
 ### Structural, install, and repository gates
 
 - Extend `internal/contractlint` only for frontmatter, user-command discovery, name/path agreement, plugin-manifest reachability, and FO/ensign load-boundary invariants. Structural tests do not claim setup behavior.
+- Add a setup regression that parses the generated implementation-stage contract and rejects omission or weakening of any RED-evidence, green-before-commit, combined-commit, red-only/non-buildable prohibition, or enabled-hook rule from AC-9.
 - Add current-checkout installed-skill discovery smoke to the existing Codex, Claude, and Pi runtime lanes. A missing host in a local developer run may skip its host-specific smoke; the corresponding release CI lane is required.
 - Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
 - Before merge, run the proof-policy detached adversarial audit because this adds shipped skill/scaffolding.
@@ -176,6 +186,8 @@ Add `docs/site/advanced/roborev.md`:
 Run `/spacedock:roborev-setup` from an existing commissioned code project when you want an independent review record before fresh validation.
 
 The setup starts with `roborev quickstart`, applies only the missing steps you approve, and keeps Roborev optional. It configures a cheap exact-tip quick review before the required `code_completion` panel; Spacedock still owns fixes, routing, and behavioral validation.
+
+Test-first RED stays in the working tree and is recorded in the Stage Report with the pre-fix command, exact failure, and predicted reason. Commit the test and minimal implementation together only after the focused check and relevant suite pass; the enabled post-commit hook reviews green candidates, never intentional-red or non-buildable product commits.
 
 For split-root workflows, setup excludes the actual state branch without creating a probe review. In a sandbox, it proposes only the read-only Roborev runtime access the client needs and never commits machine-local Safehouse settings.
 
@@ -198,6 +210,7 @@ Add one navigation entry to `mkdocs.yml` after Split-root state:
 - Quickstart and local help are primary. Direct official pages are allowed only for a named residual gap, after the local evidence; broad search is never part of setup.
 - `review_guidelines` are an explicit user-reviewed calibration artifact, not a summary of repository instructions.
 - The semantic adversarial pass is implementer/process guidance in the generated stage, never Roborev reviewer calibration.
+- Expected RED is an evidenced working-tree state, not a product commit. The post-commit hook remains enabled, but the generated implementation contract permits only green candidate commits containing the test and minimal implementation together.
 
 ## Stage Report: ideation
 
@@ -211,7 +224,9 @@ Add one navigation entry to `mkdocs.yml` after Split-root state:
   The skill and AC-7 exclude duplicated agent/workflow procedures and commands, and compare resulting TOML with approved fixture facts.
 - DONE: Preserve the pilot's semantic adversarial pass as implementer-facing pre-review guidance rather than `review_guidelines`.
   The canonical skill and AC-4 cover representation/lifecycle tracing, variant matrices, atomic validation, scaling/limits, and false-green exact-result proof before quick.
+- DONE: Amend the setup contract so strict TDD does not trigger Roborev on intentional-red commits.
+  AC-9, the canonical skill, the generated-stage sequence, and the panel-order fixture now define RED as an evidenced working-tree state, forbid red-only and non-buildable product commits, require the test and minimal implementation to land together after focused and relevant green checks, and keep the post-commit hook enabled for green candidates.
 
 ### Summary
 
-Ideation revised the canonical task artifacts around two observed failures: a documentation-search detour and over-broad generated review guidelines. The design now has independent durable oracles for command order, targeted web fallback, panel order, split-state exclusion, sandbox advice, guideline calibration, installed discovery, and adversarial refutation; no active workflow definition or product code changed. `go test ./...` and `go test ./... -race` passed after the required format gate.
+Ideation revised the canonical task artifacts around three observed failures: a documentation-search detour, over-broad generated review guidelines, and intentional-red commits reviewed by the post-commit hook. The design now has independent durable oracles for command order, targeted web fallback, green-only candidate commits with durable RED evidence, panel order, split-state exclusion, sandbox advice, guideline calibration, installed discovery, and adversarial refutation; no active workflow definition or product code changed. `go test ./...` and `go test ./... -race` passed after the required format gate.
