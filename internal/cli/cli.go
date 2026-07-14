@@ -4,6 +4,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
+	"github.com/spacedock-dev/spacedock/internal/bridgeingress"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
@@ -481,6 +483,16 @@ func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
 				})
 				return nil
 			}
+			if len(args) >= 2 && args[0] == "ingress" && args[1] == "wake" {
+				result := bridgeingress.Wake(cmd.Context(), bridgeingress.Options{
+					Host:     parseBridgeHost(args[2:]),
+					Root:     parseBridgeStringFlag(args[2:], "--repo-root", dir),
+					Members:  parseBridgeCSVFlag(args[2:], "--members"),
+					CodexBin: parseBridgeStringFlag(args[2:], "--codex-bin", ""),
+				})
+				_ = json.NewEncoder(cmd.OutOrStdout()).Encode(result)
+				return nil
+			}
 			return nil
 		},
 	}
@@ -496,6 +508,38 @@ func parseBridgeHost(args []string) string {
 		}
 	}
 	return ""
+}
+
+func parseBridgeStringFlag(args []string, name string, fallback string) string {
+	for i := 0; i < len(args); i++ {
+		if args[i] == name && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(args[i], name+"=") {
+			return strings.TrimPrefix(args[i], name+"=")
+		}
+	}
+	return fallback
+}
+
+func parseBridgeCSVFlag(args []string, name string) []string {
+	raw := parseBridgeStringFlag(args, name, "")
+	if raw == "" {
+		return nil
+	}
+	return csvParts(raw)
+}
+
+func csvParts(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
 }
 
 // wantsHelp reports whether the operator asked for command help. Commands with
