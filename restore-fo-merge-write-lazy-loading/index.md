@@ -197,6 +197,30 @@ narrow repair round: keep runtime lazy-loading behavior unchanged, align merge
 recovery with `engage`, and repair only the three job-1167 proof oracles before
 a fresh full-range Roborev review and exact-head live validation.
 
+**Cycle 5 (Roborev-first validation, job 1218).** Roborev reviewed the mandated
+inclusive range through repaired exact head
+`89859d0c926844f799bb8ef02f555903e2fae493` and returned one high and three
+medium findings. The fresh validator stopped before downstream tests or live
+spend and recommended REJECTED.
+
+- The high bootstrap-positional and medium `resume` option-value findings are
+  valid preexisting Codex front-door defects from `d0082e3` / `aeeadf45`,
+  already documented by the `557f8df3` pre-cut audit. They were not introduced
+  by the lazy-loading commits and belong to their own release-blocker repair.
+- The new shallow-boot fixture is driven through headless `claude -p` and
+  `codex exec` transports while its prompt asks the model to emulate the
+  interactive greet-and-stop branch. That cannot prove the claimed interactive
+  default; use an actual interactive session or narrow the claimed behavior.
+- The reference-order oracle does not reject mutation / terminal events in the
+  cold gate journey and does not require successful shared-core and runtime
+  adapter reads as common preconditions for the other journeys. Add independent
+  adversarial controls for those omissions.
+
+This is beyond the cycle-3 human-escalation boundary, and the single
+captain-approved cycle-4 repair round has been consumed. No further repair is
+dispatched pending captain direction. These two in-scope findings are evidence
+defects, not an observed failure of deferred merge/write-core loading.
+
 ## Stage Report: ideation
 
 - DONE: Produce a behavior-first design that restores exact-path deferred write-core and merge-core loads at their mutation and terminal/mod-block triggers without reintroducing search or skill-discovery guessing.
