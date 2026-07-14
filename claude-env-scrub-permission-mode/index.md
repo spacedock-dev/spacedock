@@ -102,6 +102,37 @@ Expand `docs/site/reference/sandbox.md` after the table:
 - Protect the external four-row macOS journey above as a manual/live release artifact. It must record the Claude version, banner, permissions view, prompt behavior, and child `scrub=` output. No PR may claim AC-1 from fixture evidence alone.
 - Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` after focused tests.
 
+### Feedback Cycles
+
+**Cycle 1 (captain external-probe result).** The proposed probe is not
+exercisable as written. In a real external Claude session, `/permissions`
+dismissed without durable mode evidence and the model correctly refused to run
+the requested command because it would print `AWS_ACCESS_KEY_ID` into the
+transcript. The compatibility prompt also instructed Claude to wait, so the
+normal first-officer boot path did not run.
+
+Routed back to ideation:
+
+- Replace the credential-value echo and model judgment with a safe,
+  deterministic observation. Do not print any credential value or rely on a
+  permissions dialog that produces no record. A presence-only check may be
+  considered only if it actually distinguishes scrub behavior without exposing
+  secret material; otherwise use host/process evidence outside model tool
+  selection.
+- Separate permission-mode evidence from credential-scrub evidence so a model
+  refusal cannot make the matrix inconclusive. Preserve the real transcript as
+  a negative test for the old probe.
+- Add this exact macOS launcher UX requirement when Safehouse is available but
+  no profile enables it:
+
+  ```text
+  Sandbox: available, not enabled (no .safehouse profile)
+  Use --safehouse to enable.
+  ```
+
+  Cover its platform/availability conditions and exact output without changing
+  the already-enabled Safehouse banner.
+
 ## Stage Report: ideation
 
 - DONE: Define and, where externally runnable, exercise the scrub on/off × unsandboxed auto/Safehouse launch matrix, distinguishing Claude permission policy from process isolation and recording exact banners plus harmless tool behavior.
