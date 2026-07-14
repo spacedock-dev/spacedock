@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/spacedock-dev/spacedock/internal/bridgeegress"
 	"github.com/spacedock-dev/spacedock/internal/claudeteam"
 	"github.com/spacedock-dev/spacedock/internal/dispatch"
 	"github.com/spacedock-dev/spacedock/internal/safehouse"
@@ -149,6 +150,7 @@ func newRootCommand(ctx context.Context, rawArgs []string, env []string, dir str
 		newMergeCommand(ctx, env, dir, stdout, stderr),
 		newCompletionCommand(stdout, stderr),
 		newDispatchCommand(dispatchProbe, stdin, stdout, stderr),
+		newBridgeCommand(dir, stdin),
 	)
 	return root
 }
@@ -455,6 +457,45 @@ func newDispatchCommand(probe claudeteam.TeamStateProbe, stdin io.Reader, stdout
 			return nil
 		},
 	}
+}
+
+// newBridgeCommand is a hidden Bridge-facing surface carrying exactly three
+// hook-/daemon-invoked entrypoints — never FO judgment: `egress emit` (the
+// host-neutral events.jsonl + session-marker writer), `ingress wake` (the codex
+// external resume), and `inbox check` (the synchronous Stop-hook drain gate).
+// Egress stays silent and no-op-safe because it is observe-only telemetry; wake
+// and check print compact JSON that Bridge (or the Stop hook) consumes without
+// knowing host internals. The FO's own judgment (draining, acking, gating,
+// alerting) is direct _bridge/ file writes per docs/seam-contract.md §3, not a
+// verb here.
+func newBridgeCommand(dir string, stdin io.Reader) *cobra.Command {
+	return &cobra.Command{
+		Use:                "bridge egress emit --host <host> | ingress wake --host codex | inbox check",
+		Hidden:             true,
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) >= 2 && args[0] == "egress" && args[1] == "emit" {
+				bridgeegress.EmitFromReader(stdin, bridgeegress.Options{
+					Host: parseBridgeHost(args[2:]),
+					CWD:  dir,
+				})
+				return nil
+			}
+			return nil
+		},
+	}
+}
+
+func parseBridgeHost(args []string) string {
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--host" && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(args[i], "--host=") {
+			return strings.TrimPrefix(args[i], "--host=")
+		}
+	}
+	return ""
 }
 
 // wantsHelp reports whether the operator asked for command help. Commands with
