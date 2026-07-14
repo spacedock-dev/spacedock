@@ -1,17 +1,18 @@
 ---
 title: Install the checked-out candidate into a neutral bin for Claude live E2E
-status: validation
+status: done
 source: "Captain direction 2026-07-13 after Opus treated the checkout-shaped SPACEDOCK_BIN path as a workflow root."
 score: 0.85
 started: 2026-07-13T04:20:06Z
-completed:
-verdict:
+completed: 2026-07-14T07:17:13Z
+verdict: passed
 worktree: .worktrees/spacedock-ensign-claude-live-installed-candidate-binary
 issue:
 id: 2h786rdtw1f26q7q98v5bp43
 milestone:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:505
+archived: 2026-07-14T07:17:13Z
 ---
 
 The Claude live job currently builds `./spacedock`, exports `SPACEDOCK_BIN=$(pwd)/spacedock`, and adds the checkout to PATH. The front door then deliberately re-exports its own executable path to the first officer. In a real Opus failure, that repository-shaped path became the apparent project root even though the host process started in a fixture.
