@@ -433,6 +433,28 @@ bind recovery to the full workflow identity, and preflight split-root state
 before arming. The next fresh validator must again run corrected exact-range
 Roborev first; no push, PR, or CI is permitted before PASS.
 
+**Cycle 7 (Roborev-first validation, job 903).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..13aec0142c5c12cb0071565928328fcbf24e3673`
+before tests, push, PR creation, or CI:
+
+- HIGH: a symlinked state `.git` can redirect to another linked worktree's
+  metadata.
+- HIGH: `ResolveProject` does not prove the canonical workflow remains inside
+  its canonical repository, allowing a workflow symlink to place `state new`
+  outside the project.
+- MEDIUM: an empty standalone `.git` directory can pass validation before
+  merge-guard auto-arm.
+- MEDIUM: clean `state commit` now probes an unreadable origin instead of
+  preserving the established compatibility no-op.
+
+Captain standing decision: send these findings back without reframing. They
+remain within repository containment, corrupt-metadata failure, and compatibility
+scope. Close the canonical-path escapes, validate standalone operability before
+arming, and preserve clean no-op ordering. The next fresh validator must again
+run corrected exact-range Roborev first; no push, PR, or CI is permitted before
+PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
