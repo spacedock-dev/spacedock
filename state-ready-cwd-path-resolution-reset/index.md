@@ -147,6 +147,7 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
   - MEDIUM outcome defect (AC-3 branch-verification boundary): `fullStateBranchRef` treats a configured branch beginning `refs/heads/` as already expanded, while the existing state commands treat that value as a literal legal branch name and create `refs/heads/refs/heads/<name>`.
   - Recommended narrow outcome fix: unconditionally map the configured literal branch name to `refs/heads/<configured>` for verification and add the literal-prefix regression. Do not normalize all state commands or broaden branch semantics in this task.
   - No automatic cycle 4 dispatch; captain decision required.
+  - Captain approved this one final narrow outcome fix on 2026-07-15. Any further rejected review returns to the captain without another automatic correction.
 
 ## Stage Report: implementation (cycle 2)
 
