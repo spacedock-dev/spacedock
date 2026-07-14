@@ -268,3 +268,16 @@ The five job-487 repairs and their stated AC proofs pass at exact head `3d50bd9a
 ### Summary
 
 Validation is **REJECTED** at the Roborev-first gate. Exact-range job `775` found three unscoped failure modes, so no tests beyond review, PR update, or CI engagement were performed; these findings must return to implementation before another fresh validation.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Make creator post-creation convergence failure atomic for all waiters: clean up or propagate the failure, with deterministic concurrent creator/waiter regressions.
+  Local commit `67721584` adds a repository-common-dir resume outcome (`pending`/`failed`/`ready`) keyed to the real state path. Creators publish `ready` only after full convergence; on post-creation failure they publish `failed` and remove the checkout/registration while preserving the local branch ref. `TestConcurrentStateReadyCreatorPullFailureNeverLooksReady` releases six callers from the same absent-checkout boundary into a deterministic pull/rebase conflict and proves every caller exits 1, the failed checkout and worktree registration are absent, and the local branch HEAD is preserved.
+- DONE: Provide a real non-Unix cross-process resume guarantee or an explicit fail-closed unsupported result, proven across separate processes rather than a mutex-only test.
+  Replaced the `!unix` process-local mutex with explicit `errStateResumeLockUnsupported`; its callback is never invoked. New child-process tests prove the exact unsupported wrapper fails closed in two separate processes and prove the Unix `flock` path serializes two separate processes through a gate plus an `O_EXCL` active-section sentinel (green for three repetitions). `GOOS=windows GOARCH=amd64 go test -c -o /tmp/spacedock-cli-windows.test.exe ./internal/cli` also passes, proving the non-Unix path compiles.
+- DONE: Limit shared exclude mutation to linked-worktree placement, run focused/full/race tests, and commit locally without push for another Roborev-first validation.
+  Shared `.git/info/exclude` mutation is now gated on `placement.Linked`; `TestStateNewFromMainDoesNotPersistSharedExclude` proves a normal main-worktree birth leaves it untouched while the existing linked-worktree regression remains green. Focused adversarial tests, `git diff --check`, Windows cross-compilation, `go test ./... -count=1 -p 1`, and `go test ./... -race -count=1 -p 1` pass at clean head `677215842a369850fcefbf239851da69a3389d2b`. A package-parallel full run hit the pre-existing `TestSonnetTeamDeleteHangReplay` replay-order flake; this run's serialized full and race suites both executed that package and passed. The code branch remains two local commits ahead of remote `3d50bd9a`; no code push or CI trigger/approval occurred.
+
+### Summary
+
+Closed all three Roborev job 775 findings without excluding their failure modes: waiter success now requires a durable matching convergence result, unsupported locking fails closed across processes, and shared exclude mutation is linked-worktree-only. The exact clean local head is fully verified and remains unpushed for the required fresh Roborev-first validation.
