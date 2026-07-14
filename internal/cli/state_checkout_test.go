@@ -458,6 +458,71 @@ func TestConcurrentStateReadyUnreachableOriginWaitersDoNotRepull(t *testing.T) {
 	}
 }
 
+func TestConcurrentStateReadyCreatorPullFailureNeverLooksReady(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	stateA := filepath.Join(workflowA, ".spacedock-state")
+	stateB := filepath.Join(workflowB, ".spacedock-state")
+
+	if err := os.WriteFile(filepath.Join(stateA, "first-task.md"), []byte("---\nstatus: ideation\n---\n# Local divergence\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, stateA, "add", "first-task.md")
+	git(t, stateA, "commit", "-q", "-m", "local divergence")
+	wantLocalHead := strings.TrimSpace(git(t, stateA, "rev-parse", "HEAD"))
+
+	if err := os.WriteFile(filepath.Join(stateB, "first-task.md"), []byte("---\nstatus: ideation\n---\n# Remote divergence\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, stateB, "add", "first-task.md")
+	git(t, stateB, "commit", "-q", "-m", "remote divergence")
+	git(t, stateB, "push", "origin", stateBranch)
+	if got := strings.TrimSpace(git(t, bare, "rev-parse", stateBranch)); got == wantLocalHead {
+		t.Fatal("precondition: remote and local state heads must diverge")
+	}
+	if err := os.RemoveAll(stateA); err != nil {
+		t.Fatal(err)
+	}
+
+	rootA := filepath.Dir(filepath.Dir(workflowA))
+	for _, result := range runConcurrentStateReadyAtAbsentBoundary(t, rootA, workflowA, 6) {
+		if !strings.HasPrefix(result, "1|") || !strings.Contains(result, "pull --rebase") {
+			t.Fatalf("failed creator/waiter must report convergence failure, got %q", result)
+		}
+	}
+	if _, err := os.Stat(stateA); !os.IsNotExist(err) {
+		t.Fatalf("failed resume left a checkout directory: %v", err)
+	}
+	records, err := status.ParseWorktreePorcelainZ([]byte(git(t, rootA, "worktree", "list", "--porcelain", "-z")))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range records {
+		if status.RealpathOf(record.Path) == status.RealpathOf(stateA) {
+			t.Fatalf("failed resume left registration %q", record.Path)
+		}
+	}
+	if got := strings.TrimSpace(git(t, rootA, "rev-parse", stateBranch)); got != wantLocalHead {
+		t.Fatalf("failed resume changed local branch: got %s want %s", got, wantLocalHead)
+	}
+}
+
+func TestStateNewFromMainDoesNotPersistSharedExclude(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, _, _ := noOriginSplitWorkflow(t)
+	exclude, err := os.ReadFile(filepath.Join(root, ".git", "info", "exclude"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(exclude), "docs/dev/.spacedock-state/") {
+		t.Fatalf("main-worktree birth left hidden shared exclude rule: %q", exclude)
+	}
+	tracked, err := os.ReadFile(filepath.Join(root, ".gitignore"))
+	if err != nil || !strings.Contains(string(tracked), "docs/dev/.spacedock-state/") {
+		t.Fatalf("main birth missing tracked ignore: err=%v body=%q", err, tracked)
+	}
+}
+
 func TestLinkedWorktreeMetadataFailureFailsClosed(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	root, _, statePath := noOriginSplitWorkflow(t)

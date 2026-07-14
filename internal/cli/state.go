@@ -60,7 +60,12 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 		// origin integration through completion, so this waiter must not repeat a
 		// possibly unreachable pull.
 		if dirExists(statePath) {
-			if !observedAbsent {
+			if observedAbsent {
+				if result, err := readStateResumeOutcome(workflowDir, statePath); err != nil || result != "ready" {
+					fmt.Fprintln(stderr, "spacedock state init: concurrent state resume did not converge")
+					return 1
+				}
+			} else {
 				if fetchOK, _ := runGit(statePath, "fetch", "origin", branch); fetchOK {
 					if pullOK, pullOut := runGit(statePath, "pull", "--rebase", "origin", branch); !pullOK {
 						if rebaseInProgress(statePath) {
@@ -74,7 +79,23 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 			fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
 			return 0
 		}
+		if err := writeStateResumeOutcome(workflowDir, statePath, "pending"); err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: cannot record resume outcome: %v\n", err)
+			return 1
+		}
 		resumeCode, _ := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath, stdout, stderr)
+		if resumeCode != 0 {
+			writeStateResumeOutcome(workflowDir, statePath, "failed")
+			if err := cleanupFailedStateResume(workflowDir, statePath); err != nil {
+				fmt.Fprintf(stderr, "spacedock state init: failed resume cleanup: %v\n", err)
+			}
+			return resumeCode
+		}
+		if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: cannot commit resume outcome: %v\n", err)
+			cleanupFailedStateResume(workflowDir, statePath)
+			return 1
+		}
 		return resumeCode
 	})
 	if lockErr != nil {
@@ -332,7 +353,7 @@ func appendGitignoreEntry(workflowDir, relPath string) error {
 	// the invoking code branch, but until that edit is merged the main worktree
 	// would otherwise see the state checkout as untracked content. Mirror the
 	// physical path into the shared repository exclude before creating it.
-	if placement.InGit {
+	if placement.Linked {
 		exclude := filepath.Join(placement.CommonGitDir, "info", "exclude")
 		if err := appendIgnoreEntry(exclude, "/"+entry); err != nil {
 			return fmt.Errorf("updating repository exclude: %w", err)
