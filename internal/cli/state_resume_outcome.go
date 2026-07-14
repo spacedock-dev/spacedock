@@ -27,6 +27,11 @@ func unsupportedStateResumeLock(_ string, _ func() int) (int, error) {
 	return 0, errStateResumeLockUnsupported
 }
 
+func stateResumePathKey(statePath string) string {
+	key := sha256.Sum256([]byte(status.RealpathOf(statePath)))
+	return fmt.Sprintf("%x", key)
+}
+
 func stateResumeOutcomePath(workflowDir, statePath string) (string, error) {
 	placement, err := status.ResolveRepositoryPlacement(workflowDir)
 	if err != nil {
@@ -35,8 +40,7 @@ func stateResumeOutcomePath(workflowDir, statePath string) (string, error) {
 	if !placement.InGit {
 		return "", fmt.Errorf("not a git repository at %s", workflowDir)
 	}
-	key := sha256.Sum256([]byte(status.RealpathOf(statePath)))
-	return filepath.Join(placement.CommonGitDir, fmt.Sprintf("spacedock-state-resume.%x.outcome.json", key)), nil
+	return filepath.Join(placement.CommonGitDir, "spacedock-state-resume."+stateResumePathKey(statePath)+".outcome.json"), nil
 }
 
 func writeStateResumeOutcome(workflowDir, statePath, result string) error {
@@ -72,17 +76,6 @@ func readStateResumeOutcome(workflowDir, statePath string) (string, error) {
 		return "", err
 	}
 	return outcome.Result, nil
-}
-
-// stateResumeWasPending is an observation hint, not completion evidence. A
-// caller can see a newly published checkout before the creator releases the
-// repository resume lock; the pending record tells that caller to consume the
-// creator's generation-bound ready outcome after it acquires the lock instead
-// of redundantly contacting origin. Missing, malformed, and non-pending records
-// are deliberately ignored here and handled by the normal in-lock path.
-func stateResumeWasPending(workflowDir, statePath string) bool {
-	outcome, err := readStateResumeOutcomeRecord(workflowDir, statePath)
-	return err == nil && outcome.Result == "pending"
 }
 
 func readStateResumeOutcomeRecord(workflowDir, statePath string) (stateResumeOutcome, error) {

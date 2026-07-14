@@ -62,7 +62,7 @@ func TestStateResumeLockProcessHelper(t *testing.T) {
 			}
 			time.Sleep(5 * time.Millisecond)
 		}
-		if code, err := withStateResumeLock(os.Getenv("SPACEDOCK_LOCK_REPO"), callback); err != nil || code != 0 {
+		if code, err := withStateResumeLock(os.Getenv("SPACEDOCK_LOCK_REPO"), os.Getenv("SPACEDOCK_LOCK_STATE"), func(bool) int { return callback() }); err != nil || code != 0 {
 			t.Fatalf("withStateResumeLock code=%d err=%v", code, err)
 		}
 	default:
@@ -113,6 +113,7 @@ func TestStateResumeLockSerializesSeparateProcesses(t *testing.T) {
 	common := []string{
 		"SPACEDOCK_LOCK_HELPER=unix",
 		"SPACEDOCK_LOCK_REPO=" + root,
+		"SPACEDOCK_LOCK_STATE=" + filepath.Join(root, "state"),
 		"SPACEDOCK_LOCK_CALLBACK=" + callback,
 		"SPACEDOCK_LOCK_ACTIVE=" + active,
 		"SPACEDOCK_LOCK_GATE=" + gate,

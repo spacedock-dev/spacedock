@@ -19,7 +19,10 @@ import (
 // nil.
 var stateResumeBeforeRestoreHook func(string)
 var stateResumeBeforePublishHook func(string)
+var stateResumeAfterRegistrationRepairHook func(string)
 var stateResumeAfterPublishHook func(string)
+var stateResumeAfterReadyHook func(string)
+var stateResumeWaitHook func(string)
 
 // runStateInit implements `spacedock state init`. It reads the workflow's
 // `state:` and `state-branch:` from the README, and for a split-root workflow
@@ -61,29 +64,29 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 	}
 
 	observedAbsent := !dirExists(statePath)
-	observedPending := !observedAbsent && stateResumeWasPending(workflowDir, statePath)
-	code, lockErr := withStateResumeLock(workflowDir, func() int {
+	code, lockErr := withStateResumeLock(workflowDir, statePath, func(waitedForState bool) int {
 		if dirExists(statePath) {
 			if err := validateExistingStateCheckout(workflowDir, statePath, branch); err != nil {
 				fmt.Fprintf(stderr, "spacedock state init: refusing invalid state checkout: %v\n", err)
 				return 1
 			}
 		}
-		// A caller that observed absence, or saw the creator's pending outcome after
-		// publication, waited behind that creator. The creator owned fetch/fallback
-		// and origin integration through completion, so this waiter must not repeat
-		// a possibly unreachable pull.
+		// A caller that observed absence, or waited on this checkout's lock, follows
+		// the preceding convergence result. The per-checkout lock distinguishes this
+		// from waiting behind an unrelated workflow's repository-wide worktree work.
 		if dirExists(statePath) {
-			if observedAbsent || observedPending {
+			if observedAbsent || waitedForState {
 				if result, err := readStateResumeOutcome(workflowDir, statePath); err != nil || result != "ready" {
-					if observedAbsent {
-						fmt.Fprintln(stderr, "spacedock state init: concurrent state resume did not converge")
-						return 1
-					}
+					fmt.Fprintln(stderr, "spacedock state init: concurrent state resume did not converge")
+					return 1
 				} else {
 					fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
 					return 0
 				}
+			}
+			if err := writeStateResumeOutcome(workflowDir, statePath, "pending"); err != nil {
+				fmt.Fprintf(stderr, "spacedock state init: cannot record convergence outcome: %v\n", err)
+				return 1
 			}
 			if !observedAbsent {
 				if fetchOK, _ := runGit(statePath, "fetch", "origin", branch); fetchOK {
@@ -91,10 +94,15 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 						if rebaseInProgress(statePath) {
 							runGit(statePath, "rebase", "--abort")
 						}
+						writeStateResumeOutcome(workflowDir, statePath, "failed")
 						fmt.Fprintf(stderr, "spacedock state init: pull --rebase failed:\n%s\n", pullOut)
 						return 1
 					}
 				}
+			}
+			if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
+				fmt.Fprintf(stderr, "spacedock state init: cannot commit convergence outcome: %v\n", err)
+				return 1
 			}
 			fmt.Fprintf(stdout, "State checkout already initialized at %s (branch %s).\n", statePath, branch)
 			return 0
@@ -111,6 +119,9 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 		if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
 			fmt.Fprintf(stderr, "spacedock state init: cannot commit resume outcome: %v\n", err)
 			return 1
+		}
+		if stateResumeAfterReadyHook != nil {
+			stateResumeAfterReadyHook(statePath)
 		}
 		return resumeCode
 	})
@@ -587,12 +598,9 @@ func addPrivateStateWorktree(workflowDir, statePath, branch string) (privatePath
 	if err != nil {
 		return "", false, fmt.Errorf("parsing worktree registrations: %w", err)
 	}
-	target := status.RealpathOf(statePath)
-	for _, record := range records {
-		if status.RealpathOf(record.Path) == target {
-			stale = true
-			break
-		}
+	stale, err = classifyStaleStateRegistration(records, statePath, branch)
+	if err != nil {
+		return "", false, err
 	}
 	privatePath, err = os.MkdirTemp(filepath.Dir(statePath), ".spacedock-state-resume-")
 	if err != nil {
@@ -612,26 +620,76 @@ func addPrivateStateWorktree(workflowDir, statePath, branch string) (privatePath
 	return privatePath, stale, nil
 }
 
+func classifyStaleStateRegistration(records []status.WorktreeRecord, statePath, branch string) (bool, error) {
+	target := status.RealpathOf(statePath)
+	var matches []status.WorktreeRecord
+	for _, record := range records {
+		if status.RealpathOf(record.Path) == target {
+			matches = append(matches, record)
+		}
+	}
+	if len(matches) == 0 {
+		return false, nil
+	}
+	if len(matches) != 1 {
+		return false, fmt.Errorf("state checkout %s has %d registrations; refusing ambiguous stale repair", statePath, len(matches))
+	}
+	record := matches[0]
+	wantBranch := "refs/heads/" + branch
+	if record.Branch != wantBranch {
+		return false, fmt.Errorf("state checkout %s registration is on %q, expected %q; refusing stale repair", statePath, record.Branch, wantBranch)
+	}
+	if record.Bare || !record.Prunable {
+		return false, fmt.Errorf("state checkout %s registration is active or not prunable; refusing stale repair", statePath)
+	}
+	return true, nil
+}
+
+func removeStaleStateRegistration(workflowDir, statePath, branch string) error {
+	if _, err := os.Lstat(statePath); err == nil {
+		return fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("checking state checkout before registration repair %s: %w", statePath, err)
+	}
+	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain", "-z")
+	if !ok {
+		return fmt.Errorf("listing worktree registrations before repair failed:\n%s", out)
+	}
+	records, err := status.ParseWorktreePorcelainZ([]byte(out))
+	if err != nil {
+		return fmt.Errorf("parsing worktree registrations before repair: %w", err)
+	}
+	stale, err := classifyStaleStateRegistration(records, statePath, branch)
+	if err != nil {
+		return err
+	}
+	if !stale {
+		return fmt.Errorf("state checkout %s no longer has the expected prunable registration; refusing stale repair", statePath)
+	}
+	if ok, out := runGit(workflowDir, "worktree", "remove", statePath); !ok {
+		return fmt.Errorf("removing stale state worktree registration failed:\n%s", out)
+	}
+	return nil
+}
+
 // publishPrivateStateWorktree atomically publishes a fully converged private
-// directory. A concurrent non-empty final directory makes Rename fail and is
-// left byte-for-byte untouched. published reports that the rename occurred even
+// directory without replacing any destination entry. published reports that
+// the rename occurred even
 // if subsequent metadata repair/validation fails, so callers never clean the
 // now-public directory through its former private name.
 func publishPrivateStateWorktree(workflowDir, privatePath, statePath, branch string, stale bool) (published bool, err error) {
 	if stateResumeBeforePublishHook != nil {
 		stateResumeBeforePublishHook(statePath)
 	}
-	if _, err := os.Lstat(statePath); err == nil {
-		return false, fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
-	} else if !os.IsNotExist(err) {
-		return false, fmt.Errorf("checking state checkout publication path %s: %w", statePath, err)
-	}
 	if stale {
-		if ok, out := runGit(workflowDir, "worktree", "remove", statePath); !ok {
-			return false, fmt.Errorf("removing stale state worktree registration failed:\n%s", out)
+		if err := removeStaleStateRegistration(workflowDir, statePath, branch); err != nil {
+			return false, err
 		}
 	}
-	if err := os.Rename(privatePath, statePath); err != nil {
+	if stateResumeAfterRegistrationRepairHook != nil {
+		stateResumeAfterRegistrationRepairHook(statePath)
+	}
+	if err := renameNoReplace(privatePath, statePath); err != nil {
 		return false, fmt.Errorf("publishing converged state checkout at %s: %w", statePath, err)
 	}
 	published = true

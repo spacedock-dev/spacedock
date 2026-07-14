@@ -164,7 +164,6 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 	}
 
 	observedAbsent := !dirExists(checkout)
-	observedPending := !observedAbsent && stateResumeWasPending(workflowDir, checkout)
 	if stateReadyObservationHook != nil {
 		stateReadyObservationHook()
 	}
@@ -174,7 +173,7 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 		// owns stdout atomically: exactly one document.
 		resumeOut = io.Discard
 	}
-	code, lockErr := withStateResumeLock(workflowDir, func() int {
+	code, lockErr := withStateResumeLock(workflowDir, checkout, func(waitedForState bool) int {
 		if dirExists(checkout) {
 			if err := validateExistingStateCheckout(workflowDir, checkout, branch); err != nil {
 				fmt.Fprintf(stderr, "spacedock state ready: refusing invalid state checkout: %v\n", err)
@@ -195,6 +194,9 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 				fmt.Fprintf(stderr, "spacedock state ready: cannot commit resume outcome: %v\n", err)
 				return 1
 			}
+			if stateResumeAfterReadyHook != nil {
+				stateResumeAfterReadyHook(checkout)
+			}
 			if !jsonOut {
 				fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
 			}
@@ -210,16 +212,14 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 			}, 0)
 		}
 
-		if observedAbsent || observedPending {
+		if observedAbsent || waitedForState {
 			// This caller waited behind another resume. The creator held this same
 			// lock through remote integration or local fallback, so repeating a pull
 			// would both race the convergence boundary and turn a successful
 			// unreachable-origin fallback into a false failure.
 			if result, err := readStateResumeOutcome(workflowDir, checkout); err != nil || result != "ready" {
-				if observedAbsent {
-					fmt.Fprintln(stderr, "spacedock state ready: concurrent state resume did not converge")
-					return 1
-				}
+				fmt.Fprintln(stderr, "spacedock state ready: concurrent state resume did not converge")
+				return 1
 			} else {
 				if !jsonOut {
 					fmt.Fprintln(stdout, "checkout resumed — re-run `spacedock status --boot` before the greet.")
@@ -230,8 +230,16 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 				}, 0)
 			}
 		}
+		if err := writeStateResumeOutcome(workflowDir, checkout, "pending"); err != nil {
+			fmt.Fprintf(stderr, "spacedock state ready: cannot record convergence outcome: %v\n", err)
+			return 1
+		}
 
 		if !stateHasOrigin(checkout) {
+			if err := writeStateResumeOutcome(workflowDir, checkout, "ready"); err != nil {
+				fmt.Fprintf(stderr, "spacedock state ready: cannot commit convergence outcome: %v\n", err)
+				return 1
+			}
 			return emitSync(stdout, jsonOut, syncResult{
 				Command: "state ready", Result: "ready", StateBranch: branch,
 				Reason: "State checkout ready (no origin remote — state is local-only).",
@@ -240,10 +248,15 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 
 		rebaseOK, rebaseOut := runGit(checkout, "pull", "--rebase", "origin", branch)
 		if !rebaseOK {
+			writeStateResumeOutcome(workflowDir, checkout, "failed")
 			if rebaseInProgress(checkout) {
 				return haltOnConflict(stdout, stderr, jsonOut, "state ready", "", branch, checkout, "", rebaseOut)
 			}
 			fmt.Fprintf(stderr, "spacedock state ready: pull --rebase failed (not a conflict):\n%s\n", rebaseOut)
+			return 1
+		}
+		if err := writeStateResumeOutcome(workflowDir, checkout, "ready"); err != nil {
+			fmt.Fprintf(stderr, "spacedock state ready: cannot commit convergence outcome: %v\n", err)
 			return 1
 		}
 		return emitSync(stdout, jsonOut, syncResult{

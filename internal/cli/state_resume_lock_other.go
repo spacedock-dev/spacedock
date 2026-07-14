@@ -3,6 +3,6 @@
 
 package cli
 
-func withStateResumeLock(_ string, fn func() int) (int, error) {
-	return unsupportedStateResumeLock("", fn)
+func withStateResumeLock(_ string, _ string, fn func(bool) int) (int, error) {
+	return unsupportedStateResumeLock("", func() int { return fn(false) })
 }

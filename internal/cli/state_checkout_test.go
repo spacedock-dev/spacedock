@@ -26,6 +26,17 @@ func mustReadFile(t *testing.T, path string) []byte {
 	return body
 }
 
+func copyFile(t *testing.T, src, dst string) {
+	t.Helper()
+	body, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dst, body, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // addAgentWorktree adds a linked git worktree at hostRoot/.worktrees/<name>, on a
 // new branch off HEAD — the shape a Spacedock agent dispatch creates
 // (`.worktrees/<worker>-<entity>/`). Returns the worktree's absolute root, whose
@@ -239,6 +250,115 @@ func TestStateReadyRepairsOnlyTargetRegistration(t *testing.T) {
 	}
 	if siblingRegistrations != 1 || !siblingPrunable {
 		t.Fatalf("unrelated missing sibling registration=(count=%d prunable=%v), want preserved", siblingRegistrations, siblingPrunable)
+	}
+}
+
+func TestClassifyStaleStateRegistrationRequiresUniqueExpectedPrunableRecord(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "state")
+	want := status.WorktreeRecord{Path: statePath, Branch: "refs/heads/spacedock-state/dev", Prunable: true}
+	other := status.WorktreeRecord{Path: filepath.Join(t.TempDir(), "other"), Branch: "refs/heads/main"}
+	tests := []struct {
+		name    string
+		records []status.WorktreeRecord
+		stale   bool
+		err     bool
+	}{
+		{name: "absent", records: []status.WorktreeRecord{other}},
+		{name: "unique expected prunable", records: []status.WorktreeRecord{other, want}, stale: true},
+		{name: "active", records: []status.WorktreeRecord{{Path: statePath, Branch: want.Branch}}, err: true},
+		{name: "wrong branch", records: []status.WorktreeRecord{{Path: statePath, Branch: "refs/heads/wrong", Prunable: true}}, err: true},
+		{name: "duplicate", records: []status.WorktreeRecord{want, want}, err: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			stale, err := classifyStaleStateRegistration(tc.records, statePath, "spacedock-state/dev")
+			if stale != tc.stale || (err != nil) != tc.err {
+				t.Fatalf("classify stale=%v err=%v, want stale=%v err=%v", stale, err, tc.stale, tc.err)
+			}
+		})
+	}
+}
+
+func TestStateReadyRefusesChangedStaleRegistrationWithoutMutation(t *testing.T) {
+	for _, variant := range []string{"wrong-branch", "duplicate"} {
+		t.Run(variant, func(t *testing.T) {
+			t.Setenv("HOME", t.TempDir())
+			root, workflowDir, statePath := noOriginSplitWorkflow(t)
+			stateGitDir := status.TrimGitLineTerminator(git(t, statePath, "rev-parse", "--path-format=absolute", "--git-dir"))
+			branch, err := status.StateBranch(workflowDir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wantHead := strings.TrimSpace(git(t, root, "rev-parse", branch))
+			if err := os.RemoveAll(statePath); err != nil {
+				t.Fatal(err)
+			}
+			reached := make(chan struct{})
+			release := make(chan struct{})
+			stateResumeBeforePublishHook = func(path string) {
+				if status.RealpathOf(path) == status.RealpathOf(statePath) {
+					close(reached)
+					<-release
+				}
+			}
+			t.Cleanup(func() { stateResumeBeforePublishHook = nil })
+			type result struct {
+				code int
+				err  string
+			}
+			readyResult := make(chan result, 1)
+			go func() {
+				var out, errBuf strings.Builder
+				code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+					os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+				readyResult <- result{code: code, err: errBuf.String()}
+			}()
+			<-reached
+			switch variant {
+			case "wrong-branch":
+				git(t, root, "branch", "wrong-state-branch")
+				if err := os.WriteFile(filepath.Join(stateGitDir, "HEAD"), []byte("ref: refs/heads/wrong-state-branch\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+			case "duplicate":
+				duplicate := filepath.Join(filepath.Dir(stateGitDir), "duplicate-state-registration")
+				if err := os.Mkdir(duplicate, 0o700); err != nil {
+					t.Fatal(err)
+				}
+				for _, name := range []string{"gitdir", "HEAD", "commondir"} {
+					copyFile(t, filepath.Join(stateGitDir, name), filepath.Join(duplicate, name))
+				}
+			}
+			targetRegistrations := func() []status.WorktreeRecord {
+				t.Helper()
+				records, err := status.ParseWorktreePorcelainZ([]byte(git(t, root, "worktree", "list", "--porcelain", "-z")))
+				if err != nil {
+					t.Fatal(err)
+				}
+				var target []status.WorktreeRecord
+				for _, record := range records {
+					if status.RealpathOf(record.Path) == status.RealpathOf(statePath) {
+						target = append(target, record)
+					}
+				}
+				return target
+			}
+			registrationsBefore := targetRegistrations()
+			close(release)
+			got := <-readyResult
+			if got.code != 1 || !strings.Contains(got.err, "refusing") {
+				t.Fatalf("changed registration was not rejected: %+v", got)
+			}
+			if _, err := os.Lstat(statePath); !os.IsNotExist(err) {
+				t.Fatalf("registration refusal published or removed destination: %v", err)
+			}
+			if registrationsAfter := targetRegistrations(); fmt.Sprint(registrationsAfter) != fmt.Sprint(registrationsBefore) {
+				t.Fatalf("registration refusal mutated target records\nbefore=%v\nafter=%v", registrationsBefore, registrationsAfter)
+			}
+			if head := strings.TrimSpace(git(t, root, "rev-parse", branch)); head != wantHead {
+				t.Fatalf("registration refusal changed state branch HEAD=%s want=%s", head, wantHead)
+			}
+		})
 	}
 }
 
@@ -687,9 +807,17 @@ func TestStateReadyWaiterObservingPublishedCheckoutConsumesOutcome(t *testing.T)
 	waiterObserved := make(chan struct{})
 	stateReadyObservationHook = func() { close(waiterObserved) }
 	t.Cleanup(func() { stateReadyObservationHook = nil })
+	waiterBlocked := make(chan struct{})
+	stateResumeWaitHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(waiterBlocked)
+		}
+	}
+	t.Cleanup(func() { stateResumeWaitHook = nil })
 	waiterResult := make(chan result, 1)
 	go runReady(waiterResult)
 	<-waiterObserved
+	<-waiterBlocked
 	close(releasePublisher)
 
 	if got := <-publisherResult; got.code != 0 {
@@ -701,6 +829,59 @@ func TestStateReadyWaiterObservingPublishedCheckoutConsumesOutcome(t *testing.T)
 	}
 	if head := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); head != wantHead {
 		t.Fatalf("published-path waiter changed state HEAD=%s, want %s", head, wantHead)
+	}
+}
+
+func TestStateReadyWaiterObservingReadyCheckoutConsumesOutcome(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath, wantHead := originBackedCheckoutBehindRemote(t)
+	ready := make(chan struct{})
+	releasePublisher := make(chan struct{})
+	stateResumeAfterReadyHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(ready)
+			<-releasePublisher
+		}
+	}
+	t.Cleanup(func() { stateResumeAfterReadyHook = nil })
+	type result struct {
+		code        int
+		stdout, err string
+	}
+	runReady := func(ch chan<- result) {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		ch <- result{code: code, stdout: out.String(), err: errBuf.String()}
+	}
+	publisherResult := make(chan result, 1)
+	go runReady(publisherResult)
+	<-ready
+	git(t, root, "remote", "set-url", "origin", filepath.Join(t.TempDir(), "missing.git"))
+	waiterObserved := make(chan struct{})
+	stateReadyObservationHook = func() { close(waiterObserved) }
+	t.Cleanup(func() { stateReadyObservationHook = nil })
+	waiterBlocked := make(chan struct{})
+	stateResumeWaitHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(waiterBlocked)
+		}
+	}
+	t.Cleanup(func() { stateResumeWaitHook = nil })
+	waiterResult := make(chan result, 1)
+	go runReady(waiterResult)
+	<-waiterObserved
+	<-waiterBlocked
+	close(releasePublisher)
+	if got := <-publisherResult; got.code != 0 {
+		t.Fatalf("publisher failed after ready outcome: %+v", got)
+	}
+	got := <-waiterResult
+	if got.code != 0 || !strings.Contains(got.stdout, "concurrent resume completed") {
+		t.Fatalf("ready-path waiter did not consume completed outcome: %+v", got)
+	}
+	if head := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); head != wantHead {
+		t.Fatalf("ready-path waiter changed state HEAD=%s want=%s", head, wantHead)
 	}
 }
 
@@ -845,6 +1026,52 @@ func TestStateReadyPrivatePublishPreservesConcurrentStateWriter(t *testing.T) {
 
 func TestStateInitPrivatePublishPreservesConcurrentStateWriter(t *testing.T) {
 	testPrivateStateResumePreservesConcurrentStateWriter(t, "init")
+}
+
+func TestStateReadyNoReplacePublishPreservesCheckoutCreatedAfterRepair(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	repaired := make(chan struct{})
+	release := make(chan struct{})
+	stateResumeAfterRegistrationRepairHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(repaired)
+			<-release
+		}
+	}
+	t.Cleanup(func() { stateResumeAfterRegistrationRepairHook = nil })
+	type result struct {
+		code int
+		err  string
+	}
+	readyResult := make(chan result, 1)
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		readyResult <- result{code: code, err: errBuf.String()}
+	}()
+	<-repaired
+	git(t, root, "worktree", "add", "-q", "--force", "-b", "after-registration-repair", statePath, "HEAD")
+	payload := filepath.Join(statePath, "concurrent-after-repair")
+	if err := os.WriteFile(payload, []byte("preserve me\n"), 0o644); err != nil {
+		close(release)
+		t.Fatal(err)
+	}
+	close(release)
+	got := <-readyResult
+	if got.code != 1 || !strings.Contains(got.err, "publishing converged state checkout") {
+		t.Fatalf("no-replace publication did not fail closed: %+v", got)
+	}
+	if branch := strings.TrimSpace(git(t, statePath, "branch", "--show-current")); branch != "after-registration-repair" {
+		t.Fatalf("no-replace publication replaced concurrent branch %q", branch)
+	}
+	if body := string(mustReadFile(t, payload)); body != "preserve me\n" {
+		t.Fatalf("no-replace publication changed concurrent bytes: %q", body)
+	}
 }
 
 func testPrivateStateResumePreservesConcurrentStateWriter(t *testing.T, verb string) {
