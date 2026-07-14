@@ -143,6 +143,10 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
   - MEDIUM outcome defect: `TrimSpace` can remove valid whitespace from the repository-relative workflow directory. Remove only Git's record terminator and prove a whitespace-bearing workflow path.
   - LOW outcome defect: abbreviated symbolic-ref output can be ambiguous. Compare the full ref against normalized `refs/heads/<expected>`.
   - Scope boundary: correct these three Git output boundaries only; another rejected review is cycle 3 and must escalate.
+- **Cycle 3 — Roborev job 1432, exact head `e594f80d`, ESCALATED:**
+  - MEDIUM outcome defect (AC-3 branch-verification boundary): `fullStateBranchRef` treats a configured branch beginning `refs/heads/` as already expanded, while the existing state commands treat that value as a literal legal branch name and create `refs/heads/refs/heads/<name>`.
+  - Recommended narrow outcome fix: unconditionally map the configured literal branch name to `refs/heads/<configured>` for verification and add the literal-prefix regression. Do not normalize all state commands or broaden branch semantics in this task.
+  - No automatic cycle 4 dispatch; captain decision required.
 
 ## Stage Report: implementation (cycle 2)
 
