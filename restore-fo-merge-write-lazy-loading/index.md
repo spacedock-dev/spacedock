@@ -301,3 +301,16 @@ Roborev job 988 rejected the exact cycle-2 range. It found that the changed shal
 ### Summary
 
 Cycle 3 separates automatic merged-PR discovery from resumed mod-block recovery and makes the recovery prompt judge the durable outcome instead of a prescribed command sequence. Exact loaded-base binding and per-target classification close both Roborev false-green paths while preserving the canonical core hashes (`a347fc4a…`, `a350c1cc…`) and the 8,075-byte cold-contract saving.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: The recovery journey keeps boot read-only and demonstrates deferred merge handling only after `engage`.
+  Commit `89859d0c` makes shallow boot byte-for-byte read-only and requires the recovery stream to observe successful `state ready` engagement before write-core, merge-core, and the first merge action.
+- DONE: All three job-1167 oracle defects are fixed with non-vacuous actual-body, uppercase-path, and stale-frontmatter controls.
+  Structured host status plus canonical anchors accept the real shared-core body; original-case path extraction accepts `/PluginCache/...`; parsed opening YAML rejects terminal lookalikes in stale body text.
+- DONE: Focused, full, race, live-tag compile, and diff/format gates pass without runtime lazy-loading or core-body changes.
+  Focused ensigncycle/contractlint tests, `gofmt -w ./cmd ./internal`, `git diff --check`, `go test ./...`, `go test ./... -race`, and `go test -tags live -run '^$' ./...` passed; write/merge hashes remain `a350c1cc…` / `a347fc4a…` and no live journey ran.
+
+### Summary
+
+Cycle 4 repairs the three Roborev job-1167 false-red/false-green paths and aligns all recovery evidence with read-only boot followed by engage. Code commit `89859d0c926844f799bb8ef02f555903e2fae493` changes only oracle/scenario evidence; canonical lazy-loading instructions and merge/write core bodies are unchanged.
