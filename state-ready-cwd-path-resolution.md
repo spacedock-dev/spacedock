@@ -150,6 +150,23 @@ approval, or live-lane engagement. Only a Roborev PASS may release the exact
 head to the PR and CI; any deliberately unhandled failure mode must first be
 explicitly scoped out in the task and validation evidence.
 
+**Cycle 4 (Roborev-first validation, job 775).** Authoritative exact-range
+review rejected local head `d346aba4dffd706918e8b0f746ca1be78ba7c9c6`
+before tests, push, or CI:
+
+- MEDIUM: waiters can return success after the creator leaves a post-creation
+  convergence failure; clean up or propagate the failed state and test the
+  creator-failure concurrency path.
+- MEDIUM: the non-Unix resume lock is process-local, so cross-process repair and
+  creation remain racy; provide a real cross-process guarantee or fail
+  explicitly with behavioral proof.
+- LOW: shared exclude is mutated for main-worktree births; limit the persistent
+  ignore rule to linked-worktree placement.
+
+Routed back to implementation under the captain's standing instruction: no push
+or CI before a fresh corrected exact-range Roborev PASS. Any finding not fixed
+must be explicitly scoped out with evidence before the next review.
+
 ## Stage Report: ideation (cycle 2)
 
 - DONE: Resolve the sweep / splitRootStateCheckout self-contradiction: either extend the fix's scope to cover internal/dispatch/helpers.go, or correct the "every split-root state verb" claim and out-of-scope sweep explicitly
