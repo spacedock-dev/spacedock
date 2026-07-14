@@ -168,3 +168,25 @@ Cycle 2 kept recovery inside the existing Git command sequence: the canonical ma
 - MEDIUM (`internal/cli/state_sync.go:302`): `worktreePaths` parses combined stdout/stderr, so a successful warning can prefix and hide the first NUL `worktree` field. Capture structured stdout separately and test successful stderr output.
 - MEDIUM (`internal/cli/state_sync.go:277`): `strings.TrimSpace(prefixOut)` can remove valid whitespace from a repository-relative workflow directory. Remove only Git's output terminator and cover whitespace-bearing workflow paths.
 - LOW (`internal/cli/state_sync.go:322`): `symbolic-ref --short` can return `heads/foo` when another ref makes `foo` ambiguous. Compare the full symbolic ref with normalized `refs/heads/<expected>`.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Keep NUL-structured `git worktree` stdout separate from stderr and prove successful diagnostic output cannot hide or corrupt the first worktree record.
+  Code commit `e594f80d17b7ecf1e2d022dbd4af2346570ca123`; a successful stderr warning precedes real Git output while recovery still restores only the canonical main checkout.
+- DONE: Preserve valid whitespace in the repository-relative workflow directory by removing only Git's output terminator, with a real-Git whitespace-bearing path regression.
+  The leading-space workflow fixture was RED before implementation and now resolves its real main-worktree state checkout without creating nested agent state.
+- FAILED: Compare the full symbolic ref to normalized `refs/heads/<expected>`, then run focused/full/race gates and request exact-head Roborev only after green; stop and escalate on another rejection.
+  Full-ref collision coverage and all gates passed, but exact-head Roborev job 1432 found one MEDIUM literal-branch normalization defect and returned verdict F.
+
+### Summary
+
+Cycle 3 separated structured Git stdout from diagnostics, preserved workflow-prefix whitespace by removing one line terminator, and compared the checkout's full symbolic ref. The three regressions were RED 3/3 then green 3/3; the complete `TestStateReady` family, `go test ./...`, and `go test ./... -race` passed on code commit `e594f80d`, which remains unpushed. Roborev rejected that exact head, so the code was not mutated after review and the finding is escalated as required.
+
+### Roborev Request
+
+- Job `1432`, review `1417`, UUID `f64914e9-4966-4fbd-acbf-a682c2250132`, patch `97962c950292f29c5b1ee88709ea8fe1e8527f35`.
+- Exact `git_ref`: `e594f80d17b7ecf1e2d022dbd4af2346570ca123`; agent `codex`, reasoning `thorough`, status `done`, retry count `0`, verdict `F`.
+
+### Reviewer Finding
+
+- MEDIUM (`internal/cli/state_sync.go:337`): `fullStateBranchRef` treats a configured name beginning `refs/heads/` as already expanded, but existing state commands treat it as a literal legal branch name and create `refs/heads/refs/heads/foo`. Unconditionally prepend `refs/heads/`, or normalize consistently across every state command, and add literal-prefix coverage.
