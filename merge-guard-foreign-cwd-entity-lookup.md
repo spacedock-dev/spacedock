@@ -10,6 +10,7 @@ score:
 worktree: .worktrees/spacedock-ensign-merge-guard-foreign-cwd-entity-lookup
 issue: spacedock-dev/spacedock#485
 mod-block: merge:pr-merge
+pr: "#506"
 ---
 
 `spacedock merge guard <slug> --verdict passed --workflow-dir docs/<workflow>` reports `Error: entity not found: <slug>` (exit 1) when run from a foreign cwd — inside an agent worktree of the project — even though `--workflow-dir` is passed explicitly. The identical command succeeds once `cd`'d back to the project root. The explicit `--workflow-dir` flag not compensating for a foreign cwd suggests the relative value resolves against cwd rather than the enclosing repo root; either resolving it against `git rev-parse --show-toplevel`, or documenting that the flag must be absolute and erroring more clearly than `entity not found` when the resolved dir does not exist, would fix the confusion. Filed alongside #484 (cwd-sensitivity in `state ready`) as a possibly shared root cause. Full repro is in the linked issue.
