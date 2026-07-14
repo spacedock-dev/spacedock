@@ -40,3 +40,24 @@ The prior implementation branch and its proof harness were rejected. This task i
 - **AC-2:** Existing filing and terminal/recovery journeys observe exact write/merge reads before their real supported commands, with no broad search, wrapper invocation, alternate-path retry, or earlier owned action; their durable success/refusal/archive outcomes remain unchanged.
 - **AC-3:** Structural coverage proves one eager canonical import and two resolvable delayed files only. It does not infer runtime order from instruction prose.
 - **AC-4:** Focused tests, `go test ./...`, `go test ./... -race`, and the relevant exact-head local Codex live journeys are green before Roborev is requested. The harness orchestrates and observes the supported runtime; it does not model arbitrary shell semantics.
+
+## Stage Report: implementation
+
+- DONE: Deliver the must-have deferred write/merge loading boundaries while preserving real gate, mutation, and terminal outcomes.
+  Commit `09288711` leaves only the shared core eager, defers exact write/merge references, and keeps gate hold, atomic filing, and terminal refusal outcomes green on both hosts.
+- DONE: Use existing supported-host event streams and scenario runners; do not implement a shell parser, runtime controller, or parallel lifecycle, and obtain exact-head local Codex live green before Roborev.
+  Existing gate, filing, and merge-hook runners now grade emitted Claude/Codex path and action events; final exact-head Codex was 3/3 green before any Roborev request.
+- DONE: Keep the change narrow; if another controller/lifecycle layer appears or no visible product proof emerges within 90 minutes, stop and request a design reset.
+  The change is limited to load cues, structural guards, and one bounded event-field observer; it adds no runtime product code, controller, lifecycle, or shell grammar.
+- DONE: AC-1 (VALUE)
+  Fresh exact-head Claude and Codex gate journeys read shared core plus their adapter and neither deferred core; deferring the unchanged write+merge files saves `5,843 + 2,830 = 8,673` cold bytes.
+- DONE: AC-2
+  Exact-head Claude and Codex were each 3/3 green: filing reads write before `new`, terminal reads write then merge before `status --set`, and durable success/refusal/no-archive outcomes remain enforced.
+- DONE: AC-3
+  Contractlint proves the sole eager import, the two canonical loader-base suffixes, reference closure, ceremony anchors, and absence of wrapper core skills; runtime order comes only from host events.
+- DONE: AC-4
+  Focused trace controls, `go test ./...`, `go test ./... -race`, exact-head Codex 3/3, and exact-head Claude 3/3 all passed on commit `09288711`.
+
+### Summary
+
+Restored the intended cold boundary without changing mutation, merge, routing, or terminal resolution semantics. The existing supported-host journeys now make the load order visible and falsifiable while retaining their durable outcome assertions.
