@@ -334,3 +334,23 @@ Validation is **REJECTED** at the Roborev-first gate. Exact-range job `867` foun
 ### Summary
 
 Closed both job-867 findings without deleting or overwriting any public checkout: failed convergence is durable and fail-closed, stale metadata recovery is non-destructive, and every non-locking adjacent writer path is exercised for both resume verbs. Outcomes are independently keyed per canonical checkout, and the exact clean local head is ready for corrected exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 5)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..4cdb53c2 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, PR update, or CI.
+  Authoritative thorough Roborev job `904` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..4cdb53c27ed8165ee425e2bca36af316caff3892`, all four corrected guideline sections, and verdict FAIL.
+- SKIPPED: Only after Roborev PASS independently reproduce non-destructive failed-resume fan-out, adjacent writer races, per-checkout durable outcomes, every AC, gofmt, focused/full/race suites, and detached audit evidence.
+  Roborev failed the first gate, so no local validation or detached audit ran.
+- SKIPPED: Only after every local gate passes push exact head 4cdb53c2 to PR #503 and engage required CI; report actual outcomes and block on waiting, skipped, unapproved, or failed evidence.
+  No code was pushed and no CI was triggered or approved; PR #503 remains on remote head `3d50bd9a` while exact reviewed head `4cdb53c2` remains local-only.
+
+### Reviewer findings
+
+- HIGH: ready/init/commit trust any existing state directory without proving it is the registered worktree rooted exactly there on the expected state branch; Git can climb to the main worktree and mutate its code branch.
+- HIGH: resume publishes the final checkout before origin convergence; non-locking state writers can mutate entities while add or pull/rebase is still operating, losing concurrent state.
+- MEDIUM: lexical `.git` discovery misclassifies an external symlink into a linked worktree as standalone and resolves state under the linked worktree instead of the main worktree.
+- MEDIUM: `strings.TrimSpace` corrupts legitimate leading or trailing whitespace in Git-reported paths and prefixes, redirecting workflow state.
+
+### Summary
+
+Validation is **REJECTED** at the Roborev-first gate. Exact-range job `904` found four unscoped repository-identity, publication-race, symlink, and path-byte defects; local tests, PR update, and CI engagement were not performed.
