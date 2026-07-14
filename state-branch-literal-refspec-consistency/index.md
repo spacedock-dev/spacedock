@@ -1,8 +1,8 @@
 ---
 title: Make literal state-branch refspecs consistent
-status: backlog
+status: ideation
 source: "Roborev job 1434 on e6j exact head 58b304ef; captain filing request 2026-07-15."
-started:
+started: 2026-07-14T16:49:02Z
 completed:
 verdict:
 score:
