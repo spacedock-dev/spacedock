@@ -439,3 +439,22 @@ Validation is **REJECTED** at the Roborev-first gate. Exact-range job `951` foun
 ### Summary
 
 Closed all three job-951 findings with target-scoped registration repair, publication-aware waiter outcome consumption, and checkout-generation-bound durable outcomes. The exact clean local head is fully verified and intentionally unpushed for fresh corrected exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 7)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..ff5bb036 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, PR update, or CI.
+  Authoritative thorough Roborev job `1016` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..ff5bb0363a130a23228e6f5bf14679eaacb390e6`, Compatibility posture, Trust boundaries, Behavioral proof, and Review focus, and verdict FAIL.
+- SKIPPED: Only after Roborev PASS independently reproduce target-only registration repair, pending-publication waiter outcome consumption, checkout-generation freshness across delete/recreate and later peers, every AC, gofmt, focused/full/race suites, Windows cross-compilation, and detached audit evidence.
+  Roborev failed the mandatory first gate, so no local validation suites, cross-compilation, or detached audit ran.
+- SKIPPED: Only after every local gate passes push exact head ff5bb036 to PR #503 and engage required CI; report actual outcomes and block on waiting, skipped, unapproved, or failed evidence.
+  No code was pushed, PR #503 was not updated, and no CI was triggered or approved; exact reviewed head `ff5bb036` remains local-only.
+
+### Reviewer findings
+
+- MEDIUM: `internal/cli/state.go:624` checks destination absence before cleanup and rename, leaving a TOCTOU window that can remove or replace a checkout created after the check. Publication needs an atomic no-replace primitive and a deterministic interleaving test.
+- MEDIUM: `internal/cli/state.go:591` treats any registration resolving to `statePath` as stale without proving expected branch, prunable status, and uniqueness; wrong-branch, active, or duplicate registrations can be removed.
+- MEDIUM: `internal/cli/state_sync.go:166` recognizes a concurrent resume only when it observed `pending`; a caller seeing the published checkout after `ready` but before unlock can wait and then redundantly pull, turning a successful fallback into failure during an outage.
+
+### Summary
+
+Validation is **REJECTED** at the Roborev-first gate. Exact-range job `1016` found three remaining publication-order and registration-identity defects; local tests, PR publication, and CI engagement were correctly not performed.
