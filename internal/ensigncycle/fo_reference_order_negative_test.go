@@ -102,6 +102,11 @@ func TestFOReferenceOrderRequiresSuccessfulExactReads(t *testing.T) {
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(sedMention), "filing"); err == nil {
 		t.Fatal("a sed output that only echoed the path mention satisfied the canonical-body boundary")
 	}
+	quotedReadNarration := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"echo \"cat /plugin/skills/first-officer/references/fo-write-core.md\"","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(quotedReadNarration), "filing"); err == nil {
+		t.Fatal("a quoted cat narration satisfied the canonical-body boundary")
+	}
 
 	failedClaudeRead := claudeFirstOfficerBaseEvent + "\n" + `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"read","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/fo-write-core.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"read","is_error":true,"content":"not found"}]}}
@@ -179,6 +184,30 @@ func TestFindFirstOfficerSkillBaseUsesSuccessfulCodexBootPair(t *testing.T) {
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(wrongDelayed), "filing"); err == nil {
 		t.Fatal("boot-pair fallback accepted a delayed read under a different skill base")
+	}
+}
+
+func TestFOReferenceOrderHandlesWrappedBootAndUnrelatedSearch(t *testing.T) {
+	wrappedBoot := `{"type":"item.completed","item":{"type":"command_execution","command":"/bin/zsh -lc \"sed -n '1,240p' /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n '1,260p' /plugin/skills/first-officer/references/codex-first-officer-runtime.md\"","status":"completed","exit_code":0,"aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}`
+	if got := findFirstOfficerSkillBase(wrappedBoot); got != "/plugin/skills/first-officer" {
+		t.Fatalf("wrapped boot base = %q", got)
+	}
+	events := normalizeCodexFOReferenceEvents(wrappedBoot)
+	if eventIndex(events, foSharedRead) < 0 || eventIndex(events, foRuntimeRead) < 0 {
+		command := `/bin/zsh -lc "sed -n '1,240p' /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n '1,260p' /plugin/skills/first-officer/references/codex-first-officer-runtime.md"`
+		t.Fatalf("wrapped successful boot pair normalized to %v; classified=%v", events, classifyFOCommand(command, "/plugin/skills/first-officer"))
+	}
+
+	compound := codexFirstOfficerBaseEvent + "\n" +
+		`{"type":"item.completed","item":{"type":"command_execution","command":"sed -n '1,240p' /plugin/skills/first-officer/references/first-officer-shared-core.md; sed -n '1,260p' /plugin/skills/first-officer/references/codex-first-officer-runtime.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"sed -n '1,300p' /plugin/skills/first-officer/references/fo-write-core.md; spacedock status --next --json; rg --files -g 'README*' -g '*task*'","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
+	events = normalizeCodexFOReferenceEvents(compound)
+	if eventIndex(events, foBroadSearch) >= 0 {
+		t.Fatalf("unrelated entity rg --files was classified as a core search: %v", events)
+	}
+	if err := assertFOReferenceJourney(events, "filing"); err != nil {
+		t.Fatalf("compound exact read plus unrelated entity search: %v", err)
 	}
 }
 

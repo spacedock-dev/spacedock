@@ -267,8 +267,7 @@ func classifyFORead(target, skillBase string) []foReferenceEvent {
 func classifyFOCommand(command, skillBase string) []foReferenceEvent {
 	lower := strings.ToLower(command)
 	indexed := classifyShellFOReadTargets(command, skillBase)
-	if (strings.Contains(lower, "fo-write-core") || strings.Contains(lower, "fo-merge-core")) &&
-		(strings.Contains(lower, "find ") || strings.Contains(lower, "grep -r") || strings.Contains(lower, "rg --files") || strings.Contains(lower, "ls -r")) {
+	if commandBroadlySearchesFOCore(lower) {
 		indexed = append(indexed, foIndexedEvent{kind: foBroadSearch})
 	}
 	if strings.Contains(lower, "spacedock:fo-write-core") || strings.Contains(lower, "spacedock:fo-merge-core") {
@@ -317,7 +316,11 @@ func classifyFOCommand(command, skillBase string) []foReferenceEvent {
 	return events
 }
 
-var shellReadCommandRE = regexp.MustCompile(`(?:^|[[:space:]])(?:cat|sed|head|tail|less|more|bat|awk)(?:[[:space:]]|$)`)
+var (
+	shellReadCommandRE        = regexp.MustCompile(`(?:^|[[:space:]])(?:cat|sed|head|tail|less|more|bat|awk)(?:[[:space:]]|$)`)
+	shellWrappedReadCommandRE = regexp.MustCompile(`(?:^|[[:space:]])-(?:lc|cl|c)[[:space:]]+["'](?:cat|sed|head|tail|less|more|bat|awk)(?:[[:space:]]|$)`)
+	shellControlBoundaryRE    = regexp.MustCompile(`(?:\r?\n|;|&&|\|\|)`)
+)
 
 func shellReadTargetIndices(command, target string) []int {
 	var indices []int
@@ -328,12 +331,27 @@ func shellReadTargetIndices(command, target string) []int {
 		}
 		at += from
 		start := strings.LastIndexAny(command[:at], ";\n|&") + 1
-		if shellReadCommandRE.MatchString(command[start:at]) {
+		prefix := command[start:at]
+		if shellReadCommandRE.MatchString(prefix) || shellWrappedReadCommandRE.MatchString(prefix) {
 			indices = append(indices, at)
 		}
 		from = at + len(target)
 	}
 	return indices
+}
+
+func commandBroadlySearchesFOCore(command string) bool {
+	for _, segment := range shellControlBoundaryRE.Split(command, -1) {
+		if !strings.Contains(segment, "fo-write-core") && !strings.Contains(segment, "fo-merge-core") {
+			continue
+		}
+		for _, search := range []string{"find ", "grep -r", "rg --files", "ls -r"} {
+			if strings.Contains(segment, search) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func classifyShellFOReadTargets(command, skillBase string) []foIndexedEvent {
