@@ -103,8 +103,8 @@ func subprocessEnvScrubActive(env []string) bool {
 	return ok && v != "" && v != "0"
 }
 
-// envValueOf looks up key's value in an env slice ("KEY=value" entries),
-// production-code counterpart to the test-only envValue helper.
+// envValueOf looks up key's value in an env slice ("KEY=value" entries) —
+// the production env scanner used by hasEnv and subprocessEnvScrubActive.
 func envValueOf(env []string, key string) (string, bool) {
 	prefix := key + "="
 	for _, entry := range env {
