@@ -479,3 +479,16 @@ Closed all three job-951 findings with target-scoped registration repair, public
 ### Summary
 
 Validation is **REJECTED** at the Roborev-first gate. Exact-range job `1016` found three remaining publication-order and registration-identity defects; local tests, PR publication, and CI engagement were correctly not performed.
+
+## Stage Report: implementation (cycle 8)
+
+- DONE: Publish the converged checkout with atomic no-replace semantics so a destination created during cleanup/rename cannot be removed or replaced, with deterministic interleaving coverage.
+  Commit `9627a564` replaces ordinary `os.Rename` with the operating system's atomic no-replace primitive (`renamex_np(RENAME_EXCL)` on Darwin, `renameat2(RENAME_NOREPLACE)` on Linux, explicit fail-closed elsewhere) via declared `golang.org/x/sys v0.30.0`. `TestStateReadyNoReplacePublishPreservesCheckoutCreatedAfterRepair` creates a real different-branch checkout plus uncommitted bytes after stale cleanup and proves publication fails without changing either.
+- DONE: Remove only a unique prunable registration on the expected state branch; refuse active, wrong-branch, or duplicate registrations without mutation.
+  Stale repair now classifies complete porcelain records before private creation and revalidates immediately before targeted removal: exactly one canonical match, `refs/heads/<expected branch>`, non-bare, and prunable. The table matrix covers absent/valid/active/wrong/duplicate records; real-Git wrong-branch and duplicate mutations injected after private convergence both fail closed with exact target registrations and state-branch HEAD unchanged, while the temporarily-missing sibling proof remains green.
+- DONE: Make callers first observing the published checkout after ready but before unlock consume the completed outcome before any pull; run focused/full/race gates and keep the branch local for fresh Roborev-first validation.
+  A per-checkout cross-process flock now identifies same-checkout waiters while the repository flock retains cross-workflow Git metadata serialization; every present-checkout convergence records `pending` then generation-bound `ready`/`failed`. The ready-before-unlock test waits until the second caller is demonstrably blocked, makes origin unreachable, and proves it consumes the holder's ready outcome; the later-peer control still proves a non-waiting call pulls. Full state lifecycle passes (137.659s), race-focused tests pass (44.278s), complete CLI passes (231.331s), `go test ./... -count=1` and `go test ./... -race -count=1` pass (race CLI 225.425s, status 67.806s), broad gofmt ran with unrelated pre-existing drift restored, and Linux/Windows cross-compiles pass. The code branch is clean at `9627a56435f8e036f7c89dbecc3cd51216367ae1`, six local commits ahead of unchanged remote `3d50bd9a`; no code push, PR update, CI trigger, or CI approval occurred.
+
+### Summary
+
+Closed all three job-1016 findings with kernel-enforced no-replace publication, exact stale-registration identity checks, and same-checkout waiter result consumption across the ready-before-unlock boundary. The exact clean local head is fully verified and intentionally unpushed for fresh corrected exact-range Roborev-first validation.
