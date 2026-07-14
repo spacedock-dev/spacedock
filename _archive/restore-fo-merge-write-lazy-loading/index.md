@@ -1,14 +1,15 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores
-status: implementation
+status: done
 source: Captain correction after fresh-session boot trace, 2026-07-13
 started: 2026-07-13T15:56:42Z
-completed:
-verdict:
+completed: 2026-07-14T14:11:22Z
+verdict: rejected
 score:
 worktree: .worktrees/spacedock-ensign-restore-fo-merge-write-lazy-loading
 issue:
 id: 1kevganrmr2csr539ktfjerh
+archived: 2026-07-14T14:11:22Z
 ---
 
 Restore the intended first-officer loading boundary: boot reads the shared core and active runtime adapter, while the write core loads at the first FO-authored mutation and the merge core loads only at terminal or merge-mod recovery handling.
