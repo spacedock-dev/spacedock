@@ -489,6 +489,19 @@ func warnSubprocessEnvScrub(env []string, passthrough []string, name string, w i
 		name, subprocessEnvScrubEnv, subprocessEnvScrubEnv)
 }
 
+// envScrubDoctorNote returns the advisory spacedock doctor prints when Claude
+// Code's subprocess credential-scrubbing hardening is active in the operator's
+// environment, or "" when it is not. Informational only — it must never affect
+// doctor's exit code, which stays governed solely by contract.ManifestVerdict.
+func envScrubDoctorNote(env []string) string {
+	if !subprocessEnvScrubActive(env) {
+		return ""
+	}
+	return fmt.Sprintf(
+		"note: %s is set in this environment — `spacedock claude` launches will warn that Claude Code forces permission mode back to \"default\" unless --allowedTools is declared explicitly. See `spacedock claude --help`, or unset the var to avoid this.\n",
+		subprocessEnvScrubEnv)
+}
+
 // launchPrompt returns the inner-argv launch prompt: `base + " " + task` when the
 // operator fenced a task after `--`, otherwise the bare base prompt. Claude and
 // Codex suppress it on their respective resume forms.

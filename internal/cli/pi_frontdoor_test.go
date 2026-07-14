@@ -383,6 +383,54 @@ func TestNonPiSetupRejectsPluginDir(t *testing.T) {
 	}
 }
 
+// TestDoctorNotesSubprocessEnvScrubForClaude: `spacedock doctor --host claude`
+// prints the env-scrub advisory when CLAUDE_CODE_SUBPROCESS_ENV_SCRUB is set
+// truthy in the operator's environment — informational only, so the exit code
+// stays governed by the manifest verdict (compatible here).
+func TestDoctorNotesSubprocessEnvScrubForClaude(t *testing.T) {
+	ops := &fakeHost{manifest: compatibleManifest(t)}
+	var stdout, stderr bytes.Buffer
+	env := []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1"}
+
+	code := runDoctorWithPi(context.Background(), []string{"--host", "claude"}, ops, &fakePiRuntimeOps{}, env, &stdout, &stderr)
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+		t.Fatalf("stdout missing env-scrub doctor note: %q", stdout.String())
+	}
+}
+
+// TestDoctorOmitsSubprocessEnvScrubNoteWhenInactiveOrNonClaude covers: the var
+// unset, and the var set but the host is codex (no Claude Code analog) or pi
+// (a different runtime doctor path entirely).
+func TestDoctorOmitsSubprocessEnvScrubNoteWhenInactiveOrNonClaude(t *testing.T) {
+	cases := []struct {
+		name string
+		host string
+		env  []string
+	}{
+		{"claude, var unset", "claude", nil},
+		{"codex, var set", "codex", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ops := &fakeHost{manifest: compatibleManifest(t)}
+			var stdout, stderr bytes.Buffer
+
+			code := runDoctorWithPi(context.Background(), []string{"--host", tc.host}, ops, &fakePiRuntimeOps{}, tc.env, &stdout, &stderr)
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
+			}
+			if strings.Contains(stdout.String(), "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB") {
+				t.Fatalf("stdout should not carry the env-scrub doctor note: %q", stdout.String())
+			}
+		})
+	}
+}
+
 func TestPiInstallCheckFailsForMissingSupervisorTalkbackPrerequisites(t *testing.T) {
 	repo := t.TempDir()
 	writePiSkillFixtures(t, repo)
