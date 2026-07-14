@@ -2,8 +2,13 @@ package ensigncycle
 
 import "testing"
 
+const (
+	claudeFirstOfficerBaseEvent = `{"type":"user","message":{"content":[{"type":"text","text":"Base directory for this skill: /plugin/skills/first-officer\n\n# First Officer"}]},"isSynthetic":true}`
+	codexFirstOfficerBaseEvent  = `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n '1,80p' /plugin/skills/first-officer/SKILL.md","status":"completed","exit_code":0,"aggregated_output":"name: first-officer"}}`
+)
+
 func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
-	claude := `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"1","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/first-officer-shared-core.md"}}]}}
+	claude := claudeFirstOfficerBaseEvent + "\n" + `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"1","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/first-officer-shared-core.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"1","content":"# First Officer Shared Core"}]}}
 {"type":"assistant","message":{"id":"b","content":[{"type":"tool_use","id":"2","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/claude-first-officer-runtime.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"2","content":"# Claude Code First Officer Runtime"}]}}
@@ -20,7 +25,7 @@ func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
 		t.Fatalf("Claude positive recovery stream: %v", err)
 	}
 
-	codex := `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n 1,220p /plugin/skills/first-officer/references/codex-first-officer-runtime.md","aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}
+	codex := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n 1,220p /plugin/skills/first-officer/references/codex-first-officer-runtime.md","aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"$B status --boot --json","aggregated_output":"{\"mod-block\":\"merge:pr-merge\"}"}}
 {"type":"item.completed","item":{"type":"agent_message","text":"write.classify says allowed"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/fo-write-core.md","aggregated_output":"# First Officer Write Core"}}
@@ -50,6 +55,7 @@ func TestFOReferenceOrderOracleRejectsAdversarialControls(t *testing.T) {
 		{"broad search", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foBroadSearch, foWriteRead, foMutation}},
 		{"merge after guard", "terminal", []foReferenceEvent{foSharedRead, foRuntimeRead, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
 		{"reversed recovery", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
+		{"repeated merge work", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foMergeRead, foRepeatedMerge, foMergeAction, foMutation}},
 	}
 	for _, control := range controls {
 		t.Run(control.name, func(t *testing.T) {
@@ -72,18 +78,18 @@ func TestFOReferenceOrderOracleIgnoresClassificationNarration(t *testing.T) {
 }
 
 func TestFOReferenceOrderRequiresSuccessfulExactReads(t *testing.T) {
-	pathMention := `{"type":"item.completed","item":{"type":"command_execution","command":"echo references/fo-write-core.md","status":"completed","exit_code":0}}
+	pathMention := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"echo references/fo-write-core.md","status":"completed","exit_code":0}}
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(pathMention), "filing"); err == nil {
 		t.Fatal("a non-read path mention satisfied the write-core boundary")
 	}
-	sedMention := `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n '/references/fo-write-core.md/p' README.md","status":"completed","exit_code":0,"aggregated_output":"references/fo-write-core.md"}}
+	sedMention := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n '/references/fo-write-core.md/p' README.md","status":"completed","exit_code":0,"aggregated_output":"references/fo-write-core.md"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(sedMention), "filing"); err == nil {
 		t.Fatal("a sed output that only echoed the path mention satisfied the canonical-body boundary")
 	}
 
-	failedClaudeRead := `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"read","name":"Read","input":{"file_path":"/plugin/references/fo-write-core.md"}}]}}
+	failedClaudeRead := claudeFirstOfficerBaseEvent + "\n" + `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"read","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/fo-write-core.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"read","is_error":true,"content":"not found"}]}}
 {"type":"assistant","message":{"id":"b","content":[{"type":"tool_use","id":"write","name":"Bash","input":{"command":"spacedock new task"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"write","content":"created"}]}}`
@@ -91,24 +97,43 @@ func TestFOReferenceOrderRequiresSuccessfulExactReads(t *testing.T) {
 		t.Fatal("a failed Claude Read satisfied the write-core boundary")
 	}
 
-	failedThenRetried := `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/references/fo-write-core.md","status":"failed","exit_code":1}}
-{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+	failedThenRetried := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/skills/first-officer/references/fo-write-core.md","status":"failed","exit_code":1}}
+{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(failedThenRetried), "filing"); err == nil {
 		t.Fatal("a failed-then-retried Codex read satisfied the no-retry boundary")
 	}
 
-	emptyRead := `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":""}}
+	emptyRead := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":""}}
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(emptyRead), "filing"); err == nil {
 		t.Fatal("an empty successful-status read satisfied the canonical body boundary")
 	}
 
-	wrongThenRetried := `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/fo-write-core.md","status":"failed","exit_code":1}}
-{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+	wrongThenRetried := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/fo-write-core.md","status":"failed","exit_code":1}}
+{"type":"item.completed","item":{"type":"command_execution","command":"cat /plugin/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(wrongThenRetried), "filing"); err == nil {
 		t.Fatal("a wrong-path retry satisfied the exact no-retry boundary")
+	}
+
+	wrongBaseSameSuffix := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /other/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(wrongBaseSameSuffix), "filing"); err == nil {
+		t.Fatal("a same-suffix read under a different skill base satisfied the canonical boundary")
+	}
+	wrongBaseClaudeRead := claudeFirstOfficerBaseEvent + "\n" + `{"type":"assistant","message":{"id":"a","content":[{"type":"tool_use","id":"read","name":"Read","input":{"file_path":"/other/skills/first-officer/references/fo-write-core.md"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"read","content":"# First Officer Write Core"}]}}
+{"type":"assistant","message":{"id":"b","content":[{"type":"tool_use","id":"write","name":"Bash","input":{"command":"spacedock new task"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"write","content":"created"}]}}`
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(wrongBaseClaudeRead), "filing"); err == nil {
+		t.Fatal("a Claude Read with the right suffix under the wrong skill base satisfied the canonical boundary")
+	}
+
+	compoundWrongThenCanonical := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"cat /other/skills/first-officer/references/fo-write-core.md /plugin/skills/first-officer/references/fo-write-core.md","status":"completed","exit_code":0,"aggregated_output":"# First Officer Write Core"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(compoundWrongThenCanonical), "filing"); err == nil {
+		t.Fatal("a compound wrong-base then canonical read suppressed the wrong-path hazard")
 	}
 }
 
@@ -123,7 +148,7 @@ func TestFOReferenceOrderDetectsShellMutationBoundaries(t *testing.T) {
 	}
 	for _, command := range commands {
 		t.Run(command, func(t *testing.T) {
-			if eventIndex(classifyFOCommand(command), foMutation) < 0 {
+			if eventIndex(classifyFOCommand(command, ""), foMutation) < 0 {
 				t.Fatalf("shell mutation was not detected: %s", command)
 			}
 			stream := `{"type":"item.completed","item":{"type":"command_execution","command":` + mustJSONString(command) + `,"status":"completed","exit_code":0}}`

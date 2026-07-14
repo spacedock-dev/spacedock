@@ -42,6 +42,28 @@ func writeShallowBootWorkflow(t *testing.T, root string) shallowBootFixture {
 	}
 }
 
+func writeMergeModRecoveryWorkflow(t *testing.T, root string) mergeModRecoveryFixture {
+	t.Helper()
+	writeFile(t, filepath.Join(root, "README.md"), shallowBootReadme())
+	modsDir := filepath.Join(root, "_mods")
+	if err := os.MkdirAll(modsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	prMergeSrc := filepath.Join(repoRoot(t), "mods", "pr-merge.md")
+	prMergeBody, err := os.ReadFile(prMergeSrc)
+	if err != nil {
+		t.Fatalf("read canonical pr-merge mod %s: %v", prMergeSrc, err)
+	}
+	writeFile(t, filepath.Join(modsDir, "pr-merge.md"), string(prMergeBody))
+	entityPath := filepath.Join(root, "merge-recovery.md")
+	writeFile(t, entityPath, mergeModRecoveryEntity())
+	gitInit(t, root)
+	return mergeModRecoveryFixture{
+		entityPath:  entityPath,
+		archivePath: filepath.Join(root, "_archive", "merge-recovery.md"),
+	}
+}
+
 // writeStubMergedGh writes a `gh` shim that reports MERGED for `gh pr view`, so the
 // boot's live PR-state probe and the pr-merge startup hook both see a merged PR
 // deterministically (offline, no real PR). Returns the dir to prepend to PATH.

@@ -35,6 +35,10 @@ func piSharedScenarioCoverageMap() map[string]piSharedScenarioCoverage {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer shallow-boot runner.",
 		},
+		"merge-mod-block-recovery": {
+			mode:   "gap",
+			reason: "Pi has no live-safe shared first-officer merge-mod recovery runner; static deferred-path coverage remains codified.",
+		},
 		"self-evidence-merge-triage": {
 			mode:   "gap",
 			reason: "Pi currently has durable live coverage for subagent dispatch/front-door setup, but not a live-safe shared first-officer merge/triage self-evidence runner.",

@@ -367,9 +367,10 @@ func filingPrompt(workflowRoot string) string {
 // shallowBootFixture is the shallow-boot scenario's on-disk state plus the stub-gh
 // dir the runner prepends to PATH. The fixture seeds TWO entities: a gate-check at
 // a human gate (which the FO must present, not dispatch) and a PR-bearing
-// non-terminal entity carrying a merged-PR sentinel and an in-flight pr-merge
-// mod-block (which recovery advances and archives before-greet). The canonical
-// pr-merge mod is registered so the boot JSON `mods` map resolves the block. The
+// non-terminal entity whose stubbed `gh` reports MERGED (which S7b advances and
+// archives before-greet). The canonical pr-merge mod is registered so the boot
+// JSON `mods` map shows it and S7b can read it; the merged entity carries `pr` so
+// its terminal advancement clears the merge-hook guard without `--force`. The
 // fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner file;
 // the pure string builders below are default-tagged so the offline negative cases
 // reuse them without a model.
@@ -432,17 +433,17 @@ func shallowBootMergedEntity() string {
 		"status: implementation\n" +
 		"completed:\n" +
 		"verdict:\n" +
-		"pr: pr-merge:42\n" +
-		"mod-block: merge:pr-merge\n" +
+		"pr: \"#42\"\n" +
+		"mod-block:\n" +
 		"worktree:\n" +
 		"---\n" +
 		"# Merged PR Entity\n\n" +
-		"A non-terminal entity carrying the durable merged-PR sentinel and an in-flight `mod-block=merge:pr-merge`. Boot recovery must resume it through `merge guard`, advance it to terminal (`done`, `verdict: PASSED`), clear the block, and archive it BEFORE the greet.\n\n" +
+		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The boot's S7b merged-PR sweep must advance it to terminal (`done`, `verdict: PASSED`) and archive it BEFORE the greet — proving a greet-and-stop boot still advances a merged PR.\n\n" +
 		"## Stage Report: implementation\n\n" +
 		"- DONE: Work exists and a PR was opened\n" +
-		"  The PR (#42) has since merged; its durable sentinel and merge mod-block must be resumed and finalized.\n" +
+		"  The PR (#42) has since merged; the boot must advance and archive this entity.\n" +
 		"\n### Summary\n\n" +
-		"PR #42 is merged; boot recovery resumes its merge guard, advances it to done, and archives it before the greet.\n"
+		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
 }
 
 func shallowBootPrompt(workflowRoot string) string {
@@ -450,7 +451,7 @@ func shallowBootPrompt(workflowRoot string) string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
 		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
-		"Boot the workflow: read startup state, recognize the merged PR entity's non-empty merge mod-block, load the exact write and merge owners, and resume it with `${SPACEDOCK_BIN:-spacedock} merge guard merged-pr --verdict passed --json` before any other merge action. Then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
+		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
 		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
 	)
 }
@@ -463,6 +464,57 @@ func TestShallowBootPromptUsesExactAbsoluteFixtureRoot(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "Workflow directory: "+fixtureRoot) {
 		t.Fatal("shallow boot prompt does not anchor the exact absolute fixture root")
+	}
+}
+
+type mergeModRecoveryFixture struct {
+	entityPath  string
+	archivePath string
+}
+
+func mergeModRecoveryEntity() string {
+	return "---\n" +
+		"id: merge-recovery\n" +
+		"title: Merge Recovery\n" +
+		"status: implementation\n" +
+		"completed:\n" +
+		"verdict: PASSED\n" +
+		"pr: pr-merge:42\n" +
+		"mod-block: merge:pr-merge\n" +
+		"worktree:\n" +
+		"---\n" +
+		"# Merge Recovery\n\n" +
+		"The PR merge is already durably represented by its sentinel and the merge ceremony is in flight. Recovery must finish the existing ceremony without repeating merge work.\n\n" +
+		"## Stage Report: implementation\n\n" +
+		"- DONE: The implementation was validated and its PR merged\n" +
+		"  Durable state carries the merged-PR sentinel and active merge mod-block.\n\n" +
+		"### Summary\n\n" +
+		"Resume the in-flight merge ceremony to its durable terminal outcome.\n"
+}
+
+func mergeModRecoveryPrompt(workflowRoot string) string {
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s",
+		"Use $spacedock:first-officer for this whole run.",
+		"Workflow directory: "+workflowRoot,
+		"Process only `merge-recovery`, which is already mid-merge. Resume it to the correct durable terminal outcome under the shipped contract without repeating work already represented by its current PR sentinel and mod-block.",
+		"Stop after the bounded recovery completes. Your final response must report the resulting durable status and archive outcome.",
+	)
+}
+
+func TestMergeRecoveryDoesNotReplaceOrPrescribeShallowBootDiscovery(t *testing.T) {
+	shallow := shallowBootMergedEntity()
+	if !strings.Contains(shallow, `pr: "#42"`) || !strings.Contains(shallow, "mod-block:\n") || strings.Contains(shallow, "pr: pr-merge:") {
+		t.Fatal("shallow-boot no longer starts from a discoverable open PR with no pre-seeded recovery state")
+	}
+	recovery := mergeModRecoveryEntity()
+	if !strings.Contains(recovery, "pr: pr-merge:42") || !strings.Contains(recovery, "mod-block: merge:pr-merge") {
+		t.Fatal("separate recovery fixture lacks the durable in-flight merge state")
+	}
+	prompt := mergeModRecoveryPrompt("/tmp/workflow")
+	for _, prescribed := range []string{"fo-write-core", "fo-merge-core", "merge guard", "SPACEDOCK_BIN"} {
+		if strings.Contains(prompt, prescribed) {
+			t.Errorf("outcome-oriented recovery prompt prescribes mechanism %q", prescribed)
+		}
 	}
 }
 

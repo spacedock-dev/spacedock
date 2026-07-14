@@ -163,6 +163,7 @@ func claudeScenarioRunners() map[string]func(*testing.T, liveDriver, sharedRunti
 		"merge-hook-guardrail":          runClaudeMergeHookGuardrailScenario,
 		"filing":                        runClaudeFilingScenario,
 		"shallow-boot":                  runClaudeShallowBootScenario,
+		"merge-mod-block-recovery":      runClaudeMergeModRecoveryScenario,
 		"self-evidence-merge-triage":    runClaudeSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runClaudeSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runClaudeKeepMovingScenario,
@@ -429,13 +430,32 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertShallowBootMeasured(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "recovery"); err != nil {
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "terminal"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// Record (don't gate on) the greet turn's full token usage as a distinct
 	// shallow-boot-window observation, riding the same journeymetrics ledger pipe
 	// emitClaudeScenarioMetrics below already uses.
 	emitShallowBootWindowMetrics(t, result.stream, runner.model())
+	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
+}
+
+func runClaudeMergeModRecoveryScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	fixture := writeMergeModRecoveryWorkflow(t, workflowRoot)
+	result := runner.run(t, scenario, workflowRoot, mergeModRecoveryPrompt(workflowRoot))
+	obs := mergeModRecoveryObservation{
+		activeAfter:   readFileAllowMissing(fixture.entityPath),
+		archivedAfter: readFileAllowMissing(fixture.archivePath),
+		gitClean:      strings.TrimSpace(git(t, workflowRoot, "status", "--porcelain")) == "",
+	}
+	if err := assertMergeModRecovery(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "recovery"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
 	emitClaudeScenarioMetrics(t, scenario, result, runner.model())
 }
 

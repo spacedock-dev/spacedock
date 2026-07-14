@@ -12,7 +12,7 @@ The scenario surface lives in `internal/ensigncycle` and splits into four host-n
 |-------|------|---------------|
 | Scenario table | `shared_scenarios_test.go` (`sharedRuntimeScenarios()`) | Yes |
 | Fixtures + prompts | `shared_fixtures_test.go` | Yes |
-| Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go` | Yes |
+| Assertions | `gate_assert_impl_test.go`, `shared_assertions_impl_test.go`, `merge_mod_recovery_assert_test.go` | Yes |
 | Runner adapter | `codex_live_runner_test.go`, `claude_live_runner_test.go`, `pi_shared_coverage_test.go` | No — one per host; Pi currently records explicit live/codified/gap status for each shared scenario |
 
 The shared table (`sharedRuntimeScenario`) carries ONLY runtime-neutral facts: scenario `name` (ID), `oldPythonTest` provenance, behavior `intent`, and a live `timeout`. It encodes NO launch, auth, plugin, artifact, or transcript field — `TestSharedRuntimeScenarioDefinitions` reflects over the type and fails if any field names a single host.
@@ -33,6 +33,7 @@ The shared scenarios reuse the old shared Claude/Codex Python journey overlap (`
 - `rejection-flow`: drives a two-cycle rejection trajectory — route the concrete finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer when the host exposes an addressable-worker route and otherwise fresh-dispatching a separate reviewer.
 - `feedback-3-cycle-escalation`: starts from two prior rejection cycles at a third REJECTED validation and asserts the first officer escalates to the human on the third cycle instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail`: attempts terminalization while a merge hook is registered and asserts the guard refuses bypass without `mod-block`, PR, or force.
+- `merge-mod-block-recovery`: resumes an already in-flight merge from its durable sentinel and mod-block, then asserts terminal status, cleared block, archive placement, and a clean workflow checkout without prescribing the recovery command.
 
 Assertions prefer durable workflow state over transcript phrasing: entity frontmatter (status / completed / verdict), archive-vs-no-archive, the exact fix marker and a second stage report, and only the durable user-facing final-message obligations (a gate review and a decision prompt). `extractClaudeFinalMessage` surfaces a stale-credential `is_error`/`401` `result` event as a LOUD launch failure, distinct from a scenario-assertion failure, so a credential problem is never misread as a runtime regression.
 

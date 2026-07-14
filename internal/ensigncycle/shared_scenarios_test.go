@@ -54,6 +54,11 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
 		},
 		{
+			name:          "merge-mod-block-recovery",
+			oldPythonTest: "0250 lazy-core recovery (net-new; no Python ancestor)",
+			intent:        "A resumed FO recognizes an in-flight merge mod-block and reaches the correct durable terminal/archive outcome without repeating already-recorded merge work.",
+		},
+		{
 			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence
 			// bar); no Python ancestor — it reconstructs the ezf/hf merge/triage
 			// incident (2026-06-16), a recorded real failure, as a live decision.

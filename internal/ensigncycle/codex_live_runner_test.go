@@ -73,6 +73,7 @@ func codexScenarioRunners() map[string]func(*testing.T, codexLiveRunner, sharedR
 		"merge-hook-guardrail":          runCodexMergeHookGuardrailScenario,
 		"filing":                        runCodexFilingScenario,
 		"shallow-boot":                  runCodexShallowBootScenario,
+		"merge-mod-block-recovery":      runCodexMergeModRecoveryScenario,
 		"self-evidence-merge-triage":    runCodexSelfEvidenceMergeTriageScenario,
 		"smallest-sufficient-mechanism": runCodexSmallestSufficientMechanismScenario,
 		"keep-moving-posture":           runCodexKeepMovingScenario,
@@ -378,6 +379,28 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "terminal"); err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
+}
+
+func runCodexMergeModRecoveryScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
+	t.Helper()
+	workflowRoot := t.TempDir()
+	fixture := writeMergeModRecoveryWorkflow(t, workflowRoot)
+	result, err := runner.run(t, scenario, workflowRoot, mergeModRecoveryPrompt(workflowRoot), 0)
+	if err != nil {
+		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+	}
+	obs := mergeModRecoveryObservation{
+		activeAfter:   readFileAllowMissing(fixture.entityPath),
+		archivedAfter: readFileAllowMissing(fixture.archivePath),
+		gitClean:      strings.TrimSpace(git(t, workflowRoot, "status", "--porcelain")) == "",
+	}
+	if err := assertMergeModRecovery(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "recovery"); err != nil {

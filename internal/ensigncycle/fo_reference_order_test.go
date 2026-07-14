@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -12,18 +13,20 @@ import (
 type foReferenceEvent string
 
 const (
-	foSharedRead   foReferenceEvent = "shared-read"
-	foRuntimeRead  foReferenceEvent = "runtime-read"
-	foWriteRead    foReferenceEvent = "write-read"
-	foMergeRead    foReferenceEvent = "merge-read"
-	foModBlockSeen foReferenceEvent = "merge-mod-block-seen"
-	foMutation     foReferenceEvent = "mutation"
-	foTerminal     foReferenceEvent = "terminal-mutation"
-	foMergeGuard   foReferenceEvent = "merge-guard"
-	foWrongPath    foReferenceEvent = "wrong-core-path"
-	foFailedRead   foReferenceEvent = "failed-core-read"
-	foBroadSearch  foReferenceEvent = "broad-core-search"
-	foWrapperSkill foReferenceEvent = "wrapper-skill"
+	foSharedRead    foReferenceEvent = "shared-read"
+	foRuntimeRead   foReferenceEvent = "runtime-read"
+	foWriteRead     foReferenceEvent = "write-read"
+	foMergeRead     foReferenceEvent = "merge-read"
+	foModBlockSeen  foReferenceEvent = "merge-mod-block-seen"
+	foMutation      foReferenceEvent = "mutation"
+	foTerminal      foReferenceEvent = "terminal-mutation"
+	foMergeGuard    foReferenceEvent = "merge-guard"
+	foMergeAction   foReferenceEvent = "merge-action"
+	foWrongPath     foReferenceEvent = "wrong-core-path"
+	foFailedRead    foReferenceEvent = "failed-core-read"
+	foBroadSearch   foReferenceEvent = "broad-core-search"
+	foWrapperSkill  foReferenceEvent = "wrapper-skill"
+	foRepeatedMerge foReferenceEvent = "repeated-merge-work"
 )
 
 type foIndexedEvent struct {
@@ -35,8 +38,48 @@ type claudePendingFOCall struct {
 	events []foReferenceEvent
 }
 
+var (
+	firstOfficerBaseAnnouncementRE = regexp.MustCompile(`Base directory for this skill:[[:space:]]*([^\\"\r\n]+/first-officer)`)
+	firstOfficerEntryPathRE        = regexp.MustCompile(`([^"'[:space:];|&]+/skills/first-officer)/SKILL\.md`)
+)
+
+func findFirstOfficerSkillBase(stream string) string {
+	if match := firstOfficerBaseAnnouncementRE.FindStringSubmatch(stream); len(match) == 2 {
+		return filepath.Clean(match[1])
+	}
+	scanner := bufio.NewScanner(strings.NewReader(stream))
+	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
+	for scanner.Scan() {
+		var row struct {
+			Type string `json:"type"`
+			Item struct {
+				Type             string `json:"type"`
+				Command          string `json:"command"`
+				AggregatedOutput string `json:"aggregated_output"`
+				Output           string `json:"output"`
+				Status           string `json:"status"`
+				ExitCode         *int   `json:"exit_code"`
+			} `json:"item"`
+		}
+		if json.Unmarshal(scanner.Bytes(), &row) != nil || row.Type != "item.completed" || row.Item.Type != "command_execution" {
+			continue
+		}
+		if row.Item.Status == "failed" || (row.Item.ExitCode != nil && *row.Item.ExitCode != 0) {
+			continue
+		}
+		if !strings.Contains(strings.ToLower(row.Item.AggregatedOutput+row.Item.Output), "name: first-officer") {
+			continue
+		}
+		if match := firstOfficerEntryPathRE.FindStringSubmatch(row.Item.Command); len(match) == 2 {
+			return filepath.Clean(match[1])
+		}
+	}
+	return ""
+}
+
 func normalizeClaudeFOReferenceEvents(stream string) []foReferenceEvent {
 	var events []foReferenceEvent
+	skillBase := findFirstOfficerSkillBase(stream)
 	seenTools := map[string]bool{}
 	pending := map[string]claudePendingFOCall{}
 	scanner := bufio.NewScanner(strings.NewReader(stream))
@@ -71,9 +114,9 @@ func normalizeClaudeFOReferenceEvents(stream string) []foReferenceEvent {
 				seenTools[key] = true
 				switch block.Name {
 				case "Read":
-					pending[block.ID] = claudePendingFOCall{events: classifyFORead(fmt.Sprint(block.Input["file_path"]))}
+					pending[block.ID] = claudePendingFOCall{events: classifyFORead(fmt.Sprint(block.Input["file_path"]), skillBase)}
 				case "Bash":
-					pending[block.ID] = claudePendingFOCall{events: classifyFOCommand(fmt.Sprint(block.Input["command"]))}
+					pending[block.ID] = claudePendingFOCall{events: classifyFOCommand(fmt.Sprint(block.Input["command"]), skillBase)}
 				case "Skill":
 					skill := fmt.Sprint(block.Input["skill"])
 					if skill == "spacedock:fo-write-core" || skill == "spacedock:fo-merge-core" {
@@ -109,6 +152,7 @@ func normalizeClaudeFOReferenceEvents(stream string) []foReferenceEvent {
 
 func normalizeCodexFOReferenceEvents(stream string) []foReferenceEvent {
 	var events []foReferenceEvent
+	skillBase := findFirstOfficerSkillBase(stream)
 	scanner := bufio.NewScanner(strings.NewReader(stream))
 	scanner.Buffer(make([]byte, 0, 64*1024), 4*1024*1024)
 	for scanner.Scan() {
@@ -129,7 +173,7 @@ func normalizeCodexFOReferenceEvents(stream string) []foReferenceEvent {
 		switch row.Item.Type {
 		case "command_execution":
 			succeeded := row.Item.Status != "failed" && (row.Item.ExitCode == nil || *row.Item.ExitCode == 0)
-			callEvents := classifyFOCommand(row.Item.Command)
+			callEvents := classifyFOCommand(row.Item.Command, skillBase)
 			events = append(events, resolvedFOCallEvents(callEvents, foCallSucceeded(callEvents, succeeded, row.Item.AggregatedOutput+row.Item.Output))...)
 			if succeeded && containsMergeModBlock(row.Item.AggregatedOutput+row.Item.Output) {
 				events = append(events, foModBlockSeen)
@@ -194,48 +238,42 @@ func resolvedFOCallEvents(events []foReferenceEvent, succeeded bool) []foReferen
 	return out
 }
 
-func classifyFORead(target string) []foReferenceEvent {
+func classifyFORead(target, skillBase string) []foReferenceEvent {
+	cleanTarget := filepath.Clean(target)
+	expected := func(suffix string) string { return filepath.Join(skillBase, filepath.FromSlash(suffix)) }
 	switch {
-	case strings.HasSuffix(target, "/references/first-officer-shared-core.md"):
+	case skillBase != "" && cleanTarget == expected("references/first-officer-shared-core.md"):
 		return []foReferenceEvent{foSharedRead}
-	case strings.HasSuffix(target, "/references/claude-first-officer-runtime.md"),
-		strings.HasSuffix(target, "/references/codex-first-officer-runtime.md"),
-		strings.HasSuffix(target, "/references/pi-first-officer-runtime.md"):
+	case skillBase != "" && (cleanTarget == expected("references/claude-first-officer-runtime.md") ||
+		cleanTarget == expected("references/codex-first-officer-runtime.md") ||
+		cleanTarget == expected("references/pi-first-officer-runtime.md")):
 		return []foReferenceEvent{foRuntimeRead}
-	case strings.HasSuffix(target, "/references/fo-write-core.md"):
+	case skillBase != "" && cleanTarget == expected("references/fo-write-core.md"):
 		return []foReferenceEvent{foWriteRead}
-	case strings.HasSuffix(target, "/references/fo-merge-core.md"):
+	case skillBase != "" && cleanTarget == expected("references/fo-merge-core.md"):
 		return []foReferenceEvent{foMergeRead}
-	case strings.Contains(target, "fo-write-core") || strings.Contains(target, "fo-merge-core"):
+	case strings.Contains(target, "first-officer-shared-core.md"), strings.Contains(target, "first-officer-runtime.md"),
+		strings.Contains(target, "fo-write-core.md"), strings.Contains(target, "fo-merge-core.md"):
 		return []foReferenceEvent{foWrongPath}
 	default:
 		return nil
 	}
 }
 
-func classifyFOCommand(command string) []foReferenceEvent {
+func classifyFOCommand(command, skillBase string) []foReferenceEvent {
 	lower := strings.ToLower(command)
-	var indexed []foIndexedEvent
-	addRead := func(needle string, kind foReferenceEvent) {
-		for _, at := range shellReadTargetIndices(lower, needle) {
-			indexed = append(indexed, foIndexedEvent{index: at, kind: kind})
-		}
-	}
-	addRead("references/first-officer-shared-core.md", foSharedRead)
-	addRead("references/claude-first-officer-runtime.md", foRuntimeRead)
-	addRead("references/codex-first-officer-runtime.md", foRuntimeRead)
-	addRead("references/pi-first-officer-runtime.md", foRuntimeRead)
-	addRead("references/fo-write-core.md", foWriteRead)
-	addRead("references/fo-merge-core.md", foMergeRead)
-	if hasWrongCoreReadAttempt(lower) {
-		indexed = append(indexed, foIndexedEvent{kind: foWrongPath})
-	}
+	indexed := classifyShellFOReadTargets(lower, skillBase)
 	if (strings.Contains(lower, "fo-write-core") || strings.Contains(lower, "fo-merge-core")) &&
 		(strings.Contains(lower, "find ") || strings.Contains(lower, "grep -r") || strings.Contains(lower, "rg --files") || strings.Contains(lower, "ls -r")) {
 		indexed = append(indexed, foIndexedEvent{kind: foBroadSearch})
 	}
 	if strings.Contains(lower, "spacedock:fo-write-core") || strings.Contains(lower, "spacedock:fo-merge-core") {
 		indexed = append(indexed, foIndexedEvent{kind: foWrapperSkill})
+	}
+	for _, repeated := range []string{"gh pr create", "git merge", "git push"} {
+		if at := strings.Index(lower, repeated); at >= 0 {
+			indexed = append(indexed, foIndexedEvent{index: at, kind: foRepeatedMerge})
+		}
 	}
 	mutationAt := shellMutationIndex(lower)
 	for _, needle := range []string{" status ", "spacedock status", " state commit ", "spacedock state commit", " dispatch build ", "spacedock dispatch build", " new ", "spacedock new", " --archive "} {
@@ -247,6 +285,7 @@ func classifyFOCommand(command string) []foReferenceEvent {
 	}
 	if at := strings.Index(lower, "merge guard"); at >= 0 {
 		indexed = append(indexed, foIndexedEvent{index: at, kind: foMergeGuard})
+		indexed = append(indexed, foIndexedEvent{index: at, kind: foMergeAction})
 		if mutationAt < 0 || at < mutationAt {
 			mutationAt = at
 		}
@@ -256,6 +295,12 @@ func classifyFOCommand(command string) []foReferenceEvent {
 	}
 	if at := terminalMutationIndex(lower); at >= 0 {
 		indexed = append(indexed, foIndexedEvent{index: at, kind: foTerminal})
+		indexed = append(indexed, foIndexedEvent{index: at, kind: foMergeAction})
+	}
+	for _, needle := range []string{"mod-block=", "pr=pr-merge:", "pr=local-merge:"} {
+		if at := strings.Index(lower, needle); at >= 0 {
+			indexed = append(indexed, foIndexedEvent{index: at, kind: foMergeAction})
+		}
 	}
 	sort.SliceStable(indexed, func(i, j int) bool { return indexed[i].index < indexed[j].index })
 	events := make([]foReferenceEvent, 0, len(indexed))
@@ -284,19 +329,49 @@ func shellReadTargetIndices(command, target string) []int {
 	return indices
 }
 
-func hasWrongCoreReadAttempt(command string) bool {
-	for _, core := range []string{"fo-write-core", "fo-merge-core"} {
-		if !strings.Contains(command, core) {
-			continue
-		}
-		if strings.Contains(command, "references/"+core+".md") {
-			continue
-		}
-		if len(shellReadTargetIndices(command, core)) > 0 {
-			return true
+func classifyShellFOReadTargets(command, skillBase string) []foIndexedEvent {
+	targets := []struct {
+		name, suffix string
+		kind         foReferenceEvent
+	}{
+		{"first-officer-shared-core.md", "references/first-officer-shared-core.md", foSharedRead},
+		{"claude-first-officer-runtime.md", "references/claude-first-officer-runtime.md", foRuntimeRead},
+		{"codex-first-officer-runtime.md", "references/codex-first-officer-runtime.md", foRuntimeRead},
+		{"pi-first-officer-runtime.md", "references/pi-first-officer-runtime.md", foRuntimeRead},
+		{"fo-write-core.md", "references/fo-write-core.md", foWriteRead},
+		{"fo-merge-core.md", "references/fo-merge-core.md", foMergeRead},
+	}
+	var indexed []foIndexedEvent
+	for _, target := range targets {
+		for _, at := range shellReadTargetIndices(command, target.name) {
+			path := shellTokenAt(command, at)
+			expected := ""
+			if skillBase != "" {
+				expected = filepath.Join(skillBase, filepath.FromSlash(target.suffix))
+			}
+			kind := foWrongPath
+			if expected != "" && filepath.Clean(path) == expected {
+				kind = target.kind
+			}
+			indexed = append(indexed, foIndexedEvent{index: at, kind: kind})
 		}
 	}
-	return false
+	return indexed
+}
+
+func shellTokenAt(command string, at int) string {
+	isBoundary := func(r byte) bool {
+		return r == ' ' || r == '\t' || r == '\r' || r == '\n' || strings.ContainsRune("\"'`;|&() <>", rune(r))
+	}
+	start := at
+	for start > 0 && !isBoundary(command[start-1]) {
+		start--
+	}
+	end := at
+	for end < len(command) && !isBoundary(command[end]) {
+		end++
+	}
+	return command[start:end]
 }
 
 var (
@@ -331,7 +406,7 @@ func containsMergeModBlock(output string) bool {
 }
 
 func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
-	for _, hazard := range []foReferenceEvent{foWrongPath, foFailedRead, foBroadSearch, foWrapperSkill} {
+	for _, hazard := range []foReferenceEvent{foWrongPath, foFailedRead, foBroadSearch, foWrapperSkill, foRepeatedMerge} {
 		if eventIndex(events, hazard) >= 0 {
 			return fmt.Errorf("%s contains forbidden %s event: %v", journey, hazard, events)
 		}
@@ -377,8 +452,9 @@ func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
 	}
 	if journey == "recovery" {
 		modAt := eventIndex(events, foModBlockSeen)
-		if modAt < 0 || !(modAt < writeAt && writeAt < mergeAt && mergeAt < guardAt) {
-			return fmt.Errorf("recovery order must be mod-block → write → merge → guard: %v", events)
+		actionAt := eventIndex(events, foMergeAction)
+		if modAt < 0 || actionAt < 0 || !(modAt < writeAt && writeAt < mergeAt && mergeAt < actionAt) {
+			return fmt.Errorf("recovery order must be mod-block → write → merge → first merge action: %v", events)
 		}
 	}
 	return nil
