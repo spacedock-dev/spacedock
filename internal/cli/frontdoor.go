@@ -94,6 +94,32 @@ func hasEnv(env []string, key string) bool {
 	return false
 }
 
+// subprocessEnvScrubEnv is Claude Code's own subprocess credential-scrubbing
+// hardening var. When set truthy, Claude Code forces the launched session's
+// permission mode back to "default" unless --allowedTools is declared
+// explicitly — see warnSubprocessEnvScrub (runClaude) and envScrubDoctorNote
+// (spacedock doctor).
+const subprocessEnvScrubEnv = "CLAUDE_CODE_SUBPROCESS_ENV_SCRUB"
+
+// subprocessEnvScrubActive reports whether subprocessEnvScrubEnv is present in
+// env and set to a truthy value (non-empty, not "0").
+func subprocessEnvScrubActive(env []string) bool {
+	v, ok := envValueOf(env, subprocessEnvScrubEnv)
+	return ok && v != "" && v != "0"
+}
+
+// envValueOf looks up key's value in an env slice ("KEY=value" entries),
+// production-code counterpart to the test-only envValue helper.
+func envValueOf(env []string, key string) (string, bool) {
+	prefix := key + "="
+	for _, entry := range env {
+		if strings.HasPrefix(entry, prefix) {
+			return strings.TrimPrefix(entry, prefix), true
+		}
+	}
+	return "", false
+}
+
 // launcherBinEnvPassFlags returns the `--env-pass SPACEDOCK_BIN` safehouse flags
 // that tell safehouse to forward SPACEDOCK_BIN from its (the launching process's)
 // environment into the otherwise-sanitized sandbox, so the launcher binary the

@@ -159,6 +159,31 @@ func envValue(env []string, key string) (string, bool) {
 	return "", false
 }
 
+// TestSubprocessEnvScrubActive covers the truthy/falsy parsing of
+// CLAUDE_CODE_SUBPROCESS_ENV_SCRUB that gates the launch warning (Task 2) and
+// the doctor note (Task 3).
+func TestSubprocessEnvScrubActive(t *testing.T) {
+	cases := []struct {
+		name string
+		env  []string
+		want bool
+	}{
+		{"unset", nil, false},
+		{"empty value", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="}, false},
+		{"explicit zero", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=0"}, false},
+		{"set to 1", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1"}, true},
+		{"set to true", []string{"CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=true"}, true},
+		{"unrelated env untouched", []string{"OTHER_VAR=1"}, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := subprocessEnvScrubActive(tc.env); got != tc.want {
+				t.Fatalf("subprocessEnvScrubActive(%v) = %v, want %v", tc.env, got, tc.want)
+			}
+		})
+	}
+}
+
 // TestClaudeFrontDoorLaunchesOnCompatible: on a compatible contract the front
 // door invokes the launch seam with argv beginning `claude --agent
 // spacedock:first-officer` and passes through the operator's trailing args.
