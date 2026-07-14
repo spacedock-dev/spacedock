@@ -455,3 +455,22 @@ Validation recommends REJECTED for exact head `f91863463a7058cf1b98f20ffdae86817
 ### Summary
 
 Linked and standalone state checkouts can no longer redirect mutation through path or Git-metadata aliases outside the declared workflow, and boot surfaces resolver failures instead of failing silently. The append-only local head is ready for fresh corrected-guideline Roborev-first validation; the race replay flake and its successful exact-head reruns are recorded explicitly rather than hidden.
+
+## Stage Report: validation (cycle 3)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..f63f71eb and inspect its stored range/prompt; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `855` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..f63f71eb4ee41b227e24ca288d0aaffc0366fb54`, reviewed all eight commits in that Git difference, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. It returned FAIL with two high, one medium, and one low finding: inherited Git-routing environment variables can redirect validated operations; effective inherited or included `core.worktree` can redirect standalone operations; linked-worktree-only project-gitfile validation rejects separate-git-dir and submodule layouts; and boot can print a returned `computeNextID` error twice.
+- SKIPPED: Only after Roborev PASS independently reproduce both external-redirect refusals and boot diagnostics, all ACs, gofmt, focused/full/race suites, real-mount evidence, and detached mutation audit.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, or detached-audit command ran, and the implementation report's earlier evidence was not promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head f63f71eb, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, or failed evidence.
+  No code push, PR creation, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `f63f71eb4ee41b227e24ca288d0aaffc0366fb54`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `f63f71eb`. Roborev job `855`
+shows that validated paths can still be overridden by inherited Git routing and
+configuration, while the project-gitfile lane regresses supported Git layouts
+and one boot error can be duplicated. AC-1, AC-3, and AC-6 therefore fail; the
+remaining criteria were not revalidated because the mandated first gate stopped
+the cycle. No tests, push, PR, CI, implementation mutation, or local merge
+occurred.
