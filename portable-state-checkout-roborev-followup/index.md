@@ -414,6 +414,25 @@ fail-closed scope. Fix them with public-command zero-mutation regressions. The
 next fresh validator must again run corrected exact-range Roborev first; no
 push, PR, or CI is permitted before PASS.
 
+**Cycle 6 (Roborev-first validation, job 900).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..82adfab58de230fa2f05a2150c1910a35d545247`
+before tests, push, PR creation, or CI:
+
+- HIGH: fresh `state init` and `state new` still route mutating operations
+  through unsanitized Git helpers.
+- HIGH: moved-checkout stale-backpointer recovery compares only the
+  workflow-relative state suffix, so multiple workflows can collide.
+- HIGH: merge-guard auto-arm mutates entity state before validating the
+  split-root checkout with `Resolve`.
+
+Captain standing decision: send these findings back without reframing. They are
+direct violations of the existing all-path routing, repository identity, and
+mutation-before-validation invariants. Close every mutating bootstrap helper,
+bind recovery to the full workflow identity, and preflight split-root state
+before arming. The next fresh validator must again run corrected exact-range
+Roborev first; no push, PR, or CI is permitted before PASS.
+
 ## Stage Report: validation
 
 - FAILED: AC-1 — refuse every cross-repository state target before mutation.
