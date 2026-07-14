@@ -126,6 +126,7 @@ Cycle 1 closes both false-green evidence gaps without changing lazy-loading or w
   - Material evidence defect (AC-4): valid common checkout paths containing spaces are truncated and falsely rejected.
   - Release-scope triage: all three affect named ACs and common or explicitly exercised workflows; the Linux-only non-distinct `/tmp` alias control is a deferred risk with synthetic-symlink revisit condition.
   - Design-reset trigger: another observer patch would require shell quoting, JSON payload semantics, and further command-family interpretation. The branch is now 749 additions across 12 files, including a 575-line observer, while the shipped contract delta is small. No automatic cycle 4 dispatch.
+  - Captain resolution: skip the contract-specific runtime trace harness. Preserve the deferred-load contract and minimal structural coverage; use the same-model shallow-boot token comparison against the published v0.24.0 ledger as the release proof. Remove the semantic observer instead of repairing its command, path, or payload classifiers.
 
 ## Stage Report: validation (cycle 2)
 
