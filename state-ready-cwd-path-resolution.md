@@ -426,3 +426,16 @@ Closed all four job-904 findings with exact checkout identity checks, private or
 ### Summary
 
 Validation is **REJECTED** at the Roborev-first gate. Exact-range job `951` found three remaining scope and generation-identity defects; local tests, PR publication, and CI engagement were correctly not performed.
+
+## Stage Report: implementation (cycle 7)
+
+- DONE: Replace repository-wide worktree pruning with state-path-scoped repair that cannot delete unrelated registrations, with an adversarial temporarily-missing sibling worktree proof.
+  Commit `ff5bb036` replaces `git worktree prune --expire now` with Git's target-specific `git worktree remove <statePath>` while the final path is proven absent. `TestStateReadyRepairsOnlyTargetRegistration` makes both the state checkout and an unrelated sibling registration prunable, resumes the state checkout, and proves the sibling remains exactly registered and prunable.
+- DONE: Make waiters consume the completed resume outcome after publication/lock release before any redundant pull, preserving successful local fallback when origin is unreachable.
+  Ready/init callers now remember a generation-neutral `pending` outcome observed beside a newly published path and, after acquiring the repository lock, consume its generation-bound `ready` result before remote work. `TestStateReadyWaiterObservingPublishedCheckoutConsumesOutcome` makes origin unreachable after private convergence but before lock release and proves the waiter exits ready without a redundant pull; the later-peer control proves a completed outcome never suppresses a future ordinary pull.
+- DONE: Bind durable resume outcomes to the current checkout generation so deletion and independent recreation cannot inherit stale ready; run focused/full/race gates and keep the branch local for fresh Roborev-first validation.
+  Each `ready` outcome now carries a cryptographically random generation token stored in that linked worktree's private Git administration directory; reads require an exact token match, and outcome records publish atomically. The delete/recreate regression proves a same-path independent worktree cannot inherit stale ready. Focused and race-focused matrices pass; complete CLI passes (229.436s), `go test ./... -count=1` passes, `go test ./... -race -count=1` passes (CLI 311.640s, status 82.529s), broad gofmt ran with unrelated pre-existing drift restored, and Windows cross-compilation produced a PE32+ executable. The code branch is clean at `ff5bb0363a130a23228e6f5bf14679eaacb390e6`, five local commits ahead of unchanged remote `3d50bd9a`; no code push, PR update, CI trigger, or CI approval occurred.
+
+### Summary
+
+Closed all three job-951 findings with target-scoped registration repair, publication-aware waiter outcome consumption, and checkout-generation-bound durable outcomes. The exact clean local head is fully verified and intentionally unpushed for fresh corrected exact-range Roborev-first validation.
