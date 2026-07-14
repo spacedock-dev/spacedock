@@ -709,3 +709,20 @@ implementation mutation, or local merge occurred.
 ### Summary
 
 Fresh split-root creation now has one canonical in-repository destination from validation through ignore spelling and worktree registration, so partial ancestor symlinks cannot redirect mutation. Exact entity classification includes ignored untracked files without changing the established clean no-op; the append-only local branch is ready for another corrected exact-range Roborev-first validation.
+
+## Stage Report: validation (cycle 8)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..6f54d8d6 and inspect the stored range and all four guideline sections; on any finding stop REJECTED without tests, push, PR, or CI.
+  Roborev job `930` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..6f54d8d636521b7e48d0dbbc964d606d4a488e27`, used thorough reasoning, and included `Compatibility posture`, `Trust boundaries`, `Behavioral proof`, and `Review focus`. Its `branch: main` field records the checkout from which the exact-SHA review was invoked; this is the local qwp follow-up range, not a review of `main` and not PR `#505`. The review returned FAIL with two high findings: administrative entries below validated Git directories can symlink outside the repository, and `state new` can write through a repository-root `.gitignore` symlink to an external file.
+- SKIPPED: Only after Roborev PASS independently reproduce existing-ancestor escape refusal for init/new, ignored-untracked exact classification, canonical internal-symlink gitignore convergence, every AC, gofmt, focused/full/race suites, and detached zero-mutation evidence.
+  Roborev failed the mandatory first gate. No local test, formatting, real-mount, race, or detached-audit command ran, and no implementation evidence was promoted to this exact-head validation.
+- SKIPPED: Only after every local gate passes push exact head 6f54d8d6, open and verify the PR, then engage required CI; report actual outcomes and block on OAuth, waiting, skipped, unapproved, or failed evidence.
+  No code push, PR creation or update, CI trigger or approval, merge, rebase, ref movement, or implementation edit was attempted. PR `#505` is unrelated to this unpushed local range. The remote follow-up branch remains absent; local `main` and `origin/main` remain exactly `557f8df3e6a62d34987edda70533375fc48ba8f6`, immutable qwp remains `a70e9121f0707dfbee1e9d1341bac6acc951038e`, and the clean implementation worktree remains at `6f54d8d636521b7e48d0dbbc964d606d4a488e27`.
+
+### Summary
+
+Validation recommends REJECTED for exact head `6f54d8d6`. Roborev job `930`
+found two remaining external-write paths through symlinked Git administrative
+metadata and `.gitignore`. AC-1, AC-3, and AC-6 therefore fail; the remaining
+criteria were not revalidated because the mandatory first gate stopped the
+cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
