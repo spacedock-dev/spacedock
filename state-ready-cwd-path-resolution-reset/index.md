@@ -195,3 +195,25 @@ Cycle 3 separated structured Git stdout from diagnostics, preserved workflow-pre
 ### Reviewer Finding
 
 - MEDIUM (`internal/cli/state_sync.go:337`): `fullStateBranchRef` treats a configured name beginning `refs/heads/` as already expanded, but existing state commands treat it as a literal legal branch name and create `refs/heads/refs/heads/foo`. Unconditionally prepend `refs/heads/`, or normalize consistently across every state command, and add literal-prefix coverage.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Treat the configured state branch as a literal and verify the checkout against the full ref `refs/heads/<configured>`, including the legal configured value `refs/heads/foo` mapping to `refs/heads/refs/heads/foo`.
+  Code commit `58b304ef1ac57cd1b9abe7107525fcc0575ca223`; the real-Git literal-prefix fixture was RED before the change and green after unconditional full-ref expansion.
+- DONE: Keep every other state command and branch semantic unchanged; add only the literal-prefix regression and no new recovery, parsing, or lifecycle mechanism.
+  The two-file diff adds one regression and removes only the three-line `refs/heads/` special case; no fetch, pull, push, recovery, or lifecycle code changed.
+- FAILED: Run focused/full/race gates, request exact-head Roborev only after green, and stop without post-review mutation; any rejection returns to the captain.
+  Focused/full/race gates passed, but exact-head Roborev job 1434 returned verdict F with one MEDIUM origin-backed refspec consistency finding; code was not mutated afterward.
+
+### Summary
+
+The captain-authorized final correction now verifies a configured branch name literally, including `refs/heads/foo` at Git's actual `refs/heads/refs/heads/foo`. The complete `TestStateReady` family, `go test ./...`, and `go test ./... -race` passed on unpushed code commit `58b304ef`. Roborev rejected because remote fetch/pull/push still interpret that configured string as a qualified ref; changing those commands would exceed this dispatch's explicit unchanged-semantics boundary, so the frozen rejection returns to the captain.
+
+### Roborev Request
+
+- Job `1434`, review `1419`, UUID `1bcbe4a5-7f27-492f-929f-3a6834825a3b`, patch `f815eef260454f2fa4bc44de50d629ae6fc64d25`.
+- Exact `git_ref`: `58b304ef1ac57cd1b9abe7107525fcc0575ca223`; agent `codex`, reasoning `thorough`, status `done`, retry count `0`, verdict `F`.
+
+### Reviewer Finding
+
+- MEDIUM (`internal/cli/state_sync.go:338`): local verification treats `refs/heads/foo` literally, but origin-backed fetch/pull/push receive it verbatim and Git interprets it as the qualified ordinary branch `foo`; the local-only regression removes `origin` and does not expose that mismatch. Roborev requests explicit literal refspecs across remote operations plus origin-backed ready/commit coverage.
