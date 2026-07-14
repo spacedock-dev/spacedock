@@ -55,10 +55,18 @@ func (r codexLiveRunner) runInteractiveSession(t *testing.T, scenario sharedRunt
 	// itself runs under Codex. Removing them gives the child an independent TUI
 	// session and durable rollout. The actual Spacedock front door remains the
 	// launched program; --no-alt-screen only makes pane diagnostics legible.
-	launch := shellJoin([]string{
+	hostArgs := []string{"--no-alt-screen"}
+	if followup != "" {
+		// The recovery turn must archive and commit fixture state. Match the
+		// established headless live runner's explicit test-only permission mode so
+		// the TUI cannot stop at an approval picker after the ordering evidence has
+		// already crossed the merge boundary.
+		hostArgs = append(hostArgs, "--dangerously-bypass-approvals-and-sandbox")
+	}
+	launch := shellJoin(append([]string{
 		"env", "-u", "CODEX_THREAD_ID", "-u", "CODEX_CI",
-		r.spacedockBin, "codex", "--skip-compat-check", "--", "--no-alt-screen",
-	})
+		r.spacedockBin, "codex", "--skip-compat-check", "--",
+	}, hostArgs...))
 	args := []string{"new-session", "-d", "-s", session, "-x", "220", "-y", "50", "-c", workflowRoot}
 	for _, kv := range r.env {
 		args = append(args, "-e", kv)
