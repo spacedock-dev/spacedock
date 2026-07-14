@@ -192,6 +192,10 @@ Captain clarification (2026-07-14): merged-PR discovery or advancement is not
 required during the read-only boot greeting; it may occur on `engage`. Job 1167
 did not repeat the obsolete before-greet discovery objection. These findings
 are proof-oracle defects, not evidence of an observed runtime lazy-load failure.
+After the cycle-3 escalation boundary, the captain explicitly approved one
+narrow repair round: keep runtime lazy-loading behavior unchanged, align merge
+recovery with `engage`, and repair only the three job-1167 proof oracles before
+a fresh full-range Roborev review and exact-head live validation.
 
 ## Stage Report: ideation
 
