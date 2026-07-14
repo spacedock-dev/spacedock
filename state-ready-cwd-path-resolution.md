@@ -1,7 +1,7 @@
 ---
 id: e6j9adxnn5hgv4hd7g5edr3t
 title: "spacedock state ready resolves init paths relative to cwd and requires an origin remote"
-status: validation
+status: implementation
 source: "GitHub issue #484 (spacedock-dev/spacedock#484), filed by clkao 2026-07-07, from a live split-root dogfooding session on this exact workflow shape (5 stages, ~6 entities, sd-b32 ids)."
 started: 2026-07-07T22:59:51Z
 completed:
@@ -209,6 +209,25 @@ Routed back to implementation under the captain's standing instruction. These
 are existing-scope repository identity, publication-race, symlink, and exact-path
 defects; no reframing is needed. No PR update or CI is permitted before a fresh
 corrected exact-range Roborev PASS.
+
+**Cycle 7 (Roborev-first validation, job 951).** Authoritative thorough review
+stored exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..f57b0924523ee75ef0a2c08f9c999d9c6b0756a1`,
+included all four corrected guideline sections, and rejected before tests, PR
+update, or CI:
+
+- MEDIUM: repository-wide `git worktree prune --expire now` can delete unrelated
+  temporarily missing worktree registrations while repairing one state path.
+- MEDIUM: a waiter can observe the published checkout before lock release, skip
+  the completed resume outcome, and issue a redundant pull that turns a
+  successful local fallback into failure when origin is unreachable.
+- MEDIUM: checkout-path-only durable outcomes survive deletion and independent
+  recreation, allowing a new checkout generation to inherit stale `ready`.
+
+Routed back to implementation under the captain's standing instruction. These
+are existing-scope targeted cleanup, publication ordering, and generation
+identity defects; no reframing is needed. No PR update or CI is permitted before
+a fresh corrected exact-range Roborev PASS.
 
 ## Stage Report: ideation (cycle 2)
 
