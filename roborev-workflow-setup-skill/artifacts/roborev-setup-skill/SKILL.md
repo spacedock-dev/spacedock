@@ -42,6 +42,18 @@ Do not begin with web search or a tour of Roborev's documentation. When `quickst
 
 Treat `review_guidelines` as reviewer calibration, not a second instruction file. Derive only context a reviewer cannot infer from the diff and repository: trust boundaries, intentional compatibility posture, known false-positive suppressions, and boundaries on what the review should evaluate. Never duplicate `AGENTS.md`, workflow or stage instructions, component procedures, or required developer and test commands. Show the proposed calibration to the user and get approval before writing it. Keep implementer process guidance in `AGENTS.md` or the generated implementation-stage instructions instead.
 
+## Keep expected RED in the working tree
+
+Add this strict-TDD contract to the generated implementation-stage instructions:
+
+1. Create the failing test in the working tree before its implementation and run the focused pre-fix command.
+2. Record the command, exact failure, and predicted reason in the implementation Stage Report. That durable evidence is the expected RED proof; RED is not a required commit.
+3. Keep `HEAD` unchanged while RED. Never create a red-only or non-buildable product commit.
+4. Add the minimal implementation and run the focused check plus the relevant suite.
+5. Only after both pass, commit the test and minimal implementation together.
+
+Keep the post-commit `quick` hook enabled. It should review green candidate commits produced after the checks pass, not known-red states. Excluding expected-red commits from convergence accounting does not make reviewing them useful and cannot account for a future green commit.
+
 ## Exclude split workflow state during setup
 
 Roborev may register a split state checkout as a separate repository path, so the code repository's `.roborev.toml` may not govern it. Put the smallest documented configuration in the state checkout and name the actual state branch:
@@ -62,15 +74,15 @@ Add this pre-review discipline to the generated implementation-stage instruction
 - Inspect hot paths and their readers for multiplicative work, blocking I/O, unbounded allocation, and implicit size limits. Add scaling and over-limit proof where the path can grow.
 - Ask how the existing tests could pass while observable behavior is still wrong. Assert the exact result plus failure, cleanup, and terminal-state behavior.
 
-This pass is implementation work: the worker fixes what it finds, strengthens proof, and commits the final candidate before entering the quick cost gate. Roborev reviews the resulting change; it does not own this pass or its fixes.
+This pass is implementation work: the worker fixes what it finds, strengthens proof, runs the focused check and relevant suite, and commits only a green final candidate before entering the quick cost gate. Roborev reviews the resulting change; it does not own this pass or its fixes.
 
 ## Put `quick` before `code_completion`
 
 Add this invariant to the implementation stage definition or dispatch checklist:
 
-1. After the final candidate commit, resolve and record the exact candidate `HEAD`.
+1. After the final green candidate commit, resolve and record the exact candidate `HEAD`.
 2. Wait for the already-enqueued post-commit `quick` review for that exact commit with `roborev wait <head>`, then inspect the stored exact-tip job with `roborev show <head> --json`. Verify that it is the expected quick panel before judging findings. Do not start `code_completion` in parallel or before this wait and inspection complete.
-3. If the exact-tip quick review is missing, has an execution error, or reports a Medium-or-higher finding, remain in implementation. Repair coverage or fix the finding, commit, and repeat the quick wait for the replacement tip. `wait` may exit nonzero for a Low-only failed verdict; the stored finding severities decide this cost gate, and Low findings remain advisory without forcing another commit.
+3. If the exact-tip quick review is missing, has an execution error, or reports a Medium-or-higher finding, remain in implementation. Repair coverage or fix the finding, rerun the focused check and relevant suite, commit only a green replacement, and repeat the quick wait for the replacement tip. `wait` may exit nonzero for a Low-only failed verdict; the stored finding severities decide this cost gate, and Low findings remain advisory without forcing another commit.
 4. Only after that exact-tip quick result clears the severity floor, launch the required panel against the complete branch. Current CLI syntax is:
 
 ```bash
