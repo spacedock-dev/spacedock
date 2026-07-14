@@ -148,6 +148,10 @@ file changed, with no repair, locking, publication, or lifecycle subsystem.
   - Recommended narrow outcome fix: unconditionally map the configured literal branch name to `refs/heads/<configured>` for verification and add the literal-prefix regression. Do not normalize all state commands or broaden branch semantics in this task.
   - No automatic cycle 4 dispatch; captain decision required.
   - Captain approved this one final narrow outcome fix on 2026-07-15. Any further rejected review returns to the captain without another automatic correction.
+- **Captain-authorized final correction — Roborev job 1434, exact head `58b304ef`, REJECTED and frozen:**
+  - MEDIUM outcome defect: local verification now treats `state-branch: refs/heads/foo` verbatim, as `StateBranch` documents, but origin-backed fetch/pull/push still interpret that argument as qualified branch `foo`; the local-only regression cannot prove remote consistency.
+  - This crosses the task boundary: a correct fix requires explicit literal remote refspecs and coverage across `state ready` and `state commit`, which this task explicitly excludes.
+  - Recommended disposition: separate the shared state-branch/refspec defect, land it once across state commands, then rebase and revalidate e6j. No further e6j mutation or automatic review cycle.
 
 ## Stage Report: implementation (cycle 2)
 
