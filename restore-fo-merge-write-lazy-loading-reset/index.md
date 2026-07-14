@@ -69,3 +69,29 @@ Restored the intended cold boundary without changing mutation, merge, routing, o
 - Medium finding at `internal/ensigncycle/fo_deferred_load_trace_test.go:39`: `observeLoad` can count any successful event containing a matching path suffix as a completed read. Roborev recommends requiring the exact loader-supplied base and host-native read operation, correlating a genuine full-file Codex read, and adding negative cases for path-only mentions, partial reads, and same-suffix alternate roots.
 - Medium finding at `internal/ensigncycle/fo_deferred_load_trace_test.go:172`: the checks cover atomic filing and `status=done`, but not the broader set of FO-authored mutations or every existing mutating live scenario. Roborev recommends detecting the first general FO mutation across those scenarios while retaining the specialized terminal merge-order assertion.
 - No code was changed in response; both concrete findings await first-officer feedback routing.
+
+### Feedback Cycles
+
+- Cycle 1 — detached adversarial audit of exact head `09288711` on throwaway detached worktrees.
+  - Material (AC-1/AC-2/AC-4 evidence defect): planted path-only `printf`, partial `head`, and same-suffix alternate-root events; all were accepted as completed canonical reads, so the new negative controls went RED.
+  - Material (AC-2/AC-4 evidence defect): planted an ordinary `status --set` before the write read and a later instrumented filing; the early mutation was invisible, so the new negative control went RED.
+  - Current raw Claude/Codex events show the intended behavior, so no outcome defect was observed. This is a narrow evidence fix: bind the exact installed base and full host-native read result, add the negative controls, and apply first-mutation checks to existing mutating scenarios. No parser, controller, or lifecycle is required; this is not a design reset.
+
+## Stage Report: validation
+
+- DONE: Independently verify AC-1: fresh Claude and Codex gate holds omit both deferred cores, retain the adapter/shared core, and save at least 8,000 cold bytes.
+  Exact-head raw streams read the full shared core plus selected adapter and neither deferred core; `5,843 + 2,830 = 8,673` cold bytes are removed from the eager baseline.
+- FAILED: Independently verify AC-2 and AC-3: existing host events show exact write/merge load order before real owned actions, durable filing/terminal outcomes remain unchanged, and structural checks prove only canonical imports without prose-derived runtime order.
+  AC-3 and today's filing/terminal outcomes pass, but AC-2 evidence is invalid: the observer accepts fake/partial/alternate-root reads and ignores an earlier ordinary mutation.
+- DONE: Reproduce focused, full, race, and exact-head local live checks at 09288711; run the required detached adversarial audit for shipped contract/scaffolding, account for the exact-head Roborev result, and issue PASSED or a precisely classified REJECTED recommendation.
+  Focused structural/trace controls passed; isolated `go test ./...` and `go test ./... -race` passed; Codex and Claude were each 3/3 green; detached audits reproduced both Roborev Medium findings.
+- DONE: AC-3 structural topology.
+  The sole eager shared-core import, resolvable write/merge cores, 8,673-byte value, and reference closure passed without using instruction prose to infer runtime order.
+- FAILED: AC-4 behavioral proof boundary.
+  Exact-head live journeys are green, but the harness can false-pass claim-breaking traces; Roborev job `1423` independently returned `F` with the same two Medium evidence findings.
+- DONE: Recommendation: REJECTED — narrow evidence fix.
+  Harden the existing host-event observer and extend it across existing mutating scenarios; no product-semantics change or architecture reset is warranted.
+
+### Summary
+
+The current Claude and Codex journeys visibly perform the intended lazy reads and preserve durable outcomes, and all deterministic gates pass at `09288711`. Validation rejects the shipped evidence boundary because two detached adversarial edits proved it can certify behavior it did not observe; route a narrow test-harness correction back to implementation.
