@@ -127,3 +127,45 @@ The rebased implementation is internally consistent and all deterministic accept
 ### Summary
 
 Validation cycle 2 closes the only evidence gap: the real post-fix macOS `self-evidence-merge-triage` live scenario passed under the canonical fresh-isolated-`HOME` harness without any wrong-root detection or unrelated failure. Recommendation: PASSED; no implementation code changed, and the worktree is clean.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: The branch is clean and based on current origin/main, with only the approved 5q change set.
+  After fetching, `origin/main` remained `23c32369da2066bf23c58d4298d1296192d667ff`; it is HEAD's merge-base and ancestor. Clean HEAD `3128e38884c3257bae59fc331bcdc2cc1fb6d4cc` is one commit changing only the two approved detector files (117 insertions, 9 deletions), so no rebase was needed.
+- DONE: Relevant wrong-root coverage plus full and race gates pass on the rebased head.
+  `gofmt -w ./cmd ./internal` ran; its unrelated `internal/release/journeydelta.go` drift was restored, leaving a clean tree. Focused symlink controls passed 5/5, the detector family passed 25/25, and `go test ./...` plus `go test ./... -race` both exited 0 across all 17 tested packages.
+- DONE: A complete PR title/body draft follows the workflow pr-merge template; nothing is pushed or opened.
+  The draft uses short ID `5q`, owner/repo `spacedock-dev/spacedock`, and verified immutable state snapshot `8673df842848188c986d0f4e7fbf59dd248f21d1`. No code branch was pushed and no PR was opened.
+
+### PR draft
+
+- **Title:** Wrong-root boot detector false-positives on macOS: observed path not symlink-resolved before comparison
+- **Branch:** `spacedock-ensign/wrong-root-detector-symlink-false-positive-rebased` -> `main`
+- **Changes:** 2 files changed across 1 commit (117 insertions, 9 deletions)
+- **Files:** `internal/ensigncycle/wrong_root_detect_impl_test.go`, `internal/ensigncycle/wrong_root_detect_test.go`
+- **Body:**
+
+```markdown
+Canonicalizing both fixture and observed paths prevents macOS symlink spellings from falsely reporting correct workflow boots as wrong-root failures.
+
+## What changed
+
+- Centralize wrong-root path normalization in a deepest-existing-ancestor canonicalizer.
+- Route fixture roots, README reads, and Bash path observations through the canonicalizer.
+- Add deterministic symlink tests for existing, ghost, and genuine-wander paths.
+
+## Evidence
+
+- Focused symlink and detector suites: 5/5 and 25/25 passed.
+- Repository gates: 2/2 passed; live macOS probe: 1/1 passed with zero false flags.
+
+---
+
+[5q](/spacedock-dev/spacedock/blob/8673df842848188c986d0f4e7fbf59dd248f21d1/wrong-root-detector-symlink-false-positive.md)
+```
+
+Existing PR #492 is closed without merge at remote head `5c754fb0b52d4bd5775fec2526bc2675dc67875a`; that history has diverged from rebased local HEAD `3128e38884c3257bae59fc331bcdc2cc1fb6d4cc` (1 remote-only, 38 local-only commits). Reopening or reusing its remote branch cannot carry the rebased history without a forbidden force update. The fresh branch name above was confirmed absent on `origin`; use it for a new PR only after captain approval.
+
+### Summary
+
+Validation cycle 3 confirms the prior rebase remains current, the approved two-file patch is clean, and all focused, full, and race gates pass. The complete PR draft is ready, but closed PR #492 and its divergent remote branch must not be reused; a fresh remote branch and new PR are the safe path. Recommendation remains PASSED, with no product-code change, code push, or PR creation performed in this stage.
