@@ -9,6 +9,7 @@ verdict:
 score:
 worktree:
 issue:
+milestone: 0.26.0
 ---
 
 Ship Roborev adoption as a first-party, user-invocable `spacedock:roborev-setup` skill in the main Spacedock plugin. The skill helps a user decide whether Roborev fits a code workflow and configures the Spacedock workflow boundary without making Roborev a dependency of ordinary Spacedock use.
