@@ -1074,6 +1074,91 @@ func TestStateReadyNoReplacePublishPreservesCheckoutCreatedAfterRepair(t *testin
 	}
 }
 
+func TestStateReadyStaleRepairPreservesCheckoutRecreatedAfterVerification(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	verified := make(chan struct{})
+	release := make(chan struct{})
+	released := false
+	defer func() {
+		if !released {
+			close(release)
+		}
+	}()
+	stateResumeAfterStaleRegistrationVerificationHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(verified)
+			<-release
+		}
+	}
+	t.Cleanup(func() { stateResumeAfterStaleRegistrationVerificationHook = nil })
+
+	type result struct {
+		code int
+		err  string
+	}
+	readyResult := make(chan result, 1)
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", "ready", "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		readyResult <- result{code: code, err: errBuf.String()}
+	}()
+	<-verified
+
+	replacementBranch := "replacement-after-stale-verification"
+	git(t, root, "worktree", "add", "-q", "--force", "-b", replacementBranch, statePath, "HEAD")
+	payload := filepath.Join(statePath, "replacement-payload")
+	if err := os.WriteFile(payload, []byte("preserve replacement bytes\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, statePath, "add", "replacement-payload")
+	git(t, statePath, "commit", "-q", "-m", "replacement checkout payload")
+	wantHead := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD"))
+	targetRegistrations := func() string {
+		records, err := status.ParseWorktreePorcelainZ([]byte(git(t, root, "worktree", "list", "--porcelain", "-z")))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var target []status.WorktreeRecord
+		for _, record := range records {
+			if status.RealpathOf(record.Path) == status.RealpathOf(statePath) {
+				target = append(target, record)
+			}
+		}
+		return fmt.Sprint(target)
+	}
+	wantRegistrations := targetRegistrations()
+	if dirty := git(t, statePath, "status", "--porcelain"); dirty != "" {
+		t.Fatalf("replacement checkout must be clean before release: %q", dirty)
+	}
+
+	close(release)
+	released = true
+	got := <-readyResult
+	if got.code != 1 || !strings.Contains(got.err, "left it untouched") {
+		t.Fatalf("concurrent replacement was not rejected safely: %+v", got)
+	}
+	if branch := strings.TrimSpace(git(t, statePath, "branch", "--show-current")); branch != replacementBranch {
+		t.Fatalf("stale repair replaced concurrent branch %q", branch)
+	}
+	if head := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); head != wantHead {
+		t.Fatalf("stale repair moved replacement HEAD=%s want=%s", head, wantHead)
+	}
+	if body := string(mustReadFile(t, payload)); body != "preserve replacement bytes\n" {
+		t.Fatalf("stale repair changed replacement bytes: %q", body)
+	}
+	if dirty := git(t, statePath, "status", "--porcelain"); dirty != "" {
+		t.Fatalf("stale repair dirtied replacement checkout: %q", dirty)
+	}
+	if gotRegistrations := targetRegistrations(); gotRegistrations != wantRegistrations {
+		t.Fatalf("stale repair changed replacement registration\nbefore=%q\nafter=%q", wantRegistrations, gotRegistrations)
+	}
+}
+
 func testPrivateStateResumePreservesConcurrentStateWriter(t *testing.T, verb string) {
 	t.Setenv("HOME", t.TempDir())
 	root, workflowDir, statePath := noOriginSplitWorkflow(t)

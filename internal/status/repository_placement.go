@@ -180,8 +180,20 @@ func ResolveSplitRootCheckout(workflowDir, relPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !placement.InGit || !placement.Linked {
+	if !placement.InGit {
 		return filepath.Join(workflowDir, relPath), nil
 	}
-	return filepath.Join(placement.MainWorktreeRoot, placement.Prefix, relPath), nil
+	candidate := filepath.Join(workflowDir, relPath)
+	if placement.Linked {
+		candidate = filepath.Join(placement.MainWorktreeRoot, placement.Prefix, relPath)
+	}
+	mainRoot := RealpathOf(placement.MainWorktreeRoot)
+	checkout := RealpathOf(candidate)
+	rel, err := filepath.Rel(mainRoot, checkout)
+	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", fmt.Errorf("resolved state checkout %q escapes canonical main worktree %q", checkout, mainRoot)
+	}
+	// Canonical paths define the trust boundary; the original contained spelling
+	// remains the stable command/output path (notably macOS /var vs /private/var).
+	return candidate, nil
 }

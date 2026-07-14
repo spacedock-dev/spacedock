@@ -128,6 +128,86 @@ func TestResolveRepositoryPlacementFromExternalSymlinkIntoLinkedWorktree(t *test
 	}
 }
 
+func TestResolveSplitRootCheckoutRejectsCanonicalEscapes(t *testing.T) {
+	base := t.TempDir()
+	mainRoot := filepath.Join(base, "main")
+	if err := os.MkdirAll(mainRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "init", "-q")
+	placementGit(t, mainRoot, "config", "user.email", "t@t")
+	placementGit(t, mainRoot, "config", "user.name", "t")
+
+	outsidePrefix := filepath.Join(base, "outside-prefix")
+	if err := os.MkdirAll(outsidePrefix, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	workflowRel := "workflow"
+	if err := os.Symlink(outsidePrefix, filepath.Join(mainRoot, workflowRel)); err != nil {
+		t.Fatal(err)
+	}
+	safeRel := "safe-workflow"
+	if err := os.MkdirAll(filepath.Join(mainRoot, safeRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(mainRoot, safeRel, "README.md"), []byte("---\nstate: .state\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, mainRoot, "add", workflowRel, filepath.Join(safeRel, "README.md"))
+	placementGit(t, mainRoot, "commit", "-q", "-m", "seed main prefix symlink")
+
+	linked := filepath.Join(base, "linked")
+	placementGit(t, mainRoot, "worktree", "add", "-q", "-b", "linked-prefix-directory", linked)
+	if err := os.Remove(filepath.Join(linked, workflowRel)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(linked, workflowRel), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(linked, workflowRel, "README.md"), []byte("---\nstate: .state\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	placementGit(t, linked, "add", "-A")
+	placementGit(t, linked, "commit", "-q", "-m", "replace prefix symlink with directory")
+
+	t.Run("main prefix symlink", func(t *testing.T) {
+		if got, err := ResolveSplitRootCheckout(filepath.Join(linked, workflowRel), ".state"); err == nil || !strings.Contains(err.Error(), "canonical main worktree") {
+			t.Fatalf("symlink-escaped main prefix resolved to %q with err=%v", got, err)
+		}
+	})
+
+	t.Run("valid linked prefix", func(t *testing.T) {
+		got, err := ResolveSplitRootCheckout(filepath.Join(linked, safeRel), ".state")
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := filepath.Join(mainRoot, safeRel, ".state")
+		if RealpathOf(got) != RealpathOf(want) {
+			t.Fatalf("valid linked checkout=%q want=%q", got, want)
+		}
+	})
+
+	t.Run("state child symlink", func(t *testing.T) {
+		outsideState := filepath.Join(base, "outside-state")
+		if err := os.MkdirAll(outsideState, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Symlink(outsideState, filepath.Join(mainRoot, safeRel, ".state")); err != nil {
+			t.Fatal(err)
+		}
+		if got, err := ResolveSplitRootCheckout(filepath.Join(linked, safeRel), ".state"); err == nil || !strings.Contains(err.Error(), "canonical main worktree") {
+			t.Fatalf("symlink-escaped state child resolved to %q with err=%v", got, err)
+		}
+	})
+
+	t.Run("state relative traversal", func(t *testing.T) {
+		escapingState := filepath.Join("..", "..", "outside-state")
+		if got, err := ResolveSplitRootCheckout(filepath.Join(linked, safeRel), escapingState); err == nil || !strings.Contains(err.Error(), "canonical main worktree") {
+			t.Fatalf("parent-escaped state path resolved to %q with err=%v", got, err)
+		}
+	})
+}
+
 func TestResolveSplitRootCheckoutPreservesWhitespacePathBytes(t *testing.T) {
 	base := t.TempDir()
 	mainRoot := filepath.Join(base, " main root ")

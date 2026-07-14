@@ -19,6 +19,7 @@ import (
 // nil.
 var stateResumeBeforeRestoreHook func(string)
 var stateResumeBeforePublishHook func(string)
+var stateResumeAfterStaleRegistrationVerificationHook func(string)
 var stateResumeAfterRegistrationRepairHook func(string)
 var stateResumeAfterPublishHook func(string)
 var stateResumeAfterReadyHook func(string)
@@ -643,33 +644,6 @@ func classifyStaleStateRegistration(records []status.WorktreeRecord, statePath, 
 		return false, fmt.Errorf("state checkout %s registration is active or not prunable; refusing stale repair", statePath)
 	}
 	return true, nil
-}
-
-func removeStaleStateRegistration(workflowDir, statePath, branch string) error {
-	if _, err := os.Lstat(statePath); err == nil {
-		return fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
-	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("checking state checkout before registration repair %s: %w", statePath, err)
-	}
-	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain", "-z")
-	if !ok {
-		return fmt.Errorf("listing worktree registrations before repair failed:\n%s", out)
-	}
-	records, err := status.ParseWorktreePorcelainZ([]byte(out))
-	if err != nil {
-		return fmt.Errorf("parsing worktree registrations before repair: %w", err)
-	}
-	stale, err := classifyStaleStateRegistration(records, statePath, branch)
-	if err != nil {
-		return err
-	}
-	if !stale {
-		return fmt.Errorf("state checkout %s no longer has the expected prunable registration; refusing stale repair", statePath)
-	}
-	if ok, out := runGit(workflowDir, "worktree", "remove", statePath); !ok {
-		return fmt.Errorf("removing stale state worktree registration failed:\n%s", out)
-	}
-	return nil
 }
 
 // publishPrivateStateWorktree atomically publishes a fully converged private
