@@ -2,10 +2,10 @@
 package cli
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -23,7 +23,7 @@ func unsupportedStateResumeLock(_ string, _ func() int) (int, error) {
 	return 0, errStateResumeLockUnsupported
 }
 
-func stateResumeOutcomePath(workflowDir string) (string, error) {
+func stateResumeOutcomePath(workflowDir, statePath string) (string, error) {
 	placement, err := status.ResolveRepositoryPlacement(workflowDir)
 	if err != nil {
 		return "", err
@@ -31,11 +31,12 @@ func stateResumeOutcomePath(workflowDir string) (string, error) {
 	if !placement.InGit {
 		return "", fmt.Errorf("not a git repository at %s", workflowDir)
 	}
-	return filepath.Join(placement.CommonGitDir, "spacedock-state-resume.outcome.json"), nil
+	key := sha256.Sum256([]byte(status.RealpathOf(statePath)))
+	return filepath.Join(placement.CommonGitDir, fmt.Sprintf("spacedock-state-resume.%x.outcome.json", key)), nil
 }
 
 func writeStateResumeOutcome(workflowDir, statePath, result string) error {
-	path, err := stateResumeOutcomePath(workflowDir)
+	path, err := stateResumeOutcomePath(workflowDir, statePath)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func writeStateResumeOutcome(workflowDir, statePath, result string) error {
 }
 
 func readStateResumeOutcome(workflowDir, statePath string) (string, error) {
-	path, err := stateResumeOutcomePath(workflowDir)
+	path, err := stateResumeOutcomePath(workflowDir, statePath)
 	if err != nil {
 		return "", err
 	}
@@ -63,22 +64,4 @@ func readStateResumeOutcome(workflowDir, statePath string) (string, error) {
 		return "", fmt.Errorf("resume outcome belongs to a different state checkout")
 	}
 	return outcome.Result, nil
-}
-
-func cleanupFailedStateResume(workflowDir, statePath string) error {
-	if dirExists(statePath) {
-		runGit(workflowDir, "worktree", "remove", "--force", statePath)
-	}
-	if dirExists(statePath) {
-		if err := os.RemoveAll(statePath); err != nil {
-			return err
-		}
-	}
-	if err := repairStaleWorktreeRegistration(workflowDir, statePath, io.Discard); err != nil {
-		return err
-	}
-	if dirExists(statePath) {
-		return fmt.Errorf("state checkout still exists at %s", statePath)
-	}
-	return nil
 }

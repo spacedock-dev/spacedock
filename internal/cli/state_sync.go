@@ -176,14 +176,13 @@ func runStateReady(ctx context.Context, args []string, env []string, dir string,
 			resumeCode, originConverged := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, checkout, resumeOut, stderr)
 			if resumeCode != 0 {
 				writeStateResumeOutcome(workflowDir, checkout, "failed")
-				if err := cleanupFailedStateResume(workflowDir, checkout); err != nil {
-					fmt.Fprintf(stderr, "spacedock state ready: failed resume cleanup: %v\n", err)
+				if stateResumeFailureHook != nil {
+					stateResumeFailureHook(checkout)
 				}
 				return resumeCode
 			}
 			if err := writeStateResumeOutcome(workflowDir, checkout, "ready"); err != nil {
 				fmt.Fprintf(stderr, "spacedock state ready: cannot commit resume outcome: %v\n", err)
-				cleanupFailedStateResume(workflowDir, checkout)
 				return 1
 			}
 			if !jsonOut {

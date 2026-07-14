@@ -17,6 +17,15 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
 // addAgentWorktree adds a linked git worktree at hostRoot/.worktrees/<name>, on a
 // new branch off HEAD — the shape a Spacedock agent dispatch creates
 // (`.worktrees/<worker>-<entity>/`). Returns the worktree's absolute root, whose
@@ -385,6 +394,101 @@ func runConcurrentStateReadyAtAbsentBoundary(t *testing.T, root, workflowDir str
 	return collected
 }
 
+func TestConcurrentTwoWorkflowResumeOutcomesArePathIsolated(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	root := t.TempDir()
+	git(t, root, "init", "-q")
+	git(t, root, "config", "user.email", "t@t")
+	git(t, root, "config", "user.name", "t")
+
+	workflowA := filepath.Join(root, "docs", "alpha")
+	workflowB := filepath.Join(root, "docs", "beta")
+	for _, workflowDir := range []string{workflowA, workflowB} {
+		if err := os.MkdirAll(workflowDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(workflowDir, "README.md"), []byte(splitWorkflowReadme), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	git(t, root, "add", "docs")
+	git(t, root, "commit", "-q", "-m", "two split workflows")
+
+	stateA := filepath.Join(workflowA, ".spacedock-state")
+	stateB := filepath.Join(workflowB, ".spacedock-state")
+	branchA := "spacedock-state/alpha"
+	branchB := "spacedock-state/beta"
+	git(t, root, "branch", branchA)
+	git(t, root, "branch", branchB)
+	git(t, root, "worktree", "add", "-q", stateA, branchA)
+	git(t, root, "worktree", "add", "-q", stateB, branchB)
+	if err := os.RemoveAll(stateA); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(stateB); err != nil {
+		t.Fatal(err)
+	}
+
+	type call struct{ workflow string }
+	calls := []call{{workflowA}, {workflowA}, {workflowB}, {workflowB}}
+	arrived := make(chan struct{}, len(calls))
+	release := make(chan struct{})
+	stateReadyObservationHook = func() {
+		arrived <- struct{}{}
+		<-release
+	}
+	t.Cleanup(func() { stateReadyObservationHook = nil })
+	results := make(chan string, len(calls))
+	var wg sync.WaitGroup
+	for _, c := range calls {
+		c := c
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var out, errBuf strings.Builder
+			code := run(context.Background(), []string{"state", "ready", "--workflow-dir", c.workflow},
+				os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+			results <- fmt.Sprintf("%d|%s|%s", code, out.String(), errBuf.String())
+		}()
+	}
+	for range calls {
+		<-arrived
+	}
+	close(release)
+	wg.Wait()
+	close(results)
+	stateReadyObservationHook = nil
+	for result := range results {
+		if !strings.HasPrefix(result, "0|") {
+			t.Fatalf("two-workflow concurrent resume failed: %q", result)
+		}
+	}
+
+	outcomeA, err := stateResumeOutcomePath(workflowA, stateA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outcomeB, err := stateResumeOutcomePath(workflowB, stateB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if outcomeA == outcomeB {
+		t.Fatalf("distinct canonical checkouts share outcome path %s", outcomeA)
+	}
+	if result, err := readStateResumeOutcome(workflowA, stateA); err != nil || result != "ready" {
+		t.Fatalf("workflow A outcome=%q err=%v", result, err)
+	}
+	if result, err := readStateResumeOutcome(workflowB, stateB); err != nil || result != "ready" {
+		t.Fatalf("workflow B outcome=%q err=%v", result, err)
+	}
+	if err := writeStateResumeOutcome(workflowA, stateA, "failed"); err != nil {
+		t.Fatal(err)
+	}
+	if result, err := readStateResumeOutcome(workflowB, stateB); err != nil || result != "ready" {
+		t.Fatalf("workflow A overwrite leaked into B: outcome=%q err=%v", result, err)
+	}
+}
+
 func originBackedCheckoutBehindRemote(t *testing.T) (root, workflowDir, statePath, wantHead string) {
 	t.Helper()
 	bare, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
@@ -486,24 +590,210 @@ func TestConcurrentStateReadyCreatorPullFailureNeverLooksReady(t *testing.T) {
 
 	rootA := filepath.Dir(filepath.Dir(workflowA))
 	for _, result := range runConcurrentStateReadyAtAbsentBoundary(t, rootA, workflowA, 6) {
-		if !strings.HasPrefix(result, "1|") || !strings.Contains(result, "pull --rebase") {
+		if !strings.HasPrefix(result, "1|") || (!strings.Contains(result, "pull --rebase") && !strings.Contains(result, "did not converge")) {
 			t.Fatalf("failed creator/waiter must report convergence failure, got %q", result)
 		}
 	}
-	if _, err := os.Stat(stateA); !os.IsNotExist(err) {
-		t.Fatalf("failed resume left a checkout directory: %v", err)
+	if _, err := os.Stat(stateA); err != nil {
+		t.Fatalf("failed resume must preserve its published checkout: %v", err)
 	}
 	records, err := status.ParseWorktreePorcelainZ([]byte(git(t, rootA, "worktree", "list", "--porcelain", "-z")))
 	if err != nil {
 		t.Fatal(err)
 	}
+	registrations := 0
 	for _, record := range records {
 		if status.RealpathOf(record.Path) == status.RealpathOf(stateA) {
-			t.Fatalf("failed resume left registration %q", record.Path)
+			registrations++
 		}
 	}
-	if got := strings.TrimSpace(git(t, rootA, "rev-parse", stateBranch)); got != wantLocalHead {
+	if registrations != 1 {
+		t.Fatalf("failed resume registrations=%d, want one preserved checkout", registrations)
+	}
+	if got := strings.TrimSpace(git(t, stateA, "rev-parse", "HEAD")); got != wantLocalHead {
 		t.Fatalf("failed resume changed local branch: got %s want %s", got, wantLocalHead)
+	}
+}
+
+func TestFailedStateReadyPreservesConcurrentStateWriter(t *testing.T) {
+	testFailedStateResumePreservesConcurrentStateWriter(t, "ready")
+}
+
+func TestFailedStateInitPreservesConcurrentStateWriter(t *testing.T) {
+	testFailedStateResumePreservesConcurrentStateWriter(t, "init")
+}
+
+func testFailedStateResumePreservesConcurrentStateWriter(t *testing.T, verb string) {
+	t.Setenv("HOME", t.TempDir())
+	_, workflowA, workflowB, stateBranch := twoHostStateWorkflow(t)
+	stateA := filepath.Join(workflowA, ".spacedock-state")
+	stateB := filepath.Join(workflowB, ".spacedock-state")
+
+	if err := os.WriteFile(filepath.Join(stateA, "first-task.md"), []byte("---\nstatus: ideation\n---\n# Local divergence\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, stateA, "add", "first-task.md")
+	git(t, stateA, "commit", "-q", "-m", "local divergence")
+	if err := os.WriteFile(filepath.Join(stateB, "first-task.md"), []byte("---\nstatus: validation\n---\n# Remote divergence\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, stateB, "add", "first-task.md")
+	git(t, stateB, "commit", "-q", "-m", "remote divergence")
+	git(t, stateB, "push", "origin", stateBranch)
+	if err := os.RemoveAll(stateA); err != nil {
+		t.Fatal(err)
+	}
+
+	failed := make(chan struct{})
+	release := make(chan struct{})
+	stateResumeFailureHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(stateA) {
+			close(failed)
+			<-release
+		}
+	}
+	t.Cleanup(func() { stateResumeFailureHook = nil })
+
+	type readyResult struct {
+		code        int
+		stdout, err string
+	}
+	result := make(chan readyResult, 1)
+	rootA := filepath.Dir(filepath.Dir(workflowA))
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", verb, "--workflow-dir", workflowA},
+			os.Environ(), rootA, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		result <- readyResult{code: code, stdout: out.String(), err: errBuf.String()}
+	}()
+	<-failed
+
+	var statusOut, statusErr strings.Builder
+	code := run(context.Background(), []string{"status", "--workflow-dir", workflowA, "--set", "first-task", "status=done"},
+		os.Environ(), rootA, nil, &statusOut, &statusErr, &status.NativeRunner{}, nil)
+	if code != 0 {
+		close(release)
+		t.Fatalf("concurrent status writer exit=%d stderr=%q", code, statusErr.String())
+	}
+	close(release)
+	got := <-result
+	if got.code != 1 || !strings.Contains(got.err, "pull --rebase") {
+		t.Fatalf("failed resume result=%+v", got)
+	}
+	entity := filepath.Join(stateA, "first-task.md")
+	if status.ParseFrontmatter(entity)["status"] != "done" {
+		t.Fatalf("failed resume deleted or reverted concurrent state writer: %q", string(mustReadFile(t, entity)))
+	}
+	if clean := strings.TrimSpace(git(t, stateA, "status", "--short", "first-task.md")); clean == "" {
+		t.Fatal("concurrent uncommitted state mutation was not preserved")
+	}
+}
+
+func TestStateReadyDoesNotDeleteConcurrentStateNew(t *testing.T) {
+	testStateResumeDoesNotDeleteConcurrentStateNew(t, "ready")
+}
+
+func TestStateInitDoesNotDeleteConcurrentStateNew(t *testing.T) {
+	testStateResumeDoesNotDeleteConcurrentStateNew(t, "init")
+}
+
+func testStateResumeDoesNotDeleteConcurrentStateNew(t *testing.T, verb string) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir := writeSplitReadmeRepo(t)
+	statePath := filepath.Join(workflowDir, ".spacedock-state")
+	reached := make(chan struct{})
+	release := make(chan struct{})
+	stateResumeBeforeRestoreHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(reached)
+			<-release
+		}
+	}
+	t.Cleanup(func() { stateResumeBeforeRestoreHook = nil })
+
+	type readyResult struct {
+		code        int
+		stdout, err string
+	}
+	result := make(chan readyResult, 1)
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", verb, "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		result <- readyResult{code: code, stdout: out.String(), err: errBuf.String()}
+	}()
+	<-reached
+	newCode, newOut, newErr := execStateNew(t, root, workflowDir)
+	if newCode != 0 {
+		close(release)
+		t.Fatalf("concurrent state new exit=%d stdout=%q stderr=%q", newCode, newOut, newErr)
+	}
+	branchHead := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD"))
+	close(release)
+	got := <-result
+	if got.code != 1 || !strings.Contains(got.err, "appeared concurrently") {
+		t.Fatalf("state ready should fail closed around concurrent birth: %+v", got)
+	}
+	if head := strings.TrimSpace(git(t, statePath, "rev-parse", "HEAD")); head != branchHead {
+		t.Fatalf("resume mutated concurrent state new checkout: got HEAD %s want %s", head, branchHead)
+	}
+	if !gitignoreHasLine(string(mustReadFile(t, filepath.Join(root, ".gitignore"))), "docs/dev/.spacedock-state/") {
+		t.Fatal("resume deleted concurrent state new's uncommitted code-branch edit")
+	}
+}
+
+func TestStateReadyDoesNotDeleteConcurrentDirectWorktree(t *testing.T) {
+	testStateResumeDoesNotDeleteConcurrentDirectWorktree(t, "ready")
+}
+
+func TestStateInitDoesNotDeleteConcurrentDirectWorktree(t *testing.T) {
+	testStateResumeDoesNotDeleteConcurrentDirectWorktree(t, "init")
+}
+
+func testStateResumeDoesNotDeleteConcurrentDirectWorktree(t *testing.T, verb string) {
+	t.Setenv("HOME", t.TempDir())
+	root, workflowDir, statePath := noOriginSplitWorkflow(t)
+	if err := os.RemoveAll(statePath); err != nil {
+		t.Fatal(err)
+	}
+	reached := make(chan struct{})
+	release := make(chan struct{})
+	stateResumeBeforeRestoreHook = func(path string) {
+		if status.RealpathOf(path) == status.RealpathOf(statePath) {
+			close(reached)
+			<-release
+		}
+	}
+	t.Cleanup(func() { stateResumeBeforeRestoreHook = nil })
+
+	type resumeResult struct {
+		code int
+		err  string
+	}
+	result := make(chan resumeResult, 1)
+	go func() {
+		var out, errBuf strings.Builder
+		code := run(context.Background(), []string{"state", verb, "--workflow-dir", workflowDir},
+			os.Environ(), root, nil, &out, &errBuf, &status.NativeRunner{}, nil)
+		result <- resumeResult{code: code, err: errBuf.String()}
+	}()
+	<-reached
+	git(t, root, "worktree", "add", "-q", "--force", "-b", "concurrent-state-writer", statePath, "HEAD")
+	payload := filepath.Join(statePath, "uncommitted-writer-state")
+	if err := os.WriteFile(payload, []byte("preserve me\n"), 0o644); err != nil {
+		close(release)
+		t.Fatal(err)
+	}
+	close(release)
+	got := <-result
+	if got.code != 1 || !strings.Contains(got.err, "appeared concurrently") {
+		t.Fatalf("resume should fail closed around direct worktree publication: %+v", got)
+	}
+	if branch := strings.TrimSpace(git(t, statePath, "branch", "--show-current")); branch != "concurrent-state-writer" {
+		t.Fatalf("resume replaced concurrent direct worktree branch %q", branch)
+	}
+	if body := string(mustReadFile(t, payload)); body != "preserve me\n" {
+		t.Fatalf("resume changed concurrent uncommitted bytes: %q", body)
 	}
 }
 

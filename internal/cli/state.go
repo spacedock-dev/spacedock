@@ -14,6 +14,11 @@ import (
 	"github.com/spacedock-dev/spacedock/internal/status"
 )
 
+// Resume lifecycle seams let real-Git tests place non-locking commands at the
+// two publication boundaries. Production leaves both nil.
+var stateResumeBeforeRestoreHook func(string)
+var stateResumeFailureHook func(string)
+
 // runStateInit implements `spacedock state init`. It reads the workflow's
 // `state:` and `state-branch:` from the README, and for a split-root workflow
 // whose state checkout is ABSENT, fetches the orphan state branch from origin and
@@ -86,14 +91,13 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 		resumeCode, _ := resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath, stdout, stderr)
 		if resumeCode != 0 {
 			writeStateResumeOutcome(workflowDir, statePath, "failed")
-			if err := cleanupFailedStateResume(workflowDir, statePath); err != nil {
-				fmt.Fprintf(stderr, "spacedock state init: failed resume cleanup: %v\n", err)
+			if stateResumeFailureHook != nil {
+				stateResumeFailureHook(statePath)
 			}
 			return resumeCode
 		}
 		if err := writeStateResumeOutcome(workflowDir, statePath, "ready"); err != nil {
 			fmt.Fprintf(stderr, "spacedock state init: cannot commit resume outcome: %v\n", err)
-			cleanupFailedStateResume(workflowDir, statePath)
 			return 1
 		}
 		return resumeCode
@@ -120,8 +124,11 @@ func runStateInit(ctx context.Context, args []string, env []string, dir string, 
 // originConverged reports whether this resume fetched and integrated origin —
 // false for a local-only or unreachable-origin fallback.
 func resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath string, stdout, stderr io.Writer) (code int, originConverged bool) {
-	if err := repairStaleWorktreeRegistration(workflowDir, statePath, stdout); err != nil {
-		fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
+	if stateResumeBeforeRestoreHook != nil {
+		stateResumeBeforeRestoreHook(statePath)
+	}
+	if dirExists(statePath) {
+		fmt.Fprintf(stderr, "spacedock state init: state checkout appeared concurrently at %s; left it untouched\n", statePath)
 		return 1, false
 	}
 
@@ -135,8 +142,8 @@ func resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath string, 
 
 	switch {
 	case fetchOK:
-		if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
-			fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
+		if err := addResumedStateWorktree(workflowDir, statePath, branch, stdout); err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
 			return 1, false
 		}
 		if ok, out := runGit(statePath, "pull", "--rebase", "origin", branch); !ok {
@@ -150,8 +157,8 @@ func resumeAbsentSplitRootCheckoutLocked(workflowDir, branch, statePath string, 
 		return 0, true
 
 	case localBranchExists:
-		if ok, out := runGit(workflowDir, "worktree", "add", statePath, branch); !ok {
-			fmt.Fprintf(stderr, "spacedock state init: git worktree add %s %s failed:\n%s\n", statePath, branch, out)
+		if err := addResumedStateWorktree(workflowDir, statePath, branch, stdout); err != nil {
+			fmt.Fprintf(stderr, "spacedock state init: %v\n", err)
 			return 1, false
 		}
 		if !hasOrigin {
@@ -517,37 +524,40 @@ func dirExists(path string) bool {
 	return err == nil && info.IsDir()
 }
 
-// repairStaleWorktreeRegistration removes a stale `git worktree` registration for
-// statePath before a fresh resume adds it. Callers only reach this after
-// confirming statePath's directory is ABSENT, so any registration found for it is
-// necessarily stale (a live registration's directory would exist) — e.g. issue
-// #484's deleted-checkout-but-registered-worktree repro, where a raw `git
-// worktree add` at that path fatals exit 128 "missing but already registered
-// worktree". Comparisons are realpath-normalized (macOS `/var` -> `/private/var`).
-// Never runs `git worktree prune` (would touch unrelated registrations) and never
-// removes a registration whose directory exists (the caller's dirExists guard
-// already routes that case to the present-checkout no-op instead).
-func repairStaleWorktreeRegistration(workflowDir, statePath string, stdout io.Writer) error {
+// addResumedStateWorktree restores statePath without ever removing that public
+// path. A matching absent registration is recovered by Git's same-path
+// `worktree add --force`: Git replaces the stale registration atomically, while
+// an externally-created non-empty checkout makes add fail and is left untouched.
+func addResumedStateWorktree(workflowDir, statePath, branch string, stdout io.Writer) error {
+	if dirExists(statePath) {
+		return fmt.Errorf("state checkout appeared concurrently at %s; left it untouched", statePath)
+	}
 	ok, out := runGit(workflowDir, "worktree", "list", "--porcelain", "-z")
 	if !ok {
-		// Best-effort: a listing failure just skips the repair; the subsequent
-		// `worktree add` will surface any real problem.
-		return nil
+		return fmt.Errorf("listing worktree registrations failed:\n%s", out)
 	}
 	records, err := status.ParseWorktreePorcelainZ([]byte(out))
 	if err != nil {
 		return fmt.Errorf("parsing worktree registrations: %w", err)
 	}
 	target := status.RealpathOf(statePath)
+	stale := false
 	for _, record := range records {
-		if status.RealpathOf(record.Path) != target {
-			continue
+		if status.RealpathOf(record.Path) == target {
+			stale = true
+			break
 		}
-		if ok, out := runGit(workflowDir, "worktree", "remove", "--force", statePath); !ok {
-			return fmt.Errorf("repairing stale worktree registration for %s failed:\n%s", statePath, out)
-		}
+	}
+	args := []string{"worktree", "add"}
+	if stale {
+		args = append(args, "--force")
+	}
+	args = append(args, statePath, branch)
+	if ok, out := runGit(workflowDir, args...); !ok {
+		return fmt.Errorf("git worktree add %s %s failed:\n%s", statePath, branch, out)
+	}
+	if stale {
 		fmt.Fprintf(stdout, "Repaired stale worktree registration for %s.\n", statePath)
-		return nil
 	}
 	return nil
 }
