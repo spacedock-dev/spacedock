@@ -367,10 +367,10 @@ func filingPrompt(workflowRoot string) string {
 // shallowBootFixture is the shallow-boot scenario's on-disk state plus the stub-gh
 // dir the runner prepends to PATH. The fixture seeds TWO entities: a gate-check at
 // a human gate (which the FO must present, not dispatch) and a PR-bearing
-// non-terminal entity whose stubbed `gh` reports MERGED (which S7b advances and
-// archives before-greet). The canonical pr-merge mod is registered so the boot
-// JSON `mods` map shows it and S7b can read it; the merged entity carries `pr` so
-// its terminal advancement clears the merge-hook guard without `--force`. The
+// non-terminal entity whose stubbed `gh` would report MERGED if engage queried it.
+// Read-only boot must leave both entities untouched and report the local PR mirror
+// as not live-checked. The canonical pr-merge mod remains registered so an
+// accidental engage has the real advancement path available and cannot false-pass.
 // fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner file;
 // the pure string builders below are default-tagged so the offline negative cases
 // reuse them without a model.
@@ -438,12 +438,12 @@ func shallowBootMergedEntity() string {
 		"worktree:\n" +
 		"---\n" +
 		"# Merged PR Entity\n\n" +
-		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The boot's S7b merged-PR sweep must advance it to terminal (`done`, `verdict: PASSED`) and archive it BEFORE the greet — proving a greet-and-stop boot still advances a merged PR.\n\n" +
+		"A non-terminal entity carrying a local PR mirror whose stubbed `gh` would report MERGED during engage. Read-only boot must leave it active and unchanged, with live PR discovery deferred until engage.\n\n" +
 		"## Stage Report: implementation\n\n" +
 		"- DONE: Work exists and a PR was opened\n" +
-		"  The PR (#42) has since merged; the boot must advance and archive this entity.\n" +
+		"  The local PR mirror remains authoritative only until engage performs its live check.\n" +
 		"\n### Summary\n\n" +
-		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
+		"Read-only boot reports this entity without live PR discovery or advancement.\n"
 }
 
 func shallowBootPrompt(workflowRoot string) string {
@@ -451,8 +451,8 @@ func shallowBootPrompt(workflowRoot string) string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
 		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
-		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
-		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
+		"Perform only the read-only boot: read local startup state, then greet the operator and STOP for input. Do not engage, run live PR discovery, advance or archive the PR-bearing entity, or mutate workflow state.",
+		"Do NOT create a team or dispatch any worker. Name `gate-check` as a ready gate, name `merged-pr` with its local PR state still pending a live check, and invite the operator to use `engage` for convergence.",
 	)
 }
 
@@ -493,18 +493,28 @@ func mergeModRecoveryEntity() string {
 }
 
 func mergeModRecoveryPrompt(workflowRoot string) string {
-	return fmt.Sprintf("%s\n\n%s\n%s\n%s",
+	return fmt.Sprintf("%s\n\n%s\n%s\n%s\n%s",
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
-		"Process only `merge-recovery`, which is already mid-merge. Resume it to the correct durable terminal outcome under the shipped contract without repeating work already represented by its current PR sentinel and mod-block.",
+		"Perform the read-only boot and state summary first; do not advance, recover, or mutate any entity during boot.",
+		"Then engage this workflow and process only `merge-recovery`, which is already mid-merge. Resume it to the correct durable terminal outcome under the shipped contract without repeating work already represented by its current PR sentinel and mod-block.",
 		"Stop after the bounded recovery completes. Your final response must report the resulting durable status and archive outcome.",
 	)
 }
 
-func TestMergeRecoveryDoesNotReplaceOrPrescribeShallowBootDiscovery(t *testing.T) {
+func TestMergeRecoveryKeepsShallowBootReadOnlyAndDoesNotPrescribeMechanism(t *testing.T) {
 	shallow := shallowBootMergedEntity()
 	if !strings.Contains(shallow, `pr: "#42"`) || !strings.Contains(shallow, "mod-block:\n") || strings.Contains(shallow, "pr: pr-merge:") {
 		t.Fatal("shallow-boot no longer starts from a discoverable open PR with no pre-seeded recovery state")
+	}
+	shallowPrompt := strings.ToLower(shallowBootPrompt("/tmp/workflow"))
+	if !strings.Contains(shallowPrompt, "read-only boot") || !strings.Contains(shallowPrompt, "do not engage") {
+		t.Fatalf("shallow-boot prompt does not keep convergence behind engage:\n%s", shallowPrompt)
+	}
+	for _, obsolete := range []string{"before-greet", "before the greet", "report the merged-pr entity as advanced"} {
+		if strings.Contains(shallowPrompt, obsolete) {
+			t.Errorf("shallow-boot prompt retains obsolete boot-time advancement requirement %q", obsolete)
+		}
 	}
 	recovery := mergeModRecoveryEntity()
 	if !strings.Contains(recovery, "pr: pr-merge:42") || !strings.Contains(recovery, "mod-block: merge:pr-merge") {
@@ -515,6 +525,18 @@ func TestMergeRecoveryDoesNotReplaceOrPrescribeShallowBootDiscovery(t *testing.T
 		if strings.Contains(prompt, prescribed) {
 			t.Errorf("outcome-oriented recovery prompt prescribes mechanism %q", prescribed)
 		}
+	}
+}
+
+func TestMergeRecoveryPromptBootsReadOnlyThenEngages(t *testing.T) {
+	prompt := strings.ToLower(mergeModRecoveryPrompt("/tmp/workflow"))
+	bootAt := strings.Index(prompt, "read-only boot")
+	engageAt := strings.Index(prompt, "engage")
+	if bootAt < 0 || engageAt < 0 || bootAt >= engageAt {
+		t.Fatalf("recovery prompt must order read-only boot before engage:\n%s", prompt)
+	}
+	if strings.Contains(prompt, "before-greet") || strings.Contains(prompt, "before the greet") {
+		t.Fatalf("recovery prompt retains an obsolete before-greet recovery requirement:\n%s", prompt)
 	}
 }
 

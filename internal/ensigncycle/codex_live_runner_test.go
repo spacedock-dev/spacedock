@@ -355,8 +355,8 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 
 // runCodexShallowBootScenario drives the real FO against the shallow-boot fixture
 // and grades the SAME host-neutral durable end-state assertShallowBoot the Claude
-// runner feeds: the FO greets and presents the gate, S7b advances+archives the
-// merged PR before-greet, and NO worker is dispatched (the gate entity is
+// runner feeds: the FO greets from local state, leaves the PR-bearing entity
+// untouched until engage, and NO worker is dispatched (the gate entity is
 // unchanged, not archived, no worktree). Codex has no Claude team root, so the
 // no-team-config check is host-neutral-vacuous (empty teamRoot); the no-dispatch
 // proof rides the durable gate-unchanged + no-worktree facts. The AC-2/AC-6 Claude
@@ -366,9 +366,10 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
+	mergedBefore := readFile(t, fixture.mergedEntityPath)
 
-	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
-	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
+	// The stub `gh` (reporting MERGED) resolves on the FO subprocess PATH so an
+	// accidental engage would advance the PR and fail the read-only durable oracle.
 	scenarioRunner := runner
 	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
 
@@ -377,11 +378,11 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 
-	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
+	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, mergedBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "terminal"); err != nil {
+	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(result.jsonl), "gate"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)

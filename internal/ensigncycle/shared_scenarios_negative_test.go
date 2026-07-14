@@ -407,13 +407,13 @@ func TestSelfEvidenceMergeTriageNegativeIncidentEndState(t *testing.T) {
 
 func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 	// The realized shallow-boot end-state passes: no team config, the gate entity
-	// unchanged, the merged entity advanced+archived, the greet present.
+	// unchanged, the PR-bearing entity unchanged and active, the greet present.
 	gate := shallowBootGateEntity()
-	mergedArchived := "---\nid: merged-pr\nstatus: done\ncompleted: 2026-06-13T00:00:00Z\nverdict: PASSED\npr: \"#42\"\nmod-block:\nworktree:\n---\n"
-	greet := "Workflow overview: 1 task at the review gate; merged-pr advanced (PR #42 merged).\nGate review: Gate Check at review.\nDecision: approve or reject?"
+	merged := shallowBootMergedEntity()
+	greet := "Workflow overview: gate-check is ready; merged-pr has local PR #42 pending a live check. Use engage to converge the workflow."
 	good := shallowBootObservation{
 		finalMessage: greet, gateBefore: gate, gateAfter: gate,
-		mergedAfter: mergedArchived, mergedArchived: true,
+		mergedBefore: merged, mergedAfter: merged,
 	}
 	if err := assertShallowBoot(good); err != nil {
 		t.Fatalf("the realized shallow-boot end-state must pass: %v", err)
@@ -454,35 +454,28 @@ func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 		t.Fatal("expected a worktree created for the gated entity to fail assertShallowBoot")
 	}
 
-	// Broken: the merged-PR entity was NOT advanced (S7b skipped) — still active,
-	// not archived. This is the M3 failure a greet-and-stop boot would have without
-	// the before-greet sweep.
-	s7bSkipped := good
-	s7bSkipped.mergedArchived = false
-	s7bSkipped.mergedAfter = shallowBootMergedEntity() // still at implementation, no verdict
-	if err := assertShallowBoot(s7bSkipped); err == nil {
-		t.Fatal("expected an un-advanced merged-PR entity (S7b skipped) to fail assertShallowBoot")
+	// Broken: boot performed live PR advancement and archived the entity instead of
+	// leaving convergence for engage.
+	advanced := good
+	advanced.mergedArchived = true
+	advanced.mergedAfter = "---\nid: merged-pr\nstatus: done\ncompleted: 2026-06-13T00:00:00Z\nverdict: PASSED\npr: \"#42\"\nmod-block:\nworktree:\n---\n"
+	if err := assertShallowBoot(advanced); err == nil {
+		t.Fatal("expected boot-time PR advancement and archival to fail assertShallowBoot")
 	}
 
-	// Isolating: archived but verdict not set — advancement incomplete. Isolates the
-	// verdict check from the archived check so neither can be silently dropped.
-	noVerdict := good
-	noVerdict.mergedAfter = strings.Replace(mergedArchived, "verdict: PASSED", "verdict:", 1)
-	if err := assertShallowBoot(noVerdict); err == nil {
-		t.Fatal("expected an archived-but-no-verdict merged entity to fail assertShallowBoot on the verdict check")
+	// Isolating: an in-place mutation without archival must also fail the byte-for-byte
+	// read-only contract.
+	mutated := good
+	mutated.mergedAfter = strings.Replace(merged, "status: implementation", "status: done", 1)
+	if err := assertShallowBoot(mutated); err == nil {
+		t.Fatal("expected an in-place boot mutation of merged-pr to fail assertShallowBoot")
 	}
 
-	// Isolating: advanced+archived but a mod-block still set — the clear was skipped.
-	modBlockLeft := good
-	modBlockLeft.mergedAfter = strings.Replace(mergedArchived, "mod-block:\n", "mod-block: merge:pr-merge\n", 1)
-	if err := assertShallowBoot(modBlockLeft); err == nil {
-		t.Fatal("expected an advanced entity with a lingering mod-block to fail assertShallowBoot on the mod-block-clear check")
-	}
-
-	// Broken: no greet — the final message lacks the gate review / decision prompt.
+	// Broken: no useful read-only greet — the final message omits the named local
+	// state and engage invitation.
 	noGreet := good
-	noGreet.finalMessage = "Advanced merged-pr; nothing else to do."
+	noGreet.finalMessage = "Nothing else to do."
 	if err := assertShallowBoot(noGreet); err == nil {
-		t.Fatal("expected a final message with no gate review/decision prompt to fail assertShallowBoot")
+		t.Fatal("expected a final message without named local state and an engage invitation to fail assertShallowBoot")
 	}
 }

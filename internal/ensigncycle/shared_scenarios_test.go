@@ -51,12 +51,12 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			// the real provenance, not a fictitious port source.
 			name:          "shallow-boot",
 			oldPythonTest: "0203-fo-efficiency (net-new; no Python ancestor)",
-			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
+			intent:        "A freshly-booted FO greets from local state, leaves live PR discovery and advancement to engage, creates NO team, dispatches NO worker, and stops for input without mutation.",
 		},
 		{
 			name:          "merge-mod-block-recovery",
 			oldPythonTest: "0250 lazy-core recovery (net-new; no Python ancestor)",
-			intent:        "A resumed FO recognizes an in-flight merge mod-block and reaches the correct durable terminal/archive outcome without repeating already-recorded merge work.",
+			intent:        "After a read-only boot, engage makes a resumed FO recognize an in-flight merge mod-block and reach the correct durable terminal/archive outcome without repeating already-recorded merge work.",
 		},
 		{
 			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence

@@ -13,6 +13,8 @@ func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
 {"type":"assistant","message":{"id":"b","content":[{"type":"tool_use","id":"2","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/claude-first-officer-runtime.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"2","content":"# Claude Code First Officer Runtime"}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","content":"{\"mod-block\":\"merge:pr-merge\"}"}]}}
+{"type":"assistant","message":{"id":"engage","content":[{"type":"tool_use","id":"ready","name":"Bash","input":{"command":"$B state ready --workflow-dir /tmp/workflow --json"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"ready","content":"{\"ready\":true}"}]}}
 {"type":"assistant","message":{"id":"c","content":[{"type":"text","text":"write.classify says allowed"}]}}
 {"type":"assistant","message":{"id":"d","content":[{"type":"tool_use","id":"3","name":"Read","input":{"file_path":"/plugin/skills/first-officer/references/fo-write-core.md"}}]}}
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"3","content":"# First Officer Write Core"}]}}
@@ -27,6 +29,7 @@ func TestFOReferenceOrderNormalizersPreserveHostEventOrder(t *testing.T) {
 
 	codex := codexFirstOfficerBaseEvent + "\n" + `{"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/first-officer-shared-core.md && sed -n 1,220p /plugin/skills/first-officer/references/codex-first-officer-runtime.md","aggregated_output":"# First Officer Shared Core\n# Codex First Officer Runtime"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"$B status --boot --json","aggregated_output":"{\"mod-block\":\"merge:pr-merge\"}"}}
+{"type":"item.completed","item":{"type":"command_execution","command":"$B state ready --workflow-dir /tmp/workflow --json","status":"completed","exit_code":0,"aggregated_output":"{\"ready\":true}"}}
 {"type":"item.completed","item":{"type":"agent_message","text":"write.classify says allowed"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/fo-write-core.md","aggregated_output":"# First Officer Write Core"}}
 {"type":"item.completed","item":{"type":"command_execution","command":"sed -n 1,220p /plugin/skills/first-officer/references/fo-merge-core.md","aggregated_output":"# First Officer Merge Core"}}
@@ -54,8 +57,9 @@ func TestFOReferenceOrderOracleRejectsAdversarialControls(t *testing.T) {
 		{"wrapper invocation", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foWrapperSkill, foWriteRead, foMutation}},
 		{"broad search", "filing", []foReferenceEvent{foSharedRead, foRuntimeRead, foBroadSearch, foWriteRead, foMutation}},
 		{"merge after guard", "terminal", []foReferenceEvent{foSharedRead, foRuntimeRead, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
-		{"reversed recovery", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
-		{"repeated merge work", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foMergeRead, foRepeatedMerge, foMergeAction, foMutation}},
+		{"recovery before engage", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foWriteRead, foEngage, foMergeRead, foMergeGuard, foMutation}},
+		{"reversed recovery", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foEngage, foWriteRead, foMutation, foMergeGuard, foMergeRead}},
+		{"repeated merge work", "recovery", []foReferenceEvent{foSharedRead, foRuntimeRead, foModBlockSeen, foEngage, foWriteRead, foMergeRead, foRepeatedMerge, foMergeAction, foMutation}},
 	}
 	for _, control := range controls {
 		t.Run(control.name, func(t *testing.T) {
@@ -134,6 +138,14 @@ func TestFOReferenceOrderRequiresSuccessfulExactReads(t *testing.T) {
 {"type":"item.completed","item":{"type":"command_execution","command":"spacedock new task","status":"completed","exit_code":0}}`
 	if err := assertFOReferenceJourney(normalizeCodexFOReferenceEvents(compoundWrongThenCanonical), "filing"); err == nil {
 		t.Fatal("a compound wrong-base then canonical read suppressed the wrong-path hazard")
+	}
+}
+
+func TestFOReferenceOrderPreservesLoadedSkillBaseCase(t *testing.T) {
+	const skillBase = "/PluginCache/skills/first-officer"
+	events := classifyFOCommand("cat "+skillBase+"/references/fo-write-core.md", skillBase)
+	if eventIndex(events, foWriteRead) < 0 || eventIndex(events, foWrongPath) >= 0 {
+		t.Fatalf("uppercase-containing loaded skill base classified as %v, want write-read", events)
 	}
 }
 

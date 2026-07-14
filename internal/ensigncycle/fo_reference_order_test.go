@@ -18,12 +18,14 @@ const (
 	foWriteRead     foReferenceEvent = "write-read"
 	foMergeRead     foReferenceEvent = "merge-read"
 	foModBlockSeen  foReferenceEvent = "merge-mod-block-seen"
+	foEngage        foReferenceEvent = "engage"
 	foMutation      foReferenceEvent = "mutation"
 	foTerminal      foReferenceEvent = "terminal-mutation"
 	foMergeGuard    foReferenceEvent = "merge-guard"
 	foMergeAction   foReferenceEvent = "merge-action"
 	foWrongPath     foReferenceEvent = "wrong-core-path"
 	foFailedRead    foReferenceEvent = "failed-core-read"
+	foFailedEngage  foReferenceEvent = "failed-engage"
 	foBroadSearch   foReferenceEvent = "broad-core-search"
 	foWrapperSkill  foReferenceEvent = "wrapper-skill"
 	foRepeatedMerge foReferenceEvent = "repeated-merge-work"
@@ -186,9 +188,6 @@ func normalizeCodexFOReferenceEvents(stream string) []foReferenceEvent {
 }
 
 func foCallSucceeded(events []foReferenceEvent, transportSucceeded bool, output string) bool {
-	if !transportSucceeded {
-		return false
-	}
 	hasRead := false
 	for _, event := range events {
 		switch event {
@@ -197,16 +196,7 @@ func foCallSucceeded(events []foReferenceEvent, transportSucceeded bool, output 
 		}
 	}
 	if !hasRead {
-		return true
-	}
-	trimmed := strings.TrimSpace(strings.ToLower(output))
-	if trimmed == "" || strings.HasPrefix(trimmed, "error:") {
-		return false
-	}
-	for _, failure := range []string{"no such file", "not found", "permission denied"} {
-		if strings.Contains(trimmed, failure) {
-			return false
-		}
+		return transportSucceeded
 	}
 	anchors := map[foReferenceEvent]string{
 		foSharedRead:  "# first officer shared core",
@@ -214,12 +204,13 @@ func foCallSucceeded(events []foReferenceEvent, transportSucceeded bool, output 
 		foWriteRead:   "# first officer write core",
 		foMergeRead:   "# first officer merge core",
 	}
+	var required []string
 	for _, event := range events {
-		if anchor := anchors[event]; anchor != "" && !strings.Contains(trimmed, anchor) {
-			return false
+		if anchor := anchors[event]; anchor != "" {
+			required = append(required, anchor)
 		}
 	}
-	return true
+	return ReferenceReadSucceeded(transportSucceeded, output, required...)
 }
 
 func resolvedFOCallEvents(events []foReferenceEvent, succeeded bool) []foReferenceEvent {
@@ -231,6 +222,8 @@ func resolvedFOCallEvents(events []foReferenceEvent, succeeded bool) []foReferen
 		switch event {
 		case foSharedRead, foRuntimeRead, foWriteRead, foMergeRead:
 			out = append(out, foFailedRead)
+		case foEngage:
+			out = append(out, foFailedEngage)
 		default:
 			out = append(out, event)
 		}
@@ -262,7 +255,7 @@ func classifyFORead(target, skillBase string) []foReferenceEvent {
 
 func classifyFOCommand(command, skillBase string) []foReferenceEvent {
 	lower := strings.ToLower(command)
-	indexed := classifyShellFOReadTargets(lower, skillBase)
+	indexed := classifyShellFOReadTargets(command, skillBase)
 	if (strings.Contains(lower, "fo-write-core") || strings.Contains(lower, "fo-merge-core")) &&
 		(strings.Contains(lower, "find ") || strings.Contains(lower, "grep -r") || strings.Contains(lower, "rg --files") || strings.Contains(lower, "ls -r")) {
 		indexed = append(indexed, foIndexedEvent{kind: foBroadSearch})
@@ -274,6 +267,9 @@ func classifyFOCommand(command, skillBase string) []foReferenceEvent {
 		if at := strings.Index(lower, repeated); at >= 0 {
 			indexed = append(indexed, foIndexedEvent{index: at, kind: foRepeatedMerge})
 		}
+	}
+	if at := strings.Index(lower, " state ready"); at >= 0 {
+		indexed = append(indexed, foIndexedEvent{index: at, kind: foEngage})
 	}
 	mutationAt := shellMutationIndex(lower)
 	for _, needle := range []string{" status ", "spacedock status", " state commit ", "spacedock state commit", " dispatch build ", "spacedock dispatch build", " new ", "spacedock new", " --archive "} {
@@ -406,7 +402,7 @@ func containsMergeModBlock(output string) bool {
 }
 
 func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
-	for _, hazard := range []foReferenceEvent{foWrongPath, foFailedRead, foBroadSearch, foWrapperSkill, foRepeatedMerge} {
+	for _, hazard := range []foReferenceEvent{foWrongPath, foFailedRead, foFailedEngage, foBroadSearch, foWrapperSkill, foRepeatedMerge} {
 		if eventIndex(events, hazard) >= 0 {
 			return fmt.Errorf("%s contains forbidden %s event: %v", journey, hazard, events)
 		}
@@ -452,9 +448,10 @@ func assertFOReferenceJourney(events []foReferenceEvent, journey string) error {
 	}
 	if journey == "recovery" {
 		modAt := eventIndex(events, foModBlockSeen)
+		engageAt := eventIndex(events, foEngage)
 		actionAt := eventIndex(events, foMergeAction)
-		if modAt < 0 || actionAt < 0 || !(modAt < writeAt && writeAt < mergeAt && mergeAt < actionAt) {
-			return fmt.Errorf("recovery order must be mod-block → write → merge → first merge action: %v", events)
+		if modAt < 0 || engageAt < 0 || actionAt < 0 || !(modAt < engageAt && engageAt < writeAt && writeAt < mergeAt && mergeAt < actionAt) {
+			return fmt.Errorf("recovery order must be boot mod-block → engage → write → merge → first merge action: %v", events)
 		}
 	}
 	return nil

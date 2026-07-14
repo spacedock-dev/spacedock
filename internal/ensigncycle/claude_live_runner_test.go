@@ -388,8 +388,8 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 // runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
 // (a gate-check entity at a human gate + a PR-bearing entity whose stubbed `gh`
 // reports MERGED) with a per-run isolated team root, and grades the durable
-// end-state: the FO greets and presents the gate, S7b advances+archives the merged
-// PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
+// end-state: the FO greets from local state, leaves the PR-bearing entity untouched
+// until engage, NO team config lands on disk, and NO worker is dispatched. It
 // then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
 // pre-greet invocation of a deferred FO skill — fo-status-viewer / fo-write-core) and
 // the AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
@@ -399,9 +399,10 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
+	mergedBefore := readFile(t, fixture.mergedEntityPath)
 
-	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
-	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
+	// The stub `gh` (reporting MERGED) resolves on the FO subprocess PATH so an
+	// accidental engage would advance the PR and fail the read-only durable oracle.
 	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
 
 	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
@@ -409,7 +410,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.
 	teamRoot := filepath.Join(runner.home(), ".claude", "teams")
-	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, result.finalMessage)
+	obs := gatherShallowBootObservation(t, workflowRoot, teamRoot, fixture, gateBefore, mergedBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
@@ -430,7 +431,7 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	if err := assertShallowBootMeasured(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
-	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "terminal"); err != nil {
+	if err := assertFOReferenceJourney(normalizeClaudeFOReferenceEvents(result.stream), "gate"); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// Record (don't gate on) the greet turn's full token usage as a distinct

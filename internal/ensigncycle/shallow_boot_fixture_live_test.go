@@ -11,8 +11,8 @@ import (
 // writeShallowBootWorkflow seeds the shallow-boot fixture under root and returns
 // the entity/archive paths plus the stub-gh dir. It registers the canonical
 // pr-merge mod verbatim (so the boot JSON reports the startup/idle/merge hooks and
-// S7b reads the real advancement prose) and seeds the gate-check + merged-pr
-// entities. Live-tagged because it copies the repo's canonical mod via repoRoot,
+// an accidental engage can take the real advancement path) and seeds the
+// gate-check + merged-pr entities. Live-tagged because it copies the canonical mod via repoRoot,
 // which is a live-only helper.
 func writeShallowBootWorkflow(t *testing.T, root string) shallowBootFixture {
 	t.Helper()
@@ -65,8 +65,9 @@ func writeMergeModRecoveryWorkflow(t *testing.T, root string) mergeModRecoveryFi
 }
 
 // writeStubMergedGh writes a `gh` shim that reports MERGED for `gh pr view`, so the
-// boot's live PR-state probe and the pr-merge startup hook both see a merged PR
-// deterministically (offline, no real PR). Returns the dir to prepend to PATH.
+// engage's live PR-state probe and the pr-merge startup hook see a merged PR
+// deterministically (offline, no real PR). Read-only boot must not invoke it.
+// Returns the dir to prepend to PATH.
 func writeStubMergedGh(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
