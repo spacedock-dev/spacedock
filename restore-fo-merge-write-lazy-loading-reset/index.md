@@ -112,3 +112,30 @@ The current Claude and Codex journeys visibly perform the intended lazy reads an
 ### Summary
 
 Cycle 1 closes both false-green evidence gaps without changing lazy-loading or workflow semantics. Exact installed-base/full-read proof and first-mutation coverage are now adversarially falsifiable, with deterministic gates, supported-host live evidence, and exact-head Roborev green.
+
+### Feedback Cycles
+
+- Cycle 2 — detached adversarial re-review of exact head `f745bba1592837aa8697d321177cc3a07a224115`.
+  - Material (AC-2/AC-4 evidence defect): a single Codex command that reads the exact write-core path and also retries a same-suffix alternate-root path is accepted because one exact-path match masks the noncanonical occurrence.
+  - Material (AC-2/AC-4 evidence defect): early supported `state commit`, `status --archive`, and `merge guard` mutations are absent from the fixed first-mutation classifier and therefore false-pass before the write-core read.
+  - Material (AC-4 evidence defect): a lexical `/tmp` installed base does not match host events reported through macOS's canonical `/private/tmp` alias; the same three Codex scenarios were rejected 0/3 through the alias and passed 3/3 through the canonical path.
+  - No outcome defect was observed. Keep the correction in the observer: reject every non-exact core occurrence, cover supported mutation families, and compare canonical installed paths; do not change product semantics, parsing, controllers, or lifecycle.
+
+## Stage Report: validation (cycle 2)
+
+- FAILED: Reproduce the path-only, partial-read, and alternate-root negative controls and verify only an exact loader-base host-native full-file read satisfies AC-2/AC-4.
+  The shipped individual controls and exact-read positive passed, but a detached combined exact-plus-alternate-root control false-passed at `f745bba1`; one exact occurrence currently masks the noncanonical retry.
+- FAILED: Reproduce the early ordinary-mutation control across existing mutating scenarios, retain filing/terminal ordering, and confirm no product semantic, shell parser, controller, or lifecycle change.
+  Existing ordinary-status, filing, and terminal controls pass, and the two correction commits change tests only. Detached early `state commit`, `status --archive`, and `merge guard` controls all false-passed because those supported mutators are not classified.
+- DONE: Independently verify exact head `f745bba1` with applicable focused/full/race and Claude/Codex live evidence, account for Roborev job `1433`, and issue PASSED or precisely classified REJECTED.
+  Focused controls and live-tag compilation passed; isolated `go test ./...` and `go test ./... -race` passed. Exact-head Codex passed 3/3 from a canonical artifact path; the `/tmp` alias run exposed the observer false-negative above. Implementer-owned Claude 3/3 is recorded; local Claude rerun is not a 1k gate.
+- DONE: Account for independent review evidence.
+  Roborev job `1433` reviewed exact head `f745bba1`, completed with verdict `P`, and reported no issue; the detached controls above exercise combinations and mutation categories outside that review.
+- DONE: Preserve the quantitative shallow-boot condition as a post-PR CI gate.
+  CI must compare the same resolved model against the published v0.24.0 `shallow-boot-window` baseline (Sonnet total 47,936, cache creation 638, pre-greet peak 9,864), recording client/model drift; the 8,673-byte core reduction alone is not token proof. Its absence locally is not a validation failure.
+- DONE: Recommendation: REJECTED — narrow evidence fix.
+  Three observer gaps can still reject valid canonical behavior or certify claim-breaking traces. Correct the evidence harness without a product-semantics change or design reset, then rerun the affected controls and gates.
+
+### Summary
+
+Exact-head deterministic gates, canonical-path Codex outcomes, implementer-owned Claude evidence, and Roborev are green, but independent adversarial controls still falsify AC-2/AC-4's proof boundary. Validation rejects `f745bba1` for three narrow observer defects and routes an evidence-only correction back to implementation; the quantitative same-model shallow-boot comparison remains a post-PR CI requirement.
