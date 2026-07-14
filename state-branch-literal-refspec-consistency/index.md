@@ -1,12 +1,12 @@
 ---
 title: Make literal state-branch refspecs consistent
-status: ideation
+status: implementation
 source: "Roborev job 1434 on e6j exact head 58b304ef; captain filing request 2026-07-15."
 started: 2026-07-14T16:49:02Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-state-branch-literal-refspec-consistency
 issue:
 milestone: 0.25.0
 id: 0by8fscax8t88f5wnktggees
