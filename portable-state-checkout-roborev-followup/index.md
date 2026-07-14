@@ -1,6 +1,6 @@
 ---
 title: Close Roborev repository-boundary findings in portable state checkout
-status: validation
+status: implementation
 source: Follow-up to archived qw after Roborev thorough branch review job 488, 2026-07-14
 started: 2026-07-13T16:28:38Z
 completed:
@@ -490,6 +490,25 @@ administrative entries before use and refuse a symlinked root `.gitignore`
 before any write, with exact external-target zero-mutation evidence. The next
 fresh validator must again run corrected exact-range Roborev first; no push, PR,
 or CI is permitted before PASS.
+
+**Cycle 10 (Roborev-first validation, job 991).** Corrected-guideline thorough
+Roborev rejected exact
+`557f8df3e6a62d34987edda70533375fc48ba8f6..ef180439157f13bdbf6d754421fad63025f36e78`
+before tests, push, PR creation, or CI:
+
+- HIGH: the separate-git-dir/submodule project lane accepts a live external
+  gitfile target without proving it belongs to the declared checkout, so a
+  copied checkout can mutate the source repository's refs and worktrees.
+- MEDIUM: the nominally read-only clean preflight can refresh index stat data
+  before origin validation fails because ordinary `git status` permits optional
+  index locking and refresh.
+
+Captain standing decision: send these findings back without reframing. They are
+direct repository-identity and mutation-before-validation defects. Bind every
+external gitfile target to the declared checkout and make the pre-origin clean
+probe genuinely non-mutating, with copied-checkout and index-byte evidence. The
+next fresh validator must again run corrected exact-range Roborev first; no
+push, PR, or CI is permitted before PASS.
 
 ## Stage Report: validation
 
