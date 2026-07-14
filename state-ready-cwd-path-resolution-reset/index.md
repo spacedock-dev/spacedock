@@ -39,3 +39,42 @@ A stale registration may still block `git worktree add` after the directory was 
 - **AC-2:** With no `origin` and an existing local state branch, `state ready` exits 0 and restores the checkout from that branch; an origin-backed repository retains its existing fetch-first behavior.
 - **AC-3:** A stale registration fails closed without removing or rewriting any registration and emits precise remediation naming the canonical state path. A present checkout remains untouched.
 - **AC-4:** Focused real-Git tests, `go test ./...`, and `go test ./... -race` pass. The implementation introduces no new coordination/lifecycle subsystem and remains a narrow change around existing Git commands.
+
+## Implementation result
+
+Code commit `0384a012` changes only `internal/cli/state_sync.go` and its real-Git
+`state_ready_test.go` fixtures.
+
+The exact mechanism/value trace is:
+
+- **Value observed:** from a workflow discovered inside a linked agent worktree,
+  `state ready` restores `first-task.md` at the canonical main-worktree state
+  path and leaves the agent-worktree state path absent.
+- **Smallest mechanism:** Git supplies the workflow-relative prefix and canonical
+  main worktree; the existing branch plus `git worktree add` restores the checkout.
+  Origin-backed recovery fetches first; no-origin recovery verifies the local ref.
+- **Fail-closed boundary:** a missing path still present in `git worktree list
+  --porcelain` exits non-zero, leaves the registry byte-identical, and prints the
+  exact `git -C <main-root> worktree remove <state-path>` manual remediation.
+- **RED to GREEN:** the three new fixtures initially failed 3/3 (nested-path
+  recovery, mandatory `fetch origin`, and generic stale-registration failure),
+  then passed 3/3; the complete `TestStateReady` family, full suite, and race suite
+  passed after the change.
+- **Rejected machinery:** no lock, journal, generation, publication protocol,
+  automatic repair, daemon, lease, or lifecycle controller was introduced.
+
+## Stage Report: implementation
+
+- DONE: Make state ready use the canonical main-worktree state path from a linked-worktree cwd and restore from a local branch when origin is absent.
+  Commit `0384a012`; real-Git linked-worktree and no-origin fixtures both pass and assert the resulting on-disk entity path.
+- DONE: Fail closed with precise remediation for stale registration; do not add automatic repair, locks, outcome journals, generations, publication protocols, or lifecycle machinery.
+  The stale fixture exits non-zero with an unchanged worktree registry and exact path-scoped `worktree remove` guidance; the diff adds no coordination subsystem.
+- DONE: Prove the narrow command behavior with real-Git fixtures, then run focused, full, and race suites and record the exact mechanism/value trace.
+  `TestStateReady*` passed (9.977s), `go test ./internal/cli` passed (67.292s), `go test ./...` passed, `go test ./... -race` passed, and the RED 3/3 baseline is recorded above.
+
+### Summary
+
+Implemented the clean reset as a narrow `state ready` recovery change backed by
+real Git behavior, with canonical main-root placement, local-branch fallback,
+and non-mutating stale-registration refusal. All required focused, full, and race
+gates passed; code is committed at `0384a012` and ready for independent validation.
