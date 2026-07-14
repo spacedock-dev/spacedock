@@ -375,3 +375,16 @@ Closed both job-867 findings without deleting or overwriting any public checkout
 ### Summary
 
 Validation is **REJECTED** at the Roborev-first gate. Exact-range job `904` found four unscoped repository-identity, publication-race, symlink, and path-byte defects; local tests, PR update, and CI engagement were not performed.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: Prove every existing state directory is the exact registered worktree on the expected state branch before ready/init/commit can mutate, preventing Git parent discovery into the code branch.
+  Local commit `f57b0924` adds exact existing-checkout validation before mutation. Repository-backed state must match one canonical, non-bare, non-prunable `git worktree list --porcelain -z` record on the expected `refs/heads/<state branch>`, with an exact top-level and common-Git-dir match; standalone compatibility accepts only an exact repository root. A two-checkout-by-three-verb adversarial matrix covers a plain directory and a wrong-branch linked worktree across `state ready`, `state init`, and `state commit`, asserting the main HEAD and porcelain remain byte-for-byte unchanged.
+- DONE: Converge origin privately before publishing the final checkout so non-locking state writers cannot lose concurrent entity changes, with adversarial writer coverage.
+  Resume now creates an adjacent private worktree, fetches and rebases there, and only then atomically renames it to the final path, repairs metadata, validates exact identity, and records `ready`. A pre-publication origin test proves the private branch already equals the peer HEAD while the final path is absent. Deterministic ready/init races cover `status --set`, direct Git worktree creation with uncommitted bytes, and `state new`; publication fails closed and preserves every concurrent writer. Pull/rebase failure leaves no published checkout and preserves the stale prunable registration and local branch.
+- DONE: Classify external symlinks into linked worktrees correctly and preserve exact whitespace path bytes; run focused/full/race gates and commit locally only for fresh Roborev-first validation.
+  Repository placement now probes canonical Git metadata before lexical fallback, so a real external symlink into a linked worktree anchors to the primary worktree. Git path framing removes exactly one terminal LF instead of trimming path whitespace; unit and real-repository tests preserve spaces, tabs, and newline-bearing roots/prefixes. Changed files are gofmt-clean, `git show --check` and Windows cross-compilation pass, focused lifecycle/race suites pass, `go test ./... -count=1` passes, and `go test ./... -race -count=1` passes (CLI 325.677s, status 94.903s). The code branch is clean and four local commits ahead of unchanged remote `3d50bd9a`; no code push, PR update, CI trigger, or CI approval occurred.
+
+### Summary
+
+Closed all four job-904 findings with exact checkout identity checks, private origin convergence plus atomic publication, canonical linked-worktree classification, and byte-preserving Git path parsing. Exact clean head `f57b0924523ee75ef0a2c08f9c999d9c6b0756a1` is locally verified and intentionally unpushed for a fresh corrected exact-range Roborev-first validation.
