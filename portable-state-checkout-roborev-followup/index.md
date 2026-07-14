@@ -743,3 +743,16 @@ found two remaining external-write paths through symlinked Git administrative
 metadata and `.gitignore`. AC-1, AC-3, and AC-6 therefore fail; the remaining
 criteria were not revalidated because the mandatory first gate stopped the
 cycle. No tests, push, PR, CI, implementation mutation, or local merge occurred.
+
+## Stage Report: implementation (cycle 9)
+
+- DONE: Reject symlinked entries inside validated Git administrative directories before any metadata read or mutation, with exact external-target zero-mutation coverage.
+  Commit `ef180439157f13bdbf6d754421fad63025f36e78` replaces follow-symlink checks with non-symlink file/directory validation for project/common and standalone `HEAD`, `config`, `objects`, `refs`, optional mutable indexes, linked-worktree path components, and linked admin records before any runner is returned. Resolver regressions move standalone `objects`/`refs` and a linked-worktree admin directory outside, replace them with symlinks, require refusal, and compare complete external target snapshots before and after.
+- DONE: Refuse a repository-root .gitignore symlink before state new writes, preserving internal canonical ignore behavior and proving the external target is byte-identical.
+  `appendGitignoreEntry` now `Lstat`s the root ignore path and permits only absence or a regular non-symlink file. `TestStateNewRejectsRepositoryGitignoreSymlinkBeforeMutation` drives the public command and pins empty stdout, exact refusal, code HEAD/index/status/refs/worktree registrations, symlink target, and external bytes/mode; lexical and canonical internal workflow alias tests remain green.
+- DONE: Run focused/full/race gates, commit locally only, and leave push, PR, and CI blocked for a fresh corrected exact-range Roborev-first validation.
+  Focused administrative-symlink and state-new tests, complete affected packages, `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` all passed at clean local head `ef180439`. Original qwp remains `a70e9121`, local `main` and `origin/main` remain `557f8df3`, and no code push, PR, CI, merge, approval, rebase, or integration action occurred.
+
+### Summary
+
+Validated state runners no longer accept symlinked repository-routing records beneath their Git directories, including external object/ref stores and linked administrative directories. State birth also refuses a symlinked root ignore file before its first write; the append-only local head is ready for fresh corrected exact-range Roborev-first validation.
