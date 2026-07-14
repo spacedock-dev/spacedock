@@ -59,6 +59,7 @@ The first foundation is the host-neutral runtime scenarios already shipped and h
 - `rejection-flow` — the FO drives a two-cycle rejection trajectory: route the finding back through implementation, re-implement, and re-validate a second cycle, reusing the kept-alive reviewer only when the host exposes an addressable-worker route.
 - `feedback-3-cycle-escalation` — on the third consecutive REJECTED validation the FO escalates to the human instead of auto-bouncing a fourth time.
 - `merge-hook-guardrail` — the FO cannot bypass a registered merge hook by terminalizing without pr, mod-block, or force.
+- `merge-mod-block-recovery` — a resumed FO recognizes an in-flight merge mod-block and reaches the correct durable terminal/archive outcome without repeating already-recorded merge work.
 - `filing` — the FO files a new seed entity via the atomic `spacedock new <slug>` path, not the drift-prone `--next-id` + hand-write pair.
 - `shallow-boot` — a freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with no team created and no worker dispatched, then stops for input.
 - `self-evidence-merge-triage` — the FO holds its own merge/triage decision to the evidence bar: it does not terminalize while a required live lane is unapproved, and it diagnoses a live-CI red from this run's failing test, not an inherited "known flake" label.
