@@ -20,4 +20,4 @@ When a feedback stage recommends REJECTED:
 6. Re-run the reviewer after fixes. When the existing reviewer remains addressable and reuse conditions pass, re-run the kept-alive reviewer through the same `«addressable-worker»` capability used for feedback routing; the message must ask that reviewer to re-review the updated entity state, not validate its own fix work. Fresh-dispatch the reviewer only when the existing reviewer is no longer addressable or reuse conditions fail.
 7. Re-enter the normal gate flow with the updated result.
 
-The FO owns `### Feedback Cycles`. Routing follows the eagerly loaded first-officer `«write.classify»` scope: worktree-side when `worktree:` is set, main-side otherwise.
+The FO owns `### Feedback Cycles`. After the first-officer's exact write-core read and `«write.classify»` boundary, routing follows its write scope: worktree-side when `worktree:` is set, main-side otherwise.

@@ -86,3 +86,21 @@ func TestPR495FilingHuntTargetHasDeterministicDelayedAddress(t *testing.T) {
 		t.Fatalf("PR #495 filing hunt delayed target does not resolve: %v", err)
 	}
 }
+
+func TestFODeferredReferenceInstructionsStayConsistent(t *testing.T) {
+	for _, rel := range []string{
+		"skills/first-officer/references/claude-first-officer-runtime.md",
+		"skills/fo-status-viewer/SKILL.md",
+		"skills/feedback-rejection-flow/SKILL.md",
+	} {
+		body := readRepoFile(t, filepath.FromSlash(rel))
+		for _, stale := range []string{"preloaded by `first-officer/SKILL.md`", "eagerly loaded `«write.classify»`", "under the eagerly loaded `«write.classify»`"} {
+			if strings.Contains(body, stale) {
+				t.Errorf("%s retains stale eager-load claim %q", rel, stale)
+			}
+		}
+		if !strings.Contains(body, "exact") || !strings.Contains(body, "write-core") {
+			t.Errorf("%s does not direct writes through the exact deferred write-core boundary", rel)
+		}
+	}
+}

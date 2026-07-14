@@ -1,6 +1,6 @@
 # Claude Code First Officer Runtime
 
-This file defines how the shared first-officer core executes on Claude Code: Captain Interaction (the greet/guardrail), Agent Back-off, and Entity-Body Inspection. The dispatch reference loads at its trigger; the merge core is preloaded by the first-officer entry point and applies at the terminal boundary.
+This file defines how the shared first-officer core executes on Claude Code: Captain Interaction (the greet/guardrail), Agent Back-off, and Entity-Body Inspection. Dispatch, write, and merge owners load only at their exact shared-core triggers.
 
 ## Dispatch reference (load at first dispatch)
 
@@ -10,7 +10,7 @@ When filing a new task, read `id_style` from `status --boot --json`, then use `s
 
 ## Terminal teardown (load at terminalization)
 
-`fo-merge-core.md` (preloaded by `first-officer/SKILL.md`) invokes `«worker.shutdown»()` at the terminal boundary. The Claude binding is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch). When the runtime still exposes `TeamCreate`, its further bounded teardown is the legacy override.
+`fo-merge-core.md` (read by the shared core's exact deferred-load rule at the first terminal or `mod-block=merge:*` boundary) invokes `«worker.shutdown»()`. The Claude binding is the per-name `SendMessage(shutdown_request)` in `## Terminal Worker Teardown` of `references/claude-fo-dispatch.md` (already loaded at first dispatch). When the runtime still exposes `TeamCreate`, its further bounded teardown is the legacy override.
 
 ## Captain Interaction
 
@@ -34,4 +34,4 @@ See `## Probe and Ideation Discipline` in the shared core — its Grep-over-Read
 
 Before filing, read the workflow README's `## Task Template`; use its frontmatter and section scaffolding as the starting shape for the entity body you pipe to `spacedock new`.
 
-To file a seed task, do NOT use the Write tool to hand-assemble frontmatter after a `status --next-id` preview — that two-step flow can land a stale id when the `--next-id` candidate drifts between preview and write. Use `${SPACEDOCK_BIN:-spacedock} new <slug> [--folder] [--id-seed S --id-actor A]` via Bash from the project root (`new` auto-discovers the lone workflow, else pass `--workflow-dir {workflow_dir}` — see `spacedock new --help`), piping a complete entity stub on stdin (frontmatter with `id` omitted or blank, followed by the brief description body): it mints the id, stamps it into the frontmatter, and atomically writes the stamped entity as flat `<slug>.md` in one call (see the eagerly loaded `«write.classify»` contract). `--next-id` is a candidate-preview surface only. `new` writes but does not commit; for split-root state checkouts the FO still does the path-scoped commit + push after `new` (per the shared core's State Management rule).
+To file a seed task, do NOT use the Write tool to hand-assemble frontmatter after a `status --next-id` preview — that two-step flow can land a stale id when the `--next-id` candidate drifts between preview and write. Use `${SPACEDOCK_BIN:-spacedock} new <slug> [--folder] [--id-seed S --id-actor A]` via Bash from the project root (`new` auto-discovers the lone workflow, else pass `--workflow-dir {workflow_dir}` — see `spacedock new --help`), piping a complete entity stub on stdin (frontmatter with `id` omitted or blank, followed by the brief description body): it mints the id, stamps it into the frontmatter, and atomically writes the stamped entity as flat `<slug>.md` in one call (after the shared core's exact write-core read and `«write.classify»` boundary). `--next-id` is a candidate-preview surface only. `new` writes but does not commit; for split-root state checkouts the FO still does the path-scoped commit + push after `new` (per the shared core's State Management rule).
