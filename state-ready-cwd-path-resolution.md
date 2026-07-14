@@ -281,3 +281,21 @@ Validation is **REJECTED** at the Roborev-first gate. Exact-range job `775` foun
 ### Summary
 
 Closed all three Roborev job 775 findings without excluding their failure modes: waiter success now requires a durable matching convergence result, unsupported locking fails closed across processes, and shared exclude mutation is linked-worktree-only. The exact clean local head is fully verified and remains unpushed for the required fresh Roborev-first validation.
+
+## Stage Report: validation (cycle 4)
+
+- FAILED: Run corrected-guideline Roborev first on exact range 557f8df3..67721584 and inspect stored range/prompt; on any finding stop REJECTED without push or CI.
+  Authoritative thorough Roborev job `867` stored exact range `557f8df3e6a62d34987edda70533375fc48ba8f6..677215842a369850fcefbf239851da69a3389d2b`, all four corrected guideline sections, and verdict FAIL; earlier job `862` is non-authoritative because positional range semantics included the base commit.
+- SKIPPED: Only after Roborev PASS independently reproduce convergence-failure fan-out, cross-process Unix serialization and non-Unix fail-closed behavior, linked-only exclude mutation, every AC, gofmt, focused/full/race suites, and detached audit.
+  Roborev failed the first gate, so the assignment required validation to stop before every downstream local check.
+- SKIPPED: Only after all local gates pass push exact head 67721584 to PR #503 and then engage required CI; report actual outcomes and block on waiting, skipped, failed, or unapproved evidence.
+  No code was pushed and no CI was triggered or approved; PR #503 remains on remote head `3d50bd9a` while exact reviewed head `67721584` remains local-only.
+
+### Reviewer findings
+
+- HIGH: failed-resume cleanup force-removes the final checkout path although `state new`, state writers, and direct Git operations do not honor the resume lock; a concurrent valid checkout or uncommitted state can be deleted. Converge privately before publication, or prove exclusive ownership and unchanged state before cleanup, with cross-command writer coverage.
+- MEDIUM: one repository-wide outcome file lets workflow B overwrite workflow A's result before A's waiter reads it, causing A to reject a successfully restored checkout. Key durable outcomes by canonical checkout path and cover concurrent resumes of two workflows.
+
+### Summary
+
+Validation is **REJECTED** at the Roborev-first gate. Exact-range job `867` found two unscoped concurrency and data-loss defects, so local tests, PR update, and CI engagement were not performed; return the findings to implementation before another fresh validation.
