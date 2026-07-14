@@ -176,3 +176,22 @@ The implementation passes all local behavioral, full, race, bounded-diff, exact-
 ### Summary
 
 The corrected Roborev exact-range gate passed cleanly and verified the intended guideline injection. Validation remains REJECTED on an explicit infrastructure blocker: Git cannot publish the workflow-changing commit without an OAuth credential carrying workflow scope, so the required exact-SHA live evidence cannot yet be produced.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Run corrected-guideline Roborev first on exact range 557f8df3..5ff92f9b and inspect its stored range/prompt; on any finding stop without push or CI.
+  Roborev job `902` returned `No issues found`; its stored `git_ref` is exact `557f8df3e6a62d34987edda70533375fc48ba8f6..5ff92f9b58e2aae918a9cbbda560eb7394dae413`, and the prompt contains all four configured guideline sections.
+- DONE: Only after Roborev PASS push exact head 5ff92f9b, verify the remote branch, and dispatch the exact-SHA Claude live E2E required by AC-1 with retained provenance and executable artifacts.
+  The remote branch equals exact `5ff92f9b`; run `29303305720` is bound to that SHA, and retained Sonnet artifact `8299521188` plus Opus artifact `8299603800` contain provenance and installed executables through 2026-10-12.
+- DONE: Inspect the actual live result and artifacts, rerun local focused/full/race evidence if the head changes, and return PASSED or REJECTED without treating waiting/skipped/absent CI as green.
+  PASSED for this task: both Claude jobs completed `success`; head stayed exact and clean, so prior focused/full/race evidence did not require rerun. The overall workflow is honestly red because the independent Codex keep-moving scenario failed its durable dispatch assertion.
+- DONE: AC-1 (VALUE) — Claude live E2E exercises a physical candidate binary outside the checkout while continuing to run the exact workflow-dispatch SHA and current local plugin bytes.
+  Sonnet and Opus passed the live gate, ensign-cycle, shared-scenario, pty, and merged-team lanes; both uploaded binaries embed exact `5ff92f9b`, report `vcs.modified=false`, and ran with the checkout's unchanged staged plugin path.
+- DONE: AC-2 — The host-visible binary path no longer names the repository checkout, and no symlink resolves it back there.
+  Both artifacts record `/home/runner/work/_temp/spacedock-live-bin/spacedock`, outside `/home/runner/work/spacedock/spacedock`; downloaded binaries are regular executable ELF files, not symlinks, with identical SHA-256 `bea2fbfec20213a1dc677add0ddb2485a9d0c4c3c620618c2611e1faecb15745`.
+- DONE: AC-3 — The change does not weaken the separate wrong-root detector or claim to solve launch-cwd authority.
+  The exact two-file diff remains limited to the Claude workflow install/upload path and its behavioral release test; no `internal/ensigncycle` or first-officer contract file changed.
+
+### Summary
+
+Exact-SHA live evidence now closes the prior external-proof gap: both Claude variants exercised the neutral installed candidate successfully and retained independently inspectable provenance and executable artifacts. Validation recommends PASSED for `2h`; run `29303305720` is not a green release-certification run because an unrelated Codex live assertion failed, and that failure remains visible for separate triage.
