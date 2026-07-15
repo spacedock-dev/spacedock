@@ -375,6 +375,11 @@ type shallowBootFixture struct {
 	gateEntityPath string
 }
 
+const (
+	shallowBootHeldGateLine   = "Gate state: Gate Check remains held at review."
+	shallowBootEngageHintLine = "Next action: use engage to act."
+)
+
 func shallowBootReadme() string {
 	return "---\n" +
 		"commissioned-by: spacedock@1\n" +
@@ -426,7 +431,7 @@ func shallowBootPrompt(workflowRoot string) string {
 		"Workflow directory: "+workflowRoot,
 		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
 		"Perform only the local boot identify, then greet the operator with an accurate state summary. Name the entity parked at its gated review stage and state that it remains held there. Then STOP for input; do not engage the workflow.",
-		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, archive, or edit the entity sitting at its gate. Your final response must name `Gate Check` at `review`, say it remains held, and hint that the operator can use `engage` to act.",
+		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, archive, or edit the entity sitting at its gate. Your final response must include these exact lines: `"+shallowBootHeldGateLine+"` and `"+shallowBootEngageHintLine+"`",
 	)
 }
 

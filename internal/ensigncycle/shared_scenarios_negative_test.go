@@ -409,7 +409,7 @@ func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 	// The realized shallow-boot end-state passes: no team config, the gate entity
 	// unchanged, and an accurate held-gate greet present.
 	gate := shallowBootGateEntity()
-	greet := "Workflow overview: 1 task is held.\nGate state: Gate Check remains at review.\nNext: use engage to act."
+	greet := "Workflow overview: 1 task is held.\n" + shallowBootHeldGateLine + "\n" + shallowBootEngageHintLine
 	good := shallowBootObservation{
 		finalMessage: greet, gateBefore: gate, gateAfter: gate,
 	}
@@ -450,6 +450,22 @@ func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 	worktreeCreated.gateWorktreeCreated = true
 	if err := assertShallowBoot(worktreeCreated); err == nil {
 		t.Fatal("expected a worktree created for the gated entity to fail assertShallowBoot")
+	}
+
+	// Broken: the same keywords narrate that the gate was already resolved. The
+	// structured held-gate line must reject this false-green phrasing.
+	resolvedGate := good
+	resolvedGate.finalMessage = "Gate state: Gate Check at review was resolved.\n" + shallowBootEngageHintLine
+	if err := assertShallowBoot(resolvedGate); err == nil {
+		t.Fatal("expected an already-resolved gate message to fail assertShallowBoot")
+	}
+
+	// Broken: the gate is described as held but engage is narrated as completed,
+	// not offered prospectively as the operator's next action.
+	alreadyEngaged := good
+	alreadyEngaged.finalMessage = shallowBootHeldGateLine + "\nNext action: engage already completed."
+	if err := assertShallowBoot(alreadyEngaged); err == nil {
+		t.Fatal("expected an already-engaged message to fail assertShallowBoot")
 	}
 
 	// Broken: no greet — the final message lacks the held gate and engage hint.

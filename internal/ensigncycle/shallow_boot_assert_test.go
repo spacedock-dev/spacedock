@@ -22,7 +22,7 @@ type shallowBootObservation struct {
 	gateBefore string
 	gateAfter  string
 	// gateWorktreeCreated is true when a .worktrees/ dir was created for the gate
-	// entity (it must NOT be — no dispatch happened).
+	// entity (a durable dispatch fingerprint that must remain absent).
 	gateWorktreeCreated bool
 	// gateArchived is true when the gate entity was archived (it must NOT be — it is
 	// parked at its gate).
@@ -37,12 +37,17 @@ type shallowBootObservation struct {
 // transcript phrase as the sole signal):
 //
 //	(a)  the greet names the gate and reports that it remains held for engage;
-//	(b)  NO team artifact on disk (lazy-TeamCreate) AND no worker dispatched (the
-//	     gate entity is unchanged, not archived, no worktree created);
-//	(c)  the FO stopped for input without engaging or resolving the gate.
+//	(b)  NO team artifact on disk (lazy-TeamCreate) and no durable mutation or
+//	     dispatch fingerprint (the gate is unchanged, not archived, no worktree);
+//	(c)  the greet reports engage as the next operator action without resolving the
+//	     gate. This host-neutral durable oracle makes no per-command claim. The
+//	     Claude-only shallow-boot-window ledger is release cost evidence; the Codex
+//	     journey proves only the persisted no-mutation/no-artifact outcome. Absence
+//	     of transient Codex dispatch or engage commands remains unproved without
+//	     the semantic event classifier this task explicitly excludes.
 //
 // The absence-of-team-config is the lazy-TeamCreate proof; the unchanged gate
-// frontmatter is the shallow-boot / no-dispatch / no-mutation proof.
+// frontmatter is the shallow-boot no-persisted-mutation proof.
 func assertShallowBoot(o shallowBootObservation) error {
 	// (b) lazy-TeamCreate: no team artifact created at boot.
 	if o.teamConfigOnDisk {
@@ -64,11 +69,16 @@ func assertShallowBoot(o shallowBootObservation) error {
 	if o.gateWorktreeCreated {
 		return fmt.Errorf("a worktree was created for the gated entity — a dispatch happened at boot")
 	}
-	// (a) the greet accurately names the held gate and the engage boundary.
+	// (a) the greet uses the fixture's structured held-gate and prospective-engage
+	// lines. Loose keywords are insufficient: a resolved or already-engaged message
+	// can contain the same nouns.
 	lowerFinal := strings.ToLower(o.finalMessage)
-	for _, want := range []string{"gate check", "review", "engage"} {
+	for _, want := range []string{
+		strings.ToLower(shallowBootHeldGateLine),
+		strings.ToLower(shallowBootEngageHintLine),
+	} {
 		if !strings.Contains(lowerFinal, want) {
-			return fmt.Errorf("the greet did not report the held gate accurately: missing %q", want)
+			return fmt.Errorf("the greet did not report the held gate and prospective engage action accurately: missing %q", want)
 		}
 	}
 	return nil
