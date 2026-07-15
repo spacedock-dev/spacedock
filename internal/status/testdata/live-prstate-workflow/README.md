@@ -20,6 +20,6 @@ stages:
 
 Pins the shallow-boot accuracy dependency: a PR-bearing non-terminal entity's
 `pr_state` entry in `status --boot --json` must reflect the LIVE merge state (from
-`gh pr view`), not just the stored `pr:` field. The shallow-boot greet and the
-S7b before-greet merged-PR sweep both rest on this. A stubbed `gh` on PATH supplies
-the live state in the test.
+`gh pr view`), not just the stored `pr:` field. The shallow-boot greet's accurate
+local state summary rests on this. A stubbed `gh` on PATH supplies the live state
+in the test.

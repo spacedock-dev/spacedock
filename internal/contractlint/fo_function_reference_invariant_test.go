@@ -188,6 +188,19 @@ func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
 	}
 }
 
+func TestFOEngageRetainsStartupPRAdvancement(t *testing.T) {
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+	engage := foMarkdownSection(t, shared, "## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition")
+	for _, want := range []string{
+		"`«hooks.run»(\"startup\")` exactly once",
+		"The registered startup mod owns live PR advancement",
+	} {
+		if !strings.Contains(engage, want) {
+			t.Errorf("engage lost its startup PR advancement boundary %q", want)
+		}
+	}
+}
+
 func TestFOFunctionRequiredCallSites(t *testing.T) {
 	type site struct {
 		path, heading string

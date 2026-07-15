@@ -64,10 +64,10 @@ func bootPRState(t *testing.T, root, pathValue string) (status string, entries [
 // TestBootPRStateCarriesLiveMergeState is the shallow-boot accuracy pin: with `gh`
 // on PATH, a PR-bearing non-terminal entity's pr_state entry reflects the LIVE
 // merge state (`gh pr view` → MERGED), not just the stored `pr:` field. The
-// shallow-boot greet and the S7b before-greet merged-PR sweep both rest on this; a
-// regression that dropped the live `gh pr view` and echoed only the stored field
-// would not report a freshly-merged PR, breaking both. The stub `gh` makes the
-// live state deterministic and offline.
+// shallow-boot greet's accurate local state summary rests on this; a regression
+// that dropped the live `gh pr view` and echoed only the stored field would not
+// report a freshly-merged PR accurately. The stub `gh` makes the live state
+// deterministic and offline.
 func TestBootPRStateCarriesLiveMergeState(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "live-prstate-workflow"))
 	if err != nil {
@@ -97,8 +97,8 @@ func TestBootPRStateCarriesLiveMergeState(t *testing.T) {
 // TestBootPRStateGhAbsentReportsUnknown pins the M6 degraded branch: when `gh` is
 // absent from PATH, checkPRStates returns status "gh not available" with NO
 // entries. The shallow-boot greet keys off this to state PR merge status is
-// UNKNOWN (S7b skipped) rather than asserting an unknowable state. A PATH stripped
-// of `gh` reproduces the branch.
+// UNKNOWN rather than asserting an unknowable state. A PATH stripped of `gh`
+// reproduces the branch.
 func TestBootPRStateGhAbsentReportsUnknown(t *testing.T) {
 	root, err := filepath.Abs(filepath.Join("testdata", "live-prstate-workflow"))
 	if err != nil {

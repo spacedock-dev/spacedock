@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -22,12 +21,6 @@ type shallowBootObservation struct {
 	// dispatch or self-approve).
 	gateBefore string
 	gateAfter  string
-	// mergedAfter is the merged-PR entity's durable state read from wherever it
-	// lives after the boot (the archive, once S7b advances it). Empty when the file
-	// is gone from the active dir AND absent from the archive.
-	mergedAfter string
-	// mergedArchived is true when the merged-PR entity was moved to _archive/.
-	mergedArchived bool
 	// gateWorktreeCreated is true when a .worktrees/ dir was created for the gate
 	// entity (it must NOT be — no dispatch happened).
 	gateWorktreeCreated bool
@@ -39,26 +32,17 @@ type shallowBootObservation struct {
 	teamConfigOnDisk bool
 }
 
-var (
-	mergedTerminalStatus = regexp.MustCompile(`(?im)^status:\s*done\s*$`)
-	mergedVerdictPassed  = regexp.MustCompile(`(?im)^verdict:\s*PASSED\s*$`)
-	mergedModBlockClear  = regexp.MustCompile(`(?im)^mod-block:\s*$`)
-)
-
 // assertShallowBoot is the host-neutral AC-1 oracle over the run's durable on-disk
 // state and final message. It grades, on independent on-disk facts (never a
 // transcript phrase as the sole signal):
 //
-//	(a)  the greet presents a gate review + decision prompt;
-//	(a2) the S7b merged-PR entity is advanced before-greet — terminal frontmatter
-//	     (done / verdict PASSED / mod-block cleared) AND archived (the M3 proof);
+//	(a)  the greet names the gate and reports that it remains held for engage;
 //	(b)  NO team artifact on disk (lazy-TeamCreate) AND no worker dispatched (the
 //	     gate entity is unchanged, not archived, no worktree created);
-//	(c)  the FO stopped for input (it presented a gate, did not advance it).
+//	(c)  the FO stopped for input without engaging or resolving the gate.
 //
 // The absence-of-team-config is the lazy-TeamCreate proof; the unchanged gate
-// frontmatter is the shallow-boot / no-dispatch proof; the advanced+archived merged
-// entity is the S7b proof.
+// frontmatter is the shallow-boot / no-dispatch / no-mutation proof.
 func assertShallowBoot(o shallowBootObservation) error {
 	// (b) lazy-TeamCreate: no team artifact created at boot.
 	if o.teamConfigOnDisk {
@@ -80,30 +64,18 @@ func assertShallowBoot(o shallowBootObservation) error {
 	if o.gateWorktreeCreated {
 		return fmt.Errorf("a worktree was created for the gated entity — a dispatch happened at boot")
 	}
-	// (a2) S7b: the merged-PR entity is advanced and archived before-greet.
-	if !o.mergedArchived {
-		return fmt.Errorf("the merged-PR entity was not archived — S7b did not advance it before the greet")
-	}
-	if !mergedTerminalStatus.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity is not at the terminal stage (status: done) — S7b advancement is incomplete")
-	}
-	if !mergedVerdictPassed.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity has no verdict: PASSED — S7b advancement is incomplete")
-	}
-	if !mergedModBlockClear.MatchString(o.mergedAfter) {
-		return fmt.Errorf("the merged-PR entity still carries a mod-block — S7b did not clear it on advancement")
-	}
-	// (a) the greet presents a gate review + decision prompt.
+	// (a) the greet accurately names the held gate and the engage boundary.
 	lowerFinal := strings.ToLower(o.finalMessage)
-	if !strings.Contains(lowerFinal, "gate review:") || !strings.Contains(lowerFinal, "decision:") {
-		return fmt.Errorf("the greet did not present a gate review and decision prompt")
+	for _, want := range []string{"gate check", "review", "engage"} {
+		if !strings.Contains(lowerFinal, want) {
+			return fmt.Errorf("the greet did not report the held gate accurately: missing %q", want)
+		}
 	}
 	return nil
 }
 
 // gatherShallowBootObservation reads the run's durable on-disk state into a
-// shallowBootObservation: the gate entity's post-boot frontmatter, the merged
-// entity's state (from the archive once S7b advances it, else its active path), the
+// shallowBootObservation: the gate entity's post-boot frontmatter, its
 // archive/worktree facts, and the team-config-on-disk check under the host's team
 // root. It is host-neutral over the entity/archive/worktree state; teamRoot is the
 // host's team-config root (Claude: {home}/.claude/teams) — an empty teamRoot means
@@ -114,14 +86,6 @@ func gatherShallowBootObservation(t *testing.T, workflowRoot, teamRoot string, f
 		finalMessage: finalMessage,
 		gateBefore:   gateBefore,
 		gateAfter:    readFileAllowMissing(fx.gateEntityPath),
-	}
-	// The merged entity lives in _archive once S7b advances it; before that it stays
-	// at its active path. Read whichever exists so the assertion sees its real state.
-	if data, err := os.ReadFile(fx.mergedArchive); err == nil {
-		o.mergedAfter = string(data)
-		o.mergedArchived = true
-	} else {
-		o.mergedAfter = readFileAllowMissing(fx.mergedEntityPath)
 	}
 	if _, err := os.Stat(fx.gateEntityArchivePath(workflowRoot)); err == nil {
 		o.gateArchived = true

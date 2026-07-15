@@ -364,21 +364,15 @@ func filingPrompt(workflowRoot string) string {
 	)
 }
 
-// shallowBootFixture is the shallow-boot scenario's on-disk state plus the stub-gh
-// dir the runner prepends to PATH. The fixture seeds TWO entities: a gate-check at
-// a human gate (which the FO must present, not dispatch) and a PR-bearing
-// non-terminal entity whose stubbed `gh` reports MERGED (which S7b advances and
-// archives before-greet). The canonical pr-merge mod is registered so the boot
-// JSON `mods` map shows it and S7b can read it; the merged entity carries `pr` so
-// its terminal advancement clears the merge-hook guard without `--force`. The
-// fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner file;
-// the pure string builders below are default-tagged so the offline negative cases
-// reuse them without a model.
+// shallowBootFixture is the shallow-boot scenario's on-disk state. It seeds one
+// gate-check at a human gate, which the FO must name in its local boot summary but
+// must not dispatch or resolve. PR discovery and startup hooks begin at engage, so
+// this greet-only fixture deliberately carries no PR-bearing entity or merge mod.
+// The fixture writer (writeShallowBootWorkflow) lives in the live-tagged runner
+// file; the pure string builders below are default-tagged so the offline negative
+// cases reuse them without a model.
 type shallowBootFixture struct {
-	gateEntityPath   string
-	mergedEntityPath string
-	mergedArchive    string
-	stubGhDir        string
+	gateEntityPath string
 }
 
 func shallowBootReadme() string {
@@ -418,32 +412,12 @@ func shallowBootGateEntity() string {
 		"worktree:\n" +
 		"---\n" +
 		"# Gate Check\n\n" +
-		"This entity sits at the human review gate. The FO must present the gate at boot and stop — not dispatch a worker, not approve.\n\n" +
+		"This entity sits at the human review gate. The FO must name its held state in the boot summary and stop — not engage, dispatch a worker, or approve it.\n\n" +
 		"## Stage Report: implementation\n\n" +
 		"- DONE: Work exists\n" +
 		"  The implementation is complete and ready for review.\n" +
 		"\n### Summary\n\n" +
-		"The implementation stage is complete; the first officer must present the review gate and wait.\n"
-}
-
-func shallowBootMergedEntity() string {
-	return "---\n" +
-		"id: merged-pr\n" +
-		"title: Merged PR Entity\n" +
-		"status: implementation\n" +
-		"completed:\n" +
-		"verdict:\n" +
-		"pr: \"#42\"\n" +
-		"mod-block:\n" +
-		"worktree:\n" +
-		"---\n" +
-		"# Merged PR Entity\n\n" +
-		"A non-terminal entity carrying a PR whose stubbed `gh` reports MERGED. The boot's S7b merged-PR sweep must advance it to terminal (`done`, `verdict: PASSED`) and archive it BEFORE the greet — proving a greet-and-stop boot still advances a merged PR.\n\n" +
-		"## Stage Report: implementation\n\n" +
-		"- DONE: Work exists and a PR was opened\n" +
-		"  The PR (#42) has since merged; the boot must advance and archive this entity.\n" +
-		"\n### Summary\n\n" +
-		"PR #42 is merged; S7b advances this entity to done and archives it before the greet.\n"
+		"The implementation stage is complete; the first officer must report the held review gate and wait for engage.\n"
 }
 
 func shallowBootPrompt(workflowRoot string) string {
@@ -451,8 +425,8 @@ func shallowBootPrompt(workflowRoot string) string {
 		"Use $spacedock:first-officer for this whole run.",
 		"Workflow directory: "+workflowRoot,
 		"This is an interactive boot scenario. Do NOT enter single-entity auto-approval mode.",
-		"Boot the workflow: read startup state, advance any merged PR per the before-greet merged-PR sweep, then greet the operator with a state summary and present any entity parked at a gated review stage. Then STOP for input.",
-		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, or edit the entity sitting at its gate. Your final response must include a Gate review line and a Decision line asking for operator approval or rejection, and report the merged-PR entity as advanced.",
+		"Perform only the local boot identify, then greet the operator with an accurate state summary. Name the entity parked at its gated review stage and state that it remains held there. Then STOP for input; do not engage the workflow.",
+		"Do NOT create a team. Do NOT dispatch any worker. Do NOT approve, reject, advance, archive, or edit the entity sitting at its gate. Your final response must name `Gate Check` at `review`, say it remains held, and hint that the operator can use `engage` to act.",
 	)
 }
 
@@ -464,6 +438,27 @@ func TestShallowBootPromptUsesExactAbsoluteFixtureRoot(t *testing.T) {
 	}
 	if !strings.Contains(prompt, "Workflow directory: "+fixtureRoot) {
 		t.Fatal("shallow boot prompt does not anchor the exact absolute fixture root")
+	}
+}
+
+func TestShallowBootPromptIsMutationFreeInteractiveGreet(t *testing.T) {
+	prompt := strings.ToLower(shallowBootPrompt("/tmp/shallow-boot-workflow"))
+	normalized := strings.NewReplacer("-", " ", "‑", " ").Replace(prompt)
+	if strings.Contains(normalized, "merged pr") {
+		t.Fatal("shallow boot prompt still carries a merged-PR workload; discovery and advancement belong to engage")
+	}
+	for _, want := range []string{
+		"interactive boot scenario",
+		"local boot identify",
+		"greet the operator",
+		"gate",
+		"do not engage the workflow",
+		"do not create a team",
+		"do not dispatch any worker",
+	} {
+		if !strings.Contains(prompt, want) {
+			t.Errorf("mutation-free shallow boot prompt missing %q", want)
+		}
 	}
 }
 

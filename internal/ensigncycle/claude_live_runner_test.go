@@ -373,25 +373,20 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 }
 
 // runClaudeShallowBootScenario drives the real FO against the shallow-boot fixture
-// (a gate-check entity at a human gate + a PR-bearing entity whose stubbed `gh`
-// reports MERGED) with a per-run isolated team root, and grades the durable
-// end-state: the FO greets and presents the gate, S7b advances+archives the merged
-// PR before-greet, NO team config lands on disk, and NO worker is dispatched. It
-// then asserts the AC-2 behavioral signals (no TeamCreate before the greet, and no
-// pre-greet invocation of a deferred FO skill — fo-status-viewer / fo-write-core) and
-// the AC-6 measured signal (greet-turn context below the ~60k ceiling, no pre-greet
-// ~89k cache_creation spike) over the captured stream.
+// (one gate-check entity at a human gate) with a per-run isolated team root, and
+// grades the durable end-state: the FO greets with the accurate held-gate state,
+// NO entity mutation occurs, NO team config lands on disk, and NO worker is
+// dispatched. It then asserts the AC-2 behavioral signals (no TeamCreate before
+// the greet, and no pre-greet invocation of a deferred FO skill — fo-status-viewer
+// / fo-write-core) and the AC-6 measured signal (greet-turn context below the ~60k
+// ceiling, no pre-greet ~89k cache_creation spike) over the captured stream.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
-	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
-	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
-	scenarioRunner := runner.withStubPATH(fixture.stubGhDir)
-
-	result := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
+	result := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
 
 	// The Claude team root is {home}/.claude/teams — the exact path the comm-officer
 	// startup hook membership-checks and TeamCreate writes a team config.json under.

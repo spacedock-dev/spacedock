@@ -28,9 +28,8 @@ func writeDispatchRecoveryWorkflow(t *testing.T, root string) string {
 // context-budget`, etc. — to the REAL built binary at realBinary. It calls
 // realBinary by its absolute path rather than by PATH lookup, so prepending the
 // shim's dir ahead of the real binary's dir on PATH (via withStubPATH) cannot
-// recurse into itself. Mechanism precedent: the shallow-boot scenario's stub `gh`
-// (writeStubMergedGh in shallow_boot_fixture_live_test.go), which the same
-// withStubPATH seam carries.
+// recurse into itself. Other live scenarios use the same withStubPATH seam for
+// their scenario-local executable shims.
 func writeStubBreakGlassSpacedock(t *testing.T, realBinary string) string {
 	t.Helper()
 	dir := t.TempDir()
