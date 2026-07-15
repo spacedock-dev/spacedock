@@ -1,13 +1,13 @@
 ---
 id: zath5jk8c6txzq3rwn8a6m1g
 title: Complete removal of the assertGreetInvokesNoDeferredFOSkill greet oracle
-status: ideation
+status: implementation
 source: Follow-up from PR #512 (restore-fo-merge-write-lazy-loading-reset)
 started: 2026-07-15T04:14:21Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-remove-greet-deferred-skill-oracle
 issue:
 ---
 
