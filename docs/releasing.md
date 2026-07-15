@@ -110,15 +110,20 @@ green Runtime Live E2E run for its exact SHA. Stamp and push the release commit 
    emergency cut when the live matrix is unavailable, the gate accepts the auditable
    `SPACEDOCK_E2E_GATE_WAIVER` repo variable instead.)
 
-5. Write a changelog. Summarize the commits since the last tag into plain text:
+5. Write a changelog. For a stable release, inventory everything from the prior
+   stable tag through the candidate, including changes that first appeared in a
+   prerelease. Inventory first; compress it into public notes second:
 
    ```bash
-   git log $(git describe --tags --abbrev=0 origin/main)..HEAD --oneline
+   PREV_STABLE="$(git tag --list --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)"
+   git log "$PREV_STABLE..$REL_SHA" --oneline
    ```
 
-   One sentence names the release theme, then user-value-led `- ` bullets name
-   what upgrading gives users. Ignore workflow-state churn
-   (dispatch/advance/archive/mod-block/pr/report commits).
+   Use commits and PRs as source evidence, but write for users: one theme
+   sentence followed by 4–7 `- ` bullets that say what upgrading lets them do,
+   avoid, or rely on. Omit PR numbers, task IDs, filenames, tests and fixture or
+   oracle names, prose counts, CI wiring, and workflow-state churn. Finish with
+   one stable-to-stable `Full changelog` comparison link when useful.
 
 6. Create the annotated tag on the greened commit:
 
