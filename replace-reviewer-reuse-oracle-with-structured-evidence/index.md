@@ -1,8 +1,8 @@
 ---
 title: Replace reviewer-reuse inference with structured evidence
-status: backlog
+status: ideation
 source: "Test-infrastructure audit 2026-07-14."
-started:
+started: 2026-07-15T06:52:43Z
 completed:
 verdict:
 score:
