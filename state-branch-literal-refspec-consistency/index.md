@@ -187,3 +187,16 @@ Implemented one literal state-branch mapping so creation, resume, ready, commit,
 ### Summary
 
 Validation reproduced the literal-ref, fail-closed, ordinary-compatibility, full, race, and adversarial evidence at exact head `68556b83`. The release outcome is nevertheless REJECTED because canonical slug-based guidance can silently leave a dispatched folder-form entity uncommitted when a same-slug flat file exists; no product code was changed during validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Preserve the exact dispatched folder-form entity through generated commit guidance so a colliding flat file cannot turn the assigned commit into a success/no-op.
+  Commit `e442363a` adds a constrained `--entity-path` selector to the existing launcher-owned `state commit` flow and renders the canonical dispatch entity path into that action.
+- DONE: Add a focused flat-plus-folder collision regression that edits the canonical folder entity and proves the generated action commits that exact path while leaving the flat sibling untouched.
+  The real-Git collision fixture commits only `thing/index.md`, preserves `thing.md` byte-for-byte, and leaves the state checkout clean; dispatch tests and goldens pin the matching canonical action.
+- DONE: Retain all literal-ref, dual-validation, fail-closed, ordinary-compatibility, formatting, full, and race gates green; keep the fix within the existing command flow.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed at correction head `e442363a`; the diff adds no synchronization or lifecycle subsystem.
+
+### Summary
+
+Correction cycle 1 preserves the builder's canonical entity path through the existing state-commit command, removing the flat-first collision no-op without changing slug-only compatibility. The focused collision fixture and complete test gates are green at `e442363a`.
