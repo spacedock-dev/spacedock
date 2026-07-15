@@ -1,6 +1,6 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores (clean reset)
-status: validation
+status: implementation
 source: Clean reset from rejected 1k implementation, captain direction 2026-07-14
 started: 2026-07-14T14:12:36Z
 completed:
@@ -42,6 +42,15 @@ The prior implementation branch and its proof harness were rejected. This task i
 - **AC-2:** Structural coverage proves the entry skill has one eager canonical shared-core import and that the write/merge deferred references resolve to their canonical non-empty files. It does not infer runtime order from instruction prose or transcripts.
 - **AC-3:** Existing gate, filing, and terminal/recovery scenario assertions retain their durable success/refusal/archive outcomes without a contract-specific semantic trace oracle.
 - **AC-4:** Focused structural checks, `go test ./...`, `go test ./... -race`, and relevant exact-head local Codex journeys are green before Roborev. Local Claude live is not required; the same-model Claude ledger comparison remains the post-PR merge gate.
+
+## Feedback Cycles
+
+### Cycle 5 — PR live evidence correction
+
+- **Evidence defect (1k scope):** Exact-head PR run `29382760645`, Opus rerun job `87252929149`, invoked `fo-status-viewer` before the shallow-boot greet. The pre-existing `assertGreetInvokesNoDeferredFOSkill` stream oracle then failed. That oracle claims per-skill runtime order from a transcript and conflicts with the captain's direction that the same-model shallow-boot token ledger—not a contract-specific harness—proves this task's deferred-loading value.
+- **Correction:** Delete the pre-greet deferred-FO-skill assertion, its dedicated fixtures/controls, and stale runner/spec commentary. Do not replace it with another Skill/Read/path/command/event classifier. Retain the durable mutation-free gate/team assertions and the quantitative `shallow-boot-window` ledger.
+- **Separate evidence defect:** The same Opus job correctly advanced and dispatched `approved-gate`, then the unchanged keep-moving regex treated `no "want me to advance?" pause` as an actual permission request. That free-narration false positive is outside 1k and must be fixed in a separate, sequenced test-infrastructure task rather than folded into this branch.
+- **Return conditions:** Focused/full/race and relevant exact-head local Codex checks green, followed by an exact-head Roborev request. Local Claude remains unnecessary. Return without touching the separate keep-moving oracle.
 
 ## Stage Report: implementation
 
