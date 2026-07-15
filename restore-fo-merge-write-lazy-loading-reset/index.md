@@ -22,24 +22,24 @@ The prior implementation branch and its proof harness were rejected. This task i
 
 ## Required outcome
 
-- `skills/first-officer/SKILL.md` eagerly imports only the shared core; the active runtime adapter remains a boot read.
-- A mutation-free gate hold reads neither write nor merge core.
-- The first FO mutation reads the exact write core before the mutation. The first terminal or `mod-block=merge:*` recovery reads the exact merge core before merge-owned action; when both trigger together, write precedes merge.
+- `skills/first-officer/SKILL.md` eagerly imports only the shared core; the active runtime adapter remains a boot read, while write and merge remain canonical deferred references.
+- The contract keeps the intended triggers: write authority at the first FO mutation, merge handling at the first terminal or `mod-block=merge:*` recovery boundary, with write before merge when both apply.
 - Merged-PR discovery is not required on boot; it may happen on `engage`.
 - Do not change mutation resolution, merge resolution, routing, or terminal semantics. If a resolution is broken, that is a separate defect shared by eager and lazy loading.
+- Do not claim semantic runtime order from a bespoke transcript or command classifier. Release value is established by the post-PR same-resolved-model shallow-boot ledger comparison.
 
 ## Mechanism/value trace
 
-- Served value: avoid at least 8,000 bytes of unused cold contract while preserving supported-host behavior.
-- Simplest route: change the import/load cues and observe real host tool-call order plus durable workflow outcomes through the existing scenario runners.
-- Rejected heavier route: no new command parser, operation-language interpreter, PTY/session controller, lifecycle state, daemon, lease, or recovery protocol. If existing host events cannot prove a claim, stop for architecture review instead of implementing a second runtime.
+- Served value: reduce the real shallow-boot token window while preserving supported-host outcomes.
+- Simplest route: keep the small import/load-cue change, enforce only eager-import/reference closure structurally, retain existing durable scenario assertions, and let post-PR Claude CI compare the measured `shallow-boot-window` ledger against the published v0.24.0 baseline for the same resolved model.
+- Rejected mechanism: the contract-specific semantic trace observer is deleted. Do not replace it with shell/path/payload classifiers, runtime instrumentation, a command parser, operation-language interpreter, controller, lifecycle layer, daemon, lease, or recovery protocol.
 
 ## Acceptance criteria
 
-- **AC-1 (VALUE):** Fresh Claude and Codex mutation-free gate journeys load shared core plus the selected adapter, read neither deferred core through the gate, and save at least 8,000 cold bytes against the eager baseline.
-- **AC-2:** Existing filing and terminal/recovery journeys observe exact write/merge reads before their real supported commands, with no broad search, wrapper invocation, alternate-path retry, or earlier owned action; their durable success/refusal/archive outcomes remain unchanged.
-- **AC-3:** Structural coverage proves one eager canonical import and two resolvable delayed files only. It does not infer runtime order from instruction prose.
-- **AC-4:** Focused tests, `go test ./...`, `go test ./... -race`, and the relevant exact-head local Codex live journeys are green before Roborev is requested. The harness orchestrates and observes the supported runtime; it does not model arbitrary shell semantics.
+- **AC-1 (VALUE / RELEASE PROOF):** Post-PR Claude CI emits `shallow-boot-window` and compares the same resolved model against the published v0.24.0 ledger (Sonnet total 47,936, cache creation 638, pre-greet peak 9,864). The comparison must demonstrate the intended cold-window improvement before merge; record client/model drift, and do not treat a cross-model delta as evidence.
+- **AC-2:** Structural coverage proves the entry skill has one eager canonical shared-core import and that the write/merge deferred references resolve to their canonical non-empty files. It does not infer runtime order from instruction prose or transcripts.
+- **AC-3:** Existing gate, filing, and terminal/recovery scenario assertions retain their durable success/refusal/archive outcomes without a contract-specific semantic trace oracle.
+- **AC-4:** Focused structural checks, `go test ./...`, `go test ./... -race`, and relevant exact-head local Codex journeys are green before Roborev. Local Claude live is not required; the same-model Claude ledger comparison remains the post-PR merge gate.
 
 ## Stage Report: implementation
 
@@ -166,3 +166,16 @@ Exact-head deterministic gates, canonical-path Codex outcomes, implementer-owned
 ### Summary
 
 Cycle 2 closes the three routed examples with a bounded test-only observer change and all required local gates green. Exact-head Roborev nevertheless rejected three material proof gaps, so the last automatic correction stops without another code mutation and returns for cycle-3 captain escalation.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Delete the semantic trace observer and its scenario integrations without replacing it.
+  Commit `ea60aa7c1a44686b0d5bfe3e4dccb63b8ab62c8f` deletes the 575-line `fo_deferred_load_trace_test.go` oracle and removes its runner seam, cache-path resolver, scenario assertions, and observer-only stream fields. The Claude, Codex, PTY, and streamwatch runner files now match pre-task baseline `6e99954f`; no shell, path, payload, mutation, or terminal classifier replaces the oracle.
+- DONE: Preserve the smallest deferred write/merge product contract and only structural closure/import tests.
+  The retained branch delta is seven product/contractlint files with 59 insertions and 79 deletions against `6e99954f`: one eager shared-core import, canonical deferred write/merge references, adapter boot routing, and structural reference closure. The local 8,000-byte proxy test was removed so repository byte count cannot stand in for host token-window evidence; focused contract and live-fixture checks passed.
+- DONE: Use the same-resolved-model `shallow-boot-window` ledger comparison as release proof, with focused/full/race and exact-head Codex green before Roborev; local Claude is not required.
+  AC-1 records the published v0.24.0 Sonnet ledger (total 47,936, cache creation 638, pre-greet peak 9,864) as the post-PR comparison baseline and rejects cross-model deltas as proof. `gofmt -w ./cmd ./internal`, standalone `go test ./...`, and standalone `go test ./... -race` completed successfully; exact-head Codex gate-guardrail, merge-hook-guardrail, and filing journeys passed 3/3 in 171.99s before review. Roborev job `1446` reviewed the same head and returned `F` only because it requested host-specific runtime-event checks recreating the explicitly prohibited semantic observer; the finding was intentionally declined and no code changed after review.
+
+### Summary
+
+Cycle 3 removes the contract-specific semantic trace architecture and leaves the minimal deferred-core contract guarded only by structural closure/import checks and existing durable scenario outcomes. All required local gates and exact-head Codex journeys are green; the quantitative same-model Claude ledger comparison remains the post-PR release proof, and the reviewer request to restore semantic tracing was not implemented.
