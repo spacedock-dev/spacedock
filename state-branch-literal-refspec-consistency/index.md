@@ -200,3 +200,28 @@ Validation reproduced the literal-ref, fail-closed, ordinary-compatibility, full
 ### Summary
 
 Correction cycle 1 preserves the builder's canonical entity path through the existing state-commit command, removing the flat-first collision no-op without changing slug-only compatibility. The focused collision fixture and complete test gates are green at `e442363a`.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: At exact head e442363a6a37144c503808847859ac97c8ff2aa2, independently prove generated guidance commits the canonical folder entity under a flat/folder slug collision and leaves the flat sibling untouched.
+  The real-Git fixture committed only `thing/index.md`, preserved `thing.md` byte-for-byte, reported local commit success, and left the checkout clean; origin/no-origin and path-quoting guidance checks passed.
+- FAILED: AC-1 (VALUE): canonical generated commit guidance reaches the dispatched entity across supported path spellings.
+  A symlink-alias workflow with `--entity-path` naming the same real folder entity exited 1 because `resolveCommitEntityPath` compares cleaned strings instead of filesystem identity.
+- DONE: AC-2: literal origin/local parity, both invalid mappings, and wrong-HEAD paths still fail closed before mutation.
+  Focused `refs/heads/foo`, `-foo`, `@{-1}`, invalid init/new/ready/commit, local-only, and mismatch tests all passed at `e442363a`.
+- DONE: AC-3: ordinary `spacedock-state/dev` and generated-guidance compatibility remain intact.
+  Ordinary ready/commit, no-origin behavior, absolute workflow/entity paths, and worktree/non-worktree guidance tests passed.
+- FAILED: AC-4: independently reproduce a clean repository-wide race process gate.
+  Full tests passed and every touched/relevant package passed under race, but exact full-race runs hit unrelated pre-existing `ensigncycle` replay flakes and one external Claude install timeout; each exact failing test passed alone under race.
+- DONE: Re-run relevant literal-ref, invalid-value, wrong-HEAD, generated-guidance, full, and race checks; adversarially bypass the new exact-path handoff and prove the collision regression fails before restoring green.
+  Ignoring the explicit selector reproduced the original success/no-op failure; restoring exact head returned the collision test green and the disposable checkout clean.
+- FAILED: Run exact-head Roborev for e442363a6a37144c503808847859ac97c8ff2aa2 after independent green and report PASSED or REJECTED with AC coverage and precise material findings.
+  Roborev job `1465` returned a medium symlink-alias finding; independent command-level reproduction confirmed it, so the recommendation is REJECTED.
+- FAILED: Narrow fix recommendation — outcome defect affecting AC-1 at explicit entity-path identity comparison.
+  For split-root workers using a symlinked workflow root or macOS alias spelling, the observable harm is rejection before the assigned report commits; compare filesystem identity/canonical paths, return the checkout spelling, and add an alias regression.
+- SKIPPED: Expand the correction into e6j recovery behavior or lifecycle machinery.
+  The material defect is confined to the new selector boundary; the unrelated race flakes and prior reviewer-low diagnostics remain deferred risks outside this narrow fix.
+
+### Summary
+
+Correction head `e442363a` closes the flat/folder collision and preserves all literal-ref guards, but validation cycle 2 is REJECTED because equivalent symlink path spellings are rejected before commit. The adversarial audit is clean after restoration, no product files were changed, and the next correction remains a narrow filesystem-identity fix with one regression.
