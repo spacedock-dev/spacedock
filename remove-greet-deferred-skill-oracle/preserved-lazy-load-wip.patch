@@ -1,0 +1,162 @@
+diff --git a/internal/ensigncycle/claude_live_runner_test.go b/internal/ensigncycle/claude_live_runner_test.go
+index b5a5813f..95c2f9ca 100644
+--- a/internal/ensigncycle/claude_live_runner_test.go
++++ b/internal/ensigncycle/claude_live_runner_test.go
+@@ -376,11 +376,8 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
+ // (one gate-check entity at a human gate) with a per-run isolated team root, and
+ // grades the durable end-state: the FO greets with the accurate held-gate state,
+ // NO entity mutation occurs, NO team config lands on disk, and no durable dispatch
+-// fingerprint appears. It then asserts the AC-2 behavioral signals (no TeamCreate
+-// before the greet, and no pre-greet invocation of a deferred FO skill —
+-// fo-status-viewer / fo-write-core) and the AC-6 measured signal (greet-turn
+-// context below the ~60k ceiling, no pre-greet ~89k cache_creation spike) over the
+-// captured stream.
++// fingerprint appears. It then asserts the AC-2 behavioral signal (no TeamCreate
++// before the greet) and records the AC-6 measured signal over the captured stream.
+ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
+ 	t.Helper()
+ 	workflowRoot := t.TempDir()
+@@ -400,13 +397,6 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
+ 	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
+ 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+ 	}
+-	// AC-2: the greet invokes no deferred FO skill. The staged plugin ships the real
+-	// fo-status-viewer / fo-write-core skills (livePluginDir copies skills/), so the FO
+-	// COULD invoke them — this asserts the greet-and-stop boot renders from status --boot
+-	// without loading a deferred FO skill (present-gate is allowed pre-greet).
+-	if err := assertGreetInvokesNoDeferredFOSkill(result.stream); err != nil {
+-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
+-	}
+ 	// The boot-window oracle: a greet turn was produced (structural only — the
+ 	// former ~60k ceiling/spike thresholds no longer gate CI, see
+ 	// assertShallowBootMeasuredTurns).
+diff --git a/internal/ensigncycle/shallow_boot_measure_test.go b/internal/ensigncycle/shallow_boot_measure_test.go
+index 0afbcf01..ba740e5b 100644
+--- a/internal/ensigncycle/shallow_boot_measure_test.go
++++ b/internal/ensigncycle/shallow_boot_measure_test.go
+@@ -2,21 +2,10 @@ package ensigncycle
+ 
+ import (
+ 	"fmt"
+-	"strings"
+ 
+ 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
+ )
+ 
+-// deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
+-// must NOT invoke before the greet: the status-viewer surface, the write/id-style
+-// surface, and the dispatch-failure-recovery surface. Each loads only at its trigger
+-// (the FIRST status query / --set / id lookup / issue filing, the FIRST write to
+-// main, or a dispatch failure — never at boot). present-gate is deliberately NOT
+-// here — the greet legitimately presents a ready gate via
+-// Skill(skill="spacedock:present-gate") (Startup step 3), so the oracle keys on the
+-// skill ARGUMENT, not on any Skill call.
+-var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
+-
+ // teamToolNames are the Claude team-mode tool calls whose presence before the
+ // greet would mean an eager team was created. TeamCreate is the one the FO would
+ // fire; the others are listed so any team-lifecycle call pre-greet is caught.
+@@ -53,41 +42,6 @@ func assertNoTeamCreateBeforeGreet(stream string) error {
+ 	return nil
+ }
+ 
+-// assertGreetInvokesNoDeferredFOSkill is the AC-2 behavioral oracle over the captured
+-// stream's tool-call sequence: no pre-greet turn invokes a deferred FO skill (a Skill
+-// tool_use whose skill argument names fo-status-viewer or fo-write-core, in the turns
+-// up to and including the greet turn). It is a behavioral observation over the real
+-// run's tool ordering, NOT a contract grep — the sibling of
+-// assertNoTeamCreateBeforeGreet. The greet must compose its summary from status --boot
+-// + README frontmatter; a regression that eagerly loaded the deferred status-viewer or
+-// write skill surfaces a pre-greet Skill(spacedock:fo-status-viewer|fo-write-core) and
+-// fails this. It keys on the skill ARGUMENT, not on any Skill call — the greet
+-// legitimately invokes Skill(skill="spacedock:present-gate") to present a ready gate,
+-// so a blanket "no pre-greet Skill" oracle would false-fail that.
+-func assertGreetInvokesNoDeferredFOSkill(stream string) error {
+-	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
+-	if err != nil {
+-		return fmt.Errorf("parse stream for AC-2 deferred-skill check: %w", err)
+-	}
+-	if len(turns) == 0 {
+-		return fmt.Errorf("stream carried no assistant turns — nothing to check")
+-	}
+-	greet := greetTurnIndex(turns)
+-	if greet < 0 {
+-		return fmt.Errorf("every assistant turn dispatched — no greet turn produced")
+-	}
+-	for i := 0; i <= greet; i++ {
+-		for _, skill := range turns[i].SkillNames {
+-			for _, forbidden := range deferredFOSkillNames {
+-				if strings.Contains(skill, forbidden) {
+-					return fmt.Errorf("pre-greet turn %d invoked the deferred FO skill %q via Skill(skill=%q) — the greet must render from status --boot, not load a deferred FO skill (present-gate is allowed pre-greet)", i, forbidden, skill)
+-				}
+-			}
+-		}
+-	}
+-	return nil
+-}
+-
+ // assertShallowBootMeasured is the AC-6 structural oracle over a captured
+ // claude-stream.jsonl: it parses the stream per turn and asserts a greet turn was
+ // produced. It no longer gates on the ~60k greet-context ceiling or the ~89k
+diff --git a/internal/ensigncycle/shallow_boot_measure_unit_test.go b/internal/ensigncycle/shallow_boot_measure_unit_test.go
+index 25c7f4c0..4132d584 100644
+--- a/internal/ensigncycle/shallow_boot_measure_unit_test.go
++++ b/internal/ensigncycle/shallow_boot_measure_unit_test.go
+@@ -72,42 +72,6 @@ func TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate(t *testing.T)
+ 	}
+ }
+ 
+-// TestAssertGreetInvokesNoDeferredFOSkillOffline validates the AC-2 deferred-skill
+-// oracle against committed MULTI-DELTA streams: the shallow-boot positive (the greet
+-// renders from status --boot and invokes present-gate to show the ready gate, but no
+-// deferred FO skill) passes — proving the oracle keys on the skill ARGUMENT and does
+-// NOT flag the legitimate pre-greet Skill(spacedock:present-gate); the negative (a
+-// pre-greet Skill(spacedock:fo-status-viewer), on a LATER delta of its message) fails.
+-// Multi-delta is mandatory — the Skill lands on a later delta, so a first-delta-only
+-// parse would FALSE-PASS (the documented hollow-AC defect).
+-func TestAssertGreetInvokesNoDeferredFOSkillOffline(t *testing.T) {
+-	if err := assertGreetInvokesNoDeferredFOSkill(readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")); err != nil {
+-		t.Fatalf("shallow-boot positive fixture (renders from status --boot, invokes only present-gate pre-greet) must pass AC-2: %v", err)
+-	}
+-	if err := assertGreetInvokesNoDeferredFOSkill(readMeasureFixture(t, "greet-invokes-fo-status-viewer-skill.stream.jsonl")); err == nil {
+-		t.Fatal("the negative fixture (multi-delta pre-greet Skill(spacedock:fo-status-viewer)) must FAIL AC-2 — the Skill lands on a later delta, so a first-delta-only parse would false-pass")
+-	}
+-}
+-
+-// TestAssertGreetInvokesNoDeferredFOSkillCatchesLaterDeltaInvoke is the AC-2 positive
+-// control over the parser extension: a stream whose Skill(spacedock:fo-status-viewer)
+-// is on a LATER delta of its message (the real runner shape, NOT a synthetic
+-// single-delta one) must make assertGreetInvokesNoDeferredFOSkill RED. A
+-// first-delta-only parse drops the later-delta Skill entirely — the skill argument
+-// would be invisible and the greet-independence proof hollow. This mirrors the retired
+-// Read-based later-delta control; a Skill block can land on a later delta exactly like
+-// a Read, so retiring the Read control without a Skill equivalent would be a coverage
+-// regression on the design's riskiest path.
+-func TestAssertGreetInvokesNoDeferredFOSkillCatchesLaterDeltaInvoke(t *testing.T) {
+-	// msg_skill: thinking on delta[0], Skill(spacedock:fo-status-viewer) on delta[1]; then a text greet.
+-	stream := `{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":21000,"cache_creation_input_tokens":600},"content":[{"type":"thinking","thinking":"load the status viewer skill"}]}}
+-{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":21000,"cache_creation_input_tokens":600},"content":[{"type":"tool_use","id":"toolu_skill","name":"Skill","input":{"skill":"spacedock:fo-status-viewer"}}]}}
+-{"type":"assistant","message":{"id":"msg_greet","model":"claude-opus-4-8","usage":{"input_tokens":100,"cache_read_input_tokens":5000,"cache_creation_input_tokens":0},"content":[{"type":"text","text":"Workflow overview: ... Gate review: ... Decision: approve or reject?"}]}}`
+-	if err := assertGreetInvokesNoDeferredFOSkill(stream); err == nil {
+-		t.Fatal("a pre-greet Skill(spacedock:fo-status-viewer) on a LATER delta must make assertGreetInvokesNoDeferredFOSkill RED — the parser must merge later-delta skill names, not read only the first delta")
+-	}
+-}
+-
+ // TestParserExtractsTeamCallsFromRealHangCapture is the validator-named ready
+ // oracle: the committed real-runner stream `sonnet_teamdelete_hang.stream.jsonl`
+ // (20/27 message ids multi-delta; its lone TeamCreate and TeamDelete each land on a
+diff --git a/internal/ensigncycle/testdata/greet-invokes-fo-status-viewer-skill.stream.jsonl b/internal/ensigncycle/testdata/greet-invokes-fo-status-viewer-skill.stream.jsonl
+deleted file mode 100644
+index 576bb1d7..00000000
+--- a/internal/ensigncycle/testdata/greet-invokes-fo-status-viewer-skill.stream.jsonl
++++ /dev/null
+@@ -1,9 +0,0 @@
+-{"type":"system","subtype":"init","model":"claude-opus-4-8"}
+-{"type":"assistant","message":{"id":"msg_boot1","model":"claude-opus-4-8","usage":{"input_tokens":4,"output_tokens":12,"cache_creation_input_tokens":1200,"cache_read_input_tokens":8000},"content":[{"type":"thinking","thinking":"check the version"}]}}
+-{"type":"assistant","message":{"id":"msg_boot1","model":"claude-opus-4-8","usage":{"input_tokens":4,"output_tokens":12,"cache_creation_input_tokens":1200,"cache_read_input_tokens":8000},"content":[{"type":"tool_use","id":"toolu_ver","name":"Bash","input":{"command":"spacedock --version"}}]}}
+-{"type":"assistant","message":{"id":"msg_boot2","model":"claude-opus-4-8","usage":{"input_tokens":6,"output_tokens":40,"cache_creation_input_tokens":900,"cache_read_input_tokens":18000},"content":[{"type":"thinking","thinking":"read the boot state"}]}}
+-{"type":"assistant","message":{"id":"msg_boot2","model":"claude-opus-4-8","usage":{"input_tokens":6,"output_tokens":40,"cache_creation_input_tokens":900,"cache_read_input_tokens":18000},"content":[{"type":"tool_use","id":"toolu_boot","name":"Bash","input":{"command":"spacedock status --boot --json"}}]}}
+-{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"output_tokens":20,"cache_creation_input_tokens":600,"cache_read_input_tokens":21000},"content":[{"type":"thinking","thinking":"let me load the status viewer skill before greeting"}]}}
+-{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"output_tokens":20,"cache_creation_input_tokens":600,"cache_read_input_tokens":21000},"content":[{"type":"tool_use","id":"toolu_skill","name":"Skill","input":{"skill":"spacedock:fo-status-viewer"}}]}}
+-{"type":"assistant","message":{"id":"msg_greet","model":"claude-opus-4-8","usage":{"input_tokens":120,"output_tokens":300,"cache_creation_input_tokens":400,"cache_read_input_tokens":42000},"content":[{"type":"text","text":"Workflow overview: 1 task at the review gate. Gate review: ... Decision: approve or reject?"}]}}
+-{"type":"result","subtype":"success","usage":{"input_tokens":130,"output_tokens":352,"cache_creation_input_tokens":2500,"cache_read_input_tokens":68000},"total_cost_usd":0.04,"result":"Workflow overview: 1 task at the review gate. Gate review: ... Decision: approve or reject?"}
