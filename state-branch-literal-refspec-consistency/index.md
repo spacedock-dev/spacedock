@@ -265,3 +265,20 @@ Correction cycle 2 makes the explicit entity selector alias-safe without weakeni
 ### Summary
 
 Correction head `cda550e0` fixes symlink and native alias identity while preserving collision and outside-checkout checks, but validation cycle 3 is REJECTED because allowed directory-shaped spellings can recursively commit non-entity contents. The exact command-level evidence and narrow regular-file fix are recorded for captain escalation; no product files were changed during validation.
+
+## Stage Report: validation (cycle 3 classification amendment)
+
+- DONE: Correct the outcome classification without rewriting the historical cycle-3 report.
+  Roborev job `1472` retains severity **Medium**, but the directory-shaped entity-path finding is **DEFERRED RISK**, not a release-blocking outcome defect.
+- DONE: Apply the newer normal-workflow outcome/deferrable criteria.
+  Normal generated guidance receives a dispatch-verified regular-file entity path; the trigger requires malformed directory-shaped state or an unproven post-dispatch replacement race, so no promised normal-workflow AC is shown failing.
+- DONE: Record concrete revisit conditions for the deferred risk.
+  Revisit if `--entity-path` becomes a documented arbitrary-path interface, or if a real workflow demonstrates directory-shaped entity paths or the post-dispatch replacement race.
+- DONE: Correct the validation recommendation while preserving all prior exact-head evidence.
+  Validation recommendation for exact head `cda550e0fd054f8ea22d1bd9b302d749a4761d50` is **PASSED with the deferred risk**; prior collision, alias, containment, literal-ref, adversarial, full, race, and Roborev evidence remains unchanged.
+- SKIPPED: Edit product code, rerun validation, or rewrite the historical report.
+  This is a durable report-only classification amendment as requested.
+
+### Summary
+
+The newer release-scope classifier separates potential impact from release outcome: Roborev severity remains Medium, while the unpromised malformed-state trigger makes the finding deferrable. Cycle-3 validation is therefore corrected to PASSED with a documented deferred risk and explicit revisit conditions.
