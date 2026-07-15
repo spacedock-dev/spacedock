@@ -47,12 +47,6 @@ var feedbackCycleEntry = regexp.MustCompile(`(?im)^- Cycle \d+:`)
 // report rather than any prose that merely names the stage.
 var implementationReport = regexp.MustCompile(`(?m)^## Stage Report: implementation`)
 
-// validationReport anchors validation worker output in the durable entity body.
-// Codex exec may omit spawn/thread/assignment metadata, so the Codex live
-// reviewer oracle can fall back to this durable stage report only after the
-// host-neutral two-cycle rejection state has passed.
-var validationReport = regexp.MustCompile(`(?m)^## Stage Report: validation`)
-
 // feedbackCyclesSection returns the body of the entity's `### Feedback Cycles`
 // section — from its heading to the next heading (any `##`/`###`/etc.) or EOF.
 // Scoping the cycle-entry and escalation-marker matches to this section keeps the
