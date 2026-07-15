@@ -183,13 +183,39 @@ This placement avoids dispatching a fresh behavioral validator merely to relay
 code-review findings back to implementation. It also keeps ordinary Roborev
 iterations out of Spacedock's validation feedback-cycle count.
 
-The implementation worker records one disposition for each synthesized
+Before assigning a disposition, the implementation worker records this
+release-scope triage for each synthesized finding:
+
+1. **Released user and normal workflow:** identify who encounters the finding
+   in a released product and the normal workflow that triggers it.
+2. **Observable harm:** state what that user loses or cannot complete.
+3. **Protected value:** name the affected value AC or a non-negotiable safety,
+   security, data-integrity, or compatibility boundary.
+4. **Trigger evidence:** cite evidence that the trigger is common or explicitly
+   promised.
+
+All four fields are required before implementation assigns `fix`, `rebut`, or
+`needs decision`. Without completed triage, a finding cannot be classified as
+release-blocking. Completed triage supports classification; it does not by
+itself make a finding release-blocking.
+
+After triage, the implementation worker records one disposition for each
 finding:
 
 - `fix`: change the code and strengthen proof;
 - `rebut`: cite concrete repository evidence and ask a replacement independent
   panel to decide whether the finding clears;
 - `needs decision`: stop for a real product, contract, or policy fork.
+
+The automatic review-fix-review loop allows at most two remediation rounds
+after the initial required panel. A remediation round starts when implementation
+acts on the current panel's findings and ends when the replacement
+`code_completion` panel completes. Required quick-gate reruns are part of that
+round, not additional rounds. If findings remain after the second remediation
+round, implementation stops and sends the First Officer and captain every
+remaining finding, its completed four-field triage, its disposition, and the
+supporting evidence. No worker may make another code change or launch another
+panel until the First Officer or captain directs the next action.
 
 The implementation stage remains incomplete until the current head has passing
 required evidence. Operational failure also blocks completion; absent output is
@@ -206,7 +232,8 @@ records:
 - current implementation head SHA;
 - panel name and configured member outcomes;
 - synthesis-parent verdict;
-- disposition of every synthesized finding.
+- completed four-field release-scope triage and disposition of every
+  synthesized finding.
 
 The synthesis parent is authoritative. Required member jobs must finish
 successfully and appear exactly once, but an individual member verdict is not a
@@ -306,8 +333,11 @@ After the current working-tree changes settle:
    while the combined green candidate does enqueue `quick`.
 6. Prove the final-tip quick job finishes before `code_completion` starts;
    Medium-or-higher findings hold implementation while Low findings do not.
-7. Prove a failing required panel keeps the entity in implementation, a fixing
-   commit invalidates the old result, and a replacement panel can pass.
+7. Prove every finding gets all four release-scope fields before disposition or
+   release-blocking classification. Show that a fixing commit invalidates the
+   old result, a replacement panel can pass, and findings left after two
+   remediation rounds stop for First Officer/captain direction with their
+   completed triage before another change or panel.
 8. Confirm the fresh validator verifies the stored exact-head evidence and
    independently reproduces the entity's ACs.
 

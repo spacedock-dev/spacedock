@@ -109,15 +109,26 @@ Implementation is complete only when:
 
 The synthesis parent is the review authority. Individual member verdicts are inputs, not separate gates.
 
-Record compact evidence in the implementation Stage Report: Roborev version, parent ID, exact range and head, panel, member execution outcomes, parent verdict, and finding dispositions. When the full synthesis contains findings or would obscure the report, store it as a folder-form entity artifact and link it. Do not duplicate the full synthesis in both places.
+Record compact evidence in the implementation Stage Report: Roborev version, parent ID, exact range and head, panel, member execution outcomes, parent verdict, and each finding's completed release-scope triage and disposition. When the full synthesis contains findings or would obscure the report, store it as a folder-form entity artifact and link it. Do not duplicate the full synthesis in both places.
 
 ## Keep fixes and routing in Spacedock
 
-For every synthesized finding, implementation records one disposition:
+Before assigning a disposition, implementation records this release-scope triage for every synthesized finding:
+
+1. **Released user and normal workflow:** identify who encounters the finding in a released product and the normal workflow that triggers it.
+2. **Observable harm:** state what that user loses or cannot complete.
+3. **Protected value:** name the affected value AC or a non-negotiable safety, security, data-integrity, or compatibility boundary.
+4. **Trigger evidence:** cite evidence that the trigger is common or explicitly promised.
+
+All four fields are required before implementation assigns `fix`, `rebut`, or `needs decision`. Without completed triage, a finding cannot be classified as release-blocking. Completed triage supports classification; it does not by itself make a finding release-blocking.
+
+After triage, implementation records one disposition for every finding:
 
 - `fix` — implementation changes code and strengthens proof;
 - `rebut` — implementation cites repository evidence, then requests a replacement panel;
 - `needs decision` — the First Officer stops for a genuine product, contract, or policy choice.
+
+The automatic review-fix-review loop allows at most two remediation rounds after the initial required panel. A remediation round starts when implementation acts on the current panel's findings and ends when the replacement `code_completion` panel completes. Required quick-gate reruns are part of that round, not additional rounds. If findings remain after the second remediation round, implementation stops and sends the First Officer and captain every remaining finding, its completed four-field triage, its disposition, and the supporting evidence. No worker may make another code change or launch another panel until the First Officer or captain directs the next action.
 
 Roborev supplies evidence only. It does not run a fix/refine loop, make commits, advance entity state, or route a rejection. Ordinary review-fix-review iterations remain inside implementation and do not count as validation feedback cycles.
 
@@ -131,7 +142,7 @@ Validation remains behavior-focused: reproduce every acceptance criterion, run r
 
 - Advisory post-commit review fails open for the commit; missing coverage is not a clean review and must be repaired before the final-tip cost gate. Inspect the stored quick result instead of treating `wait` exit status alone as the severity decision.
 - The required `code_completion` panel fails closed on findings, absence, daemon failure, database or disk failure, required-member execution failure, or synthesis failure.
-- Keep a failed required panel in implementation; do not present it as a human approval gate.
+- Keep a failed required panel in implementation. Before the two-round automatic limit, do not present it as a human approval gate; at the limit, stop and escalate the remaining findings with their completed triage as required above.
 - Do not count ordinary implementation review iterations as validation feedback cycles.
 
 ## Respect the sandbox boundary
