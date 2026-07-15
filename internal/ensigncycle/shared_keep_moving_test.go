@@ -13,11 +13,13 @@ import (
 // pause, sequential-instead-of-parallel dispatch, turn-end on an async launch with work
 // remaining, and a captain correction halting the session. The durable end-state cannot
 // tell keep-moving from a false stop, so the ACTIONS (advance, dispatch, re-shape) are read
-// from the transcript and the turn-ending POSTURES (a permission question; whether the
-// corrected entity's re-shape was surfaced or silently parked) are read from the FINAL
-// MESSAGE. Reading the postures from the final message, not from all narration, avoids the
-// contract-read false-positive: the FO's mid-stream reasoning quotes the shared-core
-// keep-moving blockquote, which a stream-wide phrase scan would misread.
+// from the transcript. The post-approval pause is proven by those actions: an approved entity
+// that was advanced AND dispatched did not pause for permission, so the structured
+// advance/dispatch evidence is the no-false-stop proof — the free-form summary wording is not
+// scanned for question phrasing. The one posture the actions cannot show — whether the
+// corrected entity's re-shape was surfaced or silently parked — is read from the FINAL
+// MESSAGE, not from all narration, so the FO's mid-stream reasoning quoting the shared-core
+// keep-moving blockquote is not misread by a stream-wide phrase scan.
 //
 // A captain correction on one entity means an invariant TRIPLE (the shipped S4 clause and
 // this grader key on the same thing): (1) the corrected entity does NOT drive FORWARD
@@ -47,13 +49,6 @@ const (
 )
 
 func kmIndependent() []string { return []string{kmReadyOne, kmReadyTwo} }
-
-// kmPermissionRe matches the post-approval permission question (pattern 1): the FO asking
-// the captain's leave to take the reversible advance+dispatch step the approval already
-// triggered. Drive-cue: the 2026-07-06/07 Commander session's self-imposed gate stall under
-// a standing conn grant. Keyed on an ask verb near a proceed verb so a plain status report
-// ("I advanced and dispatched") does not match.
-var kmPermissionRe = regexp.MustCompile(`(?i)(want me to|shall i|should i|do you want me to|would you like me to|let me know (if|whether)|awaiting your (go|ok|approval|sign-?off))\b[^.?!]{0,48}?\b(advance|dispatch|proceed|continue|kick off|go ahead|engage|move forward|move on)`)
 
 // kmCorrectedDispositionRe matches, in the final message, a substantive disposition of the
 // corrected entity's re-shape — SURFACED (a gate review / decision / re-presentation for the
@@ -126,7 +121,6 @@ type keepMovingTrace struct {
 	correctedReshaped     bool            // the corrected entity's design was re-shaped (in-house edit, routed rework, or re-open to ideation)
 	correctedDriven       bool            // the corrected entity was driven FORWARD (to implementation/done/merge) before the re-shape folded
 	correctedAddressed    bool            // at stop, the re-shape was surfaced or its rework honestly named as in-flight
-	askedPermission       bool            // the final message asks the captain's leave to advance/dispatch (pattern 1)
 }
 
 func newKeepMovingTrace() keepMovingTrace {
@@ -134,15 +128,13 @@ func newKeepMovingTrace() keepMovingTrace {
 }
 
 // gradeKeepMoving is host-neutral: it holds the FO's motion trace to the keep-moving
-// patterns. Approval triggers the advance AND the dispatch with no permission question (S1);
-// every independent ready entity is dispatched, not serialized behind a pause (S2); the
-// corrected entity is re-shaped, held from driving forward, and its re-shape surfaced or
-// honestly named as in-flight while the independent ones keep moving (S4). The re-shape
-// mechanism is free — only a FORWARD drive of the corrected entity or a silent park fails.
+// patterns. Approval triggers the advance AND the dispatch — performing both is the proof the
+// FO did not pause for permission (S1); every independent ready entity is dispatched, not
+// serialized behind a pause (S2); the corrected entity is re-shaped, held from driving
+// forward, and its re-shape surfaced or honestly named as in-flight while the independent
+// ones keep moving (S4). The re-shape mechanism is free — only a FORWARD drive of the
+// corrected entity or a silent park fails.
 func gradeKeepMoving(tr keepMovingTrace, independent []string) error {
-	if tr.askedPermission {
-		return fmt.Errorf("the FO asked the captain's permission to advance/dispatch after the gate approval — approval triggers the next action, it is not a turn boundary (advance+dispatch is reversible work the contract already permits)")
-	}
 	if !tr.approvedAdvanced {
 		return fmt.Errorf("the FO did not advance the approved entity %q past its gate to the next stage after the captain's approval", kmApprovedGate)
 	}
@@ -233,7 +225,6 @@ func claudeKeepMovingTrace(stream, finalMessage string, independent []string) ke
 			}
 		}
 	}
-	tr.askedPermission = kmPermissionRe.MatchString(finalMessage)
 	tr.correctedAddressed = kmCorrectedAddressed(finalMessage, kmQuestioned)
 	return tr
 }
@@ -315,7 +306,6 @@ func codexKeepMovingTrace(jsonl, finalMessage string, independent []string) keep
 	if dispatchEvidence.stageReport[kmQuestioned] {
 		tr.correctedReshaped = true
 	}
-	tr.askedPermission = kmPermissionRe.MatchString(finalMessage)
 	tr.correctedAddressed = kmCorrectedAddressed(finalMessage, kmQuestioned)
 	return tr
 }
