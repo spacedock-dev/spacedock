@@ -1,7 +1,7 @@
 ---
 title: Make unhandled worker completions durable and scheduler-visible
 status: backlog
-source: "Captain report of s0 completion parked behind unchanged implementation state; relevant to c6 continuation ledger feed, 2026-07-15"
+source: "Captain report of s0 completion parked behind unchanged implementation state; standalone scheduler/worker-completion awareness coordinated with jv and roadmap 0222, 2026-07-15"
 started:
 completed:
 verdict:
@@ -55,9 +55,11 @@ For Codex, reconcile the durable feed with `list_agents` so a completed worker a
 
 ## Relationships and scope
 
-- **Feeds into `c6` `codex-post-compaction-contract-reload`:** extend its typed continuation ledger and priority order rather than create a parallel ledger or lifecycle controller.
-- **Coordinates with `jv` `codex-worker-shutdown-and-roster-reconcile`:** reuse its worker identity, roster, and completion-epoch evidence where compatible.
+- **Standalone scheduler/worker-completion awareness:** this task coordinates primarily with `jv` `codex-worker-shutdown-and-roster-reconcile` and roadmap 0222.
+- **Coordinates with `jv`:** reuse its worker identity, roster, and completion-epoch evidence where compatible.
 - **Coordinates with roadmap 0222:** the unshipped `spacedock dispatch next-action` is the preferred deterministic consumer of this feed.
+- **Independent of `c6` `codex-post-compaction-contract-reload`:** `c6` owns post-compaction rehydration, authorization, and hooks. This task neither feeds into, expands, nor depends on `c6`.
+- If both tasks use typed records, keep their schemas compatible and reusable rather than create conflicting ledgers.
 - A mandatory turn-boundary check for unhandled completions, completed stages still recorded at the old stage, and newly unblocked dependencies is an acceptable near-term guard only if backed by a failing behavioral test. Prose alone is not the end state.
 - Do not add a watcher, daemon, lease, retry controller, or transcript/narration oracle.
 
