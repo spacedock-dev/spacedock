@@ -1,16 +1,17 @@
 ---
 id: zath5jk8c6txzq3rwn8a6m1g
 title: Complete removal of the assertGreetInvokesNoDeferredFOSkill greet oracle
-status: validation
+status: done
 source: Follow-up from PR #512 (restore-fo-merge-write-lazy-loading-reset)
 started: 2026-07-15T04:14:21Z
-completed:
-verdict:
+completed: 2026-07-15T06:35:47Z
+verdict: passed
 score:
 worktree: .worktrees/spacedock-ensign-remove-greet-deferred-skill-oracle
 issue:
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:513
+archived: 2026-07-15T06:35:47Z
 ---
 
 Complete the removal of the brittle `assertGreetInvokesNoDeferredFOSkill` AC-2 greet oracle, plus its two dedicated unit-test controls and its dedicated fixture, that PR #512 started but left uncommitted in its worktree — while RETAINING the durable shallow-boot guards. The started-but-unmerged removal is preserved verbatim as `preserved-lazy-load-wip.patch` beside this entity (captured from `.worktrees/spacedock-ensign-restore-fo-merge-write-lazy-loading-reset`).
