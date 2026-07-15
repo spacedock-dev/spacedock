@@ -1,17 +1,18 @@
 ---
 title: Retire the keep-moving permission narration oracle
-status: validation
+status: done
 source: "PR #512 Runtime Live E2E run 29382760645: Opus jobs 87249808752 and 87252929149 both advanced and dispatched the approved entity, then failed because kmPermissionRe matched a negated quotation in the final summary."
 started: 2026-07-15T04:14:25Z
-completed:
-verdict:
+completed: 2026-07-15T06:35:49Z
+verdict: passed
 score: 0.9
 worktree: .worktrees/spacedock-ensign-retire-keep-moving-permission-narration-oracle
 issue:
 milestone: 0.25.0
 id: bjdm4tdnk93813p9nj913j2y
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:514
+archived: 2026-07-15T06:35:49Z
 ---
 
 The keep-moving live grader must prove that an approved entity advances and dispatches without letting free-form summary wording veto structured action evidence.
