@@ -158,3 +158,28 @@ Cycle 3 makes both validation halves independently falsifiable and extends no-mu
 ### Summary
 
 Implemented one literal state-branch mapping so creation, resume, ready, commit, synchronization, and peer diagnostics address the same configured history. Dispatch guidance now delegates the sole commit/sync action to the launcher, with exact-ref and fail-closed behavior proven by focused real-Git tests and both full gates.
+
+## Stage Report: validation
+
+- FAILED: Independently verify AC-1 through AC-4 at exact head 68556b834b1ff9e306b4bf9cde5d350109661aaa using focused real-Git/generated-guidance checks plus full and race gates; do not repair implementation.
+  AC-1 fails at generated guidance's exact-path-to-slug handoff; AC-2 through AC-4 otherwise reproduce green at the pinned clean head.
+- FAILED: AC-1 (VALUE): literal refs and canonical generated commit/sync guidance preserve the dispatched entity and addressed history.
+  An exact-head collision fixture with both `foo.md` and dispatched `foo/index.md` made `state commit foo` exit 0/no-op while leaving `foo/index.md` uncommitted because the CLI resolves flat-first.
+- DONE: AC-2: local-only/origin-backed parity, dual invalid-value validation, and mismatch guards fail closed before mutation.
+  Focused real-Git tests passed for `-foo` and `@{-1}` across new/init/ready/commit; the `-foo` init bypass mutated the previously absent local ref seeded from remote `refs/heads/-foo`, proving the fixture boundary.
+- DONE: AC-3: ordinary `spacedock-state/dev` ready/commit and generated-guidance compatibility remain green for the promised literal-ref scope.
+  Existing ordinary ready/commit, local-only execution, resolver mapping, origin/no-origin guidance, and quote-bearing path tests passed.
+- DONE: AC-4: focused real-Git regressions, full tests, race tests, bounded diff, and changed-file formatting checks pass.
+  `go test ./...` passed; `go test ./... -race` passed on retry after one unrelated `ensigncycle` replay transient passed alone; all changed Go files are gofmt-clean.
+- DONE: Run the detached adversarial audit so bypassing raw-guidance routing, B validation, H validation, or the symbolic-HEAD guard makes its targeted regression fail and restoring the exact head returns green.
+  Raw and hand-rendered guidance, `B=-foo`, `H=@{-1}`, and HEAD-guard mutations each failed at the intended boundary; the disposable checkout restored clean to `68556b83` after every edit.
+- FAILED: Run exact-head Roborev only after independently confirming implementer-owned green, then report PASSED or REJECTED with durable ref/process/state evidence and any material findings.
+  Roborev job `1456` rejected `68556b83` with the folder/flat path-selection defect; independent reproduction confirmed the medium finding, so the recommendation is REJECTED.
+- FAILED: Narrow fix recommendation — outcome defect affecting AC-1 at the generated-guidance → slug resolver → path-scoped commit boundary.
+  For the released split-root worker and explicitly supported folder-form entity, the observable harm is a success/no-op response while the assigned report remains uncommitted; preserve the exact dispatched path or make CLI resolution folder-first and add a collision regression.
+- SKIPPED: Treat unrelated hygiene and reviewer-low observations as release blockers.
+  Pre-existing out-of-diff `internal/release/journeydelta.go` formatting, seven-character peer-SHA ambiguity, and full tracking-ref diagnostic text are deferred risks; revisit during the narrow fix or when their concrete triggers become promised workloads.
+
+### Summary
+
+Validation reproduced the literal-ref, fail-closed, ordinary-compatibility, full, race, and adversarial evidence at exact head `68556b83`. The release outcome is nevertheless REJECTED because canonical slug-based guidance can silently leave a dispatched folder-form entity uncommitted when a same-slug flat file exists; no product code was changed during validation.
