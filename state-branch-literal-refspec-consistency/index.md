@@ -1,6 +1,6 @@
 ---
 title: Make literal state-branch refspecs consistent
-status: validation
+status: implementation
 source: "Roborev job 1434 on e6j exact head 58b304ef; captain filing request 2026-07-15."
 started: 2026-07-14T16:49:02Z
 completed:
@@ -104,6 +104,7 @@ This is a prerequisite for rebase and revalidation of `state-ready-cwd-path-reso
 ### Feedback Cycles
 
 - **Cycle 1 — validation → implementation (2026-07-15):** Exact-head Roborev job 1456 and an independent collision fixture rejected commit `68556b834b1ff9e306b4bf9cde5d350109661aaa`. Outcome defect serving AC-1: generated commit guidance discards the canonical folder-form entity path and emits `state commit <slug>`; when both `<slug>.md` and `<slug>/index.md` exist, flat-first resolution can return success without committing the dispatched folder entity. Route the narrow fix to preserve the exact dispatched path (or otherwise make canonical selection unambiguous), add a flat/folder collision regression, and retain all literal-ref and fail-closed evidence.
+- **Cycle 2 — validation → implementation (2026-07-15):** Exact-head Roborev job 1465 and independent command-level reproduction rejected commit `e442363a6a37144c503808847859ac97c8ff2aa2`. Outcome defect serving AC-1: the new exact-path selector compares cleaned path strings, so a symlinked workflow root or macOS alias spelling can reject two paths that identify the same folder-form entity before committing it. Route the narrow fix to compare canonical filesystem identity while returning the state checkout's canonical flat/folder spelling, add a symlink-alias regression, and preserve the closed collision and literal-ref proofs.
 
 ## Stage Report: ideation
 
