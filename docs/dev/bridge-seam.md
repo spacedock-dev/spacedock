@@ -40,9 +40,13 @@ protocol, and the FO/ensign prose that binds each host's producer.
 
 **Load-bearing:** the `_bridge/fo.<slug>.json` heartbeat MUST carry the harness
 session id. The Claude Stop-hook check resolves which slugs belong to a stopping
-session by matching the Stop payload's `session_id` against the heartbeats; a
-heartbeat that omits or mismatches that id makes the check resolve nothing, so a
-Claude FO is never blocked and queued captain intent is delivered never.
+session by matching the Stop payload's `session_id` against the heartbeats (and,
+secondarily, against session→entity markers — but an FO session writes no marker,
+markers being ensign-on-entity-Read only, so the heartbeat is the effective
+resolver). A heartbeat that omits or mismatches that id makes the check resolve
+nothing, so a Claude FO is never blocked and queued captain intent is delivered
+never. The harness id is real and already read elsewhere in spacedock
+(`internal/dispatch/build.go` reads `$CLAUDE_CODE_SESSION_ID`).
 
 ## Hook registrations
 
@@ -56,16 +60,31 @@ Claude FO is never blocked and queued captain intent is delivered never.
 - `.pi/extensions/spacedock.ts`: forwards Pi lifecycle payloads to
   `bridge egress emit --host pi`.
 
-## Check the inbox line cap
+## Durable-wake caveat (Claude)
 
-`bridge inbox check` scans `_bridge/inbox.jsonl` with a 1 MiB per-line cap; an
-oversized intent line makes the check honestly emit `{}` (no block) rather than
-error. Pair with Bridge's own reader cap follow-up.
+The synchronous Stop hook (`bridge inbox check`) is the durable wake for an
+**interactive** unmanaged Claude FO: on turn end it emits `{"decision":"block"}`
+while intent is queued so the FO drains before stopping. Under `claude -p`
+(headless), a Stop-hook block decision is not a guaranteed re-entry — but a
+headless FO in practice is **daemon-managed**, and a managed FO is woken by the
+Bridge daemon's in-process `--resume`, not by this hook (the hook is not on the
+managed delivery path). So the wake paths are: interactive Claude → Stop hook;
+managed Claude → daemon resume; Codex → external `ingress wake`; anything with
+no live session → the durable queue, drained at the FO's next boot.
+
+Inbox scanning is **uncapped** (`bridge inbox check` reads `_bridge/inbox.jsonl`
+line-by-line with no per-line limit, matching Bridge's own reader). The 1 MiB
+cap in this seam applies to the `events.jsonl` scan/trim in the egress producer,
+not to the inbox check. A per-line inbox cap is a filed Bridge-side follow-up,
+not a contract limit.
 
 ## Not shipped here (intentional)
 
-`fo-feed.jsonl` is not produced — it is redundant with git narration plus the
-marker-derived feed (see Bridge `docs/seam-contract.md` §5). Getting the
+`fo-feed.jsonl` is not produced. Its dispatch/advance signal is covered by git
+narration plus the marker-derived feed, so **no Bridge surface breaks** without
+it (`LoadFOFeedCombined` degrades cleanly) — but note the `complete` verb and
+free-text feed notes are unique to fo-feed and are simply absent, not
+reconstructed (see Bridge `docs/seam-contract.md` §5). Getting the
 `bridge-seam` mod into non-dogfood workflows still needs commission/refit
 scaffolding (a named follow-up); today it ships canonically at `mods/` and as a
 dogfood copy under `docs/dev/_mods/`.

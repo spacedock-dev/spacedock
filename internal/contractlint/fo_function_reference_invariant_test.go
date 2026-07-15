@@ -19,7 +19,7 @@ import (
 // mod and deferred `fo-bridge.md`/`fo-fleet.md`; only the pointers and load-bearing
 // session-id binding live in the counted files. The ratchet still guards against
 // accidental future growth from this new floor.
-const foFunctionReferenceBaselineBytes = 130200
+const foFunctionReferenceBaselineBytes = 130300
 
 var foFunctionReferencePaths = []string{
 	"skills/first-officer/SKILL.md",

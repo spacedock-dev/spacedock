@@ -310,15 +310,23 @@ func truncateEvents(path string, opts Options) {
 }
 
 func timestampFor(p payload, opts Options) string {
-	if p.Timestamp != "" {
-		return p.Timestamp
-	}
-	if p.TS != "" {
-		return p.TS
-	}
 	now := time.Now
 	if opts.Now != nil {
 		now = opts.Now
+	}
+	// Bridge parses events.jsonl `ts` into a time.Time (foactivity.go eventLine),
+	// so a passthrough value that is not RFC3339 fails the whole-line unmarshal and
+	// the event is silently dropped — no liveness signal. Claude payloads carry no
+	// timestamp (we default below), but a Codex/Pi hook payload might carry one in
+	// another format; only pass a payload timestamp through when it actually parses
+	// as RFC3339, else stamp our own.
+	for _, cand := range []string{p.Timestamp, p.TS} {
+		if cand == "" {
+			continue
+		}
+		if _, err := time.Parse(time.RFC3339, cand); err == nil {
+			return cand
+		}
 	}
 	return now().UTC().Format(time.RFC3339)
 }
