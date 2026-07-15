@@ -125,3 +125,32 @@ Ideation replaces the Codex harness's silence/wait/retry stack with a single fix
 ### Summary
 
 The Codex shared runner now launches one authoritative process under a fixed deadline, writes process streams directly to flat scenario artifacts, and grades durable state only after exit. The rejection-flow lane retains post-run entity/Git evidence and exact source-HEAD provenance while deleting the wait watchdog, state fingerprinting, typed-stall handling, and whole-scenario retry.
+
+## Stage Report: validation
+
+- FAILED: Independently reproduce AC-1 through AC-5 evidence, including the fault cases, mutation reds, exact-head live rejection flow, and the 485-line net reduction.
+  AC-1, AC-2, AC-4, and AC-5 reproduced; AC-3's artifact-content proof false-greens under two independent empty-content mutations.
+- DONE: Reproduce AC-1 first-run authority and fault classification.
+  Exit-23 and hard-deadline cases passed 2/2 with one invocation; retry mutation red on `[1 1]`, and ignored-exit mutation red on an unexpectedly passing scenario.
+- DONE: Reproduce AC-2's one fixed deadline without a wait controller.
+  The stall emitted `wait_agent` JSONL every 20ms yet expired at the original 2s bound; review found one `CommandContext`, one `cmd.Run`, and no old controller/retry symbols.
+- FAILED: Reproduce AC-3's diagnosable same-run fault evidence.
+  Actual artifacts are correct, but writing empty `rejection-task.after.md` or empty `git-head.txt` independently left the focused test green; existence alone does not prove retained content.
+- DONE: Reproduce AC-4's exact-head live producer proof.
+  One fresh run passed in 322.68s under `/tmp/spacedock-codex-validation-d199fc98.ulLI8a`; source HEAD is `d199fc98`, exit is 0/not timed out, cycles are REJECTED then PASSED, Git status is clean, and layout is flat.
+- DONE: Reproduce AC-5's simplification evidence.
+  The named-file audit is 335 additions, 820 deletions, and 485 net lines removed; removed-symbol sweep is clean and the process path has no replacement poller, watcher, retry, or recovery loop.
+- FAILED: Adversarially test whether retries, ignored exits, wait-shaped output, or missing artifacts could still produce a false green; verify one fixed deadline and one authoritative invocation.
+  Retry, ignored exit, omitted process-result file, and omitted entity file all red, but zero-byte entity and Git-head artifacts false-green, so missing same-run content is not fully guarded.
+- DONE: Confirm the full and race suites, documentation, removed-symbol sweep, clean worktree, and same-run artifact provenance; classify every finding as material, deferred, or polish and recommend PASSED or REJECTED.
+  Package, `go test ./...`, and fresh `go test ./... -race -count=1` pass; docs and provenance match, removed symbols are absent, and the implementation worktree is clean.
+- FAILED: Material evidence defect — AC-3 artifact-content boundary.
+  Supported ordinary-exit/timeout diagnostics can regress to empty entity or Git-head snapshots without the focused test failing; narrowly compare snapshot bytes to the entity and `rev-parse HEAD` from the same helper run.
+- DONE: Deferred and polish classification.
+  No deferred risks found; polish only: `gofmt -l ./cmd ./internal` reports pre-existing, out-of-scope `internal/release/journeydelta.go`, unchanged from parent `00c2fa6f`.
+- FAILED: Recommend PASSED or REJECTED.
+  REJECTED because the material AC-3 evidence defect violates the promised mutation-sensitive proof even though the current production and live artifacts are correct.
+
+### Summary
+
+Validation confirms the single-run mechanism, exact-head live outcome, suites, provenance, documentation, and 485-line reduction. Recommendation is REJECTED on one narrow material evidence defect: required entity and Git-head snapshots can be emptied without making the focused fault test red; no outcome defect or deferred risk was found.
