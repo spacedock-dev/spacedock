@@ -51,7 +51,7 @@ func sharedRuntimeScenarios() []sharedRuntimeScenario {
 			// the real provenance, not a fictitious port source.
 			name:          "shallow-boot",
 			oldPythonTest: "0203-fo-efficiency (net-new; no Python ancestor)",
-			intent:        "A freshly-booted FO greets and reports accurate state, advances a merged PR before-greet (S7b), with NO team created and NO worker dispatched, then stops for input.",
+			intent:        "A freshly-booted FO performs local identify, greets with accurate held-gate state, creates NO team, dispatches NO worker, mutates NO entity, then stops for engage/input.",
 		},
 		{
 			// Net-new in the 0250 FO-behavioral-discipline sprint (z25 self-evidence

@@ -407,13 +407,11 @@ func TestSelfEvidenceMergeTriageNegativeIncidentEndState(t *testing.T) {
 
 func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 	// The realized shallow-boot end-state passes: no team config, the gate entity
-	// unchanged, the merged entity advanced+archived, the greet present.
+	// unchanged, and an accurate held-gate greet present.
 	gate := shallowBootGateEntity()
-	mergedArchived := "---\nid: merged-pr\nstatus: done\ncompleted: 2026-06-13T00:00:00Z\nverdict: PASSED\npr: \"#42\"\nmod-block:\nworktree:\n---\n"
-	greet := "Workflow overview: 1 task at the review gate; merged-pr advanced (PR #42 merged).\nGate review: Gate Check at review.\nDecision: approve or reject?"
+	greet := "Workflow overview: 1 task is held.\n" + shallowBootHeldGateLine + "\n" + shallowBootEngageHintLine
 	good := shallowBootObservation{
 		finalMessage: greet, gateBefore: gate, gateAfter: gate,
-		mergedAfter: mergedArchived, mergedArchived: true,
 	}
 	if err := assertShallowBoot(good); err != nil {
 		t.Fatalf("the realized shallow-boot end-state must pass: %v", err)
@@ -454,35 +452,26 @@ func TestShallowBootNegativeBrokenEndStates(t *testing.T) {
 		t.Fatal("expected a worktree created for the gated entity to fail assertShallowBoot")
 	}
 
-	// Broken: the merged-PR entity was NOT advanced (S7b skipped) — still active,
-	// not archived. This is the M3 failure a greet-and-stop boot would have without
-	// the before-greet sweep.
-	s7bSkipped := good
-	s7bSkipped.mergedArchived = false
-	s7bSkipped.mergedAfter = shallowBootMergedEntity() // still at implementation, no verdict
-	if err := assertShallowBoot(s7bSkipped); err == nil {
-		t.Fatal("expected an un-advanced merged-PR entity (S7b skipped) to fail assertShallowBoot")
+	// Broken: the same keywords narrate that the gate was already resolved. The
+	// structured held-gate line must reject this false-green phrasing.
+	resolvedGate := good
+	resolvedGate.finalMessage = "Gate state: Gate Check at review was resolved.\n" + shallowBootEngageHintLine
+	if err := assertShallowBoot(resolvedGate); err == nil {
+		t.Fatal("expected an already-resolved gate message to fail assertShallowBoot")
 	}
 
-	// Isolating: archived but verdict not set — advancement incomplete. Isolates the
-	// verdict check from the archived check so neither can be silently dropped.
-	noVerdict := good
-	noVerdict.mergedAfter = strings.Replace(mergedArchived, "verdict: PASSED", "verdict:", 1)
-	if err := assertShallowBoot(noVerdict); err == nil {
-		t.Fatal("expected an archived-but-no-verdict merged entity to fail assertShallowBoot on the verdict check")
+	// Broken: the gate is described as held but engage is narrated as completed,
+	// not offered prospectively as the operator's next action.
+	alreadyEngaged := good
+	alreadyEngaged.finalMessage = shallowBootHeldGateLine + "\nNext action: engage already completed."
+	if err := assertShallowBoot(alreadyEngaged); err == nil {
+		t.Fatal("expected an already-engaged message to fail assertShallowBoot")
 	}
 
-	// Isolating: advanced+archived but a mod-block still set — the clear was skipped.
-	modBlockLeft := good
-	modBlockLeft.mergedAfter = strings.Replace(mergedArchived, "mod-block:\n", "mod-block: merge:pr-merge\n", 1)
-	if err := assertShallowBoot(modBlockLeft); err == nil {
-		t.Fatal("expected an advanced entity with a lingering mod-block to fail assertShallowBoot on the mod-block-clear check")
-	}
-
-	// Broken: no greet — the final message lacks the gate review / decision prompt.
+	// Broken: no greet — the final message lacks the held gate and engage hint.
 	noGreet := good
-	noGreet.finalMessage = "Advanced merged-pr; nothing else to do."
+	noGreet.finalMessage = "Nothing else to do."
 	if err := assertShallowBoot(noGreet); err == nil {
-		t.Fatal("expected a final message with no gate review/decision prompt to fail assertShallowBoot")
+		t.Fatal("expected a final message with no held-gate state to fail assertShallowBoot")
 	}
 }

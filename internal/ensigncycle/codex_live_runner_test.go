@@ -342,11 +342,11 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 
 // runCodexShallowBootScenario drives the real FO against the shallow-boot fixture
 // and grades the SAME host-neutral durable end-state assertShallowBoot the Claude
-// runner feeds: the FO greets and presents the gate, S7b advances+archives the
-// merged PR before-greet, and NO worker is dispatched (the gate entity is
-// unchanged, not archived, no worktree). Codex has no Claude team root, so the
-// no-team-config check is host-neutral-vacuous (empty teamRoot); the no-dispatch
-// proof rides the durable gate-unchanged + no-worktree facts. The AC-2/AC-6 Claude
+// runner feeds: the FO greets with the accurate held-gate state, performs no
+// persisted entity mutation, and leaves no durable dispatch fingerprint (the gate
+// entity is unchanged, not archived, no worktree). Codex has no Claude team root,
+// so the no-team-config check is host-neutral-vacuous (empty teamRoot). Absence of
+// transient dispatch commands is outside this durable oracle. The AC-2/AC-6 Claude
 // token-stream measurements are Claude-specific and live in the Claude runner.
 func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
@@ -354,12 +354,7 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
-	// The stub `gh` (reporting MERGED) must resolve on the FO subprocess PATH so the
-	// boot's live pr_state probe and the pr-merge startup hook both see the merge.
-	scenarioRunner := runner
-	scenarioRunner.env = withPATHPrefix(runner.env, fixture.stubGhDir)
-
-	result, err := scenarioRunner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot), 0)
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}

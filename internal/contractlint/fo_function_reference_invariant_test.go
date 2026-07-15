@@ -1,5 +1,5 @@
 // ABOUTME: Guards the first-officer contract against mutable numeric procedure addresses.
-// ABOUTME: Pins named-function ownership, local procedure order, eager topology, and prompt size.
+// ABOUTME: Pins named-function ownership, local procedure order, load topology, and prompt size.
 package contractlint
 
 import (
@@ -113,7 +113,7 @@ func TestFOFunctionReferenceCheckpointMetrics(t *testing.T) {
 	t.Logf("FO_FUNCTION_METRICS addresses=%d bytes=%d", addresses, bytes)
 }
 
-func TestFirstOfficerEagerReferenceTopology(t *testing.T) {
+func TestFirstOfficerReferenceTopology(t *testing.T) {
 	root := skillsRoot(t)
 	entry := readRepoFile(t, filepath.Join("skills", "first-officer", "SKILL.md"))
 	var imports []string
@@ -124,16 +124,18 @@ func TestFirstOfficerEagerReferenceTopology(t *testing.T) {
 	}
 	want := []string{
 		"@references/first-officer-shared-core.md",
-		"@references/fo-merge-core.md",
-		"@references/fo-write-core.md",
 	}
 	if strings.Join(imports, "\n") != strings.Join(want, "\n") {
-		t.Fatalf("eager imports = %v, want live-proven topology %v", imports, want)
+		t.Fatalf("eager imports = %v, want lazy write/merge topology %v", imports, want)
 	}
-	for _, include := range imports {
-		path := filepath.Join(root, "first-officer", strings.TrimPrefix(include, "@"))
+	for _, rel := range []string{
+		"references/first-officer-shared-core.md",
+		"references/fo-write-core.md",
+		"references/fo-merge-core.md",
+	} {
+		path := filepath.Join(root, "first-officer", rel)
 		if info, err := os.Stat(path); err != nil || info.Size() == 0 {
-			t.Errorf("eager import %s does not resolve to a non-empty canonical body: %v", include, err)
+			t.Errorf("canonical first-officer body %s does not resolve non-empty: %v", rel, err)
 		}
 	}
 	if _, err := os.Stat(filepath.Join(root, "fo-write-core")); !os.IsNotExist(err) {
@@ -182,6 +184,19 @@ func TestFODeferredDispatchOwnerLoadsBeforeUse(t *testing.T) {
 	} {
 		if !strings.Contains(principles, want) {
 			t.Errorf("smallest-sufficient commissioned-dispatch boundary missing %q", want)
+		}
+	}
+}
+
+func TestFOEngageRetainsStartupPRAdvancement(t *testing.T) {
+	shared := readRepoFile(t, filepath.Join("skills", "first-officer", "references", "first-officer-shared-core.md"))
+	engage := foMarkdownSection(t, shared, "## «engage»(workflow): converge one named workflow, then run its event loop to a stopping condition")
+	for _, want := range []string{
+		"`«hooks.run»(\"startup\")` exactly once",
+		"The registered startup mod owns live PR advancement",
+	} {
+		if !strings.Contains(engage, want) {
+			t.Errorf("engage lost its startup PR advancement boundary %q", want)
 		}
 	}
 }
