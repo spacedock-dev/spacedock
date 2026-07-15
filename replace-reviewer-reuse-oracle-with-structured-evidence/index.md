@@ -1,6 +1,6 @@
 ---
 title: Replace reviewer-reuse inference with structured evidence
-status: implementation
+status: validation
 source: "Test-infrastructure audit 2026-07-14."
 started: 2026-07-15T06:52:43Z
 completed:
