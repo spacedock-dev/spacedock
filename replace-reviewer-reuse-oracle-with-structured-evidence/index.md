@@ -1,12 +1,12 @@
 ---
 title: Replace reviewer-reuse inference with structured evidence
-status: ideation
+status: implementation
 source: "Test-infrastructure audit 2026-07-14."
 started: 2026-07-15T06:52:43Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-replace-reviewer-reuse-oracle-with-structured-evidence
 issue:
 milestone: 0.26.0
 id: 6vn56z3423xk3ej3wvk54z6r
