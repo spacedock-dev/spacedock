@@ -16,6 +16,7 @@
     "automation"
   ],
   "skills": "./skills/",
+  "hooks": "./hooks/codex-hooks.json",
   "requires-contract": ">=3,<4",
   "interface": {
     "displayName": "Spacedock",

@@ -258,6 +258,10 @@ func TestNoUnexpectedModHookOrPRMergeIntroduced(t *testing.T) {
 		// `## Hook: merge` mechanism surface) into the merge core; it legitimately
 		// carries the `## Hook:` token.
 		filepath.Join("skills", "first-officer", "references", "fo-merge-core.md"): true,
+		// The Bridge seam mod carries `## Hook: startup`/`## Hook: idle` prose
+		// conventions (non-standing) that drive the FO's per-tick heartbeat +
+		// captain-intent drain — a legitimate lifecycle-hook surface.
+		filepath.Join("mods", "bridge-seam.md"): true,
 	}
 	allowedPRMergeFiles := map[string]bool{
 		filepath.Join("mods", "pr-merge.md"): true,

@@ -44,3 +44,26 @@ The template is the floor, not the ceiling. The FO MUST hold to the following di
 9. **Target length: 15-25 lines of FO-authored prose.** The full gate message should fit in 15-25 lines. If it exceeds 25, the FO is over-narrating; cut.
 10. **FO-authored prose speaks the workflow's declared label.** Where the gate-summary prose the FO writes — the `Chosen direction:` line, the `Checklist:` gist roll-up, the `Decision:` line — names the kind of thing under review, use the workflow's declared `entity-label` / `entity-label-plural` from `«state.boot»()`, not the generic "entity". A `ticket` workflow's Decision line says "approve to enter implementation on this ticket"; an `experiment` workflow says "experiment". The `{entity title}` placeholder and the structural headings (`Gate review:`, `Checklist:`, `Decision:`) stay generic — only the FO-authored noun localizes.
 11. **Surface verification state as evidence, not as a label.** When the gate turns on checks that ran outside this presentation (CI lanes, a validation report), hold them to the shared core's self-evidence bar (`## Working Principles`): state which relevant checks actually ran and passed, and read any failure from this run's evidence (the failing test/assertion), never from an inherited "known flake" label. The captain votes on which checks are green and why a red is red.
+
+## Emit the gate to Bridge (host-neutral)
+
+After rendering the gate-review to the captain in-session, the FO ALSO pushes the same gate to Bridge so a remote captain can decide it from the command-center UI. This is host-neutral — it lives here in `present-gate` (loaded by every host), never in a Claude-only hook. It is a **direct file append**, not a verb: add one line to `_bridge/fo-initiate.jsonl` (relative to the fleet root), using the `docs/seam-contract.md` §2.7 shape verbatim:
+
+```json
+{"schema":1,"id":"gate-<entity>-<stage>","ts":"<now RFC3339>","kind":"gate-review","workflow":"<slug>","entity":"<entity-slug>","ship_id":"<slug>/<entity-slug>","host":"<claude|codex|pi>","session_id":"<this session's id>","headline":"<the gate lede — the one-liner the captain sees>","body":"<optional supporting prose>","status":"open"}
+```
+
+- `schema` MUST be `1` and `id` non-empty and `kind` `gate-review` — Bridge drops the line otherwise.
+- `id` is the fold key AND (defaulting `request_id` to it) the loop-closure correlator. It MUST be a STABLE function of `(entity, stage)` — e.g. `gate-<entity>-<stage>` — so re-emitting the same gate on each drain tick folds to ONE card instead of stacking duplicates. Never derive it from a timestamp or random value.
+- `status` is ALWAYS `open`; Bridge overlays the resolution itself from the matching inbox `decision` intent (`approve`→approved, `reject`→rejected) by `request_id`. Do not write a resolved status.
+- `host`/`session_id` carry attribution so the card shows which host raised the gate; pass the current host and session id.
+- `headline` ≤ 240 chars (the gate lede); keep `body` ≤ 2000.
+
+### Channel boundary — a gate goes to fo-initiate ONLY
+
+A gate-review is a decidable interrupt. It goes to `_bridge/fo-initiate.jsonl` and NOWHERE ELSE:
+
+- NEVER `fo-feed.jsonl` — that stream is ambient git narration (dispatch/advance), not a decidable ask; a gate rendered there has no Approve/Reject affordance.
+- NEVER `fo-replies.jsonl` — that stream requires an `in_reply_to` correlator to a captain intent; an FO-initiated gate has no such parent and would be silently dropped.
+
+Approve/Reject on the fo-initiate card close the loop back through the inbox by `request_id` (a `decision` intent the FO drains per the `bridge-seam` mod); that is why the id must be stable and shared with the gate the captain sees.

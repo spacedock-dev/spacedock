@@ -23,3 +23,6 @@ dist/
 .safehouse
 .claude/
 /spacedock
+
+# Bridge seam scratch (captain-intent inbox, cursors, heartbeats, events).
+_bridge/
