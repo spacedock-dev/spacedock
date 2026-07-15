@@ -11,7 +11,7 @@ issue:
 milestone: 0.25.0
 id: gk7ceyrs4496jgp535w3awfp
 mod-block:
-pr: "#512"
+pr: pr-merge:512
 ---
 
 Restore the intended first-officer loading boundary: boot reads the shared core and active runtime adapter, while write authority loads at the first FO-authored mutation and merge handling loads only at a terminal or merge-mod recovery boundary.
