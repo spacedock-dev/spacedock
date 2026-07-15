@@ -1,12 +1,12 @@
 ---
 title: Replace Codex wait watchdog with single-run evidence
-status: ideation
+status: implementation
 source: "Test-infrastructure audit 2026-07-14."
 started: 2026-07-15T06:16:10Z
 completed:
 verdict:
 score:
-worktree:
+worktree: .worktrees/spacedock-ensign-replace-codex-wait-watchdog-with-single-run-evidence
 issue:
 milestone: 0.26.0
 id: 15sdwn85ekhwkf0jxnh38h8j
