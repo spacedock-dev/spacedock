@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-replace-reviewer-reuse-oracle-with-structu
 issue:
 milestone: 0.26.0
 id: 6vn56z3423xk3ej3wvk54z6r
+mod-block: merge:pr-merge
 ---
 
 ## Problem
