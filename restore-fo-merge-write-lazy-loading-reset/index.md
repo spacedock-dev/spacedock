@@ -10,6 +10,7 @@ worktree: .worktrees/spacedock-ensign-restore-fo-merge-write-lazy-loading-reset
 issue:
 milestone: 0.25.0
 id: gk7ceyrs4496jgp535w3awfp
+mod-block: merge:pr-merge
 ---
 
 Restore the intended first-officer loading boundary: boot reads the shared core and active runtime adapter, while write authority loads at the first FO-authored mutation and merge handling loads only at a terminal or merge-mod recovery boundary.
