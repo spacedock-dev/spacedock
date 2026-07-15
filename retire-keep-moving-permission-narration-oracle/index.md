@@ -45,3 +45,16 @@ Verified by: focused keep-moving tests, `go test ./...`, `go test ./... -race`, 
 ## Test plan
 
 Use offline replay/negative tests for the grader change, then the required full and race suites. The next already-required PR live lane is confirmation; do not build a new live harness or run local Claude.
+
+## Stage Report: implementation
+
+- DONE: Delete kmPermissionRe, the askedPermission field and every assignment (claudeKeepMovingTrace, codexKeepMovingTrace, gradeKeepMoving), and the narration-only synthetic negative — with NO replacement parser; structured advance/dispatch checks remain the authoritative no-false-stop proof (AC-3).
+  Commit 3b11e34d: regex, `askedPermission` field, its `gradeKeepMoving` check, both extractor assignments, `kmPermissionFinal`, and the three permission-question negatives removed; grep of the four identifiers now returns nothing; no quote-strip/negation parser added.
+- DONE: Add a committed replay fixture from the two failing Opus final-message shapes (negated quotation): correct completed motion PASSES on structured evidence (AC-1); a real false stop with missing approved advance/dispatch stays RED and names the missing action (AC-2).
+  `TestKeepMovingNegatedQuotationReplay`; both finals genuinely matched the retired regex (exercised: `want me to advance`, `should I proceed`) yet pass on structured advance+dispatch; missing-advance error names "advance", missing-dispatch names "dispatch".
+- DONE: gofmt clean; go build/go vet; go test ./... and go test ./... -race green; report the negative test-infrastructure line delta (AC-3/value).
+  `gofmt -l` empty; build/vet exit 0; full suite + `-race` both `ok` across all packages; grader-machinery file `shared_keep_moving_test.go` net −10 lines (+13/−23) — the inferred-evidence apparatus shrank; the tests file's +43 is the grounded replay fixture, not a parser.
+
+### Summary
+
+Retired the final-message permission-narration oracle: the regex, the `askedPermission` trace field with its grade check and both host-extractor assignments, and the narration-only permission-question negatives (plus `kmPermissionFinal`) are gone, with no replacement parser — the existing structured advance/dispatch checks are now the sole no-false-stop proof. Added `TestKeepMovingNegatedQuotationReplay` distilled from the two failing Opus finals (jobs 87249808752/87252929149), proving a correct completed motion carrying a negated permission quotation passes while a genuine missing-advance/missing-dispatch false stop stays red and names the missing action. gofmt/build/vet clean and the full + race suites are green; Roborev and the next Opus live lane are the downstream confirmation per the test plan.
