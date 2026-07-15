@@ -11,6 +11,7 @@ issue:
 milestone: 0.25.0
 id: bjdm4tdnk93813p9nj913j2y
 mod-block: merge:pr-merge
+pr: "#514"
 ---
 
 The keep-moving live grader must prove that an approved entity advances and dispatches without letting free-form summary wording veto structured action evidence.
