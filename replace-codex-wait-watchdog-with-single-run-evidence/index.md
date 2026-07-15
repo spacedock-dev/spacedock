@@ -112,3 +112,16 @@ The line-delta and removed-symbol audit serves AC-5. A symbol-absence check alon
 ### Summary
 
 Ideation replaces the Codex harness's silence/wait/retry stack with a single fixed process boundary and post-run evidence grading. The risky OS-process path is exercised, the real Codex proof is pinned to one exact-head run, and the design carries an independently measurable simplification target plus a concrete documentation diff.
+
+## Stage Report: implementation
+
+- DONE: Replace the retrying Codex wait controller with one fixed-deadline CommandContext.Run path; add no watcher, poller, retry, or recovery loop.
+  Commit `d199fc98630408649e89f39a5db57a76a9049732` uses one 15-minute `CommandContext` and one `cmd.Run`; removed-symbol and controller review sweeps are clean.
+- DONE: Preserve same-run process, JSONL, stderr, entity, Git, and source-HEAD evidence; make focused fault tests and existing rejection/reviewer assertions green.
+  Exit-23 and hard-timeout faults preserve all artifacts with one invocation; retry and ignored-exit mutations red, and the exact-head live rejection flow passed once in 402.64s under `/tmp/spacedock-codex-single-run-d199fc98.yWE8r1`.
+- DONE: Remove at least 400 net Go lines against the named baseline, apply the runtime-live documentation diff, and run the required focused, full, race, and formatting checks.
+  The named-file audit reports 335 additions, 820 deletions, and 485 net lines removed; `go test ./...`, `go test ./... -race`, focused/live-tag tests, `gofmt`, and `git diff --check` pass.
+
+### Summary
+
+The Codex shared runner now launches one authoritative process under a fixed deadline, writes process streams directly to flat scenario artifacts, and grades durable state only after exit. The rejection-flow lane retains post-run entity/Git evidence and exact source-HEAD provenance while deleting the wait watchdog, state fingerprinting, typed-stall handling, and whole-scenario retry.
