@@ -1,6 +1,6 @@
 ---
 title: Make literal state-branch refspecs consistent
-status: validation
+status: implementation
 source: "Roborev job 1434 on e6j exact head 58b304ef; captain filing request 2026-07-15."
 started: 2026-07-14T16:49:02Z
 completed:
@@ -100,6 +100,10 @@ Implementation applies this concrete clarification to `docs/specs/state-behavior
 ## Relationship
 
 This is a prerequisite for rebase and revalidation of `state-ready-cwd-path-resolution-reset`; that task remains frozen and unpushed until this shared consistency defect lands. This task does not change e6j's linked-worktree path anchoring, stale-registration detection/remediation, worktree-list parsing, local-only recovery, or linked/main README agreement. The eventual rebase may reuse this task's literal resolver and branch guard, but e6j owns recovery behavior and its own validation.
+
+### Feedback Cycles
+
+- **Cycle 1 — validation → implementation (2026-07-15):** Exact-head Roborev job 1456 and an independent collision fixture rejected commit `68556b834b1ff9e306b4bf9cde5d350109661aaa`. Outcome defect serving AC-1: generated commit guidance discards the canonical folder-form entity path and emits `state commit <slug>`; when both `<slug>.md` and `<slug>/index.md` exist, flat-first resolution can return success without committing the dispatched folder entity. Route the narrow fix to preserve the exact dispatched path (or otherwise make canonical selection unambiguous), add a flat/folder collision regression, and retain all literal-ref and fail-closed evidence.
 
 ## Stage Report: ideation
 
