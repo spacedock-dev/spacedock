@@ -1,6 +1,6 @@
 ---
 title: Retire the keep-moving permission narration oracle
-status: implementation
+status: validation
 source: "PR #512 Runtime Live E2E run 29382760645: Opus jobs 87249808752 and 87252929149 both advanced and dispatched the approved entity, then failed because kmPermissionRe matched a negated quotation in the final summary."
 started: 2026-07-15T04:14:25Z
 completed:
