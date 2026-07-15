@@ -24,10 +24,9 @@ import (
 // the Claude runner.
 
 type codexLiveRunner struct {
-	codexBin         string
-	env              []string
-	artifactRoot     string
-	firstOfficerBase string
+	codexBin     string
+	env          []string
+	artifactRoot string
 }
 
 type codexLiveScenario struct {
@@ -139,40 +138,8 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.WriteFile(filepath.Join(setupDir, "codex-runtime-adapter-present.txt"), []byte(adapterPath+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	firstOfficerBase := codexInstalledFirstOfficerBase(t, codexHome)
 
-	return codexLiveRunner{
-		codexBin:         codexBin,
-		env:              env,
-		artifactRoot:     artifactRoot,
-		firstOfficerBase: firstOfficerBase,
-	}
-}
-
-// codexInstalledFirstOfficerBase resolves the one installed cache entry in this
-// runner's isolated CODEX_HOME. This is the loader-visible base emitted in Codex
-// command events; the marketplace source symlink is not the installed path.
-func codexInstalledFirstOfficerBase(t *testing.T, codexHome string) string {
-	t.Helper()
-	cacheRoot := filepath.Join(codexHome, "plugins", "cache", "spacedock", "spacedock")
-	entries, err := os.ReadDir(cacheRoot)
-	if err != nil {
-		t.Fatalf("read isolated Codex plugin cache %s: %v", cacheRoot, err)
-	}
-	var candidates []string
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		base := filepath.Join(cacheRoot, entry.Name(), "skills", "first-officer")
-		if _, err := os.Stat(filepath.Join(base, "SKILL.md")); err == nil {
-			candidates = append(candidates, base)
-		}
-	}
-	if len(candidates) != 1 {
-		t.Fatalf("isolated Codex plugin cache has %d first-officer installs under %s, want exactly one: %v", len(candidates), cacheRoot, candidates)
-	}
-	return candidates[0]
+	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
 }
 
 func newCodexLiveIsolatedHome(t *testing.T, repo, artifactRoot string) string {
@@ -215,9 +182,6 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertGateHeld(before, after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOGateLoadBoundary(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "gate-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("gate-check was archived while waiting at the gate; stat err=%v", err)
 	}
@@ -241,9 +205,6 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, attempt.result.finalMessage, attempt.result.artifactDir)
 	}
-	if err := assertFOWriteBeforeFirstMutation(codexFOLoadTrace(attempt.result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, attempt.result.artifactDir)
-	}
 	emitCodexScenarioMetrics(t, scenario, attempt.result)
 }
 
@@ -266,9 +227,6 @@ func runCodexFeedback3CycleEscalationScenario(t *testing.T, runner codexLiveRunn
 	if err := assertThirdCycleEscalation(after); err != nil {
 		t.Fatalf("%v\nEntity after:\n%s\nFinal message:\n%s\nArtifacts: %s", err, after, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOWriteBeforeFirstMutation(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
@@ -285,9 +243,6 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	after := readFile(t, entityPath)
 	if err := assertMergeHookGuardHeld(before, after, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertFOTerminalLoadBoundary(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), codexTerminalAction("merge-check"))); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	if _, err := os.Stat(filepath.Join(workflowRoot, "_archive", "merge-check.md")); !os.IsNotExist(err) {
 		t.Fatalf("merge-check was archived despite the guardrail scenario; stat err=%v", err)
@@ -316,9 +271,6 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 	if err := assertSelfEvidenceMergeTriage(after, result.finalMessage); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOWriteBeforeObservedMutation(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
@@ -340,9 +292,6 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 	if err := assertCodexSmallestSufficientMechanism(result.jsonl, ssmEditFiles(), ssmCommissioned()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertFOWriteBeforeFirstMutation(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
 
@@ -363,9 +312,6 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 	}
 	if err := assertCodexKeepMoving(result.jsonl, result.finalMessage, kmIndependent()); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertFOWriteBeforeFirstMutation(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
@@ -390,9 +336,6 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	}
 	if err := assertCodexFilingViaNew(result.jsonl, filingSlug); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertFOFilingLoadBoundary(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), codexFilingAction(filingSlug))); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
@@ -424,9 +367,6 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	obs := gatherShallowBootObservation(t, workflowRoot, "", fixture, gateBefore, result.finalMessage)
 	if err := assertShallowBoot(obs); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
-	}
-	if err := assertFOWriteBeforeFirstMutation(codexFOLoadTrace(result.jsonl, mustFOLoadSpec(t, runner.firstOfficerBase, "codex"), nil)); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }

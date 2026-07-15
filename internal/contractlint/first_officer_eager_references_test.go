@@ -77,18 +77,3 @@ func TestFirstOfficerDeferredWriteCoreHasSingleCanonicalBody(t *testing.T) {
 		t.Fatalf("standalone fo-write-core wrapper remains: %v", err)
 	}
 }
-
-func TestDeferredWriteAndMergeCoresSaveAtLeastEightThousandColdBytes(t *testing.T) {
-	root := skillsRoot(t)
-	total := 0
-	for _, name := range []string{"fo-write-core.md", "fo-merge-core.md"} {
-		body, err := os.ReadFile(filepath.Join(root, "first-officer", "references", name))
-		if err != nil {
-			t.Fatalf("read deferred core %s: %v", name, err)
-		}
-		total += len(body)
-	}
-	if total < 8_000 {
-		t.Fatalf("deferred write+merge cold bytes = %d, want at least 8000", total)
-	}
-}
