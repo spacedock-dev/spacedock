@@ -84,3 +84,20 @@ Filled in the ideation body for a pure-removal task: delete the brittle skill-ar
 ### Summary
 
 Applied the preserved seed patch verbatim, removing the brittle skill-argument-keyed `assertGreetInvokesNoDeferredFOSkill` oracle, its `deferredFOSkillNames` var, the now-unused `strings` import, the two dedicated unit-test controls, and the negative fixture — all contained to `internal/ensigncycle`, with `runClaudeShallowBootScenario` retaining only the `assertNoTeamCreateBeforeGreet` check and a reworded comment. All five acceptance criteria verified by exercising: containment grep empty, `go vet`/gofmt clean, retained durable guards green, full `go test ./...` and `-race` both exit 0, and the AC-1 cumulative line delta vs origin/main is -101 (NEGATIVE). Committed as 536f96e6.
+
+## Stage Report: validation
+
+- DONE: Independently reproduce each AC's cited evidence (AC-1 line delta; AC-2 grep+vet; AC-3 controls+fixture absent; AC-4 retained guards green; AC-5 gofmt + go test ./... + -race).
+  AC-1: `git diff --numstat origin/main -- internal/ensigncycle/ | awk` = -101 (NEGATIVE, +2/-103). AC-2: grep for both symbols empty, `go vet ./internal/ensigncycle/` exit 0, no `strings` import/use left. AC-3: `go test -list 'TestAssertGreetInvokesNoDeferredFOSkill.*'` lists no test; fixture absent; no dangling filename refs. AC-4: 6/6 cited-regex guard tests PASS (7th green in package suite), both guards live-called in runClaudeShallowBootScenario (L397/L403), greetTurnIndex has 3 live callers. AC-5: `gofmt -l` empty; `go test ./...` exit 0; `go test ./... -race` exit 0; uncached ensigncycle -race exit 0.
+- DONE: Semantic adversarial pass — no neutered guard, no dangling reference.
+  Both guard bodies byte-unchanged from origin/main (diff removed only the sibling fn/var/import). assertNoTeamCreateBeforeGreet has a passing RED-path control (TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate) — fires on bad input, not a stub. assertShallowBootMeasured still errors on parse-fail/zero-turns/no-greet (not `return nil`), live-called at L403. greetTurnIndex: 3 live + 1 test caller, not orphaned. Reworded comment matches the two retained calls; no reference to the removed oracle remains. Detached audit judged NOT warranted: pure test-infra DELETION removing an oracle (not weakening one), no production code, no new mechanism — low blast radius; retained RED path verified intact.
+- DONE: PASSED/REJECTED recommendation with reproduced evidence per AC; classify findings on defect-kind and release-scope.
+  Recommendation: PASSED. All five ACs have valid, independently-reproduced evidence; no outcome defect, no evidence defect, no material finding. Two non-blocking deferred observations below.
+
+### Summary
+
+Validated the pure-removal deliverable (commit 536f96e6, branch spacedock-ensign/remove-greet-deferred-skill-oracle, atop origin/main 9aadd89e). Reproduced all five ACs by exercising, not re-reading: net line delta -101 (NEGATIVE) vs the git baseline, grep-empty + `go vet` clean, no listed control + fixture absent, retained guards present/green/live-called, and full suite + `-race` exit 0. Adversarial pass confirmed neither retained guard was neutered, greetTurnIndex is not orphaned, and the reworded comment matches the single retained signal. Recommendation: PASSED.
+
+Deferred (non-blocking):
+- AC-4 prose says "7 offline tests pass" but its cited regex expands to 6 names; the 7th (TestPreGreetPeakCacheCreationFindsSpikeNotOnFirstTurn) passes in the package suite, just isn't matched by the regex. Evidence-annotation nit in the entity text, not a deliverable defect.
+- assertShallowBootMeasured has no RED-path unit test in the retained set. Pre-existing, byte-unchanged by this task, explicitly out of scope. Promotes to material only if that guard is later changed without adding a negative test.
