@@ -221,3 +221,26 @@ The bounded reset is structurally minimal, independently falsifiable, and preser
 ### Summary
 
 Cycle 4 corrects the measured workload rather than rebuilding the deleted trace architecture: shallow boot now ends after local identify, a structured held-gate greet, and no persisted mutation or dispatch artifact. Engage retains startup-mod PR advancement through existing structural/outcome coverage; all local gates are green, and the unresolved release proof is the new PR's same-model Claude ledger comparison.
+
+## Stage Report: validation (cycle 4)
+
+- DONE: Independently verify the revised shallow-boot workload is a mutation-free interactive greet/gate hold and that its durable negative controls cannot accept an engaged, resolved, dispatched, archived, or team-created state.
+  Focused prompt/fixture/identify/oracle controls passed. A detached audit removed the team and prospective-engage checks and reintroduced `merged-pr.md`; all three planted regressions went RED. Exact-head Codex passed 1/1 in 31.02s with unchanged gate/no archive/worktree; ancillary raw inspection showed only the version gate and `status --boot --identify --json`, followed by the held-gate/engage-next greet and no collaboration event.
+- DONE: Verify merged-PR advancement remains owned by `engage` startup coverage without a new semantic trace or controller, and triage Roborev 1469 against the revised ACs and release scope.
+  `TestFOEngageRetainsStartupPRAdvancement` retains the single startup-hook ownership, and `TestSweepNonEmptyNamesRegisteredStartupModNextStep` exercised a merged PR and returned the registered `_mods/pr-merge.md` next step. The deleted trace oracle remains absent and no transport/controller/classifier was added.
+- DONE: Reproduce applicable focused/full/race and exact-head Codex evidence; issue PASSED/REJECTED while retaining the new same-model Sonnet ledger as the hard pre-merge proof.
+  Focused checks, live-tag fixture compilation, `go test ./...`, and `go test ./... -race` passed at `ea63bcd4`; exact-head Codex shallow boot passed. Recommendation: PASSED — PR-update-ready, with merge forbidden pending the corrected same-resolved-model Sonnet ledger.
+- SKIPPED: AC-1 corrected-workload release proof.
+  Run `29378927729` measured the superseded S7b workload at 61,781 versus v0.24.0's 47,936 and cannot satisfy AC-1. PR #512 still points at `cee47a55`; after updating it to `ea63bcd4`, the new Sonnet `claude-sonnet-5` comparison must reach the v0.24.0 level before merge.
+- DONE: AC-2 structural proof.
+  The unchanged deferred-core topology/closure guards remain green in the full suite; cycle 4 adds no semantic-order inference.
+- DONE: AC-3 durable outcome proof.
+  The corrected shallow fixture contains only the held gate, and the live/offline assertions independently reject mutated/resolved gate state, archive, worktree, and team artifacts while retaining existing gate/filing/terminal outcome suites.
+- DONE: AC-4 local gate proof.
+  Applicable focused, full, race, and exact-head local Codex gates are green; local Claude is not required.
+- DONE: Release-scope triage of Roborev job `1469` (verdict `F`).
+  Its two Mediums request a genuine interactive transport or host command-stream classifier, both excluded by the revised mechanism boundary. No current AC or safety/compatibility boundary promises that instrumentation; the exact Codex spot-check performed only identify, while the same-model Claude ledger catches costly transient engage. Treat this as a deferred risk and revisit if the corrected ledger is green while archived artifacts show engage/dispatch before greet.
+
+### Summary
+
+Cycle 4 restores a controlled mutation-free shallow-boot workload and its durable guards, keeps merged-PR advancement at engage, and passes every required local gate at `ea63bcd4`. Validation recommends PASSED for updating PR #512, not for merge: the corrected same-resolved-model Sonnet ledger remains the hard release proof.
