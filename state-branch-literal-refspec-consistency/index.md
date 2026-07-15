@@ -145,3 +145,16 @@ Cycle 2 closes the staff-review gaps at generated guidance, dual ref validation,
 ### Summary
 
 Cycle 3 makes both validation halves independently falsifiable and extends no-mutation proof to `state init`'s fetch-before-attachment risk. Generated guidance now names the repository's existing launcher and shell-quoting helpers explicitly, while the implementation scope remains the same bounded Git flow.
+
+## Stage Report: implementation
+
+- DONE: Implement one validated literal B/H/T mapping across state new, init, ready, and commit so every mutable operation targets the configured history or fails closed first.
+  Commit `68556b83` adds the dual Git validator, exact H/H:H/T consumers, and symbolic-HEAD guards across all four mutable state verbs.
+- DONE: Replace raw-Git dispatch commit guidance with the canonical LauncherCommand/shlexQuote state commit action, apply the promised spec clarification, and add no lifecycle machinery or e6j behavior.
+  Commit `68556b83` emits one quoted launcher-bound `state commit`, updates the generated goldens and state behavior spec, and adds no coordination or recovery subsystem.
+- DONE: Add focused real-Git and generated-guidance regressions for literal collisions, ordinary compatibility, both invalid-validation directions, pre-mutation new/init/ready/commit guards, then run formatting, full, and race gates green.
+  Real-Git literal/ordinary, local-only, `-foo`, `@{-1}`, invalid-init, and wrong-HEAD fixtures pass; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` completed successfully.
+
+### Summary
+
+Implemented one literal state-branch mapping so creation, resume, ready, commit, synchronization, and peer diagnostics address the same configured history. Dispatch guidance now delegates the sole commit/sync action to the launcher, with exact-ref and fail-closed behavior proven by focused real-Git tests and both full gates.
