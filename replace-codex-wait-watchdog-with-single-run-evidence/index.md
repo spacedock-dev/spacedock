@@ -154,3 +154,30 @@ The Codex shared runner now launches one authoritative process under a fixed dea
 ### Summary
 
 Validation confirms the single-run mechanism, exact-head live outcome, suites, provenance, documentation, and 485-line reduction. Recommendation is REJECTED on one narrow material evidence defect: required entity and Git-head snapshots can be emptied without making the focused fault test red; no outcome defect or deferred risk was found.
+
+## Stage Report: validation (classification correction)
+
+- DONE: Reassess the AC-3 finding using the release-scope classifier.
+  The prior material classification and REJECTED recommendation are superseded: both empty-content cases are unreachable code mutations, not released-input or normal-CI triggers.
+- DONE: Finding 1 — Released user and normal workflow.
+  The only user is a CI maintainer diagnosing a Codex rejection-flow fault; the normal path reads the nonempty entity and writes those exact bytes at `codex_single_run_test.go:107-113`.
+- DONE: Finding 1 — Observable harm.
+  Current users lose nothing: the fresh live artifact is 1,600 bytes; only a hypothetical future edit that writes different bytes would remove the entity snapshot diagnostic.
+- DONE: Finding 1 — Affected value AC or non-negotiable boundary.
+  AC-3's diagnostic value would be weakened by that hypothetical edit, but current production satisfies AC-3 and no safety, security, data-integrity, or compatibility boundary fails.
+- DONE: Finding 1 — Trigger evidence and classification.
+  The green mutation replaced the write argument with `nil` while still returning the original entity in memory; no supported input causes that split, and read/write errors already fail capture, so this is polish-level assertion hardening.
+- DONE: Finding 2 — Released user and normal workflow.
+  The same CI maintainer consumes `git-head.txt`; production runs `git rev-parse HEAD` and writes its output at `codex_single_run_test.go:119-133`.
+- DONE: Finding 2 — Observable harm.
+  Current users lose nothing: the fresh live artifact is a 41-byte SHA line; only a hypothetical future edit that discards successful command output would empty it.
+- DONE: Finding 2 — Affected value AC or non-negotiable boundary.
+  AC-3's Git diagnostic would be weakened by that hypothetical edit, while AC-4 uses the separate nonempty source-HEAD artifact; no non-negotiable boundary currently fails.
+- DONE: Finding 2 — Trigger evidence and classification.
+  The green mutation assigned `out = nil` after successful `rev-parse`; a valid initialized fixture returns a SHA, and any command or artifact-write error fails capture, so this too is polish rather than material or deferred.
+- DONE: Return the corrected verdict.
+  PASSED: all value ACs have current behavioral evidence, with no material finding or real deferred trigger; exact artifact-byte comparisons remain optional polish.
+
+### Summary
+
+Plainly, the test can be made stronger against a future programmer deliberately disconnecting two writes from their sources, but CI cannot naturally reach either empty-file state through the implemented path. The completed four-field triage therefore corrects the release-scope classification to polish and the validation verdict to PASSED.
