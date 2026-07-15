@@ -63,7 +63,7 @@ go test -tags live -count=1 -timeout 40m -run TestLiveClaudeSharedScenarios ./in
 
 Run the Codex shared suite locally (`npm install -g @openai/codex` then `codex login`, or set `OPENAI_API_KEY`). Local runs may authenticate either through an existing Codex login at `~/.codex/auth.json` or through `OPENAI_API_KEY`. The test copies only `auth.json` into a temporary `CODEX_HOME` for the local subscription path; it does not copy local plugin state or the rest of the operator's Codex config. CI does not use local subscription auth.
 
-Codex shared runs use two liveness guards: the shared 60s stream-silence guard, and a Codex foreground-wait watchdog for repeated `collab:wait` / `wait_agent` activity with no durable workflow-state progress or for no-progress silence after a foreground wait. The watchdog can fail or retry a typed stall, but scenario success still comes from process exit plus durable entity/git-state assertions.
+Each Codex shared scenario launches one `codex exec`. A fixed 15-minute wall-clock process limit is its only scenario-level liveness guard; JSONL activity, `wait_agent` events, and durable writes do not extend the deadline, and the runner does not retry. The runner preserves JSONL, stderr, the process result, and post-run durable entity/Git evidence, then requires exit 0 and grades the existing workflow assertions. The suite-wide `-timeout 40m` remains a loose outer backstop.
 
 ```bash
 go test -tags live -count=1 -timeout 40m -run TestLiveCodexSharedScenarios ./internal/ensigncycle -v
