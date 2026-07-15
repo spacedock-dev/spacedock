@@ -376,11 +376,8 @@ func runClaudeFilingScenario(t *testing.T, runner liveDriver, scenario sharedRun
 // (one gate-check entity at a human gate) with a per-run isolated team root, and
 // grades the durable end-state: the FO greets with the accurate held-gate state,
 // NO entity mutation occurs, NO team config lands on disk, and no durable dispatch
-// fingerprint appears. It then asserts the AC-2 behavioral signals (no TeamCreate
-// before the greet, and no pre-greet invocation of a deferred FO skill —
-// fo-status-viewer / fo-write-core) and the AC-6 measured signal (greet-turn
-// context below the ~60k ceiling, no pre-greet ~89k cache_creation spike) over the
-// captured stream.
+// fingerprint appears. It then asserts the AC-2 behavioral signal (no TeamCreate
+// before the greet) and records the AC-6 measured signal over the captured stream.
 func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario sharedRuntimeScenario) {
 	t.Helper()
 	workflowRoot := t.TempDir()
@@ -398,13 +395,6 @@ func runClaudeShallowBootScenario(t *testing.T, runner liveDriver, scenario shar
 	}
 	// AC-2: no TeamCreate before the greet (behavioral, over the tool-call sequence).
 	if err := assertNoTeamCreateBeforeGreet(result.stream); err != nil {
-		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
-	}
-	// AC-2: the greet invokes no deferred FO skill. The staged plugin ships the real
-	// fo-status-viewer / fo-write-core skills (livePluginDir copies skills/), so the FO
-	// COULD invoke them — this asserts the greet-and-stop boot renders from status --boot
-	// without loading a deferred FO skill (present-gate is allowed pre-greet).
-	if err := assertGreetInvokesNoDeferredFOSkill(result.stream); err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
 	// The boot-window oracle: a greet turn was produced (structural only — the

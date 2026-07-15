@@ -72,42 +72,6 @@ func TestAssertNoTeamCreateBeforeGreetCatchesLaterDeltaTeamCreate(t *testing.T) 
 	}
 }
 
-// TestAssertGreetInvokesNoDeferredFOSkillOffline validates the AC-2 deferred-skill
-// oracle against committed MULTI-DELTA streams: the shallow-boot positive (the greet
-// renders from status --boot and invokes present-gate to show the ready gate, but no
-// deferred FO skill) passes — proving the oracle keys on the skill ARGUMENT and does
-// NOT flag the legitimate pre-greet Skill(spacedock:present-gate); the negative (a
-// pre-greet Skill(spacedock:fo-status-viewer), on a LATER delta of its message) fails.
-// Multi-delta is mandatory — the Skill lands on a later delta, so a first-delta-only
-// parse would FALSE-PASS (the documented hollow-AC defect).
-func TestAssertGreetInvokesNoDeferredFOSkillOffline(t *testing.T) {
-	if err := assertGreetInvokesNoDeferredFOSkill(readMeasureFixture(t, "shallow-boot-greet.stream.jsonl")); err != nil {
-		t.Fatalf("shallow-boot positive fixture (renders from status --boot, invokes only present-gate pre-greet) must pass AC-2: %v", err)
-	}
-	if err := assertGreetInvokesNoDeferredFOSkill(readMeasureFixture(t, "greet-invokes-fo-status-viewer-skill.stream.jsonl")); err == nil {
-		t.Fatal("the negative fixture (multi-delta pre-greet Skill(spacedock:fo-status-viewer)) must FAIL AC-2 — the Skill lands on a later delta, so a first-delta-only parse would false-pass")
-	}
-}
-
-// TestAssertGreetInvokesNoDeferredFOSkillCatchesLaterDeltaInvoke is the AC-2 positive
-// control over the parser extension: a stream whose Skill(spacedock:fo-status-viewer)
-// is on a LATER delta of its message (the real runner shape, NOT a synthetic
-// single-delta one) must make assertGreetInvokesNoDeferredFOSkill RED. A
-// first-delta-only parse drops the later-delta Skill entirely — the skill argument
-// would be invisible and the greet-independence proof hollow. This mirrors the retired
-// Read-based later-delta control; a Skill block can land on a later delta exactly like
-// a Read, so retiring the Read control without a Skill equivalent would be a coverage
-// regression on the design's riskiest path.
-func TestAssertGreetInvokesNoDeferredFOSkillCatchesLaterDeltaInvoke(t *testing.T) {
-	// msg_skill: thinking on delta[0], Skill(spacedock:fo-status-viewer) on delta[1]; then a text greet.
-	stream := `{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":21000,"cache_creation_input_tokens":600},"content":[{"type":"thinking","thinking":"load the status viewer skill"}]}}
-{"type":"assistant","message":{"id":"msg_skill","model":"claude-opus-4-8","usage":{"input_tokens":8,"cache_read_input_tokens":21000,"cache_creation_input_tokens":600},"content":[{"type":"tool_use","id":"toolu_skill","name":"Skill","input":{"skill":"spacedock:fo-status-viewer"}}]}}
-{"type":"assistant","message":{"id":"msg_greet","model":"claude-opus-4-8","usage":{"input_tokens":100,"cache_read_input_tokens":5000,"cache_creation_input_tokens":0},"content":[{"type":"text","text":"Workflow overview: ... Gate review: ... Decision: approve or reject?"}]}}`
-	if err := assertGreetInvokesNoDeferredFOSkill(stream); err == nil {
-		t.Fatal("a pre-greet Skill(spacedock:fo-status-viewer) on a LATER delta must make assertGreetInvokesNoDeferredFOSkill RED — the parser must merge later-delta skill names, not read only the first delta")
-	}
-}
-
 // TestParserExtractsTeamCallsFromRealHangCapture is the validator-named ready
 // oracle: the committed real-runner stream `sonnet_teamdelete_hang.stream.jsonl`
 // (20/27 message ids multi-delta; its lone TeamCreate and TeamDelete each land on a

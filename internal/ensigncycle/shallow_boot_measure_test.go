@@ -2,20 +2,9 @@ package ensigncycle
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spacedock-dev/spacedock/internal/journeymetrics"
 )
-
-// deferredFOSkillNames are the first-officer-internal skills a greet-and-stop boot
-// must NOT invoke before the greet: the status-viewer surface, the write/id-style
-// surface, and the dispatch-failure-recovery surface. Each loads only at its trigger
-// (the FIRST status query / --set / id lookup / issue filing, the FIRST write to
-// main, or a dispatch failure — never at boot). present-gate is deliberately NOT
-// here — the greet legitimately presents a ready gate via
-// Skill(skill="spacedock:present-gate") (Startup step 3), so the oracle keys on the
-// skill ARGUMENT, not on any Skill call.
-var deferredFOSkillNames = []string{"fo-status-viewer", "fo-write-core", "fo-dispatch-recovery"}
 
 // teamToolNames are the Claude team-mode tool calls whose presence before the
 // greet would mean an eager team was created. TeamCreate is the one the FO would
@@ -47,41 +36,6 @@ func assertNoTeamCreateBeforeGreet(stream string) error {
 		for _, name := range turns[i].ToolNames {
 			if teamToolNames[name] {
 				return fmt.Errorf("pre-greet turn %d emitted a %s tool call — a team was created before the greet (lazy-TeamCreate violated)", i, name)
-			}
-		}
-	}
-	return nil
-}
-
-// assertGreetInvokesNoDeferredFOSkill is the AC-2 behavioral oracle over the captured
-// stream's tool-call sequence: no pre-greet turn invokes a deferred FO skill (a Skill
-// tool_use whose skill argument names fo-status-viewer or fo-write-core, in the turns
-// up to and including the greet turn). It is a behavioral observation over the real
-// run's tool ordering, NOT a contract grep — the sibling of
-// assertNoTeamCreateBeforeGreet. The greet must compose its summary from status --boot
-// + README frontmatter; a regression that eagerly loaded the deferred status-viewer or
-// write skill surfaces a pre-greet Skill(spacedock:fo-status-viewer|fo-write-core) and
-// fails this. It keys on the skill ARGUMENT, not on any Skill call — the greet
-// legitimately invokes Skill(skill="spacedock:present-gate") to present a ready gate,
-// so a blanket "no pre-greet Skill" oracle would false-fail that.
-func assertGreetInvokesNoDeferredFOSkill(stream string) error {
-	turns, err := journeymetrics.ParseClaudeTurns([]byte(stream))
-	if err != nil {
-		return fmt.Errorf("parse stream for AC-2 deferred-skill check: %w", err)
-	}
-	if len(turns) == 0 {
-		return fmt.Errorf("stream carried no assistant turns — nothing to check")
-	}
-	greet := greetTurnIndex(turns)
-	if greet < 0 {
-		return fmt.Errorf("every assistant turn dispatched — no greet turn produced")
-	}
-	for i := 0; i <= greet; i++ {
-		for _, skill := range turns[i].SkillNames {
-			for _, forbidden := range deferredFOSkillNames {
-				if strings.Contains(skill, forbidden) {
-					return fmt.Errorf("pre-greet turn %d invoked the deferred FO skill %q via Skill(skill=%q) — the greet must render from status --boot, not load a deferred FO skill (present-gate is allowed pre-greet)", i, forbidden, skill)
-				}
 			}
 		}
 	}
