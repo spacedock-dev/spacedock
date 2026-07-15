@@ -4,13 +4,11 @@ package ensigncycle
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/spacedock-dev/spacedock/internal/cli"
 )
@@ -138,6 +136,10 @@ func newCodexLiveRunner(t *testing.T) codexLiveRunner {
 	if err := os.WriteFile(filepath.Join(setupDir, "codex-runtime-adapter-present.txt"), []byte(adapterPath+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	sourceHead := runCodexLiveCommand(t, setupDir, "source-head.txt", "", os.Environ(), "git", "-C", repo, "rev-parse", "HEAD")
+	if strings.TrimSpace(sourceHead) == "" {
+		t.Fatal("current-checkout source HEAD is empty")
+	}
 
 	return codexLiveRunner{codexBin: codexBin, env: env, artifactRoot: artifactRoot}
 }
@@ -174,7 +176,7 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 	entityPath := writeGateWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result, err := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, gatePrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -190,22 +192,23 @@ func runCodexGateGuardrailScenario(t *testing.T, runner codexLiveRunner, scenari
 
 func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenario sharedRuntimeScenario) {
 	t.Helper()
-	attempt, err := runCodexRejectionFlowWithRetry(func(attempt int) (codexRejectionFlowAttempt, error) {
-		workflowRoot := t.TempDir()
-		entityPath := writeRejectionWorkflow(t, workflowRoot)
-		result, err := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot), attempt)
-		if err != nil {
-			return codexRejectionFlowAttempt{result: result}, err
-		}
-		return codexRejectionFlowAttempt{
-			entityAfter: readFile(t, entityPath),
-			result:      result,
-		}, nil
-	})
-	if err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, attempt.result.finalMessage, attempt.result.artifactDir)
+	workflowRoot := t.TempDir()
+	entityPath := writeRejectionWorkflow(t, workflowRoot)
+	result, runErr := runner.run(t, scenario, workflowRoot, rejectionPrompt(workflowRoot))
+	entityAfter, captureErr := captureCodexRejectionEvidence(workflowRoot, entityPath, result.artifactDir)
+	if captureErr != nil {
+		t.Fatalf("capture rejection-flow evidence: %v\nArtifacts: %s", captureErr, result.artifactDir)
 	}
-	emitCodexScenarioMetrics(t, scenario, attempt.result)
+	if runErr != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", runErr, result.finalMessage, result.artifactDir)
+	}
+	if err := assertRejectionFlow(entityAfter, result.finalMessage+"\n"+result.jsonl); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	if err := assertCodexReviewerReuseWithDurableState(result.jsonl, entityAfter); err != nil {
+		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	}
+	emitCodexScenarioMetrics(t, scenario, result)
 }
 
 // runCodexFeedback3CycleEscalationScenario drives the real FO against a fixture
@@ -219,7 +222,7 @@ func runCodexFeedback3CycleEscalationScenario(t *testing.T, runner codexLiveRunn
 	workflowRoot := t.TempDir()
 	entityPath := writeEscalationWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, escalationPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -236,7 +239,7 @@ func runCodexMergeHookGuardrailScenario(t *testing.T, runner codexLiveRunner, sc
 	entityPath := writeMergeHookGuardWorkflow(t, workflowRoot)
 	before := readFile(t, entityPath)
 
-	result, err := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, mergeHookGuardPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -263,7 +266,7 @@ func runCodexSelfEvidenceMergeTriageScenario(t *testing.T, runner codexLiveRunne
 	workflowRoot := t.TempDir()
 	entityPath := writeMergeTriageWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, mergeTriagePrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -285,7 +288,7 @@ func runCodexSmallestSufficientMechanismScenario(t *testing.T, runner codexLiveR
 	workflowRoot := t.TempDir()
 	writeSmallestMechanismWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, smallestMechanismPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -306,7 +309,7 @@ func runCodexKeepMovingScenario(t *testing.T, runner codexLiveRunner, scenario s
 	workflowRoot := t.TempDir()
 	writeKeepMovingWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, keepMovingPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -327,7 +330,7 @@ func runCodexFilingScenario(t *testing.T, runner codexLiveRunner, scenario share
 	workflowRoot := t.TempDir()
 	entityPath := writeFilingWorkflow(t, workflowRoot)
 
-	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, filingPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -354,7 +357,7 @@ func runCodexShallowBootScenario(t *testing.T, runner codexLiveRunner, scenario 
 	fixture := writeShallowBootWorkflow(t, workflowRoot)
 	gateBefore := readFile(t, fixture.gateEntityPath)
 
-	result, err := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot), 0)
+	result, err := runner.run(t, scenario, workflowRoot, shallowBootPrompt(workflowRoot))
 	if err != nil {
 		t.Fatalf("%v\nArtifacts: %s", err, result.artifactDir)
 	}
@@ -378,71 +381,21 @@ func codexExecArgv(workflowRoot, finalPath, prompt string) []string {
 	}
 }
 
-// run launches `codex exec --json` for one shared scenario. Liveness still uses
-// the shared streamWatcher for the 60s stream-silence guard, with a Codex-specific
-// foreground-wait watchdog layered beside it so repeated wait-loop JSONL does not
-// count as progress forever. The watchdog returns a typed stall; it does not make
-// a scenario pass, because the pass assertions still grade durable state plus the
-// Codex producer signal.
-func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string, attempt int) (codexScenarioResult, error) {
+// run launches one `codex exec --json` for one shared scenario. Its only
+// scenario-level liveness guard is a fixed wall-clock deadline; JSONL activity,
+// wait events, and durable writes cannot reset it or trigger another launch.
+func (r codexLiveRunner) run(t *testing.T, scenario sharedRuntimeScenario, workflowRoot, prompt string) (codexScenarioResult, error) {
 	t.Helper()
-	artifactDir := codexAttemptArtifactDir(r.artifactRoot, scenario.name, attempt)
-	if err := os.MkdirAll(artifactDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
+	artifactDir := filepath.Join(r.artifactRoot, scenario.name)
 	finalPath := filepath.Join(artifactDir, "codex-final-message.txt")
-	jsonlPath := filepath.Join(artifactDir, "codex-exec.jsonl")
-	stderrPath := filepath.Join(artifactDir, "codex-exec.stderr.txt")
-
-	cmd := exec.Command(r.codexBin, codexExecArgv(workflowRoot, finalPath, prompt)...)
-	cmd.Env = r.env
-	// stdout (the --json event stream) flows through the watcher's pipe for the
-	// no-progress liveness guard; stderr goes to its own artifact file. The
-	// cmdPoller closes the pipe write-end on exit so the scanner EOFs.
-	pr, pw := io.Pipe()
-	cmd.Stdout = pw
-	stderr, err := os.Create(stderrPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer stderr.Close()
-	cmd.Stderr = stderr
-
-	started := time.Now()
-	if startErr := cmd.Start(); startErr != nil {
-		return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("codex exec failed to start for %s: %w", scenario.name, startErr)
-	}
-	poller := newCmdPoller(cmd, pw)
-	defer poller.kill()
-	watcher := newStreamWatcher(newPipeLineSource(pr), poller, discardStreamLine)
-	probe, err := newWorkflowStateProbe(workflowRoot)
-	if err != nil {
-		return codexScenarioResult{artifactDir: artifactDir}, fmt.Errorf("snapshot workflow state for %s: %w", scenario.name, err)
-	}
-	watchdog := newCodexCollabWaitWatchdog(scenario.name, artifactDir, probe)
-
-	// drainToExit runs the process to exit accumulating the full transcript, OR
-	// kills it on a 60s no-progress stall; the deferred poller.kill() reaps it.
-	jsonl, stallErr := drainCodexToExitWithWaitWatchdog(watcher, quietBudgetDefault, "codex shared scenario "+scenario.name, watchdog)
-	duration := time.Since(started)
-
-	if writeErr := os.WriteFile(jsonlPath, []byte(jsonl), 0o644); writeErr != nil {
-		t.Fatal(writeErr)
-	}
-	if stallErr != nil {
-		return codexScenarioResult{
-			jsonl:       jsonl,
-			artifactDir: artifactDir,
-			duration:    duration,
-		}, stallErr
-	}
-
-	return codexScenarioResult{
-		finalMessage: readFile(t, finalPath),
-		jsonl:        jsonl,
-		artifactDir:  artifactDir,
-		duration:     duration,
-	}, nil
+	return runCodexProcess(codexProcessSpec{
+		bin:         r.codexBin,
+		argv:        codexExecArgv(workflowRoot, finalPath, prompt),
+		env:         r.env,
+		artifactDir: artifactDir,
+		finalPath:   finalPath,
+		timeout:     codexScenarioTimeout,
+	})
 }
 
 func codexLiveArtifactDir(t *testing.T, name string) string {
