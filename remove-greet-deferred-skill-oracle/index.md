@@ -71,3 +71,16 @@ Spike (riskiest path, exercised during ideation): applied the seed patch to a th
 ### Summary
 
 Filled in the ideation body for a pure-removal task: delete the brittle skill-argument-keyed `assertGreetInvokesNoDeferredFOSkill` oracle, its two dedicated controls, and its negative fixture — all contained to `internal/ensigncycle` — while retaining the durable `assertNoTeamCreateBeforeGreet` and `assertShallowBootMeasured` guards. Ran the riskiest-path spike (applied the preserved seed patch to a throwaway tree: `git apply`/gofmt/`go vet` clean and 7 retained offline oracle tests green, then reverted), so the "still compiles + guards still pass after removal" mechanism is proven, not assumed. The value AC is a NEGATIVE −101-line delta vs origin/main; no new mechanism and no user-visible/doc surface is touched.
+
+## Stage Report: implementation
+
+- DONE: Apply the preserved seed patch (docs/dev/.spacedock-state/remove-greet-deferred-skill-oracle/preserved-lazy-load-wip.patch) on this worktree branch: delete assertGreetInvokesNoDeferredFOSkill + deferredFOSkillNames + the now-unused strings import (shallow_boot_measure_test.go), the two controls (shallow_boot_measure_unit_test.go), the AC-2 call site + reword the comment (claude_live_runner_test.go), and the fixture greet-invokes-fo-status-viewer-skill.stream.jsonl — retaining assertNoTeamCreateBeforeGreet and assertShallowBootMeasured. Contained to internal/ensigncycle; do not orphan greetTurnIndex.
+  `git apply` clean; commit 536f96e6. AC-2 grep empty; fixture absent; `greetTurnIndex` keeps 4 live callers (shallow_boot_window_record.go + surviving guards); both retained guards present.
+- DONE: gofmt -l clean; go vet ./internal/ensigncycle/ clean (catches orphaned symbol / unused import); go test ./... and go test ./... -race exit 0 with the oracle+controls+fixture gone and the durable guards passing.
+  `gofmt -l internal/ensigncycle/` empty; `go vet ./internal/ensigncycle/` clean; `go test ./...` all ok; `go test ./... -race` RACE_EXIT=0; AC-4 retained-guard tests pass; AC-3 `-list` shows no removed control.
+- DONE: Commit the deliverable on the branch; report the cumulative test-infra line delta vs origin/main (git diff --numstat origin/main -- internal/ensigncycle/ | awk '{a+=$1;d+=$2} END{print a-d}') — must be NEGATIVE (AC-1).
+  Committed as 536f96e6 on spacedock-ensign/remove-greet-deferred-skill-oracle; AC-1 delta = -101 (NEGATIVE), matching the seed patch's +2/-103.
+
+### Summary
+
+Applied the preserved seed patch verbatim, removing the brittle skill-argument-keyed `assertGreetInvokesNoDeferredFOSkill` oracle, its `deferredFOSkillNames` var, the now-unused `strings` import, the two dedicated unit-test controls, and the negative fixture — all contained to `internal/ensigncycle`, with `runClaudeShallowBootScenario` retaining only the `assertNoTeamCreateBeforeGreet` check and a reworded comment. All five acceptance criteria verified by exercising: containment grep empty, `go vet`/gofmt clean, retained durable guards green, full `go test ./...` and `-race` both exit 0, and the AC-1 cumulative line delta vs origin/main is -101 (NEGATIVE). Committed as 536f96e6.
