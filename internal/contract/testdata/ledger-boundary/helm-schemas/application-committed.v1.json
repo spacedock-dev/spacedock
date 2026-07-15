@@ -19,14 +19,16 @@
     "after": { "type": "string" },
     "commit_oid": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
     "parent_oids": { "type": "array", "items": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" } },
-    "tree_or_blob_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "tree_or_blob_kind": { "enum": ["tree", "blob"], "description": "Git object type whose raw payload is independently pinned." },
+    "tree_or_blob_oid": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$", "description": "Full Git object id for the tree or blob whose payload is digested." },
+    "tree_or_blob_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$", "description": "sha256 over the exact raw Git object payload bytes named by tree_or_blob_kind and tree_or_blob_oid, excluding the loose-object '<kind> <size>\\0' header. Pretty-printed or text-normalized output is invalid." },
     "committed_at": { "type": "string", "format": "date-time" }
   },
   "allOf": [
     {
       "if": { "properties": { "target_kind": { "const": "git" } }, "required": ["target_kind"] },
       "then": {
-        "required": ["commit_oid", "parent_oids", "tree_or_blob_digest"]
+        "required": ["commit_oid", "parent_oids", "tree_or_blob_kind", "tree_or_blob_oid", "tree_or_blob_digest"]
       }
     },
     {
@@ -36,6 +38,8 @@
           "anyOf": [
             { "required": ["commit_oid"] },
             { "required": ["parent_oids"] },
+            { "required": ["tree_or_blob_kind"] },
+            { "required": ["tree_or_blob_oid"] },
             { "required": ["tree_or_blob_digest"] }
           ]
         }

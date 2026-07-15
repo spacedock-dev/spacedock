@@ -64,6 +64,14 @@ Committed and observed facts use the same `application_id` but remain separate.
 Missing observation does not undo an applied gate. Observation arriving first does
 not apply a gate.
 
+For a Git target, the committed fact names `tree_or_blob_kind` (`tree` or `blob`), the
+full 40/64 lowercase-hex `tree_or_blob_oid`, and `tree_or_blob_digest`. The digest is
+`sha256:` plus lowercase SHA-256 over the exact raw Git object payload bytes named by
+that kind and OID. It excludes the loose-object header `<kind> <size>\0` and forbids
+pretty-printed/text-normalized output such as `git cat-file -p`. The empty-blob golden
+vector uses OID `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391` and payload digest
+`sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+
 ## Apply lifecycle
 
 1. Ledger opens the gate with the Spacedock binding, then records an authorized
@@ -72,8 +80,9 @@ not apply a gate.
    Ledger capabilities before mutation.
 3. Spacedock writes its workflow state and commits durable references to
    `application_id`, `resolution_id`, and `gate_id`.
-4. The same coordinator records `helm.application.committed.v1` with the original
-   idempotency material.
+4. The same coordinator records `helm.application.committed.v1`; idempotency is scoped
+   by `(application_id, idempotency_key)`, and response-loss replay reuses that tuple
+   with the byte-identical fact/body digest.
 5. Ledger acceptance changes the gate from `pending_apply` to `applied`.
 6. A publisher or watcher may later record `helm.application.observed.v1`.
 
@@ -139,6 +148,11 @@ digest path. Contract vectors cover UTF-16 property ordering, string escaping, a
 numeric representation. Reprojection cannot silently mint a new application
 obligation or redirect an existing one.
 
+An applied application never enters rewrite_quarantined. Its committed receipt remains
+append-only proof; later binding/source changes append supersession or reconciliation
+evidence and, if needed, create a new application obligation. Quarantine is only for an
+uncommitted projection whose candidate differs from the frozen exposed binding.
+
 ## Orphan observations
 
 An observation without `application_id` is not a binding and cannot apply a gate.
@@ -196,7 +210,7 @@ They recursively walk every Helm `$ref` and reject an incomplete vendored schema
 closure, including a reference reachable only through an optional property.
 
 The manifest uses `provenance_status: complete` and pins Helm source revision
-`3d39fcdc67cc6aac22d51f4abcc2dfdadf56c838`. Every schema entry records its exact
+`e852f31e0ae6c5f06c44b51b5c7a82d0edc7da7a`. Every schema entry records its exact
 source path, Git blob ID, and raw SHA-256 so consumers can independently reproduce
 the vendored bytes from the immutable source commit.
 
@@ -210,8 +224,11 @@ A consumer of `spacedock.gate-binding.v1` must:
   never by requiring them inside the binding;
 - validate target state and required capabilities before mutation;
 - persist `application_id` in durable mutation evidence;
+- recompute Git tree/blob evidence from the declared kind, full object OID, and raw
+  payload bytes without a loose-object header or text conversion;
 - treat committed acceptance as the only apply fold and observation as audit only;
-- recover a lost response by application read or same-key, same-body replay;
+- recover a lost response by application read or replay of the same
+  `(application_id, idempotency_key)` tuple and byte-identical body;
 - preserve unknown additive fields;
 - stop on projection invalidation or rewrite quarantine.
 

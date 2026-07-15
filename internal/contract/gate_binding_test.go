@@ -21,7 +21,7 @@ import (
 )
 
 const gateBindingSchemaPath = "../../docs/schema/gate-binding.v1.schema.json"
-const helmSchemaSourceRevision = "3d39fcdc67cc6aac22d51f4abcc2dfdadf56c838"
+const helmSchemaSourceRevision = "e852f31e0ae6c5f06c44b51b5c7a82d0edc7da7a"
 
 func TestGateBindingSchemaPinsProviderTargetIdentity(t *testing.T) {
 	schema := readJSONObject(t, gateBindingSchemaPath)
@@ -92,7 +92,14 @@ func TestGateBindingDigestContractPinsRFC8785(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read binding spec: %v", err)
 	}
-	for _, required := range []string{"RFC 8785", "JSON Canonicalization Scheme (JCS)"} {
+	for _, required := range []string{
+		"RFC 8785",
+		"JSON Canonicalization Scheme (JCS)",
+		"raw Git object payload bytes",
+		"excludes the loose-object header",
+		"(application_id, idempotency_key)",
+		"An applied application never enters rewrite_quarantined",
+	} {
 		if !strings.Contains(string(rawSpec), required) {
 			t.Errorf("binding digest contract does not name %q", required)
 		}
@@ -160,6 +167,11 @@ func TestGateBindingApplicationReplayAndResponseLostRecovery(t *testing.T) {
 	fixture := readJSONObject(t, filepath.Join("testdata", "ledger-boundary", "application-recovery.json"))
 	request := objectValue(t, fixture, "committed_request")
 	assertDigestMatchesBinding(t, request, "fact", "body_digest")
+	fact := objectValue(t, request, "fact")
+	assertStringValue(t, fact, "tree_or_blob_kind", "blob")
+	assertStringValue(t, fact, "tree_or_blob_oid", "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+	emptyPayloadDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(nil))
+	assertStringValue(t, fact, "tree_or_blob_digest", emptyPayloadDigest)
 	receipt := objectValue(t, fixture, "accepted_receipt")
 	replay := objectValue(t, fixture, "same_key_same_body_replay")
 	if !reflect.DeepEqual(receipt, replay) {

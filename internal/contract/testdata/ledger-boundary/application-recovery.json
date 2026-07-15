@@ -2,7 +2,7 @@
   "committed_request": {
     "schema": "helm.application.record_committed_request.v1",
     "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
-    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740",
+    "body_digest": "sha256:e37710ab552ed4ee0e46276b773378f788d8d71cbb24fdb998f14b9a7e915e43",
     "fact": {
       "schema": "helm.application.committed.v1",
       "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
@@ -18,7 +18,9 @@
       "parent_oids": [
         "0000000000000000000000000000000000000000"
       ],
-      "tree_or_blob_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "tree_or_blob_kind": "blob",
+      "tree_or_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "tree_or_blob_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "committed_at": "2026-07-14T08:00:00Z",
       "spacedock:stage_run_id": "sr1:demo"
     }
@@ -31,7 +33,7 @@
     "applied_at": "2026-07-14T08:00:01Z",
     "gate_status": "applied",
     "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
-    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+    "body_digest": "sha256:e37710ab552ed4ee0e46276b773378f788d8d71cbb24fdb998f14b9a7e915e43"
   },
   "same_key_same_body_replay": {
     "schema": "helm.application.committed_receipt.v1",
@@ -41,13 +43,13 @@
     "applied_at": "2026-07-14T08:00:01Z",
     "gate_status": "applied",
     "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
-    "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+    "body_digest": "sha256:e37710ab552ed4ee0e46276b773378f788d8d71cbb24fdb998f14b9a7e915e43"
   },
   "changed_body_conflict": {
     "request": {
       "schema": "helm.application.record_committed_request.v1",
       "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
-      "body_digest": "sha256:7f158adb41a904179cafe659c58a4db95064c4b189b17bb268f450837ce5dafa",
+      "body_digest": "sha256:48156d28f80d31e6155c3f8e20f9bd99799a897be5da97a7e7c15669a3f2997e",
       "fact": {
         "schema": "helm.application.committed.v1",
         "application_id": "app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
@@ -63,7 +65,9 @@
         "parent_oids": [
           "1111111111111111111111111111111111111111"
         ],
-        "tree_or_blob_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "tree_or_blob_kind": "blob",
+        "tree_or_blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+        "tree_or_blob_digest": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "committed_at": "2026-07-14T08:00:02Z"
       }
     },
@@ -98,7 +102,7 @@
         "applied_at": "2026-07-14T08:00:01Z",
         "gate_status": "applied",
         "idempotency_key": "sd-apply:app_0190c3f2-6a1b-7c3d-8e2f-1a2b3c4d5e6f",
-        "body_digest": "sha256:79c673da04916bc1ff370626f0d5aaa02c4fbfc708a7991bbfae308148ae4740"
+        "body_digest": "sha256:e37710ab552ed4ee0e46276b773378f788d8d71cbb24fdb998f14b9a7e915e43"
       },
       "observations": []
     }

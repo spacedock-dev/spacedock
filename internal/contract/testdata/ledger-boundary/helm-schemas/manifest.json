@@ -1,7 +1,7 @@
 {
   "provenance_status": "complete",
   "source_repository": "https://github.com/spacedock-dev/helm",
-  "source_revision": "3d39fcdc67cc6aac22d51f4abcc2dfdadf56c838",
+  "source_revision": "e852f31e0ae6c5f06c44b51b5c7a82d0edc7da7a",
   "schemas": {
     "application-record-committed-request.v1.json": {
       "source_path": "src/ledger/contracts/schemas/application-record-committed-request.v1.json",
@@ -10,8 +10,8 @@
     },
     "application-committed.v1.json": {
       "source_path": "src/ledger/contracts/schemas/application-committed.v1.json",
-      "git_blob": "c0d1bc132b8f7f979cbd1135108eb4a3cf8ae2b1",
-      "raw_sha256": "sha256:8b6083e2b474a2771e59422ea6bd8f67562cbc66b828246f3aa8645a8f1b90d2"
+      "git_blob": "aa523f7d2324ecbae516e68b5005f4fd20ad7ff4",
+      "raw_sha256": "sha256:9ab83d7f781dbb6993518d5d7febbff2b33e1e5ba38be3dedec317cae1d18811"
     },
     "application-committed-receipt.v1.json": {
       "source_path": "src/ledger/contracts/schemas/application-committed-receipt.v1.json",
