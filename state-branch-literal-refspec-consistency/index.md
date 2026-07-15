@@ -239,3 +239,28 @@ Correction head `e442363a` closes the flat/folder collision and preserves all li
 ### Summary
 
 Correction cycle 2 makes the explicit entity selector alias-safe without weakening its collision or containment guarantees. Symlink and native macOS path aliases now commit the canonical folder entity through the existing state-commit flow, with all full gates green at `cda550e0`.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: At exact head cda550e0fd054f8ea22d1bd9b302d749a4761d50, independently prove symlink/native-alias spellings commit the canonical folder entity while collision selection and outside-checkout containment remain correct.
+  Workflow-symlink and native `/var` aliases committed only `thing/index.md`; the flat sibling stayed unchanged, and an outside selector failed before index mutation.
+- FAILED: AC-1 (VALUE): the canonical commit action remains entity-file scoped for every accepted selector.
+  A directory at allowed spelling `thing/index.md` was accepted; `state commit` exited 0/local-only and recursively committed `thing/index.md/unexpected.md` instead of rejecting a non-file entity.
+- DONE: AC-2: literal mapping, invalid-value, and wrong-HEAD paths retain pre-mutation fail-closed behavior.
+  Focused origin/local `refs/heads/foo`, `-foo`, `@{-1}`, init/new/ready/commit, and mismatch regressions all passed at `cda550e0`.
+- DONE: AC-3: ordinary `spacedock-state/dev` and launcher-bound generated guidance remain compatible.
+  Ordinary ready/commit, no-origin behavior, collision selection, path quoting, and worktree/non-worktree guidance checks passed.
+- DONE: AC-4: correction-scoped formatting, full, and race evidence is green without lifecycle or e6j scope growth.
+  Changed Go files are gofmt-clean; full and race suites passed with the optional hanging Claude host excluded, while the unisolated full run timed out only in that external subprocess.
+- DONE: Re-run relevant literal-ref, invalid-value, wrong-HEAD, generated-guidance, collision, full, and race checks; adversarially bypass canonical identity comparison and prove the alias regression fails before restoring green.
+  Replacing canonical identity with lexical comparison failed the workflow-alias regression; restoration returned it green and left the detached checkout clean at `cda550e0`.
+- FAILED: Run exact-head Roborev for cda550e0fd054f8ea22d1bd9b302d749a4761d50 after independent green and report PASSED or REJECTED with complete AC coverage; do not implement fixes.
+  Roborev job `1472` returned the medium directory-shaped selector finding; command-level reproduction confirmed it, so the recommendation is REJECTED.
+- FAILED: Captain escalation after validation feedback cycle 3 — outcome/data-integrity defect at the explicit selector → path-scoped Git boundary.
+  Require the matched checkout-derived path to satisfy regular-file `fileExists` before return, and add flat/folder directory regressions asserting nonzero exit plus unchanged HEAD/index; do not expand into e6j or lifecycle machinery.
+- SKIPPED: Treat the optional live-Claude host timeout or prior reviewer-low diagnostics as correction findings.
+  Those triggers remain deferred infrastructure/diagnostic risks and do not alter the precise recursive-staging rejection above.
+
+### Summary
+
+Correction head `cda550e0` fixes symlink and native alias identity while preserving collision and outside-checkout checks, but validation cycle 3 is REJECTED because allowed directory-shaped spellings can recursively commit non-entity contents. The exact command-level evidence and narrow regular-file fix are recorded for captain escalation; no product files were changed during validation.
