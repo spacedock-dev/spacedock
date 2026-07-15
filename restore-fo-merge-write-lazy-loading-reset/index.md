@@ -179,3 +179,26 @@ Cycle 2 closes the three routed examples with a bounded test-only observer chang
 ### Summary
 
 Cycle 3 removes the contract-specific semantic trace architecture and leaves the minimal deferred-core contract guarded only by structural closure/import checks and existing durable scenario outcomes. All required local gates and exact-head Codex journeys are green; the quantitative same-model Claude ledger comparison remains the post-PR release proof, and the reviewer request to restore semantic tracing was not implemented.
+
+## Stage Report: validation (cycle 3)
+
+- DONE: Verify the exact branch contains the minimal deferred-core contract and structural closure/import coverage, with the semantic trace oracle and all replacement classifiers absent.
+  Exact head `ea60aa7c` differs from pre-task `6e99954f` only in seven contract/contractlint files: one eager shared-core import, one canonical write cue, one canonical merge cue, and non-empty target checks. `internal/ensigncycle` is byte-identical to baseline; the 575-line oracle, runner seams, path/payload/mutation classifiers, and observer-only fields are absent.
+- DONE: Reproduce the applicable focused/full/race and exact-head local Codex evidence, then assess Roborev job 1446 against the captain-revised ACs and release-scope policy.
+  Focused structural and durable-outcome controls, live-tag compilation, `go test ./...`, and `go test ./... -race` passed. Exact-head Codex gate hold, merge-hook refusal/no-archive, and atomic filing passed 3/3 in 208.76s; a detached eager-import plus dangling-target audit correctly went RED.
+- DONE: Issue PASSED or a precisely classified REJECTED recommendation, preserving the same-resolved-model post-PR shallow-boot ledger comparison as the unresolved merge gate rather than demanding a contract-specific trace harness.
+  Recommendation: PASSED — PR-ready, not yet merge-ready. The post-PR Claude ledger must still demonstrate the cold-window improvement against the same resolved v0.24.0 model before merge; no cross-model delta qualifies.
+- SKIPPED: AC-1 final release proof.
+  Intentionally unavailable before the PR live lane. The published `journey-costs-v0.24.0.json` independently confirms Sonnet `claude-sonnet-5`, total 47,936, cache creation 638, and pre-greet peak 9,864; CI already emits `shallow-boot-window`, preserves resolved-model/client metadata, and posts the delta for the required pre-merge decision.
+- DONE: AC-2 structural proof.
+  The focused guards independently read the entry import topology and filesystem targets; the detached audit proved both an extra eager import and a broken canonical target fail rather than self-certify prose.
+- DONE: AC-3 durable outcome proof.
+  The live runners retain gate entity equality/status/refusal, archive absence, and filed-entity existence/atomic-create assertions while carrying no contract-specific deferred-load observation.
+- DONE: AC-4 local gate proof.
+  All required deterministic gates and applicable exact-head Codex journeys are green; local Claude is not required by the revised criterion.
+- DONE: Release-scope triage of Roborev job `1446` (verdict `F`).
+  Its sole Medium asks for host-event proof the revised ticket explicitly rejects. For supported-host FO operators, eager cold cost is caught by AC-1 and outcome harm by AC-3; no current AC or safety/compatibility boundary promises per-event semantic order. Revisit instrumentation only if the same-model ledger or a durable supported-host outcome regresses.
+
+### Summary
+
+The bounded reset is structurally minimal, independently falsifiable, and preserves the existing durable supported-host outcomes at exact head `ea60aa7c`. Validation recommends PASSED for PR creation while holding merge on the quantitative same-resolved-model Claude comparison; Roborev 1446 requests the superseded mechanism rather than identifying a current release-boundary failure.
