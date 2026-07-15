@@ -1,6 +1,6 @@
 ---
 title: Restore lazy loading for first-officer merge and write cores (clean reset)
-status: validation
+status: implementation
 source: Clean reset from rejected 1k implementation, captain direction 2026-07-14
 started: 2026-07-14T14:12:36Z
 completed:
@@ -10,7 +10,7 @@ worktree: .worktrees/spacedock-ensign-restore-fo-merge-write-lazy-loading-reset
 issue:
 milestone: 0.25.0
 id: gk7ceyrs4496jgp535w3awfp
-mod-block: merge:pr-merge
+mod-block:
 pr: "#512"
 ---
 
@@ -129,6 +129,10 @@ Cycle 1 closes both false-green evidence gaps without changing lazy-loading or w
   - Release-scope triage: all three affect named ACs and common or explicitly exercised workflows; the Linux-only non-distinct `/tmp` alias control is a deferred risk with synthetic-symlink revisit condition.
   - Design-reset trigger: another observer patch would require shell quoting, JSON payload semantics, and further command-family interpretation. The branch is now 749 additions across 12 files, including a 575-line observer, while the shipped contract delta is small. No automatic cycle 4 dispatch.
   - Captain resolution: skip the contract-specific runtime trace harness. Preserve the deferred-load contract and minimal structural coverage; use the same-model shallow-boot token comparison against the published v0.24.0 ledger as the release proof. Remove the semantic observer instead of repairing its command, path, or payload classifiers.
+- Post-PR release gate — Runtime Live E2E run `29378927729`, exact rebased head `cee47a55`, NOT MERGEABLE.
+  - AC-1 value result: every CI job passed, but same-model Sonnet `claude-sonnet-5` shallow-boot-window usage was 61,781 total tokens across 22 turns versus v0.24.0's 47,936 across 18 turns. Cache creation was 639 versus 638 and pre-greet peak improved to 9,334 from 9,864, but the requested return to the v0.24.0 total-token level did not occur.
+  - Evidence-workload defect: the existing `shallowBootPrompt`, fixture, assertions, and scenario description still require S7b merged-PR finalization before greet. The captured run obeyed that stale requirement, read both deferred cores, mutated and archived state, then greeted. This contradicts the captain-approved outcome that merged-PR discovery may wait until `engage`, so the metric is not a mutation-free shallow boot.
+  - Routed correction: reshape the existing shallow-boot scenario into a mutation-free interactive greet/gate hold and remove its before-greet merged-PR requirement. Do not add a deferred-load trace observer or replacement classifier. Preserve merged-PR handling at `engage` through existing supported outcome coverage, or identify the smallest separate coverage gap without widening 1k into new infrastructure.
 
 ## Stage Report: validation (cycle 2)
 
