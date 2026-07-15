@@ -1,6 +1,6 @@
 ---
 title: Replace Codex wait watchdog with single-run evidence
-status: implementation
+status: validation
 source: "Test-infrastructure audit 2026-07-14."
 started: 2026-07-15T06:16:10Z
 completed:
