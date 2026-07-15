@@ -226,3 +226,16 @@ Correction cycle 1 preserves the builder's canonical entity path through the exi
 ### Summary
 
 Correction head `e442363a` closes the flat/folder collision and preserves all literal-ref guards, but validation cycle 2 is REJECTED because equivalent symlink path spellings are rejected before commit. The adversarial audit is clean after restoration, no product files were changed, and the next correction remains a narrow filesystem-identity fix with one regression.
+
+## Stage Report: implementation (cycle 3)
+
+- DONE: Make explicit entity-path selection accept equivalent symlink/alias spellings by comparing canonical filesystem identity while returning only the state checkout's canonical flat-or-folder path.
+  Commit `cda550e0` resolves the requested and allowed entity paths through `filepath.EvalSymlinks`, compares their canonical spellings, and returns only the checkout-derived flat/folder path.
+- DONE: Add a command-level symlink-alias regression, including macOS-style path aliasing where available, that commits the assigned folder entity without weakening collision selection or checkout containment.
+  Focused real-Git tests pass for an explicit workflow symlink and this host's `/var` to `/private/var` alias; collision selection still commits only the folder entity, while an outside path fails before index mutation.
+- DONE: Keep all collision, literal-ref, fail-closed, ordinary compatibility, focused, formatting, full, and race gates green with no e6j or lifecycle scope growth.
+  `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed at exact correction head `cda550e0`; only selector comparison and its command-level regressions changed.
+
+### Summary
+
+Correction cycle 2 makes the explicit entity selector alias-safe without weakening its collision or containment guarantees. Symlink and native macOS path aliases now commit the canonical folder entity through the existing state-commit flow, with all full gates green at `cda550e0`.
