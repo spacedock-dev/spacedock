@@ -11,7 +11,7 @@ issue:
 milestone: 0.26.0
 id: 15sdwn85ekhwkf0jxnh38h8j
 mod-block: merge:pr-merge
-pr: "#515"
+pr: pr-merge:515
 ---
 
 ## Problem
