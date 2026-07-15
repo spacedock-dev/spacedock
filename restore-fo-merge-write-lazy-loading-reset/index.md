@@ -208,3 +208,16 @@ Cycle 3 removes the contract-specific semantic trace architecture and leaves the
 ### Summary
 
 The bounded reset is structurally minimal, independently falsifiable, and preserves the existing durable supported-host outcomes at exact head `ea60aa7c`. Validation recommends PASSED for PR creation while holding merge on the quantitative same-resolved-model Claude comparison; Roborev 1446 requests the superseded mechanism rather than identifying a current release-boundary failure.
+
+## Stage Report: implementation (cycle 4)
+
+- DONE: Reshape the existing shallow-boot scenario, fixture, assertions, and specification into a mutation-free interactive greet/gate hold; remove the S7b merged-PR-before-greet requirement without adding a new observer or harness.
+  Commits `4d6f9379` and `ea63bcd4` remove the merged-PR entity, pr-merge mod, merged-`gh` shim, S7b prompt/outcome checks, and stale specification text from the existing workload. The fixture now contains only the held gate; its structured greet rejects resolved/already-engaged messages while durable checks require unchanged gate state, no archive/worktree, and no team artifact.
+- DONE: Preserve merged-PR discovery at `engage` through the smallest existing supported-outcome coverage, documenting any genuine separate gap instead of widening 1k into new infrastructure.
+  `TestFOEngageRetainsStartupPRAdvancement` pins `engage` → `«hooks.run»("startup")` exactly once and startup-mod ownership of live PR advancement; existing `TestSweepNonEmptyNamesRegisteredStartupModNextStep` proves a merged PR routes to the registered startup mod. The one-shot Codex journey proves persisted no-mutation/no-artifact outcomes but cannot exclude transient engage/dispatch commands; that command-sequence gap is documented and intentionally receives no semantic event classifier or interactive controller.
+- DONE: Run focused/full/race and relevant exact-head local Codex checks, request exact-head Roborev after green, and leave the branch ready for a new same-model Claude shallow-boot CI measurement.
+  Prompt/fixture/oracle, engage-boundary, sweep-outcome, and boot-identify focused checks passed; `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race` passed at exact head `ea63bcd44c93de44483924f404e21f5141867cee`. Exact-head Codex shallow-boot passed in 29.46s. Roborev job `1469` returned `F` only by requesting a genuine-interactive transport or both-host command-stream classifiers, the two mechanisms this correction explicitly excludes; no code changed afterward. Local Claude was not required, and the branch is ready for the same-resolved-model Sonnet `shallow-boot-window` CI comparison.
+
+### Summary
+
+Cycle 4 corrects the measured workload rather than rebuilding the deleted trace architecture: shallow boot now ends after local identify, a structured held-gate greet, and no persisted mutation or dispatch artifact. Engage retains startup-mod PR advancement through existing structural/outcome coverage; all local gates are green, and the unresolved release proof is the new PR's same-model Claude ledger comparison.
