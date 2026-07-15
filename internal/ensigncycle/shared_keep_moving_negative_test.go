@@ -9,9 +9,9 @@ import (
 // replay fixtures. It proves the grader holds the invariant triple for a captain correction
 // (corrected entity does not drive FORWARD until folded; everything else keeps moving; the
 // folded re-shape SURFACES or its rework is honestly named in-flight) from the REAL fixture
-// tokens: the correct trace PASSES, and every incident reds in isolation — a post-approval
-// permission question, a serialized independent dispatch, a dropped re-shape, a FORWARD
-// drive of the corrected entity, and a silent wait/park that never surfaces the re-shape.
+// tokens: the correct trace PASSES, and every incident reds in isolation — a serialized
+// independent dispatch, a dropped re-shape, a FORWARD drive of the corrected entity, and a
+// silent wait/park that never surfaces the re-shape.
 // The re-shape MECHANISM is free: a routed rework dispatch of the corrected entity is NOT a
 // violation (only a forward status is). The replay fixtures distil the three recorded
 // cycle-1 drives (run 28843487385): codex green (surfaced a gate review), sonnet green
@@ -26,10 +26,6 @@ func kmCorrectFinal() string {
 		"Dispatched " + kmReadyOne + " and " + kmReadyTwo + " in parallel in one turn. " +
 		"Re-shaped " + kmQuestioned + " to fold the captain's symlink correction and presented it for gate review, " +
 		"holding it from advancing until the correction is folded."
-}
-
-func kmPermissionFinal() string {
-	return "I reviewed the captain's approval of " + kmApprovedGate + ". Want me to advance it to " + kmNextStage + " and dispatch the stage?"
 }
 
 // kmSilentWaitFinal is the opus cycle-1 specimen verbatim: everything dispatched, then a
@@ -71,13 +67,6 @@ func TestGradeKeepMoving(t *testing.T) {
 	// Positive: the correct trace passes.
 	if err := gradeKeepMoving(kmCorrectTrace(), independent); err != nil {
 		t.Fatalf("the correct keep-moving trace must pass: %v", err)
-	}
-
-	// Negative (S1 pause): the FO asked permission to advance/dispatch after the approval.
-	asked := kmCorrectTrace()
-	asked.askedPermission = true
-	if err := gradeKeepMoving(asked, independent); err == nil {
-		t.Fatal("expected a post-approval permission question to fail")
 	}
 
 	// Negative (S1): the approved entity was never advanced.
@@ -138,11 +127,6 @@ func TestAssertClaudeKeepMoving(t *testing.T) {
 	// Positive: the correct stream + a surfacing final message passes.
 	if err := assertClaudeKeepMoving(kmClaudeCorrectStream(), kmCorrectFinal(), independent); err != nil {
 		t.Fatalf("the correct Claude keep-moving trace must pass: %v", err)
-	}
-
-	// Negative (S1 pause): correct actions, a permission-question final message.
-	if err := assertClaudeKeepMoving(kmClaudeCorrectStream(), kmPermissionFinal(), independent); err == nil {
-		t.Fatal("expected a permission-question final message to fail the Claude assertion")
 	}
 
 	// Negative (S4 silent park): correct actions, a silent-wait final that never names the
@@ -276,11 +260,6 @@ func TestAssertCodexKeepMoving(t *testing.T) {
 		t.Fatalf("the codex merge-guard terminalization dialect must pass (PR #480 false-negative regression): %v", err)
 	}
 
-	// Negative (S1 pause): correct actions, a permission-question final message.
-	if err := assertCodexKeepMoving(kmCodexCorrectStream(), kmPermissionFinal(), independent); err == nil {
-		t.Fatal("expected a permission-question final message to fail the Codex assertion")
-	}
-
 	// Negative (S4 silent park): correct actions, a silent-wait final that never names the
 	// corrected entity.
 	if err := assertCodexKeepMoving(kmCodexCorrectStream(), kmSilentWaitFinal(), independent); err == nil {
@@ -363,5 +342,69 @@ func TestKeepMovingReplayFromRecordedDrives(t *testing.T) {
 		"Gate review: " + kmQuestioned + " - review. Recommend approve. Decision: approve to enter " + kmNextStage + ", or reject."
 	if err := assertCodexKeepMoving(codexReplay, codexFinal, independent); err != nil {
 		t.Fatalf("codex replay: a surfaced gate review must pass: %v", err)
+	}
+}
+
+// kmNegatedQuotationFinals are the two Opus final-message shapes that falsely failed the run
+// this scenario targets (PR #512 Runtime Live E2E run 29382760645, jobs 87249808752 and
+// 87252929149): each honestly reports the completed advance + parallel dispatch and surfaces
+// the corrected entity's re-shape while NEGATING a quoted permission phrase ("want me to
+// advance?", "should I proceed?"). The structured advance/dispatch evidence, not the summary
+// wording, is the no-false-stop proof, so a correct motion carrying either summary must pass.
+func kmNegatedQuotationFinals() []string {
+	return []string{
+		"Advanced " + kmApprovedGate + " to " + kmNextStage + " and dispatched its next stage — " +
+			`the approval is the trigger, so there was no "want me to advance?" pause. ` +
+			"Dispatched " + kmReadyOne + " and " + kmReadyTwo + " in parallel in one turn. " +
+			"Re-shaped " + kmQuestioned + " to fold the captain's correction and presented it for gate review, " +
+			"holding it from advancing until the correction folds.",
+		"Advanced " + kmApprovedGate + " to " + kmNextStage + " and dispatched it. " +
+			"Dispatched " + kmReadyOne + " and " + kmReadyTwo + " together in parallel. " +
+			`I did not stop to ask "should I proceed?" — approval already permits the reversible step. ` +
+			"Re-shaped " + kmQuestioned + " and surfaced its re-shape as a gate-review recommendation, " +
+			"kept off the forward path until folded.",
+	}
+}
+
+func TestKeepMovingNegatedQuotationReplay(t *testing.T) {
+	independent := kmIndependent()
+	finals := kmNegatedQuotationFinals()
+
+	// AC-1: both negated-quotation summaries over the correct completed motion PASS on the
+	// structured advance/dispatch evidence — the quoted permission phrase does not veto.
+	for i, final := range finals {
+		if err := assertClaudeKeepMoving(kmClaudeReplayStream(), final, independent); err != nil {
+			t.Fatalf("negated-quotation final #%d: a correct completed motion must pass on structured evidence: %v", i, err)
+		}
+	}
+
+	// AC-2: the same summary neither rescues nor condemns — a real false stop stays RED and names
+	// the missing action, independently for a missing advance and a missing dispatch.
+	final := finals[0]
+
+	// Missing the approved advance: dispatched and re-shaped, but approved-gate never advanced.
+	noAdvance := strings.Join([]string{
+		claudeToolUse("Agent", `{"description":"Approved Gate: `+kmNextStage+`","prompt":"Dispatch `+kmApprovedGate+`."}`),
+		claudeToolUse("Agent", `{"description":"Ready One: `+kmNextStage+`","prompt":"Dispatch `+kmReadyOne+`."}`),
+		claudeToolUse("Agent", `{"description":"Ready Two: `+kmNextStage+`","prompt":"Dispatch `+kmReadyTwo+`."}`),
+		claudeToolUse("Agent", `{"description":"Questioned: `+kmReopenStage+` re-shape","prompt":"Rework `+kmQuestioned+`."}`),
+	}, "\n")
+	if err := assertClaudeKeepMoving(noAdvance, final, independent); err == nil {
+		t.Fatal("missing approved advance must stay red under a negated-quotation final")
+	} else if !strings.Contains(err.Error(), "advance") {
+		t.Fatalf("the missing-advance error must name the missing advance: %v", err)
+	}
+
+	// Missing the approved dispatch: approved-gate advanced, but its next stage never dispatched.
+	noDispatch := strings.Join([]string{
+		claudeToolUse("Bash", `{"command":"spacedock status --workflow-dir . --set `+kmApprovedGate+` status=`+kmNextStage+`"}`),
+		claudeToolUse("Agent", `{"description":"Ready One: `+kmNextStage+`","prompt":"Dispatch `+kmReadyOne+`."}`),
+		claudeToolUse("Agent", `{"description":"Ready Two: `+kmNextStage+`","prompt":"Dispatch `+kmReadyTwo+`."}`),
+		claudeToolUse("Agent", `{"description":"Questioned: `+kmReopenStage+` re-shape","prompt":"Rework `+kmQuestioned+`."}`),
+	}, "\n")
+	if err := assertClaudeKeepMoving(noDispatch, final, independent); err == nil {
+		t.Fatal("missing approved dispatch must stay red under a negated-quotation final")
+	} else if !strings.Contains(err.Error(), "dispatch") {
+		t.Fatalf("the missing-dispatch error must name the missing dispatch: %v", err)
 	}
 }
