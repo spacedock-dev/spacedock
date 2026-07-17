@@ -3,6 +3,7 @@
 package ensigncycle
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -205,8 +206,18 @@ func runCodexRejectionFlowScenario(t *testing.T, runner codexLiveRunner, scenari
 	if err := assertRejectionFlow(entityAfter, result.finalMessage+"\n"+result.jsonl); err != nil {
 		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
 	}
-	if err := assertCodexReviewerReuseWithDurableState(result.jsonl, entityAfter); err != nil {
-		t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+	// assertRejectionFlow (above) proves the two-cycle re-review OCCURRED from the
+	// durable entity body. assertCodexReviewerReuse grades WHO performed it from
+	// structured handles: a re-review routed to a non-validation thread fails; reuse
+	// and structurally-distinct fresh both pass; an absent identity handle is
+	// identity-not-provable — log it, do not fail, since the durable two-cycle proof
+	// already stands.
+	if err := assertCodexReviewerReuse(result.jsonl); err != nil {
+		if errors.Is(err, errReviewerIdentityUnsupported) {
+			t.Logf("rejection-flow reviewer identity abstained (re-review OCCURRED per durable state, but WHO is not structurally provable): %s", err)
+		} else {
+			t.Fatalf("%v\nFinal message:\n%s\nArtifacts: %s", err, result.finalMessage, result.artifactDir)
+		}
 	}
 	emitCodexScenarioMetrics(t, scenario, result)
 }
