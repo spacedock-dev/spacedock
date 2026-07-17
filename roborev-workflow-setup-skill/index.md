@@ -26,11 +26,12 @@ The artifacts preserve the reviewed proposal and the user feedback folded into i
 
 Spacedock users can benefit from independent Roborev code-review evidence, but adoption currently requires knowing how to combine Roborev panels, implementation-exit ownership, fresh validation, split state checkouts, daemon placement, and Safehouse access. A separate integration plugin would make the setup entry point harder to discover and would create a one-skill packaging boundary without independent runtime code or release needs.
 
-The pilot exposed three concrete guidance failures:
+The pilot exposed four concrete guidance failures:
 
 1. The first skill draft led with three web-documentation links. An actual setup run went searching for guidance even though `roborev quickstart` already emitted a version-matched **Current state** and **Configuration playbook**. This was an avoidable first-contact detour.
 2. The generated `review_guidelines` copied repository procedures and required test commands. Inspection of `kenn-io/roborev`'s own configuration showed the narrower useful pattern: calibrate reviewer judgment with context it cannot infer from the diff or repository, such as trust boundaries, intentional compatibility posture, false-positive suppressions, and review-focus boundaries.
 3. **Roborev setup reviews intentional red commits.** The setup combines strict TDD with an automatic post-commit review hook but does not say whether the expected-red state belongs in Git. Implementers therefore commit tests that intentionally fail or do not compile. Roborev immediately reviews those commits, reports the known failure, consumes reviewer time and tokens, and adds misleading noise to pass-rate and correction data. Excluding expected-red commits from the authoritative convergence budget prevents false escalation but does not prevent wasted review work; a reviewer cannot account for a green commit that does not yet exist.
+4. **The review circuit breaker did not control dispatch.** One implementation ran 16 authoritative `code_completion` panels. Twelve reviewed changed ranges and counted as rounds; four adjudicated unchanged ranges and did not. The budget allowed three rounds plus one explicitly approved fourth, yet dispatch continued for eight more countable rounds. Each repair created a new full-diff review range, deferred or untriaged findings returned as blockers, and the worker was forbidden to report without a mechanical PASS. Green product work therefore remained in implementation without a Stage Report. The round limit existed in prose but was not durable workflow state.
 
 Skill behavior is harder to test than command behavior. Repository policy bans prose-grep as behavioral proof, requires a live drive for a skill change, and requires a detached adversarial audit for shipped contract or scaffolding changes. The design must produce fixture-backed durable evidence rather than treating skill wording or transcript phrasing as proof.
 
@@ -46,6 +47,19 @@ The riskiest external assumptions were exercised during ideation against install
 
 No product helper spike is needed. The setup mutations are ordinary file edits and Git operations already exercised by supported hosts. The live harness needs test-only recording shims, not a new `spacedock roborev` command.
 
+## Incident: review-budget bypass and stalled convergence
+
+The extended review incident comprised these authoritative `code_completion` panels:
+
+- Counted changed-range rounds: `1710`, `1722`, `1733`, `1764`, `1781`, `1850`, `1861`, `1876`, `1891`, `1909`, `1917`, and `1931`.
+- Unchanged-range adjudications, which did not consume rounds: `1812`, `1823`, `1921`, and `1925`.
+
+After panel `1733`, the three-round circuit breaker fired and the captain approved one additional round. Later instructions such as “send it back” and “get 91 rolling” were wrongly treated as unlimited review authorization. Eight countable rounds then ran beyond the approved limit.
+
+This was a dispatcher-control failure, not evidence of eight additional release-blocking product defects. The dispatcher conflated reviewer severity with release scope, treated repeated policy violations as product failures, and pursued a mechanical PASS after the review budget was exhausted. Because each worker dispatch prohibited a Stage Report on any failed panel, the workflow could neither advance nor present a bounded decision.
+
+The correct convergence behavior after the approved fourth round was to stop dispatch, preserve existing finding dispositions, complete release-scope triage once, and present one decision: perform only captain-approved repairs and advance under an explicit override, advance to validation from green product evidence, or record Roborev as blocked. No further panel was authorized.
+
 ## Proposed approach
 
 - Add `skills/roborev-setup/SKILL.md` to the main `spacedock` plugin with `name: roborev-setup` and `user-invocable: true`, exposed as `spacedock:roborev-setup`. Add `skills/roborev-setup/agents/openai.yaml` from the canonical artifact.
@@ -56,6 +70,8 @@ No product helper spike is needed. The setup mutations are ordinary file edits a
 - Configure `quick` as the cheap post-commit cost gate, the exact-head `code_completion` panel as authoritative implementation-exit evidence, and fresh validation as the consumer of stored synthesis-parent evidence before independent behavioral validation.
 - Define expected RED as a working-tree state with durable evidence, not a required commit. The implementer records the pre-fix command, exact failure, and predicted reason in the Stage Report, then adds the minimal implementation and commits the test and implementation together only after the focused check and relevant suite pass. Generated guidance forbids red-only or non-buildable product commits while keeping the post-commit hook enabled, so Roborev receives green candidate states without weakening test-first proof.
 - Encode panel order in generated implementation-stage text or a dispatch checklist: after the final candidate commit, wait for that exact tip's existing `quick` review; fix and recommit any Medium-or-higher finding; let Low findings remain advisory; launch `code_completion` only after `quick` clears. The panels never start independently.
+- Make convergence state durable and enforceable rather than a prose reminder. Record the review budget, changed-range rounds used, any one-shot captain allowance, stable finding IDs and dispositions, the product verdict, and the review-policy verdict. A generic repair or progress instruction cannot grant another review round.
+- At budget exhaustion, require the worker to write a Stage Report and convergence report from the available product and review evidence even when Roborev has not produced a mechanical PASS. Route the entity to validation or one captain decision; do not make another code change or dispatch another panel until that decision is recorded.
 - Add the split state checkout's actual branch to its checkout-local `excluded_branches` without enqueueing a probe review.
 - Detect Safehouse or another sandbox. When present, advise the smallest read-only runtime access needed for the external daemon; omit sandbox advice otherwise. Never commit machine-local permissions or expose all of `~/.roborev`.
 - Keep `review_guidelines` to context the reviewer cannot infer: trust boundaries, intentional compatibility posture, false-positive suppressions, and review-focus boundaries. Never duplicate `AGENTS.md`, workflow or stage instructions, component procedures, or developer/test commands.
@@ -76,6 +92,17 @@ The implementation stage receives this observable sequence:
 9. Any code-changing commit invalidates both quick and `code_completion` evidence and restarts at step 3; a new test-first change starts at step 1.
 
 Roborev supplies evidence only. Implementation owns fixes and commits. The First Officer owns entity state and routing. Fresh validation verifies the stored exact-head parent, then independently exercises acceptance behavior; it does not rerun an unchanged passing panel.
+
+Authoritative review also has a bounded convergence contract:
+
+1. Persist the default three-round budget. A round is consumed only when `code_completion` reviews a changed frozen range. An unchanged-range adjudication may settle a rebuttal without consuming a round.
+2. Refuse a fourth changed-range review unless the captain explicitly grants one additional round. The grant is one-shot; ordinary instructions to repair, continue, or send work back do not renew it.
+3. Give each finding a stable ID. Persist `fix`, `defer`, `dismiss`, or `needs decision` and the finding's four-field release-scope triage: released user and normal workflow, observable harm, affected value AC or non-negotiable boundary, and trigger evidence. Incomplete triage cannot produce a release blocker.
+4. Carry dispositions into later panels. A deferred or dismissed finding remains non-blocking unless new trigger evidence materially changes its triage. Repetition or rewording alone cannot resurrect it.
+5. Record product verification separately from review-policy compliance. Repeated untriaged or captain-deferred findings are a review-policy failure, not a product failure.
+6. When the budget is exhausted, stop the automatic fix-and-review loop. The worker writes the Stage Report and convergence report even without a Roborev PASS. The First Officer then advances to validation from sufficient green product evidence, presents one bounded captain decision, or records Roborev as blocked.
+
+The implementation must use the smallest durable enforcement surface that survives worker returns and context compaction. Prose-only reminders do not satisfy this contract. Short captain actions such as `allow-one-more-review`, `defer F-17`, `dismiss F-22`, and `converge-and-validate` describe the intended interaction; exact command syntax remains an implementation decision.
 
 ## Review-guideline calibration contract
 
@@ -126,6 +153,15 @@ Verified by: a detached adversarial audit on a throwaway checkout mutates at lea
 **AC-9 - Generated implementation guidance preserves test-first RED evidence without sending intentional-red or non-buildable product commits to Roborev.**
 Verified by: a setup regression that parses the generated implementation-stage contract and requires all of these rules together: RED remains in the working tree; the Stage Report records the pre-fix command, exact failure, and predicted reason; `HEAD` stays unchanged until the focused check and relevant suite pass; the test and minimal implementation are committed together; red-only and non-buildable product commits are forbidden; and the post-commit hook remains enabled. The live panel-order fixture separately proves the observable behavior, so this structural contract inspection does not stand in for runtime evidence.
 
+**AC-10 (VALUE) - The authoritative review budget stops changed-range dispatch after three rounds plus at most one explicitly approved additional round.**
+Verified by: a deterministic convergence journey that offers the incident's sequence of 12 changed-range reviews and four unchanged-range adjudications. The first three changed ranges consume the default budget, the explicit one-shot allowance permits exactly the fourth, and the fifth is refused. Unchanged-range adjudications do not consume rounds; generic captain instructions to repair or continue do not grant one. The durable record must still report `4/4`, not lose or reset the count across worker returns or context reconstruction.
+
+**AC-11 (VALUE) - Budget exhaustion preserves green product progress and produces one bounded convergence decision without requiring a mechanical Roborev PASS.**
+Verified by: a live-gated worker journey in which product tests pass while the fourth panel repeats a captain-deferred finding. The worker must write its Stage Report and convergence report, preserve the exact product evidence and stored panel result, and stop further fixes and reviews. The First Officer must present or enact exactly one allowed route—advance to validation, perform explicitly approved repairs under an override, or record Roborev blocked—and must not leave the entity silently parked in implementation.
+
+**AC-12 - Finding dispositions and release-scope triage remain stable across panels, while product and review-policy verdicts remain independently visible.**
+Verified by: fixture findings with stable IDs. A four-field-triaged `defer` or `dismiss` remains non-blocking when a later synthesis repeats or rewords it; only new trigger evidence may reopen triage. A finding missing any triage field cannot block release. Status evidence must show stage, product verification, rounds used and allowed, material and deferred findings, review-policy violations, and the next action.
+
 ## Test architecture and plan
 
 ### Hermetic fixture
@@ -161,6 +197,14 @@ Drive the generated implementation text once through a supported live worker wit
 - `code_completion` starts only after tip B's wait and show completion and returns a parent frozen to tip B;
 - fresh validation reads that parent and writes an independent acceptance marker;
 - a negative fixture that starts both panels independently fails from event order alone.
+
+### Review-budget convergence journey
+
+Replay the incident shape with deterministic panel records: 12 changed frozen ranges corresponding to jobs `1710`, `1722`, `1733`, `1764`, `1781`, `1850`, `1861`, `1876`, `1891`, `1909`, `1917`, and `1931`, interleaved with unchanged-range adjudications `1812`, `1823`, `1921`, and `1925`. The harness must prove that only the first three changed ranges and one explicitly approved fourth can run. It must refuse the fifth before enqueueing it, preserve a `4/4` durable count, and treat all later fixture jobs as evidence of the historical failure rather than work to reproduce.
+
+Give repeated findings stable IDs and seed captain dispositions. Assert that repetition without new trigger evidence does not change `defer` or `dismiss`, incomplete four-field triage cannot block, and a genuine new trigger returns the finding for a fresh captain disposition rather than silently promoting it. Record product verification and review-policy compliance separately.
+
+At exhaustion, make the final panel non-passing while product tests remain green. The worker must still write the Stage Report and convergence report. Assert that no further code mutation or panel event occurs before the First Officer records one allowed convergence route, and that status exposes the round count, finding classes, both verdicts, and next action.
 
 ### Sandbox and guideline oracles
 
@@ -211,6 +255,10 @@ Add one navigation entry to `mkdocs.yml` after Split-root state:
 - `review_guidelines` are an explicit user-reviewed calibration artifact, not a summary of repository instructions.
 - The semantic adversarial pass is implementer/process guidance in the generated stage, never Roborev reviewer calibration.
 - Expected RED is an evidenced working-tree state, not a product commit. The post-commit hook remains enabled, but the generated implementation contract permits only green candidate commits containing the test and minimal implementation together.
+- Authoritative changed-range review has a durable three-round budget. An explicitly approved fourth round is a one-shot allowance; ordinary repair or progress language cannot extend it.
+- Finding IDs and captain dispositions are sticky. Repetition cannot revive a deferred or dismissed finding without new trigger evidence and complete four-field release-scope triage.
+- Product verification and review-policy compliance are separate verdicts. A reviewer that repeats untriaged or captain-deferred findings does not turn green product evidence red.
+- Budget exhaustion requires a Stage Report, convergence report, and one bounded routing decision. It never requires another Roborev panel merely to obtain PASS.
 
 ## Stage Report: ideation
 
@@ -226,7 +274,9 @@ Add one navigation entry to `mkdocs.yml` after Split-root state:
   The canonical skill and AC-4 cover representation/lifecycle tracing, variant matrices, atomic validation, scaling/limits, and false-green exact-result proof before quick.
 - DONE: Amend the setup contract so strict TDD does not trigger Roborev on intentional-red commits.
   AC-9, the canonical skill, the generated-stage sequence, and the panel-order fixture now define RED as an evidenced working-tree state, forbid red-only and non-buildable product commits, require the test and minimal implementation to land together after focused and relevant green checks, and keep the post-commit hook enabled for green candidates.
+- DONE: Record the 16-panel convergence incident and make its circuit breaker, finding dispositions, and exhaustion behavior part of the implementation contract.
+  AC-10 through AC-12 now require a durable changed-range round counter, a one-shot explicit allowance, sticky triage and captain dispositions, separate product and review-policy verdicts, and a Stage Report plus bounded decision when the budget ends.
 
 ### Summary
 
-Ideation revised the canonical task artifacts around three observed failures: a documentation-search detour, over-broad generated review guidelines, and intentional-red commits reviewed by the post-commit hook. The design now has independent durable oracles for command order, targeted web fallback, green-only candidate commits with durable RED evidence, panel order, split-state exclusion, sandbox advice, guideline calibration, installed discovery, and adversarial refutation; no active workflow definition or product code changed. `go test ./...` and `go test ./... -race` passed after the required format gate.
+Ideation revised the task around four observed failures: a documentation-search detour, over-broad generated review guidelines, intentional-red commits reviewed by the post-commit hook, and a 16-panel convergence loop that ran eight countable rounds beyond its approved limit. The design now adds durable review-budget enforcement, sticky finding dispositions, separate product and policy verdicts, and mandatory convergence reporting to the existing oracles for command order, targeted web fallback, green-only candidate commits, panel order, split-state exclusion, sandbox advice, guideline calibration, installed discovery, and adversarial refutation. No active workflow definition or product code changed. `go test ./...` and `go test ./... -race` passed after the required format gate.
