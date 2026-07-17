@@ -9,6 +9,8 @@ score: 0.7
 worktree: .worktrees/spacedock-ensign-document-dispatch-entity-path-base
 issue:
 id: 93y35a0yrwxnxa5qzfghtj4h
+mod-block: merge:pr-merge
+pr: "#522"
 ---
 
 `spacedock dispatch build` accepts a relative `entity_path`, but resolves it against the process working directory rather than `workflow_dir`. The built-in help says only “Path to the entity file,” the JSON schema supplies no description, and the FO contract uses an undefined `{entity_file_path}` placeholder. In a split-root workflow this ambiguity makes `.spacedock-state/{slug}/index.md` look canonical even when the first officer is running from the repository root and must pass `docs/dev/.spacedock-state/{slug}/index.md`.
