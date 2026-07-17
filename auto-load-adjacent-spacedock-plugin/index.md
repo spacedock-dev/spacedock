@@ -76,3 +76,32 @@ Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Bec
 ### Summary
 
 Implemented the smallest boundary around the resolved launcher directory, reusing Claude's session flag and Codex's existing local-marketplace adapter only after complete validation. `go test ./...`, `go test ./... -race`, real isolated Codex provider tests, host CLI smokes, strict documentation rendering, and a detached adversarial audit all passed; the audit found no blocking defects.
+
+## Stage Report: validation
+
+- DONE: Reproduce the live 0.25.0+dev adjacent launcher versus installed Claude 0.26.0-pre1 mismatch and prove both Claude and Codex select the adjacent checkout without an explicit --plugin-dir.
+  Claude 2.1.212 debug output loaded `spacedock:first-officer` and skills from the branch worktree; isolated Codex 0.144.4 returned `ADJACENT_CODEX_OK`, and its installed provider symlink resolved to the same worktree.
+- DONE: Reproduce every acceptance criterion with focused behavior evidence, then run gofmt, go test ./..., and go test ./... -race; reject false-green or self-referential test evidence.
+  AC-1 through AC-6 focused tests passed; both complete Go suites passed, changed Go files are gofmt-clean, and repository-pinned MkDocs 1.6.1 built strictly.
+- DONE: Run the required detached adversarial audit on a throwaway checkout by removing or corrupting adjacent manifests and confirm the deliverable tests catch the fallback and fail-closed boundaries.
+  Corrupting both manifest names failed both repository manifest guards; automatic Claude fell back to the exact 0.25.0+dev/0.26.0-pre1 mismatch, Codex fell back to installed resolution, and explicit invalid Codex exited before writing isolated config.
+- DONE: AC-1 adjacent local selection for Claude and Codex.
+  Live host launches used no explicit `--plugin-dir`; Claude's debug log named the exact adjacent skills root, while Codex's provider symlink and successful agent output named and exercised the exact root.
+- DONE: AC-2 invalid adjacent layouts preserve installed resolution and healing.
+  Eight host/layout table cases passed for missing manifest, wrong name, missing skills, and release-style `bin/`; both host auto-install fallback cases re-resolved, gated, and launched.
+- DONE: AC-3 Claude additional plugins remain additions and cannot suppress the installed gate.
+  The behavior test observed installed-manifest resolution, preserved the additional directory in exact Claude argv, and reached the launch seam only after a compatible verdict.
+- DONE: AC-4 invalid Codex input fails before mutation.
+  The focused test asserted non-zero exit, manifest-name diagnostic, zero install calls, and an empty isolated `CODEX_HOME`; the detached real-CLI probe reproduced all four boundaries.
+- DONE: AC-5 explicit development override compatibility and precedence.
+  Existing explicit Claude/Codex tests and both adjacent-versus-explicit precedence tests passed.
+- DONE: AC-6 truthful host-specific help and development documentation.
+  Help behavior tests passed, Codex post-fence rejection was executable rather than prose-only, and `mkdocs build --strict` completed with the pinned requirements.
+- DONE: Semantic adversarial pass and false-green audit.
+  Disabling discovery failed both host selection tests; disabling manifest-name validation failed both host fallback lanes and the Codex no-mutation test, proving the new evidence is mutation-sensitive rather than self-confirming.
+- DONE: Validation recommendation: PASSED.
+  No material outcome or evidence defects remain; no deferred risks were identified for the promised workflows.
+
+### Summary
+
+Validation independently reproduced the release-autobump mismatch and proved that the adjacent checkout now wins for both live hosts without an explicit override. All acceptance criteria, complete test gates, strict docs build, and detached adversarial mutations passed; recommendation is PASSED with no blocking findings.
