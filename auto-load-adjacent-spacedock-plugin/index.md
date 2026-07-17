@@ -63,3 +63,16 @@ Verified by: command help snapshots and rendered documentation review paired wit
 Add focused unit tests in `internal/cli` before implementation for adjacent-root qualification, explicit-override precedence, Claude gate behavior, and Codex preflight-before-mutation. Use isolated temporary launcher roots and `CODEX_HOME` directories. Exercise current Claude and Codex CLI schemas with fixture-backed command behavior; use live host commands only where the claim depends on provider resolution rather than argv construction.
 
 Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`. Because the change touches the high-stakes front-door launcher and both host lanes, validation must also run the required Claude and Codex live lanes and a detached adversarial audit that removes or corrupts an adjacent manifest and confirms the tests catch the fallback or fail-closed boundary.
+
+## Stage Report: implementation
+
+- DONE: Local binaries automatically select an adjacent valid Spacedock checkout for both Claude and Codex.
+  Commit `a69032c8` adds host-manifest-qualified discovery; isolated Claude 2.1.212 and Codex 0.144.4 smokes launched the adjacent checkout, and Codex listed it as the sole enabled provider.
+- DONE: Missing or invalid adjacent checkouts preserve installed fallback or fail before any Codex mutation.
+  Fixture tests cover missing/wrong-name/missing-skills/release layouts for both hosts; invalid explicit Codex input left isolated `CODEX_HOME` unchanged with zero install calls.
+- DONE: Explicit overrides and host-specific additional-plugin behavior stay compatible, truthful, tested, and documented.
+  Pre-fence precedence tests pass for both hosts; Claude post-fence additions retain installed gating, Codex rejects unsupported forwarding, strict MkDocs rendering succeeds, and help snapshots pin both behaviors.
+
+### Summary
+
+Implemented the smallest boundary around the resolved launcher directory, reusing Claude's session flag and Codex's existing local-marketplace adapter only after complete validation. `go test ./...`, `go test ./... -race`, real isolated Codex provider tests, host CLI smokes, strict documentation rendering, and a detached adversarial audit all passed; the audit found no blocking defects.
