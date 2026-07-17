@@ -1,6 +1,6 @@
 ---
 title: Auto-load the adjacent Spacedock plugin
-status: implementation
+status: validation
 source: captain discussion 2026-07-17
 started: 2026-07-17T13:00:22Z
 completed:
