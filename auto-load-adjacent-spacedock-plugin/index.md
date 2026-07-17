@@ -1,12 +1,12 @@
 ---
 title: Auto-load the adjacent Spacedock plugin
-status: ideation
+status: implementation
 source: captain discussion 2026-07-17
-started:
+started: 2026-07-17T13:00:22Z
 completed:
 verdict:
 score: 0.9
-worktree:
+worktree: .worktrees/spacedock-ensign-auto-load-adjacent-spacedock-plugin
 issue:
 id: zbx5d7c4xgre4aq96d6q3xdy
 ---
