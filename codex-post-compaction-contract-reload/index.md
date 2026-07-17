@@ -241,6 +241,17 @@ Routed back to ideation: revise the schema, action table, gate authorization,
 live spike evidence, AC-16, and proof suites together before another staff
 review.
 
+**Cycle 3 (captain scope reset, 2026-07-17).** The durable action and
+authorization design is rejected as unnecessary mechanism. The intended value
+is two bounded hints only: before compaction, suggest it only when current
+workflow state and obligations are already durable at a safe boundary; after
+compaction, tell the resumed FO to reread the authoritative first-officer
+contract and reconcile durable workflow/worker state before continuing. Remove
+the authorization ledger, permits, action gateway, crash-replay controller,
+interception matrix, and their derived ACs. Re-ideate the smallest host-supported
+hook or reminder path, fail harmlessly when the host surface is absent, and prove
+only hint timing plus post-compaction contract reload behavior.
+
 ## Stage Report: ideation
 
 - DONE: Compress within budget.
