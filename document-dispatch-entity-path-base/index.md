@@ -33,3 +33,16 @@ Verified by: the existing relative-path behavioral test plus focused help/schema
 ## Test plan
 
 Add focused tests before changing the help/schema text. Run `gofmt -w ./cmd ./internal`, `go test ./...`, and `go test ./... -race`.
+
+## Stage Report: implementation
+
+- DONE: Add focused red-then-green help and schema tests that independently assert entity_path is absolute or relative to the caller current working directory, never relative to workflow_dir.
+  Red run failed on both missing contracts; green focused run passed help, decoded-schema, and existing relative-path behavior tests.
+- DONE: Document the project-root/state-checkout boundary and include the docs/dev/.spacedock-state/example/index.md split-root example without changing path resolution behavior or the overlapping public command-reference page.
+  Commit `d2929c6d` changes only built-in dispatch help, emitted schema metadata, and their focused tests; no resolver or public reference changes.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race; append exact evidence and a recommendation to the entity stage report.
+  `gofmt -w ./cmd ./internal` completed; `go test ./...` and `go test ./... -race` both exited 0 across all packages.
+
+### Summary
+
+`dispatch build --help` and `--print-schema` now state that `entity_path` is absolute or caller-cwd-relative, never `workflow_dir`-relative, and points to shared project/state rather than a code worktree. The split-root example uses `docs/dev/.spacedock-state/example/index.md`; existing resolution behavior remains unchanged. Recommendation: advance commit `d2929c6d` to fresh validation.
