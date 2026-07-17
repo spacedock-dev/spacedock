@@ -314,3 +314,27 @@ This retry changed no code or dependency files; the assigned worktree is clean. 
 ### Summary
 
 Product code and dependency files are unchanged by this retry. This report is committed locally only, per the current no-push instruction.
+
+## Stage Report: implementation (cycle 6)
+
+- DONE: AC-1 / AC-2 — replace all-history discovery with one native-index binding query and one selected rollout open.
+  Code commit `0cc72300` adds the approved pure-Go `modernc.org/sqlite` driver, queries `thread_spawn_edges` joined to `threads` with `LIMIT 2`, does not filter on edge status, and revalidates the indexed child ID, both JSONL parent fields, and the byte-exact worker path. `TestReadBudgetOpensOnlyIndexSelectedRolloutAmong978Files` places 977 content-bearing decoys beside the selected fixture and instruments the production seams: exactly one binding query and exactly one rollout open occurred; no decoy opened. Completed edges remain eligible, while zero/two rows, wrong identity, duplicate metadata, and index-versus-rollout disagreement fail closed.
+- DONE: AC-3 — use effective Codex SQLite configuration and a bounded read-only, WAL-safe native reader.
+  The resolver parses top-level `sqlite_home` from `$CODEX_HOME/config.toml`, then falls back to `CODEX_SQLITE_HOME`, then `CODEX_HOME`; relative config and environment values resolve from the working directory. Only canonical, regular, non-symlink `state_*.sqlite` candidates are considered. Each connection uses a file URI whose query is exactly `mode=ro&cache=private`, one connection, normal locking, and a 500 ms context; no `immutable`, `nolock`, migration, or mutating production pragma exists. Tests prove a committed WAL row is visible while its writer remains open, an INSERT through the production reader is rejected, an exclusive lock fails closed, and missing, unreadable, symlinked, schema-mismatched, or multiply-qualified state fails closed.
+- DONE: AC-4 — retain active-window-only projection from the one canonical selected JSONL.
+  The selected rollout must be absolute, clean, canonical, regular, non-symlinked, and below canonical `$CODEX_HOME/sessions`; its filesystem identity is checked before open, after open, and after streaming. Tests preserve the 18,893 -> 4,097 compaction pair, exact 60.0% and next-token behavior, malformed-known-record latching, unsafe path rejection, and transcript-content sentinel exclusion. `threads.tokens_used` is never selected or represented.
+- DONE: AC-5 / AC-6 — preserve no-JSON unavailable routing and the synchronous native-index-plus-selected-file product boundary.
+  Command goldens now build real SQLite fixtures for valid, above-budget, binding, ambiguous, record, stale, and unsafe outcomes. The existing adapter decision suite continues to route every non-zero or incomplete result to exactly one fresh dispatch. Runtime documentation states that the index provides identity only and the selected JSONL provides tokens; no app-server, observer, socket, sidecar, cache, capability file, companion executable, or full-tree fallback was added.
+
+### Verification
+
+- `go test ./internal/codexsession ./internal/dispatch -run 'Test(ReadBudget|LookupIndex|ResolveSQLite|CodexContextBudget)' -count=1` — exit 0.
+- `go test ./...` — exit 0 across all 18 packages.
+- `go test ./... -race` — exit 0 across all 18 packages.
+- `gofmt -w ./cmd ./internal` and `git diff --check` — clean for the task changes; the unrelated pre-existing `internal/release/journeydelta.go` alignment was restored and excluded.
+- Live current-worker replay from the built production binary: independently queried native state bound parent `019f7007-8fba-7503-8c44-5ebf9a7cc945` plus worker `/root/spacedock_ensign_codex_context_budget_probe_implementation` to child `019f709c-d443-7490-bb76-e3581de95416` and its canonical rollout. The command returned the same child, `source:"session-jsonl"`, a fresh `134768 / 258400` active-window snapshot, and `reuse_ok:true`; `/usr/bin/time -p` measured `real 0.27`, `user 0.01`, `sys 0.00`.
+- The live `EXPLAIN QUERY PLAN` used `idx_thread_spawn_edges_parent_status (parent_thread_id=?)`, then `sqlite_autoindex_threads_1 (id=?)`; no sessions-tree traversal occurred.
+
+### Summary
+
+The native-index redesign is implemented in `0cc72300`. The production gate now turns a roster path into one exact child through Codex's read-only local state, opens only that child's canonical rollout for fresh active-window tokens, and fresh-dispatches on every missing, locked, ambiguous, stale, inconsistent, malformed, or unsafe evidence condition. The measured live path completed in 0.27 seconds versus the recorded roughly 30-second / 978-file / 1.1-GiB replay baseline.
