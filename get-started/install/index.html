@@ -71,7 +71,7 @@
         "headline": "Install",
         "description": "A multi-agent orchestrator where nothing ships without a decision.",
         "url": "https://spacedock.md/docs/get-started/install/",
-        "dateModified": "2026-07-15 14:16:02",
+        "dateModified": "2026-07-17 15:13:08",
         "isPartOf": { "@type": "WebSite", "name": "Spacedock", "url": "https://spacedock.md/docs/" }
       },
       {
@@ -1350,10 +1350,19 @@ same way with <code>codex plugin add</code>.</p>
 marketplace instead of the default <code>spacedock-dev/marketplace</code> — useful for
 dogfooding a marketplace change before it reaches the production marketplace:</p>
 <pre class="highlight"><code class="language-bash">SPACEDOCK_MARKETPLACE_SOURCE=/path/to/local/marketplace spacedock install --host codex</code></pre>
-<p>Launching with <code>--plugin-dir</code> loads a local plugin checkout directly. On Claude
-and Pi this is an ephemeral, install-free override — it bypasses installed-plugin
-resolution for that one launch and does not wrap the launch in the safehouse
-sandbox; use it for plugin development, not as an install substitute.</p>
+<p>When the resolved <code>spacedock</code> executable sits at the root of a checkout whose
+host manifest names <code>spacedock</code> and points to an existing skills directory, the
+launcher selects that adjacent checkout automatically. A source build at
+<code>./spacedock</code> therefore needs no <code>--plugin-dir</code> for either Claude or Codex. A
+release binary in a <code>bin/</code> directory, or a checkout with a missing or invalid
+host manifest, keeps the normal installed-plugin resolution and compatibility
+gate.</p>
+<p>An explicit <code>--plugin-dir &lt;checkout&gt;</code> before <code>--</code> overrides adjacent discovery.
+On Claude and Pi this is an ephemeral, install-free override — it bypasses
+installed-plugin resolution for that one launch and does not wrap the launch in
+the safehouse sandbox; use it for plugin development, not as an install
+substitute. On Claude, a <code>--plugin-dir</code> after <code>--</code> remains a native additional
+session plugin: it does not replace Spacedock or suppress the compatibility gate.</p>
 <p>Codex has no such flag on its own CLI, so <code>spacedock codex --plugin-dir
 &lt;checkout&gt;</code> and <code>spacedock install --host codex --plugin-dir &lt;checkout&gt;</code> build a
 local marketplace from the checkout and install it under the binary's own
@@ -1365,7 +1374,9 @@ channel replaces any existing stable or edge Spacedock Codex plugin so
 point-in-time snapshot: editing the checkout afterward has no effect until the
 command is re-run. The command prints an advisory that names the selected channel
 and notes that the reported version reflects the checkout's checked-in manifest,
-not necessarily its current HEAD.</p>
+not necessarily its current HEAD. Codex does not accept a post-<code>--</code>
+<code>--plugin-dir</code>; install additional Codex plugins persistently with
+<code>codex plugin add</code>.</p>
 <h2 id="sandboxing">Sandboxing<a class="headerlink" href="#sandboxing" title="Permanent link">&para;</a></h2>
 <p>See <a href="../../reference/sandbox/">supported sandboxes</a>.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
@@ -1393,7 +1404,7 @@ with coding agents, or start with <a href="../first-workflow/">your first workfl
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 15, 2026 14:16:02 UTC">2026-07-15 14:16:02</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-iso_datetime" title="July 17, 2026 15:13:08 UTC">2026-07-17 15:13:08</span>
   </span>
 
     

@@ -2,7 +2,7 @@
 title: "Command reference"
 description: "A multi-agent orchestrator where nothing ships without a decision."
 doc_version: "0.20.2"
-last_updated: "2026-07-15 14:16:02"
+last_updated: "2026-07-17 15:13:08"
 ---
 
 # Command reference
@@ -31,7 +31,9 @@ The `Sandbox:` line is one of `enabled (safehouse)`, `available, not enabled (no
 spacedock claude [task] [spacedock-flags] [-- host-flags]
 ```
 
-The task comes first and becomes the launch prompt. Anything after `--` forwards verbatim to the host (`--model`, `resume`, and the like). For Codex, Spacedock keeps its normal launch banner, default approval posture, and bootstrap prompt unless the forwarded token slice contains an exact token equal to `resume`. It does not parse Codex option grammar: `spacedock codex -- --model gpt-5.6-sol` remains a fresh first-officer launch, while `spacedock codex -- --model gpt-5.6-sol resume <id>` stays prompt-free. Use bare `spacedock codex` to start the first officer. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
+The task comes first and becomes the launch prompt. Supported host arguments after `--` forward verbatim (`--model`, `resume`, and the like). For Codex, Spacedock keeps its normal launch banner, default approval posture, and bootstrap prompt unless the forwarded token slice contains an exact token equal to `resume`. It does not parse Codex option grammar: `spacedock codex -- --model gpt-5.6-sol` remains a fresh first-officer launch, while `spacedock codex -- --model gpt-5.6-sol resume <id>` stays prompt-free. Use bare `spacedock codex` to start the first officer. When no plugin is installed, the launcher auto-installs it and launches, so the single command yields a working session; a contract mismatch fails fast. The sandbox flags (`--safehouse` and its knobs) and the contract-gate flags are listed by `spacedock claude --help`.
+
+For Claude and Codex, a valid Spacedock plugin checkout beside the resolved launcher is selected automatically. `--plugin-dir <checkout>` before `--` is an explicit Spacedock override and takes precedence. Claude treats a post-`--` `--plugin-dir` as an additional native session plugin, so the installed or adjacent Spacedock provider is still gated normally. Codex has no native session-local flag: a post-`--` `--plugin-dir` is rejected, and additional Codex plugins must be installed persistently with `codex plugin add`.
 
 An unsandboxed bootstrap launch carries no safehouse isolation, so per-action permission prompting is friction without a matching safety gain: `spacedock claude` starts in `--permission-mode auto` and Codex starts in `--ask-for-approval on-request` unless you supply an approval mode. A sandboxed bootstrap launch instead skips/bypasses approvals (`--dangerously-skip-permissions` for claude, `--dangerously-bypass-approvals-and-sandbox` for codex) since the sandbox is the gate. Claude suppresses its defaults when you pass your own mode or a resume. Codex suppresses its banner and bootstrap prompt only when its forwarded argv contains the exact `resume` token; an explicit approval mode prevents only a duplicate automatic approval flag.
 
