@@ -1047,7 +1047,8 @@ func emitBuildSchema(stdout io.Writer) int {
 				"const": schemaVersion,
 			},
 			"entity_path": map[string]any{
-				"type": "string",
+				"type":        "string",
+				"description": "Absolute path or path relative to the caller's current working directory; never relative to workflow_dir. Identifies the project-root/state-checkout entity, not a code-worktree copy (for example, docs/dev/.spacedock-state/example/index.md).",
 			},
 			"workflow_dir": map[string]any{
 				"type": "string",

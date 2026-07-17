@@ -33,6 +33,24 @@ func TestDispatchBuildHelpBeforeRequiredFlags(t *testing.T) {
 	}
 }
 
+func TestDispatchBuildHelpDocumentsEntityPathBase(t *testing.T) {
+	res := runNative("", "build", "--help")
+	if res.exit != 0 {
+		t.Fatalf("dispatch build --help exit=%d, want 0\nstderr=%q", res.exit, res.stderr)
+	}
+	if res.stderr != "" {
+		t.Fatalf("dispatch build --help stderr=%q, want empty", res.stderr)
+	}
+
+	assertContainsAll(t, res.stdout,
+		"absolute or relative to the caller's current working directory",
+		"never relative to workflow_dir",
+		"project-root/state-checkout entity, not a code-worktree copy",
+		`"entity_path":"docs/dev/.spacedock-state/example/index.md"`,
+		`"workflow_dir":"docs/dev"`,
+	)
+}
+
 func TestDispatchShowStageDefHelpBeforeRequiredFlags(t *testing.T) {
 	for _, helpFlag := range []string{"--help", "-h"} {
 		t.Run(helpFlag, func(t *testing.T) {
