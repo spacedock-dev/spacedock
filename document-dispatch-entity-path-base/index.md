@@ -46,3 +46,24 @@ Add focused tests before changing the help/schema text. Run `gofmt -w ./cmd ./in
 ### Summary
 
 `dispatch build --help` and `--print-schema` now state that `entity_path` is absolute or caller-cwd-relative, never `workflow_dir`-relative, and points to shared project/state rather than a code worktree. The split-root example uses `docs/dev/.spacedock-state/example/index.md`; existing resolution behavior remains unchanged. Recommendation: advance commit `d2929c6d` to fresh validation.
+
+## Stage Report: validation
+
+- DONE: Independently prove the help and decoded schema identify entity_path as absolute or caller-cwd-relative, never workflow_dir-relative, including the split-root example.
+  A branch-built binary emitted the rule in `dispatch build --help`; decoded `--print-schema` JSON carried the same rule and `docs/dev/.spacedock-state/example/index.md` example.
+- DONE: Verify AC-1 through AC-3 with behavior-sensitive evidence and reject any tautological or self-referential assertion.
+  The added tests invoke the command surface and decode emitted JSON rather than deriving expectations from output; independent live path probes supplied the behavioral oracle, so the tests are not tautological.
+- DONE: AC-1 — An operator can determine the correct `entity_path` base from `spacedock dispatch build --help` without reading source code.
+  Live help clearly said caller current working directory, never `workflow_dir`, project/state entity rather than code worktree, and showed the split-root JSON example.
+- DONE: AC-2 — `spacedock dispatch build --print-schema` carries the same path semantics.
+  `jq` decoded `properties.entity_path.description` and independently verified the cwd rule, exclusion, and split-root path; JSON was valid and structurally addressable.
+- DONE: AC-3 — Existing absolute and cwd-relative behavior remains unchanged.
+  From the repository root, both absolute and `docs/dev/.spacedock-state/.../index.md` inputs exited 0 and emitted the same absolute entity path; `.spacedock-state/.../index.md` was rejected with exit 1 rather than being resolved below `workflow_dir`.
+- DONE: Perform a semantic adversarial pass over the changed behavior.
+  Matrix covered help/schema representations and absolute/caller-relative/workflow-relative inputs; exact resolved identity and failure behavior agreed across representations, with no material or deferred finding.
+- DONE: Run gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race, recording exact results and a PASSED or REJECTED recommendation.
+  Focused dispatch tests exited 0; `go test ./...` and `go test ./... -race` both exited 0. Repository-wide gofmt exposed only pre-existing alignment drift in `internal/release/journeydelta.go`, which was restored; all four changed files have empty `gofmt -d` output.
+
+### Summary
+
+Commit `d2929c6d` satisfies AC-1 through AC-3 with clear observable help/schema output and unchanged path resolution. No material, deferred-risk, or polish finding remains; recommendation: PASSED.
