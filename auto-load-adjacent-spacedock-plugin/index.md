@@ -1,6 +1,6 @@
 ---
 title: Auto-load the adjacent Spacedock plugin
-status: implementation
+status: validation
 source: captain discussion 2026-07-17
 started: 2026-07-17T13:00:22Z
 completed:
@@ -109,8 +109,6 @@ Validation independently reproduced the release-autobump mismatch and proved tha
 ### Feedback Cycles
 
 - Cycle 1 — evidence defect in AC-3: the Claude additional-plugin test proves the installed compatibility gate runs and the extra directory reaches argv, but it does not observe which `spacedock:first-officer` provider Claude selects. Because the additional fixture is itself named `spacedock`, the test can pass while that directory impersonates the selected provider. Route to implementation: add provider-identity observation plus an adversarial mutation that fails if the additional directory wins while the gate and argv assertions still pass; then rerun focused, full, and race tests before fresh validation.
-
-- Cycle 2 — RoboRev branch-final rejection: `internal/cli/frontdoor.go` gates the installed Claude manifest whenever the development plugin appears after `--`, even when that post-fence manifest is itself named `spacedock` and becomes Claude's selected provider. Preserve differently named post-fence additions, but inspect post-fence manifests and retain the supported install-free Spacedock override. The new provider-identity test must also leave the baseline suite deterministic: put live-Claude execution behind an explicit integration opt-in or build tag, check the supported host version, and bound external commands with a timeout while retaining fixture-backed baseline coverage.
 
 ## Stage Report: implementation (cycle 2)
 
