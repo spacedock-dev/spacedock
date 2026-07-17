@@ -271,6 +271,31 @@ func TestBuildSchemaAndValidateOnly(t *testing.T) {
 	})
 }
 
+func TestBuildSchemaDocumentsEntityPathBase(t *testing.T) {
+	native := runNativePreservingHostEnv("", "build", "--print-schema")
+	if native.exit != 0 {
+		t.Fatalf("print-schema exit=%d stderr=%s", native.exit, native.stderr)
+	}
+
+	var schema map[string]any
+	if err := json.Unmarshal([]byte(native.stdout), &schema); err != nil {
+		t.Fatalf("schema is not valid JSON: %v\n%s", err, native.stdout)
+	}
+	props, ok := schema["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("schema missing properties object:\n%s", native.stdout)
+	}
+	entityPath, ok := props["entity_path"].(map[string]any)
+	if !ok {
+		t.Fatalf("schema missing entity_path property:\n%s", native.stdout)
+	}
+
+	const want = "Absolute path or path relative to the caller's current working directory; never relative to workflow_dir. Identifies the project-root/state-checkout entity, not a code-worktree copy (for example, docs/dev/.spacedock-state/example/index.md)."
+	if got := entityPath["description"]; got != want {
+		t.Fatalf("entity_path description = %q, want %q", got, want)
+	}
+}
+
 func buildHostFixture(t *testing.T) (string, string) {
 	t.Helper()
 	root := t.TempDir()

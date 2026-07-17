@@ -302,13 +302,14 @@ Flags:
 
 Stdin JSON fields:
   schema_version  Dispatch schema version. The current supported value is 2.
-  entity_path     Path to the entity file for this dispatch.
+  entity_path     May be absolute or relative to the caller's current working directory; never relative to workflow_dir.
+                  Identifies the project-root/state-checkout entity, not a code-worktree copy.
   workflow_dir    Workflow directory for the dispatch request.
   stage           Stage name to dispatch.
   checklist       Array of checklist strings for the dispatched worker.
 
-Example:
-  {"schema_version":2,"entity_path":"thing.md","workflow_dir":".","stage":"implementation","checklist":["DONE: run tests"]}
+Split-root example (called from the project root):
+  {"schema_version":2,"entity_path":"docs/dev/.spacedock-state/example/index.md","workflow_dir":"docs/dev","stage":"implementation","checklist":["DONE: run tests"]}
 `)
 }
 
