@@ -1,6 +1,6 @@
 ---
 title: Document dispatch entity path base
-status: implementation
+status: validation
 source: captain discussion 2026-07-17
 started: 2026-07-17T13:36:06Z
 completed:
