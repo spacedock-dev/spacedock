@@ -122,6 +122,11 @@ func WriteCodexLocalMarketplace(marketplaceRoot, repoRoot, marketplaceName strin
 // `--plugin-dir` install reports the checkout's checked-in .codex-plugin/plugin.json
 // version, not necessarily its current HEAD (the full stamping fix is deferred).
 func installCodexLocalPluginDir(ops hostOps, checkout string, stderr io.Writer) error {
+	// Preflight the checkout before creating the persistent marketplace directory,
+	// replacing its symlink, or asking Codex to remove/install any channel.
+	if err := validateLocalSpacedockPlugin(checkout, "codex"); err != nil {
+		return err
+	}
 	marketplaceRoot := filepath.Join(codexHome(), "spacedock-plugin-dir", channelMarketplace(devBranch))
 	if err := os.MkdirAll(marketplaceRoot, 0o755); err != nil {
 		return fmt.Errorf("create local marketplace dir: %w", err)

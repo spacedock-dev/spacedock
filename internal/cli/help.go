@@ -48,17 +48,30 @@ func printHelp(w io.Writer) {
 func setFrontDoorHelp(cmd *cobra.Command, host string, w io.Writer) {
 	declareFrontDoorHelpFlags(cmd)
 	cmd.SetHelpFunc(func(c *cobra.Command, _ []string) {
+		pluginBehavior := `A valid Spacedock checkout beside the resolved launcher is selected automatically.
+Use --plugin-dir before -- to override that selection with another local checkout.
+For Claude, --plugin-dir after -- is a native additional session plugin; it does
+not replace Spacedock or bypass the installed-plugin compatibility gate.`
+		forwardingExamples := `Claude model/session flags and additional --plugin-dir entries.`
+		lastExample := `spacedock claude --safehouse-add-dirs ~/scratch -- --plugin-dir ./additional-plugin`
+		if host == "codex" {
+			pluginBehavior = `A valid Spacedock checkout beside the resolved launcher is selected automatically.
+Use --plugin-dir before -- to override that selection with another local checkout.
+Codex installs the selected checkout through its persistent local marketplace.
+Codex has no forwarded --plugin-dir flag; install additional plugins with
+"codex plugin add" instead.`
+			forwardingExamples = `Codex model/session flags. A forwarded --plugin-dir is rejected.`
+			lastExample = `spacedock codex -- --model gpt-5.6-sol`
+		}
 		fmt.Fprint(w, tagline+`
 
 Usage:
   spacedock `+host+` [task] [spacedock-flags] [-- `+host+`-flags]
 
 Start `+hostTitle(host)+` as your Spacedock first officer. The optional task is the
-launch prompt; everything after -- forwards verbatim to `+host+`.
+launch prompt; supported host arguments after -- forward verbatim to `+host+`.
 
-A --plugin-dir launch loads a local plugin checkout and relaxes the version gate,
-so it does not require a prior "spacedock install". --plugin-dir is accepted both
-before -- (as a spacedock-parsed flag, repeatable) and after -- (forwarded verbatim).
+`+pluginBehavior+`
 
 Flags:
 `)
@@ -66,13 +79,13 @@ Flags:
 		fmt.Fprint(w, `
 Forwarding:
   Tokens before -- are spacedock's (the task + the flags above). Tokens after --
-  forward verbatim to `+host+`, e.g. `+host+` model/session flags and --plugin-dir.
+  forward verbatim where supported to `+host+`: `+forwardingExamples+`
 
 Examples:
   spacedock `+host+`
   spacedock `+host+` "review the open PRs"
   spacedock `+host+` --plugin-dir ./checkout
-  spacedock `+host+` --safehouse-add-dirs ~/scratch -- --plugin-dir ./checkout
+  `+lastExample+`
 `)
 	})
 }

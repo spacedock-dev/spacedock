@@ -354,8 +354,10 @@ func printHealableRemedy(host string, res contract.Result, stderr io.Writer) {
 // `--safehouse-*` knobs translate into the safehouse `extra` slot. The bootstrap
 // prompt is appended last (base, or base + " " + task when a task is fenced after
 // `--`) unless a resume is forwarded. The gate is bypassed by an explicit
-// `--skip-compat-check` or by any `--plugin-dir` (the local checkout supersedes
-// the installed plugin). `lookPath` resolves the safehouse binary (default
+// `--skip-compat-check`, by a declared pre-fence `--plugin-dir`, or by a valid
+// host-specific plugin checkout adjacent to the resolved launcher. Post-fence
+// plugin directories remain native Claude additions and do not affect provider
+// selection or gating. `lookPath` resolves the safehouse binary (default
 // exec.LookPath; injected so tests pin not-found).
 func runClaude(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
@@ -368,10 +370,19 @@ func runClaude(ctx context.Context, args []string, dir string, ops hostOps, look
 		fmt.Fprintf(stderr, "spacedock claude: %v\n", err)
 		return 1
 	}
-	// A `--plugin-dir` launch loads the LOCAL plugin checkout, so the installed
-	// plugin's version verdict is irrelevant — it relaxes the gate exactly like
-	// an explicit `--skip-compat-check`.
-	if !fd.skipCheck && !hasPluginDir(fd.passthrough) {
+	// A declared pre-fence plugin directory is the compatibility-preserving local
+	// Spacedock override. Without one, a valid checkout beside the resolved
+	// launcher supplies the same session-local provider automatically. Native
+	// post-fence Claude plugin directories are additions only: they neither select
+	// Spacedock nor suppress the installed compatibility gate.
+	localSpacedock := fd.pluginDirPairs > 0
+	if !localSpacedock {
+		if adjacent, ok := adjacentSpacedockPluginRoot("claude"); ok {
+			fd.passthrough = append([]string{"--plugin-dir", adjacent}, fd.passthrough...)
+			localSpacedock = true
+		}
+	}
+	if !fd.skipCheck && !localSpacedock {
 		if !resolveHealableGate(ops, "claude", fd.noInstall, stderr) {
 			return 1
 		}
@@ -539,10 +550,12 @@ const codexBootstrapPrompt = "You totally got this. Take your time. I love you. 
 // sandbox). After Spacedock consumes its own pre-fence flags, an exact `resume`
 // token in Codex's forwarded argv suppresses the banner, default approval mode,
 // and bootstrap prompt; every other forwarded argv retains the normal fresh-launch
-// posture. A declared pre-fence `--plugin-dir` installs its local checkout before
-// the normal gate; `--skip-compat-check` alone bypasses that gate. `lookPath`
-// resolves the safehouse binary (default exec.LookPath; injected so tests pin
-// not-found).
+// posture. A declared pre-fence `--plugin-dir`, or a valid host-specific plugin
+// checkout adjacent to the resolved launcher when no explicit override exists,
+// installs the local checkout before the normal gate. Forwarded post-fence
+// `--plugin-dir` is rejected because Codex has no such native session flag.
+// `--skip-compat-check` alone bypasses the gate. `lookPath` resolves the safehouse
+// binary (default exec.LookPath; injected so tests pin not-found).
 func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookPath func(string) (string, error), stdout, stderr io.Writer) int {
 	fd, err := parseFrontDoorArgs(args)
 	if err != nil {
@@ -554,20 +567,25 @@ func runCodex(ctx context.Context, args []string, dir string, ops hostOps, lookP
 		fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 		return 1
 	}
-	// `spacedock codex --plugin-dir <checkout>` has no codex-native flag to forward
-	// — codex's CLI hard-rejects `--plugin-dir` — so consume it here: strip it from
-	// the passthrough so the real codex never sees it, build a local marketplace
-	// from the checkout, and install it under the binary's own channel. The normal
-	// gate then runs against the just-installed plugin. Unlike Claude's ephemeral
-	// --plugin-dir bypass, a Codex --plugin-dir is a real on-disk install. It is
-	// gate-checked rather than treated as redundant.
-	if dir, rest, found := takeCodexPluginDir(fd.passthrough, fd.pluginDirPairs); found {
-		fd.passthrough = rest
-		if dir == "" {
-			fmt.Fprintln(stderr, "spacedock codex: --plugin-dir requires a checkout path")
-			return 1
-		}
-		if err := installCodexLocalPluginDir(ops, dir, stderr); err != nil {
+	// Codex has no native session-local plugin flag. Consume only Spacedock's
+	// declared pre-fence override; reject a post-fence occurrence truthfully before
+	// any persistent work. When there is no explicit override, use a qualified
+	// checkout beside the resolved launcher. Explicit selection always wins.
+	pluginDir, rest, explicitPluginDir := takeCodexPluginDir(fd.passthrough, fd.pluginDirPairs)
+	fd.passthrough = rest
+	if hasPluginDir(fd.passthrough) {
+		fmt.Fprintln(stderr, "spacedock codex: Codex does not accept forwarded --plugin-dir; place the Spacedock checkout flag before `--`, or install additional Codex plugins with `codex plugin add`")
+		return 1
+	}
+	if explicitPluginDir && pluginDir == "" {
+		fmt.Fprintln(stderr, "spacedock codex: --plugin-dir requires a checkout path")
+		return 1
+	}
+	if !explicitPluginDir {
+		pluginDir, _ = adjacentSpacedockPluginRoot("codex")
+	}
+	if pluginDir != "" {
+		if err := installCodexLocalPluginDir(ops, pluginDir, stderr); err != nil {
 			fmt.Fprintf(stderr, "spacedock codex: %v\n", err)
 			return 1
 		}
@@ -767,7 +785,7 @@ func bindFrontDoorFlags(fs *pflag.FlagSet) frontDoorFlags {
 		addDirsRO: fs.StringArray("safehouse-add-dirs-ro", nil,
 			"Grant safehouse read-only access to a directory; repeatable"),
 		pluginDir: fs.StringArray("plugin-dir", nil,
-			"Load a local plugin checkout (relaxes the version gate); repeatable"),
+			"Select a local Spacedock checkout before -- (relaxes the version gate); repeatable"),
 	}
 }
 

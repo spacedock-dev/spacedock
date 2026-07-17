@@ -41,7 +41,7 @@ func (h *codexPluginDirHost) Install(host, source, branch string) (string, error
 // re-introduction of the passthrough bug flips this assertion.
 func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
-	checkout := t.TempDir()
+	checkout, _ := localPluginCheckout(t, "codex")
 	host := &codexPluginDirHost{fakeHost: fakeHost{manifest: compatibleManifest(t)}}
 	var stdout, stderr bytes.Buffer
 
@@ -77,7 +77,7 @@ func TestRunCodexPluginDirInstallsThenLaunchesWithoutTheFlag(t *testing.T) {
 // the checkout flag nor its value reaches the real Codex argv.
 func TestRunCodexPluginDirPostFenceResumeStaysPromptFree(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
-	checkout := t.TempDir()
+	checkout, _ := localPluginCheckout(t, "codex")
 	host := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -100,7 +100,7 @@ func TestRunCodexPluginDirPostFenceResumeStaysPromptFree(t *testing.T) {
 // never the Spacedock-owned checkout tokens.
 func TestRunCodexPluginDirModelOnlyRetainsBootstrapPosture(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
-	checkout := t.TempDir()
+	checkout, _ := localPluginCheckout(t, "codex")
 	host := &fakeHost{manifest: compatibleManifest(t)}
 	var stdout, stderr bytes.Buffer
 
@@ -119,7 +119,7 @@ func TestRunCodexPluginDirModelOnlyRetainsBootstrapPosture(t *testing.T) {
 	}
 }
 
-func TestRunCodexPostFencePluginDirRemainsForwardedAndBootstraps(t *testing.T) {
+func TestRunCodexPostFencePluginDirIsRejectedTruthfully(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir())
 	postFenceCheckout := t.TempDir()
 	host := &fakeHost{manifest: compatibleManifest(t)}
@@ -128,18 +128,17 @@ func TestRunCodexPostFencePluginDirRemainsForwardedAndBootstraps(t *testing.T) {
 	args := []string{"--", "--plugin-dir", postFenceCheckout}
 	code := runCodex(context.Background(), args, t.TempDir(), host, lookFound, &stdout, &stderr)
 
-	if code != 0 {
-		t.Fatalf("exit = %d, want 0 (stderr=%q)", code, stderr.String())
-	}
-	want := []string{"codex", "--ask-for-approval", "on-request", "--plugin-dir", postFenceCheckout, wantCodexBootstrapPrompt}
-	if !equalArgv(host.launchedArg, want) {
-		t.Fatalf("launch argv = %v, want %v", host.launchedArg, want)
+	if code == 0 {
+		t.Fatalf("exit = 0, want unsupported forwarded flag failure (stderr=%q)", stderr.String())
 	}
 	if len(host.installCmds) != 0 {
 		t.Fatalf("post-fence --plugin-dir invoked the local-install seam: %v", host.installCmds)
 	}
-	if !strings.Contains(stderr.String(), "· launching codex") {
-		t.Fatalf("post-fence --plugin-dir launch omitted the Codex banner: %q", stderr.String())
+	if host.launchedArg != nil {
+		t.Fatalf("post-fence --plugin-dir reached Codex argv: %v", host.launchedArg)
+	}
+	if !strings.Contains(stderr.String(), "does not accept forwarded --plugin-dir") || !strings.Contains(stderr.String(), "codex plugin add") {
+		t.Fatalf("post-fence diagnostic is not actionable: %q", stderr.String())
 	}
 }
 
@@ -154,7 +153,7 @@ func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 
 	t.Run("present on --plugin-dir", func(t *testing.T) {
 		t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
-		checkout := t.TempDir()
+		checkout, _ := localPluginCheckout(t, "codex")
 		fake := &fakeHost{manifest: compatibleManifest(t)}
 		var stdout, stderr bytes.Buffer
 		code := runCodex(context.Background(), []string{"--plugin-dir", checkout}, t.TempDir(), fake, lookFound, &stdout, &stderr)
@@ -197,7 +196,7 @@ func TestCodexPluginDirAdvisoryPresenceAndAbsence(t *testing.T) {
 // than the pre-change rejection.
 func TestInstallCodexPluginDirInstallsViaSharedHelper(t *testing.T) {
 	t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
-	checkout := t.TempDir()
+	checkout, _ := localPluginCheckout(t, "codex")
 	host := &codexPluginDirHost{fakeHost: fakeHost{manifest: compatibleManifest(t)}}
 	var stdout, stderr bytes.Buffer
 
