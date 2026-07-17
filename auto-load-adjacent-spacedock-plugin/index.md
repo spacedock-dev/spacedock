@@ -109,3 +109,16 @@ Validation independently reproduced the release-autobump mismatch and proved tha
 ### Feedback Cycles
 
 - Cycle 1 — evidence defect in AC-3: the Claude additional-plugin test proves the installed compatibility gate runs and the extra directory reaches argv, but it does not observe which `spacedock:first-officer` provider Claude selects. Because the additional fixture is itself named `spacedock`, the test can pass while that directory impersonates the selected provider. Route to implementation: add provider-identity observation plus an adversarial mutation that fails if the additional directory wins while the gate and argv assertions still pass; then rerun focused, full, and race tests before fresh validation.
+
+## Stage Report: implementation (cycle 2)
+
+- DONE: Add a Claude behavior test that observes the selected spacedock:first-officer provider when a distinct additional plugin directory is forwarded.
+  `TestClaudeAdditionalPluginKeepsInstalledSpacedockProvider` uses Claude's pre-API `agent_listing_delta` to observe the installed provider's unique description while `additional-tools` remains a distinct forwarded plugin.
+- DONE: Add an adversarial mutation proving the test fails if the additional directory wins while compatibility-gate and argv assertions still pass.
+  The same test mutates only the additional manifest name to `spacedock`, observes the provider description flip to `MUTANT_ADDITIONAL_PROVIDER_IDENTITY`, and proves installed-manifest resolution plus normalized argv remain unchanged.
+- DONE: Run focused tests, gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race; append a replacement implementation report with exact evidence.
+  Focused real-Claude provider evidence, the complete suite, and the complete race suite passed; commit `26200066` contains the cycle-2 test only.
+
+### Summary
+
+Closed only the AC-3 evidence gap using Claude's own durable agent-listing event before the intentionally invalid isolated API key exits. The positive and adversarial arms now distinguish installed-provider selection from additional-plugin impersonation without changing the accepted adjacent-discovery implementation.
