@@ -1,6 +1,6 @@
 ---
 title: Auto-load the adjacent Spacedock plugin
-status: validation
+status: implementation
 source: captain discussion 2026-07-17
 started: 2026-07-17T13:00:22Z
 completed:
@@ -105,3 +105,7 @@ Implemented the smallest boundary around the resolved launcher directory, reusin
 ### Summary
 
 Validation independently reproduced the release-autobump mismatch and proved that the adjacent checkout now wins for both live hosts without an explicit override. All acceptance criteria, complete test gates, strict docs build, and detached adversarial mutations passed; recommendation is PASSED with no blocking findings.
+
+### Feedback Cycles
+
+- Cycle 1 — evidence defect in AC-3: the Claude additional-plugin test proves the installed compatibility gate runs and the extra directory reaches argv, but it does not observe which `spacedock:first-officer` provider Claude selects. Because the additional fixture is itself named `spacedock`, the test can pass while that directory impersonates the selected provider. Route to implementation: add provider-identity observation plus an adversarial mutation that fails if the additional directory wins while the gate and argv assertions still pass; then rerun focused, full, and race tests before fresh validation.
