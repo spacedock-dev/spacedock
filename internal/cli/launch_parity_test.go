@@ -358,22 +358,21 @@ func TestCodexPostFenceWithoutResumeBootstrapsFirstOfficer(t *testing.T) {
 	}
 }
 
-// LP-AC-3: for claude, --plugin-dir passes through (multiplicity, order) AND
-// relaxes the gate (launches even on a failing manifest); without it the gate
-// still fails. Codex is the exception: its CLI has no --plugin-dir flag, so the
+// LP-AC-3: for claude, only a declared pre-fence --plugin-dir passes through AND
+// relaxes the gate; a post-fence directory is a native addition and the gate
+// still runs. Codex is the exception: its CLI has no --plugin-dir flag, so the
 // flag is consumed into a real local-marketplace install and the gate then runs
 // against that install rather than being relaxed (the codex sub-case below).
 func TestPluginDirRelaxesGate(t *testing.T) {
-	t.Run("claude-relaxes-on-failing-manifest", func(t *testing.T) {
+	t.Run("claude-post-fence-does-not-relax-failing-manifest", func(t *testing.T) {
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)} // gate would FAIL
 		var stdout, stderr bytes.Buffer
 		code := runClaude(context.Background(), []string{"--", "--plugin-dir", "/a", "--plugin-dir", "/b"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
-		if code != 0 {
-			t.Fatalf("exit = %d, want 0 (--plugin-dir relaxes the gate); stderr=%q", code, stderr.String())
+		if code == 0 {
+			t.Fatalf("exit = 0, want installed-gate failure for post-fence additions; stderr=%q", stderr.String())
 		}
-		want := []string{"claude", "--agent", "spacedock:first-officer", "--permission-mode", "auto", "--plugin-dir", "/a", "--plugin-dir", "/b", wantBootstrapPrompt}
-		if !equalArgv(fake.launchedArg, want) {
-			t.Fatalf("launch argv = %v, want %v", fake.launchedArg, want)
+		if fake.launchedArg != nil {
+			t.Fatalf("post-fence additions bypassed gate and launched: %v", fake.launchedArg)
 		}
 	})
 	t.Run("codex-plugin-dir-installs-then-gates-not-relaxed", func(t *testing.T) {
@@ -383,9 +382,10 @@ func TestPluginDirRelaxesGate(t *testing.T) {
 		// manifest, the gate FAILS — proving codex --plugin-dir installs then gates
 		// rather than relaxing.
 		t.Setenv("CODEX_HOME", t.TempDir()) // isolate the persistent local marketplace
+		checkout, _ := localPluginCheckout(t, "codex")
 		fake := &fakeHost{manifest: tooOldBinaryManifest(t)}
 		var stdout, stderr bytes.Buffer
-		code := runCodex(context.Background(), []string{"--plugin-dir", "/a"}, t.TempDir(), fake, lookFound, &stdout, &stderr)
+		code := runCodex(context.Background(), []string{"--plugin-dir", checkout}, t.TempDir(), fake, lookFound, &stdout, &stderr)
 		if code == 0 {
 			t.Fatalf("exit = 0, want non-zero (codex --plugin-dir gate-checks the install, not relaxes); stderr=%q", stderr.String())
 		}

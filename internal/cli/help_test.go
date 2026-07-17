@@ -38,6 +38,15 @@ func TestFrontDoorHelpCarriesDetail(t *testing.T) {
 					t.Errorf("%s --help missing %q:\n%s", host, want, out)
 				}
 			}
+			hostTruth := []string{"additional session plugin", "not replace Spacedock"}
+			if host == "codex" {
+				hostTruth = []string{"persistent local marketplace", "forwarded --plugin-dir is rejected", "codex plugin add"}
+			}
+			for _, want := range hostTruth {
+				if !strings.Contains(out, want) {
+					t.Errorf("%s --help missing host-specific behavior %q:\n%s", host, want, out)
+				}
+			}
 		})
 	}
 }

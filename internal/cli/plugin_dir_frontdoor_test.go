@@ -38,14 +38,14 @@ func (h *resolveErrHost) ResolveManifest(string) (string, error) {
 }
 
 // TestDevLanePluginDirReachesLaunchSeam locks AC-2(a) under the Option-2 grammar:
-// `spacedock claude "task" -- --plugin-dir <vendored-repo>` reaches the launch
+// `spacedock claude "task" --plugin-dir <vendored-repo>` reaches the launch
 // seam with the inner argv beginning `claude --agent spacedock:first-officer`, the
 // task-bearing prompt appended LAST, and NO contract-gate rejection — proving the
 // manifest this entity vendors flows through the dev lane. The host's
 // ResolveManifest is wired to fail; a launch on exit 0 with the FO seam present
 // proves the gate was relaxed (ResolveManifest never consulted). The prompt is
-// always the last spacedock-built token and --plugin-dir rides in the post-`--`
-// passthrough with its value bound, so the host never binds the prompt here
+// always the last spacedock-built token and --plugin-dir is re-injected into the
+// host passthrough with its value bound, so the host never binds the prompt here
 // (AC-3). The narrow limit — a dangling value-taking flag as the FINAL passthrough
 // token — is covered by TestDanglingValueTakingHostFlagStillSwallows.
 func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
@@ -53,7 +53,7 @@ func TestDevLanePluginDirReachesLaunchSeam(t *testing.T) {
 	host := &resolveErrHost{}
 	var stdout, stderr bytes.Buffer
 
-	code := runClaude(context.Background(), []string{"do the thing", "--", "--plugin-dir", repo}, t.TempDir(), host, lookFound, &stdout, &stderr)
+	code := runClaude(context.Background(), []string{"do the thing", "--plugin-dir", repo}, t.TempDir(), host, lookFound, &stdout, &stderr)
 
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 (--plugin-dir <repo> must relax the gate); stderr=%q", code, stderr.String())

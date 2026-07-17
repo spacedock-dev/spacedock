@@ -20,15 +20,18 @@ effect immediately. For a normal install, see [Install Spacedock](../get-started
 
     Prints `spacedock <version>` for your local build.
 
-3. **Launch with the local plugin.**
+3. **Launch with the adjacent local plugin.**
 
     ```bash
-    ./spacedock claude "your task" -- --plugin-dir "$PWD"
+    ./spacedock claude "your task"
     ```
 
-    `--plugin-dir` is a host flag, so it rides after `--`. It loads the
-    first-officer and ensign agents from your checkout instead of the installed
-    plugin. Edits to the repo are live.
+    The launcher resolves its own executable and validates the adjacent
+    `.claude-plugin/plugin.json` before selecting this checkout. Codex does the
+    same with `.codex-plugin/plugin.json` through its local marketplace adapter.
+    Use `--plugin-dir /another/checkout` before `--` only when you need an
+    explicit Spacedock override. On Claude, a plugin directory after `--` is an
+    additional host plugin and does not replace Spacedock.
 
 The `next` branch is the development channel. If you want the bleeding edge
 without building from source, install the **edge channel** (`spacedock-edge`)
