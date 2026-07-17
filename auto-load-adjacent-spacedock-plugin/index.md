@@ -122,3 +122,24 @@ Validation independently reproduced the release-autobump mismatch and proved tha
 ### Summary
 
 Closed only the AC-3 evidence gap using Claude's own durable agent-listing event before the intentionally invalid isolated API key exits. The positive and adversarial arms now distinguish installed-provider selection from additional-plugin impersonation without changing the accepted adjacent-discovery implementation.
+
+## Stage Report: validation (cycle 2)
+
+- DONE: Independently reproduce the positive and mutant real-Claude provider-identity observations while confirming compatibility-gate and argv evidence remain unchanged.
+  Claude 2.1.212 reported `spacedock:first-officer: INSTALLED_PROVIDER_IDENTITY` for `additional-tools` and `spacedock:first-officer: MUTANT_ADDITIONAL_PROVIDER_IDENTITY` when only the additional manifest name changed; both arms retained installed resolution and byte-equivalent normalized argv.
+- DONE: Re-check AC-3 and the full AC-1 through AC-6 set, rejecting tautological evidence and recording any material or deferred finding.
+  AC-1 through AC-6 focused behavior tests passed; the new AC-3 evidence observes Claude's final agent registry rather than fixture prose, and no material or deferred finding remains.
+- DONE: Run focused tests, gofmt -w ./cmd ./internal, go test ./..., and go test ./... -race; append a cycle-2 PASSED or REJECTED validation report.
+  The real-Claude test passed three consecutive isolated runs plus one instrumented observation run; focused AC tests, the complete suite, and the complete race suite passed, and changed Go files are gofmt-clean.
+- DONE: Reproduce the cycle-2 evidence boundary adversarially on a detached checkout.
+  Naming the positive additional fixture `spacedock` failed on the host-reported mutant marker; restoring the old post-fence gate bypass failed both the original gate assertion and the new real-Claude resolver assertion.
+- DONE: AC-3 provider identity is independent of the gate and argv oracles.
+  Candidate descriptions differ before launch, `agent_listing_delta` supplies the selected qualified-agent description after Claude resolves both plugins, and fresh config roots prevent stale-session evidence.
+- DONE: AC-1, AC-2, AC-4, AC-5, and AC-6 remain satisfied.
+  Cycle 2 changes only `internal/cli/claude_provider_identity_test.go`; all prior adjacent selection, fallback, no-mutation, precedence, help, and documentation evidence remained green.
+- DONE: Validation recommendation: PASSED.
+  The cycle-1 AC-3 evidence defect is closed; there are no material findings, deferred risks, or polish findings in cycle 2.
+
+### Summary
+
+Fresh validation observed the installed and impersonating Claude providers through Claude's own session event and proved the oracle turns red under both provider-identity and gate-bypass mutations. The full normal and race suites pass, so cycle 2 recommends PASSED with no remaining findings.
