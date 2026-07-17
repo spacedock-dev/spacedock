@@ -1,6 +1,7 @@
 # Release build for the spacedock launcher: darwin + linux arm64 + amd64
 # tarballs, a checksums file, a GitHub Release, and a Homebrew formula bump on
-# the own-tap (cask is darwin-only; linux installs via install.sh).
+# the own-tap (the cask carries both darwin and linux URLs; linux may also
+# install via install.sh).
 version: 2
 
 project_name: spacedock
@@ -150,10 +151,18 @@ homebrew_casks:
       # download carries com.apple.quarantine and Gatekeeper kills the first
       # launch. Strip the attribute from the staged binary so the user needs no
       # manual step. Interim until a Developer ID notarized build lands.
+      #
+      # The cask ships linux URLs too (goreleaser emits them from the linux
+      # archives), so this postflight also runs on a `brew install` on linux —
+      # where `/usr/bin/xattr` does not exist and the hook aborts the install
+      # with exit 127. Guard on OS.mac? so the quarantine strip is a no-op off
+      # macOS (there is no quarantine attribute to strip there anyway).
       post:
         install: |
-          system_command "/usr/bin/xattr",
-                         args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
+          if OS.mac?
+            system_command "/usr/bin/xattr",
+                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
+          end
   # The EDGE cask: `brew install spacedock-dev/tap/spacedock@next` ships the
   # devBranch=next binary that installs the `next` plugin. Its on-demand re-pull
   # cadence rides the unchanged next-publish.yml; goreleaser only emits the cask.
@@ -193,10 +202,14 @@ homebrew_casks:
         safehouse  — sandboxes agent runs (https://agent-safehouse.dev)
         brew install eugene1g/safehouse/agent-safehouse
     hooks:
+      # Same quarantine strip as the stable cask, guarded on OS.mac? so the
+      # linux `brew install` path does not abort on the missing /usr/bin/xattr.
       post:
         install: |
-          system_command "/usr/bin/xattr",
-                         args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
+          if OS.mac?
+            system_command "/usr/bin/xattr",
+                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/spacedock"]
+          end
 
 snapshot:
   # Used by `goreleaser release --snapshot --clean` (the dry-run oracle). The
