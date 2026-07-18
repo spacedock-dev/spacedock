@@ -1,16 +1,17 @@
 ---
 title: Auto-load the adjacent Spacedock plugin
-status: validation
+status: done
 source: captain discussion 2026-07-17
 started: 2026-07-17T13:00:22Z
-completed:
-verdict:
+completed: 2026-07-18T05:48:25Z
+verdict: passed
 score: 0.9
 worktree: .worktrees/spacedock-ensign-auto-load-adjacent-spacedock-plugin
 issue:
 id: zbx5d7c4xgre4aq96d6q3xdy
-mod-block: merge:pr-merge
+mod-block:
 pr: pr-merge:524
+archived: 2026-07-18T05:48:25Z
 ---
 
 A locally built Spacedock launcher should load the matching plugin checkout beside its own executable without requiring `--plugin-dir`. This separates launcher identity from additional host plugins and prevents unrelated directories from replacing or bypassing Spacedock accidentally.
