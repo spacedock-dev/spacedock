@@ -1,0 +1,65 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-1",
+  "question": "Is the durable gate and one-question review design ready for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-resolution-frontmatter-contract",
+      "uri": "../../gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:004f0b9f7936b32d30a2ba7fafa73662611dbd8ded8254cde5437645f05245ab"
+    },
+    {
+      "id": "artifact:gate-review-probes",
+      "uri": "../../gate-review-probes.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:efa02663194a074350b38019aee86abe71a806bce59e0fcdc9d3c6c7dd28e332"
+    }
+  ],
+  "context": [
+    {
+      "id": "routing:ideation-outcome",
+      "type": "Routing",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    },
+    {
+      "id": "criterion:first-use-loop",
+      "type": "Criterion",
+      "text": "A new user can ask one question, send the design back, and see the changed answer before approving."
+    },
+    {
+      "id": "criterion:durable-resolution",
+      "type": "Criterion",
+      "text": "The exact binding Resolution is durable before the First Officer applies any workflow effect."
+    },
+    {
+      "id": "reference:task-record",
+      "type": "Reference",
+      "label": "3k task record at the ideation report commit",
+      "uri": "../../index.md",
+      "mediaType": "text/markdown",
+      "rev": "git:3060160c"
+    }
+  ]
+}
