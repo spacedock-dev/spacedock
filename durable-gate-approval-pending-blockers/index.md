@@ -1,9 +1,10 @@
 ---
 title: Persist gate approval while dispatch blockers remain
-status: backlog
+status: ideation
 score: "0.80"
 source: "Captain design feedback, 2026-07-13."
 id: 3kd1x1gfxr8mdwzbmnwtjbw8
+started: 2026-07-18T08:58:53Z
 ---
 
 # Persist gate approval while dispatch blockers remain
