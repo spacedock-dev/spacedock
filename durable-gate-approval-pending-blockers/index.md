@@ -55,15 +55,23 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 
 ## Acceptance criteria
 
-1. An approved blocked entity survives process restart and still reports the same durable approval, exact blocker, reviewed digest, and `approved-pending` condition without advancing or dispatching.
-2. Clearing the final blocker with unchanged reviewed content causes exactly one stage advance and exactly one dispatch, without re-presenting the gate. Repeated scheduler passes do not redispatch or reuse the approval.
-3. Any change to the reviewed artifact or other digest-bound gate input before blocker clearance marks the approval stale and produces zero advance/dispatch effects until a replacement Resolution is recorded.
-4. Revise and hold Resolutions remain durable, visible, and non-dispatchable; blocker clearance cannot override them.
-5. Dependency and scheduler failures fail closed. Missing, ambiguous, or unqueryable blocker state never appears as satisfied and never consumes approval.
-6. Status text and JSON distinguish pending approval, stale approval, unsatisfied blockers, satisfied-but-not-yet-consumed approval, consumed approval, and ambiguous recovery.
-7. The single-file Subspace review path persists the binding Resolution before deleting temporary review-package files. Durable records contain no temporary path, pane/session metadata, prompts, credentials, or personal information.
-8. Behavioral tests cover restart, blocker-clear, stale-content, revise, hold, duplicate scheduler passes, and crashes around advance/dispatch. A mutant that deletes the decision after review or dispatches while blocked must fail.
-9. After validation rejects and routes to implementation, status text and JSON
+**AC-1** An approved blocked entity survives process restart and still reports the same durable approval, exact blocker, reviewed digest, and `approved-pending` condition without advancing or dispatching.
+
+**AC-2** Clearing the final blocker with unchanged reviewed content causes exactly one stage advance and exactly one dispatch, without re-presenting the gate. Repeated scheduler passes do not redispatch or reuse the approval.
+
+**AC-3** Any change to the reviewed artifact or other digest-bound gate input before blocker clearance marks the approval stale and produces zero advance/dispatch effects until a replacement Resolution is recorded.
+
+**AC-4** Revise and hold Resolutions remain durable, visible, and non-dispatchable; blocker clearance cannot override them.
+
+**AC-5** Dependency and scheduler failures fail closed. Missing, ambiguous, or unqueryable blocker state never appears as satisfied and never consumes approval.
+
+**AC-6** Status text and JSON distinguish pending approval, stale approval, unsatisfied blockers, satisfied-but-not-yet-consumed approval, consumed approval, and ambiguous recovery.
+
+**AC-7** The single-file Subspace review path persists the binding Resolution before deleting temporary review-package files. Durable records contain no temporary path, pane/session metadata, prompts, credentials, or personal information.
+
+**AC-8** Behavioral tests cover restart, blocker-clear, stale-content, revise, hold, duplicate scheduler passes, and crashes around advance/dispatch. A mutant that deletes the decision after review or dispatches while blocked must fail.
+
+**AC-9** After validation rejects and routes to implementation, status text and JSON
    report both the current `implementation` stage and its validation-rejection
    rework context, including cycle and source gate identity. A fresh process
    reconstructing the same state history reports byte-equivalent structured
@@ -127,18 +135,18 @@ contract, until those corrections are incorporated and behaviorally proved.
    projector/reducer and status formatter; assert that human output says
    `implementation` plus validation-rejection/cycle context and JSON exposes
    the linked source gate and target stage run. Re-run from a new process with
-   no cache and compare the structured result. This directly measures AC 9.
+   no cache and compare the structured result. This directly measures AC-9.
 2. Use contrast fixtures that repeat implementation without a feedback route,
    omit the target-stage binding, and record a cycle-3 escalation without a
    target. None may report active rework. A mutant that ignores the route edge
    or clears the rejected result on `task.stage_entered` must fail. This guards
-   AC 9 against inference and tautological fixture checks.
+   AC-9 against inference and tautological fixture checks.
 3. Extend the fixture through re-validation. A later pass closes the active
    rework context; a later rejection supersedes it with cycle 2 while retaining
-   cycle 1 in history. This verifies AC 4 and AC 9 without a live runtime.
+   cycle 1 in history. This verifies AC-4 and AC-9 without a live runtime.
 4. Retain the existing commit-graph CLI fixtures for blocked approvals,
    staleness, duplicate scheduler passes, crash boundaries, merge resolution,
-   and privacy. Those continue to cover AC 1–8.
+   and privacy. Those continue to cover AC-1 through AC-8.
 
 Estimated cost is medium: deterministic Git-history and CLI golden fixtures
 cover the durable claim; no live host test is required because worker liveness
@@ -172,9 +180,11 @@ paragraph:
 - DONE: Determine the smallest design change needed so a validation rejection routed back to implementation remains visible alongside the current lifecycle stage.
   Kept `gate.resolution_recorded` as the durable result and extended existing `feedback.cycle_recorded` as an explicit route edge to the rework stage run; no duplicate stage-result event is needed.
 - DONE: Update the acceptance criteria and behavioral test plan so the status text/JSON projection proves the rejected-gate/rework context survives routing and restart.
-  AC 9 and contrast-based CLI fixtures now require durable source-gate/cycle context after restart and reject false rework labels on ordinary stage re-entry.
+  AC-9 and contrast-based CLI fixtures now require durable source-gate/cycle context after restart and reject false rework labels on ordinary stage re-entry.
 - DONE: Keep the initial design and documentation consequences coherent with the amendment.
   Updated the proposal artifact, its recorded SHA-256, reducer semantics, Phase 1 plan, acceptance tests, and the proposed lifecycle documentation wording.
+- DONE: Repair the acceptance-criteria labels so the gate's structured cross-check can enumerate the design contract.
+  `status --read 3k --ac-scan --stage ideation` extracts exactly AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, and AC-9 with their original meanings and test mappings intact.
 
 ### Summary
 
