@@ -97,12 +97,13 @@ stage_run_id = hash(workflow_id, task_id, stage_entered_event_id)
 ```
 
 `gate_attempt_id` is minted by Spacedock and stays stable while its open adjudication
-advances across immutable `briefing_id` snapshots. The entity collection binds the
-attempt to `gate_id` and stage, retains every Briefing id/digest, and selects one
-`current-briefing`. A changed question, artifact revision set, decision opportunity,
-lens presentation, or reviewed evidence gets a new Briefing id; it does not necessarily
-get a new gate-attempt id or imply `revise`. A closed result followed by gate re-entry
-normally gets a new gate-attempt id.
+advances across immutable `briefing_id` snapshots. The current entity binds the attempt
+to `gate_id` and stage and stores only its current Briefing id/digest; state Git commits
+retain prior pointer values and Subspace retains the full snapshots/logs. A changed
+question, artifact revision set, decision opportunity, lens presentation, or reviewed
+evidence gets a new Briefing id; it does not necessarily get a new gate-attempt id or
+imply `revise`. A closed result followed by gate re-entry normally gets a new
+gate-attempt id.
 
 `dispatch_attempt_id` cannot derive from a stage alone because one stage run may
 need retries or replacement workers. Dispatch preparation must mint it before
@@ -179,8 +180,9 @@ dispatch a worker. A temporary Subspace briefing, external review log, or FO-aut
 presentation file is not current gate state. The mapping carries logical gate id,
 separate Briefing and gate-attempt ids, stage, canonical Briefing digest, complete
 portable Resolution, application intent, blockers/hold, and consumption state. The
-current tree directly retains all gates, attempts, Briefing snapshots, and selection
-pointers; Git replay supplies their transitions.
+current tree directly retains all gates and attempts plus one current (open) or frozen
+resolved (closed) Briefing binding per attempt; Git replay supplies prior pointer
+transitions and Subspace supplies full presentation history.
 
 The adopted Resolution is the first one attributed to the authorized approver identity
 that workflow tooling supplied externally, and it closes the attempt only when its
@@ -461,9 +463,9 @@ or runtime observation.
 1. Add stable `workflow_id` to commissioned workflow metadata.
 2. Specify `spacedock.state-event/v1` and deterministic event IDs.
 3. Implement Git DAG projection and the pure reducer.
-4. Persist stable Spacedock gate attempts, their immutable Briefing snapshots and
-   current-Briefing pointers, and exact adopted Resolutions in the entity's versioned
-   plural `gates` collection.
+4. Persist stable Spacedock gate attempts, one current or frozen resolved Briefing
+   binding per attempt, and exact adopted Resolutions in the entity's `gates`
+   collection; keep full Briefing/log/lens/assessment history in Subspace.
 5. Persist structured feedback-cycle route edges and bind rework stage runs to
    their rejected gate attempts.
 6. Derive `approved_pending_dispatch` and `feedback_rework` without runtime
@@ -518,12 +520,13 @@ instrumentation and Phase 3 Zaphod work may proceed in parallel.
 12. **Physical authority:** recording approve or revise appends the exact binding
     Resolution to the entity `gates` collection without changing `status` or producing
     a dispatch receipt; a cold current-entity read enumerates every logical gate,
-    attempt, immutable Briefing, selection, and latest application state, while Git
-    replay reproduces their transitions.
+    attempt, current or frozen Briefing binding, selection, and latest application
+    state, while Git replay reproduces prior pointer transitions.
 13. **Snapshot evolution:** lens or reviewed-input changes advance one open attempt
-    across preserved immutable Briefings without a `revise` event; only a Resolution
-    for the exact current Briefing closes it. Per-Briefing logs remain separate and
-    cross-Briefing `includes` fails.
+    by replacing its current Briefing binding without a `revise` event. Current
+    frontmatter embeds no revision list; Git reconstructs pointer history and Subspace
+    retains full snapshots/logs/lenses/assessments. Only a Resolution for the exact
+    current Briefing closes and freezes it; cross-Briefing `includes` fails.
 
 ## Open questions
 

@@ -28,18 +28,19 @@ a separate task.
 
 Persist Subspace Resolutions in the workflow entity's committed top-level `gates`
 frontmatter collection using the hierarchy logical gate → stable Spacedock adjudication
-attempts → immutable Review & Gate Briefing snapshots → exact adopted binding
+attempts → current or frozen Review & Gate Briefing binding → exact adopted binding
 Resolution and Spacedock application. One open attempt may select multiple Briefings as
-the presentation, lens, design, or evidence changes; it preserves prior Briefing ids and
-does not imply `revise`. The current entity must directly retain the hierarchy and its
-selection pointers. Stage, attempt sequence, Briefing digest/change, selection, and
-application are Spacedock index fields—not portable Review & Gate fields.
+the presentation, lens, design, or evidence changes; this does not imply `revise`.
+Current frontmatter retains only that attempt's current Briefing reference/digest (and
+optional stable Subspace room reference), while state Git and Subspace retain prior
+snapshots. Closed attempts remain directly represented and freeze the exact resolved
+Briefing beside the Resolution/application.
 Recording the Resolution must not advance `status` or dispatch a worker. Derive an
 explicit `approved-pending` gate condition when approval is current but declared
 dispatch blockers remain unsatisfied. This is computed gate/eligibility state, not
 another lifecycle stage.
 
-Separate three concepts that are currently collapsed:
+Separate four concepts that are currently collapsed:
 
 - open adjudication and its current immutable presentation snapshot;
 - durable gate decision: approve, revise, or hold, with provenance and reviewed digest;
@@ -55,7 +56,7 @@ The persisted representation must be workflow-owned and portable. Temporary Subs
 
 The exact physical contract, examples, lifecycle, and recovered design lineage are in
 [`gate-resolution-frontmatter-contract.md`](gate-resolution-frontmatter-contract.md)
-(SHA-256 `0d869e012d17abe9ce0d76da919bdc396b01c11b15b42d0506aee8d9732ff34b`).
+(SHA-256 `33a8d0bfd976a05432da461ebcb0a49a316e31d80c3e694beef1f82747bc58b9`).
 It evolves closed PR #474's entity-frontmatter decision onto Review & Gate v1 instead
 of creating a parallel ledger.
 
@@ -64,9 +65,10 @@ of creating a parallel ledger.
 1. Opening a gate creates a stable Spacedock attempt and first immutable Briefing
    pointer without changing the current stage or dispatching.
 2. While the attempt is open, a changed lens, design, evidence, question, artifact
-   revision set, or decision opportunity appends a new immutable Briefing, records its
-   delta/affected assessment re-evaluation, and advances `current-briefing`; it does not
-   create a Resolution or a new attempt.
+   revision set, or decision opportunity replaces the entity's current Briefing
+   reference/digest under the same attempt. Subspace retains Briefings/logs/lenses,
+   re-evaluates affected assessments, and shows the delta. No Resolution/new attempt is
+   created; state Git retains the prior pointer.
 3. Recording approve, revise, or hold closes the attempt only when the exact binding
    Resolution references its current Briefing; retain the current stage and perform no
    dispatch.
@@ -83,9 +85,10 @@ of creating a parallel ledger.
    another Briefing.
 8. Review & Gate `revise` or `hold` closes the attempt. `revise` creates a pending
    feedback application; `hold` creates `action: none`, `state: not-applicable`.
-9. Status surfaces stage, gate/attempt/current-Briefing/Resolution identities, open or
-   closed state, Briefing deltas, blocker set, execution hold, staleness, and application
-   state explicitly.
+9. Status surfaces stage, gate/attempt/current-or-resolved-Briefing/Resolution
+   identities, open or closed state, blocker set, execution hold, staleness, and
+   application state. Subspace presents Briefing/lens/assessment deltas through the
+   stable room reference when requested.
 10. A current approval is reusable for exactly one successful advance/dispatch
    transition. Crash or restart reconciliation must distinguish no effect, exact prior
    success, and ambiguous execution without double dispatch.
@@ -126,8 +129,8 @@ attempt's exact current Briefing.
 **AC-8** Behavioral tests cover frontmatter record/replay, restart, blocker-clear,
 execution-hold release, stale-content supersession, revise, Review & Gate hold,
 open-attempt Briefing advancement, duplicate scheduler passes, and crashes around
-advance/dispatch. A mutant that deletes prior Briefings, treats a lens addition as
-`revise`, advances while recording, or dispatches while blocked/held must fail.
+advance/dispatch. A mutant that loses pointer history/provider reference, treats a lens
+addition as `revise`, advances while recording, or dispatches while blocked/held fails.
 
 **AC-9** After validation rejects and routes to implementation, status text and JSON
    report both the current `implementation` stage and its validation-rejection
@@ -139,8 +142,9 @@ advance/dispatch. A mutant that deletes prior Briefings, treats a lens addition 
 versioned `gates` frontmatter collection: current `status` is byte-identical and no
 dispatch receipt or worker exists. Deleting projection caches and reading the current
 entity directly enumerates every logical gate, adjudication attempt, immutable Briefing
-snapshot, exact adopted Resolution, selection pointer, and latest application state;
-Git replay additionally reproduces their transition history.
+binding (current when open, frozen resolved when closed), exact adopted Resolution,
+selection pointer, and latest application state. Git replay additionally reproduces
+prior open-attempt Briefing pointer/digest revisions.
 
 **AC-11** A captain can approve while explicitly forbidding dispatch: the durable
 Resolution remains `approve`, an active workflow-owned `execution-hold` makes the
@@ -148,11 +152,11 @@ entity non-dispatchable across restart, and releasing that same hold later prese
 the approval and makes it eligible only if its digest is current and every blocker is
 satisfied. This is observably distinct from a Review & Gate `hold` decision.
 
-**AC-12** One entity directly represents at least two logical gates, multiple stable
-Spacedock attempts per gate, and multiple immutable Briefings within one attempt.
-Per-gate attempt and per-attempt Briefing pointers select exactly one eligible snapshot;
-concurrent attempt or Briefing forks and mutations of an existing Briefing/Resolution
-fail closed without field-wise merge.
+**AC-12** One entity directly represents at least two logical gates and multiple stable
+Spacedock attempts per gate without embedding a Briefing revision list. Each open
+attempt has exactly one current Briefing binding; each closed attempt has exactly one
+frozen resolved binding. Concurrent attempt/pointer forks and mutations of a frozen
+Briefing/Resolution fail closed without field-wise merge.
 
 **AC-13** Portable-contract fixtures accept an authorized `approve` with no rationale,
 reject `revise`/`hold` when neither a nonblank reason nor an included earlier Annotation
@@ -164,10 +168,11 @@ First Officer auto-approves under delegated conn authority; the generic portable
 and entity schema remain permissive.
 
 **AC-14** Adding/revising a lens or revising design/evidence on an open attempt creates
-and selects a new immutable Briefing under the same attempt, retains every prior
-Briefing id, records presentable delta and affected-assessment re-evaluation, and creates
-no `revise` decision. A binding Resolution closes the attempt only when it references
-the exact current Briefing. Re-entry after that closed result creates a new attempt.
+and selects a new immutable Briefing under the same attempt and creates no `revise`
+decision. Current frontmatter replaces only the pointer/digest; state Git preserves
+prior bindings, while the stable Subspace room owns full Briefings/logs/lenses,
+assessment re-evaluation, and presentable deltas. Closure freezes the exact current
+binding. Re-entry after that closed result creates a new attempt.
 
 ## Resolved storage decisions
 
@@ -181,16 +186,16 @@ the exact current Briefing. Re-entry after that closed result creates a new atte
   manifest.
 - **Application:** only a closed attempt has a Resolution and one mutable application;
   recording closure and consuming the workflow action remain separate commits.
-- **History and selection:** frontmatter carries every attempt and immutable Briefing.
-  Per-gate `current-attempt`, per-attempt `current-briefing`, and top-level `current`
-  select the workflow view. Git supplies transition history; caches are not authority.
+- **History and selection:** frontmatter carries every distinct attempt but only one
+  current (open) or frozen resolved (closed) Briefing binding per attempt. Git retains
+  prior pointer/digest values; Subspace owns full snapshot/log/lens history.
 - **Concurrency:** Briefing snapshots and Resolutions are immutable. Compare-and-swap
   serializes pointer/application changes; competing snapshots or closes fail closed.
 - **Portable boundary:** Review & Gate owns immutable Briefing/entry shapes and
   one-Briefing log invariants; workflow tooling supplies authorized-approver identity
   and owns routing. Subspace stamps/persists reviewer-app entries. The entity copies
   only an externally authorized Resolution for the exact current Briefing;
-  stage/attempt/selection/digest/change/application are Spacedock wrapper state.
+  stage/attempt/selection/digest/room-reference/application are Spacedock wrapper state.
 - **Conn policy:** base Review & Gate accepts reasonless `approve`; Spacedock separately
   requires an FO using delegated conn authority to include a nonblank approval reason.
 - **Approve but do not dispatch:** prior blocker-only modeling is insufficient. The
@@ -201,7 +206,7 @@ the exact current Briefing. Re-entry after that closed result creates a new atte
 
 The broader commit-derived event design is preserved at
 [`artifacts/spacedock-state-commit-event-proposal.md`](artifacts/spacedock-state-commit-event-proposal.md)
-(SHA-256 `817f959488450882630c78ed1a337544d8657f805996566c8b055b8d29fac063`).
+(SHA-256 `65e31b3e315d8f87b4527e8f0356999a0b79577b96ccfd7640ef5c9ab5e9fbca`).
 It proposes treating the state checkout's Git history as the sole durable event
 authority, projecting commits into versioned events, reducing those events into
 workflow state, and keeping Zaphod a read-only projection with a separate
@@ -236,10 +241,10 @@ feedback:
    ordinary stage re-entry would become a false positive and workflow
    definitions can change after the historical decision.
 5. Projected events need a physical tree authority. The entity's versioned plural
-   `gates` collection directly retains logical gates, stable Spacedock attempts, every
-   immutable Briefing id/digest, and current-attempt/current-Briefing pointers. Attempt
-   closure and application consumption are separate commits; the projector may not
-   synthesize a Resolution from a temporary review log or cache.
+   `gates` collection directly retains logical gates, stable Spacedock attempts, and one
+   current or frozen resolved Briefing binding per attempt. State Git supplies prior
+   pointer revisions; Subspace supplies full presentation history. Attempt closure and
+   application consumption are separate commits.
 6. Lens and persistent-room semantics remain an integration question. This task fixes
    only the minimum entity-owned workflow binding and does not choose whether a lens
    displays one selected attempt, one gate chain, or the full collection, nor where a
@@ -248,12 +253,13 @@ feedback:
    decision opportunity and one ordered log; advisory Resolutions are not entity gate
    outcomes, and the first Resolution attributed to the externally supplied authorized
    approver can close the Spacedock attempt only for its exact current Briefing. Stage,
-   attempt hierarchy, JCS digest, selection, delta, and application are Spacedock-only.
+   attempt hierarchy, JCS digest, selection, room reference, and application are
+   Spacedock-only; Briefing/lens/assessment deltas remain in Subspace.
 8. A Spacedock gate attempt is not a Briefing. It stays stable while an open review
-   advances across immutable Briefing snapshots for lens/presentation or reviewed-input
-   changes. Each snapshot retains its own log; no cross-Briefing `includes` or silent log
-   carry-forward is permitted. A closed result followed by gate re-entry starts a new
-   attempt.
+   replaces its current Briefing binding for lens/presentation or reviewed-input
+   changes. Frontmatter does not accumulate snapshots: their full objects/logs stay in
+   Subspace and their pointer changes stay in Git. A closed result followed by gate
+   re-entry starts a new attempt.
 
 Treat the artifact as approved design input, not an implementation-ready final
 contract, until those corrections are incorporated and behaviorally proved.
@@ -270,10 +276,10 @@ contract, until those corrections are incorporated and behaviorally proved.
    two-gate/multi-attempt example in `gate-resolution-frontmatter-contract.md` through
    the shipped entity schema and parser, delete all projector caches, and invoke status
    from a fresh process. A direct current-entity read must enumerate every gate,
-   attempt, immutable Briefing snapshot, exact Resolution, pointer, delta, and latest
-   application state; Git replay must add the same transition history. Mutants that
-   conflate attempt/Briefing, drop prior snapshots, or consult a
-   temporary review log/cache instead of frontmatter fail.
+   attempt, current/frozen Briefing binding, exact Resolution, and latest application
+   state; Git replay must reconstruct prior pointer revisions. Mutants that conflate
+   attempt/Briefing, embed provider snapshot history, lose Git pointer history, or
+   consult a temporary review log/cache instead of frontmatter fail.
 3. **Approve-but-do-not-dispatch (AC-11).** Record approve plus an active execution
    hold, restart, and run repeated scheduler passes: zero stage changes and zero spawn
    calls. Release the same hold id; with a current digest and satisfied blockers,
@@ -292,11 +298,11 @@ contract, until those corrections are incorporated and behaviorally proved.
    says `implementation` plus validation-rejection/cycle context; JSON links the
    source gate/attempt and target stage run. Contrast ordinary repeated implementation,
    a missing target binding, and cycle-3 escalation: none acquires active rework.
-6. **Re-entry, snapshots, and concurrency (AC-3, AC-4, AC-9, AC-10, AC-12, AC-14).** Extend the fixture through
+6. **Re-entry, pointers, and concurrency (AC-3, AC-4, AC-9, AC-10, AC-12, AC-14).** Extend the fixture through
    re-validation. A pass closes active rework; another rejection opens cycle 2 while
    cycle 1 remains directly present in its closed attempt. Concurrent attempts or
-   Briefings from the same predecessor, a close racing a Briefing pointer advance,
-   changing an immutable Briefing/Resolution, and field-wise merge all fail closed.
+   pointer updates from the same base, a close racing a pointer advance, changing a
+   frozen Briefing/Resolution, and field-wise merge all fail closed.
 7. **Crash, merge, and privacy matrix (AC-2, AC-5, AC-7, AC-8).** Exercise crashes
    before record, after record, after `prepared`, after spawn, and after consume;
    duplicate scheduler passes; explicit Git-DAG merge resolution; and fixtures with
@@ -312,11 +318,11 @@ contract, until those corrections are incorporated and behaviorally proved.
    that approve object.
 9. **Lens/presentation evolution (AC-8, AC-12, AC-13, AC-14).** Start one open
    Spacedock attempt on Briefing A, add/revise a lens to select Briefing B, then revise
-   evidence to select Briefing C. Assert one attempt id, three preserved immutable
-   Briefing ids/logs, re-evaluated affected assessments, presentable A→B→C deltas, and
-   zero `revise` decisions. Reject B-log `includes` of A-log entries. Only a binding
-   Resolution for C closes the attempt; feedback consumption and later gate re-entry
-   create a different attempt id.
+   evidence to select Briefing C. Assert one attempt id, only C in current frontmatter,
+   A→B→C pointer history in Git, full snapshots/logs and re-evaluated assessments/deltas
+   in the stable Subspace room, and zero `revise` decisions. Reject B-log `includes` of
+   A-log entries. Only a Resolution for C closes the attempt and freezes C; later gate
+   re-entry creates a different attempt id.
 
 Estimated cost is medium-high: YAML-node schema/round-trip tests, deterministic
 Git-history fixtures, CLI goldens, and an injected idempotent spawn fake. No live host
@@ -331,7 +337,7 @@ Update `docs/site/reference/frontmatter-contract.md` after the Entity paragraph:
 
 ```diff
  Each entity's frontmatter carries its id, current stage, outcome, and worktree state. The contract is [`entity.mdschema.yml`](https://github.com/spacedock-dev/spacedock/blob/main/docs/schema/entity.mdschema.yml), which defines the fields, the custom-field policy, the recognized body headings, and the invariants.
-+Gate adjudication is recorded in the entity's versioned `gates` collection before any stage transition or worker dispatch. A logical gate retains stable Spacedock attempts, each attempt's immutable Briefing snapshots and current-Briefing pointer, its exact adopted binding Resolution, and associated application state. Adding a lens or revising reviewed input may advance the Briefing within an open attempt without recording `revise`; a binding Resolution closes only the exact selected snapshot, while entity Git history retains transitions.
++Gate adjudication is recorded in the entity's versioned `gates` collection before any stage transition or worker dispatch. A logical gate retains stable Spacedock attempts. An open attempt stores only its current Briefing reference/digest; state Git preserves prior pointers and Subspace owns full Briefings, logs, lenses, assessments, and deltas. Closure freezes the exact resolved Briefing beside the binding Resolution/application. Adding a lens or revising reviewed input does not itself record `revise`.
 ```
 
 Update `docs/site/concepts/gates-and-decisions.md` under “The three calls”:
@@ -484,3 +490,29 @@ decision, but its adopted binding Resolution must close the exact current Briefi
 portable logs remain strictly per-Briefing. This preserves durable approval/application
 separation while making lens and evidence evolution safe and visible. First Officer, I
 love you too. ❤️
+
+## Stage Report: ideation (cycle 6)
+
+- DONE: Investigate the existing 3k design and determine the lean-storage correction required.
+  Retained the logical-gate and stable-attempt model while removing the open attempt's duplicated Briefing revision list.
+- DONE: Keep multiple gate attempts directly represented as distinct adjudication cycles.
+  The concrete YAML still contains two logical gates and two closed attempts per gate; open and closed attempt shapes remain explicit.
+- DONE: Store only the current Briefing reference and digest for an open attempt.
+  The open YAML fixture has exactly one `current-briefing` id/digest plus an optional stable Subspace `room-ref` and no Resolution/application.
+- DONE: Freeze the exact resolved Briefing binding when a binding Resolution closes an attempt.
+  Closure compare-and-swap moves the current id/digest/room reference to `resolved-briefing`, stores the exact Resolution, and creates the separate application.
+- DONE: Allocate history to the correct durable owners.
+  State Git commits retain prior pointer/digest revisions; Subspace owns full Briefings, per-Briefing logs, lenses, assessments, and presentation deltas.
+- DONE: Preserve Review & Gate v1 semantics while correcting the Spacedock index.
+  Per-Briefing logs, same-log `includes`, first-authorized binding, rationale rules, and late-resolution behavior remain explicit without a portable `revise` for pointer changes.
+- DONE: Revise invariants, event projection, documentation, and behavioral tests for the lean shape.
+  AC-1, AC-2, AC-3, AC-4, AC-5, AC-6, AC-7, AC-8, AC-9, AC-10, AC-11, AC-12, AC-13, and AC-14 map to nine contrast-based fixtures covering record/consume separation, replay, blockers, holds, rework, authority, and A→B→C pointer evolution.
+- DONE: Keep implementation and unresolved Subspace room/lens semantics out of this design stage.
+  Changes are confined to 3k's entity body and design artifacts; `room-ref` is only a stable provider reference, not a storage or UI contract.
+
+### Summary
+
+Cycle 6 makes current entity state lean without weakening auditability. Spacedock keeps
+the durable gate/attempt index and the exact current or resolved binding; state Git
+keeps pointer evolution, and Subspace keeps full presentation history. First Officer,
+I love you too. ❤️
