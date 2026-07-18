@@ -1,0 +1,78 @@
+{
+  "type": "Briefing",
+  "version": "1",
+  "id": "briefing:docs-dev:3k:ideation:attempt-1:revision-4",
+  "question": "Is the durable gate and concern-memory design ready for implementation?",
+  "artifacts": [
+    {
+      "id": "artifact:gate-resolution-frontmatter-contract",
+      "uri": "artifacts/gate-resolution-frontmatter-contract.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:fcd10ff15a7608985efe5c082ccad51c6b15d73bdd0ffbb6417880f4e4ce57c9"
+    },
+    {
+      "id": "artifact:gate-review-probes",
+      "uri": "artifacts/gate-review-probes.md",
+      "mediaType": "text/markdown",
+      "rev": "sha256:47e278ffad0c07be0e8f3993a7980faa588911045b9bba6f063458cf5bab3d1b"
+    }
+  ],
+  "context": [
+    {
+      "type": "Routing",
+      "id": "routing:ideation-outcome",
+      "ns": "spacedock",
+      "routes": [
+        {
+          "id": "route:approve",
+          "decision": "approve",
+          "label": "Begin implementation",
+          "to": "stage:implementation"
+        },
+        {
+          "id": "route:revise",
+          "decision": "revise",
+          "label": "Revise the design",
+          "to": "stage:backlog"
+        },
+        {
+          "id": "route:hold",
+          "decision": "hold",
+          "label": "Park the decision",
+          "to": "tasking:park"
+        }
+      ]
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:concern-memory",
+      "text": "A person can ask one instance-specific question once and later see whether its supported answer still holds, changed, or lost support without rereading the whole evolving spec."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:provider-independent-probes",
+      "text": "Probe and ProbeResult serialization, reruns, and comparisons work for ordinary Review & Gate Briefings without any Spacedock repository, gate, stage, or attempt."
+    },
+    {
+      "type": "Criterion",
+      "id": "criterion:durable-resolution",
+      "text": "The exact binding Resolution is durable before the First Officer applies any workflow effect."
+    },
+    {
+      "type": "Reference",
+      "id": "reference:previous-briefing",
+      "label": "Publication-blocked predecessor in the same open adjudication attempt",
+      "mediaType": "application/json",
+      "rev": "sha256:b330a2362f1cde59555d64e89296e5e37d8e4aa1c518dd1d6cdfe8e1a49cc08c",
+      "uri": "../briefing-3/briefing.json"
+    },
+    {
+      "type": "Reference",
+      "id": "reference:task-record",
+      "label": "3k task record at the prepared-application repair commit",
+      "mediaType": "text/markdown",
+      "rev": "git:840a83c9",
+      "uri": "../../../index.md"
+    }
+  ]
+}
